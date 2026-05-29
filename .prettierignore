@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+out/
+target/
+coverage/
+
+# Release-please owns this
+CHANGELOG.md
+
+# Agent scratch dirs
+.agents/
+.codex/
+.scratch/
+
+# Credentials
+.operator
+
+# Lockfile
+bun.lock
+
+.git/
