@@ -1,7 +1,9 @@
 # Spellbook aesthetic + thematic rebrand
 
 **Date:** 2026-05-29 **Tone:** Type 2 (curiosity / "probably want this") — a
-pre-release consideration **Status:** captured spark, not yet a project
+pre-release consideration **Status:** graduated to
+`docs/projects/spellbook-rebrand/` (2026-05-29) — this fragment holds the fuller
+aesthetic exploration the proposal references
 
 ## Context
 
