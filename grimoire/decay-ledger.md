@@ -1,0 +1,47 @@
+# Decay Ledger
+
+> _"Pheromone trails evaporate unless reinforced. Let rules decay by default and
+> stay vivid only when recurring scenarios keep walking them."_
+
+Growth gets all the attention in rule systems; decay is the half nobody builds,
+and it's the half that keeps the thing from collapsing under its own weight.
+"Removal is hard" becomes "survival requires reinforcement" — so nobody has to
+make the frightening delete.
+
+## How it works
+
+- Every `house-style.md` rule has a row here with a **last-reinforced** date.
+- A rule is **reinforced** when a fresh-agent finding or a captured scenario
+  re-walks it. Bump the date and add a pointer.
+- A rule whose date goes stale (suggested: **2 release cycles** with zero
+  reinforcement) is a **removal candidate** — surface it at the next review.
+- Rules marked **load-bearing/perennial** don't decay (they're the thesis); only
+  their boundary checks get refined.
+- **Seed rules are unvalidated.** Rows whose "reinforced by" still says `(seed)`
+  came from the manifesto / recipe before any spell was built _in this repo_ —
+  informed, but not yet earned by use here. The first toolbox-spell migration
+  and its fresh-agent test are **the subtraction pass** that validates-or-cuts
+  them (per "Start minimal; subtract before you test"). Don't treat a seed row
+  as settled until real use has walked it.
+
+## Ledger
+
+| Rule (`house-style.md`)                                | Status       | Last reinforced | Reinforced by                           |
+| ------------------------------------------------------ | ------------ | --------------- | --------------------------------------- |
+| Architect for the reader's context                     | perennial    | 2026-05-29      | scenario: generalize-the-roster         |
+| Reference, don't inline                                | active       | 2026-05-28      | manifesto (seed)                        |
+| Context is an attention budget — exclusions earn place | active       | 2026-05-29      | scenario: generalize-the-roster         |
+| Start minimal; subtract before you test                | active       | 2026-05-29      | scenario: minimal-first-subtraction     |
+| The name is the canonical handle — name at coalescence | active       | 2026-05-29      | scenario: name-handle-vs-invocation     |
+| Match the kind to the interaction (cantrip/conjure)    | active       | 2026-05-28      | manifesto (seed)                        |
+| Surface-fit                                            | active       | 2026-05-28      | manifesto (seed)                        |
+| Keep the client thin — MCP at the auth layer           | active       | 2026-05-28      | manifesto (seed)                        |
+| Every spell ships a feedback touchpoint                | active       | 2026-05-29      | scenario: feedback-touchpoint-per-skill |
+| Self-contained, no build step                          | active       | 2026-05-28      | recipe (seed)                           |
+| Honor the exit-code contract                           | active       | 2026-05-28      | recipe (seed)                           |
+| Carry the Bun gotchas forward                          | **temporal** | 2026-05-28      | recipe (seed)                           |
+| Mature principle = imperative + boundary checks        | perennial    | 2026-05-28      | manifesto (seed)                        |
+
+> **temporal** = pinned to a runtime version; re-verify when Bun moves and
+> retire the gotchas that no longer reproduce. This is the row most likely to
+> need pruning first.

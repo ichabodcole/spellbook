@@ -1,0 +1,11 @@
+{
+  "name": "spellbook",
+  "version": "0.1.0",
+  "description": "Agent-conjured apps — Bun-served surfaces with an agent as the runtime. Cantrips (cast-and-resolve) and conjurations (standing daemons).",
+  "author": {
+    "name": "Cole Reed"
+  },
+  "homepage": "https://github.com/ichabodcole/spellbook",
+  "repository": "https://github.com/ichabodcole/spellbook",
+  "license": "MIT"
+}

@@ -1,0 +1,1475 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>__TITLE__</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <style>
+      :root {
+        color-scheme: light;
+        --text-primary: #2a2033;
+        --text-muted: #7f6d88;
+        --surface: #fff;
+        --surface-soft: #fff8f2;
+        --page-bg: #fff5f7;
+        --page-wash:
+          radial-gradient(
+            circle at 10% 0%,
+            rgba(255, 179, 193, 0.3),
+            transparent 24rem
+          ),
+          linear-gradient(180deg, #fff8f8 0%, #fff5f7 46%, #fff 100%);
+        --page-pattern:
+          radial-gradient(
+            circle,
+            rgba(255, 122, 166, 0.18) 0 2px,
+            transparent 2.5px
+          ),
+          radial-gradient(
+            circle,
+            rgba(106, 77, 188, 0.12) 0 1.5px,
+            transparent 2px
+          );
+        --page-pattern-position: 28px 44px, 0 0;
+        --page-pattern-size: 118px 118px, 167px 167px;
+        --page-pattern-repeat: repeat;
+        --page-pattern-opacity: 1;
+        --brand-primary: #ff7aa6;
+        --brand-strong: #ff4f84;
+        --brand-secondary: #6a4dbc;
+        --brand-tertiary: #9d6bff;
+        --brand-ink: #2a2033;
+        --brand-highlight: #ffd5e0;
+        --border-subtle: #f5d5e0;
+        --focus-ring: rgba(255, 122, 166, 0.18);
+        --action-bg: linear-gradient(
+          180deg,
+          #ff93b4 0%,
+          #ff5a8c 58%,
+          #ee3f76 100%
+        );
+        --action-border: #db2f69;
+        --action-highlight: rgba(255, 255, 255, 0.68);
+        --action-shadow:
+          inset 0 2px 0 var(--action-highlight),
+          inset 0 -3px 0 rgba(165, 32, 78, 0.18),
+          0 10px 24px rgba(255, 79, 132, 0.32),
+          0 4px 10px rgba(165, 32, 78, 0.18);
+        --question-bg: linear-gradient(
+          180deg,
+          #fff 0%,
+          var(--surface-soft) 100%
+        );
+        --question-accent: var(--brand-secondary);
+        --comment-bg: #fff6cc;
+        --comment-border: #ffe06b;
+        --code-bg: #fff0f5;
+        --code-fg: #6a3c86;
+        --code-block-bg: #fff;
+        --input-bg: rgba(255, 255, 255, 0.88);
+        --header-bg: rgba(255, 248, 250, 0.88);
+        --header-border: rgba(245, 213, 224, 0.84);
+        --action-text-shadow: 0 1px 0 rgba(122, 24, 58, 0.28);
+        --action-active-shadow:
+          inset 0 2px 0 var(--action-highlight),
+          inset 0 -2px 0 rgba(165, 32, 78, 0.18),
+          0 3px 0 color-mix(in srgb, var(--action-border) 78%, #000 22%),
+          0 10px 18px rgba(255, 79, 132, 0.18);
+        --brand-mark-filter: drop-shadow(0 7px 10px rgba(255, 79, 132, 0.18));
+        --mascot-filter: drop-shadow(0 18px 28px rgba(106, 77, 188, 0.18));
+        --elevation-soft: 0 8px 28px rgba(42, 32, 51, 0.05);
+        --elevation-card: 0 18px 50px rgba(106, 77, 188, 0.16);
+        --elevation-popover: 0 12px 28px rgba(42, 32, 51, 0.22);
+        --stamp-text: "nom nom";
+        --question-icon: "?";
+      }
+      body[data-theme="classic"] {
+        --text-primary: #1a1a1a;
+        --text-muted: #666;
+        --surface: #fff;
+        --surface-soft: #fafafa;
+        --page-bg: #fafafa;
+        --page-wash: linear-gradient(180deg, #fafafa 0%, #fff 100%);
+        --page-pattern: none;
+        --brand-primary: #2563eb;
+        --brand-strong: #2563eb;
+        --brand-secondary: #1d4ed8;
+        --brand-tertiary: #60a5fa;
+        --brand-ink: #111827;
+        --brand-highlight: #dbeafe;
+        --border-subtle: #e2e2e2;
+        --focus-ring: rgba(37, 99, 235, 0.16);
+        --action-bg: var(--brand-primary);
+        --action-border: #1d4ed8;
+        --action-highlight: rgba(255, 255, 255, 0.32);
+        --action-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        --question-bg: var(--surface);
+        --question-accent: var(--brand-primary);
+        --comment-bg: #fff7c2;
+        --comment-border: #e0d27a;
+        --code-bg: #f0f0f0;
+        --code-fg: #1a1a1a;
+        --code-block-bg: #f4f4f4;
+        --input-bg: #fff;
+        --header-bg: rgba(255, 255, 255, 0.94);
+        --header-border: var(--border-subtle);
+        --action-text-shadow: none;
+        --action-active-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+        --brand-mark-filter: none;
+        --mascot-filter: none;
+        --elevation-soft: none;
+        --elevation-card: none;
+        --elevation-popover: 0 2px 8px rgba(0, 0, 0, 0.15);
+        --stamp-text: "";
+        --question-icon: "?";
+      }
+      body[data-theme="cthulhu"] {
+        color-scheme: dark;
+        --text-primary: #f0f0e6;
+        --text-muted: #d7d6c2;
+        --surface: #2b243b;
+        --surface-soft: #211c30;
+        --page-bg: #15141e;
+        --page-wash: #15141e;
+        --page-pattern:
+          radial-gradient(
+            circle at 8% 12%,
+            rgba(167, 243, 161, 0.48) 0 1.7px,
+            transparent 2.4px
+          ),
+          radial-gradient(
+            circle at 17% 41%,
+            rgba(240, 240, 230, 0.38) 0 1.2px,
+            transparent 2px
+          ),
+          radial-gradient(
+            circle at 27% 19%,
+            rgba(165, 139, 207, 0.42) 0 1.6px,
+            transparent 2.4px
+          ),
+          radial-gradient(
+            circle at 38% 68%,
+            rgba(167, 243, 161, 0.32) 0 1px,
+            transparent 1.8px
+          ),
+          radial-gradient(
+            circle at 49% 31%,
+            rgba(240, 240, 230, 0.28) 0 1.1px,
+            transparent 1.9px
+          ),
+          radial-gradient(
+            circle at 61% 76%,
+            rgba(165, 139, 207, 0.36) 0 1.5px,
+            transparent 2.2px
+          ),
+          radial-gradient(
+            circle at 73% 16%,
+            rgba(167, 243, 161, 0.34) 0 1.2px,
+            transparent 1.8px
+          ),
+          radial-gradient(
+            circle at 84% 52%,
+            rgba(240, 240, 230, 0.3) 0 1.3px,
+            transparent 2px
+          ),
+          radial-gradient(
+            circle at 92% 28%,
+            rgba(165, 139, 207, 0.3) 0 1px,
+            transparent 1.8px
+          ),
+          radial-gradient(
+            circle at 13% 82%,
+            rgba(167, 243, 161, 0.26) 0 1.1px,
+            transparent 1.9px
+          ),
+          radial-gradient(
+            circle at 56% 9%,
+            rgba(240, 240, 230, 0.26) 0 1px,
+            transparent 1.7px
+          ),
+          radial-gradient(
+            circle at 88% 87%,
+            rgba(167, 243, 161, 0.28) 0 1.2px,
+            transparent 2px
+          ),
+          radial-gradient(
+            circle at 22% 73%,
+            rgba(240, 240, 230, 0.34) 0 1px,
+            transparent 1.8px
+          ),
+          radial-gradient(
+            circle at 34% 7%,
+            rgba(167, 243, 161, 0.28) 0 1.2px,
+            transparent 2px
+          ),
+          radial-gradient(
+            circle at 44% 88%,
+            rgba(165, 139, 207, 0.28) 0 1.1px,
+            transparent 1.9px
+          ),
+          radial-gradient(
+            circle at 67% 38%,
+            rgba(240, 240, 230, 0.36) 0 1.3px,
+            transparent 2.1px
+          ),
+          radial-gradient(
+            circle at 78% 74%,
+            rgba(167, 243, 161, 0.3) 0 1px,
+            transparent 1.8px
+          ),
+          radial-gradient(
+            circle at 96% 68%,
+            rgba(165, 139, 207, 0.32) 0 1.2px,
+            transparent 2px
+          );
+        --page-pattern-position: 0 0;
+        --page-pattern-size: 100% 100%;
+        --page-pattern-repeat: no-repeat;
+        --page-pattern-opacity: 0.95;
+        --brand-primary: #a7f3a1;
+        --brand-strong: #7bc88b;
+        --brand-secondary: #a58bcf;
+        --brand-tertiary: #6d5a8c;
+        --brand-ink: #f0f0e6;
+        --brand-highlight: rgba(167, 243, 161, 0.32);
+        --border-subtle: rgba(167, 243, 161, 0.18);
+        --focus-ring: rgba(167, 243, 161, 0.18);
+        --action-bg: linear-gradient(
+          180deg,
+          #a58bcf 0%,
+          #7b61ad 58%,
+          #5d4590 100%
+        );
+        --action-border: #2b243b;
+        --action-highlight: rgba(240, 240, 230, 0.42);
+        --action-shadow:
+          inset 0 2px 0 var(--action-highlight),
+          inset 0 -3px 0 rgba(21, 20, 30, 0.42),
+          0 10px 22px rgba(165, 139, 207, 0.22), 0 4px 12px rgba(0, 0, 0, 0.36);
+        --action-text-shadow: 0 1px 0 rgba(21, 20, 30, 0.55);
+        --action-active-shadow:
+          inset 0 2px 0 var(--action-highlight),
+          inset 0 -2px 0 rgba(21, 20, 30, 0.32), 0 3px 0 #2b243b,
+          0 10px 18px rgba(165, 139, 207, 0.16);
+        --question-bg: linear-gradient(
+          180deg,
+          rgba(43, 36, 59, 0.96) 0%,
+          #211c30 100%
+        );
+        --question-accent: #7bc88b;
+        --comment-bg: rgba(37, 78, 74, 0.74);
+        --comment-border: rgba(167, 243, 161, 0.32);
+        --code-bg: rgba(165, 139, 207, 0.18);
+        --code-fg: #d7d6c2;
+        --code-block-bg: #211c30;
+        --input-bg: rgba(21, 20, 30, 0.76);
+        --header-bg: rgba(21, 20, 30, 0.88);
+        --header-border: rgba(167, 243, 161, 0.14);
+        --brand-mark-filter: drop-shadow(0 7px 14px rgba(167, 243, 161, 0.16));
+        --mascot-filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.38));
+        --elevation-soft: 0 10px 32px rgba(0, 0, 0, 0.22);
+        --elevation-card:
+          0 18px 50px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(167, 243, 161, 0.08);
+        --elevation-popover: 0 12px 30px rgba(0, 0, 0, 0.42);
+        --stamp-text: "Eldritch\A knowledge";
+        --question-icon: "◉";
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        min-height: 100%;
+        background: var(--page-bg);
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font:
+          16px/1.68 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          system-ui,
+          sans-serif;
+        color: var(--text-primary);
+        background: var(--page-wash);
+      }
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image: var(--page-pattern);
+        background-position: var(--page-pattern-position);
+        background-size: var(--page-pattern-size);
+        background-repeat: var(--page-pattern-repeat);
+        opacity: var(--page-pattern-opacity);
+        mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+      }
+      header {
+        position: sticky;
+        top: 0;
+        background: var(--header-bg);
+        border-bottom: 1px solid var(--header-border);
+        padding: 12px 28px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
+        z-index: 10;
+        backdrop-filter: blur(18px);
+        box-shadow: var(--elevation-soft);
+      }
+      .brand-lockup {
+        min-width: 0;
+      }
+      .brand-mark {
+        display: block;
+        width: clamp(126px, 18vw, 192px);
+        height: auto;
+        margin: 0;
+        filter: var(--brand-mark-filter);
+      }
+      .brand-text {
+        display: inline-block;
+        margin: 0;
+        color: var(--brand-ink);
+        font-size: 20px;
+        line-height: 1;
+        font-weight: 800;
+      }
+      header h1 {
+        margin: 4px 0 0;
+        color: var(--brand-ink);
+        font-size: 13px;
+        line-height: 1.3;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      header button {
+        flex: 0 0 auto;
+        background: var(--action-bg);
+        color: white;
+        border: 2px solid var(--action-border);
+        padding: 10px 20px 12px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 0;
+        cursor: pointer;
+        text-shadow: var(--action-text-shadow);
+        box-shadow: var(--action-shadow);
+      }
+      header button:hover {
+        transform: translateY(-2px);
+        filter: saturate(1.04);
+      }
+      header button:active {
+        transform: translateY(4px);
+        box-shadow: var(--action-active-shadow);
+      }
+      header button:disabled {
+        cursor: wait;
+        opacity: 0.72;
+        transform: none;
+      }
+      .session-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: auto;
+        margin-right: 14px;
+        flex: 0 0 auto;
+      }
+      #timer-display {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+        font-size: 13px;
+        color: var(--text-muted);
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--surface-soft);
+        border: 1px solid var(--border-subtle);
+        min-width: 56px;
+        text-align: center;
+        cursor: pointer;
+        user-select: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition:
+          background 0.12s ease,
+          color 0.12s ease;
+      }
+      #timer-display::before {
+        content: "↻";
+        display: inline-block;
+        font-size: 13px;
+        font-weight: 700;
+        opacity: 0.55;
+        transition: transform 0.4s ease;
+      }
+      #timer-display:hover {
+        background: var(--surface);
+        color: var(--brand-ink);
+      }
+      #timer-display:hover::before {
+        opacity: 1;
+      }
+      #timer-display[data-just-reset="1"]::before {
+        transform: rotate(360deg);
+      }
+      #timer-display[data-state="warn"] {
+        color: #b15a00;
+        border-color: #f0c97c;
+        background: #fff4dc;
+      }
+      #timer-display[data-state="expired"] {
+        color: #fff;
+        background: #c0392b;
+        border-color: #c0392b;
+      }
+      header #session-id {
+        font: inherit;
+        font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: 0;
+        background: var(--surface-soft);
+        color: var(--text-muted);
+        border: 1px solid var(--border-subtle);
+        padding: 6px 10px;
+        border-radius: 999px;
+        cursor: pointer;
+        transform: none;
+        box-shadow: none;
+      }
+      header #session-id:hover {
+        color: var(--brand-ink);
+        background: var(--surface);
+        transform: none;
+        filter: none;
+      }
+      header #session-id[data-copied="1"] {
+        color: var(--brand-strong);
+        border-color: var(--brand-primary);
+      }
+      #restored-banner {
+        position: absolute;
+        left: 50%;
+        top: calc(100% + 8px);
+        transform: translateX(-50%);
+        background: var(--brand-strong);
+        color: #fff;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        box-shadow: var(--elevation-soft);
+        z-index: 5;
+      }
+      main {
+        position: relative;
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 42px 24px 120px;
+      }
+      .ambient-mascot {
+        position: fixed;
+        right: max(22px, calc((100vw - 1120px) / 2));
+        bottom: 18px;
+        width: clamp(120px, 16vw, 220px);
+        z-index: 2;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(12px) rotate(-3deg);
+        filter: var(--mascot-filter);
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+      }
+      .ambient-mascot[src] {
+        opacity: 1;
+        transform: translateY(0) rotate(-3deg);
+      }
+      body[data-theme="classic"] .ambient-mascot {
+        display: none;
+      }
+      main h1,
+      main h2,
+      main h3 {
+        line-height: 1.25;
+        color: var(--brand-ink);
+        letter-spacing: 0;
+      }
+      main h1 {
+        font-size: clamp(2rem, 5vw, 3.7rem);
+        margin-top: 0;
+      }
+      main h2 {
+        font-size: 1.6rem;
+        margin-top: 2rem;
+      }
+      main pre {
+        background: var(--code-block-bg);
+        border: 1px solid var(--border-subtle);
+        padding: 14px;
+        border-radius: 8px;
+        overflow-x: auto;
+        box-shadow: var(--elevation-soft);
+      }
+      main code {
+        background: var(--code-bg);
+        color: var(--code-fg);
+        padding: 1px 5px;
+        border-radius: 5px;
+        font-size: 0.92em;
+      }
+      main pre code {
+        background: transparent;
+        padding: 0;
+      }
+      main blockquote {
+        border-left: 4px solid var(--brand-primary);
+        margin: 0;
+        padding-left: 16px;
+        color: var(--text-muted);
+      }
+      main a {
+        color: var(--brand-secondary);
+        font-weight: 700;
+      }
+      .qcard {
+        position: relative;
+        background: var(--question-bg);
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        padding: 22px;
+        margin: 30px 0;
+        box-shadow: var(--elevation-card);
+        overflow: hidden;
+      }
+      /* Reference-vs-agent boundary: distinct from any markdown HR the
+         reference doc itself might contain. Styled as a labeled double
+         line so it's unambiguously a section break, not just another
+         paragraph divider. */
+      [data-refboundary] {
+        position: relative;
+        margin: 44px 0 28px;
+        height: 0;
+        border-top: 3px double var(--brand-secondary);
+      }
+      [data-refboundary]::before {
+        content: "end of " attr(data-refboundary);
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--page-bg);
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        padding: 0 14px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .qcard::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 6px;
+        background: var(--question-accent);
+      }
+      .qstamp {
+        position: absolute;
+        right: 18px;
+        top: 14px;
+        color: color-mix(in srgb, var(--brand-strong) 16%, transparent);
+        font-size: 22px;
+        line-height: 0.95;
+        font-weight: 900;
+        text-transform: uppercase;
+        transform: rotate(-8deg);
+      }
+      .qstamp span {
+        display: block;
+      }
+      .qstamp-small {
+        font-size: 0.62em;
+        letter-spacing: 0.03em;
+      }
+      .qcard .qprompt {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 0 0 14px;
+        max-width: 88%;
+      }
+      .qcard .qprompt-body {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+      .qcard .qprompt-body > *:first-child {
+        margin-top: 0;
+      }
+      .qcard .qprompt-body > *:last-child {
+        margin-bottom: 0;
+      }
+      .qcard .qprompt-body > p:first-child {
+        font-weight: 800;
+      }
+      .qcard .qprompt-body p {
+        margin: 0 0 10px;
+      }
+      .qcard .qprompt-body ul,
+      .qcard .qprompt-body ol {
+        margin: 6px 0 10px;
+        padding-left: 22px;
+      }
+      .qcard .qprompt-body li {
+        margin: 2px 0;
+      }
+      .qcard .qprompt-body code {
+        background: var(--code-bg);
+        color: var(--code-fg);
+        padding: 1px 5px;
+        border-radius: 3px;
+        font-size: 0.92em;
+      }
+      .qcard .qprompt-body pre {
+        background: var(--code-block-bg);
+        padding: 10px 12px;
+        border-radius: 6px;
+        overflow-x: auto;
+        margin: 8px 0;
+      }
+      .qcard .qprompt-body pre code {
+        background: transparent;
+        padding: 0;
+      }
+      .qcard .qprompt::before {
+        content: var(--question-icon);
+        display: inline-grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        color: #fff;
+        background: var(--brand-primary);
+        font-size: 14px;
+        line-height: 1;
+        /* Bubble look: subtle inset highlight up top, inset shadow on the
+           underside (purple-tinted to echo the side border), and a soft
+           purple drop shadow to give it a touch of lift. */
+        box-shadow:
+          inset 0 1.5px 0 rgba(255, 255, 255, 0.55),
+          inset 0 -2px 0
+            color-mix(in srgb, var(--brand-secondary) 35%, transparent),
+          0 4px 10px color-mix(in srgb, var(--brand-secondary) 24%, transparent);
+      }
+      .qcard textarea {
+        position: relative;
+        width: 100%;
+        min-height: 92px;
+        font: inherit;
+        padding: 12px 14px;
+        border: 1px solid var(--border-subtle);
+        border-radius: 8px;
+        resize: vertical;
+        color: var(--text-primary);
+        background: var(--input-bg);
+        outline: none;
+        transition:
+          border-color 0.16s ease,
+          box-shadow 0.16s ease;
+      }
+      .qcard textarea:focus,
+      .inline-comment textarea:focus {
+        border-color: var(--brand-primary);
+        box-shadow: 0 0 0 4px var(--focus-ring);
+      }
+      .comment-chip {
+        display: inline-block;
+        background: var(--comment-bg);
+        border: 1px solid var(--comment-border);
+        padding: 8px 12px;
+        border-radius: 10px;
+        margin: 8px 0;
+        font-size: 13px;
+        max-width: 100%;
+        box-shadow: 0 8px 18px
+          color-mix(in srgb, var(--brand-primary) 14%, transparent);
+      }
+      .comment-chip .anchor {
+        color: var(--text-muted);
+        font-style: italic;
+      }
+      .comment-chip .body {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .comment-chip .actions {
+        display: flex;
+        gap: 4px;
+        margin-top: 6px;
+      }
+      .comment-chip .actions button {
+        border: 0;
+        background: transparent;
+        color: var(--brand-ink);
+        font: inherit;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 4px;
+        opacity: 0.55;
+      }
+      .comment-chip .actions button:hover {
+        opacity: 1;
+        background: color-mix(in srgb, var(--brand-ink) 8%, transparent);
+      }
+      .floating-comment-btn {
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--brand-ink);
+        color: white;
+        border: 0;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: var(--elevation-popover);
+        z-index: 100;
+      }
+      .floating-comment-btn::before {
+        content: "";
+        flex: 0 0 7px;
+        width: 7px;
+        height: 7px;
+        /* Two box-shadow copies render dots 10px and 20px to the right of
+           this element. Flex only reserves the 7px width, so without
+           margin-right the rendered dots overlap the "Comment" text. The
+           extra 20px reserves visual space for the trailing dots. */
+        margin-right: 20px;
+        border-radius: 999px;
+        background: var(--brand-primary);
+        box-shadow:
+          10px 0 0 var(--brand-primary),
+          20px 0 0 var(--brand-primary);
+      }
+      .inline-comment {
+        background: var(--surface);
+        border: 1px solid var(--border-subtle);
+        border-top: 3px solid var(--brand-primary);
+        border-radius: 8px;
+        padding: 14px;
+        margin: 12px 0;
+        box-shadow: var(--elevation-soft);
+      }
+      .inline-comment textarea {
+        width: 100%;
+        min-height: 50px;
+        font: inherit;
+        border: 1px solid var(--border-subtle);
+        padding: 8px 10px;
+        border-radius: 8px;
+        outline: none;
+      }
+      .inline-comment .row {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+      .inline-comment button {
+        border: 0;
+        border-radius: 999px;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .inline-comment button:first-child {
+        background: var(--brand-strong);
+        color: #fff;
+      }
+      .inline-comment button:last-child {
+        background: var(--surface-soft);
+        color: var(--brand-ink);
+      }
+      .done {
+        text-align: center;
+        padding: 80px 24px;
+        color: var(--brand-ink);
+      }
+      .done h2 {
+        display: inline-block;
+        margin: 0 0 24px;
+        font-size: 56px;
+        font-weight: 900;
+        letter-spacing: -1px;
+        color: var(--brand-strong);
+      }
+      .done-mascot {
+        display: block;
+        margin: 0 auto 18px;
+        width: clamp(120px, 18vw, 200px);
+        filter: drop-shadow(0 14px 24px rgba(106, 77, 188, 0.2));
+      }
+      .done p {
+        margin: 0;
+        font-size: 16px;
+        color: var(--text-muted);
+      }
+      ::selection {
+        color: var(--brand-ink);
+        background: var(--brand-highlight);
+      }
+      @media (max-width: 640px) {
+        header {
+          padding: 10px 16px;
+        }
+        .brand-mark {
+          font-size: 23px;
+        }
+        header h1 {
+          max-width: 58vw;
+        }
+        main {
+          padding: 30px 16px 96px;
+        }
+        .qcard {
+          padding: 18px;
+        }
+        .qcard .qprompt {
+          max-width: 100%;
+        }
+        .ambient-mascot {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body data-theme="digestify">
+    <header>
+      <div class="brand-lockup">
+        <img class="brand-mark" alt="Digestify" />
+        <h1 id="page-title"></h1>
+      </div>
+      <div class="session-meta">
+        <div
+          id="timer-display"
+          title="Time remaining before idle timeout — resets on activity, or click to reset manually"
+          role="button"
+          tabindex="0"
+        >
+          --:--
+        </div>
+        <button
+          id="session-id"
+          type="button"
+          title="Click to copy session ID — give this to the agent if you need to recover an interrupted session"
+        ></button>
+      </div>
+      <button id="submit-btn" type="button">Submit</button>
+      <div id="restored-banner" hidden>Draft restored from earlier session</div>
+    </header>
+    <img class="ambient-mascot" alt="" aria-hidden="true" />
+    <main id="doc"></main>
+    <script id="payload" type="application/json">
+      __PAYLOAD__
+    </script>
+    <script>
+      (function () {
+        const payload = JSON.parse(
+          document.getElementById("payload").textContent
+        );
+        const themes = {
+          digestify: {
+            logoSrc: "/assets/classic/digestify-wordmark-classic.webp",
+            brand: "Digestify",
+            submit: "Digest it",
+            submitting: "Digesting...",
+            mascotSrc: "/assets/classic/digestify-mascot-classic.webp",
+            sentMascotSrc: "/assets/classic/digested-classic.webp",
+            stampLines: [{ text: "nom nom" }],
+          },
+          cthulhu: {
+            logoSrc: "/assets/cthulhu/digestify-wordmark-cthulhu.webp",
+            brand: "Digestify",
+            submit: "Digest it",
+            submitting: "Summoning...",
+            mascotSrc: "/assets/cthulhu/digestify-mascot-cthulhu.webp",
+            sentMascotSrc: "/assets/cthulhu/digested-cthulhu.webp",
+            stampLines: [
+              { text: "Eldritch" },
+              { text: "knowledge", small: true },
+            ],
+          },
+          classic: {
+            logoSrc: "",
+            brand: "Digestify",
+            submit: "Submit",
+            submitting: "Submitting...",
+            mascotSrc: "",
+            sentMascotSrc: "",
+            stampLines: [],
+          },
+        };
+        const activeTheme = themes[payload.theme] ? payload.theme : "digestify";
+        const theme = themes[activeTheme];
+        document.body.dataset.theme = activeTheme;
+        const brandMark = document.querySelector(".brand-mark");
+        if (theme.logoSrc) {
+          brandMark.src = theme.logoSrc;
+        } else {
+          const brandText = document.createElement("span");
+          brandText.className = "brand-text";
+          brandText.textContent = theme.brand;
+          brandMark.replaceWith(brandText);
+        }
+        document.getElementById("submit-btn").textContent = theme.submit;
+        const mascot = document.querySelector(".ambient-mascot");
+        if (theme.mascotSrc) mascot.src = theme.mascotSrc;
+        document.getElementById("page-title").textContent = payload.title;
+        document.title = payload.title;
+
+        const sanitize = (html) =>
+          DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+        const renderMd = (md) => sanitize(marked.parse(md));
+
+        const questionsById = Object.fromEntries(
+          payload.questions.map((q) => [q.id, q])
+        );
+        const answers = {};
+        const comments = []; // {id, anchor, text} — id is stripped at submit
+        let commentSeq = 0;
+        let submitted = false;
+        // Set true once the user has typed an answer or saved a comment.
+        // beforeunload only fires /cancel if dirty — refreshing a clean page
+        // shouldn't kill the session.
+        let dirty = false;
+
+        // ─── Session id, timer, heartbeat, localStorage ─────────────────
+        const sessionId = payload.session_id || "digestify-anon";
+        // Use whatever the server is configured for, no clamping — if the
+        // agent passes a short timeout (e.g. for testing), the displayed
+        // countdown should match the server's actual deadline so the user
+        // isn't surprised when the session dies before the timer reads zero.
+        const timeoutSeconds = payload.timeout_seconds || 1800;
+        const lsKey = "digestify:" + sessionId;
+        const LS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+        // Prune stale entries (>7 days) so the user's localStorage doesn't
+        // accumulate forever across many digestify sessions.
+        try {
+          for (const k of Object.keys(localStorage)) {
+            if (!k.startsWith("digestify:")) continue;
+            try {
+              const v = JSON.parse(localStorage.getItem(k) || "{}");
+              if (!v.savedAt || Date.now() - v.savedAt > LS_TTL_MS) {
+                localStorage.removeItem(k);
+              }
+            } catch {
+              localStorage.removeItem(k);
+            }
+          }
+        } catch {
+          // localStorage may be disabled (private browsing, quota, etc) —
+          // recovery is best-effort, the rest of the page still works.
+        }
+
+        // Recovery is keyed by session id, which encodes the prior bound
+        // port (`-p<port>` suffix). Same id passed on relaunch → script
+        // reuses that port → same origin → same localStorage namespace.
+        let restoredSnapshot = null;
+        try {
+          const raw = localStorage.getItem(lsKey);
+          if (raw) {
+            const snap = JSON.parse(raw);
+            if (
+              snap &&
+              snap.savedAt &&
+              Date.now() - snap.savedAt <= LS_TTL_MS
+            ) {
+              restoredSnapshot = snap;
+            }
+          }
+        } catch {}
+
+        if (restoredSnapshot) {
+          // Only restore answers whose question id still exists in the
+          // current payload. If the agent rewrote the markdown between
+          // recovery attempts, stale ids would otherwise leak into the
+          // submit payload and confuse the agent on the receiving end.
+          for (const [k, v] of Object.entries(restoredSnapshot.answers || {})) {
+            if (questionsById[k]) answers[k] = v;
+          }
+          for (const c of restoredSnapshot.comments || []) {
+            if (c && c.anchor && c.text) {
+              comments.push({
+                id: "c" + ++commentSeq,
+                anchor: c.anchor,
+                text: c.text,
+              });
+            }
+          }
+        }
+
+        const sessionIdBtn = document.getElementById("session-id");
+        sessionIdBtn.textContent = sessionId;
+        sessionIdBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(sessionId);
+          } catch {}
+          sessionIdBtn.dataset.copied = "1";
+          sessionIdBtn.textContent = "Copied!";
+          setTimeout(() => {
+            sessionIdBtn.textContent = sessionId;
+            delete sessionIdBtn.dataset.copied;
+          }, 1200);
+        });
+
+        if (restoredSnapshot) {
+          const banner = document.getElementById("restored-banner");
+          banner.hidden = false;
+          setTimeout(() => (banner.hidden = true), 4000);
+        }
+
+        let deadlineAt = Date.now() + timeoutSeconds * 1000;
+        let lastHeartbeatAt = 0;
+        let expired = false;
+
+        function persistDraft() {
+          try {
+            localStorage.setItem(
+              lsKey,
+              JSON.stringify({
+                answers,
+                comments: comments.map(({ id, ...rest }) => rest),
+                savedAt: Date.now(),
+              })
+            );
+          } catch {} // quota / disabled storage — best-effort
+        }
+
+        function markActivity() {
+          // Once the client-side timer has declared the session expired,
+          // stop firing heartbeats — otherwise background typing in a
+          // doomed tab can race with the server's own deadline and either
+          // prolong a session the user thinks is dead, or post heartbeats
+          // to a server that's already exited.
+          if (submitted || expired) return;
+          dirty = true;
+          deadlineAt = Date.now() + timeoutSeconds * 1000;
+          persistDraft();
+          const now = Date.now();
+          if (now - lastHeartbeatAt >= 5000) {
+            lastHeartbeatAt = now;
+            fetch("/heartbeat", { method: "POST" }).catch(() => {});
+          }
+        }
+
+        const timerEl = document.getElementById("timer-display");
+        function fmtRemaining(ms) {
+          if (ms <= 0) return "0:00";
+          const total = Math.floor(ms / 1000);
+          const m = Math.floor(total / 60);
+          const s = total % 60;
+          return m + ":" + s.toString().padStart(2, "0");
+        }
+        function tickTimer() {
+          if (submitted) return;
+          const remaining = deadlineAt - Date.now();
+          if (remaining <= 0) {
+            timerEl.textContent = "expired";
+            timerEl.dataset.state = "expired";
+            expired = true;
+            return;
+          }
+          timerEl.textContent = fmtRemaining(remaining);
+          if (remaining < 60_000) timerEl.dataset.state = "warn";
+          else delete timerEl.dataset.state;
+        }
+        tickTimer();
+        setInterval(tickTimer, 1000);
+
+        // Manual extend: clicking the timer pill always resets the deadline
+        // and forces a heartbeat (bypassing the 5s rate limit so the server
+        // gets the bump even if a typing-driven heartbeat just fired).
+        function extendDeadline() {
+          if (submitted || expired) return;
+          deadlineAt = Date.now() + timeoutSeconds * 1000;
+          lastHeartbeatAt = Date.now();
+          fetch("/heartbeat", { method: "POST" }).catch(() => {
+            // Server is unreachable — likely already exited. Don't keep
+            // the user staring at a fresh-looking countdown for a session
+            // that's already dead.
+            timerEl.textContent = "expired";
+            timerEl.dataset.state = "expired";
+            expired = true;
+          });
+          tickTimer();
+          // Brief spin animation as feedback that the click did something.
+          timerEl.dataset.justReset = "1";
+          setTimeout(() => delete timerEl.dataset.justReset, 450);
+        }
+        timerEl.addEventListener("click", extendDeadline);
+        timerEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            extendDeadline();
+          }
+        });
+        // ─────────────────────────────────────────────────────────────────
+
+        // Render markdown, then replace QBLOCK comments with question cards.
+        const docEl = document.getElementById("doc");
+        docEl.innerHTML = renderMd(payload.markdown);
+        document.querySelectorAll("pre code").forEach((el) => {
+          if (typeof hljs !== "undefined") hljs.highlightElement(el);
+        });
+
+        // Replace [data-qblock] placeholders with question cards.
+        // (HTML comments don't survive DOMPurify, so the parser emits
+        // <div data-qblock="id"></div> markers instead.)
+        docEl.querySelectorAll("[data-qblock]").forEach((node) => {
+          const id = node.getAttribute("data-qblock");
+          const q = questionsById[id];
+          if (!q) return;
+          const card = document.createElement("div");
+          card.className = "qcard";
+          if (theme.stampLines && theme.stampLines.length) {
+            const stamp = document.createElement("div");
+            stamp.className = "qstamp";
+            stamp.setAttribute("aria-hidden", "true");
+            theme.stampLines.forEach((line) => {
+              const span = document.createElement("span");
+              if (line.small) span.className = "qstamp-small";
+              span.textContent = line.text;
+              stamp.appendChild(span);
+            });
+            card.appendChild(stamp);
+          }
+          const prompt = document.createElement("div");
+          prompt.className = "qprompt";
+          // Render prompts as full block markdown (lists, paragraphs, code
+          // blocks all welcome). Wrap the rendered body in a single inner
+          // div so the flex container above only ever sees two flex items:
+          // the ::before icon and the body. Without that wrapper, each
+          // block element becomes its own flex item and lays out as a
+          // horizontal column. Use insertAdjacentHTML with sanitized HTML
+          // upstream from renderMd.
+          const promptBody = document.createElement("div");
+          promptBody.className = "qprompt-body";
+          promptBody.insertAdjacentHTML("afterbegin", renderMd(q.prompt));
+          prompt.appendChild(promptBody);
+          const ta = document.createElement("textarea");
+          ta.placeholder = "Your answer...";
+          if (answers[id]) ta.value = answers[id];
+          ta.addEventListener("input", () => {
+            if (ta.value.trim()) answers[id] = ta.value;
+            else delete answers[id];
+            markActivity();
+          });
+          card.appendChild(prompt);
+          card.appendChild(ta);
+          node.parentNode.replaceChild(card, node);
+        });
+
+        // Restore comment chips from a recovered session. Anchor each chip
+        // to the first block whose text contains the stored anchor — works
+        // for relaunches with the same source markdown. If the anchor can't
+        // be located, the chip lands at the bottom of the doc as an orphan.
+        if (restoredSnapshot && comments.length) {
+          for (const comment of comments) {
+            const needle = comment.anchor.slice(0, 60);
+            const blocks = docEl.querySelectorAll(
+              "p, li, blockquote, pre, h1, h2, h3, h4, h5, h6"
+            );
+            let target = null;
+            for (const b of blocks) {
+              if (b.textContent.includes(needle)) {
+                target = b;
+                break;
+              }
+            }
+            const chip = renderChip(comment);
+            if (target) {
+              target.parentNode.insertBefore(chip, target.nextSibling);
+            } else {
+              docEl.appendChild(chip);
+            }
+          }
+        }
+
+        // Floating comment button on text selection.
+        let floatingBtn = null;
+        document.addEventListener("mouseup", (ev) => {
+          if (submitted) return;
+          // Don't dismiss the floating button if the user clicked it.
+          if (floatingBtn && floatingBtn.contains(ev.target)) return;
+          const sel = window.getSelection();
+          const text = sel.toString().trim();
+          if (floatingBtn) {
+            floatingBtn.remove();
+            floatingBtn = null;
+          }
+          if (!text || !docEl.contains(sel.anchorNode)) return;
+          const range = sel.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          floatingBtn = document.createElement("button");
+          floatingBtn.className = "floating-comment-btn";
+          floatingBtn.textContent = "Comment";
+          floatingBtn.style.left = rect.left + window.scrollX + "px";
+          floatingBtn.style.top = rect.bottom + window.scrollY + 6 + "px";
+          // Stop mousedown/up from collapsing the selection or re-triggering
+          // the document-level mouseup handler that just removed previous
+          // buttons. Use mousedown so we act before the click event arrives.
+          floatingBtn.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openCommentBox(text, range);
+          });
+          document.body.appendChild(floatingBtn);
+        });
+
+        function nearestBlock(node) {
+          const el = node.nodeType === 3 ? node.parentElement : node;
+          return el.closest("p,li,blockquote,pre,h1,h2,h3,h4,h5,h6") || docEl;
+        }
+
+        function buildEditor({ initialText, anchorText, onSave, onCancel }) {
+          const box = document.createElement("div");
+          box.className = "inline-comment";
+
+          const label = document.createElement("div");
+          label.style.cssText =
+            "font-size:13px;color:var(--text-muted);margin-bottom:6px";
+          label.appendChild(document.createTextNode("on: "));
+          const labelQuote = document.createElement("i");
+          labelQuote.textContent =
+            '"' +
+            anchorText.slice(0, 80) +
+            (anchorText.length > 80 ? "…" : "") +
+            '"';
+          label.appendChild(labelQuote);
+
+          const ta = document.createElement("textarea");
+          ta.placeholder = "Comment...";
+          ta.value = initialText || "";
+
+          const row = document.createElement("div");
+          row.className = "row";
+          const saveBtn = document.createElement("button");
+          saveBtn.textContent = "Save";
+          const cancelBtn = document.createElement("button");
+          cancelBtn.textContent = "Cancel";
+          row.appendChild(saveBtn);
+          row.appendChild(cancelBtn);
+
+          box.appendChild(label);
+          box.appendChild(ta);
+          box.appendChild(row);
+
+          saveBtn.addEventListener("click", () => onSave(ta.value.trim(), box));
+          cancelBtn.addEventListener("click", () => onCancel(box));
+          return { box, textarea: ta };
+        }
+
+        function renderChip(comment) {
+          const chip = document.createElement("div");
+          chip.className = "comment-chip";
+          chip.dataset.commentId = comment.id;
+
+          const anchorSpan = document.createElement("span");
+          anchorSpan.className = "anchor";
+          anchorSpan.textContent =
+            '"' +
+            comment.anchor.slice(0, 60) +
+            (comment.anchor.length > 60 ? "…" : "") +
+            '"';
+          const sep = document.createTextNode(": ");
+          const textSpan = document.createElement("span");
+          textSpan.className = "body";
+          textSpan.textContent = comment.text;
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.textContent = "Edit";
+          const delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.textContent = "Delete";
+          actions.appendChild(editBtn);
+          actions.appendChild(delBtn);
+
+          chip.appendChild(anchorSpan);
+          chip.appendChild(sep);
+          chip.appendChild(textSpan);
+          chip.appendChild(actions);
+
+          editBtn.addEventListener("click", () => {
+            const { box, textarea } = buildEditor({
+              initialText: comment.text,
+              anchorText: comment.anchor,
+              onSave: (text, editorBox) => {
+                if (text) {
+                  comment.text = text;
+                  editorBox.replaceWith(renderChip(comment));
+                  markActivity();
+                } else {
+                  // Empty save in edit mode = no-op; restore original chip.
+                  // Use Delete if you want to remove the comment.
+                  editorBox.replaceWith(chip);
+                }
+              },
+              onCancel: (editorBox) => editorBox.replaceWith(chip),
+            });
+            chip.replaceWith(box);
+            textarea.focus();
+          });
+
+          delBtn.addEventListener("click", () => {
+            const idx = comments.findIndex((c) => c.id === comment.id);
+            if (idx >= 0) comments.splice(idx, 1);
+            chip.remove();
+            markActivity();
+          });
+
+          return chip;
+        }
+
+        function openCommentBox(anchorText, range) {
+          if (floatingBtn) {
+            floatingBtn.remove();
+            floatingBtn = null;
+          }
+          const para = nearestBlock(range.endContainer);
+          const { box, textarea } = buildEditor({
+            initialText: "",
+            anchorText,
+            onSave: (text, editorBox) => {
+              if (text) {
+                const comment = {
+                  id: "c" + ++commentSeq,
+                  anchor: anchorText,
+                  text,
+                };
+                comments.push(comment);
+                editorBox.replaceWith(renderChip(comment));
+                markActivity();
+              } else {
+                editorBox.remove();
+              }
+            },
+            onCancel: (editorBox) => editorBox.remove(),
+          });
+          para.parentNode.insertBefore(box, para.nextSibling);
+          textarea.focus();
+        }
+
+        function showSentScreen() {
+          while (document.body.firstChild)
+            document.body.removeChild(document.body.firstChild);
+
+          const wrap = document.createElement("div");
+          wrap.className = "done";
+
+          // If the theme provides a sent-page mascot (e.g. the "digested"
+          // illustration), the mascot itself communicates "you're done" —
+          // no headline needed. Otherwise fall back to a "✓ Sent" headline
+          // and, if available, the ambient mascot below it.
+          if (theme.sentMascotSrc) {
+            const m = document.createElement("img");
+            m.className = "done-mascot";
+            m.src = theme.sentMascotSrc;
+            m.alt = "Digested";
+            wrap.appendChild(m);
+          } else {
+            const h2 = document.createElement("h2");
+            h2.textContent = "✓ Sent";
+            wrap.appendChild(h2);
+
+            const ambient = document.querySelector(".ambient-mascot");
+            const ambientSrc = ambient && ambient.getAttribute("src");
+            if (ambientSrc) {
+              const m = document.createElement("img");
+              m.className = "done-mascot";
+              m.src = ambientSrc;
+              m.alt = "";
+              m.setAttribute("aria-hidden", "true");
+              wrap.appendChild(m);
+            }
+          }
+
+          const p = document.createElement("p");
+          p.textContent = "You can close this tab.";
+          wrap.appendChild(p);
+
+          document.body.appendChild(wrap);
+        }
+
+        document
+          .getElementById("submit-btn")
+          .addEventListener("click", async () => {
+            const btn = document.getElementById("submit-btn");
+            btn.disabled = true;
+            btn.textContent = theme.submitting;
+            try {
+              const res = await fetch("/submit", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  answers,
+                  comments: comments.map(({ id, ...rest }) => rest),
+                }),
+              });
+              if (!res.ok) throw new Error("submit failed");
+              submitted = true;
+              try {
+                localStorage.removeItem(lsKey);
+              } catch {}
+              showSentScreen();
+            } catch (err) {
+              btn.disabled = false;
+              btn.textContent = theme.submit;
+              alert("Submit failed: " + err.message);
+            }
+          });
+
+        window.addEventListener("beforeunload", () => {
+          // Only cancel if the user actually typed something — refreshing a
+          // clean page (or accidentally hitting Cmd+W on a fresh tab) shouldn't
+          // exit the session. The script's --timeout is the failsafe for true
+          // abandons.
+          if (!submitted && dirty && navigator.sendBeacon) {
+            navigator.sendBeacon(
+              "/cancel",
+              new Blob([], { type: "application/json" })
+            );
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

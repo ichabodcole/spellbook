@@ -1,0 +1,19 @@
+{
+  "name": "spellbook-marketplace",
+  "owner": {
+    "name": "Cole Reed",
+    "email": "alienlobsterbuffet.dev@gmail.com"
+  },
+  "metadata": {
+    "description": "The Spellbook — agent-conjured apps. Lightweight, standalone, purpose-built surfaces with an agent as the runtime underneath.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "spellbook",
+      "source": "./plugins/spellbook",
+      "category": "development",
+      "tags": ["agent-surface", "spells", "bun", "digestify", "grapevine", "tuskboard", "magpie"]
+    }
+  ]
+}
