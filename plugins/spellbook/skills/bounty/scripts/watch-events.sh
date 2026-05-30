@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# watch-events.sh — canonical Monitor filter for Tusk Board events files.
+# watch-events.sh — canonical Monitor filter for Bounty Board events files.
 #
 # When an agent arms a Monitor in monitored host mode, the simplest correct
 # invocation is:
@@ -7,7 +7,7 @@
 #   Monitor({
 #     persistent: true,
 #     timeout_ms: 3600000,
-#     command: "bash $CLAUDE_PLUGIN_ROOT/skills/tuskboard/scripts/watch-events.sh <events_file>"
+#     command: "bash $CLAUDE_PLUGIN_ROOT/skills/bounty/scripts/watch-events.sh <events_file>"
 #   })
 #
 # Each matching line on this script's stdout becomes a task-notification.

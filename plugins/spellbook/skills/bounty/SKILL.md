@@ -1,22 +1,23 @@
 ---
-name: tuskboard
+name: bounty
 description:
-  Tuskboard is a duplex agent↔user task board in the browser. Agent posts tasks;
-  user drags between todo/doing/done columns, edits titles inline, adds or
-  deletes tasks, or submits to end the session. Two host modes — STATIC
-  (server.ts, one bounded interaction, agent reads final state on submit) and
-  MONITORED (bg.ts + Monitor on the events file, long-lived, agent reacts to
+  Bounty is a duplex agent↔user task board in the browser. Agent posts tasks;
+  user drags between todo/doing/review/done columns, edits titles inline, adds
+  or deletes tasks, or submits to end the session. The Review column is a soft
+  human-verification gate — the agent parks finished work there (rather than
+  Done) when it needs human eyes a passing test can't give. Two host modes —
+  STATIC (server.ts, one bounded interaction, agent reads final state on submit)
+  and MONITORED (bg.ts + Monitor on the events file, long-lived, agent reacts to
   each event in a fresh turn). Multiple agents can share one board via join.ts.
-  HOST trigger phrases — "open a task board", "spin up a tuskboard", "give me a
+  HOST trigger phrases — "open a task board", "spin up a bounty", "give me a
   board to track this", or obvious variants. JOIN trigger phrases — "join my
-  tuskboard", "connect to the tuskboard", "the board is at <URL or id>", or
-  obvious variants. Also propose when the agent has produced 5+ discrete TODOs
-  the user might want as a workspace. Do NOT use for single tasks, narrative
-  todos that aren't trackable, or anything the user wants in chat. Requires Bun
-  on PATH.
+  bounty", "connect to the bounty", "the board is at <URL or id>", or obvious
+  variants. Also propose when the agent has produced 5+ discrete TODOs the user
+  might want as a workspace. Do NOT use for single tasks, narrative todos that
+  aren't trackable, or anything the user wants in chat. Requires Bun on PATH.
 ---
 
-# Tusk Board
+# Bounty Board
 
 A duplex agent ↔ user surface — woolly mammoth mascot, warm brown + ice blue
 palette. Woolly mammoth puns are welcome where they fit naturally.
@@ -50,15 +51,37 @@ its own turn.
 All three entries above use the same JSON-lines contract under the hood — only
 the transport varies (direct stdio vs. file-mediated).
 
+## The columns — and the review gate
+
+The board has four columns: **To do → Doing → Review → Done**. Review is a
+human-verification gate, and deciding what passes through it is a judgment call
+you make per task:
+
+- **Park a finished task in Review** (not Done) when it wants a human to look
+  before it counts as done — UI changes, anything that needs a manual smoke
+  test, behavior that passing tests don't fully capture. The user eyeballs it
+  and drags it to Done, or back to Doing if it needs more work.
+- **Move straight to Done** when automated checks already cover it — pure
+  functional changes or refactors where green tests are sufficient evidence. Not
+  everything needs a human glance; routing trivially-verified work through
+  Review just adds friction.
+
+The gate is a **convention, not enforced** — the server accepts any status
+transition from either side. Let the task's test plan guide you: if it calls for
+human smoke-testing, route through Review; if green tests settle it, Done is
+fine. When genuinely unsure, prefer Review — a cheap glance beats a missed
+regression. A `message` toast is a good way to flag what you've put up for
+review and why.
+
 ## When to Use
 
-**Host mode (any variant)** — fire on phrases like "task board", "tuskboard",
-"open a board", "spin up a board to track this", or any obvious variant.
+**Host mode (any variant)** — fire on phrases like "task board", "bounty", "open
+a board", "spin up a board to track this", or any obvious variant.
 
-**Join mode** — fire on phrases like "join my tuskboard", "join the tuskboard",
-"connect to the tuskboard", "the board is at <URL>", "the session id is <id>",
-or any obvious variant. The user is in a separate terminal / agent session from
-the one that opened the board.
+**Join mode** — fire on phrases like "join my bounty", "join the bounty",
+"connect to the bounty", "the board is at <URL>", "the session id is <id>", or
+any obvious variant. The user is in a separate terminal / agent session from the
+one that opened the board.
 
 ### Static vs. Monitored — pick by interaction shape
 
@@ -89,12 +112,12 @@ Suggested invocation (propose first, don't fire): the agent has produced 5+
 discrete TODOs **AND** the user is going to actually manipulate them (reorder,
 prioritize, mark done as they work, add their own). Example:
 
-> "I've got six discrete tasks from this session. Want me to spin up a tuskboard
-> so you can drag them around as you work through them?"
+> "I've got six discrete tasks from this session. Want me to spin up a bounty so
+> you can drag them around as you work through them?"
 
-**Don't propose tuskboard for memory-aid TODOs the user just needs to see
-listed** — the chat-native TODO tracker is better for that. The bar is "the user
-wants a workspace they manipulate," not "the agent has a list."
+**Don't propose bounty for memory-aid TODOs the user just needs to see listed**
+— the chat-native TODO tracker is better for that. The bar is "the user wants a
+workspace they manipulate," not "the agent has a list."
 
 Don't use for:
 
@@ -139,9 +162,9 @@ sentence) since they auto-dismiss.
 When `server.ts` starts, it writes session info to two files in the system temp
 directory so joining agents can discover the board without copy-paste:
 
-- `<tmpdir>/tuskboard-<session_id>.json` — keyed by session id; persistent for
-  the lifetime of this host.
-- `<tmpdir>/tuskboard-latest.json` — always points at the most recently opened
+- `<tmpdir>/bounty-<session_id>.json` — keyed by session id; persistent for the
+  lifetime of this host.
+- `<tmpdir>/bounty-latest.json` — always points at the most recently opened
   board.
 
 Both files are cleaned up on normal exit.
@@ -163,7 +186,7 @@ Both files are cleaned up on normal exit.
 {"type":"ready",        "url":"...", "port":..., "session_id":"..."}
 {"type":"connected"}                                       // browser opened WS
 {"type":"disconnected"}                                    // browser closed WS
-{"type":"task.toggle", "id":"...", "status":"todo|doing|done"}  // pill click
+{"type":"task.toggle", "id":"...", "status":"todo|doing|review|done"}  // pill click
 {"type":"task.move",   "id":"...", "status":"...", "index":N}   // drag-drop
 {"type":"task.edit",   "id":"...", "title":"..."}          // title edit
 {"type":"task.add",    "task": Task}                       // user added a task
@@ -178,7 +201,7 @@ Both files are cleaned up on normal exit.
 type Task = {
   id: string; // any unique string (you choose the scheme)
   title: string;
-  status: "todo" | "doing" | "done";
+  status: "todo" | "doing" | "review" | "done";
   notes?: string; // optional, shown under the title
 };
 ```
@@ -186,7 +209,7 @@ type Task = {
 ## Invocation
 
 ```bash
-bun run ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/server.ts \
+bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/server.ts \
   --title "Refactor sprint" \
   --timeout 1800
 ```
@@ -198,14 +221,14 @@ pattern.
 
 ## Flags
 
-- `--title TEXT` — page/tab title (default `"Task Board"`)
+- `--title TEXT` — page/tab title (default `"Bounty Board"`)
 - `--timeout SECONDS` — idle timeout (default `1800` / 30 min). Resets on any
   agent or browser activity.
 - `--no-open` — don't auto-open the browser; useful in headless / SSH setups
 - `--port N` — bind specific port (default: random free port)
 - `--host HOST` — bind host (default `127.0.0.1`)
-- `--id SLUG` — stable session id. Auto-generated as `tuskboard-<rand>-p<port>`
-  if omitted (the `-p<port>` suffix encodes the bound port for session-recovery
+- `--id SLUG` — stable session id. Auto-generated as `bounty-<rand>-p<port>` if
+  omitted (the `-p<port>` suffix encodes the bound port for session-recovery
   semantics matching digestify).
 
 The script prints `{"type":"ready", "url":..., "port":N, "session_id":"..."}` to
@@ -236,7 +259,7 @@ request fits.
 ### Step 1 — Spawn `bg.ts`
 
 ```bash
-bun run ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/bg.ts \
+bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/bg.ts \
   --title "Watch this board" \
   --timeout 1800
 ```
@@ -249,9 +272,9 @@ subprocess's stdout is a meta record:
   "type": "meta",
   "url": "http://127.0.0.1:53645",
   "port": 53645,
-  "session_id": "tuskboard-abc12345-p53645",
-  "events_file": "/tmp/tuskboard-abc12345-p53645-events.log",
-  "cmds_file": "/tmp/tuskboard-abc12345-p53645-cmds.log"
+  "session_id": "bounty-abc12345-p53645",
+  "events_file": "/tmp/bounty-abc12345-p53645-events.log",
+  "cmds_file": "/tmp/bounty-abc12345-p53645-cmds.log"
 }
 ```
 
@@ -284,16 +307,16 @@ tool argument.
 
 ```
 Monitor({
-  description: "tusk-board events for <short purpose>",
+  description: "bounty events for <short purpose>",
   persistent: true,
   timeout_ms: 3600000,
-  command: "bash ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/watch-events.sh <events_file>"
+  command: "bash ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/watch-events.sh <events_file>"
 })
 ```
 
 If `$CLAUDE_PLUGIN_ROOT` isn't set in your shell environment, substitute the
 absolute path to the script (e.g. relative to repo root,
-`plugins/spellbook/skills/tuskboard/scripts/watch-events.sh`).
+`plugins/spellbook/skills/bounty/scripts/watch-events.sh`).
 
 The helper's filter is the canonical one — it passes through user-driven board
 mutations (`task.add` / `task.move` / `task.toggle` / `task.edit` /
@@ -345,15 +368,15 @@ across multiple turns:
 > **Heads up on `$CLAUDE_PLUGIN_ROOT`.** The env var resolves to the plugin's
 > install path in Claude Code. If it's unset in your shell (some harnesses leave
 > it empty), substitute the absolute path
-> `plugins/spellbook/skills/tuskboard/scripts/...` relative to the repo root. An
+> `plugins/spellbook/skills/bounty/scripts/...` relative to the repo root. An
 > empty `$CLAUDE_PLUGIN_ROOT` silently turns `${VAR}/skills/...` into
 > `/skills/...` and `bun run` fails with a confusing "module not found."
 
 ```
 Bash({
-  command: "bun run ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/bg.ts --title 'Sprint board' --timeout 1800 > /tmp/bg-meta.json 2>&1",
+  command: "bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/bg.ts --title 'Sprint board' --timeout 1800 > /tmp/bg-meta.json 2>&1",
   run_in_background: true,
-  description: "spawn tusk board host"
+  description: "spawn bounty board host"
 })
 
 Bash({
@@ -365,10 +388,10 @@ Bash({
 // Parse the meta JSON. Extract url, events_file, cmds_file.
 
 Monitor({
-  description: "tusk-board events",
+  description: "bounty events",
   persistent: true,
   timeout_ms: 3600000,
-  command: "bash ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/watch-events.sh /var/folders/.../tuskboard-<id>-events.log"
+  command: "bash ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/watch-events.sh /var/folders/.../bounty-<id>-events.log"
 })
 // Capture the returned task_id (e.g. "abc123") — you'll TaskStop it later.
 
@@ -457,22 +480,21 @@ Events you'll see in Monitor notifications (board → agent):
   **not** need to send `{"type":"close"}` to clean up — the exit cascades
   automatically. If you want to forcibly terminate from your side, append a
   `close` command to `cmds_file` (works the same as a host stdin close).
-- **Discovery files** written to `<tmpdir>/tuskboard-<session_id>.json` and
-  `tuskboard-latest.json` (same as `server.ts` host mode), so joiners can still
+- **Discovery files** written to `<tmpdir>/bounty-<session_id>.json` and
+  `bounty-latest.json` (same as `server.ts` host mode), so joiners can still
   find this board via `join.ts`.
 - **On normal exit**, the commands file is removed; the events file stays so you
   can read the final state.
 - **Re-launching with the same `--id`** truncates and reuses both files.
-- **Multi-board caveat.** `tuskboard-latest.json` only points at the most
-  recently launched board. If you spawn two `bg.ts` instances back-to-back, a
-  no-arg `join.ts` will connect to whichever was newest. Prefer explicit `--id`
-  when you have multiple boards live.
+- **Multi-board caveat.** `bounty-latest.json` only points at the most recently
+  launched board. If you spawn two `bg.ts` instances back-to-back, a no-arg
+  `join.ts` will connect to whichever was newest. Prefer explicit `--id` when
+  you have multiple boards live.
 - **Failure modes.** If `bg.ts` itself is killed (SIGKILL, OOM) while
   `server.ts` is still alive, the board keeps running but the agent loses the
   command channel — there's no reconnect primitive today. The user closing the
   browser tab eventually triggers `server.ts`'s idle timeout (default 30 min)
-  and the orphan exits. This is a known gap, documented in
-  [architectural review](../../../../../docs/projects/tusk-board/reviews/architecture.md).
+  and the orphan exits. This is a known gap (no reconnect primitive today).
 
 ## Exit Code Contract
 
@@ -498,7 +520,7 @@ server to the host agent's stdio.
    - User gave you a session id → `--id <session_id>`
    - User gave you a full URL → `--url <url>`
    - User said "just join the latest one" or didn't specify → omit both;
-     `join.ts` reads `<tmpdir>/tuskboard-latest.json`.
+     `join.ts` reads `<tmpdir>/bounty-latest.json`.
 
    If discovery fails (no file, no host running at that URL), `join.ts` exits 2
    with a clear stderr message. Surface it to the user and ask for an explicit
@@ -507,7 +529,7 @@ server to the host agent's stdio.
 2. **Spawn the joiner.** It opens the WebSocket and stays connected.
 
    ```bash
-   bun run ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/join.ts \
+   bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts \
      --id <session_id>          # or --url <url>, or no args for "latest"
    ```
 
@@ -579,11 +601,11 @@ mirror you've been building.
 ### Join example
 
 ```bash
-# User: "join my tuskboard"
+# User: "join my bounty"
 # You (in a second terminal / agent session):
-bun run ${CLAUDE_PLUGIN_ROOT}/skills/tuskboard/scripts/join.ts
-# → reads <tmpdir>/tuskboard-latest.json
-# → emits {"type":"joined", "session_id":"tuskboard-abc...", "tasks":[...]}
+bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
+# → reads <tmpdir>/bounty-latest.json
+# → emits {"type":"joined", "session_id":"bounty-abc...", "tasks":[...]}
 # Now write JSON-lines to its stdin to act on the board.
 ```
 

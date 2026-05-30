@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-// tuskboard — agent-driven task board the user can interact with.
+// bounty — agent-driven task board the user can interact with.
 //
 // Built on the agent-surface-bun recipe's duplex pattern:
 //   - Agent ↔ server via JSON-lines on stdio
@@ -20,7 +20,7 @@
 //   {"type":"ready",          "url":"...", "port":..., "session_id":"..."}
 //   {"type":"connected"}                              // browser opened WS
 //   {"type":"disconnected"}                           // browser closed WS
-//   {"type":"task.toggle",    "id":"...", "status":"todo|doing|done"}
+//   {"type":"task.toggle",    "id":"...", "status":"todo|doing|review|done"}
 //   {"type":"task.move",      "id":"...", "status":"...", "index": N}
 //   {"type":"task.edit",      "id":"...", "title":"..."}
 //   {"type":"task.add",       "task": Task}           // user added
@@ -50,7 +50,7 @@ import type { ServerWebSocket } from "bun";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
-type TaskStatus = "todo" | "doing" | "done";
+type TaskStatus = "todo" | "doing" | "review" | "done";
 type Task = {
   id: string;
   title: string;
@@ -92,7 +92,7 @@ type BrowserMsg =
   | { type: "cancel" };
 
 const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
-const VALID_STATUS: TaskStatus[] = ["todo", "doing", "done"];
+const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
 
 function parsePortFromSessionId(sid: string): number | null {
   const m = sid?.match(PORT_SUFFIX_RE);
@@ -181,7 +181,7 @@ async function* readJsonLines(): AsyncGenerator<AgentMsg | null> {
           yield JSON.parse(line) as AgentMsg;
         } catch (e) {
           process.stderr.write(
-            `tuskboard: bad json on stdin: ${e instanceof Error ? e.message : String(e)}\n`,
+            `bounty: bad json on stdin: ${e instanceof Error ? e.message : String(e)}\n`,
           );
         }
       }
@@ -192,7 +192,7 @@ async function* readJsonLines(): AsyncGenerator<AgentMsg | null> {
             yield JSON.parse(buffer) as AgentMsg;
           } catch (e) {
             process.stderr.write(
-              `tuskboard: bad json on stdin (final): ${e instanceof Error ? e.message : String(e)}\n`,
+              `bounty: bad json on stdin (final): ${e instanceof Error ? e.message : String(e)}\n`,
             );
           }
         }
@@ -270,7 +270,7 @@ async function main(argv: string[]): Promise<number> {
     parsed = parseArgs({
       args: argv,
       options: {
-        title: { type: "string", default: "Task Board" },
+        title: { type: "string", default: "Bounty Board" },
         timeout: { type: "string", default: "1800" },
         "no-open": { type: "boolean", default: false },
         port: { type: "string", default: "0" },
@@ -385,7 +385,7 @@ async function main(argv: string[]): Promise<number> {
             ) as BrowserMsg;
           } catch (e) {
             process.stderr.write(
-              `tuskboard: bad json from browser: ${e instanceof Error ? e.message : String(e)}\n`,
+              `bounty: bad json from browser: ${e instanceof Error ? e.message : String(e)}\n`,
             );
             return;
           }
@@ -481,7 +481,7 @@ async function main(argv: string[]): Promise<number> {
   }
 
   const boundPort = server.port;
-  if (!sessionId) sessionId = `tuskboard-${randHex(4)}-p${boundPort}`;
+  if (!sessionId) sessionId = `bounty-${randHex(4)}-p${boundPort}`;
   const wsUrl = `ws://${host}:${boundPort}/ws`;
   // Two contexts for substitutions:
   //   - HTML/text contexts (the visible <h1>, <title>, <code>): use htmlEscape.
@@ -499,11 +499,11 @@ async function main(argv: string[]): Promise<number> {
 
   // Discovery: write session info to predictable temp files so joining
   // agents can find this board without copy-paste. Two files:
-  //   - tuskboard-<session_id>.json  (specific lookup by --id)
-  //   - tuskboard-latest.json        (always overwritten by most recent
+  //   - bounty-<session_id>.json  (specific lookup by --id)
+  //   - bounty-latest.json        (always overwritten by most recent
   //                                   host; default target for joiners)
-  const sessionFile = join(tmpdir(), `tuskboard-${sessionId}.json`);
-  const latestFile = join(tmpdir(), `tuskboard-latest.json`);
+  const sessionFile = join(tmpdir(), `bounty-${sessionId}.json`);
+  const latestFile = join(tmpdir(), `bounty-latest.json`);
   const sessionInfo = JSON.stringify({
     url,
     port: boundPort,
@@ -518,7 +518,7 @@ async function main(argv: string[]): Promise<number> {
     // and continue — the session id printed to stdout still lets the
     // user paste a URL into a joining agent manually.
     process.stderr.write(
-      `tuskboard: could not write discovery file: ${e instanceof Error ? e.message : String(e)}\n`,
+      `bounty: could not write discovery file: ${e instanceof Error ? e.message : String(e)}\n`,
     );
   }
   // Best-effort cleanup on exit. Won't fire on SIGKILL, but stale files

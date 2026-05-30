@@ -14,8 +14,8 @@ _not_ generated fresh at runtime (built once, then frozen and refined), and
 _not_ transient (their effect can persist).
 
 The project was extracted from the `project-docs` toolbox once four such tools —
-Digestify, Grapevine, Tuskboard, Magpie — cohered into a distinct category with
-its own manifesto. Rather than just housing the code, the repo is structured to
+Digestify, Grapevine, Bounty, Magpie — cohered into a distinct category with its
+own manifesto. Rather than just housing the code, the repo is structured to
 _embody_ the manifesto: the co-evolution machinery (house-style conventions,
 fresh-agent testing, scenario capture, a decay ledger) is a first-class citizen
 in a dedicated `grimoire/`.
@@ -43,7 +43,7 @@ plugins/spellbook/            # the shipped plugin (marketplace source)
   skills/
     digestify/                # cantrip — one-shot review surface
     grapevine/                # conjuration — agent-to-agent channel
-    tuskboard/                # conjuration — live Kanban board
+    bounty/                   # conjuration — live Kanban board (todo→doing→review→done)
     magpie/                   # image asset extraction (Python; least surface-like)
       SKILL.md  scripts/  assets/
 
@@ -164,7 +164,7 @@ validate the still-unproven `(seed)` rules.
   local UI), the Bun process that serves it and bridges to the agent, and the
   _agent_ (the runtime). Kinds: _cantrip_ (cast-and-resolve, no persistence —
   Digestify) and _conjuration_ (a standing daemon that holds state — Grapevine,
-  Tuskboard). Spells honor an exit-code contract: `0` submitted, `2` bad input,
+  Bounty). Spells honor an exit-code contract: `0` submitted, `2` bad input,
   `124` idle timeout, `130` user cancelled. Magpie is the outlier — it ships as
   Python asset-extraction scripts, not a Bun-served surface, so its registered
   "conjuration" kind is worth reconciling.

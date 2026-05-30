@@ -1,4 +1,4 @@
-# Tusk Board — Assets
+# Bounty Board — Assets
 
 Drop your graphics in this folder under the exact filenames below. The template
 loads them by path; missing files degrade gracefully (the page still works, you
@@ -11,7 +11,7 @@ attributes in `template.html` already point at the right paths.
 
 | File                | Used as                                                          | Recommended size                            |
 | ------------------- | ---------------------------------------------------------------- | ------------------------------------------- |
-| `mascot.webp`       | Header mascot, sits next to "Tusk Board"                         | ~56×56 (display size); ship at 2× → 112×112 |
+| `mascot.webp`       | Header mascot, sits next to "Bounty Board"                       | ~56×56 (display size); ship at 2× → 112×112 |
 | `mascot-large.webp` | Empty-state illustration, centered when the whole board is empty | ~280×280                                    |
 | `favicon.png`       | Browser-tab favicon                                              | 32×32                                       |
 

@@ -1,4 +1,4 @@
-// Tests for tuskboard server.ts, bg.ts, and join.ts.
+// Tests for bounty server.ts, bg.ts, and join.ts.
 //
 // Coverage:
 //   - Pure state-mutation helpers (applyTaskAdd/Update/Remove/Move).
@@ -11,7 +11,7 @@
 //       * task.add from browser rejects malformed task objects
 //       * bg.ts emits a meta JSON line and creates the events/cmds files
 //       * bg.ts forwards a commands-file append to the underlying server
-//       * join.ts discovers via tuskboard-latest.json when --url/--id omitted
+//       * join.ts discovers via bounty-latest.json when --url/--id omitted
 //       * join.ts idle timeout reports reason: "timeout"
 
 import { describe, expect, test } from "bun:test";
@@ -85,6 +85,12 @@ describe("applyTaskUpdate", () => {
     expect(s.tasks[0].status).toBe("doing");
     expect(s.tasks[0].title).toBe("A");
   });
+  test("accepts the review status", () => {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
+    expect(applyTaskUpdate(s, "a", { status: "review" })).toBe(true);
+    expect(s.tasks[0].status).toBe("review");
+  });
   test("drops invalid status quietly", () => {
     const s = freshState();
     applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
@@ -153,16 +159,16 @@ describe("applyTaskMove", () => {
 
 describe("parsePortFromSessionId", () => {
   test("extracts trailing -p<port>", () => {
-    expect(parsePortFromSessionId("tuskboard-abc-p54321")).toBe(54321);
+    expect(parsePortFromSessionId("bounty-abc-p54321")).toBe(54321);
   });
   test("returns null when no -p suffix", () => {
-    expect(parsePortFromSessionId("tuskboard-abc")).toBeNull();
+    expect(parsePortFromSessionId("bounty-abc")).toBeNull();
   });
   test("returns null for empty input", () => {
     expect(parsePortFromSessionId("")).toBeNull();
   });
   test("rejects out-of-range port", () => {
-    expect(parsePortFromSessionId("tuskboard-abc-p99999")).toBeNull();
+    expect(parsePortFromSessionId("bounty-abc-p99999")).toBeNull();
   });
 });
 
@@ -428,8 +434,8 @@ describe("bg.ts wrapper", () => {
 });
 
 describe("join.ts", () => {
-  test("discovers via tuskboard-latest.json when no --url/--id given", async () => {
-    // Spawn a host first so tuskboard-latest.json is real.
+  test("discovers via bounty-latest.json when no --url/--id given", async () => {
+    // Spawn a host first so bounty-latest.json is real.
     const { proc: hostProc, ready } = await spawnServerReady(["--timeout", "5"]);
     // Give the host time to write the discovery file (it writes synchronously
     // shortly after ready, but the file might race a fast joiner).

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-// Tusk Board — background-host wrapper for long-running / loop-driven
+// Bounty Board — background-host wrapper for long-running / loop-driven
 // agent use cases.
 //
 // `server.ts` is designed for a one-shot agent that holds the board's
@@ -61,7 +61,7 @@ async function main(argv: string[]): Promise<number> {
     parsed = parseArgs({
       args: argv,
       options: {
-        title: { type: "string", default: "Tusk Board" },
+        title: { type: "string", default: "Bounty Board" },
         timeout: { type: "string", default: "1800" },
         "no-open": { type: "boolean", default: false },
         port: { type: "string", default: "0" },
@@ -177,7 +177,7 @@ async function main(argv: string[]): Promise<number> {
           // First-ready triggers file creation and meta emission.
           if (parsedLine?.type === "ready" && !metaEmitted) {
             sessionId = parsedLine.session_id ?? "";
-            // session_id already starts with "tuskboard-" — don't double-prefix.
+            // session_id already starts with "bounty-" — don't double-prefix.
             if (!eventsFile) eventsFile = join(tmpdir(), `${sessionId}-events.log`);
             if (!cmdsFile) cmdsFile = join(tmpdir(), `${sessionId}-cmds.log`);
             // Truncate / create the files fresh.

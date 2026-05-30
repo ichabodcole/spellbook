@@ -37,8 +37,14 @@ meaning to summon anything, is a bug.
 | ----------- | ----------- | ------------------------------------------------- | ------- |
 | `digestify` | cantrip     | One-shot reading/review surface, inline questions | shipped |
 | `grapevine` | conjuration | Agent-to-agent channel daemon                     | shipped |
-| `tuskboard` | conjuration | Live duplex Kanban board                          | shipped |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done) | shipped |
 | `magpie`    | conjuration | Image surface — drop, ask, orchestrate            | shipped |
+
+## Retired names (renamed away — don't reuse)
+
+| Old name    | Renamed to | When       | Why                                          |
+| ----------- | ---------- | ---------- | -------------------------------------------- |
+| `tuskboard` | `bounty`   | 2026-05-30 | Named the furniture, not the spell (rebrand) |
 
 ## Reserved namespaces (don't name a spell into these)
 

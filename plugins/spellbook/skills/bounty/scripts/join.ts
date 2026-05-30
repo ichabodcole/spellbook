@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-// tuskboard join — connect a second agent to a running tuskboard session.
+// bounty join — connect a second agent to a running bounty session.
 //
 // This is the symmetric counterpart to server.ts. Where server.ts is the
 // host (spawns the HTTP/WS server, has stdio authority to push init/patch/
@@ -29,9 +29,9 @@
 //                                                // (init|patch|message|task.*)
 //   {"type":"disconnected", "reason":"server_closed|stdin_close|timeout|error"}
 //
-// Discovery: with no --url and no --id, reads <tmpdir>/tuskboard-latest.json
+// Discovery: with no --url and no --id, reads <tmpdir>/bounty-latest.json
 // (written by server.ts on startup). Use --id to look up a specific session
-// (matches <tmpdir>/tuskboard-<id>.json), or --url to connect directly.
+// (matches <tmpdir>/bounty-<id>.json), or --url to connect directly.
 //
 // Exit codes:
 //   0   clean disconnect (server closed or agent sent close)
@@ -81,8 +81,8 @@ function discover(args: { url?: string; id?: string }): SessionInfo {
     return { url: args.url, port: 0, session_id: "(from --url)", title: "" };
   }
   const path = args.id
-    ? join(tmpdir(), `tuskboard-${args.id}.json`)
-    : join(tmpdir(), `tuskboard-latest.json`);
+    ? join(tmpdir(), `bounty-${args.id}.json`)
+    : join(tmpdir(), `bounty-latest.json`);
   let raw: string;
   try {
     raw = readFileSync(path, "utf-8");
@@ -91,7 +91,7 @@ function discover(args: { url?: string; id?: string }): SessionInfo {
       throw new Error(`no session file for id '${args.id}' (looked at ${path})`);
     }
     throw new Error(
-      `no tuskboard session found at ${path} — pass --url <url> or --id <session_id>, or start one with server.ts first`,
+      `no bounty session found at ${path} — pass --url <url> or --id <session_id>, or start one with server.ts first`,
     );
   }
   try {

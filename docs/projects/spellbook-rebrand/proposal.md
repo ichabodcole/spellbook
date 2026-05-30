@@ -25,10 +25,12 @@ adorable, but the occultishness genuinely comes through; **light, not dark**. A
 cozy grimoire that contains real magic. (Full north-star description in the
 fragment.) Applied along three fronts:
 
-- **Names:** evaluate each spell for a spell-native name. Initial read —
-  `grapevine` is the closest fit (a whisper/scrying web, keep); `digestify` and
-  `tuskboard` are the utilitarian puns most likely to want renaming; `magpie`
-  reads as a fetching familiar.
+- **Names:** evaluate each spell for a spell-native name. Resolved so far —
+  `grapevine` (a whisper/scrying web), `magpie` (a fetching familiar), and
+  `digestify` are all **kept**: they already read as spells you cast.
+  `tuskboard` was the one outlier — it named the furniture, not the spell — and
+  is renamed to `bounty` (done; see Decisions Log). No further renames are
+  planned unless a spell's name later proves a poor fit.
 - **Mascots:** unify art style + palette (and decide reuse-existing vs.
   retheme).
 - **Cohesion motif:** a shared visual language (palette, type, sigil/motif) so
@@ -56,9 +58,28 @@ release. (Detail in the fragment's "Cost / caution.")
 **Complexity:** Medium — mostly design/decision; the rename mechanics are
 straightforward but must be done deliberately.
 
+## Decisions Log
+
+- **2026-05-30 — `tuskboard` → `bounty` (done).** First rename executed. The old
+  name was a pun on the furniture (a task _board_ with a mammoth tusk), which
+  read as an object rather than a spell. `bounty` (a bounty board) is the
+  D&D-native name for an assignable task board whose entries move through stages
+  — assignment and flow are baked into the metaphor, and it sits cleanly beside
+  `grapevine`/`magpie`. Done registry-first per the risk note: trigger-registry,
+  marketplace tags, spell tables, folder, and all `${CLAUDE_PLUGIN_ROOT}` paths
+  updated; 28 tests green. Shipped together with a new **Review** column (a soft
+  human-verification gate) on the board. Mascot/visual identity (the mammoth) is
+  untouched — folded into the mascot front below.
+- **2026-05-30 — keep `digestify`, `grapevine`, `magpie` (no rename).** The
+  remaining three names already read as spells you cast ("cast digestify,"
+  "summon a grapevine"). `digestify` was briefly flagged as a utilitarian pun,
+  but it names the _act_ (digest → a reading/divination surface), not the
+  furniture, so it stays. The name front of the rebrand is now **closed** unless
+  a name later proves a poor fit in use; remaining rebrand work is purely
+  mascot/visual cohesion.
+
 ## Open Questions
 
-- Which spells actually get renamed, and to what?
 - Reuse existing mascots in a unified style, or retheme them?
 - Does the aesthetic graduate into the manifesto's Design Philosophy section?
 

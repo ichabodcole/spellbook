@@ -12,6 +12,7 @@
         --bg-overlay: radial-gradient(ellipse at top, #1d1610 0%, #16100b 60%);
         --panel: #24190f;
         --panel-doing: #2a1f12;
+        --panel-review: #251a2b;
         --panel-done: #1d2128;
         --card: #2d2114;
         --card-hover: #3a2c1d;
@@ -27,6 +28,9 @@
         --accent-cool: #6ba3c8;          /* ice blue — "done", drop hints */
         --accent-cool-bg: #1e2d3a;
         --accent-cool-text: #b3d4e8;
+        --accent-review: #b083c8;        /* amethyst — "review" */
+        --accent-review-bg: #2e1d36;
+        --accent-review-text: #d9bce8;
         --accent-neutral: #8a6f4e;       /* warm brown — "todo" */
         --accent-neutral-bg: #2a2014;
         --accent-neutral-text: #d6c2a3;
@@ -58,7 +62,7 @@
       .status-dot.closed { background: var(--danger); }
       .session-id { color: var(--text-faint); }
       .columns {
-        display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+        display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;
         max-width: 1200px;
       }
       .column {
@@ -68,6 +72,7 @@
         transition: background 0.15s, border-color 0.15s;
       }
       .column[data-status="doing"] { background: var(--panel-doing); }
+      .column[data-status="review"] { background: var(--panel-review); }
       .column[data-status="done"]  { background: var(--panel-done); }
       .column-head {
         display: flex; align-items: center; justify-content: space-between;
@@ -78,6 +83,7 @@
         color: var(--text-muted); font-weight: 600;
       }
       .column[data-status="doing"] .column-head h2 { color: var(--accent-warm-text); }
+      .column[data-status="review"] .column-head h2 { color: var(--accent-review-text); }
       .column[data-status="done"]  .column-head h2 { color: var(--accent-cool-text); }
       .count {
         background: rgba(0,0,0,0.25); border-radius: 999px;
@@ -123,6 +129,7 @@
       .pill:hover { border-color: var(--border-hover); color: var(--text); }
       .pill.active.todo  { background: var(--accent-neutral-bg); border-color: var(--accent-neutral); color: var(--accent-neutral-text); }
       .pill.active.doing { background: var(--accent-warm-bg);    border-color: var(--accent-warm);    color: var(--accent-warm-text); }
+      .pill.active.review { background: var(--accent-review-bg);  border-color: var(--accent-review);  color: var(--accent-review-text); }
       .pill.active.done  { background: var(--accent-cool-bg);    border-color: var(--accent-cool);    color: var(--accent-cool-text); }
       .delete {
         font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px;
@@ -198,7 +205,7 @@
   <body>
     <header>
       <div class="brand">
-        <img class="wordmark" src="/assets/wordmark.webp" alt="Tusk Board" />
+        <img class="wordmark" src="/assets/wordmark.webp" alt="Bounty Board" />
         <h1 id="title">__TITLE__</h1>
       </div>
       <div class="meta">
@@ -222,6 +229,14 @@
         <div class="add-row">
           <input type="text" id="add-doing-input" placeholder="Add a task…" />
           <button data-add-status="doing">Add</button>
+        </div>
+      </section>
+      <section class="column" data-status="review">
+        <div class="column-head"><h2>Review</h2><span class="count" id="count-review">0</span></div>
+        <div class="task-list" id="list-review"></div>
+        <div class="add-row">
+          <input type="text" id="add-review-input" placeholder="Add a task…" />
+          <button data-add-status="review">Add</button>
         </div>
       </section>
       <section class="column" data-status="done">
@@ -263,7 +278,7 @@
         const state = { title: "", tasks: [] };
         let socket = null;
         let closedByServer = false;
-        const STATUSES = ["todo", "doing", "done"];
+        const STATUSES = ["todo", "doing", "review", "done"];
 
         // Drag state: which task is currently being dragged. Used by the
         // column-level drop handlers (installed once after first render).

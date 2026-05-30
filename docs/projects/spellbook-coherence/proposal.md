@@ -24,10 +24,10 @@ became answerable once real spells were in the repo.
 
 1. **Feedback touchpoints (house-style requirement).** Only digestify has a
    feedback touchpoint (re-pointed to this repo during migration). grapevine,
-   tuskboard, and magpie lack one. Add the structured touchpoint to each
-   `SKILL.md` (agent friction + human-surface prompt where applicable), routed
-   to GitHub issues against this repo. Per `grimoire/house-style.md` → "Every
-   spell ships a feedback touchpoint."
+   bounty, and magpie lack one. Add the structured touchpoint to each `SKILL.md`
+   (agent friction + human-surface prompt where applicable), routed to GitHub
+   issues against this repo. Per `grimoire/house-style.md` → "Every spell ships
+   a feedback touchpoint."
 2. **Magpie's interface.** Magpie is headless Python (`discover.py` /
    `extract.py` via Gemini/OpenRouter) — not a Bun surface. Per the "abstract
    over tools so the agent focuses on one thing" principle, evaluate a thin Bun

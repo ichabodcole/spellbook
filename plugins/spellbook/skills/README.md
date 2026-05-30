@@ -8,7 +8,7 @@ cross-spell imports, no build step.
 | ----------- | ----------- | --------------------------------------------------------- |
 | `digestify` | cantrip     | A one-shot reading/review surface with inline questions.  |
 | `grapevine` | conjuration | A standing daemon for agent-to-agent channels.            |
-| `tuskboard` | conjuration | A live duplex Kanban board (human ↔ agent, real-time).    |
+| `bounty`    | conjuration | A live duplex Kanban board (human ↔ agent, real-time).    |
 | `magpie`    | conjuration | An image surface — drop an image, the agent orchestrates. |
 
 **Cantrip** = cast-and-resolve (spawn → user acts → submit → JSON on stdout →

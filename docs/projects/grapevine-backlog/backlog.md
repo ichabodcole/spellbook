@@ -375,7 +375,7 @@ toolbox-migration spinout (a standalone CLI ships more naturally from the
 dedicated repo than from a marketplace plugin). See
 [toolbox-migration proposal](../toolbox-migration/proposal.md).
 
-**Pairs with:** the same pattern may apply to tuskboard, digestify, magpie —
+**Pairs with:** the same pattern may apply to bounty, digestify, magpie —
 operator-style verbs (open/close/list/inspect) benefit from a human-CLI surface.
 Worth thinking about as a suite-wide pattern, not a one-off for grapevine.
 
