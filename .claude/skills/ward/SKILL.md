@@ -16,12 +16,12 @@ description: >
 ## Purpose
 
 Set the wards before you merge. Several files in the Spellbook list or describe
-the same things — the four spells, the conventions, the version — and they drift
+the same things — the spells, the conventions, the version — and they drift
 apart the moment one is changed without the others. This skill is the protective
 boundary: the checklists that catch a missed update before it ships.
 
-It pairs with `inscribe` (which _casts_ a new spell). `inscribe` builds; `ward`
-protects the book's integrity afterward.
+It pairs with `inscribe`: `inscribe` builds a spell; `ward` protects the book's
+integrity afterward.
 
 ## The synced listings (the things that drift)
 
