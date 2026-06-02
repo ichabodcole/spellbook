@@ -194,6 +194,30 @@ Driving glamour for real (Spellbook brand-system task) surfaced:
   but restarts are now lossless. _Validated live:_ recovered a mid-session state
   (4 influences + direction + 6 prompts) onto the improved build with zero loss.
 
+## Generation notes (media-forge, validated 2026-06-01)
+
+CLI:
+`media-forge generate image --prompt=<> --model=<> --n=<1–4> [--width --height --seed --negative-prompt] --format json`
+→ `data.outputs[].presignedUrl` (valid 24h). Most models support `--n` up to 4
+(a full variant round per call).
+
+- **Quick model: `fal-ai/flux-2/klein/9b/lora`** (klein 9b — schnell's spiritual
+  successor). Head-to-head vs `fal-ai/flux/schnell`: klein adheres better to the
+  _atmospheric_ asks (soft rim glow, crescent-moon third eye, sparkles); schnell
+  gives slightly crisper die-cut linework but flakes on those. Both ~5s. Use
+  klein for exploration rounds; reach for a premium model (`openai/gpt-image-2`,
+  `fal-ai/recraft/v4.1`) for converged finals.
+- **Prompt for the model you have.** These are non-reasoning image models, so
+  **be explicit and spatial** — they don't connect the dots a reasoning model
+  would. "two little curved horns" rendered as cat ears; "two little curved
+  horns **growing out of the top of the cat's head, between its ears**" rendered
+  correctly. Spell out concrete style specifics too (e.g. "thick **white die-cut
+  sticker border**", "**flat shading, high contrast**").
+- Set explicit `--width/--height` (square for icons) — klein's default canvas
+  ran small. Generate `--n 4` and pick (that's the variants flow).
+- Output handoff: download the `presignedUrl` and **inline** it (so it persists
+  in the self-contained snapshot, and survives the 24h URL expiry).
+
 ## Roadmap (post-dogfood, agreed 2026-06-01)
 
 The live dogfood validated the whole compose loop (and hardened the tooling).

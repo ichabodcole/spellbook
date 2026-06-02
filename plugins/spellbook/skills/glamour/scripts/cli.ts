@@ -260,6 +260,16 @@ function fileToDataUrl(path: string): string {
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
+// Download an image URL and inline it as a data URL — so a generated variant
+// is self-contained (persists in the snapshot, survives presigned-URL expiry).
+async function urlToDataUrl(url: string): Promise<string> {
+  const res = await fetch(url);
+  if (!res.ok) die(`fetch failed (HTTP ${res.status}): ${url}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  const mime = (res.headers.get("content-type") || "image/jpeg").split(";")[0];
+  return `data:${mime};base64,${buf.toString("base64")}`;
+}
+
 function cmdInfo(session?: string) {
   const s = readSession(session);
   if (!s) die("no running glamour session");
@@ -321,7 +331,7 @@ const HELP = `glamour — compose a visual style spec.
   phase  <gather|analysis|direction|prompts|variants|spec>
   direction <text...> [--revision N]
   prompts "<p1>" "<p2>" ...
-  variant (--file <path> | --src <dataurl|url>) [--prompt ..] [--label ..] [--round N]
+  variant (--url <url> | --file <path> | --src <dataurl>) [--prompt ..] [--label ..] [--round N]
   variants-clear
   spec   [--understanding ..] [--recreate ..] [--model ..] [--modules "palette=on,motifs=off"]
   status on [text...] | status off       # show/hide the "agent working" spinner
@@ -382,9 +392,13 @@ async function main(argv: string[]): Promise<number> {
       break;
     case "variant": {
       let src: string;
-      if (typeof flags.file === "string") src = fileToDataUrl(flags.file);
+      if (typeof flags.url === "string") src = await urlToDataUrl(flags.url);
+      else if (typeof flags.file === "string") src = fileToDataUrl(flags.file);
       else if (typeof flags.src === "string") src = flags.src;
-      else die("usage: variant (--file <path> | --src <dataurl|url>) [--prompt ..] [--label ..]");
+      else
+        die(
+          "usage: variant (--url <url> | --file <path> | --src <dataurl>) [--prompt ..] [--label ..]",
+        );
       const variant: Record<string, unknown> = { src };
       if (typeof flags.prompt === "string") variant.prompt = flags.prompt;
       if (typeof flags.label === "string") variant.label = flags.label;
