@@ -24,7 +24,8 @@ media-forge generate image \
 - Output (json): `data.outputs[].presignedUrl` (each valid ~24h), plus
   `mimeType`, `sizeBytes`, `serviceJobId`.
 - `--n` up to 4 on most fal models → a whole variant round in one call. (Recraft
-  and most Gemini routes are 1/call.)
+  is 1/call. fal `nano-banana-2`/`gemini-3.1` **do** honor `--n` — verified
+  `num_images:2`→2; the OpenRouter gemini twins may be 1/call — unverified.)
 - Other verbs: `models list` (capabilities), `jobs get <serviceJobId>` (per-job
   actual cost — finalizes a minute later), `usage summary --since --until`
   (spend rollup), `ping`.
@@ -43,32 +44,31 @@ Every model is one of two kinds, and they fail in opposite ways:
   command).
 - **Diffusion** — the **Flux** family, **Recraft**, the specialized models. Non-
   reasoning: be **explicit and spatial**. Each has a **house aesthetic it drifts
-  toward** (most lean "cute 3D storybook"), and is the **only kind that can do
-  transparency**. Great for single subjects, fast iteration, and any look that
-  _is_ their native aesthetic.
+  toward** (most lean "cute 3D storybook"). Great for single subjects, fast
+  iteration, and any look that _is_ their native aesthetic.
 
 One-liner: **words-in-the-image or a laid-out board → instruction-following.
-Single illustrated subject, fast iteration, or a transparent cutout → diffusion.
-Clean vector logo/icon → Recraft.**
+Single illustrated subject or fast iteration → diffusion. Clean vector logo/icon
+→ Recraft. Reference/edit (consistency) → see Reference images.**
 
 ## Content-type → model routing
 
 Primary pick first; "Quick" = exploration rounds, "Final" = canonical output.
 
-| Content-type              | Quick (explore)             | Final (canonical)                                                       |
-| ------------------------- | --------------------------- | ----------------------------------------------------------------------- |
-| Hero mascot               | `klein-9b` · `grok`         | `flux.2-pro` · `nano-banana-2`                                          |
-| Expression sheet          | `klein-9b`                  | `flux.2-pro`/`nano-banana-2` (consistency hard — see caveat)            |
-| Logotype / wordmark       | `klein-9b`                  | `recraft/v4.1` · `nano-banana-2` · `flux.2-flex`                        |
-| Combination mark          | `klein-9b`                  | `recraft/v4.1` · `flux.2-flex`                                          |
-| Sticker pack (cutout)     | `klein-9b` · `flux/dev`     | `flux.2-pro` (Flux only if transparency needed)                         |
-| Icon system               | `klein-9b`                  | `recraft/v4.1`                                                          |
-| Color palette board       | `nano-banana-2`             | `nano-banana-2` · `gpt-image-2`                                         |
-| Typography specimen       | —                           | `nano-banana-2` · `gpt-image-2`                                         |
-| UI mockup                 | `klein-9b` (rough)          | `nano-banana-2` · `gpt-image-2`                                         |
-| Scene / illustration      | `klein-9b` · `flux.2-turbo` | `flux.2-pro` · `nano-banana-2`                                          |
-| **Full composite board**  | —                           | **`gpt-image-2` ≥ `nano-banana-2`** (FLUX viable when prompted as JSON) |
-| Photoreal (people/scenes) | `z-image/turbo`             | `juggernaut-flux/pro` · `nano-banana-2`                                 |
+| Content-type              | Quick (explore)             | Final (canonical)                                                                    |
+| ------------------------- | --------------------------- | ------------------------------------------------------------------------------------ |
+| Hero mascot               | `klein-9b` · `grok`         | `flux.2-pro` · `nano-banana-2`                                                       |
+| Expression sheet          | `klein-9b`                  | `nano-banana-2` via **`--ref`** (reuse the hero's output URL — see Reference images) |
+| Logotype / wordmark       | `klein-9b`                  | `recraft/v4.1` · `nano-banana-2` · `flux.2-flex`                                     |
+| Combination mark          | `klein-9b`                  | `recraft/v4.1` · `flux.2-flex`                                                       |
+| Sticker pack (cutout)     | `klein-9b` · `flux/dev`     | `nano-banana-2`/`flux.2-pro` + post bg-removal for true cutout                       |
+| Icon system               | `klein-9b`                  | `recraft/v4.1`                                                                       |
+| Color palette board       | `nano-banana-2`             | `nano-banana-2` · `gpt-image-2`                                                      |
+| Typography specimen       | —                           | `nano-banana-2` · `gpt-image-2`                                                      |
+| UI mockup                 | `klein-9b` (rough)          | `nano-banana-2` · `gpt-image-2`                                                      |
+| Scene / illustration      | `klein-9b` · `flux.2-turbo` | `flux.2-pro` · `nano-banana-2`                                                       |
+| **Full composite board**  | —                           | **`gpt-image-2` ≥ `nano-banana-2`** (FLUX viable when prompted as JSON)              |
+| Photoreal (people/scenes) | `z-image/turbo`             | `juggernaut-flux/pro` · `nano-banana-2`                                              |
 
 Model ids: `fal-ai/flux-2/klein/9b/lora`, `fal-ai/nano-banana-2`,
 `openai/gpt-image-2`, `black-forest-labs/flux.2-pro`,
@@ -134,17 +134,50 @@ background" (bug) → "neutral backdrop".
 
 ## Constraints that override preference
 
-- **Transparency:** `gpt-image-2` can't; **Flux** can. Isolated cutouts
-  (stickers/icons/mascots for compositing) → Flux. (media-forge has no
-  `--background` flag yet — see CLI limits.)
+- **Transparency:** not a Flux/recraft param (recraft's `background_color` sets
+  a color, not alpha). Native alpha is on `gpt-image-1.5`
+  (`background: transparent`); the general path is fal's **background-removal**
+  endpoints (`birefnet`/`bria`/`rembg`/…) on any image. media-forge doesn't
+  expose either yet (#2) — for now, isolated cutouts need a post bg-removal
+  step.
 - **`num_images`:** `--n`≤4 on flux schnell/dev, flux-2 turbo/klein,
-  gpt-image-2; **1/call** on recraft and most Gemini routes (need N separate
-  calls for a set).
+  gpt-image-2, and fal `nano-banana-2`/`gemini-3.1` (verified —
+  `num_images:2`→2). **1/call** on recraft (single image in/out); OpenRouter
+  gemini/flux twins unverified.
 - **Seed:** flux family + juggernaut expose `--seed`; gpt-image-2 / Gemini /
   recraft (on fal) do **not** — lock the prompt instead.
 - **Negative prompts:** only `juggernaut-flux/pro`. Everyone else: reword
   positively ("sharp focus" not "no blur").
 - **Watermark:** all Gemini outputs carry an invisible SynthID + C2PA.
+
+## Reference images & edit (character + style consistency)
+
+`--ref <url|path>` conditions generation on a reference image and routes to the
+model's edit endpoint. **Validated end-to-end** (Phase 1 URL refs + Phase 2
+local-file upload). Two ingest shapes:
+
+- **local file** — `--ref ./influence.png` auto-uploads (presigned PUT) then
+  edits.
+- **output URL — the loop-closer** — reuse a generated image's presigned output
+  URL as `--ref` to carry one character/style across an asset family. This is
+  how glamour builds **expression sheets, sticker packs, icon sets** from a
+  chosen mascot: generate → pick the keeper → `--ref <its url>` for each
+  follow-on.
+
+Key points:
+
+- **Role is prompt-expressed, not a flag** — say "the exact same character from
+  the reference, now <pose>, keep its colors/style." (No style-vs-subject
+  field.)
+- **Repeat `--ref` for multiple references.** Cap per model is discoverable:
+  `models list` → `operations.edit.maxRefs` (e.g. nano-banana-2: 14,
+  flux-2/turbo: 4). `operations: null` = not edit-capable (recraft's edit is a
+  separate image-to-image lane; gpt-image-2 not declared as of now).
+- **Presigned refs expire ~24h** — reuse promptly; a stale/404 ref → opaque
+  error.
+- `nano-banana-2` holds identity strongly across edits (great for consistency;
+  small pose asks stay subtle). Validated: one mascot → "reading a spellbook" /
+  "waving" kept identical body / face / palette / style.
 
 ## Cost awareness
 
@@ -157,15 +190,20 @@ canonical finals.** Check spend with
 
 ## CLI limitations (today)
 
-media-forge `generate image` is **text-to-image only** and exposes
-`--prompt --model --n --width --height --seed --negative-prompt`. It can **not**
-set steps/guidance, quality, resolution-tier, "thinking" mode, transparency, or
-pass a **reference image** — which caps flux.2-flex (steps), Gemini (tier/
-thinking), and blocks reference-driven **character consistency** and **influence
-→ output** entirely. These are filed as asks in
-`docs/projects/media-forge-cli-gaps/report.md`; until they land, route around
-the gaps (e.g. expression-sheet consistency is best-effort via a single
-character sheet, not reference conditioning).
+**Reference input shipped** — `--ref` is now live (see the Reference images
+section above), so reference-driven **character consistency** and **influence →
+output** are no longer blocked.
+
+Still **not** exposed by `generate image`: steps/guidance (caps flux.2-flex
+text), quality, resolution-tier + "thinking" mode (Gemini), transparency
+(`--background`), and vector/SVG output. These remain asks in
+`docs/projects/media-forge-cli-gaps/report.md` (#2/#3/#4) — until they land,
+take each model at its defaults.
+
+Two validated gotchas: **nano-banana-2 ignores `--width/--height`** (wants its
+own aspect/resolution; you'll get its default aspect, not your square), and a
+**stale/404 ref URL** surfaces as an opaque `Unprocessable Entity` — presigned
+refs expire ~24h, so reuse them promptly.
 
 ## The handoff
 
