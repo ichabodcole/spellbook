@@ -20,6 +20,72 @@ hit a wall on, each of which blocks a specific, real glamour use case. They are
 offered as asks + sketches; the actual design is yours, and we'd like to work
 through anything with a conflict of interest (we expect few).
 
+## Converged design (2026-06-02 session with the media-forge agent)
+
+A live design session over grapevine (`media-forge-design`,
+Spellbook=`spellwright` ↔ media-forge=`kestrel`) refined these asks against
+media-forge's real architecture and the providers' actual fal schemas. Companion
+artifact (the schema side-by-side the registry declarations would build from):
+`/Users/colereed/Projects/dreamwood/media-forge/docs/investigations/artifacts/2026-06-02-image-reference-edit-schemas.md`.
+
+Outcomes per ask:
+
+- **#1 Image input — converged shape (not committed).** Reference/edit is a
+  separate `/edit` endpoint per model, and the fal wire shape is near-uniform:
+  `prompt` + `image_urls: string[]` (URLs). **No structured style-vs-subject
+  role field exists on any fal edit endpoint** — role is prompt-expressed (the
+  native Gemini object/character distinction is native-API-only, untested, and
+  not chased for an MVP). So: `--ref <url|path>` (repeatable) → `image_urls[]` →
+  route to the model's `/edit`. **Registry declares per model** (for routing +
+  `models list`): `editCapable`, `maxRefs`, `acceptsMask` (gpt-image), recraft's
+  `style_id`/`colors`/`style`. **Seam:** CLI/registry own
+  `editCapable`/`maxRefs`/ingest; the **agent owns role via prompt**. Ingest is
+  two URL-yielding shapes; a generated **presigned output URL is directly usable
+  as an input ref** (closes glamour's generate→pick→reuse loop, ~free). _Honesty
+  caveat: references were never empirically tested (the eval was text-to-image
+  only) — this is schema-grounded, not eval-grounded._
+- **#3 Param passthrough — converged.** Not a raw `--param`: **registry-modeled
+  optional params** (typed, validated, discoverable via `models list`) as
+  primary; a marked experimental escape hatch only for the true tail. The
+  needle-movers are finite (~10 across the roster): flux
+  `num_inference_steps`/`guidance_scale`; gemini
+  `thinking_level`(minimal|high)/`resolution`(0.5K–4K)/`aspect_ratio`/`seed`;
+  recraft `style_id`/`colors`; gpt-image `quality`. (Confirmed on the live fal
+  gemini schema — `resolution` 2K/4K and `thinking_level` are real fal params,
+  not native-only. `limit_generations` exists and defaults true, but a smoke
+  test showed it does **not** cap batch at n=2: `num_images:2` returns 2 on both
+  nano-banana-2 and gemini-3.1 — so it's a registry param to expose, not a bug.
+  An earlier "asked n=2, got 1" claim was retracted: it was never observed in
+  the eval — nano-banana-2 returned the full n in every run.)
+- **#6 exit-124 concurrency** — media-forge owns the fix (distinguish queued vs
+  timeout); implementation timing is Cole's call.
+- **#2 transparency — grounded (two mechanisms).** A native per-model flag
+  exists but on **`fal-ai/gpt-image-1.5`**
+  (`background: auto|transparent|opaque`) — _not_ flux/recraft (recraft's
+  `background_color` is set-a-color, not alpha); our `openai/gpt-image-2` entry
+  doesn't expose it. The general path is **dedicated background-removal
+  endpoints** fal hosts as first-class (`birefnet`, `bria/background/remove`,
+  `ideogram/remove-background`, `imageutils/rembg`, …) — the Spellbook
+  multi-step workaround as a real endpoint, works on any image. So #2 = a thin
+  `supportsTransparency` flag for the few models that have it + bg-removal as a
+  separate transform. Low priority (workaround exists).
+- **#4 vector — tractable.** Dedicated `recraft/text-to-vector` (v4/v4.1 + pro);
+  separate-endpoint pattern like `/edit`; SVG is a distinct output modality
+  (mime/storage). For glamour: logos + icon sets. The clearest remaining ask.
+
+**Emergent frame (kestrel's synthesis, worth Cole seeing):** bg-removal (#2),
+vectorize (#4), and edit/refs (#1) — plus upscale and outpaint — are all facets
+of one **image→image TRANSFORM category**, distinct from text-to-image
+generation. The real question may be "does media-forge grow an
+_image-operations_ axis" rather than adding `--ref` / `--background` /
+`--format svg` one at a time.
+
+Open items: the **OpenRouter-hosted twins** (`google/gemini-*`,
+`black-forest-labs/flux.2-*`) are unverified — this is the fal surface only; so
+`editCapable`/`maxRefs` (and any transform capability) likely want to be
+**per-(model, provider)**, not per-model. Exact `maxRefs` per array endpoint to
+be pinned when building entries.
+
 ## What `generate image` exposes today
 
 `--prompt --model --n --width --height --seed --negative-prompt --wait --timeout --poll-interval --format`.
