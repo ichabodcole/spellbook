@@ -26,12 +26,19 @@ media-forge generate image \
 - `--n` up to 4 on most fal models → a whole variant round in one call. (Recraft
   is 1/call. fal `nano-banana-2`/`gemini-3.1` **do** honor `--n` — verified
   `num_images:2`→2; the OpenRouter gemini twins may be 1/call — unverified.)
-- Other verbs: `models list` (capabilities), `jobs get <serviceJobId>` (per-job
-  actual cost — finalizes a minute later), `usage summary --since --until`
-  (spend rollup), `ping`.
+- **Transform verbs** (image→image, not text-to-image): `generate image --ref`
+  (edit / consistency), `generate bg-remove` (→ transparent PNG),
+  `generate inpaint` (masked region swap). See **Reference images & edit** and
+  **Transform operations** below.
+- Other verbs: `models list` (capabilities + per-model `operations`),
+  `jobs get <serviceJobId>` (per-job actual cost — finalizes a minute later),
+  `usage summary --since --until` (spend rollup), `status` (api/db/redis/worker/
+  queue readiness), `ping`.
 - **Concurrency:** the fal tenant caps concurrent jobs at ~2 — fan out more and
   jobs queue past `--timeout` and exit **124** (looks like a timeout). Keep
-  parallel generations to ~2.
+  parallel generations to ~2. `media-forge status` shows
+  `queue.{waiting,active}` — check it to tell a real timeout from a backed-up
+  queue.
 
 ## The two paradigms (pick the right kind of model first)
 
@@ -61,7 +68,7 @@ Primary pick first; "Quick" = exploration rounds, "Final" = canonical output.
 | Expression sheet          | `klein-9b`                  | `nano-banana-2` via **`--ref`** (reuse the hero's output URL — see Reference images) |
 | Logotype / wordmark       | `klein-9b`                  | `recraft/v4.1` · `nano-banana-2` · `flux.2-flex`                                     |
 | Combination mark          | `klein-9b`                  | `recraft/v4.1` · `flux.2-flex`                                                       |
-| Sticker pack (cutout)     | `klein-9b` · `flux/dev`     | `nano-banana-2`/`flux.2-pro` + post bg-removal for true cutout                       |
+| Sticker pack (cutout)     | `klein-9b` · `flux/dev`     | `nano-banana-2`/`flux.2-pro` → **`bg-remove`** for true cutout                       |
 | Icon system               | `klein-9b`                  | `recraft/v4.1`                                                                       |
 | Color palette board       | `nano-banana-2`             | `nano-banana-2` · `gpt-image-2`                                                      |
 | Typography specimen       | —                           | `nano-banana-2` · `gpt-image-2`                                                      |
@@ -134,12 +141,10 @@ background" (bug) → "neutral backdrop".
 
 ## Constraints that override preference
 
-- **Transparency:** not a Flux/recraft param (recraft's `background_color` sets
-  a color, not alpha). Native alpha is on `gpt-image-1.5`
-  (`background: transparent`); the general path is fal's **background-removal**
-  endpoints (`birefnet`/`bria`/`rembg`/…) on any image. media-forge doesn't
-  expose either yet (#2) — for now, isolated cutouts need a post bg-removal
-  step.
+- **Transparency:** no generator emits alpha directly (not a Flux/recraft param;
+  recraft's `background_color` sets a color, not alpha). Get a cutout by running
+  **`generate bg-remove`** on any finished image — now a first-class verb (see
+  **Transform operations**). So: generate on the best-fit model, then bg-remove.
 - **`num_images`:** `--n`≤4 on flux schnell/dev, flux-2 turbo/klein,
   gpt-image-2, and fal `nano-banana-2`/`gemini-3.1` (verified —
   `num_images:2`→2). **1/call** on recraft (single image in/out); OpenRouter
@@ -179,6 +184,31 @@ Key points:
   small pose asks stay subtle). Validated: one mascot → "reading a spellbook" /
   "waving" kept identical body / face / palette / style.
 
+## Transform operations (image→image, separate verbs)
+
+These take an image **in** and route to a dedicated endpoint — discover them via
+`models list` → the model's `operations` key. They run on their **own model
+ids**, not the generators.
+
+- **`generate bg-remove --model <id> --ref <url|path>`** → transparent PNG.
+  Prompt-less, exactly one image in. Models: `fal-ai/bria/background/remove`,
+  `fal-ai/ideogram/remove-background` (`operations.bg-remove`,
+  `supportsGenerate: false`). This is glamour's cutout path for stickers /
+  isolated mascots / icons.
+- **`generate inpaint --model <id> --ref <url|path> --mask <url|path> --prompt "<what to paint>"`**
+  → regenerates only the masked region. **Mask convention: WHITE = regenerate,
+  BLACK = keep**; mask must match the base's dimensions. Models:
+  `fal-ai/flux-pro/v1/fill`, `fal-ai/flux-lora/inpainting`
+  (`operations.inpaint`, single ref). Use for targeted swaps ("change just the
+  banner text", "replace the background object") without re-rolling the whole
+  image.
+- Both accept local files (auto-uploaded) or URLs — including a generated output
+  URL, same loop-closer as `--ref`.
+
+_Verb surface confirmed live; not yet exercised end-to-end by glamour — treat
+the behavior notes (mask polarity, identity hold) as schema-grounded until a
+real pass runs._
+
 ## Cost awareness
 
 Per-image actuals (lock with `jobs get`): `z-image`/`klein`/`ernie` are
@@ -190,15 +220,17 @@ canonical finals.** Check spend with
 
 ## CLI limitations (today)
 
-**Reference input shipped** — `--ref` is now live (see the Reference images
-section above), so reference-driven **character consistency** and **influence →
-output** are no longer blocked.
+**Shipped — no longer blocked:** reference/edit (`--ref`, character
+consistency + influence→output), **transparency** (`generate bg-remove`), and
+**masked edits** (`generate inpaint`). The whole image→image transform axis is
+live.
 
-Still **not** exposed by `generate image`: steps/guidance (caps flux.2-flex
-text), quality, resolution-tier + "thinking" mode (Gemini), transparency
-(`--background`), and vector/SVG output. These remain asks in
-`docs/projects/media-forge-cli-gaps/report.md` (#2/#3/#4) — until they land,
-take each model at its defaults.
+Still **not** exposed: provider param passthrough — steps/guidance (caps
+flux.2-flex text), quality, Gemini resolution-tier + "thinking" mode (no
+`--param`) — and **vector/SVG output** (recraft's `text-to-vector` endpoint
+isn't in `models list`; v4.1 declares no vector op). These remain asks in
+`docs/projects/media-forge-cli-gaps/report.md` (**#3 passthrough, #4 vector**) —
+until they land, take each model at its defaults.
 
 Two validated gotchas: **nano-banana-2 ignores `--width/--height`** (wants its
 own aspect/resolution; you'll get its default aspect, not your square), and a

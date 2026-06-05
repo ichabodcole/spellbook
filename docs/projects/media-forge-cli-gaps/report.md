@@ -86,12 +86,46 @@ Open items: the **OpenRouter-hosted twins** (`google/gemini-*`,
 **per-(model, provider)**, not per-model. Exact `maxRefs` per array endpoint to
 be pinned when building entries.
 
-## What `generate image` exposes today
+## Shipped (2026-06-03 — verified live against the API)
+
+media-forge built the **image→image transform axis** kestrel synthesized. Verbs
+confirmed via `--help` + `models list`:
+
+- **#1 image input / edit — SHIPPED.** `generate image --ref <url|path>`
+  (repeatable → edit endpoint). Per-model `operations.edit.maxRefs` now declared
+  in `models list`: nano-banana-2 **14**, gemini-3.1-flash (fal) **14**,
+  flux-2/turbo **4**, flux-2/klein-9b **4**. Local-file auto-upload + output-URL
+  loop-closer both work (consumer-validated last session).
+- **#2 transparency — SHIPPED (as bg-removal).**
+  `generate bg-remove --model --ref` → transparent PNG. Models
+  `fal-ai/bria/background/remove`, `fal-ai/ideogram/remove-background`
+  (`operations.bg-remove`, `supportsGenerate:false`). The dedicated-endpoint
+  path we recommended over a native flag.
+- **inpaint — SHIPPED.** `generate inpaint --model --ref --mask --prompt`
+  (WHITE=regen, BLACK=keep; mask matches base dims). Models
+  `fal-ai/flux-pro/v1/fill`, `fal-ai/flux-lora/inpainting`
+  (`operations.inpaint`). The masked facet of the transform axis.
+- **`status` command — SHIPPED.** `media-forge status` → api/postgres/redis/
+  worker/queue readiness incl. `queue.{waiting,active}` — partially addresses
+  **#6** (lets you distinguish a backed-up queue from a real timeout, even
+  though the bare `exit 124` is unchanged).
+- **Roster expanded** — new generators: z-image/turbo, wan v2.7, ernie-image
+  (turbo + lora), imagineart-2.0, juggernaut-flux/pro, cosmos-3-super,
+  grok-imagine, recraft **v4.1**.
+
+**Still open:** **#3** provider param passthrough (no `--param`; steps/guidance/
+quality/Gemini thinking+resolution-tier unreachable), **#4** vector/SVG
+(recraft's `text-to-vector` not in `models list`; v4.1 declares no vector op),
+and the bare **#6** exit-124 (status helps diagnose but the code is still
+ambiguous). `gpt-image-2` declares `operations:null` (no edit on our entry) —
+worth a note if gpt-image edit is wanted later.
+
+## What `generate image` exposed at time of writing (superseded — see Shipped)
 
 `--prompt --model --n --width --height --seed --negative-prompt --wait --timeout --poll-interval --format`.
 Text-to-image only. No way to pass an input image, control
 steps/quality/resolution-tier, request transparency, get vector output, or send
-provider-specific params.
+provider-specific params. _(#1/#2/inpaint have since shipped — above.)_
 
 ## The gaps (prioritized by glamour value)
 
