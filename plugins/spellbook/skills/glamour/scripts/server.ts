@@ -33,6 +33,8 @@
 //   {"type":"status",        "busy":bool,"text":".."}       // surface shows a spinner while busy
 //   {"type":"message",       "text":".."}                   // toast
 //   {"type":"narrate",       "kind?":"info|working|result|error","text":".."}  // agent→user activity feed
+//   {"type":"cost",          "text":".."}                    // cumulative spend display
+//   {"type":"handoff",       "text":".."}                    // "questions in terminal" banner ("" clears)
 //   {"type":"close"}
 //
 // User events — streamed on GET /events (and replayable via ?since):
@@ -46,8 +48,9 @@
 //   {"type":"intent.set","text":".."}
 //   {"type":"analysis.comment","id":"..","text":".."}
 //   {"type":"direction.correct","text":"..","mode":"correct|augment"}
+//   {"type":"note","text":"..","scope":"<phase>","mode":"correct|augment"}  // in-surface feedback (non-terminating)
 //   {"type":"prompt.comment","id":"..","text":".."}  {"type":"prompts.comment","text":".."}
-//   {"type":"variant.like","id":"..","liked":bool}   {"type":"variant.canonical","id":"..","canonical":bool}
+//   {"type":"variant.like","id":"..","liked":bool}   {"type":"variant.canonical","id":"..","canonical":bool}  // single-select: setting one clears the rest
 //   {"type":"feedback","scope":"analysis|prompts","items":[{id,text}],"overall":".."}  // batched review
 //   {"type":"steer","text":".."}  {"type":"generate"}  {"type":"nudge","label":".."}
 //   {"type":"spec.module","key":"..","on":bool}
@@ -213,6 +216,15 @@ export function advancePhase(current: Phase, target: Phase): Phase {
   const ci = VALID_PHASE.indexOf(current);
   const ti = VALID_PHASE.indexOf(target);
   return ti > ci ? target : current;
+}
+
+// Enforce single-canonical: setting one true clears the rest; setting false
+// just clears that one. Mutates in place. Unknown id is a no-op.
+export function applyCanonical(variants: Variant[], id: string, on: boolean): void {
+  const target = variants.find((v) => v.id === id);
+  if (!target) return;
+  if (on) for (const v of variants) v.canonical = v.id === id;
+  else target.canonical = false;
 }
 
 const IMAGE_DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,(.*)$/is;
@@ -466,6 +478,14 @@ async function main(argv: string[]): Promise<number> {
         });
         broadcastState();
       }
+    } else if (t === "cost") {
+      if (typeof msg.text === "string") {
+        state.cost = msg.text;
+        broadcastState();
+      }
+    } else if (t === "handoff") {
+      state.handoff = typeof msg.text === "string" ? msg.text : "";
+      broadcastState();
     } else if (t === "message") {
       broadcast({ type: "message", text: msg.text });
     } else if (t === "close") {
@@ -698,7 +718,7 @@ async function main(argv: string[]): Promise<number> {
           } else if (t === "variant.canonical") {
             const x = findVariant(msg.id as string);
             if (!x) return;
-            x.canonical = msg.canonical === true;
+            applyCanonical(state.variants, x.id, msg.canonical === true);
             broadcastState();
             emitEvent({
               type: "variant.canonical",
@@ -708,6 +728,23 @@ async function main(argv: string[]): Promise<number> {
           } else if (t === "steer") {
             if (typeof msg.text !== "string") return;
             emitEvent({ type: "steer", text: msg.text });
+          } else if (t === "note") {
+            // FEAT-3: always-on, non-terminating feedback channel. Echo into the
+            // narration feed so the user sees it land, then forward to the agent
+            // with the phase breadcrumb + mode.
+            if (typeof msg.text !== "string" || !msg.text) return;
+            const scope = VALID_PHASE.includes(msg.scope as Phase)
+              ? (msg.scope as Phase)
+              : state.phase;
+            const mode = msg.mode === "correct" ? "correct" : "augment";
+            state.narration.push({
+              id: newId("n"),
+              kind: "info",
+              text: `you (${scope}): ${msg.text}`,
+              ts: Date.now(),
+            });
+            broadcastState();
+            emitEvent({ type: "note", text: msg.text, scope, mode });
           } else if (t === "feedback") {
             // Batched review feedback for a phase: many per-item comments +
             // an optional overall note, sent in one shot. The agent revises

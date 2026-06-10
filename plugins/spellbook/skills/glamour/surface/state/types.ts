@@ -67,6 +67,8 @@ export type GlamourState = {
   round: number;
   status: { busy: boolean; text: string };
   narration: Narration[];
+  cost: string;
+  handoff: string;
   spec: {
     understanding: string;
     modules: SpecModule[];
@@ -120,6 +122,7 @@ export type ClientToServer =
   | { type: "intent.set"; text: string }
   | { type: "analysis.comment"; id: string; text: string }
   | { type: "direction.correct"; text: string; mode: "correct" | "augment" }
+  | { type: "note"; text: string; scope: Phase; mode: "correct" | "augment" }
   | { type: "prompt.comment"; id: string; text: string }
   | { type: "prompts.comment"; text: string }
   | { type: "variant.like"; id: string; liked: boolean }
@@ -152,6 +155,7 @@ export const AGENT_EVENT_TYPES = Object.freeze([
   "context.remove",
   "analysis.comment",
   "direction.correct",
+  "note",
   "prompt.comment",
   "prompts.comment",
   "variant.like",
@@ -179,6 +183,8 @@ export function defaultState(title: string, intent: string): GlamourState {
     round: 0,
     status: { busy: false, text: "" },
     narration: [],
+    cost: "",
+    handoff: "",
     spec: {
       understanding: "",
       modules: [

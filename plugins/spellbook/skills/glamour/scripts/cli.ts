@@ -337,6 +337,8 @@ const HELP = `glamour — compose a visual style spec.
   status on [text...] | status off       # show/hide the "agent working" spinner
   say    <text...>
   narrate [--kind info|working|result|error] <text...>   # agent→user activity feed
+  cost   <text...>                    cumulative spend display (e.g. "$0.38 · 8 imgs")
+  handoff <text...> | handoff --clear raise/clear the "questions in terminal" banner
   close | info | help
 
   Add --session <id> to target a specific session (default: most recent).`;
@@ -450,6 +452,16 @@ async function main(argv: string[]): Promise<number> {
       await postCmd(session, { type: "narrate", kind, text: pos.join(" ") });
       break;
     }
+    case "cost":
+      if (!pos.length) die("usage: cost <text...>");
+      await postCmd(session, { type: "cost", text: pos.join(" ") });
+      break;
+    case "handoff":
+      await postCmd(session, {
+        type: "handoff",
+        text: flags.clear === true ? "" : pos.join(" "),
+      });
+      break;
     case "close":
       await postCmd(session, { type: "close" });
       break;
