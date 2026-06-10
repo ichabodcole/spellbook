@@ -119,7 +119,7 @@ export type ClientToServer =
   | { type: "context.remove"; id: string }
   | { type: "intent.set"; text: string }
   | { type: "analysis.comment"; id: string; text: string }
-  | { type: "direction.correct"; text: string }
+  | { type: "direction.correct"; text: string; mode: "correct" | "augment" }
   | { type: "prompt.comment"; id: string; text: string }
   | { type: "prompts.comment"; text: string }
   | { type: "variant.like"; id: string; liked: boolean }

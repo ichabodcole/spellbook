@@ -657,7 +657,8 @@ async function main(argv: string[]): Promise<number> {
             emitEvent({ type: "analysis.comment", id: msg.id, text: msg.text });
           } else if (t === "direction.correct") {
             if (typeof msg.text !== "string") return;
-            emitEvent({ type: "direction.correct", text: msg.text });
+            const mode = msg.mode === "augment" ? "augment" : "correct";
+            emitEvent({ type: "direction.correct", text: msg.text, mode });
           } else if (t === "prompt.comment") {
             if (typeof msg.text !== "string") return;
             emitEvent({ type: "prompt.comment", id: msg.id, text: msg.text });
