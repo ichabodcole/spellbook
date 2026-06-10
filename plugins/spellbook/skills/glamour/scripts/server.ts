@@ -60,76 +60,21 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
+import {
+  type Context,
+  defaultState,
+  type GlamourState,
+  type Influence,
+  type NarrationKind,
+  type Phase,
+  VALID_PHASE,
+} from "../surface/state/types";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
 // Persistent home for session snapshots (survives restarts, unlike tmpdir).
 const GLAMOUR_HOME = process.env.GLAMOUR_HOME ?? join(homedir(), ".glamour");
 const SNAPSHOTS_DIR = join(GLAMOUR_HOME, "snapshots");
-
-type Phase = "gather" | "analysis" | "direction" | "prompts" | "variants" | "spec";
-const VALID_PHASE: Phase[] = ["gather", "analysis", "direction", "prompts", "variants", "spec"];
-
-type Influence = {
-  id: string;
-  src: string; // data URL — for the browser to display
-  path: string; // on-disk file the agent can Read (vision); empty if not saved
-  name: string;
-  aspects: string[];
-  starred: boolean;
-  note: string;
-  read: string; // agent's per-image analysis
-};
-
-// A dropped text/markdown context file — world-building material, briefs,
-// anything written. The agent Reads it (path); star + note carry emphasis.
-type Context = {
-  id: string;
-  name: string;
-  text: string; // file content — for browser preview; stripped from agent line
-  path: string; // on-disk file the agent Reads
-  starred: boolean;
-  note: string;
-};
-
-type Prompt = { id: string; text: string };
-
-type Variant = {
-  id: string;
-  src: string;
-  prompt: string;
-  // Optional human-readable style name, e.g. "Painterly storybook". Lets a
-  // variant read as a *named direction* — the key affordance for divergent
-  // discovery (the agent offers contrasting styles to react to), while
-  // staying empty for ordinary convergent variations.
-  label: string;
-  round: number;
-  liked: boolean;
-  canonical: boolean;
-};
-
-type SpecModule = { key: string; label: string; on: boolean };
-
-type GlamourState = {
-  title: string;
-  intent: string;
-  phase: Phase;
-  influences: Influence[];
-  contexts: Context[];
-  direction: { revision: number; understanding: string };
-  prompts: Prompt[];
-  variants: Variant[];
-  round: number;
-  // Agent-driven "I'm working" signal — the surface shows a spinner while
-  // busy so the user knows the agent is processing between steps.
-  status: { busy: boolean; text: string };
-  spec: {
-    understanding: string;
-    modules: SpecModule[];
-    recreatePrompt: string;
-    model: string;
-  };
-};
 
 type CloseReason = "submit" | "cancel" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
@@ -195,35 +140,6 @@ function guessMime(name: string): string {
   const dot = name.lastIndexOf(".");
   const ext = dot >= 0 ? name.slice(dot).toLowerCase() : "";
   return MIME_BY_EXT[ext] || "application/octet-stream";
-}
-
-function defaultState(title: string, intent: string): GlamourState {
-  return {
-    title,
-    intent,
-    phase: "gather",
-    influences: [],
-    contexts: [],
-    direction: { revision: 0, understanding: "" },
-    prompts: [],
-    variants: [],
-    round: 0,
-    status: { busy: false, text: "" },
-    spec: {
-      understanding: "",
-      // The agent composes the spec from what the inputs warrant — these
-      // are togglable modules, none mandatory. "understanding" is the one
-      // near-universal element and lives outside this list.
-      modules: [
-        { key: "palette", label: "palette", on: false },
-        { key: "consistency", label: "consistency rules", on: false },
-        { key: "motifs", label: "motifs / iconography", on: false },
-        { key: "dosdonts", label: "do / don't", on: false },
-      ],
-      recreatePrompt: "",
-      model: "",
-    },
-  };
 }
 
 const EXT_BY_MIME: Record<string, string> = {
@@ -465,7 +381,9 @@ async function main(argv: string[]): Promise<number> {
       if (Array.isArray(s.modules)) {
         for (const m of s.modules as Array<Record<string, unknown>>) {
           const mod = state.spec.modules.find((x) => x.key === m.key);
-          if (mod && typeof m.on === "boolean") mod.on = m.on;
+          if (!mod) continue;
+          if (typeof m.on === "boolean") mod.on = m.on;
+          if (typeof m.content === "string") mod.content = m.content;
         }
       }
       broadcastState();
@@ -475,6 +393,21 @@ async function main(argv: string[]): Promise<number> {
         text: typeof msg.text === "string" ? msg.text : "",
       };
       broadcastState();
+    } else if (t === "narrate") {
+      const kind = (["info", "working", "result", "error"] as const).includes(
+        msg.kind as NarrationKind,
+      )
+        ? (msg.kind as NarrationKind)
+        : "info";
+      if (typeof msg.text === "string" && msg.text) {
+        state.narration.push({
+          id: newId("n"),
+          kind,
+          text: msg.text,
+          ts: Date.now(),
+        });
+        broadcastState();
+      }
     } else if (t === "message") {
       broadcast({ type: "message", text: msg.text });
     } else if (t === "close") {
@@ -878,5 +811,12 @@ if (import.meta.main) {
   process.exit(exitCode);
 }
 
-export type { Context, GlamourState, Influence, Phase, Variant };
-export { defaultState, htmlEscape, main, parsePortFromSessionId };
+export type {
+  Context,
+  GlamourState,
+  Influence,
+  Phase,
+  Variant,
+} from "../surface/state/types";
+export { defaultState } from "../surface/state/types";
+export { htmlEscape, main, parsePortFromSessionId };
