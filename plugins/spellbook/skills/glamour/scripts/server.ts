@@ -372,9 +372,14 @@ async function main(argv: string[]): Promise<number> {
       }
     } else if (t === "direction") {
       if (typeof msg.understanding === "string") {
+        const hadPrior = state.direction.understanding !== "";
         state.direction.understanding = msg.understanding;
         state.direction.revision =
-          typeof msg.revision === "number" ? msg.revision : state.direction.revision + 1;
+          typeof msg.revision === "number"
+            ? msg.revision
+            : hadPrior
+              ? state.direction.revision + 1
+              : 0;
         state.phase = advancePhase(state.phase, "direction");
         broadcastState();
       }
@@ -660,7 +665,7 @@ async function main(argv: string[]): Promise<number> {
             const mode = msg.mode === "augment" ? "augment" : "correct";
             emitEvent({ type: "direction.correct", text: msg.text, mode });
           } else if (t === "prompt.comment") {
-            if (typeof msg.text !== "string") return;
+            if (typeof msg.id !== "string" || typeof msg.text !== "string") return;
             emitEvent({ type: "prompt.comment", id: msg.id, text: msg.text });
           } else if (t === "prompts.comment") {
             if (typeof msg.text !== "string") return;

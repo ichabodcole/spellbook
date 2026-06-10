@@ -25,7 +25,7 @@ export function Analysis({ state, send }: PhaseProps) {
                 placeholder="your note on this one…"
                 onBlur={(e) => {
                   const v = e.target.value.trim();
-                  if (v) send({ type: "analysis.comment", id: inf.id, text: v });
+                  if (v && v !== inf.note) send({ type: "analysis.comment", id: inf.id, text: v });
                 }}
                 className="w-full bg-transparent border-b border-[#2a2238] text-xs text-slate-300 outline-none py-1"
               />
