@@ -53,7 +53,8 @@ export function Prompts({ state, send }: PhaseProps) {
         <button
           type="button"
           onClick={() => send({ type: "generate" })}
-          className="text-sm px-4 py-2 rounded-lg font-medium bg-violet-600 text-white"
+          disabled={state.prompts.length === 0}
+          className="text-sm px-4 py-2 rounded-lg font-medium bg-violet-600 text-white disabled:opacity-40"
         >
           Generate
         </button>
