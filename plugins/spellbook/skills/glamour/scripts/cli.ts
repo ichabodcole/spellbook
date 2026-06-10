@@ -445,6 +445,8 @@ async function main(argv: string[]): Promise<number> {
     case "narrate": {
       if (!pos.length) die("usage: narrate [--kind info|working|result|error] <text...>");
       const kind = typeof flags.kind === "string" ? flags.kind : "info";
+      const VALID_KINDS: string[] = ["info", "working", "result", "error"];
+      if (!VALID_KINDS.includes(kind)) die(`--kind must be one of: ${VALID_KINDS.join("|")}`);
       await postCmd(session, { type: "narrate", kind, text: pos.join(" ") });
       break;
     }

@@ -24,6 +24,7 @@ export function PhaseRouter({
           phase &quot;{state.phase}&quot; — not migrated yet (Plan 2)
         </div>
       )}
+      {state.narration.length > 0 && <div className="h-40" aria-hidden />}
       <NarrationFeed items={state.narration} />
     </div>
   );
