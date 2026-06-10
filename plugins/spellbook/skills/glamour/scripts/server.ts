@@ -62,6 +62,7 @@ import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
 import index from "../surface/index.html";
+import { optimizeImageBuffer } from "../surface/state/imageOptimize.server";
 import {
   type Context,
   defaultState,
@@ -214,6 +215,23 @@ export function advancePhase(current: Phase, target: Phase): Phase {
   return ti > ci ? target : current;
 }
 
+const IMAGE_DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,(.*)$/is;
+
+// Downscale+webp an inlined variant data-url before it enters state (raw nano
+// PNGs are the dominant state-bloat source). Non-data-url srcs (e.g. http) and
+// any failure pass the original through unchanged — optimization is best-effort.
+export async function optimizeVariantSrc(src: string): Promise<string> {
+  const m = IMAGE_DATA_URL_RE.exec(src);
+  if (!m) return src;
+  try {
+    const input = new Uint8Array(Buffer.from(m[1], "base64"));
+    const { data } = await optimizeImageBuffer(input);
+    return `data:image/webp;base64,${Buffer.from(data).toString("base64")}`;
+  } catch {
+    return src;
+  }
+}
+
 // Lean state projection for the agent: strips all inlined binary/text blobs
 // (influence src, variant src, context text). The agent reads on-disk paths
 // instead — keeps the payload ~small regardless of session size.
@@ -349,7 +367,7 @@ async function main(argv: string[]): Promise<number> {
   };
 
   // ── agent commands (POST /cmd) ────────────────────────────────────
-  function handleAgentMsg(msg: Record<string, unknown>) {
+  async function handleAgentMsg(msg: Record<string, unknown>) {
     const t = msg.type as string;
     if (t === "init") {
       if (typeof msg.title === "string") state.title = msg.title;
@@ -395,9 +413,10 @@ async function main(argv: string[]): Promise<number> {
     } else if (t === "variant.add") {
       const raw2 = msg.variant as Record<string, unknown> | undefined;
       if (raw2 && typeof raw2.src === "string") {
+        const src = await optimizeVariantSrc(raw2.src);
         state.variants.push({
           id: typeof raw2.id === "string" ? raw2.id : newId("v"),
-          src: raw2.src,
+          src,
           prompt: typeof raw2.prompt === "string" ? raw2.prompt : "",
           label: typeof raw2.label === "string" ? raw2.label : "",
           round: typeof raw2.round === "number" ? raw2.round : state.round,
@@ -525,9 +544,9 @@ async function main(argv: string[]): Promise<number> {
         if (req.method === "POST" && path === "/cmd") {
           return req
             .json()
-            .then((body) => {
+            .then(async (body) => {
               touch();
-              handleAgentMsg(body as Record<string, unknown>);
+              await handleAgentMsg(body as Record<string, unknown>);
               return new Response('{"ok":true}', {
                 headers: { "Content-Type": "application/json" },
               });
