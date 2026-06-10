@@ -3,6 +3,7 @@ import type { ClientToServer, GlamourState } from "../state/types";
 import { Analysis } from "./Analysis";
 import { Direction } from "./Direction";
 import { Gather } from "./Gather";
+import { Prompts } from "./Prompts";
 
 export type PhaseProps = {
   state: GlamourState;
@@ -17,6 +18,8 @@ function renderPhase(state: GlamourState, send: (m: ClientToServer) => void) {
       return <Analysis state={state} send={send} />;
     case "direction":
       return <Direction state={state} send={send} />;
+    case "prompts":
+      return <Prompts state={state} send={send} />;
     default:
       return (
         <div className="p-6 text-slate-400">
