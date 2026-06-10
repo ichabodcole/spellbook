@@ -9,19 +9,29 @@ export function useSession() {
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const url = `ws://${location.host}/ws`;
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    const url = `${proto}//${location.host}/ws`;
     let stop = false;
+    let ended = false; // session ended (submit/cancel/normal close) — do not reconnect
     const connect = () => {
       const sock = new WebSocket(url);
       ws.current = sock;
       sock.onopen = () => setStatus("open");
-      sock.onclose = () => {
-        setStatus("closed");
-        if (!stop) setTimeout(connect, 800);
-      };
       sock.onmessage = (e) => {
-        const msg = JSON.parse(e.data as string) as ServerToClient;
+        const msg = JSON.parse(e.data) as ServerToClient;
         if (msg.type === "state") setState(msg.state);
+        else if (msg.type === "submit" || msg.type === "cancel") {
+          ended = true;
+          setStatus("closed");
+          sock.close();
+        }
+      };
+      sock.onclose = (ev) => {
+        setStatus("closed");
+        // Reconnect only on unexpected drops, never after a clean/ended close.
+        if (!stop && !ended && ev.code !== 1000 && ev.code !== 1001) {
+          setTimeout(connect, 800);
+        }
       };
     };
     connect();
