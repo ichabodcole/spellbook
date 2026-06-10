@@ -45,7 +45,7 @@
 //   {"type":"context.remove","id":".."}
 //   {"type":"intent.set","text":".."}
 //   {"type":"analysis.comment","id":"..","text":".."}
-//   {"type":"direction.correct","text":".."}
+//   {"type":"direction.correct","text":"..","mode":"correct|augment"}
 //   {"type":"prompt.comment","id":"..","text":".."}  {"type":"prompts.comment","text":".."}
 //   {"type":"variant.like","id":"..","liked":bool}   {"type":"variant.canonical","id":"..","canonical":bool}
 //   {"type":"feedback","scope":"analysis|prompts","items":[{id,text}],"overall":".."}  // batched review
