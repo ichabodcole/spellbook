@@ -1,4 +1,9 @@
 @import "tailwindcss";
+/* Scan this surface's components/phases for class names regardless of the
+   daemon's launch cwd (cli.ts spawns the server from arbitrary directories).
+   Without this, Tailwind v4's auto content-detection roots at cwd and emits
+   zero utilities → an unstyled surface. */
+@source "./";
 :root {
   color-scheme: dark;
 }

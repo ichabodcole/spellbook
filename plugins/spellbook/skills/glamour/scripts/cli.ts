@@ -150,6 +150,11 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
+    // Pin cwd to the glamour root so Bun finds bunfig.toml (which registers
+    // bun-plugin-tailwind for the dev server). Bun reads bunfig.toml from the
+    // cwd only — without this, launching `cli.ts open` from any other directory
+    // silently skips Tailwind and serves an unstyled surface.
+    cwd: join(SCRIPT_DIR, ".."),
   });
   proc.unref();
 
