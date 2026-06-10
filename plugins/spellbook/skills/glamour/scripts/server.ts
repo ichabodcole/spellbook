@@ -32,6 +32,7 @@
 //   {"type":"spec",          "spec":{understanding?,modules?,recreatePrompt?,model?}}
 //   {"type":"status",        "busy":bool,"text":".."}       // surface shows a spinner while busy
 //   {"type":"message",       "text":".."}                   // toast
+//   {"type":"narrate",       "kind?":"info|working|result|error","text":".."}  // agent→user activity feed
 //   {"type":"close"}
 //
 // User events — streamed on GET /events (and replayable via ?since):
