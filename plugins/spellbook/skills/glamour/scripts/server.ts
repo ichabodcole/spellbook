@@ -206,6 +206,14 @@ function variantForAgent(v: Variant): Omit<Variant, "src"> {
   return rest;
 }
 
+// Advance the phase forward only: returns target if it is strictly later in
+// VALID_PHASE than current, otherwise returns current unchanged.
+export function advancePhase(current: Phase, target: Phase): Phase {
+  const ci = VALID_PHASE.indexOf(current);
+  const ti = VALID_PHASE.indexOf(target);
+  return ti > ci ? target : current;
+}
+
 // Lean state projection for the agent: strips all inlined binary/text blobs
 // (influence src, variant src, context text). The agent reads on-disk paths
 // instead — keeps the payload ~small regardless of session size.
@@ -354,6 +362,7 @@ async function main(argv: string[]): Promise<number> {
       const inf = findInfluence(msg.id as string);
       if (inf && typeof msg.read === "string") {
         inf.read = msg.read;
+        state.phase = advancePhase(state.phase, "analysis");
         broadcastState();
       }
     } else if (t === "phase") {
@@ -366,6 +375,7 @@ async function main(argv: string[]): Promise<number> {
         state.direction.understanding = msg.understanding;
         state.direction.revision =
           typeof msg.revision === "number" ? msg.revision : state.direction.revision + 1;
+        state.phase = advancePhase(state.phase, "direction");
         broadcastState();
       }
     } else if (t === "prompts") {
@@ -374,6 +384,7 @@ async function main(argv: string[]): Promise<number> {
           id: typeof p.id === "string" ? p.id : newId("p"),
           text: typeof p.text === "string" ? p.text : "",
         }));
+        state.phase = advancePhase(state.phase, "prompts");
         broadcastState();
       }
     } else if (t === "variant.add") {
@@ -388,6 +399,7 @@ async function main(argv: string[]): Promise<number> {
           liked: false,
           canonical: false,
         });
+        state.phase = advancePhase(state.phase, "variants");
         broadcastState();
       }
     } else if (t === "variants.clear") {
@@ -407,6 +419,7 @@ async function main(argv: string[]): Promise<number> {
           if (typeof m.content === "string") mod.content = m.content;
         }
       }
+      state.phase = advancePhase(state.phase, "spec");
       broadcastState();
     } else if (t === "status") {
       state.status = {
