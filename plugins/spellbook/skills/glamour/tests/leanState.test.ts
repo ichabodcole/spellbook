@@ -37,4 +37,5 @@ test("leanState strips inlined image/text src from agent view", () => {
   expect((lean.contexts[0] as Record<string, unknown>).text).toBeUndefined();
   expect(lean.influences[0].path).toBe("/tmp/i1.webp");
   expect(lean.variants[0].label).toBe("L");
+  expect(lean.contexts[0].path).toBe("/tmp/c1.md");
 });

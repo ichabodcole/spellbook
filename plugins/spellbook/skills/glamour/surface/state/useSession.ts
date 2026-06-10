@@ -24,6 +24,8 @@ export function useSession() {
           ended = true;
           setStatus("closed");
           sock.close();
+        } else if (msg.type === "message") {
+          console.info("[glamour]", msg.text);
         }
       };
       sock.onclose = (ev) => {

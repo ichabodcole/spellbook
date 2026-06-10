@@ -7,7 +7,7 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--intent ..] [--no-open]   # spawn a session
 //   bun cli.ts tail                                          # SSE user events → JSONL (Monitor this)
-//   bun cli.ts state                                         # full state snapshot
+//   bun cli.ts state                                         # lean state snapshot (--full for raw)
 //
 // Pushing into the session (POST /cmd):
 //   bun cli.ts intent <text...>
