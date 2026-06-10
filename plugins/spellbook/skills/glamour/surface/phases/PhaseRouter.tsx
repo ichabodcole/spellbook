@@ -1,6 +1,7 @@
 import { NarrationFeed } from "../components/NarrationFeed";
 import type { ClientToServer, GlamourState } from "../state/types";
 import { Analysis } from "./Analysis";
+import { Direction } from "./Direction";
 import { Gather } from "./Gather";
 
 export type PhaseProps = {
@@ -14,6 +15,8 @@ function renderPhase(state: GlamourState, send: (m: ClientToServer) => void) {
       return <Gather state={state} send={send} />;
     case "analysis":
       return <Analysis state={state} send={send} />;
+    case "direction":
+      return <Direction state={state} send={send} />;
     default:
       return (
         <div className="p-6 text-slate-400">
