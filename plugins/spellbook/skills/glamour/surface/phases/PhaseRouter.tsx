@@ -4,6 +4,7 @@ import { Analysis } from "./Analysis";
 import { Direction } from "./Direction";
 import { Gather } from "./Gather";
 import { Prompts } from "./Prompts";
+import { Spec } from "./Spec";
 import { Variants } from "./Variants";
 
 export type PhaseProps = {
@@ -23,12 +24,10 @@ function renderPhase(state: GlamourState, send: (m: ClientToServer) => void) {
       return <Prompts state={state} send={send} />;
     case "variants":
       return <Variants state={state} send={send} />;
+    case "spec":
+      return <Spec state={state} send={send} />;
     default:
-      return (
-        <div className="p-6 text-slate-400">
-          phase &quot;{state.phase}&quot; — not migrated yet (Plan 3)
-        </div>
-      );
+      return null;
   }
 }
 
