@@ -172,9 +172,9 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   die("glamour server failed to start within 5s");
 }
 
-async function cmdState(session?: string) {
+async function cmdState(session?: string, full = false) {
   const s = requireSession(session);
-  const { status, data } = await api(s.port, "GET", "/state");
+  const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
   if (status !== 200) die(`state failed (HTTP ${status})`);
   printJson(data);
 }
@@ -325,7 +325,7 @@ const HELP = `glamour — compose a visual style spec.
   open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]
   sessions                           list saved (resumable) sessions
   tail   [--since N]                  SSE user events → JSONL (wrap with Monitor)
-  state                              full state snapshot
+  state  [--full]                    lean state snapshot (add --full for raw incl. base64)
   intent <text...>
   read   <influenceId> <text...>      post per-image analysis
   phase  <gather|analysis|direction|prompts|variants|spec>
@@ -353,7 +353,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1);
       break;
     case "state":
-      await cmdState(session);
+      await cmdState(session, flags.full === true);
       break;
     case "intent":
       if (!pos.length) die("usage: intent <text...>");

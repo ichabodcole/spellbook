@@ -69,6 +69,7 @@ import {
   type NarrationKind,
   type Phase,
   VALID_PHASE,
+  type Variant,
 } from "../surface/state/types";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -195,6 +196,25 @@ function influenceForAgent(inf: Influence): Omit<Influence, "src"> {
 function contextForAgent(c: Context): Omit<Context, "text"> {
   const { text: _drop, ...rest } = c;
   return rest;
+}
+
+// Project a variant for the agent: drop the (huge) data-URL src — the
+// agent inspects variants via path or label, not raw pixel data.
+function variantForAgent(v: Variant): Omit<Variant, "src"> {
+  const { src: _drop, ...rest } = v;
+  return rest;
+}
+
+// Lean state projection for the agent: strips all inlined binary/text blobs
+// (influence src, variant src, context text). The agent reads on-disk paths
+// instead — keeps the payload ~small regardless of session size.
+export function leanState(s: GlamourState) {
+  return {
+    ...s,
+    influences: s.influences.map(influenceForAgent),
+    contexts: s.contexts.map(contextForAgent),
+    variants: s.variants.map(variantForAgent),
+  };
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -477,7 +497,9 @@ async function main(argv: string[]): Promise<number> {
         }
         // ── agent HTTP API ──
         if (req.method === "GET" && path === "/state") {
-          return new Response(JSON.stringify({ state, cursor: eventSeq }), {
+          const lean = url.searchParams.get("lean") === "1";
+          const payload = lean ? leanState(state) : state;
+          return new Response(JSON.stringify({ state: payload, cursor: eventSeq }), {
             headers: { "Content-Type": "application/json" },
           });
         }
