@@ -61,6 +61,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
+import index from "../surface/index.html";
 import {
   type Context,
   defaultState,
@@ -249,7 +250,6 @@ async function main(argv: string[]): Promise<number> {
     if (embedded !== null) port = embedded;
   }
 
-  const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
   let state = defaultState(v.title as string, v.intent as string);
@@ -476,20 +476,18 @@ async function main(argv: string[]): Promise<number> {
     });
   }
 
-  let pageHtml = "";
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
       hostname: host,
+      routes: {
+        "/": index,
+      },
+      development: { hmr: true },
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
-        if (req.method === "GET" && path === "/") {
-          return new Response(pageHtml, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
-        }
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded) return undefined;
@@ -746,11 +744,6 @@ async function main(argv: string[]): Promise<number> {
     }
     saveSnapshot();
   }
-  const wsUrl = `ws://${host}:${boundPort}/ws`;
-  pageHtml = template
-    .replace(/__TITLE__/g, htmlEscape(state.title))
-    .replace(/__SESSION_ID__/g, htmlEscape(sessionId))
-    .replace(/__WS_URL__/g, JSON.stringify(wsUrl));
 
   const url = `http://${host}:${boundPort}`;
   emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId });

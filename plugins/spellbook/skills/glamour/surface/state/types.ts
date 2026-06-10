@@ -82,6 +82,61 @@ export type ServerToClient =
   | { type: "submit" }
   | { type: "cancel" };
 
+// Browser → server (WebSocket). The client sends exactly these.
+export type ClientToServer =
+  | {
+      type: "influence.add";
+      influence: {
+        src: string;
+        name: string;
+        id?: string;
+        aspects?: string[];
+        starred?: boolean;
+        note?: string;
+      };
+    }
+  | {
+      type: "influence.annotate";
+      id: string;
+      patch: { aspects?: string[]; starred?: boolean; note?: string };
+    }
+  | { type: "influence.remove"; id: string }
+  | {
+      type: "context.add";
+      context: {
+        text: string;
+        name: string;
+        id?: string;
+        starred?: boolean;
+        note?: string;
+      };
+    }
+  | {
+      type: "context.annotate";
+      id: string;
+      patch: { starred?: boolean; note?: string };
+    }
+  | { type: "context.remove"; id: string }
+  | { type: "intent.set"; text: string }
+  | { type: "analysis.comment"; id: string; text: string }
+  | { type: "direction.correct"; text: string }
+  | { type: "prompt.comment"; id: string; text: string }
+  | { type: "prompts.comment"; text: string }
+  | { type: "variant.like"; id: string; liked: boolean }
+  | { type: "variant.canonical"; id: string; canonical: boolean }
+  | { type: "steer"; text: string }
+  | {
+      type: "feedback";
+      scope: string;
+      items: { id: string; text: string }[];
+      overall: string;
+    }
+  | { type: "generate" }
+  | { type: "nudge"; label: string }
+  | { type: "spec.module"; key: string; on: boolean }
+  | { type: "submit" }
+  | { type: "cancel" };
+
 // The complete agent event set (server → agent SSE). The agent MUST listen for
 // all of these — incompleteness here is what dropped user input in the dogfood.
 export const AGENT_EVENT_TYPES = Object.freeze([
