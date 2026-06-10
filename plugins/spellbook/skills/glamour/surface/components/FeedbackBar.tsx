@@ -31,7 +31,15 @@ export function FeedbackBar({ phase, send }: { phase: Phase; send: (m: ClientToS
     <div className="fixed bottom-3 right-3 z-40 w-72 bg-[#1b1626] border border-[#2e2640] rounded-xl p-3 space-y-2 shadow-xl">
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-slate-500">note · {phase}</span>
-        <button type="button" onClick={() => setOpen(false)} className="text-slate-500 text-xs">
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setText("");
+            setMode("augment");
+          }}
+          className="text-slate-500 text-xs"
+        >
           ✕
         </button>
       </div>
