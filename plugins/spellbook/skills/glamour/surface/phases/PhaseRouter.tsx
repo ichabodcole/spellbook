@@ -1,3 +1,4 @@
+import { NarrationFeed } from "../components/NarrationFeed";
 import type { ClientToServer, GlamourState } from "../state/types";
 import { Gather } from "./Gather";
 
@@ -23,6 +24,7 @@ export function PhaseRouter({
           phase &quot;{state.phase}&quot; — not migrated yet (Plan 2)
         </div>
       )}
+      <NarrationFeed items={state.narration} />
     </div>
   );
 }

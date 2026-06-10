@@ -336,6 +336,7 @@ const HELP = `glamour — compose a visual style spec.
   spec   [--understanding ..] [--recreate ..] [--model ..] [--modules "palette=on,motifs=off"]
   status on [text...] | status off       # show/hide the "agent working" spinner
   say    <text...>
+  narrate [--kind info|working|result|error] <text...>   # agent→user activity feed
   close | info | help
 
   Add --session <id> to target a specific session (default: most recent).`;
@@ -441,6 +442,12 @@ async function main(argv: string[]): Promise<number> {
       if (!pos.length) die("usage: say <text...>");
       await postCmd(session, { type: "message", text: pos.join(" ") });
       break;
+    case "narrate": {
+      if (!pos.length) die("usage: narrate [--kind info|working|result|error] <text...>");
+      const kind = typeof flags.kind === "string" ? flags.kind : "info";
+      await postCmd(session, { type: "narrate", kind, text: pos.join(" ") });
+      break;
+    }
     case "close":
       await postCmd(session, { type: "close" });
       break;
