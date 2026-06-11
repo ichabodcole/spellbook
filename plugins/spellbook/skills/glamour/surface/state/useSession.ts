@@ -6,6 +6,7 @@ export type ConnStatus = "connecting" | "open" | "closed";
 export function useSession() {
   const [state, setState] = useState<GlamourState | null>(null);
   const [status, setStatus] = useState<ConnStatus>("connecting");
+  const [ended, setEnded] = useState(false);
   const ws = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export function useSession() {
         if (msg.type === "state") setState(msg.state);
         else if (msg.type === "submit" || msg.type === "cancel") {
           ended = true;
+          setEnded(true);
           setStatus("closed");
           sock.close();
         } else if (msg.type === "message") {
@@ -47,5 +49,5 @@ export function useSession() {
     if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(msg));
   }, []);
 
-  return { state, send, status };
+  return { state, send, status, ended };
 }

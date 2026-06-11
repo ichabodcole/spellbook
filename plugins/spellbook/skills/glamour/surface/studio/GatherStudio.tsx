@@ -1,5 +1,4 @@
 import { FileText, Palette, Star, Trash2 } from "lucide-react";
-import { useRef } from "react";
 import { ASPECTS } from "../state/constants";
 import type { ClientToServer, Context, GlamourState, Influence } from "../state/types";
 
@@ -22,9 +21,6 @@ export function GatherStudio({
 }: GatherStudioProps) {
   const sel: Influence | null = state.influences.find((i) => i.id === selInf) ?? null;
   const selCtxObj: Context | null = state.contexts.find((c) => c.id === selCtx) ?? null;
-
-  const noteRef = useRef<string>(sel?.note ?? "");
-  const ctxNoteRef = useRef<string>(selCtxObj?.note ?? "");
 
   function toggleAspect(aspect: string) {
     if (!sel) return;
@@ -116,9 +112,6 @@ export function GatherStudio({
                 key={sel.id}
                 className="textarea h-20"
                 defaultValue={sel.note}
-                onChange={(e) => {
-                  noteRef.current = e.target.value;
-                }}
                 onBlur={(e) => {
                   const next = e.target.value;
                   if (next !== sel.note) {
@@ -181,9 +174,6 @@ export function GatherStudio({
             key={selCtxObj.id}
             className="textarea h-20"
             defaultValue={selCtxObj.note}
-            onChange={(e) => {
-              ctxNoteRef.current = e.target.value;
-            }}
             onBlur={(e) => {
               const next = e.target.value;
               if (next !== selCtxObj.note) {
