@@ -5,11 +5,10 @@ and **which model to pick + how to prompt it** for the kind of image being made.
 Generation is **agent-side** (house-style: the agent is the runtime); the daemon
 only displays what you post.
 
-> This is the decision brain. The full evidence behind every claim — model-by-
-> model research and the generation experiments (text, style-range, idiomatic-
-> style, board, board fairness re-test) — lives in
-> `docs/projects/image-style-spell/model-research.md`. Read it when a routing
-> call is non-obvious.
+> This is the decision brain — self-contained for routing and prompting; you
+> need nothing outside this skill to use it. (The full model-by-model evidence
+> behind these calls lives in the Spellbook source repo, not in the installed
+> skill.)
 
 ## The command
 
@@ -120,9 +119,10 @@ model:**
   constrain with prompt-side negatives ("no gradients, no shadows"); it has no
   negative-prompt/seed param on fal.
 
-Worked, ready-to-use board prompts per model live in
-`docs/projects/image-style-spell/artifacts/model-tests/run.ts` as `BOARD_GPT` /
-`BOARD_NANO` / `BOARD_FLUX_JSON`.
+Build each board prompt in the per-model shape above — a structured brief for
+`gpt-image-2`, a zone-enumerated layout for `nano-banana-2`, and a
+JSON-structured prompt string (`scene`/`composition`/`subjects`/`brand_colors`)
+for FLUX.
 
 General diffusion-prompt hygiene: spell out placement; name style specifics
 ("thick white die-cut sticker border", "flat shading, high contrast", "soft
@@ -228,9 +228,9 @@ live.
 Still **not** exposed: provider param passthrough — steps/guidance (caps
 flux.2-flex text), quality, Gemini resolution-tier + "thinking" mode (no
 `--param`) — and **vector/SVG output** (recraft's `text-to-vector` endpoint
-isn't in `models list`; v4.1 declares no vector op). These remain asks in
-`docs/projects/media-forge-cli-gaps/report.md` (**#3 passthrough, #4 vector**) —
-until they land, take each model at its defaults.
+isn't in `models list`; v4.1 declares no vector op). These remain known gaps
+(provider param passthrough, vector/SVG output) — until they land, take each
+model at its defaults.
 
 Two validated gotchas: **nano-banana-2 ignores `--width/--height`** (wants its
 own aspect/resolution; you'll get its default aspect, not your square), and a
