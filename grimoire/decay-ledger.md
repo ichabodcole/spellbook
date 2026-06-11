@@ -26,21 +26,21 @@ make the frightening delete.
 
 ## Ledger
 
-| Rule (`house-style.md`)                                | Status       | Last reinforced | Reinforced by                                                                                                         |
-| ------------------------------------------------------ | ------------ | --------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Architect for the reader's context                     | perennial    | 2026-06-11      | glamour SKILL marketplace-isolation pass (installed user has only the skill folder)                                   |
-| Reference, don't inline                                | active       | 2026-05-28      | manifesto (seed)                                                                                                      |
-| Context is an attention budget — exclusions earn place | active       | 2026-05-29      | scenario: generalize-the-roster                                                                                       |
-| Start minimal; subtract before you test                | active       | 2026-06-11      | fresh-agent: glamour (cold pass restored only the load-bearing gather/session guidance subtraction had left implicit) |
-| The name is the canonical handle — name at coalescence | active       | 2026-05-29      | scenario: name-handle-vs-invocation                                                                                   |
-| Match the kind to the interaction (cantrip/conjure)    | active       | 2026-05-28      | manifesto (seed)                                                                                                      |
-| Surface-fit                                            | active       | 2026-05-28      | manifesto (seed)                                                                                                      |
-| Keep the client thin — MCP at the auth layer           | active       | 2026-05-28      | manifesto (seed)                                                                                                      |
-| Every spell ships a feedback touchpoint                | active       | 2026-05-29      | scenario: feedback-touchpoint-per-skill                                                                               |
-| Self-contained, no build step                          | active       | 2026-05-28      | recipe (seed)                                                                                                         |
-| Honor the exit-code contract                           | active       | 2026-05-28      | recipe (seed)                                                                                                         |
-| Carry the Bun gotchas forward                          | **temporal** | 2026-05-28      | recipe (seed)                                                                                                         |
-| Mature principle = imperative + boundary checks        | perennial    | 2026-05-28      | manifesto (seed)                                                                                                      |
+| Rule (`house-style.md`)                                | Status       | Last reinforced | Reinforced by                                                                                                                      |
+| ------------------------------------------------------ | ------------ | --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Architect for the reader's context                     | perennial    | 2026-06-11      | glamour SKILL isolation pass; grapevine V1.7 soak (default-lurk — reader usually browses; count must agree across reader surfaces) |
+| Reference, don't inline                                | active       | 2026-05-28      | manifesto (seed)                                                                                                                   |
+| Context is an attention budget — exclusions earn place | active       | 2026-05-29      | scenario: generalize-the-roster                                                                                                    |
+| Start minimal; subtract before you test                | active       | 2026-06-11      | fresh-agent: glamour (cold pass restored only the load-bearing gather/session guidance subtraction had left implicit)              |
+| The name is the canonical handle — name at coalescence | active       | 2026-05-29      | scenario: name-handle-vs-invocation                                                                                                |
+| Match the kind to the interaction (cantrip/conjure)    | active       | 2026-05-28      | manifesto (seed)                                                                                                                   |
+| Surface-fit                                            | active       | 2026-05-28      | manifesto (seed)                                                                                                                   |
+| Keep the client thin — MCP at the auth layer           | active       | 2026-05-28      | manifesto (seed)                                                                                                                   |
+| Every spell ships a feedback touchpoint                | active       | 2026-05-29      | scenario: feedback-touchpoint-per-skill                                                                                            |
+| Self-contained, no build step                          | active       | 2026-05-28      | recipe (seed)                                                                                                                      |
+| Honor the exit-code contract                           | active       | 2026-05-28      | recipe (seed)                                                                                                                      |
+| Carry the Bun gotchas forward                          | **temporal** | 2026-05-28      | recipe (seed)                                                                                                                      |
+| Mature principle = imperative + boundary checks        | perennial    | 2026-05-28      | manifesto (seed)                                                                                                                   |
 
 > **temporal** = pinned to a runtime version; re-verify when Bun moves and
 > retire the gotchas that no longer reproduce. This is the row most likely to

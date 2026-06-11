@@ -10,6 +10,14 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
     />
+    <!-- Alpine via CDN — grapevine stays no-build (CDN libs only). The watch
+         surface is served as a static file by the daemon's /watch route. -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+      integrity="sha384-l8f0VcPi/M1iHPv8egOnY/15TDwqgbOR1anMIJWvU6nLRgZVLTLSaNqi/TOoT5Fh"
+      crossorigin="anonymous"
+    ></script>
     <style>
       :root {
         --bg: #0e1410;
@@ -286,270 +294,690 @@
       .disconnected .pulse {
         background: var(--warn);
       }
+      /* Compose box — only shown in Join mode (V1.7). Sticky to the bottom of
+         the message column, like the status bar is to the body. */
+      .compose-wrap {
+        position: sticky;
+        bottom: 0;
+        padding: 12px 0 4px;
+        background: linear-gradient(to top, var(--bg) 80%, transparent);
+      }
+      .compose {
+        display: flex;
+        gap: 8px;
+      }
+      /* Reply banner above the compose box, + quoted reply preview on a
+         threaded message (V1.7 threading). */
+      .reply-banner {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--ink-mute);
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-left: 2px solid var(--grape);
+        border-radius: 8px 8px 0 0;
+        padding: 6px 10px;
+        margin-bottom: -1px;
+      }
+      .reply-banner .reply-snippet {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .reply-cancel {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: var(--ink-mute);
+        cursor: pointer;
+        font-size: 12px;
+        line-height: 1;
+      }
+      .reply-cancel:hover {
+        color: var(--ink);
+      }
+      .reply-arrow {
+        color: var(--grape-soft);
+      }
+      .reply-from {
+        font-weight: 600;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      .msg.is-reply {
+        margin-left: 24px;
+      }
+      .reply-quote {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 11px;
+        color: var(--ink-mute);
+        padding-left: 8px;
+        margin-bottom: 4px;
+        border-left: 2px solid var(--line);
+        max-width: 100%;
+      }
+      .reply-quote .reply-snippet {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .reply-btn {
+        background: none;
+        border: none;
+        color: var(--ink-mute);
+        cursor: pointer;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 11px;
+        padding: 0 4px;
+        opacity: 0;
+        transition:
+          opacity 120ms ease,
+          color 120ms ease;
+      }
+      .msg:hover .reply-btn {
+        opacity: 1;
+      }
+      .reply-btn:hover {
+        color: var(--grape-soft);
+      }
+      /* Archived (read-only) channel cues (V1.7). */
+      .meta-right {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      .lock {
+        font-size: 10px;
+      }
+      aside.left .row.archived .name {
+        color: var(--ink-mute);
+      }
+      .archived-note {
+        position: sticky;
+        bottom: 0;
+        text-align: center;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--warn);
+        background: linear-gradient(to top, var(--bg) 80%, transparent);
+        padding: 12px 0 8px;
+      }
+      .compose-input {
+        flex: 1;
+        resize: none;
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--ink);
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.5;
+        padding: 10px 14px;
+        max-height: 160px;
+      }
+      .compose-input:focus {
+        outline: none;
+        border-color: var(--grape);
+      }
+      .compose-send {
+        align-self: flex-end;
+        background: var(--grape);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+        padding: 10px 16px;
+      }
+      .compose-send:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      /* Identity + lurk/join control in the who-sidebar (V1.7). */
+      .identity {
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .identity h2 {
+        margin: 0;
+      }
+      .identity-input {
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        color: var(--ink);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        padding: 6px 8px;
+      }
+      .identity-input:focus {
+        outline: none;
+        border-color: var(--grape);
+      }
+      .identity-input:disabled {
+        opacity: 0.6;
+      }
+      .identity-toggle {
+        background: none;
+        border: 1px solid var(--grape);
+        border-radius: 6px;
+        color: var(--grape-soft);
+        cursor: pointer;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        padding: 6px 8px;
+        transition:
+          background-color 120ms ease,
+          border-color 120ms ease;
+      }
+      .identity-toggle:hover:not(:disabled) {
+        background: rgba(124, 92, 255, 0.12);
+      }
+      .identity-toggle:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+      .identity-toggle.joined {
+        border-color: var(--leaf);
+        color: var(--leaf-soft);
+        background: rgba(87, 201, 122, 0.1);
+      }
     </style>
   </head>
-  <body>
+  <body x-data="grapevine">
     <header>
       <span class="leaf">🌿</span>
       <div style="flex: 1">
         <h1>
           grapevine<span class="sep">·</span
-          ><span class="channel" id="channel-name">—</span>
+          ><span class="channel" x-text="channel">—</span>
         </h1>
-        <p class="topic placeholder" id="topic">no topic set</p>
+        <p
+          class="topic"
+          :class="{ placeholder: !topic }"
+          x-text="topic || 'no topic set'"
+        >
+          no topic set
+        </p>
       </div>
     </header>
 
     <div class="layout">
       <aside class="left">
         <h2>Channels</h2>
-        <ul id="channels"></ul>
+        <ul>
+          <li
+            x-show="channels.length === 0"
+            style="color: var(--ink-mute); font-style: italic; padding: 6px 8px"
+          >
+            no channels yet
+          </li>
+          <template x-for="c in channels" :key="c.name">
+            <li style="padding: 0">
+              <div
+                class="row"
+                :class="{ active: c.name === channel, new: c.isNew, archived: c.archived }"
+              >
+                <a :href="'#' + encodeURIComponent(c.name)">
+                  <span class="name" x-text="c.name"></span>
+                  <span class="meta-right">
+                    <span
+                      class="lock"
+                      x-show="c.archived"
+                      title="archived — read-only"
+                      >🔒</span
+                    >
+                    <span class="count" x-text="c.subscribers ?? 0"></span>
+                  </span>
+                </a>
+                <button
+                  class="close-btn"
+                  :title="'Close channel “' + c.name + '” (deletes message log)'"
+                  @click.prevent.stop="closeChannel(c.name)"
+                >
+                  🗑
+                </button>
+              </div>
+            </li>
+          </template>
+        </ul>
       </aside>
-      <main id="stream">
-        <div class="empty" id="empty">
+
+      <main id="stream" x-ref="stream">
+        <div class="empty" x-show="messages.length === 0">
           <div class="big">🌿</div>
           <div>Waiting for messages on this channel…</div>
         </div>
+        <template x-for="(m, idx) in messages" :key="m.id ?? idx">
+          <div
+            class="msg"
+            :class="['kind-' + (m.kind || 'message'), { 'is-reply': m.in_reply_to != null }]"
+          >
+            <!-- Threaded reply: quote the referenced message (V1.7). -->
+            <template x-if="m.in_reply_to != null && msgById(m.in_reply_to)">
+              <div class="reply-quote">
+                <span class="reply-arrow">↳</span>
+                <span
+                  class="reply-from"
+                  :style="{ color: aliasColor(msgById(m.in_reply_to).from) }"
+                  x-text="msgById(m.in_reply_to).from"
+                ></span>
+                <span
+                  class="reply-snippet"
+                  x-text="snippet(msgById(m.in_reply_to).text)"
+                ></span>
+              </div>
+            </template>
+            <div class="meta">
+              <span
+                class="from"
+                :style="{ color: aliasColor(m.from) }"
+                x-text="m.kind === 'topic' ? m.from + ' set topic' : m.from"
+              ></span>
+              <span class="ts" x-text="fmtTime(m.ts)"></span>
+              <button
+                class="reply-btn"
+                x-show="mode === 'join' && m.kind !== 'topic' && !channelArchived"
+                @click="replyTo(m)"
+              >
+                reply
+              </button>
+            </div>
+            <div class="body" x-text="m.text"></div>
+          </div>
+        </template>
+        <div class="archived-note" x-show="channelArchived">
+          🔒 this channel is archived — read-only
+        </div>
+        <div class="compose-wrap" x-show="mode === 'join' && !channelArchived">
+          <div class="reply-banner" x-show="replyingTo">
+            <span class="reply-arrow">↳</span>
+            <span>replying to</span>
+            <span
+              class="reply-from"
+              :style="{ color: aliasColor(replyingTo?.from) }"
+              x-text="replyingTo?.from"
+            ></span>
+            <span
+              class="reply-snippet"
+              x-text="snippet(replyingTo?.text || '')"
+            ></span>
+            <button
+              class="reply-cancel"
+              type="button"
+              @click="replyingTo = null"
+              aria-label="Cancel reply"
+            >
+              ✕
+            </button>
+          </div>
+          <form class="compose" @submit.prevent="send()">
+            <textarea
+              class="compose-input"
+              x-ref="composeInput"
+              x-model="draft"
+              rows="1"
+              :placeholder="'message as ' + alias + '…'"
+              @keydown.enter="
+                if (!$event.shiftKey) {
+                  $event.preventDefault();
+                  send();
+                }
+              "
+            ></textarea>
+            <button
+              class="compose-send"
+              type="submit"
+              :disabled="!draft.trim()"
+            >
+              send
+            </button>
+          </form>
+        </div>
       </main>
+
       <aside class="right">
         <h2>On the line</h2>
-        <ul id="subscribers"></ul>
+        <ul>
+          <li
+            x-show="subscribers.length === 0"
+            style="color: var(--ink-mute); font-style: italic"
+          >
+            no one currently subscribed
+          </li>
+          <template x-for="a in subscribers" :key="a">
+            <li :style="{ color: aliasColor(a) }">
+              <span class="dot"></span><span x-text="subLabel(a)"></span>
+            </li>
+          </template>
+        </ul>
+
+        <div class="identity">
+          <h2>You</h2>
+          <input
+            class="identity-input"
+            x-model="alias"
+            @change="setAlias()"
+            placeholder="set an alias"
+            :disabled="mode === 'join'"
+          />
+          <button
+            class="identity-toggle"
+            :class="{ joined: mode === 'join' }"
+            :disabled="mode === 'lurk' && !alias.trim()"
+            @click="toggleMode()"
+            x-text="mode === 'join' ? 'Joined — click to lurk' : 'Join channel'"
+          ></button>
+        </div>
       </aside>
     </div>
 
-    <div class="status" id="status">
-      <span class="pulse"></span><span id="status-text">connecting…</span>
+    <div class="status" :class="{ disconnected }">
+      <span class="pulse"></span><span x-text="status">connecting…</span>
     </div>
 
     <script>
-      // Channel is read from the URL hash so a single static page handles
-      // any channel. e.g. /watch#roundtable
-      const channel =
-        decodeURIComponent((location.hash || "#lobby").slice(1)) || "lobby";
-      document.title = `grapevine · ${channel}`;
-      document.getElementById("channel-name").textContent = channel;
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("grapevine", () => ({
+          // Channel is read from the URL hash so a single static page handles
+          // any channel. e.g. /watch#roundtable
+          channel:
+            decodeURIComponent((location.hash || "#lobby").slice(1)) || "lobby",
+          topic: "",
+          status: "connecting…",
+          disconnected: false,
+          messages: [],
+          // id → message, kept in lockstep with `messages` so a threaded
+          // reply's quote lookup (msgById) is O(1), not O(n) per render.
+          msgIndex: {},
+          subscribers: [],
+          humans: [], // aliases flagged human by the daemon (V1.7)
+          channels: [],
+          // Highest message id seen — passed as `since` on (re)connect so a
+          // brief SSE drop won't lose messages.
+          highest: 0,
+          // Names we've already rendered, used to detect channels that arrived
+          // between polls so they can be briefly flashed.
+          seenChannels: new Set(),
+          firstChannelPoll: true,
+          channelArchived: false, // is the viewed channel archived? (V1.7)
+          es: null,
+          // V1.7 — human as participant. Alias persists globally; the join/lurk
+          // mode is remembered per-channel (see init) and defaults to `lurk`, so
+          // browsing channels never silently joins you — joining is explicit.
+          alias: localStorage.getItem("grapevine:alias") || "",
+          mode: "lurk", // 'lurk' | 'join'
+          draft: "",
+          replyingTo: null, // message being replied to (V1.7 threading), or null
+          // Connection generation — bumped on every (re)connect so a superseded
+          // EventSource's late events (a toggle or reconnect replaced it) are
+          // ignored instead of double-reconnecting.
+          gen: 0,
 
-      const stream = document.getElementById("stream");
-      const empty = document.getElementById("empty");
-      const topicEl = document.getElementById("topic");
-      const subsEl = document.getElementById("subscribers");
-      const channelsEl = document.getElementById("channels");
-      const statusText = document.getElementById("status-text");
-      const statusBar = document.getElementById("status");
-
-      // Set of channel names we've already rendered, used to detect which
-      // channels are newly-arrived between polls so they can be visually
-      // flashed (operator: "huh, a new channel just opened — there it is").
-      const seenChannels = new Set();
-      let firstChannelPoll = true;
-
-      // Deterministic color per alias — same alias always gets the same hue.
-      function hashHue(s) {
-        let h = 0;
-        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-        return Math.abs(h) % 360;
-      }
-      function aliasColor(alias) {
-        return `hsl(${hashHue(alias)} 70% 70%)`;
-      }
-
-      function fmtTime(ts) {
-        const d = new Date(ts);
-        return d.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
-      }
-
-      function renderMessage(m) {
-        empty.style.display = "none";
-        const el = document.createElement("div");
-        el.className = "msg kind-" + (m.kind || "message");
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        const from = document.createElement("span");
-        from.className = "from";
-        from.style.color = aliasColor(m.from);
-        from.textContent = m.kind === "topic" ? `${m.from} set topic` : m.from;
-        const ts = document.createElement("span");
-        ts.className = "ts";
-        ts.textContent = fmtTime(m.ts);
-        meta.appendChild(from);
-        meta.appendChild(ts);
-        const body = document.createElement("div");
-        body.className = "body";
-        body.textContent = m.text;
-        el.appendChild(meta);
-        el.appendChild(body);
-        stream.appendChild(el);
-        // Auto-scroll to bottom — but only if user was already near it.
-        const nearBottom =
-          stream.scrollTop + stream.clientHeight + 80 >= stream.scrollHeight;
-        if (nearBottom) stream.scrollTop = stream.scrollHeight;
-      }
-
-      function setTopic(t) {
-        if (t) {
-          topicEl.classList.remove("placeholder");
-          topicEl.textContent = t;
-        } else {
-          topicEl.classList.add("placeholder");
-          topicEl.textContent = "no topic set";
-        }
-      }
-
-      async function refreshSubscribers() {
-        try {
-          const r = await fetch(
-            `/channels/${encodeURIComponent(channel)}/subscribers`
-          );
-          const j = await r.json();
-          // Rebuild the list via DOM methods (no innerHTML).
-          while (subsEl.firstChild) subsEl.removeChild(subsEl.firstChild);
-          const subs = j.subscribers || [];
-          if (subs.length === 0) {
-            const li = document.createElement("li");
-            li.style.color = "var(--ink-mute)";
-            li.style.fontStyle = "italic";
-            li.textContent = "no one currently subscribed";
-            subsEl.appendChild(li);
-          } else {
-            subs.forEach((a) => {
-              const li = document.createElement("li");
-              li.style.color = aliasColor(a);
-              const dot = document.createElement("span");
-              dot.className = "dot";
-              li.appendChild(dot);
-              li.appendChild(document.createTextNode(a));
-              subsEl.appendChild(li);
-            });
-          }
-          if (j.topic !== undefined) setTopic(j.topic);
-        } catch {}
-      }
-
-      async function refreshChannels() {
-        try {
-          const r = await fetch(`/channels`);
-          const j = await r.json();
-          const list = (j.channels || []).map((c) => c.name);
-          // Rebuild via DOM methods. Flag newly-arrived channels with a
-          // brief animation so the operator sees "huh, a new channel."
-          while (channelsEl.firstChild)
-            channelsEl.removeChild(channelsEl.firstChild);
-          if (list.length === 0) {
-            const li = document.createElement("li");
-            li.style.color = "var(--ink-mute)";
-            li.style.fontStyle = "italic";
-            li.style.padding = "6px 8px";
-            li.textContent = "no channels yet";
-            channelsEl.appendChild(li);
-            return;
-          }
-          (j.channels || []).forEach((c) => {
-            const isNew = !firstChannelPoll && !seenChannels.has(c.name);
-            seenChannels.add(c.name);
-            const li = document.createElement("li");
-            li.style.padding = "0";
-
-            const row = document.createElement("div");
-            row.className = "row";
-            if (c.name === channel) row.classList.add("active");
-            if (isNew) row.classList.add("new");
-
-            const a = document.createElement("a");
-            a.href = `#${encodeURIComponent(c.name)}`;
-            const nameSpan = document.createElement("span");
-            nameSpan.className = "name";
-            nameSpan.textContent = c.name;
-            const count = document.createElement("span");
-            count.className = "count";
-            count.textContent = String(c.subscribers ?? 0);
-            a.appendChild(nameSpan);
-            a.appendChild(count);
-
-            const closeBtn = document.createElement("button");
-            closeBtn.className = "close-btn";
-            closeBtn.title = `Close channel "${c.name}" (deletes message log)`;
-            // Trash glyph via Unicode rather than a font dep.
-            closeBtn.textContent = "🗑";
-            closeBtn.addEventListener("click", async (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              const ok = window.confirm(
-                `Close channel "${c.name}"? This deletes its message log and disconnects any subscribers. This cannot be undone.`
-              );
-              if (!ok) return;
+          async init() {
+            document.title = `grapevine · ${this.channel}`;
+            // Resolve identity: a UI override (localStorage) wins; otherwise the
+            // per-HOME alias the CLI set (`grapevine alias <name>`), served at
+            // /identity. We resolve it even while lurking so the You box is
+            // pre-filled and one click joins.
+            if (!this.alias) {
               try {
-                await fetch(`/channels/${encodeURIComponent(c.name)}`, {
-                  method: "DELETE",
-                });
+                const r = await fetch("/identity");
+                const j = await r.json();
+                if (j.alias) this.alias = j.alias;
               } catch {}
-              seenChannels.delete(c.name);
-              refreshChannels();
-              // If we just closed the channel we were watching, redirect
-              // to "lobby" (which will be auto-opened by the server on
-              // next subscribe). The hashchange handler reloads.
-              if (c.name === channel) {
-                location.hash = "lobby";
-              }
+            }
+            // Join/lurk is an explicit, *remembered* per-channel choice. Default
+            // is lurk: switching channels or refreshing never silently joins you
+            // — you opt in once per channel and that sticks.
+            const savedMode = localStorage.getItem(
+              `grapevine:mode:${this.channel}`
+            );
+            this.mode = savedMode === "join" && this.alias ? "join" : "lurk";
+            this.connect();
+            this.refreshSubscribers();
+            this.refreshChannels();
+            // Poll subscribers + channels periodically — `who` is bursty (wait
+            // windows open and close) and new channels can be opened by other
+            // agents at any time, so we refresh every few seconds for a live
+            // feel.
+            setInterval(() => this.refreshSubscribers(), 3000);
+            setInterval(() => this.refreshChannels(), 3000);
+            // If the user changes the hash (or clicks a channel in the left
+            // rail), reload to switch channels — the simplest way to reset the
+            // SSE stream and the message list cleanly.
+            window.addEventListener("hashchange", () => location.reload());
+          },
+
+          // Deterministic color per alias — same alias always gets the same hue.
+          hashHue(s) {
+            let h = 0;
+            for (let i = 0; i < s.length; i++)
+              h = (h * 31 + s.charCodeAt(i)) | 0;
+            return Math.abs(h) % 360;
+          },
+          aliasColor(alias) {
+            return `hsl(${this.hashHue(alias || "")} 70% 70%)`;
+          },
+          fmtTime(ts) {
+            const d = new Date(ts);
+            return d.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
             });
+          },
 
-            row.appendChild(a);
-            row.appendChild(closeBtn);
-            li.appendChild(row);
-            channelsEl.appendChild(li);
-          });
-          firstChannelPoll = false;
-        } catch {}
-      }
+          setTopic(t) {
+            this.topic = t || "";
+          },
 
-      let highest = 0;
-      function connect() {
-        statusBar.classList.remove("disconnected");
-        statusText.textContent = `connecting to ${channel}…`;
-        // EventSource handles SSE reconnection natively but doesn't expose
-        // a clean retry-from-cursor mechanism, so we pass `since` on each
-        // new connection — a brief drop won't lose messages.
-        const url = `/channels/${encodeURIComponent(channel)}/tail?since=${highest}`;
-        const es = new EventSource(url);
-        es.addEventListener("subscribed", (ev) => {
-          try {
-            const d = JSON.parse(ev.data);
-            if (d.topic !== undefined) setTopic(d.topic);
-            statusText.textContent = `subscribed to ${channel}`;
-          } catch {}
-        });
-        es.addEventListener("message", (ev) => {
-          try {
-            const m = JSON.parse(ev.data);
-            if (typeof m.id === "number" && m.id > highest) highest = m.id;
-            renderMessage(m);
-            if (m.kind === "topic") setTopic(m.text);
-          } catch {}
-        });
-        es.addEventListener("error", () => {
-          statusBar.classList.add("disconnected");
-          statusText.textContent = `disconnected — reconnecting…`;
-          es.close();
-          setTimeout(connect, 1000);
-        });
-      }
+          connect() {
+            // Bump the generation and tear down any prior stream so a mode
+            // toggle or reconnect never leaves two live EventSources.
+            const myGen = ++this.gen;
+            if (this.es) this.es.close();
+            this.disconnected = false;
+            this.status = `connecting to ${this.channel}…`;
+            // Join mode passes ?as=<alias> to register presence (visible in
+            // `who`); lurk mode connects anonymously. EventSource handles SSE
+            // reconnection natively but doesn't expose a clean
+            // retry-from-cursor mechanism, so we pass `since` on each new
+            // connection.
+            // Join → register named + human-marked presence. Lurk → `&lurk=1`,
+            // which streams messages but registers no presence at all (excluded
+            // from every count), so browsing is genuinely invisible.
+            const params =
+              this.mode === "join" && this.alias
+                ? `&as=${encodeURIComponent(this.alias)}&human=1`
+                : "&lurk=1";
+            const url = `/channels/${encodeURIComponent(this.channel)}/tail?since=${this.highest}${params}`;
+            const es = new EventSource(url);
+            this.es = es;
+            es.addEventListener("subscribed", (ev) => {
+              if (myGen !== this.gen) return;
+              try {
+                const d = JSON.parse(ev.data);
+                if (d.topic !== undefined) this.setTopic(d.topic);
+                this.status =
+                  this.mode === "join"
+                    ? `joined ${this.channel} as ${this.alias}`
+                    : `subscribed to ${this.channel}`;
+              } catch {}
+            });
+            es.addEventListener("message", (ev) => {
+              if (myGen !== this.gen) return;
+              try {
+                const m = JSON.parse(ev.data);
+                if (typeof m.id === "number" && m.id > this.highest)
+                  this.highest = m.id;
+                // Auto-scroll to bottom — but only if the user was already near
+                // it (so reading history isn't interrupted). Measure before the
+                // push, scroll after the DOM updates.
+                const el = this.$refs.stream;
+                const nearBottom =
+                  el.scrollTop + el.clientHeight + 80 >= el.scrollHeight;
+                this.messages.push(m);
+                if (typeof m.id === "number") this.msgIndex[m.id] = m;
+                if (m.kind === "topic") this.setTopic(m.text);
+                if (nearBottom)
+                  this.$nextTick(() => {
+                    el.scrollTop = el.scrollHeight;
+                  });
+              } catch {}
+            });
+            es.addEventListener("error", () => {
+              if (myGen !== this.gen) return;
+              this.disconnected = true;
+              this.status = `disconnected — reconnecting…`;
+              es.close();
+              setTimeout(() => {
+                if (myGen === this.gen) this.connect();
+              }, 1000);
+            });
+          },
 
-      connect();
-      refreshSubscribers();
-      refreshChannels();
-      // Poll subscribers + channels periodically — `who` is bursty (wait
-      // windows open and close), and new channels can be opened by other
-      // agents at any time, so we refresh every few seconds for a live feel.
-      setInterval(refreshSubscribers, 3000);
-      setInterval(refreshChannels, 3000);
+          async refreshSubscribers() {
+            try {
+              const r = await fetch(
+                `/channels/${encodeURIComponent(this.channel)}/subscribers`
+              );
+              const j = await r.json();
+              this.subscribers = j.subscribers || [];
+              this.humans = j.humans || [];
+              if (j.topic !== undefined) this.setTopic(j.topic);
+            } catch {}
+          },
 
-      // If the user changes the hash (or clicks a channel in the left rail),
-      // reload to switch channels. Reload is the simplest way to reset the
-      // SSE stream and the message DOM cleanly.
-      window.addEventListener("hashchange", () => location.reload());
+          async refreshChannels() {
+            try {
+              const r = await fetch(`/channels`);
+              const j = await r.json();
+              // Rebuild the list, flagging newly-arrived channels with a brief
+              // animation so the operator sees "huh, a new channel."
+              this.channels = (j.channels || []).map((c) => {
+                const isNew =
+                  !this.firstChannelPoll && !this.seenChannels.has(c.name);
+                this.seenChannels.add(c.name);
+                return {
+                  name: c.name,
+                  subscribers: c.subscribers ?? 0,
+                  archived: !!c.archived,
+                  isNew,
+                };
+              });
+              // Is the channel we're viewing archived? Gates the compose box.
+              this.channelArchived =
+                this.channels.find((c) => c.name === this.channel)?.archived ??
+                false;
+              this.firstChannelPoll = false;
+            } catch {}
+          },
+
+          async closeChannel(name) {
+            const ok = window.confirm(
+              `Close channel "${name}"? This deletes its message log and disconnects any subscribers. This cannot be undone.`
+            );
+            if (!ok) return;
+            try {
+              await fetch(`/channels/${encodeURIComponent(name)}`, {
+                method: "DELETE",
+              });
+            } catch {}
+            this.seenChannels.delete(name);
+            this.refreshChannels();
+            // If we just closed the channel we were watching, redirect to
+            // "lobby" (auto-opened by the server on next subscribe). The
+            // hashchange handler reloads.
+            if (name === this.channel) location.hash = "lobby";
+          },
+
+          // --- V1.7: human as participant ---
+
+          // Annotate a roster entry: your own name as "(you)", any other human
+          // as "(human)" so agents reading the watch can tell people apart.
+          subLabel(a) {
+            if (a === this.alias) return `${a} (you)`;
+            if (this.humans.includes(a)) return `${a} (human)`;
+            return a;
+          },
+
+          // --- V1.7: threading ---
+
+          msgById(id) {
+            return this.msgIndex[id];
+          },
+          snippet(t) {
+            return t.length > 80 ? `${t.slice(0, 80)}…` : t;
+          },
+          replyTo(m) {
+            this.replyingTo = m;
+            this.$nextTick(() => this.$refs.composeInput?.focus());
+          },
+
+          setAlias() {
+            this.alias = this.alias.trim();
+            // Clearing the field removes the override (not an empty-string one)
+            // so the next load falls back to the /identity config default.
+            if (this.alias) localStorage.setItem("grapevine:alias", this.alias);
+            else localStorage.removeItem("grapevine:alias");
+          },
+
+          toggleMode() {
+            if (this.mode === "lurk") {
+              if (!this.alias.trim()) return; // need an alias to join
+              this.setAlias();
+              this.mode = "join";
+            } else {
+              this.mode = "lurk";
+            }
+            // Remember the choice for this channel so a refresh or a
+            // switch-away-and-back keeps it (default is lurk for channels you
+            // haven't explicitly joined).
+            localStorage.setItem(`grapevine:mode:${this.channel}`, this.mode);
+            // Re-open the stream with/without presence, then refresh `who` so
+            // the joined/left state shows without waiting for the next poll.
+            this.connect();
+            this.refreshSubscribers();
+          },
+
+          async send() {
+            const text = this.draft.trim();
+            if (!text || this.mode !== "join") return;
+            const body = { from: this.alias, text };
+            if (this.replyingTo) body.in_reply_to = this.replyingTo.id;
+            try {
+              const r = await fetch(
+                `/channels/${encodeURIComponent(this.channel)}/messages`,
+                {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify(body),
+                }
+              );
+              // The daemon fans out to every subscriber including this one, so
+              // the message returns over our own SSE stream and renders there —
+              // no optimistic insert needed. Clear only on success so a failed
+              // send doesn't lose the draft.
+              if (r.ok) {
+                this.draft = "";
+                this.replyingTo = null;
+              }
+            } catch {}
+          },
+        }));
+      });
     </script>
   </body>
 </html>

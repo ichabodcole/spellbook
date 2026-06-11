@@ -16,7 +16,14 @@
 // or wrap with Monitor.
 
 import { spawn } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, unlinkSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -24,6 +31,9 @@ import { fileURLToPath } from "node:url";
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
+// Persisted identity config (V1.7) — `grapevine alias <name>` writes it; the
+// daemon serves it to the watch via GET /identity.
+const CONFIG_FILE = join(DATA_DIR, "config.json");
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const DAEMON_SCRIPT = join(SCRIPT_DIR, "daemon.ts");
 
@@ -106,6 +116,7 @@ type TopicResponse = {
 type SubscribersResponse = {
   channel?: string;
   subscribers?: string[];
+  humans?: string[];
   count?: number;
   connections?: number;
   named?: number;
@@ -118,6 +129,7 @@ type SubscribersResponse = {
 type PresenceChannel = {
   name: string;
   subscribers: string[];
+  humans?: string[];
   connections: number;
   named: number;
   anonymous: number;
@@ -332,14 +344,16 @@ async function cmdSend(
   name: string,
   from: string,
   text: string,
-  opts: { quiet?: boolean; verbose?: boolean },
+  opts: { quiet?: boolean; verbose?: boolean; inReplyTo?: number },
 ) {
   if (!name || !from || !text) die("usage: grapevine send <name> --from <alias> <text...>");
   const port = await ensureDaemon();
-  const { status, data } = await api<SendReceipt>(port, "POST", `/channels/${name}/messages`, {
+  const body: { from: string; text: string; in_reply_to?: number } = {
     from,
     text,
-  });
+  };
+  if (opts.inReplyTo !== undefined) body.in_reply_to = opts.inReplyTo;
+  const { status, data } = await api<SendReceipt>(port, "POST", `/channels/${name}/messages`, body);
   if (status >= 400 || !data) die(data?.error ?? `HTTP ${status}`);
   // Target echo on stderr — confirms WHERE the message landed so a misrouted
   // reply (right prompt, wrong channel) is caught the instant it happens (F9).
@@ -467,9 +481,44 @@ async function cmdWhoAll() {
   printJson({ ok: true, ...data });
 }
 
-async function cmdTail(name: string, opts: { since?: number; fromStart?: boolean; as?: string }) {
-  if (!name) die("usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start]");
-  const myAlias = opts.as;
+// Get or set the persisted default alias (V1.7). With no argument, prints the
+// current alias; with one, writes it to config.json. Pure file I/O — works
+// without a running daemon. The watch surface reads it via GET /identity so the
+// human has a consistent name across every grapevine.
+async function cmdAlias(name: string | undefined) {
+  let cfg: Record<string, unknown> = {};
+  try {
+    cfg = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+  } catch {}
+  if (name === undefined) {
+    const alias = typeof cfg.alias === "string" && cfg.alias.trim() ? cfg.alias.trim() : null;
+    printJson({ ok: true, alias });
+    return;
+  }
+  const trimmed = name.trim();
+  cfg.alias = trimmed;
+  mkdirSync(DATA_DIR, { recursive: true });
+  writeFileSync(CONFIG_FILE, `${JSON.stringify(cfg, null, 2)}\n`);
+  printJson({ ok: true, alias: trimmed || null });
+}
+
+async function cmdTail(
+  name: string,
+  opts: {
+    since?: number;
+    fromStart?: boolean;
+    as?: string;
+    human?: boolean;
+    lurk?: boolean;
+  },
+) {
+  if (!name)
+    die(
+      "usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start] [--human] [--lurk]",
+    );
+  // --lurk receives messages but registers no presence — an invisible observer.
+  // It overrides identity flags (a lurker has no name to show).
+  const myAlias = opts.lurk ? undefined : opts.as;
 
   // Clean exit on signals so the SSE stream doesn't leak.
   let stopped = false;
@@ -491,7 +540,9 @@ async function cmdTail(name: string, opts: { since?: number; fromStart?: boolean
     // Ensure the channel exists (so a fresh `tail name` works without explicit open).
     await api(port, "POST", "/channels", { name });
     const asParam = myAlias ? `&as=${encodeURIComponent(myAlias)}` : "";
-    const url = `http://127.0.0.1:${port}/channels/${name}/tail?since=${highestSeen}${asParam}`;
+    const humanParam = opts.human && !opts.lurk ? "&human=1" : "";
+    const lurkParam = opts.lurk ? "&lurk=1" : "";
+    const url = `http://127.0.0.1:${port}/channels/${name}/tail?since=${highestSeen}${asParam}${humanParam}${lurkParam}`;
 
     let res: Response;
     try {
@@ -656,6 +707,18 @@ async function cmdClose(name: string) {
   const { status, data } = await api<StatusResponse>(port, "DELETE", `/channels/${name}`);
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   printJson({ ok: true });
+}
+
+// Archive (read-only) or unarchive a channel (V1.7) — the non-destructive
+// alternative to close: history is preserved, sends are rejected, and the name
+// is locked from re-open until unarchived.
+async function cmdArchive(name: string, unarchive: boolean) {
+  const verb = unarchive ? "unarchive" : "archive";
+  if (!name) die(`usage: grapevine ${verb} <channel>`);
+  const port = await ensureDaemon();
+  const { status, data } = await api<StatusResponse>(port, "POST", `/channels/${name}/${verb}`);
+  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  printJson({ ok: true, ...data });
 }
 
 async function cmdStop() {
@@ -860,6 +923,8 @@ const BOOLEAN_FLAGS = new Set([
   "literal",
   "text",
   "all",
+  "human",
+  "lurk",
 ]);
 
 function parseFlags(argv: string[]): {
@@ -929,6 +994,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdSend(name, from, text, {
         quiet: !!flags.quiet,
         verbose: !!flags.verbose,
+        inReplyTo: flags["in-reply-to"] ? parseInt(flags["in-reply-to"] as string, 10) : undefined,
       });
       return 0;
     }
@@ -953,11 +1019,16 @@ async function main(argv: string[]): Promise<number> {
       if (flags.all) await cmdWhoAll();
       else await cmdWho(positional[0]);
       return 0;
+    case "alias":
+      await cmdAlias(positional[0]);
+      return 0;
     case "tail":
       await cmdTail(positional[0], {
         since: flags.since ? parseInt(flags.since as string, 10) : undefined,
         fromStart: !!flags["from-start"],
         as: resolveAlias(flags),
+        human: !!flags.human,
+        lurk: !!flags.lurk,
       });
       return 0;
     case "grep": {
@@ -969,6 +1040,12 @@ async function main(argv: string[]): Promise<number> {
     }
     case "close":
       await cmdClose(positional[0]);
+      return 0;
+    case "archive":
+      await cmdArchive(positional[0], false);
+      return 0;
+    case "unarchive":
+      await cmdArchive(positional[0], true);
       return 0;
     case "stop":
       await cmdStop();
@@ -991,16 +1068,19 @@ async function main(argv: string[]): Promise<number> {
 Usage:
   grapevine open <name> [--topic <text>]
   grapevine list
-  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] <text...>
-  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start]
+  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--in-reply-to <id>] <text...>
+  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk]
   grapevine pull <name> [--since <id>]
   grapevine read <name> <id> [--text]   # one full message by id (--text = prose)
   grapevine wait <name> [--since <id>] [--timeout <s>]
   grapevine grep <name> <pattern> [--literal] [--from <alias>]
   grapevine topic <name> [<text>]   # no text → read current; with text → update
-  grapevine who <name>
+  grapevine who <name>              # roster; the humans field lists humans
+  grapevine alias [<name>]          # set/show your persisted alias (config.json)
   grapevine watch [<name>]          # open browser tab; live chat-bubble view
-  grapevine close <name>
+  grapevine archive <name>          # read-only: keep history, reject sends
+  grapevine unarchive <name>        # bring an archived channel back
+  grapevine close <name>            # destructive: delete the message log
   grapevine stop
   grapevine info
   grapevine doctor                  # health check — daemon, zombies, channels

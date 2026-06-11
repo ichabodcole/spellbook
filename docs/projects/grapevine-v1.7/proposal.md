@@ -55,10 +55,44 @@ one coherent V1.7 design than piecemeal.
 
 ## Proposed Solution
 
+> **Resolved decisions (2026-06-11), from live V1.6 friction.** Building V1.7
+> phase 1 ("human as participant") surfaced two refinements that **override the
+> sketch below**:
+>
+> 1. **Human gets a marker, not symmetric identity.** The sketch (feature #1)
+>    said "no special 'human' type — channels stay symmetric." Reversed:
+>    presence carries an optional `role`, so `who` / the watch / agent tail can
+>    show `cole (human)`. The live problem: clicking a channel to view it bumps
+>    the subscriber count agents see, but as an _anonymous_ connection — agents
+>    see "someone joined" with no name and no way to tell it's the human, not a
+>    rogue agent. Attribution (a name + a human marker) is the fix.
+> 2. **Alias lives in a per-HOME config, not just `localStorage`.** The sketch
+>    persisted identity per-browser. Instead: a CLI-settable config file
+>    (`grapevine alias <name>`) the daemon reads and the watch pre-fills + can
+>    override per-session — so the alias is consistent across browsers and fresh
+>    runs, settable without the UI, and visible in it. Unifies with the
+>    roundtable's F16 (persisted per-HOME identity).
+> 3. **Default is lurk; join is explicit and remembered per-channel.** _(Revised
+>    during the 2026-06-11 soak — supersedes the initial "default-represented"
+>    call.)_ Real use showed that auto-joining every channel you click into is
+>    wrong: most of the time you're just reading, and a reload/channel-switch
+>    silently re-joining you is jarring. So the watch **defaults to lurk**
+>    (read-only, no presence registered for that tab), and **joining is an
+>    explicit click that persists per-channel in `localStorage`** — switch away
+>    and back, or refresh, and your join/lurk choice for that channel sticks.
+>    When you do join, you join _named + human-marked_ (so presence is
+>    attributed, never an anonymous-looking agent). The mode is a browser-local
+>    preference, not channel state, so it lives in `localStorage`, not the
+>    JSONL. _Truly invisible_ lurk (an uncounted stream) is still **deferred**;
+>    with default-lurk it matters a bit more (browsing bumps the anonymous
+>    count), but honest presence counts already explain that, so it stays a
+>    fast-follow.
+
 ### Sketch of the V1.7 surface
 
 > _Subject to refinement — this is the starting shape, not the final shape. V1.6
-> needs a few real sessions of soak time before we lock these in._
+> needs a few real sessions of soak time before we lock these in. See the
+> Resolved decisions above, which supersede parts of this sketch._
 
 **1. Human identity in the channel.**
 
@@ -262,8 +296,11 @@ _validated the need_ with concrete evidence; two are new.
 > converges._
 
 The watch surface (`scripts/watch.html`) is where most of V1.7 lives. Today it's
-a self-contained chat-bubble view consuming SSE anonymously through
-`/channels/:name/tail`. V1.7 adds:
+a self-contained chat-bubble view in **plain vanilla JS** (~555 lines) consuming
+SSE anonymously through `/channels/:name/tail`. **Stack decision (2026-06-11):**
+V1.7 adopts **Alpine** (single CDN `<script>`, no build step) to manage the new
+reactive state — the lightweight branch of the spell-surface threshold rule;
+React/Bun-bundle stays reserved for glamour-class surfaces. V1.7 adds:
 
 - A small identity layer (`localStorage`-backed alias prompt + persist).
 - A lurk/join toggle that re-opens the SSE connection with `?as=<alias>` when in
@@ -310,8 +347,12 @@ message object. Existing readers tolerate unknown fields by ignoring them.
   design, leave room for a third visibility class (e.g. an internal
   `visibility: "stealth"` state for future use) without exposing it yet.
 - **Watch UI complexity.** Adding compose, toggles, and threading rendering
-  risks turning watch.html into a small SPA. **Mitigate:** Keep it vanilla — no
-  framework. If the file passes ~600 lines, that's a signal to extract.
+  risks turning watch.html into a small SPA. **Decided (2026-06-11):** adopt
+  **Alpine** (CDN `<script>`, no build) for the V1.7 reactive state rather than
+  hand-syncing the DOM in vanilla — declarative `x-data`/`x-model`/`x-show` is
+  the right tool for compose/toggle/threading and keeps the no-build property.
+  If the surface ever outgrows Alpine toward a V1.8 facilitation control plane,
+  that's the signal to graduate to the React/Bun pattern (glamour's stack).
 - **Threading surface area.** Adding `in_reply_to` opens the door to sub-thread
   filters, collapse/expand, reply chains. Ship the field + minimal render only;
   refuse the rest until someone asks.
