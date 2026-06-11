@@ -79,13 +79,18 @@ export function VariantsStudio({ state, send }: VariantsStudioProps) {
                 </button>
               </div>
 
-              {/* Prompt overlay */}
+              {/* Prompt overlay — click anywhere to dismiss (above the controls) */}
               {promptOpen[v.id] && (
-                <div className="absolute inset-0 bg-black/85 p-2 pt-8 overflow-y-auto z-10">
+                <button
+                  type="button"
+                  aria-label="Hide prompt"
+                  className="absolute inset-0 bg-black/85 p-2 pt-8 overflow-y-auto z-20 block w-full h-full text-left cursor-zoom-out"
+                  onClick={() => setPromptOpen((o) => ({ ...o, [v.id]: false }))}
+                >
                   <span className="text-[10px] text-slate-200 font-mono leading-snug">
                     {v.prompt}
                   </span>
-                </div>
+                </button>
               )}
 
               {/* Bottom strip */}
