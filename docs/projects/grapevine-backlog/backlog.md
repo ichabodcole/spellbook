@@ -381,6 +381,34 @@ Worth thinking about as a suite-wide pattern, not a one-off for grapevine.
 
 ---
 
+### Presence events (join / leave the channel)
+
+**Status:** Idea **Originated:** 2026-06-11 (V1.7 human-participant soak)
+
+Surfaced live during the V1.7 soak: an agent supervising a channel gets **no
+signal when a human (or agent) joins or leaves** — it only learns someone is
+present when they send a message, or by polling `who`. For the
+human-as-participant model, a join event would let agents greet/acknowledge the
+human when they arrive.
+
+**The design trap to avoid:** do NOT emit join/leave as **messages in the JSONL
+log**. Presence is flaky — `tail` auto-reconnects on drops, and the watch
+**reloads on every channel switch** — so "emit a message on connect" would spam
+`joined`/`left`/`joined` into history on every transient reconnect.
+
+**Right shape:** an **ephemeral presence frame** broadcast on the SSE stream
+(e.g. `kind:"presence"`, `{event:"join"|"leave", alias, human}`) that is **never
+persisted**, plus **debounce** so a reconnect or channel-switch reload doesn't
+fire a fake join (only emit on a genuinely new presence; grace period on leave).
+Consumers that care subscribe; the log stays clean. Real V1.8-sized work —
+touches `broadcast` + the consume model. Possibly scope to **human** joins only
+at first (agents reconnect constantly; their join/leave is noise).
+
+**Pairs with:** the V1.7 human marker (`who.humans`) — this is the push version
+of what `who` answers by poll today.
+
+---
+
 ## Possible future families (not yet items)
 
 Things that have been alluded to in conversation but aren't ideas yet, captured

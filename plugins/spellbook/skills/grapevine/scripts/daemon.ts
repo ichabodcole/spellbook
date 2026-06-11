@@ -9,22 +9,26 @@
 // until `grapevine stop` (DELETE /) or the user kills it.
 //
 // HTTP surface (all 127.0.0.1):
-//   GET    /             — daemon info ({pid, started_at, channels: N})
+//   GET    /             — daemon info ({pid, started_at, channels: N, version})
 //   DELETE /             — shut down the daemon
-//   GET    /watch        — HTML control plane (chat-bubble live view; channel from URL hash)
-//   GET    /channels     — list channels
-//   GET    /presence     — cross-channel roster: [{ name, subscribers:[alias], connections, named, anonymous }]
-//   POST   /channels     — { name, topic? } create channel (idempotent)
-//   DELETE /channels/:name — close channel
-//   POST   /channels/:name/messages — { from, text } append + broadcast
+//   GET    /watch        — HTML control plane (live view; channel from URL hash)
+//   GET    /identity     — { alias } the persisted default alias (config.json) [V1.7]
+//   GET    /channels     — list channels (each: { …, archived })
+//   GET    /presence     — cross-channel roster: [{ name, subscribers:[alias], humans:[alias], connections, named, anonymous }]
+//   POST   /channels     — { name, topic? } create channel (idempotent; 409 if archived)
+//   DELETE /channels/:name — close channel (deletes log + archived marker)
+//   POST   /channels/:name/archive   — mark read-only (sidecar marker) [V1.7]
+//   POST   /channels/:name/unarchive — clear read-only [V1.7]
+//   POST   /channels/:name/messages — { from, text, in_reply_to? } append + broadcast (409 if archived)
 //   GET    /channels/:name/messages — backlog (?since=<id>)
-//   GET    /channels/:name/subscribers — { channel, subscribers:[alias], count, connections, named, anonymous, topic }
+//   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
 //   GET    /channels/:name/topic    — { channel, topic }
 //   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message)
-//   GET    /channels/:name/tail     — SSE: live messages (?since=<id> for catch-up, ?as=<alias> registers)
+//   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
+//                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
 //                                    subscribed event includes the current topic.
 //
-// Message shape: { id, channel, from, text, ts, kind: "message" }
+// Message shape: { id, channel, from, text, ts, kind: "message", in_reply_to?: <id> }
 // IDs are channel-scoped, monotonically ascending integers. `ts` is unix
 // millis at append time.
 
@@ -36,6 +40,7 @@ import {
   readFileSync,
   statSync,
   unlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
@@ -63,6 +68,19 @@ const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const CHANNELS_DIR = join(DATA_DIR, "channels");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
+// Per-HOME identity config (V1.7) — the persisted default alias the CLI sets
+// (`grapevine alias <name>`) and the watch surface reads via GET /identity so a
+// human has a consistent name across every grapevine without re-typing it.
+const CONFIG_FILE = join(DATA_DIR, "config.json");
+
+function readConfigAlias(): string | null {
+  try {
+    const cfg = JSON.parse(readFileSync(CONFIG_FILE, "utf-8"));
+    return typeof cfg.alias === "string" && cfg.alias.trim() ? cfg.alias.trim() : null;
+  } catch {
+    return null;
+  }
+}
 
 type Message = {
   id: number;
@@ -71,10 +89,21 @@ type Message = {
   text: string;
   ts: number;
   kind: "message" | "topic";
+  // V1.7 threading — id of the message this one replies to (same channel).
+  // Stored only when set; readers that don't understand it ignore it.
+  in_reply_to?: number;
 };
 
 type Subscriber = {
   alias: string | null;
+  // V1.7 — a human-driven connection (the watch surface, or `tail --human`)
+  // marks itself so agents can tell the human apart from another agent rather
+  // than seeing an anonymous count bump.
+  human?: boolean;
+  // V1.7 — a lurk connection (the watch in lurk mode, or `tail --lurk`) still
+  // receives live messages but is **excluded from every presence count** — it
+  // bumps nothing, so browsing a channel is genuinely invisible to agents.
+  lurk?: boolean;
   send: (m: Message) => void;
 };
 
@@ -91,6 +120,10 @@ type Channel = {
   waits: Set<PendingWait>;
   last_activity: number;
   topic: string | null; // latest kind:"topic" message text; null if never set.
+  // V1.7 — archived channels are read-only: history stays readable, but sends
+  // are rejected and the name is locked from re-open. Persisted as a sidecar
+  // marker file (see archivedPath) so it survives a daemon restart.
+  archived: boolean;
 };
 
 const channels = new Map<string, Channel>();
@@ -110,6 +143,13 @@ function channelPath(name: string): string {
     throw new Error(`invalid channel name: ${JSON.stringify(name)}`);
   }
   return join(CHANNELS_DIR, `${name}.jsonl`);
+}
+
+// Sidecar marker for the archived (read-only) state. Its mere existence means
+// archived — content is irrelevant. Validated via channelPath first.
+function archivedPath(name: string): string {
+  channelPath(name); // reuse name validation (throws on invalid)
+  return join(CHANNELS_DIR, `${name}.archived`);
 }
 
 function loadChannel(name: string): Channel {
@@ -152,6 +192,7 @@ function loadChannel(name: string): Channel {
     waits: new Set(),
     last_activity: Date.now(),
     topic,
+    archived: existsSync(archivedPath(name)),
   };
   channels.set(name, ch);
   return ch;
@@ -181,10 +222,13 @@ function listChannels() {
       }
       return {
         name,
-        subscribers: ch?.subscribers.size ?? 0,
+        // Exclude lurkers — the left-rail count must match `who`'s presence,
+        // or a lurking watch tab makes the badge tick up while who shows no one.
+        subscribers: ch ? visibleSubs(ch).length : 0,
         message_count,
         last_activity,
         loaded: !!ch,
+        archived: existsSync(archivedPath(name)),
       };
     });
 }
@@ -194,6 +238,7 @@ function appendMessage(
   from: string,
   text: string,
   kind: "message" | "topic" = "message",
+  inReplyTo?: number,
 ): Message {
   const ch = loadChannel(name);
   const msg: Message = {
@@ -203,6 +248,7 @@ function appendMessage(
     text,
     ts: Date.now(),
     kind,
+    ...(typeof inReplyTo === "number" ? { in_reply_to: inReplyTo } : {}),
   };
   appendFileSync(channelPath(name), `${JSON.stringify(msg)}\n`);
   if (kind === "topic") ch.topic = text;
@@ -232,12 +278,31 @@ function appendMessage(
   return msg;
 }
 
+// Connections that count as presence — everything except lurkers (V1.7). A
+// lurk connection receives messages but is invisible: excluded from every
+// count and roster below.
+function visibleSubs(ch: Channel): Subscriber[] {
+  return Array.from(ch.subscribers.values()).filter((s) => !s.lurk);
+}
+
 function subscriberAliases(name: string): string[] {
   const ch = channels.get(name);
   if (!ch) return [];
   const out: string[] = [];
-  for (const sub of ch.subscribers.values()) {
+  for (const sub of visibleSubs(ch)) {
     if (sub.alias) out.push(sub.alias);
+  }
+  return out.sort();
+}
+
+// Named subscribers flagged as human (V1.7) — a subset of subscriberAliases,
+// so consumers can render `cole (human)` and agents can tell who is the human.
+function subscriberHumans(name: string): string[] {
+  const ch = channels.get(name);
+  if (!ch) return [];
+  const out: string[] = [];
+  for (const sub of visibleSubs(ch)) {
+    if (sub.alias && sub.human) out.push(sub.alias);
   }
   return out.sort();
 }
@@ -306,7 +371,10 @@ async function handle(req: Request): Promise<Response> {
       });
     } catch (e) {
       return json(
-        { error: "watch.html missing", details: e instanceof Error ? e.message : String(e) },
+        {
+          error: "watch.html missing",
+          details: e instanceof Error ? e.message : String(e),
+        },
         { status: 500 },
       );
     }
@@ -316,17 +384,25 @@ async function handle(req: Request): Promise<Response> {
     return json({ channels: listChannels() });
   }
 
+  // Persisted default identity (V1.7) — the watch surface reads this on load to
+  // pre-fill the human's alias. Set via `grapevine alias <name>` (writes
+  // config.json); read fresh each request so a CLI change shows up live.
+  if (path === "/identity" && method === "GET") {
+    return json({ alias: readConfigAlias() });
+  }
+
   // Cross-channel presence aggregation — one shot of names × channel for the
   // `who --all` view and `doctor`'s cross-check. Only channels with at least
   // one live connection appear (presence only exists for loaded channels).
   if (path === "/presence" && method === "GET") {
     const out = [];
     for (const ch of channels.values()) {
-      const subs = Array.from(ch.subscribers.values());
+      const subs = visibleSubs(ch); // lurkers excluded — invisible presence
       if (subs.length === 0) continue;
       out.push({
         name: ch.name,
         subscribers: subscriberAliases(ch.name),
+        humans: subscriberHumans(ch.name),
         connections: subs.length,
         named: subs.filter((s) => s.alias).length,
         anonymous: subs.filter((s) => !s.alias).length,
@@ -342,6 +418,11 @@ async function handle(req: Request): Promise<Response> {
       return json({ error: "name required" }, { status: 400 });
     }
     try {
+      // An archived name is locked — unarchive it to bring it back, rather than
+      // silently reopening a channel someone deliberately retired.
+      if (existsSync(archivedPath(body.name))) {
+        return json({ error: "archived", channel: body.name }, { status: 409 });
+      }
       const ch = loadChannel(body.name);
       // Optional topic on open — only set if provided AND channel has no
       // topic yet (so re-opening doesn't clobber). To update later, use
@@ -358,7 +439,7 @@ async function handle(req: Request): Promise<Response> {
         name: ch.name,
         created_at: ch.created_at,
         message_count: ch.next_id - 1,
-        subscribers: ch.subscribers.size,
+        subscribers: visibleSubs(ch).length,
         topic: ch.topic,
       });
     } catch (e) {
@@ -395,14 +476,49 @@ async function handle(req: Request): Promise<Response> {
         ch.subscribers.clear();
         channels.delete(name);
       }
-      // Delete persisted log too.
+      // Delete persisted log too, plus any archived marker.
       const p = channelPath(name);
       if (existsSync(p)) {
         try {
           unlinkSync(p);
         } catch {}
       }
+      const ap = archivedPath(name);
+      if (existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+      }
       return json({ ok: true });
+    }
+
+    // Archive / unarchive (V1.7) — a non-destructive alternative to close. The
+    // marker file is the source of truth; the in-memory flag mirrors it.
+    if (sub === "/archive" && method === "POST") {
+      writeFileSync(archivedPath(name), "");
+      const ch = channels.get(name);
+      if (ch) ch.archived = true;
+      return json({ ok: true, channel: name, archived: true });
+    }
+    if (sub === "/unarchive" && method === "POST") {
+      const ap = archivedPath(name);
+      if (existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+      }
+      // The marker file is the source of truth across restarts. If it still
+      // exists, the unlink failed — don't report success with a stale on-disk
+      // state that would silently re-archive on the next daemon start.
+      if (existsSync(ap)) {
+        return json(
+          { error: "unarchive failed — marker still present", channel: name },
+          { status: 500 },
+        );
+      }
+      const ch = channels.get(name);
+      if (ch) ch.archived = false;
+      return json({ ok: true, channel: name, archived: false });
     }
 
     if (sub === "/messages" && method === "GET") {
@@ -415,20 +531,23 @@ async function handle(req: Request): Promise<Response> {
       if (!body || typeof body.text !== "string" || typeof body.from !== "string") {
         return json({ error: "from and text required" }, { status: 400 });
       }
+      if (existsSync(archivedPath(name))) {
+        return json({ error: "archived", channel: name }, { status: 409 });
+      }
       try {
-        const m = appendMessage(name, body.from, body.text);
+        const inReplyTo = typeof body.in_reply_to === "number" ? body.in_reply_to : undefined;
+        const m = appendMessage(name, body.from, body.text, "message", inReplyTo);
         const ch = channels.get(name);
         const aliases = subscriberAliases(name);
-        // recipients = subscribers excluding the sender. Subscribers with a
-        // null alias (anonymous watch tabs) always count as recipients.
-        const recipients = Array.from(ch?.subscribers.values() ?? []).reduce(
-          (n, sub) => (sub.alias !== body.from ? n + 1 : n),
-          0,
-        );
+        // recipients = visible subscribers excluding the sender. Lurkers receive
+        // the message but stay uncounted (invisible); anonymous non-lurk watch
+        // tabs do count.
+        const vis = ch ? visibleSubs(ch) : [];
+        const recipients = vis.reduce((n, sub) => (sub.alias !== body.from ? n + 1 : n), 0);
         return json(
           {
             ...m,
-            subscribers: ch?.subscribers.size ?? 0,
+            subscribers: vis.length,
             recipients,
             subscriber_aliases: aliases,
           },
@@ -519,17 +638,19 @@ async function handle(req: Request): Promise<Response> {
 
     if (sub === "/subscribers" && method === "GET") {
       const ch = channels.get(name);
-      const subs = ch ? Array.from(ch.subscribers.values()) : [];
-      // Honest presence accounting: `connections` is the raw socket count,
-      // `named` is connections carrying an alias, `anonymous` is null-alias
-      // connections (e.g. watch tabs). named + anonymous === connections, so a
-      // `count` that exceeds the visible name list is always explainable rather
-      // than reading as a ghost. `count` stays === connections for back-compat.
+      // Lurkers are excluded from every count — an invisible watcher bumps
+      // nothing. Honest presence accounting over what's left: `connections` is
+      // the raw (non-lurk) socket count, `named` carries an alias, `anonymous`
+      // is null-alias (e.g. a CLI `tail` with no `--as`). named + anonymous ===
+      // connections, so a `count` over the name list is explainable, not a
+      // ghost. `count` stays === connections for back-compat.
+      const subs = ch ? visibleSubs(ch) : [];
       const named = subs.filter((s) => s.alias).length;
       const anonymous = subs.filter((s) => !s.alias).length;
       return json({
         channel: name,
         subscribers: subscriberAliases(name),
+        humans: subscriberHumans(name),
         count: subs.length,
         connections: subs.length,
         named,
@@ -565,6 +686,13 @@ async function handle(req: Request): Promise<Response> {
       const ch = loadChannel(name);
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       const alias = url.searchParams.get("as");
+      // V1.7 — a human-driven connection (the watch, or `tail --human`) flags
+      // itself so it shows as `cole (human)` in presence instead of an
+      // unattributed count bump.
+      const human = ["1", "true"].includes(url.searchParams.get("human") ?? "");
+      // V1.7 — a lurk connection receives messages but is excluded from every
+      // presence count, so browsing a channel is genuinely invisible.
+      const lurk = ["1", "true"].includes(url.searchParams.get("lurk") ?? "");
       const backlog = since >= 0 ? readBacklog(name, since) : [];
 
       // We stash the per-stream cleanup fn on the controller so cancel() can
@@ -595,7 +723,7 @@ async function handle(req: Request): Promise<Response> {
           for (const m of backlog) send(m);
 
           const key = Symbol(`sub:${alias ?? "anon"}`);
-          ch.subscribers.set(key, { alias: alias ?? null, send });
+          ch.subscribers.set(key, { alias: alias ?? null, human, lurk, send });
 
           let cleanedUp = false;
           const cleanup = () => {
@@ -686,7 +814,7 @@ async function main() {
     port: 0, // OS-assigned
     // SSE streams are long-lived and silent client→server. Default 10s
     // idleTimeout closes them prematurely; set to 255 (Bun's max — 0 isn't
-    // honored on all paths). Our own 15s heartbeat keeps clients aware.
+    // honored on all paths). Our own 3s heartbeat keeps clients aware.
     idleTimeout: 255,
     fetch: handle,
   });

@@ -5,7 +5,7 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -254,6 +254,150 @@ describe("grapevine cli", () => {
     expect(data.count).toBe(2);
     a.proc.kill("SIGTERM");
     b.proc.kill("SIGTERM");
+  });
+
+  test("tail --human marks the connection as human in who (V1.7)", async () => {
+    await bunRun(["open", "test_human"]);
+    const human = spawnTail("test_human", ["--as", "cole", "--human"]);
+    const agent = spawnTail("test_human", ["--as", "flint"]);
+    await sleep(500);
+    const r = await bunRun(["who", "test_human"]);
+    expect(r.code).toBe(0);
+    const data = JSON.parse(r.stdout);
+    // Both show as named subscribers; only the human is flagged in `humans`.
+    expect(data.subscribers.sort()).toEqual(["cole", "flint"]);
+    expect(data.humans).toEqual(["cole"]);
+    human.proc.kill("SIGTERM");
+    agent.proc.kill("SIGTERM");
+  });
+
+  test("alias set then show round-trips via config.json (V1.7)", async () => {
+    const set = await bunRun(["alias", "cole"]);
+    expect(set.code).toBe(0);
+    expect(JSON.parse(set.stdout).alias).toBe("cole");
+    const get = await bunRun(["alias"]);
+    expect(JSON.parse(get.stdout).alias).toBe("cole");
+  });
+
+  test("GET /identity serves the configured alias (V1.7)", async () => {
+    await bunRun(["alias", "cole-laptop"]);
+    // Need a running daemon to serve /identity — any verb that ensures one.
+    await bunRun(["open", "test_identity"]);
+    const port = parseInt(readFileSync(join(HOME, "daemon.port"), "utf-8").trim(), 10);
+    const res = await fetch(`http://127.0.0.1:${port}/identity`);
+    const data = (await res.json()) as { alias: string | null };
+    expect(data.alias).toBe("cole-laptop");
+  });
+
+  test("send --in-reply-to threads a message (V1.7)", async () => {
+    await bunRun(["open", "test_thread"]);
+    await bunRun(["send", "test_thread", "--from", "a", "original"]); // id 1
+    const r = await bunRun(["send", "test_thread", "--from", "b", "--in-reply-to", "1", "a reply"]); // id 2
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).id).toBe(2);
+    const pull = await bunRun(["pull", "test_thread", "--since", "0"]);
+    const msgs = JSON.parse(pull.stdout).messages as Array<{
+      id: number;
+      in_reply_to?: number;
+    }>;
+    // The reply carries the field; the original (a plain send) does not.
+    expect(msgs.find((m) => m.id === 2)?.in_reply_to).toBe(1);
+    expect(msgs.find((m) => m.id === 1)?.in_reply_to).toBeUndefined();
+  });
+
+  test("archive makes a channel read-only; unarchive restores (V1.7)", async () => {
+    await bunRun(["open", "test_arch"]);
+    await bunRun(["send", "test_arch", "--from", "a", "before archive"]);
+
+    const arch = await bunRun(["archive", "test_arch"]);
+    expect(arch.code).toBe(0);
+    expect(JSON.parse(arch.stdout).archived).toBe(true);
+
+    // list reflects the archived flag
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string; archived?: boolean }) => c.name === "test_arch",
+    );
+    expect(ch.archived).toBe(true);
+
+    // sends are rejected, but history stays readable
+    const blocked = await bunRun(["send", "test_arch", "--from", "a", "nope"]);
+    expect(blocked.code).not.toBe(0);
+    const pull = await bunRun(["pull", "test_arch", "--since", "0"]);
+    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+
+    // the name is locked from re-open
+    const reopen = await bunRun(["open", "test_arch"]);
+    expect(reopen.code).not.toBe(0);
+
+    // unarchive brings it back to writable
+    const un = await bunRun(["unarchive", "test_arch"]);
+    expect(JSON.parse(un.stdout).archived).toBe(false);
+    const ok = await bunRun(["send", "test_arch", "--from", "a", "works again"]);
+    expect(ok.code).toBe(0);
+  });
+
+  test("tail --lurk receives messages but is invisible to who (V1.7)", async () => {
+    await bunRun(["open", "test_lurk"]);
+    const named = spawnTail("test_lurk", ["--as", "watcher"]);
+    const lurker = spawnTail("test_lurk", ["--lurk"]);
+    await sleep(500);
+
+    // who counts only the named subscriber — the lurker bumps nothing.
+    const w = await bunRun(["who", "test_lurk"]);
+    const d = JSON.parse(w.stdout);
+    expect(d.subscribers).toEqual(["watcher"]);
+    expect(d.connections).toBe(1);
+    expect(d.anonymous).toBe(0);
+
+    // ...and the channel-list count must agree (a lurker mustn't tick the
+    // left-rail badge while `who` shows no one).
+    const list = await bunRun(["list"]);
+    const lch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string; subscribers: number }) => c.name === "test_lurk",
+    );
+    expect(lch.subscribers).toBe(1);
+
+    // ...and `/presence` (who --all) must exclude the lurker too.
+    const all = await bunRun(["who", "--all"]);
+    const pch = JSON.parse(all.stdout).channels.find(
+      (c: { name: string; connections: number; subscribers: string[] }) => c.name === "test_lurk",
+    );
+    expect(pch.connections).toBe(1);
+    expect(pch.subscribers).toEqual(["watcher"]);
+
+    // ...but the lurker still receives live messages.
+    await bunRun(["send", "test_lurk", "--from", "speaker", "for the lurker"]);
+    await sleep(300);
+    named.proc.kill("SIGTERM");
+    lurker.proc.kill("SIGTERM");
+    expect(lurker.output()).toContain("for the lurker");
+  });
+
+  test("tail boolean flags parse before the channel arg (V1.7)", async () => {
+    // Regression: `--human`/`--lurk` are boolean. If they weren't, a flag
+    // placed before the channel name would swallow it and the CLI would die
+    // with a usage error instead of tailing.
+    await bunRun(["open", "test_flagorder"]);
+    const proc = spawn(
+      process.execPath,
+      [CLI, "tail", "--human", "test_flagorder", "--as", "zoe"],
+      {
+        env: { ...process.env, GRAPEVINE_HOME: HOME },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    TRACKED_PROCS.add(proc);
+    let exited = false;
+    proc.on("exit", () => {
+      exited = true;
+      TRACKED_PROCS.delete(proc);
+    });
+    await sleep(500);
+    expect(exited).toBe(false); // didn't die on a swallowed channel arg
+    const w = await bunRun(["who", "test_flagorder"]);
+    expect(JSON.parse(w.stdout).humans).toEqual(["zoe"]); // channel + --human both parsed
+    proc.kill("SIGTERM");
   });
 
   test("pull returns backlog since cursor", async () => {
