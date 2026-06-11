@@ -262,8 +262,11 @@ _validated the need_ with concrete evidence; two are new.
 > converges._
 
 The watch surface (`scripts/watch.html`) is where most of V1.7 lives. Today it's
-a self-contained chat-bubble view consuming SSE anonymously through
-`/channels/:name/tail`. V1.7 adds:
+a self-contained chat-bubble view in **plain vanilla JS** (~555 lines) consuming
+SSE anonymously through `/channels/:name/tail`. **Stack decision (2026-06-11):**
+V1.7 adopts **Alpine** (single CDN `<script>`, no build step) to manage the new
+reactive state — the lightweight branch of the spell-surface threshold rule;
+React/Bun-bundle stays reserved for glamour-class surfaces. V1.7 adds:
 
 - A small identity layer (`localStorage`-backed alias prompt + persist).
 - A lurk/join toggle that re-opens the SSE connection with `?as=<alias>` when in
@@ -310,8 +313,12 @@ message object. Existing readers tolerate unknown fields by ignoring them.
   design, leave room for a third visibility class (e.g. an internal
   `visibility: "stealth"` state for future use) without exposing it yet.
 - **Watch UI complexity.** Adding compose, toggles, and threading rendering
-  risks turning watch.html into a small SPA. **Mitigate:** Keep it vanilla — no
-  framework. If the file passes ~600 lines, that's a signal to extract.
+  risks turning watch.html into a small SPA. **Decided (2026-06-11):** adopt
+  **Alpine** (CDN `<script>`, no build) for the V1.7 reactive state rather than
+  hand-syncing the DOM in vanilla — declarative `x-data`/`x-model`/`x-show` is
+  the right tool for compose/toggle/threading and keeps the no-build property.
+  If the surface ever outgrows Alpine toward a V1.8 facilitation control plane,
+  that's the signal to graduate to the React/Bun pattern (glamour's stack).
 - **Threading surface area.** Adding `in_reply_to` opens the door to sub-thread
   filters, collapse/expand, reply chains. Ship the field + minimal render only;
   refuse the rest until someone asks.
