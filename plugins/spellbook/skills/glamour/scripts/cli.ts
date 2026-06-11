@@ -7,7 +7,7 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--intent ..] [--no-open]   # spawn a session
 //   bun cli.ts tail                                          # SSE user events → JSONL (Monitor this)
-//   bun cli.ts state                                         # full state snapshot
+//   bun cli.ts state                                         # lean state snapshot (--full for raw)
 //
 // Pushing into the session (POST /cmd):
 //   bun cli.ts intent <text...>
@@ -150,6 +150,11 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
+    // Pin cwd to the glamour root so Bun finds bunfig.toml (which registers
+    // bun-plugin-tailwind for the dev server). Bun reads bunfig.toml from the
+    // cwd only — without this, launching `cli.ts open` from any other directory
+    // silently skips Tailwind and serves an unstyled surface.
+    cwd: join(SCRIPT_DIR, ".."),
   });
   proc.unref();
 
@@ -172,9 +177,9 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   die("glamour server failed to start within 5s");
 }
 
-async function cmdState(session?: string) {
+async function cmdState(session?: string, full = false) {
   const s = requireSession(session);
-  const { status, data } = await api(s.port, "GET", "/state");
+  const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
   if (status !== 200) die(`state failed (HTTP ${status})`);
   printJson(data);
 }
@@ -325,7 +330,7 @@ const HELP = `glamour — compose a visual style spec.
   open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]
   sessions                           list saved (resumable) sessions
   tail   [--since N]                  SSE user events → JSONL (wrap with Monitor)
-  state                              full state snapshot
+  state  [--full]                    lean state snapshot (add --full for raw incl. base64)
   intent <text...>
   read   <influenceId> <text...>      post per-image analysis
   phase  <gather|analysis|direction|prompts|variants|spec>
@@ -336,6 +341,9 @@ const HELP = `glamour — compose a visual style spec.
   spec   [--understanding ..] [--recreate ..] [--model ..] [--modules "palette=on,motifs=off"]
   status on [text...] | status off       # show/hide the "agent working" spinner
   say    <text...>
+  narrate [--kind info|working|result|error] <text...>   # agent→user activity feed
+  cost   <text...>                    cumulative spend display (e.g. "$0.38 · 8 imgs")
+  handoff <text...> | handoff --clear raise/clear the "questions in terminal" banner
   close | info | help
 
   Add --session <id> to target a specific session (default: most recent).`;
@@ -353,7 +361,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1);
       break;
     case "state":
-      await cmdState(session);
+      await cmdState(session, flags.full === true);
       break;
     case "intent":
       if (!pos.length) die("usage: intent <text...>");
@@ -440,6 +448,24 @@ async function main(argv: string[]): Promise<number> {
     case "say":
       if (!pos.length) die("usage: say <text...>");
       await postCmd(session, { type: "message", text: pos.join(" ") });
+      break;
+    case "narrate": {
+      if (!pos.length) die("usage: narrate [--kind info|working|result|error] <text...>");
+      const kind = typeof flags.kind === "string" ? flags.kind : "info";
+      const VALID_KINDS: string[] = ["info", "working", "result", "error"];
+      if (!VALID_KINDS.includes(kind)) die(`--kind must be one of: ${VALID_KINDS.join("|")}`);
+      await postCmd(session, { type: "narrate", kind, text: pos.join(" ") });
+      break;
+    }
+    case "cost":
+      if (!pos.length) die("usage: cost <text...>");
+      await postCmd(session, { type: "cost", text: pos.join(" ") });
+      break;
+    case "handoff":
+      await postCmd(session, {
+        type: "handoff",
+        text: flags.clear === true ? "" : pos.join(" "),
+      });
       break;
     case "close":
       await postCmd(session, { type: "close" });

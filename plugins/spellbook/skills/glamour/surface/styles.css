@@ -1,0 +1,100 @@
+@import "tailwindcss";
+/* Scan this surface's components/phases for class names regardless of the
+   daemon's launch cwd (cli.ts spawns the server from arbitrary directories).
+   Without this, Tailwind v4's auto content-detection roots at cwd and emits
+   zero utilities → an unstyled surface. */
+@source "./";
+:root {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: radial-gradient(ellipse at top, #1a1422 0%, #120e18 60%);
+}
+
+@keyframes pdot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply text-lg font-semibold text-violet-50;
+  }
+  .section-title {
+    @apply text-[11px] font-semibold text-violet-300/70 uppercase tracking-wider;
+  }
+  .label {
+    @apply text-xs text-slate-500;
+  }
+  .text-body {
+    @apply text-sm text-slate-200 leading-relaxed;
+  }
+  .text-muted {
+    @apply text-sm text-slate-400;
+  }
+  .text-faint {
+    @apply text-xs text-slate-500;
+  }
+  .text-mono {
+    @apply text-xs text-slate-500 font-mono;
+  }
+  .card {
+    @apply bg-[#1b1626] border border-[#2e2640] rounded-xl;
+  }
+  .inset {
+    @apply bg-[#140f1d] border border-[#2a2238] rounded-lg;
+  }
+  .badge {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium;
+  }
+  /* badge variants: inline base utilities to avoid Tailwind v4 cross-class @apply issue */
+  .badge-accent {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium bg-violet-500/10 text-violet-300 border-violet-500/25;
+  }
+  .badge-muted {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium bg-slate-700/40 text-slate-300 border-slate-600/60;
+  }
+  .badge-canon {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium bg-amber-500/15 text-amber-300 border-amber-500/30;
+  }
+  .btn {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2;
+  }
+  /* btn variants: inline base utilities to avoid Tailwind v4 cross-class @apply issue */
+  .btn-primary {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 bg-violet-600 text-white hover:bg-violet-500;
+  }
+  .btn-outline {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 border border-[#3a3050] text-slate-300 hover:bg-[#241d33];
+  }
+  .btn-ghost {
+    @apply text-xs px-3 py-1.5 rounded-md border border-[#2e2640] text-slate-400 hover:text-slate-200 hover:border-[#3a3050] transition-colors flex items-center justify-center gap-2;
+  }
+  .textarea {
+    @apply w-full bg-[#140f1d] border border-[#2a2238] text-sm text-white px-3 py-2 rounded-lg placeholder-slate-600 focus:outline-none focus:border-violet-600/60 resize-none;
+  }
+  .chip {
+    @apply text-xs px-2.5 py-1 rounded-full border border-[#3a3050] text-slate-300 hover:bg-violet-600/20 hover:border-violet-500/40 hover:text-violet-200 transition-colors cursor-pointer;
+  }
+  .chip-on {
+    @apply text-xs px-2.5 py-1 rounded-full border bg-violet-600/25 border-violet-500/50 text-violet-100 cursor-pointer;
+  }
+  .tile {
+    @apply relative rounded-lg overflow-hidden border border-[#2e2640] aspect-square bg-[#140f1d];
+  }
+  .tile img {
+    @apply w-full h-full object-cover;
+  }
+  .pulse-dot {
+    animation: pdot 1.6s ease-in-out infinite;
+  }
+  .toast {
+    @apply bg-[#241d33] border border-[#3a3050] text-slate-200 text-sm px-3 py-2 rounded-lg shadow-lg;
+  }
+}

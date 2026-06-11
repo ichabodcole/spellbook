@@ -32,6 +32,9 @@
 //   {"type":"spec",          "spec":{understanding?,modules?,recreatePrompt?,model?}}
 //   {"type":"status",        "busy":bool,"text":".."}       // surface shows a spinner while busy
 //   {"type":"message",       "text":".."}                   // toast
+//   {"type":"narrate",       "kind?":"info|working|result|error","text":".."}  // agent→user activity feed
+//   {"type":"cost",          "text":".."}                    // cumulative spend display
+//   {"type":"handoff",       "text":".."}                    // "questions in terminal" banner ("" clears)
 //   {"type":"close"}
 //
 // User events — streamed on GET /events (and replayable via ?since):
@@ -44,9 +47,10 @@
 //   {"type":"context.remove","id":".."}
 //   {"type":"intent.set","text":".."}
 //   {"type":"analysis.comment","id":"..","text":".."}
-//   {"type":"direction.correct","text":".."}
+//   {"type":"direction.correct","text":"..","mode":"correct|augment"}
+//   {"type":"note","text":"..","scope":"<phase>","mode":"correct|augment"}  // in-surface feedback (non-terminating)
 //   {"type":"prompt.comment","id":"..","text":".."}  {"type":"prompts.comment","text":".."}
-//   {"type":"variant.like","id":"..","liked":bool}   {"type":"variant.canonical","id":"..","canonical":bool}
+//   {"type":"variant.like","id":"..","liked":bool}   {"type":"variant.canonical","id":"..","canonical":bool}  // single-select: setting one clears the rest
 //   {"type":"feedback","scope":"analysis|prompts","items":[{id,text}],"overall":".."}  // batched review
 //   {"type":"steer","text":".."}  {"type":"generate"}  {"type":"nudge","label":".."}
 //   {"type":"spec.module","key":"..","on":bool}
@@ -60,76 +64,24 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
+import index from "../surface/index.html";
+import { optimizeImageBuffer } from "../surface/state/imageOptimize.server";
+import {
+  type Context,
+  defaultState,
+  type GlamourState,
+  type Influence,
+  type NarrationKind,
+  type Phase,
+  VALID_PHASE,
+  type Variant,
+} from "../surface/state/types";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
 // Persistent home for session snapshots (survives restarts, unlike tmpdir).
 const GLAMOUR_HOME = process.env.GLAMOUR_HOME ?? join(homedir(), ".glamour");
 const SNAPSHOTS_DIR = join(GLAMOUR_HOME, "snapshots");
-
-type Phase = "gather" | "analysis" | "direction" | "prompts" | "variants" | "spec";
-const VALID_PHASE: Phase[] = ["gather", "analysis", "direction", "prompts", "variants", "spec"];
-
-type Influence = {
-  id: string;
-  src: string; // data URL — for the browser to display
-  path: string; // on-disk file the agent can Read (vision); empty if not saved
-  name: string;
-  aspects: string[];
-  starred: boolean;
-  note: string;
-  read: string; // agent's per-image analysis
-};
-
-// A dropped text/markdown context file — world-building material, briefs,
-// anything written. The agent Reads it (path); star + note carry emphasis.
-type Context = {
-  id: string;
-  name: string;
-  text: string; // file content — for browser preview; stripped from agent line
-  path: string; // on-disk file the agent Reads
-  starred: boolean;
-  note: string;
-};
-
-type Prompt = { id: string; text: string };
-
-type Variant = {
-  id: string;
-  src: string;
-  prompt: string;
-  // Optional human-readable style name, e.g. "Painterly storybook". Lets a
-  // variant read as a *named direction* — the key affordance for divergent
-  // discovery (the agent offers contrasting styles to react to), while
-  // staying empty for ordinary convergent variations.
-  label: string;
-  round: number;
-  liked: boolean;
-  canonical: boolean;
-};
-
-type SpecModule = { key: string; label: string; on: boolean };
-
-type GlamourState = {
-  title: string;
-  intent: string;
-  phase: Phase;
-  influences: Influence[];
-  contexts: Context[];
-  direction: { revision: number; understanding: string };
-  prompts: Prompt[];
-  variants: Variant[];
-  round: number;
-  // Agent-driven "I'm working" signal — the surface shows a spinner while
-  // busy so the user knows the agent is processing between steps.
-  status: { busy: boolean; text: string };
-  spec: {
-    understanding: string;
-    modules: SpecModule[];
-    recreatePrompt: string;
-    model: string;
-  };
-};
 
 type CloseReason = "submit" | "cancel" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
@@ -197,35 +149,6 @@ function guessMime(name: string): string {
   return MIME_BY_EXT[ext] || "application/octet-stream";
 }
 
-function defaultState(title: string, intent: string): GlamourState {
-  return {
-    title,
-    intent,
-    phase: "gather",
-    influences: [],
-    contexts: [],
-    direction: { revision: 0, understanding: "" },
-    prompts: [],
-    variants: [],
-    round: 0,
-    status: { busy: false, text: "" },
-    spec: {
-      understanding: "",
-      // The agent composes the spec from what the inputs warrant — these
-      // are togglable modules, none mandatory. "understanding" is the one
-      // near-universal element and lives outside this list.
-      modules: [
-        { key: "palette", label: "palette", on: false },
-        { key: "consistency", label: "consistency rules", on: false },
-        { key: "motifs", label: "motifs / iconography", on: false },
-        { key: "dosdonts", label: "do / don't", on: false },
-      ],
-      recreatePrompt: "",
-      model: "",
-    },
-  };
-}
-
 const EXT_BY_MIME: Record<string, string> = {
   "image/png": ".png",
   "image/jpeg": ".jpg",
@@ -280,6 +203,59 @@ function contextForAgent(c: Context): Omit<Context, "text"> {
   return rest;
 }
 
+// Project a variant for the agent: drop the (huge) data-URL src — the
+// agent inspects variants via path or label, not raw pixel data.
+function variantForAgent(v: Variant): Omit<Variant, "src"> {
+  const { src: _drop, ...rest } = v;
+  return rest;
+}
+
+// Advance the phase forward only: returns target if it is strictly later in
+// VALID_PHASE than current, otherwise returns current unchanged.
+export function advancePhase(current: Phase, target: Phase): Phase {
+  const ci = VALID_PHASE.indexOf(current);
+  const ti = VALID_PHASE.indexOf(target);
+  return ti > ci ? target : current;
+}
+
+// Enforce single-canonical: setting one true clears the rest; setting false
+// just clears that one. Mutates in place. Unknown id is a no-op.
+export function applyCanonical(variants: Variant[], id: string, on: boolean): void {
+  const target = variants.find((v) => v.id === id);
+  if (!target) return;
+  if (on) for (const v of variants) v.canonical = v.id === id;
+  else target.canonical = false;
+}
+
+const IMAGE_DATA_URL_RE = /^data:image\/[a-z0-9.+-]+;base64,(.*)$/is;
+
+// Downscale+webp an inlined variant data-url before it enters state (raw nano
+// PNGs are the dominant state-bloat source). Non-data-url srcs (e.g. http) and
+// any failure pass the original through unchanged — optimization is best-effort.
+export async function optimizeVariantSrc(src: string): Promise<string> {
+  const m = IMAGE_DATA_URL_RE.exec(src);
+  if (!m) return src;
+  try {
+    const input = new Uint8Array(Buffer.from(m[1], "base64"));
+    const { data } = await optimizeImageBuffer(input);
+    return `data:image/webp;base64,${Buffer.from(data).toString("base64")}`;
+  } catch {
+    return src;
+  }
+}
+
+// Lean state projection for the agent: strips all inlined binary/text blobs
+// (influence src, variant src, context text). The agent reads on-disk paths
+// instead — keeps the payload ~small regardless of session size.
+export function leanState(s: GlamourState) {
+  return {
+    ...s,
+    influences: s.influences.map(influenceForAgent),
+    contexts: s.contexts.map(contextForAgent),
+    variants: s.variants.map(variantForAgent),
+  };
+}
+
 async function main(argv: string[]): Promise<number> {
   let parsed: ReturnType<typeof parseArgs>;
   try {
@@ -312,7 +288,6 @@ async function main(argv: string[]): Promise<number> {
     if (embedded !== null) port = embedded;
   }
 
-  const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
   let state = defaultState(v.title as string, v.intent as string);
@@ -404,7 +379,7 @@ async function main(argv: string[]): Promise<number> {
   };
 
   // ── agent commands (POST /cmd) ────────────────────────────────────
-  function handleAgentMsg(msg: Record<string, unknown>) {
+  async function handleAgentMsg(msg: Record<string, unknown>) {
     const t = msg.type as string;
     if (t === "init") {
       if (typeof msg.title === "string") state.title = msg.title;
@@ -417,6 +392,7 @@ async function main(argv: string[]): Promise<number> {
       const inf = findInfluence(msg.id as string);
       if (inf && typeof msg.read === "string") {
         inf.read = msg.read;
+        state.phase = advancePhase(state.phase, "analysis");
         broadcastState();
       }
     } else if (t === "phase") {
@@ -426,9 +402,15 @@ async function main(argv: string[]): Promise<number> {
       }
     } else if (t === "direction") {
       if (typeof msg.understanding === "string") {
+        const hadPrior = state.direction.understanding !== "";
         state.direction.understanding = msg.understanding;
         state.direction.revision =
-          typeof msg.revision === "number" ? msg.revision : state.direction.revision + 1;
+          typeof msg.revision === "number"
+            ? msg.revision
+            : hadPrior
+              ? state.direction.revision + 1
+              : 0;
+        state.phase = advancePhase(state.phase, "direction");
         broadcastState();
       }
     } else if (t === "prompts") {
@@ -437,20 +419,23 @@ async function main(argv: string[]): Promise<number> {
           id: typeof p.id === "string" ? p.id : newId("p"),
           text: typeof p.text === "string" ? p.text : "",
         }));
+        state.phase = advancePhase(state.phase, "prompts");
         broadcastState();
       }
     } else if (t === "variant.add") {
       const raw2 = msg.variant as Record<string, unknown> | undefined;
       if (raw2 && typeof raw2.src === "string") {
+        const src = await optimizeVariantSrc(raw2.src);
         state.variants.push({
           id: typeof raw2.id === "string" ? raw2.id : newId("v"),
-          src: raw2.src,
+          src,
           prompt: typeof raw2.prompt === "string" ? raw2.prompt : "",
           label: typeof raw2.label === "string" ? raw2.label : "",
           round: typeof raw2.round === "number" ? raw2.round : state.round,
           liked: false,
           canonical: false,
         });
+        state.phase = advancePhase(state.phase, "variants");
         broadcastState();
       }
     } else if (t === "variants.clear") {
@@ -465,15 +450,41 @@ async function main(argv: string[]): Promise<number> {
       if (Array.isArray(s.modules)) {
         for (const m of s.modules as Array<Record<string, unknown>>) {
           const mod = state.spec.modules.find((x) => x.key === m.key);
-          if (mod && typeof m.on === "boolean") mod.on = m.on;
+          if (!mod) continue;
+          if (typeof m.on === "boolean") mod.on = m.on;
+          if (typeof m.content === "string") mod.content = m.content;
         }
       }
+      state.phase = advancePhase(state.phase, "spec");
       broadcastState();
     } else if (t === "status") {
       state.status = {
         busy: msg.busy === true,
         text: typeof msg.text === "string" ? msg.text : "",
       };
+      broadcastState();
+    } else if (t === "narrate") {
+      const kind = (["info", "working", "result", "error"] as const).includes(
+        msg.kind as NarrationKind,
+      )
+        ? (msg.kind as NarrationKind)
+        : "info";
+      if (typeof msg.text === "string" && msg.text) {
+        state.narration.push({
+          id: newId("n"),
+          kind,
+          text: msg.text,
+          ts: Date.now(),
+        });
+        broadcastState();
+      }
+    } else if (t === "cost") {
+      if (typeof msg.text === "string") {
+        state.cost = msg.text;
+        broadcastState();
+      }
+    } else if (t === "handoff") {
+      state.handoff = typeof msg.text === "string" ? msg.text : "";
       broadcastState();
     } else if (t === "message") {
       broadcast({ type: "message", text: msg.text });
@@ -522,20 +533,18 @@ async function main(argv: string[]): Promise<number> {
     });
   }
 
-  let pageHtml = "";
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
       hostname: host,
+      routes: {
+        "/": index,
+      },
+      development: { hmr: true },
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
-        if (req.method === "GET" && path === "/") {
-          return new Response(pageHtml, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
-        }
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded) return undefined;
@@ -543,7 +552,9 @@ async function main(argv: string[]): Promise<number> {
         }
         // ── agent HTTP API ──
         if (req.method === "GET" && path === "/state") {
-          return new Response(JSON.stringify({ state, cursor: eventSeq }), {
+          const lean = url.searchParams.get("lean") === "1";
+          const payload = lean ? leanState(state) : state;
+          return new Response(JSON.stringify({ state: payload, cursor: eventSeq }), {
             headers: { "Content-Type": "application/json" },
           });
         }
@@ -553,9 +564,9 @@ async function main(argv: string[]): Promise<number> {
         if (req.method === "POST" && path === "/cmd") {
           return req
             .json()
-            .then((body) => {
+            .then(async (body) => {
               touch();
-              handleAgentMsg(body as Record<string, unknown>);
+              await handleAgentMsg(body as Record<string, unknown>);
               return new Response('{"ok":true}', {
                 headers: { "Content-Type": "application/json" },
               });
@@ -690,9 +701,10 @@ async function main(argv: string[]): Promise<number> {
             emitEvent({ type: "analysis.comment", id: msg.id, text: msg.text });
           } else if (t === "direction.correct") {
             if (typeof msg.text !== "string") return;
-            emitEvent({ type: "direction.correct", text: msg.text });
+            const mode = msg.mode === "augment" ? "augment" : "correct";
+            emitEvent({ type: "direction.correct", text: msg.text, mode });
           } else if (t === "prompt.comment") {
-            if (typeof msg.text !== "string") return;
+            if (typeof msg.id !== "string" || typeof msg.text !== "string") return;
             emitEvent({ type: "prompt.comment", id: msg.id, text: msg.text });
           } else if (t === "prompts.comment") {
             if (typeof msg.text !== "string") return;
@@ -706,7 +718,7 @@ async function main(argv: string[]): Promise<number> {
           } else if (t === "variant.canonical") {
             const x = findVariant(msg.id as string);
             if (!x) return;
-            x.canonical = msg.canonical === true;
+            applyCanonical(state.variants, x.id, msg.canonical === true);
             broadcastState();
             emitEvent({
               type: "variant.canonical",
@@ -716,6 +728,23 @@ async function main(argv: string[]): Promise<number> {
           } else if (t === "steer") {
             if (typeof msg.text !== "string") return;
             emitEvent({ type: "steer", text: msg.text });
+          } else if (t === "note") {
+            // FEAT-3: always-on, non-terminating feedback channel. Echo into the
+            // narration feed so the user sees it land, then forward to the agent
+            // with the phase breadcrumb + mode.
+            if (typeof msg.text !== "string" || !msg.text) return;
+            const scope = VALID_PHASE.includes(msg.scope as Phase)
+              ? (msg.scope as Phase)
+              : state.phase;
+            const mode = msg.mode === "correct" ? "correct" : "augment";
+            state.narration.push({
+              id: newId("n"),
+              kind: "info",
+              text: `you (${scope}): ${msg.text}`,
+              ts: Date.now(),
+            });
+            broadcastState();
+            emitEvent({ type: "note", text: msg.text, scope, mode });
           } else if (t === "feedback") {
             // Batched review feedback for a phase: many per-item comments +
             // an optional overall note, sent in one shot. The agent revises
@@ -790,11 +819,6 @@ async function main(argv: string[]): Promise<number> {
     }
     saveSnapshot();
   }
-  const wsUrl = `ws://${host}:${boundPort}/ws`;
-  pageHtml = template
-    .replace(/__TITLE__/g, htmlEscape(state.title))
-    .replace(/__SESSION_ID__/g, htmlEscape(sessionId))
-    .replace(/__WS_URL__/g, JSON.stringify(wsUrl));
 
   const url = `http://${host}:${boundPort}`;
   emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId });
@@ -878,5 +902,12 @@ if (import.meta.main) {
   process.exit(exitCode);
 }
 
-export type { Context, GlamourState, Influence, Phase, Variant };
-export { defaultState, htmlEscape, main, parsePortFromSessionId };
+export type {
+  Context,
+  GlamourState,
+  Influence,
+  Phase,
+  Variant,
+} from "../surface/state/types";
+export { defaultState } from "../surface/state/types";
+export { htmlEscape, main, parsePortFromSessionId };
