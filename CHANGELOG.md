@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.0.0...spellbook-v1.1.0) (2026-06-11)
+
+
+### Features
+
+* **grapevine:** V1.7 — human as a first-class participant ([2187404](https://github.com/ichabodcole/spellbook/commit/21874043a19e9d1df9772b6468b63ff60a9d535c))
+
 ## [1.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v0.1.0...spellbook-v1.0.0) (2026-06-11)
 
 
