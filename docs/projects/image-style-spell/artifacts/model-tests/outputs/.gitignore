@@ -1,0 +1,4 @@
+# Generated test images — local only, not committed.
+# Drop this file (or specific images) if you want to keep a curated set.
+*
+!.gitignore

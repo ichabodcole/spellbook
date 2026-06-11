@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mockup — compose spell (provisional)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+
+    <!--
+      ============================================================
+      THEME — Spellbook-dark, violet/fuchsia "compose" accent.
+      Throwaway tint; real identity chosen later, at coalescence.
+      ============================================================
+    -->
+    <style type="text/tailwindcss">
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: radial-gradient(ellipse at top, #1a1422 0%, #120e18 60%);
+      }
+      .page-title { @apply text-lg font-semibold text-violet-50; }
+      .section-title { @apply text-[11px] font-semibold text-violet-300/70 uppercase tracking-wider; }
+      .label { @apply text-xs text-slate-500; }
+      .text-body { @apply text-sm text-slate-200 leading-relaxed; }
+      .text-muted { @apply text-sm text-slate-400; }
+      .text-faint { @apply text-xs text-slate-500; }
+      .text-mono { @apply text-xs text-slate-500 font-mono; }
+
+      .card { @apply bg-[#1b1626] border border-[#2e2640] rounded-xl; }
+      .inset { @apply bg-[#140f1d] border border-[#2a2238] rounded-lg; }
+
+      .badge { @apply text-[11px] px-2 py-0.5 rounded border font-medium; }
+      .badge-accent { @apply badge bg-violet-500/10 text-violet-300 border-violet-500/25; }
+      .badge-muted { @apply badge bg-slate-700/40 text-slate-300 border-slate-600/60; }
+      .badge-canon { @apply badge bg-amber-500/15 text-amber-300 border-amber-500/30; }
+
+      .btn { @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2; }
+      .btn-primary { @apply btn bg-violet-600 text-white hover:bg-violet-500; }
+      .btn-outline { @apply btn border border-[#3a3050] text-slate-300 hover:bg-[#241d33]; }
+      .btn-ghost { @apply text-xs px-3 py-1.5 rounded-md border border-[#2e2640] text-slate-400 hover:text-slate-200 hover:border-[#3a3050] transition-colors flex items-center justify-center gap-2; }
+
+      .textarea { @apply w-full bg-[#140f1d] border border-[#2a2238] text-sm text-white px-3 py-2 rounded-lg placeholder-slate-600 focus:outline-none focus:border-violet-600/60 resize-none; }
+      .chip { @apply text-xs px-2.5 py-1 rounded-full border border-[#3a3050] text-slate-300 hover:bg-violet-600/20 hover:border-violet-500/40 hover:text-violet-200 transition-colors cursor-pointer; }
+      .chip-on { @apply text-xs px-2.5 py-1 rounded-full border bg-violet-600/25 border-violet-500/50 text-violet-100 cursor-pointer; }
+
+      .tile { @apply relative rounded-lg overflow-hidden border border-[#2e2640] aspect-square; }
+      .skeleton { background: linear-gradient(90deg,#1f1830 25%,#2e2442 50%,#1f1830 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+      @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+      .pulse-dot { animation: pdot 1.6s ease-in-out infinite; }
+      @keyframes pdot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+      .caret::after { content: "▋"; @apply text-violet-400; animation: blink 1s steps(2) infinite; }
+      @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+    </style>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("app", () => ({
+          state: "idle",
+          flow: ["idle","influences","reflecting","analysis","direction","prompts","generating","variants","spec"],
+          atLeast(s) { return this.flow.indexOf(this.state) >= this.flow.indexOf(s); },
+
+          intent:
+            "Warm, editorial, a little sun-faded — confident type, retro-leaning but clean. For our app's marketing visuals.",
+
+          aspectOptions: ["color","light","subject","style","composition","type","mood","accent"],
+          sel: 0,
+          refs: [
+            { name: "sun-faded-poster.jpg", grad: "linear-gradient(135deg,#e8a657,#c2532f 60%,#7a2e22)",
+              aspects: ["color","light"], starred: true, note: "The bleached amber wash — this exact warmth, not the subject.",
+              read: "A bleached amber wash over the whole frame — warmth reads as late-afternoon sun, not a filter. Per your note I'm taking the light + color, not the poster's subject or layout.", commenting: false },
+            { name: "matcha-ceramics.jpg", grad: "linear-gradient(135deg,#9bbf8a,#5f8f6b 55%,#33503f)",
+              aspects: ["color"], starred: false, note: "Just the green as a cool counterweight. Ignore the ceramics.",
+              read: "Muted sage and matcha greens against warm neutrals. You scoped this to color only, so I'm ignoring the ceramic objects — just banking the cool green as a counterweight.", commenting: false },
+            { name: "neon-alley.png", grad: "linear-gradient(135deg,#6d5cff,#b14fd8 55%,#e0589a)",
+              aspects: ["accent"], starred: false, note: "Only the neon pop — used sparingly, never the base.",
+              read: "High-saturation magenta/blue neon against deep shadow. Marked accent — so I'm treating this as one electric note to use sparingly, never the base palette.", commenting: false },
+            { name: "editorial-spread.jpg", grad: "linear-gradient(135deg,#2a2620,#534a3b 60%,#9c8a6b)",
+              aspects: ["type","composition"], starred: true, note: "Confident high-contrast serif + the negative space.",
+              read: "Confident high-contrast serif, generous leading, strong off-center layout with breathing negative space. I'm reading the typographic voice + composition, not the photo content.", commenting: false },
+          ],
+          toggleAspect(r, a) { const i = r.aspects.indexOf(a); i < 0 ? r.aspects.push(a) : r.aspects.splice(i, 1); },
+          toggleStar(r) { r.starred = !r.starred; },
+
+          // composable spec modules — the agent keeps only what the inputs warrant
+          specModules: [
+            { key: "palette", label: "palette", on: true },
+            { key: "consistency", label: "consistency rules", on: false },
+            { key: "motifs", label: "motifs / iconography", on: false },
+            { key: "dosdonts", label: "do / don't", on: false },
+          ],
+          mod(k) { return this.specModules.find((m) => m.key === k); },
+          toggleMod(m) { m.on = !m.on; },
+
+          correcting: false,
+          revision: 1,
+          promptsOverall: false,
+
+          steer: "",
+          steerChips: ["warmer / more sun-faded","less neon","more negative space","tighter crop","softer grain","bolder type"],
+
+          variants: [
+            { id: 1, grad: "linear-gradient(135deg,#e9b06a,#c66a3a 60%,#7e3b2a)", liked: true,  canonical: true,  showPrompt: false,
+              prompt: "sun-faded editorial portrait, golden hour, amber + terracotta, high-contrast serif overlay, off-center, soft film grain" },
+            { id: 2, grad: "linear-gradient(135deg,#d99a55,#a85a39 55%,#6b3328)", liked: false, canonical: false, showPrompt: false,
+              prompt: "warm coastal still life, bleached light, terracotta palette, negative space, retro-modern serif caption" },
+            { id: 3, grad: "linear-gradient(135deg,#e8c98a,#cf8a4e 60%,#8a4f2e)", liked: true,  canonical: true,  showPrompt: false,
+              prompt: "golden-hour wide shot, amber wash, matcha-green counterweight, editorial layout, film grain" },
+            { id: 4, grad: "linear-gradient(135deg,#c98f6b,#8f5a44 55%,#5a3530)", liked: false, canonical: false, showPrompt: false,
+              prompt: "sun-bleached portrait, muted terracotta, cool neon accent (sparing), off-center composition" },
+            { id: 5, grad: "linear-gradient(135deg,#f0c178,#d68a45 55%,#9c5a2e)", liked: false, canonical: false, showPrompt: false,
+              prompt: "retro-modern poster, high-contrast serif, amber + burnt orange, generous margins, grain" },
+            { id: 6, grad: "linear-gradient(135deg,#dca967,#b07038 60%,#73402a)", liked: true,  canonical: false, showPrompt: false,
+              prompt: "warm editorial scene, golden hour, terracotta + matcha, confident typography, soft grain" },
+          ],
+          round: 2,
+
+          get canon() { return this.variants.filter((v) => v.canonical); },
+          toggleLike(v) { v.liked = !v.liked; },
+          toggleCanon(v) { v.canonical = !v.canonical; },
+        }));
+      });
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+
+  <body class="text-slate-200 min-h-screen">
+    <div x-data="app">
+      <!-- State switcher -->
+      <div class="bg-amber-950/60 border-b border-amber-800/40 px-6 py-2 flex items-center gap-3 sticky top-0 z-50">
+        <span class="section-title text-amber-500">Prototype state</span>
+        <div class="flex gap-1.5 flex-wrap">
+          <template x-for="(s, i) in flow" :key="s">
+            <button @click="state = s; correcting = false"
+              :class="state === s ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-800 text-slate-300 border-slate-600'"
+              class="text-xs px-2.5 py-1 rounded border font-medium capitalize"
+              x-text="(i+1) + ' · ' + s"></button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <header class="px-6 pt-5 pb-3 flex items-center justify-between border-b border-[#241d33]">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-violet-600/20 border border-violet-500/30 flex items-center justify-center">
+            <i data-lucide="wand-sparkles" class="w-5 h-5 text-violet-300 pointer-events-none"></i>
+          </div>
+          <div>
+            <div class="page-title leading-tight">untitled compose spell</div>
+            <div class="text-faint">provisional · mirror of magpie (compose ↔ decompose) · throwaway prototype</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+          agent listening
+          <span class="text-faint ml-2">round <span x-text="round"></span></span>
+        </div>
+      </header>
+
+      <!-- 3-pane studio -->
+      <div class="grid grid-cols-[300px_1fr_330px] gap-4 p-4 items-start">
+
+        <!-- ============ LEFT · INFLUENCES ============ -->
+        <div class="card p-4 space-y-4">
+          <div class="flex items-center">
+            <div class="section-title">Influences</div>
+            <span x-show="atLeast('influences')" class="text-faint ml-auto">click a tile to annotate</span>
+          </div>
+
+          <!-- idle: empty drop zone -->
+          <template x-if="!atLeast('influences')">
+            <div class="inset border-dashed border-2 border-[#34294a] rounded-xl py-10 px-4 text-center">
+              <i data-lucide="image-plus" class="w-7 h-7 text-violet-400/70 mx-auto mb-2 pointer-events-none"></i>
+              <div class="text-muted">Drop reference images here</div>
+              <div class="text-faint mt-1">mood boards, brand shots, anything with the vibe</div>
+            </div>
+          </template>
+
+          <!-- gathered: gallery w/ aspect chips + selection -->
+          <template x-if="atLeast('influences')">
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <template x-for="(r, idx) in refs" :key="r.name">
+                  <button @click="sel = idx; if(!atLeast('reflecting')) state='influences'"
+                    class="tile text-left"
+                    :class="sel === idx && state==='influences' ? 'ring-2 ring-violet-500' : ''"
+                    :style="'background:' + r.grad">
+                    <div class="absolute top-1 left-1 flex flex-wrap gap-0.5">
+                      <template x-for="a in r.aspects" :key="a">
+                        <span class="text-[9px] px-1 rounded bg-black/55 text-white/90" x-text="a"></span>
+                      </template>
+                    </div>
+                    <div x-show="r.starred" class="absolute top-1 right-1">
+                      <i data-lucide="star" class="w-3.5 h-3.5 text-amber-300 fill-current pointer-events-none drop-shadow"></i>
+                    </div>
+                    <div class="absolute bottom-0 inset-x-0 bg-black/45 px-1.5 py-1">
+                      <div class="text-[10px] text-white/80 font-mono truncate" x-text="r.name"></div>
+                    </div>
+                  </button>
+                </template>
+              </div>
+              <button class="btn-ghost w-full" @click="state='influences'">
+                <i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i> add more — re-reads when you do
+              </button>
+            </div>
+          </template>
+
+          <!-- intent -->
+          <div class="space-y-1.5">
+            <div class="section-title">What you're going for</div>
+            <textarea class="textarea h-24" x-text="intent"></textarea>
+          </div>
+
+          <button x-show="!atLeast('reflecting')" class="btn-primary w-full" @click="state = 'reflecting'">
+            <i data-lucide="scan-eye" class="w-4 h-4 pointer-events-none"></i> Read the influences
+          </button>
+        </div>
+
+        <!-- ============ CENTER · STUDIO ============ -->
+        <div class="space-y-4 min-h-[60vh]">
+
+          <!-- idle -->
+          <div x-show="state === 'idle'" class="card p-10 text-center">
+            <i data-lucide="palette" class="w-10 h-10 text-violet-400/60 mx-auto mb-3 pointer-events-none"></i>
+            <div class="page-title mb-1">Start with influences and intent</div>
+            <p class="text-muted max-w-md mx-auto">
+              Drop a few reference images on the left and describe the look you're chasing.
+              Annotate what matters about each, and I'll read them, reflect back, and we'll generate.
+            </p>
+          </div>
+
+          <!-- influences: ANNOTATION WORKSPACE -->
+          <div x-show="state === 'influences'" class="card p-5 space-y-4">
+            <div class="section-title">Annotate · <span x-text="refs[sel].name"></span></div>
+            <div class="flex gap-4">
+              <div class="tile w-40 h-40 shrink-0" :style="'background:' + refs[sel].grad"></div>
+              <div class="flex-1 space-y-3">
+                <div>
+                  <div class="text-faint mb-1.5">what about this image matters? (the agent won't assume the whole thing)</div>
+                  <div class="flex flex-wrap gap-1.5">
+                    <template x-for="a in aspectOptions" :key="a">
+                      <span @click="toggleAspect(refs[sel], a)"
+                        :class="refs[sel].aspects.includes(a) ? 'chip-on' : 'chip'" x-text="a"></span>
+                    </template>
+                  </div>
+                </div>
+                <div>
+                  <button @click="toggleStar(refs[sel])"
+                    class="inline-flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg border transition-colors"
+                    :class="refs[sel].starred ? 'bg-amber-500/15 border-amber-500/40 text-amber-200' : 'border-[#3a3050] text-slate-400 hover:text-slate-200'">
+                    <i data-lucide="star" class="w-4 h-4 pointer-events-none" :class="refs[sel].starred ? 'fill-current' : ''"></i>
+                    <span x-text="refs[sel].starred ? 'starred — this one matters more' : 'star this one'"></span>
+                  </button>
+                </div>
+                <div>
+                  <div class="text-faint mb-1.5">why you chose it <span class="opacity-60">(optional)</span></div>
+                  <textarea class="textarea h-20" x-text="refs[sel].note"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="inset p-3 text-faint flex items-center gap-2">
+              <i data-lucide="info" class="w-3.5 h-3.5 pointer-events-none"></i>
+              Pick another tile on the left to annotate it, drop more images, then
+              <span class="text-violet-300">Read the influences</span>.
+            </div>
+          </div>
+
+          <!-- reflecting (streaming, annotation-aware) -->
+          <div x-show="state === 'reflecting'" class="card p-5 space-y-3">
+            <div class="flex items-center gap-2 text-violet-300">
+              <i data-lucide="loader" class="w-4 h-4 animate-spin pointer-events-none"></i>
+              <span class="section-title text-violet-300/80">reading 4 influences + your notes…</span>
+            </div>
+            <p class="text-body">
+              You starred <span class="text-violet-200">sun-faded-poster</span> and
+              <span class="text-violet-200">editorial-spread</span> — I'm leaning on those most. You flagged
+              <span class="text-violet-200">matcha-ceramics for color only</span>, so its subject is noise. The
+              thread is <span class="text-violet-200">warm, sun-bleached light</span> — ambers and burnt
+              terracotta, low-saturation green as a counterweight. Type leans editorial and confident. The neon
+              you marked <em>accent</em>, so I'll keep it cool and sparing.<span class="caret"></span>
+            </p>
+            <button class="btn-outline" @click="state = 'analysis'">
+              <i data-lucide="layers" class="w-4 h-4 pointer-events-none"></i> See what I'm reading per-image
+            </button>
+          </div>
+
+          <!-- analysis: per-image read (the source the direction is built from) -->
+          <div x-show="state === 'analysis'" class="card p-5 space-y-3">
+            <div class="section-title">What I see in each — correct me at the source</div>
+            <p class="text-faint">My read of each image (the picture itself + your note). The direction is all of these combined.</p>
+            <div class="space-y-2.5">
+              <template x-for="(r, idx) in refs" :key="r.name">
+                <div class="inset p-3">
+                  <div class="flex gap-3">
+                    <div class="tile w-16 h-16 shrink-0" :style="'background:' + r.grad">
+                      <div x-show="r.starred" class="absolute top-0.5 right-0.5"><i data-lucide="star" class="w-3 h-3 text-amber-300 fill-current pointer-events-none"></i></div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="text-[11px] font-mono text-slate-400 truncate" x-text="r.name"></span>
+                        <template x-for="a in r.aspects" :key="a">
+                          <span class="badge-muted !text-[9px] !py-0" x-text="a"></span>
+                        </template>
+                      </div>
+                      <p class="text-[13px] text-slate-300 leading-relaxed" x-text="r.read"></p>
+                      <button @click="r.commenting = !r.commenting" class="btn-ghost mt-2 !text-[11px]">
+                        <i data-lucide="message-square" class="w-3 h-3 pointer-events-none"></i>
+                        <span x-text="r.commenting ? 'cancel' : 'that\'s not quite it'"></span>
+                      </button>
+                      <div x-show="r.commenting" class="mt-2">
+                        <textarea class="textarea h-16 !text-[12px]" placeholder="e.g. you've got the color, but it's really the grain I care about here…"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <button class="btn-primary" @click="state = 'direction'">
+              <i data-lucide="git-merge" class="w-4 h-4 pointer-events-none"></i> Looks right — synthesize the direction
+            </button>
+          </div>
+
+          <!-- direction: current read + correction loop -->
+          <div x-show="state === 'direction'" class="card p-5 space-y-4">
+            <div class="flex items-center">
+              <div class="section-title">My full read — align here before we generate</div>
+              <span class="badge-muted ml-auto">revision <span x-text="revision"></span></span>
+            </div>
+            <p class="text-faint -mt-1">This is the gate. Generation is costly — push back on anything off <em>now</em>, while it's just words.</p>
+            <div class="space-y-3 text-body">
+              <p>
+                <span class="text-violet-300 font-medium">What you're after.</span> Not just "warm tones" — you're
+                chasing a <em>remembered</em> warmth: an image that feels like late-afternoon light recalled, confident
+                and unhurried. The two you starred (sun-faded-poster, editorial-spread) are the keystones, so I'm
+                anchoring on bleached amber light + an editorial typographic voice as the load-bearing traits.
+              </p>
+              <p>
+                <span class="text-violet-300 font-medium">How your inputs map.</span> Amber + burnt terracotta do the
+                emotional work (from the keystone). Matcha green you scoped to <em>color only</em> — I'm using it as a
+                cool counterweight so the warmth doesn't go saccharine, and ignoring the ceramics entirely. The neon
+                you marked accent: one electric, contemporary note, never the base. Type carries as much weight as
+                color here — high-contrast serif, generous leading, off-center composition with real negative space.
+              </p>
+              <p>
+                <span class="text-violet-300 font-medium">What I'm deliberately not doing.</span> Not going
+                vintage-kitsch or sepia (the warmth is memory, not age). Not letting neon become a theme. Not treating
+                matcha's subject matter as relevant. If any of that inverts what you meant, this is the moment to say so.
+              </p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span class="badge-muted">warm / sun-faded</span>
+              <span class="badge-muted">editorial type</span>
+              <span class="badge-muted">terracotta + amber</span>
+              <span class="badge-muted">matcha counterweight</span>
+              <span class="badge-muted">neon = accent only</span>
+            </div>
+
+            <!-- correction box (revealed by "Not quite") -->
+            <div x-show="correcting" class="inset p-3 space-y-2">
+              <div class="text-faint">Correct my read — I keep the full history, so "actually I meant…" works.</div>
+              <textarea class="textarea h-20" placeholder="e.g. terracotta is right but lose the green entirely; push the type more brutalist…"></textarea>
+              <div class="flex gap-2">
+                <button class="btn-primary !py-1.5" @click="revision++; correcting=false">
+                  <i data-lucide="rotate-cw" class="w-3.5 h-3.5 pointer-events-none"></i> Re-interpret
+                </button>
+                <button class="btn-ghost" @click="correcting=false">cancel</button>
+              </div>
+            </div>
+
+            <div x-show="!correcting" class="flex gap-2 pt-1">
+              <button class="btn-primary" @click="state = 'prompts'">
+                <i data-lucide="check" class="w-4 h-4 pointer-events-none"></i> Yes — draft the prompts
+              </button>
+              <button class="btn-outline" @click="correcting = true">
+                <i data-lucide="pencil" class="w-4 h-4 pointer-events-none"></i> Not quite — let me correct
+              </button>
+            </div>
+          </div>
+
+          <!-- prompts: pre-generation transparency (read-only, optional steer) -->
+          <div x-show="state === 'prompts'" class="card p-5 space-y-4">
+            <div class="flex items-center">
+              <div class="section-title">Prompts I'll send · 6 variations</div>
+              <span class="text-faint ml-auto">read-only for now — editing comes later</span>
+            </div>
+            <div class="space-y-2">
+              <template x-for="(v, idx) in variants" :key="v.id">
+                <div class="inset p-2.5">
+                  <div class="flex items-start gap-2">
+                    <span class="text-[10px] font-mono text-slate-600 mt-0.5">#<span x-text="idx + 1"></span></span>
+                    <span class="text-mono !text-[11px] text-slate-400 leading-relaxed flex-1" x-text="v.prompt"></span>
+                    <button @click="v.pcomment = !v.pcomment" class="shrink-0 text-slate-600 hover:text-violet-300" title="comment on this prompt">
+                      <i data-lucide="message-square-plus" class="w-3.5 h-3.5 pointer-events-none"></i>
+                    </button>
+                  </div>
+                  <div x-show="v.pcomment" class="mt-2">
+                    <textarea class="textarea h-14 !text-[12px]" placeholder="tweak just this one — e.g. drop 'portrait', it should be a wide landscape…"></textarea>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div class="flex gap-2 pt-1 items-center">
+              <button class="btn-primary" @click="state = 'generating'">
+                <i data-lucide="sparkles" class="w-4 h-4 pointer-events-none"></i> Looks good — generate
+              </button>
+              <button class="btn-outline" @click="promptsOverall = !promptsOverall">
+                <i data-lucide="messages-square" class="w-4 h-4 pointer-events-none"></i> Comment on the set
+              </button>
+            </div>
+            <div x-show="promptsOverall">
+              <textarea class="textarea h-16 !text-[12px]" placeholder="a note across all of them — e.g. they're all too literal, push more abstract / atmospheric…"></textarea>
+            </div>
+          </div>
+
+          <!-- generating (stub) -->
+          <div x-show="state === 'generating'" class="card p-5 space-y-4">
+            <div class="flex items-center gap-2 text-violet-300">
+              <i data-lucide="loader" class="w-4 h-4 animate-spin pointer-events-none"></i>
+              <span class="section-title text-violet-300/80">conjuring 6 variations…</span>
+              <span class="text-faint ml-auto">stubbed — no backend wired yet</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              <template x-for="n in 6" :key="n"><div class="tile skeleton"></div></template>
+            </div>
+          </div>
+
+          <!-- variants: react + per-variant prompt + freeform steering -->
+          <div x-show="state === 'variants'" class="space-y-4">
+            <div class="card p-5 space-y-4">
+              <div class="flex items-center">
+                <div class="section-title">Round <span x-text="round"></span> · pick what's working</div>
+                <span class="text-faint ml-auto">♥ like · ★ canonical · ⓘ prompt</span>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <template x-for="v in variants" :key="v.id">
+                  <div class="tile" :style="'background:' + v.grad">
+                    <div class="absolute top-1.5 right-1.5 flex gap-1">
+                      <button @click="toggleLike(v)" class="w-7 h-7 rounded-full bg-black/45 backdrop-blur flex items-center justify-center"
+                        :class="v.liked ? 'text-rose-300' : 'text-white/70 hover:text-white'">
+                        <i data-lucide="heart" class="w-3.5 h-3.5 pointer-events-none" :class="v.liked ? 'fill-current' : ''"></i>
+                      </button>
+                      <button @click="toggleCanon(v)" class="w-7 h-7 rounded-full bg-black/45 backdrop-blur flex items-center justify-center"
+                        :class="v.canonical ? 'text-amber-300' : 'text-white/70 hover:text-white'">
+                        <i data-lucide="star" class="w-3.5 h-3.5 pointer-events-none" :class="v.canonical ? 'fill-current' : ''"></i>
+                      </button>
+                      <button @click="v.showPrompt = !v.showPrompt" class="w-7 h-7 rounded-full bg-black/45 backdrop-blur flex items-center justify-center text-white/70 hover:text-white">
+                        <i data-lucide="info" class="w-3.5 h-3.5 pointer-events-none"></i>
+                      </button>
+                    </div>
+                    <!-- prompt overlay (scrolls — natural-language prompts get long) -->
+                    <div x-show="v.showPrompt" class="absolute inset-0 bg-black/85 p-2 pt-8 overflow-y-auto">
+                      <span class="text-[10px] text-slate-200 font-mono leading-snug" x-text="v.prompt"></span>
+                    </div>
+                    <div class="absolute bottom-0 inset-x-0 bg-black/35 px-2 py-1 flex items-center justify-between">
+                      <span class="text-[10px] text-white/80 font-mono">v<span x-text="round + '.' + v.id"></span></span>
+                      <span x-show="v.canonical" class="badge-canon !py-0">canonical</span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- steering panel -->
+            <div class="card p-5 space-y-3">
+              <div class="section-title">Steer the next round</div>
+              <textarea class="textarea h-20" x-model="steer"
+                placeholder="Star the ones you're drawn to (or none), then tell me what's landing and what isn't — in your words."></textarea>
+              <div>
+                <div class="text-faint mb-1.5">or nudge with a direction</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <template x-for="c in steerChips" :key="c">
+                    <span class="chip" @click="steer = (steer ? steer + '; ' : '') + c" x-text="c"></span>
+                  </template>
+                </div>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button class="btn-outline" @click="round++">
+                  <i data-lucide="refresh-cw" class="w-4 h-4 pointer-events-none"></i> Regenerate with this steer
+                </button>
+                <button class="btn-primary ml-auto" @click="state = 'spec'">
+                  <i data-lucide="check-check" class="w-4 h-4 pointer-events-none"></i> This is the direction → distill spec
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- spec: download gallery (the spec itself is the right pane) -->
+          <div x-show="state === 'spec'" class="card p-5 space-y-3">
+            <div class="flex items-center">
+              <div class="section-title">Gallery · everything generated</div>
+              <span class="text-faint ml-auto">hover to download · ⓘ for prompt</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2">
+              <template x-for="v in variants" :key="v.id">
+                <div class="tile group" :style="'background:' + v.grad">
+                  <div class="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                    <i data-lucide="download" class="w-5 h-5 text-white opacity-0 group-hover:opacity-100 pointer-events-none"></i>
+                  </div>
+                  <div x-show="v.canonical" class="absolute top-1 left-1"><i data-lucide="star" class="w-3.5 h-3.5 text-amber-300 fill-current pointer-events-none"></i></div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ RIGHT · SPEC ============ -->
+        <div class="card p-4 space-y-4">
+          <div class="flex items-center">
+            <div class="section-title">Style spec</div>
+            <span x-show="atLeast('spec')" class="badge-accent ml-auto">v1 · sealed</span>
+            <span x-show="state === 'direction' || state === 'prompts' || state === 'generating' || state === 'variants'" class="badge-muted ml-auto">draft</span>
+          </div>
+
+          <template x-if="!atLeast('direction')">
+            <div class="inset rounded-xl py-10 px-4 text-center">
+              <i data-lucide="file-text" class="w-6 h-6 text-slate-600 mx-auto mb-2 pointer-events-none"></i>
+              <div class="text-faint">The spec takes shape here as we converge — the durable thing you keep.</div>
+            </div>
+          </template>
+
+          <template x-if="atLeast('direction')">
+            <div class="space-y-4">
+              <!-- synthesized understanding — the heart -->
+              <div class="inset p-3 border-violet-500/25">
+                <div class="text-faint mb-1.5 flex items-center gap-1">
+                  <i data-lucide="brain" class="w-3 h-3 text-violet-300 pointer-events-none"></i> synthesized understanding
+                </div>
+                <p class="text-[13px] leading-relaxed text-slate-300">
+                  This style lives at golden hour in a coastal town that remembers the late '70s without being
+                  nostalgic about it. The warmth isn't decorative — it's the <em>memory</em> of heat on the
+                  image. Terracotta and amber do the emotional work; the matcha green keeps it from going
+                  saccharine. Type behaves like a confident editor: it states, it doesn't shout. Neon is the
+                  one modern intrusion — a signal that this is now, not a reproduction. Recreating it means
+                  chasing that <span class="text-violet-200">remembered warmth</span>, not just the palette.
+                </p>
+                <div class="text-faint mt-2 italic">synthesized from 4 influences · 2 corrections · 2 rounds</div>
+              </div>
+
+              <!-- canonical images -->
+              <div>
+                <div class="text-faint mb-1.5 flex items-center gap-1">
+                  <i data-lucide="star" class="w-3 h-3 text-amber-300 pointer-events-none"></i> canonical images
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                  <template x-if="canon.length === 0">
+                    <div class="col-span-3 text-faint italic">star variants to ground the spec…</div>
+                  </template>
+                  <template x-for="v in canon" :key="v.id">
+                    <div class="tile" :style="'background:' + v.grad"></div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- palette — OPTIONAL module (agent includes only if inputs warrant it) -->
+              <div x-show="mod('palette').on">
+                <div class="text-faint mb-1.5 flex items-center gap-1.5">
+                  palette <span class="badge-muted !text-[9px] !py-0">optional</span>
+                  <button @click="toggleMod(mod('palette'))" class="ml-auto text-slate-600 hover:text-slate-300">
+                    <i data-lucide="x" class="w-3 h-3 pointer-events-none"></i>
+                  </button>
+                </div>
+                <div class="flex gap-1.5">
+                  <template x-for="c in ['#e9b06a','#c2532f','#7a2e22','#5f8f6b','#6d5cff']" :key="c">
+                    <div class="h-7 flex-1 rounded" :style="'background:'+c"></div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- extra optional modules, when toggled on -->
+              <template x-for="m in specModules.filter(m => m.on && m.key !== 'palette')" :key="m.key">
+                <div>
+                  <div class="text-faint mb-1.5 flex items-center gap-1.5">
+                    <span x-text="m.label"></span> <span class="badge-muted !text-[9px] !py-0">optional</span>
+                    <button @click="toggleMod(m)" class="ml-auto text-slate-600 hover:text-slate-300">
+                      <i data-lucide="x" class="w-3 h-3 pointer-events-none"></i>
+                    </button>
+                  </div>
+                  <div class="inset p-2.5 text-faint italic">the agent fills this in when your inputs call for it</div>
+                </div>
+              </template>
+
+              <!-- composable: add a module the inputs warrant -->
+              <div class="border-t border-[#2a2238] pt-3">
+                <div class="text-faint mb-1.5">composable — the agent keeps only what your inputs warrant. add a module:</div>
+                <div class="flex flex-wrap gap-1.5">
+                  <template x-for="m in specModules.filter(m => !m.on)" :key="m.key">
+                    <span class="chip" @click="toggleMod(m)">+ <span x-text="m.label"></span></span>
+                  </template>
+                  <span x-show="specModules.every(m => m.on)" class="text-faint italic">all modules added</span>
+                </div>
+              </div>
+
+              <!-- structured bullets -->
+              <div class="inset p-3 space-y-2 text-[13px] leading-relaxed text-slate-300">
+                <div><span class="text-violet-300">Mood.</span> Warm, sun-faded editorial; confident, unhurried.</div>
+                <div><span class="text-violet-300">Light.</span> Low-saturation, golden-hour; soft film grain.</div>
+                <div><span class="text-violet-300">Type.</span> Retro-modern serif, high contrast, generous leading.</div>
+                <div><span class="text-violet-300">Composition.</span> Off-center subject, breathing negative space.</div>
+                <div><span class="text-violet-300">Accent.</span> Cool neon (#6d5cff) — sparingly, never the base.</div>
+              </div>
+
+              <!-- recreate prompt + model pin -->
+              <div>
+                <div class="text-faint mb-1.5">recreate prompt</div>
+                <div class="inset p-2.5 text-mono !text-[11px] text-slate-400 leading-relaxed">
+                  sun-faded editorial photograph, golden-hour, amber + burnt terracotta palette,
+                  matcha-green counterweight, retro-modern high-contrast serif typography,
+                  off-center composition, soft film grain, cool neon accent (sparing)
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                  <span class="text-faint">pinned model</span>
+                  <span class="badge-muted">mediaforge · flux-pro</span>
+                </div>
+              </div>
+
+              <!-- export -->
+              <div x-show="atLeast('spec')" class="pt-1 space-y-2">
+                <button class="btn-primary w-full">
+                  <i data-lucide="package" class="w-4 h-4 pointer-events-none"></i> Export spec bundle
+                </button>
+                <div class="text-faint text-center">understanding + canonical images + palette + recreate prompt</div>
+                <button class="btn-ghost w-full opacity-70">
+                  <i data-lucide="history" class="w-3.5 h-3.5 pointer-events-none"></i> save provenance (reload &amp; refine later)
+                </button>
+                <div class="text-faint text-center italic">↑ post-MVP — design keeps the bundle reloadable</div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="px-6 py-3 text-center text-faint border-t border-[#241d33]">
+        prototype · click through the amber states. friction or ideas? that's the signal we're hunting.
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("alpine:initialized", () => {
+        lucide.createIcons();
+        let pending = false;
+        const observer = new MutationObserver(() => {
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(() => { lucide.createIcons(); pending = false; });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>

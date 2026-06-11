@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>__TITLE__</title>
+    <link rel="icon" href="/assets/favicon.png" type="image/png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #16100b;
+        --bg-overlay: radial-gradient(ellipse at top, #1d1610 0%, #16100b 60%);
+        --panel: #24190f;
+        --panel-doing: #2a1f12;
+        --panel-review: #251a2b;
+        --panel-done: #1d2128;
+        --card: #2d2114;
+        --card-hover: #3a2c1d;
+        --card-editing: #3f301f;
+        --border: #3d2e1f;
+        --border-hover: #5e4830;
+        --text: #f0e6d4;
+        --text-muted: #b09a7c;
+        --text-faint: #6e5d44;
+        --accent-warm: #d49a55;          /* mammoth gold — "doing" */
+        --accent-warm-bg: #3d2e16;
+        --accent-warm-text: #f6d49a;
+        --accent-cool: #6ba3c8;          /* ice blue — "done", drop hints */
+        --accent-cool-bg: #1e2d3a;
+        --accent-cool-text: #b3d4e8;
+        --accent-review: #b083c8;        /* amethyst — "review" */
+        --accent-review-bg: #2e1d36;
+        --accent-review-text: #d9bce8;
+        --accent-neutral: #8a6f4e;       /* warm brown — "todo" */
+        --accent-neutral-bg: #2a2014;
+        --accent-neutral-text: #d6c2a3;
+        --danger: #d97a73;
+        --danger-bg: #3a1a17;
+      }
+      * { box-sizing: border-box; }
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        background: var(--bg); color: var(--text);
+        background-image: var(--bg-overlay);
+        margin: 0; padding: 1.5rem 2rem;
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+      header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+      .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; }
+      .brand .wordmark {
+        display: block; height: 48px; width: auto;
+      }
+      .brand h1 {
+        font-size: 1rem; margin: 0; font-weight: 500;
+        color: var(--text-muted);
+        letter-spacing: -0.005em;
+      }
+      .meta { color: var(--text-muted); font-size: 0.8rem; font-variant-numeric: tabular-nums; text-align: right; }
+      .status-dot { display: inline-block; width: 0.55rem; height: 0.55rem; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; background: #6e5d44; transition: background 0.15s; }
+      .status-dot.connected { background: var(--accent-warm); box-shadow: 0 0 6px rgba(212, 154, 85, 0.5); }
+      .status-dot.closed { background: var(--danger); }
+      .session-id { color: var(--text-faint); }
+      .columns {
+        display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;
+        max-width: 1200px;
+      }
+      .column {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+        padding: 0.75rem 0.85rem 1rem;
+        min-height: 8rem;
+        transition: background 0.15s, border-color 0.15s;
+      }
+      .column[data-status="doing"] { background: var(--panel-doing); }
+      .column[data-status="review"] { background: var(--panel-review); }
+      .column[data-status="done"]  { background: var(--panel-done); }
+      .column-head {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 0.75rem;
+      }
+      .column-head h2 {
+        margin: 0; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+        color: var(--text-muted); font-weight: 600;
+      }
+      .column[data-status="doing"] .column-head h2 { color: var(--accent-warm-text); }
+      .column[data-status="review"] .column-head h2 { color: var(--accent-review-text); }
+      .column[data-status="done"]  .column-head h2 { color: var(--accent-cool-text); }
+      .count {
+        background: rgba(0,0,0,0.25); border-radius: 999px;
+        padding: 0.1rem 0.5rem; font-size: 0.7rem;
+        color: var(--text-muted); font-variant-numeric: tabular-nums;
+      }
+      .task-list { display: flex; flex-direction: column; gap: 0.5rem; }
+      .task {
+        background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+        padding: 0.55rem 0.7rem; cursor: text;
+        transition: border-color 0.1s, background 0.1s, transform 0.05s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      }
+      .task:hover { border-color: var(--border-hover); background: var(--card-hover); }
+      .task[draggable="true"] { cursor: grab; }
+      .task.dragging { opacity: 0.4; cursor: grabbing; }
+      .task.drop-before { border-top: 2px solid var(--accent-cool); padding-top: calc(0.55rem - 2px); }
+      .task.drop-after  { border-bottom: 2px solid var(--accent-cool); padding-bottom: calc(0.55rem - 2px); }
+      .column.drop-target { background: rgba(107, 163, 200, 0.06); border-color: var(--accent-cool); }
+      .task-list.empty-drop-zone { min-height: 2.5rem; border: 1px dashed transparent; border-radius: 5px; }
+      .column.drop-target .task-list.empty-drop-zone { border-color: var(--accent-cool); }
+      .task .title {
+        font-size: 0.92rem; word-break: break-word;
+        outline: none;
+        min-height: 1.2em;
+        color: var(--text);
+      }
+      .task .title[contenteditable="true"]:focus { background: var(--card-editing); border-radius: 3px; padding: 0.1rem 0.3rem; margin: -0.1rem -0.3rem; }
+      .task .title:empty::before {
+        content: "(empty — type a title)"; color: var(--text-faint); font-style: italic;
+      }
+      .task .notes {
+        font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
+      }
+      .task-actions {
+        display: flex; gap: 0.3rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center;
+      }
+      .pill {
+        font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px;
+        cursor: pointer; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: var(--text-muted);
+        user-select: none; transition: all 0.1s;
+      }
+      .pill:hover { border-color: var(--border-hover); color: var(--text); }
+      .pill.active.todo  { background: var(--accent-neutral-bg); border-color: var(--accent-neutral); color: var(--accent-neutral-text); }
+      .pill.active.doing { background: var(--accent-warm-bg);    border-color: var(--accent-warm);    color: var(--accent-warm-text); }
+      .pill.active.review { background: var(--accent-review-bg);  border-color: var(--accent-review);  color: var(--accent-review-text); }
+      .pill.active.done  { background: var(--accent-cool-bg);    border-color: var(--accent-cool);    color: var(--accent-cool-text); }
+      .delete {
+        font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+        cursor: pointer; border: none; background: transparent; color: var(--text-faint);
+        margin-left: auto;
+      }
+      .delete:hover { color: var(--danger); }
+      .add-row { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
+      .add-row input {
+        flex: 1; background: rgba(0,0,0,0.25); color: var(--text);
+        border: 1px solid var(--border); border-radius: 5px;
+        padding: 0.35rem 0.55rem; font-size: 0.85rem; font-family: inherit;
+      }
+      .add-row input::placeholder { color: var(--text-faint); }
+      .add-row input:focus { border-color: var(--accent-warm); outline: none; }
+      .add-row button {
+        background: var(--card); color: var(--text-muted); border: 1px solid var(--border);
+        border-radius: 5px; padding: 0.35rem 0.7rem; cursor: pointer; font-size: 0.85rem;
+      }
+      .add-row button:hover { border-color: var(--accent-warm); color: var(--accent-warm-text); }
+      .footer {
+        display: flex; gap: 0.5rem; margin-top: 1.5rem; align-items: center; max-width: 1200px;
+      }
+      .footer .spacer { flex: 1; }
+      .footer .ambient {
+        width: 36px; height: 36px;
+        background-image: url("/assets/mascot.webp");
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.35;
+        margin-right: 0.4rem;
+      }
+      .footer button {
+        border: 1px solid var(--border); border-radius: 6px;
+        padding: 0.5rem 1.1rem; font-size: 0.9rem; cursor: pointer;
+        background: var(--card); color: var(--text); font-family: inherit;
+      }
+      .footer button.primary { background: var(--accent-warm); border-color: var(--accent-warm); color: #1a1207; font-weight: 600; }
+      .footer button.primary:hover { background: #e4ab66; }
+      .footer button.danger { background: transparent; color: var(--danger); border-color: var(--danger-bg); }
+      .footer button.danger:hover { background: var(--danger-bg); }
+      .empty-state {
+        display: none;
+        text-align: center;
+        padding: 4rem 1rem;
+        color: var(--text-faint);
+        max-width: 1200px;
+      }
+      .columns.is-empty + .empty-state { display: block; }
+      .empty-state .hero {
+        width: 200px; height: 200px;
+        margin: 0 auto 1rem;
+        background-image: url("/assets/mascot-large.webp"), linear-gradient(135deg, transparent 0%, rgba(212, 154, 85, 0.04) 100%);
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.7;
+      }
+      .empty-state p { font-size: 0.95rem; }
+      .toasts { position: fixed; right: 1rem; bottom: 1rem; display: flex; flex-direction: column; gap: 0.4rem; z-index: 100; }
+      .toast {
+        background: var(--card); border: 1px solid var(--accent-warm); border-radius: 6px;
+        padding: 0.55rem 0.85rem; font-size: 0.85rem; max-width: 22rem;
+        color: var(--text);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        animation: fadein 0.15s ease-out;
+      }
+      @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+      .ended { opacity: 0.6; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <img class="wordmark" src="/assets/wordmark.webp" alt="Bounty Board" />
+        <h1 id="title">__TITLE__</h1>
+      </div>
+      <div class="meta">
+        <span><span id="status-dot" class="status-dot"></span><span id="status-text">connecting…</span></span>
+        <div class="session-id"><code>__SESSION_ID__</code></div>
+      </div>
+    </header>
+
+    <div class="columns" id="columns">
+      <section class="column" data-status="todo">
+        <div class="column-head"><h2>To do</h2><span class="count" id="count-todo">0</span></div>
+        <div class="task-list" id="list-todo"></div>
+        <div class="add-row">
+          <input type="text" id="add-todo-input" placeholder="Add a task…" />
+          <button data-add-status="todo">Add</button>
+        </div>
+      </section>
+      <section class="column" data-status="doing">
+        <div class="column-head"><h2>Doing</h2><span class="count" id="count-doing">0</span></div>
+        <div class="task-list" id="list-doing"></div>
+        <div class="add-row">
+          <input type="text" id="add-doing-input" placeholder="Add a task…" />
+          <button data-add-status="doing">Add</button>
+        </div>
+      </section>
+      <section class="column" data-status="review">
+        <div class="column-head"><h2>Review</h2><span class="count" id="count-review">0</span></div>
+        <div class="task-list" id="list-review"></div>
+        <div class="add-row">
+          <input type="text" id="add-review-input" placeholder="Add a task…" />
+          <button data-add-status="review">Add</button>
+        </div>
+      </section>
+      <section class="column" data-status="done">
+        <div class="column-head"><h2>Done</h2><span class="count" id="count-done">0</span></div>
+        <div class="task-list" id="list-done"></div>
+        <div class="add-row">
+          <input type="text" id="add-done-input" placeholder="Add a task…" />
+          <button data-add-status="done">Add</button>
+        </div>
+      </section>
+    </div>
+
+    <div class="empty-state" id="empty-state">
+      <div class="hero" aria-hidden="true"></div>
+      <p>No tasks yet — add one below, or wait for the agent to drop some in.</p>
+    </div>
+
+    <div class="footer">
+      <div class="ambient" aria-hidden="true"></div>
+      <div class="spacer"></div>
+      <button id="cancel-btn" class="danger">Close without submitting</button>
+      <button id="submit-btn" class="primary">Submit</button>
+    </div>
+
+    <div class="toasts" id="toasts"></div>
+
+    <script>
+      (function () {
+        // Server substitutes __WS_URL__ with JSON.stringify(url), which
+        // produces a fully-quoted JS string literal — do NOT add quotes here.
+        const wsUrl = __WS_URL__;
+        const titleEl = document.getElementById("title");
+        const statusDot = document.getElementById("status-dot");
+        const statusText = document.getElementById("status-text");
+        const toastsEl = document.getElementById("toasts");
+
+        // Local mirror of the board state. Server is the source of truth;
+        // we re-render the relevant columns on every message.
+        const state = { title: "", tasks: [] };
+        let socket = null;
+        let closedByServer = false;
+        const STATUSES = ["todo", "doing", "review", "done"];
+
+        // Drag state: which task is currently being dragged. Used by the
+        // column-level drop handlers (installed once after first render).
+        const dragState = { id: null };
+
+        function clearDropMarkers() {
+          for (const el of document.querySelectorAll(".task.drop-before, .task.drop-after")) {
+            el.classList.remove("drop-before", "drop-after");
+          }
+          for (const el of document.querySelectorAll(".column.drop-target")) {
+            el.classList.remove("drop-target");
+          }
+        }
+
+        function setStatus(s) {
+          statusDot.className = "status-dot " + s;
+          statusText.textContent =
+            s === "connected" ? "connected" :
+            s === "closed" ? "closed" : "connecting…";
+        }
+
+        function send(msg) {
+          if (!socket || socket.readyState !== WebSocket.OPEN) return;
+          socket.send(JSON.stringify(msg));
+        }
+
+        function toast(text) {
+          const t = document.createElement("div");
+          t.className = "toast";
+          t.textContent = text;
+          toastsEl.appendChild(t);
+          setTimeout(() => t.remove(), 5000);
+        }
+
+        function randId() {
+          const buf = new Uint8Array(6);
+          crypto.getRandomValues(buf);
+          return "u-" + Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
+        }
+
+        function clearChildren(el) {
+          while (el.firstChild) el.removeChild(el.firstChild);
+        }
+
+        function render() {
+          for (const status of STATUSES) {
+            const list = document.getElementById("list-" + status);
+            clearChildren(list);
+            const tasks = state.tasks.filter((t) => t.status === status);
+            document.getElementById("count-" + status).textContent = String(tasks.length);
+            for (const task of tasks) {
+              list.appendChild(renderTask(task));
+            }
+          }
+          // Toggle empty-state visibility (mammoth hero appears when the
+          // board is fully empty across all columns).
+          const columnsEl = document.getElementById("columns");
+          columnsEl.classList.toggle("is-empty", state.tasks.length === 0);
+        }
+
+        function renderTask(task) {
+          const el = document.createElement("div");
+          el.className = "task";
+          el.setAttribute("data-task-id", task.id);
+          el.setAttribute("data-task-status", task.status);
+          // Draggable by default. We disable drag while the title is being
+          // edited so text-selection within the title works normally — the
+          // title's mousedown handler flips this off temporarily.
+          el.setAttribute("draggable", "true");
+
+          const title = document.createElement("div");
+          title.className = "title";
+          title.textContent = task.title;
+          title.setAttribute("contenteditable", "true");
+          title.spellcheck = false;
+          // Suspend drag while the user is editing the title so they can
+          // select text without triggering a drag start.
+          title.addEventListener("mousedown", () => el.setAttribute("draggable", "false"));
+          title.addEventListener("blur", () => {
+            el.setAttribute("draggable", "true");
+            const next = title.textContent.trim();
+            if (next === "") {
+              // Revert empty edits — server rejects them and the visible
+              // text would otherwise diverge from canonical state.
+              title.textContent = task.title;
+              return;
+            }
+            if (next !== task.title) {
+              send({ type: "task.edit", id: task.id, title: next });
+            }
+          });
+          title.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); title.blur(); }
+            if (e.key === "Escape") { title.textContent = task.title; title.blur(); }
+          });
+          el.appendChild(title);
+
+          // Drag-and-drop: dragstart records the moved id; dragend cleans up.
+          // Drop-zone wiring lives at the column level (see installDropZones
+          // below) — we just need to make the task draggable here.
+          el.addEventListener("dragstart", (e) => {
+            if (el.getAttribute("draggable") !== "true") { e.preventDefault(); return; }
+            el.classList.add("dragging");
+            // setData is needed for Firefox to actually start the drag.
+            try { e.dataTransfer.setData("text/plain", task.id); } catch {}
+            e.dataTransfer.effectAllowed = "move";
+            dragState.id = task.id;
+          });
+          el.addEventListener("dragend", () => {
+            el.classList.remove("dragging");
+            clearDropMarkers();
+            dragState.id = null;
+          });
+
+          if (task.notes) {
+            const notes = document.createElement("div");
+            notes.className = "notes";
+            notes.textContent = task.notes;
+            el.appendChild(notes);
+          }
+
+          const actions = document.createElement("div");
+          actions.className = "task-actions";
+          for (const status of STATUSES) {
+            const pill = document.createElement("span");
+            pill.className = "pill" + (task.status === status ? " active " + status : "");
+            pill.textContent = status;
+            pill.addEventListener("click", () => {
+              if (task.status === status) return;
+              send({ type: "task.toggle", id: task.id, status });
+            });
+            actions.appendChild(pill);
+          }
+          const del = document.createElement("button");
+          del.className = "delete";
+          del.textContent = "delete";
+          del.addEventListener("click", () => {
+            send({ type: "task.remove", id: task.id });
+          });
+          actions.appendChild(del);
+          el.appendChild(actions);
+
+          return el;
+        }
+
+        // ── Incoming WS messages ──────────────────────────────────────
+        function applyInit(msg) {
+          state.title = msg.title || "";
+          state.tasks = Array.isArray(msg.tasks) ? msg.tasks.slice() : [];
+          if (state.title) {
+            titleEl.textContent = state.title;
+            document.title = state.title;
+          }
+          render();
+        }
+        function applyAdd(msg) {
+          if (state.tasks.some((t) => t.id === msg.task.id)) return;
+          state.tasks.push(msg.task);
+          render();
+        }
+        function applyUpdate(msg) {
+          const idx = state.tasks.findIndex((t) => t.id === msg.id);
+          if (idx === -1) return;
+          state.tasks[idx] = Object.assign({}, state.tasks[idx], msg.patch);
+          render();
+        }
+        function applyRemove(msg) {
+          const idx = state.tasks.findIndex((t) => t.id === msg.id);
+          if (idx === -1) return;
+          state.tasks.splice(idx, 1);
+          render();
+        }
+
+        function connect() {
+          setStatus("connecting");
+          socket = new WebSocket(wsUrl);
+          socket.onopen = () => setStatus("connected");
+          socket.onclose = () => {
+            setStatus("closed");
+            if (!closedByServer) setTimeout(connect, 1000);
+          };
+          socket.onerror = () => { /* surfaces via close */ };
+          socket.onmessage = (ev) => {
+            let msg;
+            try { msg = JSON.parse(ev.data); }
+            catch { return; }
+            if (msg.type === "init") applyInit(msg);
+            else if (msg.type === "task.add") applyAdd(msg);
+            else if (msg.type === "task.update") applyUpdate(msg);
+            else if (msg.type === "task.remove") applyRemove(msg);
+            else if (msg.type === "submit" || msg.type === "cancel") {
+              // Session has ended on the server. Mark so we don't try to
+              // reconnect when the server closes our socket immediately
+              // after.
+              closedByServer = true;
+              document.body.classList.add("ended");
+            }
+            else if (msg.type === "message") {
+              toast(msg.text);
+              if (msg.text && msg.text.startsWith("session ended:")) {
+                closedByServer = true;
+                document.body.classList.add("ended");
+              }
+            }
+          };
+        }
+
+        // ── Add-task inputs ───────────────────────────────────────────
+        for (const status of STATUSES) {
+          const input = document.getElementById("add-" + status + "-input");
+          const btn = document.querySelector(`[data-add-status="${status}"]`);
+          function submitAdd() {
+            const title = input.value.trim();
+            if (!title) return;
+            const task = { id: randId(), title, status };
+            send({ type: "task.add", task });
+            input.value = "";
+            input.focus();
+          }
+          btn.addEventListener("click", submitAdd);
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") { e.preventDefault(); submitAdd(); }
+          });
+        }
+
+        // Column-level drop zones. Compute where in the destination column
+        // the dragged task should land (before/after which sibling) and
+        // emit a single task.move event on drop.
+        function installDropZones() {
+          for (const status of STATUSES) {
+            const column = document.querySelector(`.column[data-status="${status}"]`);
+            const list = column.querySelector(".task-list");
+            list.classList.add("empty-drop-zone");
+
+            column.addEventListener("dragover", (e) => {
+              if (!dragState.id) return;
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              clearDropMarkers();
+              column.classList.add("drop-target");
+
+              // Find the task we're hovering above (or null = drop at end).
+              const tasks = Array.from(list.querySelectorAll(".task:not(.dragging)"));
+              const dropOn = tasks.find((t) => {
+                const r = t.getBoundingClientRect();
+                return e.clientY < r.top + r.height / 2;
+              });
+              if (dropOn) dropOn.classList.add("drop-before");
+              else if (tasks.length > 0) tasks[tasks.length - 1].classList.add("drop-after");
+            });
+
+            column.addEventListener("dragleave", (e) => {
+              // Only clear when the cursor truly leaves the column — dragleave
+              // fires for every nested element by default.
+              if (!column.contains(e.relatedTarget)) {
+                column.classList.remove("drop-target");
+                for (const el of column.querySelectorAll(".task.drop-before, .task.drop-after")) {
+                  el.classList.remove("drop-before", "drop-after");
+                }
+              }
+            });
+
+            column.addEventListener("drop", (e) => {
+              if (!dragState.id) return;
+              e.preventDefault();
+              const tasks = Array.from(list.querySelectorAll(".task:not(.dragging)"));
+              let index = tasks.length; // default: end of column
+              for (let i = 0; i < tasks.length; i++) {
+                const r = tasks[i].getBoundingClientRect();
+                if (e.clientY < r.top + r.height / 2) { index = i; break; }
+              }
+              const id = dragState.id;
+              clearDropMarkers();
+              dragState.id = null;
+              send({ type: "task.move", id, status, index });
+            });
+          }
+        }
+        installDropZones();
+
+        document.getElementById("submit-btn").addEventListener("click", () => {
+          send({ type: "submit" });
+        });
+        document.getElementById("cancel-btn").addEventListener("click", () => {
+          if (confirm("Close without submitting? The agent won't receive the current board state.")) {
+            send({ type: "cancel" });
+          }
+        });
+
+        connect();
+      })();
+    </script>
+  </body>
+</html>

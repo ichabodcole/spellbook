@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>grapevine</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <style>
+      :root {
+        --bg: #0e1410;
+        --bg-elev: #141b16;
+        --bg-card: #1a2219;
+        --line: #28332b;
+        --ink: #e7efe9;
+        --ink-mute: #8aa093;
+        --grape: #7c5cff;
+        --grape-soft: #b9a8ff;
+        --leaf: #57c97a;
+        --leaf-soft: #a6e2b7;
+        --warn: #f0b265;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+      }
+      header {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--line);
+        background: var(--bg-elev);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      header .leaf {
+        font-size: 22px;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+      header h1 .channel {
+        color: var(--leaf-soft);
+      }
+      header h1 .sep {
+        color: var(--ink-mute);
+        margin: 0 6px;
+      }
+      header .topic {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ink-mute);
+      }
+      header .topic.placeholder {
+        font-style: italic;
+      }
+      .layout {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 220px 1fr 220px;
+      }
+      main {
+        overflow-y: auto;
+        padding: 16px 24px 24px;
+        scroll-behavior: smooth;
+      }
+      aside {
+        background: var(--bg-elev);
+        padding: 16px 18px;
+        overflow-y: auto;
+      }
+      aside.left {
+        border-right: 1px solid var(--line);
+      }
+      aside.right {
+        border-left: 1px solid var(--line);
+      }
+      aside h2 {
+        margin: 0 0 8px;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--ink-mute);
+        font-weight: 600;
+      }
+      aside ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      aside li {
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        padding: 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+      }
+      aside.right li .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      aside.left .row {
+        display: flex;
+        align-items: stretch;
+        gap: 2px;
+        border-radius: 6px;
+        transition: background-color 120ms ease;
+      }
+      aside.left .row:hover {
+        background: var(--bg-card);
+      }
+      aside.left .row.active {
+        background: var(--bg-card);
+      }
+      aside.left .row.new {
+        animation: flash 1.5s ease-out;
+      }
+      aside.left a {
+        flex: 1;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 6px;
+        color: var(--ink);
+        text-decoration: none;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+        font-size: 12px;
+        cursor: pointer;
+        min-width: 0;
+      }
+      aside.left .row.active a {
+        color: var(--leaf-soft);
+        font-weight: 600;
+      }
+      aside.left a .name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      aside.left a .count {
+        font-size: 10px;
+        color: var(--ink-mute);
+        background: var(--bg);
+        border-radius: 999px;
+        padding: 1px 6px;
+        flex-shrink: 0;
+        margin-left: 6px;
+      }
+      aside.left .row.active a .count {
+        color: var(--leaf-soft);
+      }
+      aside.left .close-btn {
+        background: none;
+        border: none;
+        color: var(--ink-mute);
+        cursor: pointer;
+        padding: 0 6px;
+        opacity: 0;
+        transition:
+          opacity 120ms ease,
+          color 120ms ease;
+        font-size: 13px;
+        line-height: 1;
+        border-radius: 4px;
+      }
+      aside.left .row:hover .close-btn {
+        opacity: 1;
+      }
+      aside.left .close-btn:hover {
+        color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.1);
+      }
+      @keyframes flash {
+        0% {
+          background: var(--grape);
+          color: white;
+        }
+        100% {
+          background: transparent;
+        }
+      }
+      .status {
+        position: sticky;
+        bottom: 0;
+        padding: 8px 12px;
+        font-size: 11px;
+        color: var(--ink-mute);
+        background: var(--bg-elev);
+        border-top: 1px solid var(--line);
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      .msg {
+        margin: 10px 0;
+        max-width: 720px;
+      }
+      .msg .meta {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 4px;
+        font-size: 12px;
+      }
+      .msg .from {
+        font-weight: 600;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      .msg .ts {
+        color: var(--ink-mute);
+        font-size: 11px;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      .msg .body {
+        background: var(--bg-card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 14px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+      .msg.kind-topic .body {
+        background: transparent;
+        border: 1px dashed var(--grape);
+        color: var(--grape-soft);
+        font-style: italic;
+      }
+      .msg.kind-topic .from {
+        color: var(--grape-soft);
+      }
+      .empty {
+        margin: 60px auto;
+        text-align: center;
+        color: var(--ink-mute);
+        max-width: 520px;
+      }
+      .empty .big {
+        font-size: 40px;
+        margin-bottom: 12px;
+      }
+      .pulse {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--leaf);
+        margin-right: 6px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.4;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+      .disconnected .pulse {
+        background: var(--warn);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span class="leaf">🌿</span>
+      <div style="flex: 1">
+        <h1>
+          grapevine<span class="sep">·</span
+          ><span class="channel" id="channel-name">—</span>
+        </h1>
+        <p class="topic placeholder" id="topic">no topic set</p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="left">
+        <h2>Channels</h2>
+        <ul id="channels"></ul>
+      </aside>
+      <main id="stream">
+        <div class="empty" id="empty">
+          <div class="big">🌿</div>
+          <div>Waiting for messages on this channel…</div>
+        </div>
+      </main>
+      <aside class="right">
+        <h2>On the line</h2>
+        <ul id="subscribers"></ul>
+      </aside>
+    </div>
+
+    <div class="status" id="status">
+      <span class="pulse"></span><span id="status-text">connecting…</span>
+    </div>
+
+    <script>
+      // Channel is read from the URL hash so a single static page handles
+      // any channel. e.g. /watch#roundtable
+      const channel =
+        decodeURIComponent((location.hash || "#lobby").slice(1)) || "lobby";
+      document.title = `grapevine · ${channel}`;
+      document.getElementById("channel-name").textContent = channel;
+
+      const stream = document.getElementById("stream");
+      const empty = document.getElementById("empty");
+      const topicEl = document.getElementById("topic");
+      const subsEl = document.getElementById("subscribers");
+      const channelsEl = document.getElementById("channels");
+      const statusText = document.getElementById("status-text");
+      const statusBar = document.getElementById("status");
+
+      // Set of channel names we've already rendered, used to detect which
+      // channels are newly-arrived between polls so they can be visually
+      // flashed (operator: "huh, a new channel just opened — there it is").
+      const seenChannels = new Set();
+      let firstChannelPoll = true;
+
+      // Deterministic color per alias — same alias always gets the same hue.
+      function hashHue(s) {
+        let h = 0;
+        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+        return Math.abs(h) % 360;
+      }
+      function aliasColor(alias) {
+        return `hsl(${hashHue(alias)} 70% 70%)`;
+      }
+
+      function fmtTime(ts) {
+        const d = new Date(ts);
+        return d.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      function renderMessage(m) {
+        empty.style.display = "none";
+        const el = document.createElement("div");
+        el.className = "msg kind-" + (m.kind || "message");
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        const from = document.createElement("span");
+        from.className = "from";
+        from.style.color = aliasColor(m.from);
+        from.textContent = m.kind === "topic" ? `${m.from} set topic` : m.from;
+        const ts = document.createElement("span");
+        ts.className = "ts";
+        ts.textContent = fmtTime(m.ts);
+        meta.appendChild(from);
+        meta.appendChild(ts);
+        const body = document.createElement("div");
+        body.className = "body";
+        body.textContent = m.text;
+        el.appendChild(meta);
+        el.appendChild(body);
+        stream.appendChild(el);
+        // Auto-scroll to bottom — but only if user was already near it.
+        const nearBottom =
+          stream.scrollTop + stream.clientHeight + 80 >= stream.scrollHeight;
+        if (nearBottom) stream.scrollTop = stream.scrollHeight;
+      }
+
+      function setTopic(t) {
+        if (t) {
+          topicEl.classList.remove("placeholder");
+          topicEl.textContent = t;
+        } else {
+          topicEl.classList.add("placeholder");
+          topicEl.textContent = "no topic set";
+        }
+      }
+
+      async function refreshSubscribers() {
+        try {
+          const r = await fetch(
+            `/channels/${encodeURIComponent(channel)}/subscribers`
+          );
+          const j = await r.json();
+          // Rebuild the list via DOM methods (no innerHTML).
+          while (subsEl.firstChild) subsEl.removeChild(subsEl.firstChild);
+          const subs = j.subscribers || [];
+          if (subs.length === 0) {
+            const li = document.createElement("li");
+            li.style.color = "var(--ink-mute)";
+            li.style.fontStyle = "italic";
+            li.textContent = "no one currently subscribed";
+            subsEl.appendChild(li);
+          } else {
+            subs.forEach((a) => {
+              const li = document.createElement("li");
+              li.style.color = aliasColor(a);
+              const dot = document.createElement("span");
+              dot.className = "dot";
+              li.appendChild(dot);
+              li.appendChild(document.createTextNode(a));
+              subsEl.appendChild(li);
+            });
+          }
+          if (j.topic !== undefined) setTopic(j.topic);
+        } catch {}
+      }
+
+      async function refreshChannels() {
+        try {
+          const r = await fetch(`/channels`);
+          const j = await r.json();
+          const list = (j.channels || []).map((c) => c.name);
+          // Rebuild via DOM methods. Flag newly-arrived channels with a
+          // brief animation so the operator sees "huh, a new channel."
+          while (channelsEl.firstChild)
+            channelsEl.removeChild(channelsEl.firstChild);
+          if (list.length === 0) {
+            const li = document.createElement("li");
+            li.style.color = "var(--ink-mute)";
+            li.style.fontStyle = "italic";
+            li.style.padding = "6px 8px";
+            li.textContent = "no channels yet";
+            channelsEl.appendChild(li);
+            return;
+          }
+          (j.channels || []).forEach((c) => {
+            const isNew = !firstChannelPoll && !seenChannels.has(c.name);
+            seenChannels.add(c.name);
+            const li = document.createElement("li");
+            li.style.padding = "0";
+
+            const row = document.createElement("div");
+            row.className = "row";
+            if (c.name === channel) row.classList.add("active");
+            if (isNew) row.classList.add("new");
+
+            const a = document.createElement("a");
+            a.href = `#${encodeURIComponent(c.name)}`;
+            const nameSpan = document.createElement("span");
+            nameSpan.className = "name";
+            nameSpan.textContent = c.name;
+            const count = document.createElement("span");
+            count.className = "count";
+            count.textContent = String(c.subscribers ?? 0);
+            a.appendChild(nameSpan);
+            a.appendChild(count);
+
+            const closeBtn = document.createElement("button");
+            closeBtn.className = "close-btn";
+            closeBtn.title = `Close channel "${c.name}" (deletes message log)`;
+            // Trash glyph via Unicode rather than a font dep.
+            closeBtn.textContent = "🗑";
+            closeBtn.addEventListener("click", async (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const ok = window.confirm(
+                `Close channel "${c.name}"? This deletes its message log and disconnects any subscribers. This cannot be undone.`
+              );
+              if (!ok) return;
+              try {
+                await fetch(`/channels/${encodeURIComponent(c.name)}`, {
+                  method: "DELETE",
+                });
+              } catch {}
+              seenChannels.delete(c.name);
+              refreshChannels();
+              // If we just closed the channel we were watching, redirect
+              // to "lobby" (which will be auto-opened by the server on
+              // next subscribe). The hashchange handler reloads.
+              if (c.name === channel) {
+                location.hash = "lobby";
+              }
+            });
+
+            row.appendChild(a);
+            row.appendChild(closeBtn);
+            li.appendChild(row);
+            channelsEl.appendChild(li);
+          });
+          firstChannelPoll = false;
+        } catch {}
+      }
+
+      let highest = 0;
+      function connect() {
+        statusBar.classList.remove("disconnected");
+        statusText.textContent = `connecting to ${channel}…`;
+        // EventSource handles SSE reconnection natively but doesn't expose
+        // a clean retry-from-cursor mechanism, so we pass `since` on each
+        // new connection — a brief drop won't lose messages.
+        const url = `/channels/${encodeURIComponent(channel)}/tail?since=${highest}`;
+        const es = new EventSource(url);
+        es.addEventListener("subscribed", (ev) => {
+          try {
+            const d = JSON.parse(ev.data);
+            if (d.topic !== undefined) setTopic(d.topic);
+            statusText.textContent = `subscribed to ${channel}`;
+          } catch {}
+        });
+        es.addEventListener("message", (ev) => {
+          try {
+            const m = JSON.parse(ev.data);
+            if (typeof m.id === "number" && m.id > highest) highest = m.id;
+            renderMessage(m);
+            if (m.kind === "topic") setTopic(m.text);
+          } catch {}
+        });
+        es.addEventListener("error", () => {
+          statusBar.classList.add("disconnected");
+          statusText.textContent = `disconnected — reconnecting…`;
+          es.close();
+          setTimeout(connect, 1000);
+        });
+      }
+
+      connect();
+      refreshSubscribers();
+      refreshChannels();
+      // Poll subscribers + channels periodically — `who` is bursty (wait
+      // windows open and close), and new channels can be opened by other
+      // agents at any time, so we refresh every few seconds for a live feel.
+      setInterval(refreshSubscribers, 3000);
+      setInterval(refreshChannels, 3000);
+
+      // If the user changes the hash (or clicks a channel in the left rail),
+      // reload to switch channels. Reload is the simplest way to reset the
+      // SSE stream and the message DOM cleanly.
+      window.addEventListener("hashchange", () => location.reload());
+    </script>
+  </body>
+</html>
