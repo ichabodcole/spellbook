@@ -45,9 +45,17 @@ reports.
 
 ## Verbs
 
-All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`. Add
-`--session <id>` to target a specific session (default: most recent). `help`
-prints the full surface.
+All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`. To
+target a specific session, put `--session <id>` **after the verb and its flags**
+(`cli.ts <verb> [args] --session <id>`) — the verb must be the first argument,
+so a leading `--session` is misread as the verb and fails. Default is the most
+recent session. `help` prints the full surface.
+
+> **"no running session" but your daemon is alive?** The most-recent-session
+> pointer (kept in the system temp dir, separate from the daemon) was lost — a
+> second session or temp-dir cleanup can drop it. Recover by re-targeting
+> explicitly: `--session <id>` (your id is in the `open` output, or run
+> `sessions`). The daemon itself is fine.
 
 > `${CLAUDE_PLUGIN_ROOT}` resolves to the plugin's install path in Claude Code.
 > If it's unset in your shell (some harnesses leave it empty), substitute the
@@ -103,8 +111,13 @@ notifications truncate long text) or from `state`.
 `direction` → direction, `prompts` → prompts, first `variant` → variants, `spec`
 → spec), so post content for the phase you're in and let it carry.
 
-- **gather** — user drops influences + context + intent and annotates (aspects,
-  star, notes). To read images, `Read` the on-disk `path` of each influence
+- **gather** — the user drops influences + context from the browser and
+  annotates (aspects, star, notes); **you cannot add them** — there is no agent
+  verb for it, so after `open` you wait in `gather` until they appear. Watch for
+  them: influences/contexts populate in `state` as the user drops, and `note`
+  events arrive on the tail. Don't post `read`s until `state.influences` is
+  non-empty (a `read` for an unknown influence id silently no-ops with
+  `ok:true`). To read images, `Read` the on-disk `path` of each influence
   (vision needs real pixels); read context files at their `path` too.
 - **analysis** — post a `read` for **each** influence (the phase flips to
   analysis on the first). The user reviews and may send **batched corrections**
@@ -157,9 +170,10 @@ waiting on a live `submit`.
 - **Bun** on PATH (the daemon serves a Bun-bundled React surface; first `open`
   builds it). Restore with `open --restore <id>`.
 - **`media-forge` CLI** on PATH — generation runs through it (see
-  `references/mediaforge.md`). Without it the gather → direction → prompts →
-  spec flow still works, but the variants phase can't generate; tell the user if
-  it's missing.
+  `references/mediaforge.md`); it's a separate tool the user installs, so
+  confirm it with `media-forge status` / `media-forge ping` before relying on
+  it. Without it the gather → direction → prompts → spec flow still works, but
+  the variants phase can't generate; tell the user if it's missing.
 - The session snapshot lives at `$GLAMOUR_HOME/snapshots/<session_id>.json`
   (default `~/.glamour`).
 - Report spend via media-forge's `usage summary` / `jobs get` — the `generate`

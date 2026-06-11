@@ -20,8 +20,11 @@ media-forge generate image \
   --format json
 ```
 
-- Output (json): `data.outputs[].presignedUrl` (each valid ~24h), plus
-  `mimeType`, `sizeBytes`, `serviceJobId`.
+- Output (json): each image is an entry in `data.outputs[]` → `presignedUrl`
+  (valid ~24h), `mimeType`, `sizeBytes`. The **`serviceJobId` is job-level (one
+  per call), not a per-output field** — read it from the top of the response (or
+  use `--no-wait`, which returns the id immediately) and pass it to
+  `jobs get <serviceJobId>` for actual cost.
 - `--n` up to 4 on most fal models → a whole variant round in one call. (Recraft
   is 1/call. fal `nano-banana-2`/`gemini-3.1` **do** honor `--n` — verified
   `num_images:2`→2; the OpenRouter gemini twins may be 1/call — unverified.)
