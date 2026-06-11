@@ -13,7 +13,16 @@
       "name": "spellbook",
       "source": "./plugins/spellbook",
       "category": "development",
-      "tags": ["agent-surface", "spells", "bun", "digestify", "grapevine", "bounty", "magpie"]
+      "tags": [
+        "agent-surface",
+        "spells",
+        "bun",
+        "digestify",
+        "grapevine",
+        "bounty",
+        "magpie",
+        "glamour"
+      ]
     }
   ]
 }

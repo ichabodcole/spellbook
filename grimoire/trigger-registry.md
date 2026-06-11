@@ -33,13 +33,13 @@ meaning to summon anything, is a bug.
 
 ## Reserved spells
 
-| Name        | Kind        | Conjures                                                           | Status   |
-| ----------- | ----------- | ------------------------------------------------------------------ | -------- |
-| `digestify` | cantrip     | One-shot reading/review surface, inline questions                  | shipped  |
-| `grapevine` | conjuration | Agent-to-agent channel daemon                                      | shipped  |
-| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done)                  | shipped  |
-| `magpie`    | conjuration | Image surface — drop, ask, orchestrate                             | shipped  |
-| `glamour`   | conjuration | Compose a visual style from influences → re-castable spec + images | building |
+| Name        | Kind        | Conjures                                                           | Status  |
+| ----------- | ----------- | ------------------------------------------------------------------ | ------- |
+| `digestify` | cantrip     | One-shot reading/review surface, inline questions                  | shipped |
+| `grapevine` | conjuration | Agent-to-agent channel daemon                                      | shipped |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done)                  | shipped |
+| `magpie`    | conjuration | Image surface — drop, ask, orchestrate                             | shipped |
+| `glamour`   | conjuration | Compose a visual style from influences → re-castable spec + images | shipped |
 
 ## Retired names (renamed away — don't reuse)
 
