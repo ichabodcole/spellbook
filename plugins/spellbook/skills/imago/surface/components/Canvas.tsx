@@ -1,15 +1,11 @@
 import {
   Check,
   Copy,
-  Eraser,
   ImagePlus,
   Info,
   Maximize,
   MessagesSquare,
   Minus,
-  MousePointer,
-  MoveUpRight,
-  Pin,
   Plus,
   Sparkles,
   X,
@@ -22,15 +18,13 @@ import {
   type ClientToServer,
   type ImageSize,
   type ImagoState,
-  type Mark,
+  MARK_TOOLS,
   SIZES,
 } from "../state/types";
-
-type Tool = "select" | "pin" | "arrow";
-
-function id(): string {
-  return crypto.randomUUID();
-}
+import { AnnotationLayer } from "./annotations/AnnotationLayer";
+import { AnnotationToolbar } from "./annotations/AnnotationToolbar";
+import { DEFAULT_DRAW_STYLE, type DrawStyle } from "./annotations/style";
+import { TOOL_REGISTRY } from "./annotations/tools/registry";
 
 function frameDims(aspect: string): { w: number; h: number } {
   const [w, h] = (aspect.split(":").map(Number) as [number, number]) ?? [1, 1];
@@ -39,14 +33,19 @@ function frameDims(aspect: string): { w: number; h: number } {
   return { w: Math.round((w || 1) * s), h: Math.round((h || 1) * s) };
 }
 
+// Viewport: zoom is "% of the ACTUAL image size" (100% = 1:1, image px ↔ CSS px).
+const PAD = 24; // breathing room around a fitted image
+const ZOOM_MIN = 5;
+const ZOOM_MAX = 800;
+const clampZoom = (z: number) => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+
 // Center pane: the stage. A blank aspect-ratio'd frame when nothing is focused
 // (pick an aspect + size, then describe it on the right), or the focused image
 // with pan/zoom + light annotation (arrow + pin). Marks are committed to the
 // conversation — handed to the agent — never "applied" by a hidden button.
 export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToServer) => void }) {
   const [zoom, setZoom] = useState(100); // % of the base fit-to-stage size
-  const [tool, setTool] = useState<Tool>("select");
-  const [arrowStart, setArrowStart] = useState<{ x: number; y: number } | null>(null);
+  const [tool, setTool] = useState("select"); // "select" | a TOOL_REGISTRY id
   const [pan, setPan] = useState({ x: 0, y: 0 }); // viewport offset in px
   const [panning, setPanning] = useState(false);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null); // image natural size
@@ -54,29 +53,59 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState<"prompt" | "analysis" | null>(null);
   const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas
+  const [drawStyle, setDrawStyle] = useState<DrawStyle>(DEFAULT_DRAW_STYLE); // active color/width for new marks
+  const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null); // mirrored from SelectionOverlay
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const dragRef = useRef<{
+    x: number;
+    y: number;
+    px: number;
+    py: number;
+  } | null>(null);
+  const fitPendingRef = useRef(true); // auto-fit the focused image once nat + stage are known
 
   const focus = state.focus;
   const batch = focus ? state.batches.find((b) => b.id === focus.batchId) : undefined;
   const vIndex = batch && focus ? batch.variants.findIndex((v) => v.id === focus.variantId) : -1;
   const variant = batch && vIndex >= 0 ? batch.variants[vIndex] : undefined;
   const variantId = variant?.id;
+  // Marks are durable PER variant now (server keys them by the focused variant);
+  // read the focused image's bucket. Client mark.* sends are unchanged.
+  const marks = focus ? (state.marksByVariant[focus.variantId] ?? []) : [];
 
-  // Reset the viewport when the focused image changes, and read the image's
-  // natural size. CRITICAL: a cached image is already `complete` by the time
-  // React attaches `onLoad`, so onLoad never fires for it — read the dims
-  // synchronously here (before paint) for that case; onLoad covers async loads.
+  // The % that fits the image fully in the stage (may be <100 for a big image,
+  // >100 for a tiny one). Zoom is now "% of actual image size".
+  function fitPercent(): number {
+    if (!nat || stageSize.w === 0) return 100;
+    const availW = Math.max(0, stageSize.w - PAD);
+    const availH = Math.max(0, stageSize.h - PAD);
+    return clampZoom(Math.floor(Math.min(availW / nat.w, availH / nat.h) * 100));
+  }
+
+  // Reset pan + read the image's natural size when the focused image changes, and
+  // ARM an auto-fit (applied once nat + stage are both known). CRITICAL: a cached
+  // image is already `complete` by the time React attaches `onLoad`, so onLoad
+  // never fires for it — read the dims synchronously here (before paint).
   // biome-ignore lint/correctness/useExhaustiveDependencies: variantId is the intentional reset key (re-run when the focused image changes)
   useLayoutEffect(() => {
-    setZoom(100);
     setPan({ x: 0, y: 0 });
-    // NB: showDetails intentionally NOT reset — the details sidebar persists
-    // open across variant selection; it just swaps content.
+    fitPendingRef.current = true; // default view for a newly-focused image = fit-to-window
+    // NB: showDetails intentionally NOT reset — the details sidebar persists open
+    // across variant selection. Annotation drafts reset inside AnnotationLayer
+    // (keyed on the focused variant), so no draft state lives here anymore.
     const el = imgRef.current;
     setNat(el?.complete && el.naturalWidth ? { w: el.naturalWidth, h: el.naturalHeight } : null);
   }, [variantId]);
+
+  // Apply the auto-fit once nat + stage are known (once per variant, so a manual
+  // zoom afterward sticks). fitPendingRef is re-armed on variant change above.
+  useEffect(() => {
+    if (!fitPendingRef.current || !nat || stageSize.w === 0) return;
+    setZoom(fitPercent());
+    setPan({ x: 0, y: 0 });
+    fitPendingRef.current = false;
+  });
 
   // Measure the stage so the image can be fit to it (re-measures on resize and
   // when (re)entering the focused view, since the stage ref attaches then).
@@ -91,49 +120,42 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     return () => ro.disconnect();
   }, [variantId]);
 
-  function frac(e: React.MouseEvent<HTMLElement>): { x: number; y: number } {
-    const r = e.currentTarget.getBoundingClientRect();
-    return {
-      x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)),
-      y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)),
-    };
-  }
+  // Annotation gestures + tool drafts now live in AnnotationLayer (it owns the
+  // image-box pointer dispatch + per-tool plugins); Canvas keeps the viewport,
+  // the reference drawer, and the details sidebar.
 
-  function onImageClick(e: React.MouseEvent<HTMLElement>) {
-    if (tool === "select" || !variant) return;
-    const p = frac(e);
-    if (tool === "pin") {
-      send({
-        type: "mark.add",
-        mark: { id: id(), tool: "pin", label: "note", x: p.x, y: p.y },
-      });
-    } else if (tool === "arrow") {
-      if (!arrowStart) setArrowStart(p);
-      else {
-        send({
-          type: "mark.add",
-          mark: {
-            id: id(),
-            tool: "arrow",
-            x1: arrowStart.x,
-            y1: arrowStart.y,
-            x2: p.x,
-            y2: p.y,
-          },
-        });
-        setArrowStart(null);
-      }
-    }
+  // The style row drives the SELECTED mark when one is selected (only meaningful
+  // in the select tool), else the active draw style for new marks.
+  const selectedMark =
+    tool === "select" && selectedMarkId ? marks.find((m) => m.id === selectedMarkId) : undefined;
+  const activeColor = selectedMark?.color ?? drawStyle.color;
+  const activeWidth = selectedMark?.width ?? drawStyle.width;
+  // fontSize is pin-only; reflects the selected pin's size, else the draw style
+  const activeFontSize =
+    (selectedMark?.tool === "pin" ? selectedMark.fontSize : undefined) ?? drawStyle.fontSize;
+  function pickColor(color: string) {
+    if (selectedMark) send({ type: "mark.update", id: selectedMark.id, patch: { color } });
+    else setDrawStyle((s) => ({ ...s, color }));
+  }
+  function pickWidth(width: number) {
+    if (selectedMark) send({ type: "mark.update", id: selectedMark.id, patch: { width } });
+    else setDrawStyle((s) => ({ ...s, width }));
+  }
+  function pickFontSize(px: number) {
+    if (selectedMark?.tool === "pin")
+      send({ type: "mark.update", id: selectedMark.id, patch: { fontSize: px } });
+    else setDrawStyle((s) => ({ ...s, fontSize: px }));
   }
 
   function commitMarks() {
-    if (!focus || state.marks.length === 0) return;
-    const pins = state.marks.filter((m) => m.tool === "pin").length;
-    const arrows = state.marks.filter((m) => m.tool === "arrow").length;
-    const parts = [
-      arrows && `${arrows} arrow${arrows > 1 ? "s" : ""}`,
-      pins && `${pins} pin${pins > 1 ? "s" : ""}`,
-    ].filter(Boolean);
+    if (!focus || marks.length === 0) return;
+    // count every shape type generically (group by tool), in MARK_TOOLS order
+    const counts = new Map<string, number>();
+    for (const m of marks) counts.set(m.tool, (counts.get(m.tool) ?? 0) + 1);
+    const parts = MARK_TOOLS.filter((t) => counts.has(t)).map((t) => {
+      const n = counts.get(t) ?? 0;
+      return `${n} ${t}${n > 1 ? "s" : ""}`;
+    });
     send({
       type: "marks.commit",
       text: `marked: ${parts.join(", ")}`,
@@ -172,7 +194,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     const cx = e.clientX - rect.left - rect.width / 2;
     const cy = e.clientY - rect.top - rect.height / 2;
     const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
-    const nz = Math.min(400, Math.max(25, Math.round(zoom * factor)));
+    const nz = clampZoom(Math.round(zoom * factor));
     if (nz === zoom) return;
     // keep the point under the cursor stationary as the image scales about center
     const ratio = nz / zoom;
@@ -180,7 +202,11 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     setZoom(nz);
   }
   function fitToStage() {
-    setZoom(100);
+    setZoom(fitPercent());
+    setPan({ x: 0, y: 0 });
+  }
+  function actualSize() {
+    setZoom(100); // 1:1 — image px ↔ CSS px
     setPan({ x: 0, y: 0 });
   }
   function copyText(text: string, key: "prompt" | "analysis") {
@@ -279,19 +305,11 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   }
 
   // ── focused image — a real viewport: natural aspect, wheel-zoom, drag-pan ──
-  const aspect = nat ? nat.w / nat.h : 1;
-  const PAD = 24; // breathing room around the fitted image
-  const availW = Math.max(0, stageSize.w - PAD);
-  const availH = Math.max(0, stageSize.h - PAD);
-  let baseW = availW;
-  let baseH = baseW / aspect;
-  if (baseH > availH) {
-    baseH = availH;
-    baseW = baseH * aspect;
-  }
+  // zoom is "% of actual image size" → scale = fraction of actual size, and the
+  // displayed box is the image's real px × scale (100% = 1:1).
   const scale = zoom / 100;
-  const dispW = baseW * scale;
-  const dispH = baseH * scale;
+  const dispW = nat ? nat.w * scale : 0;
+  const dispH = nat ? nat.h * scale : 0;
   const viewportReady = nat !== null && stageSize.w > 0;
   const batchIndex = state.batches.findIndex((b) => b.id === focus.batchId);
   // For an edit, resolve the source variant to a friendly "Batch M · variant y".
@@ -323,17 +341,18 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
           onDragLeave={onCanvasDragLeave}
           onDrop={onCanvasDrop}
           className={`relative flex-1 min-w-0 overflow-hidden flex items-center justify-center ${
-            tool === "select" ? (panning ? "cursor-grabbing" : "cursor-grab") : "cursor-crosshair"
+            tool === "select"
+              ? panning
+                ? "cursor-grabbing"
+                : "cursor-grab"
+              : (TOOL_REGISTRY[tool]?.cursor ?? "cursor-crosshair")
           }`}
         >
           {importHint}
           {/* The image box is sized to the image's real proportions (no forced
             square) and translated by pan; the marks overlay lives INSIDE it, so
             pins/arrows stay glued to the image as it pans & zooms. */}
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: pointer-position annotation surface */}
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: clicks place marks at the cursor — no keyboard equivalent */}
           <div
-            onClick={onImageClick}
             className="relative shrink-0 select-none rounded-lg shadow-2xl ring-1 ring-edge overflow-hidden"
             style={{
               width: dispW || undefined,
@@ -360,90 +379,40 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
               <div className="w-full h-full bg-surface-2" />
             )}
 
-            {/* marks overlay (fractions → percentages of the image box) */}
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-            >
-              <title>annotations</title>
-              <defs>
-                <marker id="ah" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-                  <path d="M0,0 L6,3 L0,6 Z" fill="var(--color-attention)" />
-                </marker>
-              </defs>
-              {state.marks.map((m: Mark) =>
-                m.tool === "arrow" ? (
-                  <line
-                    key={m.id}
-                    x1={m.x1 * 100}
-                    y1={m.y1 * 100}
-                    x2={m.x2 * 100}
-                    y2={m.y2 * 100}
-                    stroke="var(--color-attention)"
-                    strokeWidth="0.8"
-                    markerEnd="url(#ah)"
-                  />
-                ) : null,
-              )}
-            </svg>
-            {state.marks.map((m) =>
-              m.tool === "pin" ? (
-                <span
-                  key={m.id}
-                  className="absolute -translate-x-1/2 -translate-y-1/2 text-[10px] bg-accent text-white px-1.5 py-0.5 rounded shadow pointer-events-none"
-                  style={{ left: `${m.x * 100}%`, top: `${m.y * 100}%` }}
-                >
-                  {m.label}
-                </span>
-              ) : null,
-            )}
+            {/* committed marks + the active tool's draft/editor; the layer owns
+                pointer dispatch (select falls through to the stage's pan). */}
+            <AnnotationLayer
+              tool={tool}
+              marks={marks}
+              resetKey={variantId ?? ""}
+              send={send}
+              drawStyle={drawStyle}
+              scale={scale}
+              onSelectionChange={setSelectedMarkId}
+            />
           </div>
 
-          {/* annotation toolbar */}
-          <div className="absolute top-4 left-4 flex flex-col gap-1.5 p-1.5 card">
-            {(
-              [
-                ["select", MousePointer, "Select / pan"],
-                ["arrow", MoveUpRight, "Arrow — move this → there"],
-                ["pin", Pin, "Pin — label a spot"],
-              ] as const
-            ).map(([t, Icon, title]) => (
-              <button
-                type="button"
-                key={t}
-                title={title}
-                onClick={() => {
-                  setTool(t);
-                  setArrowStart(null);
-                }}
-                className={`w-9 h-9 rounded-md flex items-center justify-center border transition-colors ${
-                  tool === t
-                    ? "bg-accent/25 border-accent/60 text-accent-ink"
-                    : "border-edge text-muted hover:text-white hover:border-edge-hover"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </button>
-            ))}
-            {state.marks.length > 0 && (
-              <button
-                type="button"
-                title="Clear annotations"
-                onClick={() => send({ type: "marks.clear" })}
-                className="w-9 h-9 rounded-md flex items-center justify-center border border-edge text-muted hover:text-white hover:border-edge-hover"
-              >
-                <Eraser className="w-4 h-4" />
-              </button>
-            )}
-          </div>
+          {/* annotation toolbar — select pseudo-tool + registered tools + clear + style */}
+          <AnnotationToolbar
+            tool={tool}
+            setTool={setTool}
+            hasMarks={marks.length > 0}
+            onClear={() => send({ type: "marks.clear" })}
+            activeColor={activeColor}
+            activeWidth={activeWidth}
+            activeFontSize={activeFontSize}
+            pinSelected={selectedMark?.tool === "pin"}
+            onPickColor={pickColor}
+            onPickWidth={pickWidth}
+            onPickFontSize={pickFontSize}
+          />
 
-          {/* zoom */}
+          {/* zoom — % of actual image size (100% = 1:1) */}
           <div className="absolute bottom-4 right-4 flex items-center gap-1 p-1 card">
             <button
               type="button"
               className="btn-ghost !p-1.5"
-              onClick={() => setZoom((z) => Math.max(25, z - 25))}
+              onClick={() => setZoom((z) => clampZoom(z - 25))}
             >
               <Minus className="w-4 h-4" />
             </button>
@@ -451,12 +420,25 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             <button
               type="button"
               className="btn-ghost !p-1.5"
-              onClick={() => setZoom((z) => Math.min(400, z + 25))}
+              onClick={() => setZoom((z) => clampZoom(z + 25))}
             >
               <Plus className="w-4 h-4" />
             </button>
-            <button type="button" className="btn-ghost !p-1.5" onClick={fitToStage} title="Fit">
+            <button
+              type="button"
+              className="btn-ghost !p-1.5"
+              onClick={fitToStage}
+              title="Fit to window"
+            >
               <Maximize className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className="btn-ghost !px-1.5 !py-1 text-[10px] font-semibold tabular-nums"
+              onClick={actualSize}
+              title="Actual size (100%)"
+            >
+              1:1
             </button>
           </div>
 
@@ -464,7 +446,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <div className="text-[11px] bg-black/60 border border-edge text-ink px-2.5 py-1 rounded-full">
               Batch {batchIndex + 1} · variant {variantLabel(vIndex)}
-              {state.marks.length > 0 ? " · annotating" : ""}
+              {marks.length > 0 ? " · annotating" : ""}
             </div>
             <button
               type="button"
@@ -481,9 +463,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
           </div>
 
           {/* hand the marks to the conversation (not a hidden "apply") */}
-          {state.marks.length > 0 && (
+          {marks.length > 0 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 card">
-              <span className="text-[11px] text-muted">{state.marks.length} mark(s)</span>
+              <span className="text-[11px] text-muted">{marks.length} mark(s)</span>
               <button
                 type="button"
                 className="btn-primary !px-2.5 !py-1 text-[11px]"
@@ -621,7 +603,10 @@ function ReferenceDrawer({
   // The analysis popover, anchored to the badge that opened it (fixed-positioned
   // so it escapes the drawer's overflow clipping). Keyed by ref id so it closes
   // itself if that ref is removed while open.
-  const [analysisAnchor, setAnalysisAnchor] = useState<{ id: string; rect: DOMRect } | null>(null);
+  const [analysisAnchor, setAnalysisAnchor] = useState<{
+    id: string;
+    rect: DOMRect;
+  } | null>(null);
   const analysisRef = analysisAnchor
     ? state.refs.find((r) => r.id === analysisAnchor.id)
     : undefined;
@@ -687,7 +672,13 @@ function ReferenceDrawer({
                       ? "Selected — click to deselect"
                       : "Click to select for the next generation"
                   }
-                  onClick={() => send({ type: "ref.select", id: r.id, selected: !r.selected })}
+                  onClick={() =>
+                    send({
+                      type: "ref.select",
+                      id: r.id,
+                      selected: !r.selected,
+                    })
+                  }
                   className="absolute inset-0 cursor-pointer"
                 />
                 {r.selected && (

@@ -49,7 +49,7 @@ export function GenerationsRail({
         )}
 
         {state.batches.map((b, bi) => (
-          <div key={b.id} className="flex flex-col gap-2">
+          <div key={b.id} className="flex flex-col gap-2 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-ink">Batch {bi + 1}</span>
               <span
@@ -104,7 +104,9 @@ export function GenerationsRail({
                 );
               })}
             </div>
-            {b.tag && <p className="text-faint italic">{b.tag}</p>}
+            {b.tag && (
+              <p className="text-faint italic break-words [overflow-wrap:anywhere]">{b.tag}</p>
+            )}
           </div>
         ))}
       </div>

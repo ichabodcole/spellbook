@@ -98,21 +98,57 @@ export type Reference = {
   analysis: string; // the agent's read of this image, shown on the board (click to view)
 };
 
-// An annotation mark on the focused image. Coords are fractions (0–1) of the
-// image box. `marks` are transient — committed to the conversation, then cleared.
-// V1 tools: "pin" (a labeled point) and "arrow" ("move this → there"). The mask
-// "region" tool is deferred with the masking flow (see brief).
+// An annotation mark on a variant. Coords are fractions (0–1) of the image box,
+// so marks transform with pan/zoom; stroke width + text size are authored at
+// 100% zoom and the surface scales them with the zoom so they stay welded to the
+// image. Marks are DURABLE per image — kept in `marksByVariant` keyed by variant
+// id, so switching away and back preserves them; cleared explicitly (marks.clear)
+// or when committed to the conversation. Tools: pin (labeled point), arrow ("move
+// this → there"), line, rect, ellipse. The mask tool drops onto the same union later.
+// `zOrder` is server-assigned on mark.add (higher = on top); the surface omits
+// it. See docs/projects/imago/annotation-architecture.md.
+// color = stroke/accent color (a theme token name or CSS color); width = stroke
+// width in px; fontSize = label text size in px (pins use it; other marks ignore
+// it). All optional — the surface picks sensible defaults.
+export type MarkBase = {
+  id: string;
+  zOrder?: number;
+  label?: string;
+  color?: string;
+  width?: number;
+  fontSize?: number;
+};
 export type Mark =
-  | { id: string; tool: "pin"; label: string; x: number; y: number }
-  | {
-      id: string;
+  | (MarkBase & { tool: "pin"; x: number; y: number })
+  | (MarkBase & {
       tool: "arrow";
-      label?: string;
       x1: number;
       y1: number;
       x2: number;
       y2: number;
-    };
+    })
+  | (MarkBase & {
+      tool: "line";
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+    })
+  | (MarkBase & { tool: "rect"; x: number; y: number; w: number; h: number })
+  | (MarkBase & {
+      tool: "ellipse";
+      cx: number;
+      cy: number;
+      rx: number;
+      ry: number;
+    });
+export const MARK_TOOLS: readonly Mark["tool"][] = [
+  "pin",
+  "arrow",
+  "line",
+  "rect",
+  "ellipse",
+] as const;
 
 // ── the whole state ──
 
@@ -124,7 +160,7 @@ export type ImagoState = {
   styles: StyleEntry[];
   pins: Pin[];
   refs: Reference[];
-  marks: Mark[]; // annotation marks on the focused image (transient)
+  marksByVariant: Record<string, Mark[]>; // durable annotation marks per variant id
   analysisCache: Record<string, string>; // hash → agent analysis; survives a ref delete/re-add (daemon-maintained)
   aspect: string; // aspect ratio for a NEW (fresh) generation
   size: ImageSize; // output resolution for a NEW generation
@@ -166,7 +202,14 @@ export type ClientToServer =
   | { type: "ref.remove"; id: string }
   | { type: "image.import"; image: { src: string; name?: string } } // drop on canvas → working image
   | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
-  | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit
+  | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder)
+  | { type: "mark.remove"; id: string } // delete one mark (complements marks.clear)
+  | { type: "mark.update"; id: string; patch: Record<string, number | string> } // move/resize/label (server merges; never id/tool/zOrder)
+  | {
+      type: "mark.reorder";
+      id: string;
+      direction: "forward" | "back" | "front" | "back-most";
+    } // z-order
   | { type: "marks.clear" }
   | { type: "marks.commit"; text: string; batchId: string; variantId: string } // "take marks to the conversation →"
   | { type: "aspect.set"; aspect: string }
@@ -276,7 +319,7 @@ export function defaultState(title: string): ImagoState {
     styles: DEFAULT_STYLES.map((s) => ({ ...s })),
     pins: [],
     refs: [],
-    marks: [],
+    marksByVariant: {},
     analysisCache: {},
     aspect: "1:1",
     size: "1K",

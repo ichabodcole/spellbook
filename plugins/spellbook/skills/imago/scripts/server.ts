@@ -38,6 +38,7 @@ import {
   type Batch,
   defaultState,
   type ImagoState,
+  MARK_TOOLS,
   type Mark,
   type Message,
   type Reference,
@@ -393,8 +394,7 @@ async function main(argv: string[]): Promise<number> {
       const has = b?.variants.some((x) => x.id === msg.variantId);
       if (b && has) {
         state.focus = { batchId: b.id, variantId: msg.variantId as string };
-        state.marks = []; // marks are scoped to the focused image
-        broadcastState();
+        broadcastState(); // marks are durable per variant — switching never clears them
       }
     } else if (t === "ref.select") {
       // the agent points at a ref too — the user sees it highlight on the board
@@ -515,12 +515,10 @@ async function main(argv: string[]): Promise<number> {
       if (!b) return;
       if (!b.variants.some((x) => x.id === msg.variantId)) return;
       state.focus = { batchId: b.id, variantId: msg.variantId as string };
-      state.marks = []; // marks are scoped to the focused image
-      broadcastState();
+      broadcastState(); // marks are durable per variant — switching never clears them
       emitEvent({ type: "focus.set", batchId: b.id, variantId: msg.variantId });
     } else if (t === "focus.clear") {
       state.focus = null;
-      state.marks = [];
       broadcastState();
       emitEvent({ type: "focus.clear" });
     } else if (t === "variant.like") {
@@ -617,7 +615,6 @@ async function main(argv: string[]): Promise<number> {
         variants: [variant],
       });
       state.focus = { batchId, variantId: vid };
-      state.marks = [];
       pushMessage({
         role: "user",
         kind: "gesture",
@@ -628,12 +625,60 @@ async function main(argv: string[]): Promise<number> {
       emitEvent({ type: "image.import", batchId, variantId: vid, name });
     } else if (t === "mark.add") {
       const mk = msg.mark as Mark | undefined;
-      if (!mk || (mk.tool !== "pin" && mk.tool !== "arrow")) return;
-      if (!mk.id) return;
-      state.marks.push(mk);
+      const vid = state.focus?.variantId;
+      if (!vid || !mk?.id || !MARK_TOOLS.includes(mk.tool)) return;
+      if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
+      const arr = state.marksByVariant[vid];
+      mk.zOrder = arr.length; // server is authoritative for z-order
+      arr.push(mk);
       broadcastState(); // incremental — no agent event until commit
+    } else if (t === "mark.remove") {
+      const vid = state.focus?.variantId;
+      if (!vid || !state.marksByVariant[vid]) return;
+      state.marksByVariant[vid] = state.marksByVariant[vid].filter((m) => m.id !== msg.id);
+      broadcastState();
+    } else if (t === "mark.update") {
+      // move/resize/relabel a committed mark on the focused image; merge
+      // geometry/label/style keys only, never id/tool/zOrder (server-owned).
+      const vid = state.focus?.variantId;
+      const m = vid
+        ? (state.marksByVariant[vid]?.find((x) => x.id === msg.id) as
+            | Record<string, unknown>
+            | undefined)
+        : undefined;
+      const patch = msg.patch as Record<string, unknown> | undefined;
+      if (!m || !patch || typeof patch !== "object") return;
+      for (const [k, val] of Object.entries(patch)) {
+        if (k === "id" || k === "tool" || k === "zOrder") continue;
+        if (typeof val === "number" || typeof val === "string") m[k] = val;
+      }
+      broadcastState();
+    } else if (t === "mark.reorder") {
+      const vid = state.focus?.variantId;
+      if (!vid || !state.marksByVariant[vid]) return;
+      const sorted = [...state.marksByVariant[vid]].sort(
+        (a, b) => (a.zOrder ?? 0) - (b.zOrder ?? 0),
+      );
+      const idx = sorted.findIndex((m) => m.id === msg.id);
+      if (idx < 0) return;
+      const [m] = sorted.splice(idx, 1);
+      const target =
+        msg.direction === "front"
+          ? sorted.length
+          : msg.direction === "back-most"
+            ? 0
+            : msg.direction === "forward"
+              ? Math.min(sorted.length, idx + 1)
+              : Math.max(0, idx - 1); // "back"
+      sorted.splice(target, 0, m);
+      sorted.forEach((mm, i) => {
+        mm.zOrder = i;
+      });
+      state.marksByVariant[vid] = sorted;
+      broadcastState();
     } else if (t === "marks.clear") {
-      state.marks = [];
+      const vid = state.focus?.variantId;
+      if (vid) state.marksByVariant[vid] = [];
       broadcastState();
     } else if (t === "marks.commit") {
       if (
@@ -642,14 +687,16 @@ async function main(argv: string[]): Promise<number> {
         typeof msg.variantId !== "string"
       )
         return;
-      const marks = state.marks;
+      const marks = state.marksByVariant[msg.variantId] ?? [];
       pushMessage({
         role: "user",
         kind: "gesture",
         text: `✍️ ${msg.text}`,
         gesture: { kind: "marked", targetId: msg.variantId },
       });
-      state.marks = [];
+      // committing hands a snapshot to the agent and clears that image's marks
+      // (the explicit hand-off act — distinct from passively switching images).
+      state.marksByVariant[msg.variantId] = [];
       broadcastState();
       emitEvent({
         type: "marks.commit",
@@ -806,6 +853,19 @@ async function main(argv: string[]): Promise<number> {
       if (r.src) r.path = saveDataUrl(sessionFilesDir, r.id, r.src) || r.path;
       if (!r.hash && r.src) r.hash = contentHash(r.src); // backfill for pre-hash snapshots
       if (r.analysis === undefined) r.analysis = state.analysisCache[r.hash] ?? "";
+    }
+    // Migrate pre-durability snapshots: a legacy global `marks` array → the
+    // focused variant's bucket. Then normalize zOrder within each bucket.
+    const legacy = (state as { marks?: Mark[] }).marks;
+    if (Array.isArray(legacy)) {
+      if (legacy.length && state.focus) state.marksByVariant[state.focus.variantId] = legacy;
+      delete (state as { marks?: Mark[] }).marks;
+    }
+    state.marksByVariant ??= {};
+    for (const vid of Object.keys(state.marksByVariant)) {
+      state.marksByVariant[vid] = state.marksByVariant[vid].map((m, i) =>
+        m.zOrder === undefined ? { ...m, zOrder: i } : m,
+      );
     }
     saveSnapshot();
   }
