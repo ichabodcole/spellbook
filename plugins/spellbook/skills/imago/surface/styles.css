@@ -1,0 +1,151 @@
+@import "tailwindcss";
+/* Scan this surface's components for class names regardless of the daemon's
+   launch cwd (cli.ts spawns the server from arbitrary directories). Without
+   this, Tailwind v4's auto content-detection roots at cwd and emits zero
+   utilities → an unstyled surface. */
+@source "./";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SEMANTIC THEME — the single source of truth for color.
+   Components use the generated utilities (bg-surface, text-muted, border-edge,
+   bg-accent, text-attention-ink, …) — never raw hex or palette literals. To
+   change the look (or add a second theme), edit these tokens, not the markup.
+   Adding a new color is a deliberate step: add a token here, then use its
+   semantic name. ────────────────────────────────────────────────────────── */
+@theme {
+  /* surfaces (low → high elevation) */
+  --color-bg: #120e18; /* app background */
+  --color-bg-elev: #1a1422; /* gradient highlight */
+  --color-surface: #1b1626; /* cards, pills */
+  --color-surface-2: #140f1d; /* insets, wells, inputs, canvas backdrop */
+  --color-surface-3: #241d33; /* hover, raised chips, toasts */
+
+  /* borders */
+  --color-divider: #241d33; /* section/header dividers (quiet) */
+  --color-edge: #2e2640; /* default border */
+  --color-edge-2: #2a2238; /* inset border */
+  --color-edge-strong: #3a3050; /* segmented controls, outlines */
+  --color-edge-hover: #4a3f63; /* border on hover */
+
+  /* text */
+  --color-ink: #e2e8f0; /* primary text */
+  --color-ink-strong: #f5f3ff; /* headings */
+  --color-muted: #94a3b8; /* secondary text */
+  --color-faint: #64748b; /* tertiary / hints */
+
+  /* accent — imago's violet */
+  --color-accent: #7c3aed;
+  --color-accent-hover: #8b5cf6;
+  --color-accent-ink: #c4b5fd; /* accent-tinted text on dark */
+  --color-accent-fg: #ffffff; /* text/icon on a solid accent fill */
+
+  /* intents */
+  --color-attention: #f59e0b; /* the agent needs you (amber) */
+  --color-attention-ink: #fcd34d;
+  --color-capture: #d946ef; /* style capture (fuchsia) */
+  --color-capture-ink: #f0abfc;
+  --color-positive: #34d399; /* connected / good (emerald) */
+  --color-like: #fb7185; /* liked (rose) */
+}
+
+:root {
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: radial-gradient(
+    ellipse at top,
+    var(--color-bg-elev) 0%,
+    var(--color-bg) 60%
+  );
+}
+
+@keyframes pdot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply text-lg font-semibold text-ink-strong;
+  }
+  .section-title {
+    @apply text-[11px] font-semibold text-accent-ink/70 uppercase tracking-wider;
+  }
+  .label {
+    @apply text-xs text-faint;
+  }
+  .text-body {
+    @apply text-sm text-ink leading-relaxed;
+  }
+  .text-muted {
+    @apply text-sm text-muted;
+  }
+  .text-faint {
+    @apply text-xs text-faint;
+  }
+  .text-mono {
+    @apply text-xs text-faint font-mono;
+  }
+  .card {
+    @apply bg-surface border border-edge rounded-xl;
+  }
+  .inset {
+    @apply bg-surface-2 border border-edge-2 rounded-lg;
+  }
+  /* badge variants: inline base utilities to avoid Tailwind v4 cross-class @apply issue */
+  .badge-accent {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium bg-accent/10 text-accent-ink border-accent/25;
+  }
+  .badge-muted {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium bg-surface-3 text-ink border-edge;
+  }
+  .badge-canon {
+    @apply text-[11px] px-2 py-0.5 rounded border font-medium bg-attention/15 text-attention-ink border-attention/30;
+  }
+  /* btn variants: inline base utilities to avoid Tailwind v4 cross-class @apply issue */
+  .btn-primary {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 bg-accent text-accent-fg hover:bg-accent-hover;
+  }
+  .btn-outline {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 border border-edge-strong text-ink hover:bg-surface-3;
+  }
+  .btn-ghost {
+    @apply text-xs px-3 py-1.5 rounded-md border border-edge text-muted hover:text-ink hover:border-edge-strong transition-colors flex items-center justify-center gap-2;
+  }
+  .textarea {
+    @apply w-full bg-surface-2 border border-edge-2 text-sm text-ink px-3 py-2 rounded-lg placeholder-faint focus:outline-none focus:border-accent/60 resize-none;
+  }
+  .chip {
+    @apply text-xs px-2.5 py-1 rounded-full border border-edge-strong text-ink hover:bg-accent/20 hover:border-accent/40 hover:text-accent-ink transition-colors cursor-pointer;
+  }
+  .chip-on {
+    @apply text-xs px-2.5 py-1 rounded-full border bg-accent/25 border-accent/50 text-accent-ink cursor-pointer;
+  }
+  .tile {
+    @apply relative rounded-lg overflow-hidden border border-edge aspect-square bg-surface-2;
+  }
+  .tile img {
+    @apply w-full h-full object-cover;
+  }
+  .pulse-dot {
+    animation: pdot 1.6s ease-in-out infinite;
+  }
+  .toast {
+    @apply bg-surface-3 border border-edge-strong text-ink text-sm px-3 py-2 rounded-lg shadow-lg;
+  }
+  /* canvas backdrop — dotted, reads as a movable surface */
+  .workspace {
+    background-color: var(--color-surface-2);
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--color-muted) 14%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 18px 18px;
+  }
+}

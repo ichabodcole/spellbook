@@ -1,0 +1,979 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mockup — imago canvas (v2)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+
+    <style type="text/tailwindcss">
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      .section-title {
+        @apply text-[11px] font-semibold text-slate-400 uppercase tracking-wide;
+      }
+      .text-faint {
+        @apply text-xs text-slate-500;
+      }
+      .card {
+        @apply bg-slate-900 border border-slate-800 rounded-lg;
+      }
+      .inset {
+        @apply bg-slate-950 border border-slate-800 rounded-md;
+      }
+      .btn {
+        @apply text-sm px-4 py-2 rounded-md font-medium transition-colors
+               flex items-center justify-center gap-2;
+      }
+      .btn-primary {
+        @apply btn bg-violet-600 text-white hover:bg-violet-500;
+      }
+      .textarea {
+        @apply w-full bg-slate-950 border border-slate-800 text-sm text-white
+               px-3 py-2.5 rounded-md placeholder-slate-600
+               focus:outline-none focus:border-violet-600/60 resize-none;
+      }
+      .tool {
+        @apply w-9 h-9 rounded-md flex items-center justify-center
+               border border-slate-800 text-slate-400 hover:text-white
+               hover:border-slate-600 transition-colors bg-slate-900/80;
+      }
+      .tool-active {
+        @apply bg-violet-600/25 border-violet-500/60 text-violet-200;
+      }
+      .seg {
+        @apply px-2 py-0.5 text-xs font-medium transition-colors;
+      }
+      .seg-on {
+        @apply bg-violet-600 text-white;
+      }
+      .seg-off {
+        @apply text-slate-400 hover:text-white hover:bg-slate-800;
+      }
+      /* style-catalog chips + agent prompt-action buttons */
+      .chip {
+        @apply text-[11px] px-2 py-0.5 rounded-full border transition-colors shrink-0;
+      }
+      .chip-on {
+        @apply chip bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-500/40;
+      }
+      .chip-off {
+        @apply chip border-slate-700 text-slate-400 hover:text-white hover:border-slate-500;
+      }
+      .assist-btn {
+        @apply text-[11px] px-2 py-1 rounded-md border border-slate-700
+               text-slate-300 hover:bg-slate-800 hover:text-white
+               flex items-center gap-1 transition-colors shrink-0;
+      }
+
+      /* placeholder "image" gradients */
+      .imgtile {
+        @apply relative flex items-center justify-center overflow-hidden;
+      }
+      .g-fox {
+        background:
+          radial-gradient(
+            circle at 30% 25%,
+            rgba(167, 139, 250, 0.5),
+            transparent 60%
+          ),
+          linear-gradient(135deg, #4338ca, #6d28d9 55%, #9333ea);
+      }
+      .g-forest {
+        background: linear-gradient(135deg, #065f46, #047857 55%, #15803d);
+      }
+      .g-water {
+        background:
+          radial-gradient(
+            circle at 70% 30%,
+            rgba(125, 211, 252, 0.45),
+            transparent 55%
+          ),
+          linear-gradient(135deg, #0e7490, #0891b2 50%, #2563eb);
+      }
+      .g-swatch {
+        background: linear-gradient(135deg, #f59e0b, #ec4899 45%, #06b6d4);
+      }
+      /* canvas workspace backdrop — dotted, to read as a movable surface */
+      .workspace {
+        background-color: #0a0f1a;
+        background-image: radial-gradient(
+          rgba(148, 163, 184, 0.12) 1px,
+          transparent 1px
+        );
+        background-size: 18px 18px;
+      }
+      .pulse-dot {
+        animation: pdot 1.2s ease-in-out infinite;
+      }
+      @keyframes pdot {
+        0%,
+        100% {
+          opacity: 0.35;
+        }
+        50% {
+          opacity: 1;
+        }
+      }
+    </style>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("app", () => ({
+          state: "empty",
+          states: [
+            { id: "empty", label: "1 · new (pick size)" },
+            { id: "batch", label: "2 · batch kept (×4)" },
+            { id: "refs", label: "3 · refs drawer" },
+            { id: "annotate", label: "4 · annotate selected" },
+            { id: "edited", label: "5 · edit → new batch" },
+            { id: "needsyou", label: "6 · agent needs you" },
+          ],
+
+          size: "m", // generations sidebar thumb size
+          zoom: 100, // canvas zoom %
+          tool: "region", // active annotation tool
+          refsOpen: false, // references drawer in the input area
+          batch: 4, // batch size (media-forge --n ≤ 4)
+          sel: { b: 1, v: 0 }, // selected generation (batch id, variant idx)
+          ratio: "1:1", // aspect ratio for a NEW (fresh) generation
+          ratios: ["1:1", "3:2", "2:3", "16:9", "9:16"],
+          // reusable style catalog — clicking tells the agent to apply its
+          // technique for that look (not just append a keyword)
+          styles: [
+            "anime",
+            "painterly",
+            "photoreal",
+            "3D",
+            "watercolor",
+            "line art",
+          ],
+          activeStyles: ["anime"],
+          savedStyleNote: false,
+          // the "ask about this image" box — lens buttons just FILL this with
+          // editable natural language (shortcuts for talking, not hidden magic)
+          askText: "",
+          lens(t) {
+            this.askText = t;
+          },
+          toggleStyle(s) {
+            const i = this.activeStyles.indexOf(s);
+            if (i >= 0) this.activeStyles.splice(i, 1);
+            else this.activeStyles.push(s);
+          },
+          // interrogate this image → agent extracts a reusable style → catalog.
+          // also fills the box (transparent language); the catalog add is the
+          // outcome the agent produces once you send.
+          extractStyle() {
+            this.lens(
+              "Look at this image and turn what is distinctive about it (palette, lighting, finish) into a reusable style I can save to my catalog."
+            );
+            const s = "golden-hour";
+            if (!this.styles.includes(s)) this.styles.push(s);
+            if (!this.activeStyles.includes(s)) this.activeStyles.push(s);
+            this.savedStyleNote = true;
+          },
+
+          newImage() {
+            // clear the selection → blank aspect-ratio'd canvas, ready to generate
+            this.state = "empty";
+            this.sel = { b: 0, v: -1 };
+          },
+          get frameDims() {
+            const map = {
+              "1:1": [1, 1],
+              "3:2": [3, 2],
+              "2:3": [2, 3],
+              "16:9": [16, 9],
+              "9:16": [9, 16],
+            };
+            const [w, h] = map[this.ratio] || [1, 1];
+            const base = 320;
+            const s = base / Math.max(w, h);
+            return { w: Math.round(w * s), h: Math.round(h * s) };
+          },
+
+          selectState(id) {
+            this.state = id;
+            this.refsOpen = id === "refs";
+            if (id === "edited") this.sel = { b: 2, v: 0 };
+            else if (id === "empty" || id === "needsyou")
+              this.sel = { b: 0, v: -1 };
+            else this.sel = { b: 1, v: 0 };
+          },
+          // an image is focused in the canvas (drives the canvas + details panel)
+          get hasSelection() {
+            return this.state !== "empty" && this.state !== "needsyou";
+          },
+
+          get batches() {
+            const B1 = {
+              id: 1,
+              label: "Batch 1",
+              kind: "generate",
+              tag: "a fox reading under an oak",
+              grads: ["g-fox", "g-water", "g-forest", "g-fox"],
+            };
+            const B2 = {
+              id: 2,
+              label: "Batch 2",
+              kind: "edit",
+              tag: "+ scarf, acorn moved",
+              grads: ["g-water", "g-water", "g-fox", "g-forest"],
+            };
+            return (
+              {
+                empty: [],
+                batch: [B1],
+                refs: [B1],
+                annotate: [B1],
+                edited: [B1, B2],
+              }[this.state] ?? []
+            );
+          },
+          get thumbW() {
+            return { s: "w-[68px]", m: "w-[104px]", l: "w-[150px]" }[this.size];
+          },
+          get selGrad() {
+            const b = this.batches.find((x) => x.id === this.sel.b);
+            return b ? b.grads[this.sel.v] : "g-fox";
+          },
+          isSel(b, v) {
+            return this.sel.b === b && this.sel.v === v;
+          },
+
+          // ── agent presence (the genie behind the glass) ──
+          // The agent's state is always legible, and it has an obvious way to
+          // get the user's attention — so they never guess "surface or terminal?"
+          get agentMode() {
+            return (
+              {
+                generating: "working",
+                applying: "working",
+                needsyou: "asking",
+              }[this.state] ?? "idle"
+            );
+          },
+          get agentSays() {
+            return (
+              {
+                empty: `ready — tell me what you want, rough is fine. I'll interpret it, set the options, and ask if I need to.`,
+                batch: `expanded your note, chose nano-banana-2, made 4. pick a keeper, or refine.`,
+                refs: `I see 2 references — I'll blend their look into the next generation.`,
+                annotate: `got your marks (region + arrow + 2 pins) — describe the change and I'll apply it.`,
+                edited: `applied your edit across 4 variants, kept everything else intact.`,
+                needsyou: `quick one: by "make it pop" — more contrast + saturation, or rework the lighting? (I set 16:9 from "widescreen".)`,
+              }[this.state] ?? `ready.`
+            );
+          },
+        }));
+      });
+    </script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+
+  <body class="bg-slate-950 text-slate-200 min-h-screen">
+    <div x-data="app">
+      <!-- ===== state switcher (amber prototype chrome) ===== -->
+      <div
+        class="sticky top-0 z-50 bg-amber-950/60 border-b border-amber-800/40 px-4 py-1.5 flex items-center gap-1.5"
+      >
+        <span class="section-title text-amber-500 pr-2">imago mockup v2</span>
+        <template x-for="s in states" :key="s.id">
+          <button
+            @click="selectState(s.id)"
+            :class="state === s.id
+              ? 'bg-amber-600 text-white border-amber-600'
+              : 'bg-slate-800 text-slate-300 border-slate-600 hover:border-slate-400 hover:text-slate-100'"
+            class="text-xs px-2.5 py-1 rounded border font-medium transition-colors"
+            x-text="s.label"
+          ></button>
+        </template>
+      </div>
+
+      <!-- ===== imago shell ===== -->
+      <div class="h-[calc(100vh-41px)] flex flex-col">
+        <!-- header -->
+        <header
+          class="flex items-center gap-3 px-5 py-2.5 border-b border-slate-800 bg-slate-900/60"
+        >
+          <span class="text-xl">🜛</span>
+          <div class="flex-1">
+            <h1 class="text-base font-semibold text-white leading-none">
+              imago
+            </h1>
+            <p class="text-faint mt-0.5">a forest-fox concept · session</p>
+          </div>
+          <!-- agent status — always legible -->
+          <div
+            class="flex items-center gap-2 px-2.5 py-1 rounded-full border"
+            :class="agentMode==='asking' ? 'border-amber-500/40 bg-amber-500/10'
+              : agentMode==='working' ? 'border-violet-500/40 bg-violet-500/10'
+              : 'border-slate-700 bg-slate-800/40'"
+          >
+            <span
+              class="w-2 h-2 rounded-full"
+              :class="agentMode==='asking' ? 'bg-amber-400 pulse-dot'
+                : agentMode==='working' ? 'bg-violet-400 pulse-dot'
+                : 'bg-slate-500'"
+            ></span>
+            <span
+              class="text-xs"
+              :class="agentMode==='asking' ? 'text-amber-200'
+                : agentMode==='working' ? 'text-violet-200' : 'text-slate-400'"
+              x-text="agentMode==='asking' ? 'imago needs you'
+                : agentMode==='working' ? 'imago working…' : 'imago · idle'"
+            ></span>
+          </div>
+          <button
+            @click="newImage()"
+            class="btn-primary h-8 px-3 text-xs"
+            title="New image — clear selection, pick a size"
+          >
+            <i data-lucide="plus" class="w-3.5 h-3.5 pointer-events-none"></i>
+            New
+          </button>
+          <button class="tool" title="Gallery mode (later)">
+            <i
+              data-lucide="layout-grid"
+              class="w-4 h-4 pointer-events-none"
+            ></i>
+          </button>
+          <span
+            class="text-faint"
+            x-text="'$0.18 · ' + (batches.length*4) + ' generations'"
+          ></span>
+        </header>
+
+        <!-- body: generations | canvas (stage) | conversation (spine) -->
+        <div class="flex-1 flex min-h-0">
+          <!-- LEFT: GENERATIONS -->
+          <aside
+            class="w-[270px] shrink-0 border-r border-slate-800 bg-slate-900/40 flex flex-col min-h-0"
+          >
+            <div
+              class="flex items-center justify-between px-3 py-2 border-b border-slate-800"
+            >
+              <span class="section-title">Generations</span>
+              <!-- size control -->
+              <div
+                class="inline-flex rounded-md border border-slate-700 overflow-hidden"
+              >
+                <template x-for="z in ['s','m','l']" :key="z">
+                  <button
+                    @click="size = z"
+                    :class="size===z ? 'seg seg-on' : 'seg seg-off'"
+                    x-text="z.toUpperCase()"
+                  ></button>
+                </template>
+              </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
+              <!-- empty -->
+              <div
+                x-show="batches.length === 0"
+                class="text-faint italic text-center mt-10 px-4"
+              >
+                generations appear here — describe one below to start
+              </div>
+
+              <!-- batch groups (all variants kept) -->
+              <template x-for="b in batches" :key="b.id">
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="text-xs font-medium text-slate-300"
+                      x-text="b.label"
+                    ></span>
+                    <span
+                      class="text-[10px] px-1.5 py-0.5 rounded border"
+                      :class="b.kind==='edit'
+                        ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                        : 'bg-violet-500/15 text-violet-300 border-violet-500/30'"
+                      x-text="b.kind"
+                    ></span>
+                    <span class="text-faint ml-auto">4 variants</span>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <template x-for="(g, i) in b.grads" :key="i">
+                      <button
+                        @click="sel = { b: b.id, v: i }"
+                        :class="[thumbW, isSel(b.id,i) ? 'ring-2 ring-violet-500' : 'ring-1 ring-slate-700 hover:ring-slate-500']"
+                        class="imgtile aspect-square rounded-md transition shrink-0"
+                      >
+                        <div class="w-full h-full imgtile" :class="g">
+                          <span
+                            :class="size==='l' ? 'text-3xl' : size==='m' ? 'text-2xl' : 'text-lg'"
+                            >🦊</span
+                          >
+                          <span
+                            x-show="b.kind==='edit' && i===0"
+                            class="absolute text-sm -mb-3"
+                            >🧣</span
+                          >
+                        </div>
+                        <span
+                          class="absolute top-0.5 left-0.5 text-[9px] bg-slate-900/80 text-slate-300 px-1 rounded"
+                          x-text="String.fromCharCode(97+i)"
+                        ></span>
+                      </button>
+                    </template>
+                  </div>
+                  <p class="text-faint italic" x-text="b.tag"></p>
+                </div>
+              </template>
+            </div>
+          </aside>
+
+          <!-- CENTER: canvas (top) + input (bottom) -->
+          <div class="flex-1 flex flex-col min-h-0">
+            <!-- CANVAS WORKSPACE (pan/zoom, single selected image) -->
+            <div class="flex-1 relative workspace min-h-0 overflow-hidden">
+              <!-- NEW: blank aspect-ratio'd canvas + size picker (DrawThings-style) -->
+              <div
+                x-show="!hasSelection"
+                class="absolute inset-0 flex flex-col items-center justify-center gap-5"
+              >
+                <!-- the empty frame, reshaped to the chosen aspect ratio -->
+                <div
+                  class="rounded-lg border-2 border-dashed border-slate-700 bg-slate-900/30 flex flex-col items-center justify-center gap-2 text-slate-600 transition-all"
+                  :style="`width:${frameDims.w}px; height:${frameDims.h}px`"
+                >
+                  <i data-lucide="sparkles" class="w-8 h-8"></i>
+                  <span class="text-xs" x-text="ratio + ' · new image'"></span>
+                </div>
+                <!-- aspect-ratio + size picker -->
+                <div class="flex items-center gap-2">
+                  <span class="text-faint">aspect</span>
+                  <div
+                    class="inline-flex rounded-md border border-slate-700 overflow-hidden"
+                  >
+                    <template x-for="r in ratios" :key="r">
+                      <button
+                        @click="ratio = r"
+                        :class="ratio===r ? 'seg seg-on' : 'seg seg-off'"
+                        x-text="r"
+                      ></button>
+                    </template>
+                  </div>
+                  <span class="text-faint ml-1">· size</span>
+                  <div
+                    class="inline-flex rounded-md border border-slate-700 overflow-hidden"
+                  >
+                    <template x-for="z in ['1K','2K']" :key="z">
+                      <button
+                        :class="z==='1K' ? 'seg seg-on' : 'seg seg-off'"
+                        x-text="z"
+                      ></button>
+                    </template>
+                  </div>
+                </div>
+                <p class="text-faint text-center max-w-sm">
+                  start talking on the right → say what you want to make. pick
+                  an aspect here; imago handles the rest.
+                </p>
+              </div>
+
+              <!-- selected image on the movable canvas -->
+              <div
+                x-show="hasSelection"
+                class="absolute inset-0 flex items-center justify-center p-10"
+              >
+                <!-- the image "card" — sized < full so pan/zoom reads -->
+                <div
+                  class="imgtile rounded-lg shadow-2xl ring-1 ring-slate-700 relative"
+                  :class="selGrad"
+                  :style="`width:${zoom*3.6}px; height:${zoom*3.6}px`"
+                >
+                  <span class="text-[110px]">🦊</span>
+                  <span
+                    x-show="state==='edited'"
+                    class="text-[64px] -ml-8 mt-12"
+                    >🧣</span
+                  >
+
+                  <!-- annotation overlay -->
+                  <div x-show="state === 'annotate'" class="absolute inset-0">
+                    <svg
+                      class="w-full h-full"
+                      viewBox="0 0 100 100"
+                      preserveAspectRatio="none"
+                    >
+                      <rect
+                        x="40"
+                        y="52"
+                        width="22"
+                        height="16"
+                        rx="2"
+                        fill="rgba(139,92,246,0.18)"
+                        stroke="#a78bfa"
+                        stroke-width="0.5"
+                        stroke-dasharray="2 1.5"
+                      />
+                      <path
+                        d="M70 28 C 82 33, 80 50, 66 55"
+                        fill="none"
+                        stroke="#f59e0b"
+                        stroke-width="0.8"
+                        marker-end="url(#ah)"
+                      />
+                      <defs>
+                        <marker
+                          id="ah"
+                          markerWidth="6"
+                          markerHeight="6"
+                          refX="3"
+                          refY="3"
+                          orient="auto"
+                        >
+                          <path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b" />
+                        </marker>
+                      </defs>
+                    </svg>
+                    <span
+                      class="absolute text-[11px] bg-violet-600 text-white px-1.5 py-0.5 rounded shadow"
+                      style="left: 40%; top: 44%"
+                      >add a scarf</span
+                    >
+                    <span
+                      class="absolute text-[11px] bg-amber-500 text-slate-900 px-1.5 py-0.5 rounded shadow"
+                      style="left: 66%; top: 22%"
+                      >move the acorn ↘</span
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- annotation toolbar (appears whenever an image is selected) -->
+              <div
+                x-show="hasSelection"
+                class="absolute top-4 left-4 z-20 flex flex-col gap-1.5 p-1.5 card"
+              >
+                <button
+                  @click="tool='pen'"
+                  :class="tool==='pen' && 'tool-active'"
+                  class="tool"
+                  title="Draw / marker"
+                >
+                  <i
+                    data-lucide="pencil"
+                    class="w-4 h-4 pointer-events-none"
+                  ></i>
+                </button>
+                <button
+                  @click="tool='region'"
+                  :class="tool==='region' && 'tool-active'"
+                  class="tool"
+                  title="Region (mask → inpaint)"
+                >
+                  <i
+                    data-lucide="square-dashed"
+                    class="w-4 h-4 pointer-events-none"
+                  ></i>
+                </button>
+                <button
+                  @click="tool='move'"
+                  :class="tool==='move' && 'tool-active'"
+                  class="tool"
+                  title="Move this → here"
+                >
+                  <i
+                    data-lucide="move-up-right"
+                    class="w-4 h-4 pointer-events-none"
+                  ></i>
+                </button>
+                <button
+                  @click="tool='pin'"
+                  :class="tool==='pin' && 'tool-active'"
+                  class="tool"
+                  title="Text pin"
+                >
+                  <i data-lucide="type" class="w-4 h-4 pointer-events-none"></i>
+                </button>
+                <div class="h-px bg-slate-800 my-0.5"></div>
+                <button class="tool" title="Clear annotations">
+                  <i
+                    data-lucide="eraser"
+                    class="w-4 h-4 pointer-events-none"
+                  ></i>
+                </button>
+              </div>
+
+              <!-- zoom / fit controls -->
+              <div
+                x-show="hasSelection"
+                class="absolute bottom-4 right-4 z-20 flex items-center gap-1 p-1 card"
+              >
+                <button
+                  @click="zoom = Math.max(25, zoom-25)"
+                  class="tool w-8 h-8"
+                  title="Zoom out"
+                >
+                  <i
+                    data-lucide="minus"
+                    class="w-4 h-4 pointer-events-none"
+                  ></i>
+                </button>
+                <span
+                  class="text-xs text-slate-300 w-12 text-center tabular-nums"
+                  x-text="zoom + '%'"
+                ></span>
+                <button
+                  @click="zoom = Math.min(300, zoom+25)"
+                  class="tool w-8 h-8"
+                  title="Zoom in"
+                >
+                  <i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i>
+                </button>
+                <button @click="zoom = 100" class="tool w-8 h-8" title="Fit">
+                  <i
+                    data-lucide="maximize"
+                    class="w-4 h-4 pointer-events-none"
+                  ></i>
+                </button>
+              </div>
+
+              <!-- selected-context chip -->
+              <div
+                x-show="hasSelection"
+                class="absolute top-4 right-4 z-10 text-[11px] bg-slate-900/85 border border-slate-700 text-slate-300 px-2.5 py-1 rounded-full"
+                x-text="state==='edited' ? 'Batch 2 · variant a (edited)' : 'Batch 1 · variant ' + String.fromCharCode(97+sel.v) + (state==='annotate' ? ' · annotating' : '')"
+              ></div>
+
+              <!-- annotate → the marks become part of the conversation, not a
+                   hidden "apply". You hand them to imago and say what to do. -->
+              <div
+                x-show="state==='annotate'"
+                class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 px-3 py-2 card bg-slate-900/90"
+              >
+                <span class="text-[11px] text-slate-400"
+                  >region + arrow + 2 pins marked</span
+                >
+                <button
+                  class="text-[11px] px-2.5 py-1 rounded-md bg-violet-600 text-white hover:bg-violet-500 flex items-center gap-1"
+                >
+                  <i
+                    data-lucide="messages-square"
+                    class="w-3.5 h-3.5 pointer-events-none"
+                  ></i>
+                  Take marks to the conversation →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: CONVERSATION — the dialogue spine (always present). The
+               shared table everyone plays on: it adds structure + pieces, but
+               never replaces just talking. -->
+          <aside
+            class="w-[360px] shrink-0 border-l border-slate-800 bg-slate-900/40 flex flex-col min-h-0"
+          >
+            <div
+              class="px-4 py-2.5 border-b border-slate-800 flex items-center gap-2"
+            >
+              <span class="section-title">Conversation</span>
+              <span
+                class="ml-auto text-[11px] px-2 py-0.5 rounded-full border border-slate-700 bg-slate-800/60 text-slate-300 flex items-center gap-1"
+              >
+                <i data-lucide="image" class="w-3 h-3 pointer-events-none"></i>
+                <span
+                  x-text="hasSelection ? (sel.b===2 ? 'about: Batch 2 · a' : 'about: Batch 1 · ' + String.fromCharCode(97+sel.v)) : 'new image'"
+                ></span>
+              </span>
+            </div>
+
+            <!-- THREAD -->
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+              <!-- you: the initial intent (messy is fine) -->
+              <div class="flex justify-end">
+                <div
+                  class="max-w-[85%] text-sm rounded-lg rounded-br-sm px-3 py-2 bg-violet-600/20 border border-violet-500/30 text-slate-100"
+                >
+                  cozy autumn scene — a fox reading under a big oak. storybook
+                  feel, soft light.
+                </div>
+              </div>
+
+              <!-- agent: interprets, then proposes a prompt to SEND. The old
+                   "type a prompt + hit Generate" dissolves into this exchange. -->
+              <div class="flex gap-2">
+                <span class="text-base shrink-0 mt-0.5">🜛</span>
+                <div class="flex flex-col gap-2 max-w-[88%]">
+                  <div
+                    class="text-sm rounded-lg rounded-tl-sm px-3 py-2 bg-slate-800/70 border border-slate-700 text-slate-200"
+                  >
+                    Love it — warm painterly, golden-hour light, a few leaves
+                    drifting. Here's the prompt I'd send:
+                  </div>
+                  <!-- the prompt is a PIECE on the board: quoted, sendable,
+                       saved with the image so you can always see / reuse it -->
+                  <div
+                    class="rounded-lg border border-violet-500/40 bg-violet-500/5 px-3 py-2.5"
+                  >
+                    <p class="text-sm text-slate-200 leading-relaxed italic">
+                      “A red fox at the base of a gnarled oak, reading an open
+                      book, soft golden morning light through the leaves, warm
+                      storybook illustration.”
+                    </p>
+                    <div class="flex items-center gap-2 mt-2.5">
+                      <button
+                        class="text-xs px-3 py-1.5 rounded-md bg-violet-600 text-white hover:bg-violet-500 flex items-center gap-1.5"
+                      >
+                        <i
+                          data-lucide="sparkles"
+                          class="w-3.5 h-3.5 pointer-events-none"
+                        ></i>
+                        Send ×4
+                      </button>
+                      <button
+                        class="text-xs px-2.5 py-1.5 rounded-md border border-slate-600 text-slate-300 hover:bg-slate-800"
+                      >
+                        tweak it
+                      </button>
+                      <span class="text-[11px] text-slate-500 ml-auto"
+                        >saved with the image ↩</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- you: confirm -->
+              <div class="flex justify-end">
+                <div
+                  class="max-w-[85%] text-sm rounded-lg rounded-br-sm px-3 py-2 bg-violet-600/20 border border-violet-500/30 text-slate-100"
+                >
+                  yes, send it
+                </div>
+              </div>
+
+              <!-- agent: working (only while generating) -->
+              <div x-show="agentMode==='working'" class="flex gap-2">
+                <span class="text-base shrink-0 mt-0.5">🜛</span>
+                <div
+                  class="text-sm rounded-lg rounded-tl-sm px-3 py-2 bg-slate-800/70 border border-slate-700 text-violet-200 flex items-center gap-2"
+                >
+                  <i
+                    data-lucide="loader"
+                    class="w-3.5 h-3.5 pointer-events-none animate-spin"
+                  ></i>
+                  generating 4 variants…
+                </div>
+              </div>
+
+              <!-- agent: result — images land in the thread AND the left rail -->
+              <div class="flex gap-2">
+                <span class="text-base shrink-0 mt-0.5">🜛</span>
+                <div class="flex flex-col gap-2 max-w-[88%]">
+                  <div
+                    class="text-sm rounded-lg rounded-tl-sm px-3 py-2 bg-slate-800/70 border border-slate-700 text-slate-200"
+                  >
+                    Kept all 4 — they're on the left rail. Click one to focus it
+                    on the canvas, or tell me what to change.
+                  </div>
+                  <div class="flex gap-1.5">
+                    <template
+                      x-for="(g, i) in ['g-fox','g-water','g-forest','g-fox']"
+                      :key="i"
+                    >
+                      <div
+                        class="imgtile w-14 h-14 rounded-md ring-1 ring-slate-700"
+                        :class="g"
+                      >
+                        <span class="text-lg">🦊</span>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- gesture-as-message: a surface action (★ like) becomes a thing
+                   the agent hears — direct manipulation IS communication -->
+              <div
+                x-show="hasSelection"
+                class="text-center text-[11px] text-slate-500 italic py-0.5"
+              >
+                👍 you liked variant
+                <span
+                  x-text="String.fromCharCode(97 + (sel.v < 0 ? 1 : sel.v))"
+                ></span>
+                — imago can see which one
+              </div>
+
+              <!-- agent: next move / offers the style-capture shortcut -->
+              <div x-show="hasSelection" class="flex gap-2">
+                <span class="text-base shrink-0 mt-0.5">🜛</span>
+                <div
+                  class="text-sm rounded-lg rounded-tl-sm px-3 py-2 bg-slate-800/70 border border-slate-700 text-slate-200 max-w-[88%]"
+                >
+                  Nice — best composition of the four. Want the scarf bluer, or
+                  shall I capture this look as a reusable style?
+                </div>
+              </div>
+
+              <!-- agent: an actual question (amber) — handled in-surface now,
+                   no "go to the terminal" detour -->
+              <div x-show="agentMode==='asking'" class="flex gap-2">
+                <span class="text-base shrink-0 mt-0.5">🜛</span>
+                <div
+                  class="text-sm rounded-lg rounded-tl-sm px-3 py-2 bg-amber-950/40 border border-amber-500/40 text-amber-100 max-w-[88%]"
+                  x-text="agentSays"
+                ></div>
+              </div>
+            </div>
+
+            <!-- COMPOSER — one input. Shortcuts (styles, capture-look, lenses)
+                 WRITE into it; "do" controls (batch, attach, pins) set state.
+                 The box is the language going to the agent — visible + editable. -->
+            <div
+              class="border-t border-slate-800 bg-slate-900/70 p-3 flex flex-col gap-2"
+            >
+              <!-- pinned steering (moved here from the old Details panel) -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[11px] text-slate-500">pinned</span>
+                <span
+                  class="text-[11px] px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-200 border border-violet-500/30 flex items-center gap-1"
+                >
+                  📌 aspect 16:9
+                  <i data-lucide="x" class="w-3 h-3 pointer-events-none"></i>
+                </span>
+                <span class="text-[11px] text-slate-600"
+                  >· agent picks the rest</span
+                >
+              </div>
+
+              <!-- grounded shortcuts: styles (toggle/say) + capture this look -->
+              <div class="flex items-center gap-1.5 overflow-x-auto">
+                <span class="text-faint shrink-0">styles</span>
+                <template x-for="s in styles" :key="s">
+                  <button
+                    @click="toggleStyle(s)"
+                    :class="activeStyles.includes(s) ? 'chip-on' : 'chip-off'"
+                    x-text="s"
+                  ></button>
+                </template>
+                <button
+                  @click="extractStyle()"
+                  class="chip-off border-fuchsia-500/40 text-fuchsia-200 flex items-center gap-1"
+                  title="Capture this image's look as a reusable style"
+                >
+                  <i
+                    data-lucide="wand-sparkles"
+                    class="w-3 h-3 pointer-events-none"
+                  ></i>
+                  capture look
+                </button>
+              </div>
+              <p
+                x-show="savedStyleNote"
+                class="text-[11px] text-fuchsia-300/90 flex items-center gap-1 -mt-1"
+              >
+                <i data-lucide="check" class="w-3 h-3 pointer-events-none"></i>
+                saved “golden-hour” — now a chip you can reuse
+              </p>
+
+              <!-- ask-about-this-image lenses: shortcuts that fill the box -->
+              <div
+                x-show="hasSelection"
+                class="flex items-center gap-1.5 flex-wrap"
+              >
+                <span class="text-faint shrink-0">ask</span>
+                <button
+                  class="chip-off"
+                  @click="lens('Describe this image in detail — literally what is in it.')"
+                >
+                  describe
+                </button>
+                <button
+                  class="chip-off"
+                  @click="lens('Break down the color palette — the key colors and how they work together.')"
+                >
+                  palette
+                </button>
+                <button
+                  class="chip-off"
+                  @click="lens('Describe the lighting — direction, quality, mood — so I can reuse it.')"
+                >
+                  lighting
+                </button>
+              </div>
+
+              <!-- the box -->
+              <div class="relative">
+                <textarea
+                  x-model="askText"
+                  rows="2"
+                  class="textarea pr-20"
+                  placeholder="talk to imago about this image… (rough is fine — it interprets, and the shortcuts above just write here)"
+                ></textarea>
+                <div class="absolute right-2 bottom-2 flex items-center gap-1">
+                  <button class="tool w-8 h-8" title="Attach a reference image">
+                    <i
+                      data-lucide="image-plus"
+                      class="w-4 h-4 pointer-events-none"
+                    ></i>
+                  </button>
+                  <button class="btn-primary w-8 h-8 !p-0" title="Send">
+                    <i
+                      data-lucide="send-horizontal"
+                      class="w-4 h-4 pointer-events-none"
+                    ></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- the board-game point: the surface is additive, never a cage -->
+              <p class="text-[11px] text-slate-600 flex items-center gap-1">
+                <i
+                  data-lucide="terminal"
+                  class="w-3 h-3 pointer-events-none"
+                ></i>
+                imago is right here — and you can always talk to it in the
+                terminal too.
+              </p>
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- toast: the agent's attention signal — now points to the in-surface
+           conversation (the ask lives at the table, not off in the terminal) -->
+      <div
+        x-show="state === 'needsyou'"
+        class="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-3.5 py-2.5 rounded-lg bg-amber-600 text-white shadow-xl"
+      >
+        <i
+          data-lucide="messages-square"
+          class="w-4 h-4 pointer-events-none"
+        ></i>
+        <span class="text-sm"
+          >imago has a question — see the conversation →</span
+        >
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("alpine:initialized", () => {
+        lucide.createIcons();
+        let pending = false;
+        const observer = new MutationObserver(() => {
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(() => {
+            lucide.createIcons();
+            pending = false;
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>
