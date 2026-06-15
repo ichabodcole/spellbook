@@ -259,7 +259,12 @@ features are small once the pattern is in.
 - Bounty's agent interface matches the house pattern (`cli.ts` + `/cmd` +
   `/state` + `/events`) — same shape an agent already knows from
   Grapevine/Imago.
-- No live "Tuskboard" string remains in the bounty spell surface/contract.
+- No live "Tuskboard" string remains in the bounty spell surface/contract. _(Met
+  for all text/contract. **Documented exception:** the `wordmark.webp` image
+  still renders "Tuskboard" — caught in surface-port browser verification,
+  invisible to grep; deferred by cole to follow-up
+  [spellbook#11](https://github.com/ichabodcole/spellbook/issues/11), does not
+  block this branch. See backlog W1.)_
 
 ---
 

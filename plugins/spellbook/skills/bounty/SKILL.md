@@ -3,18 +3,18 @@ name: bounty
 description:
   Bounty is a duplex agent↔user task board in the browser. Agent posts tasks;
   user drags between todo/doing/review/done columns, edits titles inline, adds
-  or deletes tasks, or submits to end the session. The Review column is a soft
-  human-verification gate — the agent parks finished work there (rather than
-  Done) when it needs human eyes a passing test can't give. The agent drives the
-  board through a thin `cli.ts` over a persistent daemon — `open` to spawn it,
-  `state` to read back, `tail` (wrapped with Monitor) to react to user actions
-  live. Multiple agents can share one board via join.ts. HOST trigger phrases —
-  "open a task board", "spin up a bounty", "give me a board to track this", or
-  obvious variants. JOIN trigger phrases — "join my bounty", "connect to the
-  bounty", "the board is at <URL or id>", or obvious variants. Also propose when
-  the agent has produced 5+ discrete TODOs the user might want as a workspace.
-  Do NOT use for single tasks, narrative todos that aren't trackable, or
-  anything the user wants in chat. Requires Bun on PATH.
+  or deletes tasks, or closes the board to end the session. The Review column is
+  a soft human-verification gate — the agent parks finished work there (rather
+  than Done) when it needs human eyes a passing test can't give. The agent
+  drives the board through a thin `cli.ts` over a persistent daemon — `open` to
+  spawn it, `state` to read back, `tail` (wrapped with Monitor) to react to user
+  actions live. Multiple agents can share one board via join.ts. HOST trigger
+  phrases — "open a task board", "spin up a bounty", "give me a board to track
+  this", or obvious variants. JOIN trigger phrases — "join my bounty", "connect
+  to the bounty", "the board is at <URL or id>", or obvious variants. Also
+  propose when the agent has produced 5+ discrete TODOs the user might want as a
+  workspace. Do NOT use for single tasks, narrative todos that aren't trackable,
+  or anything the user wants in chat. Requires Bun on PATH.
 ---
 
 # Bounty Board
@@ -23,8 +23,8 @@ A duplex agent ↔ user surface — woolly mammoth mascot, warm brown + ice blue
 palette. Woolly mammoth puns are welcome where they fit naturally.
 
 An agent posts a list of tasks into a browser board; the user interacts with it
-(drags tasks between columns, edits titles inline, adds, deletes, submits) and
-both sides receive updates in real time. Built on the
+(drags tasks between columns, edits titles inline, adds, deletes, closes the
+board) and both sides receive updates in real time. Built on the
 [`agent-surface-bun` recipe](../../../../recipes/skills/recipes/library/agent-surface-bun/RECIPE.md)
 — see that for the underlying pattern.
 
@@ -75,18 +75,22 @@ review and why.
 any obvious variant. The user is in a separate terminal / agent session from the
 one that opened the board.
 
-Drive the board live or one-shot — same daemon either way. If the user will
-finish in one sitting, `open` it, let them work, and read `state` (or wait for
-the `submit` event) when they're done. If the board is long-lived and you want
-to react as the user works, wrap `cli.ts tail` with Monitor so each action wakes
-a fresh turn. When in doubt, propose: _"want a quick board, or one I'll keep
-watching as you work?"_
+Drive the board live or one-shot — same daemon either way. The board is a
+conjuration: it **stands until dismissed**. You see every change live (via
+`tail`) or read `state` whenever you want — there's no "submit to flush" step.
+If the user will finish in one sitting, `open` it, let them work, and read
+`state` when they're done. If the board is long-lived and you want to react as
+the user works, wrap `cli.ts tail` with Monitor so each action wakes a fresh
+turn. When in doubt, propose: _"want a quick board, or one I'll keep watching as
+you work?"_
 
 **Heads up:** the daemon stays alive **even if the user closes the browser
-tab.** Sessions end only on explicit submit/cancel, your own `close`, or the
-idle timeout (default 30 min). Agent activity (`cli.ts state`/writes) resets the
-idle timer, so a board you're actively driving won't expire mid-work — but a
-board you opened and walked away from sits until the timer fires.
+tab.** Sessions end only when the human clicks **Close board**, you
+`cli.ts close`, or the idle timeout fires (default 30 min). Agent activity
+(`cli.ts state`/writes) resets the idle timer, so a board you're actively
+driving won't expire mid-work — but a board you opened and walked away from sits
+until the timer fires. Closing is non-destructive: canonical state is
+snapshotted, so a closed board reopens with `cli.ts open --restore`.
 
 Suggested invocation (propose first, don't fire): the agent has produced 5+
 discrete TODOs **AND** the user is going to actually manipulate them (reorder,
@@ -226,14 +230,13 @@ Each `tail` frame is `{ id, type, …, by }`:
 {id, type:"task.add",     task, by}                      // task added
 {id, type:"task.update",  taskId, patch, by}             // agent patch
 {id, type:"task.remove",  taskId, by}                    // task deleted
-{id, type:"submit",       tasks, by:"user"}              // final state, session ending
-{id, type:"closed",       reason, by:"system"}
+{id, type:"closed",       reason, by:"system"}           // session ended (reason: user|timeout|close)
 ```
 
-The board mutations + `submit`/`closed` are the actionable ones; `ready` /
-`connected` / `disconnected` are lifecycle noise you can usually ignore. Events
-are **not commands** — by the time you see one, the daemon has already applied
-it; you're being informed. Read `cli.ts state` when you want the full truth.
+The board mutations + `closed` are the actionable ones; `ready` / `connected` /
+`disconnected` are lifecycle noise you can usually ignore. Events are **not
+commands** — by the time you see one, the daemon has already applied it; you're
+being informed. Read `cli.ts state` when you want the full truth.
 
 ### Task shape
 
@@ -279,18 +282,21 @@ close); the snapshot you restored from is left intact.
 
 ## Exit Code Contract
 
-| Code | Reason (the `closed` event's `reason` field) | What to do                                                                              |
-| ---- | -------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 0    | `submit`                                     | User clicked Submit. Parse the `submit` event's `tasks` array for the final state.      |
-| 0    | `close`                                      | Agent sent `cli.ts close` — clean shutdown initiated by you, no submit event was fired. |
-| 2    | (no reason — fails before session starts)    | Bad CLI args or port bind failure. stderr explains; fix args and retry.                 |
-| 124  | `timeout`                                    | Idle timeout fired. Tell the user the session expired; offer to relaunch.               |
-| 130  | `cancel`                                     | User clicked "Close without submitting". Session intentionally discarded.               |
+| Code | Reason (the `closed` event's `reason` field) | What to do                                                                            |
+| ---- | -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 0    | `user`                                       | The human clicked **Close board**. Clean dismiss — state is snapshotted (restorable). |
+| 0    | `close`                                      | You sent `cli.ts close` — clean shutdown you initiated.                               |
+| 2    | (no reason — fails before session starts)    | Bad CLI args or port bind failure. stderr explains; fix args and retry.               |
+| 124  | `timeout`                                    | Idle timeout fired. Tell the user the session expired; offer to relaunch/restore.     |
 
-The session-ending codes (124 idle, 130 cancel) belong to the **daemon** and
-surface to the agent via the `closed` event's `reason` on the tail. `cli.ts`
-itself exits `2` on bad args and `0` on a successful verb (and `tail` exits `0`
-on the `closed` frame).
+A board dismiss is always a **clean exit 0** — there's no "discard" path anymore
+(the old `cancel`/130). The board holds canonical state and snapshots it, so any
+ending is non-destructive and reopenable with `cli.ts open --restore`.
+
+The session-ending outcome (a clean exit 0, or 124 on idle timeout) belongs to
+the **daemon** and surfaces to the agent via the `closed` event's `reason` on
+the tail. `cli.ts` itself exits `2` on bad args and `0` on a successful verb
+(and `tail` exits `0` on the `closed` frame).
 
 ## Join Mode — Connect to an Existing Board
 
@@ -363,17 +369,18 @@ over WS.
                                                   //   init | task.add |
                                                   //   task.update |
                                                   //   task.remove |
-                                                  //   message |
-                                                  //   submit | cancel
+                                                  //   message
 {"type":"disconnected", "reason":"server_closed|stdin_close|timeout|error"}
 ```
 
-**Submit and cancel are broadcast** with structured shapes. When the user
-submits, joiners receive `event(submit, tasks=[...])`. When the user cancels (or
-the host agent does), joiners receive `event(cancel)`. Both are followed by
-`disconnected` as the daemon tears down. Treat either as the session-ending
-signal — `submit` carries the final state, `cancel` means discard whatever local
-mirror you've been building.
+**Session end is uniform.** When the board ends (the human dismisses it, the
+host agent closes it, or the idle timer fires), every participant — joiners
+included — receives a `message` payload of `session ended: <reason>` and then a
+`disconnected` as the daemon tears down. There's no separate submit/cancel
+signal anymore: the daemon held canonical state live the whole time (and
+snapshotted it), so there's no "final state" to flush or "discard" to honor.
+Treat `disconnected` as the end; the board is restorable via
+`cli.ts open --restore` regardless of who ended it.
 
 ### Join exit codes
 
@@ -422,10 +429,10 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
 - **Don't merge tail's stderr into stdout.** Monitor notifies on every stdout
   line; the keepalive tick + diagnostics ride stderr by design. `2>&1` turns
   every keepalive into a spurious notification. Leave them split.
-- **TaskStop the Monitor when the session ends.** When you see a `submit` or
-  `closed` frame, `TaskStop` the Monitor's task id before continuing. Otherwise
-  the watch keeps running against a closed daemon until it times out.
+- **TaskStop the Monitor when the session ends.** When you see the `closed`
+  frame, `TaskStop` the Monitor's task id before continuing. Otherwise the watch
+  keeps running against a closed daemon until it times out.
 - **The daemon outlives the browser tab.** Closing the tab doesn't end the
-  session — only submit/cancel, your `cli.ts close`, or the idle timeout does.
-  If you opened a board and the user wandered off, it sits until the timer
-  fires.
+  session — only the human's **Close board**, your `cli.ts close`, or the idle
+  timeout does. If you opened a board and the user wandered off, it sits until
+  the timer fires.

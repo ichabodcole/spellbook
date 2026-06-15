@@ -4,6 +4,21 @@ Non-blocking findings surfaced during review. Tracked here so they survive to
 merge rather than riding in someone's head. Each notes its origin and a proposed
 fix; none block the phase they were found in.
 
+## Tracked follow-up (does NOT block this branch's merge)
+
+**W1 — the wordmark image still reads "Tuskboard" →
+[ichabodcole/spellbook#11](https://github.com/ichabodcole/spellbook/issues/11).**
+Surfaced in the surface-port browser verification:
+`plugins/spellbook/skills/bounty/assets/wordmark.webp` visibly renders
+**"Tuskboard"**. The earlier `grep -rni tuskboard` check passed only because
+grep can't see inside a `.webp` — the alt text is "Bounty Board" but the pixels
+say Tuskboard. This is the documented exception to the "No live 'Tuskboard'
+string remains in the bounty spell surface/contract" success criterion. _Fix:_
+regenerate the wordmark asset (image generation / magpie) reading "Bounty". Out
+of scope for a faithful view-layer port. **cole chose to DEFER it to a separate
+follow-up (#11); it no longer gates this branch's merge** — the criterion is met
+modulo this one tracked asset.
+
 ## From the Phase A diff review (commit `27c6359`)
 
 **#1 — `/cmd` trust boundary (MEDIUM) — DONE.** The daemon `/cmd` path cast

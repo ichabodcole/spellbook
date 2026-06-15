@@ -311,12 +311,17 @@ async function collectWsUntilClose(ws: WebSocket): Promise<WireMsg[]> {
   return msgs;
 }
 
-describe("submit broadcast", () => {
-  test("submit reaches both host stdio and connected WS clients", async () => {
+describe("close dismiss", () => {
+  // The board is a conjuration ("stands until dismissed"). The old submit/cancel
+  // pair collapsed to a single browser "Close board" dismiss: the daemon exits 0
+  // (a clean dismiss, never the 130 a "cancel" used to mean), the canonical state
+  // is already live to every consumer (+ snapshotted), and all clients get the
+  // uniform "session ended" signal before the socket closes.
+  test("browser close dismisses the board: exit 0 + session-ended to clients", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
     await seedCmd(ready.url, {
       type: "init",
-      title: "submit-test",
+      title: "dismiss-test",
       tasks: [{ id: "x", title: "X", status: "todo" }],
     });
 
@@ -324,29 +329,20 @@ describe("submit broadcast", () => {
     await new Promise((r) => browser.addEventListener("open", r, { once: true }));
     const msgsP = collectWsUntilClose(browser);
 
-    browser.send(JSON.stringify({ type: "submit" }));
+    browser.send(JSON.stringify({ type: "close" }));
     const browserMsgs = await msgsP;
-    await proc.exited;
-
-    const submitMsg = browserMsgs.find((m) => m.type === "submit");
-    expect(submitMsg).toBeDefined();
-    expect(submitMsg.tasks?.[0]?.id).toBe("x");
-  }, 15000);
-});
-
-describe("cancel broadcast", () => {
-  test("cancel reaches connected WS clients before disconnect", async () => {
-    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
-    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
-    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
-    const msgsP = collectWsUntilClose(ws);
-
-    ws.send(JSON.stringify({ type: "cancel" }));
-    const msgs = await msgsP;
     const code = await proc.exited;
 
-    expect(code).toBe(130);
-    expect(msgs.find((m) => m.type === "cancel")).toBeDefined();
+    // Clean dismiss = exit 0 (not 130).
+    expect(code).toBe(0);
+    // No "submit" or "cancel" frames anymore — the uniform end signal is the
+    // "session ended" message broadcast before the socket closes.
+    expect(browserMsgs.find((m) => m.type === "submit")).toBeUndefined();
+    expect(browserMsgs.find((m) => m.type === "cancel")).toBeUndefined();
+    const ended = browserMsgs.find(
+      (m) => m.type === "message" && (m.text || "").startsWith("session ended:"),
+    );
+    expect(ended).toBeDefined();
   }, 15000);
 });
 
@@ -371,7 +367,7 @@ describe("input validation from browser", () => {
     ws.send(JSON.stringify({ type: "task.edit", id: "x", title: "   " })); // whitespace
     // Good edit — should land.
     ws.send(JSON.stringify({ type: "task.edit", id: "x", title: "updated" }));
-    ws.send(JSON.stringify({ type: "submit" }));
+    ws.send(JSON.stringify({ type: "close" })); // dismiss to end the session
     const msgs = await msgsP;
     await proc.exited;
 
@@ -395,7 +391,7 @@ describe("input validation from browser", () => {
     ws.send(JSON.stringify({ type: "task.add", task: { id: 42, title: "D", status: "todo" } })); // bad id type
     // Good — should land.
     ws.send(JSON.stringify({ type: "task.add", task: { id: "ok", title: "OK", status: "todo" } }));
-    ws.send(JSON.stringify({ type: "submit" }));
+    ws.send(JSON.stringify({ type: "close" })); // dismiss to end the session
     const msgs = await msgsP;
     await proc.exited;
 

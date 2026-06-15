@@ -31,17 +31,17 @@
 //   {id, type:"task.add",     task, by}               //   id is nested/`taskId`
 //   {id, type:"task.update",  taskId, patch, by}      //   so the spread can't
 //   {id, type:"task.remove",  taskId, by}             //   clobber the cursor.
-//   {id, type:"submit",       tasks, by:"user"}
-//   {id, type:"closed",       reason, by:"system"}
+//   {id, type:"closed",       reason, by:"system"}    //   reason: user|timeout|close
 //
 // task.toggle vs task.move: toggle is the click-a-pill UX — status changes,
 // task is appended to the destination column. move is the drag UX — status
 // AND explicit position in the destination column. Agents that only care
 // about column membership can ignore .move and rely on the canonical order
-// in the final submit.
+// the daemon keeps.
 //
-// Exit codes mirror digestify's review.ts: 0 submit/close, 2 bad args,
-// 124 idle timeout, 130 cancel.
+// Exit codes: 0 on any clean dismiss (the human's "Close board" → reason "user",
+// or an agent cli.ts close → reason "close"), 2 bad args, 124 idle timeout. The
+// board is a conjuration — there's no "cancel"/130 discard path.
 
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -67,7 +67,7 @@ type Task = {
 };
 type BoardState = { title: string; tasks: Task[] };
 
-type CloseReason = "submit" | "cancel" | "timeout" | "close";
+type CloseReason = "user" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
 
 type AgentMsg =
@@ -84,8 +84,7 @@ type BrowserMsg =
   | { type: "task.edit"; id: string; title: string }
   | { type: "task.add"; task: Task }
   | { type: "task.remove"; id: string }
-  | { type: "submit" }
-  | { type: "cancel" };
+  | { type: "close" }; // the human dismisses the board ("Close board")
 
 const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
 const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
@@ -586,23 +585,14 @@ async function main(argv: string[]): Promise<number> {
               broadcast({ type: "task.remove", id: msg.id });
               emitEvent({ type: "task.remove", taskId: msg.id, by: "user" });
             }
-          } else if (msg.type === "submit") {
-            // Broadcast to all WS clients (browsers + joiners) so every
-            // connected party gets the same authoritative final state.
-            // Joiners receive it wrapped as {type:"event", payload:{...}}
-            // by their join.ts; the spawning browser ignores it because
-            // it's already navigated to its sent-screen.
-            broadcast({ type: "submit", tasks: state.tasks });
-            emitEvent({ type: "submit", tasks: state.tasks, by: "user" });
-            resolveDone({ code: 0, reason: "submit" });
-          } else if (msg.type === "cancel") {
-            // Broadcast cancel to all WS clients so joiners get the same
-            // structured session-ending signal that submit provides. Without
-            // this, joiners only see the trailing "session ended" toast
-            // and a disconnect — no way to distinguish cancel from any
-            // other server teardown reason.
-            broadcast({ type: "cancel" });
-            resolveDone({ code: 130, reason: "cancel" });
+          } else if (msg.type === "close") {
+            // The human dismisses the board ("Close board"). A clean dismiss —
+            // exit 0, never the old "cancel" 130. There's no submit-as-flush:
+            // the daemon already holds (and snapshots) canonical state and every
+            // change was live to all consumers, so dismissing loses nothing. The
+            // teardown's "session ended" broadcast + socket close is the uniform
+            // end signal every client (browser + joiners) receives.
+            resolveDone({ code: 0, reason: "user" });
           }
         },
         close(ws) {
