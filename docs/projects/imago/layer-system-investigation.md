@@ -681,6 +681,90 @@ above are preserved as the analysis that led here):
 The 9 tactical questions below are now downstream of Decision A and will mostly
 be re-derived when this becomes a plan; kept for reference.
 
+### Refinement — grouping is a fluid operation, not a fixed structure (2026-06-14, session 2)
+
+A follow-up design conversation resolved the flat-vs-container tension that
+Decision A left open. The resolution (cole + atlas):
+
+- **Two axes are decoupled, and the model must keep them separate:**
+  1. **Manipulation unit = the individual element.** Every element stays
+     individually hit-testable and selectable on the canvas, _regardless_ of
+     what layer/group it lives in. Sharing a layer does NOT weld elements — you
+     can always still grab the single arrow inside the annotations layer. This
+     dissolves cole's worry that co-locating a note + arrow makes them
+     inseparable: they never lose individual identity.
+  2. **Grouping unit = the layer/group.** This is the unit for z-order,
+     show/hide, lock, and panel organization — nothing more.
+- **z-placement is already solved per-element and does NOT motivate layers.**
+  The shipped `mark.reorder` (forward/back/front/back-most) already lets you
+  push one element behind another. Layers earn their keep for _grouping_ (treat
+  many things as one), not for z-placement. Keep this framing when scoping the
+  panel.
+- **Grouping is an OPERATION (group / ungroup), not a structural fork.** Once
+  group/ungroup exist, "draw → new layer, merge later" and "draw → into the
+  active layer" stop being competing architectures — they are two _default
+  policies_ over the same storage (flat element list + a fluid grouping layer on
+  top). Build the operation; pick a default; let the user override.
+- **Default policy is tool-aware.** Discrete objects (arrow / shape / note) are
+  each a **group-of-one** (individually manipulable, cole's requirement).
+  Consecutive **pen strokes in one sketching session accrete into the active
+  "sketch" group** (so a freeform drawing is one manageable row, not N stroke
+  rows — cole's "you'll want them on a single layer most of the time"). No
+  manual merge needed for the common case; group/ungroup handles the exceptions.
+- **Group = reversible (Figma-style), NOT destructive raster merge
+  (Photoshop-style).** Grouped elements keep individual identity and stay
+  editable; ungroup reverses it. This plays nicely with undo and the
+  durable-element guarantee.
+- **Two rasterizations with opposite lifetimes — keep them distinct:**
+  1. **Destructive merge-down** mutates the _editable structure_ (strokes become
+     one bitmap, unrecoverable). This is the Photoshop "flatten" we keep out of
+     the default path.
+  2. **Flatten-at-handoff** produces a _transient_ rasterized PNG for the agent
+     and leaves the internal structure untouched. The agent consumes pixels (a
+     real merged image), never the coordinate data structure.
+- **The legitimate raster need is the agent handoff — and it's already met,
+  non-destructively.** `flatten.ts`/`flattenMarks` already composites the
+  focused image + all marks → native-res PNG → `flattenedImagePath` → agent
+  `--ref` on commit (and on a fresh-marks chat message). So "send the agent
+  merged pixels, not image+coordinates" (cole) is the _existing_ behavior, and
+  it keeps layers intact. This is _why_ destructive merge-down is safe to defer
+  (YAGNI): the one real use for merged pixels is covered by ephemeral flatten.
+- **Layer `hidden` gives free partial-flatten control.** Hidden layers don't
+  render → don't flatten, so "commit this collage but without my scratch
+  annotations" = toggle that layer's eye off before commit. No special op
+  needed.
+- **Flatten-at-handoff is the safe default regardless of model capability** — a
+  weaker model needs the merged pixels; a stronger one is fine with them too, so
+  the handoff never branches on model.
+
+**Net model:** flat element storage (each element keeps `id` + individual
+addressability) + a shallow, _fluid_ grouping layer on top (one level, no
+nesting). The panel lists groups/layers; effective z = layer order, then element
+order within. This is the contract Phase 0 should encode.
+
+### Resolved via mockup review (2026-06-15)
+
+cole clicked through the `layers-panel-mockup.html` interactive mockup and
+resolved three of the open questions:
+
+- **Default policy (pen-accretes / discrete-stays-separate): confirmed
+  natural.** Consecutive pen strokes accrete into the active sketch group;
+  discrete objects (arrow/shape/note) each stand alone as a group-of-one. Ship
+  this as the default.
+- **OQ7 — one heterogeneous list.** Start with a single list mixing images +
+  sketch + annotations. Evolve to visual grouping (images vs annotations) only
+  if it gets noisy. (Confirms Rec 4's recommendation.)
+- **OQ5 — panel home = the canvas's right-side collapsible inspector.** Layers
+  becomes a second section/tab in the existing right-of-stage details aside
+  (Canvas.tsx:546, `w-[300px]`) that already hosts the **Info** data — toggled
+  by a stack icon beside the Info toggle. The **Conversation column stays put**
+  (far right); no fourth pane. The aside becomes an Info + Layers inspector
+  stack.
+- **Eye = handoff control (clarified, kept).** The layer `hidden` flag doubles
+  as the handoff filter: hidden layers don't render → don't flatten → aren't
+  sent to the agent. One control, two jobs (visual + handoff). Decouple only if
+  a "hide-from-view-but-still-send" case ever appears (YAGNI).
+
 ## Open questions for cole
 
 1. **Drop disambiguation:** context-sensitive (drop on image = layer, margin =
