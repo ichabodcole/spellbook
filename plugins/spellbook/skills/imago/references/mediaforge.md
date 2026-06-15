@@ -107,9 +107,10 @@ model:**
   enumerate panels for boards; `quality:high` is the fal default. Best
   conceptual adherence and richest detail.
 - **`nano-banana-2` (Gemini)** — **zone-enumerated** layout ("ROW 1, left zone
-  labeled '…': …"); quote text + give per-line font hints; render text-heavy
-  work at **2K+** (push `--width/--height` to 2048 — the native resolution tier
-  and "high-thinking" mode aren't reachable via the CLI).
+  labeled '…': …"); quote text + give per-line font hints. Note it **ignores
+  `--width/--height`** (it picks its own aspect/resolution — see CLI gotchas);
+  the 2K native-resolution tier and "high-thinking" mode aren't reachable via
+  the CLI, so take its default tier for text-heavy work.
 - **FLUX (`flux.2-flex`/`pro`, `klein`)** — non-reasoning: **explicit +
   spatial** ("two small curved horns growing out of the top of the cat's head,
   between its ears"), front-load the subject, name concrete style specifics, HEX

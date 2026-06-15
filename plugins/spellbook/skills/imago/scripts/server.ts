@@ -130,7 +130,10 @@ function saveDataUrl(dir: string, id: string, dataUrl: string): string {
   const m = /^data:([^;]+);base64,(.*)$/s.exec(dataUrl);
   if (!m || !dir) return "";
   const ext = EXT_BY_MIME[m[1].toLowerCase()] ?? ".bin";
-  const path = join(dir, `${id}${ext}`);
+  // `id` can be agent-supplied (batch/ref ids) — sanitize so it can't traverse
+  // out of the session files dir via `..` or absolute-path segments.
+  const safeId = id.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const path = join(dir, `${safeId}${ext}`);
   try {
     writeFileSync(path, Buffer.from(m[2], "base64"));
     return path;

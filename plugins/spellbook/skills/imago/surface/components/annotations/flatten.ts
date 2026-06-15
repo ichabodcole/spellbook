@@ -44,7 +44,7 @@ function esc(s: string): string {
 
 // Soft-wrap one logical line to a character budget (whole words where possible,
 // hard-split a word longer than the budget).
-function wrapLine(line: string, maxChars: number): string[] {
+export function wrapLine(line: string, maxChars: number): string[] {
   if (line.length <= maxChars) return [line];
   const out: string[] = [];
   let cur = "";
@@ -52,9 +52,10 @@ function wrapLine(line: string, maxChars: number): string[] {
     if (cur.length + word.length <= maxChars) {
       cur += word;
     } else if (word.length > maxChars) {
-      // flush, then hard-chop the long word
+      // flush, then hard-chop the long word (cur is already flushed above —
+      // start the chop from the long word alone, never re-prepend cur)
       if (cur.trim()) out.push(cur.trimEnd());
-      let rest = (cur + word).trimStart();
+      let rest = word.trimStart();
       cur = "";
       while (rest.length > maxChars) {
         out.push(rest.slice(0, maxChars));

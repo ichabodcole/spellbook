@@ -144,6 +144,11 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   if (flags["no-open"]) args.push("--no-open");
 
   const prevId = readSession()?.session_id;
+  // node:child_process (not Bun.spawn) is deliberate + matches grapevine/bounty:
+  // the daemon must SURVIVE this CLI process exiting, which needs `detached: true`
+  // + `unref()`. Bun.spawn can't detach a surviving daemon — so the house pattern
+  // for spawning a standing daemon is node's spawn. (CLAUDE.md's Bun-spawn pref
+  // applies to in-process child commands, not detached daemons.)
   const proc = spawn(process.execPath, args, {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],

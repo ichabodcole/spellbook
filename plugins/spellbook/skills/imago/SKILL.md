@@ -63,22 +63,23 @@ session. `help` prints the full surface.
 > session or a temp-dir cleanup can drop it. Re-target explicitly with
 > `--session <id>` (your id is in the `open` output, or run `sessions`).
 
-| Verb                                                                                                 | What it does                                                                                  |
-| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `open [--title ..] [--no-open] [--timeout S] [--restore <id\|path>]`                                 | Spawn the daemon (opens the browser); prints session JSON (`port`, `session_id`, `files_dir`) |
-| `sessions`                                                                                           | List saved, resumable sessions                                                                |
-| `tail [--since N]`                                                                                   | Stream user events as JSONL — **wrap with Monitor** (see below)                               |
-| `state [--full]`                                                                                     | State snapshot — **lean by default** (image blobs stripped); `--full` for raw                 |
-| `say <text…>`                                                                                        | Post your dialogue into the conversation                                                      |
-| `propose <prompt…> [--n N]`                                                                          | Propose a prompt for the user to send (a Send ×N card; N≤4)                                   |
-| `ask <text…> [--options "a\|b\|c"]`                                                                  | Ask the user a question, in-thread                                                            |
-| `batch [--kind generate\|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] <src…>` | Post a produced batch; each `src` = http url, `data:` url, or file path (inlined)             |
-| `focus <batchId> <variantId>`                                                                        | Put a variant on the canvas                                                                   |
-| `style <name…>`                                                                                      | Add a captured style to the catalog                                                           |
-| `status on [text…] \| status off`                                                                    | Toggle the "imago working" spinner                                                            |
-| `cost <text…>`                                                                                       | Set the cumulative-spend display                                                              |
-| `handoff <text…> \| handoff --clear`                                                                 | Raise/clear a "questions in your terminal" escalation                                         |
-| `close` / `info` / `help`                                                                            | End the session / print session JSON / usage                                                  |
+| Verb                                                                                                 | What it does                                                                                   |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `open [--title ..] [--no-open] [--timeout S] [--restore <id\|path>]`                                 | Spawn the daemon (opens the browser); prints session JSON (`port`, `session_id`, `files_dir`)  |
+| `sessions`                                                                                           | List saved, resumable sessions                                                                 |
+| `tail [--since N]`                                                                                   | Stream user events as JSONL — **wrap with Monitor** (see below)                                |
+| `state [--full]`                                                                                     | State snapshot — **lean by default** (image blobs stripped); `--full` for raw                  |
+| `say <text…>`                                                                                        | Post your dialogue into the conversation                                                       |
+| `propose <prompt…> [--n N]`                                                                          | Propose a prompt for the user to send (a Send ×N card; N≤4)                                    |
+| `ask <text…> [--options "a\|b\|c"]`                                                                  | Ask the user a question, in-thread                                                             |
+| `batch [--kind generate\|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] <src…>` | Post a produced batch; each `src` = http url, `data:` url, or file path (inlined)              |
+| `focus <batchId> <variantId>`                                                                        | Put a variant on the canvas                                                                    |
+| `style <name…> [--description ..] [--image <path\|url>]`                                             | Define a captured style — look in words + a canonical image (a toggleable context, like a ref) |
+| `prompt --label <name> --text <prompt>`                                                              | Save a reusable quick-prompt to the library (the user picks it to fill their input box)        |
+| `status on [text…] \| status off`                                                                    | Toggle the "imago working" spinner                                                             |
+| `cost <text…>`                                                                                       | Set the cumulative-spend display                                                               |
+| `handoff <text…> \| handoff --clear`                                                                 | Raise/clear a "questions in your terminal" escalation                                          |
+| `close` / `info` / `help`                                                                            | End the session / print session JSON / usage                                                   |
 
 The user adds **reference images** from the browser (drag-drop / attach) — you
 never add those. Everything else (dialogue, proposals, batches, focus, styles)
@@ -87,18 +88,28 @@ you post.
 ## Run it push-based — Monitor the tail, don't poll
 
 The single most important operating rule: **subscribe to the event stream and
-react the instant the user acts.** Run `cli.ts tail` as a long-lived background
-process and wake on each new line — in Claude Code that's the **Monitor** tool
-(it backgrounds a command and turns each new stdout line into a fresh turn). The
-events that want a response:
+react the instant the user acts.** Bootstrap: `open` (capture the `session_id`
+from its JSON), then run `cli.ts tail` as a long-lived background process and
+wake on each new line — in Claude Code that's the **Monitor** tool (it
+backgrounds the command and turns each new stdout line into a fresh turn, so you
+react statelessly, one event per turn). Wrap the tail and filter to the events
+that want a response:
 
 ```
-tail -f <tail output> | grep -E '"type":"(say|proposal\.send|style\.capture|marks\.commit|ref\.add|variant\.like|focus\.set)"'
+cli.ts tail --session <id> | grep -E '"type":"(say|proposal\.send|style\.capture|marks\.commit|ref\.add|image\.import)"'
 ```
 
-Read the matching event's full payload from the tail output (notifications
-truncate) or from `state`. Polling only when you happen to check leaves the user
-waiting.
+That grep IS the wake set — only these wake you. **Ambient gestures
+(`focus.set`, `variant.like`, `style.toggle`, ref selection) deliberately do NOT
+wake you**: read them from `state` when you next act, don't reply per-gesture.
+
+**Where the shapes live:** an event's full payload and the `state` snapshot are
+the `AgentEventPayload` and `ImagoState` types in `surface/state/types.ts` (the
+single contract). That's where field names come from — and where you read the
+focused variant + ids: `state.focus`, `state.batches[].id`,
+`state.batches[].variants[].id` (+ `.path` for the on-disk image). Notifications
+truncate; read the full payload from the tail line or from `state`. Polling only
+when you happen to check leaves the user waiting.
 
 ## The loop
 
@@ -115,10 +126,14 @@ There's no phase pipeline — react to what the user does:
   **edit**: read the focused variant's `path` from `state`, generate with
   `--ref <path>` + an instruction that folds in what they marked, post a
   `batch --kind edit --edited-from <variantId>`.
-- **`variant.like`** / **`focus.set`** — softer signals (which one resonates,
-  what they're looking at). Fold into your next move; you needn't reply to each.
-- **`style.capture`** — analyze the focused image, then `style "<name>"` to add
-  a reusable look to the catalog.
+- **`variant.like`** / **`focus.set`** — ambient (which one resonates, what
+  they're looking at). NOT in the wake set — read them from `state` when you
+  next act; don't reply per-gesture.
+- **`style.capture`** — analyze the focused image, then
+  `style "<name>" --description "<the look>" --image "<focused variant path>"` —
+  a captured style carries words + a canonical example. Active styles + selected
+  refs are ambient context you fold into generation (see
+  `references/mediaforge.md`).
 - **`ref.add`** — factor the attached reference into the next generation
   (`--ref`).
 - Ambiguous? `ask "<question>" --options "…"` (in-thread), or `handoff` to the
