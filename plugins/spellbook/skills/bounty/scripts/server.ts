@@ -13,24 +13,29 @@
 //   - The daemon holds canonical state; late-joining browsers receive a
 //     synthetic init on connect.
 //
-// AgentCommand — POST /cmd body (one of):
+// AgentCommand — POST /cmd body (one of). All carry an optional `as` (caller
+// identity → event `by`); /cmd returns {ok, applied?, error?}:
 //   {"type":"init",        "title": "...", "tasks": Task[]}
 //   {"type":"task.add",    "task": Task}              // append
-//   {"type":"task.update", "id": "...", "patch": Partial<Task>}
+//   {"type":"task.update", "id": "...", "patch": Partial<Task>, "claim"?: bool}
 //   {"type":"task.remove", "id": "..."}
+//   {"type":"task.block",  "id": "...", "on": string[]}   // add blocker edges (cycle-guarded)
+//   {"type":"task.unblock","id": "...", "on": string[]}   // remove blocker edges
 //   {"type":"message",     "text": "..."}             // toast
 //   {"type":"close"}                                  // end session
 //
 // Event log — GET /events frames (server → agent), each with a monotonic `id`
-// (the resume cursor) and an actor `by` ("user" | "agent" | "system"):
+// (the resume cursor), an actor `by` (the caller's --as | "user" | "system"),
+// and (task.* + unblocked) the affected task's `owner` for client-side scoping:
 //   {id, type:"ready",        url, port, session_id, by:"system"}
 //   {id, type:"connected" | "disconnected", by:"user"}
-//   {id, type:"task.toggle",  taskId, status, by}     // ⚠ taskId, NOT id —
-//   {id, type:"task.move",    taskId, status, index, by}  //   the envelope id is
-//   {id, type:"task.edit",    taskId, title, by}      //   the cursor; the task
-//   {id, type:"task.add",     task, by}               //   id is nested/`taskId`
-//   {id, type:"task.update",  taskId, patch, by}      //   so the spread can't
-//   {id, type:"task.remove",  taskId, by}             //   clobber the cursor.
+//   {id, type:"task.toggle",  taskId, status, by, owner}  // ⚠ taskId, NOT id —
+//   {id, type:"task.move",    taskId, status, index, by, owner}  //  envelope id
+//   {id, type:"task.edit",    taskId, title, by, owner}   //   is the cursor; the
+//   {id, type:"task.add",     task, by, owner}            //   task id is nested
+//   {id, type:"task.update",  taskId, patch, by, owner}   //   / `taskId` so the
+//   {id, type:"task.remove",  taskId, by, owner}          //   spread can't clobber.
+//   {id, type:"unblocked",    taskId, owner, by:"system"} // last blocker cleared
 //   {id, type:"closed",       reason, by:"system"}    //   reason: user|timeout|close
 //
 // task.toggle vs task.move: toggle is the click-a-pill UX — status changes,
@@ -65,6 +70,7 @@ type Task = {
   status: TaskStatus;
   notes?: string;
   owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
+  blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
 };
 type BoardState = { title: string; tasks: Task[] };
 
@@ -79,6 +85,8 @@ type AgentMsg =
   | { type: "task.add"; task: Task; as?: string }
   | { type: "task.update"; id: string; patch: Partial<Task>; as?: string; claim?: boolean }
   | { type: "task.remove"; id: string; as?: string }
+  | { type: "task.block"; id: string; on: string[]; as?: string }
+  | { type: "task.unblock"; id: string; on: string[]; as?: string }
   | { type: "message"; text: string; as?: string }
   | { type: "close"; as?: string };
 
@@ -169,12 +177,19 @@ function validateTask(t: unknown): Task | null {
   }
   if (cand.notes !== undefined && typeof cand.notes !== "string") return null;
   if (cand.owner !== undefined && typeof cand.owner !== "string") return null;
+  if (
+    cand.blockedBy !== undefined &&
+    (!Array.isArray(cand.blockedBy) || cand.blockedBy.some((x) => typeof x !== "string"))
+  ) {
+    return null;
+  }
   return {
     id: cand.id,
     title: cand.title,
     status: cand.status as TaskStatus,
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
+    ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
   };
 }
 
@@ -419,6 +434,47 @@ async function main(argv: string[]): Promise<number> {
   // for the cooperative-claim guard.
   const ownerOf = (id: string) => state.tasks.find((t) => t.id === id)?.owner;
 
+  // ── dependencies (Phase D) ──
+  // A task is blocked iff it has a blockedBy id pointing at an EXISTING task
+  // that isn't done yet. A missing (deleted) or done blocker doesn't block.
+  const isBlocked = (task: Task): boolean =>
+    (task.blockedBy ?? []).some((bid) => {
+      const b = state.tasks.find((t) => t.id === bid);
+      return b !== undefined && b.status !== "done";
+    });
+
+  // Can `from` reach `target` by following blockedBy edges? Used by the cycle
+  // guard: adding edge id→b would close a loop iff b already reaches id. A
+  // visited set guards against any pre-existing cycle (there shouldn't be one).
+  function canReach(from: string, target: string, seen = new Set<string>()): boolean {
+    if (from === target) return true;
+    if (seen.has(from)) return false;
+    seen.add(from);
+    const task = state.tasks.find((t) => t.id === from);
+    return (task?.blockedBy ?? []).some((bid) => canReach(bid, target, seen));
+  }
+
+  // Per-task blocked state, so reconcileBlocked can fire `unblocked` exactly on
+  // the blocked→unblocked falling edge (never double-fire). Seeded from the
+  // initial/restored board so already-blocked tasks don't spuriously fire.
+  const prevBlocked = new Map<string, boolean>();
+  for (const t of state.tasks) prevBlocked.set(t.id, isBlocked(t));
+
+  // Run after every mutation: for each task, if it just went blocked→unblocked
+  // (the last live blocker cleared, or its last live edge was removed) AND it
+  // isn't itself done, fire a targeted `unblocked` event to its owner. Broad
+  // O(n) walk — one mutation can unblock many tasks; board scale makes it free.
+  function reconcileBlocked() {
+    for (const task of state.tasks) {
+      const now = isBlocked(task);
+      const was = prevBlocked.get(task.id) ?? false;
+      if (was && !now && task.status !== "done") {
+        emitEvent({ type: "unblocked", taskId: task.id, owner: task.owner, by: "system" });
+      }
+      prevBlocked.set(task.id, now);
+    }
+  }
+
   // Single dispatch point for an agent command (POST /cmd body). Mutates the
   // canonical state via the apply* helpers, broadcasts to the WS clients, and
   // appends an event frame. Returns an apply-result so the CLI can confirm a
@@ -459,16 +515,14 @@ async function main(argv: string[]): Promise<number> {
           };
         }
       }
-      if (applyTaskUpdate(state, msg.id, msg.patch)) {
-        broadcast({ type: "task.update", id: msg.id, patch: msg.patch });
+      // `blockedBy` is mutated ONLY via task.block/task.unblock (which run the
+      // cycle guard). Strip it from a raw update patch so /cmd can't sidestep
+      // the guard — keep the guard load-bearing.
+      const { blockedBy: _stripped, ...patch } = msg.patch;
+      if (applyTaskUpdate(state, msg.id, patch)) {
+        broadcast({ type: "task.update", id: msg.id, patch });
         // Post-change owner = "who owned it when this happened" (owner-at-emit).
-        emitEvent({
-          type: "task.update",
-          taskId: msg.id,
-          patch: msg.patch,
-          by,
-          owner: ownerOf(msg.id),
-        });
+        emitEvent({ type: "task.update", taskId: msg.id, patch, by, owner: ownerOf(msg.id) });
         return { ok: true, applied: true };
       }
       return { ok: true, applied: false };
@@ -480,6 +534,43 @@ async function main(argv: string[]): Promise<number> {
         return { ok: true, applied: true };
       }
       return { ok: true, applied: false };
+    } else if (msg.type === "task.block") {
+      const task = state.tasks.find((t) => t.id === msg.id);
+      if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      // Cycle/self-ref guard: reject the WHOLE command if any proposed edge
+      // would close a loop. New edges all originate at `id` (out-edges), so a
+      // back-path can only run through existing edges — a per-edge canReach
+      // against the current graph is sufficient.
+      for (const b of msg.on) {
+        if (canReach(b, msg.id)) {
+          return { ok: true, applied: false, error: `would create a cycle: ${msg.id} → ${b}` };
+        }
+      }
+      const next = Array.from(new Set([...(task.blockedBy ?? []), ...msg.on]));
+      applyTaskUpdate(state, msg.id, { blockedBy: next });
+      broadcast({ type: "task.update", id: msg.id, patch: { blockedBy: next } });
+      emitEvent({
+        type: "task.update",
+        taskId: msg.id,
+        patch: { blockedBy: next },
+        by,
+        owner: task.owner,
+      });
+      return { ok: true, applied: true };
+    } else if (msg.type === "task.unblock") {
+      const task = state.tasks.find((t) => t.id === msg.id);
+      if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      const next = (task.blockedBy ?? []).filter((b) => !msg.on.includes(b));
+      applyTaskUpdate(state, msg.id, { blockedBy: next });
+      broadcast({ type: "task.update", id: msg.id, patch: { blockedBy: next } });
+      emitEvent({
+        type: "task.update",
+        taskId: msg.id,
+        patch: { blockedBy: next },
+        by,
+        owner: task.owner,
+      });
+      return { ok: true, applied: true };
     } else if (msg.type === "message") {
       broadcast({ type: "message", text: msg.text });
       return { ok: true, applied: true };
@@ -532,6 +623,7 @@ async function main(argv: string[]): Promise<number> {
             .then((body) => {
               touch();
               const result = handleAgentMsg(body as AgentMsg);
+              reconcileBlocked(); // fire `unblocked` for any blocked→unblocked transition
               return new Response(JSON.stringify(result), {
                 headers: { "Content-Type": "application/json" },
               });
@@ -654,6 +746,9 @@ async function main(argv: string[]): Promise<number> {
             // end signal every client (browser + joiners) receives.
             resolveDone({ code: 0, reason: "user" });
           }
+          // A browser action (e.g. dragging a blocker to Done) can unblock
+          // dependents — fire `unblocked` for any transition.
+          reconcileBlocked();
         },
         close(ws) {
           sockets.delete(ws);

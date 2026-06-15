@@ -101,8 +101,8 @@ Discovery, plan, and test plan are **already done** — start at implementation.
 - [x] Phase B — durability (snapshot + restore) — closes #6
 - [x] Surface — Alpine port
 - [x] Phase C — ownership + scoping — closes #9
-- [ ] Phase D — dependencies — closes #10
-- [ ] Tests passing (full test plan executed)
+- [x] Phase D — dependencies — closes #10
+- [x] Tests passing (full test plan executed)
 - [ ] Ready for merge
 
 ## Completion

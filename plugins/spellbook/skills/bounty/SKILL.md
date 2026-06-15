@@ -155,6 +155,7 @@ session by default; pass `--session <id>` to target a specific one.
 | `add <title…> [--status S] [--notes N] [--owner N] [--id ID] [--stdin]`  | add a task (optionally assigned)                                                       |
 | `update <id> [--status S] [--title T] [--notes N] [--owner N] [--stdin]` | patch a task (`--owner` assigns/reassigns)                                             |
 | `claim <id> [--as <name>]`                                               | self-claim an **unowned** task (rejected if owned by another)                          |
+| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                | add / remove blocker edges (block is cycle-guarded; rejection is visible)              |
 | `remove <id>`                                                            | delete a task                                                                          |
 | `message <text…> [--stdin]`                                              | transient toast on the board                                                           |
 | `init [--title T] [--stdin-tasks]`                                       | seed the board (tasks = JSON array on stdin)                                           |
@@ -233,6 +234,7 @@ Each `tail` frame is `{ id, type, …, by }`:
 {id, type:"task.add",     task, by, owner}               // task added
 {id, type:"task.update",  taskId, patch, by, owner}      // agent patch
 {id, type:"task.remove",  taskId, by, owner}             // task deleted
+{id, type:"unblocked",    taskId, owner, by:"system"}    // last blocker cleared (owner-scoped)
 {id, type:"closed",       reason, by:"system"}           // session ended (reason: user|timeout|close)
 ```
 
@@ -250,6 +252,7 @@ type Task = {
   status: "todo" | "doing" | "review" | "done";
   notes?: string; // optional, shown under the title
   owner?: string; // optional assignee — shown as an @name badge; drives scoped tails
+  blockedBy?: string[]; // ids this task waits on (set via block/unblock); drives the blocked cue + unblocked event
 };
 ```
 
@@ -319,6 +322,30 @@ keep each worker's wake-set small instead of every event waking everyone.
 > task left their lane. That's intentional: the board reflects new state, A sees
 > it on their next `cli.ts state`, and the reassigning lead conveys the _why_
 > over chat. Don't rely on the board to notify a former owner.
+
+### Dependencies (blocking)
+
+A task can declare what it's **blocked on** — the board's one real edge over a
+flat list.
+
+- **Set edges:** `cli.ts block <id> --on <id>[,<id>…]` adds blockers;
+  `cli.ts unblock <id> --on <id>[,…]` removes them. (`blockedBy` is mutated
+  **only** through these — a raw `update` can't set it, so the cycle guard
+  always runs.)
+- **Cycle guard:** a `block` that would create a self-reference or a cycle
+  (direct or transitive) is **rejected** (stderr + non-zero exit, like a
+  rejected claim) — the board can't wedge.
+- **`unblocked` event:** when a task's **last** live blocker clears — the last
+  blocker reaches `done`, _or_ its last blocking edge is removed — the daemon
+  fires `{type:"unblocked", taskId, owner}` to the task's owner. It's in the
+  wake-set (owner-scoped, so an `--owner`/`--mine` tail catches it), fires
+  **once** on the blocked→unblocked transition, and never fires for a task
+  that's already `done`. A blocker is "live" only if it still exists and isn't
+  done — a deleted or done blocker doesn't block.
+- **Surface cue:** a blocked task shows `⛔ blocked by N` and is visually
+  de-emphasized. It's a **convention, not a lock** — the board still lets anyone
+  move a blocked task (same soft-gate spirit as Review). The cue counts down
+  live as blockers clear.
 
 ## Exit Code Contract
 

@@ -13,6 +13,8 @@
 //   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]
 //   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]
 //   bun cli.ts claim <id> [--as <name>]                     # self-claim an unowned task
+//   bun cli.ts block <id> --on <id>[,<id>...]               # add blocker edges (cycle-guarded)
+//   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
 //   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board
@@ -218,8 +220,13 @@ async function cmdTail(
   // owner-scoped. `--mine` also passes claimable (unowned) tasks.
   const owner = scope.owner;
   const self = scope.as;
+  // Owner-scoped frames: task.* mutations AND `unblocked` (it carries an owner,
+  // so it must be scoped — else every worker wakes on every unblock). Lifecycle
+  // (ready/connected/disconnected/closed) always passes.
+  const scopeable = (t?: string) =>
+    typeof t === "string" && (t.startsWith("task.") || t === "unblocked");
   const inScope = (ev: { type?: string; owner?: string }) => {
-    if (typeof ev.type !== "string" || !ev.type.startsWith("task.")) return true;
+    if (!scopeable(ev.type)) return true;
     if (owner) return ev.owner === owner;
     if (scope.mine) return ev.owner === self || !ev.owner;
     return true;
@@ -353,6 +360,8 @@ const HELP = `bounty — an agent-driven task board.
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
   update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
   claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
+  block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
+  unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
   remove <id>                        delete a task
   message <text...> [--stdin]        show a toast on the board
   init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin)
@@ -435,6 +444,31 @@ async function main(argv: string[]): Promise<number> {
         // Visible rejection — nonzero exit so the agent can't mistake a rejected
         // claim for ownership (the daemon returned applied:false).
         process.stderr.write(`bounty: ${res.error ?? `could not claim ${id}`}\n`);
+        return 1;
+      }
+      break;
+    }
+    case "block":
+    case "unblock": {
+      const id = pos[0];
+      if (!id || typeof flags.on !== "string") {
+        die(`usage: ${verb} <id> --on <id>[,<id>...]`);
+      }
+      const on = flags.on
+        .split(",")
+        .map((x) => x.trim())
+        .filter(Boolean);
+      if (!on.length) die(`${verb}: --on needs at least one task id`);
+      const res = await postCmd(
+        session,
+        { type: verb === "block" ? "task.block" : "task.unblock", id, on },
+        { as, quiet: true },
+      );
+      if (res.applied) {
+        printJson({ ok: true, [verb === "block" ? "blocked" : "unblocked"]: id, on });
+      } else {
+        // Visible rejection (e.g. a cycle) — nonzero exit, like a rejected claim.
+        process.stderr.write(`bounty: ${res.error ?? `could not ${verb} ${id}`}\n`);
         return 1;
       }
       break;

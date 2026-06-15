@@ -134,6 +134,15 @@
         color: var(--accent-neutral-text);
         letter-spacing: 0.01em;
       }
+      /* A blocked task: a faint danger rail + a de-emphasized body, plus a small
+         "blocked by N" cue under the title. Convention-only — the board still
+         lets it move (no hard lock). */
+      .task.blocked { border-left: 2px solid var(--danger); opacity: 0.82; }
+      .task .blocked-cue {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        margin-top: 0.3rem; font-size: 0.7rem; font-weight: 500;
+        color: var(--danger);
+      }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
       }
@@ -250,6 +259,7 @@
             <template x-for="(task, idx) in tasksByStatus(col.status)" :key="task.id">
               <div
                 class="task"
+                :class="{ blocked: blockedCount(task) > 0 }"
                 :data-task-id="task.id"
                 :data-task-status="task.status"
                 draggable="true"
@@ -266,6 +276,12 @@
                   @keydown.enter.prevent="$el.blur()"
                   @keydown.escape="$el.textContent = task.title; $el.blur()"
                 ></div>
+                <template x-if="blockedCount(task) > 0">
+                  <div
+                    class="blocked-cue"
+                    x-text="'⛔ blocked by ' + blockedCount(task)"
+                  ></div>
+                </template>
                 <template x-if="task.notes">
                   <div class="notes" x-text="task.notes"></div>
                 </template>
@@ -363,6 +379,16 @@
 
           tasksByStatus(status) {
             return this.tasks.filter((t) => t.status === status);
+          },
+
+          // How many of a task's blockers are still live (exist + not done). 0 =
+          // not blocked. A deleted or done blocker doesn't block (matches the
+          // daemon's isBlocked).
+          blockedCount(task) {
+            return (task.blockedBy || []).filter((bid) => {
+              const b = this.tasks.find((t) => t.id === bid);
+              return b && b.status !== "done";
+            }).length;
           },
 
           // ── outgoing ────────────────────────────────────────────────

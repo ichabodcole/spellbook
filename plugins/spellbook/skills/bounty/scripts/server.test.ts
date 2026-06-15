@@ -195,6 +195,18 @@ describe("validateTask", () => {
   test("rejects non-string owner", () => {
     expect(validateTask({ id: "a", title: "A", status: "todo", owner: 42 })).toBeNull();
   });
+  test("carries blockedBy when present (string array)", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: ["b1", "b2"] })).toEqual({
+      id: "a",
+      title: "A",
+      status: "todo",
+      blockedBy: ["b1", "b2"],
+    });
+  });
+  test("rejects non-array blockedBy or non-string members", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: "b1" })).toBeNull();
+    expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: [1, 2] })).toBeNull();
+  });
   test("rejects non-objects", () => {
     expect(validateTask(null)).toBeNull();
     expect(validateTask("nope")).toBeNull();
@@ -1092,6 +1104,215 @@ describe("ownership scoping (Phase C E2E)", () => {
       const ok = await runCli(["claim", "F", "--as", "bob", "--session", session], { env });
       expect(ok.code).toBe(0);
       expect((JSON.parse(ok.stdout) as { owner?: string }).owner).toBe("bob");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 25000);
+});
+
+// ── Dependencies (Phase D) — blockedBy, cycle guard, unblocked ───────────
+
+describe("dependencies (Phase D)", () => {
+  async function cmd(url: string, body: unknown) {
+    const res = await fetch(`${url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: res.status, data: (await res.json()) as Record<string, unknown> };
+  }
+  async function state(url: string) {
+    return (await (await fetch(`${url}/state`)).json()) as { state: BoardState };
+  }
+  const find = (s: { state: BoardState }, id: string) => s.state.tasks.find((t) => t.id === id);
+
+  // Read SSE frames until predicate or timeout (local to this describe).
+  async function collect(
+    url: string,
+    since: number,
+    pred: (ev: Record<string, unknown>) => boolean,
+    maxMs: number,
+  ): Promise<Record<string, unknown>[]> {
+    const res = await fetch(`${url}/events?since=${since}`);
+    if (!res.body) throw new Error("no SSE body");
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    const seen: Record<string, unknown>[] = [];
+    const deadline = Date.now() + maxMs;
+    while (Date.now() < deadline) {
+      const chunk = await Promise.race([
+        reader.read(),
+        new Promise<{ done: true; value: undefined }>((r) =>
+          setTimeout(() => r({ done: true, value: undefined }), deadline - Date.now()),
+        ),
+      ]);
+      if (chunk.done) break;
+      buf += dec.decode(chunk.value, { stream: true });
+      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
+        const block = buf.slice(0, sep);
+        buf = buf.slice(sep + 2);
+        for (const line of block.split("\n")) {
+          if (!line.startsWith("data:")) continue;
+          try {
+            const ev = JSON.parse(line.slice(5).trim()) as Record<string, unknown>;
+            seen.push(ev);
+            if (pred(ev)) {
+              reader.cancel();
+              return seen;
+            }
+          } catch {
+            /* skip */
+          }
+        }
+      }
+    }
+    reader.cancel();
+    return seen;
+  }
+
+  async function seedTasks(url: string, tasks: Record<string, unknown>[]) {
+    for (const task of tasks) await cmd(url, { type: "task.add", task });
+  }
+
+  test("block adds edges; unblock removes them", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "X", title: "X", status: "todo" },
+      { id: "B1", title: "B1", status: "todo" },
+      { id: "B2", title: "B2", status: "todo" },
+    ]);
+    await cmd(ready.url, { type: "task.block", id: "X", on: ["B1", "B2"] });
+    let s = await state(ready.url);
+    expect(find(s, "X")?.blockedBy?.sort()).toEqual(["B1", "B2"]);
+    await cmd(ready.url, { type: "task.unblock", id: "X", on: ["B1"] });
+    s = await state(ready.url);
+    expect(find(s, "X")?.blockedBy).toEqual(["B2"]);
+    proc.kill();
+    await proc.exited;
+  }, 15000);
+
+  test("cycle guard rejects self-ref / 2-node / 3-node, state unmutated", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "A", title: "A", status: "todo" },
+      { id: "B", title: "B", status: "todo" },
+      { id: "C", title: "C", status: "todo" },
+    ]);
+    // self-ref
+    const selfRes = await cmd(ready.url, { type: "task.block", id: "A", on: ["A"] });
+    expect(selfRes.data.applied).toBe(false);
+    expect(String(selfRes.data.error).toLowerCase()).toContain("cycle");
+    expect(find(await state(ready.url), "A")?.blockedBy).toBeUndefined();
+    // 2-node: A on B (ok), then B on A (cycle)
+    await cmd(ready.url, { type: "task.block", id: "A", on: ["B"] });
+    const twoRes = await cmd(ready.url, { type: "task.block", id: "B", on: ["A"] });
+    expect(twoRes.data.applied).toBe(false);
+    expect(find(await state(ready.url), "B")?.blockedBy).toBeUndefined();
+    // 3-node: B on C (ok), then C on A (A→B→C→A cycle)
+    await cmd(ready.url, { type: "task.block", id: "B", on: ["C"] });
+    const threeRes = await cmd(ready.url, { type: "task.block", id: "C", on: ["A"] });
+    expect(threeRes.data.applied).toBe(false);
+    expect(find(await state(ready.url), "C")?.blockedBy).toBeUndefined();
+    proc.kill();
+    await proc.exited;
+  }, 15000);
+
+  test("blockedBy can't be set via a raw task.update (bypass closed)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "X", title: "X", status: "todo" },
+      { id: "Y", title: "Y", status: "todo" },
+    ]);
+    await cmd(ready.url, {
+      type: "task.update",
+      id: "X",
+      patch: { status: "doing", blockedBy: ["Y"] },
+    });
+    const x = find(await state(ready.url), "X");
+    proc.kill();
+    await proc.exited;
+    expect(x?.status).toBe("doing"); // the rest of the patch still applies
+    expect(x?.blockedBy).toBeUndefined(); // blockedBy stripped — guard stays load-bearing
+  }, 15000);
+
+  test("unblocked fires once when the LAST blocker reaches done, targets the owner", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "X", title: "X", status: "todo", owner: "worker1", blockedBy: ["B1", "B2"] },
+      { id: "B1", title: "B1", status: "todo" },
+      { id: "B2", title: "B2", status: "todo" },
+    ]);
+    const evP = collect(ready.url, 0, (ev) => ev.type === "unblocked", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    await cmd(ready.url, { type: "task.update", id: "B1", patch: { status: "done" } });
+    await new Promise((r) => setTimeout(r, 150));
+    await cmd(ready.url, { type: "task.update", id: "B2", patch: { status: "done" } });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+
+    const unblocked = events.filter((e) => e.type === "unblocked");
+    expect(unblocked).toHaveLength(1); // not on B1, only when B2 (the last) clears; fired once
+    expect(unblocked[0].taskId).toBe("X");
+    expect(unblocked[0].owner).toBe("worker1"); // targeted via owner-on-frame
+  }, 15000);
+
+  test("removing the last remaining blocker edge also unblocks", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "X", title: "X", status: "todo", owner: "w", blockedBy: ["B1", "B2"] },
+      { id: "B1", title: "B1", status: "todo" },
+      { id: "B2", title: "B2", status: "done" }, // already done
+    ]);
+    const evP = collect(ready.url, 0, (ev) => ev.type === "unblocked", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    // B2 already done; dropping the B1 edge leaves no live blocker → unblocked
+    await cmd(ready.url, { type: "task.unblock", id: "X", on: ["B1"] });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+    expect(events.filter((e) => e.type === "unblocked" && e.taskId === "X")).toHaveLength(1);
+  }, 15000);
+
+  test("no unblocked for an already-done task", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "X", title: "X", status: "done", blockedBy: ["B1"] }, // X itself done
+      { id: "B1", title: "B1", status: "todo" },
+    ]);
+    const evP = collect(
+      ready.url,
+      0,
+      (ev) => ev.type === "task.update" && ev.taskId === "B1",
+      3000,
+    );
+    await new Promise((r) => setTimeout(r, 150));
+    await cmd(ready.url, { type: "task.update", id: "B1", patch: { status: "done" } });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+    expect(events.some((e) => e.type === "unblocked")).toBe(false);
+  }, 15000);
+
+  test("cli block/unblock works; a cycle is rejected visibly (exit 1)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "X", "--id", "X", "--session", session], { env });
+    await runCli(["add", "B", "--id", "B", "--session", session], { env });
+    try {
+      const ok = await runCli(["block", "X", "--on", "B", "--session", session], { env });
+      expect(ok.code).toBe(0);
+      expect((JSON.parse(ok.stdout) as { blocked?: string }).blocked).toBe("X");
+
+      const cyc = await runCli(["block", "B", "--on", "X", "--session", session], { env });
+      expect(cyc.code).toBe(1); // visible nonzero, like a rejected claim
+      expect(cyc.stderr.toLowerCase()).toContain("cycle");
+
+      const un = await runCli(["unblock", "X", "--on", "B", "--session", session], { env });
+      expect(un.code).toBe(0);
     } finally {
       await runCli(["close", "--session", session], { env });
     }
