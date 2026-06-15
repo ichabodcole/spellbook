@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { variantLabel } from "../state/derive";
 import { processFiles } from "../state/fileIntake";
 import type { ClientToServer, ImagoState, Message } from "../state/types";
+import { flattenMarks } from "./annotations/flatten";
 
 const LENSES: [string, string][] = [
   ["describe", "Describe this image in detail — literally what is in it."],
@@ -33,11 +34,26 @@ export function Conversation({
     return bi >= 0 ? `about: Batch ${bi + 1} · ${variantLabel(vi)}` : "new image";
   })();
 
-  function submit() {
+  async function submit() {
     const t = draft.trim();
     if (!t) return;
-    send({ type: "say", text: t });
     setDraft("");
+    // Auto-attach the marked image when the focused image has marks the agent
+    // hasn't seen yet (marksUnseen) — same visual handoff as the commit button,
+    // off the same flag. Otherwise a plain say (don't re-send what's already in).
+    const focus = state.focus;
+    const variant = focus
+      ? state.batches
+          .find((b) => b.id === focus.batchId)
+          ?.variants.find((v) => v.id === focus.variantId)
+      : undefined;
+    const focusMarks = focus ? (state.marksByVariant[focus.variantId] ?? []) : [];
+    if (variant?.src && focusMarks.length > 0 && state.marksUnseen) {
+      const png = await flattenMarks(variant.src, focusMarks);
+      send({ type: "say", text: t, flattenedSrc: png || undefined });
+    } else {
+      send({ type: "say", text: t });
+    }
   }
 
   return (

@@ -282,9 +282,17 @@ The first variant auto-focuses if nothing is focused yet.
    `cli.ts status off`.
 
 **The edit loop** (a `marks.commit` event, a `variant.like` + a change request,
-or a plain `say` about the focused image): read the focused variant's `path`
-from `cli.ts state`, generate with `--ref <path>` + an instruction that includes
-whatever the user marked, then:
+or a plain `say` about the focused image): generate with `--ref <image>` + an
+instruction, then post an `--kind edit` batch. The **`--ref` is the visual
+handoff** — for a `marks.commit`, prefer the event's **`flattenedImagePath`**:
+the focused image with the user's marks (sketch, arrows, boxes, notes) burned in
+at native resolution. The model _sees_ what they drew, so you don't have to
+translate geometry into words. Pair it with the note text (the pin `label`s in
+`marks[]`) in the instruction for the things a picture can't say ("make this
+blurred", "match the painterly style"). Fall back to the focused variant's
+`path` when `flattenedImagePath` is absent (capture is best-effort) or for a
+plain `say`/`variant.like` edit with no marks. The raw `marks[]` geometry is
+there as backup, but the flattened image is the primary signal. Then:
 
 ```
 bun cli.ts batch --kind edit --edited-from <variantId> \

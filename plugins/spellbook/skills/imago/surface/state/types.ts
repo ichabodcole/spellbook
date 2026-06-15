@@ -141,13 +141,18 @@ export type Mark =
       cy: number;
       rx: number;
       ry: number;
-    });
+    })
+  // freeform sketch — an ordered list of fraction-space points (a polyline). The
+  // visual handoff (flattened image) is what the model reads; doubles as a future
+  // inpaint-mask region.
+  | (MarkBase & { tool: "draw"; points: { x: number; y: number }[] });
 export const MARK_TOOLS: readonly Mark["tool"][] = [
   "pin",
   "arrow",
   "line",
   "rect",
   "ellipse",
+  "draw",
 ] as const;
 
 // ── the whole state ──
@@ -167,6 +172,16 @@ export type ImagoState = {
   status: { busy: boolean; text: string };
   cost: string; // pre-formatted for display, e.g. "$0.18"
   handoff: string; // agent escalated to a terminal AskUserQuestion (presence: asking)
+  // undo/redo availability for the FOCUSED variant's mark edits (server-derived
+  // from an in-memory, per-variant history; situational, not persisted). Lets the
+  // toolbar enable/disable the buttons.
+  history: { canUndo: boolean; canRedo: boolean };
+  // ONE freshness signal shared by both channels: true when the FOCUSED image has
+  // annotation changes the agent hasn't received yet. Set on any mark edit;
+  // cleared when the agent gets the marked image — via the commit button OR a chat
+  // message that carries it. Drives the commit button ("Take marks" vs "Shared")
+  // and the chat-send auto-attach. Server-derived for the focused variant.
+  marksUnseen: boolean;
 };
 
 export type ImageSize = "1K" | "2K";
@@ -188,7 +203,13 @@ export type ServerToClient =
 // Each either mutates state (re-broadcast) and/or emits an SSE event the agent
 // reacts to. The conversation is the primary channel; gestures are first-class.
 export type ClientToServer =
-  | { type: "say"; text: string } // user posts a message / instruction
+  | {
+      type: "say"; // user posts a message / instruction
+      text: string;
+      // when the focused image has unseen marks, the surface flattens it and
+      // rides the marked image along with the message (one freshness signal).
+      flattenedSrc?: string;
+    }
   | { type: "proposal.send"; id: string } // confirm a prompt proposal → generate
   | { type: "proposal.dismiss"; id: string }
   | { type: "focus.set"; batchId: string; variantId: string } // focus an image
@@ -204,14 +225,29 @@ export type ClientToServer =
   | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
   | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder)
   | { type: "mark.remove"; id: string } // delete one mark (complements marks.clear)
-  | { type: "mark.update"; id: string; patch: Record<string, number | string> } // move/resize/label (server merges; never id/tool/zOrder)
+  | {
+      // move/resize/label (server merges; never id/tool/zOrder). Values are
+      // scalars (geometry/label/style) or a draw mark's whole `points` array.
+      type: "mark.update";
+      id: string;
+      patch: Record<string, number | string | { x: number; y: number }[]>;
+    }
   | {
       type: "mark.reorder";
       id: string;
       direction: "forward" | "back" | "front" | "back-most";
     } // z-order
   | { type: "marks.clear" }
-  | { type: "marks.commit"; text: string; batchId: string; variantId: string } // "take marks to the conversation →"
+  | { type: "marks.replace"; marks: Mark[] } // swap the focused image's marks wholesale (one history step) — used by the pen eraser, which trims/splits strokes
+  | { type: "undo" } // step the focused image's mark history back
+  | { type: "redo" } // step it forward
+  | {
+      type: "marks.commit"; // "take marks to the conversation →"
+      text: string;
+      batchId: string;
+      variantId: string;
+      flattenedSrc?: string; // data-url PNG: the image with marks burned in (the visual handoff). Optional — capture is best-effort.
+    }
   | { type: "aspect.set"; aspect: string }
   | { type: "size.set"; size: ImageSize }
   | { type: "submit" }
@@ -277,7 +313,9 @@ export type AgentEventType = (typeof AGENT_EVENT_TYPES)[number];
 // shapes and the server's emit calls are checked. Events not listed carry no
 // payload.
 export type AgentEventPayload = {
-  say: { text: string };
+  // a chat message; if the focused image had unseen marks, the marked image
+  // (flattenedImagePath, --ref it) + the mark geometry ride along with the text.
+  say: { text: string; flattenedImagePath?: string; marks?: Mark[] };
   "proposal.send": { id: string };
   "proposal.dismiss": { id: string };
   "focus.set": { batchId: string; variantId: string };
@@ -294,6 +332,9 @@ export type AgentEventPayload = {
     batchId: string;
     variantId: string;
     marks: Mark[];
+    // on-disk PNG path of the image with marks burned in (the visual handoff —
+    // pass as --ref). Absent if capture failed; fall back to the variant path.
+    flattenedImagePath?: string;
   };
   "aspect.set": { aspect: string };
   "size.set": { size: ImageSize };
@@ -326,5 +367,7 @@ export function defaultState(title: string): ImagoState {
     status: { busy: false, text: "" },
     cost: "",
     handoff: "",
+    history: { canUndo: false, canRedo: false },
+    marksUnseen: false,
   };
 }

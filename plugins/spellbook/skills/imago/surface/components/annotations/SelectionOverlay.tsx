@@ -48,6 +48,8 @@ function translate(m: Mark, dx: number, dy: number): Mark {
       return { ...m, x: m.x + dx, y: m.y + dy };
     case "ellipse":
       return { ...m, cx: m.cx + dx, cy: m.cy + dy };
+    case "draw":
+      return { ...m, points: m.points.map((p) => ({ x: p.x + dx, y: p.y + dy })) };
   }
 }
 
@@ -92,6 +94,21 @@ function resize(m: Mark, handle: string, dx: number, dy: number): Mark {
         ry: b.h / 2,
       };
     }
+    case "draw": {
+      // scale every point proportionally into the resized bbox (degenerate axis
+      // with zero extent stays put — avoids /0)
+      const old = markBounds(m);
+      const b = resizeBox(old, handle, dx, dy);
+      const sx = old.w > 0 ? b.w / old.w : 1;
+      const sy = old.h > 0 ? b.h / old.h : 1;
+      return {
+        ...m,
+        points: m.points.map((p) => ({
+          x: b.x + (p.x - old.x) * sx,
+          y: b.y + (p.y - old.y) * sy,
+        })),
+      };
+    }
   }
 }
 
@@ -117,7 +134,7 @@ function clampToImage(m: Mark, pinSize?: PinSize): Mark {
 }
 
 // the geometry keys to send on commit (server merges; never id/tool/zOrder)
-function geometryPatch(m: Mark): Record<string, number> {
+function geometryPatch(m: Mark): Record<string, number | { x: number; y: number }[]> {
   switch (m.tool) {
     case "pin":
       return { x: m.x, y: m.y };
@@ -128,6 +145,8 @@ function geometryPatch(m: Mark): Record<string, number> {
       return { x: m.x, y: m.y, w: m.w, h: m.h };
     case "ellipse":
       return { cx: m.cx, cy: m.cy, rx: m.rx, ry: m.ry };
+    case "draw":
+      return { points: m.points };
   }
 }
 
@@ -166,6 +185,11 @@ function resizeHandles(m: Mark): { id: string; x: number; y: number; cursor: str
     }
     case "ellipse":
       return boxHandles(m.cx - m.rx, m.cy - m.ry, m.rx * 2, m.ry * 2, false);
+    case "draw": {
+      // bbox-box handles (corners + edges) — resize scales all points; no per-vertex
+      const b = markBounds(m);
+      return boxHandles(b.x, b.y, b.w, b.h, true);
+    }
   }
 }
 

@@ -7,7 +7,9 @@ import {
   MessagesSquare,
   Minus,
   Plus,
+  Redo2,
   Sparkles,
+  Undo2,
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -23,6 +25,7 @@ import {
 } from "../state/types";
 import { AnnotationLayer } from "./annotations/AnnotationLayer";
 import { AnnotationToolbar } from "./annotations/AnnotationToolbar";
+import { flattenMarks } from "./annotations/flatten";
 import { DEFAULT_DRAW_STYLE, type DrawStyle } from "./annotations/style";
 import { TOOL_REGISTRY } from "./annotations/tools/registry";
 
@@ -120,6 +123,31 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     return () => ro.disconnect();
   }, [variantId]);
 
+  // Keyboard undo/redo for the focused image's mark history. Cmd/Ctrl+Z → undo;
+  // Cmd+Shift+Z or Ctrl+Y → redo. Bail when an editable field has focus (the pin
+  // editor) so it gets native text undo, not mark undo. Server is authoritative
+  // (per-focused-variant) and no-ops when there's nothing to step.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!focus) return;
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) {
+        return; // let the field's native text undo/redo run
+      }
+      const key = e.key.toLowerCase();
+      if (key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        send({ type: "undo" });
+      } else if ((key === "z" && e.shiftKey) || key === "y") {
+        e.preventDefault();
+        send({ type: "redo" });
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [focus, send]);
+
   // Annotation gestures + tool drafts now live in AnnotationLayer (it owns the
   // image-box pointer dispatch + per-tool plugins); Canvas keeps the viewport,
   // the reference drawer, and the details sidebar.
@@ -147,20 +175,26 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     else setDrawStyle((s) => ({ ...s, fontSize: px }));
   }
 
-  function commitMarks() {
+  async function commitMarks() {
     if (!focus || marks.length === 0) return;
     // count every shape type generically (group by tool), in MARK_TOOLS order
     const counts = new Map<string, number>();
     for (const m of marks) counts.set(m.tool, (counts.get(m.tool) ?? 0) + 1);
     const parts = MARK_TOOLS.filter((t) => counts.has(t)).map((t) => {
       const n = counts.get(t) ?? 0;
-      return `${n} ${t}${n > 1 ? "s" : ""}`;
+      const word = t === "draw" ? "sketch" : t; // "draw" reads as "sketch" in the summary
+      const plural = word === "sketch" ? "sketches" : `${word}s`;
+      return `${n} ${n > 1 ? plural : word}`;
     });
+    // Visual handoff: flatten the focused image with marks burned in at natural
+    // res (best-effort — "" on failure → omit, agent falls back to the raw ref).
+    const png = variant?.src && nat ? await flattenMarks(variant.src, marks, nat.w, nat.h) : "";
     send({
       type: "marks.commit",
       text: `marked: ${parts.join(", ")}`,
       batchId: focus.batchId,
       variantId: focus.variantId,
+      flattenedSrc: png || undefined,
     });
   }
 
@@ -407,8 +441,27 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             onPickFontSize={pickFontSize}
           />
 
-          {/* zoom — % of actual image size (100% = 1:1) */}
+          {/* zoom — % of actual image size (100% = 1:1) — with undo/redo */}
           <div className="absolute bottom-4 right-4 flex items-center gap-1 p-1 card">
+            <button
+              type="button"
+              className="btn-ghost !p-1.5 disabled:opacity-40 disabled:pointer-events-none"
+              onClick={() => send({ type: "undo" })}
+              disabled={!state.history.canUndo}
+              title="Undo (⌘Z)"
+            >
+              <Undo2 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className="btn-ghost !p-1.5 disabled:opacity-40 disabled:pointer-events-none"
+              onClick={() => send({ type: "redo" })}
+              disabled={!state.history.canRedo}
+              title="Redo (⌘⇧Z)"
+            >
+              <Redo2 className="w-4 h-4" />
+            </button>
+            <span className="w-px h-5 bg-divider mx-0.5" />
             <button
               type="button"
               className="btn-ghost !p-1.5"
@@ -462,17 +515,26 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             </button>
           </div>
 
-          {/* hand the marks to the conversation (not a hidden "apply") */}
+          {/* hand the marks to the conversation (not a hidden "apply"). When the
+              agent has already received the current marks (marksUnseen=false, via
+              a commit OR a chat message that auto-attached), the CTA drops to a
+              quiet "✓ Shared" so it's clear it went through + isn't re-firable. */}
           {marks.length > 0 && (
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-2 card">
               <span className="text-[11px] text-muted">{marks.length} mark(s)</span>
-              <button
-                type="button"
-                className="btn-primary !px-2.5 !py-1 text-[11px]"
-                onClick={commitMarks}
-              >
-                <MessagesSquare className="w-3.5 h-3.5" /> Take marks to the conversation →
-              </button>
+              {state.marksUnseen ? (
+                <button
+                  type="button"
+                  className="btn-primary !px-2.5 !py-1 text-[11px]"
+                  onClick={commitMarks}
+                >
+                  <MessagesSquare className="w-3.5 h-3.5" /> Take marks to the conversation →
+                </button>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] text-faint">
+                  <Check className="w-3.5 h-3.5" /> Shared
+                </span>
+              )}
             </div>
           )}
         </div>

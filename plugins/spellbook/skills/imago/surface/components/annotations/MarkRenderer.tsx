@@ -100,6 +100,20 @@ export function MarkRenderer({
               />
             );
           }
+          if (m.tool === "draw") {
+            return (
+              <polyline
+                key={m.id}
+                points={m.points.map((p) => `${p.x * 100},${p.y * 100}`).join(" ")}
+                fill="none"
+                stroke={stroke}
+                strokeWidth={strokeWidth}
+                vectorEffect="non-scaling-stroke"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            );
+          }
           return null;
         })}
       </svg>

@@ -216,6 +216,26 @@ async function main(argv: string[]): Promise<number> {
 
   let state = defaultState(v.title as string);
   let restored = false;
+
+  // In-memory, per-variant mark-edit history (undo/redo). Situational — NOT
+  // snapshotted, so it resets on redeploy; that's intended. Each mutating mark op
+  // snapshots the pre-mutation marks for that variant onto `undo` and clears
+  // `redo`. Capped so it can't grow without bound.
+  const HISTORY_CAP = 100;
+  const markHistory: Record<string, { undo: Mark[][]; redo: Mark[][] }> = {};
+  const histFor = (vid: string) => (markHistory[vid] ??= { undo: [], redo: [] });
+  // ONE freshness flag per variant: the agent hasn't seen these marks yet. Set on
+  // every mark change; cleared when the agent receives the marked image (commit
+  // button OR a say that carries it). See ImagoState.marksUnseen.
+  const markUnseen: Record<string, boolean> = {};
+  const pushHistory = (vid: string | undefined) => {
+    if (!vid) return;
+    markUnseen[vid] = true; // a mark is about to change → agent's view is stale
+    const h = histFor(vid);
+    h.undo.push(structuredClone(state.marksByVariant[vid] ?? []));
+    if (h.undo.length > HISTORY_CAP) h.undo.shift();
+    h.redo = []; // a fresh edit forks the timeline — redo is no longer valid
+  };
   if (v.restore) {
     const restorePath = existsSync(v.restore as string)
       ? (v.restore as string)
@@ -282,6 +302,11 @@ async function main(argv: string[]): Promise<number> {
   let snapDirty = false;
   const broadcastState = () => {
     snapDirty = true; // mark for the persistence snapshot
+    // derive undo/redo availability for the focused variant (kept fresh here so
+    // the toolbar buttons reflect the live history without a separate channel)
+    const h = state.focus ? markHistory[state.focus.variantId] : undefined;
+    state.history = { canUndo: (h?.undo.length ?? 0) > 0, canRedo: (h?.redo.length ?? 0) > 0 };
+    state.marksUnseen = state.focus ? (markUnseen[state.focus.variantId] ?? false) : false;
     broadcast({ type: "state", state });
   };
 
@@ -494,8 +519,20 @@ async function main(argv: string[]): Promise<number> {
     if (t === "say") {
       if (typeof msg.text !== "string" || !msg.text) return;
       pushMessage({ role: "user", kind: "text", text: msg.text });
+      // A message about a freshly-marked image rides the marked image + geometry
+      // along (one freshness signal). The surface attaches flattenedSrc only when
+      // the focused image has unseen marks; receiving it clears that flag.
+      let flattenedImagePath: string | undefined;
+      let attachedMarks: Mark[] | undefined;
+      const fvid = state.focus?.variantId;
+      if (fvid && typeof msg.flattenedSrc === "string" && msg.flattenedSrc.startsWith("data:")) {
+        flattenedImagePath =
+          saveDataUrl(sessionFilesDir, newId("flat"), msg.flattenedSrc) || undefined;
+        attachedMarks = state.marksByVariant[fvid] ?? [];
+        markUnseen[fvid] = false; // the agent now has the latest marks
+      }
       broadcastState();
-      emitEvent({ type: "say", text: msg.text });
+      emitEvent({ type: "say", text: msg.text, flattenedImagePath, marks: attachedMarks });
     } else if (t === "proposal.send") {
       const m = state.conversation.find((x) => x.id === msg.id);
       if (m?.proposal) {
@@ -627,6 +664,7 @@ async function main(argv: string[]): Promise<number> {
       const mk = msg.mark as Mark | undefined;
       const vid = state.focus?.variantId;
       if (!vid || !mk?.id || !MARK_TOOLS.includes(mk.tool)) return;
+      pushHistory(vid);
       if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
       const arr = state.marksByVariant[vid];
       mk.zOrder = arr.length; // server is authoritative for z-order
@@ -635,6 +673,8 @@ async function main(argv: string[]): Promise<number> {
     } else if (t === "mark.remove") {
       const vid = state.focus?.variantId;
       if (!vid || !state.marksByVariant[vid]) return;
+      if (!state.marksByVariant[vid].some((m) => m.id === msg.id)) return; // no-op → no history
+      pushHistory(vid);
       state.marksByVariant[vid] = state.marksByVariant[vid].filter((m) => m.id !== msg.id);
       broadcastState();
     } else if (t === "mark.update") {
@@ -648,9 +688,25 @@ async function main(argv: string[]): Promise<number> {
         : undefined;
       const patch = msg.patch as Record<string, unknown> | undefined;
       if (!m || !patch || typeof patch !== "object") return;
+      pushHistory(vid);
       for (const [k, val] of Object.entries(patch)) {
         if (k === "id" || k === "tool" || k === "zOrder") continue;
-        if (typeof val === "number" || typeof val === "string") m[k] = val;
+        if (typeof val === "number" || typeof val === "string") {
+          m[k] = val;
+        } else if (
+          // a draw mark's `points` move/resize as a whole array of {x,y}
+          k === "points" &&
+          Array.isArray(val) &&
+          val.every(
+            (p) =>
+              p &&
+              typeof p === "object" &&
+              typeof (p as { x: unknown }).x === "number" &&
+              typeof (p as { y: unknown }).y === "number",
+          )
+        ) {
+          m[k] = val;
+        }
       }
       broadcastState();
     } else if (t === "mark.reorder") {
@@ -661,6 +717,7 @@ async function main(argv: string[]): Promise<number> {
       );
       const idx = sorted.findIndex((m) => m.id === msg.id);
       if (idx < 0) return;
+      pushHistory(vid); // state.marksByVariant[vid] is still the pre-reorder array
       const [m] = sorted.splice(idx, 1);
       const target =
         msg.direction === "front"
@@ -678,7 +735,35 @@ async function main(argv: string[]): Promise<number> {
       broadcastState();
     } else if (t === "marks.clear") {
       const vid = state.focus?.variantId;
-      if (vid) state.marksByVariant[vid] = [];
+      if (vid && state.marksByVariant[vid]?.length) {
+        pushHistory(vid);
+        state.marksByVariant[vid] = [];
+        broadcastState();
+      }
+    } else if (t === "marks.replace") {
+      // wholesale swap of the focused image's marks (the eraser trims/splits
+      // several strokes at once → one message, one history step). Validate +
+      // re-assign zOrder by position (server-authoritative), like mark.add.
+      const vid = state.focus?.variantId;
+      const incoming = msg.marks as Mark[] | undefined;
+      if (!vid || !Array.isArray(incoming)) return;
+      const valid = incoming.filter((m) => m?.id && MARK_TOOLS.includes(m.tool));
+      pushHistory(vid);
+      valid.forEach((m, i) => {
+        m.zOrder = i;
+      });
+      state.marksByVariant[vid] = valid;
+      broadcastState();
+    } else if (t === "undo" || t === "redo") {
+      const vid = state.focus?.variantId;
+      if (!vid) return;
+      const h = histFor(vid);
+      const from = t === "undo" ? h.undo : h.redo;
+      const to = t === "undo" ? h.redo : h.undo;
+      if (!from.length) return;
+      to.push(structuredClone(state.marksByVariant[vid] ?? []));
+      state.marksByVariant[vid] = from.pop() as Mark[];
+      markUnseen[vid] = true; // the marks changed → agent's view is stale again
       broadcastState();
     } else if (t === "marks.commit") {
       if (
@@ -688,15 +773,24 @@ async function main(argv: string[]): Promise<number> {
       )
         return;
       const marks = state.marksByVariant[msg.variantId] ?? [];
+      // The visual handoff: the surface sends the image with marks burned in as a
+      // data-url; materialize it to disk so the agent can --ref it directly. The
+      // blob stays browser→server only — just the path rides the SSE event.
+      let flattenedImagePath: string | undefined;
+      if (typeof msg.flattenedSrc === "string" && msg.flattenedSrc.startsWith("data:")) {
+        flattenedImagePath =
+          saveDataUrl(sessionFilesDir, newId("flat"), msg.flattenedSrc) || undefined;
+      }
       pushMessage({
         role: "user",
         kind: "gesture",
         text: `✍️ ${msg.text}`,
         gesture: { kind: "marked", targetId: msg.variantId },
       });
-      // committing hands a snapshot to the agent and clears that image's marks
-      // (the explicit hand-off act — distinct from passively switching images).
-      state.marksByVariant[msg.variantId] = [];
+      // committing hands a SNAPSHOT to the agent but leaves the marks in place —
+      // they're durable annotations on the image, not consumed by the send. The
+      // user clears them explicitly (marks.clear) when they're done with them.
+      markUnseen[msg.variantId] = false; // the agent now has the latest marks
       broadcastState();
       emitEvent({
         type: "marks.commit",
@@ -704,6 +798,7 @@ async function main(argv: string[]): Promise<number> {
         batchId: msg.batchId,
         variantId: msg.variantId,
         marks,
+        flattenedImagePath,
       });
     } else if (t === "aspect.set") {
       if (typeof msg.aspect !== "string") return;

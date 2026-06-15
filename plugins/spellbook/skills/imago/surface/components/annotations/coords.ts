@@ -53,7 +53,25 @@ export function markBounds(m: Mark, pinSize?: PinSize): Box {
       return { x: m.x, y: m.y, w: m.w, h: m.h };
     case "ellipse":
       return { x: m.cx - m.rx, y: m.cy - m.ry, w: m.rx * 2, h: m.ry * 2 };
+    case "draw":
+      return pointsBounds(m.points);
   }
+}
+
+// Bounding box of a freeform stroke's points (empty → a 0×0 point at origin).
+function pointsBounds(points: Point[]): Box {
+  if (points.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+  let minX = points[0].x;
+  let maxX = points[0].x;
+  let minY = points[0].y;
+  let maxY = points[0].y;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
 // Shortest distance from point p to segment a→b (fraction space).
@@ -95,6 +113,16 @@ export function hitTest(p: Point, m: Mark, threshold = HIT_THRESHOLD, pinSize?: 
       const dx = (p.x - m.cx) / m.rx;
       const dy = (p.y - m.cy) / m.ry;
       return dx * dx + dy * dy <= 1;
+    }
+    case "draw": {
+      // on the stroke = near any of its segments (or its single point)
+      const pts = m.points;
+      if (pts.length === 0) return false;
+      if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= threshold;
+      for (let i = 1; i < pts.length; i++) {
+        if (pointToSegment(p, pts[i - 1], pts[i]) <= threshold) return true;
+      }
+      return false;
     }
   }
 }

@@ -5,7 +5,7 @@
 // strip never grows wider than the 9×9 tool buttons). The style row sets the
 // active draw style for NEW marks — or restyles the SELECTED mark when one is
 // selected (Canvas routes onPick* accordingly).
-import { ChevronRight, Eraser, MousePointer } from "lucide-react";
+import { ChevronRight, MousePointer, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { COLORS, TEXT_SIZES, WIDTHS } from "./style";
 import { TOOL_ORDER, TOOL_REGISTRY } from "./tools/registry";
@@ -150,11 +150,11 @@ export function AnnotationToolbar({
       {hasMarks && (
         <button
           type="button"
-          title="Clear annotations"
+          title="Clear all annotations"
           onClick={onClear}
           className="w-9 h-9 rounded-md flex items-center justify-center border border-edge text-muted hover:text-white hover:border-edge-hover"
         >
-          <Eraser className="w-4 h-4" />
+          <Trash2 className="w-4 h-4" />
         </button>
       )}
 

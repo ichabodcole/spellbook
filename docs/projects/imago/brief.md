@@ -294,6 +294,27 @@ pass:
 - **Reasoning-model edit endpoint** — marked-up image + annotations + prompt →
   new image.
 
+## Backlog / natural next steps
+
+- **Pen Option-to-erase** — the freeform pen gains a hold-Option mode that
+  erases (trims/splits points under the cursor) instead of drawing. No separate
+  tool. Establishes the convention: **Option = the subtract/inverse mode of a
+  freeform brush** (carries to masking).
+- **Masking** — a mask brush = the freeform `draw` tool whose strokes rasterize
+  to a white-on-black mask PNG (white = regenerate) instead of burning onto the
+  image; hold Option = erase the mask (black = keep). Routes to
+  `generate inpaint --mask` instead of `generate image --ref`. Reuses the
+  freeform brush + flatten-to-PNG pipeline.
+- **Image-layer collage** (big UX shift; strong future direction) — a background
+  image plus draggable image _layers_ (clippings / other images) to compose a
+  collage quickly, then hand the flattened composite to a (reasoning or not)
+  model with "harmonize this into one cohesive image." Architecturally a natural
+  extension: the flatten-on-commit pipeline is already an SVG compositor (layers
+  = more `<image>` elements); durable per-variant elements, select/move/resize,
+  undo/redo, and the flattened `--ref` all reuse. New parts: an image-element
+  type (src + position/scale/rotation), a "drop on canvas → add as a layer" path
+  (vs. today's drop → replace working image), and layer transform handles.
+
 ## References
 
 - Substrate to reuse: `plugins/spellbook/skills/glamour/`
