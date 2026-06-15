@@ -367,6 +367,47 @@ describe("container model — layers", () => {
     expect(st.history.canRedo).toBe(true);
     ws.close();
   });
+
+  test("layer.addImage creates an image-kind layer + image mark; lean strips the bitmap", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({
+      type: "layer.addImage",
+      src: PNG_1x1,
+      name: "clip",
+      x: 0.1,
+      y: 0.1,
+      w: 0.3,
+      h: 0.3,
+    });
+    const st = await waitForState(s, (x) =>
+      (x.layersByVariant[variantId] ?? []).some((l) => l.kind === "image"),
+    );
+
+    const imgLayer = st.layersByVariant[variantId].find((l) => l.kind === "image");
+    expect(imgLayer?.name).toBe("clip");
+    const imgMark = st.marksByVariant[variantId].find((m) => m.tool === "image") as
+      | (Mark & { src?: string })
+      | undefined;
+    expect(imgMark).toBeDefined();
+    expect(imgMark?.layerId).toBe(imgLayer?.id);
+    // full state carries the (optimized) bitmap for the browser to render
+    expect(typeof imgMark?.src).toBe("string");
+    expect((imgMark?.src ?? "").length).toBeGreaterThan(0);
+
+    // lean projection strips the image-mark src (agent reads the flattened composite)
+    const lean = await getState(s, true);
+    const leanImg = lean.marksByVariant[variantId].find((m) => m.tool === "image") as
+      | (Mark & { src?: string })
+      | undefined;
+    expect(leanImg).toBeDefined();
+    expect(leanImg?.src).toBeUndefined();
+    // geometry survives the strip
+    expect((leanImg as { x?: number } | undefined)?.x).toBe(0.1);
+    ws.close();
+  });
 });
 
 // ── undo / redo ──────────────────────────────────────────────────────────────

@@ -162,12 +162,26 @@ function styleForAgent(st: StyleEntry): Omit<StyleEntry, "image"> {
   return rest; // agent reads imagePath, not the inlined blob
 }
 
+// Strip the (large) inlined bitmap from an image-layer mark in the agent
+// projection — the agent reads the flattened composite, never per-layer bitmaps.
+// Vector/pin marks pass through unchanged.
+function markForAgent(m: Mark): Mark | Omit<Extract<Mark, { tool: "image" }>, "src"> {
+  if (m.tool === "image") {
+    const { src: _drop, ...rest } = m;
+    return rest;
+  }
+  return m;
+}
+
 export function leanState(s: ImagoState) {
   return {
     ...s,
     batches: s.batches.map(batchForAgent),
     refs: s.refs.map(refForAgent),
     styles: s.styles.map(styleForAgent),
+    marksByVariant: Object.fromEntries(
+      Object.entries(s.marksByVariant).map(([vid, marks]) => [vid, marks.map(markForAgent)]),
+    ),
   };
 }
 
@@ -574,7 +588,7 @@ async function main(argv: string[]): Promise<number> {
   }
 
   // ── browser messages (WebSocket) ──────────────────────────────────
-  function handleBrowserMsg(msg: Record<string, unknown>) {
+  async function handleBrowserMsg(msg: Record<string, unknown>) {
     const t = msg.type as string;
     if (t === "say") {
       if (typeof msg.text !== "string" || !msg.text) return;
@@ -747,6 +761,49 @@ async function main(argv: string[]): Promise<number> {
       });
       broadcastState();
       emitEvent({ type: "image.import", batchId, variantId: vid, name });
+    } else if (t === "layer.addImage") {
+      // drop an image as a LAYER on the focused image (collage). The client
+      // supplies the fraction-space box (it knows the base image box + the dropped
+      // bitmap's aspect); default to a centered 40% box. No agent event until
+      // commit (same rule as mark.add) — the flattened composite carries it.
+      const vid = state.focus?.variantId;
+      const raw = msg as {
+        src?: unknown;
+        name?: unknown;
+        x?: unknown;
+        y?: unknown;
+        w?: unknown;
+        h?: unknown;
+      };
+      if (!vid || typeof raw.src !== "string") return;
+      const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+      const w = num(raw.w, 0.4);
+      const h = num(raw.h, 0.4);
+      const x = num(raw.x, (1 - w) / 2);
+      const y = num(raw.y, (1 - h) / 2);
+      const optimized = await optimizeSrc(raw.src);
+      pushHistory(vid); // after the await, so any interleaved edit is in the snapshot
+      if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+      const layer: Layer = {
+        id: newId("layer"),
+        name: typeof raw.name === "string" && raw.name ? raw.name : "Image",
+        kind: "image",
+      };
+      state.layersByVariant[vid].push(layer); // a new image layer on top
+      if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
+      const arr = state.marksByVariant[vid];
+      arr.push({
+        id: newId("img"),
+        tool: "image",
+        src: optimized,
+        x,
+        y,
+        w,
+        h,
+        layerId: layer.id,
+        zOrder: arr.length,
+      });
+      broadcastState();
     } else if (t === "mark.add") {
       const mk = msg.mark as Mark | undefined;
       const vid = state.focus?.variantId;
@@ -996,7 +1053,7 @@ async function main(argv: string[]): Promise<number> {
             );
             return;
           }
-          handleBrowserMsg(msg);
+          void handleBrowserMsg(msg);
         },
         close(ws) {
           sockets.delete(ws);

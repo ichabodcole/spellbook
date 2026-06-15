@@ -154,11 +154,45 @@ test("leanState strips style.image but keeps imagePath + description", () => {
   expect(ghibli.active).toBe(true);
 });
 
-test("leanState preserves prompts and marksByVariant verbatim", () => {
+test("leanState preserves prompts and non-image marks verbatim", () => {
   const src = fixtureWithBlobs();
   const lean = leanState(src);
   expect(lean.prompts).toEqual(src.prompts);
+  // fixture marks are a pin (no bitmap) → passed through unchanged
   expect(lean.marksByVariant).toEqual(src.marksByVariant);
+});
+
+test("leanState strips the bitmap from image-layer marks (keeps geometry + other marks)", () => {
+  const src = fixtureWithBlobs();
+  src.marksByVariant = {
+    v1: [
+      { id: "p1", tool: "pin", x: 0.5, y: 0.5, zOrder: 0, layerId: "L1" },
+      {
+        id: "i1",
+        tool: "image",
+        src: "data:image/webp;base64,LAYERBLOB",
+        x: 0.1,
+        y: 0.1,
+        w: 0.3,
+        h: 0.3,
+        zOrder: 1,
+        layerId: "L2",
+      },
+    ],
+  };
+  const lean = leanState(src);
+  const marks = lean.marksByVariant.v1 as Array<Record<string, unknown>>;
+  // the pin passes through verbatim
+  expect(marks[0]).toEqual(src.marksByVariant.v1[0]);
+  // the image mark loses its src but keeps geometry/tool/layerId
+  expect(marks[1].src).toBeUndefined();
+  expect(marks[1].tool).toBe("image");
+  expect(marks[1].x).toBe(0.1);
+  expect(marks[1].layerId).toBe("L2");
+  // canonical state untouched (the browser still gets the bitmap)
+  expect((src.marksByVariant.v1[1] as Record<string, unknown>).src).toBe(
+    "data:image/webp;base64,LAYERBLOB",
+  );
 });
 
 test("leanState does not mutate the source state (no blob loss in canonical)", () => {

@@ -280,6 +280,19 @@ export type ClientToServer =
   | { type: "ref.add"; reference: { src: string; name: string; id?: string } }
   | { type: "ref.remove"; id: string }
   | { type: "image.import"; image: { src: string; name?: string } } // drop on canvas → working image
+  | {
+      // drop an image as a LAYER onto the focused image (collage) — distinct from
+      // image.import, which REPLACES. The client supplies the fraction-space box
+      // (it knows the base image box + the dropped bitmap's aspect); the server
+      // optimizes the src + stores it. Geometry optional → server centers a 40% box.
+      type: "layer.addImage";
+      src: string;
+      name?: string;
+      x?: number;
+      y?: number;
+      w?: number;
+      h?: number;
+    }
   | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
   | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder)
   | { type: "mark.remove"; id: string } // delete one mark (complements marks.clear)
