@@ -3,6 +3,7 @@ import {
   Copy,
   ImagePlus,
   Info,
+  Layers,
   Maximize,
   MessagesSquare,
   Minus,
@@ -14,8 +15,13 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { variantLabel } from "../state/derive";
-import { importFiles, processFiles } from "../state/fileIntake";
+import { focusedVariant, variantLabel } from "../state/derive";
+import {
+  addImageLayerFiles,
+  addImageLayerFromSrc,
+  importFiles,
+  processFiles,
+} from "../state/fileIntake";
 import {
   ASPECTS,
   type ClientToServer,
@@ -56,7 +62,8 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
   const [showDetails, setShowDetails] = useState(false);
   const [copied, setCopied] = useState<"prompt" | "analysis" | null>(null);
-  const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas
+  const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas margin
+  const [layerDragging, setLayerDragging] = useState(false); // image dragged over the focused image box
   const [drawStyle, setDrawStyle] = useState<DrawStyle>(DEFAULT_DRAW_STYLE); // active color/width for new marks
   const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null); // mirrored from SelectionOverlay
   const stageRef = useRef<HTMLDivElement>(null);
@@ -276,6 +283,24 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     importFiles(e.dataTransfer.files, send);
   }
 
+  // Context-sensitive drop: a file dropped ON the focused image box adds it as a
+  // collage LAYER (vs. the margin/blank frame, which REPLACES via image.import).
+  // stopPropagation keeps the stage's import handlers from also firing.
+  function onBoxDragOver(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!layerDragging) setLayerDragging(true);
+  }
+  function onBoxDragLeave(e: React.DragEvent<HTMLElement>) {
+    if (e.currentTarget === e.target) setLayerDragging(false);
+  }
+  function onBoxDrop(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setLayerDragging(false);
+    if (nat) addImageLayerFiles(e.dataTransfer.files, send, nat.w, nat.h);
+  }
+
   // Drag highlight shown on the canvas while an image is dragged over it —
   // deliberately stronger than the drawer's subtle tint (this is an import, not
   // a reference). Shared by the blank frame and the focused stage.
@@ -283,6 +308,16 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-accent/10">
       <span className="text-accent-ink text-sm font-medium bg-surface/85 px-3 py-1.5 rounded-md border border-accent/40 shadow">
         drop to import as a working image
+      </span>
+    </div>
+  ) : null;
+
+  // Drop hint shown over the focused image box itself — this is a collage LAYER
+  // (composite onto the image), distinct from the margin's "import" (replace).
+  const layerHint = layerDragging ? (
+    <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center border-2 border-dashed border-accent bg-accent/15">
+      <span className="text-accent-ink text-sm font-medium bg-surface/85 px-3 py-1.5 rounded-md border border-accent/40 shadow">
+        drop to add as a layer
       </span>
     </div>
   ) : null;
@@ -395,8 +430,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
           {importHint}
           {/* The image box is sized to the image's real proportions (no forced
             square) and translated by pan; the marks overlay lives INSIDE it, so
-            pins/arrows stay glued to the image as it pans & zooms. */}
+            pins/arrows stay glued to the image as it pans & zooms. A file dropped
+            HERE adds a collage layer (vs. the margin → import). */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: image drop = add as layer */}
           <div
+            onDragOver={onBoxDragOver}
+            onDragLeave={onBoxDragLeave}
+            onDrop={onBoxDrop}
             className="relative shrink-0 select-none rounded-lg shadow-2xl ring-1 ring-edge overflow-hidden"
             style={{
               width: dispW || undefined,
@@ -437,6 +477,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
               natH={nat?.h ?? 0}
               onSelectionChange={setSelectedMarkId}
             />
+            {layerHint}
           </div>
 
           {/* annotation toolbar — select pseudo-tool + registered tools + clear + style */}
@@ -677,6 +718,9 @@ function ReferenceDrawer({
   const fileInput = useRef<HTMLInputElement>(null);
   const selectedCount = state.refs.filter((r) => r.selected).length;
   const activeStyleCount = state.styles.filter((s) => s.active).length;
+  // the focused image a reference can be composited onto (undefined on the blank
+  // frame → the "add as layer" affordance is hidden).
+  const focusedSrc = focusedVariant(state)?.src;
   // The analysis popover, anchored to the badge that opened it (fixed-positioned
   // so it escapes the drawer's overflow clipping). Keyed by ref id so it closes
   // itself if that ref is removed while open.
@@ -815,6 +859,21 @@ function ReferenceDrawer({
                   >
                     <X className="w-3 h-3" />
                   </button>
+                  {/* composite this reference onto the focused image as a layer
+                      (only when an image is focused to drop it onto) */}
+                  {focusedSrc && (
+                    <button
+                      type="button"
+                      title="Add as a layer on the focused image"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addImageLayerFromSrc(r.src, r.name, focusedSrc, send);
+                      }}
+                      className="absolute bottom-0 right-0 bg-black/70 text-white rounded-tl p-0.5 hover:text-accent-ink"
+                    >
+                      <Layers className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               ))}
               <button

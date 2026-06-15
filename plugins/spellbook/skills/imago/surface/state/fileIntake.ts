@@ -71,3 +71,74 @@ export async function importFiles(
     }
   }
 }
+
+// A centered ~40% fraction-space box for an image of `imgW`×`imgH` placed onto a
+// base image of `baseW`×`baseH` (both natural px). The layer renders with
+// preserveAspectRatio="none", so the box MUST match the image's aspect or it'd
+// stretch — we contain-fit the image into a 40%×40% region of the base box (which
+// preserves aspect in the base box's own pixel space) and center it. Fractions are
+// of the base box, which is exactly what ImageLayer x/y/w/h mean.
+export function centeredLayerBox(
+  imgW: number,
+  imgH: number,
+  baseW: number,
+  baseH: number,
+): { x: number; y: number; w: number; h: number } {
+  const scale = Math.min((0.4 * baseW) / imgW, (0.4 * baseH) / imgH);
+  const w = (imgW * scale) / baseW;
+  const h = (imgH * scale) / baseH;
+  return { x: (1 - w) / 2, y: (1 - h) / 2, w, h };
+}
+
+// The pixel size of an image src (data-url or path) via createImageBitmap.
+async function imageSize(src: string): Promise<{ w: number; h: number }> {
+  const bmp = await createImageBitmap(await (await fetch(src)).blob());
+  return { w: bmp.width, h: bmp.height };
+}
+
+// Intake for IMAGE LAYERS: images dropped ON the focused image → layer.addImage
+// (collage — composites onto the focused image, distinct from image.import which
+// REPLACES). baseW/baseH are the focused image's natural px (Canvas has them), so
+// we compute an aspect-correct centered box client-side.
+export async function addImageLayerFiles(
+  files: FileList | null,
+  send: (m: ClientToServer) => void,
+  baseW: number,
+  baseH: number,
+): Promise<void> {
+  for (const f of Array.from(files ?? [])) {
+    if (!IMG.test(f.type)) continue;
+    try {
+      const src = await toWebpSrc(f);
+      const box =
+        baseW > 0 && baseH > 0
+          ? await imageSize(src)
+              .then((s) => centeredLayerBox(s.w, s.h, baseW, baseH))
+              .catch(() => ({}))
+          : {};
+      send({ type: "layer.addImage", src, name: f.name, ...box });
+    } catch (err) {
+      console.error("imago: failed to add image layer", f.name, err);
+    }
+  }
+}
+
+// "Add as a layer" from an EXISTING image (a reference thumb or a generation) onto
+// the focused image. We have neither the base nor the source pixel dims here, so we
+// measure both srcs to compute an aspect-correct centered box (falls back to the
+// server's default-centered box if either measure fails).
+export async function addImageLayerFromSrc(
+  src: string,
+  name: string,
+  baseSrc: string,
+  send: (m: ClientToServer) => void,
+): Promise<void> {
+  let box: { x: number; y: number; w: number; h: number } | Record<string, never> = {};
+  try {
+    const [img, base] = await Promise.all([imageSize(src), imageSize(baseSrc)]);
+    box = centeredLayerBox(img.w, img.h, base.w, base.h);
+  } catch {
+    // leave box empty → the server centers a default 40% box
+  }
+  send({ type: "layer.addImage", src, name, ...box });
+}
