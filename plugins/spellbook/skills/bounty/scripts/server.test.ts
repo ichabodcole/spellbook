@@ -259,6 +259,9 @@ async function spawnServerReady(
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",
+    // Isolate persistence to a throwaway dir — a test suite must NOT write
+    // snapshots into the user's real ~/.bounty (the default BOUNTY_HOME).
+    env: { ...process.env, BOUNTY_HOME: uniqHome() },
   });
   const discoveryFile = join(tmpdir(), `bounty-${id}.json`);
   const deadline = Date.now() + 5000;
@@ -1294,6 +1297,59 @@ describe("dependencies (Phase D)", () => {
     await proc.exited;
     expect(events.some((e) => e.type === "unblocked")).toBe(false);
   }, 15000);
+
+  test("/state derives `blocked` + `liveBlockers` (computed readback parity)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "X", title: "X", status: "todo", blockedBy: ["B1", "B2", "gone"] },
+      { id: "B1", title: "Build engine", status: "review" },
+      { id: "B2", title: "B2", status: "done" }, // done → not a live blocker
+    ]);
+    // 'gone' refers to no task → not live. B2 is done → not live. Only B1 lives.
+    const raw = await (await fetch(`${ready.url}/state`)).json();
+    const s = raw as { state: { tasks: Record<string, unknown>[] } };
+    proc.kill();
+    await proc.exited;
+
+    const x = s.state.tasks.find((t) => t.id === "X");
+    expect(x?.blocked).toBe(true);
+    expect(x?.liveBlockers).toEqual([{ id: "B1", title: "Build engine", status: "review" }]);
+    const b1 = s.state.tasks.find((t) => t.id === "B1");
+    expect(b1?.blocked).toBe(false);
+    expect(b1?.liveBlockers).toEqual([]);
+  }, 15000);
+
+  test("state --mine/--owner scopes the readback; a blocked task stays actionable", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "my task", "--id", "mine", "--owner", "w1", "--session", session], {
+      env,
+    });
+    await runCli(["add", "other", "--id", "other", "--owner", "w2", "--session", session], { env });
+    await runCli(["add", "free", "--id", "free", "--session", session], { env }); // unowned/claimable
+    // 'mine' (w1's) is blocked on 'other' (w2's) — which is filtered out of w1's view
+    await runCli(["block", "mine", "--on", "other", "--session", session], { env });
+    type ST = { state: { tasks: Record<string, unknown>[] } };
+    try {
+      const sMine = JSON.parse(
+        (await runCli(["state", "--mine", "--as", "w1", "--session", session], { env })).stdout,
+      ) as ST;
+      expect(sMine.state.tasks.map((t) => t.id).sort()).toEqual(["free", "mine"]); // own + claimable
+      const mine = sMine.state.tasks.find((t) => t.id === "mine");
+      expect(mine?.blocked).toBe(true);
+      // liveBlockers survives the filter — actionable even though 'other' is hidden
+      expect(mine?.liveBlockers).toEqual([{ id: "other", title: "other", status: "todo" }]);
+
+      const sOwner = JSON.parse(
+        (await runCli(["state", "--owner", "w2", "--session", session], { env })).stdout,
+      ) as ST;
+      expect(sOwner.state.tasks.map((t) => t.id)).toEqual(["other"]); // exactly w2's
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 25000);
 
   test("cli block/unblock works; a cycle is rejected visibly (exit 1)", async () => {
     const home = uniqHome();

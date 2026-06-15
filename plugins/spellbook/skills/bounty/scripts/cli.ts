@@ -7,7 +7,9 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>]  # spawn a daemon
 //   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
-//   bun cli.ts state [--full]                               # read-back: { state, cursor }
+//   bun cli.ts state [--full] [--owner <name> | --mine] [--as <name>]    # scoped read-back
+//     Each task carries derived `blocked` + `liveBlockers:[{id,title,status}]`
+//     (the not-done blockers), so a filtered blocked task stays actionable.
 //
 // Driving the board (POST /cmd):
 //   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]
@@ -193,10 +195,26 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   die("bounty daemon failed to start within 5s");
 }
 
-async function cmdState(session: string | undefined, full: boolean) {
+async function cmdState(
+  session: string | undefined,
+  full: boolean,
+  scope: { owner?: string; mine?: boolean; as?: string } = {},
+) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
   if (status !== 200) die(`state failed (HTTP ${status})`);
+  // Scoped readback (mirrors `tail` semantics): --owner X = X's tasks; --mine =
+  // own + claimable (unowned). Each retained task keeps its computed
+  // `liveBlockers`, so a blocked task stays actionable even when the blocker is
+  // owned by someone else and thus filtered out of this view.
+  if (scope.owner || scope.mine) {
+    const d = data as { state?: { tasks?: Array<{ owner?: string }> } };
+    if (d.state?.tasks) {
+      d.state.tasks = d.state.tasks.filter((t) =>
+        scope.owner ? t.owner === scope.owner : t.owner === scope.as || !t.owner,
+      );
+    }
+  }
   printJson(data);
 }
 
@@ -355,7 +373,7 @@ async function readStdin(): Promise<string> {
 const HELP = `bounty — an agent-driven task board.
 
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
-  state  [--full]                    read-back: { state, cursor } (default lean)
+  state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
   update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
@@ -392,9 +410,16 @@ async function main(argv: string[]): Promise<number> {
       });
       break;
     }
-    case "state":
-      await cmdState(session, flags.full === true);
+    case "state": {
+      const mine = flags.mine === true;
+      if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
+      await cmdState(session, flags.full === true, {
+        owner: typeof flags.owner === "string" ? flags.owner : undefined,
+        mine,
+        as,
+      });
       break;
+    }
     case "add": {
       const title = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--stdin]");

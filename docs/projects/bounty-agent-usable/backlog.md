@@ -4,6 +4,27 @@ Non-blocking findings surfaced during review. Tracked here so they survive to
 merge rather than riding in someone's head. Each notes its origin and a proposed
 fix; none block the phase they were found in.
 
+## From the fresh-agent fleet acceptance test (post-Phase D)
+
+A lead + 2 cold worker agents drove a real coordination scenario with only the
+SKILL. The experience delivered cold; these are the deferred polish items (the
+high-value findings — scoped `state`, computed `liveBlockers`, the
+test-isolation leak — were fixed on-branch).
+
+**F1 — no one-shot `tail --drain` / `--once` (MED).** `tail --since N` streams
+then blocks forever; the only documented non-blocking consume is wrapping it
+with Monitor (push). An episodic agent (per-turn catch-up, like grapevine's
+`pull`) has no clean primitive — it must background the tail + kill it (and
+macOS has no `timeout`). _Proposed:_ `tail --drain` (or `--once`) that replays
+from `--since` to the current cursor and exits 0. Completes the consume-mode
+story (push = Monitor, episodic = drain).
+
+**F2 — `sessions` has no filter / limit / recency (LOW).** `cli.ts sessions`
+lists every snapshot under `$BOUNTY_HOME` with no cap — a haystack for
+`--restore` once a few sessions accumulate. (The worst contributor, e2e tests
+leaking into `~/.bounty`, is now fixed.) _Proposed:_ cap to the N most-recent by
+mtime, or a `--limit`/`--since` filter.
+
 ## Tracked follow-up (does NOT block this branch's merge)
 
 **W1 — the wordmark image still reads "Tuskboard" →

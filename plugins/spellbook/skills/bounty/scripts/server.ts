@@ -475,6 +475,26 @@ async function main(argv: string[]): Promise<number> {
     }
   }
 
+  // The /state projection — adds DERIVED, agent-facing fields per task, computed
+  // at serialize time (NOT stored, NOT snapshotted; canonical state keeps raw
+  // `blockedBy`). This is the readback-parity layer: an agent reading `state`
+  // sees the same blocked-ness the surface renders as ⛔ — `blocked` plus the
+  // LIVE blockers (exist && not done) with their title+status, so a task that's
+  // been filtered down by `state --mine` is still actionable (the blocker may be
+  // owned by someone else and thus absent from the filtered view).
+  function projectState() {
+    return {
+      title: state.title,
+      tasks: state.tasks.map((task) => {
+        const liveBlockers = (task.blockedBy ?? [])
+          .map((bid) => state.tasks.find((t) => t.id === bid))
+          .filter((b): b is Task => b !== undefined && b.status !== "done")
+          .map((b) => ({ id: b.id, title: b.title, status: b.status }));
+        return { ...task, blocked: liveBlockers.length > 0, liveBlockers };
+      }),
+    };
+  }
+
   // Single dispatch point for an agent command (POST /cmd body). Mutates the
   // canonical state via the apply* helpers, broadcasts to the WS clients, and
   // appends an event frame. Returns an apply-result so the CLI can confirm a
@@ -606,7 +626,7 @@ async function main(argv: string[]): Promise<number> {
         // touch() so agent reads count as activity (idle-touch, #6).
         if (req.method === "GET" && path === "/state") {
           touch();
-          return new Response(JSON.stringify({ state, cursor: eventSeq }), {
+          return new Response(JSON.stringify({ state: projectState(), cursor: eventSeq }), {
             headers: { "Content-Type": "application/json" },
           });
         }

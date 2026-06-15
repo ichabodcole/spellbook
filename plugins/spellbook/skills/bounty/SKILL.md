@@ -150,7 +150,7 @@ session by default; pass `--session <id>` to target a specific one.
 | Verb                                                                     | Does                                                                                   |
 | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
 | `open [--title T] [--timeout S] [--no-open] [--restore <id>]`            | spawn the daemon (or resume a saved session); print session JSON                       |
-| `state [--full]`                                                         | read-back `{ state, cursor }` — confirm a command applied                              |
+| `state [--full] [--owner <name> \| --mine] [--as <name>]`                | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`           |
 | `tail [--since N] [--owner <name> \| --mine] [--as <name>]`              | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since` |
 | `add <title…> [--status S] [--notes N] [--owner N] [--id ID] [--stdin]`  | add a task (optionally assigned)                                                       |
 | `update <id> [--status S] [--title T] [--notes N] [--owner N] [--stdin]` | patch a task (`--owner` assigns/reassigns)                                             |
@@ -183,6 +183,20 @@ echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Spr
 current event cursor. After any write, read `state` to **confirm it applied**;
 you never have to render HTML or infer from the event stream. `cursor` is the
 resume point you hand to `tail --since <cursor>`.
+
+**Scope it like `tail`.** On a shared board, `state --mine --as <you>` (or
+`--owner <name>`) filters the read-back to your own + claimable tasks — the
+snapshot path scopes the same way the live path does, so orienting isn't a
+firehose.
+
+**Each task carries computed blocked-ness.** The `state` response adds derived,
+read-only fields per task: `blocked` (bool) and `liveBlockers` — the not-done
+blockers as `[{id, title, status}]`. So you see the same `⛔` signal the human's
+surface shows, and a task that's been filtered down by `--mine` stays
+**actionable**: its blocker may be owned by someone else (and thus absent from
+your filtered view), but `liveBlockers` still tells you what you're waiting on
+and its status — no unfiltered re-query. (These are derived at read time; the
+stored task only carries the raw `blockedBy` ids.)
 
 **Tip: use `message` toasts liberally.** A `cli.ts message "…"` renders a
 transient toast on the board — good for acknowledging user actions ("nice — that
@@ -342,6 +356,11 @@ flat list.
   **once** on the blocked→unblocked transition, and never fires for a task
   that's already `done`. A blocker is "live" only if it still exists and isn't
   done — a deleted or done blocker doesn't block.
+  - **A blocker must reach `done` — not `review` — to unblock dependents.**
+    Review is the human-verification gate (the blocker isn't finished yet), so a
+    blocker parked in Review keeps its dependents blocked until a human moves it
+    to Done. If you park a blocker in Review and its dependent stays stuck,
+    that's why — flag the review for a human (`message`) rather than waiting.
 - **Surface cue:** a blocked task shows `⛔ blocked by N` and is visually
   de-emphasized. It's a **convention, not a lock** — the board still lets anyone
   move a blocked task (same soft-gate spirit as Review). The cue counts down
