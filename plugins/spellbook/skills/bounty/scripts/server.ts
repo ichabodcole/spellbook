@@ -43,14 +43,20 @@
 // Exit codes mirror digestify's review.ts: 0 submit/close, 2 bad args,
 // 124 idle timeout, 130 cancel.
 
-import { unlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+
+// Persistence root: debounced snapshots land in $BOUNTY_HOME/snapshots/<id>.json
+// so a board survives a restart via `cli.ts open --restore <id>`. cli.ts derives
+// the same path, so override BOUNTY_HOME to relocate both.
+const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
+const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
 
 type TaskStatus = "todo" | "doing" | "review" | "done";
 type Task = {
@@ -230,6 +236,7 @@ async function main(argv: string[]): Promise<number> {
         port: { type: "string", default: "0" },
         host: { type: "string", default: "127.0.0.1" },
         id: { type: "string" },
+        restore: { type: "string" }, // snapshot id or path to resume from
       },
       strict: true,
       allowPositionals: false,
@@ -251,7 +258,30 @@ async function main(argv: string[]): Promise<number> {
   const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
+  // Initial state — restored from a snapshot (merge-over-defaults) or fresh.
+  // Restore loads the snapshot and merges it over the default shape so a snapshot
+  // from an older build gains any new top-level fields without crashing; restored
+  // tasks run through validateTask (filter-and-keep-valid) so a malformed or
+  // legacy entry is dropped, not fatal.
   const state: BoardState = { title: v.title as string, tasks: [] };
+  if (v.restore) {
+    const restoreArg = v.restore as string;
+    const restorePath = existsSync(restoreArg)
+      ? restoreArg
+      : join(SNAPSHOTS_DIR, `${restoreArg}.json`);
+    try {
+      const snap = JSON.parse(readFileSync(restorePath, "utf8")) as Partial<BoardState>;
+      const merged: BoardState = { title: state.title, tasks: [], ...snap };
+      if (typeof merged.title === "string") state.title = merged.title;
+      state.tasks = Array.isArray(merged.tasks)
+        ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
+        : [];
+    } catch (e) {
+      process.stderr.write(
+        `bounty: restore failed (${restorePath}): ${e instanceof Error ? e.message : String(e)}\n`,
+      );
+    }
+  }
   const sockets = new Set<ServerWebSocket<unknown>>();
 
   // Append-only event log for the agent's SSE tail (GET /events). Each event
@@ -262,6 +292,30 @@ async function main(argv: string[]): Promise<number> {
   const enc = new TextEncoder();
   const sseClients = new Set<ReadableStreamDefaultController>();
   const sseTimers = new Set<ReturnType<typeof setInterval>>();
+
+  // Debounced persistence: a board mutation marks the snapshot dirty; a ~1s
+  // timer flushes it, and a final write lands on close. The snapshot is keyed by
+  // session id and KEPT on close (it's the resume point for --restore).
+  let snapDirty = false;
+  const saveSnapshot = () => {
+    try {
+      mkdirSync(SNAPSHOTS_DIR, { recursive: true });
+      writeFileSync(join(SNAPSHOTS_DIR, `${sessionId}.json`), JSON.stringify(state));
+    } catch {
+      /* persistence is best-effort */
+    }
+  };
+  // Event types that mutate board state — used to set snapDirty centrally (every
+  // mutation already emits one of these). Lifecycle frames don't dirty the snap.
+  const DIRTYING = new Set([
+    "init",
+    "task.add",
+    "task.update",
+    "task.remove",
+    "task.toggle",
+    "task.move",
+    "task.edit",
+  ]);
 
   let resolveDone!: (val: DoneResult) => void;
   let settled = false;
@@ -296,6 +350,8 @@ async function main(argv: string[]): Promise<number> {
   function emitEvent(msg: Record<string, unknown>) {
     const ev = { id: ++eventSeq, ...msg };
     events.push(ev);
+    // Every board mutation flows through here — mark the snapshot dirty centrally.
+    if (typeof msg.type === "string" && DIRTYING.has(msg.type)) snapDirty = true;
     const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
     for (const c of sseClients) {
       try {
@@ -634,8 +690,19 @@ async function main(argv: string[]): Promise<number> {
     }
   }, 250);
 
+  // Debounced snapshot — flush ~1s after any board mutation so a crash mid-
+  // session is recoverable via --restore.
+  const snapTimer = setInterval(() => {
+    if (snapDirty) {
+      snapDirty = false;
+      saveSnapshot();
+    }
+  }, 1000);
+
   const { code, reason } = await done;
   clearInterval(idleTimer);
+  clearInterval(snapTimer);
+  saveSnapshot(); // final write — KEEP it (the resume point, not deleted on close)
   // Closing frame on the event log — ends a `cli.ts tail` (exit 0) and bookends
   // the `ready` that opened it.
   emitEvent({ type: "closed", reason, by: "system" });

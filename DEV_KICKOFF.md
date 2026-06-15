@@ -98,7 +98,7 @@ Discovery, plan, and test plan are **already done** — start at implementation.
 - [x] Plan created and user-reviewed
 - [x] Test plan created
 - [x] Phase A — substrate core (daemon + cli.ts; retire bg.ts) — closes #7, #8
-- [ ] Phase B — durability (snapshot + restore) — closes #6
+- [x] Phase B — durability (snapshot + restore) — closes #6
 - [ ] Surface — Alpine port
 - [ ] Phase C — ownership + scoping — closes #9
 - [ ] Phase D — dependencies — closes #10

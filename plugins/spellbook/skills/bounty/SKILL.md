@@ -143,17 +143,17 @@ session by default; pass `--session <id>` to target a specific one.
 
 ### Verbs
 
-| Verb                                                         | Does                                                                                    |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open]`                 | spawn the daemon; print session JSON                                                    |
-| `state [--full]`                                             | read-back `{ state, cursor }` — confirm a command applied                               |
-| `tail [--since N]`                                           | stream board events as JSONL on stdout (wrap with Monitor); resumes from `--since <id>` |
-| `add <title…> [--status S] [--notes N] [--id ID] [--stdin]`  | add a task                                                                              |
-| `update <id> [--status S] [--title T] [--notes N] [--stdin]` | patch a task                                                                            |
-| `remove <id>`                                                | delete a task                                                                           |
-| `message <text…> [--stdin]`                                  | transient toast on the board                                                            |
-| `init [--title T] [--stdin-tasks]`                           | seed the board (tasks = JSON array on stdin)                                            |
-| `close` / `info` / `sessions` / `help`                       | end session / show session / list snapshots / usage                                     |
+| Verb                                                          | Does                                                                                    |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>]` | spawn the daemon (or resume a saved session); print session JSON                        |
+| `state [--full]`                                              | read-back `{ state, cursor }` — confirm a command applied                               |
+| `tail [--since N]`                                            | stream board events as JSONL on stdout (wrap with Monitor); resumes from `--since <id>` |
+| `add <title…> [--status S] [--notes N] [--id ID] [--stdin]`   | add a task                                                                              |
+| `update <id> [--status S] [--title T] [--notes N] [--stdin]`  | patch a task                                                                            |
+| `remove <id>`                                                 | delete a task                                                                           |
+| `message <text…> [--stdin]`                                   | transient toast on the board                                                            |
+| `init [--title T] [--stdin-tasks]`                            | seed the board (tasks = JSON array on stdin)                                            |
+| `close` / `info` / `sessions` / `help`                        | end session / show session / list snapshots / usage                                     |
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` (which reads the title
@@ -257,6 +257,25 @@ type Task = {
 - `--id SLUG` — stable session id. Auto-generated as `bounty-<rand>-p<port>` if
   omitted (the `-p<port>` suffix encodes the bound port for session-recovery
   semantics matching digestify).
+- `--restore <id>` — resume a saved board (see Durability below).
+
+### Durability
+
+The daemon debounce-snapshots the board to
+`$BOUNTY_HOME/snapshots/<session_id>.json` (default `$BOUNTY_HOME` is
+`~/.bounty`) ~1s after any change, and writes a final snapshot on close — kept,
+not deleted, so it's a resume point. Combined with idle-touch (every `cli.ts`
+verb resets the idle timer), a board you're actively driving survives long
+stretches and a restart.
+
+- `cli.ts sessions` lists saved snapshots (id · task count · title).
+- `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
+  over defaults (old snapshots gain new fields cleanly) and its tasks are run
+  through the same `validateTask` boundary, so a malformed or legacy entry is
+  dropped rather than fatal — the rest of the board restores.
+
+The restored daemon gets a **new** session id (and writes its own snapshot on
+close); the snapshot you restored from is left intact.
 
 ## Exit Code Contract
 

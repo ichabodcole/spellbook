@@ -378,27 +378,27 @@ scope for this migration.
 
 _Filled in during and after execution by the implementing agent._
 
-| Scenario | Status  | Notes                                                                                                       |
-| -------- | ------- | ----------------------------------------------------------------------------------------------------------- |
-| T1-01    | Pass    | Phase A: `bun test` green, 38 pass (bg.ts tests removed, not failing)                                       |
-| T1-02    | Pass    | Phase A: `cli.ts open` spawns detached daemon; `/state` reachable; discovery file written                   |
-| T1-03    | N/A     | Surface (Alpine port) — not yet landed                                                                      |
-| T2-01    | Pass    | Phase A E2E: `cli.ts state` returns `{state,cursor}`, reflects add + update                                 |
-| T2-02    | Pass    | Phase A E2E: `add --stdin` lands `it's a "quoted" & <ok> $title \`x\`` verbatim                             |
-| T2-03    | Pass    | Phase A E2E: tail streams JSONL, resumes from `--since <cursor>`, `closed`→exit 0                           |
-| T2-04    | Pass    | Phase A E2E: idle-touch keeps daemon alive past `--timeout 1`; exits 124 on real silence                    |
-| T2-05    | N/A     | Snapshot/restore — Phase B                                                                                  |
-| T2-06    | N/A     | Scoped tail — Phase C                                                                                       |
-| T2-07    | N/A     | Ownership/claim — Phase C                                                                                   |
-| T2-08    | N/A     | Dependencies/unblocked — Phase D                                                                            |
-| T2-09    | N/A     | Cycle guard — Phase D                                                                                       |
-| T2-10    | N/A     | Alpine port UX + parity — Surface phase                                                                     |
-| T2-11    | Pass    | Phase A: bg.ts + watch-events.sh removed, no import refs; SKILL.md `bun -e` snippet gone; join.ts E2E green |
-| T3-01    | Skipped | [Tier 3 — deferred]                                                                                         |
-| T3-02    | Skipped | [Tier 3 — deferred]                                                                                         |
-| T3-03    | Skipped | [Tier 3 — deferred]                                                                                         |
-| T3-04    | Skipped | [Tier 3 — deferred]                                                                                         |
-| T3-05    | Skipped | [Tier 3 — deferred]                                                                                         |
+| Scenario | Status  | Notes                                                                                                                                                       |
+| -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T1-01    | Pass    | Phase A: `bun test` green, 38 pass (bg.ts tests removed, not failing)                                                                                       |
+| T1-02    | Pass    | Phase A: `cli.ts open` spawns detached daemon; `/state` reachable; discovery file written                                                                   |
+| T1-03    | N/A     | Surface (Alpine port) — not yet landed                                                                                                                      |
+| T2-01    | Pass    | Phase A E2E: `cli.ts state` returns `{state,cursor}`, reflects add + update                                                                                 |
+| T2-02    | Pass    | Phase A E2E: `add --stdin` lands `it's a "quoted" & <ok> $title \`x\`` verbatim                                                                             |
+| T2-03    | Pass    | Phase A E2E: tail streams JSONL, resumes from `--since <cursor>`, `closed`→exit 0                                                                           |
+| T2-04    | Pass    | Phase A E2E: idle-touch keeps daemon alive past `--timeout 1`; exits 124 on real silence                                                                    |
+| T2-05    | Pass    | Phase B E2E: snapshot-on-close under $BOUNTY_HOME; `open --restore <id>` round-trips tasks/columns; original snapshot kept                                  |
+| T2-06    | N/A     | Scoped tail — Phase C                                                                                                                                       |
+| T2-07    | N/A     | Ownership/claim — Phase C                                                                                                                                   |
+| T2-08    | N/A     | Dependencies/unblocked — Phase D                                                                                                                            |
+| T2-09    | N/A     | Cycle guard — Phase D                                                                                                                                       |
+| T2-10    | N/A     | Alpine port UX + parity — Surface phase                                                                                                                     |
+| T2-11    | Pass    | Phase A: bg.ts + watch-events.sh removed, no import refs; SKILL.md `bun -e` snippet gone; join.ts E2E green                                                 |
+| T3-01    | Pass    | Promoted to Tier 2 in Phase B: legacy snapshot (no newer fields, one bad-status task) restores filter-and-keep-valid via validateTask + merge-over-defaults |
+| T3-02    | Skipped | [Tier 3 — deferred]                                                                                                                                         |
+| T3-03    | Skipped | [Tier 3 — deferred]                                                                                                                                         |
+| T3-04    | Skipped | [Tier 3 — deferred]                                                                                                                                         |
+| T3-05    | Skipped | [Tier 3 — deferred]                                                                                                                                         |
 
 **Blocked scenarios:** None expected — no external prerequisites. A scenario for
 a not-yet-implemented phase is **N/A until that phase lands** (mark in Notes),

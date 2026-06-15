@@ -16,7 +16,7 @@
 //       * join.ts idle timeout reports reason: "timeout"
 
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -843,6 +843,100 @@ describe("cli.ts ↔ daemon parity", () => {
     const dead = await runCli(["state", "--session", session], { env });
     expect(dead.code).toBe(2); // cli.ts `die`s when the daemon is gone
   }, 25000);
+});
+
+// ── Durability (Phase B) — snapshot + restore ────────────────────────────
+
+describe("durability (Phase B)", () => {
+  function snapshotPath(home: string, sessionId: string): string {
+    return join(home, "snapshots", `${sessionId}.json`);
+  }
+
+  test("snapshots board state to $BOUNTY_HOME on close", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "persisted task", "--id", "p1", "--session", session], { env });
+    await runCli(["close", "--session", session], { env });
+
+    const snapFile = snapshotPath(home, session);
+    expect(existsSync(snapFile)).toBe(true);
+    const snap = JSON.parse(readFileSync(snapFile, "utf8")) as BoardState;
+    expect(snap.tasks.find((t) => t.id === "p1")).toBeDefined();
+  }, 20000);
+
+  test("open --restore <id> brings the seeded board back", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open1 = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "design", "--id", "a", "--status", "doing", "--session", session], {
+      env,
+    });
+    await runCli(["add", "build", "--id", "b", "--session", session], { env });
+    await runCli(["close", "--session", session], { env });
+
+    const open2 = await runCli(["open", "--no-open", "--timeout", "10", "--restore", session], {
+      env,
+    });
+    const restored = (JSON.parse(open2.stdout) as { session_id: string }).session_id;
+    try {
+      const s = JSON.parse((await runCli(["state", "--session", restored], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(s.state.tasks.map((t) => t.id).sort()).toEqual(["a", "b"]);
+      expect(s.state.tasks.find((t) => t.id === "a")?.status).toBe("doing");
+    } finally {
+      await runCli(["close", "--session", restored], { env });
+    }
+  }, 25000);
+
+  test("restores a legacy snapshot missing newer fields (merge-over-defaults)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    // Hand-write a minimal snapshot — just { title, tasks }, no future optional
+    // fields, with one invalid-status task that must be filtered on restore
+    // (filter-and-keep-valid: the good task survives, the snapshot isn't rejected).
+    const legacyId = "legacy-001";
+    mkdirSync(join(home, "snapshots"), { recursive: true });
+    writeFileSync(
+      snapshotPath(home, legacyId),
+      JSON.stringify({
+        title: "Legacy Board",
+        tasks: [
+          { id: "ok", title: "valid", status: "todo" },
+          { id: "bad", title: "filtered", status: "bogus" },
+        ],
+      }),
+    );
+    const open = await runCli(["open", "--no-open", "--timeout", "10", "--restore", legacyId], {
+      env,
+    });
+    const restored = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const s = JSON.parse((await runCli(["state", "--session", restored], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(s.state.title).toBe("Legacy Board");
+      expect(s.state.tasks.find((t) => t.id === "ok")).toBeDefined();
+      expect(s.state.tasks.find((t) => t.id === "bad")).toBeUndefined();
+    } finally {
+      await runCli(["close", "--session", restored], { env });
+    }
+  }, 20000);
+
+  test("sessions lists a saved snapshot", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "x", "--id", "x", "--session", session], { env });
+    await runCli(["close", "--session", session], { env });
+
+    const sessions = await runCli(["sessions"], { env });
+    expect(sessions.stdout).toContain(session);
+  }, 20000);
 });
 
 describe("join.ts", () => {

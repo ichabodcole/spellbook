@@ -5,7 +5,7 @@
 // streams board events as JSONL for Monitor to wrap.
 //
 // Lifecycle:
-//   bun cli.ts open [--title ..] [--timeout S] [--no-open]   # spawn a daemon
+//   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>]  # spawn a daemon
 //   bun cli.ts tail [--since N]                              # SSE events → JSONL (Monitor this)
 //   bun cli.ts state [--full]                               # read-back: { state, cursor }
 //
@@ -136,6 +136,7 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));
+  if (flags.restore) args.push("--restore", String(flags.restore));
   if (flags["no-open"]) args.push("--no-open");
 
   const prevId = readSession()?.session_id;
@@ -294,7 +295,7 @@ async function readStdin(): Promise<string> {
 
 const HELP = `bounty — an agent-driven task board.
 
-  open   [--title ..] [--timeout S] [--no-open]   spawn a board daemon
+  open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full]                    read-back: { state, cursor } (default lean)
   tail   [--since N]                 SSE board events → JSONL (wrap with Monitor)
   add    <title...> [--status ..] [--notes ..] [--id ..] [--stdin]   add a task
