@@ -557,6 +557,8 @@ async function main(argv: string[]): Promise<number> {
         }
       } else if (msg.type === "task.remove") {
         if (applyTaskRemove(state, msg.id)) broadcast({ type: "task.remove", id: msg.id });
+      } else if (msg.type === "state.get") {
+        emitToAgent({ type: "state", title: state.title, tasks: state.tasks });
       } else if (msg.type === "message") {
         broadcast({ type: "message", text: msg.text });
       } else if (msg.type === "close") {
