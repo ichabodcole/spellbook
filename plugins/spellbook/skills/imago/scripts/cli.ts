@@ -329,9 +329,11 @@ const HELP = `imago — a grounded image conversation.
   say    <text...>                   post agent dialogue into the conversation
   propose <prompt...> [--n N]        propose a prompt for the user to send (×N, ≤4)
   ask    <text...> [--options "a|b|c"]   ask the user a question (in-thread)
-  batch  [--kind generate|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] <src> ...
-                                     add a produced batch; each src = http url, data: url, or file path
+  batch  [--kind generate|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] [--models m1,m2,..] <src> ...
+                                     add a produced batch; each src = http url, data: url, or file path; --models labels each variant
   focus  <batchId> <variantId>       put an image on the canvas
+  select <refId> [off]               point at a reference (highlights it for the user)
+  analyze <ref-or-variant-id> <text...>  write your read onto a reference OR an image (durable metadata)
   style  <name...>                   add a captured style to the catalog
   status on [text...] | status off   show/hide the "imago working" spinner
   cost   <text...>                   cumulative spend display (e.g. "$0.38 · 8 imgs")
@@ -381,12 +383,19 @@ async function main(argv: string[]): Promise<number> {
     case "batch": {
       if (!pos.length) {
         die(
-          "usage: batch [--kind generate|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] <src> ...\n" +
-            "  src = an http(s) url, a data: url, or a file path",
+          "usage: batch [--kind generate|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] [--models m1,m2,..] <src> ...\n" +
+            "  src = an http(s) url, a data: url, or a file path; --models labels each variant in order",
         );
       }
+      // optional per-variant model labels, comma-separated, positional to srcs
+      const models =
+        typeof flags.models === "string" ? flags.models.split(",").map((m) => m.trim()) : [];
       const variants: Array<Record<string, unknown>> = [];
-      for (const arg of pos) variants.push({ src: await resolveSrc(arg) });
+      for (let i = 0; i < pos.length; i++) {
+        const v: Record<string, unknown> = { src: await resolveSrc(pos[i]) };
+        if (models[i]) v.model = models[i];
+        variants.push(v);
+      }
       const msg: Record<string, unknown> = {
         type: "batch.add",
         kind: flags.kind === "edit" ? "edit" : "generate",
@@ -403,6 +412,18 @@ async function main(argv: string[]): Promise<number> {
       if (pos.length < 2) die("usage: focus <batchId> <variantId>");
       await postCmd(session, { type: "focus", batchId: pos[0], variantId: pos[1] });
       break;
+    case "select":
+      if (!pos.length) die("usage: select <refId> [off]");
+      await postCmd(session, { type: "ref.select", id: pos[0], selected: pos[1] !== "off" });
+      break;
+    case "analyze": {
+      if (pos.length < 2) die("usage: analyze <ref-or-variant-id> <text...>");
+      const [aid, ...words] = pos;
+      // route by id prefix: variants are "v-…", references "ref-…"
+      const type = aid.startsWith("v-") ? "variant.analyze" : "ref.analyze";
+      await postCmd(session, { type, id: aid, text: words.join(" ") });
+      break;
+    }
     case "style":
       if (!pos.length) die("usage: style <name...>");
       await postCmd(session, { type: "style.add", name: pos.join(" ") });

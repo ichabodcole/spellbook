@@ -26,8 +26,18 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
-// Drag/drop/pick intake: images → ref.add (a reference staged for the next
-// generation), downscaled to webp with a raw fallback. Non-images are ignored.
+// Downscale an image File to a webp data URL, falling back to the raw data URL.
+async function toWebpSrc(f: File): Promise<string> {
+  try {
+    return await downscaleToWebp(f);
+  } catch {
+    return await readAsDataUrl(f);
+  }
+}
+
+// Drag/drop/pick intake for REFERENCES: images → ref.add (a reference staged for
+// the next generation), downscaled to webp with a raw fallback. Non-images are
+// ignored. The drop target (drawer/composer) is what makes these references.
 export async function processFiles(
   files: FileList | null,
   send: (m: ClientToServer) => void,
@@ -35,15 +45,29 @@ export async function processFiles(
   for (const f of Array.from(files ?? [])) {
     if (!IMG.test(f.type)) continue;
     try {
-      let src: string;
-      try {
-        src = await downscaleToWebp(f);
-      } catch {
-        src = await readAsDataUrl(f);
-      }
+      const src = await toWebpSrc(f);
       send({ type: "ref.add", reference: { src, name: f.name } });
     } catch (err) {
       console.error("imago: failed to process file", f.name, err);
+    }
+  }
+}
+
+// Intake for WORKING IMAGES: images dropped on the canvas → image.import (the
+// server makes a one-variant "import" batch and focuses it). Same downscale path
+// as processFiles; the drop target (canvas, not the drawer) is what makes these
+// durable working images instead of references.
+export async function importFiles(
+  files: FileList | null,
+  send: (m: ClientToServer) => void,
+): Promise<void> {
+  for (const f of Array.from(files ?? [])) {
+    if (!IMG.test(f.type)) continue;
+    try {
+      const src = await toWebpSrc(f);
+      send({ type: "image.import", image: { src, name: f.name } });
+    } catch (err) {
+      console.error("imago: failed to import file", f.name, err);
     }
   }
 }

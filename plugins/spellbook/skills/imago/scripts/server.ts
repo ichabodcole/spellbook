@@ -72,6 +72,12 @@ function newId(prefix: string): string {
   return `${prefix}-${randHex(4)}`;
 }
 
+// Stable content hash of a reference's bytes — dedupes identical adds and keys
+// the analysis cache (so a delete→re-add of the same image reuses its read).
+function contentHash(s: string): string {
+  return new Bun.CryptoHasher("sha256").update(s).digest("hex").slice(0, 16);
+}
+
 function openBrowser(url: string): void {
   const cmd =
     process.platform === "darwin"
@@ -356,6 +362,7 @@ async function main(argv: string[]): Promise<number> {
           seed: typeof raw.seed === "number" ? raw.seed : undefined,
           model: typeof raw.model === "string" ? raw.model : undefined,
           liked: false,
+          analysis: "",
         });
       }
       if (variants.length === 0) return;
@@ -389,6 +396,27 @@ async function main(argv: string[]): Promise<number> {
         state.marks = []; // marks are scoped to the focused image
         broadcastState();
       }
+    } else if (t === "ref.select") {
+      // the agent points at a ref too — the user sees it highlight on the board
+      const r = state.refs.find((x) => x.id === msg.id);
+      if (!r) return;
+      r.selected = msg.selected === true;
+      broadcastState();
+    } else if (t === "ref.analyze") {
+      // the agent writes its read onto a ref (visible to the user + cached by
+      // hash so a re-add or another agent doesn't re-analyze the same pixels)
+      const r = state.refs.find((x) => x.id === msg.id);
+      if (!r || typeof msg.text !== "string") return;
+      r.analysis = msg.text;
+      state.analysisCache[r.hash] = msg.text;
+      broadcastState();
+    } else if (t === "variant.analyze") {
+      // the agent writes its read onto a generated/imported image — durable
+      // metadata stored on the variant (persists in the snapshot).
+      const hit = findVariant(msg.id as string);
+      if (!hit || typeof msg.text !== "string") return;
+      hit.variant.analysis = msg.text;
+      broadcastState();
     } else if (t === "style.add") {
       if (typeof msg.name === "string" && msg.name.trim()) {
         const name = normStyle(msg.name);
@@ -533,6 +561,9 @@ async function main(argv: string[]): Promise<number> {
     } else if (t === "ref.add") {
       const raw = msg.reference as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
+      const hash = contentHash(raw.src);
+      // dedupe: the same image already in the drawer → no-op (no confusing dupes)
+      if (state.refs.some((r) => r.hash === hash)) return;
       const id = typeof raw.id === "string" ? raw.id : newId("ref");
       const name = typeof raw.name === "string" ? raw.name : "reference";
       const ref: Reference = {
@@ -540,6 +571,9 @@ async function main(argv: string[]): Promise<number> {
         src: raw.src,
         path: saveDataUrl(sessionFilesDir, id, raw.src),
         name,
+        selected: false,
+        hash,
+        analysis: state.analysisCache[hash] ?? "", // reuse a prior read of the same image
       };
       state.refs.push(ref);
       pushMessage({
@@ -554,6 +588,44 @@ async function main(argv: string[]): Promise<number> {
       state.refs = state.refs.filter((r) => r.id !== msg.id);
       broadcastState();
       emitEvent({ type: "ref.remove", id: msg.id });
+    } else if (t === "ref.select") {
+      const r = state.refs.find((x) => x.id === msg.id);
+      if (!r) return;
+      r.selected = msg.selected === true;
+      broadcastState();
+      emitEvent({ type: "ref.select", id: r.id, selected: r.selected });
+    } else if (t === "image.import") {
+      // the user dropped their own image onto the canvas — a first-class working
+      // image (a one-variant "import" batch), focused so they can annotate/edit it
+      const raw = msg.image as Record<string, unknown> | undefined;
+      if (!raw || typeof raw.src !== "string") return;
+      const name = typeof raw.name === "string" ? raw.name : "imported image";
+      const vid = newId("v");
+      const batchId = newId("b");
+      const variant: Variant = {
+        id: vid,
+        src: raw.src,
+        path: saveDataUrl(sessionFilesDir, vid, raw.src),
+        liked: false,
+        analysis: "",
+      };
+      state.batches.push({
+        id: batchId,
+        kind: "import",
+        prompt: "",
+        tag: name,
+        variants: [variant],
+      });
+      state.focus = { batchId, variantId: vid };
+      state.marks = [];
+      pushMessage({
+        role: "user",
+        kind: "gesture",
+        text: `🖼 you brought in an image to work on (${name})`,
+        gesture: { kind: "imported", targetId: vid },
+      });
+      broadcastState();
+      emitEvent({ type: "image.import", batchId, variantId: vid, name });
     } else if (t === "mark.add") {
       const mk = msg.mark as Mark | undefined;
       if (!mk || (mk.tool !== "pin" && mk.tool !== "arrow")) return;
@@ -727,10 +799,13 @@ async function main(argv: string[]): Promise<number> {
     for (const b of state.batches) {
       for (const v2 of b.variants) {
         if (v2.src) v2.path = saveDataUrl(sessionFilesDir, v2.id, v2.src) || v2.path;
+        if (v2.analysis === undefined) v2.analysis = ""; // backfill pre-analysis snapshots
       }
     }
     for (const r of state.refs) {
       if (r.src) r.path = saveDataUrl(sessionFilesDir, r.id, r.src) || r.path;
+      if (!r.hash && r.src) r.hash = contentHash(r.src); // backfill for pre-hash snapshots
+      if (r.analysis === undefined) r.analysis = state.analysisCache[r.hash] ?? "";
     }
     saveSnapshot();
   }

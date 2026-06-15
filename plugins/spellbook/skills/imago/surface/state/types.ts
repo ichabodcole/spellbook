@@ -16,6 +16,8 @@ export type Variant = {
   seed?: number;
   model?: string;
   liked: boolean;
+  analysis: string; // the agent's read of THIS image — durable, updatable metadata
+  // (distinct from the Batch prompt, which is fixed provenance). Shown in details.
   // No per-variant prompt: the settled prompt lives on the Batch (one prompt,
   // many seeds). The display label ("a"/"b"/…) is derived from array index.
 };
@@ -27,8 +29,8 @@ export type Variant = {
 // "Batch N" label is derived from array index.
 export type Batch = {
   id: string;
-  kind: "generate" | "edit";
-  prompt: string; // the settled prompt for this batch
+  kind: "generate" | "edit" | "import"; // import = a working image the user brought in
+  prompt: string; // the settled prompt for this batch ("" for imports)
   tag?: string; // short human summary ("a fox reading under an oak")
   editedFromVariantId?: string; // set when kind === "edit"
   variants: Variant[];
@@ -65,7 +67,7 @@ export type Message = {
   batchId?: string;
   // kind: "gesture" — what the user did, and to what
   gesture?: {
-    kind: "liked" | "marked" | "ref-added" | "focus";
+    kind: "liked" | "marked" | "ref-added" | "focus" | "imported";
     targetId?: string;
   };
   // kind: "question" — optional quick replies (the full answer can be free text)
@@ -83,12 +85,17 @@ export type StyleEntry = { name: string; active: boolean; captured?: boolean };
 // A value the user pins to lock for the next generate (agent picks the rest).
 export type Pin = { key: string; value: string };
 
-// A reference image staged for the next generation (drag/drop to mix).
+// A reference image in the drawer. The user keeps a library and `selected`s a
+// subset to point at "use these for this generation" (default false; at
+// generate time the agent uses the selected set, or all if none are selected).
 export type Reference = {
   id: string;
   src: string; // base64 webp (same as Variant.src)
   path: string;
   name: string;
+  selected: boolean;
+  hash: string; // content hash — dedupes identical adds + keys the analysis cache
+  analysis: string; // the agent's read of this image, shown on the board (click to view)
 };
 
 // An annotation mark on the focused image. Coords are fractions (0–1) of the
@@ -118,6 +125,7 @@ export type ImagoState = {
   pins: Pin[];
   refs: Reference[];
   marks: Mark[]; // annotation marks on the focused image (transient)
+  analysisCache: Record<string, string>; // hash → agent analysis; survives a ref delete/re-add (daemon-maintained)
   aspect: string; // aspect ratio for a NEW (fresh) generation
   size: ImageSize; // output resolution for a NEW generation
   status: { busy: boolean; text: string };
@@ -156,6 +164,8 @@ export type ClientToServer =
   | { type: "pin.remove"; key: string }
   | { type: "ref.add"; reference: { src: string; name: string; id?: string } }
   | { type: "ref.remove"; id: string }
+  | { type: "image.import"; image: { src: string; name?: string } } // drop on canvas → working image
+  | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
   | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit
   | { type: "marks.clear" }
   | { type: "marks.commit"; text: string; batchId: string; variantId: string } // "take marks to the conversation →"
@@ -181,6 +191,9 @@ export type AgentCommand =
       variants: { src: string; seed?: number; model?: string; id?: string }[];
     }
   | { type: "focus"; batchId: string; variantId: string } // agent focuses an image
+  | { type: "ref.select"; id: string; selected: boolean } // agent points at a ref (the user sees it highlight)
+  | { type: "ref.analyze"; id: string; text: string } // write your read onto a ref (the user can see it)
+  | { type: "variant.analyze"; id: string; text: string } // write your read onto a generated/imported image
   | { type: "style.add"; name: string } // add a captured style to the catalog
   | { type: "status"; busy: boolean; text?: string }
   | { type: "cost"; text: string }
@@ -207,6 +220,8 @@ export const AGENT_EVENT_TYPES = Object.freeze([
   "pin.remove",
   "ref.add",
   "ref.remove",
+  "ref.select",
+  "image.import",
   "marks.commit",
   "aspect.set",
   "size.set",
@@ -229,6 +244,8 @@ export type AgentEventPayload = {
   "pin.remove": { key: string };
   "ref.add": { id: string; name: string };
   "ref.remove": { id: string };
+  "ref.select": { id: string; selected: boolean };
+  "image.import": { batchId: string; variantId: string; name: string };
   "marks.commit": {
     text: string;
     batchId: string;
@@ -260,6 +277,7 @@ export function defaultState(title: string): ImagoState {
     pins: [],
     refs: [],
     marks: [],
+    analysisCache: {},
     aspect: "1:1",
     size: "1K",
     status: { busy: false, text: "" },

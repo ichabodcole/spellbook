@@ -22,6 +22,7 @@ export function Conversation({
   send: (m: ClientToServer) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [dragging, setDragging] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const focusLabel = (() => {
@@ -61,8 +62,25 @@ export function Conversation({
         ))}
       </div>
 
-      {/* COMPOSER */}
-      <div className="border-t border-divider p-3 flex flex-col gap-2">
+      {/* COMPOSER — also a forgiving drop target for reference images */}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: drag-drop file zone */}
+      <div
+        className={`border-t p-3 flex flex-col gap-2 transition-colors ${
+          dragging ? "border-accent/60 bg-accent/5" : "border-divider"
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!dragging) setDragging(true);
+        }}
+        onDragLeave={(e) => {
+          if (e.currentTarget === e.target) setDragging(false);
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          processFiles(e.dataTransfer.files, send);
+        }}
+      >
         {state.pins.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] text-faint">pinned</span>
@@ -117,69 +135,47 @@ export function Conversation({
           </div>
         )}
 
-        {/* staged references */}
-        {state.refs.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-faint shrink-0">refs</span>
-            {state.refs.map((r) => (
-              <span
-                key={r.id}
-                className="relative w-12 h-12 rounded-md overflow-hidden ring-1 ring-edge shrink-0"
-              >
-                <img src={r.src} alt={r.name} className="w-full h-full object-cover" />
-                <button
-                  type="button"
-                  onClick={() => send({ type: "ref.remove", id: r.id })}
-                  className="absolute top-0 right-0 bg-black/70 text-white"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+        {/* the box — taller by default, and resizable for a longer ramble */}
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
+          }}
+          rows={3}
+          className="textarea !resize-y min-h-[84px]"
+          placeholder="talk to imago about this image… (rough is fine)"
+        />
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          onChange={(e) => {
+            processFiles(e.target.files, send);
+            e.target.value = "";
+          }}
+        />
 
-        <div className="relative">
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
-            }}
-            rows={2}
-            className="textarea pr-20"
-            placeholder="talk to imago about this image… (rough is fine — ⌘↵ to send)"
-          />
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(e) => {
-              processFiles(e.target.files, send);
-              e.target.value = "";
-            }}
-          />
-          <div className="absolute right-2 bottom-2 flex items-center gap-1">
-            <button
-              type="button"
-              className="btn-ghost !p-1.5"
-              title="Attach a reference image"
-              onClick={() => fileInput.current?.click()}
-            >
-              <ImagePlus className="w-4 h-4" />
-            </button>
-            <button type="button" className="btn-primary !p-1.5" title="Send" onClick={submit}>
-              <SendHorizontal className="w-4 h-4" />
-            </button>
-          </div>
+        {/* actions — below the input, not crowded inside it */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-faint flex items-center gap-1">
+            <Terminal className="w-3 h-3" /> also in your terminal
+          </span>
+          <span className="text-[11px] text-faint ml-auto">⌘↵</span>
+          <button
+            type="button"
+            title="Attach a reference image"
+            onClick={() => fileInput.current?.click()}
+            className="btn-ghost !p-1.5"
+          >
+            <ImagePlus className="w-4 h-4" />
+          </button>
+          <button type="button" className="btn-primary !px-3 !py-1.5 text-xs" onClick={submit}>
+            <SendHorizontal className="w-4 h-4" /> Send
+          </button>
         </div>
-
-        <p className="text-[11px] text-faint flex items-center gap-1">
-          <Terminal className="w-3 h-3" /> imago is right here — and you can always talk to it in
-          the terminal too.
-        </p>
       </div>
     </aside>
   );
@@ -197,13 +193,17 @@ function Bubble({
   setDraft: (s: string) => void;
 }) {
   if (m.kind === "gesture") {
-    return <div className="text-center text-[11px] text-faint italic py-0.5">{m.text}</div>;
+    return (
+      <div className="text-center text-[11px] text-faint italic py-0.5 break-words [overflow-wrap:anywhere]">
+        {m.text}
+      </div>
+    );
   }
 
   if (m.role === "user") {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[85%] text-sm rounded-lg rounded-br-sm px-3 py-2 bg-accent/20 border border-accent/30 text-ink">
+        <div className="max-w-[85%] text-sm rounded-lg rounded-br-sm px-3 py-2 bg-accent/20 border border-accent/30 text-ink break-words [overflow-wrap:anywhere]">
           {m.text}
         </div>
       </div>
@@ -220,7 +220,7 @@ function Bubble({
       <div className="flex flex-col gap-2 max-w-[88%]">
         {m.text && (
           <div
-            className={`text-sm rounded-lg rounded-tl-sm px-3 py-2 ${
+            className={`text-sm rounded-lg rounded-tl-sm px-3 py-2 break-words [overflow-wrap:anywhere] ${
               asking
                 ? "bg-attention/40 border border-attention/40 text-attention-ink"
                 : "bg-surface border border-edge text-ink"

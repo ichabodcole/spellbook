@@ -52,7 +52,17 @@ export function GenerationsRail({
           <div key={b.id} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-medium text-ink">Batch {bi + 1}</span>
-              <span className={b.kind === "edit" ? "badge-canon" : "badge-accent"}>{b.kind}</span>
+              <span
+                className={
+                  b.kind === "edit"
+                    ? "badge-canon"
+                    : b.kind === "import"
+                      ? "badge-muted"
+                      : "badge-accent"
+                }
+              >
+                {b.kind}
+              </span>
               <span className="text-faint ml-auto">
                 {b.variants.length} {b.variants.length === 1 ? "variant" : "variants"}
               </span>
