@@ -4,6 +4,32 @@ Non-blocking findings surfaced during review. Tracked here so they survive to
 merge rather than riding in someone's head. Each notes its origin and a proposed
 fix; none block the phase they were found in.
 
+## From the finalize-branch independent code review
+
+Dual independent review (bugs/security + plan-alignment) cleared the branch
+(both "Ready to merge"). Two doc gaps were fixed on-branch (the join-protocol
+`task.update` inaccuracy + the verb exit-1 contract note). These two benign code
+nits are deferred:
+
+**R1 — `prevBlocked` keeps a stale entry for a deleted task (NIT).** When a task
+is removed, its `prevBlocked` entry isn't deleted. Harmless (the reconcile loop
+only walks `state.tasks`), but if a task id were ever recycled it could suppress
+that id's first `unblocked`. Browser ids are 6 bytes of randomness (~1 in 10¹⁴),
+so it can't bite in practice. _Proposed:_ `prevBlocked.delete(id)` in the remove
+paths (agent + WS).
+
+**R2 — non-numeric `?since=` on `/events` degrades to replay-all (NIT).**
+`parseInt("abc")` → `NaN`, and `id > NaN` is always false, so a corrupt cursor
+replays everything instead of erroring. The CLI always sends a numeric
+`--since`, so it's never hit. _Proposed:_ clamp `NaN` → `-1` (replay-all is
+already the intended "no cursor" behavior) or 400 on a non-numeric cursor.
+
+(Also noted, not fixed: the `join.ts` "discovers via latest" test relies on the
+shared `bounty-latest.json` pointer — theoretically flaky under _parallel_
+daemon starts, but the suite runs sequentially and the test asserts the
+session_id matches, so it fails loudly rather than false-passes. Low-risk; left
+as-is.)
+
 ## From the fresh-agent fleet acceptance test (post-Phase D)
 
 A lead + 2 cold worker agents drove a real coordination scenario with only the

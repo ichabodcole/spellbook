@@ -382,7 +382,11 @@ ending is non-destructive and reopenable with `cli.ts open --restore`.
 The session-ending outcome (a clean exit 0, or 124 on idle timeout) belongs to
 the **daemon** and surfaces to the agent via the `closed` event's `reason` on
 the tail. `cli.ts` itself exits `2` on bad args and `0` on a successful verb
-(and `tail` exits `0` on the `closed` frame).
+(and `tail` exits `0` on the `closed` frame). One more: a **cooperatively
+rejected** verb — `claim` on an other-owned task, or `block` that would form a
+cycle — exits **`1`** (with the reason on stderr), distinct from `2` (bad args).
+So `claim`/`block` exiting non-zero means "the daemon refused this," not "you
+called it wrong" — check stderr and adjust, don't retry verbatim.
 
 ## Join Mode — Connect to an Existing Board
 
@@ -425,15 +429,18 @@ opens a WebSocket to the daemon and bridges it to its own stdio.
 
 ```
 {"type":"task.add",    "task": Task}              // append a new task
-{"type":"task.update", "id": "...", "patch": Partial<Task>}
-{"type":"task.move",   "id": "...", "status": "...", "index": N}
+{"type":"task.toggle", "id": "...", "status": "todo|doing|review|done"}  // change status
+{"type":"task.move",   "id": "...", "status": "...", "index": N}  // status + position
+{"type":"task.edit",   "id": "...", "title": "..."}   // change the title
 {"type":"task.remove", "id": "..."}
 {"type":"close"}                                  // disconnect cleanly
 ```
 
-Joiners CAN'T push toasts (`message`), reset state (`init`), or arbitrarily
-patch the title — those are host-only. The daemon silently ignores them if sent
-over WS.
+These are the **WebSocket** verbs (the same ones the browser sends) — a joiner
+is a browser-equivalent participant. Note there's no `task.update` over WS: use
+the granular `task.toggle` (status) / `task.edit` (title) / `task.move` (drag)
+instead. Joiners also CAN'T push toasts (`message`) or reset state (`init`) —
+those are agent-`/cmd`-only; the daemon ignores them over WS.
 
 ### Join protocol — join.ts → agent (stdout, one JSON line per message)
 
