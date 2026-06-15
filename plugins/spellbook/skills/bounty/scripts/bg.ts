@@ -62,7 +62,7 @@ async function main(argv: string[]): Promise<number> {
       args: argv,
       options: {
         title: { type: "string", default: "Bounty Board" },
-        timeout: { type: "string", default: "1800" },
+        timeout: { type: "string", default: "43200" },
         "no-open": { type: "boolean", default: false },
         port: { type: "string", default: "0" },
         host: { type: "string", default: "127.0.0.1" },

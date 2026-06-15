@@ -271,7 +271,7 @@ async function main(argv: string[]): Promise<number> {
       args: argv,
       options: {
         title: { type: "string", default: "Bounty Board" },
-        timeout: { type: "string", default: "1800" },
+        timeout: { type: "string", default: "43200" },
         "no-open": { type: "boolean", default: false },
         port: { type: "string", default: "0" },
         host: { type: "string", default: "127.0.0.1" },
@@ -567,7 +567,8 @@ async function main(argv: string[]): Promise<number> {
   })();
 
   const idleTimer = setInterval(() => {
-    if ((performance.now() - lastActivity) / 1000 >= timeout) {
+    if (sockets.size > 0) touch();
+    if (timeout > 0 && (performance.now() - lastActivity) / 1000 >= timeout) {
       resolveDone({ code: 124, reason: "timeout" });
     }
   }, 250);
