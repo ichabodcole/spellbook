@@ -10,6 +10,7 @@ import {
   Redo2,
   Sparkles,
   Undo2,
+  WandSparkles,
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -660,8 +661,10 @@ function ReferenceDrawer({
   send: (m: ClientToServer) => void;
 }) {
   const [dragging, setDragging] = useState(false);
+  const [activeTab, setActiveTab] = useState<"references" | "styles">("references");
   const fileInput = useRef<HTMLInputElement>(null);
   const selectedCount = state.refs.filter((r) => r.selected).length;
+  const activeStyleCount = state.styles.filter((s) => s.active).length;
   // The analysis popover, anchored to the badge that opened it (fixed-positioned
   // so it escapes the drawer's overflow clipping). Keyed by ref id so it closes
   // itself if that ref is removed while open.
@@ -680,6 +683,7 @@ function ReferenceDrawer({
         dragging ? "border-accent/60 bg-accent/5" : "border-divider"
       }`}
       onDragOver={(e) => {
+        if (activeTab !== "references") return; // drops add references only
         e.preventDefault();
         if (!dragging) setDragging(true);
       }}
@@ -687,105 +691,199 @@ function ReferenceDrawer({
         if (e.currentTarget === e.target) setDragging(false);
       }}
       onDrop={(e) => {
+        if (activeTab !== "references") return;
         e.preventDefault();
         setDragging(false);
         processFiles(e.dataTransfer.files, send);
       }}
     >
-      {state.refs.length === 0 ? (
+      {/* tabs — references + styles are both selectable, image-backed context the
+          agent reads at generation (toggle = ambient selection) */}
+      <div className="flex items-center gap-3 text-[11px] mb-1.5">
         <button
           type="button"
-          onClick={() => fileInput.current?.click()}
-          className={`w-full h-[75px] rounded-md border border-dashed flex items-center justify-center gap-1.5 text-[11px] transition-colors ${
-            dragging
-              ? "border-accent/60 bg-accent/10 text-accent-ink"
-              : "border-edge-strong text-faint hover:text-ink hover:border-edge-hover"
-          }`}
+          onClick={() => setActiveTab("references")}
+          className={
+            activeTab === "references" ? "text-ink font-medium" : "text-faint hover:text-ink"
+          }
         >
-          <ImagePlus className="w-3.5 h-3.5" />
-          {dragging ? "drop to add as a reference" : "drag reference images here, or click to add"}
+          References
         </button>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {/* header row — label left, count right (justify-between) so the count
-              appears/disappears in a fixed spot and never reflows the thumbnails.
-              Right side is also where future drawer actions can live. */}
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-faint">refs</span>
-            {selectedCount > 0 && <span className="text-accent-ink">{selectedCount} selected</span>}
-          </div>
-          {/* px/py give the outset selection ring room on all four sides —
+        <button
+          type="button"
+          onClick={() => setActiveTab("styles")}
+          className={activeTab === "styles" ? "text-ink font-medium" : "text-faint hover:text-ink"}
+        >
+          Styles
+        </button>
+        {activeTab === "references" && selectedCount > 0 && (
+          <span className="ml-auto text-accent-ink">{selectedCount} selected</span>
+        )}
+        {activeTab === "styles" && activeStyleCount > 0 && (
+          <span className="ml-auto text-accent-ink">{activeStyleCount} active</span>
+        )}
+      </div>
+
+      {activeTab === "references" &&
+        (state.refs.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            className={`w-full h-[75px] rounded-md border border-dashed flex items-center justify-center gap-1.5 text-[11px] transition-colors ${
+              dragging
+                ? "border-accent/60 bg-accent/10 text-accent-ink"
+                : "border-edge-strong text-faint hover:text-ink hover:border-edge-hover"
+            }`}
+          >
+            <ImagePlus className="w-3.5 h-3.5" />
+            {dragging
+              ? "drop to add as a reference"
+              : "drag reference images here, or click to add"}
+          </button>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {/* px/py give the outset selection ring room on all four sides —
               overflow-x-auto forces vertical clipping, so an exact-height row
               would cut the ring at top & bottom. */}
-          <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
-            {state.refs.map((r) => (
-              <div
-                key={r.id}
-                className={`relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 transition-shadow ${
-                  r.selected ? "ring-2 ring-accent" : "ring-1 ring-edge"
-                }`}
-              >
-                <img src={r.src} alt={r.name} className="w-full h-full object-cover" />
-                {/* body click toggles selection for the next generation */}
-                <button
-                  type="button"
-                  title={
-                    r.selected
-                      ? "Selected — click to deselect"
-                      : "Click to select for the next generation"
-                  }
-                  onClick={() =>
-                    send({
-                      type: "ref.select",
-                      id: r.id,
-                      selected: !r.selected,
-                    })
-                  }
-                  className="absolute inset-0 cursor-pointer"
-                />
-                {r.selected && (
-                  <span className="absolute top-0 left-0 bg-accent text-accent-fg rounded-br p-0.5 pointer-events-none">
-                    <Check className="w-3 h-3" />
-                  </span>
-                )}
-                {r.analysis && (
+            <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
+              {state.refs.map((r) => (
+                <div
+                  key={r.id}
+                  className={`relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 transition-shadow ${
+                    r.selected ? "ring-2 ring-accent" : "ring-1 ring-edge"
+                  }`}
+                >
+                  <img src={r.src} alt={r.name} className="w-full h-full object-cover" />
+                  {/* body click toggles selection for the next generation */}
                   <button
                     type="button"
-                    title="View the agent's read of this reference"
+                    title={
+                      r.selected
+                        ? "Selected — click to deselect"
+                        : "Click to select for the next generation"
+                    }
+                    onClick={() =>
+                      send({
+                        type: "ref.select",
+                        id: r.id,
+                        selected: !r.selected,
+                      })
+                    }
+                    className="absolute inset-0 cursor-pointer"
+                  />
+                  {r.selected && (
+                    <span className="absolute top-0 left-0 bg-accent text-accent-fg rounded-br p-0.5 pointer-events-none">
+                      <Check className="w-3 h-3" />
+                    </span>
+                  )}
+                  {r.analysis && (
+                    <button
+                      type="button"
+                      title="View the agent's read of this reference"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAnalysisAnchor({
+                          id: r.id,
+                          rect: e.currentTarget.getBoundingClientRect(),
+                        });
+                      }}
+                      className="absolute bottom-0 left-0 bg-positive text-bg rounded-tr p-0.5"
+                    >
+                      <Info className="w-3 h-3" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    title="Remove reference"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setAnalysisAnchor({
-                        id: r.id,
-                        rect: e.currentTarget.getBoundingClientRect(),
-                      });
+                      send({ type: "ref.remove", id: r.id });
                     }}
-                    className="absolute bottom-0 left-0 bg-positive text-bg rounded-tr p-0.5"
+                    className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
                   >
-                    <Info className="w-3 h-3" />
+                    <X className="w-3 h-3" />
                   </button>
-                )}
-                <button
-                  type="button"
-                  title="Remove reference"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    send({ type: "ref.remove", id: r.id });
-                  }}
-                  className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
+                </div>
+              ))}
+              <button
+                type="button"
+                title="Add reference images"
+                onClick={() => fileInput.current?.click()}
+                className="w-[75px] h-[75px] shrink-0 rounded-md border border-dashed border-edge-strong text-faint hover:text-ink hover:border-edge-hover flex items-center justify-center transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+
+      {activeTab === "styles" && (
+        <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
+          {state.styles.map((s) => (
+            <div
+              key={s.name}
+              title={s.description || s.name}
+              className={`relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 transition-shadow ${
+                s.active ? "ring-2 ring-accent" : "ring-1 ring-edge"
+              }`}
+            >
+              {s.image ? (
+                <img src={s.image} alt={s.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-surface-2 flex items-center justify-center p-1">
+                  <span className="text-[10px] text-ink text-center leading-tight break-words [overflow-wrap:anywhere]">
+                    {s.name}
+                  </span>
+                </div>
+              )}
+              {/* body click toggles the ambient style selection */}
+              <button
+                type="button"
+                title={
+                  s.active
+                    ? "Active — click to deselect"
+                    : "Click to use as ambient style context for the next generation"
+                }
+                onClick={() => send({ type: "style.toggle", name: s.name })}
+                className="absolute inset-0 cursor-pointer"
+              />
+              {/* name caption on image cards (chip cards already show the name) */}
+              {s.image && (
+                <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1 py-0.5 text-center truncate pointer-events-none">
+                  {s.name}
+                </span>
+              )}
+              {s.active && (
+                <span className="absolute top-0 left-0 bg-accent text-accent-fg rounded-br p-0.5 pointer-events-none">
+                  <Check className="w-3 h-3" />
+                </span>
+              )}
+              <button
+                type="button"
+                title="Remove style"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  send({ type: "style.remove", name: s.name });
+                }}
+                className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {/* capture the focused image's look as a reusable style (agent analyzes
+              + defines it via style.add with a canonical image) */}
+          {state.focus && (
             <button
               type="button"
-              title="Add reference images"
-              onClick={() => fileInput.current?.click()}
-              className="w-[75px] h-[75px] shrink-0 rounded-md border border-dashed border-edge-strong text-faint hover:text-ink hover:border-edge-hover flex items-center justify-center transition-colors"
+              title="Capture this image's style"
+              onClick={() => send({ type: "style.capture" })}
+              className="w-[75px] h-[75px] shrink-0 rounded-md border border-dashed border-capture/40 text-capture-ink hover:border-capture flex flex-col items-center justify-center gap-1 transition-colors"
             >
-              <Plus className="w-4 h-4" />
+              <WandSparkles className="w-4 h-4" />
+              <span className="text-[9px] leading-tight text-center">capture style</span>
             </button>
-          </div>
+          )}
         </div>
       )}
       <input

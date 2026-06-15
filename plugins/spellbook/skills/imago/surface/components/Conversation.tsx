@@ -1,20 +1,23 @@
-import { ImagePlus, SendHorizontal, Terminal, WandSparkles, X } from "lucide-react";
-import { useRef, useState } from "react";
+import {
+  ChevronDown,
+  ImagePlus,
+  Pencil,
+  Plus,
+  SendHorizontal,
+  Terminal,
+  X,
+  Zap,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { variantLabel } from "../state/derive";
 import { processFiles } from "../state/fileIntake";
-import type { ClientToServer, ImagoState, Message } from "../state/types";
+import type { ClientToServer, ImagoState, Message, PromptEntry } from "../state/types";
 import { flattenMarks } from "./annotations/flatten";
 
-const LENSES: [string, string][] = [
-  ["describe", "Describe this image in detail — literally what is in it."],
-  ["palette", "Break down the color palette — the key colors and how they work together."],
-  ["lighting", "Describe the lighting — direction, quality, mood — so I can reuse it."],
-];
-
 // Right pane: the dialogue spine + the composer. The composer is the single
-// input; shortcuts (styles, capture-look, ask-lenses) WRITE into it, "do"
-// controls (pins, attach ref) set state. Generation happens through the
-// conversation, not a Generate button.
+// input; shortcuts (the quick-prompt library) WRITE into it, "do" controls
+// (pins, attach ref) set state. Generation happens through the conversation,
+// not a Generate button.
 export function Conversation({
   state,
   send,
@@ -114,42 +117,11 @@ export function Conversation({
           </div>
         )}
 
-        {/* styles + capture look */}
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          <span className="text-faint shrink-0">styles</span>
-          {state.styles.map((s) => (
-            <button
-              type="button"
-              key={s.name}
-              onClick={() => send({ type: "style.toggle", name: s.name })}
-              className={`${s.active ? "chip-on" : "chip"} shrink-0`}
-            >
-              {s.name}
-            </button>
-          ))}
-          {state.focus && (
-            <button
-              type="button"
-              onClick={() => send({ type: "style.capture" })}
-              className="chip shrink-0 !border-capture/40 !text-capture-ink flex items-center gap-1"
-              title="Capture this image's look as a reusable style"
-            >
-              <WandSparkles className="w-3 h-3" /> capture look
-            </button>
-          )}
+        {/* quick-prompt library — picks populate the box (never fire behind the
+            glass); editable/extensible by the user OR the agent */}
+        <div className="flex items-center gap-1.5">
+          <QuickPrompts prompts={state.prompts} send={send} onPick={setDraft} />
         </div>
-
-        {/* ask-lenses (shortcuts that fill the box) */}
-        {state.focus && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-faint shrink-0">ask</span>
-            {LENSES.map(([label, text]) => (
-              <button type="button" key={label} className="chip" onClick={() => setDraft(text)}>
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* the box — taller by default, and resizable for a longer ramble */}
         <textarea
@@ -194,6 +166,147 @@ export function Conversation({
         </div>
       </div>
     </aside>
+  );
+}
+
+// The quick-prompt library: a dropdown of reusable prompts that POPULATE the box
+// on pick (language-first — never fires behind the glass), with inline add/edit/
+// delete. Opens upward (it sits just above the textarea). Closes on pick / Esc /
+// outside-press (same document-pointerdown pattern as the toolbar flyouts).
+function QuickPrompts({
+  prompts,
+  send,
+  onPick,
+}: {
+  prompts: PromptEntry[];
+  send: (m: ClientToServer) => void;
+  onPick: (text: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null); // "new" | a prompt id | null
+  const [label, setLabel] = useState("");
+  const [text, setText] = useState("");
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  function startNew() {
+    setEditing("new");
+    setLabel("");
+    setText("");
+  }
+  function startEdit(p: PromptEntry) {
+    setEditing(p.id);
+    setLabel(p.label);
+    setText(p.text);
+  }
+  function save() {
+    const l = label.trim();
+    const t = text.trim();
+    if (!l || !t) return;
+    if (editing === "new") send({ type: "prompt.add", label: l, text: t });
+    else if (editing) send({ type: "prompt.update", id: editing, label: l, text: t });
+    setEditing(null);
+    setLabel("");
+    setText("");
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="chip flex items-center gap-1"
+      >
+        <Zap className="w-3 h-3" /> quick prompts <ChevronDown className="w-3 h-3" />
+      </button>
+      {open && (
+        <div className="absolute bottom-full mb-1 left-0 z-30 w-72 card p-1.5 flex flex-col gap-0.5 max-h-80 overflow-y-auto">
+          {prompts.map((p) => (
+            <div key={p.id} className="flex items-center gap-1 rounded hover:bg-accent/10">
+              <button
+                type="button"
+                onClick={() => {
+                  onPick(p.text);
+                  setOpen(false);
+                }}
+                title={p.text}
+                className="flex-1 min-w-0 text-left px-2 py-1 text-[12px] text-ink truncate"
+              >
+                {p.label}
+              </button>
+              <button
+                type="button"
+                title="Edit prompt"
+                onClick={() => startEdit(p)}
+                className="shrink-0 p-1 text-faint hover:text-ink"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                title="Delete prompt"
+                onClick={() => send({ type: "prompt.remove", id: p.id })}
+                className="shrink-0 p-1 text-faint hover:text-ink"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          {editing ? (
+            <div className="flex flex-col gap-1 border-t border-divider mt-1 pt-2">
+              <input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="label"
+                className="bg-surface-2 border border-edge-2 rounded px-2 py-1 text-[12px] text-ink placeholder-faint focus:outline-none focus:border-accent/60"
+              />
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                placeholder="prompt text"
+                rows={3}
+                className="textarea !resize-y text-[12px]"
+              />
+              <div className="flex items-center justify-end gap-1.5">
+                <button type="button" onClick={() => setEditing(null)} className="chip">
+                  cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={save}
+                  className="btn-primary !px-2.5 !py-1 text-[11px]"
+                >
+                  save
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={startNew}
+              className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink border-t border-divider mt-1 pt-2"
+            >
+              <Plus className="w-3 h-3" /> New prompt
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

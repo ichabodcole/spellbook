@@ -80,7 +80,25 @@ export type Message = {
 // look. `captured` marks ones extracted from an image (the catalog loop-closer).
 // `name` is the key — normalized (trimmed, lowercased) on write so casing /
 // whitespace can't create duplicates.
-export type StyleEntry = { name: string; active: boolean; captured?: boolean };
+// A reusable style — durable, toggleable CONTEXT (like a selected reference, not
+// an ask-shortcut): when `active`, the agent factors it into generation. A
+// captured style carries a `description` (the look in words) AND a canonical
+// `image` (which "anime" — Akira vs Ghibli vs manga; the picture pins it). The
+// agent reads `description` + `imagePath` at generate time, like a selected ref.
+export type StyleEntry = {
+  name: string;
+  active: boolean;
+  captured?: boolean;
+  description?: string; // the agent's read of the look, in words
+  image?: string; // base64 canonical example (stripped in the lean agent projection)
+  imagePath?: string; // on-disk canonical image the agent can --ref
+};
+
+// A reusable quick-prompt: a named snippet that populates the composer (the
+// describe/palette/lighting "lenses" generalized into an editable library). The
+// user OR the agent can add/edit/remove; picking one fills the input box (a
+// shortcut for language — never fires behind the glass). Surfaced as a dropdown.
+export type PromptEntry = { id: string; label: string; text: string };
 
 // A value the user pins to lock for the next generate (agent picks the rest).
 export type Pin = { key: string; value: string };
@@ -163,6 +181,7 @@ export type ImagoState = {
   focus: Focus | null; // the image on the canvas (null = blank "new" frame)
   conversation: Message[];
   styles: StyleEntry[];
+  prompts: PromptEntry[]; // reusable quick-prompts (the editable lens library)
   pins: Pin[];
   refs: Reference[];
   marksByVariant: Record<string, Mark[]>; // durable annotation marks per variant id
@@ -216,7 +235,11 @@ export type ClientToServer =
   | { type: "focus.clear" } // back to a blank "new" frame
   | { type: "variant.like"; id: string; liked: boolean }
   | { type: "style.toggle"; name: string }
+  | { type: "style.remove"; name: string } // drop a style from the catalog
   | { type: "style.capture" } // ask the agent to extract this image's look
+  | { type: "prompt.add"; label: string; text: string } // add a reusable quick-prompt (server assigns id)
+  | { type: "prompt.update"; id: string; label: string; text: string }
+  | { type: "prompt.remove"; id: string }
   | { type: "pin.add"; key: string; value: string }
   | { type: "pin.remove"; key: string }
   | { type: "ref.add"; reference: { src: string; name: string; id?: string } }
@@ -273,7 +296,16 @@ export type AgentCommand =
   | { type: "ref.select"; id: string; selected: boolean } // agent points at a ref (the user sees it highlight)
   | { type: "ref.analyze"; id: string; text: string } // write your read onto a ref (the user can see it)
   | { type: "variant.analyze"; id: string; text: string } // write your read onto a generated/imported image
-  | { type: "style.add"; name: string } // add a captured style to the catalog
+  | {
+      // add/define a captured style in the catalog (the response to style.capture):
+      // a name + the look in words + a canonical example image (src → server
+      // materializes a path). Re-defining an existing name updates it.
+      type: "style.add";
+      name: string;
+      description?: string;
+      image?: string; // base64 data-url; server saves it + sets imagePath
+    }
+  | { type: "prompt.add"; label: string; text: string } // save a reusable quick-prompt to the library
   | { type: "status"; busy: boolean; text?: string }
   | { type: "cost"; text: string }
   | { type: "handoff"; text: string } // "" clears (terminal-ask escape)
@@ -351,6 +383,26 @@ const DEFAULT_STYLES: StyleEntry[] = [
   { name: "line art", active: false },
 ];
 
+// The default quick-prompt library — the old describe/palette/lighting lenses,
+// now editable. Stable ids so they survive restarts.
+const DEFAULT_PROMPTS: PromptEntry[] = [
+  {
+    id: "describe",
+    label: "describe",
+    text: "Describe this image in detail — literally what is in it.",
+  },
+  {
+    id: "palette",
+    label: "palette",
+    text: "Break down the color palette — the key colors and how they work together.",
+  },
+  {
+    id: "lighting",
+    label: "lighting",
+    text: "Describe the lighting — direction, quality, mood — so I can reuse it.",
+  },
+];
+
 export function defaultState(title: string): ImagoState {
   return {
     title,
@@ -358,6 +410,7 @@ export function defaultState(title: string): ImagoState {
     focus: null,
     conversation: [],
     styles: DEFAULT_STYLES.map((s) => ({ ...s })),
+    prompts: DEFAULT_PROMPTS.map((p) => ({ ...p })),
     pins: [],
     refs: [],
     marksByVariant: {},

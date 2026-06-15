@@ -42,6 +42,7 @@ import {
   type Mark,
   type Message,
   type Reference,
+  type StyleEntry,
   type Variant,
 } from "../surface/state/types";
 
@@ -152,11 +153,17 @@ function refForAgent(r: Reference): Omit<Reference, "src"> {
   return rest;
 }
 
+function styleForAgent(st: StyleEntry): Omit<StyleEntry, "image"> {
+  const { image: _drop, ...rest } = st;
+  return rest; // agent reads imagePath, not the inlined blob
+}
+
 export function leanState(s: ImagoState) {
   return {
     ...s,
     batches: s.batches.map(batchForAgent),
     refs: s.refs.map(refForAgent),
+    styles: s.styles.map(styleForAgent),
   };
 }
 
@@ -445,13 +452,41 @@ async function main(argv: string[]): Promise<number> {
     } else if (t === "style.add") {
       if (typeof msg.name === "string" && msg.name.trim()) {
         const name = normStyle(msg.name);
+        const description = typeof msg.description === "string" ? msg.description : undefined;
+        // a captured style carries a canonical example image — materialize it
+        const imageSrc =
+          typeof msg.image === "string" && msg.image.startsWith("data:") ? msg.image : undefined;
+        const imagePath = imageSrc
+          ? saveDataUrl(sessionFilesDir, newId("style"), imageSrc) || undefined
+          : undefined;
         const existing = state.styles.find((s) => s.name === name);
         if (existing) {
           existing.active = true;
           existing.captured = true;
+          if (description !== undefined) existing.description = description;
+          if (imageSrc) {
+            existing.image = imageSrc;
+            existing.imagePath = imagePath;
+          }
         } else {
-          state.styles.push({ name, active: true, captured: true });
+          state.styles.push({
+            name,
+            active: true,
+            captured: true,
+            description,
+            image: imageSrc,
+            imagePath,
+          });
         }
+        broadcastState();
+      }
+    } else if (t === "prompt.add") {
+      if (typeof msg.label === "string" && typeof msg.text === "string" && msg.text.trim()) {
+        state.prompts.push({
+          id: newId("prompt"),
+          label: msg.label.trim() || "prompt",
+          text: msg.text,
+        });
         broadcastState();
       }
     } else if (t === "status") {
@@ -580,6 +615,33 @@ async function main(argv: string[]): Promise<number> {
       s.active = !s.active;
       broadcastState();
       emitEvent({ type: "style.toggle", name: s.name, active: s.active });
+    } else if (t === "style.remove") {
+      if (typeof msg.name === "string") {
+        const name = normStyle(msg.name);
+        state.styles = state.styles.filter((x) => x.name !== name);
+        broadcastState();
+      }
+    } else if (t === "prompt.add") {
+      if (typeof msg.label === "string" && typeof msg.text === "string" && msg.text.trim()) {
+        state.prompts.push({
+          id: newId("prompt"),
+          label: msg.label.trim() || "prompt",
+          text: msg.text,
+        });
+        broadcastState();
+      }
+    } else if (t === "prompt.update") {
+      const p = state.prompts.find((x) => x.id === msg.id);
+      if (p) {
+        if (typeof msg.label === "string") p.label = msg.label.trim() || p.label;
+        if (typeof msg.text === "string") p.text = msg.text;
+        broadcastState();
+      }
+    } else if (t === "prompt.remove") {
+      if (typeof msg.id === "string") {
+        state.prompts = state.prompts.filter((x) => x.id !== msg.id);
+        broadcastState();
+      }
     } else if (t === "style.capture") {
       emitEvent({ type: "style.capture" });
     } else if (t === "pin.add") {

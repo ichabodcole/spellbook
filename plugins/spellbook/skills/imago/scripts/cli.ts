@@ -17,7 +17,7 @@
 //                    [--edited-from <variantId>] [--summary ..] <src1> <src2> ...
 //                    # each src = an http(s) url, a data: url, or a file path
 //   bun cli.ts focus <batchId> <variantId>                    # put an image on the canvas
-//   bun cli.ts style <name...>                                 # add a captured style to the catalog
+//   bun cli.ts style <name...> [--description ..] [--image <path|url>]  # define a captured style (look + canonical image)
 //   bun cli.ts status on [text...] | status off               # the working spinner
 //   bun cli.ts cost <text...>                                  # cumulative spend display
 //   bun cli.ts handoff <text...> | handoff --clear            # escalate to a terminal ask
@@ -334,7 +334,8 @@ const HELP = `imago — a grounded image conversation.
   focus  <batchId> <variantId>       put an image on the canvas
   select <refId> [off]               point at a reference (highlights it for the user)
   analyze <ref-or-variant-id> <text...>  write your read onto a reference OR an image (durable metadata)
-  style  <name...>                   add a captured style to the catalog
+  style  <name...> [--description ..] [--image <path|url>]   define a captured style (look in words + canonical image)
+  prompt --label "<name>" --text "<the prompt>"             save a reusable quick-prompt to the library
   status on [text...] | status off   show/hide the "imago working" spinner
   cost   <text...>                   cumulative spend display (e.g. "$0.38 · 8 imgs")
   handoff <text...> | handoff --clear   raise/clear a terminal-ask escalation
@@ -424,10 +425,23 @@ async function main(argv: string[]): Promise<number> {
       await postCmd(session, { type, id: aid, text: words.join(" ") });
       break;
     }
-    case "style":
-      if (!pos.length) die("usage: style <name...>");
-      await postCmd(session, { type: "style.add", name: pos.join(" ") });
+    case "style": {
+      if (!pos.length) die("usage: style <name...> [--description ..] [--image <path|url>]");
+      const styleMsg: Record<string, unknown> = { type: "style.add", name: pos.join(" ") };
+      if (typeof flags.description === "string") styleMsg.description = flags.description;
+      // a captured style carries a canonical example image (a variant path/url) →
+      // inline it so it's self-contained, like batch srcs
+      if (typeof flags.image === "string") styleMsg.image = await resolveSrc(flags.image);
+      await postCmd(session, styleMsg);
       break;
+    }
+    case "prompt": {
+      // save a reusable quick-prompt to the library: prompt --label "X" --text "…"
+      if (typeof flags.label !== "string" || typeof flags.text !== "string")
+        die('usage: prompt --label "<name>" --text "<the prompt>"');
+      await postCmd(session, { type: "prompt.add", label: flags.label, text: flags.text });
+      break;
+    }
     case "status": {
       const on = pos[0] === "on";
       await postCmd(session, { type: "status", busy: on, text: pos.slice(1).join(" ") });

@@ -299,7 +299,29 @@ bun cli.ts batch --kind edit --edited-from <variantId> \
   --prompt "<the edit instruction>" "<resultUrl…>"
 ```
 
-Other reactions: `style.capture` → analyze the focused image, then
-`cli.ts style "<name>"` to add it to the catalog. `ref.add` → factor the
-attached reference into the next generation (`--ref` it). Ambiguous intent →
-`cli.ts ask "<question>" --options "a|b"` (or `handoff` to the terminal).
+**Styles are durable, toggleable CONTEXT — like selected references, not
+ask-shortcuts.** A style = a name + a `description` (the look in words) + a
+canonical `image` (which "anime": Akira vs Ghibli vs manga — the picture pins
+it). They live in the drawer's Styles tab; toggling one sets `active`. The
+`active` styles are **ambient context** (read from `/state`, not pinged per
+toggle — `style.toggle` is not in your wake set, same as `focus`/`like`):
+
+- **At generation,** read `state.styles.filter(s => s.active)` and factor each
+  in — put its `description` into the prompt AND pass its `imagePath` as a
+  `--ref` (a captured style's canonical image is a style reference, same as a
+  selected content ref). Selected styles + selected refs stack as the
+  conditioning set.
+- **`style.capture`** (the user pointed at the focused image) → analyze it, then
+  define the style with BOTH the words and a canonical example:
+  `cli.ts style "<name>" --description "<the look>" --image "<focused variant path>"`.
+  Pick a SPECIFIC name when the look is specific ("ghibli-soft", "1920s-pulp"),
+  not just "anime". (Post-V1: generate a few candidates and let the user pick
+  the representative; for now the focused image IS the canonical example.)
+- **Conflict-flag (a board rule).** If the user's ask contradicts an active
+  style — e.g. "make this photorealistic" while `anime` is active — point it out
+  (`cli.ts say "heads up — you've got anime selected; want me to drop it for this, or keep it?"`)
+  rather than silently picking one. It's a shared board, not a program: surface
+  the tension, automate the rest.
+
+`ref.add` → factor the attached reference into the next generation (`--ref` it).
+Ambiguous intent → `cli.ts ask "<question>" --options "a|b"` (or `handoff`).
