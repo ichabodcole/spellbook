@@ -4,10 +4,45 @@
 // transform with the viewport's pan/zoom automatically. This is the load-bearing
 // seam every tool (and, later, masking) shares.
 import type React from "react";
-import type { Mark } from "../../state/types";
+import type { Layer, Mark } from "../../state/types";
 
 export type Point = { x: number; y: number };
 export type Box = { x: number; y: number; w: number; h: number };
+
+// ── layer-aware stacking + visibility ─────────────────────────────────────────
+// Effective z = LAYER band (the mark's layer's index in the back→front `layers`
+// list) first, then the mark's `zOrder` WITHIN its layer. With a single layer this
+// reduces to today's zOrder-only order, so it's a no-op until image layers exist.
+
+// A mark's layer band (array index in `layers`). No layerId, or a layerId not in
+// `layers` (legacy / in-flight before the server stamps it), sorts as -1 → beneath
+// all real layers, so unstamped marks never float above layered content.
+export function layerBand(layers: Layer[], m: Mark): number {
+  if (!m.layerId) return -1;
+  return layers.findIndex((l) => l.id === m.layerId);
+}
+
+// Ascending effective-z comparator (paint order: later in the sort = on top).
+export function byEffectiveZ(layers: Layer[]): (a: Mark, b: Mark) => number {
+  return (a, b) => {
+    const ba = layerBand(layers, a);
+    const bb = layerBand(layers, b);
+    return ba !== bb ? ba - bb : (a.zOrder ?? 0) - (b.zOrder ?? 0);
+  };
+}
+
+// Is a mark's layer hidden? Hidden layers don't render → don't flatten → the agent
+// never sees them. A mark with no/unknown layer is treated as visible.
+export function isMarkHidden(layers: Layer[], m: Mark): boolean {
+  if (!m.layerId) return false;
+  return layers.find((l) => l.id === m.layerId)?.hidden === true;
+}
+
+// Render-ready: marks in visible layers, ascending effective-z. Shared by the live
+// renderer and the flatten compositor so on-screen order == handoff order.
+export function visibleSorted(marks: Mark[], layers: Layer[]): Mark[] {
+  return marks.filter((m) => !isMarkHidden(layers, m)).sort(byEffectiveZ(layers));
+}
 
 // Pointer position as a 0–1 fraction of the event's currentTarget box, clamped
 // to [0,1] so a drag that leaves the image still yields in-bounds coords.
@@ -50,6 +85,7 @@ export function markBounds(m: Mark, pinSize?: PinSize): Box {
     case "line":
       return bbox({ x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2 });
     case "rect":
+    case "image": // rect geometry
       return { x: m.x, y: m.y, w: m.w, h: m.h };
     case "ellipse":
       return { x: m.cx - m.rx, y: m.cy - m.ry, w: m.rx * 2, h: m.ry * 2 };
@@ -102,6 +138,7 @@ export function hitTest(p: Point, m: Mark, threshold = HIT_THRESHOLD, pinSize?: 
     case "line":
       return pointToSegment(p, { x: m.x1, y: m.y1 }, { x: m.x2, y: m.y2 }) <= threshold;
     case "rect":
+    case "image": // rect geometry — area hit (grab anywhere on the image layer)
       return (
         p.x >= m.x - threshold &&
         p.x <= m.x + m.w + threshold &&

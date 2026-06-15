@@ -11,8 +11,17 @@
 import { ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import type { ClientToServer, Mark } from "../../state/types";
-import { type Box, frac, hitTest, markBounds, type PinSize, type Point } from "./coords";
+import type { ClientToServer, Layer, Mark } from "../../state/types";
+import {
+  type Box,
+  byEffectiveZ,
+  frac,
+  hitTest,
+  isMarkHidden,
+  markBounds,
+  type PinSize,
+  type Point,
+} from "./coords";
 import { DEFAULT_TEXT_SIZE } from "./style";
 import { PinEditor } from "./tools/PinTool";
 
@@ -45,6 +54,7 @@ function translate(m: Mark, dx: number, dy: number): Mark {
         y2: m.y2 + dy,
       };
     case "rect":
+    case "image": // rect geometry
       return { ...m, x: m.x + dx, y: m.y + dy };
     case "ellipse":
       return { ...m, cx: m.cx + dx, cy: m.cy + dy };
@@ -75,7 +85,8 @@ function resize(m: Mark, handle: string, dx: number, dy: number): Mark {
       return handle === "p1"
         ? { ...m, x1: m.x1 + dx, y1: m.y1 + dy }
         : { ...m, x2: m.x2 + dx, y2: m.y2 + dy };
-    case "rect": {
+    case "rect":
+    case "image": {
       const b = resizeBox({ x: m.x, y: m.y, w: m.w, h: m.h }, handle, dx, dy);
       return { ...m, ...b };
     }
@@ -142,6 +153,7 @@ function geometryPatch(m: Mark): Record<string, number | { x: number; y: number 
     case "line":
       return { x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2 };
     case "rect":
+    case "image": // rect geometry
       return { x: m.x, y: m.y, w: m.w, h: m.h };
     case "ellipse":
       return { cx: m.cx, cy: m.cy, rx: m.rx, ry: m.ry };
@@ -179,7 +191,8 @@ function resizeHandles(m: Mark): { id: string; x: number; y: number; cursor: str
         { id: "p1", x: m.x1, y: m.y1, cursor: "cursor-move" },
         { id: "p2", x: m.x2, y: m.y2, cursor: "cursor-move" },
       ];
-    case "rect": {
+    case "rect":
+    case "image": {
       const { x, y, w, h } = m;
       return boxHandles(x, y, w, h, true);
     }
@@ -217,6 +230,7 @@ function boxHandles(x: number, y: number, w: number, h: number, edges: boolean) 
 
 export function SelectionOverlay({
   marks,
+  layers,
   send,
   scale,
   pinBounds,
@@ -225,6 +239,7 @@ export function SelectionOverlay({
   liveOverride,
 }: {
   marks: Mark[];
+  layers: Layer[]; // back→front → topmost-hit honors layer order, skips hidden
   send: (m: ClientToServer) => void;
   scale: number; // viewport zoom → the inline note editor welds to the image
   pinBounds: Record<string, PinSize>; // measured pin text boxes (fractions), by id
@@ -265,10 +280,13 @@ export function SelectionOverlay({
   }, [gesture, selected, pinBounds, onLiveTransform]);
   useEffect(() => () => onLiveTransform?.(null), [onLiveTransform]);
 
-  // topmost mark under p (zOrder descending), pins sized to their measured box
+  // topmost mark under p (effective-z descending: layer order then zOrder), pins
+  // sized to their measured box. Marks in hidden layers aren't drawn → not hittable.
   function topHit(p: Point): Mark | undefined {
+    const cmp = byEffectiveZ(layers);
     return [...marks]
-      .sort((a, b) => (b.zOrder ?? 0) - (a.zOrder ?? 0))
+      .filter((m) => !isMarkHidden(layers, m))
+      .sort((a, b) => cmp(b, a))
       .find((m) => hitTest(p, m, undefined, pinBounds[m.id]));
   }
 

@@ -77,6 +77,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   // Marks are durable PER variant now (server keys them by the focused variant);
   // read the focused image's bucket. Client mark.* sends are unchanged.
   const marks = focus ? (state.marksByVariant[focus.variantId] ?? []) : [];
+  // Container metadata for the focused variant (back→front): drives effective z,
+  // the hidden-layer handoff filter, and which layer new marks drop into.
+  const layers = focus ? (state.layersByVariant[focus.variantId] ?? []) : [];
 
   // The % that fits the image fully in the stage (may be <100 for a big image,
   // >100 for a tiny one). Zoom is now "% of actual image size".
@@ -178,10 +181,12 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
 
   async function commitMarks() {
     if (!focus || marks.length === 0) return;
-    // count every shape type generically (group by tool), in MARK_TOOLS order
+    // count every ANNOTATION shape type generically (group by tool), in MARK_TOOLS
+    // order. image layers are content, not annotation marks → excluded from the
+    // "marked: …" summary (they ride along in the flattened composite regardless).
     const counts = new Map<string, number>();
     for (const m of marks) counts.set(m.tool, (counts.get(m.tool) ?? 0) + 1);
-    const parts = MARK_TOOLS.filter((t) => counts.has(t)).map((t) => {
+    const parts = MARK_TOOLS.filter((t) => t !== "image" && counts.has(t)).map((t) => {
       const n = counts.get(t) ?? 0;
       const word = t === "draw" ? "sketch" : t; // "draw" reads as "sketch" in the summary
       const plural = word === "sketch" ? "sketches" : `${word}s`;
@@ -189,10 +194,14 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     });
     // Visual handoff: flatten the focused image with marks burned in at natural
     // res (best-effort — "" on failure → omit, agent falls back to the raw ref).
-    const png = variant?.src && nat ? await flattenMarks(variant.src, marks, nat.w, nat.h) : "";
+    const png =
+      variant?.src && nat ? await flattenMarks(variant.src, marks, nat.w, nat.h, layers) : "";
+    // image-only sets (a dropped collage with no annotation marks) have no parts →
+    // describe the composite instead of an empty "marked: ".
+    const text = parts.length ? `marked: ${parts.join(", ")}` : "composited image layers";
     send({
       type: "marks.commit",
-      text: `marked: ${parts.join(", ")}`,
+      text,
       batchId: focus.batchId,
       variantId: focus.variantId,
       flattenedSrc: png || undefined,
@@ -419,10 +428,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             <AnnotationLayer
               tool={tool}
               marks={marks}
+              layers={layers}
               resetKey={variantId ?? ""}
               send={send}
               drawStyle={drawStyle}
               scale={scale}
+              natW={nat?.w ?? 0}
+              natH={nat?.h ?? 0}
               onSelectionChange={setSelectedMarkId}
             />
           </div>

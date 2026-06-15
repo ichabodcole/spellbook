@@ -8,7 +8,7 @@
 // stopPropagation keeps it off the pan path.
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import type { ClientToServer, Mark } from "../../state/types";
+import type { ClientToServer, Layer, Mark } from "../../state/types";
 import { frac, type PinSize, type Point } from "./coords";
 import { ERASER_RADIUS, eraseMarks } from "./erase";
 import { MarkRenderer } from "./MarkRenderer";
@@ -25,18 +25,24 @@ const ERASER_CURSOR =
 export function AnnotationLayer({
   tool,
   marks,
+  layers,
   resetKey,
   send,
   drawStyle,
   scale,
+  natW,
+  natH,
   onSelectionChange,
 }: {
   tool: string;
   marks: Mark[];
+  layers: Layer[]; // container metadata (back→front) → effective z + hidden skip
   resetKey: string; // changes when the focused image changes → clears any draft
   send: (m: ClientToServer) => void;
   drawStyle: DrawStyle; // active color/width for NEW marks (tools stay style-agnostic)
   scale: number; // viewport zoom scale → marks/drafts weld to the image
+  natW: number; // image natural px (the SVG viewBox basis)
+  natH: number;
   onSelectionChange?: (id: string | null) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(null);
@@ -170,7 +176,10 @@ export function AnnotationLayer({
     >
       <MarkRenderer
         marks={shownMarks}
+        layers={layers}
         scale={scale}
+        natW={natW}
+        natH={natH}
         onMeasurePin={onMeasurePin}
         liveOverride={liveOverride}
       />
@@ -181,6 +190,7 @@ export function AnnotationLayer({
         <SelectionOverlay
           key={resetKey}
           marks={marks}
+          layers={layers}
           send={send}
           scale={scale}
           pinBounds={pinBounds}

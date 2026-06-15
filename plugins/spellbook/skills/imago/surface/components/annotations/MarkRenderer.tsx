@@ -1,25 +1,36 @@
 // surface/components/annotations/MarkRenderer.tsx
-// Pure render of committed marks (SVG arrow/line/rect/ellipse + HTML pins).
-// pointer-events-none — all interaction lives in the layer/tools; this just
-// draws. Coords are fractions of the image box (% / viewBox 0–100), so positions
-// ride the viewport's pan/zoom. Stroke width + pin text size are authored px "at
-// 100% zoom" and multiplied by `scale` so they WELD to the image (no bloat when
-// zoomed out). Drawn in zOrder ascending (higher = on top).
-import { useLayoutEffect, useRef } from "react";
-import type { Mark } from "../../state/types";
-import type { PinSize } from "./coords";
-import { DEFAULT_STROKE, DEFAULT_TEXT_SIZE, DEFAULT_WIDTH, PIN_MAX_W_FRACTION } from "./style";
+// Pure render of committed marks. ONE SVG in the image's NATURAL-dimension coord
+// system (viewBox 0 0 natW natH) — the same basis flatten.ts composites in — so
+// images, vector marks, AND pins all live in a single z-ordered tree and what you
+// see on screen is exactly what the agent receives. (Pins were HTML before, which
+// forced them permanently above everything; an SVG <text> in the old stretched
+// 0–100 viewBox would shear on a non-square image, so we adopt flatten's uniform
+// natural-dim viewBox instead.) pointer-events-none — all interaction lives in the
+// layer/tools; this just draws. Stroke widths weld to the image (non-scaling-stroke
+// at width×scale px); pin text + arrowheads use flatten's shared geometry.
+import { useEffect } from "react";
+import type { Layer, Mark } from "../../state/types";
+import { type PinSize, visibleSorted } from "./coords";
+import { DEFAULT_STROKE, DEFAULT_WIDTH } from "./style";
+import { arrowHeadPoints, PIN_BG_DEFAULT, PIN_TEXT, pinLayout } from "./svgMark";
 
 export function MarkRenderer({
   marks,
+  layers,
   scale,
+  natW,
+  natH,
   onMeasurePin,
   liveOverride,
 }: {
   marks: Mark[];
-  scale: number;
-  // report each pin's rendered text box (fractions of the image box) so SELECT
-  // can size its hit area + highlight to the note, not a fixed point.
+  layers: Layer[]; // back→front; drives effective z + the hidden-layer skip
+  scale: number; // viewport zoom → vector stroke widths weld to the image
+  natW: number; // image natural px (the viewBox basis); 0 until the image loads
+  natH: number;
+  // report each pin's box (fraction of the image box) so SELECT can size its hit
+  // area + highlight to the note. Now derived geometrically (same layout as
+  // flatten) rather than DOM-measured — render and handoff can't disagree.
   onMeasurePin?: (id: string, size: PinSize) => void;
   // mid-drag geometry for the selected mark: substituted for the stored mark of
   // the same id so the SHAPE (not just the highlight) moves live with the cursor.
@@ -28,156 +39,175 @@ export function MarkRenderer({
   const display = liveOverride
     ? marks.map((m) => (m.id === liveOverride.id ? liveOverride : m))
     : marks;
-  const sorted = [...display].sort((a, b) => (a.zOrder ?? 0) - (b.zOrder ?? 0));
+
+  // Report pin boxes (pure geometry — no DOM measure). The parent's setter guards
+  // on value-equality, so redundant reports while dragging/zooming are no-ops.
+  useEffect(() => {
+    if (!onMeasurePin || natW <= 0 || natH <= 0) return;
+    // mirror the render: only VISIBLE pins (hidden-layer pins aren't drawn and
+    // shouldn't leave stale bounds behind for hit-testing).
+    for (const m of visibleSorted(display, layers)) {
+      if (m.tool === "pin") {
+        const { bgW, bgH } = pinLayout(m, natW, natH);
+        onMeasurePin(m.id, { w: bgW / natW, h: bgH / natH });
+      }
+    }
+  }, [display, layers, natW, natH, onMeasurePin]);
+
+  if (natW <= 0 || natH <= 0) return null; // image not measured yet (box hidden)
   return (
-    <>
-      <svg
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-      >
-        <title>annotations</title>
-        <defs>
-          {/* context-stroke → the arrowhead inherits each arrow's stroke color */}
-          <marker
-            id="imago-arrowhead"
-            markerWidth="6"
-            markerHeight="6"
-            refX="3"
-            refY="3"
-            orient="auto"
-          >
-            <path d="M0,0 L6,3 L0,6 Z" fill="context-stroke" />
-          </marker>
-        </defs>
-        {sorted.map((m) => {
-          const stroke = m.color ?? DEFAULT_STROKE;
-          // px stroke authored at 100%, scaled by the viewport; non-scaling-stroke
-          // renders it at exactly that many px (no viewBox distortion).
-          const strokeWidth = (m.width ?? DEFAULT_WIDTH) * scale;
-          if (m.tool === "arrow" || m.tool === "line") {
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      viewBox={`0 0 ${natW} ${natH}`}
+    >
+      <title>annotations</title>
+      {visibleSorted(display, layers).map((m) => {
+        const stroke = m.color ?? DEFAULT_STROKE;
+        const sw = (m.width ?? DEFAULT_WIDTH) * scale; // px (non-scaling-stroke)
+        switch (m.tool) {
+          case "image":
+            return (
+              <image
+                key={m.id}
+                href={m.src}
+                x={m.x * natW}
+                y={m.y * natH}
+                width={m.w * natW}
+                height={m.h * natH}
+                preserveAspectRatio="none"
+              />
+            );
+          case "arrow":
+            return (
+              <g key={m.id}>
+                <line
+                  x1={m.x1 * natW}
+                  y1={m.y1 * natH}
+                  x2={m.x2 * natW}
+                  y2={m.y2 * natH}
+                  stroke={stroke}
+                  strokeWidth={sw}
+                  vectorEffect="non-scaling-stroke"
+                  strokeLinecap="round"
+                />
+                {/* explicit triangle (matches flatten) — head welds to the image
+                    in natural-px units; w is authored px, NOT ×scale */}
+                <polygon
+                  points={arrowHeadPoints(
+                    m.x1 * natW,
+                    m.y1 * natH,
+                    m.x2 * natW,
+                    m.y2 * natH,
+                    m.width ?? DEFAULT_WIDTH,
+                  )}
+                  fill={stroke}
+                />
+              </g>
+            );
+          case "line":
             return (
               <line
                 key={m.id}
-                x1={m.x1 * 100}
-                y1={m.y1 * 100}
-                x2={m.x2 * 100}
-                y2={m.y2 * 100}
+                x1={m.x1 * natW}
+                y1={m.y1 * natH}
+                x2={m.x2 * natW}
+                y2={m.y2 * natH}
                 stroke={stroke}
-                strokeWidth={strokeWidth}
+                strokeWidth={sw}
                 vectorEffect="non-scaling-stroke"
-                markerEnd={m.tool === "arrow" ? "url(#imago-arrowhead)" : undefined}
+                strokeLinecap="round"
               />
             );
-          }
-          if (m.tool === "rect") {
+          case "rect":
             return (
               <rect
                 key={m.id}
-                x={m.x * 100}
-                y={m.y * 100}
-                width={m.w * 100}
-                height={m.h * 100}
+                x={m.x * natW}
+                y={m.y * natH}
+                width={m.w * natW}
+                height={m.h * natH}
                 fill="none"
                 stroke={stroke}
-                strokeWidth={strokeWidth}
+                strokeWidth={sw}
                 vectorEffect="non-scaling-stroke"
               />
             );
-          }
-          if (m.tool === "ellipse") {
+          case "ellipse":
             return (
               <ellipse
                 key={m.id}
-                cx={m.cx * 100}
-                cy={m.cy * 100}
-                rx={m.rx * 100}
-                ry={m.ry * 100}
+                cx={m.cx * natW}
+                cy={m.cy * natH}
+                rx={m.rx * natW}
+                ry={m.ry * natH}
                 fill="none"
                 stroke={stroke}
-                strokeWidth={strokeWidth}
+                strokeWidth={sw}
                 vectorEffect="non-scaling-stroke"
               />
             );
-          }
-          if (m.tool === "draw") {
+          case "draw":
             return (
               <polyline
                 key={m.id}
-                points={m.points.map((p) => `${p.x * 100},${p.y * 100}`).join(" ")}
+                points={m.points.map((p) => `${p.x * natW},${p.y * natH}`).join(" ")}
                 fill="none"
                 stroke={stroke}
-                strokeWidth={strokeWidth}
+                strokeWidth={sw}
                 vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
             );
+          case "pin": {
+            const { fontSize, cx, cy, lines, lh, bgW, bgH, baseline, rx } = pinLayout(
+              m,
+              natW,
+              natH,
+            );
+            const bg = m.color ?? PIN_BG_DEFAULT; // live SVG reads CSS vars directly
+            // stable per-line keys from cumulative char offset — the wrapped lines
+            // never reorder (the whole pin re-renders), so this avoids array-index
+            // keys without risking a collision on duplicate line text.
+            let off = 0;
+            const rows = lines.map((text) => {
+              const row = { text, dy: off === 0 ? 0 : lh, key: `${m.id}@${off}` };
+              off += text.length + 1;
+              return row;
+            });
+            return (
+              <g key={m.id}>
+                <rect
+                  x={cx - bgW / 2}
+                  y={cy - bgH / 2}
+                  width={bgW}
+                  height={bgH}
+                  rx={rx}
+                  fill={bg}
+                />
+                <text
+                  x={cx}
+                  y={baseline}
+                  fontFamily="sans-serif"
+                  fontSize={fontSize}
+                  fill={PIN_TEXT}
+                  textAnchor="middle"
+                >
+                  {rows.map((row) => (
+                    <tspan key={row.key} x={cx} {...(row.dy ? { dy: row.dy } : {})}>
+                      {row.text}
+                    </tspan>
+                  ))}
+                </text>
+              </g>
+            );
           }
-          return null;
-        })}
-      </svg>
-      {sorted.map((m) =>
-        m.tool === "pin" ? (
-          <PinLabel key={m.id} mark={m} scale={scale} onMeasure={onMeasurePin} />
-        ) : null,
-      )}
-    </>
-  );
-}
-
-// A committed pin's label. Self-measuring: after layout it reports its rendered
-// box as a fraction of the image box (its positioned parent = the layer's inset-0
-// div). The fraction is scale-invariant — both the span and the image grow with
-// zoom by the same factor — so the reported size is stable across zoom.
-function PinLabel({
-  mark,
-  scale,
-  onMeasure,
-}: {
-  mark: Extract<Mark, { tool: "pin" }>;
-  scale: number;
-  onMeasure?: (id: string, size: PinSize) => void;
-}) {
-  const ref = useRef<HTMLSpanElement>(null);
-
-  // Re-measure whenever the span's rendered size changes — driven by a
-  // ResizeObserver rather than prop deps, so label / fontSize / zoom edits all
-  // retrigger it without listing values the effect doesn't itself read.
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || !onMeasure) return;
-    const measure = () => {
-      const box = el.offsetParent as HTMLElement | null;
-      if (!box) return;
-      const pw = box.clientWidth;
-      const ph = box.clientHeight;
-      if (pw > 0 && ph > 0) onMeasure(mark.id, { w: el.offsetWidth / pw, h: el.offsetHeight / ph });
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [mark.id, onMeasure]);
-
-  return (
-    <span
-      ref={ref}
-      className="absolute -translate-x-1/2 -translate-y-1/2 w-max bg-accent text-white px-1.5 py-0.5 rounded shadow pointer-events-none leading-tight whitespace-pre-wrap [overflow-wrap:anywhere]"
-      style={{
-        left: `${mark.x * 100}%`,
-        top: `${mark.y * 100}%`,
-        fontSize: `${(mark.fontSize ?? DEFAULT_TEXT_SIZE) * scale}px`,
-        // wrap at a fraction of the image box (scales with zoom) so a long note
-        // doesn't sprawl across the image; honors explicit \n via pre-wrap above.
-        // w-max (width:max-content) sizes to content REGARDLESS of position — without
-        // it, abspos shrink-to-fit = (container − left) so the note wraps earlier the
-        // further right it's dragged. With it, the wrap point is constant.
-        maxWidth: `${PIN_MAX_W_FRACTION * 100}%`,
-        ...(mark.color ? { backgroundColor: mark.color } : {}),
-      }}
-    >
-      {mark.label}
-    </span>
+          default:
+            // exhaustive: every Mark tool returns above. A new tool makes `m`
+            // non-never here → a compile error, never a silently-unrendered mark.
+            return m satisfies never;
+        }
+      })}
+    </svg>
   );
 }
