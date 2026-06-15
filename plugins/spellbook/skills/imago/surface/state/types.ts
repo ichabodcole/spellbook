@@ -130,7 +130,9 @@ export type Reference = {
 // it). All optional — the surface picks sensible defaults.
 export type MarkBase = {
   id: string;
-  zOrder?: number;
+  zOrder?: number; // order WITHIN the element's layer (server-authoritative)
+  layerId?: string; // which Layer (container) this element belongs to; backfilled on migration
+  rotation?: number; // degrees clockwise about the element's bbox center; image-first (absent = 0 = today)
   label?: string;
   color?: string;
   width?: number;
@@ -163,7 +165,19 @@ export type Mark =
   // freeform sketch — an ordered list of fraction-space points (a polyline). The
   // visual handoff (flattened image) is what the model reads; doubles as a future
   // inpaint-mask region.
-  | (MarkBase & { tool: "draw"; points: { x: number; y: number }[] });
+  | (MarkBase & { tool: "draw"; points: { x: number; y: number }[] })
+  // an image LAYER element — a dropped clipping/reference composited onto the
+  // image. Reuses rect geometry (x,y,w,h fractions) so it inherits
+  // bounds/hit/resize/translate; `src` is a base64 webp (stripped in the lean
+  // agent projection — the agent reads the flattened composite, not layer bitmaps).
+  | (MarkBase & {
+      tool: "image";
+      src: string;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    });
 export const MARK_TOOLS: readonly Mark["tool"][] = [
   "pin",
   "arrow",
@@ -171,7 +185,24 @@ export const MARK_TOOLS: readonly Mark["tool"][] = [
   "rect",
   "ellipse",
   "draw",
+  "image",
 ] as const;
+
+// A LAYER is a CONTAINER of marks (elements) on a variant — the grouping unit for
+// z-order, visibility, and lock. Elements reference it via Mark.layerId. Effective
+// z = layer order (array index in `layersByVariant`, back→front) then the element's
+// `zOrder` WITHIN the layer. A "group-of-one" (a standalone arrow) is just a layer
+// with a single element; a sketch layer accretes many pen strokes. The base image
+// (the focused Variant) is shown as a synthetic locked "Background" row and is NOT
+// stored here. `hidden` doubles as the agent-handoff filter: hidden layers don't
+// render, so they don't flatten, so the agent never receives them.
+export type Layer = {
+  id: string;
+  name: string; // editable; the panel label
+  kind: "annotation" | "sketch" | "image"; // auto-name + icon; "sketch" accretes pen strokes
+  hidden?: boolean;
+  locked?: boolean;
+};
 
 // ── the whole state ──
 
@@ -185,6 +216,10 @@ export type ImagoState = {
   pins: Pin[];
   refs: Reference[];
   marksByVariant: Record<string, Mark[]>; // durable annotation marks per variant id
+  // CONTAINER metadata per variant: an ordered list of Layers (back→front) that
+  // group the marks above. Each Mark carries a `layerId` into this list; effective
+  // z = layer order, then Mark.zOrder within the layer. See type Layer.
+  layersByVariant: Record<string, Layer[]>;
   analysisCache: Record<string, string>; // hash → agent analysis; survives a ref delete/re-add (daemon-maintained)
   aspect: string; // aspect ratio for a NEW (fresh) generation
   size: ImageSize; // output resolution for a NEW generation
@@ -414,6 +449,7 @@ export function defaultState(title: string): ImagoState {
     pins: [],
     refs: [],
     marksByVariant: {},
+    layersByVariant: {},
     analysisCache: {},
     aspect: "1:1",
     size: "1K",

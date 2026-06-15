@@ -38,6 +38,7 @@ import {
   type Batch,
   defaultState,
   type ImagoState,
+  type Layer,
   MARK_TOOLS,
   type Mark,
   type Message,
@@ -232,19 +233,40 @@ async function main(argv: string[]): Promise<number> {
   // snapshots the pre-mutation marks for that variant onto `undo` and clears
   // `redo`. Capped so it can't grow without bound.
   const HISTORY_CAP = 100;
-  const markHistory: Record<string, { undo: Mark[][]; redo: Mark[][] }> = {};
+  // A history entry snapshots BOTH the marks AND the layer containers for a
+  // variant, so a layer rename/reorder/visibility/group op is atomically undoable
+  // alongside element edits (container model — see type Layer).
+  type MarkSnap = { marks: Mark[]; layers: Layer[] };
+  const markHistory: Record<string, { undo: MarkSnap[]; redo: MarkSnap[] }> = {};
   const histFor = (vid: string) => (markHistory[vid] ??= { undo: [], redo: [] });
   // ONE freshness flag per variant: the agent hasn't seen these marks yet. Set on
   // every mark change; cleared when the agent receives the marked image (commit
   // button OR a say that carries it). See ImagoState.marksUnseen.
   const markUnseen: Record<string, boolean> = {};
+  const snapFor = (vid: string): MarkSnap => ({
+    marks: structuredClone(state.marksByVariant[vid] ?? []),
+    layers: structuredClone(state.layersByVariant[vid] ?? []),
+  });
   const pushHistory = (vid: string | undefined) => {
     if (!vid) return;
-    markUnseen[vid] = true; // a mark is about to change → agent's view is stale
+    markUnseen[vid] = true; // a mark/layer is about to change → agent's view is stale
     const h = histFor(vid);
-    h.undo.push(structuredClone(state.marksByVariant[vid] ?? []));
+    h.undo.push(snapFor(vid));
     if (h.undo.length > HISTORY_CAP) h.undo.shift();
     h.redo = []; // a fresh edit forks the timeline — redo is no longer valid
+  };
+  // Container model: every element belongs to a Layer. Until the layers panel
+  // lands (Phase 2 — active-layer selection + per-tool grouping), all marks drop
+  // into a single default "Annotations" layer per variant. Returns its id,
+  // creating the layer if absent. Call AFTER pushHistory so the auto-created layer
+  // is part of the same undoable step as the mark that triggered it.
+  const ensureDefaultLayer = (vid: string): string => {
+    if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+    const layers = state.layersByVariant[vid];
+    if (!layers.length) {
+      layers.push({ id: newId("layer"), name: "Annotations", kind: "annotation" });
+    }
+    return layers[layers.length - 1].id;
   };
   if (v.restore) {
     const restorePath = existsSync(v.restore as string)
@@ -732,6 +754,7 @@ async function main(argv: string[]): Promise<number> {
       pushHistory(vid);
       if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
       const arr = state.marksByVariant[vid];
+      mk.layerId = ensureDefaultLayer(vid); // container model: stamp the active layer
       mk.zOrder = arr.length; // server is authoritative for z-order
       arr.push(mk);
       broadcastState(); // incremental — no agent event until commit
@@ -826,9 +849,11 @@ async function main(argv: string[]): Promise<number> {
       const from = t === "undo" ? h.undo : h.redo;
       const to = t === "undo" ? h.redo : h.undo;
       if (!from.length) return;
-      to.push(structuredClone(state.marksByVariant[vid] ?? []));
-      state.marksByVariant[vid] = from.pop() as Mark[];
-      markUnseen[vid] = true; // the marks changed → agent's view is stale again
+      to.push(snapFor(vid));
+      const prev = from.pop() as MarkSnap;
+      state.marksByVariant[vid] = prev.marks;
+      state.layersByVariant[vid] = prev.layers;
+      markUnseen[vid] = true; // the marks/layers changed → agent's view is stale again
       broadcastState();
     } else if (t === "marks.commit") {
       if (
@@ -1022,10 +1047,22 @@ async function main(argv: string[]): Promise<number> {
       delete (state as { marks?: Mark[] }).marks;
     }
     state.marksByVariant ??= {};
+    state.layersByVariant ??= {};
     for (const vid of Object.keys(state.marksByVariant)) {
-      state.marksByVariant[vid] = state.marksByVariant[vid].map((m, i) =>
-        m.zOrder === undefined ? { ...m, zOrder: i } : m,
-      );
+      const marks = state.marksByVariant[vid];
+      // Backfill the container model: wrap pre-layer marks into one default
+      // "Annotations" layer, then stamp layerId + normalize zOrder by position.
+      let layers = state.layersByVariant[vid];
+      if (!layers?.length && marks.length) {
+        layers = [{ id: newId("layer"), name: "Annotations", kind: "annotation" }];
+        state.layersByVariant[vid] = layers;
+      }
+      const defaultLayerId = layers?.[layers.length - 1]?.id;
+      state.marksByVariant[vid] = marks.map((m, i) => ({
+        ...m,
+        zOrder: m.zOrder === undefined ? i : m.zOrder,
+        layerId: m.layerId ?? defaultLayerId,
+      }));
     }
     saveSnapshot();
   }

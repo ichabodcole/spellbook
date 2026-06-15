@@ -24,6 +24,9 @@ test("defaultState carries the title and empty artifact collections", () => {
   // marksByVariant is the durable per-variant annotation map — empty object,
   // NOT undefined (the surface and server index into it directly).
   expect(s.marksByVariant).toEqual({});
+  // layersByVariant is the per-variant layer-container map (container model) —
+  // same empty-object invariant; the server/surface index into it directly.
+  expect(s.layersByVariant).toEqual({});
   expect(s.analysisCache).toEqual({});
 });
 

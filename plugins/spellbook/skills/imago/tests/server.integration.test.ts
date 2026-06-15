@@ -328,6 +328,47 @@ describe("marks lifecycle", () => {
   });
 });
 
+// ── container model: layers ───────────────────────────────────────────────────
+
+describe("container model — layers", () => {
+  test("mark.add auto-creates a default layer and stamps the mark's layerId", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    const st = await waitForState(s, (x) => x.marksByVariant[variantId]?.length === 1);
+
+    const layers = st.layersByVariant[variantId];
+    expect(layers).toHaveLength(1);
+    expect(layers[0].kind).toBe("annotation");
+    // the element points at the container it landed in
+    expect(st.marksByVariant[variantId][0].layerId).toBe(layers[0].id);
+    ws.close();
+  });
+
+  test("undo of the first add removes the mark AND the auto-created layer (atomic {marks,layers})", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    await waitForState(
+      s,
+      (x) =>
+        x.marksByVariant[variantId]?.length === 1 &&
+        (x.layersByVariant[variantId]?.length ?? 0) === 1,
+    );
+
+    // the add's pushHistory snapshotted the pre-state (no layer); undo restores it
+    ws.send({ type: "undo" });
+    const st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 0);
+    expect(st.layersByVariant[variantId] ?? []).toEqual([]);
+    expect(st.history.canRedo).toBe(true);
+    ws.close();
+  });
+});
+
 // ── undo / redo ──────────────────────────────────────────────────────────────
 
 describe("undo/redo of mark edits", () => {
@@ -537,6 +578,12 @@ describe("restore backfills newer fields from an old snapshot", () => {
     expect(ids(st.marksByVariant.v1)).toEqual(["legacy1"]);
     // zOrder normalized during migration (was undefined in the snapshot)
     expect(st.marksByVariant.v1[0].zOrder).toBe(0);
+    // container-model backfill: marks wrapped in a default "Annotations" layer,
+    // and the legacy mark stamped with that layer's id
+    expect(st.layersByVariant.v1).toHaveLength(1);
+    expect(st.layersByVariant.v1[0].name).toBe("Annotations");
+    expect(st.layersByVariant.v1[0].kind).toBe("annotation");
+    expect(st.marksByVariant.v1[0].layerId).toBe(st.layersByVariant.v1[0].id);
     // the old top-level `marks` array is gone (deleted by the migration)
     expect(st.marks).toBeUndefined();
     expect(st.title).toBe("resumed");
