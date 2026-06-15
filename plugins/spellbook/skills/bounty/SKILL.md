@@ -285,10 +285,10 @@ Capture both file paths in conversation context.
 Append a JSON-lines `init` command to the commands file:
 
 ```bash
+CMD='{"type": "init", "title": "My Project Board", "tasks": []}' \
 bun -e '
 import { appendFileSync } from "node:fs";
-const cmd = { type: "init", title: "...", tasks: [...] };
-appendFileSync(process.env.CMDS, JSON.stringify(cmd) + "\n");
+appendFileSync(process.env.CMDS, process.env.CMD + "\n");
 '
 ```
 
