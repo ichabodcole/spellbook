@@ -6,17 +6,21 @@
 //
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>]  # spawn a daemon
-//   bun cli.ts tail [--since N]                              # SSE events → JSONL (Monitor this)
+//   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
 //   bun cli.ts state [--full]                               # read-back: { state, cursor }
 //
 // Driving the board (POST /cmd):
-//   bun cli.ts add <title...> [--status ..] [--notes ..] [--id ..] [--stdin]
-//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--stdin]
+//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]
+//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]
+//   bun cli.ts claim <id> [--as <name>]                     # self-claim an unowned task
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
 //   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board
 //   bun cli.ts close | info | sessions | help
 //
+// Identity: --as <name> (or $BOUNTY_AS) stamps the event `by`, drives self-echo
+// suppression + claim/--mine. Ownership: --owner assigns; tail --owner/--mine
+// scopes a worker's wake-set to its own + claimable tasks (client-side filter).
 // --stdin reads the title from stdin (bypasses shell quoting — apostrophes,
 // quotes, ampersands, angle brackets all land verbatim). All verbs target the
 // most recent session by default; pass --session <id> to target a specific one.
@@ -119,11 +123,28 @@ function parseArgs(args: string[]): {
   return { pos, flags };
 }
 
-async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
+type CmdResult = { ok?: boolean; applied?: boolean; error?: string };
+
+// The caller's identity, stamped onto the event `by` so a scoped tail can
+// filter + suppress self-echo. --as wins, else $BOUNTY_AS, else undefined.
+function resolveAs(flags: Record<string, string | boolean>): string | undefined {
+  if (typeof flags.as === "string") return flags.as;
+  return process.env.BOUNTY_AS || undefined;
+}
+
+// POST a command; merge the caller's `as` identity in; return the apply-result.
+// Pass `quiet` for verbs that print their own outcome (e.g. claim).
+async function postCmd(
+  session: string | undefined,
+  msg: Record<string, unknown>,
+  opts: { as?: string; quiet?: boolean } = {},
+): Promise<CmdResult> {
   const s = requireSession(session);
-  const { status } = await api(s.port, "POST", "/cmd", msg);
+  const body = opts.as ? { ...msg, as: opts.as } : msg;
+  const { status, data } = await api(s.port, "POST", "/cmd", body);
   if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
-  printJson({ ok: true, sent: msg.type });
+  if (!opts.quiet) printJson({ ok: true, sent: msg.type });
+  return (data ?? {}) as CmdResult;
 }
 
 function newTaskId(): string {
@@ -177,7 +198,11 @@ async function cmdState(session: string | undefined, full: boolean) {
   printJson(data);
 }
 
-async function cmdTail(session: string | undefined, sinceArg: number) {
+async function cmdTail(
+  session: string | undefined,
+  sinceArg: number,
+  scope: { owner?: string; mine?: boolean; as?: string } = {},
+) {
   let since = sinceArg;
   let delay = 250;
   let stopped = false;
@@ -187,6 +212,23 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
   };
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);
+
+  // Client-side scope filter (the daemon streams ALL events). Lifecycle frames
+  // (ready/connected/disconnected/closed) always pass — only task.* frames are
+  // owner-scoped. `--mine` also passes claimable (unowned) tasks.
+  const owner = scope.owner;
+  const self = scope.as;
+  const inScope = (ev: { type?: string; owner?: string }) => {
+    if (typeof ev.type !== "string" || !ev.type.startsWith("task.")) return true;
+    if (owner) return ev.owner === owner;
+    if (scope.mine) return ev.owner === self || !ev.owner;
+    return true;
+  };
+  // Self-echo suppression: drop frames the caller's own identity caused (applied
+  // after the scope filter). Notice rides stderr, never stdout.
+  if (owner) process.stderr.write(`# scoped to owner=${owner}\n`);
+  else if (scope.mine)
+    process.stderr.write(`# scoped to --mine (owner=${self ?? "?"} + claimable)\n`);
 
   while (!stopped) {
     const s = readSession(session);
@@ -236,9 +278,19 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
         if (!dataLines.length) continue;
         const payload = dataLines.join("\n");
         try {
-          const ev = JSON.parse(payload) as { id?: number; type?: string };
+          const ev = JSON.parse(payload) as {
+            id?: number;
+            type?: string;
+            by?: string;
+            owner?: string;
+          };
+          // Advance the cursor on EVERY event (even filtered ones) so resume is
+          // correct regardless of scope.
           if (typeof ev.id === "number" && ev.id > since) since = ev.id;
-          process.stdout.write(`${payload}\n`);
+          // Scope filter, then self-echo suppression. `closed` is lifecycle, so
+          // it always passes — but guard the exit outside the filter regardless.
+          const selfEcho = self !== undefined && ev.by === self;
+          if (inScope(ev) && !selfEcho) process.stdout.write(`${payload}\n`);
           if (ev.type === "closed") process.exit(0);
         } catch {
           /* skip malformed frame */
@@ -297,14 +349,17 @@ const HELP = `bounty — an agent-driven task board.
 
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full]                    read-back: { state, cursor } (default lean)
-  tail   [--since N]                 SSE board events → JSONL (wrap with Monitor)
-  add    <title...> [--status ..] [--notes ..] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--stdin]      patch a task
+  tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
+  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
+  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
+  claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
   remove <id>                        delete a task
   message <text...> [--stdin]        show a toast on the board
   init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin)
   close | info | sessions | help
 
+  --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped
+  tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.
   --stdin reads the title from stdin (verbatim — survives apostrophes, quotes,
   &, <, >). Add --session <id> to target a specific session (default: most recent).`;
 
@@ -312,14 +367,22 @@ async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
   const { pos, flags } = parseArgs(rest);
   const session = typeof flags.session === "string" ? flags.session : undefined;
+  const as = resolveAs(flags);
 
   switch (verb) {
     case "open":
       await cmdOpen(flags);
       break;
-    case "tail":
-      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1);
+    case "tail": {
+      const mine = flags.mine === true;
+      if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
+      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1, {
+        owner: typeof flags.owner === "string" ? flags.owner : undefined,
+        mine,
+        as,
+      });
       break;
+    }
     case "state":
       await cmdState(session, flags.full === true);
       break;
@@ -336,30 +399,54 @@ async function main(argv: string[]): Promise<number> {
         status,
       };
       if (typeof flags.notes === "string") task.notes = flags.notes;
-      await postCmd(session, { type: "task.add", task });
+      if (typeof flags.owner === "string") task.owner = flags.owner;
+      await postCmd(session, { type: "task.add", task }, { as });
       break;
     }
     case "update": {
       const id = pos[0];
-      if (!id) die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--stdin]");
+      if (!id)
+        die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]");
       const patch: Record<string, unknown> = {};
       if (flags.stdin === true) patch.title = await readStdin();
       else if (typeof flags.title === "string") patch.title = flags.title;
       if (typeof flags.status === "string") patch.status = flags.status;
       if (typeof flags.notes === "string") patch.notes = flags.notes;
+      if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
       if (Object.keys(patch).length === 0)
-        die("update: nothing to change (give --status/--title/--notes/--stdin)");
-      await postCmd(session, { type: "task.update", id, patch });
+        die("update: nothing to change (give --status/--title/--notes/--owner/--stdin)");
+      await postCmd(session, { type: "task.update", id, patch }, { as });
+      break;
+    }
+    case "claim": {
+      // Cooperative self-claim: take ownership of an UNOWNED task. Rejected (and
+      // surfaced) if someone else already owns it — never a silent steal.
+      const id = pos[0];
+      if (!id) die("usage: claim <id> [--as <name>]");
+      if (!as) die("claim needs an identity — pass --as <name> or set BOUNTY_AS");
+      const res = await postCmd(
+        session,
+        { type: "task.update", id, patch: { owner: as }, claim: true },
+        { as, quiet: true },
+      );
+      if (res.applied) {
+        printJson({ ok: true, claimed: id, owner: as });
+      } else {
+        // Visible rejection — nonzero exit so the agent can't mistake a rejected
+        // claim for ownership (the daemon returned applied:false).
+        process.stderr.write(`bounty: ${res.error ?? `could not claim ${id}`}\n`);
+        return 1;
+      }
       break;
     }
     case "remove":
       if (!pos[0]) die("usage: remove <id>");
-      await postCmd(session, { type: "task.remove", id: pos[0] });
+      await postCmd(session, { type: "task.remove", id: pos[0] }, { as });
       break;
     case "message": {
       const text = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!text) die("usage: message <text...> [--stdin]");
-      await postCmd(session, { type: "message", text });
+      await postCmd(session, { type: "message", text }, { as });
       break;
     }
     case "init": {
@@ -376,11 +463,11 @@ async function main(argv: string[]): Promise<number> {
           die("init --stdin-tasks: invalid JSON on stdin");
         }
       }
-      await postCmd(session, msg);
+      await postCmd(session, msg, { as });
       break;
     }
     case "close":
-      await postCmd(session, { type: "close" });
+      await postCmd(session, { type: "close" }, { as });
       break;
     case "info":
       cmdInfo(session);

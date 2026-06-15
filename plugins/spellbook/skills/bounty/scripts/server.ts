@@ -64,19 +64,27 @@ type Task = {
   title: string;
   status: TaskStatus;
   notes?: string;
+  owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
 };
 type BoardState = { title: string; tasks: Task[] };
 
 type CloseReason = "user" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
 
+// `as` is the caller's --as identity (stamped onto the event `by`); cooperative
+// attribution, never an auth boundary. `claim` marks a cooperative self-claim
+// (task.update) that must not steal an already-owned task.
 type AgentMsg =
-  | { type: "init"; title?: string; tasks?: Task[] }
-  | { type: "task.add"; task: Task }
-  | { type: "task.update"; id: string; patch: Partial<Task> }
-  | { type: "task.remove"; id: string }
-  | { type: "message"; text: string }
-  | { type: "close" };
+  | { type: "init"; title?: string; tasks?: Task[]; as?: string }
+  | { type: "task.add"; task: Task; as?: string }
+  | { type: "task.update"; id: string; patch: Partial<Task>; as?: string; claim?: boolean }
+  | { type: "task.remove"; id: string; as?: string }
+  | { type: "message"; text: string; as?: string }
+  | { type: "close"; as?: string };
+
+// The /cmd response — `applied` lets the CLI confirm a write actually took (a
+// rejected cooperative claim returns applied:false + a reason).
+type ApplyResult = { ok: true; applied?: boolean; error?: string };
 
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
@@ -160,11 +168,13 @@ function validateTask(t: unknown): Task | null {
     return null;
   }
   if (cand.notes !== undefined && typeof cand.notes !== "string") return null;
+  if (cand.owner !== undefined && typeof cand.owner !== "string") return null;
   return {
     id: cand.id,
     title: cand.title,
     status: cand.status as TaskStatus,
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
+    ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
   };
 }
 
@@ -404,15 +414,19 @@ async function main(argv: string[]): Promise<number> {
     });
   }
 
-  // Single dispatch point for an agent command (POST /cmd body, and — until the
-  // file-pump is retired — the stdin JSON-lines reader). Mutates the canonical
-  // state via the apply* helpers and broadcasts to the WS clients, mirroring
-  // imago's handleAgentMsg.
-  // The actor that drove a /cmd write. Phase A has no --as identity yet, so all
-  // agent-origin frames are stamped `by:"agent"`; Phase C populates the caller's
-  // --as here. Self-echo suppression + the scope filter (Phase C) key off `by`,
-  // so the frame carries it from the start to keep the contract stable.
-  function handleAgentMsg(msg: AgentMsg) {
+  // Owner of a task by id (or undefined). Stamped onto task.* event frames so a
+  // scoped `cli.ts tail --owner`/`--mine` can filter client-side, and looked up
+  // for the cooperative-claim guard.
+  const ownerOf = (id: string) => state.tasks.find((t) => t.id === id)?.owner;
+
+  // Single dispatch point for an agent command (POST /cmd body). Mutates the
+  // canonical state via the apply* helpers, broadcasts to the WS clients, and
+  // appends an event frame. Returns an apply-result so the CLI can confirm a
+  // write took (a rejected cooperative claim returns applied:false + a reason).
+  // `by` carries the caller's --as identity (cooperative attribution, never an
+  // auth boundary); task.* frames carry the affected task's owner.
+  function handleAgentMsg(msg: AgentMsg): ApplyResult {
+    const by = typeof msg.as === "string" ? msg.as : "agent";
     if (msg.type === "init") {
       if (typeof msg.title === "string") state.title = msg.title;
       // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
@@ -420,28 +434,60 @@ async function main(argv: string[]): Promise<number> {
       if (Array.isArray(msg.tasks))
         state.tasks = msg.tasks.map(validateTask).filter((t): t is Task => t !== null);
       broadcast({ type: "init", title: state.title, tasks: state.tasks });
-      emitEvent({ type: "init", title: state.title, by: "agent" });
+      emitEvent({ type: "init", title: state.title, by });
+      return { ok: true, applied: true };
     } else if (msg.type === "task.add") {
       const task = validateTask(msg.task);
       if (task && applyTaskAdd(state, task)) {
         broadcast({ type: "task.add", task });
-        emitEvent({ type: "task.add", task, by: "agent" });
+        emitEvent({ type: "task.add", task, by, owner: task.owner });
+        return { ok: true, applied: true };
       }
+      return { ok: true, applied: false };
     } else if (msg.type === "task.update") {
+      // Cooperative-claim guard: a claim can't steal an already-owned task. The
+      // lead's `update --owner` (no claim flag) always wins — that's the
+      // reassignment path. Claiming a task you already own is a no-op success.
+      if (msg.claim) {
+        const existing = state.tasks.find((t) => t.id === msg.id);
+        const claimant = typeof msg.as === "string" ? msg.as : undefined;
+        if (existing?.owner && existing.owner !== claimant) {
+          return {
+            ok: true,
+            applied: false,
+            error: `task ${msg.id} is owned by ${existing.owner}`,
+          };
+        }
+      }
       if (applyTaskUpdate(state, msg.id, msg.patch)) {
         broadcast({ type: "task.update", id: msg.id, patch: msg.patch });
-        emitEvent({ type: "task.update", taskId: msg.id, patch: msg.patch, by: "agent" });
+        // Post-change owner = "who owned it when this happened" (owner-at-emit).
+        emitEvent({
+          type: "task.update",
+          taskId: msg.id,
+          patch: msg.patch,
+          by,
+          owner: ownerOf(msg.id),
+        });
+        return { ok: true, applied: true };
       }
+      return { ok: true, applied: false };
     } else if (msg.type === "task.remove") {
+      const owner = ownerOf(msg.id); // before removal
       if (applyTaskRemove(state, msg.id)) {
         broadcast({ type: "task.remove", id: msg.id });
-        emitEvent({ type: "task.remove", taskId: msg.id, by: "agent" });
+        emitEvent({ type: "task.remove", taskId: msg.id, by, owner });
+        return { ok: true, applied: true };
       }
+      return { ok: true, applied: false };
     } else if (msg.type === "message") {
       broadcast({ type: "message", text: msg.text });
+      return { ok: true, applied: true };
     } else if (msg.type === "close") {
       resolveDone({ code: 0, reason: "close" });
+      return { ok: true, applied: true };
     }
+    return { ok: true, applied: false };
   }
 
   let pageHtml = "";
@@ -485,8 +531,8 @@ async function main(argv: string[]): Promise<number> {
             .json()
             .then((body) => {
               touch();
-              handleAgentMsg(body as AgentMsg);
-              return new Response('{"ok":true}', {
+              const result = handleAgentMsg(body as AgentMsg);
+              return new Response(JSON.stringify(result), {
                 headers: { "Content-Type": "application/json" },
               });
             })
@@ -546,7 +592,13 @@ async function main(argv: string[]): Promise<number> {
             if (!VALID_STATUS.includes(msg.status)) return;
             if (applyTaskUpdate(state, msg.id, { status: msg.status })) {
               broadcast({ type: "task.update", id: msg.id, patch: { status: msg.status } });
-              emitEvent({ type: "task.toggle", taskId: msg.id, status: msg.status, by: "user" });
+              emitEvent({
+                type: "task.toggle",
+                taskId: msg.id,
+                status: msg.status,
+                by: "user",
+                owner: ownerOf(msg.id),
+              });
             }
           } else if (msg.type === "task.move") {
             if (!VALID_STATUS.includes(msg.status)) return;
@@ -560,6 +612,7 @@ async function main(argv: string[]): Promise<number> {
                 status: msg.status,
                 index: msg.index,
                 by: "user",
+                owner: ownerOf(msg.id),
               });
             }
           } else if (msg.type === "task.edit") {
@@ -571,19 +624,26 @@ async function main(argv: string[]): Promise<number> {
             if (typeof msg.title !== "string" || msg.title.trim() === "") return;
             if (applyTaskUpdate(state, msg.id, { title: msg.title })) {
               broadcast({ type: "task.update", id: msg.id, patch: { title: msg.title } });
-              emitEvent({ type: "task.edit", taskId: msg.id, title: msg.title, by: "user" });
+              emitEvent({
+                type: "task.edit",
+                taskId: msg.id,
+                title: msg.title,
+                by: "user",
+                owner: ownerOf(msg.id),
+              });
             }
           } else if (msg.type === "task.add") {
             // Shape-validate the untrusted browser task via the shared boundary.
             const task = validateTask(msg.task);
             if (task && applyTaskAdd(state, task)) {
               broadcast({ type: "task.add", task });
-              emitEvent({ type: "task.add", task, by: "user" });
+              emitEvent({ type: "task.add", task, by: "user", owner: task.owner });
             }
           } else if (msg.type === "task.remove") {
+            const owner = ownerOf(msg.id); // before removal
             if (applyTaskRemove(state, msg.id)) {
               broadcast({ type: "task.remove", id: msg.id });
-              emitEvent({ type: "task.remove", taskId: msg.id, by: "user" });
+              emitEvent({ type: "task.remove", taskId: msg.id, by: "user", owner });
             }
           } else if (msg.type === "close") {
             // The human dismisses the board ("Close board"). A clean dismiss —

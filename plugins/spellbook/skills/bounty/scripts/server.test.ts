@@ -184,6 +184,17 @@ describe("validateTask", () => {
   test("rejects non-string notes", () => {
     expect(validateTask({ id: "a", title: "A", status: "todo", notes: 42 })).toBeNull();
   });
+  test("carries an owner when present (string)", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", owner: "worker1" })).toEqual({
+      id: "a",
+      title: "A",
+      status: "todo",
+      owner: "worker1",
+    });
+  });
+  test("rejects non-string owner", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", owner: 42 })).toBeNull();
+  });
   test("rejects non-objects", () => {
     expect(validateTask(null)).toBeNull();
     expect(validateTask("nope")).toBeNull();
@@ -671,6 +682,134 @@ describe("GET /events (SSE)", () => {
     expect(addIds).not.toContain("c1");
     expect(addIds).not.toContain("c2");
   }, 15000);
+
+  // Phase C: the `by` stamp carries the caller's --as identity (set up in A),
+  // and task.* frames carry the affected task's owner so cli.ts tail can scope
+  // client-side. by is a cooperative attribution, never a security boundary.
+  test("/cmd stamps `by` from the caller's `as` and carries owner on the frame", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    const evP = collectEvents(ready.url, 0, (ev) => ev.type === "task.add", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        type: "task.add",
+        as: "lead",
+        task: { id: "o1", title: "owned", status: "todo", owner: "worker1" },
+      }),
+    });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+
+    const add = events.find((e) => e.type === "task.add");
+    expect(add?.by).toBe("lead"); // actor identity, not the hardcoded "agent"
+    expect(add?.owner).toBe("worker1"); // affected task's owner, on the frame
+  }, 15000);
+
+  test("a browser mutation carries the task's owner on the frame too", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        type: "task.add",
+        task: { id: "t1", title: "T", status: "todo", owner: "worker2" },
+      }),
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    const evP = collectEvents(ready.url, 0, (ev) => ev.type === "task.toggle", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    ws.send(JSON.stringify({ type: "task.toggle", id: "t1", status: "doing" }));
+    const events = await evP;
+    ws.close();
+    proc.kill();
+    await proc.exited;
+
+    const toggle = events.find((e) => e.type === "task.toggle");
+    expect(toggle?.by).toBe("user");
+    expect(toggle?.owner).toBe("worker2"); // owner stamped so an owner-scoped tail wakes
+  }, 15000);
+});
+
+describe("ownership claim guard (Phase C)", () => {
+  async function cmd(url: string, body: unknown) {
+    const res = await fetch(`${url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return { status: res.status, data: (await res.json()) as Record<string, unknown> };
+  }
+  async function state(url: string) {
+    return (await (await fetch(`${url}/state`)).json()) as { state: BoardState };
+  }
+
+  test("a cooperative claim on an other-owned task is rejected + reported (apply-result)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await cmd(ready.url, {
+      type: "task.add",
+      task: { id: "x", title: "X", status: "todo", owner: "alice" },
+    });
+    // bob tries to claim alice's task
+    const res = await cmd(ready.url, {
+      type: "task.update",
+      id: "x",
+      patch: { owner: "bob" },
+      as: "bob",
+      claim: true,
+    });
+    const s = await state(ready.url);
+    proc.kill();
+    await proc.exited;
+
+    // /cmd reports the apply result so cli.ts can surface a rejection (#2 slice).
+    expect(res.data.applied).toBe(false);
+    expect(String(res.data.error)).toContain("alice");
+    // State is unchanged — no silent steal.
+    expect(s.state.tasks[0].owner).toBe("alice");
+  }, 15000);
+
+  test("claiming an unowned task succeeds", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await cmd(ready.url, { type: "task.add", task: { id: "x", title: "X", status: "todo" } });
+    const res = await cmd(ready.url, {
+      type: "task.update",
+      id: "x",
+      patch: { owner: "bob" },
+      as: "bob",
+      claim: true,
+    });
+    const s = await state(ready.url);
+    proc.kill();
+    await proc.exited;
+
+    expect(res.data.applied).toBe(true);
+    expect(s.state.tasks[0].owner).toBe("bob");
+  }, 15000);
+
+  test("lead update --owner always wins (no claim flag) — reassignment", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await cmd(ready.url, {
+      type: "task.add",
+      task: { id: "x", title: "X", status: "todo", owner: "alice" },
+    });
+    // lead reassigns to bob — no claim flag, always applies
+    const res = await cmd(ready.url, {
+      type: "task.update",
+      id: "x",
+      patch: { owner: "bob" },
+      as: "lead",
+    });
+    const s = await state(ready.url);
+    proc.kill();
+    await proc.exited;
+
+    expect(res.data.applied).toBe(true);
+    expect(s.state.tasks[0].owner).toBe("bob");
+  }, 15000);
 });
 
 // ── cli.ts ↔ daemon parity (Phase A gate) ────────────────────────────────
@@ -838,6 +977,124 @@ describe("cli.ts ↔ daemon parity", () => {
     await new Promise((res) => setTimeout(res, 2000));
     const dead = await runCli(["state", "--session", session], { env });
     expect(dead.code).toBe(2); // cli.ts `die`s when the daemon is gone
+  }, 25000);
+});
+
+// ── Ownership + scoping (Phase C) ────────────────────────────────────────
+//
+// The multi-agent value: a worker tailing its scope is woken by its own +
+// claimable tasks, never the whole board; its own writes are suppressed; and a
+// cooperative claim can't steal an already-owned task.
+
+describe("ownership scoping (Phase C E2E)", () => {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  // Run a scoped tail, mutate the board, return the JSONL frames the tail saw.
+  async function tailFrames(
+    session: string,
+    env: Record<string, string>,
+    scopeArgs: string[],
+    mutate: () => Promise<void>,
+  ): Promise<Record<string, unknown>[]> {
+    const tail = Bun.spawn({
+      cmd: ["bun", "run", CLI, "tail", "--since", "0", "--session", session, ...scopeArgs],
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, ...env },
+    });
+    await wait(400); // subscribe
+    await mutate();
+    await wait(400); // let frames arrive
+    tail.kill();
+    const out = await new Response(tail.stdout).text();
+    return out
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+  }
+
+  test("--owner scopes to owned, filters others, suppresses self-echo", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "15"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "X", "--id", "X", "--owner", "worker1", "--session", session], { env });
+    await runCli(["add", "Y", "--id", "Y", "--owner", "worker2", "--session", session], { env });
+
+    const frames = await tailFrames(
+      session,
+      env,
+      ["--owner", "worker1", "--as", "worker1"],
+      async () => {
+        // a third actor (lead) mutates worker1's X → should reach worker1's tail
+        await runCli(["update", "X", "--status", "doing", "--as", "lead", "--session", session], {
+          env,
+        });
+        // lead mutates worker2's Y → filtered out (not worker1's)
+        await runCli(["update", "Y", "--status", "doing", "--as", "lead", "--session", session], {
+          env,
+        });
+        // worker1 mutates its OWN X → self-echo, suppressed from worker1's tail
+        await runCli(["update", "X", "--notes", "mine", "--as", "worker1", "--session", session], {
+          env,
+        });
+      },
+    );
+    await runCli(["close", "--session", session], { env });
+
+    // Woken by the lead's mutation of an owned task.
+    expect(frames.some((f) => f.taskId === "X" && f.by === "lead")).toBe(true);
+    // Never woken by another owner's task.
+    expect(frames.some((f) => f.taskId === "Y")).toBe(false);
+    // Own writes suppressed.
+    expect(frames.some((f) => f.by === "worker1")).toBe(false);
+  }, 30000);
+
+  test("--mine wakes on own + claimable (unowned), not another owner's", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "15"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "M", "--id", "M", "--owner", "worker1", "--session", session], { env });
+    await runCli(["add", "U", "--id", "U", "--session", session], { env }); // unowned/claimable
+    await runCli(["add", "Z", "--id", "Z", "--owner", "worker2", "--session", session], { env });
+
+    const frames = await tailFrames(session, env, ["--mine", "--as", "worker1"], async () => {
+      await runCli(["update", "M", "--status", "doing", "--as", "lead", "--session", session], {
+        env,
+      });
+      await runCli(["update", "U", "--status", "doing", "--as", "lead", "--session", session], {
+        env,
+      });
+      await runCli(["update", "Z", "--status", "doing", "--as", "lead", "--session", session], {
+        env,
+      });
+    });
+    await runCli(["close", "--session", session], { env });
+
+    expect(frames.some((f) => f.taskId === "M" && f.type === "task.update")).toBe(true); // mine
+    expect(frames.some((f) => f.taskId === "U" && f.type === "task.update")).toBe(true); // claimable
+    expect(frames.some((f) => f.taskId === "Z" && f.type === "task.update")).toBe(false); // another's
+  }, 30000);
+
+  test("claim: rejected (visible, nonzero) on other-owned; succeeds on unowned", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "O", "--id", "O", "--owner", "alice", "--session", session], { env });
+    await runCli(["add", "F", "--id", "F", "--session", session], { env });
+    try {
+      const rejected = await runCli(["claim", "O", "--as", "bob", "--session", session], { env });
+      expect(rejected.code).toBe(1); // visible nonzero — not a silent {ok:true}
+      expect(rejected.stderr).toContain("alice");
+
+      const ok = await runCli(["claim", "F", "--as", "bob", "--session", session], { env });
+      expect(ok.code).toBe(0);
+      expect((JSON.parse(ok.stdout) as { owner?: string }).owner).toBe("bob");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
   }, 25000);
 });
 

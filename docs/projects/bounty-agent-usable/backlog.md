@@ -28,13 +28,13 @@ narrowing into a shared `validateTask(unknown): Task | null` and calling it in
 `handleAgentMsg` (init filters, task.add rejects) and the WS handler. Landed as
 a Phase-A follow-up; Phase B restore reuses it (filter-and-keep-valid).
 
-**#2 — `/cmd` ack is unconditional `{ok:true}` (LOW).** `handleAgentMsg` drops
-the `apply*` booleans, so `/cmd` returns `ok` even when nothing applied
-(`update`/`remove` on a missing id; duplicate-id `add`). #8's contract is
-"confirm via `/state`," so it's not wrong — but returning `{ok, applied}` would
-make `/cmd` self-confirming and save a follow-up `/state` round-trip.
-_Proposed:_ thread the `apply*` boolean back through `handleAgentMsg` → the
-`/cmd` response.
+**#2 — `/cmd` ack is unconditional `{ok:true}` — DONE (Phase C).** Was: the
+`/cmd` response dropped the `apply*` booleans, so it returned `ok` even when
+nothing applied. Pulled forward in Phase C (the cooperative-claim guard needed a
+visible rejection): `handleAgentMsg` now returns `{ok, applied?, error?}` for
+**every** command and `/cmd` returns it. `cli.ts claim` surfaces a rejected
+claim (stderr + non-zero exit); other verbs can inspect `applied` to
+self-confirm without a follow-up `/state`.
 
 **#3 — `events[]` is unbounded (NIT).** The daemon's event log grows for the
 session's lifetime, and each tail reconnect replays `O(n)` buffered events. Fine

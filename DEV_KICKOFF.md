@@ -100,7 +100,7 @@ Discovery, plan, and test plan are **already done** — start at implementation.
 - [x] Phase A — substrate core (daemon + cli.ts; retire bg.ts) — closes #7, #8
 - [x] Phase B — durability (snapshot + restore) — closes #6
 - [x] Surface — Alpine port
-- [ ] Phase C — ownership + scoping — closes #9
+- [x] Phase C — ownership + scoping — closes #9
 - [ ] Phase D — dependencies — closes #10
 - [ ] Tests passing (full test plan executed)
 - [ ] Ready for merge

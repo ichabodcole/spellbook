@@ -126,6 +126,14 @@
       .task .title:empty::before {
         content: "(empty — type a title)"; color: var(--text-faint); font-style: italic;
       }
+      .task .owner {
+        /* Plain metadata at the bottom-left — deliberately NOT a pill, so it
+           doesn't compete with the status pills just above it. */
+        margin-top: 0.45rem;
+        font-size: 0.7rem;
+        color: var(--accent-neutral-text);
+        letter-spacing: 0.01em;
+      }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
       }
@@ -272,6 +280,9 @@
                   </template>
                   <button class="delete" @click="remove(task)">delete</button>
                 </div>
+                <template x-if="task.owner">
+                  <div class="owner" x-text="'@' + task.owner"></div>
+                </template>
               </div>
             </template>
           </div>

@@ -147,17 +147,18 @@ session by default; pass `--session <id>` to target a specific one.
 
 ### Verbs
 
-| Verb                                                          | Does                                                                                    |
-| ------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open] [--restore <id>]` | spawn the daemon (or resume a saved session); print session JSON                        |
-| `state [--full]`                                              | read-back `{ state, cursor }` — confirm a command applied                               |
-| `tail [--since N]`                                            | stream board events as JSONL on stdout (wrap with Monitor); resumes from `--since <id>` |
-| `add <title…> [--status S] [--notes N] [--id ID] [--stdin]`   | add a task                                                                              |
-| `update <id> [--status S] [--title T] [--notes N] [--stdin]`  | patch a task                                                                            |
-| `remove <id>`                                                 | delete a task                                                                           |
-| `message <text…> [--stdin]`                                   | transient toast on the board                                                            |
-| `init [--title T] [--stdin-tasks]`                            | seed the board (tasks = JSON array on stdin)                                            |
-| `close` / `info` / `sessions` / `help`                        | end session / show session / list snapshots / usage                                     |
+| Verb                                                                     | Does                                                                                   |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>]`            | spawn the daemon (or resume a saved session); print session JSON                       |
+| `state [--full]`                                                         | read-back `{ state, cursor }` — confirm a command applied                              |
+| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`              | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since` |
+| `add <title…> [--status S] [--notes N] [--owner N] [--id ID] [--stdin]`  | add a task (optionally assigned)                                                       |
+| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--stdin]` | patch a task (`--owner` assigns/reassigns)                                             |
+| `claim <id> [--as <name>]`                                               | self-claim an **unowned** task (rejected if owned by another)                          |
+| `remove <id>`                                                            | delete a task                                                                          |
+| `message <text…> [--stdin]`                                              | transient toast on the board                                                           |
+| `init [--title T] [--stdin-tasks]`                                       | seed the board (tasks = JSON array on stdin)                                           |
+| `close` / `info` / `sessions` / `help`                                   | end session / show session / list snapshots / usage                                    |
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` (which reads the title
@@ -215,21 +216,23 @@ ends the tail (exit 0); `TaskStop` the Monitor when you see it.
 Each `tail` frame is `{ id, type, …, by }`:
 
 - `id` — monotonic event cursor (the resume point for `--since`).
-- `by` — the actor: `"user"` (browser action), `"agent"` (a `cli.ts` write),
-  `"system"` (lifecycle).
+- `by` — the actor: `"user"` (browser action), an agent's `--as` identity (a
+  `cli.ts` write; `"agent"` if none given), `"system"` (lifecycle). Cooperative
+  attribution, not auth.
 - task-bearing frames carry the task identifier as **`taskId`** (the envelope
-  `id` is the cursor, so the task id can't be named `id`); `task.add` nests the
-  full `task` object.
+  `id` is the cursor, so the task id can't be named `id`) and the task's
+  **`owner`** at the moment of the event (for client-side scope filtering);
+  `task.add` nests the full `task` object.
 
 ```
 {id, type:"ready",        url, port, session_id, by:"system"}
 {id, type:"connected" | "disconnected", by:"user"}
-{id, type:"task.toggle",  taskId, status, by}            // pill click
-{id, type:"task.move",    taskId, status, index, by}     // drag-drop
-{id, type:"task.edit",    taskId, title, by}             // inline title edit
-{id, type:"task.add",     task, by}                      // task added
-{id, type:"task.update",  taskId, patch, by}             // agent patch
-{id, type:"task.remove",  taskId, by}                    // task deleted
+{id, type:"task.toggle",  taskId, status, by, owner}     // pill click
+{id, type:"task.move",    taskId, status, index, by, owner}  // drag-drop
+{id, type:"task.edit",    taskId, title, by, owner}      // inline title edit
+{id, type:"task.add",     task, by, owner}               // task added
+{id, type:"task.update",  taskId, patch, by, owner}      // agent patch
+{id, type:"task.remove",  taskId, by, owner}             // task deleted
 {id, type:"closed",       reason, by:"system"}           // session ended (reason: user|timeout|close)
 ```
 
@@ -246,6 +249,7 @@ type Task = {
   title: string;
   status: "todo" | "doing" | "review" | "done";
   notes?: string; // optional, shown under the title
+  owner?: string; // optional assignee — shown as an @name badge; drives scoped tails
 };
 ```
 
@@ -279,6 +283,42 @@ stretches and a restart.
 
 The restored daemon gets a **new** session id (and writes its own snapshot on
 close); the snapshot you restored from is left intact.
+
+### Ownership & scoping (multi-agent)
+
+When several agents share a board (a lead + workers), `owner` + scoped tails
+keep each worker's wake-set small instead of every event waking everyone.
+
+- **Identity.** Pass `--as <name>` (or set `$BOUNTY_AS`) on your verbs. It
+  stamps the event `by`, and drives `claim` + `--mine`. It's cooperative
+  attribution, **not** auth — agents self-assert it; don't treat `by`/`owner` as
+  a security boundary.
+- **Assign (lead).** `cli.ts add <title> --owner <name>` or
+  `cli.ts update <id> --owner <name>`. Assignment-first is the primary path;
+  `update --owner` is also the **reassignment** path and always wins.
+- **Self-claim (worker).** `cli.ts claim <id> --as <name>` takes an **unowned**
+  task. A claim on a task someone else owns is **rejected** (stderr notice +
+  non-zero exit) — never a silent steal; claiming your own task is a no-op
+  success. (Reassignment is the lead's job via `update --owner`.)
+- **Scoped tail.** `cli.ts tail --owner <name>` wakes only on that owner's
+  tasks; `cli.ts tail --mine --as <name>` wakes on your own **plus claimable
+  (unowned)** tasks. Lifecycle frames (`ready`/`closed`/…) always pass.
+  Filtering is client-side in the CLI — the `# scoped to …` notice rides
+  **stderr**.
+- **Self-echo suppression.** A scoped tail drops frames your own `--as` identity
+  caused, so you don't wake on your own writes (applied after the scope filter).
+- **`review` is the human handoff cue.** Moving a task to **Review** is a status
+  change on an owned task — the human sees it on the **surface** (the Review
+  column) and the lead sees it on an **unfiltered** tail. No special event; the
+  board _is_ the signal (board = state, chat = substance).
+
+> **Ownership-transfer wake (by design).** An event frame carries the task's
+> owner **at the moment it happened** (post-change). So when a task is
+> reassigned A→B (or a worker claims an unowned task), only the **new** owner's
+> scoped tail wakes — the **previous** owner A is _not_ board-woken that the
+> task left their lane. That's intentional: the board reflects new state, A sees
+> it on their next `cli.ts state`, and the reassigning lead conveys the _why_
+> over chat. Don't rely on the board to notify a former owner.
 
 ## Exit Code Contract
 
