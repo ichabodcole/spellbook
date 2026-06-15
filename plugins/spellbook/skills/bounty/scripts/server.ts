@@ -2,47 +2,54 @@
 
 // bounty — agent-driven task board the user can interact with.
 //
-// Built on the agent-surface-bun recipe's duplex pattern:
-//   - Agent ↔ server via JSON-lines on stdio
-//   - Server ↔ browser via WebSocket
-//   - Server holds the canonical state; late-joining browsers receive
-//     a synthetic init on connect.
+// The house agent-interface pattern (shared with grapevine + imago): a
+// persistent daemon holds the canonical state; the agent drives it through a
+// thin `cli.ts` over HTTP, and the browser is wired over WebSocket.
 //
-// Protocol — agent → server (one JSON object per line on stdin):
+//   - Agent → daemon:  POST /cmd          (an AgentCommand; write path)
+//   - Agent ← daemon:  GET  /state[?lean=1]  ({ state, cursor } read-back)
+//                      GET  /events?since=<id>  (SSE event tail, resumable)
+//   - Browser ↔ daemon: WebSocket /ws     (same task.* events both ways)
+//   - The daemon holds canonical state; late-joining browsers receive a
+//     synthetic init on connect.
+//
+// AgentCommand — POST /cmd body (one of). All carry an optional `as` (caller
+// identity → event `by`); /cmd returns {ok, applied?, error?}:
 //   {"type":"init",        "title": "...", "tasks": Task[]}
 //   {"type":"task.add",    "task": Task}              // append
-//   {"type":"task.update", "id": "...", "patch": Partial<Task>}
+//   {"type":"task.update", "id": "...", "patch": Partial<Task>, "claim"?: bool}
 //   {"type":"task.remove", "id": "..."}
+//   {"type":"task.block",  "id": "...", "on": string[]}   // add blocker edges (cycle-guarded)
+//   {"type":"task.unblock","id": "...", "on": string[]}   // remove blocker edges
 //   {"type":"message",     "text": "..."}             // toast
 //   {"type":"close"}                                  // end session
 //
-// Protocol — server → agent (one JSON object per line on stdout):
-//   {"type":"ready",          "url":"...", "port":..., "session_id":"..."}
-//   {"type":"connected"}                              // browser opened WS
-//   {"type":"disconnected"}                           // browser closed WS
-//   {"type":"task.toggle",    "id":"...", "status":"todo|doing|review|done"}
-//   {"type":"task.move",      "id":"...", "status":"...", "index": N}
-//   {"type":"task.edit",      "id":"...", "title":"..."}
-//   {"type":"task.add",       "task": Task}           // user added
-//   {"type":"task.remove",    "id":"..."}             // user deleted
-//   {"type":"submit",         "tasks": Task[]}        // final state on submit
-//   {"type":"closed",         "reason":"submit|cancel|timeout|stdin_eof|close"}
+// Event log — GET /events frames (server → agent), each with a monotonic `id`
+// (the resume cursor), an actor `by` (the caller's --as | "user" | "system"),
+// and (task.* + unblocked) the affected task's `owner` for client-side scoping:
+//   {id, type:"ready",        url, port, session_id, by:"system"}
+//   {id, type:"connected" | "disconnected", by:"user"}
+//   {id, type:"task.toggle",  taskId, status, by, owner}  // ⚠ taskId, NOT id —
+//   {id, type:"task.move",    taskId, status, index, by, owner}  //  envelope id
+//   {id, type:"task.edit",    taskId, title, by, owner}   //   is the cursor; the
+//   {id, type:"task.add",     task, by, owner}            //   task id is nested
+//   {id, type:"task.update",  taskId, patch, by, owner}   //   / `taskId` so the
+//   {id, type:"task.remove",  taskId, by, owner}          //   spread can't clobber.
+//   {id, type:"unblocked",    taskId, owner, by:"system"} // last blocker cleared
+//   {id, type:"closed",       reason, by:"system"}    //   reason: user|timeout|close
 //
 // task.toggle vs task.move: toggle is the click-a-pill UX — status changes,
 // task is appended to the destination column. move is the drag UX — status
 // AND explicit position in the destination column. Agents that only care
 // about column membership can ignore .move and rely on the canonical order
-// in the final submit.
+// the daemon keeps.
 //
-// Protocol — server ↔ browser (WebSocket): same task.* events flow
-// in both directions; the server is a proxy that mutates the state
-// snapshot when either side speaks.
-//
-// Exit codes mirror digestify's review.ts: 0 submit, 2 bad args,
-// 124 idle timeout, 130 cancel.
+// Exit codes: 0 on any clean dismiss (the human's "Close board" → reason "user",
+// or an agent cli.ts close → reason "close"), 2 bad args, 124 idle timeout. The
+// board is a conjuration — there's no "cancel"/130 discard path.
 
-import { unlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -50,37 +57,42 @@ import type { ServerWebSocket } from "bun";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
+// Persistence root: debounced snapshots land in $BOUNTY_HOME/snapshots/<id>.json
+// so a board survives a restart via `cli.ts open --restore <id>`. cli.ts derives
+// the same path, so override BOUNTY_HOME to relocate both.
+const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
+const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
+
 type TaskStatus = "todo" | "doing" | "review" | "done";
 type Task = {
   id: string;
   title: string;
   status: TaskStatus;
   notes?: string;
+  owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
+  blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
 };
 type BoardState = { title: string; tasks: Task[] };
 
-type CloseReason = "submit" | "cancel" | "timeout" | "stdin_eof" | "close";
+type CloseReason = "user" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
 
+// `as` is the caller's --as identity (stamped onto the event `by`); cooperative
+// attribution, never an auth boundary. `claim` marks a cooperative self-claim
+// (task.update) that must not steal an already-owned task.
 type AgentMsg =
-  | { type: "init"; title?: string; tasks?: Task[] }
-  | { type: "task.add"; task: Task }
-  | { type: "task.update"; id: string; patch: Partial<Task> }
-  | { type: "task.remove"; id: string }
-  | { type: "message"; text: string }
-  | { type: "close" };
+  | { type: "init"; title?: string; tasks?: Task[]; as?: string }
+  | { type: "task.add"; task: Task; as?: string }
+  | { type: "task.update"; id: string; patch: Partial<Task>; as?: string; claim?: boolean }
+  | { type: "task.remove"; id: string; as?: string }
+  | { type: "task.block"; id: string; on: string[]; as?: string }
+  | { type: "task.unblock"; id: string; on: string[]; as?: string }
+  | { type: "message"; text: string; as?: string }
+  | { type: "close"; as?: string };
 
-type ServerToAgentMsg =
-  | { type: "ready"; url: string; port: number; session_id: string }
-  | { type: "connected" }
-  | { type: "disconnected" }
-  | { type: "task.toggle"; id: string; status: TaskStatus }
-  | { type: "task.move"; id: string; status: TaskStatus; index: number }
-  | { type: "task.edit"; id: string; title: string }
-  | { type: "task.add"; task: Task }
-  | { type: "task.remove"; id: string }
-  | { type: "submit"; tasks: Task[] }
-  | { type: "closed"; reason: CloseReason };
+// The /cmd response — `applied` lets the CLI confirm a write actually took (a
+// rejected cooperative claim returns applied:false + a reason).
+type ApplyResult = { ok: true; applied?: boolean; error?: string };
 
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
@@ -88,8 +100,7 @@ type BrowserMsg =
   | { type: "task.edit"; id: string; title: string }
   | { type: "task.add"; task: Task }
   | { type: "task.remove"; id: string }
-  | { type: "submit" }
-  | { type: "cancel" };
+  | { type: "close" }; // the human dismisses the board ("Close board")
 
 const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
 const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
@@ -151,62 +162,35 @@ function guessMime(name: string): string {
   return MIME_BY_EXT[ext] || "application/octet-stream";
 }
 
-function emitToAgent(msg: ServerToAgentMsg): void {
-  try {
-    process.stdout.write(`${JSON.stringify(msg)}\n`);
-  } catch (e) {
-    if (!(e && typeof e === "object" && "code" in e && e.code === "EPIPE")) throw e;
+// Narrow an untrusted value into a valid Task, or null if it doesn't qualify:
+// required string id + title, a valid status, optional string notes. This is
+// the single task-shape trust boundary — the browser WS path, the agent /cmd
+// path (init + task.add), and snapshot restore all run candidates through it so
+// a malformed task can't enter canonical state. Per-task (callers filter-and-
+// keep-valid or reject a single task), never all-or-nothing.
+function validateTask(t: unknown): Task | null {
+  if (!t || typeof t !== "object") return null;
+  const cand = t as Record<string, unknown>;
+  if (typeof cand.id !== "string" || typeof cand.title !== "string") return null;
+  if (typeof cand.status !== "string" || !VALID_STATUS.includes(cand.status as TaskStatus)) {
+    return null;
   }
-}
-
-async function* readJsonLines(): AsyncGenerator<AgentMsg | null> {
-  if (process.stdin.isTTY) {
-    yield null;
-    return;
+  if (cand.notes !== undefined && typeof cand.notes !== "string") return null;
+  if (cand.owner !== undefined && typeof cand.owner !== "string") return null;
+  if (
+    cand.blockedBy !== undefined &&
+    (!Array.isArray(cand.blockedBy) || cand.blockedBy.some((x) => typeof x !== "string"))
+  ) {
+    return null;
   }
-  const reader = Bun.stdin.stream().getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (value) buffer += decoder.decode(value, { stream: true });
-      // Re-scan for the next newline each pass so the `continue` below
-      // doesn't skip advancing past a consumed line.
-      for (let nl = buffer.indexOf("\n"); nl >= 0; nl = buffer.indexOf("\n")) {
-        const line = buffer.slice(0, nl).trim();
-        buffer = buffer.slice(nl + 1);
-        if (!line) continue;
-        try {
-          yield JSON.parse(line) as AgentMsg;
-        } catch (e) {
-          process.stderr.write(
-            `bounty: bad json on stdin: ${e instanceof Error ? e.message : String(e)}\n`,
-          );
-        }
-      }
-      if (done) {
-        buffer = buffer.trim();
-        if (buffer) {
-          try {
-            yield JSON.parse(buffer) as AgentMsg;
-          } catch (e) {
-            process.stderr.write(
-              `bounty: bad json on stdin (final): ${e instanceof Error ? e.message : String(e)}\n`,
-            );
-          }
-        }
-        yield null;
-        return;
-      }
-    }
-  } finally {
-    try {
-      reader.releaseLock();
-    } catch {
-      /* already released */
-    }
-  }
+  return {
+    id: cand.id,
+    title: cand.title,
+    status: cand.status as TaskStatus,
+    ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
+    ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
+    ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
+  };
 }
 
 // State mutation helpers. All keep `state.tasks` in place (replace by id)
@@ -276,6 +260,7 @@ async function main(argv: string[]): Promise<number> {
         port: { type: "string", default: "0" },
         host: { type: "string", default: "127.0.0.1" },
         id: { type: "string" },
+        restore: { type: "string" }, // snapshot id or path to resume from
       },
       strict: true,
       allowPositionals: false,
@@ -297,8 +282,64 @@ async function main(argv: string[]): Promise<number> {
   const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
+  // Initial state — restored from a snapshot (merge-over-defaults) or fresh.
+  // Restore loads the snapshot and merges it over the default shape so a snapshot
+  // from an older build gains any new top-level fields without crashing; restored
+  // tasks run through validateTask (filter-and-keep-valid) so a malformed or
+  // legacy entry is dropped, not fatal.
   const state: BoardState = { title: v.title as string, tasks: [] };
+  if (v.restore) {
+    const restoreArg = v.restore as string;
+    const restorePath = existsSync(restoreArg)
+      ? restoreArg
+      : join(SNAPSHOTS_DIR, `${restoreArg}.json`);
+    try {
+      const snap = JSON.parse(readFileSync(restorePath, "utf8")) as Partial<BoardState>;
+      const merged: BoardState = { title: state.title, tasks: [], ...snap };
+      if (typeof merged.title === "string") state.title = merged.title;
+      state.tasks = Array.isArray(merged.tasks)
+        ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
+        : [];
+    } catch (e) {
+      process.stderr.write(
+        `bounty: restore failed (${restorePath}): ${e instanceof Error ? e.message : String(e)}\n`,
+      );
+    }
+  }
   const sockets = new Set<ServerWebSocket<unknown>>();
+
+  // Append-only event log for the agent's SSE tail (GET /events). Each event
+  // gets a monotonic `id` so a (re)connecting tail resumes via ?since=<id>.
+  // `cursor` in GET /state is the current `eventSeq` — the resume point.
+  const events: Array<Record<string, unknown>> = [];
+  let eventSeq = 0;
+  const enc = new TextEncoder();
+  const sseClients = new Set<ReadableStreamDefaultController>();
+  const sseTimers = new Set<ReturnType<typeof setInterval>>();
+
+  // Debounced persistence: a board mutation marks the snapshot dirty; a ~1s
+  // timer flushes it, and a final write lands on close. The snapshot is keyed by
+  // session id and KEPT on close (it's the resume point for --restore).
+  let snapDirty = false;
+  const saveSnapshot = () => {
+    try {
+      mkdirSync(SNAPSHOTS_DIR, { recursive: true });
+      writeFileSync(join(SNAPSHOTS_DIR, `${sessionId}.json`), JSON.stringify(state));
+    } catch {
+      /* persistence is best-effort */
+    }
+  };
+  // Event types that mutate board state — used to set snapDirty centrally (every
+  // mutation already emits one of these). Lifecycle frames don't dirty the snap.
+  const DIRTYING = new Set([
+    "init",
+    "task.add",
+    "task.update",
+    "task.remove",
+    "task.toggle",
+    "task.move",
+    "task.edit",
+  ]);
 
   let resolveDone!: (val: DoneResult) => void;
   let settled = false;
@@ -326,6 +367,240 @@ async function main(argv: string[]): Promise<number> {
     }
   }
 
+  // Append a frame to the agent-facing event log and push it to live SSE tails.
+  // The monotonic `id` is the resume cursor — it MUST win over any `id` in the
+  // payload, so callers that carry a task identifier pass it as `taskId`, never
+  // `id` (a bare `id` in `msg` would clobber the cursor under the spread).
+  function emitEvent(msg: Record<string, unknown>) {
+    const ev = { id: ++eventSeq, ...msg };
+    events.push(ev);
+    // Every board mutation flows through here — mark the snapshot dirty centrally.
+    if (typeof msg.type === "string" && DIRTYING.has(msg.type)) snapDirty = true;
+    const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
+    for (const c of sseClients) {
+      try {
+        c.enqueue(frame);
+      } catch {
+        /* client gone */
+      }
+    }
+  }
+
+  // GET /events?since=<id> — replay buffered events with id > since, then keep
+  // the stream open for live frames + a 15s heartbeat comment. Mirror imago's
+  // sseResponse. touch() so an active tail counts as agent activity.
+  function sseResponse(url: URL): Response {
+    touch();
+    const since = parseInt(url.searchParams.get("since") ?? "-1", 10);
+    let ref: ReadableStreamDefaultController | null = null;
+    let hb: ReturnType<typeof setInterval> | null = null;
+    const stream = new ReadableStream({
+      start(controller) {
+        ref = controller;
+        for (const ev of events) {
+          if ((ev.id as number) > since) {
+            controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
+          }
+        }
+        sseClients.add(controller);
+        hb = setInterval(() => {
+          try {
+            controller.enqueue(enc.encode(`: hb\n\n`));
+          } catch {
+            /* gone */
+          }
+        }, 15000);
+        sseTimers.add(hb);
+      },
+      cancel() {
+        if (hb) {
+          clearInterval(hb);
+          sseTimers.delete(hb);
+        }
+        if (ref) sseClients.delete(ref);
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }
+
+  // Owner of a task by id (or undefined). Stamped onto task.* event frames so a
+  // scoped `cli.ts tail --owner`/`--mine` can filter client-side, and looked up
+  // for the cooperative-claim guard.
+  const ownerOf = (id: string) => state.tasks.find((t) => t.id === id)?.owner;
+
+  // ── dependencies (Phase D) ──
+  // A task is blocked iff it has a blockedBy id pointing at an EXISTING task
+  // that isn't done yet. A missing (deleted) or done blocker doesn't block.
+  const isBlocked = (task: Task): boolean =>
+    (task.blockedBy ?? []).some((bid) => {
+      const b = state.tasks.find((t) => t.id === bid);
+      return b !== undefined && b.status !== "done";
+    });
+
+  // Can `from` reach `target` by following blockedBy edges? Used by the cycle
+  // guard: adding edge id→b would close a loop iff b already reaches id. A
+  // visited set guards against any pre-existing cycle (there shouldn't be one).
+  function canReach(from: string, target: string, seen = new Set<string>()): boolean {
+    if (from === target) return true;
+    if (seen.has(from)) return false;
+    seen.add(from);
+    const task = state.tasks.find((t) => t.id === from);
+    return (task?.blockedBy ?? []).some((bid) => canReach(bid, target, seen));
+  }
+
+  // Per-task blocked state, so reconcileBlocked can fire `unblocked` exactly on
+  // the blocked→unblocked falling edge (never double-fire). Seeded from the
+  // initial/restored board so already-blocked tasks don't spuriously fire.
+  const prevBlocked = new Map<string, boolean>();
+  for (const t of state.tasks) prevBlocked.set(t.id, isBlocked(t));
+
+  // Run after every mutation: for each task, if it just went blocked→unblocked
+  // (the last live blocker cleared, or its last live edge was removed) AND it
+  // isn't itself done, fire a targeted `unblocked` event to its owner. Broad
+  // O(n) walk — one mutation can unblock many tasks; board scale makes it free.
+  function reconcileBlocked() {
+    for (const task of state.tasks) {
+      const now = isBlocked(task);
+      const was = prevBlocked.get(task.id) ?? false;
+      if (was && !now && task.status !== "done") {
+        emitEvent({ type: "unblocked", taskId: task.id, owner: task.owner, by: "system" });
+      }
+      prevBlocked.set(task.id, now);
+    }
+  }
+
+  // The /state projection — adds DERIVED, agent-facing fields per task, computed
+  // at serialize time (NOT stored, NOT snapshotted; canonical state keeps raw
+  // `blockedBy`). This is the readback-parity layer: an agent reading `state`
+  // sees the same blocked-ness the surface renders as ⛔ — `blocked` plus the
+  // LIVE blockers (exist && not done) with their title+status, so a task that's
+  // been filtered down by `state --mine` is still actionable (the blocker may be
+  // owned by someone else and thus absent from the filtered view).
+  function projectState() {
+    return {
+      title: state.title,
+      tasks: state.tasks.map((task) => {
+        const liveBlockers = (task.blockedBy ?? [])
+          .map((bid) => state.tasks.find((t) => t.id === bid))
+          .filter((b): b is Task => b !== undefined && b.status !== "done")
+          .map((b) => ({ id: b.id, title: b.title, status: b.status }));
+        return { ...task, blocked: liveBlockers.length > 0, liveBlockers };
+      }),
+    };
+  }
+
+  // Single dispatch point for an agent command (POST /cmd body). Mutates the
+  // canonical state via the apply* helpers, broadcasts to the WS clients, and
+  // appends an event frame. Returns an apply-result so the CLI can confirm a
+  // write took (a rejected cooperative claim returns applied:false + a reason).
+  // `by` carries the caller's --as identity (cooperative attribution, never an
+  // auth boundary); task.* frames carry the affected task's owner.
+  function handleAgentMsg(msg: AgentMsg): ApplyResult {
+    const by = typeof msg.as === "string" ? msg.as : "agent";
+    if (msg.type === "init") {
+      if (typeof msg.title === "string") state.title = msg.title;
+      // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
+      // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
+      if (Array.isArray(msg.tasks))
+        state.tasks = msg.tasks.map(validateTask).filter((t): t is Task => t !== null);
+      broadcast({ type: "init", title: state.title, tasks: state.tasks });
+      emitEvent({ type: "init", title: state.title, by });
+      return { ok: true, applied: true };
+    } else if (msg.type === "task.add") {
+      const task = validateTask(msg.task);
+      if (task && applyTaskAdd(state, task)) {
+        broadcast({ type: "task.add", task });
+        emitEvent({ type: "task.add", task, by, owner: task.owner });
+        return { ok: true, applied: true };
+      }
+      return { ok: true, applied: false };
+    } else if (msg.type === "task.update") {
+      // Cooperative-claim guard: a claim can't steal an already-owned task. The
+      // lead's `update --owner` (no claim flag) always wins — that's the
+      // reassignment path. Claiming a task you already own is a no-op success.
+      if (msg.claim) {
+        const existing = state.tasks.find((t) => t.id === msg.id);
+        const claimant = typeof msg.as === "string" ? msg.as : undefined;
+        if (existing?.owner && existing.owner !== claimant) {
+          return {
+            ok: true,
+            applied: false,
+            error: `task ${msg.id} is owned by ${existing.owner}`,
+          };
+        }
+      }
+      // `blockedBy` is mutated ONLY via task.block/task.unblock (which run the
+      // cycle guard). Strip it from a raw update patch so /cmd can't sidestep
+      // the guard — keep the guard load-bearing.
+      const { blockedBy: _stripped, ...patch } = msg.patch;
+      if (applyTaskUpdate(state, msg.id, patch)) {
+        broadcast({ type: "task.update", id: msg.id, patch });
+        // Post-change owner = "who owned it when this happened" (owner-at-emit).
+        emitEvent({ type: "task.update", taskId: msg.id, patch, by, owner: ownerOf(msg.id) });
+        return { ok: true, applied: true };
+      }
+      return { ok: true, applied: false };
+    } else if (msg.type === "task.remove") {
+      const owner = ownerOf(msg.id); // before removal
+      if (applyTaskRemove(state, msg.id)) {
+        broadcast({ type: "task.remove", id: msg.id });
+        emitEvent({ type: "task.remove", taskId: msg.id, by, owner });
+        return { ok: true, applied: true };
+      }
+      return { ok: true, applied: false };
+    } else if (msg.type === "task.block") {
+      const task = state.tasks.find((t) => t.id === msg.id);
+      if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      // Cycle/self-ref guard: reject the WHOLE command if any proposed edge
+      // would close a loop. New edges all originate at `id` (out-edges), so a
+      // back-path can only run through existing edges — a per-edge canReach
+      // against the current graph is sufficient.
+      for (const b of msg.on) {
+        if (canReach(b, msg.id)) {
+          return { ok: true, applied: false, error: `would create a cycle: ${msg.id} → ${b}` };
+        }
+      }
+      const next = Array.from(new Set([...(task.blockedBy ?? []), ...msg.on]));
+      applyTaskUpdate(state, msg.id, { blockedBy: next });
+      broadcast({ type: "task.update", id: msg.id, patch: { blockedBy: next } });
+      emitEvent({
+        type: "task.update",
+        taskId: msg.id,
+        patch: { blockedBy: next },
+        by,
+        owner: task.owner,
+      });
+      return { ok: true, applied: true };
+    } else if (msg.type === "task.unblock") {
+      const task = state.tasks.find((t) => t.id === msg.id);
+      if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      const next = (task.blockedBy ?? []).filter((b) => !msg.on.includes(b));
+      applyTaskUpdate(state, msg.id, { blockedBy: next });
+      broadcast({ type: "task.update", id: msg.id, patch: { blockedBy: next } });
+      emitEvent({
+        type: "task.update",
+        taskId: msg.id,
+        patch: { blockedBy: next },
+        by,
+        owner: task.owner,
+      });
+      return { ok: true, applied: true };
+    } else if (msg.type === "message") {
+      broadcast({ type: "message", text: msg.text });
+      return { ok: true, applied: true };
+    } else if (msg.type === "close") {
+      resolveDone({ code: 0, reason: "close" });
+      return { ok: true, applied: true };
+    }
+    return { ok: true, applied: false };
+  }
+
   let pageHtml = "";
   let server: ReturnType<typeof Bun.serve>;
   try {
@@ -344,6 +619,42 @@ async function main(argv: string[]): Promise<number> {
           const upgraded = srv.upgrade(req);
           if (upgraded) return undefined;
           return new Response("upgrade required", { status: 426 });
+        }
+        // Agent read-back: current board state + the resume cursor. `?lean=1`
+        // is the default the CLI uses; Bounty has no large blobs so lean ≈ full
+        // today — the shape is kept for house consistency + forward-compat.
+        // touch() so agent reads count as activity (idle-touch, #6).
+        if (req.method === "GET" && path === "/state") {
+          touch();
+          return new Response(JSON.stringify({ state: projectState(), cursor: eventSeq }), {
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        // Agent live tail: SSE stream of the event log, resumable via ?since=.
+        if (req.method === "GET" && path === "/events") {
+          return sseResponse(url);
+        }
+        // Agent write path: dispatch a single AgentCommand into the canonical
+        // state. Replaces the stdin JSON-lines reader (retired at the parity
+        // gate). touch() so writes count as activity (idle-touch, #6).
+        if (req.method === "POST" && path === "/cmd") {
+          return req
+            .json()
+            .then((body) => {
+              touch();
+              const result = handleAgentMsg(body as AgentMsg);
+              reconcileBlocked(); // fire `unblocked` for any blocked→unblocked transition
+              return new Response(JSON.stringify(result), {
+                headers: { "Content-Type": "application/json" },
+              });
+            })
+            .catch(
+              () =>
+                new Response('{"error":"bad json"}', {
+                  status: 400,
+                  headers: { "Content-Type": "application/json" },
+                }),
+            );
         }
         if (req.method === "GET" && path.startsWith("/assets/")) {
           const assetName = decodeURIComponent(path.slice("/assets/".length));
@@ -373,7 +684,7 @@ async function main(argv: string[]): Promise<number> {
         open(ws) {
           sockets.add(ws);
           touch();
-          emitToAgent({ type: "connected" });
+          emitEvent({ type: "connected", by: "user" });
           ws.send(JSON.stringify({ type: "init", title: state.title, tasks: state.tasks }));
         },
         message(_ws, raw) {
@@ -393,7 +704,13 @@ async function main(argv: string[]): Promise<number> {
             if (!VALID_STATUS.includes(msg.status)) return;
             if (applyTaskUpdate(state, msg.id, { status: msg.status })) {
               broadcast({ type: "task.update", id: msg.id, patch: { status: msg.status } });
-              emitToAgent({ type: "task.toggle", id: msg.id, status: msg.status });
+              emitEvent({
+                type: "task.toggle",
+                taskId: msg.id,
+                status: msg.status,
+                by: "user",
+                owner: ownerOf(msg.id),
+              });
             }
           } else if (msg.type === "task.move") {
             if (!VALID_STATUS.includes(msg.status)) return;
@@ -401,7 +718,14 @@ async function main(argv: string[]): Promise<number> {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
               broadcast({ type: "init", title: state.title, tasks: state.tasks });
-              emitToAgent({ type: "task.move", id: msg.id, status: msg.status, index: msg.index });
+              emitEvent({
+                type: "task.move",
+                taskId: msg.id,
+                status: msg.status,
+                index: msg.index,
+                by: "user",
+                owner: ownerOf(msg.id),
+              });
             }
           } else if (msg.type === "task.edit") {
             // Validate: title must be a non-empty string after trim. A
@@ -412,59 +736,43 @@ async function main(argv: string[]): Promise<number> {
             if (typeof msg.title !== "string" || msg.title.trim() === "") return;
             if (applyTaskUpdate(state, msg.id, { title: msg.title })) {
               broadcast({ type: "task.update", id: msg.id, patch: { title: msg.title } });
-              emitToAgent({ type: "task.edit", id: msg.id, title: msg.title });
+              emitEvent({
+                type: "task.edit",
+                taskId: msg.id,
+                title: msg.title,
+                by: "user",
+                owner: ownerOf(msg.id),
+              });
             }
           } else if (msg.type === "task.add") {
-            // Shape-validate the task before applying. The browser is
-            // untrusted, so treat the incoming task as unknown and narrow:
-            // required string id + title, valid status; notes optional string.
-            const t: unknown = msg.task;
-            if (!t || typeof t !== "object") return;
-            const cand = t as Record<string, unknown>;
-            if (typeof cand.id !== "string" || typeof cand.title !== "string") return;
-            if (
-              typeof cand.status !== "string" ||
-              !VALID_STATUS.includes(cand.status as TaskStatus)
-            )
-              return;
-            if (cand.notes !== undefined && typeof cand.notes !== "string") return;
-            const task: Task = {
-              id: cand.id,
-              title: cand.title,
-              status: cand.status as TaskStatus,
-              ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
-            };
-            if (applyTaskAdd(state, task)) {
+            // Shape-validate the untrusted browser task via the shared boundary.
+            const task = validateTask(msg.task);
+            if (task && applyTaskAdd(state, task)) {
               broadcast({ type: "task.add", task });
-              emitToAgent({ type: "task.add", task });
+              emitEvent({ type: "task.add", task, by: "user", owner: task.owner });
             }
           } else if (msg.type === "task.remove") {
+            const owner = ownerOf(msg.id); // before removal
             if (applyTaskRemove(state, msg.id)) {
               broadcast({ type: "task.remove", id: msg.id });
-              emitToAgent({ type: "task.remove", id: msg.id });
+              emitEvent({ type: "task.remove", taskId: msg.id, by: "user", owner });
             }
-          } else if (msg.type === "submit") {
-            // Broadcast to all WS clients (browsers + joiners) so every
-            // connected party gets the same authoritative final state.
-            // Joiners receive it wrapped as {type:"event", payload:{...}}
-            // by their join.ts; the spawning browser ignores it because
-            // it's already navigated to its sent-screen.
-            broadcast({ type: "submit", tasks: state.tasks });
-            emitToAgent({ type: "submit", tasks: state.tasks });
-            resolveDone({ code: 0, reason: "submit" });
-          } else if (msg.type === "cancel") {
-            // Broadcast cancel to all WS clients so joiners get the same
-            // structured session-ending signal that submit provides. Without
-            // this, joiners only see the trailing "session ended" toast
-            // and a disconnect — no way to distinguish cancel from any
-            // other server teardown reason.
-            broadcast({ type: "cancel" });
-            resolveDone({ code: 130, reason: "cancel" });
+          } else if (msg.type === "close") {
+            // The human dismisses the board ("Close board"). A clean dismiss —
+            // exit 0, never the old "cancel" 130. There's no submit-as-flush:
+            // the daemon already holds (and snapshots) canonical state and every
+            // change was live to all consumers, so dismissing loses nothing. The
+            // teardown's "session ended" broadcast + socket close is the uniform
+            // end signal every client (browser + joiners) receives.
+            resolveDone({ code: 0, reason: "user" });
           }
+          // A browser action (e.g. dragging a blocker to Done) can unblock
+          // dependents — fire `unblocked` for any transition.
+          reconcileBlocked();
         },
         close(ws) {
           sockets.delete(ws);
-          emitToAgent({ type: "disconnected" });
+          emitEvent({ type: "disconnected", by: "user" });
         },
       },
     });
@@ -495,7 +803,8 @@ async function main(argv: string[]): Promise<number> {
     .replace(/__WS_URL__/g, JSON.stringify(wsUrl));
 
   const url = `http://${host}:${boundPort}`;
-  emitToAgent({ type: "ready", url, port: boundPort, session_id: sessionId });
+  // First frame on the event log (id 1) — bookends the stream with `closed`.
+  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, by: "system" });
 
   // Discovery: write session info to predictable temp files so joining
   // agents can find this board without copy-paste. Two files:
@@ -540,41 +849,28 @@ async function main(argv: string[]): Promise<number> {
 
   if (!v["no-open"]) openBrowser(url);
 
-  (async () => {
-    for await (const msg of readJsonLines()) {
-      if (msg === null) break; // stdin EOF — leave the surface up
-      touch();
-      if (msg.type === "init") {
-        if (typeof msg.title === "string") state.title = msg.title;
-        if (Array.isArray(msg.tasks))
-          state.tasks = msg.tasks.filter((t) => VALID_STATUS.includes(t.status));
-        broadcast({ type: "init", title: state.title, tasks: state.tasks });
-      } else if (msg.type === "task.add") {
-        if (applyTaskAdd(state, msg.task)) broadcast({ type: "task.add", task: msg.task });
-      } else if (msg.type === "task.update") {
-        if (applyTaskUpdate(state, msg.id, msg.patch)) {
-          broadcast({ type: "task.update", id: msg.id, patch: msg.patch });
-        }
-      } else if (msg.type === "task.remove") {
-        if (applyTaskRemove(state, msg.id)) broadcast({ type: "task.remove", id: msg.id });
-      } else if (msg.type === "message") {
-        broadcast({ type: "message", text: msg.text });
-      } else if (msg.type === "close") {
-        resolveDone({ code: 0, reason: "close" });
-        return;
-      }
-    }
-  })();
-
   const idleTimer = setInterval(() => {
     if ((performance.now() - lastActivity) / 1000 >= timeout) {
       resolveDone({ code: 124, reason: "timeout" });
     }
   }, 250);
 
+  // Debounced snapshot — flush ~1s after any board mutation so a crash mid-
+  // session is recoverable via --restore.
+  const snapTimer = setInterval(() => {
+    if (snapDirty) {
+      snapDirty = false;
+      saveSnapshot();
+    }
+  }, 1000);
+
   const { code, reason } = await done;
   clearInterval(idleTimer);
-  emitToAgent({ type: "closed", reason });
+  clearInterval(snapTimer);
+  saveSnapshot(); // final write — KEEP it (the resume point, not deleted on close)
+  // Closing frame on the event log — ends a `cli.ts tail` (exit 0) and bookends
+  // the `ready` that opened it.
+  emitEvent({ type: "closed", reason, by: "system" });
   broadcast({ type: "message", text: `session ended: ${reason}` });
   // Grace period: server.stop(true) aggressively aborts in-flight
   // connections, which can drop a broadcast that was queued microseconds
@@ -583,6 +879,12 @@ async function main(argv: string[]): Promise<number> {
   // socket buffers flush before we tear down. 150ms is enough on a
   // local connection; small enough that "session ended" feels responsive.
   await new Promise((r) => setTimeout(r, 150));
+  for (const t of sseTimers) clearInterval(t);
+  for (const c of sseClients) {
+    try {
+      c.close();
+    } catch {}
+  }
   for (const ws of sockets) {
     try {
       ws.close();
@@ -607,4 +909,5 @@ export {
   htmlEscape,
   main,
   parsePortFromSessionId,
+  validateTask,
 };
