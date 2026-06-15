@@ -2,13 +2,18 @@
 
 // bounty — agent-driven task board the user can interact with.
 //
-// Built on the agent-surface-bun recipe's duplex pattern:
-//   - Agent ↔ server via JSON-lines on stdio
-//   - Server ↔ browser via WebSocket
-//   - Server holds the canonical state; late-joining browsers receive
-//     a synthetic init on connect.
+// The house agent-interface pattern (shared with grapevine + imago): a
+// persistent daemon holds the canonical state; the agent drives it through a
+// thin `cli.ts` over HTTP, and the browser is wired over WebSocket.
 //
-// Protocol — agent → server (one JSON object per line on stdin):
+//   - Agent → daemon:  POST /cmd          (an AgentCommand; write path)
+//   - Agent ← daemon:  GET  /state[?lean=1]  ({ state, cursor } read-back)
+//                      GET  /events?since=<id>  (SSE event tail, resumable)
+//   - Browser ↔ daemon: WebSocket /ws     (same task.* events both ways)
+//   - The daemon holds canonical state; late-joining browsers receive a
+//     synthetic init on connect.
+//
+// AgentCommand — POST /cmd body (one of):
 //   {"type":"init",        "title": "...", "tasks": Task[]}
 //   {"type":"task.add",    "task": Task}              // append
 //   {"type":"task.update", "id": "...", "patch": Partial<Task>}
@@ -16,17 +21,18 @@
 //   {"type":"message",     "text": "..."}             // toast
 //   {"type":"close"}                                  // end session
 //
-// Protocol — server → agent (one JSON object per line on stdout):
-//   {"type":"ready",          "url":"...", "port":..., "session_id":"..."}
-//   {"type":"connected"}                              // browser opened WS
-//   {"type":"disconnected"}                           // browser closed WS
-//   {"type":"task.toggle",    "id":"...", "status":"todo|doing|review|done"}
-//   {"type":"task.move",      "id":"...", "status":"...", "index": N}
-//   {"type":"task.edit",      "id":"...", "title":"..."}
-//   {"type":"task.add",       "task": Task}           // user added
-//   {"type":"task.remove",    "id":"..."}             // user deleted
-//   {"type":"submit",         "tasks": Task[]}        // final state on submit
-//   {"type":"closed",         "reason":"submit|cancel|timeout|stdin_eof|close"}
+// Event log — GET /events frames (server → agent), each with a monotonic `id`
+// (the resume cursor) and an actor `by` ("user" | "agent" | "system"):
+//   {id, type:"ready",        url, port, session_id, by:"system"}
+//   {id, type:"connected" | "disconnected", by:"user"}
+//   {id, type:"task.toggle",  taskId, status, by}     // ⚠ taskId, NOT id —
+//   {id, type:"task.move",    taskId, status, index, by}  //   the envelope id is
+//   {id, type:"task.edit",    taskId, title, by}      //   the cursor; the task
+//   {id, type:"task.add",     task, by}               //   id is nested/`taskId`
+//   {id, type:"task.update",  taskId, patch, by}      //   so the spread can't
+//   {id, type:"task.remove",  taskId, by}             //   clobber the cursor.
+//   {id, type:"submit",       tasks, by:"user"}
+//   {id, type:"closed",       reason, by:"system"}
 //
 // task.toggle vs task.move: toggle is the click-a-pill UX — status changes,
 // task is appended to the destination column. move is the drag UX — status
@@ -34,11 +40,7 @@
 // about column membership can ignore .move and rely on the canonical order
 // in the final submit.
 //
-// Protocol — server ↔ browser (WebSocket): same task.* events flow
-// in both directions; the server is a proxy that mutates the state
-// snapshot when either side speaks.
-//
-// Exit codes mirror digestify's review.ts: 0 submit, 2 bad args,
+// Exit codes mirror digestify's review.ts: 0 submit/close, 2 bad args,
 // 124 idle timeout, 130 cancel.
 
 import { unlinkSync, writeFileSync } from "node:fs";
@@ -59,7 +61,7 @@ type Task = {
 };
 type BoardState = { title: string; tasks: Task[] };
 
-type CloseReason = "submit" | "cancel" | "timeout" | "stdin_eof" | "close";
+type CloseReason = "submit" | "cancel" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
 
 type AgentMsg =
@@ -69,18 +71,6 @@ type AgentMsg =
   | { type: "task.remove"; id: string }
   | { type: "message"; text: string }
   | { type: "close" };
-
-type ServerToAgentMsg =
-  | { type: "ready"; url: string; port: number; session_id: string }
-  | { type: "connected" }
-  | { type: "disconnected" }
-  | { type: "task.toggle"; id: string; status: TaskStatus }
-  | { type: "task.move"; id: string; status: TaskStatus; index: number }
-  | { type: "task.edit"; id: string; title: string }
-  | { type: "task.add"; task: Task }
-  | { type: "task.remove"; id: string }
-  | { type: "submit"; tasks: Task[] }
-  | { type: "closed"; reason: CloseReason };
 
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
@@ -151,62 +141,26 @@ function guessMime(name: string): string {
   return MIME_BY_EXT[ext] || "application/octet-stream";
 }
 
-function emitToAgent(msg: ServerToAgentMsg): void {
-  try {
-    process.stdout.write(`${JSON.stringify(msg)}\n`);
-  } catch (e) {
-    if (!(e && typeof e === "object" && "code" in e && e.code === "EPIPE")) throw e;
+// Narrow an untrusted value into a valid Task, or null if it doesn't qualify:
+// required string id + title, a valid status, optional string notes. This is
+// the single task-shape trust boundary — the browser WS path, the agent /cmd
+// path (init + task.add), and snapshot restore all run candidates through it so
+// a malformed task can't enter canonical state. Per-task (callers filter-and-
+// keep-valid or reject a single task), never all-or-nothing.
+function validateTask(t: unknown): Task | null {
+  if (!t || typeof t !== "object") return null;
+  const cand = t as Record<string, unknown>;
+  if (typeof cand.id !== "string" || typeof cand.title !== "string") return null;
+  if (typeof cand.status !== "string" || !VALID_STATUS.includes(cand.status as TaskStatus)) {
+    return null;
   }
-}
-
-async function* readJsonLines(): AsyncGenerator<AgentMsg | null> {
-  if (process.stdin.isTTY) {
-    yield null;
-    return;
-  }
-  const reader = Bun.stdin.stream().getReader();
-  const decoder = new TextDecoder("utf-8");
-  let buffer = "";
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (value) buffer += decoder.decode(value, { stream: true });
-      // Re-scan for the next newline each pass so the `continue` below
-      // doesn't skip advancing past a consumed line.
-      for (let nl = buffer.indexOf("\n"); nl >= 0; nl = buffer.indexOf("\n")) {
-        const line = buffer.slice(0, nl).trim();
-        buffer = buffer.slice(nl + 1);
-        if (!line) continue;
-        try {
-          yield JSON.parse(line) as AgentMsg;
-        } catch (e) {
-          process.stderr.write(
-            `bounty: bad json on stdin: ${e instanceof Error ? e.message : String(e)}\n`,
-          );
-        }
-      }
-      if (done) {
-        buffer = buffer.trim();
-        if (buffer) {
-          try {
-            yield JSON.parse(buffer) as AgentMsg;
-          } catch (e) {
-            process.stderr.write(
-              `bounty: bad json on stdin (final): ${e instanceof Error ? e.message : String(e)}\n`,
-            );
-          }
-        }
-        yield null;
-        return;
-      }
-    }
-  } finally {
-    try {
-      reader.releaseLock();
-    } catch {
-      /* already released */
-    }
-  }
+  if (cand.notes !== undefined && typeof cand.notes !== "string") return null;
+  return {
+    id: cand.id,
+    title: cand.title,
+    status: cand.status as TaskStatus,
+    ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
+  };
 }
 
 // State mutation helpers. All keep `state.tasks` in place (replace by id)
@@ -300,6 +254,15 @@ async function main(argv: string[]): Promise<number> {
   const state: BoardState = { title: v.title as string, tasks: [] };
   const sockets = new Set<ServerWebSocket<unknown>>();
 
+  // Append-only event log for the agent's SSE tail (GET /events). Each event
+  // gets a monotonic `id` so a (re)connecting tail resumes via ?since=<id>.
+  // `cursor` in GET /state is the current `eventSeq` — the resume point.
+  const events: Array<Record<string, unknown>> = [];
+  let eventSeq = 0;
+  const enc = new TextEncoder();
+  const sseClients = new Set<ReadableStreamDefaultController>();
+  const sseTimers = new Set<ReturnType<typeof setInterval>>();
+
   let resolveDone!: (val: DoneResult) => void;
   let settled = false;
   const done = new Promise<DoneResult>((res) => {
@@ -326,6 +289,106 @@ async function main(argv: string[]): Promise<number> {
     }
   }
 
+  // Append a frame to the agent-facing event log and push it to live SSE tails.
+  // The monotonic `id` is the resume cursor — it MUST win over any `id` in the
+  // payload, so callers that carry a task identifier pass it as `taskId`, never
+  // `id` (a bare `id` in `msg` would clobber the cursor under the spread).
+  function emitEvent(msg: Record<string, unknown>) {
+    const ev = { id: ++eventSeq, ...msg };
+    events.push(ev);
+    const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
+    for (const c of sseClients) {
+      try {
+        c.enqueue(frame);
+      } catch {
+        /* client gone */
+      }
+    }
+  }
+
+  // GET /events?since=<id> — replay buffered events with id > since, then keep
+  // the stream open for live frames + a 15s heartbeat comment. Mirror imago's
+  // sseResponse. touch() so an active tail counts as agent activity.
+  function sseResponse(url: URL): Response {
+    touch();
+    const since = parseInt(url.searchParams.get("since") ?? "-1", 10);
+    let ref: ReadableStreamDefaultController | null = null;
+    let hb: ReturnType<typeof setInterval> | null = null;
+    const stream = new ReadableStream({
+      start(controller) {
+        ref = controller;
+        for (const ev of events) {
+          if ((ev.id as number) > since) {
+            controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
+          }
+        }
+        sseClients.add(controller);
+        hb = setInterval(() => {
+          try {
+            controller.enqueue(enc.encode(`: hb\n\n`));
+          } catch {
+            /* gone */
+          }
+        }, 15000);
+        sseTimers.add(hb);
+      },
+      cancel() {
+        if (hb) {
+          clearInterval(hb);
+          sseTimers.delete(hb);
+        }
+        if (ref) sseClients.delete(ref);
+      },
+    });
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  }
+
+  // Single dispatch point for an agent command (POST /cmd body, and — until the
+  // file-pump is retired — the stdin JSON-lines reader). Mutates the canonical
+  // state via the apply* helpers and broadcasts to the WS clients, mirroring
+  // imago's handleAgentMsg.
+  // The actor that drove a /cmd write. Phase A has no --as identity yet, so all
+  // agent-origin frames are stamped `by:"agent"`; Phase C populates the caller's
+  // --as here. Self-echo suppression + the scope filter (Phase C) key off `by`,
+  // so the frame carries it from the start to keep the contract stable.
+  function handleAgentMsg(msg: AgentMsg) {
+    if (msg.type === "init") {
+      if (typeof msg.title === "string") state.title = msg.title;
+      // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
+      // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
+      if (Array.isArray(msg.tasks))
+        state.tasks = msg.tasks.map(validateTask).filter((t): t is Task => t !== null);
+      broadcast({ type: "init", title: state.title, tasks: state.tasks });
+      emitEvent({ type: "init", title: state.title, by: "agent" });
+    } else if (msg.type === "task.add") {
+      const task = validateTask(msg.task);
+      if (task && applyTaskAdd(state, task)) {
+        broadcast({ type: "task.add", task });
+        emitEvent({ type: "task.add", task, by: "agent" });
+      }
+    } else if (msg.type === "task.update") {
+      if (applyTaskUpdate(state, msg.id, msg.patch)) {
+        broadcast({ type: "task.update", id: msg.id, patch: msg.patch });
+        emitEvent({ type: "task.update", taskId: msg.id, patch: msg.patch, by: "agent" });
+      }
+    } else if (msg.type === "task.remove") {
+      if (applyTaskRemove(state, msg.id)) {
+        broadcast({ type: "task.remove", id: msg.id });
+        emitEvent({ type: "task.remove", taskId: msg.id, by: "agent" });
+      }
+    } else if (msg.type === "message") {
+      broadcast({ type: "message", text: msg.text });
+    } else if (msg.type === "close") {
+      resolveDone({ code: 0, reason: "close" });
+    }
+  }
+
   let pageHtml = "";
   let server: ReturnType<typeof Bun.serve>;
   try {
@@ -344,6 +407,41 @@ async function main(argv: string[]): Promise<number> {
           const upgraded = srv.upgrade(req);
           if (upgraded) return undefined;
           return new Response("upgrade required", { status: 426 });
+        }
+        // Agent read-back: current board state + the resume cursor. `?lean=1`
+        // is the default the CLI uses; Bounty has no large blobs so lean ≈ full
+        // today — the shape is kept for house consistency + forward-compat.
+        // touch() so agent reads count as activity (idle-touch, #6).
+        if (req.method === "GET" && path === "/state") {
+          touch();
+          return new Response(JSON.stringify({ state, cursor: eventSeq }), {
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        // Agent live tail: SSE stream of the event log, resumable via ?since=.
+        if (req.method === "GET" && path === "/events") {
+          return sseResponse(url);
+        }
+        // Agent write path: dispatch a single AgentCommand into the canonical
+        // state. Replaces the stdin JSON-lines reader (retired at the parity
+        // gate). touch() so writes count as activity (idle-touch, #6).
+        if (req.method === "POST" && path === "/cmd") {
+          return req
+            .json()
+            .then((body) => {
+              touch();
+              handleAgentMsg(body as AgentMsg);
+              return new Response('{"ok":true}', {
+                headers: { "Content-Type": "application/json" },
+              });
+            })
+            .catch(
+              () =>
+                new Response('{"error":"bad json"}', {
+                  status: 400,
+                  headers: { "Content-Type": "application/json" },
+                }),
+            );
         }
         if (req.method === "GET" && path.startsWith("/assets/")) {
           const assetName = decodeURIComponent(path.slice("/assets/".length));
@@ -373,7 +471,7 @@ async function main(argv: string[]): Promise<number> {
         open(ws) {
           sockets.add(ws);
           touch();
-          emitToAgent({ type: "connected" });
+          emitEvent({ type: "connected", by: "user" });
           ws.send(JSON.stringify({ type: "init", title: state.title, tasks: state.tasks }));
         },
         message(_ws, raw) {
@@ -393,7 +491,7 @@ async function main(argv: string[]): Promise<number> {
             if (!VALID_STATUS.includes(msg.status)) return;
             if (applyTaskUpdate(state, msg.id, { status: msg.status })) {
               broadcast({ type: "task.update", id: msg.id, patch: { status: msg.status } });
-              emitToAgent({ type: "task.toggle", id: msg.id, status: msg.status });
+              emitEvent({ type: "task.toggle", taskId: msg.id, status: msg.status, by: "user" });
             }
           } else if (msg.type === "task.move") {
             if (!VALID_STATUS.includes(msg.status)) return;
@@ -401,7 +499,13 @@ async function main(argv: string[]): Promise<number> {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
               broadcast({ type: "init", title: state.title, tasks: state.tasks });
-              emitToAgent({ type: "task.move", id: msg.id, status: msg.status, index: msg.index });
+              emitEvent({
+                type: "task.move",
+                taskId: msg.id,
+                status: msg.status,
+                index: msg.index,
+                by: "user",
+              });
             }
           } else if (msg.type === "task.edit") {
             // Validate: title must be a non-empty string after trim. A
@@ -412,36 +516,19 @@ async function main(argv: string[]): Promise<number> {
             if (typeof msg.title !== "string" || msg.title.trim() === "") return;
             if (applyTaskUpdate(state, msg.id, { title: msg.title })) {
               broadcast({ type: "task.update", id: msg.id, patch: { title: msg.title } });
-              emitToAgent({ type: "task.edit", id: msg.id, title: msg.title });
+              emitEvent({ type: "task.edit", taskId: msg.id, title: msg.title, by: "user" });
             }
           } else if (msg.type === "task.add") {
-            // Shape-validate the task before applying. The browser is
-            // untrusted, so treat the incoming task as unknown and narrow:
-            // required string id + title, valid status; notes optional string.
-            const t: unknown = msg.task;
-            if (!t || typeof t !== "object") return;
-            const cand = t as Record<string, unknown>;
-            if (typeof cand.id !== "string" || typeof cand.title !== "string") return;
-            if (
-              typeof cand.status !== "string" ||
-              !VALID_STATUS.includes(cand.status as TaskStatus)
-            )
-              return;
-            if (cand.notes !== undefined && typeof cand.notes !== "string") return;
-            const task: Task = {
-              id: cand.id,
-              title: cand.title,
-              status: cand.status as TaskStatus,
-              ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
-            };
-            if (applyTaskAdd(state, task)) {
+            // Shape-validate the untrusted browser task via the shared boundary.
+            const task = validateTask(msg.task);
+            if (task && applyTaskAdd(state, task)) {
               broadcast({ type: "task.add", task });
-              emitToAgent({ type: "task.add", task });
+              emitEvent({ type: "task.add", task, by: "user" });
             }
           } else if (msg.type === "task.remove") {
             if (applyTaskRemove(state, msg.id)) {
               broadcast({ type: "task.remove", id: msg.id });
-              emitToAgent({ type: "task.remove", id: msg.id });
+              emitEvent({ type: "task.remove", taskId: msg.id, by: "user" });
             }
           } else if (msg.type === "submit") {
             // Broadcast to all WS clients (browsers + joiners) so every
@@ -450,7 +537,7 @@ async function main(argv: string[]): Promise<number> {
             // by their join.ts; the spawning browser ignores it because
             // it's already navigated to its sent-screen.
             broadcast({ type: "submit", tasks: state.tasks });
-            emitToAgent({ type: "submit", tasks: state.tasks });
+            emitEvent({ type: "submit", tasks: state.tasks, by: "user" });
             resolveDone({ code: 0, reason: "submit" });
           } else if (msg.type === "cancel") {
             // Broadcast cancel to all WS clients so joiners get the same
@@ -464,7 +551,7 @@ async function main(argv: string[]): Promise<number> {
         },
         close(ws) {
           sockets.delete(ws);
-          emitToAgent({ type: "disconnected" });
+          emitEvent({ type: "disconnected", by: "user" });
         },
       },
     });
@@ -495,7 +582,8 @@ async function main(argv: string[]): Promise<number> {
     .replace(/__WS_URL__/g, JSON.stringify(wsUrl));
 
   const url = `http://${host}:${boundPort}`;
-  emitToAgent({ type: "ready", url, port: boundPort, session_id: sessionId });
+  // First frame on the event log (id 1) — bookends the stream with `closed`.
+  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, by: "system" });
 
   // Discovery: write session info to predictable temp files so joining
   // agents can find this board without copy-paste. Two files:
@@ -540,32 +628,6 @@ async function main(argv: string[]): Promise<number> {
 
   if (!v["no-open"]) openBrowser(url);
 
-  (async () => {
-    for await (const msg of readJsonLines()) {
-      if (msg === null) break; // stdin EOF — leave the surface up
-      touch();
-      if (msg.type === "init") {
-        if (typeof msg.title === "string") state.title = msg.title;
-        if (Array.isArray(msg.tasks))
-          state.tasks = msg.tasks.filter((t) => VALID_STATUS.includes(t.status));
-        broadcast({ type: "init", title: state.title, tasks: state.tasks });
-      } else if (msg.type === "task.add") {
-        if (applyTaskAdd(state, msg.task)) broadcast({ type: "task.add", task: msg.task });
-      } else if (msg.type === "task.update") {
-        if (applyTaskUpdate(state, msg.id, msg.patch)) {
-          broadcast({ type: "task.update", id: msg.id, patch: msg.patch });
-        }
-      } else if (msg.type === "task.remove") {
-        if (applyTaskRemove(state, msg.id)) broadcast({ type: "task.remove", id: msg.id });
-      } else if (msg.type === "message") {
-        broadcast({ type: "message", text: msg.text });
-      } else if (msg.type === "close") {
-        resolveDone({ code: 0, reason: "close" });
-        return;
-      }
-    }
-  })();
-
   const idleTimer = setInterval(() => {
     if ((performance.now() - lastActivity) / 1000 >= timeout) {
       resolveDone({ code: 124, reason: "timeout" });
@@ -574,7 +636,9 @@ async function main(argv: string[]): Promise<number> {
 
   const { code, reason } = await done;
   clearInterval(idleTimer);
-  emitToAgent({ type: "closed", reason });
+  // Closing frame on the event log — ends a `cli.ts tail` (exit 0) and bookends
+  // the `ready` that opened it.
+  emitEvent({ type: "closed", reason, by: "system" });
   broadcast({ type: "message", text: `session ended: ${reason}` });
   // Grace period: server.stop(true) aggressively aborts in-flight
   // connections, which can drop a broadcast that was queued microseconds
@@ -583,6 +647,12 @@ async function main(argv: string[]): Promise<number> {
   // socket buffers flush before we tear down. 150ms is enough on a
   // local connection; small enough that "session ended" feels responsive.
   await new Promise((r) => setTimeout(r, 150));
+  for (const t of sseTimers) clearInterval(t);
+  for (const c of sseClients) {
+    try {
+      c.close();
+    } catch {}
+  }
   for (const ws of sockets) {
     try {
       ws.close();
@@ -607,4 +677,5 @@ export {
   htmlEscape,
   main,
   parsePortFromSessionId,
+  validateTask,
 };

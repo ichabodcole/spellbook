@@ -1,21 +1,23 @@
-// Tests for bounty server.ts, bg.ts, and join.ts.
+// Tests for bounty server.ts (the daemon), cli.ts, and join.ts.
 //
 // Coverage:
 //   - Pure state-mutation helpers (applyTaskAdd/Update/Remove/Move).
 //   - parsePortFromSessionId (the relaunch-port-reuse contract).
 //   - htmlEscape (the 5 interesting chars + ampersand-first ordering).
+//   - The daemon HTTP surface: GET /state, POST /cmd, GET /events (SSE).
 //   - End-to-end via subprocess for the bits that need a real server:
 //       * submit broadcasts to all WS clients (browsers + joiners)
 //       * cancel broadcasts a structured event to all WS clients
 //       * task.edit rejects non-string titles silently
 //       * task.add from browser rejects malformed task objects
-//       * bg.ts emits a meta JSON line and creates the events/cmds files
-//       * bg.ts forwards a commands-file append to the underlying server
+//       * cli.ts ↔ daemon parity: state ack, --stdin quoting, tail
+//         resume-from-cursor, idle-touch (the Phase A gate)
 //       * join.ts discovers via bounty-latest.json when --url/--id omitted
 //       * join.ts idle timeout reports reason: "timeout"
 
 import { describe, expect, test } from "bun:test";
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -28,6 +30,7 @@ import {
   parsePortFromSessionId,
   type Task,
   type TaskStatus,
+  validateTask,
 } from "./server.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -49,11 +52,8 @@ type WireMsg = {
   url?: string;
   port?: number;
   session_id?: string;
-  events_file?: string;
-  cmds_file?: string;
 };
 const SERVER = join(SCRIPT_DIR, "server.ts");
-const BG = join(SCRIPT_DIR, "bg.ts");
 const JOIN = join(SCRIPT_DIR, "join.ts");
 
 function freshState(): BoardState {
@@ -155,6 +155,42 @@ describe("applyTaskMove", () => {
   });
 });
 
+// ── validateTask (the shared task-shape trust boundary) ──────────────────
+
+describe("validateTask", () => {
+  test("accepts a well-formed task and passes notes through", () => {
+    expect(validateTask({ id: "a", title: "A", status: "doing", notes: "n" })).toEqual({
+      id: "a",
+      title: "A",
+      status: "doing",
+      notes: "n",
+    });
+  });
+  test("accepts without notes (omits the field)", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo" })).toEqual({
+      id: "a",
+      title: "A",
+      status: "todo",
+    });
+  });
+  test("rejects missing id / title", () => {
+    expect(validateTask({ title: "A", status: "todo" })).toBeNull();
+    expect(validateTask({ id: "a", status: "todo" })).toBeNull();
+  });
+  test("rejects invalid / missing status", () => {
+    expect(validateTask({ id: "a", title: "A", status: "bogus" })).toBeNull();
+    expect(validateTask({ id: "a", title: "A" })).toBeNull();
+  });
+  test("rejects non-string notes", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", notes: 42 })).toBeNull();
+  });
+  test("rejects non-objects", () => {
+    expect(validateTask(null)).toBeNull();
+    expect(validateTask("nope")).toBeNull();
+    expect(validateTask(undefined)).toBeNull();
+  });
+});
+
 // ── parsePortFromSessionId ───────────────────────────────────────────────
 
 describe("parsePortFromSessionId", () => {
@@ -187,36 +223,44 @@ describe("htmlEscape", () => {
 
 type ReadyInfo = { url: string; port: number; session_id: string };
 
+// Spawn the daemon and wait until it's reachable. Readiness is discovered via
+// the daemon's discovery file (`bounty-<id>.json`) + a /state probe — the
+// daemon no longer prints a `ready` line on stdout (the SSE event log is the
+// sole agent channel since the file-pump was retired).
 async function spawnServerReady(
   args: string[] = [],
 ): Promise<{ proc: ReturnType<typeof Bun.spawn>; ready: ReadyInfo }> {
+  const id = `e2e-${crypto.randomUUID().slice(0, 8)}`;
   const proc = Bun.spawn({
-    cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", ...args],
-    stdin: "pipe",
-    stdout: "pipe",
-    stderr: "pipe",
+    cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--id", id, ...args],
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
   });
-  const reader = proc.stdout.getReader();
-  const dec = new TextDecoder();
-  let buf = "";
+  const discoveryFile = join(tmpdir(), `bounty-${id}.json`);
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
-    const { done, value } = await reader.read();
-    if (value) buf += dec.decode(value, { stream: true });
-    for (let nl = buf.indexOf("\n"); nl >= 0; nl = buf.indexOf("\n")) {
-      const line = buf.slice(0, nl).trim();
-      buf = buf.slice(nl + 1);
-      if (!line) continue;
-      const m = JSON.parse(line) as WireMsg;
-      if (m.type === "ready") {
-        reader.releaseLock();
-        return { proc, ready: m as unknown as ReadyInfo };
-      }
+    try {
+      const info = JSON.parse(readFileSync(discoveryFile, "utf8")) as ReadyInfo;
+      const r = await fetch(`${info.url}/state`);
+      if (r.ok) return { proc, ready: info };
+    } catch {
+      /* not up yet */
     }
-    if (done) break;
+    await new Promise((res) => setTimeout(res, 80));
   }
-  reader.releaseLock();
-  throw new Error("server did not emit ready");
+  proc.kill();
+  throw new Error("server did not become ready");
+}
+
+// Seed board state over the daemon's HTTP write path (replaces the retired
+// stdin JSON-lines seeding).
+async function seedCmd(url: string, body: unknown): Promise<void> {
+  await fetch(`${url}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 async function collectStdout(
@@ -270,17 +314,11 @@ async function collectWsUntilClose(ws: WebSocket): Promise<WireMsg[]> {
 describe("submit broadcast", () => {
   test("submit reaches both host stdio and connected WS clients", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
-    const enc = new TextEncoder();
-    proc.stdin.write(
-      enc.encode(
-        `${JSON.stringify({
-          type: "init",
-          title: "submit-test",
-          tasks: [{ id: "x", title: "X", status: "todo" }],
-        })}\n`,
-      ),
-    );
-    await new Promise((r) => setTimeout(r, 100));
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "submit-test",
+      tasks: [{ id: "x", title: "X", status: "todo" }],
+    });
 
     const browser = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
     await new Promise((r) => browser.addEventListener("open", r, { once: true }));
@@ -315,17 +353,11 @@ describe("cancel broadcast", () => {
 describe("input validation from browser", () => {
   test("task.edit with non-string title is rejected silently", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
-    const enc = new TextEncoder();
-    proc.stdin.write(
-      enc.encode(
-        `${JSON.stringify({
-          type: "init",
-          title: "T",
-          tasks: [{ id: "x", title: "original", status: "todo" }],
-        })}\n`,
-      ),
-    );
-    await new Promise((r) => setTimeout(r, 100));
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "x", title: "original", status: "todo" }],
+    });
 
     const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
     await new Promise((r) => ws.addEventListener("open", r, { once: true }));
@@ -373,64 +405,444 @@ describe("input validation from browser", () => {
   }, 15000);
 });
 
-describe("bg.ts wrapper", () => {
-  test("emits meta JSON line + creates events/cmds files", async () => {
-    const proc = Bun.spawn({
-      cmd: ["bun", "run", BG, "--no-open", "--port", "0", "--timeout", "5"],
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe",
-    });
-    const seen = await collectStdout(proc, (m) => m.type === "meta", 5000);
-    const meta = seen.find((m) => m.type === "meta");
-    expect(meta).toBeDefined();
-    expect(typeof meta.url).toBe("string");
-    expect(typeof meta.events_file).toBe("string");
-    expect(typeof meta.cmds_file).toBe("string");
-    expect(existsSync(meta.events_file)).toBe(true);
-    expect(existsSync(meta.cmds_file)).toBe(true);
+// ── Daemon HTTP surface (house pattern: /cmd + /state + /events) ──────────
+//
+// These exercise the agent-facing HTTP surface directly against a spawned
+// server (fetch, not WebSocket). The WS path (browsers + join.ts) is unchanged
+// and covered by the broadcast/validation suites above.
 
-    // Let the idle timeout fire to clean up.
+describe("GET /state", () => {
+  test("returns { state, cursor } for a fresh board", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5", "--title", "state-test"]);
+    const res = await fetch(`${ready.url}/state`);
+    const body = (await res.json()) as { state?: BoardState; cursor?: number };
+    proc.kill();
     await proc.exited;
+
+    expect(res.status).toBe(200);
+    expect(body.state).toBeDefined();
+    expect(body.state?.title).toBe("state-test");
+    expect(body.state?.tasks).toEqual([]);
+    expect(typeof body.cursor).toBe("number");
+  }, 15000);
+});
+
+describe("POST /cmd", () => {
+  async function postCmd(url: string, body: unknown) {
+    return fetch(`${url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  test("task.add is applied and reflected in /state (the #8 ack)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    const res = await postCmd(ready.url, {
+      type: "task.add",
+      task: { id: "t1", title: "first task", status: "todo" },
+    });
+    const ack = (await res.json()) as { ok?: boolean };
+    const stateRes = await fetch(`${ready.url}/state`);
+    const body = (await stateRes.json()) as { state: BoardState; cursor: number };
+    proc.kill();
+    await proc.exited;
+
+    expect(res.status).toBe(200);
+    expect(ack.ok).toBe(true);
+    expect(body.state.tasks).toHaveLength(1);
+    expect(body.state.tasks[0]).toMatchObject({ id: "t1", title: "first task", status: "todo" });
   }, 15000);
 
-  test("forwards appended cmds-file lines to the underlying server", async () => {
-    const proc = Bun.spawn({
-      cmd: ["bun", "run", BG, "--no-open", "--port", "0", "--timeout", "5"],
-      stdin: "ignore",
-      stdout: "pipe",
-      stderr: "pipe",
+  test("task.update patches an existing task", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await postCmd(ready.url, {
+      type: "task.add",
+      task: { id: "t1", title: "first", status: "todo" },
     });
-    const seen = await collectStdout(proc, (m) => m.type === "meta", 5000);
-    const meta = seen.find((m) => m.type === "meta");
+    await postCmd(ready.url, { type: "task.update", id: "t1", patch: { status: "doing" } });
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    proc.kill();
+    await proc.exited;
 
-    // Append an init via cmds_file — server should process it and we should
-    // see the matching events show up in events_file.
-    appendFileSync(
-      meta.cmds_file,
-      `${JSON.stringify({
-        type: "init",
-        title: "via cmds-file",
-        tasks: [{ id: "z", title: "Z", status: "todo" }],
-      })}\n`,
-    );
-    // Give the polling pump time to forward.
-    await new Promise((r) => setTimeout(r, 500));
+    expect(body.state.tasks[0].status).toBe("doing");
+    expect(body.state.tasks[0].title).toBe("first");
+  }, 15000);
 
-    // Connect a browser, submit, verify the seeded task lands in the submit
-    // event we see via events_file.
-    const ws = new WebSocket(`${meta.url.replace(/^http/, "ws")}/ws`);
+  test("malformed JSON returns 400 { error }", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    const res = await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{not json",
+    });
+    const body = (await res.json()) as { error?: string };
+    proc.kill();
+    await proc.exited;
+
+    expect(res.status).toBe(400);
+    expect(body.error).toBeDefined();
+  }, 15000);
+
+  // The daemon is the canonical-state trust boundary: the agent /cmd path must
+  // narrow task shapes as strictly as the browser WS path does, not just dedupe
+  // ids / filter by status. (Review finding #1.)
+  test("init filters malformed tasks (missing id/title), not just bad status", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await postCmd(ready.url, {
+      type: "init",
+      title: "guarded",
+      tasks: [
+        { id: "good", title: "Good", status: "todo" },
+        { status: "todo" }, // no id/title — must be filtered
+        { id: "x", status: "todo" }, // no title — must be filtered
+        { id: "y", title: "bad status", status: "bogus" }, // invalid status — filtered
+      ],
+    });
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    proc.kill();
+    await proc.exited;
+
+    expect(body.state.tasks).toHaveLength(1);
+    expect(body.state.tasks[0].id).toBe("good");
+  }, 15000);
+
+  test("task.add rejects a malformed task — nothing stored", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await postCmd(ready.url, { type: "task.add", task: {} });
+    await postCmd(ready.url, { type: "task.add", task: { id: "n", status: "todo" } }); // no title
+    await postCmd(ready.url, { type: "task.add", task: { id: "m", title: "T", status: "bogus" } });
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    proc.kill();
+    await proc.exited;
+
+    expect(body.state.tasks).toHaveLength(0);
+  }, 15000);
+
+  test("task.add accepts a well-formed task (with optional notes)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await postCmd(ready.url, {
+      type: "task.add",
+      task: { id: "ok", title: "fine", status: "doing", notes: "a note" },
+    });
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    proc.kill();
+    await proc.exited;
+
+    expect(body.state.tasks).toHaveLength(1);
+    expect(body.state.tasks[0]).toMatchObject({
+      id: "ok",
+      title: "fine",
+      status: "doing",
+      notes: "a note",
+    });
+  }, 15000);
+});
+
+describe("GET /events (SSE)", () => {
+  // Read SSE `data:` frames from a /events stream until `predicate` matches or
+  // `maxMs` elapses. Returns the decoded JSON frames seen (in order).
+  async function collectEvents(
+    url: string,
+    since: number,
+    predicate: (ev: Record<string, unknown>) => boolean,
+    maxMs: number,
+  ): Promise<Record<string, unknown>[]> {
+    const res = await fetch(`${url}/events?since=${since}`);
+    if (!res.body) throw new Error("no SSE body");
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    const seen: Record<string, unknown>[] = [];
+    const deadline = Date.now() + maxMs;
+    while (Date.now() < deadline) {
+      const chunk = await Promise.race([
+        reader.read(),
+        new Promise<{ done: true; value: undefined }>((r) =>
+          setTimeout(() => r({ done: true, value: undefined }), deadline - Date.now()),
+        ),
+      ]);
+      if (chunk.done) break;
+      buf += dec.decode(chunk.value, { stream: true });
+      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
+        const block = buf.slice(0, sep);
+        buf = buf.slice(sep + 2);
+        for (const line of block.split("\n")) {
+          if (!line.startsWith("data:")) continue;
+          try {
+            const ev = JSON.parse(line.slice(5).trim()) as Record<string, unknown>;
+            seen.push(ev);
+            if (predicate(ev)) {
+              reader.cancel();
+              return seen;
+            }
+          } catch {
+            /* skip */
+          }
+        }
+      }
+    }
+    reader.cancel();
+    return seen;
+  }
+
+  test("a browser task.toggle emits a frame with monotonic id + taskId (no id collision)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    // Seed a task via /cmd so there's something to toggle.
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "task.add", task: { id: "t1", title: "T", status: "todo" } }),
+    });
+
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
     await new Promise((r) => ws.addEventListener("open", r, { once: true }));
-    ws.send(JSON.stringify({ type: "submit" }));
+
+    const evP = collectEvents(ready.url, 0, (ev) => ev.type === "task.toggle", 4000);
+    // tiny delay so the SSE stream is subscribed before we mutate
+    await new Promise((r) => setTimeout(r, 150));
+    ws.send(JSON.stringify({ type: "task.toggle", id: "t1", status: "doing" }));
+
+    const events = await evP;
+    ws.close();
+    proc.kill();
     await proc.exited;
 
-    const events = readFileSync(meta.events_file, "utf-8");
-    const submitLine = events.split("\n").find((l) => l.startsWith('{"type":"submit"'));
-    expect(submitLine).toBeDefined();
-    if (submitLine === undefined) throw new Error("submit line not found in events file");
-    const parsed = JSON.parse(submitLine) as WireMsg;
-    expect(parsed.tasks?.find((t) => t.id === "z")).toBeDefined();
+    const toggle = events.find((e) => e.type === "task.toggle");
+    expect(toggle).toBeDefined();
+    // The envelope id is the monotonic event cursor — NOT the task id.
+    expect(typeof toggle?.id).toBe("number");
+    // The task identifier is carried as `taskId` (item-2 rename) so the spread
+    // can't clobber the cursor.
+    expect(toggle?.taskId).toBe("t1");
+    expect(toggle?.status).toBe("doing");
+    // Browser-origin frames are stamped by:"user".
+    expect(toggle?.by).toBe("user");
   }, 15000);
+
+  test("an agent /cmd write emits a frame stamped by:agent (Model B)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    const evP = collectEvents(ready.url, 0, (ev) => ev.type === "task.add", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "task.add", task: { id: "a1", title: "A", status: "todo" } }),
+    });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+
+    const add = events.find((e) => e.type === "task.add");
+    expect(add).toBeDefined();
+    // Model B: agent /cmd writes reach the event log so scoped tails (Phase C)
+    // can wake on agent-to-agent coordination.
+    expect(add?.by).toBe("agent");
+    expect((add?.task as Task).id).toBe("a1");
+    expect(typeof add?.id).toBe("number");
+  }, 15000);
+
+  test("replays only events with id > since (resume cursor)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    // Two writes before any tail connects.
+    for (const id of ["c1", "c2"]) {
+      await fetch(`${ready.url}/cmd`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ type: "task.add", task: { id, title: id, status: "todo" } }),
+      });
+    }
+    // Cursor after both writes.
+    const { cursor } = (await (await fetch(`${ready.url}/state`)).json()) as { cursor: number };
+    // A third write after we capture the cursor.
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "task.add", task: { id: "c3", title: "c3", status: "todo" } }),
+    });
+    // Connecting with since=cursor must replay only c3, not c1/c2.
+    const events = await collectEvents(
+      ready.url,
+      cursor,
+      (ev) => ev.type === "task.add" && (ev.task as Task)?.id === "c3",
+      4000,
+    );
+    proc.kill();
+    await proc.exited;
+
+    const addIds = events.filter((e) => e.type === "task.add").map((e) => (e.task as Task).id);
+    expect(addIds).toContain("c3");
+    expect(addIds).not.toContain("c1");
+    expect(addIds).not.toContain("c2");
+  }, 15000);
+});
+
+// ── cli.ts ↔ daemon parity (Phase A gate) ────────────────────────────────
+//
+// These drive the real cli.ts as a subprocess against a daemon it spawns —
+// the agent-facing path that replaces bg.ts. Proving these green is the gate
+// that lets bg.ts / watch-events.sh / the stdin reader be retired. Each test
+// targets its daemon by explicit --session <id> (never the shared "latest"
+// pointer) so concurrent/stale discovery files can't cross-wire the assertions.
+
+const CLI = join(SCRIPT_DIR, "cli.ts");
+
+// A fresh per-test BOUNTY_HOME so snapshot/discovery state never leaks between
+// tests (Phase B writes snapshots here; Phase A keeps tests isolated up front).
+function uniqHome(): string {
+  return join(tmpdir(), `bounty-test-${crypto.randomUUID().slice(0, 8)}`);
+}
+
+type CliResult = { stdout: string; stderr: string; code: number };
+
+async function runCli(args: string[], opts: { stdin?: string; env?: Record<string, string> } = {}) {
+  const proc = Bun.spawn({
+    cmd: ["bun", "run", CLI, ...args],
+    stdin: opts.stdin !== undefined ? new TextEncoder().encode(opts.stdin) : "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    env: { ...process.env, ...opts.env },
+  });
+  const [stdout, stderr] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+  const code = await proc.exited;
+  return { stdout, stderr, code } as CliResult;
+}
+
+describe("cli.ts ↔ daemon parity", () => {
+  test("state read-back reflects an add then an update (the #8 ack)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "first task", "--id", "t1", "--session", session], { env });
+      const s1 = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+        cursor: number;
+      };
+      expect(s1.state.tasks).toHaveLength(1);
+      expect(s1.state.tasks[0]).toMatchObject({ id: "t1", title: "first task", status: "todo" });
+      expect(typeof s1.cursor).toBe("number");
+
+      await runCli(["update", "t1", "--status", "doing", "--session", session], { env });
+      const s2 = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(s2.state.tasks[0].status).toBe("doing");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
+  test("add --stdin lands arbitrary text verbatim (the #7 quoting guard)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const nasty = `it's a "quoted" & <ok> $title \`x\``;
+    try {
+      await runCli(["add", "--stdin", "--id", "t1", "--session", session], { env, stdin: nasty });
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      // Character-for-character — no shell truncation, no escaping artifacts.
+      expect(s.state.tasks[0].title).toBe(nasty);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
+  test("tail streams JSONL events and exits 0 on the closed frame", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+
+    // Start a tail subprocess capturing stdout (the Monitor-wrapped path).
+    const tail = Bun.spawn({
+      cmd: ["bun", "run", CLI, "tail", "--since", "0", "--session", session],
+      stdout: "pipe",
+      stderr: "pipe",
+      env: { ...process.env, ...env },
+    });
+    await new Promise((r) => setTimeout(r, 300)); // let the tail subscribe
+    await runCli(["add", "tailed task", "--id", "tt", "--session", session], { env });
+    await new Promise((r) => setTimeout(r, 300));
+    await runCli(["close", "--session", session], { env });
+
+    const out = await new Response(tail.stdout).text();
+    const code = await tail.exited;
+
+    const lines = out
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l) as Record<string, unknown>);
+    const add = lines.find((e) => e.type === "task.add");
+    expect(add).toBeDefined();
+    expect((add?.task as Task).id).toBe("tt");
+    // Frames are monotonic on `id`; the closed frame ends the stream, exit 0.
+    expect(lines.some((e) => e.type === "closed")).toBe(true);
+    expect(code).toBe(0);
+  }, 20000);
+
+  test("tail --since <cursor> resumes: only newer events replay", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "early", "--id", "e1", "--session", session], { env });
+      const { cursor } = JSON.parse(
+        (await runCli(["state", "--session", session], { env })).stdout,
+      ) as { cursor: number };
+      await runCli(["add", "late", "--id", "l1", "--session", session], { env });
+
+      // A tail resuming from `cursor` must replay only the post-cursor add.
+      const tail = Bun.spawn({
+        cmd: ["bun", "run", CLI, "tail", "--since", String(cursor), "--session", session],
+        stdout: "pipe",
+        stderr: "pipe",
+        env: { ...process.env, ...env },
+      });
+      await new Promise((r) => setTimeout(r, 500));
+      tail.kill();
+      const out = await new Response(tail.stdout).text();
+
+      const addIds = out
+        .split("\n")
+        .filter(Boolean)
+        .map((l) => JSON.parse(l) as Record<string, unknown>)
+        .filter((e) => e.type === "task.add")
+        .map((e) => (e.task as Task).id);
+      expect(addIds).toContain("l1");
+      expect(addIds).not.toContain("e1");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
+  test("agent activity keeps the daemon alive past the idle window (#6 idle-touch)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "1"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+
+    // Touch via /state every ~400ms for ~2s — well past the 1s idle window.
+    for (let i = 0; i < 5; i++) {
+      const r = await runCli(["state", "--session", session], { env });
+      expect(r.code).toBe(0);
+      expect(r.stdout).toContain('"cursor"');
+      await new Promise((res) => setTimeout(res, 400));
+    }
+    // Now go quiet — after genuine inactivity the daemon should exit 124 and
+    // the session discovery file/port become unreachable.
+    await new Promise((res) => setTimeout(res, 2000));
+    const dead = await runCli(["state", "--session", session], { env });
+    expect(dead.code).toBe(2); // cli.ts `die`s when the daemon is gone
+  }, 25000);
 });
 
 describe("join.ts", () => {
