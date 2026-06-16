@@ -6,6 +6,7 @@
 //   bun cli.ts open <name>
 //   bun cli.ts list
 //   bun cli.ts send <name> --from <alias> <text...>
+//   bun cli.ts send <name> --from <alias> --stdin < message.txt
 //   bun cli.ts tail <name> [--since <id>] [--from-start]
 //   bun cli.ts read <name> <id> [--text]
 //   bun cli.ts close <name>
@@ -346,7 +347,7 @@ async function cmdSend(
   text: string,
   opts: { quiet?: boolean; verbose?: boolean; inReplyTo?: number },
 ) {
-  if (!name || !from || !text) die("usage: grapevine send <name> --from <alias> <text...>");
+  if (!name || !from || !text) die("usage: grapevine send <name> --from <alias> <text...>\n       grapevine send <name> --from <alias> --stdin < msg.txt\n  tip: use --stdin to avoid shell metacharacter issues (braces, brackets, semicolons)");
   const port = await ensureDaemon();
   const body: { from: string; text: string; in_reply_to?: number } = {
     from,
@@ -988,7 +989,10 @@ async function main(argv: string[]): Promise<number> {
         text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
       } else {
         text = positional.slice(1).join(" ");
-      }
+      // Warn if text contains shell metacharacters that may have been mangled
+      if (/[{}\[\]();$`"*?|&<>]/.test(text)) {
+        process.stderr.write("grapevine: ⚠️  text contains shell metacharacters — use --stdin to prevent data loss\n");
+      }      }
       if (!from)
         die("send: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
       await cmdSend(name, from, text, {
