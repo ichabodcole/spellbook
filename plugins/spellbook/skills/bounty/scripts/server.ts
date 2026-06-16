@@ -71,6 +71,8 @@ type Task = {
   notes?: string;
   owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
   blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
+  complexity?: "S" | "M" | "L";
+  doingSince?: number; // timestamp in ms when status became "doing"
 };
 type BoardState = { title: string; tasks: Task[] };
 
@@ -104,6 +106,14 @@ type BrowserMsg =
 
 const PORT_SUFFIX_RE = /-p(\d{2,5})$/;
 const VALID_STATUS: TaskStatus[] = ["todo", "doing", "review", "done"];
+
+const isTest = process.env.NODE_ENV === "test";
+const COMPLEXITY_DURATIONS: Record<string, number> = {
+  S: isTest ? 100 : 60 * 1000,
+  M: isTest ? 200 : 3 * 60 * 1000,
+  L: isTest ? 300 : 5 * 60 * 1000,
+};
+const DEFAULT_COMPLEXITY_DURATION = isTest ? 200 : 3 * 60 * 1000;
 
 function parsePortFromSessionId(sid: string): number | null {
   const m = sid?.match(PORT_SUFFIX_RE);
@@ -183,6 +193,12 @@ function validateTask(t: unknown): Task | null {
   ) {
     return null;
   }
+  if (cand.complexity !== undefined && !["S", "M", "L"].includes(cand.complexity as string)) {
+    return null;
+  }
+  if (cand.doingSince !== undefined && typeof cand.doingSince !== "number") {
+    return null;
+  }
   return {
     id: cand.id,
     title: cand.title,
@@ -190,6 +206,8 @@ function validateTask(t: unknown): Task | null {
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
     ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
+    ...(cand.complexity !== undefined ? { complexity: cand.complexity as "S" | "M" | "L" } : {}),
+    ...(cand.doingSince !== undefined ? { doingSince: cand.doingSince as number } : {}),
   };
 }
 
@@ -197,6 +215,9 @@ function validateTask(t: unknown): Task | null {
 // so the agent and browser see consistent ordering.
 function applyTaskAdd(state: BoardState, task: Task): boolean {
   if (state.tasks.some((t) => t.id === task.id)) return false;
+  if (task.status === "doing" && !task.doingSince) {
+    task.doingSince = Date.now();
+  }
   state.tasks.push(task);
   return true;
 }
@@ -210,7 +231,18 @@ function applyTaskUpdate(state: BoardState, id: string, patch: Partial<Task>): b
     const { status: _drop, ...rest } = patch;
     patch = rest;
   }
-  state.tasks[idx] = { ...state.tasks[idx], ...patch };
+  if (patch.status && patch.status !== state.tasks[idx].status) {
+    if (patch.status === "doing") {
+      patch.doingSince = Date.now();
+    } else {
+      patch.doingSince = undefined;
+    }
+  }
+  const nextTask = { ...state.tasks[idx], ...patch };
+  if (nextTask.status !== "doing") {
+    delete nextTask.doingSince;
+  }
+  state.tasks[idx] = nextTask;
   return true;
 }
 
@@ -229,7 +261,15 @@ function applyTaskMove(state: BoardState, id: string, status: TaskStatus, index:
   const fromIdx = state.tasks.findIndex((t) => t.id === id);
   if (fromIdx === -1) return -1;
   const [task] = state.tasks.splice(fromIdx, 1);
+  const oldStatus = task.status;
   task.status = status;
+  if (status !== oldStatus) {
+    if (status === "doing") {
+      task.doingSince = Date.now();
+    } else {
+      delete task.doingSince;
+    }
+  }
   // Translate the column-local index into an absolute index in state.tasks:
   // walk through state.tasks and count tasks of the target status until we
   // hit `index` slots. If `index` exceeds the column count, append.
@@ -382,6 +422,35 @@ async function main(argv: string[]): Promise<number> {
         c.enqueue(frame);
       } catch {
         /* client gone */
+      }
+    }
+  }
+
+  const lastStaleEmitted = new Map<string, number>();
+
+  function checkStaleTasks() {
+    const now = Date.now();
+    for (const task of state.tasks) {
+      if (task.status !== "doing" || !task.doingSince) {
+        lastStaleEmitted.delete(task.id);
+        continue;
+      }
+
+      const complexity = task.complexity ?? "M";
+      const duration = COMPLEXITY_DURATIONS[complexity] ?? DEFAULT_COMPLEXITY_DURATION;
+
+      const elapsed = now - task.doingSince;
+      if (elapsed >= duration) {
+        const lastEmitted = lastStaleEmitted.get(task.id) ?? 0;
+        if (now - lastEmitted >= duration) {
+          lastStaleEmitted.set(task.id, now);
+          emitEvent({
+            type: "task.stale",
+            taskId: task.id,
+            owner: task.owner,
+            by: "system",
+          });
+        }
       }
     }
   }
@@ -864,9 +933,13 @@ async function main(argv: string[]): Promise<number> {
     }
   }, 1000);
 
+  const checkInterval = isTest ? 50 : 1000;
+  const staleTimer = setInterval(checkStaleTasks, checkInterval);
+
   const { code, reason } = await done;
   clearInterval(idleTimer);
   clearInterval(snapTimer);
+  clearInterval(staleTimer);
   saveSnapshot(); // final write — KEEP it (the resume point, not deleted on close)
   // Closing frame on the event log — ends a `cli.ts tail` (exit 0) and bookends
   // the `ready` that opened it.

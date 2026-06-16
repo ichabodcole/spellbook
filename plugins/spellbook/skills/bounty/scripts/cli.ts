@@ -375,8 +375,8 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
-  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
+  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--complexity ..] [--stdin]   add a task
+  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--complexity ..] [--stdin]      patch a task
   claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
   block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
@@ -434,21 +434,37 @@ async function main(argv: string[]): Promise<number> {
       };
       if (typeof flags.notes === "string") task.notes = flags.notes;
       if (typeof flags.owner === "string") task.owner = flags.owner;
+      if (typeof flags.complexity === "string") {
+        if (!["S", "M", "L"].includes(flags.complexity)) {
+          die("add: --complexity must be S, M, or L");
+        }
+        task.complexity = flags.complexity;
+      }
       await postCmd(session, { type: "task.add", task }, { as });
       break;
     }
     case "update": {
       const id = pos[0];
       if (!id)
-        die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]");
+        die(
+          "usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--complexity ..] [--stdin]",
+        );
       const patch: Record<string, unknown> = {};
       if (flags.stdin === true) patch.title = await readStdin();
       else if (typeof flags.title === "string") patch.title = flags.title;
       if (typeof flags.status === "string") patch.status = flags.status;
       if (typeof flags.notes === "string") patch.notes = flags.notes;
       if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
+      if (typeof flags.complexity === "string") {
+        if (!["S", "M", "L"].includes(flags.complexity)) {
+          die("update: --complexity must be S, M, or L");
+        }
+        patch.complexity = flags.complexity;
+      }
       if (Object.keys(patch).length === 0)
-        die("update: nothing to change (give --status/--title/--notes/--owner/--stdin)");
+        die(
+          "update: nothing to change (give --status/--title/--notes/--owner/--complexity/--stdin)",
+        );
       await postCmd(session, { type: "task.update", id, patch }, { as });
       break;
     }

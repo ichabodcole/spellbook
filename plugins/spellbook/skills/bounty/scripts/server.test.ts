@@ -207,6 +207,24 @@ describe("validateTask", () => {
     expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: "b1" })).toBeNull();
     expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: [1, 2] })).toBeNull();
   });
+  test("carries complexity and doingSince when present", () => {
+    expect(
+      validateTask({ id: "a", title: "A", status: "doing", complexity: "S", doingSince: 12345 }),
+    ).toEqual({
+      id: "a",
+      title: "A",
+      status: "doing",
+      complexity: "S",
+      doingSince: 12345,
+    });
+  });
+  test("rejects invalid complexity", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", complexity: "X" })).toBeNull();
+    expect(validateTask({ id: "a", title: "A", status: "todo", complexity: 42 })).toBeNull();
+  });
+  test("rejects non-number doingSince", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", doingSince: "today" })).toBeNull();
+  });
   test("rejects non-objects", () => {
     expect(validateTask(null)).toBeNull();
     expect(validateTask("nope")).toBeNull();
@@ -1373,6 +1391,93 @@ describe("dependencies (Phase D)", () => {
       await runCli(["close", "--session", session], { env });
     }
   }, 25000);
+});
+
+// ── Stale-Task Heartbeat (Phase E) ────────────────────────────
+
+describe("stale-task heartbeat", () => {
+  async function collect(
+    url: string,
+    since: number,
+    pred: (ev: Record<string, unknown>) => boolean,
+    maxMs: number,
+  ): Promise<Record<string, unknown>[]> {
+    const res = await fetch(`${url}/events?since=${since}`);
+    if (!res.body) throw new Error("no SSE body");
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    const seen: Record<string, unknown>[] = [];
+    const deadline = Date.now() + maxMs;
+    while (Date.now() < deadline) {
+      const chunk = await Promise.race([
+        reader.read(),
+        new Promise<{ done: true; value: undefined }>((r) =>
+          setTimeout(() => r({ done: true, value: undefined }), Math.max(0, deadline - Date.now())),
+        ),
+      ]);
+      if (chunk.done) break;
+      buf += dec.decode(chunk.value, { stream: true });
+      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
+        const block = buf.slice(0, sep);
+        buf = buf.slice(sep + 2);
+        for (const line of block.split("\n")) {
+          if (!line.startsWith("data:")) continue;
+          const ev = JSON.parse(line.slice(5).trim()) as Record<string, unknown>;
+          seen.push(ev);
+          if (pred(ev)) {
+            reader.cancel();
+            return seen;
+          }
+        }
+      }
+    }
+    reader.cancel();
+    return seen;
+  }
+
+  test("emits task.stale events periodically for tasks in doing status after expected duration", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const ready = JSON.parse(readFileSync(join(tmpdir(), `bounty-${session}.json`), "utf8")) as {
+      url: string;
+    };
+
+    // Start collecting events
+    const collectP = collect(ready.url, 0, (ev) => ev.type === "task.stale", 3000);
+
+    try {
+      // Add a small task (complexity: "S" = 100ms in test mode) in doing status
+      await runCli(
+        [
+          "add",
+          "Quick Task",
+          "--id",
+          "quick",
+          "--status",
+          "doing",
+          "--complexity",
+          "S",
+          "--owner",
+          "alice",
+          "--session",
+          session,
+        ],
+        { env },
+      );
+
+      const events = await collectP;
+      const staleEvs = events.filter((e) => e.type === "task.stale");
+      expect(staleEvs.length).toBeGreaterThanOrEqual(1);
+      expect(staleEvs[0].taskId).toBe("quick");
+      expect(staleEvs[0].owner).toBe("alice");
+      expect(staleEvs[0].by).toBe("system");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 12000);
 });
 
 // ── Durability (Phase B) — snapshot + restore ────────────────────────────
