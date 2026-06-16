@@ -1,4 +1,4 @@
-import { Heart, Layers, Paperclip, X } from "lucide-react";
+import { Heart, ImageDown, Images, Layers, Paperclip, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { focusedVariant, variantLabel } from "../state/derive";
 import { addImageLayerFromSrc, IMAGO_IMAGE_DND } from "../state/fileIntake";
@@ -46,11 +46,13 @@ export function GenerationsRail({
     if (filter === "generated") return b.kind !== "import";
     return true; // all
   });
-  const FILTERS: { id: typeof filter; label: string }[] = [
-    { id: "all", label: "All" },
-    { id: "generated", label: "Generated" },
-    { id: "imported", label: "Imported" },
-    { id: "references", label: "References" },
+  // icon-only pills (the labels overflowed the narrow rail) — title + aria-label
+  // carry the text. References → Paperclip deliberately matches the ref badge.
+  const FILTERS: { id: typeof filter; label: string; Icon: typeof Paperclip }[] = [
+    { id: "all", label: "All", Icon: Images },
+    { id: "generated", label: "Generated", Icon: Sparkles },
+    { id: "imported", label: "Imported", Icon: ImageDown },
+    { id: "references", label: "References", Icon: Paperclip },
   ];
 
   return (
@@ -73,18 +75,23 @@ export function GenerationsRail({
         </div>
       </div>
 
-      {/* filter the library by source: all / AI-made / brought-in */}
+      {/* filter the library: All / Generated / Imported / References. Icon-only so
+          the row fits the narrow rail; active = filled accent. */}
       <div className="flex items-center gap-1 px-3 py-1.5 border-b border-divider">
         {FILTERS.map((f) => (
           <button
             type="button"
             key={f.id}
+            title={f.label}
+            aria-label={f.label}
             onClick={() => setFilter(f.id)}
-            className={`px-2 py-0.5 text-xs font-medium rounded ${
-              filter === f.id ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"
+            className={`p-1.5 rounded ${
+              filter === f.id
+                ? "bg-accent text-accent-ink"
+                : "text-faint hover:text-ink hover:bg-surface-3"
             }`}
           >
-            {f.label}
+            <f.Icon className="w-4 h-4" />
           </button>
         ))}
       </div>
