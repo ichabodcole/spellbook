@@ -201,6 +201,13 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
   let since = sinceArg;
   let delay = 250;
   let stopped = false;
+  // Pin the session: resolve once, then RECONNECT to the SAME session on every
+  // retry — never silently hop to a new "most recent" daemon (that hijack ended a
+  // watcher the moment a second daemon spawned). `session` may be undefined; it's
+  // pinned to the first resolved id below. Once pinned + grounded, if that session
+  // disappears we EXIT (end-of-session), rather than retry forever or re-resolve.
+  let boundId = session;
+  let grounded = false;
   const stop = () => {
     stopped = true;
     process.exit(0);
@@ -209,12 +216,22 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
   process.on("SIGTERM", stop);
 
   while (!stopped) {
-    const s = readSession(session);
+    const s = readSession(boundId);
     if (!s) {
+      if (grounded) process.exit(0); // our pinned session went away → done
       process.stderr.write("# no session yet, retrying…\n");
       await sleep(delay);
       delay = Math.min(delay * 2, 5000);
       continue;
+    }
+    if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+    if (!grounded) {
+      grounded = true;
+      // grounding line — parseable + visible in a Monitor, names the binding so a
+      // wrong session/port is obvious instead of silent.
+      process.stdout.write(
+        `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+      );
     }
     let res: Response;
     try {
