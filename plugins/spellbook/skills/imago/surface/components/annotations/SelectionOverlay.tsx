@@ -1,14 +1,19 @@
 // surface/components/annotations/SelectionOverlay.tsx
 // Active only in the "select" tool (AnnotationLayer renders it then, keyed on the
-// focused variant so selection clears on image change). One pointer surface over
-// the image handles select / move / resize / delete / reorder:
-//   press a mark   → select (topmost via hitTest, zOrder DESCENDING), no pan
-//   press empty    → deselect + bubble to the stage's pan
-//   drag a mark    → move (optimistic live highlight; MarkRenderer lags one
-//                    broadcast, per the doc); commit on release via mark.update
-//   drag a handle  → resize with the opposite anchor fixed; commit via mark.update
-//   ✕ / ⌃ / ⌄      → mark.remove / mark.reorder forward|back
-import { ChevronDown, ChevronUp, Pencil, X } from "lucide-react";
+// focused variant so selection clears on image change). Selection is a SET, lifted
+// to Canvas (controlled) and shared with the layers panel. One pointer surface over
+// the image handles select / move / resize / delete:
+//   press a mark        → single-select (replace the set; topmost via hitTest,
+//                         effective-z DESCENDING), no pan
+//   shift/⌘-press a mark → toggle it in the set (for grouping); no move
+//   press empty         → clear the set + bubble to the stage's pan
+//   drag a mark         → move (single only); commit on release via mark.update
+//   drag a handle       → resize (single only), opposite anchor fixed; mark.update
+//   ✕ / pencil          → mark.remove / re-edit a pin label (single only)
+// Multi-select is for GROUPING (panel → group), not multi-transform: ≥2 selected
+// just outline. Inter-layer z-order lives in the panel now (layer.reorder), so the
+// old per-selection forward/back chevrons are retired.
+import { Pencil, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import type { ClientToServer, Layer, Mark } from "../../state/types";
@@ -234,8 +239,8 @@ export function SelectionOverlay({
   send,
   scale,
   pinBounds,
-  selectedId,
-  onSelectedIdChange,
+  selectedIds,
+  onSelectedIdsChange,
   onLiveTransform,
   liveOverride,
 }: {
@@ -244,28 +249,30 @@ export function SelectionOverlay({
   send: (m: ClientToServer) => void;
   scale: number; // viewport zoom → the inline note editor welds to the image
   pinBounds: Record<string, PinSize>; // measured pin text boxes (fractions), by id
-  selectedId: string | null; // CONTROLLED by Canvas — one selection shared by canvas + (Phase-2) panel
-  onSelectedIdChange: (id: string | null) => void; // drive the lifted selection
+  selectedIds: string[]; // CONTROLLED by Canvas — the selection SET (shared with the layers panel)
+  onSelectedIdsChange: (ids: string[]) => void; // drive the lifted selection
   onLiveTransform?: (m: Mark | null) => void; // lift the mid-drag geometry so the SHAPE moves live
   liveOverride?: Mark | null; // the held drop geometry (until broadcast) → highlight rides it too
 }) {
-  // selectedId is lifted (controlled by Canvas); only the transient gesture + the
+  // selectedIds is lifted (controlled by Canvas); only the transient gesture + the
   // open pin-edit stay local — they're drag-/edit-scoped, not shared state.
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null); // pin label being re-edited
 
-  const selected = selectedId ? marks.find((m) => m.id === selectedId) : undefined;
-  // the mark as it looks right now: mid-gesture → the live transform; just after
+  // every selected mark (outlined); `single` = the lone transform target (only when
+  // exactly one is selected — move/resize/edit/delete act on it; ≥2 just outline).
+  const selectedMarks = marks.filter((m) => selectedIds.includes(m.id));
+  const single = selectedIds.length === 1 ? selectedMarks[0] : undefined;
+  // the lone mark as it looks right now: mid-gesture → the live transform; just after
   // release → the held drop geometry (liveOverride) until the broadcast lands,
   // mirroring the shape's hand-off so the highlight box doesn't flash back to the
   // start for a frame; otherwise → the committed mark.
-  const held =
-    selected && liveOverride && liveOverride.id === selected.id ? liveOverride : undefined;
+  const held = single && liveOverride && liveOverride.id === single.id ? liveOverride : undefined;
   const live =
-    selected && gesture
-      ? clampToImage(applyGesture(selected, gesture), pinBounds[selected.id])
-      : (held ?? selected);
-  const hl = live ? highlightBox(live, pinBounds[live.id]) : null;
+    single && gesture
+      ? clampToImage(applyGesture(single, gesture), pinBounds[single.id])
+      : (held ?? single);
+  const hl = single && live ? highlightBox(live, pinBounds[live.id]) : null;
   const editing = editingId ? marks.find((m) => m.id === editingId) : undefined;
 
   // Push the live transformed mark up DURING a gesture so MarkRenderer moves the
@@ -273,9 +280,9 @@ export function SelectionOverlay({
   // drops it when the committed broadcast arrives, so the shape doesn't flash back
   // to its old spot in the gap between release and broadcast. Cleared on unmount.
   useEffect(() => {
-    if (gesture && selected)
-      onLiveTransform?.(clampToImage(applyGesture(selected, gesture), pinBounds[selected.id]));
-  }, [gesture, selected, pinBounds, onLiveTransform]);
+    if (gesture && single)
+      onLiveTransform?.(clampToImage(applyGesture(single, gesture), pinBounds[single.id]));
+  }, [gesture, single, pinBounds, onLiveTransform]);
   useEffect(() => () => onLiveTransform?.(null), [onLiveTransform]);
 
   // topmost mark under p (effective-z descending: layer order then zOrder), pins
@@ -293,7 +300,7 @@ export function SelectionOverlay({
     if (editingId) setEditingId(null); // a press elsewhere ends an open edit (blur commits it)
     const handle = (e.target as HTMLElement).dataset.handle;
     const p = frac(e);
-    if (handle && selected) {
+    if (handle && single) {
       e.stopPropagation();
       setGesture({ type: "resize", handle, start: p, cur: p });
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -301,11 +308,20 @@ export function SelectionOverlay({
     }
     const hit = topHit(p);
     if (!hit) {
-      onSelectedIdChange(null); // empty press → deselect; no stopPropagation → stage pans
+      onSelectedIdsChange([]); // empty press → clear; no stopPropagation → stage pans
       return;
     }
-    e.stopPropagation(); // selecting/moving a mark, not panning
-    onSelectedIdChange(hit.id);
+    e.stopPropagation(); // selecting a mark, not panning
+    // shift/⌘-press → toggle this mark in the set (for grouping); never a move.
+    if (e.shiftKey || e.metaKey) {
+      onSelectedIdsChange(
+        selectedIds.includes(hit.id)
+          ? selectedIds.filter((id) => id !== hit.id)
+          : [...selectedIds, hit.id],
+      );
+      return;
+    }
+    onSelectedIdsChange([hit.id]); // plain press → single-select (replace the set)
     // double-press a pin (detail===2) → re-edit its label inline, no move gesture.
     // (Detected here rather than via onDoubleClick so the surface stays
     // pointer-only — biome's noStaticElementInteractions flags click-family.)
@@ -326,11 +342,11 @@ export function SelectionOverlay({
     const moved =
       Math.hypot(gesture.cur.x - gesture.start.x, gesture.cur.y - gesture.start.y) >=
       MOVE_THRESHOLD;
-    if (moved && selected) {
+    if (moved && single) {
       send({
         type: "mark.update",
-        id: selected.id,
-        patch: geometryPatch(clampToImage(applyGesture(selected, gesture), pinBounds[selected.id])),
+        id: single.id,
+        patch: geometryPatch(clampToImage(applyGesture(single, gesture), pinBounds[single.id])),
       });
     }
     setGesture(null);
@@ -343,76 +359,61 @@ export function SelectionOverlay({
       onPointerUp={onPointerUp}
       className="absolute inset-0"
     >
-      {selected && live && hl && (
-        <>
-          {/* selection highlight */}
+      {/* every selected mark gets an outline; the single's rides its live geometry
+          mid-gesture. The transform frame below is single-selection only. */}
+      {selectedMarks.map((m) => {
+        const shown = single && single.id === m.id ? (live ?? m) : m;
+        const box = highlightBox(shown, pinBounds[shown.id]);
+        return (
           <div
+            key={m.id}
             className="absolute rounded-sm border-2 border-accent pointer-events-none"
             style={{
-              left: `${hl.x * 100}%`,
-              top: `${hl.y * 100}%`,
-              width: `${hl.w * 100}%`,
-              height: `${hl.h * 100}%`,
+              left: `${box.x * 100}%`,
+              top: `${box.y * 100}%`,
+              width: `${box.w * 100}%`,
+              height: `${box.h * 100}%`,
             }}
           />
+        );
+      })}
 
-          {/* resize handles — hidden while editing; never present for pins */}
-          {!editing &&
-            resizeHandles(live).map((hnd) => (
-              <div
-                key={hnd.id}
-                data-handle={hnd.id}
-                className={`absolute w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent border border-edge ${hnd.cursor}`}
-                style={{ left: `${hnd.x * 100}%`, top: `${hnd.y * 100}%` }}
-              />
-            ))}
-
-          {/* actions — edit (pins) + reorder + delete, at the highlight's top-right edge */}
-          {!editing && (
+      {/* transform frame — handles + actions — only with exactly one mark selected
+          and not mid-edit. (Multi-select is for grouping, not multi-transform.) */}
+      {single && live && hl && !editing && (
+        <>
+          {/* resize handles — never present for pins */}
+          {resizeHandles(live).map((hnd) => (
             <div
-              className="absolute flex items-center gap-1 -translate-x-full -translate-y-1/2"
-              style={{ left: `${(hl.x + hl.w) * 100}%`, top: `${hl.y * 100}%` }}
+              key={hnd.id}
+              data-handle={hnd.id}
+              className={`absolute w-2 h-2 -translate-x-1/2 -translate-y-1/2 rounded-sm bg-accent border border-edge ${hnd.cursor}`}
+              style={{ left: `${hnd.x * 100}%`, top: `${hnd.y * 100}%` }}
+            />
+          ))}
+
+          {/* actions — edit (pins) + delete, at the highlight's top-right edge.
+              Inter-layer z-order now lives in the layers panel (layer.reorder), so
+              the per-selection forward/back chevrons are retired. */}
+          <div
+            className="absolute flex items-center gap-1 -translate-x-full -translate-y-1/2"
+            style={{ left: `${(hl.x + hl.w) * 100}%`, top: `${hl.y * 100}%` }}
+          >
+            {single.tool === "pin" && (
+              <ActionButton title="Edit note" onClick={() => setEditingId(single.id)}>
+                <Pencil className="w-3 h-3" />
+              </ActionButton>
+            )}
+            <ActionButton
+              title="Delete annotation"
+              onClick={() => {
+                send({ type: "mark.remove", id: single.id });
+                onSelectedIdsChange([]);
+              }}
             >
-              {selected.tool === "pin" && (
-                <ActionButton title="Edit note" onClick={() => setEditingId(selected.id)}>
-                  <Pencil className="w-3 h-3" />
-                </ActionButton>
-              )}
-              <ActionButton
-                title="Send back"
-                onClick={() =>
-                  send({
-                    type: "mark.reorder",
-                    id: selected.id,
-                    direction: "back",
-                  })
-                }
-              >
-                <ChevronDown className="w-3 h-3" />
-              </ActionButton>
-              <ActionButton
-                title="Bring forward"
-                onClick={() =>
-                  send({
-                    type: "mark.reorder",
-                    id: selected.id,
-                    direction: "forward",
-                  })
-                }
-              >
-                <ChevronUp className="w-3 h-3" />
-              </ActionButton>
-              <ActionButton
-                title="Delete annotation"
-                onClick={() => {
-                  send({ type: "mark.remove", id: selected.id });
-                  onSelectedIdChange(null);
-                }}
-              >
-                <X className="w-3 h-3" />
-              </ActionButton>
-            </div>
-          )}
+              <X className="w-3 h-3" />
+            </ActionButton>
+          </div>
         </>
       )}
 

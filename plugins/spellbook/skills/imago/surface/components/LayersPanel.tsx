@@ -19,10 +19,12 @@ import {
   Eye,
   EyeOff,
   GripVertical,
+  Group,
   Image as ImageIcon,
   Lock,
   Pencil,
   Shapes,
+  Ungroup,
   Unlock,
   X,
 } from "lucide-react";
@@ -35,15 +37,15 @@ export function LayersPanel({
   marks,
   send,
   variantSrc,
-  selectedMarkId,
-  onClearSelection,
+  selectedMarkIds,
+  onSelectionChange,
 }: {
   layers: Layer[]; // server order: back→front (index 0 = back)
-  marks: Mark[]; // derives image-layer thumbnails + the selected-mark → layer check
+  marks: Mark[]; // image-layer thumbnails, per-layer mark counts + the selection ↔ layer sync
   send: (m: ClientToServer) => void;
   variantSrc?: string; // the Background row's thumbnail (the base image)
-  selectedMarkId: string | null;
-  onClearSelection: () => void; // drop selection when its layer goes hidden/locked/removed
+  selectedMarkIds: string[]; // the canvas selection SET (controlled by Canvas)
+  onSelectionChange: (ids: string[]) => void; // drive the lifted selection (two-way sync + auto-deselect)
 }) {
   const [editingId, setEditingId] = useState<string | null>(null); // layer being renamed
   const [draftName, setDraftName] = useState("");
@@ -53,27 +55,40 @@ export function LayersPanel({
   const realCount = layers.length;
   const visual = [...layers].reverse(); // front-first display order
 
-  // Does the current selection live in this layer? Drives auto-deselect when the
-  // layer is hidden/locked/removed out from under a selected-but-now-unreachable mark.
+  // a layer's own marks (its elements) — drives thumbnails, the ≥2 ungroup
+  // affordance, and row-click "select all of this layer".
+  function layerMarks(layerId: string): Mark[] {
+    return marks.filter((m) => m.layerId === layerId);
+  }
+  // Does any selected mark live in this layer? Lights the row (canvas → panel sync)
+  // AND drives auto-deselect when the layer goes hidden/locked/removed.
   function selectionIn(layerId: string): boolean {
-    return (
-      selectedMarkId != null && marks.find((m) => m.id === selectedMarkId)?.layerId === layerId
+    return selectedMarkIds.some((id) => marks.find((m) => m.id === id)?.layerId === layerId);
+  }
+  // drop every mark of this layer from the selection (it became unreachable)
+  function dropFromSelection(layerId: string) {
+    onSelectionChange(
+      selectedMarkIds.filter((id) => marks.find((m) => m.id === id)?.layerId !== layerId),
     );
+  }
+  // panel → canvas: clicking a row selects ALL of that layer's marks
+  function selectLayer(layer: Layer) {
+    onSelectionChange(layerMarks(layer.id).map((m) => m.id));
   }
 
   function toggleHidden(layer: Layer) {
     const hidden = !layer.hidden;
     send({ type: "layer.setHidden", id: layer.id, hidden });
-    if (hidden && selectionIn(layer.id)) onClearSelection();
+    if (hidden && selectionIn(layer.id)) dropFromSelection(layer.id);
   }
   function toggleLocked(layer: Layer) {
     const locked = !layer.locked;
     send({ type: "layer.setLocked", id: layer.id, locked });
-    if (locked && selectionIn(layer.id)) onClearSelection();
+    if (locked && selectionIn(layer.id)) dropFromSelection(layer.id);
   }
   function remove(layer: Layer) {
     send({ type: "layer.remove", id: layer.id }); // deletes the layer AND its marks
-    if (selectionIn(layer.id)) onClearSelection();
+    if (selectionIn(layer.id)) dropFromSelection(layer.id);
   }
   function commitRename(layer: Layer) {
     const name = draftName.trim();
@@ -94,6 +109,20 @@ export function LayersPanel({
 
   return (
     <div className="p-2 flex flex-col gap-0.5 text-xs">
+      {/* group the current multi-selection into a new layer (server creates it on
+          top + prunes the emptied source layers). Enabled with ≥2 marks selected. */}
+      <button
+        type="button"
+        disabled={selectedMarkIds.length < 2}
+        onClick={() => send({ type: "group", markIds: selectedMarkIds })}
+        className="mb-1 flex items-center justify-center gap-1.5 rounded-md border border-edge-strong px-2 py-1 font-medium text-muted hover:text-ink hover:border-edge-hover disabled:opacity-40 disabled:pointer-events-none"
+      >
+        <Group className="w-3.5 h-3.5" />
+        {selectedMarkIds.length >= 2
+          ? `Group ${selectedMarkIds.length} selected`
+          : "Group selected"}
+      </button>
+
       {realCount === 0 && (
         <p className="px-2 py-3 text-faint italic text-center">
           No layers yet — drop an image onto the canvas, or group marks, to make one.
@@ -110,6 +139,7 @@ export function LayersPanel({
         const thumbSrc = imgMark?.tool === "image" ? imgMark.src : undefined;
         const isEditing = editingId === layer.id;
         const sel = selectionIn(layer.id);
+        const count = layerMarks(layer.id).length; // ≥2 → offer ungroup
         return (
           // biome-ignore lint/a11y/noStaticElementInteractions: HTML5 drag-drop reorder target
           <div
@@ -179,18 +209,27 @@ export function LayersPanel({
             ) : (
               <button
                 type="button"
+                onClick={() => selectLayer(layer)}
                 onDoubleClick={() => {
                   setEditingId(layer.id);
                   setDraftName(layer.name);
                 }}
-                title="Double-click to rename"
+                title="Click to select its marks · double-click to rename"
                 className="flex-1 min-w-0 text-left truncate text-ink"
               >
                 {layer.name}
               </button>
             )}
 
-            {/* visibility · lock · delete */}
+            {/* ungroup (multi-element layers only) · visibility · lock · delete */}
+            {count >= 2 && (
+              <RowButton
+                title="Ungroup into separate layers"
+                onClick={() => send({ type: "ungroup", id: layer.id })}
+              >
+                <Ungroup className="w-3.5 h-3.5" />
+              </RowButton>
+            )}
             <RowButton
               title={layer.hidden ? "Show layer" : "Hide layer"}
               active={layer.hidden}

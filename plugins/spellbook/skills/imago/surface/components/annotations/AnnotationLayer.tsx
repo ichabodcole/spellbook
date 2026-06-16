@@ -32,8 +32,8 @@ export function AnnotationLayer({
   scale,
   natW,
   natH,
-  selectedId,
-  onSelectedIdChange,
+  selectedIds,
+  onSelectedIdsChange,
 }: {
   tool: string;
   marks: Mark[];
@@ -44,8 +44,8 @@ export function AnnotationLayer({
   scale: number; // viewport zoom scale → marks/drafts weld to the image
   natW: number; // image natural px (the SVG viewBox basis)
   natH: number;
-  selectedId: string | null; // controlled selection, owned by Canvas
-  onSelectedIdChange: (id: string | null) => void;
+  selectedIds: string[]; // controlled selection SET, owned by Canvas
+  onSelectedIdsChange: (ids: string[]) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(null);
   const plugin = TOOL_REGISTRY[tool]; // undefined for the `select` pseudo-tool
@@ -196,8 +196,8 @@ export function AnnotationLayer({
           send={send}
           scale={scale}
           pinBounds={pinBounds}
-          selectedId={selectedId}
-          onSelectedIdChange={onSelectedIdChange}
+          selectedIds={selectedIds}
+          onSelectedIdsChange={onSelectedIdsChange}
           onLiveTransform={setLiveOverride}
           liveOverride={liveOverride}
         />

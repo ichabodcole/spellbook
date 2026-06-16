@@ -66,7 +66,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas margin
   const [layerDragging, setLayerDragging] = useState(false); // image dragged over the focused image box
   const [drawStyle, setDrawStyle] = useState<DrawStyle>(DEFAULT_DRAW_STYLE); // active color/width for new marks
-  const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null); // controlled selection (source of truth, lifted from SelectionOverlay)
+  const [selectedMarkIds, setSelectedMarkIds] = useState<string[]>([]); // controlled selection SET (source of truth, shared by canvas + layers panel)
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const dragRef = useRef<{
@@ -107,9 +107,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     setPan({ x: 0, y: 0 });
     fitPendingRef.current = true; // default view for a newly-focused image = fit-to-window
     // Selection is now lifted here (controlled), so the per-variant SelectionOverlay
-    // remount no longer clears it — drop it explicitly, else a stale id points at a
-    // mark on the previous image.
-    setSelectedMarkId(null);
+    // remount no longer clears it — drop it explicitly, else stale ids point at
+    // marks on the previous image.
+    setSelectedMarkIds([]);
     // NB: asidePanel intentionally NOT reset — the inspector (Details/Layers) stays
     // open across variant selection; its content swaps. Annotation drafts reset
     // inside AnnotationLayer (keyed on the focused variant), so none live here.
@@ -168,10 +168,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   // image-box pointer dispatch + per-tool plugins); Canvas keeps the viewport,
   // the reference drawer, and the details sidebar.
 
-  // The style row drives the SELECTED mark when one is selected (only meaningful
-  // in the select tool), else the active draw style for new marks.
+  // The style row drives the SELECTED mark only when exactly ONE is selected (in the
+  // select tool) — multi-select is for grouping, not multi-style; else the active
+  // draw style for new marks.
   const selectedMark =
-    tool === "select" && selectedMarkId ? marks.find((m) => m.id === selectedMarkId) : undefined;
+    tool === "select" && selectedMarkIds.length === 1
+      ? marks.find((m) => m.id === selectedMarkIds[0])
+      : undefined;
   const activeColor = selectedMark?.color ?? drawStyle.color;
   const activeWidth = selectedMark?.width ?? drawStyle.width;
   // fontSize is pin-only; reflects the selected pin's size, else the draw style
@@ -480,8 +483,8 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
               scale={scale}
               natW={nat?.w ?? 0}
               natH={nat?.h ?? 0}
-              selectedId={selectedMarkId}
-              onSelectedIdChange={setSelectedMarkId}
+              selectedIds={selectedMarkIds}
+              onSelectedIdsChange={setSelectedMarkIds}
             />
             {layerHint}
           </div>
@@ -659,8 +662,8 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
                 marks={marks}
                 send={send}
                 variantSrc={variant.src}
-                selectedMarkId={selectedMarkId}
-                onClearSelection={() => setSelectedMarkId(null)}
+                selectedMarkIds={selectedMarkIds}
+                onSelectionChange={setSelectedMarkIds}
               />
             )}
 
