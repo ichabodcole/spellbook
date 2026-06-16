@@ -36,12 +36,19 @@ const PAD = 0.012; // breathing room around the highlight
 const MIN_HL = 0.04; // min highlight size so points/thin marks stay grabbable
 
 // A mid-gesture transform of the selected mark. handle is "" for a move.
+// shift carries the live modifier: on a corner resize it flips the aspect
+// behavior ("Shift = the other aspect behavior" — see resize()).
 type Gesture = {
   type: "move" | "resize";
   handle: string;
   start: Point;
   cur: Point;
+  shift: boolean;
 };
+
+// the four corner handle ids — these carry aspect behavior; edge handles (n/e/s/w)
+// stay free 1-axis stretches regardless of Shift.
+const CORNERS = new Set(["nw", "ne", "se", "sw"]);
 
 // ── geometry (pure) ──────────────────────────────────────────────────────────
 
@@ -69,7 +76,7 @@ function translate(m: Mark, dx: number, dy: number): Mark {
 }
 
 // resize a box by dragging the named handle; the opposite edge(s) stay fixed.
-function resizeBox(box: Box, handle: string, dx: number, dy: number): Box {
+export function resizeBox(box: Box, handle: string, dx: number, dy: number): Box {
   let L = box.x;
   let R = box.x + box.w;
   let T = box.y;
@@ -81,7 +88,41 @@ function resizeBox(box: Box, handle: string, dx: number, dy: number): Box {
   return { x: L, y: T, w: R - L, h: B - T };
 }
 
-function resize(m: Mark, handle: string, dx: number, dy: number): Mark {
+// Aspect-locked corner resize: the corner OPPOSITE the handle is the anchor and
+// stays put; the box scales UNIFORMLY (keeps its w:h). We project the drag delta
+// onto the anchor→corner diagonal to get one scale factor, so the dragged corner
+// tracks the cursor along that diagonal instead of free-distorting.
+export function resizeBoxAspect(box: Box, handle: string, dx: number, dy: number): Box {
+  const { x, y, w, h } = box;
+  if (w <= 0 || h <= 0) return resizeBox(box, handle, dx, dy); // degenerate → free
+  const west = handle.includes("w");
+  const north = handle.includes("n");
+  // diagonal vector from the fixed anchor to the moving corner (|Dx|=w, |Dy|=h)
+  const Dx = west ? -w : w;
+  const Dy = north ? -h : h;
+  const t = (dx * Dx + dy * Dy) / (Dx * Dx + Dy * Dy); // signed scale delta
+  // clamp so neither side underflows MIN_SIZE (uniform → gate on the smaller side)
+  const s = Math.max(1 + t, MIN_SIZE / Math.min(w, h));
+  const nw = w * s;
+  const nh = h * s;
+  // hold the anchor edge fixed; the box grows from it toward the dragged corner
+  const nx = west ? x + w - nw : x; // east edge fixed when dragging west
+  const ny = north ? y + h - nh : y; // south edge fixed when dragging north
+  return { x: nx, y: ny, w: nw, h: nh };
+}
+
+// pick the aspect-locked corner resize when `lock`, else the free per-edge resize.
+// edge handles are never aspect-locked (they're explicit 1-axis stretches).
+export function resizeBoxFor(box: Box, handle: string, dx: number, dy: number, lock: boolean): Box {
+  return lock && CORNERS.has(handle)
+    ? resizeBoxAspect(box, handle, dx, dy)
+    : resizeBox(box, handle, dx, dy);
+}
+
+// shift flips the per-tool default aspect behavior on a CORNER drag:
+//   IMAGE marks  → aspect-locked by default; Shift free-distorts.
+//   everything else (rect/ellipse/draw) → free by default; Shift locks aspect.
+function resize(m: Mark, handle: string, dx: number, dy: number, shift: boolean): Mark {
   switch (m.tool) {
     case "pin":
       return m; // no resize
@@ -92,15 +133,17 @@ function resize(m: Mark, handle: string, dx: number, dy: number): Mark {
         : { ...m, x2: m.x2 + dx, y2: m.y2 + dy };
     case "rect":
     case "image": {
-      const b = resizeBox({ x: m.x, y: m.y, w: m.w, h: m.h }, handle, dx, dy);
+      const lock = m.tool === "image" ? !shift : shift;
+      const b = resizeBoxFor({ x: m.x, y: m.y, w: m.w, h: m.h }, handle, dx, dy, lock);
       return { ...m, ...b };
     }
     case "ellipse": {
-      const b = resizeBox(
+      const b = resizeBoxFor(
         { x: m.cx - m.rx, y: m.cy - m.ry, w: m.rx * 2, h: m.ry * 2 },
         handle,
         dx,
         dy,
+        shift,
       );
       return {
         ...m,
@@ -114,7 +157,7 @@ function resize(m: Mark, handle: string, dx: number, dy: number): Mark {
       // scale every point proportionally into the resized bbox (degenerate axis
       // with zero extent stays put — avoids /0)
       const old = markBounds(m);
-      const b = resizeBox(old, handle, dx, dy);
+      const b = resizeBoxFor(old, handle, dx, dy, shift);
       const sx = old.w > 0 ? b.w / old.w : 1;
       const sy = old.h > 0 ? b.h / old.h : 1;
       return {
@@ -131,7 +174,7 @@ function resize(m: Mark, handle: string, dx: number, dy: number): Mark {
 function applyGesture(m: Mark, g: Gesture): Mark {
   const dx = g.cur.x - g.start.x;
   const dy = g.cur.y - g.start.y;
-  return g.type === "move" ? translate(m, dx, dy) : resize(m, g.handle, dx, dy);
+  return g.type === "move" ? translate(m, dx, dy) : resize(m, g.handle, dx, dy, g.shift);
 }
 
 // Edge policy: keep a note FULLY inside the image. Clamp a pin's center by its
@@ -302,7 +345,7 @@ export function SelectionOverlay({
     const p = frac(e);
     if (handle && single) {
       e.stopPropagation();
-      setGesture({ type: "resize", handle, start: p, cur: p });
+      setGesture({ type: "resize", handle, start: p, cur: p, shift: e.shiftKey });
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
@@ -329,12 +372,13 @@ export function SelectionOverlay({
       setEditingId(hit.id);
       return;
     }
-    setGesture({ type: "move", handle: "", start: p, cur: p });
+    setGesture({ type: "move", handle: "", start: p, cur: p, shift: e.shiftKey });
     e.currentTarget.setPointerCapture(e.pointerId);
   }
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!gesture) return;
-    setGesture({ ...gesture, cur: frac(e) });
+    // track Shift live so toggling it mid-drag flips the aspect behavior
+    setGesture({ ...gesture, cur: frac(e), shift: e.shiftKey });
   }
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     if (!gesture) return;
