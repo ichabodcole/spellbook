@@ -364,8 +364,8 @@ const HELP = `imago — a grounded image conversation.
   batch  [--kind generate|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] [--models m1,m2,..] <src> ...
                                      add a produced batch; each src = http url, data: url, or file path; --models labels each variant
   focus  <batchId> <variantId>       put an image on the canvas
-  select <refId> [off]               point at a reference (highlights it for the user)
-  analyze <ref-or-variant-id> <text...>  write your read onto a reference OR an image (durable metadata)
+  select <variantId> [off]           point a variant at the next gen as a reference (highlights it for the user)
+  analyze <variantId> <text...>      write your read onto an image (durable metadata)
   style  <name...> [--description ..] [--image <path|url>]   define a captured style (look in words + canonical image)
   prompt --label "<name>" --text "<the prompt>"             save a reusable quick-prompt to the library
   status on [text...] | status off   show/hide the "imago working" spinner
@@ -446,15 +446,15 @@ async function main(argv: string[]): Promise<number> {
       await postCmd(session, { type: "focus", batchId: pos[0], variantId: pos[1] });
       break;
     case "select":
-      if (!pos.length) die("usage: select <refId> [off]");
+      if (!pos.length) die("usage: select <variantId> [off]");
       await postCmd(session, { type: "ref.select", id: pos[0], selected: pos[1] !== "off" });
       break;
     case "analyze": {
-      if (pos.length < 2) die("usage: analyze <ref-or-variant-id> <text...>");
+      if (pos.length < 2) die("usage: analyze <image-id> <text...>");
       const [aid, ...words] = pos;
-      // route by id prefix: variants are "v-…", references "ref-…"
-      const type = aid.startsWith("v-") ? "variant.analyze" : "ref.analyze";
-      await postCmd(session, { type, id: aid, text: words.join(" ") });
+      // refs are variants now → one verb writes a read onto any image (incl.
+      // migrated refs that kept their old "ref-…" id)
+      await postCmd(session, { type: "variant.analyze", id: aid, text: words.join(" ") });
       break;
     }
     case "style": {

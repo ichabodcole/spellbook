@@ -396,11 +396,14 @@ async function main(argv: string[]): Promise<number> {
   // for "bring in a working image" AND "add a reference". Hashes for dedup +
   // analysisCache; if the same pixels are already imported, returns the existing
   // variant (no duplicate). Caller decides focus/refSelected.
-  function importImageVariant(src: string, name: string): { batchId: string; variant: Variant } {
+  function importImageVariant(src: string, name?: string): { batchId: string; variant: Variant } {
     const hash = contentHash(src);
     for (const b of state.batches) {
       const ex = b.variants.find((v) => v.hash === hash);
-      if (ex) return { batchId: b.id, variant: ex };
+      if (ex) {
+        if (name && !ex.name) ex.name = name; // fill a missing name on a dedup hit
+        return { batchId: b.id, variant: ex };
+      }
     }
     const vid = newId("v");
     const batchId = newId("b");
@@ -761,13 +764,15 @@ async function main(argv: string[]): Promise<number> {
       // NOT steal focus (a ref isn't the working image; image.import is).
       const raw = msg.image as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
-      const name = typeof raw.name === "string" ? raw.name : "reference";
+      // leave name undefined when not supplied (don't store a "reference"
+      // placeholder — a later image.import of the same pixels can fill the name)
+      const name = typeof raw.name === "string" ? raw.name : undefined;
       const { variant } = importImageVariant(raw.src, name);
       variant.refSelected = true;
       pushMessage({
         role: "user",
         kind: "gesture",
-        text: `📎 you pointed at a reference (${variant.name ?? name})`,
+        text: `📎 you pointed at a reference (${variant.name ?? "image"})`,
         gesture: { kind: "ref-added", targetId: variant.id },
       });
       broadcastState();
@@ -1250,16 +1255,22 @@ async function main(argv: string[]): Promise<number> {
         kind: "import",
         prompt: "",
         tag: "references",
-        variants: legacyRefs.map((r) => ({
-          id: r.id, // reuse the ref id as the variant id
-          src: r.src,
-          path: r.path ?? "",
-          liked: false,
-          analysis: r.analysis ?? "",
-          name: r.name,
-          refSelected: r.selected === true,
-          hash: r.hash ?? (r.src ? contentHash(r.src) : undefined),
-        })),
+        variants: legacyRefs.map((r) => {
+          const hash = r.hash ?? (r.src ? contentHash(r.src) : undefined);
+          // seed the hash→analysis cache so deleting + re-importing the same pixels
+          // still reuses the agent's prior read (the old delete/re-add invariant)
+          if (hash && r.analysis) state.analysisCache[hash] = r.analysis;
+          return {
+            id: r.id, // reuse the ref id as the variant id
+            src: r.src,
+            path: r.path ?? "",
+            liked: false,
+            analysis: r.analysis ?? "",
+            name: r.name,
+            refSelected: r.selected === true,
+            hash,
+          };
+        }),
       });
     }
     delete (state as { refs?: unknown }).refs;

@@ -937,6 +937,8 @@ describe("restore backfills newer fields from an old snapshot", () => {
     expect(r1?.analysis).toBe("muted greens");
     expect(r2?.refSelected).toBeFalsy(); // selected:false → not a ref, but still in the library
     expect(r1?.path).not.toBe("/stale/ref1.png"); // re-materialized to the live files dir
+    // the hash→analysis cache is seeded so a delete + re-import reuses the read
+    expect(st.analysisCache.h1).toBe("muted greens");
 
     rmSync(home, { recursive: true, force: true });
   });
