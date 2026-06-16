@@ -35,6 +35,7 @@ import { AnnotationToolbar } from "./annotations/AnnotationToolbar";
 import { flattenMarks } from "./annotations/flatten";
 import { DEFAULT_DRAW_STYLE, type DrawStyle } from "./annotations/style";
 import { TOOL_REGISTRY } from "./annotations/tools/registry";
+import { LayersPanel } from "./LayersPanel";
 
 function frameDims(aspect: string): { w: number; h: number } {
   const [w, h] = (aspect.split(":").map(Number) as [number, number]) ?? [1, 1];
@@ -60,7 +61,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [panning, setPanning] = useState(false);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null); // image natural size
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
-  const [showDetails, setShowDetails] = useState(false);
+  const [asidePanel, setAsidePanel] = useState<"details" | "layers" | null>(null); // right-of-stage inspector tab (null = closed)
   const [copied, setCopied] = useState<"prompt" | "analysis" | null>(null);
   const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas margin
   const [layerDragging, setLayerDragging] = useState(false); // image dragged over the focused image box
@@ -109,9 +110,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     // remount no longer clears it — drop it explicitly, else a stale id points at a
     // mark on the previous image.
     setSelectedMarkId(null);
-    // NB: showDetails intentionally NOT reset — the details sidebar persists open
-    // across variant selection. Annotation drafts reset inside AnnotationLayer
-    // (keyed on the focused variant), so no draft state lives here anymore.
+    // NB: asidePanel intentionally NOT reset — the inspector (Details/Layers) stays
+    // open across variant selection; its content swaps. Annotation drafts reset
+    // inside AnnotationLayer (keyed on the focused variant), so none live here.
     const el = imgRef.current;
     setNat(el?.complete && el.naturalWidth ? { w: el.naturalWidth, h: el.naturalHeight } : null);
   }, [variantId]);
@@ -563,14 +564,26 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             <button
               type="button"
               title="Image details"
-              onClick={() => setShowDetails((v) => !v)}
+              onClick={() => setAsidePanel((p) => (p === "details" ? null : "details"))}
               className={`w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${
-                showDetails
+                asidePanel === "details"
                   ? "bg-accent/25 border-accent/60 text-accent-ink"
                   : "bg-black/60 border-edge text-muted hover:text-ink hover:border-edge-hover"
               }`}
             >
               <Info className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              title="Layers"
+              onClick={() => setAsidePanel((p) => (p === "layers" ? null : "layers"))}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${
+                asidePanel === "layers"
+                  ? "bg-accent/25 border-accent/60 text-accent-ink"
+                  : "bg-black/60 border-edge text-muted hover:text-ink hover:border-edge-hover"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -602,84 +615,72 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             its own overflow-y-auto scroll never reaches the stage's wheel/pan
             handlers. Persists open across variant selection (content swaps).
             Structured as stacked sections so more can be added later. */}
-        {showDetails && (
+        {asidePanel && (
           <aside className="w-[300px] shrink-0 border-l border-divider bg-surface flex flex-col overflow-y-auto">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-divider">
-              <span className="section-title">Details</span>
-              <span className={`ml-auto ${batch.kind === "edit" ? "badge-accent" : "badge-muted"}`}>
-                {batch.kind}
-              </span>
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-divider">
               <button
                 type="button"
-                title="Close details"
-                onClick={() => setShowDetails(false)}
-                className="shrink-0 text-faint hover:text-ink"
+                onClick={() => setAsidePanel("details")}
+                className={`px-2 py-0.5 rounded font-medium ${
+                  asidePanel === "details" ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"
+                }`}
+              >
+                Details
+              </button>
+              <button
+                type="button"
+                onClick={() => setAsidePanel("layers")}
+                className={`px-2 py-0.5 rounded font-medium ${
+                  asidePanel === "layers" ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"
+                }`}
+              >
+                Layers
+              </button>
+              {asidePanel === "details" && (
+                <span
+                  className={`ml-auto ${batch.kind === "edit" ? "badge-accent" : "badge-muted"}`}
+                >
+                  {batch.kind}
+                </span>
+              )}
+              <button
+                type="button"
+                title="Close"
+                onClick={() => setAsidePanel(null)}
+                className={`shrink-0 text-faint hover:text-ink ${asidePanel === "layers" ? "ml-auto" : ""}`}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 flex flex-col gap-4 text-xs">
-              <span className="text-sm font-semibold text-ink-strong">
-                Batch {batchIndex + 1} · variant {variantLabel(vIndex)}
-              </span>
+            {asidePanel === "layers" && (
+              <LayersPanel
+                layers={layers}
+                marks={marks}
+                send={send}
+                variantSrc={variant.src}
+                selectedMarkId={selectedMarkId}
+                onClearSelection={() => setSelectedMarkId(null)}
+              />
+            )}
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-faint uppercase tracking-wider">prompt</span>
-                  <button
-                    type="button"
-                    title="Copy prompt"
-                    onClick={() => copyText(batch.prompt, "prompt")}
-                    disabled={!batch.prompt}
-                    className="flex items-center gap-1 text-faint hover:text-ink disabled:opacity-40 disabled:hover:text-faint"
-                  >
-                    {copied === "prompt" ? (
-                      <>
-                        <Check className="w-3 h-3" /> copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" /> copy
-                      </>
-                    )}
-                  </button>
-                </div>
-                <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                  {batch.prompt || "—"}
-                </p>
-              </div>
+            {asidePanel === "details" && (
+              <div className="p-4 flex flex-col gap-4 text-xs">
+                <span className="text-sm font-semibold text-ink-strong">
+                  Batch {batchIndex + 1} · variant {variantLabel(vIndex)}
+                </span>
 
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-                <dt className="text-faint">model</dt>
-                <dd className="text-ink break-words [overflow-wrap:anywhere]">
-                  {variant.model || "—"}
-                </dd>
-                <dt className="text-faint">seed</dt>
-                <dd className="text-ink tabular-nums">{variant.seed ?? "—"}</dd>
-                <dt className="text-faint">kind</dt>
-                <dd className="text-ink">{batch.kind}</dd>
-                {batch.kind === "edit" && (
-                  <>
-                    <dt className="text-faint">source</dt>
-                    <dd className="text-ink">{sourceLabel}</dd>
-                  </>
-                )}
-              </dl>
-
-              {/* analysis — the agent's living read of THIS image (durable,
-                  distinct from the prompt). Empty until the agent analyzes it. */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-faint uppercase tracking-wider">analysis</span>
-                  {variant.analysis && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-faint uppercase tracking-wider">prompt</span>
                     <button
                       type="button"
-                      title="Copy analysis"
-                      onClick={() => copyText(variant.analysis, "analysis")}
-                      className="flex items-center gap-1 text-faint hover:text-ink"
+                      title="Copy prompt"
+                      onClick={() => copyText(batch.prompt, "prompt")}
+                      disabled={!batch.prompt}
+                      className="flex items-center gap-1 text-faint hover:text-ink disabled:opacity-40 disabled:hover:text-faint"
                     >
-                      {copied === "analysis" ? (
+                      {copied === "prompt" ? (
                         <>
                           <Check className="w-3 h-3" /> copied
                         </>
@@ -689,17 +690,63 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
                         </>
                       )}
                     </button>
+                  </div>
+                  <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                    {batch.prompt || "—"}
+                  </p>
+                </div>
+
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                  <dt className="text-faint">model</dt>
+                  <dd className="text-ink break-words [overflow-wrap:anywhere]">
+                    {variant.model || "—"}
+                  </dd>
+                  <dt className="text-faint">seed</dt>
+                  <dd className="text-ink tabular-nums">{variant.seed ?? "—"}</dd>
+                  <dt className="text-faint">kind</dt>
+                  <dd className="text-ink">{batch.kind}</dd>
+                  {batch.kind === "edit" && (
+                    <>
+                      <dt className="text-faint">source</dt>
+                      <dd className="text-ink">{sourceLabel}</dd>
+                    </>
+                  )}
+                </dl>
+
+                {/* analysis — the agent's living read of THIS image (durable,
+                  distinct from the prompt). Empty until the agent analyzes it. */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-faint uppercase tracking-wider">analysis</span>
+                    {variant.analysis && (
+                      <button
+                        type="button"
+                        title="Copy analysis"
+                        onClick={() => copyText(variant.analysis, "analysis")}
+                        className="flex items-center gap-1 text-faint hover:text-ink"
+                      >
+                        {copied === "analysis" ? (
+                          <>
+                            <Check className="w-3 h-3" /> copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" /> copy
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {variant.analysis ? (
+                    <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                      {variant.analysis}
+                    </p>
+                  ) : (
+                    <p className="text-faint italic">— not analyzed yet</p>
                   )}
                 </div>
-                {variant.analysis ? (
-                  <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                    {variant.analysis}
-                  </p>
-                ) : (
-                  <p className="text-faint italic">— not analyzed yet</p>
-                )}
               </div>
-            </div>
+            )}
           </aside>
         )}
       </div>
