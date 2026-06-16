@@ -12,8 +12,8 @@
 //     (the not-done blockers), so a filtered blocked task stays actionable.
 //
 // Driving the board (POST /cmd):
-//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]
-//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]
+//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--tag t] [--tags a,b] [--stdin]
+//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag t] [--tags a,b] [--stdin]
 //   bun cli.ts claim <id> [--as <name>]                     # self-claim an unowned task
 //   bun cli.ts block <id> --on <id>[,<id>...]               # add blocker edges (cycle-guarded)
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
@@ -106,16 +106,22 @@ async function api(
 function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
+  tags: string[];
 } {
   const pos: string[] = [];
   const flags: Record<string, string | boolean> = {};
+  const tags: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a.startsWith("--")) {
       const key = a.slice(2);
       const next = args[i + 1];
       if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
+        if (key === "tag") {
+          tags.push(next);
+        } else {
+          flags[key] = next;
+        }
         i++;
       } else {
         flags[key] = true;
@@ -124,7 +130,7 @@ function parseArgs(args: string[]): {
       pos.push(a);
     }
   }
-  return { pos, flags };
+  return { pos, flags, tags };
 }
 
 type CmdResult = { ok?: boolean; applied?: boolean; error?: string };
@@ -375,8 +381,8 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
-  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
+  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--tag t] [--tags a,b] [--stdin]   add a task
+  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag t] [--tags a,b] [--stdin]      patch a task
   claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
   block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
@@ -392,7 +398,7 @@ const HELP = `bounty — an agent-driven task board.
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  const { pos, flags } = parseArgs(rest);
+  const { pos, flags, tags: argTags } = parseArgs(rest);
   const session = typeof flags.session === "string" ? flags.session : undefined;
   const as = resolveAs(flags);
 
@@ -422,7 +428,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case "add": {
       const title = flags.stdin === true ? await readStdin() : pos.join(" ");
-      if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--stdin]");
+      if (!title) die("usage: add <title...> [--status ..] [--notes ..] [--tag t] [--tags a,b] [--stdin]");
       const status =
         typeof flags.status === "string" && VALID_STATUS.includes(flags.status as TaskStatus)
           ? (flags.status as TaskStatus)
@@ -434,21 +440,25 @@ async function main(argv: string[]): Promise<number> {
       };
       if (typeof flags.notes === "string") task.notes = flags.notes;
       if (typeof flags.owner === "string") task.owner = flags.owner;
+      const allTags = [...argTags, ...(typeof flags.tags === "string" ? flags.tags.split(",").map((t) => t.trim()).filter(Boolean) : [])];
+      if (allTags.length > 0) task.tags = [...new Set(allTags)];
       await postCmd(session, { type: "task.add", task }, { as });
       break;
     }
     case "update": {
       const id = pos[0];
       if (!id)
-        die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]");
+        die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag t] [--tags a,b] [--stdin]");
       const patch: Record<string, unknown> = {};
       if (flags.stdin === true) patch.title = await readStdin();
       else if (typeof flags.title === "string") patch.title = flags.title;
       if (typeof flags.status === "string") patch.status = flags.status;
       if (typeof flags.notes === "string") patch.notes = flags.notes;
       if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
+      const allTags = [...argTags, ...(typeof flags.tags === "string" ? flags.tags.split(",").map((t) => t.trim()).filter(Boolean) : [])];
+      if (allTags.length > 0) patch.tags = [...new Set(allTags)];
       if (Object.keys(patch).length === 0)
-        die("update: nothing to change (give --status/--title/--notes/--owner/--stdin)");
+        die("update: nothing to change (give --status/--title/--notes/--owner/--tag/--tags/--stdin)");
       await postCmd(session, { type: "task.update", id, patch }, { as });
       break;
     }

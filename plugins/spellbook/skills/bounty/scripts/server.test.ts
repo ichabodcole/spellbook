@@ -207,6 +207,23 @@ describe("validateTask", () => {
     expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: "b1" })).toBeNull();
     expect(validateTask({ id: "a", title: "A", status: "todo", blockedBy: [1, 2] })).toBeNull();
   });
+  test("carries tags when present (string array)", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", tags: ["bug", "frontend"] })).toEqual({
+      id: "a",
+      title: "A",
+      status: "todo",
+      tags: ["bug", "frontend"],
+    });
+  });
+  test("accepts without tags (omits the field)", () => {
+    const task = validateTask({ id: "a", title: "A", status: "todo" });
+    expect(task).not.toBeNull();
+    expect(task!.tags).toBeUndefined();
+  });
+  test("rejects non-array tags or non-string members", () => {
+    expect(validateTask({ id: "a", title: "A", status: "todo", tags: "bug" })).toBeNull();
+    expect(validateTask({ id: "a", title: "A", status: "todo", tags: [1, 2] })).toBeNull();
+  });
   test("rejects non-objects", () => {
     expect(validateTask(null)).toBeNull();
     expect(validateTask("nope")).toBeNull();

@@ -146,6 +146,14 @@
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
       }
+      .task .tags {
+        display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.3rem;
+      }
+      .task .tag-chip {
+        font-size: 0.66rem; padding: 0.1rem 0.4rem; border-radius: 3px;
+        background: var(--accent-neutral-bg); color: var(--accent-neutral-text);
+        border: 1px solid var(--border); cursor: default; user-select: none;
+      }
       .task-actions {
         display: flex; gap: 0.3rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center;
       }

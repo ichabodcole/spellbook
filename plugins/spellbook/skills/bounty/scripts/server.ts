@@ -71,6 +71,7 @@ type Task = {
   notes?: string;
   owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
   blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
+  tags?: string[]; // category labels — set via add/update --tag or --tags
 };
 type BoardState = { title: string; tasks: Task[] };
 
@@ -183,6 +184,12 @@ function validateTask(t: unknown): Task | null {
   ) {
     return null;
   }
+  if (
+    cand.tags !== undefined &&
+    (!Array.isArray(cand.tags) || cand.tags.some((x) => typeof x !== "string"))
+  ) {
+    return null;
+  }
   return {
     id: cand.id,
     title: cand.title,
@@ -190,6 +197,7 @@ function validateTask(t: unknown): Task | null {
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
     ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
+    ...(cand.tags !== undefined ? { tags: cand.tags as string[] } : {}),
   };
 }
 
