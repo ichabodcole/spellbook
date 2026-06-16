@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.3.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.2.0...spellbook-v1.3.0) (2026-06-16)
+
+
+### Features
+
+* **imago:** agent events — imperatives only; ambient board state is read, not pinged ([5b1074f](https://github.com/ichabodcole/spellbook/commit/5b1074fcd28ddd5197a5ee1192a7a7bc7acfed93))
+* **imago:** drag a sidebar image into the references drawer → ref-select it ([c1c19a8](https://github.com/ichabodcole/spellbook/commit/c1c19a8c1c03a17a4e582fd03d285b4732415112))
+* **imago:** layer-system Phase 0 — container contract + migration ([0735d30](https://github.com/ichabodcole/spellbook/commit/0735d30aeea87acfe86eb4ef0e97b391dd0e483c))
+* **imago:** layer-system Phase 1 — drop + add-as-layer wiring ([5d4f100](https://github.com/ichabodcole/spellbook/commit/5d4f1006abe9a69d41bb20a1b20c68f4e5fbd174))
+* **imago:** layer-system Phase 1 server — layer.addImage + lean image strip ([85b0fdb](https://github.com/ichabodcole/spellbook/commit/85b0fdb51ab3dd3b33142d9b5354a5057ca260c5))
+* **imago:** layer-system Phase 1 surface — effective-z + image render + pin parity ([633f21c](https://github.com/ichabodcole/spellbook/commit/633f21c248cb46f70bf9a1bac37eca412021b701))
+* **imago:** layer-system Phase 2 server — layer ops + fluid grouping ([efae276](https://github.com/ichabodcole/spellbook/commit/efae27656daff51c0d50f9ac0e35529621447a02))
+* **imago:** layer-system Phase 2 surface — active-layer (closeout) ([441667b](https://github.com/ichabodcole/spellbook/commit/441667b958678074ab4a27508bd11240567ce4aa))
+* **imago:** layer-system Phase 2 surface — grouping core (multi-select + group/ungroup) ([517bd36](https://github.com/ichabodcole/spellbook/commit/517bd367dc279def48c21ae8e1012ff94806c3b1))
+* **imago:** layer-system Phase 2 surface — layers inspector panel ([1590e9b](https://github.com/ichabodcole/spellbook/commit/1590e9b092b3464df49cdbfb240dcfbe9891d287))
+* **imago:** layer-system Phase 2 surface — selection-lift refactor ([4c45e5e](https://github.com/ichabodcole/spellbook/commit/4c45e5e3bfac274c1ce1d6f7aa98df4a65c5708c))
+* **imago:** layer-system Phase 3 surface — aspect-constrained scaling ([d7ac4e1](https://github.com/ichabodcole/spellbook/commit/d7ac4e1f77432d1885de62eefe7347de91e96846))
+* **imago:** layer-system Phase 3 surface — rotation (image-first) ([4f23b3f](https://github.com/ichabodcole/spellbook/commit/4f23b3f855b1b9c21dac82a308ba30dd7b64433a))
+* **imago:** refs-as-assets Phase 1 — collapse Reference into Variant (data model) ([9606cde](https://github.com/ichabodcole/spellbook/commit/9606cde25621e248b212fcdcff46c6b40aeef514))
+* **imago:** refs-as-assets Phase 2 — sidebar ref badge + References filter facet ([776eee3](https://github.com/ichabodcole/spellbook/commit/776eee38668c54c8a6f830d07398ca8e0fade636))
+* **imago:** sidebar becomes a Library — rename + source filter + delete ([a3fa833](https://github.com/ichabodcole/spellbook/commit/a3fa833ab9f3a0fa8d347cead1b43e153c181145))
+* **imago:** sidebar thumbnails show layers + annotations ([dd72e57](https://github.com/ichabodcole/spellbook/commit/dd72e5727c2780f0208a9ac4e1ff353de65bf559))
+
+
+### Bug Fixes
+
+* **imago:** cli parseArgs handles --flag=value (equals form) ([df91148](https://github.com/ichabodcole/spellbook/commit/df911489d916b0f93a8a2d57b4de66a921005a80))
+* **imago:** drag sidebar images onto the canvas (import / collage) + clear stuck drop-highlight ([83c7647](https://github.com/ichabodcole/spellbook/commit/83c7647bb3dd50f3609f7a325ab1ede7b8da75e2))
+* **imago:** group of image-only marks yields an image-kind layer ([092b19b](https://github.com/ichabodcole/spellbook/commit/092b19b0f28e331ba635b2501d781e72d2daeff6))
+* **imago:** Library filter pills → icon-only (4 text labels overflowed the rail) ([c03f931](https://github.com/ichabodcole/spellbook/commit/c03f93122d59b7e0e0da8e7447a39877db1a3893))
+* **imago:** refs-as-assets review fixes (cli analyze router, migration cache seed, dedup name) ([94a2ecc](https://github.com/ichabodcole/spellbook/commit/94a2ecce9011b09ca1c3e0916bf22843a9494a1c))
+* **imago:** tail pins its session + grounds on connect (no silent hijack) ([880ad2d](https://github.com/ichabodcole/spellbook/commit/880ad2dd6498a6034f3091b3c0f2e7d5ad848abb))
+
 ## [1.2.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.1.0...spellbook-v1.2.0) (2026-06-16)
 
 
