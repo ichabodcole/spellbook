@@ -1,7 +1,7 @@
 # Plan — imago references-as-assets (#2 of the unified image model)
 
-Status: **plan, pending vulcan review** · Date: 2026-06-16 · Implements item #2
-of
+Status: **reviewed by vulcan (OK with changes) — pending cole sign-off** · Date:
+2026-06-16 · Implements item #2 of
 [`unified-image-model-investigation.md`](./unified-image-model-investigation.md).
 
 ## Goal (cole's direction)
@@ -130,3 +130,54 @@ remain; SKILL/mediaforge notes if the agent-facing ref verbs changed.
    until the user/agent names it?
 5. Anything in Phase 2's drag UX that should be vulcan's call (drawer-as-drop vs
    sidebar-ring-toggle, where the ref indicator sits).
+
+## Review folded in (vulcan, 2026-06-16) — verdict: OK with changes
+
+Core collapse confirmed (overlap verified against types.ts/server.ts; lean
+projection free; reuses image.import's proven import-batch path). No blockers.
+
+**Must-fix before build:**
+
+- **A — uniform import hashing + select-on-dup.** Today only `ref.add` hashes
+  (server.ts:742); `image.import` doesn't. If both mint import variants but only
+  ref-origin ones carry `hash`, dragging the same file to the canvas then to
+  refs makes a duplicate. Fix: **hash ALL imports** (image.import computes
+  `contentHash` too), and dedup-on-add **selects the existing variant** instead
+  of the current silent `return` (server.ts:744). Keeps the hash-keyed
+  `analysisCache` (:754) working across both paths.
+- **B — id-preserving migration.** The restore transform reuses each old
+  `ref.id` as the new variant `id` (don't mint fresh): re-restore idempotency is
+  automatic, and any historical `selectedRefIds` baked into past say/commit
+  events still resolve. Runs AFTER the shallow `{...defaultState(),...snap}`
+  merge (server.ts:301-309), gated on `state.refs?.length`, then
+  `delete state.refs`. First real data-RESHAPING migration on that path →
+  dedicated test asserting id-preservation + analysis/refSelected carry-over +
+  **re-restore is a no-op (count unchanged)**.
+- **C — single `selectedRefIds(state)` helper.** Extract one
+  `state.batches.flatMap(b=>b.variants).filter(v=>v.refSelected).map(v=>v.id)`
+  and call it at both emit sites (say :632, marks.commit :1096) — kills the
+  "both must change together" drift permanently.
+
+**Design confirmations (resolved):**
+
+1. Collapse Reference→Variant — **YES.**
+2. Keep the drawer as a selected-tray — **YES**, _but_ add a **"References" (or
+   "Imported") facet to the Library filter** so the hand-picked "ref shelf"
+   mental model is reconstitutable on demand (the drawer narrowing to
+   refSelected-only otherwise dissolves it). Ref indicator = a **top-left corner
+   badge** on the sidebar thumb (not stacked on the like/focus corner);
+   drag-INTO-drawer stays the primary select gesture; the sidebar ring is the
+   indicator (click-to-toggle optional).
+3. `ref.remove` = deselect not delete — **YES**, with UX caveats: change the
+   gesture message text ("deselected", not "removed"), and ensure delete is
+   obviously reachable (the Library ✕ / `variant.remove` already shipped).
+4. `name` on variants — **blank for generates** (keep the index-derived "a"/"b"
+   display label; a stored name would go stale on reorder/delete); **imports
+   default `name` to the filename** (genuine provenance).
+5. (folded into 2 above.)
+
+**Phase-2 note (D):** flatten only runs on `marks.commit` for the FOCUSED image,
+so a selected-but-unfocused annotated ref hands the agent **vector marks + the
+ref path, not a burned-in composite**. Fine for "use THIS part" (marks read as
+the pointer); if a composite is wanted, the user focuses + commits the ref. Make
+it a conscious Phase-2 note, not a surprise.
