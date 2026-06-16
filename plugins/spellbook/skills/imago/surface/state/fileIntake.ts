@@ -4,6 +4,22 @@ import type { ClientToServer } from "./types";
 
 const IMG = /^image\//;
 
+// Custom drag MIME for dragging a sidebar image INTERNALLY onto the canvas. An
+// internal drag carries no dataTransfer.files (unlike an OS file drop), so the
+// drag stashes the image's src here and the canvas drop reads it. Payload is
+// JSON { src, name }.
+export const IMAGO_IMAGE_DND = "application/x-imago-image";
+export function readImagoDrag(dt: DataTransfer): { src: string; name: string } | null {
+  const raw = dt.getData(IMAGO_IMAGE_DND);
+  if (!raw) return null;
+  try {
+    const o = JSON.parse(raw);
+    return typeof o?.src === "string" ? { src: o.src, name: String(o.name ?? "image") } : null;
+  } catch {
+    return null;
+  }
+}
+
 async function downscaleToWebp(file: File): Promise<string> {
   const bmp = await createImageBitmap(file);
   const scale = Math.min(1, OPTIMIZE.maxDim / Math.max(bmp.width, bmp.height));

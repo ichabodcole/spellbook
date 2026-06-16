@@ -1,7 +1,7 @@
 import { Heart, Layers } from "lucide-react";
 import { useState } from "react";
 import { focusedVariant, variantLabel } from "../state/derive";
-import { addImageLayerFromSrc } from "../state/fileIntake";
+import { addImageLayerFromSrc, IMAGO_IMAGE_DND } from "../state/fileIntake";
 import type { ClientToServer, ImagoState } from "../state/types";
 import { MarkRenderer } from "./annotations/MarkRenderer";
 
@@ -113,6 +113,16 @@ export function GenerationsRail({
                           src={v.src}
                           alt={`variant ${variantLabel(vi)}`}
                           className="w-full h-full object-cover"
+                          // drag a sidebar image onto the canvas (margin → import,
+                          // image-box → collage layer); stash src for the drop.
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData(
+                              IMAGO_IMAGE_DND,
+                              JSON.stringify({ src: v.src, name: `variant ${variantLabel(vi)}` }),
+                            );
+                            e.dataTransfer.effectAllowed = "copy";
+                          }}
                           onLoad={(e) => {
                             const t = e.currentTarget;
                             setDims((prev) =>

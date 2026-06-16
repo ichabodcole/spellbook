@@ -7,7 +7,11 @@
 // are exercised live, not here; centeredLayerBox is pure arithmetic.)
 
 import { expect, test } from "bun:test";
-import { centeredLayerBox } from "../surface/state/fileIntake";
+import { centeredLayerBox, IMAGO_IMAGE_DND, readImagoDrag } from "../surface/state/fileIntake";
+
+// a minimal DataTransfer stand-in carrying one mime → value
+const dt = (mime: string, value: string): DataTransfer =>
+  ({ getData: (t: string) => (t === mime ? value : "") }) as unknown as DataTransfer;
 
 // the rendered-pixel aspect of a box on a base = (w*baseW)/(h*baseH); it must
 // equal the source image's aspect for there to be no stretch.
@@ -46,4 +50,31 @@ test("tall image fits within the 40% region by height", () => {
   expect(box.h).toBeCloseTo(0.4, 10);
   expect(box.w).toBeCloseTo(0.2, 10);
   expect(renderedAspect(box, 1000, 1000)).toBeCloseTo(0.5, 10);
+});
+
+// ── readImagoDrag (sidebar → canvas internal drag payload) ───────────────────
+
+test("readImagoDrag: valid {src,name} payload round-trips", () => {
+  const raw = JSON.stringify({ src: "data:image/webp;base64,AA", name: "variant c" });
+  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, raw))).toEqual({
+    src: "data:image/webp;base64,AA",
+    name: "variant c",
+  });
+});
+
+test("readImagoDrag: missing name defaults to 'image'", () => {
+  const raw = JSON.stringify({ src: "http://x/a.png" });
+  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, raw))).toEqual({ src: "http://x/a.png", name: "image" });
+});
+
+test("readImagoDrag: no imago mime present → null (e.g. an OS file drop)", () => {
+  expect(readImagoDrag(dt("text/plain", "hello"))).toBeNull();
+});
+
+test("readImagoDrag: malformed JSON → null (no throw)", () => {
+  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, "{not json"))).toBeNull();
+});
+
+test("readImagoDrag: payload without a string src → null", () => {
+  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, JSON.stringify({ name: "x" })))).toBeNull();
 });

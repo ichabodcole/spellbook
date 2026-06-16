@@ -21,6 +21,7 @@ import {
   addImageLayerFromSrc,
   importFiles,
   processFiles,
+  readImagoDrag,
 } from "../state/fileIntake";
 import {
   ASPECTS,
@@ -313,6 +314,20 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     });
   }
 
+  // Safety net: a drag that ends anywhere — a real drop OR a cancel (e.g. released
+  // back over the sidebar) — clears the canvas drop-highlight, so it can't get
+  // stuck after a cancelled drop. `dragend` fires on the source and bubbles to
+  // document; clearing flags that are only set during a canvas drag is a no-op
+  // otherwise.
+  useEffect(() => {
+    const clear = () => {
+      setImportDragging(false);
+      setLayerDragging(false);
+    };
+    document.addEventListener("dragend", clear);
+    return () => document.removeEventListener("dragend", clear);
+  }, []);
+
   // ── canvas drop = import a durable working image (vs. the drawer = reference).
   // Separate from the pan/zoom pointer handlers (different event types).
   function onCanvasDragOver(e: React.DragEvent<HTMLElement>) {
@@ -325,7 +340,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   function onCanvasDrop(e: React.DragEvent<HTMLElement>) {
     e.preventDefault();
     setImportDragging(false);
-    importFiles(e.dataTransfer.files, send);
+    if (e.dataTransfer.files.length) {
+      importFiles(e.dataTransfer.files, send);
+      return;
+    }
+    // internal drag from the sidebar → import it as a working image (replace)
+    const dragged = readImagoDrag(e.dataTransfer);
+    if (dragged) send({ type: "image.import", image: { src: dragged.src, name: dragged.name } });
   }
 
   // Context-sensitive drop: a file dropped ON the focused image box adds it as a
@@ -343,7 +364,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     e.preventDefault();
     e.stopPropagation();
     setLayerDragging(false);
-    if (nat) addImageLayerFiles(e.dataTransfer.files, send, nat.w, nat.h);
+    if (e.dataTransfer.files.length) {
+      if (nat) addImageLayerFiles(e.dataTransfer.files, send, nat.w, nat.h);
+      return;
+    }
+    // internal drag from the sidebar → collage it onto the focused image
+    const dragged = readImagoDrag(e.dataTransfer);
+    if (dragged && variant?.src) addImageLayerFromSrc(dragged.src, dragged.name, variant.src, send);
   }
 
   // Drag highlight shown on the canvas while an image is dragged over it —
