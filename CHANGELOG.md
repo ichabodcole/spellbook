@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.1.0...spellbook-v1.2.0) (2026-06-16)
+
+
+### Features
+
+* **bounty:** Alpine surface port + collapse to a single "Close board" dismiss ([9cc5579](https://github.com/ichabodcole/spellbook/commit/9cc55792cde4643472e9fd4391720b8a15e29bcf))
+* **bounty:** Phase A — house daemon + thin cli.ts; retire the file-pump ([#7](https://github.com/ichabodcole/spellbook/issues/7), [#8](https://github.com/ichabodcole/spellbook/issues/8)) ([d097474](https://github.com/ichabodcole/spellbook/commit/d097474e2fe916956a3fc1dfd6ff84c60450c99a))
+* **bounty:** Phase B — durability via debounced snapshot + open --restore ([#6](https://github.com/ichabodcole/spellbook/issues/6)) ([3eabdec](https://github.com/ichabodcole/spellbook/commit/3eabdecc95f4ab21c4debc48391f2c5e2dad60be))
+* **bounty:** Phase C — ownership + scoping (owner, scoped tail, self-echo, claim) ([#9](https://github.com/ichabodcole/spellbook/issues/9)) ([c45308f](https://github.com/ichabodcole/spellbook/commit/c45308f0613d2a7802e7ee4024a884bae18cecd5))
+* **bounty:** Phase D — dependencies (blockedBy, cycle guard, unblocked event) ([#10](https://github.com/ichabodcole/spellbook/issues/10)) ([c5bf232](https://github.com/ichabodcole/spellbook/commit/c5bf232df9490172f47b25ee219604df1ec279ca))
+* **imago:** annotation system — tools, styling, durable + welded marks ([be1b578](https://github.com/ichabodcole/spellbook/commit/be1b578a2bf059e41a33a91b040775df90049dc6))
+* **imago:** canvas workspace — references, pan/zoom, details, image import ([36fb355](https://github.com/ichabodcole/spellbook/commit/36fb35516866f78d81f130474d9e33d67bd8d3c9))
+* **imago:** freeform sketch, the visual handoff, undo/redo, pen erase ([c049ffa](https://github.com/ichabodcole/spellbook/commit/c049ffa44820985c15ed077e731f557f9aecb031))
+* **imago:** scaffold the imago spell — contract, daemon, surface, SKILL ([08ad396](https://github.com/ichabodcole/spellbook/commit/08ad39620092e90fd81a66c9079a15bcac57188a))
+* **imago:** styles as image-backed context + quick-prompt library ([b3bd15d](https://github.com/ichabodcole/spellbook/commit/b3bd15db22dabf326c5ed26d1057ac00a94d469e))
+
+
+### Bug Fixes
+
+* **bounty:** readback parity (scoped state + computed blocked-ness) + test isolation ([10f37a2](https://github.com/ichabodcole/spellbook/commit/10f37a20105864fd5f9e914dd80480325b402e80))
+
 ## [1.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.0.0...spellbook-v1.1.0) (2026-06-11)
 
 
