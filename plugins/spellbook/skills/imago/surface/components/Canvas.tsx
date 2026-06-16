@@ -67,6 +67,8 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [layerDragging, setLayerDragging] = useState(false); // image dragged over the focused image box
   const [drawStyle, setDrawStyle] = useState<DrawStyle>(DEFAULT_DRAW_STYLE); // active color/width for new marks
   const [selectedMarkIds, setSelectedMarkIds] = useState<string[]>([]); // controlled selection SET (source of truth, shared by canvas + layers panel)
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null); // explicit "draw into this layer" pick (null = use the fallback)
+  const pendingNewLayerRef = useRef<Set<string> | null>(null); // layer ids present when "+ New layer" was clicked → activate the fresh one on broadcast
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const dragRef = useRef<{
@@ -89,6 +91,17 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   // the hidden-layer handoff filter, and which layer new marks drop into.
   const layers = focus ? (state.layersByVariant[focus.variantId] ?? []) : [];
 
+  // EFFECTIVE active layer = the explicit pick if it still exists and isn't an image
+  // layer, else the topmost (front-most) non-image layer — mirrors the server's
+  // ensureDrawLayer fallback so drawing never lands "inside" an image layer. New
+  // marks are stamped with this id in AnnotationLayer.commit; the server honors it
+  // (and re-falls-back if absent/invalid), so this is safe even mid-draw.
+  const activeLayer =
+    (activeLayerId && layers.find((l) => l.id === activeLayerId && l.kind !== "image")) ||
+    [...layers].reverse().find((l) => l.kind !== "image") ||
+    undefined;
+  const effectiveActiveLayerId = activeLayer?.id ?? null;
+
   // The % that fits the image fully in the stage (may be <100 for a big image,
   // >100 for a tiny one). Zoom is now "% of actual image size".
   function fitPercent(): number {
@@ -110,6 +123,10 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     // remount no longer clears it — drop it explicitly, else stale ids point at
     // marks on the previous image.
     setSelectedMarkIds([]);
+    // active layer is per-variant too; drop the pick so the new image falls back to
+    // its own topmost non-image layer (and cancel any in-flight new-layer activation).
+    setActiveLayerId(null);
+    pendingNewLayerRef.current = null;
     // NB: asidePanel intentionally NOT reset — the inspector (Details/Layers) stays
     // open across variant selection; its content swaps. Annotation drafts reset
     // inside AnnotationLayer (keyed on the focused variant), so none live here.
@@ -164,6 +181,19 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     return () => document.removeEventListener("keydown", onKey);
   }, [focus, send]);
 
+  // "+ New layer" creates a layer on top server-side; once the broadcast brings it
+  // back, make it active. We diff against the ids present at click time so we pick
+  // exactly the fresh one (and never the pre-existing top).
+  useEffect(() => {
+    const prior = pendingNewLayerRef.current;
+    if (!prior) return;
+    const fresh = layers.find((l) => !prior.has(l.id));
+    if (fresh) {
+      setActiveLayerId(fresh.id);
+      pendingNewLayerRef.current = null;
+    }
+  }, [layers]);
+
   // Annotation gestures + tool drafts now live in AnnotationLayer (it owns the
   // image-box pointer dispatch + per-tool plugins); Canvas keeps the viewport,
   // the reference drawer, and the details sidebar.
@@ -192,6 +222,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     if (selectedMark?.tool === "pin")
       send({ type: "mark.update", id: selectedMark.id, patch: { fontSize: px } });
     else setDrawStyle((s) => ({ ...s, fontSize: px }));
+  }
+
+  // Add a fresh annotation layer (server puts it on top); arm the activation effect
+  // so the new layer becomes the active draw target once the broadcast lands.
+  function newLayer() {
+    pendingNewLayerRef.current = new Set(layers.map((l) => l.id));
+    send({ type: "layer.add", kind: "annotation" });
   }
 
   async function commitMarks() {
@@ -485,6 +522,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
               natH={nat?.h ?? 0}
               selectedIds={selectedMarkIds}
               onSelectedIdsChange={setSelectedMarkIds}
+              activeLayerId={effectiveActiveLayerId}
             />
             {layerHint}
           </div>
@@ -664,6 +702,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
                 variantSrc={variant.src}
                 selectedMarkIds={selectedMarkIds}
                 onSelectionChange={setSelectedMarkIds}
+                activeLayerId={effectiveActiveLayerId}
+                onSetActive={setActiveLayerId}
+                onNewLayer={newLayer}
               />
             )}
 

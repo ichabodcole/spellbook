@@ -34,6 +34,7 @@ export function AnnotationLayer({
   natH,
   selectedIds,
   onSelectedIdsChange,
+  activeLayerId,
 }: {
   tool: string;
   marks: Mark[];
@@ -46,6 +47,7 @@ export function AnnotationLayer({
   natH: number;
   selectedIds: string[]; // controlled selection SET, owned by Canvas
   onSelectedIdsChange: (ids: string[]) => void;
+  activeLayerId: string | null; // the layer NEW marks drop into (effective active; server honors it)
 }) {
   const [draft, setDraft] = useState<Draft>(null);
   const plugin = TOOL_REGISTRY[tool]; // undefined for the `select` pseudo-tool
@@ -108,6 +110,9 @@ export function AnnotationLayer({
     if (drawStyle.color) styled.color = drawStyle.color;
     if (drawStyle.width != null) styled.width = drawStyle.width;
     if (drawStyle.fontSize != null) styled.fontSize = drawStyle.fontSize;
+    // stamp the active layer so the mark lands where the user expects; the server
+    // honors a valid id and falls back to the topmost non-image layer otherwise.
+    if (activeLayerId) styled.layerId = activeLayerId;
     send({ type: "mark.add", mark: styled });
     setDraft(null);
   }

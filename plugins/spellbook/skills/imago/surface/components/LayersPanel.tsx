@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   Lock,
   Pencil,
+  Plus,
   Shapes,
   Ungroup,
   Unlock,
@@ -39,6 +40,9 @@ export function LayersPanel({
   variantSrc,
   selectedMarkIds,
   onSelectionChange,
+  activeLayerId,
+  onSetActive,
+  onNewLayer,
 }: {
   layers: Layer[]; // server order: back→front (index 0 = back)
   marks: Mark[]; // image-layer thumbnails, per-layer mark counts + the selection ↔ layer sync
@@ -46,6 +50,9 @@ export function LayersPanel({
   variantSrc?: string; // the Background row's thumbnail (the base image)
   selectedMarkIds: string[]; // the canvas selection SET (controlled by Canvas)
   onSelectionChange: (ids: string[]) => void; // drive the lifted selection (two-way sync + auto-deselect)
+  activeLayerId: string | null; // EFFECTIVE active layer (where new marks land); marks the active row
+  onSetActive: (id: string) => void; // make a (non-image) layer the active draw target
+  onNewLayer: () => void; // add a fresh annotation layer + make it active
 }) {
   const [editingId, setEditingId] = useState<string | null>(null); // layer being renamed
   const [draftName, setDraftName] = useState("");
@@ -54,6 +61,9 @@ export function LayersPanel({
 
   const realCount = layers.length;
   const visual = [...layers].reverse(); // front-first display order
+  const activeLayerName = activeLayerId
+    ? layers.find((l) => l.id === activeLayerId)?.name
+    : undefined;
 
   // a layer's own marks (its elements) — drives thumbnails, the ≥2 ungroup
   // affordance, and row-click "select all of this layer".
@@ -109,19 +119,32 @@ export function LayersPanel({
 
   return (
     <div className="p-2 flex flex-col gap-0.5 text-xs">
-      {/* group the current multi-selection into a new layer (server creates it on
-          top + prunes the emptied source layers). Enabled with ≥2 marks selected. */}
-      <button
-        type="button"
-        disabled={selectedMarkIds.length < 2}
-        onClick={() => send({ type: "group", markIds: selectedMarkIds })}
-        className="mb-1 flex items-center justify-center gap-1.5 rounded-md border border-edge-strong px-2 py-1 font-medium text-muted hover:text-ink hover:border-edge-hover disabled:opacity-40 disabled:pointer-events-none"
-      >
-        <Group className="w-3.5 h-3.5" />
-        {selectedMarkIds.length >= 2
-          ? `Group ${selectedMarkIds.length} selected`
-          : "Group selected"}
-      </button>
+      {/* actions — add a blank annotation layer, or group the multi-selection into
+          one. Both create a layer on top server-side; the broadcast brings it back. */}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onNewLayer}
+          title="Add a new annotation layer (becomes active)"
+          className="flex-1 flex items-center justify-center gap-1 rounded-md border border-edge-strong px-2 py-1 font-medium text-muted hover:text-ink hover:border-edge-hover"
+        >
+          <Plus className="w-3.5 h-3.5" /> New layer
+        </button>
+        <button
+          type="button"
+          disabled={selectedMarkIds.length < 2}
+          onClick={() => send({ type: "group", markIds: selectedMarkIds })}
+          title="Group the selected marks into one layer"
+          className="flex-1 flex items-center justify-center gap-1 rounded-md border border-edge-strong px-2 py-1 font-medium text-muted hover:text-ink hover:border-edge-hover disabled:opacity-40 disabled:pointer-events-none"
+        >
+          <Group className="w-3.5 h-3.5" />
+          Group{selectedMarkIds.length >= 2 ? ` (${selectedMarkIds.length})` : ""}
+        </button>
+      </div>
+      {/* where new marks land — the active layer (server ensures one if none exists) */}
+      <p className="px-1 py-1 text-faint truncate">
+        New marks → <span className="text-muted">{activeLayerName ?? "a new layer"}</span>
+      </p>
 
       {realCount === 0 && (
         <p className="px-2 py-3 text-faint italic text-center">
@@ -140,6 +163,7 @@ export function LayersPanel({
         const isEditing = editingId === layer.id;
         const sel = selectionIn(layer.id);
         const count = layerMarks(layer.id).length; // ≥2 → offer ungroup
+        const isActive = activeLayerId === layer.id; // the active draw target
         return (
           // biome-ignore lint/a11y/noStaticElementInteractions: HTML5 drag-drop reorder target
           <div
@@ -160,6 +184,24 @@ export function LayersPanel({
               overId === layer.id ? "border-accent bg-accent/10" : "border-transparent"
             } ${sel ? "bg-accent/10" : "hover:bg-surface-3"} ${layer.hidden ? "opacity-55" : ""}`}
           >
+            {/* make-active target — DISTINCT from the name-click (which selects the
+                layer's marks). Image layers can't be a draw target → no dot, just a
+                spacer to keep rows aligned. The filled dot marks the active layer. */}
+            {layer.kind === "image" ? (
+              <span className="shrink-0 w-3.5" />
+            ) : (
+              <button
+                type="button"
+                onClick={() => onSetActive(layer.id)}
+                title={isActive ? "Active — new marks land here" : "Make active"}
+                className="shrink-0 w-3.5 h-3.5 flex items-center justify-center"
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${isActive ? "bg-accent" : "border border-edge-strong"}`}
+                />
+              </button>
+            )}
+
             {/* drag handle — a button so it stays interactive (no a11y flag) */}
             <button
               type="button"
