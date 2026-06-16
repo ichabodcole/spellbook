@@ -681,12 +681,15 @@ describe("agent event contract", () => {
     const { variantId } = await seedFocusedVariant(s);
     const ws = await openWs(s);
 
-    // add a ref and select it — both ambient board moves (no agent event)
-    ws.send({ type: "ref.add", reference: { src: PNG_1x1, name: "mood" } });
-    const withRef = await waitForState(s, (x) => x.refs.length === 1);
-    const refId = withRef.refs[0].id;
-    ws.send({ type: "ref.select", id: refId, selected: true });
-    await waitForState(s, (x) => x.refs[0]?.selected === true);
+    // ref.add imports an external image as a variant + flags it refSelected
+    ws.send({ type: "ref.add", image: { src: PNG_1x1, name: "mood" } });
+    const withRef = await waitForState(s, (x) =>
+      x.batches.flatMap((b) => b.variants).some((v) => v.refSelected),
+    );
+    const refId = withRef.batches
+      .flatMap((b) => b.variants)
+      .filter((v) => v.refSelected)
+      .map((v) => v.id)[0];
 
     const cursor = (await fetchCursor(s)) - 1;
     const evP = collectEvents(s, cursor, (e) => e.type === "say");
@@ -697,7 +700,7 @@ describe("agent event contract", () => {
 
     expect(say).toBeDefined();
     expect(say?.focus?.variantId).toBe(variantId); // "which image" rides the message
-    expect(say?.selectedRefIds).toEqual([refId]); // "which refs" too
+    expect(say?.selectedRefIds).toEqual([refId]); // the refSelected variant id
     ws.close();
   });
 
@@ -705,15 +708,13 @@ describe("agent event contract", () => {
     const s = await spawnDaemon();
     const a = await seedFocusedVariant(s);
     const ws = await openWs(s);
-    ws.send({ type: "ref.add", reference: { src: PNG_1x1, name: "r" } });
-    const withRef = await waitForState(s, (x) => x.refs.length === 1);
 
     const cursor = (await fetchCursor(s)) - 1;
     // listen briefly; none of these board moves should produce an agent event
     const evP = collectEvents(s, cursor, () => false, 800);
     ws.send({ type: "image.import", image: { src: PNG_1x1, name: "two" } });
     ws.send({ type: "focus.set", batchId: a.batchId, variantId: a.variantId });
-    ws.send({ type: "ref.select", id: withRef.refs[0].id, selected: true });
+    ws.send({ type: "ref.select", id: a.variantId, selected: true }); // flag a variant as a ref
     ws.send({ type: "variant.like", id: a.variantId, liked: true });
     const events = await evP;
 
@@ -850,7 +851,6 @@ describe("restore backfills newer fields from an old snapshot", () => {
       // legacy global marks → should migrate into marksByVariant["v1"]
       marks: [{ id: "legacy1", tool: "pin", x: 0.4, y: 0.4 }],
       pins: [],
-      refs: [],
       analysisCache: {},
       aspect: "1:1",
       size: "1K",
@@ -879,6 +879,116 @@ describe("restore backfills newer fields from an old snapshot", () => {
     // the old top-level `marks` array is gone (deleted by the migration)
     expect(st.marks).toBeUndefined();
     expect(st.title).toBe("resumed");
+
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test("refs-as-assets: legacy refs[] → an import-batch variant (id-preserved, refSelected)", async () => {
+    const home = mkdtempSync(join(tmpdir(), "imago-refshome-"));
+    const snapsDir = join(home, "snapshots");
+    mkdirSync(snapsDir, { recursive: true });
+    const sid = "imago-refsnap";
+    const oldSnap = {
+      title: "resumed",
+      batches: [],
+      focus: null,
+      conversation: [],
+      styles: [],
+      pins: [],
+      // legacy refs array → migrated into an import-kind batch of variants
+      refs: [
+        {
+          id: "ref1",
+          src: PNG_1x1,
+          path: "/stale/ref1.png",
+          name: "mood",
+          selected: true,
+          hash: "h1",
+          analysis: "muted greens",
+        },
+        {
+          id: "ref2",
+          src: PNG_1x1,
+          path: "/stale/ref2.png",
+          name: "tone",
+          selected: false,
+          hash: "h2",
+          analysis: "",
+        },
+      ],
+      analysisCache: {},
+      aspect: "1:1",
+      size: "1K",
+      status: { busy: false, text: "" },
+      cost: "",
+      handoff: "",
+    };
+    writeFileSync(join(snapsDir, `${sid}.json`), JSON.stringify(oldSnap));
+
+    const s = await spawnDaemon(["--restore", sid], { IMAGO_HOME: home });
+    const st = await getState(s);
+
+    expect(st.refs).toBeUndefined(); // the legacy array is gone
+    const variants = st.batches.flatMap((b) => b.variants);
+    const r1 = variants.find((v) => v.id === "ref1"); // id PRESERVED (idempotency + old selectedRefIds resolve)
+    const r2 = variants.find((v) => v.id === "ref2");
+    expect(r1?.refSelected).toBe(true);
+    expect(r1?.name).toBe("mood");
+    expect(r1?.analysis).toBe("muted greens");
+    expect(r2?.refSelected).toBeFalsy(); // selected:false → not a ref, but still in the library
+    expect(r1?.path).not.toBe("/stale/ref1.png"); // re-materialized to the live files dir
+
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test("refs migration is a no-op on an already-migrated snapshot (no double-create)", async () => {
+    const home = mkdtempSync(join(tmpdir(), "imago-refshome2-"));
+    const snapsDir = join(home, "snapshots");
+    mkdirSync(snapsDir, { recursive: true });
+    const sid = "imago-migrated";
+    // a snapshot that ALREADY has the import-batch variant + NO refs field
+    const migrated = {
+      title: "resumed",
+      batches: [
+        {
+          id: "bref",
+          kind: "import",
+          prompt: "",
+          tag: "references",
+          variants: [
+            {
+              id: "ref1",
+              src: PNG_1x1,
+              path: "/stale/ref1.png",
+              liked: false,
+              analysis: "",
+              name: "mood",
+              refSelected: true,
+              hash: "h1",
+            },
+          ],
+        },
+      ],
+      focus: null,
+      conversation: [],
+      styles: [],
+      pins: [],
+      analysisCache: {},
+      aspect: "1:1",
+      size: "1K",
+      status: { busy: false, text: "" },
+      cost: "",
+      handoff: "",
+    };
+    writeFileSync(join(snapsDir, `${sid}.json`), JSON.stringify(migrated));
+
+    const s = await spawnDaemon(["--restore", sid], { IMAGO_HOME: home });
+    const st = await getState(s);
+
+    const refVars = st.batches.flatMap((b) => b.variants).filter((v) => v.id === "ref1");
+    expect(refVars).toHaveLength(1); // not duplicated by a re-run migration
+    expect(refVars[0].refSelected).toBe(true);
+    expect(st.batches).toHaveLength(1); // no extra "references" batch synthesized
 
     rmSync(home, { recursive: true, force: true });
   });

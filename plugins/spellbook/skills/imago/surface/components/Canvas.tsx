@@ -827,8 +827,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
 }
 
 // The reference drawer — a full-width strip pinned to the bottom of the canvas
-// pane. A forgiving drop target (and click-to-add) that stages reference images
-// into shared state.refs; both this and the composer just emit ref.add/ref.remove.
+// pane. The "selected for the next generation" tray: it shows the variants flagged
+// refSelected; a forgiving drop target (and click-to-add) imports + selects new
+// references via ref.add. ✕ deselects (ref.remove); the image stays in the Library.
 function ReferenceDrawer({
   state,
   send,
@@ -839,7 +840,10 @@ function ReferenceDrawer({
   const [dragging, setDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<"references" | "styles">("references");
   const fileInput = useRef<HTMLInputElement>(null);
-  const selectedCount = state.refs.filter((r) => r.selected).length;
+  // refs are now Variants flagged refSelected — the drawer is the "selected" tray
+  // (browse all images in the Library; Phase-2 adds a References filter facet).
+  const refVariants = state.batches.flatMap((b) => b.variants).filter((v) => v.refSelected);
+  const selectedCount = refVariants.length;
   const activeStyleCount = state.styles.filter((s) => s.active).length;
   // the focused image a reference can be composited onto (undefined on the blank
   // frame → the "add as layer" affordance is hidden).
@@ -852,7 +856,7 @@ function ReferenceDrawer({
     rect: DOMRect;
   } | null>(null);
   const analysisRef = analysisAnchor
-    ? state.refs.find((r) => r.id === analysisAnchor.id)
+    ? refVariants.find((v) => v.id === analysisAnchor.id)
     : undefined;
 
   return (
@@ -904,7 +908,7 @@ function ReferenceDrawer({
       </div>
 
       {activeTab === "references" &&
-        (state.refs.length === 0 ? (
+        (refVariants.length === 0 ? (
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
@@ -920,49 +924,28 @@ function ReferenceDrawer({
               : "drag reference images here, or click to add"}
           </button>
         ) : (
+          // the "selected for the next generation" tray — every tile here is a
+          // refSelected variant; ✕ deselects (the image stays in your Library).
           <div className="flex flex-col gap-1.5">
-            {/* px/py give the outset selection ring room on all four sides —
-              overflow-x-auto forces vertical clipping, so an exact-height row
-              would cut the ring at top & bottom. */}
             <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
-              {state.refs.map((r) => (
+              {refVariants.map((v) => (
                 <div
-                  key={r.id}
-                  className={`relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 transition-shadow ${
-                    r.selected ? "ring-2 ring-accent" : "ring-1 ring-edge"
-                  }`}
+                  key={v.id}
+                  className="relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
                 >
-                  <img src={r.src} alt={r.name} className="w-full h-full object-cover" />
-                  {/* body click toggles selection for the next generation */}
-                  <button
-                    type="button"
-                    title={
-                      r.selected
-                        ? "Selected — click to deselect"
-                        : "Click to select for the next generation"
-                    }
-                    onClick={() =>
-                      send({
-                        type: "ref.select",
-                        id: r.id,
-                        selected: !r.selected,
-                      })
-                    }
-                    className="absolute inset-0 cursor-pointer"
+                  <img
+                    src={v.src}
+                    alt={v.name ?? "reference"}
+                    className="w-full h-full object-cover"
                   />
-                  {r.selected && (
-                    <span className="absolute top-0 left-0 bg-accent text-accent-fg rounded-br p-0.5 pointer-events-none">
-                      <Check className="w-3 h-3" />
-                    </span>
-                  )}
-                  {r.analysis && (
+                  {v.analysis && (
                     <button
                       type="button"
-                      title="View the agent's read of this reference"
+                      title="View the agent's read of this image"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAnalysisAnchor({
-                          id: r.id,
+                          id: v.id,
                           rect: e.currentTarget.getBoundingClientRect(),
                         });
                       }}
@@ -973,24 +956,23 @@ function ReferenceDrawer({
                   )}
                   <button
                     type="button"
-                    title="Remove reference"
+                    title="Remove from references (stays in your Library)"
                     onClick={(e) => {
                       e.stopPropagation();
-                      send({ type: "ref.remove", id: r.id });
+                      send({ type: "ref.remove", id: v.id });
                     }}
                     className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
                   >
                     <X className="w-3 h-3" />
                   </button>
-                  {/* composite this reference onto the focused image as a layer
-                      (only when an image is focused to drop it onto) */}
+                  {/* composite this reference onto the focused image as a layer */}
                   {focusedSrc && (
                     <button
                       type="button"
                       title="Add as a layer on the focused image"
                       onClick={(e) => {
                         e.stopPropagation();
-                        addImageLayerFromSrc(r.src, r.name, focusedSrc, send);
+                        addImageLayerFromSrc(v.src, v.name ?? "image", focusedSrc, send);
                       }}
                       className="absolute bottom-0 right-0 bg-black/70 text-white rounded-tl p-0.5 hover:text-accent-ink"
                     >
@@ -1111,7 +1093,7 @@ function ReferenceDrawer({
           >
             <div className="flex items-start gap-2 mb-1.5">
               <span className="text-[11px] font-semibold text-ink-strong truncate">
-                {analysisRef.name}
+                {analysisRef.name ?? "reference"}
               </span>
               <button
                 type="button"

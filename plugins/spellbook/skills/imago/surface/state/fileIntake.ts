@@ -62,7 +62,7 @@ export async function processFiles(
     if (!IMG.test(f.type)) continue;
     try {
       const src = await toWebpSrc(f);
-      send({ type: "ref.add", reference: { src, name: f.name } });
+      send({ type: "ref.add", image: { src, name: f.name } });
     } catch (err) {
       console.error("imago: failed to process file", f.name, err);
     }

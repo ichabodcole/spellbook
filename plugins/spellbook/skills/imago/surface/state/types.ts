@@ -9,6 +9,9 @@
 
 // ── the artifacts (pieces on the board) ──
 
+// A Variant is THE universal image asset — generated, imported, or brought in as
+// a reference. "Being a reference" is a flag (`refSelected`), not a separate type:
+// any variant can be focused, annotated, AND pointed at for the next generation.
 export type Variant = {
   id: string;
   src: string; // base64 webp; stripped in lean projection (agent reads `path`)
@@ -20,6 +23,9 @@ export type Variant = {
   // (distinct from the Batch prompt, which is fixed provenance). Shown in details.
   // No per-variant prompt: the settled prompt lives on the Batch (one prompt,
   // many seeds). The display label ("a"/"b"/…) is derived from array index.
+  name?: string; // editable label; blank for generated (use the derived label), filename for imports
+  refSelected?: boolean; // pointed at as a reference for the next generation
+  hash?: string; // content hash (imports only) — import dedup + analysisCache key
 };
 
 // A batch is one round of generation kept together (all variants kept by
@@ -103,18 +109,9 @@ export type PromptEntry = { id: string; label: string; text: string };
 // A value the user pins to lock for the next generate (agent picks the rest).
 export type Pin = { key: string; value: string };
 
-// A reference image in the drawer. The user keeps a library and `selected`s a
-// subset to point at "use these for this generation" (default false; at
-// generate time the agent uses the selected set, or all if none are selected).
-export type Reference = {
-  id: string;
-  src: string; // base64 webp (same as Variant.src)
-  path: string;
-  name: string;
-  selected: boolean;
-  hash: string; // content hash — dedupes identical adds + keys the analysis cache
-  analysis: string; // the agent's read of this image, shown on the board (click to view)
-};
+// (References are no longer a separate type — they're Variants with `refSelected`.
+// "Use these for this generation" = the set of variants where refSelected; at
+// generate time the agent uses that set, or all if none are selected.)
 
 // An annotation mark on a variant. Coords are fractions (0–1) of the image box,
 // so marks transform with pan/zoom; stroke width + text size are authored at
@@ -214,7 +211,6 @@ export type ImagoState = {
   styles: StyleEntry[];
   prompts: PromptEntry[]; // reusable quick-prompts (the editable lens library)
   pins: Pin[];
-  refs: Reference[];
   marksByVariant: Record<string, Mark[]>; // durable annotation marks per variant id
   // CONTAINER metadata per variant: an ordered list of Layers (back→front) that
   // group the marks above. Each Mark carries a `layerId` into this list; effective
@@ -278,8 +274,8 @@ export type ClientToServer =
   | { type: "prompt.remove"; id: string }
   | { type: "pin.add"; key: string; value: string }
   | { type: "pin.remove"; key: string }
-  | { type: "ref.add"; reference: { src: string; name: string; id?: string } }
-  | { type: "ref.remove"; id: string }
+  | { type: "ref.add"; image: { src: string; name?: string } } // import an external image as a variant + select it as a ref (dedup by hash → selects the existing one)
+  | { type: "ref.remove"; id: string } // DESELECT a variant as a ref (it stays in the library; to delete the image use variant.remove)
   | { type: "image.import"; image: { src: string; name?: string } } // drop on canvas → working image
   | {
       // drop an image as a LAYER onto the focused image (collage) — distinct from
@@ -308,7 +304,7 @@ export type ClientToServer =
   // NOTE: there is no `layer.setActive` — the active layer (where new marks drop)
   // is surface-owned. The client stamps `mark.layerId` on mark.add; the server
   // honors a valid one, else drops into the topmost non-image layer.
-  | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
+  | { type: "ref.select"; id: string; selected: boolean } // point a VARIANT at the next gen (id = variantId; toggles refSelected)
   | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder; honors a valid mark.layerId as the active layer, else topmost non-image layer)
   | { type: "mark.remove"; id: string } // delete one mark (complements marks.clear)
   | {
@@ -356,8 +352,8 @@ export type AgentCommand =
       variants: { src: string; seed?: number; model?: string; id?: string }[];
     }
   | { type: "focus"; batchId: string; variantId: string } // agent focuses an image
-  | { type: "ref.select"; id: string; selected: boolean } // agent points at a ref (the user sees it highlight)
-  | { type: "ref.analyze"; id: string; text: string } // write your read onto a ref (the user can see it)
+  | { type: "ref.select"; id: string; selected: boolean } // agent points a variant at the next gen (id = variantId; the user sees it highlight)
+  // (ref.analyze removed — write a read onto any image via variant.analyze; refs are variants now)
   | { type: "variant.analyze"; id: string; text: string } // write your read onto a generated/imported image
   | {
       // add/define a captured style in the catalog (the response to style.capture):
@@ -473,7 +469,6 @@ export function defaultState(title: string): ImagoState {
     styles: DEFAULT_STYLES.map((s) => ({ ...s })),
     prompts: DEFAULT_PROMPTS.map((p) => ({ ...p })),
     pins: [],
-    refs: [],
     marksByVariant: {},
     layersByVariant: {},
     analysisCache: {},

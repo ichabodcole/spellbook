@@ -42,7 +42,6 @@ import {
   MARK_TOOLS,
   type Mark,
   type Message,
-  type Reference,
   type StyleEntry,
   type Variant,
 } from "../surface/state/types";
@@ -152,11 +151,6 @@ function variantForAgent(v: Variant): Omit<Variant, "src"> {
 function batchForAgent(b: Batch): Omit<Batch, "variants"> & { variants: Omit<Variant, "src">[] } {
   return { ...b, variants: b.variants.map(variantForAgent) };
 }
-function refForAgent(r: Reference): Omit<Reference, "src"> {
-  const { src: _drop, ...rest } = r;
-  return rest;
-}
-
 function styleForAgent(st: StyleEntry): Omit<StyleEntry, "image"> {
   const { image: _drop, ...rest } = st;
   return rest; // agent reads imagePath, not the inlined blob
@@ -177,7 +171,6 @@ export function leanState(s: ImagoState) {
   return {
     ...s,
     batches: s.batches.map(batchForAgent),
-    refs: s.refs.map(refForAgent),
     styles: s.styles.map(styleForAgent),
     marksByVariant: Object.fromEntries(
       Object.entries(s.marksByVariant).map(([vid, marks]) => [vid, marks.map(markForAgent)]),
@@ -392,6 +385,37 @@ async function main(argv: string[]): Promise<number> {
     return null;
   }
   const labelOf = (i: number) => String.fromCharCode(97 + i);
+  // The references "set" is just the variants flagged refSelected (one source of
+  // truth; used by both the say + marks.commit handoffs). See refs-as-assets plan.
+  const selectedRefIds = (): string[] =>
+    state.batches
+      .flatMap((b) => b.variants)
+      .filter((v) => v.refSelected)
+      .map((v) => v.id);
+  // Import an external image as a one-variant import-kind batch — the unified path
+  // for "bring in a working image" AND "add a reference". Hashes for dedup +
+  // analysisCache; if the same pixels are already imported, returns the existing
+  // variant (no duplicate). Caller decides focus/refSelected.
+  function importImageVariant(src: string, name: string): { batchId: string; variant: Variant } {
+    const hash = contentHash(src);
+    for (const b of state.batches) {
+      const ex = b.variants.find((v) => v.hash === hash);
+      if (ex) return { batchId: b.id, variant: ex };
+    }
+    const vid = newId("v");
+    const batchId = newId("b");
+    const variant: Variant = {
+      id: vid,
+      src,
+      path: saveDataUrl(sessionFilesDir, vid, src),
+      liked: false,
+      analysis: state.analysisCache[hash] ?? "", // reuse a prior read of the same pixels
+      name,
+      hash,
+    };
+    state.batches.push({ id: batchId, kind: "import", prompt: "", tag: name, variants: [variant] });
+    return { batchId, variant };
+  }
   function pushMessage(m: Omit<Message, "id" | "ts"> & { id?: string }) {
     const msg: Message = { id: m.id ?? newId("m"), ts: Date.now(), ...m } as Message;
     state.conversation.push(msg);
@@ -484,18 +508,10 @@ async function main(argv: string[]): Promise<number> {
         broadcastState(); // marks are durable per variant — switching never clears them
       }
     } else if (t === "ref.select") {
-      // the agent points at a ref too — the user sees it highlight on the board
-      const r = state.refs.find((x) => x.id === msg.id);
-      if (!r) return;
-      r.selected = msg.selected === true;
-      broadcastState();
-    } else if (t === "ref.analyze") {
-      // the agent writes its read onto a ref (visible to the user + cached by
-      // hash so a re-add or another agent doesn't re-analyze the same pixels)
-      const r = state.refs.find((x) => x.id === msg.id);
-      if (!r || typeof msg.text !== "string") return;
-      r.analysis = msg.text;
-      state.analysisCache[r.hash] = msg.text;
+      // the agent points a variant at the next gen — the user sees it highlight
+      const hit = findVariant(msg.id as string);
+      if (!hit) return;
+      hit.variant.refSelected = msg.selected === true;
       broadcastState();
     } else if (t === "variant.analyze") {
       // the agent writes its read onto a generated/imported image — durable
@@ -503,6 +519,9 @@ async function main(argv: string[]): Promise<number> {
       const hit = findVariant(msg.id as string);
       if (!hit || typeof msg.text !== "string") return;
       hit.variant.analysis = msg.text;
+      // imported images carry a hash → cache by it so re-importing the same pixels
+      // reuses the read (preserves the old ref.analyze behavior across the merge)
+      if (hit.variant.hash) state.analysisCache[hit.variant.hash] = msg.text;
       broadcastState();
     } else if (t === "style.add") {
       if (typeof msg.name === "string" && msg.name.trim()) {
@@ -629,7 +648,7 @@ async function main(argv: string[]): Promise<number> {
         type: "say",
         text: msg.text,
         focus: state.focus,
-        selectedRefIds: state.refs.filter((r) => r.selected).map((r) => r.id),
+        selectedRefIds: selectedRefIds(),
         flattenedImagePath,
         marks: attachedMarks,
       });
@@ -737,66 +756,45 @@ async function main(argv: string[]): Promise<number> {
       state.pins = state.pins.filter((p) => p.key !== msg.key);
       broadcastState();
     } else if (t === "ref.add") {
-      const raw = msg.reference as Record<string, unknown> | undefined;
+      // add an external image as a reference = import it as a library variant +
+      // flag it refSelected (dedup → selects the existing one, no duplicate). Does
+      // NOT steal focus (a ref isn't the working image; image.import is).
+      const raw = msg.image as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
-      const hash = contentHash(raw.src);
-      // dedupe: the same image already in the drawer → no-op (no confusing dupes)
-      if (state.refs.some((r) => r.hash === hash)) return;
-      const id = typeof raw.id === "string" ? raw.id : newId("ref");
       const name = typeof raw.name === "string" ? raw.name : "reference";
-      const ref: Reference = {
-        id,
-        src: raw.src,
-        path: saveDataUrl(sessionFilesDir, id, raw.src),
-        name,
-        selected: false,
-        hash,
-        analysis: state.analysisCache[hash] ?? "", // reuse a prior read of the same image
-      };
-      state.refs.push(ref);
+      const { variant } = importImageVariant(raw.src, name);
+      variant.refSelected = true;
       pushMessage({
         role: "user",
         kind: "gesture",
-        text: `📎 you attached a reference (${name})`,
-        gesture: { kind: "ref-added", targetId: id },
+        text: `📎 you pointed at a reference (${variant.name ?? name})`,
+        gesture: { kind: "ref-added", targetId: variant.id },
       });
       broadcastState();
     } else if (t === "ref.remove") {
-      state.refs = state.refs.filter((r) => r.id !== msg.id);
+      // DESELECT a variant as a ref — it stays in the library (delete = variant.remove)
+      const hit = findVariant(msg.id as string);
+      if (!hit) return;
+      hit.variant.refSelected = false;
       broadcastState();
     } else if (t === "ref.select") {
-      const r = state.refs.find((x) => x.id === msg.id);
-      if (!r) return;
-      r.selected = msg.selected === true;
+      const hit = findVariant(msg.id as string);
+      if (!hit) return;
+      hit.variant.refSelected = msg.selected === true;
       broadcastState();
     } else if (t === "image.import") {
-      // the user dropped their own image onto the canvas — a first-class working
-      // image (a one-variant "import" batch), focused so they can annotate/edit it
+      // the user dropped their own image onto the canvas — a working image
+      // (a one-variant "import" batch), focused so they can annotate/edit it
       const raw = msg.image as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
       const name = typeof raw.name === "string" ? raw.name : "imported image";
-      const vid = newId("v");
-      const batchId = newId("b");
-      const variant: Variant = {
-        id: vid,
-        src: raw.src,
-        path: saveDataUrl(sessionFilesDir, vid, raw.src),
-        liked: false,
-        analysis: "",
-      };
-      state.batches.push({
-        id: batchId,
-        kind: "import",
-        prompt: "",
-        tag: name,
-        variants: [variant],
-      });
-      state.focus = { batchId, variantId: vid };
+      const { batchId, variant } = importImageVariant(raw.src, name);
+      state.focus = { batchId, variantId: variant.id };
       pushMessage({
         role: "user",
         kind: "gesture",
-        text: `🖼 you brought in an image to work on (${name})`,
-        gesture: { kind: "imported", targetId: vid },
+        text: `🖼 you brought in an image to work on (${variant.name ?? name})`,
+        gesture: { kind: "imported", targetId: variant.id },
       });
       broadcastState();
     } else if (t === "layer.addImage") {
@@ -1093,7 +1091,7 @@ async function main(argv: string[]): Promise<number> {
         batchId: msg.batchId,
         variantId: msg.variantId,
         marks,
-        selectedRefIds: state.refs.filter((r) => r.selected).map((r) => r.id),
+        selectedRefIds: selectedRefIds(),
         flattenedImagePath,
       });
     } else if (t === "aspect.set") {
@@ -1232,16 +1230,45 @@ async function main(argv: string[]): Promise<number> {
   // are stale (old tmpdir, cleaned). Re-materialize files so the agent's vision
   // (Read by path) works again.
   if (restored) {
+    // refs-as-assets migration: a legacy `refs[]` array → an import-kind batch of
+    // variants, REUSING each ref id as the variant id (so re-restore is idempotent
+    // and any historical selectedRefIds still resolve). Runs BEFORE materialization
+    // so the new variants get their on-disk paths.
+    type LegacyRef = {
+      id: string;
+      src: string;
+      path?: string;
+      name?: string;
+      selected?: boolean;
+      hash?: string;
+      analysis?: string;
+    };
+    const legacyRefs = (state as { refs?: LegacyRef[] }).refs;
+    if (Array.isArray(legacyRefs) && legacyRefs.length) {
+      state.batches.push({
+        id: newId("b"),
+        kind: "import",
+        prompt: "",
+        tag: "references",
+        variants: legacyRefs.map((r) => ({
+          id: r.id, // reuse the ref id as the variant id
+          src: r.src,
+          path: r.path ?? "",
+          liked: false,
+          analysis: r.analysis ?? "",
+          name: r.name,
+          refSelected: r.selected === true,
+          hash: r.hash ?? (r.src ? contentHash(r.src) : undefined),
+        })),
+      });
+    }
+    delete (state as { refs?: unknown }).refs;
+
     for (const b of state.batches) {
       for (const v2 of b.variants) {
         if (v2.src) v2.path = saveDataUrl(sessionFilesDir, v2.id, v2.src) || v2.path;
         if (v2.analysis === undefined) v2.analysis = ""; // backfill pre-analysis snapshots
       }
-    }
-    for (const r of state.refs) {
-      if (r.src) r.path = saveDataUrl(sessionFilesDir, r.id, r.src) || r.path;
-      if (!r.hash && r.src) r.hash = contentHash(r.src); // backfill for pre-hash snapshots
-      if (r.analysis === undefined) r.analysis = state.analysisCache[r.hash] ?? "";
     }
     // Migrate pre-durability snapshots: a legacy global `marks` array → the
     // focused variant's bucket. Then normalize zOrder within each bucket.
