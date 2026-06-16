@@ -877,7 +877,13 @@ function ReferenceDrawer({
         if (activeTab !== "references") return;
         e.preventDefault();
         setDragging(false);
-        processFiles(e.dataTransfer.files, send);
+        if (e.dataTransfer.files.length) {
+          processFiles(e.dataTransfer.files, send); // OS files → import + select as refs
+          return;
+        }
+        // internal drag from the sidebar Library → flag that variant as a ref
+        const dragged = readImagoDrag(e.dataTransfer);
+        if (dragged?.variantId) send({ type: "ref.select", id: dragged.variantId, selected: true });
       }}
     >
       {/* tabs — references + styles are both selectable, image-backed context the

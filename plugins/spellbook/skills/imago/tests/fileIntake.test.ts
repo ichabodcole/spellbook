@@ -64,7 +64,12 @@ test("readImagoDrag: valid {src,name} payload round-trips", () => {
 
 test("readImagoDrag: missing name defaults to 'image'", () => {
   const raw = JSON.stringify({ src: "http://x/a.png" });
-  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, raw))).toEqual({ src: "http://x/a.png", name: "image" });
+  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, raw))?.name).toBe("image");
+});
+
+test("readImagoDrag: a sidebar drag carries the variantId (ref-select an existing image)", () => {
+  const raw = JSON.stringify({ src: "data:,", name: "variant c", variantId: "v-123" });
+  expect(readImagoDrag(dt(IMAGO_IMAGE_DND, raw))?.variantId).toBe("v-123");
 });
 
 test("readImagoDrag: no imago mime present → null (e.g. an OS file drop)", () => {

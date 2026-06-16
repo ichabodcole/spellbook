@@ -9,12 +9,21 @@ const IMG = /^image\//;
 // drag stashes the image's src here and the canvas drop reads it. Payload is
 // JSON { src, name }.
 export const IMAGO_IMAGE_DND = "application/x-imago-image";
-export function readImagoDrag(dt: DataTransfer): { src: string; name: string } | null {
+export function readImagoDrag(
+  dt: DataTransfer,
+): { src: string; name: string; variantId?: string } | null {
   const raw = dt.getData(IMAGO_IMAGE_DND);
   if (!raw) return null;
   try {
     const o = JSON.parse(raw);
-    return typeof o?.src === "string" ? { src: o.src, name: String(o.name ?? "image") } : null;
+    if (typeof o?.src !== "string") return null;
+    // variantId is present when dragging an EXISTING library image (sidebar) —
+    // lets a drop ref-select that variant instead of re-importing a duplicate.
+    return {
+      src: o.src,
+      name: String(o.name ?? "image"),
+      variantId: typeof o.variantId === "string" ? o.variantId : undefined,
+    };
   } catch {
     return null;
   }

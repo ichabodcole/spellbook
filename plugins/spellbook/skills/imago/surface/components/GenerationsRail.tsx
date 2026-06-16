@@ -152,7 +152,11 @@ export function GenerationsRail({
                           onDragStart={(e) => {
                             e.dataTransfer.setData(
                               IMAGO_IMAGE_DND,
-                              JSON.stringify({ src: v.src, name: `variant ${variantLabel(vi)}` }),
+                              JSON.stringify({
+                                src: v.src,
+                                name: `variant ${variantLabel(vi)}`,
+                                variantId: v.id, // lets a refs-drawer drop select THIS variant
+                              }),
                             );
                             e.dataTransfer.effectAllowed = "copy";
                           }}
