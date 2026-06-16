@@ -145,6 +145,14 @@
       }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
+        cursor: pointer;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .task .notes.empty-hint {
+        font-style: italic; color: var(--text-faint);
       }
       .task-actions {
         display: flex; gap: 0.3rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center;
@@ -228,6 +236,50 @@
       }
       @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
       .ended { opacity: 0.6; pointer-events: none; }
+
+      /* Card-detail modal — click a card's notes (or the whole card body) to
+         open it. Shows the full title + editable description. */
+      .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 200; animation: fadein 0.12s ease-out;
+      }
+      .modal {
+        background: var(--panel); border: 1px solid var(--border-hover);
+        border-radius: 10px; padding: 1.25rem 1.4rem;
+        width: min(520px, 90vw); max-height: 80vh; overflow-y: auto;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      }
+      .modal h3 {
+        margin: 0 0 0.75rem; font-size: 1rem; color: var(--text);
+        word-break: break-word;
+      }
+      .modal textarea {
+        width: 100%; min-height: 120px; resize: vertical;
+        background: rgba(0,0,0,0.25); color: var(--text);
+        border: 1px solid var(--border); border-radius: 6px;
+        padding: 0.55rem 0.65rem; font-size: 0.85rem;
+        font-family: inherit; line-height: 1.5;
+      }
+      .modal textarea:focus { border-color: var(--accent-warm); outline: none; }
+      .modal .modal-meta {
+        font-size: 0.72rem; color: var(--text-faint); margin-top: 0.65rem;
+      }
+      .modal .modal-actions {
+        display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: flex-end;
+      }
+      .modal .modal-actions button {
+        border: 1px solid var(--border); border-radius: 6px;
+        padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer;
+        background: var(--card); color: var(--text); font-family: inherit;
+      }
+      .modal .modal-actions button:hover { border-color: var(--border-hover); }
+      .modal .modal-actions button.primary {
+        background: var(--accent-warm); border-color: var(--accent-warm);
+        color: #1a1207; font-weight: 600;
+      }
+      .modal .modal-actions button.primary:hover { background: #e4ab66; }
+    
     </style>
   </head>
   <body x-data="board" :class="{ ended }" x-cloak>
@@ -283,7 +335,10 @@
                   ></div>
                 </template>
                 <template x-if="task.notes">
-                  <div class="notes" x-text="task.notes"></div>
+                  <div class="notes" x-text="task.notes" @click="openCard(task)" title="Click to edit"></div>
+                </template>
+                <template x-if="!task.notes">
+                  <div class="notes empty-hint" @click="openCard(task)" title="Click to add a description">Add description…</div>
                 </template>
                 <div class="task-actions">
                   <template x-for="s in STATUSES" :key="s">
@@ -332,6 +387,30 @@
       </template>
     </div>
 
+    <!-- Card-detail modal -->
+    <template x-if="selectedTask">
+      <div class="modal-overlay" @click.self="closeCard()" @keydown.escape.window="closeCard()">
+        <div class="modal">
+          <h3 x-text="selectedTask.title"></h3>
+          <textarea
+            x-model="modalNotes"
+            placeholder="Add a description…"
+            @keydown.escape="closeCard()"
+          ></textarea>
+          <div class="modal-meta">
+            <template x-if="selectedTask.owner"><span x-text="'@' + selectedTask.owner"></span></template>
+            <template x-if="blockedCount(selectedTask) > 0">
+              <span x-text="' · blocked by ' + blockedCount(selectedTask)"></span>
+            </template>
+          </div>
+          <div class="modal-actions">
+            <button @click="closeCard()">Cancel</button>
+            <button class="primary" @click="saveCardNotes()">Save</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <script>
       // Server substitutes __WS_URL__ with JSON.stringify(url), which produces a
       // fully-quoted JS string literal — do NOT add quotes here.
@@ -353,6 +432,8 @@
           closedByServer: false,
           toastSeq: 0,
           dragId: null, // id of the task currently being dragged
+          selectedTask: null, // task open in the card-detail modal
+          modalNotes: "", // draft notes in the card-detail modal
           STATUSES: ["todo", "doing", "review", "done"],
           COLUMNS: [
             { status: "todo", label: "To do" },
@@ -434,6 +515,22 @@
             if (confirm("Close this board? The agent can reopen it later from a snapshot.")) {
               this.send({ type: "close" });
             }
+          },
+
+          // ── card-detail modal ────────────────────────────────────────
+          openCard(task) {
+            this.selectedTask = task;
+            this.modalNotes = task.notes || "";
+          },
+          closeCard() {
+            this.selectedTask = null;
+            this.modalNotes = "";
+          },
+          saveCardNotes() {
+            if (!this.selectedTask) return;
+            const notes = this.modalNotes;
+            this.send({ type: "task.edit", id: this.selectedTask.id, notes });
+            this.closeCard();
           },
 
           // ── drag-and-drop (transient hints are imperative DOM, faithful to

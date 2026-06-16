@@ -404,6 +404,60 @@ describe("input validation from browser", () => {
     expect(titleUpdates[0].patch.title).toBe("updated");
   }, 15000);
 
+  test("task.edit with notes updates the description via the browser WS path", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "x", title: "original", status: "todo" }],
+    });
+
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    const msgsP = collectWsUntilClose(ws);
+
+    // Edit with only notes — should produce a task.update with notes in the patch
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", notes: "my description" }));
+    // Clear notes (empty string is valid for notes)
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", notes: "" }));
+    // Edit both title and notes in one message
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", title: "renamed", notes: "with notes" }));
+    // Edit with neither valid field — should be dropped silently
+    ws.send(JSON.stringify({ type: "task.edit", id: "x" }));
+    ws.send(JSON.stringify({ type: "close" }));
+    const msgs = await msgsP;
+    await proc.exited;
+
+    // Three valid notes/title edits should produce three task.update frames
+    const updates = msgs.filter((m) => m.type === "task.update");
+    const notesPatches = updates.filter((m) => m.patch?.notes !== undefined);
+    expect(notesPatches).toHaveLength(3); // set, clear, set-with-title
+    expect(notesPatches[0].patch?.notes).toBe("my description");
+    expect(notesPatches[1].patch?.notes).toBe("");
+    expect(notesPatches[2].patch?.notes).toBe("with notes");
+    expect(notesPatches[2].patch?.title).toBe("renamed");
+  }, 15000);
+
+  test("applyTaskUpdate patches notes through to canonical state", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "t1", title: "T1", status: "todo" }],
+    });
+    // Agent-side update with notes
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ type: "task.update", id: "t1", patch: { notes: "agent-set notes" } }),
+    });
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    proc.kill();
+    await proc.exited;
+
+    expect(body.state.tasks[0].notes).toBe("agent-set notes");
+  }, 15000);
+
   test("task.add from browser with missing fields is rejected", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
     const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);

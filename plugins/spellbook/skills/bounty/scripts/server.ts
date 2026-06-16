@@ -97,7 +97,7 @@ type ApplyResult = { ok: true; applied?: boolean; error?: string };
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
   | { type: "task.move"; id: string; status: TaskStatus; index: number }
-  | { type: "task.edit"; id: string; title: string }
+  | { type: "task.edit"; id: string; title?: string; notes?: string }
   | { type: "task.add"; task: Task }
   | { type: "task.remove"; id: string }
   | { type: "close" }; // the human dismisses the board ("Close board")
@@ -728,18 +728,24 @@ async function main(argv: string[]): Promise<number> {
               });
             }
           } else if (msg.type === "task.edit") {
-            // Validate: title must be a non-empty string after trim. A
-            // malformed edit (title:null, title:"") would otherwise corrupt
-            // the canonical task shape that gets re-broadcast and stored —
-            // empty titles in particular surface to the agent on submit as
-            // tasks with no readable label.
-            if (typeof msg.title !== "string" || msg.title.trim() === "") return;
-            if (applyTaskUpdate(state, msg.id, { title: msg.title })) {
-              broadcast({ type: "task.update", id: msg.id, patch: { title: msg.title } });
+            // Accept a title edit, a notes edit, or both. Title must be a
+            // non-empty trimmed string (same guard as before). Notes can be
+            // any string — including empty to clear it. An edit with neither
+            // field (or both invalid) is dropped silently.
+            const patch: Partial<Task> = {};
+            if (typeof msg.title === "string" && msg.title.trim() !== "") {
+              patch.title = msg.title;
+            }
+            if (typeof msg.notes === "string") {
+              patch.notes = msg.notes;
+            }
+            if (Object.keys(patch).length === 0) return;
+            if (applyTaskUpdate(state, msg.id, patch)) {
+              broadcast({ type: "task.update", id: msg.id, patch });
               emitEvent({
                 type: "task.edit",
                 taskId: msg.id,
-                title: msg.title,
+                ...patch,
                 by: "user",
                 owner: ownerOf(msg.id),
               });
