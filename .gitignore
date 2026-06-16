@@ -36,3 +36,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 *.local.json
 .operator
+
+# agent working scratch + playwright test artifacts
+.agents/
+.playwright-mcp/

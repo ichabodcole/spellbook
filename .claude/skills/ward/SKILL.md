@@ -104,6 +104,44 @@ A convention never changes alone — the change _is_ a captured judgment.
       (quote the globs — unquoted `*.md` errors under zsh)
 - [ ] Rename the skill folder + any hardcoded path in the spell's `SKILL.md`
 
+### Removing a spell
+
+Retiring a spell is a **breaking change** — anyone who installed the plugin for
+it loses it on upgrade. Removal is rare; be sure deletion (not just softening
+the `SKILL.md`) is what you want. Then scrub every _live_ reference, decouple
+anything that pointed at it, and leave the historical record intact.
+
+- [ ] Delete `plugins/spellbook/skills/<name>/`. Sweep untracked leftovers
+      (`.DS_Store`) so the folder is fully gone, not just emptied in git's view.
+- [ ] Land it as a **breaking** conventional commit — `feat(spellbook)!:` /
+      `refactor(spellbook)!:` with a `BREAKING CHANGE:` footer — so
+      release-please cuts the **major** bump. Still **don't hand-edit the
+      version** (see Bumping the version).
+- [ ] Scrub the spell from the **live** synced listings: `tags` in
+      `.claude-plugin/marketplace.json`, the table in
+      `plugins/spellbook/skills/README.md`, the table in root `README.md`.
+- [ ] **Keep the `grimoire/trigger-registry.md` record.** A retired name stays
+      reserved (don't free it for reuse) — mark it retired in place, the way the
+      registry records the `tuskboard → bounty` rename. The registry is
+      history + reservation, not a live roster.
+- [ ] **Decouple dependents.** Grep the name _and_ the folder path repo-wide —
+      `grep -rn "<name>" --include='*.md' --include='*.json' --include='*.ts' .`
+      (quote the globs under zsh). Watch especially for the `agent-surface-bun`
+      recipe and other spells' `SKILL.md`s, which cite spells as canonical
+      examples; rewrite any dead pointer.
+- [ ] **Decay-ledger check.** If the removed spell was a house-style rule's
+      _only_ reinforcement (it's named in that row's "reinforced by"), the rule
+      may now be a removal candidate — flag it at the next review rather than
+      leaving a rule propped up by a spell that's gone.
+- [ ] **Leave history alone.** `docs/projects/*`, sessions, `CHANGELOG.md`, and
+      the grimoire's `scenarios/` · `fresh-agent/` · dated decay-ledger
+      reinforcements record work that genuinely happened — removing the spell
+      doesn't un-happen it. Don't rewrite them.
+- [ ] Verify no **live** pointers remain:
+      `grep -rIn "<name>" plugins/ .claude-plugin/ README.md` returns only the
+      trigger-registry retirement record (and any intentional history).
+- [ ] Drift check passes: the spell-folder roster matches every synced listing.
+
 ### Bumping the spellbook plugin version
 
 The spells are versioned together as one plugin, and **release-please owns the

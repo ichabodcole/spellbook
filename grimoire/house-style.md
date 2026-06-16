@@ -144,6 +144,30 @@ underneath.
   cross-session state belongs in the agent or a separate store, not the surface.
 - **Repeal when:** —
 
+### Drive a conjuration through a daemon + thin CLI: command in, state read-back, events out.
+
+For a conjuration the agent drives across a session, hold canonical state in one
+persistent daemon and give the agent a stateless `cli.ts` — one HTTP round-trip
+per verb. Three primitives: **write** with `POST /cmd` (and a `--stdin` body
+path, so natural-language text is never inlined into a shell-parsed string);
+**read back** with `GET /state` (confirm the command applied, discover
+server-assigned ids); **receive** with a `GET /events?since=<id>` SSE tail
+wrapped by Monitor (monotonic ids + resume-from-cursor, so a reconnecting agent
+loses nothing). Payload on stdout, liveness/echo on stderr — never `2>&1` under
+Monitor. Persist a debounced snapshot and restore by merging over defaults. (The
+_human_ surface keeps its own channel — a WebSocket full-state push; this trio
+is the _agent's_ interface.)
+
+- **Boundary check:** this is the conjuration shape. A cantrip
+  (cast-and-resolve, no standing state) needs none of it — stdio plus the exit
+  code suffice. Don't pre-build snapshot/restore for state that's trivially
+  reconstructable or genuinely ephemeral, and don't push the human surface onto
+  the agent's HTTP path.
+- **Repeal when:** a better agent-transport primitive supersedes
+  cmd/state/events-over-HTTP (a first-class harness channel for spell state, or
+  an MCP surface contract) — then rewrite the specifics; don't keep them from
+  habit.
+
 ### Every spell ships a feedback touchpoint.
 
 Agents don't volunteer friction — they work around it silently, and the signal

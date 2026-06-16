@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>__TITLE__</title>
     <link rel="icon" href="/assets/favicon.png" type="image/png" />
+    <!-- Alpine-over-CDN (the Grapevine tier) — no bundler; the daemon serves
+         this single static file. The board is a thin reactive membrane over the
+         daemon's WebSocket; the daemon holds canonical state. SRI pinned to the
+         same hash grapevine/watch.html uses (Alpine 3.14.1). -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"
+      integrity="sha384-l8f0VcPi/M1iHPv8egOnY/15TDwqgbOR1anMIJWvU6nLRgZVLTLSaNqi/TOoT5Fh"
+      crossorigin="anonymous"
+    ></script>
     <style>
       :root {
         color-scheme: dark;
@@ -46,6 +56,7 @@
         line-height: 1.5;
         min-height: 100vh;
       }
+      [x-cloak] { display: none !important; }
       header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
       .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem; }
       .brand .wordmark {
@@ -114,6 +125,23 @@
       .task .title[contenteditable="true"]:focus { background: var(--card-editing); border-radius: 3px; padding: 0.1rem 0.3rem; margin: -0.1rem -0.3rem; }
       .task .title:empty::before {
         content: "(empty — type a title)"; color: var(--text-faint); font-style: italic;
+      }
+      .task .owner {
+        /* Plain metadata at the bottom-left — deliberately NOT a pill, so it
+           doesn't compete with the status pills just above it. */
+        margin-top: 0.45rem;
+        font-size: 0.7rem;
+        color: var(--accent-neutral-text);
+        letter-spacing: 0.01em;
+      }
+      /* A blocked task: a faint danger rail + a de-emphasized body, plus a small
+         "blocked by N" cue under the title. Convention-only — the board still
+         lets it move (no hard lock). */
+      .task.blocked { border-left: 2px solid var(--danger); opacity: 0.82; }
+      .task .blocked-cue {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        margin-top: 0.3rem; font-size: 0.7rem; font-weight: 500;
+        color: var(--danger);
       }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
@@ -202,54 +230,92 @@
       .ended { opacity: 0.6; pointer-events: none; }
     </style>
   </head>
-  <body>
+  <body x-data="board" :class="{ ended }" x-cloak>
     <header>
       <div class="brand">
         <img class="wordmark" src="/assets/wordmark.webp" alt="Bounty Board" />
-        <h1 id="title">__TITLE__</h1>
+        <h1 x-text="title">__TITLE__</h1>
       </div>
       <div class="meta">
-        <span><span id="status-dot" class="status-dot"></span><span id="status-text">connecting…</span></span>
+        <span><span class="status-dot" :class="conn"></span><span x-text="statusText"></span></span>
         <div class="session-id"><code>__SESSION_ID__</code></div>
       </div>
     </header>
 
-    <div class="columns" id="columns">
-      <section class="column" data-status="todo">
-        <div class="column-head"><h2>To do</h2><span class="count" id="count-todo">0</span></div>
-        <div class="task-list" id="list-todo"></div>
-        <div class="add-row">
-          <input type="text" id="add-todo-input" placeholder="Add a task…" />
-          <button data-add-status="todo">Add</button>
-        </div>
-      </section>
-      <section class="column" data-status="doing">
-        <div class="column-head"><h2>Doing</h2><span class="count" id="count-doing">0</span></div>
-        <div class="task-list" id="list-doing"></div>
-        <div class="add-row">
-          <input type="text" id="add-doing-input" placeholder="Add a task…" />
-          <button data-add-status="doing">Add</button>
-        </div>
-      </section>
-      <section class="column" data-status="review">
-        <div class="column-head"><h2>Review</h2><span class="count" id="count-review">0</span></div>
-        <div class="task-list" id="list-review"></div>
-        <div class="add-row">
-          <input type="text" id="add-review-input" placeholder="Add a task…" />
-          <button data-add-status="review">Add</button>
-        </div>
-      </section>
-      <section class="column" data-status="done">
-        <div class="column-head"><h2>Done</h2><span class="count" id="count-done">0</span></div>
-        <div class="task-list" id="list-done"></div>
-        <div class="add-row">
-          <input type="text" id="add-done-input" placeholder="Add a task…" />
-          <button data-add-status="done">Add</button>
-        </div>
-      </section>
+    <div class="columns" :class="{ 'is-empty': tasks.length === 0 }">
+      <template x-for="col in COLUMNS" :key="col.status">
+        <section
+          class="column"
+          :data-status="col.status"
+          @dragover="onDragOver(col.status, $event, $el)"
+          @dragleave="onDragLeave($event, $el)"
+          @drop="onDrop(col.status, $event, $el)"
+        >
+          <div class="column-head">
+            <h2 x-text="col.label"></h2>
+            <span class="count" x-text="tasksByStatus(col.status).length"></span>
+          </div>
+          <div class="task-list empty-drop-zone">
+            <template x-for="(task, idx) in tasksByStatus(col.status)" :key="task.id">
+              <div
+                class="task"
+                :class="{ blocked: blockedCount(task) > 0 }"
+                :data-task-id="task.id"
+                :data-task-status="task.status"
+                draggable="true"
+                @dragstart="onDragStart(task, $event, $el)"
+                @dragend="onDragEnd($el)"
+              >
+                <div
+                  class="title"
+                  contenteditable="true"
+                  spellcheck="false"
+                  x-text="task.title"
+                  @mousedown="$el.closest('.task').setAttribute('draggable', 'false')"
+                  @blur="onTitleBlur(task, $el)"
+                  @keydown.enter.prevent="$el.blur()"
+                  @keydown.escape="$el.textContent = task.title; $el.blur()"
+                ></div>
+                <template x-if="blockedCount(task) > 0">
+                  <div
+                    class="blocked-cue"
+                    x-text="'⛔ blocked by ' + blockedCount(task)"
+                  ></div>
+                </template>
+                <template x-if="task.notes">
+                  <div class="notes" x-text="task.notes"></div>
+                </template>
+                <div class="task-actions">
+                  <template x-for="s in STATUSES" :key="s">
+                    <span
+                      class="pill"
+                      :class="task.status === s ? 'active ' + s : ''"
+                      x-text="s"
+                      @click="toggle(task, s)"
+                    ></span>
+                  </template>
+                  <button class="delete" @click="remove(task)">delete</button>
+                </div>
+                <template x-if="task.owner">
+                  <div class="owner" x-text="'@' + task.owner"></div>
+                </template>
+              </div>
+            </template>
+          </div>
+          <div class="add-row">
+            <input
+              type="text"
+              placeholder="Add a task…"
+              x-model="drafts[col.status]"
+              @keydown.enter.prevent="addTask(col.status)"
+            />
+            <button @click="addTask(col.status)">Add</button>
+          </div>
+        </section>
+      </template>
     </div>
 
-    <div class="empty-state" id="empty-state">
+    <div class="empty-state">
       <div class="hero" aria-hidden="true"></div>
       <p>No tasks yet — add one below, or wait for the agent to drop some in.</p>
     </div>
@@ -257,319 +323,247 @@
     <div class="footer">
       <div class="ambient" aria-hidden="true"></div>
       <div class="spacer"></div>
-      <button id="cancel-btn" class="danger">Close without submitting</button>
-      <button id="submit-btn" class="primary">Submit</button>
+      <button class="primary" @click="closeBoard()">Close board</button>
     </div>
 
-    <div class="toasts" id="toasts"></div>
+    <div class="toasts">
+      <template x-for="t in toasts" :key="t.id">
+        <div class="toast" x-text="t.text"></div>
+      </template>
+    </div>
 
     <script>
-      (function () {
-        // Server substitutes __WS_URL__ with JSON.stringify(url), which
-        // produces a fully-quoted JS string literal — do NOT add quotes here.
-        const wsUrl = __WS_URL__;
-        const titleEl = document.getElementById("title");
-        const statusDot = document.getElementById("status-dot");
-        const statusText = document.getElementById("status-text");
-        const toastsEl = document.getElementById("toasts");
+      // Server substitutes __WS_URL__ with JSON.stringify(url), which produces a
+      // fully-quoted JS string literal — do NOT add quotes here.
+      const WS_URL = __WS_URL__;
 
-        // Local mirror of the board state. Server is the source of truth;
-        // we re-render the relevant columns on every message.
-        const state = { title: "", tasks: [] };
-        let socket = null;
-        let closedByServer = false;
-        const STATUSES = ["todo", "doing", "review", "done"];
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("board", () => ({
+          // Local mirror of the board. The daemon is the source of truth; we
+          // re-render reactively on every WS message. (Same contract the old
+          // vanilla surface used — this is a view-layer port, not a protocol
+          // change.)
+          title: "",
+          tasks: [],
+          drafts: { todo: "", doing: "", review: "", done: "" },
+          toasts: [],
+          conn: "", // status-dot modifier: "" | "connected" | "closed"
+          ended: false,
+          socket: null,
+          closedByServer: false,
+          toastSeq: 0,
+          dragId: null, // id of the task currently being dragged
+          STATUSES: ["todo", "doing", "review", "done"],
+          COLUMNS: [
+            { status: "todo", label: "To do" },
+            { status: "doing", label: "Doing" },
+            { status: "review", label: "Review" },
+            { status: "done", label: "Done" },
+          ],
 
-        // Drag state: which task is currently being dragged. Used by the
-        // column-level drop handlers (installed once after first render).
-        const dragState = { id: null };
+          get statusText() {
+            return this.conn === "connected"
+              ? "connected"
+              : this.conn === "closed"
+                ? "closed"
+                : "connecting…";
+          },
 
-        function clearDropMarkers() {
-          for (const el of document.querySelectorAll(".task.drop-before, .task.drop-after")) {
-            el.classList.remove("drop-before", "drop-after");
-          }
-          for (const el of document.querySelectorAll(".column.drop-target")) {
-            el.classList.remove("drop-target");
-          }
-        }
+          init() {
+            // Seed the title from the server-substituted <title> (plain text —
+            // no quoting risk, unlike inlining __TITLE__ into a JS expression).
+            // The WS `init` message overrides it with canonical state shortly.
+            this.title = document.title;
+            this.connect();
+          },
 
-        function setStatus(s) {
-          statusDot.className = "status-dot " + s;
-          statusText.textContent =
-            s === "connected" ? "connected" :
-            s === "closed" ? "closed" : "connecting…";
-        }
+          tasksByStatus(status) {
+            return this.tasks.filter((t) => t.status === status);
+          },
 
-        function send(msg) {
-          if (!socket || socket.readyState !== WebSocket.OPEN) return;
-          socket.send(JSON.stringify(msg));
-        }
+          // How many of a task's blockers are still live (exist + not done). 0 =
+          // not blocked. A deleted or done blocker doesn't block (matches the
+          // daemon's isBlocked).
+          blockedCount(task) {
+            return (task.blockedBy || []).filter((bid) => {
+              const b = this.tasks.find((t) => t.id === bid);
+              return b && b.status !== "done";
+            }).length;
+          },
 
-        function toast(text) {
-          const t = document.createElement("div");
-          t.className = "toast";
-          t.textContent = text;
-          toastsEl.appendChild(t);
-          setTimeout(() => t.remove(), 5000);
-        }
-
-        function randId() {
-          const buf = new Uint8Array(6);
-          crypto.getRandomValues(buf);
-          return "u-" + Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
-        }
-
-        function clearChildren(el) {
-          while (el.firstChild) el.removeChild(el.firstChild);
-        }
-
-        function render() {
-          for (const status of STATUSES) {
-            const list = document.getElementById("list-" + status);
-            clearChildren(list);
-            const tasks = state.tasks.filter((t) => t.status === status);
-            document.getElementById("count-" + status).textContent = String(tasks.length);
-            for (const task of tasks) {
-              list.appendChild(renderTask(task));
-            }
-          }
-          // Toggle empty-state visibility (mammoth hero appears when the
-          // board is fully empty across all columns).
-          const columnsEl = document.getElementById("columns");
-          columnsEl.classList.toggle("is-empty", state.tasks.length === 0);
-        }
-
-        function renderTask(task) {
-          const el = document.createElement("div");
-          el.className = "task";
-          el.setAttribute("data-task-id", task.id);
-          el.setAttribute("data-task-status", task.status);
-          // Draggable by default. We disable drag while the title is being
-          // edited so text-selection within the title works normally — the
-          // title's mousedown handler flips this off temporarily.
-          el.setAttribute("draggable", "true");
-
-          const title = document.createElement("div");
-          title.className = "title";
-          title.textContent = task.title;
-          title.setAttribute("contenteditable", "true");
-          title.spellcheck = false;
-          // Suspend drag while the user is editing the title so they can
-          // select text without triggering a drag start.
-          title.addEventListener("mousedown", () => el.setAttribute("draggable", "false"));
-          title.addEventListener("blur", () => {
-            el.setAttribute("draggable", "true");
-            const next = title.textContent.trim();
+          // ── outgoing ────────────────────────────────────────────────
+          send(msg) {
+            if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+            this.socket.send(JSON.stringify(msg));
+          },
+          randId() {
+            const buf = new Uint8Array(6);
+            crypto.getRandomValues(buf);
+            return "u-" + Array.from(buf, (b) => b.toString(16).padStart(2, "0")).join("");
+          },
+          addTask(status) {
+            const title = (this.drafts[status] || "").trim();
+            if (!title) return;
+            this.send({ type: "task.add", task: { id: this.randId(), title, status } });
+            this.drafts[status] = "";
+          },
+          toggle(task, status) {
+            if (task.status === status) return;
+            this.send({ type: "task.toggle", id: task.id, status });
+          },
+          remove(task) {
+            this.send({ type: "task.remove", id: task.id });
+          },
+          onTitleBlur(task, el) {
+            el.closest(".task").setAttribute("draggable", "true");
+            const next = el.textContent.trim();
             if (next === "") {
-              // Revert empty edits — server rejects them and the visible
+              // Revert empty edits — the daemon rejects them and the visible
               // text would otherwise diverge from canonical state.
-              title.textContent = task.title;
+              el.textContent = task.title;
               return;
             }
             if (next !== task.title) {
-              send({ type: "task.edit", id: task.id, title: next });
+              this.send({ type: "task.edit", id: task.id, title: next });
             }
-          });
-          title.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); title.blur(); }
-            if (e.key === "Escape") { title.textContent = task.title; title.blur(); }
-          });
-          el.appendChild(title);
+          },
+          closeBoard() {
+            // Dismiss the board. Non-destructive — the agent already has every
+            // change live and the daemon snapshots canonical state, so this just
+            // ends the session (the agent can reopen with `cli.ts open --restore`).
+            if (confirm("Close this board? The agent can reopen it later from a snapshot.")) {
+              this.send({ type: "close" });
+            }
+          },
 
-          // Drag-and-drop: dragstart records the moved id; dragend cleans up.
-          // Drop-zone wiring lives at the column level (see installDropZones
-          // below) — we just need to make the task draggable here.
-          el.addEventListener("dragstart", (e) => {
-            if (el.getAttribute("draggable") !== "true") { e.preventDefault(); return; }
+          // ── drag-and-drop (transient hints are imperative DOM, faithful to
+          //    the vanilla surface; the drop emits a single task.move) ──────
+          clearDropMarkers() {
+            for (const el of document.querySelectorAll(".task.drop-before, .task.drop-after")) {
+              el.classList.remove("drop-before", "drop-after");
+            }
+            for (const el of document.querySelectorAll(".column.drop-target")) {
+              el.classList.remove("drop-target");
+            }
+          },
+          onDragStart(task, e, el) {
+            if (el.getAttribute("draggable") !== "true") {
+              e.preventDefault();
+              return;
+            }
             el.classList.add("dragging");
-            // setData is needed for Firefox to actually start the drag.
             try { e.dataTransfer.setData("text/plain", task.id); } catch {}
             e.dataTransfer.effectAllowed = "move";
-            dragState.id = task.id;
-          });
-          el.addEventListener("dragend", () => {
+            this.dragId = task.id;
+          },
+          onDragEnd(el) {
             el.classList.remove("dragging");
-            clearDropMarkers();
-            dragState.id = null;
-          });
-
-          if (task.notes) {
-            const notes = document.createElement("div");
-            notes.className = "notes";
-            notes.textContent = task.notes;
-            el.appendChild(notes);
-          }
-
-          const actions = document.createElement("div");
-          actions.className = "task-actions";
-          for (const status of STATUSES) {
-            const pill = document.createElement("span");
-            pill.className = "pill" + (task.status === status ? " active " + status : "");
-            pill.textContent = status;
-            pill.addEventListener("click", () => {
-              if (task.status === status) return;
-              send({ type: "task.toggle", id: task.id, status });
-            });
-            actions.appendChild(pill);
-          }
-          const del = document.createElement("button");
-          del.className = "delete";
-          del.textContent = "delete";
-          del.addEventListener("click", () => {
-            send({ type: "task.remove", id: task.id });
-          });
-          actions.appendChild(del);
-          el.appendChild(actions);
-
-          return el;
-        }
-
-        // ── Incoming WS messages ──────────────────────────────────────
-        function applyInit(msg) {
-          state.title = msg.title || "";
-          state.tasks = Array.isArray(msg.tasks) ? msg.tasks.slice() : [];
-          if (state.title) {
-            titleEl.textContent = state.title;
-            document.title = state.title;
-          }
-          render();
-        }
-        function applyAdd(msg) {
-          if (state.tasks.some((t) => t.id === msg.task.id)) return;
-          state.tasks.push(msg.task);
-          render();
-        }
-        function applyUpdate(msg) {
-          const idx = state.tasks.findIndex((t) => t.id === msg.id);
-          if (idx === -1) return;
-          state.tasks[idx] = Object.assign({}, state.tasks[idx], msg.patch);
-          render();
-        }
-        function applyRemove(msg) {
-          const idx = state.tasks.findIndex((t) => t.id === msg.id);
-          if (idx === -1) return;
-          state.tasks.splice(idx, 1);
-          render();
-        }
-
-        function connect() {
-          setStatus("connecting");
-          socket = new WebSocket(wsUrl);
-          socket.onopen = () => setStatus("connected");
-          socket.onclose = () => {
-            setStatus("closed");
-            if (!closedByServer) setTimeout(connect, 1000);
-          };
-          socket.onerror = () => { /* surfaces via close */ };
-          socket.onmessage = (ev) => {
-            let msg;
-            try { msg = JSON.parse(ev.data); }
-            catch { return; }
-            if (msg.type === "init") applyInit(msg);
-            else if (msg.type === "task.add") applyAdd(msg);
-            else if (msg.type === "task.update") applyUpdate(msg);
-            else if (msg.type === "task.remove") applyRemove(msg);
-            else if (msg.type === "submit" || msg.type === "cancel") {
-              // Session has ended on the server. Mark so we don't try to
-              // reconnect when the server closes our socket immediately
-              // after.
-              closedByServer = true;
-              document.body.classList.add("ended");
-            }
-            else if (msg.type === "message") {
-              toast(msg.text);
-              if (msg.text && msg.text.startsWith("session ended:")) {
-                closedByServer = true;
-                document.body.classList.add("ended");
-              }
-            }
-          };
-        }
-
-        // ── Add-task inputs ───────────────────────────────────────────
-        for (const status of STATUSES) {
-          const input = document.getElementById("add-" + status + "-input");
-          const btn = document.querySelector(`[data-add-status="${status}"]`);
-          function submitAdd() {
-            const title = input.value.trim();
-            if (!title) return;
-            const task = { id: randId(), title, status };
-            send({ type: "task.add", task });
-            input.value = "";
-            input.focus();
-          }
-          btn.addEventListener("click", submitAdd);
-          input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter") { e.preventDefault(); submitAdd(); }
-          });
-        }
-
-        // Column-level drop zones. Compute where in the destination column
-        // the dragged task should land (before/after which sibling) and
-        // emit a single task.move event on drop.
-        function installDropZones() {
-          for (const status of STATUSES) {
-            const column = document.querySelector(`.column[data-status="${status}"]`);
+            this.clearDropMarkers();
+            this.dragId = null;
+          },
+          onDragOver(status, e, column) {
+            if (!this.dragId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            this.clearDropMarkers();
+            column.classList.add("drop-target");
             const list = column.querySelector(".task-list");
-            list.classList.add("empty-drop-zone");
-
-            column.addEventListener("dragover", (e) => {
-              if (!dragState.id) return;
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              clearDropMarkers();
-              column.classList.add("drop-target");
-
-              // Find the task we're hovering above (or null = drop at end).
-              const tasks = Array.from(list.querySelectorAll(".task:not(.dragging)"));
-              const dropOn = tasks.find((t) => {
-                const r = t.getBoundingClientRect();
-                return e.clientY < r.top + r.height / 2;
-              });
-              if (dropOn) dropOn.classList.add("drop-before");
-              else if (tasks.length > 0) tasks[tasks.length - 1].classList.add("drop-after");
+            const cards = Array.from(list.querySelectorAll(".task:not(.dragging)"));
+            const dropOn = cards.find((t) => {
+              const r = t.getBoundingClientRect();
+              return e.clientY < r.top + r.height / 2;
             });
-
-            column.addEventListener("dragleave", (e) => {
-              // Only clear when the cursor truly leaves the column — dragleave
-              // fires for every nested element by default.
-              if (!column.contains(e.relatedTarget)) {
-                column.classList.remove("drop-target");
-                for (const el of column.querySelectorAll(".task.drop-before, .task.drop-after")) {
-                  el.classList.remove("drop-before", "drop-after");
-                }
+            if (dropOn) dropOn.classList.add("drop-before");
+            else if (cards.length > 0) cards[cards.length - 1].classList.add("drop-after");
+          },
+          onDragLeave(e, column) {
+            if (!column.contains(e.relatedTarget)) {
+              column.classList.remove("drop-target");
+              for (const el of column.querySelectorAll(".task.drop-before, .task.drop-after")) {
+                el.classList.remove("drop-before", "drop-after");
               }
-            });
-
-            column.addEventListener("drop", (e) => {
-              if (!dragState.id) return;
-              e.preventDefault();
-              const tasks = Array.from(list.querySelectorAll(".task:not(.dragging)"));
-              let index = tasks.length; // default: end of column
-              for (let i = 0; i < tasks.length; i++) {
-                const r = tasks[i].getBoundingClientRect();
-                if (e.clientY < r.top + r.height / 2) { index = i; break; }
+            }
+          },
+          onDrop(status, e, column) {
+            if (!this.dragId) return;
+            e.preventDefault();
+            const list = column.querySelector(".task-list");
+            const cards = Array.from(list.querySelectorAll(".task:not(.dragging)"));
+            let index = cards.length; // default: end of column
+            for (let i = 0; i < cards.length; i++) {
+              const r = cards[i].getBoundingClientRect();
+              if (e.clientY < r.top + r.height / 2) {
+                index = i;
+                break;
               }
-              const id = dragState.id;
-              clearDropMarkers();
-              dragState.id = null;
-              send({ type: "task.move", id, status, index });
-            });
-          }
-        }
-        installDropZones();
+            }
+            const id = this.dragId;
+            this.clearDropMarkers();
+            this.dragId = null;
+            this.send({ type: "task.move", id, status, index });
+          },
 
-        document.getElementById("submit-btn").addEventListener("click", () => {
-          send({ type: "submit" });
-        });
-        document.getElementById("cancel-btn").addEventListener("click", () => {
-          if (confirm("Close without submitting? The agent won't receive the current board state.")) {
-            send({ type: "cancel" });
-          }
-        });
+          // ── toasts ──────────────────────────────────────────────────
+          toast(text) {
+            const id = ++this.toastSeq;
+            this.toasts.push({ id, text });
+            setTimeout(() => {
+              this.toasts = this.toasts.filter((t) => t.id !== id);
+            }, 5000);
+          },
 
-        connect();
-      })();
+          // ── incoming WS messages ────────────────────────────────────
+          applyInit(msg) {
+            this.title = msg.title || "";
+            this.tasks = Array.isArray(msg.tasks) ? msg.tasks.slice() : [];
+            if (this.title) document.title = this.title;
+          },
+          applyAdd(msg) {
+            if (this.tasks.some((t) => t.id === msg.task.id)) return;
+            this.tasks.push(msg.task);
+          },
+          applyUpdate(msg) {
+            const idx = this.tasks.findIndex((t) => t.id === msg.id);
+            if (idx === -1) return;
+            this.tasks[idx] = Object.assign({}, this.tasks[idx], msg.patch);
+          },
+          applyRemove(msg) {
+            const idx = this.tasks.findIndex((t) => t.id === msg.id);
+            if (idx === -1) return;
+            this.tasks.splice(idx, 1);
+          },
+          endSession() {
+            this.closedByServer = true;
+            this.ended = true;
+          },
+
+          connect() {
+            this.conn = "";
+            this.socket = new WebSocket(WS_URL);
+            this.socket.onopen = () => { this.conn = "connected"; };
+            this.socket.onclose = () => {
+              this.conn = "closed";
+              if (!this.closedByServer) setTimeout(() => this.connect(), 1000);
+            };
+            this.socket.onerror = () => { /* surfaces via close */ };
+            this.socket.onmessage = (ev) => {
+              let msg;
+              try { msg = JSON.parse(ev.data); } catch { return; }
+              if (msg.type === "init") this.applyInit(msg);
+              else if (msg.type === "task.add") this.applyAdd(msg);
+              else if (msg.type === "task.update") this.applyUpdate(msg);
+              else if (msg.type === "task.remove") this.applyRemove(msg);
+              else if (msg.type === "message") {
+                // The uniform session-end signal: a "session ended: <reason>"
+                // toast precedes the socket close (any reason — user dismiss,
+                // idle timeout, agent close).
+                this.toast(msg.text);
+                if (msg.text && msg.text.startsWith("session ended:")) this.endSession();
+              }
+            };
+          },
+        }));
+      });
     </script>
   </body>
 </html>
