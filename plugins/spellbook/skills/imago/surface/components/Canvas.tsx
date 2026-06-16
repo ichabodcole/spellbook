@@ -65,7 +65,7 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas margin
   const [layerDragging, setLayerDragging] = useState(false); // image dragged over the focused image box
   const [drawStyle, setDrawStyle] = useState<DrawStyle>(DEFAULT_DRAW_STYLE); // active color/width for new marks
-  const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null); // mirrored from SelectionOverlay
+  const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null); // controlled selection (source of truth, lifted from SelectionOverlay)
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const dragRef = useRef<{
@@ -105,6 +105,10 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   useLayoutEffect(() => {
     setPan({ x: 0, y: 0 });
     fitPendingRef.current = true; // default view for a newly-focused image = fit-to-window
+    // Selection is now lifted here (controlled), so the per-variant SelectionOverlay
+    // remount no longer clears it — drop it explicitly, else a stale id points at a
+    // mark on the previous image.
+    setSelectedMarkId(null);
     // NB: showDetails intentionally NOT reset — the details sidebar persists open
     // across variant selection. Annotation drafts reset inside AnnotationLayer
     // (keyed on the focused variant), so no draft state lives here anymore.
@@ -475,7 +479,8 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
               scale={scale}
               natW={nat?.w ?? 0}
               natH={nat?.h ?? 0}
-              onSelectionChange={setSelectedMarkId}
+              selectedId={selectedMarkId}
+              onSelectedIdChange={setSelectedMarkId}
             />
             {layerHint}
           </div>

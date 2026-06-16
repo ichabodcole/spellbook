@@ -38,6 +38,20 @@ export function isMarkHidden(layers: Layer[], m: Mark): boolean {
   return layers.find((l) => l.id === m.layerId)?.hidden === true;
 }
 
+// Is a mark's layer locked? Locked layers are pinned — the select tool won't grab,
+// move, or resize their marks. A mark with no/unknown layer is treated as unlocked.
+export function isMarkLocked(layers: Layer[], m: Mark): boolean {
+  if (!m.layerId) return false;
+  return layers.find((l) => l.id === m.layerId)?.locked === true;
+}
+
+// Can the select tool grab this mark? No if its layer is hidden (not drawn) or
+// locked (pinned). Shared by topHit and the (Phase-2) panel-select so the canvas
+// and the layers panel honor one rule.
+export function isMarkSelectable(layers: Layer[], m: Mark): boolean {
+  return !isMarkHidden(layers, m) && !isMarkLocked(layers, m);
+}
+
 // Render-ready: marks in visible layers, ascending effective-z. Shared by the live
 // renderer and the flatten compositor so on-screen order == handoff order.
 export function visibleSorted(marks: Mark[], layers: Layer[]): Mark[] {

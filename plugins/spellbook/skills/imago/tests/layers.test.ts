@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import {
   byEffectiveZ,
   isMarkHidden,
+  isMarkLocked,
+  isMarkSelectable,
   layerBand,
   visibleSorted,
 } from "../surface/components/annotations/coords";
@@ -70,4 +72,29 @@ test("isMarkHidden + visibleSorted: marks in hidden layers are dropped (handoff 
 test("isMarkHidden: a mark with no/unknown layer is treated as visible", () => {
   expect(isMarkHidden(layers, pin("x", undefined, 0))).toBe(false);
   expect(isMarkHidden(layers, pin("y", "ghost", 0))).toBe(false);
+});
+
+test("isMarkLocked + isMarkSelectable: locked OR hidden layers are not selectable", () => {
+  const mixed: Layer[] = [
+    { id: "bg", name: "Annotations", kind: "annotation" },
+    { id: "lk", name: "Locked", kind: "annotation", locked: true },
+    { id: "hd", name: "Hidden", kind: "image", hidden: true },
+  ];
+  const free = pin("free", "bg", 0);
+  const locked = pin("locked", "lk", 0);
+  const hidden = pin("hidden", "hd", 0);
+  // isMarkLocked tracks only the locked flag…
+  expect(isMarkLocked(mixed, locked)).toBe(true);
+  expect(isMarkLocked(mixed, hidden)).toBe(false);
+  expect(isMarkLocked(mixed, free)).toBe(false);
+  // …isMarkSelectable rejects BOTH locked and hidden, accepts a plain layer.
+  expect(isMarkSelectable(mixed, free)).toBe(true);
+  expect(isMarkSelectable(mixed, locked)).toBe(false);
+  expect(isMarkSelectable(mixed, hidden)).toBe(false);
+});
+
+test("isMarkLocked + isMarkSelectable: a mark with no/unknown layer is unlocked + selectable", () => {
+  expect(isMarkLocked(layers, pin("x", undefined, 0))).toBe(false);
+  expect(isMarkSelectable(layers, pin("x", undefined, 0))).toBe(true);
+  expect(isMarkSelectable(layers, pin("y", "ghost", 0))).toBe(true);
 });

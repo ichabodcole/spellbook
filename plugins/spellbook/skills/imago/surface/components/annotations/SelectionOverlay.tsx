@@ -17,7 +17,7 @@ import {
   byEffectiveZ,
   frac,
   hitTest,
-  isMarkHidden,
+  isMarkSelectable,
   markBounds,
   type PinSize,
   type Point,
@@ -234,27 +234,25 @@ export function SelectionOverlay({
   send,
   scale,
   pinBounds,
-  onSelectionChange,
+  selectedId,
+  onSelectedIdChange,
   onLiveTransform,
   liveOverride,
 }: {
   marks: Mark[];
-  layers: Layer[]; // back→front → topmost-hit honors layer order, skips hidden
+  layers: Layer[]; // back→front → topmost-hit honors layer order, skips hidden/locked
   send: (m: ClientToServer) => void;
   scale: number; // viewport zoom → the inline note editor welds to the image
   pinBounds: Record<string, PinSize>; // measured pin text boxes (fractions), by id
-  onSelectionChange?: (id: string | null) => void; // mirror up so the toolbar can restyle
+  selectedId: string | null; // CONTROLLED by Canvas — one selection shared by canvas + (Phase-2) panel
+  onSelectedIdChange: (id: string | null) => void; // drive the lifted selection
   onLiveTransform?: (m: Mark | null) => void; // lift the mid-drag geometry so the SHAPE moves live
   liveOverride?: Mark | null; // the held drop geometry (until broadcast) → highlight rides it too
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // selectedId is lifted (controlled by Canvas); only the transient gesture + the
+  // open pin-edit stay local — they're drag-/edit-scoped, not shared state.
   const [gesture, setGesture] = useState<Gesture | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null); // pin label being re-edited
-
-  // report selection up (for the toolbar's style row); harmless if absent
-  useEffect(() => {
-    onSelectionChange?.(selectedId);
-  }, [selectedId, onSelectionChange]);
 
   const selected = selectedId ? marks.find((m) => m.id === selectedId) : undefined;
   // the mark as it looks right now: mid-gesture → the live transform; just after
@@ -281,11 +279,12 @@ export function SelectionOverlay({
   useEffect(() => () => onLiveTransform?.(null), [onLiveTransform]);
 
   // topmost mark under p (effective-z descending: layer order then zOrder), pins
-  // sized to their measured box. Marks in hidden layers aren't drawn → not hittable.
+  // sized to their measured box. Marks in hidden layers aren't drawn and marks in
+  // locked layers are pinned → neither is selectable, so both are skipped here.
   function topHit(p: Point): Mark | undefined {
     const cmp = byEffectiveZ(layers);
     return [...marks]
-      .filter((m) => !isMarkHidden(layers, m))
+      .filter((m) => isMarkSelectable(layers, m))
       .sort((a, b) => cmp(b, a))
       .find((m) => hitTest(p, m, undefined, pinBounds[m.id]));
   }
@@ -302,11 +301,11 @@ export function SelectionOverlay({
     }
     const hit = topHit(p);
     if (!hit) {
-      setSelectedId(null); // empty press → deselect; no stopPropagation → stage pans
+      onSelectedIdChange(null); // empty press → deselect; no stopPropagation → stage pans
       return;
     }
     e.stopPropagation(); // selecting/moving a mark, not panning
-    setSelectedId(hit.id);
+    onSelectedIdChange(hit.id);
     // double-press a pin (detail===2) → re-edit its label inline, no move gesture.
     // (Detected here rather than via onDoubleClick so the surface stays
     // pointer-only — biome's noStaticElementInteractions flags click-family.)
@@ -407,7 +406,7 @@ export function SelectionOverlay({
                 title="Delete annotation"
                 onClick={() => {
                   send({ type: "mark.remove", id: selected.id });
-                  setSelectedId(null);
+                  onSelectedIdChange(null);
                 }}
               >
                 <X className="w-3 h-3" />
