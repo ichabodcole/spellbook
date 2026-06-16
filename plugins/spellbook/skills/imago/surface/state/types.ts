@@ -269,6 +269,7 @@ export type ClientToServer =
   | { type: "focus.set"; batchId: string; variantId: string } // focus an image
   | { type: "focus.clear" } // back to a blank "new" frame
   | { type: "variant.like"; id: string; liked: boolean }
+  | { type: "variant.remove"; batchId: string; variantId: string } // delete a variant from the library (+ its marks/layers; drops the batch when empty); ambient (no agent event)
   | { type: "style.toggle"; name: string }
   | { type: "style.remove"; name: string } // drop a style from the catalog
   | { type: "style.capture" } // ask the agent to extract this image's look

@@ -669,6 +669,26 @@ async function main(argv: string[]): Promise<number> {
         });
       }
       broadcastState();
+    } else if (t === "variant.remove") {
+      // delete a variant from the library: drop it from its batch (and drop the
+      // batch when it empties), clean its annotations/layers/history, and clear
+      // focus if it was the focused one. Ambient (library curation) — no agent
+      // event; the agent reads the new state.
+      const batchId = msg.batchId;
+      const variantId = msg.variantId;
+      if (typeof batchId !== "string" || typeof variantId !== "string") return;
+      const batch = state.batches.find((b) => b.id === batchId);
+      if (!batch?.variants.some((v) => v.id === variantId)) return;
+      batch.variants = batch.variants.filter((v) => v.id !== variantId);
+      if (batch.variants.length === 0) {
+        state.batches = state.batches.filter((b) => b.id !== batchId);
+      }
+      delete state.marksByVariant[variantId];
+      delete state.layersByVariant[variantId];
+      delete markHistory[variantId];
+      delete markUnseen[variantId];
+      if (state.focus?.variantId === variantId) state.focus = null;
+      broadcastState();
     } else if (t === "style.toggle") {
       if (typeof msg.name !== "string") return;
       const name = normStyle(msg.name);

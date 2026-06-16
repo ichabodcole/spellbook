@@ -891,3 +891,65 @@ async function fetchCursor(s: Spawned): Promise<number> {
   const body = (await res.json()) as { cursor: number };
   return body.cursor;
 }
+
+// ── variant.remove (library curation) ────────────────────────────────────────
+
+describe("variant.remove", () => {
+  test("removes the variant + its marks/layers, drops the empty batch, clears focus", async () => {
+    const s = await spawnDaemon();
+    const { batchId, variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+    ws.send({ type: "mark.add", mark: pin("m1") }); // gives the variant marks + a layer
+    await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+
+    ws.send({ type: "variant.remove", batchId, variantId });
+    const st = await waitForState(s, (x) => x.focus === null);
+    expect(st.batches.find((b) => b.id === batchId)).toBeUndefined(); // empty batch dropped
+    expect(st.marksByVariant[variantId]).toBeUndefined(); // annotations cleaned up
+    expect(st.layersByVariant[variantId]).toBeUndefined();
+    ws.close();
+  });
+
+  test("removing one variant of a multi-variant batch keeps the batch + the others", async () => {
+    const s = await spawnDaemon();
+    await postCmd(s, {
+      type: "batch.add",
+      kind: "generate",
+      prompt: "pair",
+      variants: [
+        { src: PNG_1x1, id: "vA" },
+        { src: PNG_1x1, id: "vB" },
+      ],
+    });
+    const seeded = await waitForState(s, (x) => x.batches.length === 1);
+    const batchId = seeded.batches[0].id;
+    const ws = await openWs(s);
+
+    ws.send({ type: "variant.remove", batchId, variantId: "vA" });
+    const st = await waitForState(s, (x) => x.batches[0]?.variants.length === 1);
+    expect(ids(st.batches[0].variants)).toEqual(["vB"]); // the other survives
+    expect(st.batches[0].id).toBe(batchId); // batch kept (not empty)
+    ws.close();
+  });
+
+  test("removing a NON-focused variant leaves focus intact", async () => {
+    const s = await spawnDaemon();
+    await postCmd(s, {
+      type: "batch.add",
+      kind: "generate",
+      prompt: "pair",
+      variants: [
+        { src: PNG_1x1, id: "vA" }, // first variant auto-focuses
+        { src: PNG_1x1, id: "vB" },
+      ],
+    });
+    const seeded = await waitForState(s, (x) => x.focus?.variantId === "vA");
+    const batchId = seeded.batches[0].id;
+    const ws = await openWs(s);
+
+    ws.send({ type: "variant.remove", batchId, variantId: "vB" }); // the non-focused one
+    const st = await waitForState(s, (x) => x.batches[0]?.variants.length === 1);
+    expect(st.focus?.variantId).toBe("vA"); // focus undisturbed
+    ws.close();
+  });
+});

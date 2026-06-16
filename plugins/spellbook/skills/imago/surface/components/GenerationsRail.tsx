@@ -1,4 +1,4 @@
-import { Heart, Layers } from "lucide-react";
+import { Heart, Layers, X } from "lucide-react";
 import { useState } from "react";
 import { focusedVariant, variantLabel } from "../state/derive";
 import { addImageLayerFromSrc, IMAGO_IMAGE_DND } from "../state/fileIntake";
@@ -28,14 +28,25 @@ export function GenerationsRail({
   // natural px per variant (measured on thumb load) → the mark overlay's viewBox
   // basis + slice alignment with the object-cover image.
   const [dims, setDims] = useState<Record<string, { w: number; h: number }>>({});
+  // library filter: all media, AI-made (generate+edit), or brought-in (import).
+  const [filter, setFilter] = useState<"all" | "generated" | "imported">("all");
   // the focused image a generation can be composited onto (undefined on the blank
   // frame → "add as layer" hidden).
   const focusedSrc = focusedVariant(state)?.src;
 
+  const shown = state.batches.filter((b) =>
+    filter === "all" ? true : filter === "imported" ? b.kind === "import" : b.kind !== "import",
+  );
+  const FILTERS: { id: typeof filter; label: string }[] = [
+    { id: "all", label: "All" },
+    { id: "generated", label: "Generated" },
+    { id: "imported", label: "Imported" },
+  ];
+
   return (
     <aside className="card flex flex-col min-h-0 h-full">
       <div className="flex items-center justify-between px-3 py-2 border-b border-divider">
-        <span className="section-title">Generations</span>
+        <span className="section-title">Library</span>
         <div className="inline-flex rounded-md border border-edge-strong overflow-hidden">
           {(["s", "m", "l"] as Size[]).map((z) => (
             <button
@@ -52,17 +63,39 @@ export function GenerationsRail({
         </div>
       </div>
 
+      {/* filter the library by source: all / AI-made / brought-in */}
+      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-divider">
+        {FILTERS.map((f) => (
+          <button
+            type="button"
+            key={f.id}
+            onClick={() => setFilter(f.id)}
+            className={`px-2 py-0.5 text-xs font-medium rounded ${
+              filter === f.id ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
         {state.batches.length === 0 && (
           <p className="text-faint italic text-center mt-10 px-4">
-            generations appear here — say what you want to make on the right
+            your images appear here — say what you want to make on the right, or drop one in
           </p>
         )}
+        {state.batches.length > 0 && shown.length === 0 && (
+          <p className="text-faint italic text-center mt-10 px-4">nothing in this filter</p>
+        )}
 
-        {state.batches.map((b, bi) => (
+        {shown.map((b) => (
           <div key={b.id} className="flex flex-col gap-2 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-ink">Batch {bi + 1}</span>
+              {/* canonical batch number (position in history), stable across filters */}
+              <span className="text-xs font-medium text-ink">
+                Batch {state.batches.indexOf(b) + 1}
+              </span>
               <span
                 className={
                   b.kind === "edit"
@@ -172,6 +205,18 @@ export function GenerationsRail({
                         <Layers className="w-3 h-3" />
                       </button>
                     )}
+                    {/* delete this image from the library (also drops its batch
+                        when it empties; clears focus if it was focused) */}
+                    <button
+                      type="button"
+                      title="Delete from library"
+                      onClick={() =>
+                        send({ type: "variant.remove", batchId: b.id, variantId: v.id })
+                      }
+                      className="absolute bottom-0.5 left-0.5 bg-black/70 text-ink rounded p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-400"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
                 );
               })}
