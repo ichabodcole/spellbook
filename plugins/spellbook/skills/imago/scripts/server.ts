@@ -885,10 +885,18 @@ async function main(argv: string[]): Promise<number> {
       if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
       const layers = state.layersByVariant[vid];
       const sourceIds = new Set(picked.map((m) => m.layerId).filter(Boolean) as string[]);
+      // homogeneous selections keep their kind (a pure-image group must stay an
+      // image layer — else ensureDrawLayer would treat it as a draw target and the
+      // panel would show a shapes icon instead of the bitmap thumbnail); a mixed
+      // selection is a generic annotation group.
       const group: Layer = {
         id: newId("layer"),
         name: typeof msg.name === "string" && msg.name ? msg.name : "Group",
-        kind: picked.every((m) => m.tool === "draw") ? "sketch" : "annotation",
+        kind: picked.every((m) => m.tool === "draw")
+          ? "sketch"
+          : picked.every((m) => m.tool === "image")
+            ? "image"
+            : "annotation",
       };
       layers.push(group);
       picked.forEach((m, i) => {

@@ -505,6 +505,34 @@ describe("container model — layer ops", () => {
     ws.close();
   });
 
+  test("group of image-only marks yields an image-kind layer (not annotation)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    // two image layers → two image marks
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "a" });
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "b" });
+    const before = await waitForState(
+      s,
+      (x) => (x.marksByVariant[variantId] ?? []).filter((m) => m.tool === "image").length === 2,
+    );
+    const imgIds = before.marksByVariant[variantId]
+      .filter((m) => m.tool === "image")
+      .map((m) => m.id);
+
+    ws.send({ type: "group", markIds: imgIds, name: "Collage" });
+    const st = await waitForState(
+      s,
+      (x) => x.layersByVariant[variantId]?.some((l) => l.name === "Collage") ?? false,
+    );
+    const group = st.layersByVariant[variantId].find((l) => l.name === "Collage");
+    // a pure-image group MUST stay an image layer (else ensureDrawLayer would pick it
+    // as a draw target and the panel would show a shapes icon, not the thumbnail)
+    expect(group?.kind).toBe("image");
+    ws.close();
+  });
+
   test("ungroup dissolves a multi-element layer into group-of-one layers in place", async () => {
     const s = await spawnDaemon();
     const { variantId } = await seedFocusedVariant(s);
