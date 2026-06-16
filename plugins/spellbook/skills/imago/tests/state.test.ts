@@ -20,10 +20,12 @@ test("defaultState carries the title and empty artifact collections", () => {
   expect(s.focus).toBeNull();
   expect(s.conversation).toEqual([]);
   expect(s.pins).toEqual([]);
-  expect(s.refs).toEqual([]);
   // marksByVariant is the durable per-variant annotation map — empty object,
   // NOT undefined (the surface and server index into it directly).
   expect(s.marksByVariant).toEqual({});
+  // layersByVariant is the per-variant layer-container map (container model) —
+  // same empty-object invariant; the server/surface index into it directly.
+  expect(s.layersByVariant).toEqual({});
   expect(s.analysisCache).toEqual({});
 });
 
@@ -91,17 +93,25 @@ function fixtureWithBlobs(): ImagoState {
       ],
     },
   ];
-  s.refs = [
-    {
-      id: "ref1",
-      src: "data:image/webp;base64,REFBLOB",
-      path: "/tmp/files/ref1.webp",
-      name: "mood board",
-      selected: true,
-      hash: "deadbeef",
-      analysis: "muted greens",
-    },
-  ];
+  // a reference is now a Variant (in an import batch) flagged refSelected
+  s.batches.push({
+    id: "bref",
+    kind: "import",
+    prompt: "",
+    tag: "references",
+    variants: [
+      {
+        id: "ref1",
+        src: "data:image/webp;base64,REFBLOB",
+        path: "/tmp/files/ref1.webp",
+        liked: false,
+        analysis: "muted greens",
+        name: "mood board",
+        refSelected: true,
+        hash: "deadbeef",
+      },
+    ],
+  });
   s.styles.push({
     name: "ghibli",
     active: true,
@@ -130,15 +140,17 @@ test("leanState strips variant.src but keeps path + metadata", () => {
   expect(lean.batches[0].tag).toBe("fox");
 });
 
-test("leanState strips ref.src but keeps path/name/analysis/hash", () => {
+test("leanState strips a ref variant's src but keeps refSelected/name/hash/analysis", () => {
   const lean = leanState(fixtureWithBlobs());
-  const r = lean.refs[0] as Record<string, unknown>;
+  const r = lean.batches
+    .flatMap((b) => b.variants)
+    .find((v) => (v as Record<string, unknown>).id === "ref1") as Record<string, unknown>;
   expect(r.src).toBeUndefined();
   expect(r.path).toBe("/tmp/files/ref1.webp");
   expect(r.name).toBe("mood board");
   expect(r.analysis).toBe("muted greens");
   expect(r.hash).toBe("deadbeef");
-  expect(r.selected).toBe(true);
+  expect(r.refSelected).toBe(true); // the agent reads refs as variants where refSelected
 });
 
 test("leanState strips style.image but keeps imagePath + description", () => {
@@ -151,18 +163,54 @@ test("leanState strips style.image but keeps imagePath + description", () => {
   expect(ghibli.active).toBe(true);
 });
 
-test("leanState preserves prompts and marksByVariant verbatim", () => {
+test("leanState preserves prompts and non-image marks verbatim", () => {
   const src = fixtureWithBlobs();
   const lean = leanState(src);
   expect(lean.prompts).toEqual(src.prompts);
+  // fixture marks are a pin (no bitmap) → passed through unchanged
   expect(lean.marksByVariant).toEqual(src.marksByVariant);
+});
+
+test("leanState strips the bitmap from image-layer marks (keeps geometry + other marks)", () => {
+  const src = fixtureWithBlobs();
+  src.marksByVariant = {
+    v1: [
+      { id: "p1", tool: "pin", x: 0.5, y: 0.5, zOrder: 0, layerId: "L1" },
+      {
+        id: "i1",
+        tool: "image",
+        src: "data:image/webp;base64,LAYERBLOB",
+        x: 0.1,
+        y: 0.1,
+        w: 0.3,
+        h: 0.3,
+        zOrder: 1,
+        layerId: "L2",
+      },
+    ],
+  };
+  const lean = leanState(src);
+  const marks = lean.marksByVariant.v1 as Array<Record<string, unknown>>;
+  // the pin passes through verbatim
+  expect(marks[0]).toEqual(src.marksByVariant.v1[0]);
+  // the image mark loses its src but keeps geometry/tool/layerId
+  expect(marks[1].src).toBeUndefined();
+  expect(marks[1].tool).toBe("image");
+  expect(marks[1].x).toBe(0.1);
+  expect(marks[1].layerId).toBe("L2");
+  // canonical state untouched (the browser still gets the bitmap)
+  expect((src.marksByVariant.v1[1] as Record<string, unknown>).src).toBe(
+    "data:image/webp;base64,LAYERBLOB",
+  );
 });
 
 test("leanState does not mutate the source state (no blob loss in canonical)", () => {
   const src = fixtureWithBlobs();
   leanState(src);
   expect(src.batches[0].variants[0].src).toBe("data:image/webp;base64,VARIANTBLOB");
-  expect(src.refs[0].src).toBe("data:image/webp;base64,REFBLOB");
+  expect(src.batches.find((b) => b.id === "bref")?.variants[0].src).toBe(
+    "data:image/webp;base64,REFBLOB",
+  );
   expect(src.styles.find((st) => st.name === "ghibli")?.image).toBe(
     "data:image/webp;base64,STYLEBLOB",
   );

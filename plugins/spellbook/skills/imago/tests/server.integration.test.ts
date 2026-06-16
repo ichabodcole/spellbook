@@ -328,6 +328,271 @@ describe("marks lifecycle", () => {
   });
 });
 
+// ── container model: layers ───────────────────────────────────────────────────
+
+describe("container model — layers", () => {
+  test("mark.add auto-creates a default layer and stamps the mark's layerId", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    const st = await waitForState(s, (x) => x.marksByVariant[variantId]?.length === 1);
+
+    const layers = st.layersByVariant[variantId];
+    expect(layers).toHaveLength(1);
+    expect(layers[0].kind).toBe("annotation");
+    // the element points at the container it landed in
+    expect(st.marksByVariant[variantId][0].layerId).toBe(layers[0].id);
+    ws.close();
+  });
+
+  test("undo of the first add removes the mark AND the auto-created layer (atomic {marks,layers})", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    await waitForState(
+      s,
+      (x) =>
+        x.marksByVariant[variantId]?.length === 1 &&
+        (x.layersByVariant[variantId]?.length ?? 0) === 1,
+    );
+
+    // the add's pushHistory snapshotted the pre-state (no layer); undo restores it
+    ws.send({ type: "undo" });
+    const st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 0);
+    expect(st.layersByVariant[variantId] ?? []).toEqual([]);
+    expect(st.history.canRedo).toBe(true);
+    ws.close();
+  });
+
+  test("layer.addImage creates an image-kind layer + image mark; lean strips the bitmap", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({
+      type: "layer.addImage",
+      src: PNG_1x1,
+      name: "clip",
+      x: 0.1,
+      y: 0.1,
+      w: 0.3,
+      h: 0.3,
+    });
+    const st = await waitForState(s, (x) =>
+      (x.layersByVariant[variantId] ?? []).some((l) => l.kind === "image"),
+    );
+
+    const imgLayer = st.layersByVariant[variantId].find((l) => l.kind === "image");
+    expect(imgLayer?.name).toBe("clip");
+    const imgMark = st.marksByVariant[variantId].find((m) => m.tool === "image") as
+      | (Mark & { src?: string })
+      | undefined;
+    expect(imgMark).toBeDefined();
+    expect(imgMark?.layerId).toBe(imgLayer?.id);
+    // full state carries the (optimized) bitmap for the browser to render
+    expect(typeof imgMark?.src).toBe("string");
+    expect((imgMark?.src ?? "").length).toBeGreaterThan(0);
+
+    // lean projection strips the image-mark src (agent reads the flattened composite)
+    const lean = await getState(s, true);
+    const leanImg = lean.marksByVariant[variantId].find((m) => m.tool === "image") as
+      | (Mark & { src?: string })
+      | undefined;
+    expect(leanImg).toBeDefined();
+    expect(leanImg?.src).toBeUndefined();
+    // geometry survives the strip
+    expect((leanImg as { x?: number } | undefined)?.x).toBe(0.1);
+    ws.close();
+  });
+});
+
+// ── container model: layer ops (Phase 2 inspector panel) ──────────────────────
+
+describe("container model — layer ops", () => {
+  test("layer.rename changes the name and is undoable", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") }); // auto-creates "Annotations"
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+    const layerId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "layer.rename", id: layerId, name: "Hero" });
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "Hero");
+    expect(st.history.canUndo).toBe(true);
+
+    // a cosmetic layer op is undoable (widened {marks,layers} history)
+    ws.send({ type: "undo" });
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "Annotations");
+    expect(st.layersByVariant[variantId][0].name).toBe("Annotations");
+    ws.close();
+  });
+
+  test("layer.setHidden toggles the handoff/visibility flag (over-fires marksUnseen, by design)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+    const layerId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "layer.setHidden", id: layerId, hidden: true });
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.hidden === true);
+    // hidden doubles as the agent-handoff filter; cosmetic-or-not, it bumps freshness
+    expect(st.marksUnseen).toBe(true);
+    ws.close();
+  });
+
+  test("layer.reorder places a layer at an absolute index (back→front)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") }); // [Annotations]
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "clip" }); // [Annotations, clip]
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 2);
+    const clip = st.layersByVariant[variantId].find((l) => l.kind === "image");
+    if (!clip) throw new Error("no image layer");
+
+    ws.send({ type: "layer.reorder", id: clip.id, toIndex: 0 }); // image to the back
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.id === clip.id);
+    expect(st.layersByVariant[variantId].map((l) => l.kind)).toEqual(["image", "annotation"]);
+    ws.close();
+  });
+
+  test("layer.remove deletes the layer AND the elements it contained", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    let st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
+    const layerId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "layer.remove", id: layerId });
+    st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 0);
+    expect(st.marksByVariant[variantId] ?? []).toEqual([]);
+    ws.close();
+  });
+
+  test("group wraps selected marks in a new layer, reindexes z, prunes the emptied source", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    ws.send({ type: "mark.add", mark: pin("m2", 0.3, 0.3) });
+    await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 2);
+
+    ws.send({ type: "group", markIds: ["m1", "m2"], name: "Pair" });
+    const st = await waitForState(
+      s,
+      (x) => x.layersByVariant[variantId]?.some((l) => l.name === "Pair") ?? false,
+    );
+    // the default "Annotations" layer was emptied by the move → pruned; only the group remains
+    expect(st.layersByVariant[variantId]).toHaveLength(1);
+    const group = st.layersByVariant[variantId][0];
+    expect(group.name).toBe("Pair");
+    const marks = st.marksByVariant[variantId];
+    expect(marks.every((m) => m.layerId === group.id)).toBe(true);
+    expect(marks.map((m) => m.zOrder)).toEqual([0, 1]);
+    ws.close();
+  });
+
+  test("group of image-only marks yields an image-kind layer (not annotation)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    // two image layers → two image marks
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "a" });
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "b" });
+    const before = await waitForState(
+      s,
+      (x) => (x.marksByVariant[variantId] ?? []).filter((m) => m.tool === "image").length === 2,
+    );
+    const imgIds = before.marksByVariant[variantId]
+      .filter((m) => m.tool === "image")
+      .map((m) => m.id);
+
+    ws.send({ type: "group", markIds: imgIds, name: "Collage" });
+    const st = await waitForState(
+      s,
+      (x) => x.layersByVariant[variantId]?.some((l) => l.name === "Collage") ?? false,
+    );
+    const group = st.layersByVariant[variantId].find((l) => l.name === "Collage");
+    // a pure-image group MUST stay an image layer (else ensureDrawLayer would pick it
+    // as a draw target and the panel would show a shapes icon, not the thumbnail)
+    expect(group?.kind).toBe("image");
+    ws.close();
+  });
+
+  test("ungroup dissolves a multi-element layer into group-of-one layers in place", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    ws.send({ type: "mark.add", mark: pin("m2", 0.3, 0.3) });
+    await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 2);
+    ws.send({ type: "group", markIds: ["m1", "m2"], name: "G" });
+    // wait on the named group (length is 1 BOTH before and after the move → race)
+    let st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "G");
+    const groupId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "ungroup", id: groupId });
+    st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 2);
+    // each pin now owns a single-element layer; ids are distinct and re-zeroed
+    const layers = st.layersByVariant[variantId];
+    expect(layers.every((l) => l.name === "Pin" && l.kind === "annotation")).toBe(true);
+    const marks = st.marksByVariant[variantId];
+    expect(new Set(marks.map((m) => m.layerId)).size).toBe(2);
+    expect(marks.every((m) => m.zOrder === 0)).toBe(true);
+    ws.close();
+  });
+
+  test("mark.add skips an image layer as the drop target (drawing lands in a non-image layer)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "clip" }); // only an image layer exists
+    await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    const st = await waitForState(s, (x) =>
+      (x.marksByVariant[variantId] ?? []).some((m) => m.tool === "pin"),
+    );
+    const pinMark = st.marksByVariant[variantId].find((m) => m.tool === "pin");
+    const pinLayer = st.layersByVariant[variantId].find((l) => l.id === pinMark?.layerId);
+    expect(pinLayer?.kind).toBe("annotation"); // NOT the image layer
+    ws.close();
+  });
+
+  test("mark.add honors a valid client-supplied active layerId", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "layer.add", name: "Sketch", kind: "sketch" });
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+    const activeId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "mark.add", mark: { ...pin("m1"), layerId: activeId } });
+    st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
+    expect(st.marksByVariant[variantId][0].layerId).toBe(activeId);
+    // no extra default layer was created — the client's choice was honored
+    expect(st.layersByVariant[variantId]).toHaveLength(1);
+    ws.close();
+  });
+});
+
 // ── undo / redo ──────────────────────────────────────────────────────────────
 
 describe("undo/redo of mark edits", () => {
@@ -404,6 +669,75 @@ describe("marksUnseen freshness flag", () => {
     // give it a beat, then assert it stayed false
     await Bun.sleep(150);
     expect((await getState(s)).marksUnseen).toBe(false);
+    ws.close();
+  });
+});
+
+// ── agent event contract: imperatives carry board context, ambient is state-only ──
+
+describe("agent event contract", () => {
+  test("say carries the focused variant + selected ref ids (ambient board context)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    // ref.add imports an external image as a variant + flags it refSelected
+    ws.send({ type: "ref.add", image: { src: PNG_1x1, name: "mood" } });
+    const withRef = await waitForState(s, (x) =>
+      x.batches.flatMap((b) => b.variants).some((v) => v.refSelected),
+    );
+    const refId = withRef.batches
+      .flatMap((b) => b.variants)
+      .filter((v) => v.refSelected)
+      .map((v) => v.id)[0];
+
+    const cursor = (await fetchCursor(s)) - 1;
+    const evP = collectEvents(s, cursor, (e) => e.type === "say");
+    ws.send({ type: "say", text: "use this ref" });
+    const say = (await evP).find((e) => e.type === "say") as
+      | { focus?: { variantId?: string }; selectedRefIds?: string[] }
+      | undefined;
+
+    expect(say).toBeDefined();
+    expect(say?.focus?.variantId).toBe(variantId); // "which image" rides the message
+    expect(say?.selectedRefIds).toEqual([refId]); // the refSelected variant id
+    ws.close();
+  });
+
+  test("ambient board moves (focus.set / ref.select / variant.like) do NOT emit agent events", async () => {
+    const s = await spawnDaemon();
+    const a = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    const cursor = (await fetchCursor(s)) - 1;
+    // listen briefly; none of these board moves should produce an agent event
+    const evP = collectEvents(s, cursor, () => false, 800);
+    ws.send({ type: "image.import", image: { src: PNG_1x1, name: "two" } });
+    ws.send({ type: "focus.set", batchId: a.batchId, variantId: a.variantId });
+    ws.send({ type: "ref.select", id: a.variantId, selected: true }); // flag a variant as a ref
+    ws.send({ type: "variant.like", id: a.variantId, liked: true });
+    const events = await evP;
+
+    const ambient = events.filter((e) =>
+      ["focus.set", "ref.select", "variant.like", "image.import"].includes(e.type as string),
+    );
+    expect(ambient).toEqual([]); // state-only — the agent reads them from /state
+    ws.close();
+  });
+
+  test("style.capture carries the focused variant", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    const cursor = (await fetchCursor(s)) - 1;
+    const evP = collectEvents(s, cursor, (e) => e.type === "style.capture");
+    ws.send({ type: "style.capture" });
+    const cap = (await evP).find((e) => e.type === "style.capture") as
+      | { focus?: { variantId?: string } }
+      | undefined;
+
+    expect(cap?.focus?.variantId).toBe(variantId);
     ws.close();
   });
 });
@@ -517,7 +851,6 @@ describe("restore backfills newer fields from an old snapshot", () => {
       // legacy global marks → should migrate into marksByVariant["v1"]
       marks: [{ id: "legacy1", tool: "pin", x: 0.4, y: 0.4 }],
       pins: [],
-      refs: [],
       analysisCache: {},
       aspect: "1:1",
       size: "1K",
@@ -537,9 +870,127 @@ describe("restore backfills newer fields from an old snapshot", () => {
     expect(ids(st.marksByVariant.v1)).toEqual(["legacy1"]);
     // zOrder normalized during migration (was undefined in the snapshot)
     expect(st.marksByVariant.v1[0].zOrder).toBe(0);
+    // container-model backfill: marks wrapped in a default "Annotations" layer,
+    // and the legacy mark stamped with that layer's id
+    expect(st.layersByVariant.v1).toHaveLength(1);
+    expect(st.layersByVariant.v1[0].name).toBe("Annotations");
+    expect(st.layersByVariant.v1[0].kind).toBe("annotation");
+    expect(st.marksByVariant.v1[0].layerId).toBe(st.layersByVariant.v1[0].id);
     // the old top-level `marks` array is gone (deleted by the migration)
     expect(st.marks).toBeUndefined();
     expect(st.title).toBe("resumed");
+
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test("refs-as-assets: legacy refs[] → an import-batch variant (id-preserved, refSelected)", async () => {
+    const home = mkdtempSync(join(tmpdir(), "imago-refshome-"));
+    const snapsDir = join(home, "snapshots");
+    mkdirSync(snapsDir, { recursive: true });
+    const sid = "imago-refsnap";
+    const oldSnap = {
+      title: "resumed",
+      batches: [],
+      focus: null,
+      conversation: [],
+      styles: [],
+      pins: [],
+      // legacy refs array → migrated into an import-kind batch of variants
+      refs: [
+        {
+          id: "ref1",
+          src: PNG_1x1,
+          path: "/stale/ref1.png",
+          name: "mood",
+          selected: true,
+          hash: "h1",
+          analysis: "muted greens",
+        },
+        {
+          id: "ref2",
+          src: PNG_1x1,
+          path: "/stale/ref2.png",
+          name: "tone",
+          selected: false,
+          hash: "h2",
+          analysis: "",
+        },
+      ],
+      analysisCache: {},
+      aspect: "1:1",
+      size: "1K",
+      status: { busy: false, text: "" },
+      cost: "",
+      handoff: "",
+    };
+    writeFileSync(join(snapsDir, `${sid}.json`), JSON.stringify(oldSnap));
+
+    const s = await spawnDaemon(["--restore", sid], { IMAGO_HOME: home });
+    const st = await getState(s);
+
+    expect(st.refs).toBeUndefined(); // the legacy array is gone
+    const variants = st.batches.flatMap((b) => b.variants);
+    const r1 = variants.find((v) => v.id === "ref1"); // id PRESERVED (idempotency + old selectedRefIds resolve)
+    const r2 = variants.find((v) => v.id === "ref2");
+    expect(r1?.refSelected).toBe(true);
+    expect(r1?.name).toBe("mood");
+    expect(r1?.analysis).toBe("muted greens");
+    expect(r2?.refSelected).toBeFalsy(); // selected:false → not a ref, but still in the library
+    expect(r1?.path).not.toBe("/stale/ref1.png"); // re-materialized to the live files dir
+    // the hash→analysis cache is seeded so a delete + re-import reuses the read
+    expect(st.analysisCache.h1).toBe("muted greens");
+
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  test("refs migration is a no-op on an already-migrated snapshot (no double-create)", async () => {
+    const home = mkdtempSync(join(tmpdir(), "imago-refshome2-"));
+    const snapsDir = join(home, "snapshots");
+    mkdirSync(snapsDir, { recursive: true });
+    const sid = "imago-migrated";
+    // a snapshot that ALREADY has the import-batch variant + NO refs field
+    const migrated = {
+      title: "resumed",
+      batches: [
+        {
+          id: "bref",
+          kind: "import",
+          prompt: "",
+          tag: "references",
+          variants: [
+            {
+              id: "ref1",
+              src: PNG_1x1,
+              path: "/stale/ref1.png",
+              liked: false,
+              analysis: "",
+              name: "mood",
+              refSelected: true,
+              hash: "h1",
+            },
+          ],
+        },
+      ],
+      focus: null,
+      conversation: [],
+      styles: [],
+      pins: [],
+      analysisCache: {},
+      aspect: "1:1",
+      size: "1K",
+      status: { busy: false, text: "" },
+      cost: "",
+      handoff: "",
+    };
+    writeFileSync(join(snapsDir, `${sid}.json`), JSON.stringify(migrated));
+
+    const s = await spawnDaemon(["--restore", sid], { IMAGO_HOME: home });
+    const st = await getState(s);
+
+    const refVars = st.batches.flatMap((b) => b.variants).filter((v) => v.id === "ref1");
+    expect(refVars).toHaveLength(1); // not duplicated by a re-run migration
+    expect(refVars[0].refSelected).toBe(true);
+    expect(st.batches).toHaveLength(1); // no extra "references" batch synthesized
 
     rmSync(home, { recursive: true, force: true });
   });
@@ -552,3 +1003,65 @@ async function fetchCursor(s: Spawned): Promise<number> {
   const body = (await res.json()) as { cursor: number };
   return body.cursor;
 }
+
+// ── variant.remove (library curation) ────────────────────────────────────────
+
+describe("variant.remove", () => {
+  test("removes the variant + its marks/layers, drops the empty batch, clears focus", async () => {
+    const s = await spawnDaemon();
+    const { batchId, variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+    ws.send({ type: "mark.add", mark: pin("m1") }); // gives the variant marks + a layer
+    await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+
+    ws.send({ type: "variant.remove", batchId, variantId });
+    const st = await waitForState(s, (x) => x.focus === null);
+    expect(st.batches.find((b) => b.id === batchId)).toBeUndefined(); // empty batch dropped
+    expect(st.marksByVariant[variantId]).toBeUndefined(); // annotations cleaned up
+    expect(st.layersByVariant[variantId]).toBeUndefined();
+    ws.close();
+  });
+
+  test("removing one variant of a multi-variant batch keeps the batch + the others", async () => {
+    const s = await spawnDaemon();
+    await postCmd(s, {
+      type: "batch.add",
+      kind: "generate",
+      prompt: "pair",
+      variants: [
+        { src: PNG_1x1, id: "vA" },
+        { src: PNG_1x1, id: "vB" },
+      ],
+    });
+    const seeded = await waitForState(s, (x) => x.batches.length === 1);
+    const batchId = seeded.batches[0].id;
+    const ws = await openWs(s);
+
+    ws.send({ type: "variant.remove", batchId, variantId: "vA" });
+    const st = await waitForState(s, (x) => x.batches[0]?.variants.length === 1);
+    expect(ids(st.batches[0].variants)).toEqual(["vB"]); // the other survives
+    expect(st.batches[0].id).toBe(batchId); // batch kept (not empty)
+    ws.close();
+  });
+
+  test("removing a NON-focused variant leaves focus intact", async () => {
+    const s = await spawnDaemon();
+    await postCmd(s, {
+      type: "batch.add",
+      kind: "generate",
+      prompt: "pair",
+      variants: [
+        { src: PNG_1x1, id: "vA" }, // first variant auto-focuses
+        { src: PNG_1x1, id: "vB" },
+      ],
+    });
+    const seeded = await waitForState(s, (x) => x.focus?.variantId === "vA");
+    const batchId = seeded.batches[0].id;
+    const ws = await openWs(s);
+
+    ws.send({ type: "variant.remove", batchId, variantId: "vB" }); // the non-focused one
+    const st = await waitForState(s, (x) => x.batches[0]?.variants.length === 1);
+    expect(st.focus?.variantId).toBe("vA"); // focus undisturbed
+    ws.close();
+  });
+});

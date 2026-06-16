@@ -8,7 +8,7 @@
 // stopPropagation keeps it off the pan path.
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import type { ClientToServer, Mark } from "../../state/types";
+import type { ClientToServer, Layer, Mark } from "../../state/types";
 import { frac, type PinSize, type Point } from "./coords";
 import { ERASER_RADIUS, eraseMarks } from "./erase";
 import { MarkRenderer } from "./MarkRenderer";
@@ -25,19 +25,29 @@ const ERASER_CURSOR =
 export function AnnotationLayer({
   tool,
   marks,
+  layers,
   resetKey,
   send,
   drawStyle,
   scale,
-  onSelectionChange,
+  natW,
+  natH,
+  selectedIds,
+  onSelectedIdsChange,
+  activeLayerId,
 }: {
   tool: string;
   marks: Mark[];
+  layers: Layer[]; // container metadata (back→front) → effective z + hidden skip
   resetKey: string; // changes when the focused image changes → clears any draft
   send: (m: ClientToServer) => void;
   drawStyle: DrawStyle; // active color/width for NEW marks (tools stay style-agnostic)
   scale: number; // viewport zoom scale → marks/drafts weld to the image
-  onSelectionChange?: (id: string | null) => void;
+  natW: number; // image natural px (the SVG viewBox basis)
+  natH: number;
+  selectedIds: string[]; // controlled selection SET, owned by Canvas
+  onSelectedIdsChange: (ids: string[]) => void;
+  activeLayerId: string | null; // the layer NEW marks drop into (effective active; server honors it)
 }) {
   const [draft, setDraft] = useState<Draft>(null);
   const plugin = TOOL_REGISTRY[tool]; // undefined for the `select` pseudo-tool
@@ -100,6 +110,9 @@ export function AnnotationLayer({
     if (drawStyle.color) styled.color = drawStyle.color;
     if (drawStyle.width != null) styled.width = drawStyle.width;
     if (drawStyle.fontSize != null) styled.fontSize = drawStyle.fontSize;
+    // stamp the active layer so the mark lands where the user expects; the server
+    // honors a valid id and falls back to the topmost non-image layer otherwise.
+    if (activeLayerId) styled.layerId = activeLayerId;
     send({ type: "mark.add", mark: styled });
     setDraft(null);
   }
@@ -170,7 +183,10 @@ export function AnnotationLayer({
     >
       <MarkRenderer
         marks={shownMarks}
+        layers={layers}
         scale={scale}
+        natW={natW}
+        natH={natH}
         onMeasurePin={onMeasurePin}
         liveOverride={liveOverride}
       />
@@ -181,10 +197,14 @@ export function AnnotationLayer({
         <SelectionOverlay
           key={resetKey}
           marks={marks}
+          layers={layers}
           send={send}
           scale={scale}
+          natW={natW}
+          natH={natH}
           pinBounds={pinBounds}
-          onSelectionChange={onSelectionChange}
+          selectedIds={selectedIds}
+          onSelectedIdsChange={onSelectedIdsChange}
           onLiveTransform={setLiveOverride}
           liveOverride={liveOverride}
         />

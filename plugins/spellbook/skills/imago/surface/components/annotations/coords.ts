@@ -4,10 +4,59 @@
 // transform with the viewport's pan/zoom automatically. This is the load-bearing
 // seam every tool (and, later, masking) shares.
 import type React from "react";
-import type { Mark } from "../../state/types";
+import type { Layer, Mark } from "../../state/types";
 
 export type Point = { x: number; y: number };
 export type Box = { x: number; y: number; w: number; h: number };
+
+// ── layer-aware stacking + visibility ─────────────────────────────────────────
+// Effective z = LAYER band (the mark's layer's index in the back→front `layers`
+// list) first, then the mark's `zOrder` WITHIN its layer. With a single layer this
+// reduces to today's zOrder-only order, so it's a no-op until image layers exist.
+
+// A mark's layer band (array index in `layers`). No layerId, or a layerId not in
+// `layers` (legacy / in-flight before the server stamps it), sorts as -1 → beneath
+// all real layers, so unstamped marks never float above layered content.
+export function layerBand(layers: Layer[], m: Mark): number {
+  if (!m.layerId) return -1;
+  return layers.findIndex((l) => l.id === m.layerId);
+}
+
+// Ascending effective-z comparator (paint order: later in the sort = on top).
+export function byEffectiveZ(layers: Layer[]): (a: Mark, b: Mark) => number {
+  return (a, b) => {
+    const ba = layerBand(layers, a);
+    const bb = layerBand(layers, b);
+    return ba !== bb ? ba - bb : (a.zOrder ?? 0) - (b.zOrder ?? 0);
+  };
+}
+
+// Is a mark's layer hidden? Hidden layers don't render → don't flatten → the agent
+// never sees them. A mark with no/unknown layer is treated as visible.
+export function isMarkHidden(layers: Layer[], m: Mark): boolean {
+  if (!m.layerId) return false;
+  return layers.find((l) => l.id === m.layerId)?.hidden === true;
+}
+
+// Is a mark's layer locked? Locked layers are pinned — the select tool won't grab,
+// move, or resize their marks. A mark with no/unknown layer is treated as unlocked.
+export function isMarkLocked(layers: Layer[], m: Mark): boolean {
+  if (!m.layerId) return false;
+  return layers.find((l) => l.id === m.layerId)?.locked === true;
+}
+
+// Can the select tool grab this mark? No if its layer is hidden (not drawn) or
+// locked (pinned). Shared by topHit and the (Phase-2) panel-select so the canvas
+// and the layers panel honor one rule.
+export function isMarkSelectable(layers: Layer[], m: Mark): boolean {
+  return !isMarkHidden(layers, m) && !isMarkLocked(layers, m);
+}
+
+// Render-ready: marks in visible layers, ascending effective-z. Shared by the live
+// renderer and the flatten compositor so on-screen order == handoff order.
+export function visibleSorted(marks: Mark[], layers: Layer[]): Mark[] {
+  return marks.filter((m) => !isMarkHidden(layers, m)).sort(byEffectiveZ(layers));
+}
 
 // Pointer position as a 0–1 fraction of the event's currentTarget box, clamped
 // to [0,1] so a drag that leaves the image still yields in-bounds coords.
@@ -50,12 +99,38 @@ export function markBounds(m: Mark, pinSize?: PinSize): Box {
     case "line":
       return bbox({ x1: m.x1, y1: m.y1, x2: m.x2, y2: m.y2 });
     case "rect":
+    case "image": // rect geometry
       return { x: m.x, y: m.y, w: m.w, h: m.h };
     case "ellipse":
       return { x: m.cx - m.rx, y: m.cy - m.ry, w: m.rx * 2, h: m.ry * 2 };
     case "draw":
       return pointsBounds(m.points);
   }
+}
+
+// Center of a box (fraction space). The rotation pivot for a mark is the center
+// of its UN-rotated bounds — the same point the SVG/CSS rotate transforms about.
+export function boundsCenter(b: Box): Point {
+  return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+}
+
+// Rotate point p by `deg` (clockwise, matching SVG `rotate(deg)` and CSS rotate)
+// about center c, in the image's ISOTROPIC pixel metric. Fraction space is
+// anisotropic when natW≠natH, but the on-screen render rotates in visual pixels,
+// so the math converts through px via `aspect` (= natW/natH) to stay WYSIWYG.
+// Pass θ=-deg to map a screen point back into a mark's un-rotated local frame
+// (hit-test), or c={0,0} to rotate a bare delta vector (rotated-resize).
+export function rotatePoint(p: Point, deg: number, c: Point, aspect = 1): Point {
+  if (!deg) return p;
+  const a = (deg * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const u = p.x - c.x;
+  const v = p.y - c.y;
+  return {
+    x: c.x + u * cos - (v * sin) / aspect,
+    y: c.y + u * aspect * sin + v * cos,
+  };
 }
 
 // Bounding box of a freeform stroke's points (empty → a 0×0 point at origin).
@@ -89,7 +164,21 @@ export const HIT_THRESHOLD = 0.02;
 // Is point p "on" mark m? A measured pin is its text box (grab from anywhere on
 // the note); an unmeasured pin falls back to a point-distance test. arrow/line
 // are distance tests (threshold); rect/ellipse are area tests. All in fractions.
-export function hitTest(p: Point, m: Mark, threshold = HIT_THRESHOLD, pinSize?: PinSize): boolean {
+// When the mark is rotated, the test point is first mapped back into the mark's
+// un-rotated local frame (rotatePoint by -rotation about the bbox center), so the
+// existing axis-aligned geometry tests apply unchanged. `aspect` (= natW/natH)
+// makes that un-rotation match the on-screen render on non-square images.
+export function hitTest(
+  p: Point,
+  m: Mark,
+  threshold = HIT_THRESHOLD,
+  pinSize?: PinSize,
+  aspect = 1,
+): boolean {
+  if (m.rotation) {
+    const c = boundsCenter(markBounds(m, pinSize));
+    p = rotatePoint(p, -m.rotation, c, aspect);
+  }
   switch (m.tool) {
     case "pin": {
       if (!pinSize || (pinSize.w === 0 && pinSize.h === 0)) {
@@ -102,6 +191,7 @@ export function hitTest(p: Point, m: Mark, threshold = HIT_THRESHOLD, pinSize?: 
     case "line":
       return pointToSegment(p, { x: m.x1, y: m.y1 }, { x: m.x2, y: m.y2 }) <= threshold;
     case "rect":
+    case "image": // rect geometry — area hit (grab anywhere on the image layer)
       return (
         p.x >= m.x - threshold &&
         p.x <= m.x + m.w + threshold &&

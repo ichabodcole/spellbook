@@ -38,10 +38,10 @@ import {
   type Batch,
   defaultState,
   type ImagoState,
+  type Layer,
   MARK_TOOLS,
   type Mark,
   type Message,
-  type Reference,
   type StyleEntry,
   type Variant,
 } from "../surface/state/types";
@@ -151,22 +151,30 @@ function variantForAgent(v: Variant): Omit<Variant, "src"> {
 function batchForAgent(b: Batch): Omit<Batch, "variants"> & { variants: Omit<Variant, "src">[] } {
   return { ...b, variants: b.variants.map(variantForAgent) };
 }
-function refForAgent(r: Reference): Omit<Reference, "src"> {
-  const { src: _drop, ...rest } = r;
-  return rest;
-}
-
 function styleForAgent(st: StyleEntry): Omit<StyleEntry, "image"> {
   const { image: _drop, ...rest } = st;
   return rest; // agent reads imagePath, not the inlined blob
+}
+
+// Strip the (large) inlined bitmap from an image-layer mark in the agent
+// projection — the agent reads the flattened composite, never per-layer bitmaps.
+// Vector/pin marks pass through unchanged.
+function markForAgent(m: Mark): Mark | Omit<Extract<Mark, { tool: "image" }>, "src"> {
+  if (m.tool === "image") {
+    const { src: _drop, ...rest } = m;
+    return rest;
+  }
+  return m;
 }
 
 export function leanState(s: ImagoState) {
   return {
     ...s,
     batches: s.batches.map(batchForAgent),
-    refs: s.refs.map(refForAgent),
     styles: s.styles.map(styleForAgent),
+    marksByVariant: Object.fromEntries(
+      Object.entries(s.marksByVariant).map(([vid, marks]) => [vid, marks.map(markForAgent)]),
+    ),
   };
 }
 
@@ -232,19 +240,56 @@ async function main(argv: string[]): Promise<number> {
   // snapshots the pre-mutation marks for that variant onto `undo` and clears
   // `redo`. Capped so it can't grow without bound.
   const HISTORY_CAP = 100;
-  const markHistory: Record<string, { undo: Mark[][]; redo: Mark[][] }> = {};
+  // A history entry snapshots BOTH the marks AND the layer containers for a
+  // variant, so a layer rename/reorder/visibility/group op is atomically undoable
+  // alongside element edits (container model — see type Layer).
+  type MarkSnap = { marks: Mark[]; layers: Layer[] };
+  const markHistory: Record<string, { undo: MarkSnap[]; redo: MarkSnap[] }> = {};
   const histFor = (vid: string) => (markHistory[vid] ??= { undo: [], redo: [] });
   // ONE freshness flag per variant: the agent hasn't seen these marks yet. Set on
   // every mark change; cleared when the agent receives the marked image (commit
   // button OR a say that carries it). See ImagoState.marksUnseen.
   const markUnseen: Record<string, boolean> = {};
+  const snapFor = (vid: string): MarkSnap => ({
+    marks: structuredClone(state.marksByVariant[vid] ?? []),
+    layers: structuredClone(state.layersByVariant[vid] ?? []),
+  });
   const pushHistory = (vid: string | undefined) => {
     if (!vid) return;
-    markUnseen[vid] = true; // a mark is about to change → agent's view is stale
+    markUnseen[vid] = true; // a mark/layer is about to change → agent's view is stale
     const h = histFor(vid);
-    h.undo.push(structuredClone(state.marksByVariant[vid] ?? []));
+    h.undo.push(snapFor(vid));
     if (h.undo.length > HISTORY_CAP) h.undo.shift();
     h.redo = []; // a fresh edit forks the timeline — redo is no longer valid
+  };
+  // Container model: every element belongs to a Layer. A new vector mark drops
+  // into the active draw layer — the topmost NON-image layer (drawing "into" an
+  // image layer reads oddly), creating a default "Annotations" layer if there's
+  // no non-image layer yet (its push lands above any image layers, so annotations
+  // paint over the collage). The active layer is otherwise surface-owned: mark.add
+  // honors a valid client `mark.layerId` and only falls back to this. Call AFTER
+  // pushHistory so the auto-created layer is part of the same undoable step.
+  const ensureDrawLayer = (vid: string): string => {
+    if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+    const layers = state.layersByVariant[vid];
+    for (let i = layers.length - 1; i >= 0; i--) {
+      if (layers[i].kind !== "image") return layers[i].id;
+    }
+    const layer: Layer = { id: newId("layer"), name: "Annotations", kind: "annotation" };
+    layers.push(layer);
+    return layer.id;
+  };
+  // A single element's natural container kind + label (used by group/ungroup).
+  const kindForTool = (tool: Mark["tool"]): Layer["kind"] =>
+    tool === "image" ? "image" : tool === "draw" ? "sketch" : "annotation";
+  const TOOL_LABEL: Record<Mark["tool"], string> = {
+    pin: "Pin",
+    arrow: "Arrow",
+    line: "Line",
+    rect: "Rectangle",
+    ellipse: "Ellipse",
+    draw: "Sketch",
+    image: "Image",
   };
   if (v.restore) {
     const restorePath = existsSync(v.restore as string)
@@ -340,6 +385,40 @@ async function main(argv: string[]): Promise<number> {
     return null;
   }
   const labelOf = (i: number) => String.fromCharCode(97 + i);
+  // The references "set" is just the variants flagged refSelected (one source of
+  // truth; used by both the say + marks.commit handoffs). See refs-as-assets plan.
+  const selectedRefIds = (): string[] =>
+    state.batches
+      .flatMap((b) => b.variants)
+      .filter((v) => v.refSelected)
+      .map((v) => v.id);
+  // Import an external image as a one-variant import-kind batch — the unified path
+  // for "bring in a working image" AND "add a reference". Hashes for dedup +
+  // analysisCache; if the same pixels are already imported, returns the existing
+  // variant (no duplicate). Caller decides focus/refSelected.
+  function importImageVariant(src: string, name?: string): { batchId: string; variant: Variant } {
+    const hash = contentHash(src);
+    for (const b of state.batches) {
+      const ex = b.variants.find((v) => v.hash === hash);
+      if (ex) {
+        if (name && !ex.name) ex.name = name; // fill a missing name on a dedup hit
+        return { batchId: b.id, variant: ex };
+      }
+    }
+    const vid = newId("v");
+    const batchId = newId("b");
+    const variant: Variant = {
+      id: vid,
+      src,
+      path: saveDataUrl(sessionFilesDir, vid, src),
+      liked: false,
+      analysis: state.analysisCache[hash] ?? "", // reuse a prior read of the same pixels
+      name,
+      hash,
+    };
+    state.batches.push({ id: batchId, kind: "import", prompt: "", tag: name, variants: [variant] });
+    return { batchId, variant };
+  }
   function pushMessage(m: Omit<Message, "id" | "ts"> & { id?: string }) {
     const msg: Message = { id: m.id ?? newId("m"), ts: Date.now(), ...m } as Message;
     state.conversation.push(msg);
@@ -432,18 +511,10 @@ async function main(argv: string[]): Promise<number> {
         broadcastState(); // marks are durable per variant — switching never clears them
       }
     } else if (t === "ref.select") {
-      // the agent points at a ref too — the user sees it highlight on the board
-      const r = state.refs.find((x) => x.id === msg.id);
-      if (!r) return;
-      r.selected = msg.selected === true;
-      broadcastState();
-    } else if (t === "ref.analyze") {
-      // the agent writes its read onto a ref (visible to the user + cached by
-      // hash so a re-add or another agent doesn't re-analyze the same pixels)
-      const r = state.refs.find((x) => x.id === msg.id);
-      if (!r || typeof msg.text !== "string") return;
-      r.analysis = msg.text;
-      state.analysisCache[r.hash] = msg.text;
+      // the agent points a variant at the next gen — the user sees it highlight
+      const hit = findVariant(msg.id as string);
+      if (!hit) return;
+      hit.variant.refSelected = msg.selected === true;
       broadcastState();
     } else if (t === "variant.analyze") {
       // the agent writes its read onto a generated/imported image — durable
@@ -451,6 +522,9 @@ async function main(argv: string[]): Promise<number> {
       const hit = findVariant(msg.id as string);
       if (!hit || typeof msg.text !== "string") return;
       hit.variant.analysis = msg.text;
+      // imported images carry a hash → cache by it so re-importing the same pixels
+      // reuses the read (preserves the old ref.analyze behavior across the merge)
+      if (hit.variant.hash) state.analysisCache[hit.variant.hash] = msg.text;
       broadcastState();
     } else if (t === "style.add") {
       if (typeof msg.name === "string" && msg.name.trim()) {
@@ -552,7 +626,7 @@ async function main(argv: string[]): Promise<number> {
   }
 
   // ── browser messages (WebSocket) ──────────────────────────────────
-  function handleBrowserMsg(msg: Record<string, unknown>) {
+  async function handleBrowserMsg(msg: Record<string, unknown>) {
     const t = msg.type as string;
     if (t === "say") {
       if (typeof msg.text !== "string" || !msg.text) return;
@@ -570,7 +644,17 @@ async function main(argv: string[]): Promise<number> {
         markUnseen[fvid] = false; // the agent now has the latest marks
       }
       broadcastState();
-      emitEvent({ type: "say", text: msg.text, flattenedImagePath, marks: attachedMarks });
+      // ambient board state (focus + selected refs) rides the message, so the
+      // agent has "which image, with which refs" without subscribing to the
+      // ambient focus.set/ref.select events (which no longer notify).
+      emitEvent({
+        type: "say",
+        text: msg.text,
+        focus: state.focus,
+        selectedRefIds: selectedRefIds(),
+        flattenedImagePath,
+        marks: attachedMarks,
+      });
     } else if (t === "proposal.send") {
       const m = state.conversation.find((x) => x.id === msg.id);
       if (m?.proposal) {
@@ -591,11 +675,9 @@ async function main(argv: string[]): Promise<number> {
       if (!b.variants.some((x) => x.id === msg.variantId)) return;
       state.focus = { batchId: b.id, variantId: msg.variantId as string };
       broadcastState(); // marks are durable per variant — switching never clears them
-      emitEvent({ type: "focus.set", batchId: b.id, variantId: msg.variantId });
     } else if (t === "focus.clear") {
       state.focus = null;
       broadcastState();
-      emitEvent({ type: "focus.clear" });
     } else if (t === "variant.like") {
       const hit = findVariant(msg.id as string);
       if (!hit) return;
@@ -609,7 +691,26 @@ async function main(argv: string[]): Promise<number> {
         });
       }
       broadcastState();
-      emitEvent({ type: "variant.like", id: hit.variant.id, liked: hit.variant.liked });
+    } else if (t === "variant.remove") {
+      // delete a variant from the library: drop it from its batch (and drop the
+      // batch when it empties), clean its annotations/layers/history, and clear
+      // focus if it was the focused one. Ambient (library curation) — no agent
+      // event; the agent reads the new state.
+      const batchId = msg.batchId;
+      const variantId = msg.variantId;
+      if (typeof batchId !== "string" || typeof variantId !== "string") return;
+      const batch = state.batches.find((b) => b.id === batchId);
+      if (!batch?.variants.some((v) => v.id === variantId)) return;
+      batch.variants = batch.variants.filter((v) => v.id !== variantId);
+      if (batch.variants.length === 0) {
+        state.batches = state.batches.filter((b) => b.id !== batchId);
+      }
+      delete state.marksByVariant[variantId];
+      delete state.layersByVariant[variantId];
+      delete markHistory[variantId];
+      delete markUnseen[variantId];
+      if (state.focus?.variantId === variantId) state.focus = null;
+      broadcastState();
     } else if (t === "style.toggle") {
       if (typeof msg.name !== "string") return;
       const name = normStyle(msg.name);
@@ -617,7 +718,6 @@ async function main(argv: string[]): Promise<number> {
       if (!s) return;
       s.active = !s.active;
       broadcastState();
-      emitEvent({ type: "style.toggle", name: s.name, active: s.active });
     } else if (t === "style.remove") {
       if (typeof msg.name === "string") {
         const name = normStyle(msg.name);
@@ -646,85 +746,212 @@ async function main(argv: string[]): Promise<number> {
         broadcastState();
       }
     } else if (t === "style.capture") {
-      emitEvent({ type: "style.capture" });
+      // carry the focused variant so the agent knows which image to read the
+      // look from (focus.set no longer notifies).
+      emitEvent({ type: "style.capture", focus: state.focus });
     } else if (t === "pin.add") {
       if (typeof msg.key !== "string" || typeof msg.value !== "string") return;
       const ex = state.pins.find((p) => p.key === msg.key);
       if (ex) ex.value = msg.value;
       else state.pins.push({ key: msg.key, value: msg.value });
       broadcastState();
-      emitEvent({ type: "pin.add", key: msg.key, value: msg.value });
     } else if (t === "pin.remove") {
       state.pins = state.pins.filter((p) => p.key !== msg.key);
       broadcastState();
-      emitEvent({ type: "pin.remove", key: msg.key });
     } else if (t === "ref.add") {
-      const raw = msg.reference as Record<string, unknown> | undefined;
+      // add an external image as a reference = import it as a library variant +
+      // flag it refSelected (dedup → selects the existing one, no duplicate). Does
+      // NOT steal focus (a ref isn't the working image; image.import is).
+      const raw = msg.image as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
-      const hash = contentHash(raw.src);
-      // dedupe: the same image already in the drawer → no-op (no confusing dupes)
-      if (state.refs.some((r) => r.hash === hash)) return;
-      const id = typeof raw.id === "string" ? raw.id : newId("ref");
-      const name = typeof raw.name === "string" ? raw.name : "reference";
-      const ref: Reference = {
-        id,
-        src: raw.src,
-        path: saveDataUrl(sessionFilesDir, id, raw.src),
-        name,
-        selected: false,
-        hash,
-        analysis: state.analysisCache[hash] ?? "", // reuse a prior read of the same image
-      };
-      state.refs.push(ref);
+      // leave name undefined when not supplied (don't store a "reference"
+      // placeholder — a later image.import of the same pixels can fill the name)
+      const name = typeof raw.name === "string" ? raw.name : undefined;
+      const { variant } = importImageVariant(raw.src, name);
+      variant.refSelected = true;
       pushMessage({
         role: "user",
         kind: "gesture",
-        text: `📎 you attached a reference (${name})`,
-        gesture: { kind: "ref-added", targetId: id },
+        text: `📎 you pointed at a reference (${variant.name ?? "image"})`,
+        gesture: { kind: "ref-added", targetId: variant.id },
       });
       broadcastState();
-      emitEvent({ type: "ref.add", id, name });
     } else if (t === "ref.remove") {
-      state.refs = state.refs.filter((r) => r.id !== msg.id);
+      // DESELECT a variant as a ref — it stays in the library (delete = variant.remove)
+      const hit = findVariant(msg.id as string);
+      if (!hit) return;
+      hit.variant.refSelected = false;
       broadcastState();
-      emitEvent({ type: "ref.remove", id: msg.id });
     } else if (t === "ref.select") {
-      const r = state.refs.find((x) => x.id === msg.id);
-      if (!r) return;
-      r.selected = msg.selected === true;
+      const hit = findVariant(msg.id as string);
+      if (!hit) return;
+      hit.variant.refSelected = msg.selected === true;
       broadcastState();
-      emitEvent({ type: "ref.select", id: r.id, selected: r.selected });
     } else if (t === "image.import") {
-      // the user dropped their own image onto the canvas — a first-class working
-      // image (a one-variant "import" batch), focused so they can annotate/edit it
+      // the user dropped their own image onto the canvas — a working image
+      // (a one-variant "import" batch), focused so they can annotate/edit it
       const raw = msg.image as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
       const name = typeof raw.name === "string" ? raw.name : "imported image";
-      const vid = newId("v");
-      const batchId = newId("b");
-      const variant: Variant = {
-        id: vid,
-        src: raw.src,
-        path: saveDataUrl(sessionFilesDir, vid, raw.src),
-        liked: false,
-        analysis: "",
-      };
-      state.batches.push({
-        id: batchId,
-        kind: "import",
-        prompt: "",
-        tag: name,
-        variants: [variant],
-      });
-      state.focus = { batchId, variantId: vid };
+      const { batchId, variant } = importImageVariant(raw.src, name);
+      state.focus = { batchId, variantId: variant.id };
       pushMessage({
         role: "user",
         kind: "gesture",
-        text: `🖼 you brought in an image to work on (${name})`,
-        gesture: { kind: "imported", targetId: vid },
+        text: `🖼 you brought in an image to work on (${variant.name ?? name})`,
+        gesture: { kind: "imported", targetId: variant.id },
       });
       broadcastState();
-      emitEvent({ type: "image.import", batchId, variantId: vid, name });
+    } else if (t === "layer.addImage") {
+      // drop an image as a LAYER on the focused image (collage). The client
+      // supplies the fraction-space box (it knows the base image box + the dropped
+      // bitmap's aspect); default to a centered 40% box. No agent event until
+      // commit (same rule as mark.add) — the flattened composite carries it.
+      const vid = state.focus?.variantId;
+      const raw = msg as {
+        src?: unknown;
+        name?: unknown;
+        x?: unknown;
+        y?: unknown;
+        w?: unknown;
+        h?: unknown;
+      };
+      if (!vid || typeof raw.src !== "string") return;
+      const num = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+      const w = num(raw.w, 0.4);
+      const h = num(raw.h, 0.4);
+      const x = num(raw.x, (1 - w) / 2);
+      const y = num(raw.y, (1 - h) / 2);
+      const optimized = await optimizeSrc(raw.src);
+      pushHistory(vid); // after the await, so any interleaved edit is in the snapshot
+      if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+      const layer: Layer = {
+        id: newId("layer"),
+        name: typeof raw.name === "string" && raw.name ? raw.name : "Image",
+        kind: "image",
+      };
+      state.layersByVariant[vid].push(layer); // a new image layer on top
+      if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
+      const arr = state.marksByVariant[vid];
+      arr.push({
+        id: newId("img"),
+        tool: "image",
+        src: optimized,
+        x,
+        y,
+        w,
+        h,
+        layerId: layer.id,
+        zOrder: arr.length,
+      });
+      broadcastState();
+    } else if (t === "layer.add") {
+      // a blank layer on top — becomes the surface's active draw target
+      const vid = state.focus?.variantId;
+      if (!vid) return;
+      if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+      pushHistory(vid);
+      const kind: Layer["kind"] =
+        msg.kind === "sketch" || msg.kind === "image" ? msg.kind : "annotation";
+      state.layersByVariant[vid].push({
+        id: newId("layer"),
+        name: typeof msg.name === "string" && msg.name ? msg.name : "Layer",
+        kind,
+      });
+      broadcastState();
+    } else if (t === "layer.rename") {
+      const vid = state.focus?.variantId;
+      const layer = vid ? state.layersByVariant[vid]?.find((l) => l.id === msg.id) : undefined;
+      if (!layer || typeof msg.name !== "string" || !msg.name || layer.name === msg.name) return;
+      pushHistory(vid);
+      layer.name = msg.name;
+      broadcastState();
+    } else if (t === "layer.setHidden" || t === "layer.setLocked") {
+      const vid = state.focus?.variantId;
+      const layer = vid ? state.layersByVariant[vid]?.find((l) => l.id === msg.id) : undefined;
+      const key = t === "layer.setHidden" ? "hidden" : "locked";
+      const next = t === "layer.setHidden" ? msg.hidden : msg.locked;
+      if (!layer || typeof next !== "boolean" || Boolean(layer[key]) === next) return;
+      pushHistory(vid);
+      layer[key] = next;
+      broadcastState();
+    } else if (t === "layer.reorder") {
+      // absolute placement (drag-drop): move layer `id` to `toIndex` (back→front)
+      const vid = state.focus?.variantId;
+      const layers = vid ? state.layersByVariant[vid] : undefined;
+      const idx = layers?.findIndex((l) => l.id === msg.id) ?? -1;
+      if (!vid || !layers || idx < 0 || typeof msg.toIndex !== "number") return;
+      const to = Math.max(0, Math.min(layers.length - 1, Math.trunc(msg.toIndex)));
+      if (to === idx) return;
+      pushHistory(vid);
+      const [l] = layers.splice(idx, 1);
+      layers.splice(to, 0, l);
+      broadcastState();
+    } else if (t === "layer.remove") {
+      // delete a layer AND the elements it contained
+      const vid = state.focus?.variantId;
+      if (!vid || !state.layersByVariant[vid]?.some((l) => l.id === msg.id)) return;
+      pushHistory(vid);
+      state.layersByVariant[vid] = state.layersByVariant[vid].filter((l) => l.id !== msg.id);
+      if (state.marksByVariant[vid]) {
+        state.marksByVariant[vid] = state.marksByVariant[vid].filter((m) => m.layerId !== msg.id);
+      }
+      broadcastState();
+    } else if (t === "group") {
+      // wrap the selected marks in a new layer on top; reassign layerId/zOrder.
+      const vid = state.focus?.variantId;
+      const ids = msg.markIds;
+      if (!vid || !Array.isArray(ids) || !ids.length) return;
+      const marks = state.marksByVariant[vid] ?? [];
+      const idSet = new Set(ids.filter((x): x is string => typeof x === "string"));
+      const picked = marks.filter((m) => idSet.has(m.id));
+      if (!picked.length) return;
+      pushHistory(vid);
+      if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+      const layers = state.layersByVariant[vid];
+      const sourceIds = new Set(picked.map((m) => m.layerId).filter(Boolean) as string[]);
+      // homogeneous selections keep their kind (a pure-image group must stay an
+      // image layer — else ensureDrawLayer would treat it as a draw target and the
+      // panel would show a shapes icon instead of the bitmap thumbnail); a mixed
+      // selection is a generic annotation group.
+      const group: Layer = {
+        id: newId("layer"),
+        name: typeof msg.name === "string" && msg.name ? msg.name : "Group",
+        kind: picked.every((m) => m.tool === "draw")
+          ? "sketch"
+          : picked.every((m) => m.tool === "image")
+            ? "image"
+            : "annotation",
+      };
+      layers.push(group);
+      picked.forEach((m, i) => {
+        m.layerId = group.id;
+        m.zOrder = i;
+      });
+      // prune source layers the move emptied (never the new one or a still-occupied one)
+      state.layersByVariant[vid] = layers.filter(
+        (l) => l.id === group.id || !sourceIds.has(l.id) || marks.some((m) => m.layerId === l.id),
+      );
+      broadcastState();
+    } else if (t === "ungroup") {
+      // dissolve a layer → each element becomes its own group-of-one layer in place
+      const vid = state.focus?.variantId;
+      const layers = vid ? state.layersByVariant[vid] : undefined;
+      const at = layers?.findIndex((l) => l.id === msg.id) ?? -1;
+      if (!vid || !layers || at < 0) return;
+      const members = (state.marksByVariant[vid] ?? [])
+        .filter((m) => m.layerId === msg.id)
+        .sort((a, b) => (a.zOrder ?? 0) - (b.zOrder ?? 0));
+      if (members.length < 2) return; // 0/1 element is already a group-of-one
+      pushHistory(vid);
+      const fresh: Layer[] = members.map((m) => {
+        const id = newId("layer");
+        m.layerId = id;
+        m.zOrder = 0;
+        return { id, name: TOOL_LABEL[m.tool], kind: kindForTool(m.tool) };
+      });
+      layers.splice(at, 1, ...fresh); // replace the dissolved layer, preserving z-band
+      broadcastState();
     } else if (t === "mark.add") {
       const mk = msg.mark as Mark | undefined;
       const vid = state.focus?.variantId;
@@ -732,6 +959,10 @@ async function main(argv: string[]): Promise<number> {
       pushHistory(vid);
       if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
       const arr = state.marksByVariant[vid];
+      // container model: honor a valid client-chosen active layer, else default
+      const wanted = typeof mk.layerId === "string" ? mk.layerId : undefined;
+      const onLayer = wanted && state.layersByVariant[vid]?.some((l) => l.id === wanted);
+      mk.layerId = onLayer ? (wanted as string) : ensureDrawLayer(vid);
       mk.zOrder = arr.length; // server is authoritative for z-order
       arr.push(mk);
       broadcastState(); // incremental — no agent event until commit
@@ -826,9 +1057,11 @@ async function main(argv: string[]): Promise<number> {
       const from = t === "undo" ? h.undo : h.redo;
       const to = t === "undo" ? h.redo : h.undo;
       if (!from.length) return;
-      to.push(structuredClone(state.marksByVariant[vid] ?? []));
-      state.marksByVariant[vid] = from.pop() as Mark[];
-      markUnseen[vid] = true; // the marks changed → agent's view is stale again
+      to.push(snapFor(vid));
+      const prev = from.pop() as MarkSnap;
+      state.marksByVariant[vid] = prev.marks;
+      state.layersByVariant[vid] = prev.layers;
+      markUnseen[vid] = true; // the marks/layers changed → agent's view is stale again
       broadcastState();
     } else if (t === "marks.commit") {
       if (
@@ -863,18 +1096,17 @@ async function main(argv: string[]): Promise<number> {
         batchId: msg.batchId,
         variantId: msg.variantId,
         marks,
+        selectedRefIds: selectedRefIds(),
         flattenedImagePath,
       });
     } else if (t === "aspect.set") {
       if (typeof msg.aspect !== "string") return;
       state.aspect = msg.aspect;
       broadcastState();
-      emitEvent({ type: "aspect.set", aspect: msg.aspect });
     } else if (t === "size.set") {
       if (msg.size !== "1K" && msg.size !== "2K") return;
       state.size = msg.size;
       broadcastState();
-      emitEvent({ type: "size.set", size: msg.size });
     } else if (t === "submit") {
       broadcast({ type: "submit" });
       emitEvent({ type: "submit" });
@@ -971,7 +1203,7 @@ async function main(argv: string[]): Promise<number> {
             );
             return;
           }
-          handleBrowserMsg(msg);
+          void handleBrowserMsg(msg);
         },
         close(ws) {
           sockets.delete(ws);
@@ -1003,16 +1235,51 @@ async function main(argv: string[]): Promise<number> {
   // are stale (old tmpdir, cleaned). Re-materialize files so the agent's vision
   // (Read by path) works again.
   if (restored) {
+    // refs-as-assets migration: a legacy `refs[]` array → an import-kind batch of
+    // variants, REUSING each ref id as the variant id (so re-restore is idempotent
+    // and any historical selectedRefIds still resolve). Runs BEFORE materialization
+    // so the new variants get their on-disk paths.
+    type LegacyRef = {
+      id: string;
+      src: string;
+      path?: string;
+      name?: string;
+      selected?: boolean;
+      hash?: string;
+      analysis?: string;
+    };
+    const legacyRefs = (state as { refs?: LegacyRef[] }).refs;
+    if (Array.isArray(legacyRefs) && legacyRefs.length) {
+      state.batches.push({
+        id: newId("b"),
+        kind: "import",
+        prompt: "",
+        tag: "references",
+        variants: legacyRefs.map((r) => {
+          const hash = r.hash ?? (r.src ? contentHash(r.src) : undefined);
+          // seed the hash→analysis cache so deleting + re-importing the same pixels
+          // still reuses the agent's prior read (the old delete/re-add invariant)
+          if (hash && r.analysis) state.analysisCache[hash] = r.analysis;
+          return {
+            id: r.id, // reuse the ref id as the variant id
+            src: r.src,
+            path: r.path ?? "",
+            liked: false,
+            analysis: r.analysis ?? "",
+            name: r.name,
+            refSelected: r.selected === true,
+            hash,
+          };
+        }),
+      });
+    }
+    delete (state as { refs?: unknown }).refs;
+
     for (const b of state.batches) {
       for (const v2 of b.variants) {
         if (v2.src) v2.path = saveDataUrl(sessionFilesDir, v2.id, v2.src) || v2.path;
         if (v2.analysis === undefined) v2.analysis = ""; // backfill pre-analysis snapshots
       }
-    }
-    for (const r of state.refs) {
-      if (r.src) r.path = saveDataUrl(sessionFilesDir, r.id, r.src) || r.path;
-      if (!r.hash && r.src) r.hash = contentHash(r.src); // backfill for pre-hash snapshots
-      if (r.analysis === undefined) r.analysis = state.analysisCache[r.hash] ?? "";
     }
     // Migrate pre-durability snapshots: a legacy global `marks` array → the
     // focused variant's bucket. Then normalize zOrder within each bucket.
@@ -1022,10 +1289,22 @@ async function main(argv: string[]): Promise<number> {
       delete (state as { marks?: Mark[] }).marks;
     }
     state.marksByVariant ??= {};
+    state.layersByVariant ??= {};
     for (const vid of Object.keys(state.marksByVariant)) {
-      state.marksByVariant[vid] = state.marksByVariant[vid].map((m, i) =>
-        m.zOrder === undefined ? { ...m, zOrder: i } : m,
-      );
+      const marks = state.marksByVariant[vid];
+      // Backfill the container model: wrap pre-layer marks into one default
+      // "Annotations" layer, then stamp layerId + normalize zOrder by position.
+      let layers = state.layersByVariant[vid];
+      if (!layers?.length && marks.length) {
+        layers = [{ id: newId("layer"), name: "Annotations", kind: "annotation" }];
+        state.layersByVariant[vid] = layers;
+      }
+      const defaultLayerId = layers?.[layers.length - 1]?.id;
+      state.marksByVariant[vid] = marks.map((m, i) => ({
+        ...m,
+        zOrder: m.zOrder === undefined ? i : m.zOrder,
+        layerId: m.layerId ?? defaultLayerId,
+      }));
     }
     saveSnapshot();
   }

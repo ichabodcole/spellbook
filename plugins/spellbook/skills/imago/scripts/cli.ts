@@ -103,7 +103,7 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value` or boolean `--flag`.
-function parseArgs(args: string[]): {
+export function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
@@ -112,7 +112,17 @@ function parseArgs(args: string[]): {
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a.startsWith("--")) {
-      const key = a.slice(2);
+      const body = a.slice(2);
+      // `--key=value` (equals form) — split on the FIRST `=` so the value can
+      // itself contain `=`. An empty value (`--key=`) is still a string ("").
+      const eq = body.indexOf("=");
+      if (eq >= 0) {
+        flags[body.slice(0, eq)] = body.slice(eq + 1);
+        continue;
+      }
+      // `--key value` (space form) — consume the next arg as the value unless it's
+      // another flag, in which case `--key` is a boolean.
+      const key = body;
       const next = args[i + 1];
       if (next !== undefined && !next.startsWith("--")) {
         flags[key] = next;
@@ -191,6 +201,13 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
   let since = sinceArg;
   let delay = 250;
   let stopped = false;
+  // Pin the session: resolve once, then RECONNECT to the SAME session on every
+  // retry — never silently hop to a new "most recent" daemon (that hijack ended a
+  // watcher the moment a second daemon spawned). `session` may be undefined; it's
+  // pinned to the first resolved id below. Once pinned + grounded, if that session
+  // disappears we EXIT (end-of-session), rather than retry forever or re-resolve.
+  let boundId = session;
+  let grounded = false;
   const stop = () => {
     stopped = true;
     process.exit(0);
@@ -199,12 +216,22 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
   process.on("SIGTERM", stop);
 
   while (!stopped) {
-    const s = readSession(session);
+    const s = readSession(boundId);
     if (!s) {
+      if (grounded) process.exit(0); // our pinned session went away → done
       process.stderr.write("# no session yet, retrying…\n");
       await sleep(delay);
       delay = Math.min(delay * 2, 5000);
       continue;
+    }
+    if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+    if (!grounded) {
+      grounded = true;
+      // grounding line — parseable + visible in a Monitor, names the binding so a
+      // wrong session/port is obvious instead of silent.
+      process.stdout.write(
+        `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+      );
     }
     let res: Response;
     try {
@@ -337,8 +364,8 @@ const HELP = `imago — a grounded image conversation.
   batch  [--kind generate|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] [--models m1,m2,..] <src> ...
                                      add a produced batch; each src = http url, data: url, or file path; --models labels each variant
   focus  <batchId> <variantId>       put an image on the canvas
-  select <refId> [off]               point at a reference (highlights it for the user)
-  analyze <ref-or-variant-id> <text...>  write your read onto a reference OR an image (durable metadata)
+  select <variantId> [off]           point a variant at the next gen as a reference (highlights it for the user)
+  analyze <variantId> <text...>      write your read onto an image (durable metadata)
   style  <name...> [--description ..] [--image <path|url>]   define a captured style (look in words + canonical image)
   prompt --label "<name>" --text "<the prompt>"             save a reusable quick-prompt to the library
   status on [text...] | status off   show/hide the "imago working" spinner
@@ -419,15 +446,15 @@ async function main(argv: string[]): Promise<number> {
       await postCmd(session, { type: "focus", batchId: pos[0], variantId: pos[1] });
       break;
     case "select":
-      if (!pos.length) die("usage: select <refId> [off]");
+      if (!pos.length) die("usage: select <variantId> [off]");
       await postCmd(session, { type: "ref.select", id: pos[0], selected: pos[1] !== "off" });
       break;
     case "analyze": {
-      if (pos.length < 2) die("usage: analyze <ref-or-variant-id> <text...>");
+      if (pos.length < 2) die("usage: analyze <image-id> <text...>");
       const [aid, ...words] = pos;
-      // route by id prefix: variants are "v-…", references "ref-…"
-      const type = aid.startsWith("v-") ? "variant.analyze" : "ref.analyze";
-      await postCmd(session, { type, id: aid, text: words.join(" ") });
+      // refs are variants now → one verb writes a read onto any image (incl.
+      // migrated refs that kept their old "ref-…" id)
+      await postCmd(session, { type: "variant.analyze", id: aid, text: words.join(" ") });
       break;
     }
     case "style": {

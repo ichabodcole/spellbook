@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { wrapLine } from "../surface/components/annotations/flatten";
+import { wrapLine } from "../surface/components/annotations/svgMark";
 
 test("wrapLine: short line passes through untouched", () => {
   expect(wrapLine("hello world", 20)).toEqual(["hello world"]);

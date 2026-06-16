@@ -51,8 +51,9 @@ export function Conversation({
           ?.variants.find((v) => v.id === focus.variantId)
       : undefined;
     const focusMarks = focus ? (state.marksByVariant[focus.variantId] ?? []) : [];
+    const focusLayers = focus ? (state.layersByVariant[focus.variantId] ?? []) : [];
     if (variant?.src && focusMarks.length > 0 && state.marksUnseen) {
-      const png = await flattenMarks(variant.src, focusMarks);
+      const png = await flattenMarks(variant.src, focusMarks, undefined, undefined, focusLayers);
       send({ type: "say", text: t, flattenedSrc: png || undefined });
     } else {
       send({ type: "say", text: t });

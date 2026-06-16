@@ -3,6 +3,7 @@ import {
   Copy,
   ImagePlus,
   Info,
+  Layers,
   Maximize,
   MessagesSquare,
   Minus,
@@ -14,8 +15,14 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { variantLabel } from "../state/derive";
-import { importFiles, processFiles } from "../state/fileIntake";
+import { focusedVariant, variantLabel } from "../state/derive";
+import {
+  addImageLayerFiles,
+  addImageLayerFromSrc,
+  importFiles,
+  processFiles,
+  readImagoDrag,
+} from "../state/fileIntake";
 import {
   ASPECTS,
   type ClientToServer,
@@ -29,6 +36,7 @@ import { AnnotationToolbar } from "./annotations/AnnotationToolbar";
 import { flattenMarks } from "./annotations/flatten";
 import { DEFAULT_DRAW_STYLE, type DrawStyle } from "./annotations/style";
 import { TOOL_REGISTRY } from "./annotations/tools/registry";
+import { LayersPanel } from "./LayersPanel";
 
 function frameDims(aspect: string): { w: number; h: number } {
   const [w, h] = (aspect.split(":").map(Number) as [number, number]) ?? [1, 1];
@@ -54,11 +62,14 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   const [panning, setPanning] = useState(false);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null); // image natural size
   const [stageSize, setStageSize] = useState({ w: 0, h: 0 });
-  const [showDetails, setShowDetails] = useState(false);
+  const [asidePanel, setAsidePanel] = useState<"details" | "layers" | null>(null); // right-of-stage inspector tab (null = closed)
   const [copied, setCopied] = useState<"prompt" | "analysis" | null>(null);
-  const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas
+  const [importDragging, setImportDragging] = useState(false); // image dragged over the canvas margin
+  const [layerDragging, setLayerDragging] = useState(false); // image dragged over the focused image box
   const [drawStyle, setDrawStyle] = useState<DrawStyle>(DEFAULT_DRAW_STYLE); // active color/width for new marks
-  const [selectedMarkId, setSelectedMarkId] = useState<string | null>(null); // mirrored from SelectionOverlay
+  const [selectedMarkIds, setSelectedMarkIds] = useState<string[]>([]); // controlled selection SET (source of truth, shared by canvas + layers panel)
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null); // explicit "draw into this layer" pick (null = use the fallback)
+  const pendingNewLayerRef = useRef<Set<string> | null>(null); // layer ids present when "+ New layer" was clicked → activate the fresh one on broadcast
   const stageRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const dragRef = useRef<{
@@ -77,6 +88,20 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   // Marks are durable PER variant now (server keys them by the focused variant);
   // read the focused image's bucket. Client mark.* sends are unchanged.
   const marks = focus ? (state.marksByVariant[focus.variantId] ?? []) : [];
+  // Container metadata for the focused variant (back→front): drives effective z,
+  // the hidden-layer handoff filter, and which layer new marks drop into.
+  const layers = focus ? (state.layersByVariant[focus.variantId] ?? []) : [];
+
+  // EFFECTIVE active layer = the explicit pick if it still exists and isn't an image
+  // layer, else the topmost (front-most) non-image layer — mirrors the server's
+  // ensureDrawLayer fallback so drawing never lands "inside" an image layer. New
+  // marks are stamped with this id in AnnotationLayer.commit; the server honors it
+  // (and re-falls-back if absent/invalid), so this is safe even mid-draw.
+  const activeLayer =
+    (activeLayerId && layers.find((l) => l.id === activeLayerId && l.kind !== "image")) ||
+    [...layers].reverse().find((l) => l.kind !== "image") ||
+    undefined;
+  const effectiveActiveLayerId = activeLayer?.id ?? null;
 
   // The % that fits the image fully in the stage (may be <100 for a big image,
   // >100 for a tiny one). Zoom is now "% of actual image size".
@@ -95,9 +120,17 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   useLayoutEffect(() => {
     setPan({ x: 0, y: 0 });
     fitPendingRef.current = true; // default view for a newly-focused image = fit-to-window
-    // NB: showDetails intentionally NOT reset — the details sidebar persists open
-    // across variant selection. Annotation drafts reset inside AnnotationLayer
-    // (keyed on the focused variant), so no draft state lives here anymore.
+    // Selection is now lifted here (controlled), so the per-variant SelectionOverlay
+    // remount no longer clears it — drop it explicitly, else stale ids point at
+    // marks on the previous image.
+    setSelectedMarkIds([]);
+    // active layer is per-variant too; drop the pick so the new image falls back to
+    // its own topmost non-image layer (and cancel any in-flight new-layer activation).
+    setActiveLayerId(null);
+    pendingNewLayerRef.current = null;
+    // NB: asidePanel intentionally NOT reset — the inspector (Details/Layers) stays
+    // open across variant selection; its content swaps. Annotation drafts reset
+    // inside AnnotationLayer (keyed on the focused variant), so none live here.
     const el = imgRef.current;
     setNat(el?.complete && el.naturalWidth ? { w: el.naturalWidth, h: el.naturalHeight } : null);
   }, [variantId]);
@@ -149,14 +182,30 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     return () => document.removeEventListener("keydown", onKey);
   }, [focus, send]);
 
+  // "+ New layer" creates a layer on top server-side; once the broadcast brings it
+  // back, make it active. We diff against the ids present at click time so we pick
+  // exactly the fresh one (and never the pre-existing top).
+  useEffect(() => {
+    const prior = pendingNewLayerRef.current;
+    if (!prior) return;
+    const fresh = layers.find((l) => !prior.has(l.id));
+    if (fresh) {
+      setActiveLayerId(fresh.id);
+      pendingNewLayerRef.current = null;
+    }
+  }, [layers]);
+
   // Annotation gestures + tool drafts now live in AnnotationLayer (it owns the
   // image-box pointer dispatch + per-tool plugins); Canvas keeps the viewport,
   // the reference drawer, and the details sidebar.
 
-  // The style row drives the SELECTED mark when one is selected (only meaningful
-  // in the select tool), else the active draw style for new marks.
+  // The style row drives the SELECTED mark only when exactly ONE is selected (in the
+  // select tool) — multi-select is for grouping, not multi-style; else the active
+  // draw style for new marks.
   const selectedMark =
-    tool === "select" && selectedMarkId ? marks.find((m) => m.id === selectedMarkId) : undefined;
+    tool === "select" && selectedMarkIds.length === 1
+      ? marks.find((m) => m.id === selectedMarkIds[0])
+      : undefined;
   const activeColor = selectedMark?.color ?? drawStyle.color;
   const activeWidth = selectedMark?.width ?? drawStyle.width;
   // fontSize is pin-only; reflects the selected pin's size, else the draw style
@@ -176,12 +225,21 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     else setDrawStyle((s) => ({ ...s, fontSize: px }));
   }
 
+  // Add a fresh annotation layer (server puts it on top); arm the activation effect
+  // so the new layer becomes the active draw target once the broadcast lands.
+  function newLayer() {
+    pendingNewLayerRef.current = new Set(layers.map((l) => l.id));
+    send({ type: "layer.add", kind: "annotation" });
+  }
+
   async function commitMarks() {
     if (!focus || marks.length === 0) return;
-    // count every shape type generically (group by tool), in MARK_TOOLS order
+    // count every ANNOTATION shape type generically (group by tool), in MARK_TOOLS
+    // order. image layers are content, not annotation marks → excluded from the
+    // "marked: …" summary (they ride along in the flattened composite regardless).
     const counts = new Map<string, number>();
     for (const m of marks) counts.set(m.tool, (counts.get(m.tool) ?? 0) + 1);
-    const parts = MARK_TOOLS.filter((t) => counts.has(t)).map((t) => {
+    const parts = MARK_TOOLS.filter((t) => t !== "image" && counts.has(t)).map((t) => {
       const n = counts.get(t) ?? 0;
       const word = t === "draw" ? "sketch" : t; // "draw" reads as "sketch" in the summary
       const plural = word === "sketch" ? "sketches" : `${word}s`;
@@ -189,10 +247,14 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     });
     // Visual handoff: flatten the focused image with marks burned in at natural
     // res (best-effort — "" on failure → omit, agent falls back to the raw ref).
-    const png = variant?.src && nat ? await flattenMarks(variant.src, marks, nat.w, nat.h) : "";
+    const png =
+      variant?.src && nat ? await flattenMarks(variant.src, marks, nat.w, nat.h, layers) : "";
+    // image-only sets (a dropped collage with no annotation marks) have no parts →
+    // describe the composite instead of an empty "marked: ".
+    const text = parts.length ? `marked: ${parts.join(", ")}` : "composited image layers";
     send({
       type: "marks.commit",
-      text: `marked: ${parts.join(", ")}`,
+      text,
       batchId: focus.batchId,
       variantId: focus.variantId,
       flattenedSrc: png || undefined,
@@ -252,6 +314,20 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     });
   }
 
+  // Safety net: a drag that ends anywhere — a real drop OR a cancel (e.g. released
+  // back over the sidebar) — clears the canvas drop-highlight, so it can't get
+  // stuck after a cancelled drop. `dragend` fires on the source and bubbles to
+  // document; clearing flags that are only set during a canvas drag is a no-op
+  // otherwise.
+  useEffect(() => {
+    const clear = () => {
+      setImportDragging(false);
+      setLayerDragging(false);
+    };
+    document.addEventListener("dragend", clear);
+    return () => document.removeEventListener("dragend", clear);
+  }, []);
+
   // ── canvas drop = import a durable working image (vs. the drawer = reference).
   // Separate from the pan/zoom pointer handlers (different event types).
   function onCanvasDragOver(e: React.DragEvent<HTMLElement>) {
@@ -264,7 +340,37 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
   function onCanvasDrop(e: React.DragEvent<HTMLElement>) {
     e.preventDefault();
     setImportDragging(false);
-    importFiles(e.dataTransfer.files, send);
+    if (e.dataTransfer.files.length) {
+      importFiles(e.dataTransfer.files, send);
+      return;
+    }
+    // internal drag from the sidebar → import it as a working image (replace)
+    const dragged = readImagoDrag(e.dataTransfer);
+    if (dragged) send({ type: "image.import", image: { src: dragged.src, name: dragged.name } });
+  }
+
+  // Context-sensitive drop: a file dropped ON the focused image box adds it as a
+  // collage LAYER (vs. the margin/blank frame, which REPLACES via image.import).
+  // stopPropagation keeps the stage's import handlers from also firing.
+  function onBoxDragOver(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!layerDragging) setLayerDragging(true);
+  }
+  function onBoxDragLeave(e: React.DragEvent<HTMLElement>) {
+    if (e.currentTarget === e.target) setLayerDragging(false);
+  }
+  function onBoxDrop(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setLayerDragging(false);
+    if (e.dataTransfer.files.length) {
+      if (nat) addImageLayerFiles(e.dataTransfer.files, send, nat.w, nat.h);
+      return;
+    }
+    // internal drag from the sidebar → collage it onto the focused image
+    const dragged = readImagoDrag(e.dataTransfer);
+    if (dragged && variant?.src) addImageLayerFromSrc(dragged.src, dragged.name, variant.src, send);
   }
 
   // Drag highlight shown on the canvas while an image is dragged over it —
@@ -274,6 +380,16 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
     <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center rounded-lg border-2 border-dashed border-accent bg-accent/10">
       <span className="text-accent-ink text-sm font-medium bg-surface/85 px-3 py-1.5 rounded-md border border-accent/40 shadow">
         drop to import as a working image
+      </span>
+    </div>
+  ) : null;
+
+  // Drop hint shown over the focused image box itself — this is a collage LAYER
+  // (composite onto the image), distinct from the margin's "import" (replace).
+  const layerHint = layerDragging ? (
+    <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center border-2 border-dashed border-accent bg-accent/15">
+      <span className="text-accent-ink text-sm font-medium bg-surface/85 px-3 py-1.5 rounded-md border border-accent/40 shadow">
+        drop to add as a layer
       </span>
     </div>
   ) : null;
@@ -386,8 +502,13 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
           {importHint}
           {/* The image box is sized to the image's real proportions (no forced
             square) and translated by pan; the marks overlay lives INSIDE it, so
-            pins/arrows stay glued to the image as it pans & zooms. */}
+            pins/arrows stay glued to the image as it pans & zooms. A file dropped
+            HERE adds a collage layer (vs. the margin → import). */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: image drop = add as layer */}
           <div
+            onDragOver={onBoxDragOver}
+            onDragLeave={onBoxDragLeave}
+            onDrop={onBoxDrop}
             className="relative shrink-0 select-none rounded-lg shadow-2xl ring-1 ring-edge overflow-hidden"
             style={{
               width: dispW || undefined,
@@ -419,12 +540,18 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             <AnnotationLayer
               tool={tool}
               marks={marks}
+              layers={layers}
               resetKey={variantId ?? ""}
               send={send}
               drawStyle={drawStyle}
               scale={scale}
-              onSelectionChange={setSelectedMarkId}
+              natW={nat?.w ?? 0}
+              natH={nat?.h ?? 0}
+              selectedIds={selectedMarkIds}
+              onSelectedIdsChange={setSelectedMarkIds}
+              activeLayerId={effectiveActiveLayerId}
             />
+            {layerHint}
           </div>
 
           {/* annotation toolbar — select pseudo-tool + registered tools + clear + style */}
@@ -505,14 +632,26 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             <button
               type="button"
               title="Image details"
-              onClick={() => setShowDetails((v) => !v)}
+              onClick={() => setAsidePanel((p) => (p === "details" ? null : "details"))}
               className={`w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${
-                showDetails
+                asidePanel === "details"
                   ? "bg-accent/25 border-accent/60 text-accent-ink"
                   : "bg-black/60 border-edge text-muted hover:text-ink hover:border-edge-hover"
               }`}
             >
               <Info className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              title="Layers"
+              onClick={() => setAsidePanel((p) => (p === "layers" ? null : "layers"))}
+              className={`w-7 h-7 rounded-full flex items-center justify-center border transition-colors ${
+                asidePanel === "layers"
+                  ? "bg-accent/25 border-accent/60 text-accent-ink"
+                  : "bg-black/60 border-edge text-muted hover:text-ink hover:border-edge-hover"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -544,84 +683,75 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
             its own overflow-y-auto scroll never reaches the stage's wheel/pan
             handlers. Persists open across variant selection (content swaps).
             Structured as stacked sections so more can be added later. */}
-        {showDetails && (
+        {asidePanel && (
           <aside className="w-[300px] shrink-0 border-l border-divider bg-surface flex flex-col overflow-y-auto">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-divider">
-              <span className="section-title">Details</span>
-              <span className={`ml-auto ${batch.kind === "edit" ? "badge-accent" : "badge-muted"}`}>
-                {batch.kind}
-              </span>
+            <div className="flex items-center gap-1 px-3 py-2 border-b border-divider">
               <button
                 type="button"
-                title="Close details"
-                onClick={() => setShowDetails(false)}
-                className="shrink-0 text-faint hover:text-ink"
+                onClick={() => setAsidePanel("details")}
+                className={`px-2 py-0.5 rounded font-medium ${
+                  asidePanel === "details" ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"
+                }`}
+              >
+                Details
+              </button>
+              <button
+                type="button"
+                onClick={() => setAsidePanel("layers")}
+                className={`px-2 py-0.5 rounded font-medium ${
+                  asidePanel === "layers" ? "bg-surface-3 text-ink" : "text-faint hover:text-ink"
+                }`}
+              >
+                Layers
+              </button>
+              {asidePanel === "details" && (
+                <span
+                  className={`ml-auto ${batch.kind === "edit" ? "badge-accent" : "badge-muted"}`}
+                >
+                  {batch.kind}
+                </span>
+              )}
+              <button
+                type="button"
+                title="Close"
+                onClick={() => setAsidePanel(null)}
+                className={`shrink-0 text-faint hover:text-ink ${asidePanel === "layers" ? "ml-auto" : ""}`}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 flex flex-col gap-4 text-xs">
-              <span className="text-sm font-semibold text-ink-strong">
-                Batch {batchIndex + 1} · variant {variantLabel(vIndex)}
-              </span>
+            {asidePanel === "layers" && (
+              <LayersPanel
+                layers={layers}
+                marks={marks}
+                send={send}
+                variantSrc={variant.src}
+                selectedMarkIds={selectedMarkIds}
+                onSelectionChange={setSelectedMarkIds}
+                activeLayerId={effectiveActiveLayerId}
+                onSetActive={setActiveLayerId}
+                onNewLayer={newLayer}
+              />
+            )}
 
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-faint uppercase tracking-wider">prompt</span>
-                  <button
-                    type="button"
-                    title="Copy prompt"
-                    onClick={() => copyText(batch.prompt, "prompt")}
-                    disabled={!batch.prompt}
-                    className="flex items-center gap-1 text-faint hover:text-ink disabled:opacity-40 disabled:hover:text-faint"
-                  >
-                    {copied === "prompt" ? (
-                      <>
-                        <Check className="w-3 h-3" /> copied
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" /> copy
-                      </>
-                    )}
-                  </button>
-                </div>
-                <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                  {batch.prompt || "—"}
-                </p>
-              </div>
+            {asidePanel === "details" && (
+              <div className="p-4 flex flex-col gap-4 text-xs">
+                <span className="text-sm font-semibold text-ink-strong">
+                  Batch {batchIndex + 1} · variant {variantLabel(vIndex)}
+                </span>
 
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-                <dt className="text-faint">model</dt>
-                <dd className="text-ink break-words [overflow-wrap:anywhere]">
-                  {variant.model || "—"}
-                </dd>
-                <dt className="text-faint">seed</dt>
-                <dd className="text-ink tabular-nums">{variant.seed ?? "—"}</dd>
-                <dt className="text-faint">kind</dt>
-                <dd className="text-ink">{batch.kind}</dd>
-                {batch.kind === "edit" && (
-                  <>
-                    <dt className="text-faint">source</dt>
-                    <dd className="text-ink">{sourceLabel}</dd>
-                  </>
-                )}
-              </dl>
-
-              {/* analysis — the agent's living read of THIS image (durable,
-                  distinct from the prompt). Empty until the agent analyzes it. */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-faint uppercase tracking-wider">analysis</span>
-                  {variant.analysis && (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-faint uppercase tracking-wider">prompt</span>
                     <button
                       type="button"
-                      title="Copy analysis"
-                      onClick={() => copyText(variant.analysis, "analysis")}
-                      className="flex items-center gap-1 text-faint hover:text-ink"
+                      title="Copy prompt"
+                      onClick={() => copyText(batch.prompt, "prompt")}
+                      disabled={!batch.prompt}
+                      className="flex items-center gap-1 text-faint hover:text-ink disabled:opacity-40 disabled:hover:text-faint"
                     >
-                      {copied === "analysis" ? (
+                      {copied === "prompt" ? (
                         <>
                           <Check className="w-3 h-3" /> copied
                         </>
@@ -631,17 +761,63 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
                         </>
                       )}
                     </button>
+                  </div>
+                  <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                    {batch.prompt || "—"}
+                  </p>
+                </div>
+
+                <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                  <dt className="text-faint">model</dt>
+                  <dd className="text-ink break-words [overflow-wrap:anywhere]">
+                    {variant.model || "—"}
+                  </dd>
+                  <dt className="text-faint">seed</dt>
+                  <dd className="text-ink tabular-nums">{variant.seed ?? "—"}</dd>
+                  <dt className="text-faint">kind</dt>
+                  <dd className="text-ink">{batch.kind}</dd>
+                  {batch.kind === "edit" && (
+                    <>
+                      <dt className="text-faint">source</dt>
+                      <dd className="text-ink">{sourceLabel}</dd>
+                    </>
+                  )}
+                </dl>
+
+                {/* analysis — the agent's living read of THIS image (durable,
+                  distinct from the prompt). Empty until the agent analyzes it. */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-faint uppercase tracking-wider">analysis</span>
+                    {variant.analysis && (
+                      <button
+                        type="button"
+                        title="Copy analysis"
+                        onClick={() => copyText(variant.analysis, "analysis")}
+                        className="flex items-center gap-1 text-faint hover:text-ink"
+                      >
+                        {copied === "analysis" ? (
+                          <>
+                            <Check className="w-3 h-3" /> copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" /> copy
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  {variant.analysis ? (
+                    <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                      {variant.analysis}
+                    </p>
+                  ) : (
+                    <p className="text-faint italic">— not analyzed yet</p>
                   )}
                 </div>
-                {variant.analysis ? (
-                  <p className="text-muted leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                    {variant.analysis}
-                  </p>
-                ) : (
-                  <p className="text-faint italic">— not analyzed yet</p>
-                )}
               </div>
-            </div>
+            )}
           </aside>
         )}
       </div>
@@ -651,8 +827,9 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
 }
 
 // The reference drawer — a full-width strip pinned to the bottom of the canvas
-// pane. A forgiving drop target (and click-to-add) that stages reference images
-// into shared state.refs; both this and the composer just emit ref.add/ref.remove.
+// pane. The "selected for the next generation" tray: it shows the variants flagged
+// refSelected; a forgiving drop target (and click-to-add) imports + selects new
+// references via ref.add. ✕ deselects (ref.remove); the image stays in the Library.
 function ReferenceDrawer({
   state,
   send,
@@ -663,8 +840,14 @@ function ReferenceDrawer({
   const [dragging, setDragging] = useState(false);
   const [activeTab, setActiveTab] = useState<"references" | "styles">("references");
   const fileInput = useRef<HTMLInputElement>(null);
-  const selectedCount = state.refs.filter((r) => r.selected).length;
+  // refs are now Variants flagged refSelected — the drawer is the "selected" tray
+  // (browse all images in the Library; Phase-2 adds a References filter facet).
+  const refVariants = state.batches.flatMap((b) => b.variants).filter((v) => v.refSelected);
+  const selectedCount = refVariants.length;
   const activeStyleCount = state.styles.filter((s) => s.active).length;
+  // the focused image a reference can be composited onto (undefined on the blank
+  // frame → the "add as layer" affordance is hidden).
+  const focusedSrc = focusedVariant(state)?.src;
   // The analysis popover, anchored to the badge that opened it (fixed-positioned
   // so it escapes the drawer's overflow clipping). Keyed by ref id so it closes
   // itself if that ref is removed while open.
@@ -673,7 +856,7 @@ function ReferenceDrawer({
     rect: DOMRect;
   } | null>(null);
   const analysisRef = analysisAnchor
-    ? state.refs.find((r) => r.id === analysisAnchor.id)
+    ? refVariants.find((v) => v.id === analysisAnchor.id)
     : undefined;
 
   return (
@@ -694,7 +877,13 @@ function ReferenceDrawer({
         if (activeTab !== "references") return;
         e.preventDefault();
         setDragging(false);
-        processFiles(e.dataTransfer.files, send);
+        if (e.dataTransfer.files.length) {
+          processFiles(e.dataTransfer.files, send); // OS files → import + select as refs
+          return;
+        }
+        // internal drag from the sidebar Library → flag that variant as a ref
+        const dragged = readImagoDrag(e.dataTransfer);
+        if (dragged?.variantId) send({ type: "ref.select", id: dragged.variantId, selected: true });
       }}
     >
       {/* tabs — references + styles are both selectable, image-backed context the
@@ -725,7 +914,7 @@ function ReferenceDrawer({
       </div>
 
       {activeTab === "references" &&
-        (state.refs.length === 0 ? (
+        (refVariants.length === 0 ? (
           <button
             type="button"
             onClick={() => fileInput.current?.click()}
@@ -741,49 +930,28 @@ function ReferenceDrawer({
               : "drag reference images here, or click to add"}
           </button>
         ) : (
+          // the "selected for the next generation" tray — every tile here is a
+          // refSelected variant; ✕ deselects (the image stays in your Library).
           <div className="flex flex-col gap-1.5">
-            {/* px/py give the outset selection ring room on all four sides —
-              overflow-x-auto forces vertical clipping, so an exact-height row
-              would cut the ring at top & bottom. */}
             <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
-              {state.refs.map((r) => (
+              {refVariants.map((v) => (
                 <div
-                  key={r.id}
-                  className={`relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 transition-shadow ${
-                    r.selected ? "ring-2 ring-accent" : "ring-1 ring-edge"
-                  }`}
+                  key={v.id}
+                  className="relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
                 >
-                  <img src={r.src} alt={r.name} className="w-full h-full object-cover" />
-                  {/* body click toggles selection for the next generation */}
-                  <button
-                    type="button"
-                    title={
-                      r.selected
-                        ? "Selected — click to deselect"
-                        : "Click to select for the next generation"
-                    }
-                    onClick={() =>
-                      send({
-                        type: "ref.select",
-                        id: r.id,
-                        selected: !r.selected,
-                      })
-                    }
-                    className="absolute inset-0 cursor-pointer"
+                  <img
+                    src={v.src}
+                    alt={v.name ?? "reference"}
+                    className="w-full h-full object-cover"
                   />
-                  {r.selected && (
-                    <span className="absolute top-0 left-0 bg-accent text-accent-fg rounded-br p-0.5 pointer-events-none">
-                      <Check className="w-3 h-3" />
-                    </span>
-                  )}
-                  {r.analysis && (
+                  {v.analysis && (
                     <button
                       type="button"
-                      title="View the agent's read of this reference"
+                      title="View the agent's read of this image"
                       onClick={(e) => {
                         e.stopPropagation();
                         setAnalysisAnchor({
-                          id: r.id,
+                          id: v.id,
                           rect: e.currentTarget.getBoundingClientRect(),
                         });
                       }}
@@ -794,15 +962,29 @@ function ReferenceDrawer({
                   )}
                   <button
                     type="button"
-                    title="Remove reference"
+                    title="Remove from references (stays in your Library)"
                     onClick={(e) => {
                       e.stopPropagation();
-                      send({ type: "ref.remove", id: r.id });
+                      send({ type: "ref.remove", id: v.id });
                     }}
                     className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
                   >
                     <X className="w-3 h-3" />
                   </button>
+                  {/* composite this reference onto the focused image as a layer */}
+                  {focusedSrc && (
+                    <button
+                      type="button"
+                      title="Add as a layer on the focused image"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addImageLayerFromSrc(v.src, v.name ?? "image", focusedSrc, send);
+                      }}
+                      className="absolute bottom-0 right-0 bg-black/70 text-white rounded-tl p-0.5 hover:text-accent-ink"
+                    >
+                      <Layers className="w-3 h-3" />
+                    </button>
+                  )}
                 </div>
               ))}
               <button
@@ -917,7 +1099,7 @@ function ReferenceDrawer({
           >
             <div className="flex items-start gap-2 mb-1.5">
               <span className="text-[11px] font-semibold text-ink-strong truncate">
-                {analysisRef.name}
+                {analysisRef.name ?? "reference"}
               </span>
               <button
                 type="button"

@@ -9,6 +9,9 @@
 
 // ── the artifacts (pieces on the board) ──
 
+// A Variant is THE universal image asset — generated, imported, or brought in as
+// a reference. "Being a reference" is a flag (`refSelected`), not a separate type:
+// any variant can be focused, annotated, AND pointed at for the next generation.
 export type Variant = {
   id: string;
   src: string; // base64 webp; stripped in lean projection (agent reads `path`)
@@ -20,6 +23,9 @@ export type Variant = {
   // (distinct from the Batch prompt, which is fixed provenance). Shown in details.
   // No per-variant prompt: the settled prompt lives on the Batch (one prompt,
   // many seeds). The display label ("a"/"b"/…) is derived from array index.
+  name?: string; // editable label; blank for generated (use the derived label), filename for imports
+  refSelected?: boolean; // pointed at as a reference for the next generation
+  hash?: string; // content hash (imports only) — import dedup + analysisCache key
 };
 
 // A batch is one round of generation kept together (all variants kept by
@@ -103,18 +109,9 @@ export type PromptEntry = { id: string; label: string; text: string };
 // A value the user pins to lock for the next generate (agent picks the rest).
 export type Pin = { key: string; value: string };
 
-// A reference image in the drawer. The user keeps a library and `selected`s a
-// subset to point at "use these for this generation" (default false; at
-// generate time the agent uses the selected set, or all if none are selected).
-export type Reference = {
-  id: string;
-  src: string; // base64 webp (same as Variant.src)
-  path: string;
-  name: string;
-  selected: boolean;
-  hash: string; // content hash — dedupes identical adds + keys the analysis cache
-  analysis: string; // the agent's read of this image, shown on the board (click to view)
-};
+// (References are no longer a separate type — they're Variants with `refSelected`.
+// "Use these for this generation" = the set of variants where refSelected; at
+// generate time the agent uses that set, or all if none are selected.)
 
 // An annotation mark on a variant. Coords are fractions (0–1) of the image box,
 // so marks transform with pan/zoom; stroke width + text size are authored at
@@ -130,7 +127,9 @@ export type Reference = {
 // it). All optional — the surface picks sensible defaults.
 export type MarkBase = {
   id: string;
-  zOrder?: number;
+  zOrder?: number; // order WITHIN the element's layer (server-authoritative)
+  layerId?: string; // which Layer (container) this element belongs to; backfilled on migration
+  rotation?: number; // degrees clockwise about the element's bbox center; image-first (absent = 0 = today)
   label?: string;
   color?: string;
   width?: number;
@@ -163,7 +162,19 @@ export type Mark =
   // freeform sketch — an ordered list of fraction-space points (a polyline). The
   // visual handoff (flattened image) is what the model reads; doubles as a future
   // inpaint-mask region.
-  | (MarkBase & { tool: "draw"; points: { x: number; y: number }[] });
+  | (MarkBase & { tool: "draw"; points: { x: number; y: number }[] })
+  // an image LAYER element — a dropped clipping/reference composited onto the
+  // image. Reuses rect geometry (x,y,w,h fractions) so it inherits
+  // bounds/hit/resize/translate; `src` is a base64 webp (stripped in the lean
+  // agent projection — the agent reads the flattened composite, not layer bitmaps).
+  | (MarkBase & {
+      tool: "image";
+      src: string;
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+    });
 export const MARK_TOOLS: readonly Mark["tool"][] = [
   "pin",
   "arrow",
@@ -171,7 +182,24 @@ export const MARK_TOOLS: readonly Mark["tool"][] = [
   "rect",
   "ellipse",
   "draw",
+  "image",
 ] as const;
+
+// A LAYER is a CONTAINER of marks (elements) on a variant — the grouping unit for
+// z-order, visibility, and lock. Elements reference it via Mark.layerId. Effective
+// z = layer order (array index in `layersByVariant`, back→front) then the element's
+// `zOrder` WITHIN the layer. A "group-of-one" (a standalone arrow) is just a layer
+// with a single element; a sketch layer accretes many pen strokes. The base image
+// (the focused Variant) is shown as a synthetic locked "Background" row and is NOT
+// stored here. `hidden` doubles as the agent-handoff filter: hidden layers don't
+// render, so they don't flatten, so the agent never receives them.
+export type Layer = {
+  id: string;
+  name: string; // editable; the panel label
+  kind: "annotation" | "sketch" | "image"; // auto-name + icon; "sketch" accretes pen strokes
+  hidden?: boolean;
+  locked?: boolean;
+};
 
 // ── the whole state ──
 
@@ -183,8 +211,11 @@ export type ImagoState = {
   styles: StyleEntry[];
   prompts: PromptEntry[]; // reusable quick-prompts (the editable lens library)
   pins: Pin[];
-  refs: Reference[];
   marksByVariant: Record<string, Mark[]>; // durable annotation marks per variant id
+  // CONTAINER metadata per variant: an ordered list of Layers (back→front) that
+  // group the marks above. Each Mark carries a `layerId` into this list; effective
+  // z = layer order, then Mark.zOrder within the layer. See type Layer.
+  layersByVariant: Record<string, Layer[]>;
   analysisCache: Record<string, string>; // hash → agent analysis; survives a ref delete/re-add (daemon-maintained)
   aspect: string; // aspect ratio for a NEW (fresh) generation
   size: ImageSize; // output resolution for a NEW generation
@@ -234,6 +265,7 @@ export type ClientToServer =
   | { type: "focus.set"; batchId: string; variantId: string } // focus an image
   | { type: "focus.clear" } // back to a blank "new" frame
   | { type: "variant.like"; id: string; liked: boolean }
+  | { type: "variant.remove"; batchId: string; variantId: string } // delete a variant from the library (+ its marks/layers; drops the batch when empty); ambient (no agent event)
   | { type: "style.toggle"; name: string }
   | { type: "style.remove"; name: string } // drop a style from the catalog
   | { type: "style.capture" } // ask the agent to extract this image's look
@@ -242,11 +274,38 @@ export type ClientToServer =
   | { type: "prompt.remove"; id: string }
   | { type: "pin.add"; key: string; value: string }
   | { type: "pin.remove"; key: string }
-  | { type: "ref.add"; reference: { src: string; name: string; id?: string } }
-  | { type: "ref.remove"; id: string }
+  | { type: "ref.add"; image: { src: string; name?: string } } // import an external image as a variant + select it as a ref (dedup by hash → selects the existing one)
+  | { type: "ref.remove"; id: string } // DESELECT a variant as a ref (it stays in the library; to delete the image use variant.remove)
   | { type: "image.import"; image: { src: string; name?: string } } // drop on canvas → working image
-  | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
-  | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder)
+  | {
+      // drop an image as a LAYER onto the focused image (collage) — distinct from
+      // image.import, which REPLACES. The client supplies the fraction-space box
+      // (it knows the base image box + the dropped bitmap's aspect); the server
+      // optimizes the src + stores it. Geometry optional → server centers a 40% box.
+      type: "layer.addImage";
+      src: string;
+      name?: string;
+      x?: number;
+      y?: number;
+      w?: number;
+      h?: number;
+    }
+  // ── layer (container) ops — Phase 2 inspector panel. All server-authoritative
+  // and undoable via the widened {marks,layers} history; local until commit (the
+  // flatten respects `hidden`), so no agent event — same rule as mark.* ops.
+  | { type: "layer.add"; name?: string; kind?: Layer["kind"] } // blank layer on top
+  | { type: "layer.rename"; id: string; name: string }
+  | { type: "layer.setHidden"; id: string; hidden: boolean } // visibility + handoff filter
+  | { type: "layer.setLocked"; id: string; locked: boolean } // not hit-testable / selectable
+  | { type: "layer.reorder"; id: string; toIndex: number } // absolute placement (drag-drop)
+  | { type: "layer.remove"; id: string } // deletes the layer AND its elements
+  | { type: "group"; markIds: string[]; name?: string } // wrap selected marks in a new layer
+  | { type: "ungroup"; id: string } // dissolve → each element becomes its own group-of-one layer
+  // NOTE: there is no `layer.setActive` — the active layer (where new marks drop)
+  // is surface-owned. The client stamps `mark.layerId` on mark.add; the server
+  // honors a valid one, else drops into the topmost non-image layer.
+  | { type: "ref.select"; id: string; selected: boolean } // point a VARIANT at the next gen (id = variantId; toggles refSelected)
+  | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder; honors a valid mark.layerId as the active layer, else topmost non-image layer)
   | { type: "mark.remove"; id: string } // delete one mark (complements marks.clear)
   | {
       // move/resize/label (server merges; never id/tool/zOrder). Values are
@@ -293,8 +352,8 @@ export type AgentCommand =
       variants: { src: string; seed?: number; model?: string; id?: string }[];
     }
   | { type: "focus"; batchId: string; variantId: string } // agent focuses an image
-  | { type: "ref.select"; id: string; selected: boolean } // agent points at a ref (the user sees it highlight)
-  | { type: "ref.analyze"; id: string; text: string } // write your read onto a ref (the user can see it)
+  | { type: "ref.select"; id: string; selected: boolean } // agent points a variant at the next gen (id = variantId; the user sees it highlight)
+  // (ref.analyze removed — write a read onto any image via variant.analyze; refs are variants now)
   | { type: "variant.analyze"; id: string; text: string } // write your read onto a generated/imported image
   | {
       // add/define a captured style in the catalog (the response to style.capture):
@@ -311,10 +370,18 @@ export type AgentCommand =
   | { type: "handoff"; text: string } // "" clears (terminal-ask escape)
   | { type: "close" };
 
-// The complete agent event set (server → agent SSE). The agent MUST listen for
-// all of these — incompleteness here is what drops user input. Incremental
-// annotation (mark.add/marks.clear) is intentionally NOT here: the agent reacts
-// when the user COMMITS marks, not on every stroke.
+// The agent event set (server → agent SSE) — IMPERATIVES ONLY: the moves where
+// the user is asking the agent for something or handing work off, plus lifecycle.
+// The agent reacts to these.
+//
+// AMBIENT BOARD STATE is deliberately NOT here — focus, ref selection, likes,
+// style toggles, aspect/size, pins, ref-library adds, image imports. Those are
+// pieces moving on the board; the agent READS them from /state when it's its move,
+// it does not get pinged on every toggle (that was just noise). To make that safe,
+// the imperatives that are "about an image" carry their board context: `say` and
+// `marks.commit` ride the focused variant + selected ref ids; `style.capture`
+// rides the focus. Incremental annotation (mark.add/marks.clear) is likewise NOT
+// here — the agent reacts when the user COMMITS marks, not on every stroke.
 export const AGENT_EVENT_TYPES = Object.freeze([
   "ready",
   "connected",
@@ -322,20 +389,8 @@ export const AGENT_EVENT_TYPES = Object.freeze([
   "say",
   "proposal.send",
   "proposal.dismiss",
-  "focus.set",
-  "focus.clear",
-  "variant.like",
-  "style.toggle",
   "style.capture",
-  "pin.add",
-  "pin.remove",
-  "ref.add",
-  "ref.remove",
-  "ref.select",
-  "image.import",
   "marks.commit",
-  "aspect.set",
-  "size.set",
   "submit",
   "closed",
 ] as const);
@@ -345,31 +400,33 @@ export type AgentEventType = (typeof AGENT_EVENT_TYPES)[number];
 // shapes and the server's emit calls are checked. Events not listed carry no
 // payload.
 export type AgentEventPayload = {
-  // a chat message; if the focused image had unseen marks, the marked image
-  // (flattenedImagePath, --ref it) + the mark geometry ride along with the text.
-  say: { text: string; flattenedImagePath?: string; marks?: Mark[] };
+  // a chat message. It carries the AMBIENT BOARD CONTEXT so the agent doesn't need
+  // the (now-removed) focus.set/ref.select pings: `focus` is the image on the
+  // canvas when the user sent (null = blank frame), `selectedRefIds` the refs the
+  // user pointed at for this turn. If the focused image had unseen marks, the
+  // marked image (flattenedImagePath, --ref it) + the mark geometry ride along too.
+  say: {
+    text: string;
+    focus: Focus | null;
+    selectedRefIds: string[];
+    flattenedImagePath?: string;
+    marks?: Mark[];
+  };
   "proposal.send": { id: string };
   "proposal.dismiss": { id: string };
-  "focus.set": { batchId: string; variantId: string };
-  "variant.like": { id: string; liked: boolean };
-  "style.toggle": { name: string; active: boolean };
-  "pin.add": { key: string; value: string };
-  "pin.remove": { key: string };
-  "ref.add": { id: string; name: string };
-  "ref.remove": { id: string };
-  "ref.select": { id: string; selected: boolean };
-  "image.import": { batchId: string; variantId: string; name: string };
+  // "extract this image's look" — carries the focused variant so the agent knows
+  // which image to read (focus.set no longer notifies).
+  "style.capture": { focus: Focus | null };
   "marks.commit": {
     text: string;
     batchId: string;
     variantId: string;
     marks: Mark[];
+    selectedRefIds: string[]; // refs the user pointed at (ambient board context)
     // on-disk PNG path of the image with marks burned in (the visual handoff —
     // pass as --ref). Absent if capture failed; fall back to the variant path.
     flattenedImagePath?: string;
   };
-  "aspect.set": { aspect: string };
-  "size.set": { size: ImageSize };
 };
 
 // The default catalog — clicking a chip tells the agent to apply its technique
@@ -412,8 +469,8 @@ export function defaultState(title: string): ImagoState {
     styles: DEFAULT_STYLES.map((s) => ({ ...s })),
     prompts: DEFAULT_PROMPTS.map((p) => ({ ...p })),
     pins: [],
-    refs: [],
     marksByVariant: {},
+    layersByVariant: {},
     analysisCache: {},
     aspect: "1:1",
     size: "1K",
