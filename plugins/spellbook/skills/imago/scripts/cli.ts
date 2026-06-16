@@ -103,7 +103,7 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value` or boolean `--flag`.
-function parseArgs(args: string[]): {
+export function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
@@ -112,7 +112,17 @@ function parseArgs(args: string[]): {
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
     if (a.startsWith("--")) {
-      const key = a.slice(2);
+      const body = a.slice(2);
+      // `--key=value` (equals form) — split on the FIRST `=` so the value can
+      // itself contain `=`. An empty value (`--key=`) is still a string ("").
+      const eq = body.indexOf("=");
+      if (eq >= 0) {
+        flags[body.slice(0, eq)] = body.slice(eq + 1);
+        continue;
+      }
+      // `--key value` (space form) — consume the next arg as the value unless it's
+      // another flag, in which case `--key` is a boolean.
+      const key = body;
       const next = args[i + 1];
       if (next !== undefined && !next.startsWith("--")) {
         flags[key] = next;
