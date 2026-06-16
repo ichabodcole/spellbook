@@ -269,18 +269,34 @@ async function main(argv: string[]): Promise<number> {
     if (h.undo.length > HISTORY_CAP) h.undo.shift();
     h.redo = []; // a fresh edit forks the timeline — redo is no longer valid
   };
-  // Container model: every element belongs to a Layer. Until the layers panel
-  // lands (Phase 2 — active-layer selection + per-tool grouping), all marks drop
-  // into a single default "Annotations" layer per variant. Returns its id,
-  // creating the layer if absent. Call AFTER pushHistory so the auto-created layer
-  // is part of the same undoable step as the mark that triggered it.
-  const ensureDefaultLayer = (vid: string): string => {
+  // Container model: every element belongs to a Layer. A new vector mark drops
+  // into the active draw layer — the topmost NON-image layer (drawing "into" an
+  // image layer reads oddly), creating a default "Annotations" layer if there's
+  // no non-image layer yet (its push lands above any image layers, so annotations
+  // paint over the collage). The active layer is otherwise surface-owned: mark.add
+  // honors a valid client `mark.layerId` and only falls back to this. Call AFTER
+  // pushHistory so the auto-created layer is part of the same undoable step.
+  const ensureDrawLayer = (vid: string): string => {
     if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
     const layers = state.layersByVariant[vid];
-    if (!layers.length) {
-      layers.push({ id: newId("layer"), name: "Annotations", kind: "annotation" });
+    for (let i = layers.length - 1; i >= 0; i--) {
+      if (layers[i].kind !== "image") return layers[i].id;
     }
-    return layers[layers.length - 1].id;
+    const layer: Layer = { id: newId("layer"), name: "Annotations", kind: "annotation" };
+    layers.push(layer);
+    return layer.id;
+  };
+  // A single element's natural container kind + label (used by group/ungroup).
+  const kindForTool = (tool: Mark["tool"]): Layer["kind"] =>
+    tool === "image" ? "image" : tool === "draw" ? "sketch" : "annotation";
+  const TOOL_LABEL: Record<Mark["tool"], string> = {
+    pin: "Pin",
+    arrow: "Arrow",
+    line: "Line",
+    rect: "Rectangle",
+    ellipse: "Ellipse",
+    draw: "Sketch",
+    image: "Image",
   };
   if (v.restore) {
     const restorePath = existsSync(v.restore as string)
@@ -804,6 +820,105 @@ async function main(argv: string[]): Promise<number> {
         zOrder: arr.length,
       });
       broadcastState();
+    } else if (t === "layer.add") {
+      // a blank layer on top — becomes the surface's active draw target
+      const vid = state.focus?.variantId;
+      if (!vid) return;
+      if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+      pushHistory(vid);
+      const kind: Layer["kind"] =
+        msg.kind === "sketch" || msg.kind === "image" ? msg.kind : "annotation";
+      state.layersByVariant[vid].push({
+        id: newId("layer"),
+        name: typeof msg.name === "string" && msg.name ? msg.name : "Layer",
+        kind,
+      });
+      broadcastState();
+    } else if (t === "layer.rename") {
+      const vid = state.focus?.variantId;
+      const layer = vid ? state.layersByVariant[vid]?.find((l) => l.id === msg.id) : undefined;
+      if (!layer || typeof msg.name !== "string" || !msg.name || layer.name === msg.name) return;
+      pushHistory(vid);
+      layer.name = msg.name;
+      broadcastState();
+    } else if (t === "layer.setHidden" || t === "layer.setLocked") {
+      const vid = state.focus?.variantId;
+      const layer = vid ? state.layersByVariant[vid]?.find((l) => l.id === msg.id) : undefined;
+      const key = t === "layer.setHidden" ? "hidden" : "locked";
+      const next = t === "layer.setHidden" ? msg.hidden : msg.locked;
+      if (!layer || typeof next !== "boolean" || Boolean(layer[key]) === next) return;
+      pushHistory(vid);
+      layer[key] = next;
+      broadcastState();
+    } else if (t === "layer.reorder") {
+      // absolute placement (drag-drop): move layer `id` to `toIndex` (back→front)
+      const vid = state.focus?.variantId;
+      const layers = vid ? state.layersByVariant[vid] : undefined;
+      const idx = layers?.findIndex((l) => l.id === msg.id) ?? -1;
+      if (!vid || !layers || idx < 0 || typeof msg.toIndex !== "number") return;
+      const to = Math.max(0, Math.min(layers.length - 1, Math.trunc(msg.toIndex)));
+      if (to === idx) return;
+      pushHistory(vid);
+      const [l] = layers.splice(idx, 1);
+      layers.splice(to, 0, l);
+      broadcastState();
+    } else if (t === "layer.remove") {
+      // delete a layer AND the elements it contained
+      const vid = state.focus?.variantId;
+      if (!vid || !state.layersByVariant[vid]?.some((l) => l.id === msg.id)) return;
+      pushHistory(vid);
+      state.layersByVariant[vid] = state.layersByVariant[vid].filter((l) => l.id !== msg.id);
+      if (state.marksByVariant[vid]) {
+        state.marksByVariant[vid] = state.marksByVariant[vid].filter((m) => m.layerId !== msg.id);
+      }
+      broadcastState();
+    } else if (t === "group") {
+      // wrap the selected marks in a new layer on top; reassign layerId/zOrder.
+      const vid = state.focus?.variantId;
+      const ids = msg.markIds;
+      if (!vid || !Array.isArray(ids) || !ids.length) return;
+      const marks = state.marksByVariant[vid] ?? [];
+      const idSet = new Set(ids.filter((x): x is string => typeof x === "string"));
+      const picked = marks.filter((m) => idSet.has(m.id));
+      if (!picked.length) return;
+      pushHistory(vid);
+      if (!state.layersByVariant[vid]) state.layersByVariant[vid] = [];
+      const layers = state.layersByVariant[vid];
+      const sourceIds = new Set(picked.map((m) => m.layerId).filter(Boolean) as string[]);
+      const group: Layer = {
+        id: newId("layer"),
+        name: typeof msg.name === "string" && msg.name ? msg.name : "Group",
+        kind: picked.every((m) => m.tool === "draw") ? "sketch" : "annotation",
+      };
+      layers.push(group);
+      picked.forEach((m, i) => {
+        m.layerId = group.id;
+        m.zOrder = i;
+      });
+      // prune source layers the move emptied (never the new one or a still-occupied one)
+      state.layersByVariant[vid] = layers.filter(
+        (l) => l.id === group.id || !sourceIds.has(l.id) || marks.some((m) => m.layerId === l.id),
+      );
+      broadcastState();
+    } else if (t === "ungroup") {
+      // dissolve a layer → each element becomes its own group-of-one layer in place
+      const vid = state.focus?.variantId;
+      const layers = vid ? state.layersByVariant[vid] : undefined;
+      const at = layers?.findIndex((l) => l.id === msg.id) ?? -1;
+      if (!vid || !layers || at < 0) return;
+      const members = (state.marksByVariant[vid] ?? [])
+        .filter((m) => m.layerId === msg.id)
+        .sort((a, b) => (a.zOrder ?? 0) - (b.zOrder ?? 0));
+      if (members.length < 2) return; // 0/1 element is already a group-of-one
+      pushHistory(vid);
+      const fresh: Layer[] = members.map((m) => {
+        const id = newId("layer");
+        m.layerId = id;
+        m.zOrder = 0;
+        return { id, name: TOOL_LABEL[m.tool], kind: kindForTool(m.tool) };
+      });
+      layers.splice(at, 1, ...fresh); // replace the dissolved layer, preserving z-band
+      broadcastState();
     } else if (t === "mark.add") {
       const mk = msg.mark as Mark | undefined;
       const vid = state.focus?.variantId;
@@ -811,7 +926,10 @@ async function main(argv: string[]): Promise<number> {
       pushHistory(vid);
       if (!state.marksByVariant[vid]) state.marksByVariant[vid] = [];
       const arr = state.marksByVariant[vid];
-      mk.layerId = ensureDefaultLayer(vid); // container model: stamp the active layer
+      // container model: honor a valid client-chosen active layer, else default
+      const wanted = typeof mk.layerId === "string" ? mk.layerId : undefined;
+      const onLayer = wanted && state.layersByVariant[vid]?.some((l) => l.id === wanted);
+      mk.layerId = onLayer ? (wanted as string) : ensureDrawLayer(vid);
       mk.zOrder = arr.length; // server is authoritative for z-order
       arr.push(mk);
       broadcastState(); // incremental — no agent event until commit

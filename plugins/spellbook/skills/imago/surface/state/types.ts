@@ -293,8 +293,22 @@ export type ClientToServer =
       w?: number;
       h?: number;
     }
+  // ── layer (container) ops — Phase 2 inspector panel. All server-authoritative
+  // and undoable via the widened {marks,layers} history; local until commit (the
+  // flatten respects `hidden`), so no agent event — same rule as mark.* ops.
+  | { type: "layer.add"; name?: string; kind?: Layer["kind"] } // blank layer on top
+  | { type: "layer.rename"; id: string; name: string }
+  | { type: "layer.setHidden"; id: string; hidden: boolean } // visibility + handoff filter
+  | { type: "layer.setLocked"; id: string; locked: boolean } // not hit-testable / selectable
+  | { type: "layer.reorder"; id: string; toIndex: number } // absolute placement (drag-drop)
+  | { type: "layer.remove"; id: string } // deletes the layer AND its elements
+  | { type: "group"; markIds: string[]; name?: string } // wrap selected marks in a new layer
+  | { type: "ungroup"; id: string } // dissolve → each element becomes its own group-of-one layer
+  // NOTE: there is no `layer.setActive` — the active layer (where new marks drop)
+  // is surface-owned. The client stamps `mark.layerId` on mark.add; the server
+  // honors a valid one, else drops into the topmost non-image layer.
   | { type: "ref.select"; id: string; selected: boolean } // point at a ref for the next gen
-  | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder)
+  | { type: "mark.add"; mark: Mark } // local-ish; no agent event until commit (server assigns zOrder; honors a valid mark.layerId as the active layer, else topmost non-image layer)
   | { type: "mark.remove"; id: string } // delete one mark (complements marks.clear)
   | {
       // move/resize/label (server merges; never id/tool/zOrder). Values are

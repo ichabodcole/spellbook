@@ -410,6 +410,161 @@ describe("container model — layers", () => {
   });
 });
 
+// ── container model: layer ops (Phase 2 inspector panel) ──────────────────────
+
+describe("container model — layer ops", () => {
+  test("layer.rename changes the name and is undoable", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") }); // auto-creates "Annotations"
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+    const layerId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "layer.rename", id: layerId, name: "Hero" });
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "Hero");
+    expect(st.history.canUndo).toBe(true);
+
+    // a cosmetic layer op is undoable (widened {marks,layers} history)
+    ws.send({ type: "undo" });
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "Annotations");
+    expect(st.layersByVariant[variantId][0].name).toBe("Annotations");
+    ws.close();
+  });
+
+  test("layer.setHidden toggles the handoff/visibility flag (over-fires marksUnseen, by design)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+    const layerId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "layer.setHidden", id: layerId, hidden: true });
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.hidden === true);
+    // hidden doubles as the agent-handoff filter; cosmetic-or-not, it bumps freshness
+    expect(st.marksUnseen).toBe(true);
+    ws.close();
+  });
+
+  test("layer.reorder places a layer at an absolute index (back→front)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") }); // [Annotations]
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "clip" }); // [Annotations, clip]
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 2);
+    const clip = st.layersByVariant[variantId].find((l) => l.kind === "image");
+    if (!clip) throw new Error("no image layer");
+
+    ws.send({ type: "layer.reorder", id: clip.id, toIndex: 0 }); // image to the back
+    st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.id === clip.id);
+    expect(st.layersByVariant[variantId].map((l) => l.kind)).toEqual(["image", "annotation"]);
+    ws.close();
+  });
+
+  test("layer.remove deletes the layer AND the elements it contained", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    let st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
+    const layerId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "layer.remove", id: layerId });
+    st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 0);
+    expect(st.marksByVariant[variantId] ?? []).toEqual([]);
+    ws.close();
+  });
+
+  test("group wraps selected marks in a new layer, reindexes z, prunes the emptied source", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    ws.send({ type: "mark.add", mark: pin("m2", 0.3, 0.3) });
+    await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 2);
+
+    ws.send({ type: "group", markIds: ["m1", "m2"], name: "Pair" });
+    const st = await waitForState(
+      s,
+      (x) => x.layersByVariant[variantId]?.some((l) => l.name === "Pair") ?? false,
+    );
+    // the default "Annotations" layer was emptied by the move → pruned; only the group remains
+    expect(st.layersByVariant[variantId]).toHaveLength(1);
+    const group = st.layersByVariant[variantId][0];
+    expect(group.name).toBe("Pair");
+    const marks = st.marksByVariant[variantId];
+    expect(marks.every((m) => m.layerId === group.id)).toBe(true);
+    expect(marks.map((m) => m.zOrder)).toEqual([0, 1]);
+    ws.close();
+  });
+
+  test("ungroup dissolves a multi-element layer into group-of-one layers in place", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    ws.send({ type: "mark.add", mark: pin("m2", 0.3, 0.3) });
+    await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 2);
+    ws.send({ type: "group", markIds: ["m1", "m2"], name: "G" });
+    // wait on the named group (length is 1 BOTH before and after the move → race)
+    let st = await waitForState(s, (x) => x.layersByVariant[variantId]?.[0]?.name === "G");
+    const groupId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "ungroup", id: groupId });
+    st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 2);
+    // each pin now owns a single-element layer; ids are distinct and re-zeroed
+    const layers = st.layersByVariant[variantId];
+    expect(layers.every((l) => l.name === "Pin" && l.kind === "annotation")).toBe(true);
+    const marks = st.marksByVariant[variantId];
+    expect(new Set(marks.map((m) => m.layerId)).size).toBe(2);
+    expect(marks.every((m) => m.zOrder === 0)).toBe(true);
+    ws.close();
+  });
+
+  test("mark.add skips an image layer as the drop target (drawing lands in a non-image layer)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "layer.addImage", src: PNG_1x1, name: "clip" }); // only an image layer exists
+    await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+
+    ws.send({ type: "mark.add", mark: pin("m1") });
+    const st = await waitForState(s, (x) =>
+      (x.marksByVariant[variantId] ?? []).some((m) => m.tool === "pin"),
+    );
+    const pinMark = st.marksByVariant[variantId].find((m) => m.tool === "pin");
+    const pinLayer = st.layersByVariant[variantId].find((l) => l.id === pinMark?.layerId);
+    expect(pinLayer?.kind).toBe("annotation"); // NOT the image layer
+    ws.close();
+  });
+
+  test("mark.add honors a valid client-supplied active layerId", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    ws.send({ type: "layer.add", name: "Sketch", kind: "sketch" });
+    let st = await waitForState(s, (x) => (x.layersByVariant[variantId]?.length ?? 0) === 1);
+    const activeId = st.layersByVariant[variantId][0].id;
+
+    ws.send({ type: "mark.add", mark: { ...pin("m1"), layerId: activeId } });
+    st = await waitForState(s, (x) => (x.marksByVariant[variantId]?.length ?? 0) === 1);
+    expect(st.marksByVariant[variantId][0].layerId).toBe(activeId);
+    // no extra default layer was created — the client's choice was honored
+    expect(st.layersByVariant[variantId]).toHaveLength(1);
+    ws.close();
+  });
+});
+
 // ── undo / redo ──────────────────────────────────────────────────────────────
 
 describe("undo/redo of mark edits", () => {
