@@ -622,7 +622,17 @@ async function main(argv: string[]): Promise<number> {
         markUnseen[fvid] = false; // the agent now has the latest marks
       }
       broadcastState();
-      emitEvent({ type: "say", text: msg.text, flattenedImagePath, marks: attachedMarks });
+      // ambient board state (focus + selected refs) rides the message, so the
+      // agent has "which image, with which refs" without subscribing to the
+      // ambient focus.set/ref.select events (which no longer notify).
+      emitEvent({
+        type: "say",
+        text: msg.text,
+        focus: state.focus,
+        selectedRefIds: state.refs.filter((r) => r.selected).map((r) => r.id),
+        flattenedImagePath,
+        marks: attachedMarks,
+      });
     } else if (t === "proposal.send") {
       const m = state.conversation.find((x) => x.id === msg.id);
       if (m?.proposal) {
@@ -643,11 +653,9 @@ async function main(argv: string[]): Promise<number> {
       if (!b.variants.some((x) => x.id === msg.variantId)) return;
       state.focus = { batchId: b.id, variantId: msg.variantId as string };
       broadcastState(); // marks are durable per variant — switching never clears them
-      emitEvent({ type: "focus.set", batchId: b.id, variantId: msg.variantId });
     } else if (t === "focus.clear") {
       state.focus = null;
       broadcastState();
-      emitEvent({ type: "focus.clear" });
     } else if (t === "variant.like") {
       const hit = findVariant(msg.id as string);
       if (!hit) return;
@@ -661,7 +669,6 @@ async function main(argv: string[]): Promise<number> {
         });
       }
       broadcastState();
-      emitEvent({ type: "variant.like", id: hit.variant.id, liked: hit.variant.liked });
     } else if (t === "style.toggle") {
       if (typeof msg.name !== "string") return;
       const name = normStyle(msg.name);
@@ -669,7 +676,6 @@ async function main(argv: string[]): Promise<number> {
       if (!s) return;
       s.active = !s.active;
       broadcastState();
-      emitEvent({ type: "style.toggle", name: s.name, active: s.active });
     } else if (t === "style.remove") {
       if (typeof msg.name === "string") {
         const name = normStyle(msg.name);
@@ -698,18 +704,18 @@ async function main(argv: string[]): Promise<number> {
         broadcastState();
       }
     } else if (t === "style.capture") {
-      emitEvent({ type: "style.capture" });
+      // carry the focused variant so the agent knows which image to read the
+      // look from (focus.set no longer notifies).
+      emitEvent({ type: "style.capture", focus: state.focus });
     } else if (t === "pin.add") {
       if (typeof msg.key !== "string" || typeof msg.value !== "string") return;
       const ex = state.pins.find((p) => p.key === msg.key);
       if (ex) ex.value = msg.value;
       else state.pins.push({ key: msg.key, value: msg.value });
       broadcastState();
-      emitEvent({ type: "pin.add", key: msg.key, value: msg.value });
     } else if (t === "pin.remove") {
       state.pins = state.pins.filter((p) => p.key !== msg.key);
       broadcastState();
-      emitEvent({ type: "pin.remove", key: msg.key });
     } else if (t === "ref.add") {
       const raw = msg.reference as Record<string, unknown> | undefined;
       if (!raw || typeof raw.src !== "string") return;
@@ -735,17 +741,14 @@ async function main(argv: string[]): Promise<number> {
         gesture: { kind: "ref-added", targetId: id },
       });
       broadcastState();
-      emitEvent({ type: "ref.add", id, name });
     } else if (t === "ref.remove") {
       state.refs = state.refs.filter((r) => r.id !== msg.id);
       broadcastState();
-      emitEvent({ type: "ref.remove", id: msg.id });
     } else if (t === "ref.select") {
       const r = state.refs.find((x) => x.id === msg.id);
       if (!r) return;
       r.selected = msg.selected === true;
       broadcastState();
-      emitEvent({ type: "ref.select", id: r.id, selected: r.selected });
     } else if (t === "image.import") {
       // the user dropped their own image onto the canvas — a first-class working
       // image (a one-variant "import" batch), focused so they can annotate/edit it
@@ -776,7 +779,6 @@ async function main(argv: string[]): Promise<number> {
         gesture: { kind: "imported", targetId: vid },
       });
       broadcastState();
-      emitEvent({ type: "image.import", batchId, variantId: vid, name });
     } else if (t === "layer.addImage") {
       // drop an image as a LAYER on the focused image (collage). The client
       // supplies the fraction-space box (it knows the base image box + the dropped
@@ -1071,18 +1073,17 @@ async function main(argv: string[]): Promise<number> {
         batchId: msg.batchId,
         variantId: msg.variantId,
         marks,
+        selectedRefIds: state.refs.filter((r) => r.selected).map((r) => r.id),
         flattenedImagePath,
       });
     } else if (t === "aspect.set") {
       if (typeof msg.aspect !== "string") return;
       state.aspect = msg.aspect;
       broadcastState();
-      emitEvent({ type: "aspect.set", aspect: msg.aspect });
     } else if (t === "size.set") {
       if (msg.size !== "1K" && msg.size !== "2K") return;
       state.size = msg.size;
       broadcastState();
-      emitEvent({ type: "size.set", size: msg.size });
     } else if (t === "submit") {
       broadcast({ type: "submit" });
       emitEvent({ type: "submit" });

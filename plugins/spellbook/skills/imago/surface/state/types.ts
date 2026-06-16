@@ -373,10 +373,18 @@ export type AgentCommand =
   | { type: "handoff"; text: string } // "" clears (terminal-ask escape)
   | { type: "close" };
 
-// The complete agent event set (server → agent SSE). The agent MUST listen for
-// all of these — incompleteness here is what drops user input. Incremental
-// annotation (mark.add/marks.clear) is intentionally NOT here: the agent reacts
-// when the user COMMITS marks, not on every stroke.
+// The agent event set (server → agent SSE) — IMPERATIVES ONLY: the moves where
+// the user is asking the agent for something or handing work off, plus lifecycle.
+// The agent reacts to these.
+//
+// AMBIENT BOARD STATE is deliberately NOT here — focus, ref selection, likes,
+// style toggles, aspect/size, pins, ref-library adds, image imports. Those are
+// pieces moving on the board; the agent READS them from /state when it's its move,
+// it does not get pinged on every toggle (that was just noise). To make that safe,
+// the imperatives that are "about an image" carry their board context: `say` and
+// `marks.commit` ride the focused variant + selected ref ids; `style.capture`
+// rides the focus. Incremental annotation (mark.add/marks.clear) is likewise NOT
+// here — the agent reacts when the user COMMITS marks, not on every stroke.
 export const AGENT_EVENT_TYPES = Object.freeze([
   "ready",
   "connected",
@@ -384,20 +392,8 @@ export const AGENT_EVENT_TYPES = Object.freeze([
   "say",
   "proposal.send",
   "proposal.dismiss",
-  "focus.set",
-  "focus.clear",
-  "variant.like",
-  "style.toggle",
   "style.capture",
-  "pin.add",
-  "pin.remove",
-  "ref.add",
-  "ref.remove",
-  "ref.select",
-  "image.import",
   "marks.commit",
-  "aspect.set",
-  "size.set",
   "submit",
   "closed",
 ] as const);
@@ -407,31 +403,33 @@ export type AgentEventType = (typeof AGENT_EVENT_TYPES)[number];
 // shapes and the server's emit calls are checked. Events not listed carry no
 // payload.
 export type AgentEventPayload = {
-  // a chat message; if the focused image had unseen marks, the marked image
-  // (flattenedImagePath, --ref it) + the mark geometry ride along with the text.
-  say: { text: string; flattenedImagePath?: string; marks?: Mark[] };
+  // a chat message. It carries the AMBIENT BOARD CONTEXT so the agent doesn't need
+  // the (now-removed) focus.set/ref.select pings: `focus` is the image on the
+  // canvas when the user sent (null = blank frame), `selectedRefIds` the refs the
+  // user pointed at for this turn. If the focused image had unseen marks, the
+  // marked image (flattenedImagePath, --ref it) + the mark geometry ride along too.
+  say: {
+    text: string;
+    focus: Focus | null;
+    selectedRefIds: string[];
+    flattenedImagePath?: string;
+    marks?: Mark[];
+  };
   "proposal.send": { id: string };
   "proposal.dismiss": { id: string };
-  "focus.set": { batchId: string; variantId: string };
-  "variant.like": { id: string; liked: boolean };
-  "style.toggle": { name: string; active: boolean };
-  "pin.add": { key: string; value: string };
-  "pin.remove": { key: string };
-  "ref.add": { id: string; name: string };
-  "ref.remove": { id: string };
-  "ref.select": { id: string; selected: boolean };
-  "image.import": { batchId: string; variantId: string; name: string };
+  // "extract this image's look" — carries the focused variant so the agent knows
+  // which image to read (focus.set no longer notifies).
+  "style.capture": { focus: Focus | null };
   "marks.commit": {
     text: string;
     batchId: string;
     variantId: string;
     marks: Mark[];
+    selectedRefIds: string[]; // refs the user pointed at (ambient board context)
     // on-disk PNG path of the image with marks burned in (the visual handoff —
     // pass as --ref). Absent if capture failed; fall back to the variant path.
     flattenedImagePath?: string;
   };
-  "aspect.set": { aspect: string };
-  "size.set": { size: ImageSize };
 };
 
 // The default catalog — clicking a chip tells the agent to apply its technique

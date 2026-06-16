@@ -96,17 +96,25 @@ react statelessly, one event per turn). Wrap the tail and filter to the events
 that want a response:
 
 ```
-cli.ts tail --session <id> | grep -E '"type":"(say|proposal\.send|style\.capture|marks\.commit|ref\.add|image\.import)"'
+cli.ts tail --session <id> | grep -E '"type":"(say|proposal\.send|proposal\.dismiss|style\.capture|marks\.commit|submit)"'
 ```
 
-That grep IS the wake set — only these wake you. **Ambient gestures
-(`focus.set`, `variant.like`, `style.toggle`, ref selection) deliberately do NOT
-wake you**: read them from `state` when you next act, don't reply per-gesture.
+That grep IS the wake set. **Ambient board state never reaches the stream at
+all** — focus, ref selection, likes, style toggles, aspect/size, pins,
+ref-library adds, and image imports are pieces moving on the board, not
+requests: read them from `state` when you next act, don't reply per-move. (The
+grep also keeps the lifecycle pings `ready`/`connected`/`disconnected`/`closed`
+from waking a response turn.)
+
+**The imperatives carry their board context** — so you know _which image_ (and
+which refs) a request is about without a separate read: `say` and `marks.commit`
+ride the focused variant + `selectedRefIds`; `style.capture` rides the focus.
 
 **Where the shapes live:** an event's full payload and the `state` snapshot are
 the `AgentEventPayload` and `ImagoState` types in `surface/state/types.ts` (the
 single contract). That's where field names come from — and where you read the
-focused variant + ids: `state.focus`, `state.batches[].id`,
+ambient board state (`state.focus`, `state.refs[].selected`, `state.styles`,
+`state.aspect`/`size`) plus ids: `state.batches[].id`,
 `state.batches[].variants[].id` (+ `.path` for the on-disk image). Notifications
 truncate; read the full payload from the tail line or from `state`. Polling only
 when you happen to check leaves the user waiting.
@@ -126,16 +134,19 @@ There's no phase pipeline — react to what the user does:
   **edit**: read the focused variant's `path` from `state`, generate with
   `--ref <path>` + an instruction that folds in what they marked, post a
   `batch --kind edit --edited-from <variantId>`.
-- **`variant.like`** / **`focus.set`** — ambient (which one resonates, what
-  they're looking at). NOT in the wake set — read them from `state` when you
-  next act; don't reply per-gesture.
+- **`variant.like`** / **`focus.set`** / **ref selection** — ambient (which one
+  resonates, what they're looking at, which refs they pointed at). These don't
+  emit events at all — read them from `state` when you next act (and `say` /
+  `marks.commit` already carry the current focus + `selectedRefIds`); never
+  reply per-move.
 - **`style.capture`** — analyze the focused image, then
   `style "<name>" --description "<the look>" --image "<focused variant path>"` —
   a captured style carries words + a canonical example. Active styles + selected
   refs are ambient context you fold into generation (see
-  `references/mediaforge.md`).
-- **`ref.add`** — factor the attached reference into the next generation
-  (`--ref`).
+  `references/mediaforge.md`). The user adds + selects refs on the board
+  (ambient, no event); read `state.refs[].selected` — or take the
+  `selectedRefIds` that ride `say`/`marks.commit` — and `--ref` them when you
+  generate.
 - Ambiguous? `ask "<question>" --options "…"` (in-thread), or `handoff` to the
   terminal for anything bigger. The terminal is always there — the surface
   doesn't have to carry every exchange.

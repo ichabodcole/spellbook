@@ -673,6 +673,74 @@ describe("marksUnseen freshness flag", () => {
   });
 });
 
+// ── agent event contract: imperatives carry board context, ambient is state-only ──
+
+describe("agent event contract", () => {
+  test("say carries the focused variant + selected ref ids (ambient board context)", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    // add a ref and select it — both ambient board moves (no agent event)
+    ws.send({ type: "ref.add", reference: { src: PNG_1x1, name: "mood" } });
+    const withRef = await waitForState(s, (x) => x.refs.length === 1);
+    const refId = withRef.refs[0].id;
+    ws.send({ type: "ref.select", id: refId, selected: true });
+    await waitForState(s, (x) => x.refs[0]?.selected === true);
+
+    const cursor = (await fetchCursor(s)) - 1;
+    const evP = collectEvents(s, cursor, (e) => e.type === "say");
+    ws.send({ type: "say", text: "use this ref" });
+    const say = (await evP).find((e) => e.type === "say") as
+      | { focus?: { variantId?: string }; selectedRefIds?: string[] }
+      | undefined;
+
+    expect(say).toBeDefined();
+    expect(say?.focus?.variantId).toBe(variantId); // "which image" rides the message
+    expect(say?.selectedRefIds).toEqual([refId]); // "which refs" too
+    ws.close();
+  });
+
+  test("ambient board moves (focus.set / ref.select / variant.like) do NOT emit agent events", async () => {
+    const s = await spawnDaemon();
+    const a = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+    ws.send({ type: "ref.add", reference: { src: PNG_1x1, name: "r" } });
+    const withRef = await waitForState(s, (x) => x.refs.length === 1);
+
+    const cursor = (await fetchCursor(s)) - 1;
+    // listen briefly; none of these board moves should produce an agent event
+    const evP = collectEvents(s, cursor, () => false, 800);
+    ws.send({ type: "image.import", image: { src: PNG_1x1, name: "two" } });
+    ws.send({ type: "focus.set", batchId: a.batchId, variantId: a.variantId });
+    ws.send({ type: "ref.select", id: withRef.refs[0].id, selected: true });
+    ws.send({ type: "variant.like", id: a.variantId, liked: true });
+    const events = await evP;
+
+    const ambient = events.filter((e) =>
+      ["focus.set", "ref.select", "variant.like", "image.import"].includes(e.type as string),
+    );
+    expect(ambient).toEqual([]); // state-only — the agent reads them from /state
+    ws.close();
+  });
+
+  test("style.capture carries the focused variant", async () => {
+    const s = await spawnDaemon();
+    const { variantId } = await seedFocusedVariant(s);
+    const ws = await openWs(s);
+
+    const cursor = (await fetchCursor(s)) - 1;
+    const evP = collectEvents(s, cursor, (e) => e.type === "style.capture");
+    ws.send({ type: "style.capture" });
+    const cap = (await evP).find((e) => e.type === "style.capture") as
+      | { focus?: { variantId?: string } }
+      | undefined;
+
+    expect(cap?.focus?.variantId).toBe(variantId);
+    ws.close();
+  });
+});
+
 // ── styles ─────────────────────────────────────────────────────────────────────
 
 describe("style.add / toggle / remove", () => {
