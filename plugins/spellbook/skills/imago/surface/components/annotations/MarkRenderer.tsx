@@ -23,6 +23,7 @@ export function MarkRenderer({
   natH,
   onMeasurePin,
   liveOverride,
+  preserveAspectRatio = "xMidYMid meet",
 }: {
   marks: Mark[];
   layers: Layer[]; // back→front; drives effective z + the hidden-layer skip
@@ -36,6 +37,9 @@ export function MarkRenderer({
   // mid-drag geometry for the selected mark: substituted for the stored mark of
   // the same id so the SHAPE (not just the highlight) moves live with the cursor.
   liveOverride?: Mark | null;
+  // how the viewBox fits its box — "meet" (default; matches the canvas's
+  // contain-fit) or "slice" (matches an object-cover sidebar thumbnail).
+  preserveAspectRatio?: string;
 }) {
   const display = liveOverride
     ? marks.map((m) => (m.id === liveOverride.id ? liveOverride : m))
@@ -60,6 +64,7 @@ export function MarkRenderer({
     <svg
       className="absolute inset-0 w-full h-full pointer-events-none"
       viewBox={`0 0 ${natW} ${natH}`}
+      preserveAspectRatio={preserveAspectRatio}
     >
       <title>annotations</title>
       {visibleSorted(display, layers).map((m) => {

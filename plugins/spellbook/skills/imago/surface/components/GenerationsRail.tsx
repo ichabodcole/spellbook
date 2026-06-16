@@ -3,6 +3,7 @@ import { useState } from "react";
 import { focusedVariant, variantLabel } from "../state/derive";
 import { addImageLayerFromSrc } from "../state/fileIntake";
 import type { ClientToServer, ImagoState } from "../state/types";
+import { MarkRenderer } from "./annotations/MarkRenderer";
 
 type Size = "s" | "m" | "l";
 const THUMB: Record<Size, string> = {
@@ -10,6 +11,9 @@ const THUMB: Record<Size, string> = {
   m: "w-[92px]",
   l: "w-[132px]",
 };
+// rendered thumb width in px (mirrors THUMB) — drives the mark overlay's stroke
+// scale so annotations weld at thumb scale instead of full-image px.
+const THUMB_PX: Record<Size, number> = { s: 60, m: 92, l: 132 };
 
 // Left pane: every kept generation, grouped by batch. Click a variant to focus
 // it on the canvas (a "focus" gesture the agent hears).
@@ -21,6 +25,9 @@ export function GenerationsRail({
   send: (m: ClientToServer) => void;
 }) {
   const [size, setSize] = useState<Size>("m");
+  // natural px per variant (measured on thumb load) → the mark overlay's viewBox
+  // basis + slice alignment with the object-cover image.
+  const [dims, setDims] = useState<Record<string, { w: number; h: number }>>({});
   // the focused image a generation can be composited onto (undefined on the blank
   // frame → "add as layer" hidden).
   const focusedSrc = focusedVariant(state)?.src;
@@ -74,6 +81,12 @@ export function GenerationsRail({
             <div className="flex flex-wrap gap-2">
               {b.variants.map((v, vi) => {
                 const selected = state.focus?.variantId === v.id;
+                // composite the variant's layers + marks onto its thumbnail so you
+                // can tell a worked-on image (collage / annotations) from a raw one.
+                const marks = state.marksByVariant[v.id] ?? [];
+                const layers = state.layersByVariant[v.id] ?? [];
+                const d = dims[v.id];
+                const hasOverlay = (marks.length > 0 || layers.length > 0) && d && d.w > 0;
                 return (
                   // wrapper holds the ring + the two sibling buttons (a focus
                   // button can't NEST an "add as layer" button — invalid HTML).
@@ -100,11 +113,31 @@ export function GenerationsRail({
                           src={v.src}
                           alt={`variant ${variantLabel(vi)}`}
                           className="w-full h-full object-cover"
+                          onLoad={(e) => {
+                            const t = e.currentTarget;
+                            setDims((prev) =>
+                              prev[v.id]?.w === t.naturalWidth
+                                ? prev
+                                : { ...prev, [v.id]: { w: t.naturalWidth, h: t.naturalHeight } },
+                            );
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full bg-surface-2" />
                       )}
                     </button>
+                    {/* layer/mark overlay — slice to match the object-cover image;
+                        pointer-events-none so the focus button still gets clicks */}
+                    {hasOverlay && (
+                      <MarkRenderer
+                        marks={marks}
+                        layers={layers}
+                        natW={d.w}
+                        natH={d.h}
+                        scale={THUMB_PX[size] / d.w}
+                        preserveAspectRatio="xMidYMid slice"
+                      />
+                    )}
                     <span className="absolute top-0.5 left-0.5 text-[9px] bg-black/60 text-ink px-1 rounded pointer-events-none">
                       {variantLabel(vi)}
                     </span>
