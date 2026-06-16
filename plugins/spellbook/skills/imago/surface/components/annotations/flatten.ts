@@ -16,7 +16,7 @@
 //    tokens, so we resolve them to concrete values up front via getComputedStyle.
 //    (The live renderer reads the vars directly, so it skips this step.)
 import type { Layer, Mark } from "../../state/types";
-import { visibleSorted } from "./coords";
+import { markBounds, visibleSorted } from "./coords";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "./style";
 import { arrowHeadPoints, PIN_BG_DEFAULT, PIN_TEXT, pinLayout } from "./svgMark";
 
@@ -129,7 +129,16 @@ export async function flattenMarks(
     if (W <= 0 || H <= 0) return "";
     const resolve = colorResolver();
     const body = visibleSorted(marks, layers)
-      .map((m) => markSvg(m, W, H, resolve))
+      .map((m) => {
+        const svg = markSvg(m, W, H, resolve);
+        // rotation (image-first): same rotate-about-bbox-center the live renderer
+        // applies, burned in here so the handoff PNG matches what's on screen.
+        if (!m.rotation) return svg;
+        const b = markBounds(m);
+        const cx = (b.x + b.w / 2) * W;
+        const cy = (b.y + b.h / 2) * H;
+        return `<g transform="rotate(${m.rotation} ${cx} ${cy})">${svg}</g>`;
+      })
       .join("");
     const svg =
       `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">` +

@@ -108,6 +108,31 @@ export function markBounds(m: Mark, pinSize?: PinSize): Box {
   }
 }
 
+// Center of a box (fraction space). The rotation pivot for a mark is the center
+// of its UN-rotated bounds — the same point the SVG/CSS rotate transforms about.
+export function boundsCenter(b: Box): Point {
+  return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+}
+
+// Rotate point p by `deg` (clockwise, matching SVG `rotate(deg)` and CSS rotate)
+// about center c, in the image's ISOTROPIC pixel metric. Fraction space is
+// anisotropic when natW≠natH, but the on-screen render rotates in visual pixels,
+// so the math converts through px via `aspect` (= natW/natH) to stay WYSIWYG.
+// Pass θ=-deg to map a screen point back into a mark's un-rotated local frame
+// (hit-test), or c={0,0} to rotate a bare delta vector (rotated-resize).
+export function rotatePoint(p: Point, deg: number, c: Point, aspect = 1): Point {
+  if (!deg) return p;
+  const a = (deg * Math.PI) / 180;
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  const u = p.x - c.x;
+  const v = p.y - c.y;
+  return {
+    x: c.x + u * cos - (v * sin) / aspect,
+    y: c.y + u * aspect * sin + v * cos,
+  };
+}
+
 // Bounding box of a freeform stroke's points (empty → a 0×0 point at origin).
 function pointsBounds(points: Point[]): Box {
   if (points.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
@@ -139,7 +164,21 @@ export const HIT_THRESHOLD = 0.02;
 // Is point p "on" mark m? A measured pin is its text box (grab from anywhere on
 // the note); an unmeasured pin falls back to a point-distance test. arrow/line
 // are distance tests (threshold); rect/ellipse are area tests. All in fractions.
-export function hitTest(p: Point, m: Mark, threshold = HIT_THRESHOLD, pinSize?: PinSize): boolean {
+// When the mark is rotated, the test point is first mapped back into the mark's
+// un-rotated local frame (rotatePoint by -rotation about the bbox center), so the
+// existing axis-aligned geometry tests apply unchanged. `aspect` (= natW/natH)
+// makes that un-rotation match the on-screen render on non-square images.
+export function hitTest(
+  p: Point,
+  m: Mark,
+  threshold = HIT_THRESHOLD,
+  pinSize?: PinSize,
+  aspect = 1,
+): boolean {
+  if (m.rotation) {
+    const c = boundsCenter(markBounds(m, pinSize));
+    p = rotatePoint(p, -m.rotation, c, aspect);
+  }
   switch (m.tool) {
     case "pin": {
       if (!pinSize || (pinSize.w === 0 && pinSize.h === 0)) {

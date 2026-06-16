@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import type { ClientToServer, Layer, Mark } from "../../state/types";
 import {
   type Box,
+  boundsCenter,
   byEffectiveZ,
   frac,
   hitTest,
@@ -26,6 +27,7 @@ import {
   markBounds,
   type PinSize,
   type Point,
+  rotatePoint,
 } from "./coords";
 import { DEFAULT_TEXT_SIZE } from "./style";
 import { PinEditor } from "./tools/PinTool";
@@ -34,12 +36,14 @@ const MOVE_THRESHOLD = 0.005; // sub-threshold gesture = select-only (no update)
 const MIN_SIZE = 0.01; // min shape extent on resize (fractions)
 const PAD = 0.012; // breathing room around the highlight
 const MIN_HL = 0.04; // min highlight size so points/thin marks stay grabbable
+const ROT_GAP = 0.06; // how far above the top edge the rotation handle floats (frac)
 
-// A mid-gesture transform of the selected mark. handle is "" for a move.
-// shift carries the live modifier: on a corner resize it flips the aspect
-// behavior ("Shift = the other aspect behavior" — see resize()).
+// A mid-gesture transform of the selected mark. handle is "" for a move, "rotate"
+// for the rotation handle, or a resize handle id otherwise. shift carries the live
+// modifier: on a corner resize it flips the aspect behavior ("Shift = the other
+// aspect behavior" — see resize()).
 type Gesture = {
-  type: "move" | "resize";
+  type: "move" | "resize" | "rotate";
   handle: string;
   start: Point;
   cur: Point;
@@ -171,10 +175,32 @@ function resize(m: Mark, handle: string, dx: number, dy: number, shift: boolean)
   }
 }
 
-function applyGesture(m: Mark, g: Gesture): Mark {
-  const dx = g.cur.x - g.start.x;
-  const dy = g.cur.y - g.start.y;
-  return g.type === "move" ? translate(m, dx, dy) : resize(m, g.handle, dx, dy, g.shift);
+// normalize degrees to (-180, 180].
+function normDeg(d: number): number {
+  return ((((d + 180) % 360) + 360) % 360) - 180;
+}
+
+function applyGesture(m: Mark, g: Gesture, aspect: number): Mark {
+  if (g.type === "rotate") {
+    // absolute angle from the bbox center to the pointer (visual, so aspect-scaled).
+    // the handle sits straight UP from center at rotation 0 (atan2 of up is -90°),
+    // so offset by +90° → dragging it clockwise increases rotation, matching SVG.
+    const c = boundsCenter(markBounds(m));
+    const ang = (Math.atan2(g.cur.y - c.y, (g.cur.x - c.x) * aspect) * 180) / Math.PI;
+    return { ...m, rotation: normDeg(ang + 90) };
+  }
+  let dx = g.cur.x - g.start.x;
+  let dy = g.cur.y - g.start.y;
+  if (g.type === "move") return translate(m, dx, dy);
+  // resize: the drag is in screen space; rotate the delta back into the mark's
+  // un-rotated LOCAL frame so handles track intuitively when the mark is rotated —
+  // then slice A's aspect-lock (resize) runs unchanged on that local delta.
+  if (m.rotation) {
+    const d = rotatePoint({ x: dx, y: dy }, -m.rotation, { x: 0, y: 0 }, aspect);
+    dx = d.x;
+    dy = d.y;
+  }
+  return resize(m, g.handle, dx, dy, g.shift);
 }
 
 // Edge policy: keep a note FULLY inside the image. Clamp a pin's center by its
@@ -281,6 +307,8 @@ export function SelectionOverlay({
   layers,
   send,
   scale,
+  natW,
+  natH,
   pinBounds,
   selectedIds,
   onSelectedIdsChange,
@@ -291,12 +319,17 @@ export function SelectionOverlay({
   layers: Layer[]; // back→front → topmost-hit honors layer order, skips hidden/locked
   send: (m: ClientToServer) => void;
   scale: number; // viewport zoom → the inline note editor welds to the image
+  natW: number; // image natural px → aspect for rotated hit-test / gesture math
+  natH: number;
   pinBounds: Record<string, PinSize>; // measured pin text boxes (fractions), by id
   selectedIds: string[]; // CONTROLLED by Canvas — the selection SET (shared with the layers panel)
   onSelectedIdsChange: (ids: string[]) => void; // drive the lifted selection
   onLiveTransform?: (m: Mark | null) => void; // lift the mid-drag geometry so the SHAPE moves live
   liveOverride?: Mark | null; // the held drop geometry (until broadcast) → highlight rides it too
 }) {
+  // image aspect (w:h) — fraction space is anisotropic, so rotation math converts
+  // through it to match the on-screen render. 1 (square) until the image measures.
+  const aspect = natH > 0 ? natW / natH : 1;
   // selectedIds is lifted (controlled by Canvas); only the transient gesture + the
   // open pin-edit stay local — they're drag-/edit-scoped, not shared state.
   const [gesture, setGesture] = useState<Gesture | null>(null);
@@ -313,9 +346,13 @@ export function SelectionOverlay({
   const held = single && liveOverride && liveOverride.id === single.id ? liveOverride : undefined;
   const live =
     single && gesture
-      ? clampToImage(applyGesture(single, gesture), pinBounds[single.id])
+      ? clampToImage(applyGesture(single, gesture, aspect), pinBounds[single.id])
       : (held ?? single);
   const hl = single && live ? highlightBox(live, pinBounds[live.id]) : null;
+  // the single's rotation + pivot (bbox center) drive the CSS-rotated chrome below,
+  // so the frame + handles ride a rotated mark instead of detaching from its AABB.
+  const liveDeg = (single && live?.rotation) || 0;
+  const frameCenter = single && live ? boundsCenter(markBounds(live, pinBounds[live.id])) : null;
   const editing = editingId ? marks.find((m) => m.id === editingId) : undefined;
 
   // Push the live transformed mark up DURING a gesture so MarkRenderer moves the
@@ -324,8 +361,8 @@ export function SelectionOverlay({
   // to its old spot in the gap between release and broadcast. Cleared on unmount.
   useEffect(() => {
     if (gesture && single)
-      onLiveTransform?.(clampToImage(applyGesture(single, gesture), pinBounds[single.id]));
-  }, [gesture, single, pinBounds, onLiveTransform]);
+      onLiveTransform?.(clampToImage(applyGesture(single, gesture, aspect), pinBounds[single.id]));
+  }, [gesture, single, aspect, pinBounds, onLiveTransform]);
   useEffect(() => () => onLiveTransform?.(null), [onLiveTransform]);
 
   // topmost mark under p (effective-z descending: layer order then zOrder), pins
@@ -336,7 +373,7 @@ export function SelectionOverlay({
     return [...marks]
       .filter((m) => isMarkSelectable(layers, m))
       .sort((a, b) => cmp(b, a))
-      .find((m) => hitTest(p, m, undefined, pinBounds[m.id]));
+      .find((m) => hitTest(p, m, undefined, pinBounds[m.id], aspect));
   }
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -345,7 +382,8 @@ export function SelectionOverlay({
     const p = frac(e);
     if (handle && single) {
       e.stopPropagation();
-      setGesture({ type: "resize", handle, start: p, cur: p, shift: e.shiftKey });
+      const type = handle === "rotate" ? "rotate" : "resize";
+      setGesture({ type, handle, start: p, cur: p, shift: e.shiftKey });
       e.currentTarget.setPointerCapture(e.pointerId);
       return;
     }
@@ -383,15 +421,25 @@ export function SelectionOverlay({
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     if (!gesture) return;
     e.currentTarget.releasePointerCapture?.(e.pointerId);
-    const moved =
-      Math.hypot(gesture.cur.x - gesture.start.x, gesture.cur.y - gesture.start.y) >=
-      MOVE_THRESHOLD;
-    if (moved && single) {
-      send({
-        type: "mark.update",
-        id: single.id,
-        patch: geometryPatch(clampToImage(applyGesture(single, gesture), pinBounds[single.id])),
-      });
+    if (single) {
+      if (gesture.type === "rotate") {
+        // any rotation drag commits the new scalar (no move-threshold gate)
+        const rotated = applyGesture(single, gesture, aspect);
+        send({ type: "mark.update", id: single.id, patch: { rotation: rotated.rotation ?? 0 } });
+      } else {
+        const moved =
+          Math.hypot(gesture.cur.x - gesture.start.x, gesture.cur.y - gesture.start.y) >=
+          MOVE_THRESHOLD;
+        if (moved) {
+          send({
+            type: "mark.update",
+            id: single.id,
+            patch: geometryPatch(
+              clampToImage(applyGesture(single, gesture, aspect), pinBounds[single.id]),
+            ),
+          });
+        }
+      }
     }
     setGesture(null);
   }
@@ -408,6 +456,9 @@ export function SelectionOverlay({
       {selectedMarks.map((m) => {
         const shown = single && single.id === m.id ? (live ?? m) : m;
         const box = highlightBox(shown, pinBounds[shown.id]);
+        // the highlight box is centered on the mark, so a CSS rotate about its own
+        // (default) center pivots about the mark center — matching the SVG render.
+        const deg = shown.rotation ?? 0;
         return (
           <div
             key={m.id}
@@ -417,6 +468,7 @@ export function SelectionOverlay({
               top: `${box.y * 100}%`,
               width: `${box.w * 100}%`,
               height: `${box.h * 100}%`,
+              transform: deg ? `rotate(${deg}deg)` : undefined,
             }}
           />
         );
@@ -425,7 +477,20 @@ export function SelectionOverlay({
       {/* transform frame — handles + actions — only with exactly one mark selected
           and not mid-edit. (Multi-select is for grouping, not multi-transform.) */}
       {single && live && hl && !editing && (
-        <>
+        // the whole frame (handles + rotation handle + actions) rides the mark's
+        // rotation: one CSS rotate about the bbox center keeps every chrome element
+        // welded to the rotated AABB. transform-origin is in % of this inset-0 box.
+        <div
+          className="absolute inset-0"
+          style={
+            liveDeg && frameCenter
+              ? {
+                  transform: `rotate(${liveDeg}deg)`,
+                  transformOrigin: `${frameCenter.x * 100}% ${frameCenter.y * 100}%`,
+                }
+              : undefined
+          }
+        >
           {/* resize handles — never present for pins */}
           {resizeHandles(live).map((hnd) => (
             <div
@@ -435,6 +500,28 @@ export function SelectionOverlay({
               style={{ left: `${hnd.x * 100}%`, top: `${hnd.y * 100}%` }}
             />
           ))}
+
+          {/* rotation handle (image-first): a stem + grip floating above the
+              top-edge midpoint of the frame; it rotates with the frame, so it
+              always reads as "the top". Sets mark.update { rotation }. */}
+          {single.tool === "image" && (
+            <>
+              <div
+                className="absolute w-px -translate-x-1/2 bg-edge pointer-events-none"
+                style={{
+                  left: `${(hl.x + hl.w / 2) * 100}%`,
+                  top: `${(hl.y - ROT_GAP) * 100}%`,
+                  height: `${ROT_GAP * 100}%`,
+                }}
+              />
+              <div
+                data-handle="rotate"
+                title="Rotate"
+                className="absolute w-2.5 h-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent border border-edge cursor-grab"
+                style={{ left: `${(hl.x + hl.w / 2) * 100}%`, top: `${(hl.y - ROT_GAP) * 100}%` }}
+              />
+            </>
+          )}
 
           {/* actions — edit (pins) + delete, at the highlight's top-right edge.
               Inter-layer z-order now lives in the layers panel (layer.reorder), so
@@ -458,7 +545,7 @@ export function SelectionOverlay({
               <X className="w-3 h-3" />
             </ActionButton>
           </div>
-        </>
+        </div>
       )}
 
       {/* inline label editor — reuses the draw-mode pin editor. Enter/blur with

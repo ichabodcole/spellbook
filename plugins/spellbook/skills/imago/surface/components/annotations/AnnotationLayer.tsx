@@ -200,6 +200,8 @@ export function AnnotationLayer({
           layers={layers}
           send={send}
           scale={scale}
+          natW={natW}
+          natH={natH}
           pinBounds={pinBounds}
           selectedIds={selectedIds}
           onSelectedIdsChange={onSelectedIdsChange}
