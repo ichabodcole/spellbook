@@ -20,6 +20,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pickTailSession, type Session } from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -1587,6 +1588,54 @@ describe("durability (Phase B)", () => {
     const sessions = await runCli(["sessions"], { env });
     expect(sessions.stdout).toContain(session);
   }, 20000);
+});
+
+// ── tail session pinning (#tail-pin: cross-project hijack guard) ─────────
+//
+// An unpinned long-lived `tail` used to re-resolve the GLOBAL `latest` pointer
+// on every reconnect, so a newer board opening on the host silently hijacked
+// the stream (dream-flute BUG 1: the lead received another project's events).
+// pickTailSession locks onto the first session it resolves; thereafter it reads
+// THAT session's own file, never `latest`. Pure (readSession injected) so this
+// is deterministic and never touches the real, race-prone global pointer.
+
+describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
+  const boardA: Session = { url: "http://127.0.0.1:1", port: 1, session_id: "A", title: "A" };
+  const boardB: Session = { url: "http://127.0.0.1:2", port: 2, session_id: "B", title: "B" };
+  // Models readSession: read(undefined) follows the global `latest` pointer;
+  // read("A")/read("B") read that session's own (pinned) discovery file.
+  const reader = (latest: Session | null) => (s: string | undefined) => {
+    if (s === undefined) return latest;
+    if (s === "A") return boardA;
+    if (s === "B") return boardB;
+    return null;
+  };
+
+  test("unpinned: pins the first session it resolves off `latest`", () => {
+    const r = pickTailSession(undefined, reader(boardA));
+    expect(r?.pinned).toBe("A");
+    expect(r?.session.port).toBe(1);
+  });
+
+  test("once pinned, a newer board on `latest` does NOT hijack the tail", () => {
+    const r1 = pickTailSession(undefined, reader(boardA)); // pins to A
+    expect(r1?.pinned).toBe("A");
+    // Board B opens and becomes `latest`; the tail reconnects with its pin.
+    const r2 = pickTailSession(r1?.pinned, reader(boardB));
+    // Still A (port 1). The old read-latest-each-reconnect logic gave B (port 2).
+    expect(r2?.pinned).toBe("A");
+    expect(r2?.session.port).toBe(1);
+  });
+
+  test("an explicit --session is pinned from the start, ignoring `latest`", () => {
+    const r = pickTailSession("A", reader(boardB)); // latest=B but pinned to A
+    expect(r?.pinned).toBe("A");
+    expect(r?.session.port).toBe(1);
+  });
+
+  test("returns null when nothing resolves yet (no board up)", () => {
+    expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
 });
 
 describe("join.ts", () => {

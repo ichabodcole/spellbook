@@ -84,6 +84,23 @@ function requireSession(session?: string): Session {
   return s;
 }
 
+// Resolve the session a `tail` should read on this iteration, and the id it is
+// now PINNED to (#tail-pin). The first time an unpinned tail resolves a concrete
+// session (off the global `latest` pointer), it locks onto that session_id;
+// every later reconnect reads THAT session's own file, never `latest` again — so
+// a newer board opening on the host can't silently hijack a long-lived tail. An
+// explicit --session is pinned from the start. `read` is injected so the loop's
+// resolution is unit-testable without touching the race-prone global pointer.
+// Returns null when nothing resolves yet (no board up) — the caller retries.
+function pickTailSession(
+  pinned: string | undefined,
+  read: (session?: string) => Session | null,
+): { session: Session; pinned: string } | null {
+  const s = read(pinned);
+  if (!s) return null;
+  return { session: s, pinned: pinned ?? s.session_id };
+}
+
 async function api(
   port: number,
   method: string,
@@ -255,14 +272,25 @@ async function cmdTail(
   else if (scope.mine)
     process.stderr.write(`# scoped to --mine (owner=${self ?? "?"} + claimable)\n`);
 
+  // Pin the session this tail follows (#tail-pin). An explicit --session is
+  // pinned up front; an unpinned tail pins the first session it resolves and
+  // never consults `latest` again — no silent cross-project hijack on reconnect.
+  let pinned = session;
   while (!stopped) {
-    const s = readSession(session);
-    if (!s) {
+    const resolved = pickTailSession(pinned, readSession);
+    if (!resolved) {
       process.stderr.write("# no session yet, retrying…\n");
       await sleep(delay);
       delay = Math.min(delay * 2, 5000);
       continue;
     }
+    if (pinned === undefined) {
+      pinned = resolved.pinned;
+      process.stderr.write(
+        `# pinned to session ${pinned} — a long-lived tail won't migrate to a newer board (pass --session to choose another)\n`,
+      );
+    }
+    const s = resolved.session;
     let res: Response;
     try {
       res = await fetch(`http://127.0.0.1:${s.port}/events?since=${since}`);
@@ -551,4 +579,5 @@ if (import.meta.main) {
   process.exit(code);
 }
 
-export { main };
+export type { Session };
+export { main, pickTailSession };
