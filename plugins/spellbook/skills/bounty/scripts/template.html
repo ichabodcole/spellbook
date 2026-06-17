@@ -134,6 +134,16 @@
         color: var(--accent-neutral-text);
         letter-spacing: 0.01em;
       }
+      .task .tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.4rem; }
+      .task .tag {
+        /* Neutral chip in the "todo" / warm-brown family — same palette as the
+           @owner text, deliberately understated. No per-tag color (the audit
+           defers that); every chip the same. A future filter may make it
+           clickable — display-only for now. */
+        font-size: 0.68rem; padding: 0.1rem 0.45rem; border-radius: 999px;
+        background: var(--accent-neutral-bg); color: var(--accent-neutral-text);
+        border: 1px solid var(--border); letter-spacing: 0.01em;
+      }
       /* A blocked task: a faint danger rail + a de-emphasized body, plus a small
          "blocked by N" cue under the title. Convention-only — the board still
          lets it move (no hard lock). */
@@ -296,6 +306,14 @@
                   </template>
                   <button class="delete" @click="remove(task)">delete</button>
                 </div>
+                <template x-if="task.tags && task.tags.length">
+                  <div class="tags">
+                    <template x-for="tag in task.tags" :key="tag">
+                      <!-- x-text only — tags are untrusted strings (XSS guard) -->
+                      <span class="tag" x-text="tag"></span>
+                    </template>
+                  </div>
+                </template>
                 <template x-if="task.owner">
                   <div class="owner" x-text="'@' + task.owner"></div>
                 </template>

@@ -20,13 +20,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ownerInScope, pickTailSession, type Session } from "./cli.ts";
+import { ownerInScope, parseTags, pickTailSession, type Session } from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
   type BoardState,
+  cleanTags,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
@@ -276,6 +277,53 @@ describe("validateTask", () => {
     expect(validateTask(null)).toBeNull();
     expect(validateTask("nope")).toBeNull();
     expect(validateTask(undefined)).toBeNull();
+  });
+});
+
+// ── task tags (#18: cleanTags + validateTask) ────────────────────────────
+//
+// Tags are a clean string[] on the canonical task: strings only, trimmed,
+// deduped, no empties, case preserved (display), field omitted when empty so
+// snapshots stay clean and legacy tasks load fine. cleanTags is the shared
+// sanitizer; validateTask applies it at the trust boundary.
+
+describe("cleanTags", () => {
+  test("passes a clean list through, case preserved", () => {
+    expect(cleanTags(["FrontEnd", "bug"])).toEqual(["FrontEnd", "bug"]);
+  });
+  test("drops non-string entries", () => {
+    expect(cleanTags(["a", 42, null, undefined, {}, "b"])).toEqual(["a", "b"]);
+  });
+  test("trims each and drops empties / whitespace-only", () => {
+    expect(cleanTags([" a ", "", "   ", "b "])).toEqual(["a", "b"]);
+  });
+  test("dedupes exactly (case-sensitive — preserves both casings)", () => {
+    expect(cleanTags(["Bug", "bug", "Bug"])).toEqual(["Bug", "bug"]);
+  });
+  test("a non-array yields an empty list", () => {
+    expect(cleanTags("foo")).toEqual([]);
+    expect(cleanTags(undefined)).toEqual([]);
+    expect(cleanTags(42)).toEqual([]);
+  });
+});
+
+describe("validateTask tags", () => {
+  const base = { id: "a", title: "A", status: "todo" as TaskStatus };
+  test("accepts and cleans tags", () => {
+    expect(validateTask({ ...base, tags: [" frontend ", "frontend", 7, "bug"] })).toEqual({
+      ...base,
+      tags: ["frontend", "bug"],
+    });
+  });
+  test("omits the tags field when it cleans to empty (snapshot stays clean)", () => {
+    expect(validateTask({ ...base, tags: ["", "   ", 9] })).toEqual(base);
+    expect(validateTask({ ...base, tags: [] })).toEqual(base);
+  });
+  test("a non-array tags value is dropped, the task still validates (legacy-friendly)", () => {
+    expect(validateTask({ ...base, tags: "frontend" })).toEqual(base);
+  });
+  test("a task without tags is unchanged (legacy loads fine)", () => {
+    expect(validateTask(base)).toEqual(base);
   });
 });
 
@@ -1026,6 +1074,35 @@ describe("cli.ts ↔ daemon parity", () => {
     }
   }, 20000);
 
+  test('--tag sets (cleaned + deduped), replaces on update, and clears with "" (#18)', async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const tags = async () => {
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      return s.state.tasks[0]?.tags ?? [];
+    };
+    try {
+      // add: messy input → stored clean (trim + dedupe).
+      await runCli(
+        ["add", "tagged", "--id", "t1", "--tag", " frontend, bug ,frontend", "--session", session],
+        { env },
+      );
+      expect(await tags()).toEqual(["frontend", "bug"]);
+      // update: SET semantics — the list replaces, not merges.
+      await runCli(["update", "t1", "--tag", "ui,ux", "--session", session], { env });
+      expect(await tags()).toEqual(["ui", "ux"]);
+      // clear: --tag "" empties the list.
+      await runCli(["update", "t1", "--tag", "", "--session", session], { env });
+      expect(await tags()).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
   test("tail streams JSONL events and exits 0 on the closed frame", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
@@ -1668,6 +1745,27 @@ describe("ownerInScope (case-insensitive owner filter)", () => {
   test("no scope → everything is in scope", () => {
     expect(ownerInScope("anyone", {})).toBe(true);
     expect(ownerInScope(undefined, {})).toBe(true);
+  });
+});
+
+// ── --tag parsing (#18: comma list → clean string[]) ─────────────────────
+//
+// `add`/`update --tag a,b,c` — comma-separated, SET semantics (replaces the
+// task's tags), mirroring `block --on a,b`. `--tag ""` clears (empty list).
+
+describe("parseTags", () => {
+  test("splits a comma list", () => {
+    expect(parseTags("frontend,backend,bug")).toEqual(["frontend", "backend", "bug"]);
+  });
+  test("trims each and drops empty segments", () => {
+    expect(parseTags(" frontend , , backend ")).toEqual(["frontend", "backend"]);
+  });
+  test("dedupes", () => {
+    expect(parseTags("bug,bug,ui")).toEqual(["bug", "ui"]);
+  });
+  test("an empty string clears (empty list)", () => {
+    expect(parseTags("")).toEqual([]);
+    expect(parseTags("  ,  ")).toEqual([]);
   });
 });
 

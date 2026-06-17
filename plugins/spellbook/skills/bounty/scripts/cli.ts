@@ -12,8 +12,8 @@
 //     (the not-done blockers), so a filtered blocked task stays actionable.
 //
 // Driving the board (POST /cmd):
-//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]
-//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]
+//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--id ..] [--stdin]
+//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]
 //   bun cli.ts claim <id> [--as <name>]                     # self-claim an unowned task
 //   bun cli.ts block <id> --on <id>[,<id>...]               # add blocker edges (cycle-guarded)
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
@@ -119,6 +119,19 @@ function ownerInScope(
   if (scope.owner) return sameOwner(owner, scope.owner);
   if (scope.mine) return sameOwner(owner, scope.as) || !owner;
   return true;
+}
+
+// Parse a comma-separated `--tag` value into a clean string[] (trim each, drop
+// empties, dedupe). SET semantics: the list REPLACES the task's tags, mirroring
+// the `block --on a,b` convention; `--tag ""` yields [] (a clear). The daemon
+// re-sanitizes via cleanTags, so this is the convenience layer, not the guard.
+function parseTags(value: string): string[] {
+  const out: string[] = [];
+  for (const raw of value.split(",")) {
+    const t = raw.trim();
+    if (t && !out.includes(t)) out.push(t);
+  }
+  return out;
 }
 
 async function api(
@@ -417,8 +430,8 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
-  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
+  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--id ..] [--stdin]   add a task
+  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]      patch a task (--tag "" clears)
   claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
   block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
@@ -476,21 +489,25 @@ async function main(argv: string[]): Promise<number> {
       };
       if (typeof flags.notes === "string") task.notes = flags.notes;
       if (typeof flags.owner === "string") task.owner = flags.owner;
+      if (typeof flags.tag === "string") task.tags = parseTags(flags.tag);
       await postCmd(session, { type: "task.add", task }, { as });
       break;
     }
     case "update": {
       const id = pos[0];
       if (!id)
-        die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]");
+        die(
+          "usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]",
+        );
       const patch: Record<string, unknown> = {};
       if (flags.stdin === true) patch.title = await readStdin();
       else if (typeof flags.title === "string") patch.title = flags.title;
       if (typeof flags.status === "string") patch.status = flags.status;
       if (typeof flags.notes === "string") patch.notes = flags.notes;
       if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
+      if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
       if (Object.keys(patch).length === 0)
-        die("update: nothing to change (give --status/--title/--notes/--owner/--stdin)");
+        die("update: nothing to change (give --status/--title/--notes/--owner/--tag/--stdin)");
       await postCmd(session, { type: "task.update", id, patch }, { as });
       break;
     }
@@ -594,4 +611,4 @@ if (import.meta.main) {
 }
 
 export type { Session };
-export { main, ownerInScope, pickTailSession };
+export { main, ownerInScope, parseTags, pickTailSession };

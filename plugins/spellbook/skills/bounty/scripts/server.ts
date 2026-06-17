@@ -71,6 +71,7 @@ type Task = {
   notes?: string;
   owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
   blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
+  tags?: string[]; // free-form labels; clean string[] (a future filter groups on them)
 };
 type BoardState = { title: string; tasks: Task[] };
 
@@ -168,6 +169,21 @@ function guessMime(name: string): string {
 // path (init + task.add), and snapshot restore all run candidates through it so
 // a malformed task can't enter canonical state. Per-task (callers filter-and-
 // keep-valid or reject a single task), never all-or-nothing.
+// Sanitize an untrusted tags value into a clean string[]: strings only, each
+// trimmed, empties dropped, deduped exactly (case preserved for display — a
+// later filter compares case-insensitively, same as owner-case). A non-array
+// yields []. Callers decide whether to omit an empty result.
+function cleanTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  for (const x of value) {
+    if (typeof x !== "string") continue;
+    const t = x.trim();
+    if (t && !out.includes(t)) out.push(t);
+  }
+  return out;
+}
+
 function validateTask(t: unknown): Task | null {
   if (!t || typeof t !== "object") return null;
   const cand = t as Record<string, unknown>;
@@ -183,6 +199,7 @@ function validateTask(t: unknown): Task | null {
   ) {
     return null;
   }
+  const tags = cleanTags(cand.tags);
   return {
     id: cand.id,
     title: cand.title,
@@ -190,6 +207,7 @@ function validateTask(t: unknown): Task | null {
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
     ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
+    ...(tags.length ? { tags } : {}),
   };
 }
 
@@ -583,6 +601,10 @@ async function main(argv: string[]): Promise<number> {
       // cycle guard). Strip it from a raw update patch so /cmd can't sidestep
       // the guard — keep the guard load-bearing.
       const { blockedBy: _stripped, ...patch } = msg.patch;
+      // Sanitize tags on the way in (#18) so a raw /cmd can't store a dirty
+      // list. Keep an empty array (it's an explicit clear via `--tag ""`) — a
+      // later snapshot/restore normalizes [] away through validateTask.
+      if ("tags" in patch) patch.tags = cleanTags(patch.tags);
       // No-op guard (#23): a redundant patch (e.g. a maestro re-issuing
       // doing->doing) must not broadcast or wake scoped tails. Exempt a `claim`
       // — re-claiming a task you already own is a no-op state-wise but still
@@ -962,6 +984,7 @@ export {
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
+  cleanTags,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
