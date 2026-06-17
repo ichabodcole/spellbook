@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { pickTailSession, type Session } from "./cli.ts";
+import { ownerInScope, pickTailSession, type Session } from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -1635,6 +1635,39 @@ describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
 
   test("returns null when nothing resolves yet (no board up)", () => {
     expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
+});
+
+// ── owner scope matching (#owner-case: case-insensitive owner filter) ────
+//
+// The lead assigns `--owner loom` while the worker filters as `--as Loom`
+// (grapevine aliases are often capitalized). A case-sensitive match silently
+// emptied `--mine`/`--owner` — the worker looked unassigned. ownerInScope (used
+// by both `state` and `tail`) matches owners case-insensitively.
+
+describe("ownerInScope (case-insensitive owner filter)", () => {
+  test("--owner matches the owner regardless of case", () => {
+    expect(ownerInScope("Loom", { owner: "loom" })).toBe(true);
+    expect(ownerInScope("loom", { owner: "LOOM" })).toBe(true);
+  });
+  test("--owner does not match a different owner", () => {
+    expect(ownerInScope("raven", { owner: "loom" })).toBe(false);
+  });
+  test("--owner does not match an unowned task (exact ownership)", () => {
+    expect(ownerInScope(undefined, { owner: "loom" })).toBe(false);
+  });
+  test("--mine matches an own task across a case mismatch (the bug)", () => {
+    expect(ownerInScope("loom", { mine: true, as: "Loom" })).toBe(true);
+  });
+  test("--mine also matches an unowned (claimable) task", () => {
+    expect(ownerInScope(undefined, { mine: true, as: "Loom" })).toBe(true);
+  });
+  test("--mine does not match another worker's task", () => {
+    expect(ownerInScope("raven", { mine: true, as: "Loom" })).toBe(false);
+  });
+  test("no scope → everything is in scope", () => {
+    expect(ownerInScope("anyone", {})).toBe(true);
+    expect(ownerInScope(undefined, {})).toBe(true);
   });
 });
 

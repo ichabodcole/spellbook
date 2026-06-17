@@ -101,6 +101,26 @@ function pickTailSession(
   return { session: s, pinned: pinned ?? s.session_id };
 }
 
+// Owner identity is case-insensitive (#owner-case): the lead may assign
+// `--owner loom` while the worker filters as `--as Loom` (grapevine aliases are
+// often capitalized). A case-sensitive compare silently emptied `--mine`.
+function sameOwner(a: string | undefined, b: string | undefined): boolean {
+  return a !== undefined && b !== undefined && a.toLowerCase() === b.toLowerCase();
+}
+
+// Does a task/event with `owner` fall in the caller's scope? Shared by `state`
+// and `tail` so they filter identically. `--owner X` = exactly X's (case-
+// insensitive); `--mine` = own (case-insensitive) + claimable (unowned); no
+// scope = everything.
+function ownerInScope(
+  owner: string | undefined,
+  scope: { owner?: string; mine?: boolean; as?: string },
+): boolean {
+  if (scope.owner) return sameOwner(owner, scope.owner);
+  if (scope.mine) return sameOwner(owner, scope.as) || !owner;
+  return true;
+}
+
 async function api(
   port: number,
   method: string,
@@ -227,9 +247,7 @@ async function cmdState(
   if (scope.owner || scope.mine) {
     const d = data as { state?: { tasks?: Array<{ owner?: string }> } };
     if (d.state?.tasks) {
-      d.state.tasks = d.state.tasks.filter((t) =>
-        scope.owner ? t.owner === scope.owner : t.owner === scope.as || !t.owner,
-      );
+      d.state.tasks = d.state.tasks.filter((t) => ownerInScope(t.owner, scope));
     }
   }
   printJson(data);
@@ -260,12 +278,8 @@ async function cmdTail(
   // (ready/connected/disconnected/closed) always passes.
   const scopeable = (t?: string) =>
     typeof t === "string" && (t.startsWith("task.") || t === "unblocked");
-  const inScope = (ev: { type?: string; owner?: string }) => {
-    if (!scopeable(ev.type)) return true;
-    if (owner) return ev.owner === owner;
-    if (scope.mine) return ev.owner === self || !ev.owner;
-    return true;
-  };
+  const inScope = (ev: { type?: string; owner?: string }) =>
+    !scopeable(ev.type) || ownerInScope(ev.owner, scope);
   // Self-echo suppression: drop frames the caller's own identity caused (applied
   // after the scope filter). Notice rides stderr, never stdout.
   if (owner) process.stderr.write(`# scoped to owner=${owner}\n`);
@@ -580,4 +594,4 @@ if (import.meta.main) {
 }
 
 export type { Session };
-export { main, pickTailSession };
+export { main, ownerInScope, pickTailSession };
