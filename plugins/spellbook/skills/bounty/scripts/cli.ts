@@ -12,15 +12,16 @@
 //     (the not-done blockers), so a filtered blocked task stays actionable.
 //
 // Driving the board (POST /cmd):
-//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]
-//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]
+//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]
+//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]
 //   bun cli.ts claim <id> [--as <name>]                     # self-claim an unowned task
 //   bun cli.ts block <id> --on <id>[,<id>...]               # add blocker edges (cycle-guarded)
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
 //   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board
-//   bun cli.ts close | info | sessions | help
+//   bun cli.ts list                                        # running boards (live)
+//   bun cli.ts close | info | sessions | help              # sessions = saved snapshots
 //
 // Identity: --as <name> (or $BOUNTY_AS) stamps the event `by`, drives self-echo
 // suppression + claim/--mine. Ownership: --owner assigns; tail --owner/--mine
@@ -82,6 +83,70 @@ function requireSession(session?: string): Session {
   const s = readSession(session);
   if (!s) die("no running bounty session — run: cli.ts open");
   return s;
+}
+
+// Resolve the session a `tail` should read on this iteration, and the id it is
+// now PINNED to (#tail-pin). The first time an unpinned tail resolves a concrete
+// session (off the global `latest` pointer), it locks onto that session_id;
+// every later reconnect reads THAT session's own file, never `latest` again — so
+// a newer board opening on the host can't silently hijack a long-lived tail. An
+// explicit --session is pinned from the start. `read` is injected so the loop's
+// resolution is unit-testable without touching the race-prone global pointer.
+// Returns null when nothing resolves yet (no board up) — the caller retries.
+function pickTailSession(
+  pinned: string | undefined,
+  read: (session?: string) => Session | null,
+): { session: Session; pinned: string } | null {
+  const s = read(pinned);
+  if (!s) return null;
+  return { session: s, pinned: pinned ?? s.session_id };
+}
+
+// Owner identity is case-insensitive (#owner-case): the lead may assign
+// `--owner loom` while the worker filters as `--as Loom` (grapevine aliases are
+// often capitalized). A case-sensitive compare silently emptied `--mine`.
+function sameOwner(a: string | undefined, b: string | undefined): boolean {
+  return a !== undefined && b !== undefined && a.toLowerCase() === b.toLowerCase();
+}
+
+// Does a task/event with `owner` fall in the caller's scope? Shared by `state`
+// and `tail` so they filter identically. `--owner X` = exactly X's (case-
+// insensitive); `--mine` = own (case-insensitive) + claimable (unowned); no
+// scope = everything.
+function ownerInScope(
+  owner: string | undefined,
+  scope: { owner?: string; mine?: boolean; as?: string },
+): boolean {
+  if (scope.owner) return sameOwner(owner, scope.owner);
+  if (scope.mine) return sameOwner(owner, scope.as) || !owner;
+  return true;
+}
+
+// Parse a comma-separated `--tag` value into a clean string[] (trim each, drop
+// empties, dedupe). SET semantics: the list REPLACES the task's tags, mirroring
+// the `block --on a,b` convention; `--tag ""` yields [] (a clear). The daemon
+// re-sanitizes via cleanTags, so this is the convenience layer, not the guard.
+function parseTags(value: string): string[] {
+  const out: string[] = [];
+  for (const raw of value.split(",")) {
+    const t = raw.trim();
+    if (t && !out.includes(t)) out.push(t);
+  }
+  return out;
+}
+
+// Heartbeat sizing flags (#29). --size S|M|L (case-insensitive); anything else
+// is ignored so a typo can't set a bogus size. --expect <minutes> overrides the
+// size default; must be a positive number. The daemon re-validates both.
+function parseSize(value: string | boolean | undefined): "S" | "M" | "L" | undefined {
+  if (typeof value !== "string") return undefined;
+  const s = value.trim().toUpperCase();
+  return s === "S" || s === "M" || s === "L" ? s : undefined;
+}
+function parseExpect(value: string | boolean | undefined): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const m = Number(value.trim());
+  return Number.isFinite(m) && m > 0 ? m : undefined;
 }
 
 async function api(
@@ -210,9 +275,7 @@ async function cmdState(
   if (scope.owner || scope.mine) {
     const d = data as { state?: { tasks?: Array<{ owner?: string }> } };
     if (d.state?.tasks) {
-      d.state.tasks = d.state.tasks.filter((t) =>
-        scope.owner ? t.owner === scope.owner : t.owner === scope.as || !t.owner,
-      );
+      d.state.tasks = d.state.tasks.filter((t) => ownerInScope(t.owner, scope));
     }
   }
   printJson(data);
@@ -242,27 +305,34 @@ async function cmdTail(
   // so it must be scoped — else every worker wakes on every unblock). Lifecycle
   // (ready/connected/disconnected/closed) always passes.
   const scopeable = (t?: string) =>
-    typeof t === "string" && (t.startsWith("task.") || t === "unblocked");
-  const inScope = (ev: { type?: string; owner?: string }) => {
-    if (!scopeable(ev.type)) return true;
-    if (owner) return ev.owner === owner;
-    if (scope.mine) return ev.owner === self || !ev.owner;
-    return true;
-  };
+    typeof t === "string" && (t.startsWith("task.") || t === "unblocked" || t === "heartbeat");
+  const inScope = (ev: { type?: string; owner?: string }) =>
+    !scopeable(ev.type) || ownerInScope(ev.owner, scope);
   // Self-echo suppression: drop frames the caller's own identity caused (applied
   // after the scope filter). Notice rides stderr, never stdout.
   if (owner) process.stderr.write(`# scoped to owner=${owner}\n`);
   else if (scope.mine)
     process.stderr.write(`# scoped to --mine (owner=${self ?? "?"} + claimable)\n`);
 
+  // Pin the session this tail follows (#tail-pin). An explicit --session is
+  // pinned up front; an unpinned tail pins the first session it resolves and
+  // never consults `latest` again — no silent cross-project hijack on reconnect.
+  let pinned = session;
   while (!stopped) {
-    const s = readSession(session);
-    if (!s) {
+    const resolved = pickTailSession(pinned, readSession);
+    if (!resolved) {
       process.stderr.write("# no session yet, retrying…\n");
       await sleep(delay);
       delay = Math.min(delay * 2, 5000);
       continue;
     }
+    if (pinned === undefined) {
+      pinned = resolved.pinned;
+      process.stderr.write(
+        `# pinned to session ${pinned} — a long-lived tail won't migrate to a newer board (pass --session to choose another)\n`,
+      );
+    }
+    const s = resolved.session;
     let res: Response;
     try {
       res = await fetch(`http://127.0.0.1:${s.port}/events?since=${since}`);
@@ -364,6 +434,71 @@ function cmdSessions() {
   if (!rows.length) process.stdout.write("no saved sessions\n");
 }
 
+type LiveBoard = { session_id: string; title: string; url: string; tasks: number };
+
+// Filter discovered sessions to the LIVE ones via an injected probe (task count
+// if the board answers, null if dead/stale). Probes run in parallel. Injecting
+// the probe keeps the live-filter unit-testable without spawning real daemons.
+async function liveBoards(
+  discovered: Session[],
+  probe: (s: Session) => Promise<number | null>,
+): Promise<LiveBoard[]> {
+  const probed = await Promise.all(
+    discovered.map(async (s) => {
+      const tasks = await probe(s);
+      return tasks === null
+        ? null
+        : { session_id: s.session_id, title: s.title, url: s.url, tasks };
+    }),
+  );
+  return probed.filter((b): b is LiveBoard => b !== null);
+}
+
+// Liveness probe: GET /state with a short timeout. Returns the task count if the
+// board answers, null if unreachable (a stale discovery file left by a daemon
+// that died without cleanup).
+async function probeBoard(s: Session): Promise<number | null> {
+  try {
+    const res = await fetch(`${s.url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { state?: { tasks?: unknown[] } };
+    return Array.isArray(body.state?.tasks) ? body.state.tasks.length : 0;
+  } catch {
+    return null;
+  }
+}
+
+// `list` — enumerate currently-RUNNING boards from the tmpdir discovery files
+// (bounty-<id>.json, minus the bounty-latest pointer), liveness-probe each, and
+// print only the live ones (id/task-count/url/title). Distinct from `sessions`,
+// which lists saved snapshots (including closed boards). For join-disambiguation
+// and seeing what's running before a command hits the wrong board.
+async function cmdList() {
+  let files: string[];
+  try {
+    files = readdirSync(tmpdir()).filter(
+      (f) => f.startsWith("bounty-") && f.endsWith(".json") && f !== "bounty-latest.json",
+    );
+  } catch {
+    files = [];
+  }
+  const discovered: Session[] = [];
+  for (const f of files) {
+    try {
+      const s = JSON.parse(readFileSync(join(tmpdir(), f), "utf8")) as Session;
+      if (s && typeof s.url === "string" && typeof s.session_id === "string") discovered.push(s);
+    } catch {
+      /* skip an unreadable / partial discovery file */
+    }
+  }
+  const live = await liveBoards(discovered, probeBoard);
+  live.sort((a, b) => a.session_id.localeCompare(b.session_id));
+  for (const b of live) {
+    process.stdout.write(`${b.session_id}  ${b.tasks} tasks  ${b.url}  — ${b.title}\n`);
+  }
+  if (!live.length) process.stdout.write("no running boards\n");
+}
+
 // Read all of stdin as a single string. Used by --stdin so free text (titles,
 // notes) lands verbatim regardless of shell metacharacters.
 async function readStdin(): Promise<string> {
@@ -375,15 +510,18 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
-  add    <title...> [--status ..] [--notes ..] [--owner ..] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]      patch a task
+  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
+  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
+  --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.
   claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
   block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
   remove <id>                        delete a task
   message <text...> [--stdin]        show a toast on the board
   init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin)
-  close | info | sessions | help
+  list                               list currently-RUNNING boards (id/tasks/url/title)
+  sessions                           list saved SNAPSHOTS (incl. closed boards)
+  close | info | help
 
   --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped
   tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.
@@ -434,21 +572,33 @@ async function main(argv: string[]): Promise<number> {
       };
       if (typeof flags.notes === "string") task.notes = flags.notes;
       if (typeof flags.owner === "string") task.owner = flags.owner;
+      if (typeof flags.tag === "string") task.tags = parseTags(flags.tag);
+      const addSize = parseSize(flags.size);
+      if (addSize) task.size = addSize;
+      const addExpect = parseExpect(flags.expect);
+      if (addExpect !== undefined) task.expect = addExpect;
       await postCmd(session, { type: "task.add", task }, { as });
       break;
     }
     case "update": {
       const id = pos[0];
       if (!id)
-        die("usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--stdin]");
+        die(
+          "usage: update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]",
+        );
       const patch: Record<string, unknown> = {};
       if (flags.stdin === true) patch.title = await readStdin();
       else if (typeof flags.title === "string") patch.title = flags.title;
       if (typeof flags.status === "string") patch.status = flags.status;
       if (typeof flags.notes === "string") patch.notes = flags.notes;
       if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
+      if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
+      const upSize = parseSize(flags.size);
+      if (upSize) patch.size = upSize;
+      const upExpect = parseExpect(flags.expect);
+      if (upExpect !== undefined) patch.expect = upExpect;
       if (Object.keys(patch).length === 0)
-        die("update: nothing to change (give --status/--title/--notes/--owner/--stdin)");
+        die("update: nothing to change (give --status/--title/--notes/--owner/--tag/--stdin)");
       await postCmd(session, { type: "task.update", id, patch }, { as });
       break;
     }
@@ -534,6 +684,9 @@ async function main(argv: string[]): Promise<number> {
     case "sessions":
       cmdSessions();
       break;
+    case "list":
+      await cmdList();
+      break;
     case "help":
     case "--help":
     case "-h":
@@ -551,4 +704,5 @@ if (import.meta.main) {
   process.exit(code);
 }
 
-export { main };
+export type { Session };
+export { liveBoards, main, ownerInScope, parseTags, pickTailSession };
