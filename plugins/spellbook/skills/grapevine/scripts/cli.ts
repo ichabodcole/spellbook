@@ -733,6 +733,73 @@ async function cmdStop() {
   printJson({ ok: true, stopped: true });
 }
 
+// Per-channel live-connection summary — the restart-safety read. Mirrors what
+// `doctor` reports under active_subscribers; only populated channels are listed.
+async function fetchActiveSubscribers(
+  port: number,
+): Promise<{ total: number; channels: Array<{ name: string; connections: number }> }> {
+  let total = 0;
+  const channels: Array<{ name: string; connections: number }> = [];
+  try {
+    const { data } = await api<PresenceResponse>(port, "GET", "/presence");
+    for (const ch of data?.channels ?? []) {
+      total += ch.connections;
+      if (ch.connections > 0) channels.push({ name: ch.name, connections: ch.connections });
+    }
+  } catch {
+    // best-effort — a presence hiccup shouldn't crash a lifecycle verb
+  }
+  return { total, channels };
+}
+
+async function cmdStart() {
+  // Ensure-running, no channel side-effect. Idempotent: report an existing
+  // daemon, or spawn a fresh one. The explicit "bring it up" verb — diagnostics
+  // (doctor/info/list) stay read-only and never spawn.
+  const existing = await readDaemonPort();
+  const port = existing ?? (await ensureDaemon());
+  printJson({ ok: true, port, already_running: existing !== null });
+}
+
+async function cmdRestart(opts: { force?: boolean }) {
+  const port = await readDaemonPort();
+  if (!port) {
+    // Nothing to tear down — just bring a fresh daemon up.
+    const fresh = await ensureDaemon();
+    printJson({ ok: true, restarted: true, port: fresh, previous_pid: null });
+    return;
+  }
+  // SAFETY: a restart forces every connected client to auto-reconnect. Refuse to
+  // tear down a working fleet unless explicitly forced — never silently drop it.
+  const { total, channels } = await fetchActiveSubscribers(port);
+  if (total > 0 && !opts.force) {
+    const where = channels.map((c) => `${c.name} (${c.connections})`).join(", ");
+    die(
+      `restart: ${total} active subscriber(s) across ${channels.length} channel(s) — ${where}. ` +
+        "A restart would force them all to reconnect. Re-run with --force (or --yes) to proceed anyway.",
+    );
+  }
+  // Capture the pid we're replacing, for the receipt.
+  let previousPid: number | null = null;
+  try {
+    const { data } = await api<RootInfo>(port, "GET", "/");
+    previousPid = data?.pid ?? null;
+  } catch {}
+  // Stop, then wait for the old daemon to actually go away — it unlinks its
+  // port/pid files on shutdown, so ensureDaemon spawns fresh rather than
+  // re-discovering the dying one.
+  try {
+    await api(port, "DELETE", "/");
+  } catch {}
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+    if ((await readDaemonPort()) === null) break;
+  }
+  const fresh = await ensureDaemon();
+  printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
+}
+
 async function cmdWatch(name: string | undefined) {
   // Channel name is optional — the page reads it from the URL hash and
   // defaults to "lobby" if absent. We pass through whatever the user gave
@@ -926,6 +993,7 @@ const BOOLEAN_FLAGS = new Set([
   "human",
   "lurk",
   "force",
+  "yes",
 ]);
 
 // Signature of a heredoc fumble: a line that is (or begins with) a
@@ -1078,6 +1146,13 @@ async function main(argv: string[]): Promise<number> {
     case "unarchive":
       await cmdArchive(positional[0], true);
       return 0;
+    case "start":
+    case "up":
+      await cmdStart();
+      return 0;
+    case "restart":
+      await cmdRestart({ force: !!flags.force || !!flags.yes });
+      return 0;
     case "stop":
       await cmdStop();
       return 0;
@@ -1113,6 +1188,8 @@ Usage:
   grapevine archive <name>          # read-only: keep history, reject sends
   grapevine unarchive <name>        # bring an archived channel back
   grapevine close <name>            # destructive: delete the message log
+  grapevine start                   # ensure the daemon is running (alias: up); no channel
+  grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard
   grapevine stop
   grapevine info
   grapevine doctor                  # health check — daemon, zombies, channels

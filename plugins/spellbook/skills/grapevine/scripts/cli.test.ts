@@ -1053,4 +1053,55 @@ describe("grapevine cli", () => {
     );
     expect(ch.message_count).toBe(1);
   });
+
+  // --- daemon lifecycle: start / restart -------------------------------------
+  // These manipulate the shared daemon, so they run LAST in the file. afterAll
+  // tears down whatever daemon is left standing.
+
+  test("start ensures a daemon is running with no channel side-effect", async () => {
+    const before = await bunRun(["list"]);
+    const channelsBefore = JSON.parse(before.stdout).channels.length;
+    const r = await bunRun(["start"]);
+    expect(r.code).toBe(0);
+    const data = JSON.parse(r.stdout);
+    expect(data.ok).toBe(true);
+    expect(typeof data.port).toBe("number");
+    // A live daemon is reachable...
+    const info = await bunRun(["info"]);
+    expect(JSON.parse(info.stdout).daemon).toBe(true);
+    // ...and `start` created no channel.
+    const after = await bunRun(["list"]);
+    expect(JSON.parse(after.stdout).channels.length).toBe(channelsBefore);
+  });
+
+  test("restart refuses to tear down a live fleet without --force", async () => {
+    await bunRun(["open", "restart_busy"]);
+    const t = spawnTail("restart_busy", ["--as", "listener"]);
+    await sleep(400); // let the subscription register presence
+    const infoBefore = await bunRun(["info"]);
+    const pidBefore = JSON.parse(infoBefore.stdout).pid;
+    const r = await bunRun(["restart"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr.toLowerCase()).toMatch(/subscriber|--force|live/);
+    // Daemon untouched — same process, subscriber undisturbed.
+    const infoAfter = await bunRun(["info"]);
+    expect(JSON.parse(infoAfter.stdout).daemon).toBe(true);
+    expect(JSON.parse(infoAfter.stdout).pid).toBe(pidBefore);
+    t.proc.kill("SIGTERM");
+    await sleep(300);
+  });
+
+  test("restart --force respawns a fresh daemon (new pid)", async () => {
+    const infoBefore = await bunRun(["info"]);
+    const pidBefore = JSON.parse(infoBefore.stdout).pid;
+    const r = await bunRun(["restart", "--force"]);
+    expect(r.code).toBe(0);
+    const data = JSON.parse(r.stdout);
+    expect(data.ok).toBe(true);
+    expect(data.restarted).toBe(true);
+    // A daemon is running again, and it's a different process.
+    const infoAfter = await bunRun(["info"]);
+    expect(JSON.parse(infoAfter.stdout).daemon).toBe(true);
+    expect(JSON.parse(infoAfter.stdout).pid).not.toBe(pidBefore);
+  }, 10000);
 });
