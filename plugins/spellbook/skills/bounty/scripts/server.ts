@@ -151,6 +151,21 @@ function cardOverdue(task: Task, now: number): { overdueByMs: number; ageMs: num
   return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
 }
 
+// surface-filter: the canonical decision for whether a card survives the human's
+// view filter. Faceted — OR within a facet (any selected tag matches), AND across
+// facets (the tag-set AND the owner-set). An empty facet means "no filter on this
+// facet" → it passes. So no active filters at all → every card passes (default
+// view). Pure + state-free so it's unit-tested; the inline Alpine surface mirrors
+// it (it can't import). NOT used by the daemon — view-only narrowing, no server
+// behavior change. Hide (don't dim) cards that fail this, so column counts track
+// the visible set.
+function cardPassesFilter(task: Task, activeTags: string[], activeOwners: string[]): boolean {
+  const tagPass = activeTags.length === 0 || (task.tags ?? []).some((t) => activeTags.includes(t));
+  const ownerPass =
+    activeOwners.length === 0 || (task.owner !== undefined && activeOwners.includes(task.owner));
+  return tagPass && ownerPass;
+}
+
 // Stamp a status transition: the fields to merge onto a task entering `status`
 // at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
 // passed in) so the substrate is deterministic and the downstream features
@@ -1179,6 +1194,7 @@ export {
   applyTaskRemove,
   applyTaskUpdate,
   cardOverdue,
+  cardPassesFilter,
   cleanTags,
   computeDuePokes,
   expectedMinutes,

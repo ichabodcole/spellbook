@@ -28,6 +28,7 @@ import {
   applyTaskUpdate,
   type BoardState,
   cardOverdue,
+  cardPassesFilter,
   cleanTags,
   computeDuePokes,
   expectedMinutes,
@@ -389,6 +390,66 @@ describe("cardOverdue", () => {
   test("expect overrides size for the threshold", () => {
     expect(cardOverdue(card({ size: "S", expect: 10 }), 7 * MIN)).toBeNull(); // expect 10 > 7
     expect(cardOverdue(card({ size: "S", expect: 10 }), 12 * MIN)?.overdueByMs).toBe(2 * MIN);
+  });
+});
+
+// ── surface filter (surface-filter — human-side view narrowing) ──────────
+//
+// The board surface lets the human narrow visible cards by tag and/or owner —
+// the lens the agent already has via --mine/--owner/--tag. cardPassesFilter is
+// the canonical, state-free decision (the inline Alpine surface mirrors it).
+// Faceted: OR within a facet (any selected tag matches), AND across facets
+// (tag-set AND owner-set). Empty filter sets mean "no filter" → everything
+// passes. Hide (not dim) non-matching cards; counts then track the visible set.
+
+describe("cardPassesFilter", () => {
+  const card = (over: Partial<Task> = {}): Task => ({
+    id: "a",
+    title: "A",
+    status: "todo",
+    ...over,
+  });
+
+  test("no active filters → every card passes (default view)", () => {
+    expect(cardPassesFilter(card({ tags: ["bug"], owner: "flint" }), [], [])).toBe(true);
+    expect(cardPassesFilter(card(), [], [])).toBe(true);
+  });
+
+  test("tag facet: a card with a selected tag passes", () => {
+    expect(cardPassesFilter(card({ tags: ["bug", "ui"] }), ["bug"], [])).toBe(true);
+  });
+
+  test("tag facet: a card without any selected tag is filtered out", () => {
+    expect(cardPassesFilter(card({ tags: ["ui"] }), ["bug"], [])).toBe(false);
+  });
+
+  test("tag facet OR-within: matching any one selected tag is enough", () => {
+    expect(cardPassesFilter(card({ tags: ["ui"] }), ["bug", "ui"], [])).toBe(true);
+  });
+
+  test("tag facet: a card with no tags is filtered out by a tag filter", () => {
+    expect(cardPassesFilter(card({ tags: undefined }), ["bug"], [])).toBe(false);
+    expect(cardPassesFilter(card({ tags: [] }), ["bug"], [])).toBe(false);
+  });
+
+  test("owner facet: matching owner passes, non-matching is filtered out", () => {
+    expect(cardPassesFilter(card({ owner: "flint" }), [], ["flint"])).toBe(true);
+    expect(cardPassesFilter(card({ owner: "tycho" }), [], ["flint"])).toBe(false);
+  });
+
+  test("owner facet: a card with no owner is filtered out by an owner filter", () => {
+    expect(cardPassesFilter(card({ owner: undefined }), [], ["flint"])).toBe(false);
+  });
+
+  test("owner facet OR-within: matching any one selected owner is enough", () => {
+    expect(cardPassesFilter(card({ owner: "tycho" }), [], ["flint", "tycho"])).toBe(true);
+  });
+
+  test("AND-across facets: both the tag AND owner facet must pass", () => {
+    const c = card({ tags: ["bug"], owner: "flint" });
+    expect(cardPassesFilter(c, ["bug"], ["flint"])).toBe(true); // both match
+    expect(cardPassesFilter(c, ["bug"], ["tycho"])).toBe(false); // tag ok, owner no
+    expect(cardPassesFilter(c, ["ui"], ["flint"])).toBe(false); // owner ok, tag no
   });
 });
 
