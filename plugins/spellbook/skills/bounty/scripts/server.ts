@@ -248,6 +248,50 @@ function applyTaskMove(state: BoardState, id: string, status: TaskStatus, index:
   return insertAt;
 }
 
+// No-op guards (#23). A redundant patch (doing->doing) or a drag dropped back on
+// the card's own slot still ran the apply + broadcast + emitEvent, spuriously
+// waking every scoped tail. These predicates let the caller skip the broadcast
+// + event when "the resulting state equals current" — checked against the SAME
+// logic the apply helpers use, so the two can't drift.
+
+// True when applying `patch` to task `id` would change nothing. Mirrors
+// applyTaskUpdate's invalid-status strip so a bogus status-only patch (which the
+// apply path drops) reads as the no-op it effectively is. Missing id is NOT a
+// no-op — it's "not found", which the apply path reports as applied:false.
+function isNoOpUpdate(state: BoardState, id: string, patch: Partial<Task>): boolean {
+  const task = state.tasks.find((t) => t.id === id);
+  if (!task) return false;
+  let eff = patch;
+  if (eff.status && !VALID_STATUS.includes(eff.status)) {
+    const { status: _drop, ...rest } = eff;
+    eff = rest;
+  }
+  return (Object.keys(eff) as (keyof Task)[]).every((k) => task[k] === eff[k]);
+}
+
+// True when moving task `id` to (status, index) would leave the board's
+// VISIBLE state unchanged — every column's ordered membership identical.
+// Simulates the move on a clone via the real applyTaskMove (index-translation
+// stays single-sourced), then compares COLUMN views, not raw array order.
+// Missing id is NOT a no-op — that's "not found", per the apply path.
+function isNoOpMove(state: BoardState, id: string, status: TaskStatus, index: number): boolean {
+  if (!state.tasks.some((t) => t.id === id)) return false;
+  // Compare COLUMN views, not raw array order: re-dropping the LAST card in a
+  // column on its own slot rewrites the absolute array but not the columns —
+  // still a no-op to the user.
+  const columnView = (s: BoardState) =>
+    VALID_STATUS.map((st) =>
+      s.tasks
+        .filter((t) => t.status === st)
+        .map((t) => t.id)
+        .join(","),
+    ).join("|");
+  const before = columnView(state);
+  const probe: BoardState = { ...state, tasks: state.tasks.map((t) => ({ ...t })) };
+  applyTaskMove(probe, id, status, index);
+  return before === columnView(probe);
+}
+
 async function main(argv: string[]): Promise<number> {
   let parsed: ReturnType<typeof parseArgs>;
   try {
@@ -539,6 +583,13 @@ async function main(argv: string[]): Promise<number> {
       // cycle guard). Strip it from a raw update patch so /cmd can't sidestep
       // the guard — keep the guard load-bearing.
       const { blockedBy: _stripped, ...patch } = msg.patch;
+      // No-op guard (#23): a redundant patch (e.g. a maestro re-issuing
+      // doing->doing) must not broadcast or wake scoped tails. Exempt a `claim`
+      // — re-claiming a task you already own is a no-op state-wise but still
+      // wants its applied:true confirmation, which cli.ts `claim` reads.
+      if (!msg.claim && isNoOpUpdate(state, msg.id, patch)) {
+        return { ok: true, applied: false };
+      }
       if (applyTaskUpdate(state, msg.id, patch)) {
         broadcast({ type: "task.update", id: msg.id, patch });
         // Post-change owner = "who owned it when this happened" (owner-at-emit).
@@ -702,6 +753,8 @@ async function main(argv: string[]): Promise<number> {
           }
           if (msg.type === "task.toggle") {
             if (!VALID_STATUS.includes(msg.status)) return;
+            // No-op guard (#23): a redundant pill click (doing->doing) skips.
+            if (isNoOpUpdate(state, msg.id, { status: msg.status })) return;
             if (applyTaskUpdate(state, msg.id, { status: msg.status })) {
               broadcast({ type: "task.update", id: msg.id, patch: { status: msg.status } });
               emitEvent({
@@ -714,6 +767,9 @@ async function main(argv: string[]): Promise<number> {
             }
           } else if (msg.type === "task.move") {
             if (!VALID_STATUS.includes(msg.status)) return;
+            // No-op guard (#23): a drag dropped back on the card's own slot
+            // (same column membership + order) skips the broadcast + event.
+            if (isNoOpMove(state, msg.id, msg.status, msg.index)) return;
             if (applyTaskMove(state, msg.id, msg.status, msg.index) !== -1) {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
@@ -907,6 +963,8 @@ export {
   applyTaskRemove,
   applyTaskUpdate,
   htmlEscape,
+  isNoOpMove,
+  isNoOpUpdate,
   main,
   parsePortFromSessionId,
   validateTask,

@@ -27,6 +27,8 @@ import {
   applyTaskUpdate,
   type BoardState,
   htmlEscape,
+  isNoOpMove,
+  isNoOpUpdate,
   parsePortFromSessionId,
   type Task,
   type TaskStatus,
@@ -152,6 +154,68 @@ describe("applyTaskMove", () => {
     const s = seed();
     applyTaskMove(s, "a", "done", 0);
     expect(s.tasks.find((t) => t.id === "a")?.status).toBe("done");
+  });
+});
+
+// ── no-op guards (isNoOpUpdate / isNoOpMove) ─────────────────────────────
+//
+// A redundant patch (doing->doing) or a drag landing in the same status+index
+// must be recognized as a no-op so the daemon can skip the broadcast + event
+// — otherwise every such call spuriously wakes every scoped tail (#23).
+
+describe("isNoOpUpdate", () => {
+  function seed(): BoardState {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "doing", notes: "n", owner: "w1" });
+    return s;
+  }
+  test("true when the patch changes nothing (doing->doing)", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "doing" })).toBe(true);
+  });
+  test("true for a multi-field patch that matches current values", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "doing", notes: "n", owner: "w1" })).toBe(true);
+  });
+  test("false when any field actually changes (doing->done)", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "done" })).toBe(false);
+  });
+  test("false when one field of a multi-field patch differs", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "doing", notes: "changed" })).toBe(false);
+  });
+  test("treats a dropped invalid status as no-op (nothing valid left to apply)", () => {
+    // applyTaskUpdate strips an invalid status; a status-only bogus patch is a no-op.
+    expect(isNoOpUpdate(seed(), "a", { status: "bogus" as TaskStatus })).toBe(true);
+  });
+  test("false for a missing task (not a no-op — let the apply path report not-found)", () => {
+    expect(isNoOpUpdate(seed(), "missing", { status: "doing" })).toBe(false);
+  });
+});
+
+describe("isNoOpMove", () => {
+  function seed(): BoardState {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
+    applyTaskAdd(s, { id: "b", title: "B", status: "todo" });
+    applyTaskAdd(s, { id: "c", title: "C", status: "doing" });
+    applyTaskAdd(s, { id: "d", title: "D", status: "doing" });
+    return s;
+  }
+  test("true for a drag landing in the same status+index (a is todo[0])", () => {
+    expect(isNoOpMove(seed(), "a", "todo", 0)).toBe(true);
+  });
+  test("true for the second card dropped back on its own slot (b is todo[1])", () => {
+    expect(isNoOpMove(seed(), "b", "todo", 1)).toBe(true);
+  });
+  test("false for an intra-column reorder (b todo[1] -> todo[0])", () => {
+    expect(isNoOpMove(seed(), "b", "todo", 0)).toBe(false);
+  });
+  test("false for a cross-column move even at a matching index (a todo[0] -> doing[0])", () => {
+    expect(isNoOpMove(seed(), "a", "doing", 0)).toBe(false);
+  });
+  test("true when an out-of-range index clamps back onto the card's own last slot (d is doing[1])", () => {
+    expect(isNoOpMove(seed(), "d", "doing", 99)).toBe(true);
+  });
+  test("false for a missing task", () => {
+    expect(isNoOpMove(seed(), "missing", "todo", 0)).toBe(false);
   });
 });
 
@@ -746,6 +810,62 @@ describe("GET /events (SSE)", () => {
     const toggle = events.find((e) => e.type === "task.toggle");
     expect(toggle?.by).toBe("user");
     expect(toggle?.owner).toBe("worker2"); // owner stamped so an owner-scoped tail wakes
+  }, 15000);
+
+  // #23: a redundant patch / drag-in-place must NOT reach the event log. We
+  // prove the negative with a real "fence" event sent right after the no-op:
+  // the fence arrives, and no task.update/task.move for the no-op precedes it.
+  test("a redundant doing->doing /cmd update emits no event (no-op guard)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "task.add",
+      task: { id: "t1", title: "T", status: "doing" }, // already doing → doing->doing is a no-op
+    });
+    const evP = collectEvents(
+      ready.url,
+      0,
+      (ev) => ev.type === "task.add" && (ev.task as Task)?.id === "fence",
+      4000,
+    );
+    await new Promise((r) => setTimeout(r, 150));
+    await seedCmd(ready.url, { type: "task.update", id: "t1", patch: { status: "doing" } }); // no-op
+    await seedCmd(ready.url, {
+      type: "task.add",
+      task: { id: "fence", title: "F", status: "todo" }, // real event, the fence
+    });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+
+    expect(events.some((e) => e.type === "task.add" && (e.task as Task)?.id === "fence")).toBe(
+      true,
+    );
+    expect(events.some((e) => e.type === "task.update" && e.taskId === "t1")).toBe(false);
+  }, 15000);
+
+  test("a drag landing in the same status+index emits no task.move event (no-op guard)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [
+        { id: "c", title: "C", status: "doing" }, // doing[0]
+        { id: "d", title: "D", status: "doing" }, // doing[1]
+      ],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    const evP = collectEvents(ready.url, 0, (ev) => ev.type === "task.toggle", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    ws.send(JSON.stringify({ type: "task.move", id: "c", status: "doing", index: 0 })); // c already doing[0] → no-op
+    ws.send(JSON.stringify({ type: "task.toggle", id: "d", status: "review" })); // real fence event
+    const events = await evP;
+    ws.close();
+    proc.kill();
+    await proc.exited;
+
+    expect(events.some((e) => e.type === "task.toggle" && e.taskId === "d")).toBe(true);
+    expect(events.some((e) => e.type === "task.move")).toBe(false);
   }, 15000);
 });
 
