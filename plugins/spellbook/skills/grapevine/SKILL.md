@@ -435,8 +435,7 @@ when set; readers that don't care about threading ignore it:
   dots allowed in the middle. So `grapevine-v1.7` works; `.hidden`, `foo.`, and
   `foo..bar` don't.
 - One level of threading (`in_reply_to`) — no edits, reactions, or nested
-  reply-chains. Direct / `@mention` messages and cross-channel `announce` aren't
-  built yet.
+  reply-chains. Direct / `@mention` messages aren't built yet.
 - `archive` is read-only-with-history; `close` still hard-deletes the log.
 - A lurk connection (`?lurk=1` / `tail --lurk`) receives messages but is
   excluded from every presence count — there's no "who's lurking?" read by
