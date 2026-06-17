@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.5.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.4.0...spellbook-v1.5.0) (2026-06-17)
+
+
+### Features
+
+* **bounty:** card-aging — stale cue on overdue doing cards ([#2](https://github.com/ichabodcole/spellbook/issues/2)) ([e24ed09](https://github.com/ichabodcole/spellbook/commit/e24ed0986e4feb22372b238ae038015178d12697))
+* **bounty:** open — keep watched boards alive; default timeout 2h ([d38a32a](https://github.com/ichabodcole/spellbook/commit/d38a32a7701f1af6daa9335cea165355be115444))
+* **bounty:** surface-filter — narrow the board by tag/owner ([#1](https://github.com/ichabodcole/spellbook/issues/1)) ([3d64b58](https://github.com/ichabodcole/spellbook/commit/3d64b584f091ad0e237dfe84ede968aef6c302b1))
+* **bounty:** wip-cue — soft per-owner WIP nudge on Doing ([#3](https://github.com/ichabodcole/spellbook/issues/3)) ([6260deb](https://github.com/ichabodcole/spellbook/commit/6260deb429baf361b401fbfef4eb2c45e50ba8a5))
+
 ## [1.4.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.3.0...spellbook-v1.4.0) (2026-06-17)
 
 
