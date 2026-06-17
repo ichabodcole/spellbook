@@ -487,6 +487,13 @@ async function handle(req: Request): Promise<Response> {
     }
 
     for (const name of targets) {
+      // Re-check archived immediately before append: a channel could have been
+      // archived between target resolution and here. Mirrors the sibling
+      // POST /channels/:name/messages handler, which re-checks before appending.
+      if (existsSync(archivedPath(name))) {
+        skipped.push({ name, reason: "archived" });
+        continue;
+      }
       appendMessage(name, body.from, body.text, "announcement");
       const ch = channels.get(name);
       const vis = ch ? visibleSubs(ch) : [];
