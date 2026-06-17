@@ -299,8 +299,11 @@ type Task = {
 ### Flags (`open`)
 
 - `--title TEXT` — board/tab title (default `"Bounty Board"`)
-- `--timeout SECONDS` — idle timeout (default `1800` / 30 min). Resets on any
-  agent or browser activity.
+- `--timeout SECONDS` — idle timeout (default `7200` / 2 h). It's how long the
+  board lingers **after the last subscriber leaves**, not a cap on a live
+  session: a board with ≥1 live subscriber — a browser tab _or_ an agent's SSE
+  tail — never idle-closes, and the countdown only starts once the last one
+  disconnects. Any agent or browser activity also resets it.
 - `--no-open` — don't auto-open the browser; useful in headless / SSH setups.
 - `--port N` — bind specific port (default: random free port).
 - `--host HOST` — bind host (default `127.0.0.1`).
@@ -315,8 +318,9 @@ The daemon debounce-snapshots the board to
 `$BOUNTY_HOME/snapshots/<session_id>.json` (default `$BOUNTY_HOME` is
 `~/.bounty`) ~1s after any change, and writes a final snapshot on close — kept,
 not deleted, so it's a resume point. Combined with idle-touch (every `cli.ts`
-verb resets the idle timer), a board you're actively driving survives long
-stretches and a restart.
+verb resets the idle timer) and keep-alive-while-watched (a live tab or tail
+holds the board open — see `--timeout`), a board you're actively driving _or_
+just watching survives long stretches and a restart.
 
 - `cli.ts sessions` lists saved snapshots (id · task count · title).
 - `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
@@ -443,8 +447,33 @@ silently stalls mid-task.
 - **Re-pokes, proportionately.** It pokes once on overrun, then re-pokes **once
   per expected-period** (so a big task isn't spammed and a small one still gets
   timely nudges) until the card leaves Doing — at which point it auto-resets.
+- **You only hear it if you're tailing.** The `heartbeat` event lands on the
+  board's event stream, so it reaches you only while you hold an owner-scoped
+  tail (`tail --mine`/`--owner`, Monitor-wrapped). A worker that lives on a
+  side-channel (e.g. grapevine) but isn't tailing the board is **board-blind**:
+  the toast still shows for the human, but the owner-wake never arrives. Keep a
+  **standing `--mine` tail on your board** so `heartbeat` (and `unblocked`)
+  actually reach you — re-arm it if the board restarts on a new session id.
 - Built on the per-transition timestamp substrate (`enteredStatusAt`), the same
   data the card-aging / metrics / leaderboard backlog will reuse.
+
+### Surface cues — what the human sees
+
+These are browser-surface signals for the human watching the board. They change
+no state and need no verb; the agent's equivalents are the events + `--mine`.
+Each has its own visual language so they don't blur together.
+
+- **Card aging.** A Doing card past its expected time (`--size`/`--expect`) dims
+  and grows a "⏱ Doing Nm · over" badge, updating live — the visual half of
+  `heartbeat`, the human's eye on a stalling card.
+- **WIP cue.** When one owner has **2+ cards in Doing**, those cards show a soft
+  "N in Doing — wrap one before pulling more" nudge. Per-owner (parallel owners
+  each on one don't trip it) and non-blocking — a focus whisper, never a lock,
+  the surface kin of the doer-owns-state model.
+- **View filter.** A filter bar narrows the human's _view_ by tag/owner (tag
+  chips + `@owner` pills, toggle to filter, hide non-matching, counts track the
+  visible set) — the surface equivalent of the agent's `--mine`/`--owner`/
+  `--tag`. View-only and per-browser; nothing leaves the tab.
 
 ## Exit Code Contract
 

@@ -27,13 +27,17 @@ import {
   applyTaskRemove,
   applyTaskUpdate,
   type BoardState,
+  cardOverdue,
+  cardPassesFilter,
   cleanTags,
   computeDuePokes,
   expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
+  ownersOverWip,
   parsePortFromSessionId,
+  shouldIdleClose,
   type Task,
   type TaskStatus,
   validateTask,
@@ -348,6 +352,182 @@ describe("validateTask size/expect", () => {
     expect(validateTask({ ...base, expect: 0 })).toEqual(base);
     expect(validateTask({ ...base, expect: -5 })).toEqual(base);
     expect(validateTask({ ...base, expect: "soon" })).toEqual(base);
+  });
+});
+
+// ── card-aging staleness (#2 — surface companion to heartbeat) ───────────
+//
+// A doing card that overran its expected time reads as "stale" to the human's
+// eye. cardOverdue is the canonical, clock-injected decision (the surface
+// mirrors it inline, ticking `now` client-side). It returns both overdueByMs
+// (for an "Nm over" badge) and ageMs (for a "Doing Nm" badge), so it's
+// wording-agnostic. Mirrors heartbeat's opt-in: doing + sized + past expected.
+
+describe("cardOverdue", () => {
+  const MIN = 60_000;
+  const card = (over: Partial<Task> = {}): Task => ({
+    id: "a",
+    title: "A",
+    status: "doing",
+    size: "S", // 5 min
+    enteredStatusAt: 0,
+    ...over,
+  });
+
+  test("null before the expected time elapses", () => {
+    expect(cardOverdue(card(), 4 * MIN)).toBeNull();
+  });
+  test("returns overdue-by + age once past the expected time", () => {
+    expect(cardOverdue(card(), 7 * MIN)).toEqual({ overdueByMs: 2 * MIN, ageMs: 7 * MIN });
+  });
+  test("null for a doing card with no size/expect (opt-in, mirrors heartbeat)", () => {
+    expect(cardOverdue(card({ size: undefined }), 100 * MIN)).toBeNull();
+  });
+  test("null for a non-doing card", () => {
+    expect(cardOverdue(card({ status: "review" }), 100 * MIN)).toBeNull();
+  });
+  test("null when the task hasn't been stamped (no enteredStatusAt)", () => {
+    expect(cardOverdue(card({ enteredStatusAt: undefined }), 100 * MIN)).toBeNull();
+  });
+  test("expect overrides size for the threshold", () => {
+    expect(cardOverdue(card({ size: "S", expect: 10 }), 7 * MIN)).toBeNull(); // expect 10 > 7
+    expect(cardOverdue(card({ size: "S", expect: 10 }), 12 * MIN)?.overdueByMs).toBe(2 * MIN);
+  });
+});
+
+// ── surface filter (surface-filter — human-side view narrowing) ──────────
+//
+// The board surface lets the human narrow visible cards by tag and/or owner —
+// the lens the agent already has via --mine/--owner/--tag. cardPassesFilter is
+// the canonical, state-free decision (the inline Alpine surface mirrors it).
+// Faceted: OR within a facet (any selected tag matches), AND across facets
+// (tag-set AND owner-set). Empty filter sets mean "no filter" → everything
+// passes. Hide (not dim) non-matching cards; counts then track the visible set.
+
+describe("cardPassesFilter", () => {
+  const card = (over: Partial<Task> = {}): Task => ({
+    id: "a",
+    title: "A",
+    status: "todo",
+    ...over,
+  });
+
+  test("no active filters → every card passes (default view)", () => {
+    expect(cardPassesFilter(card({ tags: ["bug"], owner: "flint" }), [], [])).toBe(true);
+    expect(cardPassesFilter(card(), [], [])).toBe(true);
+  });
+
+  test("tag facet: a card with a selected tag passes", () => {
+    expect(cardPassesFilter(card({ tags: ["bug", "ui"] }), ["bug"], [])).toBe(true);
+  });
+
+  test("tag facet: a card without any selected tag is filtered out", () => {
+    expect(cardPassesFilter(card({ tags: ["ui"] }), ["bug"], [])).toBe(false);
+  });
+
+  test("tag facet OR-within: matching any one selected tag is enough", () => {
+    expect(cardPassesFilter(card({ tags: ["ui"] }), ["bug", "ui"], [])).toBe(true);
+  });
+
+  test("tag facet: a card with no tags is filtered out by a tag filter", () => {
+    expect(cardPassesFilter(card({ tags: undefined }), ["bug"], [])).toBe(false);
+    expect(cardPassesFilter(card({ tags: [] }), ["bug"], [])).toBe(false);
+  });
+
+  test("owner facet: matching owner passes, non-matching is filtered out", () => {
+    expect(cardPassesFilter(card({ owner: "flint" }), [], ["flint"])).toBe(true);
+    expect(cardPassesFilter(card({ owner: "tycho" }), [], ["flint"])).toBe(false);
+  });
+
+  test("owner facet: a card with no owner is filtered out by an owner filter", () => {
+    expect(cardPassesFilter(card({ owner: undefined }), [], ["flint"])).toBe(false);
+  });
+
+  test("owner facet OR-within: matching any one selected owner is enough", () => {
+    expect(cardPassesFilter(card({ owner: "tycho" }), [], ["flint", "tycho"])).toBe(true);
+  });
+
+  test("AND-across facets: both the tag AND owner facet must pass", () => {
+    const c = card({ tags: ["bug"], owner: "flint" });
+    expect(cardPassesFilter(c, ["bug"], ["flint"])).toBe(true); // both match
+    expect(cardPassesFilter(c, ["bug"], ["tycho"])).toBe(false); // tag ok, owner no
+    expect(cardPassesFilter(c, ["ui"], ["flint"])).toBe(false); // owner ok, tag no
+  });
+});
+
+// ── idle-close decision (open-timeout — keep-alive-while-watched) ────────
+//
+// A board's idle floor (--timeout, default 2h) only counts down while it's
+// UNWATCHED. A live subscriber — a WS browser (in `sockets`) or an agent SSE
+// tail (in `sseClients`) — keeps it alive indefinitely; the floor means "linger
+// this long after the LAST subscriber leaves," not "max idle while connected."
+// shouldIdleClose is the clock-free decision; the real sweep also touch()es each
+// tick while watched so the floor counts from the last disconnect.
+
+describe("shouldIdleClose", () => {
+  const MIN = 60_000;
+  const FLOOR = 120 * MIN; // 2h
+
+  test("a watched board never closes, however long it's been idle", () => {
+    expect(shouldIdleClose(1, 999 * MIN, FLOOR)).toBe(false);
+    expect(shouldIdleClose(3, 999 * MIN, FLOOR)).toBe(false);
+  });
+  test("unwatched + past the floor → closes", () => {
+    expect(shouldIdleClose(0, 121 * MIN, FLOOR)).toBe(true);
+  });
+  test("unwatched but under the floor → stays open", () => {
+    expect(shouldIdleClose(0, 60 * MIN, FLOOR)).toBe(false);
+  });
+  test("unwatched exactly at the floor → closes (>=)", () => {
+    expect(shouldIdleClose(0, FLOOR, FLOOR)).toBe(true);
+  });
+});
+
+// ── per-owner WIP cue (wip-cue — soft, non-blocking pileup nudge) ────────
+//
+// A soft signal: an owner with >= threshold cards in DOING gets a gentle "wrap
+// one before pulling more" cue on those cards. Per-OWNER (parallel owners each
+// under the limit never trip it); UNOWNED doing cards have no worker, so they're
+// excluded and don't count toward any tally. ownersOverWip is the pure decision
+// (the inline Alpine surface mirrors it); a card shows the cue iff it's in doing
+// AND its owner is in this set. Never blocks the move — purely visual.
+
+describe("ownersOverWip", () => {
+  const doing = (id: string, owner?: string, status: TaskStatus = "doing"): Task => ({
+    id,
+    title: id,
+    status,
+    owner,
+  });
+
+  test("an owner with >= threshold cards in Doing is flagged", () => {
+    expect(ownersOverWip([doing("a", "flint"), doing("b", "flint")], 2).has("flint")).toBe(true);
+  });
+  test("an owner with fewer than threshold is not flagged", () => {
+    expect(ownersOverWip([doing("a", "flint")], 2).has("flint")).toBe(false);
+  });
+  test("unowned Doing cards have no worker — excluded, never counted", () => {
+    expect(ownersOverWip([doing("a"), doing("b")], 2).size).toBe(0);
+  });
+  test("only Doing cards count toward the tally", () => {
+    // 1 in doing + 1 in todo = 1 in doing → under the limit
+    expect(ownersOverWip([doing("a", "flint"), doing("b", "flint", "todo")], 2).has("flint")).toBe(
+      false,
+    );
+  });
+  test("per-owner: parallel owners each under the limit don't trip it", () => {
+    expect(ownersOverWip([doing("a", "flint"), doing("b", "tycho")], 2).size).toBe(0);
+  });
+  test("threshold boundary: exactly threshold flags, one under doesn't", () => {
+    expect(ownersOverWip([doing("a", "f"), doing("b", "f"), doing("c", "f")], 3).has("f")).toBe(
+      true,
+    );
+    expect(ownersOverWip([doing("a", "f"), doing("b", "f")], 3).has("f")).toBe(false);
+  });
+  test("flags only the over-limit owner among mixed owners", () => {
+    const set = ownersOverWip([doing("a", "flint"), doing("b", "flint"), doing("c", "tycho")], 2);
+    expect(set.has("flint")).toBe(true);
+    expect(set.has("tycho")).toBe(false);
   });
 });
 

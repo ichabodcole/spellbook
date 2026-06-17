@@ -134,6 +134,70 @@ function computeDuePokes(
   return { pokes, pokeState: next };
 }
 
+// Card-aging (#2): the surface companion to heartbeat. A doing card that has an
+// expected time (size/expect) and has overrun it reads as "stale". Returns null
+// when the card shouldn't be cued (not doing, unsized, unstamped, or not yet
+// overdue) — opt-in, mirroring heartbeat. Returns both overdueByMs (an "Nm over"
+// badge) and ageMs (a "Doing Nm" badge) so the surface picks the wording. Pure +
+// clock-injected so it's unit-tested; the inline Alpine surface mirrors it (it
+// can't import — it ticks `now` client-side). NOT used by the daemon (no server
+// behavior change) — it's the canonical the surface copies.
+function cardOverdue(task: Task, now: number): { overdueByMs: number; ageMs: number } | null {
+  if (task.status !== "doing" || task.enteredStatusAt === undefined) return null;
+  const exp = expectedMinutes(task);
+  if (exp === undefined) return null;
+  const ageMs = now - task.enteredStatusAt;
+  const overdueByMs = ageMs - exp * 60_000;
+  return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
+}
+
+// surface-filter: the canonical decision for whether a card survives the human's
+// view filter. Faceted — OR within a facet (any selected tag matches), AND across
+// facets (the tag-set AND the owner-set). An empty facet means "no filter on this
+// facet" → it passes. So no active filters at all → every card passes (default
+// view). Pure + state-free so it's unit-tested; the inline Alpine surface mirrors
+// it (it can't import). NOT used by the daemon — view-only narrowing, no server
+// behavior change. Hide (don't dim) cards that fail this, so column counts track
+// the visible set.
+function cardPassesFilter(task: Task, activeTags: string[], activeOwners: string[]): boolean {
+  const tagPass = activeTags.length === 0 || (task.tags ?? []).some((t) => activeTags.includes(t));
+  const ownerPass =
+    activeOwners.length === 0 || (task.owner !== undefined && activeOwners.includes(task.owner));
+  return tagPass && ownerPass;
+}
+
+// open-timeout: the idle-close decision, factored out so it's clock-free testable
+// (like computeDuePokes). A board only counts its idle floor down while UNWATCHED
+// — a live subscriber (a WS browser in `sockets` OR an agent SSE tail on /events)
+// keeps it open indefinitely. So `timeout` means "linger this long after the LAST
+// subscriber leaves," not "max idle while connected." The sweep also touch()es
+// each tick while watched, so once unwatched the floor counts from that last
+// disconnect.
+function shouldIdleClose(subscriberCount: number, idleMs: number, timeoutMs: number): boolean {
+  if (subscriberCount > 0) return false;
+  return idleMs >= timeoutMs;
+}
+
+// wip-cue: the owners who have >= threshold cards in DOING — a soft, per-owner
+// WIP signal ("you've got a pileup; wrap one before pulling more"). Per-owner, so
+// legit parallel owners each under the limit never trip it. UNOWNED doing cards
+// have no worker, so they're excluded and don't count toward any owner's tally.
+// Pure so it's unit-tested; the inline Alpine surface mirrors it (it can't
+// import). NOT used by the daemon — a purely visual, non-blocking nudge (it can
+// never block the move), no server behavior change. A card shows the cue iff it
+// is in doing AND its owner is in this set.
+function ownersOverWip(tasks: Task[], threshold: number): Set<string> {
+  const counts = new Map<string, number>();
+  for (const t of tasks) {
+    if (t.status === "doing" && t.owner !== undefined) {
+      counts.set(t.owner, (counts.get(t.owner) ?? 0) + 1);
+    }
+  }
+  const over = new Set<string>();
+  for (const [owner, n] of counts) if (n >= threshold) over.add(owner);
+  return over;
+}
+
 // Stamp a status transition: the fields to merge onto a task entering `status`
 // at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
 // passed in) so the substrate is deterministic and the downstream features
@@ -441,7 +505,7 @@ async function main(argv: string[]): Promise<number> {
       args: argv,
       options: {
         title: { type: "string", default: "Bounty Board" },
-        timeout: { type: "string", default: "1800" },
+        timeout: { type: "string", default: "7200" },
         "no-open": { type: "boolean", default: false },
         port: { type: "string", default: "0" },
         host: { type: "string", default: "127.0.0.1" },
@@ -1075,7 +1139,12 @@ async function main(argv: string[]): Promise<number> {
   if (!v["no-open"]) openBrowser(url);
 
   const idleTimer = setInterval(() => {
-    if ((performance.now() - lastActivity) / 1000 >= timeout) {
+    // open-timeout: a WS browser OR an agent SSE tail counts as "watched".
+    const subscriberCount = sockets.size + sseClients.size;
+    // While watched, count the board's presence as activity so the idle floor
+    // only begins to count down once the LAST subscriber has left.
+    if (subscriberCount > 0) touch();
+    if (shouldIdleClose(subscriberCount, performance.now() - lastActivity, timeout * 1000)) {
       resolveDone({ code: 124, reason: "timeout" });
     }
   }, 250);
@@ -1161,6 +1230,8 @@ export {
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
+  cardOverdue,
+  cardPassesFilter,
   cleanTags,
   computeDuePokes,
   expectedMinutes,
@@ -1168,6 +1239,8 @@ export {
   isNoOpMove,
   isNoOpUpdate,
   main,
+  ownersOverWip,
   parsePortFromSessionId,
+  shouldIdleClose,
   validateTask,
 };
