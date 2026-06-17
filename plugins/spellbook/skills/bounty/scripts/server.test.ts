@@ -35,6 +35,7 @@ import {
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
+  ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
   type Task,
@@ -479,6 +480,54 @@ describe("shouldIdleClose", () => {
   });
   test("unwatched exactly at the floor → closes (>=)", () => {
     expect(shouldIdleClose(0, FLOOR, FLOOR)).toBe(true);
+  });
+});
+
+// ── per-owner WIP cue (wip-cue — soft, non-blocking pileup nudge) ────────
+//
+// A soft signal: an owner with >= threshold cards in DOING gets a gentle "wrap
+// one before pulling more" cue on those cards. Per-OWNER (parallel owners each
+// under the limit never trip it); UNOWNED doing cards have no worker, so they're
+// excluded and don't count toward any tally. ownersOverWip is the pure decision
+// (the inline Alpine surface mirrors it); a card shows the cue iff it's in doing
+// AND its owner is in this set. Never blocks the move — purely visual.
+
+describe("ownersOverWip", () => {
+  const doing = (id: string, owner?: string, status: TaskStatus = "doing"): Task => ({
+    id,
+    title: id,
+    status,
+    owner,
+  });
+
+  test("an owner with >= threshold cards in Doing is flagged", () => {
+    expect(ownersOverWip([doing("a", "flint"), doing("b", "flint")], 2).has("flint")).toBe(true);
+  });
+  test("an owner with fewer than threshold is not flagged", () => {
+    expect(ownersOverWip([doing("a", "flint")], 2).has("flint")).toBe(false);
+  });
+  test("unowned Doing cards have no worker — excluded, never counted", () => {
+    expect(ownersOverWip([doing("a"), doing("b")], 2).size).toBe(0);
+  });
+  test("only Doing cards count toward the tally", () => {
+    // 1 in doing + 1 in todo = 1 in doing → under the limit
+    expect(ownersOverWip([doing("a", "flint"), doing("b", "flint", "todo")], 2).has("flint")).toBe(
+      false,
+    );
+  });
+  test("per-owner: parallel owners each under the limit don't trip it", () => {
+    expect(ownersOverWip([doing("a", "flint"), doing("b", "tycho")], 2).size).toBe(0);
+  });
+  test("threshold boundary: exactly threshold flags, one under doesn't", () => {
+    expect(ownersOverWip([doing("a", "f"), doing("b", "f"), doing("c", "f")], 3).has("f")).toBe(
+      true,
+    );
+    expect(ownersOverWip([doing("a", "f"), doing("b", "f")], 3).has("f")).toBe(false);
+  });
+  test("flags only the over-limit owner among mixed owners", () => {
+    const set = ownersOverWip([doing("a", "flint"), doing("b", "flint"), doing("c", "tycho")], 2);
+    expect(set.has("flint")).toBe(true);
+    expect(set.has("tycho")).toBe(false);
   });
 });
 

@@ -197,6 +197,22 @@
         margin-top: 0.3rem; font-size: 0.7rem;
         color: var(--text-muted);
       }
+      /* wip-cue: a SOFT, non-blocking nudge when an owner has 2+ cards in Doing
+         ("wrap one before pulling more"). Its OWN minimal language — deliberately
+         distinct from the others: NOT card-aging's dim/.stale (overdue), NOT
+         surface-filter's warm-gold active chip (doing/filter), NOT blocked's red
+         rail. A calm ice-blue whisper: a small hint line + a soft dot, no card
+         dim, no rail, no fill. Soft by design — it can never block the move (same
+         spirit as the Review gate). */
+      .task .wip-cue {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        margin-top: 0.3rem; font-size: 0.7rem;
+        color: var(--accent-cool-text);
+      }
+      .task .wip-cue::before {
+        content: ""; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--accent-cool); opacity: 0.85;
+      }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
         /* Clamp to 2 lines so a long note can't bloat the card; the full text
@@ -426,6 +442,12 @@
                 <template x-if="staleInfo(task)">
                   <div class="age-cue" x-text="staleLabel(task)"></div>
                 </template>
+                <!-- wip-cue: soft per-owner WIP nudge — shows on a doing card
+                     whose owner has 2+ in Doing. x-text only; non-blocking (purely
+                     visual). Its own ice-blue whisper; mirrors server ownersOverWip. -->
+                <template x-if="wipCued(task)">
+                  <div class="wip-cue" x-text="wipLabel(task)"></div>
+                </template>
                 <template x-if="task.notes">
                   <!-- x-text only (untrusted string). Clamped to 2 lines; click
                        opens the detail modal for the full note + editing. -->
@@ -551,6 +573,7 @@
           ageTimer: null, // the card-aging tick interval
           activeTags: [], // surface-filter: active tag filters (view-only)
           activeOwners: [], // surface-filter: active owner filters (view-only)
+          WIP_THRESHOLD: 2, // wip-cue: an owner with >= this many in Doing gets nudged
           STATUSES: ["todo", "doing", "review", "done"],
           COLUMNS: [
             { status: "todo", label: "To do" },
@@ -703,6 +726,36 @@
             if (!s) return "";
             const mins = (ms) => Math.max(1, Math.round(ms / 60000));
             return `⏱ Doing ${mins(s.ageMs)}m · ${mins(s.overdueByMs)}m over`;
+          },
+
+          // wip-cue (soft per-owner WIP nudge). MIRRORS the server's ownersOverWip
+          // (server.ts) — the surface can't import it. Owners with >= WIP_THRESHOLD
+          // cards in Doing; unowned doing cards have no worker (excluded, and don't
+          // count toward any tally). No timer needed — status/owner are already
+          // reactive. Keep in lockstep with the canonical.
+          ownersOverWip() {
+            const counts = {};
+            for (const t of this.tasks) {
+              if (t.status === "doing" && t.owner != null) {
+                counts[t.owner] = (counts[t.owner] || 0) + 1;
+              }
+            }
+            const over = new Set();
+            for (const owner in counts) if (counts[owner] >= this.WIP_THRESHOLD) over.add(owner);
+            return over;
+          },
+          // A doing card is cued iff its owner is over the WIP limit. (A todo/
+          // review/done card never shows it, even if its owner is over in Doing.)
+          wipCued(task) {
+            return (
+              task.status === "doing" && task.owner != null && this.ownersOverWip().has(task.owner)
+            );
+          },
+          wipLabel(task) {
+            const n = this.tasks.filter(
+              (t) => t.status === "doing" && t.owner === task.owner,
+            ).length;
+            return `${n} in Doing — wrap one before pulling more`;
           },
 
           // ── outgoing ────────────────────────────────────────────────

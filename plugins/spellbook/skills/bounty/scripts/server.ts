@@ -178,6 +178,26 @@ function shouldIdleClose(subscriberCount: number, idleMs: number, timeoutMs: num
   return idleMs >= timeoutMs;
 }
 
+// wip-cue: the owners who have >= threshold cards in DOING — a soft, per-owner
+// WIP signal ("you've got a pileup; wrap one before pulling more"). Per-owner, so
+// legit parallel owners each under the limit never trip it. UNOWNED doing cards
+// have no worker, so they're excluded and don't count toward any owner's tally.
+// Pure so it's unit-tested; the inline Alpine surface mirrors it (it can't
+// import). NOT used by the daemon — a purely visual, non-blocking nudge (it can
+// never block the move), no server behavior change. A card shows the cue iff it
+// is in doing AND its owner is in this set.
+function ownersOverWip(tasks: Task[], threshold: number): Set<string> {
+  const counts = new Map<string, number>();
+  for (const t of tasks) {
+    if (t.status === "doing" && t.owner !== undefined) {
+      counts.set(t.owner, (counts.get(t.owner) ?? 0) + 1);
+    }
+  }
+  const over = new Set<string>();
+  for (const [owner, n] of counts) if (n >= threshold) over.add(owner);
+  return over;
+}
+
 // Stamp a status transition: the fields to merge onto a task entering `status`
 // at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
 // passed in) so the substrate is deterministic and the downstream features
@@ -1219,6 +1239,7 @@ export {
   isNoOpMove,
   isNoOpUpdate,
   main,
+  ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
   validateTask,
