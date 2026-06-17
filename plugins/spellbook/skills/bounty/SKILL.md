@@ -4,17 +4,18 @@ description:
   Bounty is a duplex agent↔user task board in the browser. Agent posts tasks;
   user drags between todo/doing/review/done columns, edits titles inline, adds
   or deletes tasks, or closes the board to end the session. The Review column is
-  a soft human-verification gate — the agent parks finished work there (rather
-  than Done) when it needs human eyes a passing test can't give. The agent
-  drives the board through a thin `cli.ts` over a persistent daemon — `open` to
-  spawn it, `state` to read back, `tail` (wrapped with Monitor) to react to user
-  actions live. Multiple agents can share one board via join.ts. HOST trigger
-  phrases — "open a task board", "spin up a bounty", "give me a board to track
-  this", or obvious variants. JOIN trigger phrases — "join my bounty", "connect
-  to the bounty", "the board is at <URL or id>", or obvious variants. Also
-  propose when the agent has produced 5+ discrete TODOs the user might want as a
-  workspace. Do NOT use for single tasks, narrative todos that aren't trackable,
-  or anything the user wants in chat. Requires Bun on PATH.
+  a soft verification gate — the agent parks finished work there (rather than
+  Done) when it needs a second set of eyes (human or agent) a passing test can't
+  give. The agent drives the board through a thin `cli.ts` over a persistent
+  daemon — `open` to spawn it, `state` to read back, `tail` (wrapped with
+  Monitor) to react to user actions live. Multiple agents can share one board
+  via join.ts. HOST trigger phrases — "open a task board", "spin up a bounty",
+  "give me a board to track this", or obvious variants. JOIN trigger phrases —
+  "join my bounty", "connect to the bounty", "the board is at <URL or id>", or
+  obvious variants. Also propose when the agent has produced 5+ discrete TODOs
+  the user might want as a workspace. Do NOT use for single tasks, narrative
+  todos that aren't trackable, or anything the user wants in chat. Requires Bun
+  on PATH.
 ---
 
 # Bounty Board
@@ -24,9 +25,7 @@ palette. Woolly mammoth puns are welcome where they fit naturally.
 
 An agent posts a list of tasks into a browser board; the user interacts with it
 (drags tasks between columns, edits titles inline, adds, deletes, closes the
-board) and both sides receive updates in real time. Built on the
-[`agent-surface-bun` recipe](../../../../recipes/skills/recipes/library/agent-surface-bun/RECIPE.md)
-— see that for the underlying pattern.
+board) and both sides receive updates in real time.
 
 Bounty follows the **house agent-interface pattern** shared with grapevine and
 imago: a **persistent daemon** holds the canonical state, and the agent drives
@@ -46,24 +45,33 @@ board with `join.ts`. Same canonical state under all of them.
 ## The columns — and the review gate
 
 The board has four columns: **To do → Doing → Review → Done**. Review is a
-human-verification gate, and deciding what passes through it is a judgment call
-you make per task:
+verification gate, and the principle is simply: **get a second set of eyes on
+work before it counts as done.** _Who_ reviews — and _whether_ a task needs a
+review at all — is a judgment call you make per task:
 
-- **Park a finished task in Review** (not Done) when it wants a human to look
-  before it counts as done — UI changes, anything that needs a manual smoke
-  test, behavior that passing tests don't fully capture. The user eyeballs it
-  and drags it to Done, or back to Doing if it needs more work.
+- **Park a finished task in Review** (not Done) when it wants another look first
+  — UI/UX changes, anything that needs a manual smoke test, behavior that
+  passing tests don't fully capture, or simply work that someone other than the
+  author should confirm. The reviewer drags it to Done, or back to Doing if it
+  needs more work.
+- **The reviewer can be a human _or_ an agent.** Sometimes a human is the right
+  judge ("does this UX feel right?"); sometimes the managing/lead agent
+  merge-verifies; sometimes you assign a peer agent — or yourself — to review.
+  Decide per task who's best placed to catch what a passing test can't. You can
+  **assign the review explicitly with `--owner`** (hand it to the human, a peer
+  agent, or yourself), so "you've been asked to review this" is itself a board
+  signal that lands in the reviewer's lane.
 - **Move straight to Done** when automated checks already cover it — pure
   functional changes or refactors where green tests are sufficient evidence. Not
-  everything needs a human glance; routing trivially-verified work through
-  Review just adds friction.
+  everything needs a review pass; routing trivially-verified work through Review
+  just adds friction.
 
 The gate is a **convention, not enforced** — the daemon accepts any status
-transition from either side. Let the task's test plan guide you: if it calls for
-human smoke-testing, route through Review; if green tests settle it, Done is
-fine. When genuinely unsure, prefer Review — a cheap glance beats a missed
-regression. A `message` toast is a good way to flag what you've put up for
-review and why.
+transition from any participant. Let the task guide you: if it wants a human's
+eye or a peer's review, route through Review and (optionally) assign the
+reviewer; if green tests settle it, Done is fine. When genuinely unsure, prefer
+Review — a cheap second look beats a missed regression. A `message` toast is a
+good way to flag what you've put up for review and why.
 
 ## When to Use
 
@@ -324,10 +332,12 @@ keep each worker's wake-set small instead of every event waking everyone.
   **stderr**.
 - **Self-echo suppression.** A scoped tail drops frames your own `--as` identity
   caused, so you don't wake on your own writes (applied after the scope filter).
-- **`review` is the human handoff cue.** Moving a task to **Review** is a status
-  change on an owned task — the human sees it on the **surface** (the Review
-  column) and the lead sees it on an **unfiltered** tail. No special event; the
-  board _is_ the signal (board = state, chat = substance).
+- **`review` is the handoff cue.** Moving a task to **Review** is a status
+  change on an owned task — whoever's reviewing sees it: the human on the
+  **surface** (the Review column), the lead on an **unfiltered** tail, and an
+  assigned reviewer on their **scoped** tail (assign the review with `--owner`
+  and it lands in their lane). No special event; the board _is_ the signal
+  (board = state, chat = substance).
 
 > **Ownership-transfer wake (by design).** An event frame carries the task's
 > owner **at the moment it happened** (post-change). So when a task is
@@ -352,9 +362,10 @@ multi-agent load: **the doer owns task-state.**
   do → Doing** — that's the "I've taken this" signal the lead sees on `tail`.
   When it's done and green, move it **Doing → Review** and post what you
   parked + how to verify.
-- **Reviewer closes.** A human glance (or the lead's merge-verify) moves
-  **Review → Done**, or bounces it back to **Doing** for rework — the owner sees
-  the bounce and picks it up.
+- **Reviewer closes.** Review means a second set of eyes — a human glance, the
+  lead's merge-verify, or a peer agent you assign the review to (`--owner`).
+  Whoever reviews moves **Review → Done**, or bounces it back to **Doing** for
+  rework — the owner sees the bounce and picks it up.
 
 Why it holds: **Doing** becomes a trustworthy "genuinely being worked" signal
 instead of the lead's guess, the lead stops puppeteering the board, and the
@@ -384,10 +395,11 @@ flat list.
   that's already `done`. A blocker is "live" only if it still exists and isn't
   done — a deleted or done blocker doesn't block.
   - **A blocker must reach `done` — not `review` — to unblock dependents.**
-    Review is the human-verification gate (the blocker isn't finished yet), so a
-    blocker parked in Review keeps its dependents blocked until a human moves it
-    to Done. If you park a blocker in Review and its dependent stays stuck,
-    that's why — flag the review for a human (`message`) rather than waiting.
+    Review is the verification gate (the blocker isn't finished yet), so a
+    blocker parked in Review keeps its dependents blocked until a reviewer moves
+    it to Done. If you park a blocker in Review and its dependent stays stuck,
+    that's why — flag the review for whoever's reviewing (`message`) rather than
+    waiting.
 - **Surface cue:** a blocked task shows `⛔ blocked by N` and is visually
   de-emphasized. It's a **convention, not a lock** — the board still lets anyone
   move a blocked task (same soft-gate spirit as Review). The cue counts down
