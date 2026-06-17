@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.5.0...spellbook-v1.6.0) (2026-06-17)
+
+
+### Features
+
+* **grapevine:** announce --channels targeting + leaked-invocation guard ([82a1eeb](https://github.com/ichabodcole/spellbook/commit/82a1eeb04e9bde919d6ec7ee90b7bc1544d76a85))
+* **grapevine:** announce — broadcast to all active channels ([8db49c1](https://github.com/ichabodcole/spellbook/commit/8db49c12f33e73ea47a6f3376d11401fae38dc77))
+* **grapevine:** watch renders kind:announcement as an accent banner ([12edc64](https://github.com/ichabodcole/spellbook/commit/12edc6494d5071a3f57ca988559b6e612af353b3))
+
+
+### Bug Fixes
+
+* **grapevine:** announce re-checks archived before appending (sibling parity) ([2540674](https://github.com/ichabodcole/spellbook/commit/25406743fb4faec14b6ee2c8f5f3237b23e34eae))
+
 ## [1.5.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.4.0...spellbook-v1.5.0) (2026-06-17)
 
 
