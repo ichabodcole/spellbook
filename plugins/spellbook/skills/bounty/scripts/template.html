@@ -153,6 +153,16 @@
         margin-top: 0.3rem; font-size: 0.7rem; font-weight: 500;
         color: var(--danger);
       }
+      /* Card-aging (#2): an overdue doing card is de-emphasized — the SAME dim
+         the blocked cards use (shared visual language), but no danger rail. The
+         age cue is muted/neutral, deliberately understated; the dim does the
+         signalling. */
+      .task.stale { opacity: 0.82; }
+      .task .age-cue {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        margin-top: 0.3rem; font-size: 0.7rem;
+        color: var(--text-muted);
+      }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
         /* Clamp to 2 lines so a long note can't bloat the card; the full text
@@ -316,7 +326,7 @@
             <template x-for="(task, idx) in tasksByStatus(col.status)" :key="task.id">
               <div
                 class="task"
-                :class="{ blocked: blockedCount(task) > 0 }"
+                :class="{ blocked: blockedCount(task) > 0, stale: !!staleInfo(task) }"
                 :data-task-id="task.id"
                 :data-task-status="task.status"
                 draggable="true"
@@ -338,6 +348,12 @@
                     class="blocked-cue"
                     x-text="'⛔ blocked by ' + blockedCount(task)"
                   ></div>
+                </template>
+                <!-- Card-aging (#2): an overdue doing card shows a muted ⏱ age
+                     cue (total age · overdue-by). x-text only; ticks live via
+                     `now`. staleInfo mirrors the server's cardOverdue. -->
+                <template x-if="staleInfo(task)">
+                  <div class="age-cue" x-text="staleLabel(task)"></div>
                 </template>
                 <template x-if="task.notes">
                   <!-- x-text only (untrusted string). Clamped to 2 lines; click
@@ -460,6 +476,8 @@
           dragId: null, // id of the task currently being dragged
           detail: null, // task open in the detail modal, or null (#19)
           detailNotes: "", // editable description buffer (separate from the task)
+          now: Date.now(), // ticked every 30s so card-aging cues update live (#2)
+          ageTimer: null, // the card-aging tick interval
           STATUSES: ["todo", "doing", "review", "done"],
           COLUMNS: [
             { status: "todo", label: "To do" },
@@ -482,6 +500,15 @@
             // The WS `init` message overrides it with canonical state shortly.
             this.title = document.title;
             this.connect();
+            // Card-aging (#2): advance `now` every 30s so the stale dim + age
+            // badge update live without a user action. Cheap — one assignment.
+            this.ageTimer = setInterval(() => {
+              this.now = Date.now();
+            }, 30000);
+          },
+
+          destroy() {
+            if (this.ageTimer) clearInterval(this.ageTimer);
           },
 
           tasksByStatus(status) {
@@ -496,6 +523,32 @@
               const b = this.tasks.find((t) => t.id === bid);
               return b && b.status !== "done";
             }).length;
+          },
+
+          // Card-aging (#2). MIRRORS the server's cardOverdue (server.ts) — the
+          // surface can't import it (inline Alpine), and the staleness depends on
+          // a live client-side `now`. Keep the two in lockstep. SIZE_MINUTES must
+          // match the server's. Returns {overdueByMs, ageMs} for an overdue doing
+          // card with an expected time, else null (no cue).
+          expectedMinutes(task) {
+            if (typeof task.expect === "number" && task.expect > 0) return task.expect;
+            const SIZE_MINUTES = { S: 5, M: 10, L: 20 };
+            return task.size && task.size in SIZE_MINUTES ? SIZE_MINUTES[task.size] : undefined;
+          },
+          staleInfo(task) {
+            if (task.status !== "doing" || typeof task.enteredStatusAt !== "number") return null;
+            const exp = this.expectedMinutes(task);
+            if (exp === undefined) return null;
+            const ageMs = this.now - task.enteredStatusAt;
+            const overdueByMs = ageMs - exp * 60000;
+            return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
+          },
+          // "⏱ Doing 25m · 12m over" — both total age and overdue-by (Cole's pick).
+          staleLabel(task) {
+            const s = this.staleInfo(task);
+            if (!s) return "";
+            const mins = (ms) => Math.max(1, Math.round(ms / 60000));
+            return `⏱ Doing ${mins(s.ageMs)}m · ${mins(s.overdueByMs)}m over`;
           },
 
           // ── outgoing ────────────────────────────────────────────────

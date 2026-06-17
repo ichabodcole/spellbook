@@ -134,6 +134,23 @@ function computeDuePokes(
   return { pokes, pokeState: next };
 }
 
+// Card-aging (#2): the surface companion to heartbeat. A doing card that has an
+// expected time (size/expect) and has overrun it reads as "stale". Returns null
+// when the card shouldn't be cued (not doing, unsized, unstamped, or not yet
+// overdue) — opt-in, mirroring heartbeat. Returns both overdueByMs (an "Nm over"
+// badge) and ageMs (a "Doing Nm" badge) so the surface picks the wording. Pure +
+// clock-injected so it's unit-tested; the inline Alpine surface mirrors it (it
+// can't import — it ticks `now` client-side). NOT used by the daemon (no server
+// behavior change) — it's the canonical the surface copies.
+function cardOverdue(task: Task, now: number): { overdueByMs: number; ageMs: number } | null {
+  if (task.status !== "doing" || task.enteredStatusAt === undefined) return null;
+  const exp = expectedMinutes(task);
+  if (exp === undefined) return null;
+  const ageMs = now - task.enteredStatusAt;
+  const overdueByMs = ageMs - exp * 60_000;
+  return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
+}
+
 // Stamp a status transition: the fields to merge onto a task entering `status`
 // at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
 // passed in) so the substrate is deterministic and the downstream features
@@ -1161,6 +1178,7 @@ export {
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
+  cardOverdue,
   cleanTags,
   computeDuePokes,
   expectedMinutes,

@@ -27,6 +27,7 @@ import {
   applyTaskRemove,
   applyTaskUpdate,
   type BoardState,
+  cardOverdue,
   cleanTags,
   computeDuePokes,
   expectedMinutes,
@@ -348,6 +349,46 @@ describe("validateTask size/expect", () => {
     expect(validateTask({ ...base, expect: 0 })).toEqual(base);
     expect(validateTask({ ...base, expect: -5 })).toEqual(base);
     expect(validateTask({ ...base, expect: "soon" })).toEqual(base);
+  });
+});
+
+// ── card-aging staleness (#2 — surface companion to heartbeat) ───────────
+//
+// A doing card that overran its expected time reads as "stale" to the human's
+// eye. cardOverdue is the canonical, clock-injected decision (the surface
+// mirrors it inline, ticking `now` client-side). It returns both overdueByMs
+// (for an "Nm over" badge) and ageMs (for a "Doing Nm" badge), so it's
+// wording-agnostic. Mirrors heartbeat's opt-in: doing + sized + past expected.
+
+describe("cardOverdue", () => {
+  const MIN = 60_000;
+  const card = (over: Partial<Task> = {}): Task => ({
+    id: "a",
+    title: "A",
+    status: "doing",
+    size: "S", // 5 min
+    enteredStatusAt: 0,
+    ...over,
+  });
+
+  test("null before the expected time elapses", () => {
+    expect(cardOverdue(card(), 4 * MIN)).toBeNull();
+  });
+  test("returns overdue-by + age once past the expected time", () => {
+    expect(cardOverdue(card(), 7 * MIN)).toEqual({ overdueByMs: 2 * MIN, ageMs: 7 * MIN });
+  });
+  test("null for a doing card with no size/expect (opt-in, mirrors heartbeat)", () => {
+    expect(cardOverdue(card({ size: undefined }), 100 * MIN)).toBeNull();
+  });
+  test("null for a non-doing card", () => {
+    expect(cardOverdue(card({ status: "review" }), 100 * MIN)).toBeNull();
+  });
+  test("null when the task hasn't been stamped (no enteredStatusAt)", () => {
+    expect(cardOverdue(card({ enteredStatusAt: undefined }), 100 * MIN)).toBeNull();
+  });
+  test("expect overrides size for the threshold", () => {
+    expect(cardOverdue(card({ size: "S", expect: 10 }), 7 * MIN)).toBeNull(); // expect 10 > 7
+    expect(cardOverdue(card({ size: "S", expect: 10 }), 12 * MIN)?.overdueByMs).toBe(2 * MIN);
   });
 });
 
