@@ -28,6 +28,8 @@ import {
   applyTaskUpdate,
   type BoardState,
   cleanTags,
+  computeDuePokes,
+  expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
@@ -254,6 +256,98 @@ describe("validateTask transition fields", () => {
       ],
     });
     expect(t?.statusHistory).toEqual([{ status: "todo", at: 1 }]);
+  });
+});
+
+// ── heartbeat: expected-time + overdue + interval re-poke (#29) ──────────
+//
+// Opt-in per task via size (S/M/L → 5/10/20 min) or an --expect override. A
+// doing task that overruns its expected time pokes its owner, then re-pokes
+// once per expected-period until it leaves doing. All pure + clock-injected.
+
+describe("expectedMinutes", () => {
+  const t = (over: Partial<Task>): Task => ({ id: "a", title: "A", status: "doing", ...over });
+  test("size maps to default minutes (S=5, M=10, L=20)", () => {
+    expect(expectedMinutes(t({ size: "S" }))).toBe(5);
+    expect(expectedMinutes(t({ size: "M" }))).toBe(10);
+    expect(expectedMinutes(t({ size: "L" }))).toBe(20);
+  });
+  test("expect overrides the size default", () => {
+    expect(expectedMinutes(t({ size: "S", expect: 45 }))).toBe(45);
+  });
+  test("no size/expect → undefined (not watched)", () => {
+    expect(expectedMinutes(t({}))).toBeUndefined();
+  });
+});
+
+describe("computeDuePokes", () => {
+  const MIN = 60_000;
+  const doing = (over: Partial<Task> = {}): Task => ({
+    id: "d",
+    title: "D",
+    status: "doing",
+    owner: "flint",
+    size: "S", // 5 min
+    enteredStatusAt: 0,
+    ...over,
+  });
+
+  test("no poke before the expected time elapses", () => {
+    expect(computeDuePokes([doing()], new Map(), 4 * MIN).pokes).toHaveLength(0);
+  });
+  test("fires once the task overruns its expected time", () => {
+    const { pokes, pokeState } = computeDuePokes([doing()], new Map(), 6 * MIN);
+    expect(pokes).toHaveLength(1);
+    expect(pokes[0]).toMatchObject({ taskId: "d", owner: "flint", expectedMinutes: 5 });
+    expect(pokes[0].overdueByMs).toBe(1 * MIN);
+    expect(pokeState.get("d")).toBe(6 * MIN);
+  });
+  test("does not re-fire on the next sweep within the same interval", () => {
+    const { pokes } = computeDuePokes([doing()], new Map([["d", 6 * MIN]]), 7 * MIN);
+    expect(pokes).toHaveLength(0);
+  });
+  test("re-pokes once another expected-period elapses (scales with expected)", () => {
+    const { pokes } = computeDuePokes([doing()], new Map([["d", 6 * MIN]]), 11 * MIN);
+    expect(pokes).toHaveLength(1);
+  });
+  test("an unowned overdue task still pokes (owner undefined — caller toasts only)", () => {
+    const { pokes } = computeDuePokes([doing({ owner: undefined })], new Map(), 6 * MIN);
+    expect(pokes).toHaveLength(1);
+    expect(pokes[0].owner).toBeUndefined();
+  });
+  test("a non-doing task is never poked", () => {
+    expect(computeDuePokes([doing({ status: "todo" })], new Map(), 100 * MIN).pokes).toHaveLength(
+      0,
+    );
+  });
+  test("a task with no size/expect is not watched", () => {
+    expect(computeDuePokes([doing({ size: undefined })], new Map(), 100 * MIN).pokes).toHaveLength(
+      0,
+    );
+  });
+  test("poke bookkeeping resets when a task leaves doing", () => {
+    const { pokeState } = computeDuePokes(
+      [doing({ status: "review" })],
+      new Map([["d", 6 * MIN]]),
+      20 * MIN,
+    );
+    expect(pokeState.has("d")).toBe(false);
+  });
+});
+
+describe("validateTask size/expect", () => {
+  const base = { id: "a", title: "A", status: "todo" as TaskStatus };
+  test("accepts a valid size", () => {
+    expect(validateTask({ ...base, size: "M" })?.size).toBe("M");
+  });
+  test("drops an invalid size, keeps the task", () => {
+    expect(validateTask({ ...base, size: "XL" })).toEqual(base);
+  });
+  test("accepts a positive expect; drops 0 / negative / non-number", () => {
+    expect(validateTask({ ...base, expect: 30 })?.expect).toBe(30);
+    expect(validateTask({ ...base, expect: 0 })).toEqual(base);
+    expect(validateTask({ ...base, expect: -5 })).toEqual(base);
+    expect(validateTask({ ...base, expect: "soon" })).toEqual(base);
   });
 });
 
@@ -1305,6 +1399,34 @@ describe("cli.ts ↔ daemon parity", () => {
       // clear: --tag "" empties the list.
       await runCli(["update", "t1", "--tag", "", "--session", session], { env });
       expect(await tags()).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
+  test("--size (case-insensitive) + --expect override set the heartbeat estimate (#29)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const task = async () => {
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      return s.state.tasks[0];
+    };
+    try {
+      await runCli(["add", "sized", "--id", "t1", "--size", "m", "--session", session], { env });
+      expect((await task()).size).toBe("M"); // normalized to uppercase
+      await runCli(["update", "t1", "--expect", "45", "--session", session], { env });
+      expect((await task()).expect).toBe(45);
+      // A bogus size alongside a real field is dropped; the rest of the patch lands.
+      await runCli(["update", "t1", "--notes", "go", "--size", "XL", "--session", session], {
+        env,
+      });
+      const t = await task();
+      expect(t.notes).toBe("go");
+      expect(t.size).toBe("M"); // unchanged — XL rejected
     } finally {
       await runCli(["close", "--session", session], { env });
     }

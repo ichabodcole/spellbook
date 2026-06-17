@@ -36,6 +36,8 @@
 //   {id, type:"task.update",  taskId, patch, by, owner}   //   / `taskId` so the
 //   {id, type:"task.remove",  taskId, by, owner}          //   spread can't clobber.
 //   {id, type:"unblocked",    taskId, owner, by:"system"} // last blocker cleared
+//   {id, type:"heartbeat",    taskId, owner, overdueByMs, expectedMinutes, by:"system"}
+//                                                     //   owner-scoped overrun poke
 //   {id, type:"closed",       reason, by:"system"}    //   reason: user|timeout|close
 //
 // task.toggle vs task.move: toggle is the click-a-pill UX — status changes,
@@ -75,11 +77,62 @@ type Task = {
   tags?: string[]; // free-form labels; clean string[] (a future filter groups on them)
   enteredStatusAt?: number; // unix ms the task entered its CURRENT status
   statusHistory?: StatusVisit[]; // capped transition log (heartbeat/aging/metrics substrate)
+  size?: TaskSize; // heartbeat sizing — opt-in; maps to a default expected time
+  expect?: number; // explicit expected minutes (overrides size); for the rare exception
 };
 type BoardState = { title: string; tasks: Task[] };
 
 // Cap the per-task transition log so long-lived tasks don't bloat snapshots.
 const MAX_STATUS_HISTORY = 20;
+
+// Heartbeat sizing (#29). Three sizes only — agents are fast (a code change
+// rarely runs past ~20 min) and the absence of an XL is deliberate: a days-long
+// task is a signal to BREAK IT DOWN, not size it bigger. Minutes are tunable.
+type TaskSize = "S" | "M" | "L";
+const SIZE_MINUTES: Record<TaskSize, number> = { S: 5, M: 10, L: 20 };
+
+// A task's expected time in minutes, or undefined when it isn't watched.
+// Heartbeat is opt-in per task: an explicit `expect` wins, else the size's
+// default, else undefined (no size/expect → never poked).
+function expectedMinutes(task: Task): number | undefined {
+  if (typeof task.expect === "number" && task.expect > 0) return task.expect;
+  if (task.size && task.size in SIZE_MINUTES) return SIZE_MINUTES[task.size];
+  return undefined;
+}
+
+type Poke = { taskId: string; owner?: string; overdueByMs: number; expectedMinutes: number };
+type PokeState = Map<string, number>; // taskId -> lastPokeAt (unix ms)
+
+// Evaluate every task for an overdue-in-doing poke and return the pokes to fire
+// plus the next poke bookkeeping. A doing task that overran its expected time
+// pokes once, then re-pokes once per expected-period (interval scales with the
+// expected time — proportionate, not constant). Rebuilding `pokeState` from
+// scratch each sweep means a task that left doing auto-resets. Pure: `now` is
+// injected so the sweep is deterministically testable.
+function computeDuePokes(
+  tasks: Task[],
+  pokeState: PokeState,
+  now: number,
+): { pokes: Poke[]; pokeState: PokeState } {
+  const next: PokeState = new Map();
+  const pokes: Poke[] = [];
+  for (const task of tasks) {
+    if (task.status !== "doing" || task.enteredStatusAt === undefined) continue;
+    const exp = expectedMinutes(task);
+    if (exp === undefined) continue;
+    const expMs = exp * 60_000;
+    const overdueByMs = now - (task.enteredStatusAt + expMs);
+    if (overdueByMs < 0) continue; // not overdue yet — no bookkeeping needed
+    const last = pokeState.get(task.id);
+    if (last === undefined || now - last >= expMs) {
+      pokes.push({ taskId: task.id, owner: task.owner, overdueByMs, expectedMinutes: exp });
+      next.set(task.id, now);
+    } else {
+      next.set(task.id, last); // carry the interval forward
+    }
+  }
+  return { pokes, pokeState: next };
+}
 
 // Stamp a status transition: the fields to merge onto a task entering `status`
 // at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
@@ -233,6 +286,12 @@ function validateTask(t: unknown): Task | null {
           typeof (h as StatusVisit).at === "number",
       ) as StatusVisit[])
     : undefined;
+  // Heartbeat sizing — lenient: drop a bad size/expect, keep the task.
+  const size =
+    typeof cand.size === "string" && cand.size in SIZE_MINUTES
+      ? (cand.size as TaskSize)
+      : undefined;
+  const expect = typeof cand.expect === "number" && cand.expect > 0 ? cand.expect : undefined;
   return {
     id: cand.id,
     title: cand.title,
@@ -243,6 +302,8 @@ function validateTask(t: unknown): Task | null {
     ...(tags.length ? { tags } : {}),
     ...(enteredStatusAt !== undefined ? { enteredStatusAt } : {}),
     ...(statusHistory?.length ? { statusHistory } : {}),
+    ...(size !== undefined ? { size } : {}),
+    ...(expect !== undefined ? { expect } : {}),
   };
 }
 
@@ -672,6 +733,14 @@ async function main(argv: string[]): Promise<number> {
       // list. Keep an empty array (it's an explicit clear via `--tag ""`) — a
       // later snapshot/restore normalizes [] away through validateTask.
       if ("tags" in patch) patch.tags = cleanTags(patch.tags);
+      // Drop a malformed size/expect from a raw /cmd patch (#29) — keep the
+      // sizing fields canonical, mirroring validateTask's leniency.
+      if ("size" in patch && !(typeof patch.size === "string" && patch.size in SIZE_MINUTES)) {
+        delete patch.size;
+      }
+      if ("expect" in patch && !(typeof patch.expect === "number" && patch.expect > 0)) {
+        delete patch.expect;
+      }
       // No-op guard (#23): a redundant patch (e.g. a maestro re-issuing
       // doing->doing) must not broadcast or wake scoped tails. Exempt a `claim`
       // — re-claiming a task you already own is a no-op state-wise but still
@@ -1020,9 +1089,39 @@ async function main(argv: string[]): Promise<number> {
     }
   }, 1000);
 
+  // Heartbeat (#29): sweep doing tasks for overruns and poke. computeDuePokes is
+  // the pure decision; here we just fire what it returns — an owner-scoped
+  // `heartbeat` event (only the owner's scoped tail wakes, like `unblocked`) plus
+  // a board toast so the human sees staleness too. An unowned overdue task gets
+  // the toast only (no owner to wake). A poke never dirties the snapshot.
+  let pokeState: PokeState = new Map();
+  const heartbeatTimer = setInterval(() => {
+    const swept = computeDuePokes(state.tasks, pokeState, Date.now());
+    pokeState = swept.pokeState;
+    for (const p of swept.pokes) {
+      const label = state.tasks.find((t) => t.id === p.taskId)?.title ?? p.taskId;
+      const overdueMin = Math.max(1, Math.round(p.overdueByMs / 60_000));
+      if (p.owner) {
+        emitEvent({
+          type: "heartbeat",
+          taskId: p.taskId,
+          owner: p.owner,
+          overdueByMs: p.overdueByMs,
+          expectedMinutes: p.expectedMinutes,
+          by: "system",
+        });
+      }
+      broadcast({
+        type: "message",
+        text: `⏰ "${label}" overdue — ~${overdueMin}m past its ${p.expectedMinutes}m estimate${p.owner ? ` (@${p.owner})` : ""}`,
+      });
+    }
+  }, 30_000);
+
   const { code, reason } = await done;
   clearInterval(idleTimer);
   clearInterval(snapTimer);
+  clearInterval(heartbeatTimer);
   saveSnapshot(); // final write — KEEP it (the resume point, not deleted on close)
   // Closing frame on the event log — ends a `cli.ts tail` (exit 0) and bookends
   // the `ready` that opened it.
@@ -1063,6 +1162,8 @@ export {
   applyTaskRemove,
   applyTaskUpdate,
   cleanTags,
+  computeDuePokes,
+  expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,

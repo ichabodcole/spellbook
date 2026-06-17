@@ -12,8 +12,8 @@
 //     (the not-done blockers), so a filtered blocked task stays actionable.
 //
 // Driving the board (POST /cmd):
-//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--id ..] [--stdin]
-//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]
+//   bun cli.ts add <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]
+//   bun cli.ts update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]
 //   bun cli.ts claim <id> [--as <name>]                     # self-claim an unowned task
 //   bun cli.ts block <id> --on <id>[,<id>...]               # add blocker edges (cycle-guarded)
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
@@ -132,6 +132,20 @@ function parseTags(value: string): string[] {
     if (t && !out.includes(t)) out.push(t);
   }
   return out;
+}
+
+// Heartbeat sizing flags (#29). --size S|M|L (case-insensitive); anything else
+// is ignored so a typo can't set a bogus size. --expect <minutes> overrides the
+// size default; must be a positive number. The daemon re-validates both.
+function parseSize(value: string | boolean | undefined): "S" | "M" | "L" | undefined {
+  if (typeof value !== "string") return undefined;
+  const s = value.trim().toUpperCase();
+  return s === "S" || s === "M" || s === "L" ? s : undefined;
+}
+function parseExpect(value: string | boolean | undefined): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const m = Number(value.trim());
+  return Number.isFinite(m) && m > 0 ? m : undefined;
 }
 
 async function api(
@@ -290,7 +304,7 @@ async function cmdTail(
   // so it must be scoped — else every worker wakes on every unblock). Lifecycle
   // (ready/connected/disconnected/closed) always passes.
   const scopeable = (t?: string) =>
-    typeof t === "string" && (t.startsWith("task.") || t === "unblocked");
+    typeof t === "string" && (t.startsWith("task.") || t === "unblocked" || t === "heartbeat");
   const inScope = (ev: { type?: string; owner?: string }) =>
     !scopeable(ev.type) || ownerInScope(ev.owner, scope);
   // Self-echo suppression: drop frames the caller's own identity caused (applied
@@ -430,8 +444,9 @@ const HELP = `bounty — an agent-driven task board.
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
-  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--id ..] [--stdin]   add a task
-  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--stdin]      patch a task (--tag "" clears)
+  add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
+  update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
+  --size S|M|L → heartbeat estimate (5/10/20 min); --expect <min> overrides. A doing task that overruns pokes its owner.
   claim  <id> [--as <name>]          self-claim an UNOWNED task (rejected if owned by another)
   block  <id> --on <id>[,<id>...]    mark <id> blocked on other task(s) (rejected on a cycle)
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
@@ -490,6 +505,10 @@ async function main(argv: string[]): Promise<number> {
       if (typeof flags.notes === "string") task.notes = flags.notes;
       if (typeof flags.owner === "string") task.owner = flags.owner;
       if (typeof flags.tag === "string") task.tags = parseTags(flags.tag);
+      const addSize = parseSize(flags.size);
+      if (addSize) task.size = addSize;
+      const addExpect = parseExpect(flags.expect);
+      if (addExpect !== undefined) task.expect = addExpect;
       await postCmd(session, { type: "task.add", task }, { as });
       break;
     }
@@ -506,6 +525,10 @@ async function main(argv: string[]): Promise<number> {
       if (typeof flags.notes === "string") patch.notes = flags.notes;
       if (typeof flags.owner === "string") patch.owner = flags.owner; // lead reassignment
       if (typeof flags.tag === "string") patch.tags = parseTags(flags.tag); // SET; "" clears
+      const upSize = parseSize(flags.size);
+      if (upSize) patch.size = upSize;
+      const upExpect = parseExpect(flags.expect);
+      if (upExpect !== undefined) patch.expect = upExpect;
       if (Object.keys(patch).length === 0)
         die("update: nothing to change (give --status/--title/--notes/--owner/--tag/--stdin)");
       await postCmd(session, { type: "task.update", id, patch }, { as });
