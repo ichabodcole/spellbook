@@ -1036,7 +1036,7 @@ const BOOLEAN_FLAGS = new Set([
 // shell pipes the literal command line in as the body, which then gets posted —
 // corrupting the channel with `bun /…/cli.ts send <channel> --as … <text>`.
 // We refuse to post such a body unless --force is passed.
-const LEAKED_SEND_RE = /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\bsend\b/;
+const LEAKED_SEND_RE = /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\b(?:send|announce)\b/;
 function looksLikeLeakedSend(text: string): boolean {
   return LEAKED_SEND_RE.test(text);
 }

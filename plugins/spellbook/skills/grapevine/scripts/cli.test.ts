@@ -1105,6 +1105,75 @@ describe("grapevine cli", () => {
     expect(JSON.parse(infoAfter.stdout).pid).not.toBe(pidBefore);
   }, 10000);
 
+  test("announce --channels targets named channels, skips unknown/archived, ignores other active", async () => {
+    // tc_a active (tail), tc_b idle (exists on disk, no tail), tc_c active (tail, NOT named),
+    // tc_arch archived, tc_missing never created.
+    const a = spawnTail("tc_a", ["--as", "alice"]);
+    const c = spawnTail("tc_c", ["--as", "carol"]);
+    await bunRun(["open", "tc_b"]); // on disk, idle, no subscriber
+    await bunRun(["open", "tc_arch"]);
+    await bunRun(["archive", "tc_arch"]);
+    await sleep(400);
+
+    const r = await bunRun([
+      "announce",
+      "--from",
+      "lead",
+      "--channels",
+      "tc_a,tc_b,tc_arch,tc_missing",
+      "reconvene in main",
+    ]);
+    expect(r.code).toBe(0);
+    const parsed = JSON.parse(r.stdout);
+
+    const delivered = parsed.channels.map((x: { name: string }) => x.name).sort();
+    expect(delivered).toEqual(["tc_a", "tc_b"]); // named + resolvable
+    const byName = Object.fromEntries(
+      parsed.channels.map((x: { name: string; recipients: number }) => [x.name, x.recipients]),
+    );
+    expect(byName.tc_a).toBe(1); // alice tailing
+    expect(byName.tc_b).toBe(0); // idle, no subscriber, but still delivered to its log
+
+    const skipped = Object.fromEntries(
+      parsed.skipped.map((x: { name: string; reason: string }) => [x.name, x.reason]),
+    );
+    expect(skipped.tc_arch).toBe("archived");
+    expect(skipped.tc_missing).toBe("unknown");
+
+    // tc_c was active but NOT named → must not receive it.
+    await sleep(300);
+    expect(c.output()).not.toContain("reconvene in main");
+    expect(a.output()).toContain("reconvene in main");
+
+    // Clean up tails and channels so they don't bleed into the next announce test.
+    a.proc.kill("SIGTERM");
+    c.proc.kill("SIGTERM");
+    await sleep(400);
+    await bunRun(["close", "tc_a"]);
+    await bunRun(["close", "tc_b"]);
+    await bunRun(["close", "tc_c"]);
+    // tc_arch is archived; unarchive then close so it's out of the channel map.
+    await bunRun(["unarchive", "tc_arch"]);
+    await bunRun(["close", "tc_arch"]);
+  });
+
+  test("announce refuses a leaked invocation body (no --force)", async () => {
+    await bunRun(["open", "ann_guard"]);
+    const leaked = 'bun /path/to/cli.ts announce --from lead "hi"';
+    const r = await bunRunStdin(
+      ["announce", "--from", "lead", "--channels", "ann_guard", "--stdin"],
+      leaked,
+    );
+    expect(r.code).not.toBe(0);
+    expect(r.stderr).toContain("leaked grapevine invocation");
+    // Nothing was posted.
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string }) => c.name === "ann_guard",
+    );
+    expect(ch.message_count).toBe(0);
+  });
+
   test("announce broadcasts to all active channels with a kind:announcement frame", async () => {
     // Two active channels, each with one subscriber tail.
     const a = spawnTail("ann_a", ["--as", "alice"]);
