@@ -337,6 +337,33 @@ keep each worker's wake-set small instead of every event waking everyone.
 > it on their next `cli.ts state`, and the reassigning lead conveys the _why_
 > over chat. Don't rely on the board to notify a former owner.
 
+### Multi-agent task-state ownership — who moves a card when
+
+Ownership (above) says _which_ tasks are yours; this is the _lifecycle_ — who
+slides a card across columns, and when. The rule that holds up under real
+multi-agent load: **the doer owns task-state.**
+
+- **Lead = dispatcher + reviewer.** Create the task, set `--owner`, and **leave
+  it in To do** — then hand it off over the back-channel (chat / grapevine).
+  Don't move it to Doing _for_ the worker: that records only _your_ intent (you
+  assume someone's on it), not whether anyone actually picked it up, so the
+  board fills with "Doing" cards nobody's working and you end up babysitting it.
+- **Owner moves its own card.** When you _actually start_, move your card **To
+  do → Doing** — that's the "I've taken this" signal the lead sees on `tail`.
+  When it's done and green, move it **Doing → Review** and post what you
+  parked + how to verify.
+- **Reviewer closes.** A human glance (or the lead's merge-verify) moves
+  **Review → Done**, or bounces it back to **Doing** for rework — the owner sees
+  the bounce and picks it up.
+
+Why it holds: **Doing** becomes a trustworthy "genuinely being worked" signal
+instead of the lead's guess, the lead stops puppeteering the board, and the
+owner stays in the loop on acceptance vs. rework. It layers on the Review-gate +
+ownership/scoping above — those say _where the gate is_ and _whose lane it is_;
+this says _who slides the card_. (Validated across a long multi-agent build —
+the workers adopted it cleanly, even self-creating cards for work they picked
+up.)
+
 ### Dependencies (blocking)
 
 A task can declare what it's **blocked on** — the board's one real edge over a
