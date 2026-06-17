@@ -155,19 +155,20 @@ session by default; pass `--session <id>` to target a specific one.
 
 ### Verbs
 
-| Verb                                                                     | Does                                                                                   |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open] [--restore <id>]`            | spawn the daemon (or resume a saved session); print session JSON                       |
-| `state [--full] [--owner <name> \| --mine] [--as <name>]`                | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`           |
-| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`              | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since` |
-| `add <title…> [--status S] [--notes N] [--owner N] [--id ID] [--stdin]`  | add a task (optionally assigned)                                                       |
-| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--stdin]` | patch a task (`--owner` assigns/reassigns)                                             |
-| `claim <id> [--as <name>]`                                               | self-claim an **unowned** task (rejected if owned by another)                          |
-| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                | add / remove blocker edges (block is cycle-guarded; rejection is visible)              |
-| `remove <id>`                                                            | delete a task                                                                          |
-| `message <text…> [--stdin]`                                              | transient toast on the board                                                           |
-| `init [--title T] [--stdin-tasks]`                                       | seed the board (tasks = JSON array on stdin)                                           |
-| `close` / `info` / `sessions` / `help`                                   | end session / show session / list snapshots / usage                                    |
+| Verb                                                                                                                   | Does                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>]`                                                          | spawn the daemon (or resume a saved session); print session JSON                                                 |
+| `state [--full] [--owner <name> \| --mine] [--as <name>]`                                                              | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`                                     |
+| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`                                                            | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                           |
+| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                              |
+| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold) |
+| `claim <id> [--as <name>]`                                                                                             | self-claim an **unowned** task (rejected if owned by another)                                                    |
+| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                              | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                        |
+| `remove <id>`                                                                                                          | delete a task                                                                                                    |
+| `message <text…> [--stdin]`                                                                                            | transient toast on the board                                                                                     |
+| `init [--title T] [--stdin-tasks]`                                                                                     | seed the board (tasks = JSON array on stdin)                                                                     |
+| `list`                                                                                                                 | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)        |
+| `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                              |
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` (which reads the title
@@ -266,6 +267,7 @@ Each `tail` frame is `{ id, type, …, by }`:
 {id, type:"task.update",  taskId, patch, by, owner}      // agent patch
 {id, type:"task.remove",  taskId, by, owner}             // task deleted
 {id, type:"unblocked",    taskId, owner, by:"system"}    // last blocker cleared (owner-scoped)
+{id, type:"heartbeat",    taskId, owner, overdueByMs, expectedMinutes, by:"system"}  // doing task overran its size/expect (owner-scoped; re-pokes per period)
 {id, type:"closed",       reason, by:"system"}           // session ended (reason: user|timeout|close)
 ```
 
@@ -281,9 +283,16 @@ type Task = {
   id: string; // any unique string (you choose the scheme; cli.ts auto-generates if omitted)
   title: string;
   status: "todo" | "doing" | "review" | "done";
-  notes?: string; // optional, shown under the title
+  notes?: string; // optional; shown under the title (clamped on the card, editable in the detail modal)
   owner?: string; // optional assignee — shown as an @name badge; drives scoped tails
+  tags?: string[]; // optional labels — neutral chips on the card (set via --tag; trimmed, deduped, case preserved)
+  size?: "S" | "M" | "L"; // optional T-shirt size → expected minutes (S=5, M=10, L=20); drives the heartbeat poke
+  expect?: number; // optional explicit expected minutes — overrides size's default
   blockedBy?: string[]; // ids this task waits on (set via block/unblock); drives the blocked cue + unblocked event
+  // substrate (server-stamped, read-only): when it entered its current status + a capped visit log.
+  // Powers heartbeat; reused by the card-aging / metrics / leaderboard backlog.
+  enteredStatusAt?: number;
+  statusHistory?: { status: string; at: number }[];
 };
 ```
 
@@ -414,6 +423,29 @@ flat list.
   move a blocked task (same soft-gate spirit as Review). The cue counts down
   live as blockers clear.
 
+### Heartbeat — nudge an owner when a Doing task overruns
+
+A task can declare how long it's expected to take, and the daemon pokes its
+owner if it sits in **Doing** past that — the safety net for an agent that
+silently stalls mid-task.
+
+- **Opt in per task.** Set a **T-shirt size** — `--size S|M|L` → **5 / 10 / 20
+  minutes** — or an explicit `--expect <minutes>` (which overrides the size's
+  default) on `add`/`update`. A task with neither is **not watched**; heartbeat
+  is opt-in, not a global timer.
+- **Three sizes by design — no XL.** Agents are fast; a code change rarely runs
+  past ~20 minutes. The absence of a "huge" size is deliberate: a task you'd
+  expect to take days is a signal to **break it down further**, not size it up.
+- **The poke.** When a Doing task overruns its expected time, the daemon fires
+  an owner-scoped `heartbeat` event (same wake-set as `unblocked` — only the
+  owner's `--owner`/`--mine` tail wakes) **plus a board toast** so the human
+  sees the staleness too. An _unowned_ overdue task gets the toast only.
+- **Re-pokes, proportionately.** It pokes once on overrun, then re-pokes **once
+  per expected-period** (so a big task isn't spammed and a small one still gets
+  timely nudges) until the card leaves Doing — at which point it auto-resets.
+- Built on the per-transition timestamp substrate (`enteredStatusAt`), the same
+  data the card-aging / metrics / leaderboard backlog will reuse.
+
 ## Exit Code Contract
 
 | Code | Reason (the `closed` event's `reason` field) | What to do                                                                            |
@@ -479,16 +511,16 @@ opens a WebSocket to the daemon and bridges it to its own stdio.
 {"type":"task.add",    "task": Task}              // append a new task
 {"type":"task.toggle", "id": "...", "status": "todo|doing|review|done"}  // change status
 {"type":"task.move",   "id": "...", "status": "...", "index": N}  // status + position
-{"type":"task.edit",   "id": "...", "title": "..."}   // change the title
+{"type":"task.edit",   "id": "...", "title?": "...", "notes?": "..."}   // edit title and/or notes (notes "" clears)
 {"type":"task.remove", "id": "..."}
 {"type":"close"}                                  // disconnect cleanly
 ```
 
 These are the **WebSocket** verbs (the same ones the browser sends) — a joiner
 is a browser-equivalent participant. Note there's no `task.update` over WS: use
-the granular `task.toggle` (status) / `task.edit` (title) / `task.move` (drag)
-instead. Joiners also CAN'T push toasts (`message`) or reset state (`init`) —
-those are agent-`/cmd`-only; the daemon ignores them over WS.
+the granular `task.toggle` (status) / `task.edit` (title/notes) / `task.move`
+(drag) instead. Joiners also CAN'T push toasts (`message`) or reset state
+(`init`) — those are agent-`/cmd`-only; the daemon ignores them over WS.
 
 ### Join protocol — join.ts → agent (stdout, one JSON line per message)
 
