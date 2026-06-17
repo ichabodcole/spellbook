@@ -31,11 +31,13 @@
 //   {id, type:"connected" | "disconnected", by:"user"}
 //   {id, type:"task.toggle",  taskId, status, by, owner}  // ⚠ taskId, NOT id —
 //   {id, type:"task.move",    taskId, status, index, by, owner}  //  envelope id
-//   {id, type:"task.edit",    taskId, title, by, owner}   //   is the cursor; the
+//   {id, type:"task.edit",    taskId, title?, notes?, by, owner}  // is the cursor;
 //   {id, type:"task.add",     task, by, owner}            //   task id is nested
 //   {id, type:"task.update",  taskId, patch, by, owner}   //   / `taskId` so the
 //   {id, type:"task.remove",  taskId, by, owner}          //   spread can't clobber.
 //   {id, type:"unblocked",    taskId, owner, by:"system"} // last blocker cleared
+//   {id, type:"heartbeat",    taskId, owner, overdueByMs, expectedMinutes, by:"system"}
+//                                                     //   owner-scoped overrun poke
 //   {id, type:"closed",       reason, by:"system"}    //   reason: user|timeout|close
 //
 // task.toggle vs task.move: toggle is the click-a-pill UX — status changes,
@@ -64,6 +66,7 @@ const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
 const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
 
 type TaskStatus = "todo" | "doing" | "review" | "done";
+type StatusVisit = { status: TaskStatus; at: number }; // a single transition (unix ms)
 type Task = {
   id: string;
   title: string;
@@ -71,8 +74,78 @@ type Task = {
   notes?: string;
   owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
   blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
+  tags?: string[]; // free-form labels; clean string[] (a future filter groups on them)
+  enteredStatusAt?: number; // unix ms the task entered its CURRENT status
+  statusHistory?: StatusVisit[]; // capped transition log (heartbeat/aging/metrics substrate)
+  size?: TaskSize; // heartbeat sizing — opt-in; maps to a default expected time
+  expect?: number; // explicit expected minutes (overrides size); for the rare exception
 };
 type BoardState = { title: string; tasks: Task[] };
+
+// Cap the per-task transition log so long-lived tasks don't bloat snapshots.
+const MAX_STATUS_HISTORY = 20;
+
+// Heartbeat sizing (#29). Three sizes only — agents are fast (a code change
+// rarely runs past ~20 min) and the absence of an XL is deliberate: a days-long
+// task is a signal to BREAK IT DOWN, not size it bigger. Minutes are tunable.
+type TaskSize = "S" | "M" | "L";
+const SIZE_MINUTES: Record<TaskSize, number> = { S: 5, M: 10, L: 20 };
+
+// A task's expected time in minutes, or undefined when it isn't watched.
+// Heartbeat is opt-in per task: an explicit `expect` wins, else the size's
+// default, else undefined (no size/expect → never poked).
+function expectedMinutes(task: Task): number | undefined {
+  if (typeof task.expect === "number" && task.expect > 0) return task.expect;
+  if (task.size && task.size in SIZE_MINUTES) return SIZE_MINUTES[task.size];
+  return undefined;
+}
+
+type Poke = { taskId: string; owner?: string; overdueByMs: number; expectedMinutes: number };
+type PokeState = Map<string, number>; // taskId -> lastPokeAt (unix ms)
+
+// Evaluate every task for an overdue-in-doing poke and return the pokes to fire
+// plus the next poke bookkeeping. A doing task that overran its expected time
+// pokes once, then re-pokes once per expected-period (interval scales with the
+// expected time — proportionate, not constant). Rebuilding `pokeState` from
+// scratch each sweep means a task that left doing auto-resets. Pure: `now` is
+// injected so the sweep is deterministically testable.
+function computeDuePokes(
+  tasks: Task[],
+  pokeState: PokeState,
+  now: number,
+): { pokes: Poke[]; pokeState: PokeState } {
+  const next: PokeState = new Map();
+  const pokes: Poke[] = [];
+  for (const task of tasks) {
+    if (task.status !== "doing" || task.enteredStatusAt === undefined) continue;
+    const exp = expectedMinutes(task);
+    if (exp === undefined) continue;
+    const expMs = exp * 60_000;
+    const overdueByMs = now - (task.enteredStatusAt + expMs);
+    if (overdueByMs < 0) continue; // not overdue yet — no bookkeeping needed
+    const last = pokeState.get(task.id);
+    if (last === undefined || now - last >= expMs) {
+      pokes.push({ taskId: task.id, owner: task.owner, overdueByMs, expectedMinutes: exp });
+      next.set(task.id, now);
+    } else {
+      next.set(task.id, last); // carry the interval forward
+    }
+  }
+  return { pokes, pokeState: next };
+}
+
+// Stamp a status transition: the fields to merge onto a task entering `status`
+// at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
+// passed in) so the substrate is deterministic and the downstream features
+// (heartbeat, card-aging, metrics, leaderboard) all read one shape.
+function transitionStamp(
+  prev: StatusVisit[] | undefined,
+  status: TaskStatus,
+  now: number,
+): { enteredStatusAt: number; statusHistory: StatusVisit[] } {
+  const statusHistory = [...(prev ?? []), { status, at: now }].slice(-MAX_STATUS_HISTORY);
+  return { enteredStatusAt: now, statusHistory };
+}
 
 type CloseReason = "user" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
@@ -97,7 +170,7 @@ type ApplyResult = { ok: true; applied?: boolean; error?: string };
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
   | { type: "task.move"; id: string; status: TaskStatus; index: number }
-  | { type: "task.edit"; id: string; title: string }
+  | { type: "task.edit"; id: string; title?: string; notes?: string }
   | { type: "task.add"; task: Task }
   | { type: "task.remove"; id: string }
   | { type: "close" }; // the human dismisses the board ("Close board")
@@ -168,6 +241,21 @@ function guessMime(name: string): string {
 // path (init + task.add), and snapshot restore all run candidates through it so
 // a malformed task can't enter canonical state. Per-task (callers filter-and-
 // keep-valid or reject a single task), never all-or-nothing.
+// Sanitize an untrusted tags value into a clean string[]: strings only, each
+// trimmed, empties dropped, deduped exactly (case preserved for display — a
+// later filter compares case-insensitively, same as owner-case). A non-array
+// yields []. Callers decide whether to omit an empty result.
+function cleanTags(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const out: string[] = [];
+  for (const x of value) {
+    if (typeof x !== "string") continue;
+    const t = x.trim();
+    if (t && !out.includes(t)) out.push(t);
+  }
+  return out;
+}
+
 function validateTask(t: unknown): Task | null {
   if (!t || typeof t !== "object") return null;
   const cand = t as Record<string, unknown>;
@@ -183,6 +271,27 @@ function validateTask(t: unknown): Task | null {
   ) {
     return null;
   }
+  const tags = cleanTags(cand.tags);
+  // Transition substrate is server-generated; on restore we preserve it
+  // leniently — drop a malformed value rather than reject the whole task, so a
+  // legacy snapshot still loads.
+  const enteredStatusAt =
+    typeof cand.enteredStatusAt === "number" ? cand.enteredStatusAt : undefined;
+  const statusHistory = Array.isArray(cand.statusHistory)
+    ? (cand.statusHistory.filter(
+        (h): h is StatusVisit =>
+          !!h &&
+          typeof h === "object" &&
+          VALID_STATUS.includes((h as StatusVisit).status) &&
+          typeof (h as StatusVisit).at === "number",
+      ) as StatusVisit[])
+    : undefined;
+  // Heartbeat sizing — lenient: drop a bad size/expect, keep the task.
+  const size =
+    typeof cand.size === "string" && cand.size in SIZE_MINUTES
+      ? (cand.size as TaskSize)
+      : undefined;
+  const expect = typeof cand.expect === "number" && cand.expect > 0 ? cand.expect : undefined;
   return {
     id: cand.id,
     title: cand.title,
@@ -190,18 +299,34 @@ function validateTask(t: unknown): Task | null {
     ...(cand.notes !== undefined ? { notes: cand.notes as string } : {}),
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
     ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
+    ...(tags.length ? { tags } : {}),
+    ...(enteredStatusAt !== undefined ? { enteredStatusAt } : {}),
+    ...(statusHistory?.length ? { statusHistory } : {}),
+    ...(size !== undefined ? { size } : {}),
+    ...(expect !== undefined ? { expect } : {}),
   };
 }
 
 // State mutation helpers. All keep `state.tasks` in place (replace by id)
 // so the agent and browser see consistent ordering.
-function applyTaskAdd(state: BoardState, task: Task): boolean {
+function applyTaskAdd(state: BoardState, task: Task, now: number = Date.now()): boolean {
   if (state.tasks.some((t) => t.id === task.id)) return false;
-  state.tasks.push(task);
+  // Stamp the initial status entry — unless the task already carries its own
+  // (a restore/init that preserved the transition log).
+  const stamped =
+    task.enteredStatusAt === undefined
+      ? { ...task, ...transitionStamp(task.statusHistory, task.status, now) }
+      : task;
+  state.tasks.push(stamped);
   return true;
 }
 
-function applyTaskUpdate(state: BoardState, id: string, patch: Partial<Task>): boolean {
+function applyTaskUpdate(
+  state: BoardState,
+  id: string,
+  patch: Partial<Task>,
+  now: number = Date.now(),
+): boolean {
   const idx = state.tasks.findIndex((t) => t.id === id);
   if (idx === -1) return false;
   // Status guard: drop invalid status values quietly so a malformed agent
@@ -210,7 +335,15 @@ function applyTaskUpdate(state: BoardState, id: string, patch: Partial<Task>): b
     const { status: _drop, ...rest } = patch;
     patch = rest;
   }
-  state.tasks[idx] = { ...state.tasks[idx], ...patch };
+  const prev = state.tasks[idx];
+  const merged: Task = { ...prev, ...patch };
+  // Stamp only on an actual status CHANGE (a transition) — not a notes/title
+  // patch, and not a same-status patch (a guarded doing->doing never reaches
+  // here, but a direct call must not reset the clock either).
+  if (patch.status !== undefined && patch.status !== prev.status) {
+    Object.assign(merged, transitionStamp(prev.statusHistory, patch.status, now));
+  }
+  state.tasks[idx] = merged;
   return true;
 }
 
@@ -225,11 +358,20 @@ function applyTaskRemove(state: BoardState, id: string): boolean {
 // tasks of that status. Returns the canonical absolute index in state.tasks
 // after the move, or -1 if the task wasn't found. Status validation is the
 // caller's job (we already screen in the WS handler).
-function applyTaskMove(state: BoardState, id: string, status: TaskStatus, index: number): number {
+function applyTaskMove(
+  state: BoardState,
+  id: string,
+  status: TaskStatus,
+  index: number,
+  now: number = Date.now(),
+): number {
   const fromIdx = state.tasks.findIndex((t) => t.id === id);
   if (fromIdx === -1) return -1;
   const [task] = state.tasks.splice(fromIdx, 1);
-  task.status = status;
+  // A cross-column move is a transition; an intra-column reorder is not.
+  if (task.status !== status) {
+    Object.assign(task, { status }, transitionStamp(task.statusHistory, status, now));
+  }
   // Translate the column-local index into an absolute index in state.tasks:
   // walk through state.tasks and count tasks of the target status until we
   // hit `index` slots. If `index` exceeds the column count, append.
@@ -246,6 +388,50 @@ function applyTaskMove(state: BoardState, id: string, status: TaskStatus, index:
   }
   state.tasks.splice(insertAt, 0, task);
   return insertAt;
+}
+
+// No-op guards (#23). A redundant patch (doing->doing) or a drag dropped back on
+// the card's own slot still ran the apply + broadcast + emitEvent, spuriously
+// waking every scoped tail. These predicates let the caller skip the broadcast
+// + event when "the resulting state equals current" — checked against the SAME
+// logic the apply helpers use, so the two can't drift.
+
+// True when applying `patch` to task `id` would change nothing. Mirrors
+// applyTaskUpdate's invalid-status strip so a bogus status-only patch (which the
+// apply path drops) reads as the no-op it effectively is. Missing id is NOT a
+// no-op — it's "not found", which the apply path reports as applied:false.
+function isNoOpUpdate(state: BoardState, id: string, patch: Partial<Task>): boolean {
+  const task = state.tasks.find((t) => t.id === id);
+  if (!task) return false;
+  let eff = patch;
+  if (eff.status && !VALID_STATUS.includes(eff.status)) {
+    const { status: _drop, ...rest } = eff;
+    eff = rest;
+  }
+  return (Object.keys(eff) as (keyof Task)[]).every((k) => task[k] === eff[k]);
+}
+
+// True when moving task `id` to (status, index) would leave the board's
+// VISIBLE state unchanged — every column's ordered membership identical.
+// Simulates the move on a clone via the real applyTaskMove (index-translation
+// stays single-sourced), then compares COLUMN views, not raw array order.
+// Missing id is NOT a no-op — that's "not found", per the apply path.
+function isNoOpMove(state: BoardState, id: string, status: TaskStatus, index: number): boolean {
+  if (!state.tasks.some((t) => t.id === id)) return false;
+  // Compare COLUMN views, not raw array order: re-dropping the LAST card in a
+  // column on its own slot rewrites the absolute array but not the columns —
+  // still a no-op to the user.
+  const columnView = (s: BoardState) =>
+    VALID_STATUS.map((st) =>
+      s.tasks
+        .filter((t) => t.status === st)
+        .map((t) => t.id)
+        .join(","),
+    ).join("|");
+  const before = columnView(state);
+  const probe: BoardState = { ...state, tasks: state.tasks.map((t) => ({ ...t })) };
+  applyTaskMove(probe, id, status, index);
+  return before === columnView(probe);
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -507,8 +693,12 @@ async function main(argv: string[]): Promise<number> {
       if (typeof msg.title === "string") state.title = msg.title;
       // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
       // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
-      if (Array.isArray(msg.tasks))
-        state.tasks = msg.tasks.map(validateTask).filter((t): t is Task => t !== null);
+      // Route through applyTaskAdd so a freshly-seeded task gets a baseline
+      // transition stamp (and a restored one keeps its preserved history).
+      if (Array.isArray(msg.tasks)) {
+        state.tasks = [];
+        for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
+      }
       broadcast({ type: "init", title: state.title, tasks: state.tasks });
       emitEvent({ type: "init", title: state.title, by });
       return { ok: true, applied: true };
@@ -539,6 +729,25 @@ async function main(argv: string[]): Promise<number> {
       // cycle guard). Strip it from a raw update patch so /cmd can't sidestep
       // the guard — keep the guard load-bearing.
       const { blockedBy: _stripped, ...patch } = msg.patch;
+      // Sanitize tags on the way in (#18) so a raw /cmd can't store a dirty
+      // list. Keep an empty array (it's an explicit clear via `--tag ""`) — a
+      // later snapshot/restore normalizes [] away through validateTask.
+      if ("tags" in patch) patch.tags = cleanTags(patch.tags);
+      // Drop a malformed size/expect from a raw /cmd patch (#29) — keep the
+      // sizing fields canonical, mirroring validateTask's leniency.
+      if ("size" in patch && !(typeof patch.size === "string" && patch.size in SIZE_MINUTES)) {
+        delete patch.size;
+      }
+      if ("expect" in patch && !(typeof patch.expect === "number" && patch.expect > 0)) {
+        delete patch.expect;
+      }
+      // No-op guard (#23): a redundant patch (e.g. a maestro re-issuing
+      // doing->doing) must not broadcast or wake scoped tails. Exempt a `claim`
+      // — re-claiming a task you already own is a no-op state-wise but still
+      // wants its applied:true confirmation, which cli.ts `claim` reads.
+      if (!msg.claim && isNoOpUpdate(state, msg.id, patch)) {
+        return { ok: true, applied: false };
+      }
       if (applyTaskUpdate(state, msg.id, patch)) {
         broadcast({ type: "task.update", id: msg.id, patch });
         // Post-change owner = "who owned it when this happened" (owner-at-emit).
@@ -702,6 +911,8 @@ async function main(argv: string[]): Promise<number> {
           }
           if (msg.type === "task.toggle") {
             if (!VALID_STATUS.includes(msg.status)) return;
+            // No-op guard (#23): a redundant pill click (doing->doing) skips.
+            if (isNoOpUpdate(state, msg.id, { status: msg.status })) return;
             if (applyTaskUpdate(state, msg.id, { status: msg.status })) {
               broadcast({ type: "task.update", id: msg.id, patch: { status: msg.status } });
               emitEvent({
@@ -714,6 +925,9 @@ async function main(argv: string[]): Promise<number> {
             }
           } else if (msg.type === "task.move") {
             if (!VALID_STATUS.includes(msg.status)) return;
+            // No-op guard (#23): a drag dropped back on the card's own slot
+            // (same column membership + order) skips the broadcast + event.
+            if (isNoOpMove(state, msg.id, msg.status, msg.index)) return;
             if (applyTaskMove(state, msg.id, msg.status, msg.index) !== -1) {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
@@ -728,18 +942,29 @@ async function main(argv: string[]): Promise<number> {
               });
             }
           } else if (msg.type === "task.edit") {
-            // Validate: title must be a non-empty string after trim. A
-            // malformed edit (title:null, title:"") would otherwise corrupt
-            // the canonical task shape that gets re-broadcast and stored —
-            // empty titles in particular surface to the agent on submit as
-            // tasks with no readable label.
-            if (typeof msg.title !== "string" || msg.title.trim() === "") return;
-            if (applyTaskUpdate(state, msg.id, { title: msg.title })) {
-              broadcast({ type: "task.update", id: msg.id, patch: { title: msg.title } });
+            // One verb covers both the inline title edit and the detail modal's
+            // description edit (#19): {id, title?, notes?}. Re-sanitize each
+            // field — a malformed edit must not corrupt canonical state:
+            //   title — if present, a non-empty trimmed string (empty titles
+            //     surface to the agent as unreadable labels);
+            //   notes — if present, a string (empty IS allowed — it clears the
+            //     description). Both render via x-text, never x-html.
+            const patch: Partial<Task> = {};
+            if (msg.title !== undefined) {
+              if (typeof msg.title !== "string" || msg.title.trim() === "") return;
+              patch.title = msg.title;
+            }
+            if (msg.notes !== undefined) {
+              if (typeof msg.notes !== "string") return;
+              patch.notes = msg.notes;
+            }
+            if (Object.keys(patch).length === 0) return; // nothing to edit
+            if (applyTaskUpdate(state, msg.id, patch)) {
+              broadcast({ type: "task.update", id: msg.id, patch });
               emitEvent({
                 type: "task.edit",
                 taskId: msg.id,
-                title: msg.title,
+                ...patch,
                 by: "user",
                 owner: ownerOf(msg.id),
               });
@@ -864,9 +1089,39 @@ async function main(argv: string[]): Promise<number> {
     }
   }, 1000);
 
+  // Heartbeat (#29): sweep doing tasks for overruns and poke. computeDuePokes is
+  // the pure decision; here we just fire what it returns — an owner-scoped
+  // `heartbeat` event (only the owner's scoped tail wakes, like `unblocked`) plus
+  // a board toast so the human sees staleness too. An unowned overdue task gets
+  // the toast only (no owner to wake). A poke never dirties the snapshot.
+  let pokeState: PokeState = new Map();
+  const heartbeatTimer = setInterval(() => {
+    const swept = computeDuePokes(state.tasks, pokeState, Date.now());
+    pokeState = swept.pokeState;
+    for (const p of swept.pokes) {
+      const label = state.tasks.find((t) => t.id === p.taskId)?.title ?? p.taskId;
+      const overdueMin = Math.max(1, Math.round(p.overdueByMs / 60_000));
+      if (p.owner) {
+        emitEvent({
+          type: "heartbeat",
+          taskId: p.taskId,
+          owner: p.owner,
+          overdueByMs: p.overdueByMs,
+          expectedMinutes: p.expectedMinutes,
+          by: "system",
+        });
+      }
+      broadcast({
+        type: "message",
+        text: `⏰ "${label}" overdue — ~${overdueMin}m past its ${p.expectedMinutes}m estimate${p.owner ? ` (@${p.owner})` : ""}`,
+      });
+    }
+  }, 30_000);
+
   const { code, reason } = await done;
   clearInterval(idleTimer);
   clearInterval(snapTimer);
+  clearInterval(heartbeatTimer);
   saveSnapshot(); // final write — KEEP it (the resume point, not deleted on close)
   // Closing frame on the event log — ends a `cli.ts tail` (exit 0) and bookends
   // the `ready` that opened it.
@@ -906,7 +1161,12 @@ export {
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
+  cleanTags,
+  computeDuePokes,
+  expectedMinutes,
   htmlEscape,
+  isNoOpMove,
+  isNoOpUpdate,
   main,
   parsePortFromSessionId,
   validateTask,

@@ -20,13 +20,19 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { liveBoards, ownerInScope, parseTags, pickTailSession, type Session } from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
   type BoardState,
+  cleanTags,
+  computeDuePokes,
+  expectedMinutes,
   htmlEscape,
+  isNoOpMove,
+  isNoOpUpdate,
   parsePortFromSessionId,
   type Task,
   type TaskStatus,
@@ -155,6 +161,258 @@ describe("applyTaskMove", () => {
   });
 });
 
+// ── status-transition timestamps (heartbeat substrate) ───────────────────
+//
+// Every status transition stamps the task: enteredStatusAt (ms it entered its
+// current status) + a capped statusHistory. Shared foundation for heartbeat,
+// card-aging, metrics, leaderboard. `now` is injected so this is deterministic.
+
+describe("status-transition timestamps", () => {
+  const T0 = 1_000_000;
+  function seededAt(now: number): BoardState {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" }, now);
+    return s;
+  }
+
+  test("applyTaskAdd stamps the initial status entry", () => {
+    const s = seededAt(T0);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0);
+    expect(s.tasks[0].statusHistory).toEqual([{ status: "todo", at: T0 }]);
+  });
+  test("applyTaskAdd preserves a restored task's existing stamp", () => {
+    const s = freshState();
+    applyTaskAdd(s, { id: "r", title: "R", status: "doing", enteredStatusAt: 42 }, T0);
+    expect(s.tasks[0].enteredStatusAt).toBe(42); // not overwritten with T0
+  });
+  test("applyTaskUpdate re-stamps on a status change and appends history", () => {
+    const s = seededAt(T0);
+    applyTaskUpdate(s, "a", { status: "doing" }, T0 + 500);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0 + 500);
+    expect(s.tasks[0].statusHistory).toEqual([
+      { status: "todo", at: T0 },
+      { status: "doing", at: T0 + 500 },
+    ]);
+  });
+  test("a non-status patch does NOT touch the transition stamp", () => {
+    const s = seededAt(T0);
+    applyTaskUpdate(s, "a", { notes: "hi" }, T0 + 500);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0);
+    expect(s.tasks[0].statusHistory).toHaveLength(1);
+  });
+  test("a same-status patch does NOT reset the stamp", () => {
+    const s = seededAt(T0);
+    applyTaskUpdate(s, "a", { status: "todo", notes: "x" }, T0 + 500);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0); // no transition
+  });
+  test("applyTaskMove stamps a cross-column move", () => {
+    const s = seededAt(T0);
+    applyTaskMove(s, "a", "doing", 0, T0 + 900);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0 + 900);
+    expect(s.tasks[0].statusHistory?.map((h) => h.status)).toEqual(["todo", "doing"]);
+  });
+  test("an intra-column reorder is NOT a transition", () => {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" }, T0);
+    applyTaskAdd(s, { id: "b", title: "B", status: "todo" }, T0);
+    applyTaskMove(s, "b", "todo", 0, T0 + 900); // reorder within the column
+    expect(s.tasks.find((t) => t.id === "b")?.enteredStatusAt).toBe(T0); // unchanged
+  });
+  test("statusHistory is capped, keeping the most recent transitions", () => {
+    const s = seededAt(T0);
+    let now = T0;
+    for (let i = 0; i < 30; i++) {
+      now += 1;
+      applyTaskUpdate(s, "a", { status: i % 2 === 0 ? "doing" : "todo" }, now);
+    }
+    const hist = s.tasks[0].statusHistory ?? [];
+    expect(hist.length).toBeLessThanOrEqual(20);
+    expect(hist.at(-1)?.at).toBe(now); // newest kept
+  });
+});
+
+describe("validateTask transition fields", () => {
+  const base = { id: "a", title: "A", status: "todo" as TaskStatus };
+  test("preserves a valid enteredStatusAt + statusHistory (restore)", () => {
+    const t = validateTask({
+      ...base,
+      enteredStatusAt: 123,
+      statusHistory: [{ status: "todo", at: 123 }],
+    });
+    expect(t?.enteredStatusAt).toBe(123);
+    expect(t?.statusHistory).toEqual([{ status: "todo", at: 123 }]);
+  });
+  test("drops a non-number enteredStatusAt but keeps the task (legacy-friendly)", () => {
+    expect(validateTask({ ...base, enteredStatusAt: "soon" })).toEqual(base);
+  });
+  test("filters malformed history entries", () => {
+    const t = validateTask({
+      ...base,
+      statusHistory: [
+        { status: "todo", at: 1 },
+        { status: "bogus", at: 2 },
+        { status: "doing" },
+        { at: 3 },
+      ],
+    });
+    expect(t?.statusHistory).toEqual([{ status: "todo", at: 1 }]);
+  });
+});
+
+// ── heartbeat: expected-time + overdue + interval re-poke (#29) ──────────
+//
+// Opt-in per task via size (S/M/L → 5/10/20 min) or an --expect override. A
+// doing task that overruns its expected time pokes its owner, then re-pokes
+// once per expected-period until it leaves doing. All pure + clock-injected.
+
+describe("expectedMinutes", () => {
+  const t = (over: Partial<Task>): Task => ({ id: "a", title: "A", status: "doing", ...over });
+  test("size maps to default minutes (S=5, M=10, L=20)", () => {
+    expect(expectedMinutes(t({ size: "S" }))).toBe(5);
+    expect(expectedMinutes(t({ size: "M" }))).toBe(10);
+    expect(expectedMinutes(t({ size: "L" }))).toBe(20);
+  });
+  test("expect overrides the size default", () => {
+    expect(expectedMinutes(t({ size: "S", expect: 45 }))).toBe(45);
+  });
+  test("no size/expect → undefined (not watched)", () => {
+    expect(expectedMinutes(t({}))).toBeUndefined();
+  });
+});
+
+describe("computeDuePokes", () => {
+  const MIN = 60_000;
+  const doing = (over: Partial<Task> = {}): Task => ({
+    id: "d",
+    title: "D",
+    status: "doing",
+    owner: "flint",
+    size: "S", // 5 min
+    enteredStatusAt: 0,
+    ...over,
+  });
+
+  test("no poke before the expected time elapses", () => {
+    expect(computeDuePokes([doing()], new Map(), 4 * MIN).pokes).toHaveLength(0);
+  });
+  test("fires once the task overruns its expected time", () => {
+    const { pokes, pokeState } = computeDuePokes([doing()], new Map(), 6 * MIN);
+    expect(pokes).toHaveLength(1);
+    expect(pokes[0]).toMatchObject({ taskId: "d", owner: "flint", expectedMinutes: 5 });
+    expect(pokes[0].overdueByMs).toBe(1 * MIN);
+    expect(pokeState.get("d")).toBe(6 * MIN);
+  });
+  test("does not re-fire on the next sweep within the same interval", () => {
+    const { pokes } = computeDuePokes([doing()], new Map([["d", 6 * MIN]]), 7 * MIN);
+    expect(pokes).toHaveLength(0);
+  });
+  test("re-pokes once another expected-period elapses (scales with expected)", () => {
+    const { pokes } = computeDuePokes([doing()], new Map([["d", 6 * MIN]]), 11 * MIN);
+    expect(pokes).toHaveLength(1);
+  });
+  test("an unowned overdue task still pokes (owner undefined — caller toasts only)", () => {
+    const { pokes } = computeDuePokes([doing({ owner: undefined })], new Map(), 6 * MIN);
+    expect(pokes).toHaveLength(1);
+    expect(pokes[0].owner).toBeUndefined();
+  });
+  test("a non-doing task is never poked", () => {
+    expect(computeDuePokes([doing({ status: "todo" })], new Map(), 100 * MIN).pokes).toHaveLength(
+      0,
+    );
+  });
+  test("a task with no size/expect is not watched", () => {
+    expect(computeDuePokes([doing({ size: undefined })], new Map(), 100 * MIN).pokes).toHaveLength(
+      0,
+    );
+  });
+  test("poke bookkeeping resets when a task leaves doing", () => {
+    const { pokeState } = computeDuePokes(
+      [doing({ status: "review" })],
+      new Map([["d", 6 * MIN]]),
+      20 * MIN,
+    );
+    expect(pokeState.has("d")).toBe(false);
+  });
+});
+
+describe("validateTask size/expect", () => {
+  const base = { id: "a", title: "A", status: "todo" as TaskStatus };
+  test("accepts a valid size", () => {
+    expect(validateTask({ ...base, size: "M" })?.size).toBe("M");
+  });
+  test("drops an invalid size, keeps the task", () => {
+    expect(validateTask({ ...base, size: "XL" })).toEqual(base);
+  });
+  test("accepts a positive expect; drops 0 / negative / non-number", () => {
+    expect(validateTask({ ...base, expect: 30 })?.expect).toBe(30);
+    expect(validateTask({ ...base, expect: 0 })).toEqual(base);
+    expect(validateTask({ ...base, expect: -5 })).toEqual(base);
+    expect(validateTask({ ...base, expect: "soon" })).toEqual(base);
+  });
+});
+
+// ── no-op guards (isNoOpUpdate / isNoOpMove) ─────────────────────────────
+//
+// A redundant patch (doing->doing) or a drag landing in the same status+index
+// must be recognized as a no-op so the daemon can skip the broadcast + event
+// — otherwise every such call spuriously wakes every scoped tail (#23).
+
+describe("isNoOpUpdate", () => {
+  function seed(): BoardState {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "doing", notes: "n", owner: "w1" });
+    return s;
+  }
+  test("true when the patch changes nothing (doing->doing)", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "doing" })).toBe(true);
+  });
+  test("true for a multi-field patch that matches current values", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "doing", notes: "n", owner: "w1" })).toBe(true);
+  });
+  test("false when any field actually changes (doing->done)", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "done" })).toBe(false);
+  });
+  test("false when one field of a multi-field patch differs", () => {
+    expect(isNoOpUpdate(seed(), "a", { status: "doing", notes: "changed" })).toBe(false);
+  });
+  test("treats a dropped invalid status as no-op (nothing valid left to apply)", () => {
+    // applyTaskUpdate strips an invalid status; a status-only bogus patch is a no-op.
+    expect(isNoOpUpdate(seed(), "a", { status: "bogus" as TaskStatus })).toBe(true);
+  });
+  test("false for a missing task (not a no-op — let the apply path report not-found)", () => {
+    expect(isNoOpUpdate(seed(), "missing", { status: "doing" })).toBe(false);
+  });
+});
+
+describe("isNoOpMove", () => {
+  function seed(): BoardState {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" });
+    applyTaskAdd(s, { id: "b", title: "B", status: "todo" });
+    applyTaskAdd(s, { id: "c", title: "C", status: "doing" });
+    applyTaskAdd(s, { id: "d", title: "D", status: "doing" });
+    return s;
+  }
+  test("true for a drag landing in the same status+index (a is todo[0])", () => {
+    expect(isNoOpMove(seed(), "a", "todo", 0)).toBe(true);
+  });
+  test("true for the second card dropped back on its own slot (b is todo[1])", () => {
+    expect(isNoOpMove(seed(), "b", "todo", 1)).toBe(true);
+  });
+  test("false for an intra-column reorder (b todo[1] -> todo[0])", () => {
+    expect(isNoOpMove(seed(), "b", "todo", 0)).toBe(false);
+  });
+  test("false for a cross-column move even at a matching index (a todo[0] -> doing[0])", () => {
+    expect(isNoOpMove(seed(), "a", "doing", 0)).toBe(false);
+  });
+  test("true when an out-of-range index clamps back onto the card's own last slot (d is doing[1])", () => {
+    expect(isNoOpMove(seed(), "d", "doing", 99)).toBe(true);
+  });
+  test("false for a missing task", () => {
+    expect(isNoOpMove(seed(), "missing", "todo", 0)).toBe(false);
+  });
+});
+
 // ── validateTask (the shared task-shape trust boundary) ──────────────────
 
 describe("validateTask", () => {
@@ -211,6 +469,53 @@ describe("validateTask", () => {
     expect(validateTask(null)).toBeNull();
     expect(validateTask("nope")).toBeNull();
     expect(validateTask(undefined)).toBeNull();
+  });
+});
+
+// ── task tags (#18: cleanTags + validateTask) ────────────────────────────
+//
+// Tags are a clean string[] on the canonical task: strings only, trimmed,
+// deduped, no empties, case preserved (display), field omitted when empty so
+// snapshots stay clean and legacy tasks load fine. cleanTags is the shared
+// sanitizer; validateTask applies it at the trust boundary.
+
+describe("cleanTags", () => {
+  test("passes a clean list through, case preserved", () => {
+    expect(cleanTags(["FrontEnd", "bug"])).toEqual(["FrontEnd", "bug"]);
+  });
+  test("drops non-string entries", () => {
+    expect(cleanTags(["a", 42, null, undefined, {}, "b"])).toEqual(["a", "b"]);
+  });
+  test("trims each and drops empties / whitespace-only", () => {
+    expect(cleanTags([" a ", "", "   ", "b "])).toEqual(["a", "b"]);
+  });
+  test("dedupes exactly (case-sensitive — preserves both casings)", () => {
+    expect(cleanTags(["Bug", "bug", "Bug"])).toEqual(["Bug", "bug"]);
+  });
+  test("a non-array yields an empty list", () => {
+    expect(cleanTags("foo")).toEqual([]);
+    expect(cleanTags(undefined)).toEqual([]);
+    expect(cleanTags(42)).toEqual([]);
+  });
+});
+
+describe("validateTask tags", () => {
+  const base = { id: "a", title: "A", status: "todo" as TaskStatus };
+  test("accepts and cleans tags", () => {
+    expect(validateTask({ ...base, tags: [" frontend ", "frontend", 7, "bug"] })).toEqual({
+      ...base,
+      tags: ["frontend", "bug"],
+    });
+  });
+  test("omits the tags field when it cleans to empty (snapshot stays clean)", () => {
+    expect(validateTask({ ...base, tags: ["", "   ", 9] })).toEqual(base);
+    expect(validateTask({ ...base, tags: [] })).toEqual(base);
+  });
+  test("a non-array tags value is dropped, the task still validates (legacy-friendly)", () => {
+    expect(validateTask({ ...base, tags: "frontend" })).toEqual(base);
+  });
+  test("a task without tags is unchanged (legacy loads fine)", () => {
+    expect(validateTask(base)).toEqual(base);
   });
 });
 
@@ -427,6 +732,94 @@ describe("input validation from browser", () => {
   }, 15000);
 });
 
+// ── task.edit notes (#19: the modal's editable description) ───────────────
+//
+// The browser used to edit titles only (task.edit carried `title`). card-detail
+// extends it to {id, title?, notes?} so the detail modal can persist an edited
+// description over the same verb. Notes are re-sanitized server-side: a string
+// (empty allowed — clears), non-strings rejected; the existing title path and
+// its non-empty guard are unchanged.
+
+describe("task.edit notes (card-detail #19)", () => {
+  async function editAndReadNotes(
+    seedNotes: string | undefined,
+    edit: Record<string, unknown>,
+  ): Promise<string | undefined> {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [
+        {
+          id: "x",
+          title: "X",
+          status: "todo",
+          ...(seedNotes !== undefined ? { notes: seedNotes } : {}),
+        },
+      ],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", ...edit }));
+    await new Promise((r) => setTimeout(r, 200));
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    ws.close();
+    proc.kill();
+    await proc.exited;
+    return body.state.tasks[0]?.notes;
+  }
+
+  test("sets notes from the modal (round-trips to canonical state)", async () => {
+    expect(await editAndReadNotes("old", { notes: "a new description" })).toBe("a new description");
+  }, 15000);
+
+  test("an empty-string notes clears the description", async () => {
+    expect(await editAndReadNotes("old", { notes: "" })).toBe("");
+  }, 15000);
+
+  test("a non-string notes is rejected silently (notes unchanged)", async () => {
+    expect(await editAndReadNotes("keep me", { notes: 42 })).toBe("keep me");
+  }, 15000);
+
+  test("title + notes in one edit both land", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "x", title: "old title", status: "todo", notes: "old notes" }],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", title: "new title", notes: "new notes" }));
+    await new Promise((r) => setTimeout(r, 200));
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    ws.close();
+    proc.kill();
+    await proc.exited;
+    expect(body.state.tasks[0].title).toBe("new title");
+    expect(body.state.tasks[0].notes).toBe("new notes");
+  }, 15000);
+
+  test("a notes-only edit leaves a non-empty title untouched", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "x", title: "keep title", status: "todo" }],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", notes: "added a note" }));
+    await new Promise((r) => setTimeout(r, 200));
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    ws.close();
+    proc.kill();
+    await proc.exited;
+    expect(body.state.tasks[0].title).toBe("keep title");
+    expect(body.state.tasks[0].notes).toBe("added a note");
+  }, 15000);
+});
+
 // ── Daemon HTTP surface (house pattern: /cmd + /state + /events) ──────────
 //
 // These exercise the agent-facing HTTP surface directly against a spawned
@@ -489,6 +882,27 @@ describe("POST /cmd", () => {
 
     expect(body.state.tasks[0].status).toBe("doing");
     expect(body.state.tasks[0].title).toBe("first");
+  }, 15000);
+
+  test("a status transition stamps enteredStatusAt + grows history (live path)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await postCmd(ready.url, { type: "task.add", task: { id: "t1", title: "T", status: "todo" } });
+    const before = ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState })
+      .state.tasks[0];
+    // Stamped on add.
+    expect(typeof before.enteredStatusAt).toBe("number");
+    expect(before.statusHistory).toHaveLength(1);
+    await new Promise((r) => setTimeout(r, 5));
+    await postCmd(ready.url, { type: "task.update", id: "t1", patch: { status: "doing" } });
+    const after = ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState })
+      .state.tasks[0];
+    proc.kill();
+    await proc.exited;
+
+    expect(after.status).toBe("doing");
+    expect(after.enteredStatusAt ?? 0).toBeGreaterThanOrEqual(before.enteredStatusAt ?? 0);
+    expect(after.statusHistory).toHaveLength(2);
+    expect(after.statusHistory?.at(-1)?.status).toBe("doing");
   }, 15000);
 
   test("malformed JSON returns 400 { error }", async () => {
@@ -747,6 +1161,62 @@ describe("GET /events (SSE)", () => {
     expect(toggle?.by).toBe("user");
     expect(toggle?.owner).toBe("worker2"); // owner stamped so an owner-scoped tail wakes
   }, 15000);
+
+  // #23: a redundant patch / drag-in-place must NOT reach the event log. We
+  // prove the negative with a real "fence" event sent right after the no-op:
+  // the fence arrives, and no task.update/task.move for the no-op precedes it.
+  test("a redundant doing->doing /cmd update emits no event (no-op guard)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "task.add",
+      task: { id: "t1", title: "T", status: "doing" }, // already doing → doing->doing is a no-op
+    });
+    const evP = collectEvents(
+      ready.url,
+      0,
+      (ev) => ev.type === "task.add" && (ev.task as Task)?.id === "fence",
+      4000,
+    );
+    await new Promise((r) => setTimeout(r, 150));
+    await seedCmd(ready.url, { type: "task.update", id: "t1", patch: { status: "doing" } }); // no-op
+    await seedCmd(ready.url, {
+      type: "task.add",
+      task: { id: "fence", title: "F", status: "todo" }, // real event, the fence
+    });
+    const events = await evP;
+    proc.kill();
+    await proc.exited;
+
+    expect(events.some((e) => e.type === "task.add" && (e.task as Task)?.id === "fence")).toBe(
+      true,
+    );
+    expect(events.some((e) => e.type === "task.update" && e.taskId === "t1")).toBe(false);
+  }, 15000);
+
+  test("a drag landing in the same status+index emits no task.move event (no-op guard)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [
+        { id: "c", title: "C", status: "doing" }, // doing[0]
+        { id: "d", title: "D", status: "doing" }, // doing[1]
+      ],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    const evP = collectEvents(ready.url, 0, (ev) => ev.type === "task.toggle", 4000);
+    await new Promise((r) => setTimeout(r, 150));
+    ws.send(JSON.stringify({ type: "task.move", id: "c", status: "doing", index: 0 })); // c already doing[0] → no-op
+    ws.send(JSON.stringify({ type: "task.toggle", id: "d", status: "review" })); // real fence event
+    const events = await evP;
+    ws.close();
+    proc.kill();
+    await proc.exited;
+
+    expect(events.some((e) => e.type === "task.toggle" && e.taskId === "d")).toBe(true);
+    expect(events.some((e) => e.type === "task.move")).toBe(false);
+  }, 15000);
 });
 
 describe("ownership claim guard (Phase C)", () => {
@@ -900,6 +1370,63 @@ describe("cli.ts ↔ daemon parity", () => {
       };
       // Character-for-character — no shell truncation, no escaping artifacts.
       expect(s.state.tasks[0].title).toBe(nasty);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
+  test('--tag sets (cleaned + deduped), replaces on update, and clears with "" (#18)', async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const tags = async () => {
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      return s.state.tasks[0]?.tags ?? [];
+    };
+    try {
+      // add: messy input → stored clean (trim + dedupe).
+      await runCli(
+        ["add", "tagged", "--id", "t1", "--tag", " frontend, bug ,frontend", "--session", session],
+        { env },
+      );
+      expect(await tags()).toEqual(["frontend", "bug"]);
+      // update: SET semantics — the list replaces, not merges.
+      await runCli(["update", "t1", "--tag", "ui,ux", "--session", session], { env });
+      expect(await tags()).toEqual(["ui", "ux"]);
+      // clear: --tag "" empties the list.
+      await runCli(["update", "t1", "--tag", "", "--session", session], { env });
+      expect(await tags()).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 20000);
+
+  test("--size (case-insensitive) + --expect override set the heartbeat estimate (#29)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const task = async () => {
+      const s = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      return s.state.tasks[0];
+    };
+    try {
+      await runCli(["add", "sized", "--id", "t1", "--size", "m", "--session", session], { env });
+      expect((await task()).size).toBe("M"); // normalized to uppercase
+      await runCli(["update", "t1", "--expect", "45", "--session", session], { env });
+      expect((await task()).expect).toBe(45);
+      // A bogus size alongside a real field is dropped; the rest of the patch lands.
+      await runCli(["update", "t1", "--notes", "go", "--size", "XL", "--session", session], {
+        env,
+      });
+      const t = await task();
+      expect(t.notes).toBe("go");
+      expect(t.size).toBe("M"); // unchanged — XL rejected
     } finally {
       await runCli(["close", "--session", session], { env });
     }
@@ -1467,6 +1994,138 @@ describe("durability (Phase B)", () => {
     const sessions = await runCli(["sessions"], { env });
     expect(sessions.stdout).toContain(session);
   }, 20000);
+});
+
+// ── tail session pinning (#tail-pin: cross-project hijack guard) ─────────
+//
+// An unpinned long-lived `tail` used to re-resolve the GLOBAL `latest` pointer
+// on every reconnect, so a newer board opening on the host silently hijacked
+// the stream (dream-flute BUG 1: the lead received another project's events).
+// pickTailSession locks onto the first session it resolves; thereafter it reads
+// THAT session's own file, never `latest`. Pure (readSession injected) so this
+// is deterministic and never touches the real, race-prone global pointer.
+
+describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
+  const boardA: Session = { url: "http://127.0.0.1:1", port: 1, session_id: "A", title: "A" };
+  const boardB: Session = { url: "http://127.0.0.1:2", port: 2, session_id: "B", title: "B" };
+  // Models readSession: read(undefined) follows the global `latest` pointer;
+  // read("A")/read("B") read that session's own (pinned) discovery file.
+  const reader = (latest: Session | null) => (s: string | undefined) => {
+    if (s === undefined) return latest;
+    if (s === "A") return boardA;
+    if (s === "B") return boardB;
+    return null;
+  };
+
+  test("unpinned: pins the first session it resolves off `latest`", () => {
+    const r = pickTailSession(undefined, reader(boardA));
+    expect(r?.pinned).toBe("A");
+    expect(r?.session.port).toBe(1);
+  });
+
+  test("once pinned, a newer board on `latest` does NOT hijack the tail", () => {
+    const r1 = pickTailSession(undefined, reader(boardA)); // pins to A
+    expect(r1?.pinned).toBe("A");
+    // Board B opens and becomes `latest`; the tail reconnects with its pin.
+    const r2 = pickTailSession(r1?.pinned, reader(boardB));
+    // Still A (port 1). The old read-latest-each-reconnect logic gave B (port 2).
+    expect(r2?.pinned).toBe("A");
+    expect(r2?.session.port).toBe(1);
+  });
+
+  test("an explicit --session is pinned from the start, ignoring `latest`", () => {
+    const r = pickTailSession("A", reader(boardB)); // latest=B but pinned to A
+    expect(r?.pinned).toBe("A");
+    expect(r?.session.port).toBe(1);
+  });
+
+  test("returns null when nothing resolves yet (no board up)", () => {
+    expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
+});
+
+// ── liveBoards (running-board lister — `list`) ───────────────────────────
+//
+// `list` enumerates currently-RUNNING boards (distinct from `sessions`, which
+// lists snapshots incl. closed ones). liveBoards takes the discovered sessions
+// and an injected liveness probe (task count if the board answers, null if
+// dead/stale) and returns only the live ones — so a stale tmpdir discovery file
+// is silently skipped. Probe injected → unit-testable without real daemons.
+
+describe("liveBoards", () => {
+  const mk = (id: string): Session => ({
+    url: `http://127.0.0.1:1${id}`,
+    port: 1,
+    session_id: `bounty-${id}`,
+    title: `Board ${id}`,
+  });
+
+  test("includes only boards the probe reports live, carrying their task counts", async () => {
+    const probe = async (s: Session) =>
+      s.session_id === "bounty-b" ? null : s.session_id === "bounty-a" ? 3 : 0;
+    const live = await liveBoards([mk("a"), mk("b"), mk("c")], probe);
+    expect(live.map((l) => l.session_id).sort()).toEqual(["bounty-a", "bounty-c"]); // b stale, skipped
+    expect(live.find((l) => l.session_id === "bounty-a")?.tasks).toBe(3);
+    expect(live.find((l) => l.session_id === "bounty-a")?.title).toBe("Board a");
+  });
+
+  test("empty list when nothing is live", async () => {
+    expect(await liveBoards([mk("a"), mk("b")], async () => null)).toEqual([]);
+  });
+});
+
+// ── owner scope matching (#owner-case: case-insensitive owner filter) ────
+//
+// The lead assigns `--owner loom` while the worker filters as `--as Loom`
+// (grapevine aliases are often capitalized). A case-sensitive match silently
+// emptied `--mine`/`--owner` — the worker looked unassigned. ownerInScope (used
+// by both `state` and `tail`) matches owners case-insensitively.
+
+describe("ownerInScope (case-insensitive owner filter)", () => {
+  test("--owner matches the owner regardless of case", () => {
+    expect(ownerInScope("Loom", { owner: "loom" })).toBe(true);
+    expect(ownerInScope("loom", { owner: "LOOM" })).toBe(true);
+  });
+  test("--owner does not match a different owner", () => {
+    expect(ownerInScope("raven", { owner: "loom" })).toBe(false);
+  });
+  test("--owner does not match an unowned task (exact ownership)", () => {
+    expect(ownerInScope(undefined, { owner: "loom" })).toBe(false);
+  });
+  test("--mine matches an own task across a case mismatch (the bug)", () => {
+    expect(ownerInScope("loom", { mine: true, as: "Loom" })).toBe(true);
+  });
+  test("--mine also matches an unowned (claimable) task", () => {
+    expect(ownerInScope(undefined, { mine: true, as: "Loom" })).toBe(true);
+  });
+  test("--mine does not match another worker's task", () => {
+    expect(ownerInScope("raven", { mine: true, as: "Loom" })).toBe(false);
+  });
+  test("no scope → everything is in scope", () => {
+    expect(ownerInScope("anyone", {})).toBe(true);
+    expect(ownerInScope(undefined, {})).toBe(true);
+  });
+});
+
+// ── --tag parsing (#18: comma list → clean string[]) ─────────────────────
+//
+// `add`/`update --tag a,b,c` — comma-separated, SET semantics (replaces the
+// task's tags), mirroring `block --on a,b`. `--tag ""` clears (empty list).
+
+describe("parseTags", () => {
+  test("splits a comma list", () => {
+    expect(parseTags("frontend,backend,bug")).toEqual(["frontend", "backend", "bug"]);
+  });
+  test("trims each and drops empty segments", () => {
+    expect(parseTags(" frontend , , backend ")).toEqual(["frontend", "backend"]);
+  });
+  test("dedupes", () => {
+    expect(parseTags("bug,bug,ui")).toEqual(["bug", "ui"]);
+  });
+  test("an empty string clears (empty list)", () => {
+    expect(parseTags("")).toEqual([]);
+    expect(parseTags("  ,  ")).toEqual([]);
+  });
 });
 
 describe("join.ts", () => {
