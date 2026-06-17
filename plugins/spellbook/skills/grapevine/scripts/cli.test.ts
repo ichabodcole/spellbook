@@ -1104,4 +1104,35 @@ describe("grapevine cli", () => {
     expect(JSON.parse(infoAfter.stdout).daemon).toBe(true);
     expect(JSON.parse(infoAfter.stdout).pid).not.toBe(pidBefore);
   }, 10000);
+
+  test("announce broadcasts to all active channels with a kind:announcement frame", async () => {
+    // Two active channels, each with one subscriber tail.
+    const a = spawnTail("ann_a", ["--as", "alice"]);
+    const b = spawnTail("ann_b", ["--as", "bob"]);
+    await sleep(400); // let subscriptions land + load the channels
+
+    const r = await bunRun(["announce", "--from", "lead", "ship is going down in 5"]);
+    expect(r.code).toBe(0);
+    const parsed = JSON.parse(r.stdout);
+    expect(parsed.ok).toBe(true);
+
+    // Both active channels are in the receipt, each with 1 recipient (the tail).
+    const byName = Object.fromEntries(
+      parsed.channels.map((c: { name: string; recipients: number }) => [c.name, c.recipients]),
+    );
+    expect(byName.ann_a).toBe(1);
+    expect(byName.ann_b).toBe(1);
+    expect(parsed.total_recipients).toBe(2);
+
+    // The stderr echo reports the spread.
+    expect(r.stderr).toContain("# announced → ");
+
+    // Each tail actually received the announcement frame.
+    await sleep(300);
+    for (const out of [a.output(), b.output()]) {
+      const line = out.split("\n").find((l) => l.includes("ship is going down"));
+      expect(line).toBeDefined();
+      expect(JSON.parse(line as string).kind).toBe("announcement");
+    }
+  });
 });
