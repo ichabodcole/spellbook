@@ -263,6 +263,19 @@
       .msg.kind-topic .from {
         color: var(--grape-soft);
       }
+      /* Cross-channel announcement — a full-width accent banner so it reads as
+         "everyone, not just this channel". Distinct from kind-topic. */
+      .msg.kind-announcement {
+        border-left: 3px solid var(--warn);
+        background: color-mix(in srgb, var(--warn) 8%, var(--bg-card));
+        border-radius: 6px;
+        padding: 6px 10px;
+      }
+      .msg.kind-announcement .from::after {
+        content: " · announced";
+        opacity: 0.6;
+        font-style: italic;
+      }
       .empty {
         margin: 60px auto;
         text-align: center;

@@ -88,7 +88,7 @@ type Message = {
   from: string;
   text: string;
   ts: number;
-  kind: "message" | "topic";
+  kind: "message" | "topic" | "announcement";
   // V1.7 threading — id of the message this one replies to (same channel).
   // Stored only when set; readers that don't understand it ignore it.
   in_reply_to?: number;
@@ -237,7 +237,7 @@ function appendMessage(
   name: string,
   from: string,
   text: string,
-  kind: "message" | "topic" = "message",
+  kind: "message" | "topic" | "announcement" = "message",
   inReplyTo?: number,
 ): Message {
   const ch = loadChannel(name);
@@ -445,6 +445,64 @@ async function handle(req: Request): Promise<Response> {
     } catch (e) {
       return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
     }
+  }
+
+  if (path === "/announce" && method === "POST") {
+    const body = await readJsonBody(req);
+    if (!body || typeof body.from !== "string" || typeof body.text !== "string") {
+      return json({ error: "from and text required" }, { status: 400 });
+    }
+    const requested: string[] | undefined = Array.isArray(body.channels)
+      ? body.channels.filter((c: unknown): c is string => typeof c === "string")
+      : undefined;
+
+    const delivered: { name: string; recipients: number }[] = [];
+    const skipped: { name: string; reason: string }[] = [];
+
+    // Resolve the target set.
+    let targets: string[];
+    if (requested) {
+      // Explicit targeting: named channels regardless of activity. Archived →
+      // skip (read-only). Unknown (not loaded and no on-disk log) → skip.
+      targets = [];
+      for (const name of requested) {
+        let onDisk = false;
+        try {
+          onDisk = existsSync(channelPath(name));
+        } catch {
+          // invalid channel name → treat as unknown
+        }
+        if (existsSync(archivedPath(name))) {
+          skipped.push({ name, reason: "archived" });
+        } else if (channels.has(name) || onDisk) {
+          targets.push(name);
+        } else {
+          skipped.push({ name, reason: "unknown" });
+        }
+      }
+    } else {
+      // Default: every active (in-memory) channel, minus archived. Archived
+      // in-memory channels are silently excluded — the caller didn't name them.
+      targets = [...channels.keys()].filter((name) => !channels.get(name)?.archived);
+    }
+
+    for (const name of targets) {
+      // Re-check archived immediately before append: a channel could have been
+      // archived between target resolution and here. Mirrors the sibling
+      // POST /channels/:name/messages handler, which re-checks before appending.
+      if (existsSync(archivedPath(name))) {
+        skipped.push({ name, reason: "archived" });
+        continue;
+      }
+      appendMessage(name, body.from, body.text, "announcement");
+      const ch = channels.get(name);
+      const vis = ch ? visibleSubs(ch) : [];
+      const recipients = vis.reduce((n, sub) => (sub.alias !== body.from ? n + 1 : n), 0);
+      delivered.push({ name, recipients });
+    }
+
+    const total_recipients = delivered.reduce((n, d) => n + d.recipients, 0);
+    return json({ ok: true, channels: delivered, skipped, total_recipients });
   }
 
   // Route-level channel name pattern. Mirrors channelPath()'s rules:

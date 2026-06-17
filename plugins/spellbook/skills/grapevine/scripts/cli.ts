@@ -69,6 +69,15 @@ type SendReceipt = Message & {
   error?: string;
 };
 
+// POST /announce — cross-channel broadcast receipt.
+type AnnounceReceipt = {
+  ok: boolean;
+  channels: { name: string; recipients: number }[];
+  skipped: { name: string; reason: string }[];
+  total_recipients: number;
+  error?: string;
+};
+
 // GET /channels — channel directory listing.
 type ChannelSummary = {
   name: string;
@@ -382,6 +391,32 @@ async function cmdSend(
   if (data.subscribers === 0) out.warning = "channel has no subscribers";
   else if (data.recipients === 0) out.warning = "only you are subscribed";
   if (opts.verbose) out.subscriber_aliases = data.subscriber_aliases ?? [];
+  printJson(out);
+}
+
+async function cmdAnnounce(
+  from: string,
+  text: string,
+  channels: string[] | undefined,
+  opts: { quiet?: boolean },
+) {
+  if (!from || !text) die("usage: grapevine announce --from <alias> <text...>");
+  const port = await ensureDaemon();
+  const body: { from: string; text: string; channels?: string[] } = { from, text };
+  if (channels?.length) body.channels = channels;
+  const { status, data } = await api<AnnounceReceipt>(port, "POST", "/announce", body);
+  if (status >= 400 || !data) die(data?.error ?? `HTTP ${status}`);
+  process.stderr.write(
+    `# announced → ${data.channels.length} channel(s) · ${data.total_recipients} recipient(s)\n`,
+  );
+  if (opts.quiet) return;
+  const out: Record<string, unknown> = {
+    ok: true,
+    channels: data.channels,
+    total_recipients: data.total_recipients,
+  };
+  if (data.skipped?.length) out.skipped = data.skipped;
+  if (data.channels.length === 0) out.warning = "no active channels to announce to";
   printJson(out);
 }
 
@@ -1001,7 +1036,7 @@ const BOOLEAN_FLAGS = new Set([
 // shell pipes the literal command line in as the body, which then gets posted —
 // corrupting the channel with `bun /…/cli.ts send <channel> --as … <text>`.
 // We refuse to post such a body unless --force is passed.
-const LEAKED_SEND_RE = /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\bsend\b/;
+const LEAKED_SEND_RE = /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\b(?:send|announce)\b/;
 function looksLikeLeakedSend(text: string): boolean {
   return LEAKED_SEND_RE.test(text);
 }
@@ -1095,6 +1130,40 @@ async function main(argv: string[]): Promise<number> {
         verbose: !!flags.verbose,
         inReplyTo: flags["in-reply-to"] ? parseInt(flags["in-reply-to"] as string, 10) : undefined,
       });
+      return 0;
+    }
+    case "announce": {
+      const from = resolveAlias(flags);
+      const hasInlineText = positional.length > 0;
+      let text: string;
+      if (flags["body-file"]) {
+        const path = flags["body-file"] as string;
+        const file = Bun.file(path);
+        if (!(await file.exists())) die(`announce: --body-file not found: ${path}`);
+        text = (await file.text()).replace(/\n$/, "");
+      } else if (flags.stdin || (!hasInlineText && !process.stdin.isTTY)) {
+        const buf: Buffer[] = [];
+        for await (const chunk of process.stdin) buf.push(chunk as Buffer);
+        text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
+      } else {
+        text = positional.join(" ");
+      }
+      if (!from)
+        die("announce: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
+      if (!flags.force && looksLikeLeakedSend(text)) {
+        die(
+          "announce: that body looks like a leaked grapevine invocation (a fumbled " +
+            "heredoc?). Nothing was sent. Pipe the real body via --stdin or " +
+            "--body-file <path>, or pass --force to send it anyway.",
+        );
+      }
+      const channels = flags.channels
+        ? (flags.channels as string)
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean)
+        : undefined;
+      await cmdAnnounce(from, text, channels, { quiet: !!flags.quiet });
       return 0;
     }
     case "pull": {
