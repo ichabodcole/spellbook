@@ -1172,6 +1172,7 @@ describe("grapevine cli", () => {
       (c: { name: string }) => c.name === "ann_guard",
     );
     expect(ch.message_count).toBe(0);
+    await bunRun(["close", "ann_guard"]);
   });
 
   test("announce broadcasts to all active channels with a kind:announcement frame", async () => {
