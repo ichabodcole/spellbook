@@ -159,6 +159,104 @@ describe("applyTaskMove", () => {
   });
 });
 
+// ── status-transition timestamps (heartbeat substrate) ───────────────────
+//
+// Every status transition stamps the task: enteredStatusAt (ms it entered its
+// current status) + a capped statusHistory. Shared foundation for heartbeat,
+// card-aging, metrics, leaderboard. `now` is injected so this is deterministic.
+
+describe("status-transition timestamps", () => {
+  const T0 = 1_000_000;
+  function seededAt(now: number): BoardState {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" }, now);
+    return s;
+  }
+
+  test("applyTaskAdd stamps the initial status entry", () => {
+    const s = seededAt(T0);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0);
+    expect(s.tasks[0].statusHistory).toEqual([{ status: "todo", at: T0 }]);
+  });
+  test("applyTaskAdd preserves a restored task's existing stamp", () => {
+    const s = freshState();
+    applyTaskAdd(s, { id: "r", title: "R", status: "doing", enteredStatusAt: 42 }, T0);
+    expect(s.tasks[0].enteredStatusAt).toBe(42); // not overwritten with T0
+  });
+  test("applyTaskUpdate re-stamps on a status change and appends history", () => {
+    const s = seededAt(T0);
+    applyTaskUpdate(s, "a", { status: "doing" }, T0 + 500);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0 + 500);
+    expect(s.tasks[0].statusHistory).toEqual([
+      { status: "todo", at: T0 },
+      { status: "doing", at: T0 + 500 },
+    ]);
+  });
+  test("a non-status patch does NOT touch the transition stamp", () => {
+    const s = seededAt(T0);
+    applyTaskUpdate(s, "a", { notes: "hi" }, T0 + 500);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0);
+    expect(s.tasks[0].statusHistory).toHaveLength(1);
+  });
+  test("a same-status patch does NOT reset the stamp", () => {
+    const s = seededAt(T0);
+    applyTaskUpdate(s, "a", { status: "todo", notes: "x" }, T0 + 500);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0); // no transition
+  });
+  test("applyTaskMove stamps a cross-column move", () => {
+    const s = seededAt(T0);
+    applyTaskMove(s, "a", "doing", 0, T0 + 900);
+    expect(s.tasks[0].enteredStatusAt).toBe(T0 + 900);
+    expect(s.tasks[0].statusHistory?.map((h) => h.status)).toEqual(["todo", "doing"]);
+  });
+  test("an intra-column reorder is NOT a transition", () => {
+    const s = freshState();
+    applyTaskAdd(s, { id: "a", title: "A", status: "todo" }, T0);
+    applyTaskAdd(s, { id: "b", title: "B", status: "todo" }, T0);
+    applyTaskMove(s, "b", "todo", 0, T0 + 900); // reorder within the column
+    expect(s.tasks.find((t) => t.id === "b")?.enteredStatusAt).toBe(T0); // unchanged
+  });
+  test("statusHistory is capped, keeping the most recent transitions", () => {
+    const s = seededAt(T0);
+    let now = T0;
+    for (let i = 0; i < 30; i++) {
+      now += 1;
+      applyTaskUpdate(s, "a", { status: i % 2 === 0 ? "doing" : "todo" }, now);
+    }
+    const hist = s.tasks[0].statusHistory ?? [];
+    expect(hist.length).toBeLessThanOrEqual(20);
+    expect(hist.at(-1)?.at).toBe(now); // newest kept
+  });
+});
+
+describe("validateTask transition fields", () => {
+  const base = { id: "a", title: "A", status: "todo" as TaskStatus };
+  test("preserves a valid enteredStatusAt + statusHistory (restore)", () => {
+    const t = validateTask({
+      ...base,
+      enteredStatusAt: 123,
+      statusHistory: [{ status: "todo", at: 123 }],
+    });
+    expect(t?.enteredStatusAt).toBe(123);
+    expect(t?.statusHistory).toEqual([{ status: "todo", at: 123 }]);
+  });
+  test("drops a non-number enteredStatusAt but keeps the task (legacy-friendly)", () => {
+    expect(validateTask({ ...base, enteredStatusAt: "soon" })).toEqual(base);
+  });
+  test("filters malformed history entries", () => {
+    const t = validateTask({
+      ...base,
+      statusHistory: [
+        { status: "todo", at: 1 },
+        { status: "bogus", at: 2 },
+        { status: "doing" },
+        { at: 3 },
+      ],
+    });
+    expect(t?.statusHistory).toEqual([{ status: "todo", at: 1 }]);
+  });
+});
+
 // ── no-op guards (isNoOpUpdate / isNoOpMove) ─────────────────────────────
 //
 // A redundant patch (doing->doing) or a drag landing in the same status+index
@@ -690,6 +788,27 @@ describe("POST /cmd", () => {
 
     expect(body.state.tasks[0].status).toBe("doing");
     expect(body.state.tasks[0].title).toBe("first");
+  }, 15000);
+
+  test("a status transition stamps enteredStatusAt + grows history (live path)", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await postCmd(ready.url, { type: "task.add", task: { id: "t1", title: "T", status: "todo" } });
+    const before = ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState })
+      .state.tasks[0];
+    // Stamped on add.
+    expect(typeof before.enteredStatusAt).toBe("number");
+    expect(before.statusHistory).toHaveLength(1);
+    await new Promise((r) => setTimeout(r, 5));
+    await postCmd(ready.url, { type: "task.update", id: "t1", patch: { status: "doing" } });
+    const after = ((await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState })
+      .state.tasks[0];
+    proc.kill();
+    await proc.exited;
+
+    expect(after.status).toBe("doing");
+    expect(after.enteredStatusAt ?? 0).toBeGreaterThanOrEqual(before.enteredStatusAt ?? 0);
+    expect(after.statusHistory).toHaveLength(2);
+    expect(after.statusHistory?.at(-1)?.status).toBe("doing");
   }, 15000);
 
   test("malformed JSON returns 400 { error }", async () => {

@@ -64,6 +64,7 @@ const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
 const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
 
 type TaskStatus = "todo" | "doing" | "review" | "done";
+type StatusVisit = { status: TaskStatus; at: number }; // a single transition (unix ms)
 type Task = {
   id: string;
   title: string;
@@ -72,8 +73,26 @@ type Task = {
   owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
   blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
   tags?: string[]; // free-form labels; clean string[] (a future filter groups on them)
+  enteredStatusAt?: number; // unix ms the task entered its CURRENT status
+  statusHistory?: StatusVisit[]; // capped transition log (heartbeat/aging/metrics substrate)
 };
 type BoardState = { title: string; tasks: Task[] };
+
+// Cap the per-task transition log so long-lived tasks don't bloat snapshots.
+const MAX_STATUS_HISTORY = 20;
+
+// Stamp a status transition: the fields to merge onto a task entering `status`
+// at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
+// passed in) so the substrate is deterministic and the downstream features
+// (heartbeat, card-aging, metrics, leaderboard) all read one shape.
+function transitionStamp(
+  prev: StatusVisit[] | undefined,
+  status: TaskStatus,
+  now: number,
+): { enteredStatusAt: number; statusHistory: StatusVisit[] } {
+  const statusHistory = [...(prev ?? []), { status, at: now }].slice(-MAX_STATUS_HISTORY);
+  return { enteredStatusAt: now, statusHistory };
+}
 
 type CloseReason = "user" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
@@ -200,6 +219,20 @@ function validateTask(t: unknown): Task | null {
     return null;
   }
   const tags = cleanTags(cand.tags);
+  // Transition substrate is server-generated; on restore we preserve it
+  // leniently — drop a malformed value rather than reject the whole task, so a
+  // legacy snapshot still loads.
+  const enteredStatusAt =
+    typeof cand.enteredStatusAt === "number" ? cand.enteredStatusAt : undefined;
+  const statusHistory = Array.isArray(cand.statusHistory)
+    ? (cand.statusHistory.filter(
+        (h): h is StatusVisit =>
+          !!h &&
+          typeof h === "object" &&
+          VALID_STATUS.includes((h as StatusVisit).status) &&
+          typeof (h as StatusVisit).at === "number",
+      ) as StatusVisit[])
+    : undefined;
   return {
     id: cand.id,
     title: cand.title,
@@ -208,18 +241,31 @@ function validateTask(t: unknown): Task | null {
     ...(cand.owner !== undefined ? { owner: cand.owner as string } : {}),
     ...(cand.blockedBy !== undefined ? { blockedBy: cand.blockedBy as string[] } : {}),
     ...(tags.length ? { tags } : {}),
+    ...(enteredStatusAt !== undefined ? { enteredStatusAt } : {}),
+    ...(statusHistory?.length ? { statusHistory } : {}),
   };
 }
 
 // State mutation helpers. All keep `state.tasks` in place (replace by id)
 // so the agent and browser see consistent ordering.
-function applyTaskAdd(state: BoardState, task: Task): boolean {
+function applyTaskAdd(state: BoardState, task: Task, now: number = Date.now()): boolean {
   if (state.tasks.some((t) => t.id === task.id)) return false;
-  state.tasks.push(task);
+  // Stamp the initial status entry — unless the task already carries its own
+  // (a restore/init that preserved the transition log).
+  const stamped =
+    task.enteredStatusAt === undefined
+      ? { ...task, ...transitionStamp(task.statusHistory, task.status, now) }
+      : task;
+  state.tasks.push(stamped);
   return true;
 }
 
-function applyTaskUpdate(state: BoardState, id: string, patch: Partial<Task>): boolean {
+function applyTaskUpdate(
+  state: BoardState,
+  id: string,
+  patch: Partial<Task>,
+  now: number = Date.now(),
+): boolean {
   const idx = state.tasks.findIndex((t) => t.id === id);
   if (idx === -1) return false;
   // Status guard: drop invalid status values quietly so a malformed agent
@@ -228,7 +274,15 @@ function applyTaskUpdate(state: BoardState, id: string, patch: Partial<Task>): b
     const { status: _drop, ...rest } = patch;
     patch = rest;
   }
-  state.tasks[idx] = { ...state.tasks[idx], ...patch };
+  const prev = state.tasks[idx];
+  const merged: Task = { ...prev, ...patch };
+  // Stamp only on an actual status CHANGE (a transition) — not a notes/title
+  // patch, and not a same-status patch (a guarded doing->doing never reaches
+  // here, but a direct call must not reset the clock either).
+  if (patch.status !== undefined && patch.status !== prev.status) {
+    Object.assign(merged, transitionStamp(prev.statusHistory, patch.status, now));
+  }
+  state.tasks[idx] = merged;
   return true;
 }
 
@@ -243,11 +297,20 @@ function applyTaskRemove(state: BoardState, id: string): boolean {
 // tasks of that status. Returns the canonical absolute index in state.tasks
 // after the move, or -1 if the task wasn't found. Status validation is the
 // caller's job (we already screen in the WS handler).
-function applyTaskMove(state: BoardState, id: string, status: TaskStatus, index: number): number {
+function applyTaskMove(
+  state: BoardState,
+  id: string,
+  status: TaskStatus,
+  index: number,
+  now: number = Date.now(),
+): number {
   const fromIdx = state.tasks.findIndex((t) => t.id === id);
   if (fromIdx === -1) return -1;
   const [task] = state.tasks.splice(fromIdx, 1);
-  task.status = status;
+  // A cross-column move is a transition; an intra-column reorder is not.
+  if (task.status !== status) {
+    Object.assign(task, { status }, transitionStamp(task.statusHistory, status, now));
+  }
   // Translate the column-local index into an absolute index in state.tasks:
   // walk through state.tasks and count tasks of the target status until we
   // hit `index` slots. If `index` exceeds the column count, append.
@@ -569,8 +632,12 @@ async function main(argv: string[]): Promise<number> {
       if (typeof msg.title === "string") state.title = msg.title;
       // Filter-and-keep-valid: drop malformed tasks, keep the well-formed ones
       // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
-      if (Array.isArray(msg.tasks))
-        state.tasks = msg.tasks.map(validateTask).filter((t): t is Task => t !== null);
+      // Route through applyTaskAdd so a freshly-seeded task gets a baseline
+      // transition stamp (and a restored one keeps its preserved history).
+      if (Array.isArray(msg.tasks)) {
+        state.tasks = [];
+        for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
+      }
       broadcast({ type: "init", title: state.title, tasks: state.tasks });
       emitEvent({ type: "init", title: state.title, by });
       return { ok: true, applied: true };
