@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.3.0...spellbook-v1.4.0) (2026-06-17)
+
+
+### Features
+
+* **bounty:** `list` verb — enumerate currently-running boards (#list-sessions) ([8e9a47f](https://github.com/ichabodcole/spellbook/commit/8e9a47f2914c1d1a689aa2bc553bd392d1a895ab))
+* **bounty:** card-detail — truncate notes + editable description modal ([#19](https://github.com/ichabodcole/spellbook/issues/19)) ([7db59e8](https://github.com/ichabodcole/spellbook/commit/7db59e8bf20dc6c729a0c4a40ac0e65624cb13d9))
+* **bounty:** document doer-owns-task-state lifecycle ([#25](https://github.com/ichabodcole/spellbook/issues/25)) ([42bc295](https://github.com/ichabodcole/spellbook/commit/42bc29537b6c9d8c396e136fce98e228b354f5eb))
+* **bounty:** heartbeat — overrun pokes on the timestamp substrate ([#29](https://github.com/ichabodcole/spellbook/issues/29)) ([e06de4d](https://github.com/ichabodcole/spellbook/commit/e06de4d38cc3538401f0d94820862f458c3994c5))
+* **bounty:** per-transition timestamp substrate (#heartbeat foundation) ([59ec83e](https://github.com/ichabodcole/spellbook/commit/59ec83e7ae605ba20c91d617546d4635c373a3fb))
+* **bounty:** task tags — model + cli + chips ([#18](https://github.com/ichabodcole/spellbook/issues/18)) ([dd56377](https://github.com/ichabodcole/spellbook/commit/dd56377538fc951cc52bac9b36e82a6c09efeb7a))
+* **grapevine:** restart/start verbs for clean daemon lifecycle ([145660d](https://github.com/ichabodcole/spellbook/commit/145660d922d0e556ee82e0150dbc0c333783233f))
+
+
+### Bug Fixes
+
+* **bounty:** case-insensitive owner filter — no silent-empty --mine (#owner-case) ([4975243](https://github.com/ichabodcole/spellbook/commit/4975243403a4b5462dc2135191694fc7e4a67300))
+* **bounty:** no-op event guard for drag + status no-op ([#23](https://github.com/ichabodcole/spellbook/issues/23)) ([4ce896a](https://github.com/ichabodcole/spellbook/commit/4ce896afdd74bce8ef225c362108a27abca74c43))
+* **bounty:** pin a tail to its first session — no cross-project hijack (#tail-pin) ([e07901f](https://github.com/ichabodcole/spellbook/commit/e07901ff800510cfc5d762e18fa51fa8f99971f9))
+* **grapevine:** send reads stdin by default + guard leaked invocation ([#24](https://github.com/ichabodcole/spellbook/issues/24)) ([03ca9fb](https://github.com/ichabodcole/spellbook/commit/03ca9fb2eca20611032cbb373bbf63b0eebf4c86))
+
 ## [1.3.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.2.0...spellbook-v1.3.0) (2026-06-16)
 
 
