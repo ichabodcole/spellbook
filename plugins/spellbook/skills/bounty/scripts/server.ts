@@ -166,6 +166,18 @@ function cardPassesFilter(task: Task, activeTags: string[], activeOwners: string
   return tagPass && ownerPass;
 }
 
+// open-timeout: the idle-close decision, factored out so it's clock-free testable
+// (like computeDuePokes). A board only counts its idle floor down while UNWATCHED
+// — a live subscriber (a WS browser in `sockets` OR an agent SSE tail on /events)
+// keeps it open indefinitely. So `timeout` means "linger this long after the LAST
+// subscriber leaves," not "max idle while connected." The sweep also touch()es
+// each tick while watched, so once unwatched the floor counts from that last
+// disconnect.
+function shouldIdleClose(subscriberCount: number, idleMs: number, timeoutMs: number): boolean {
+  if (subscriberCount > 0) return false;
+  return idleMs >= timeoutMs;
+}
+
 // Stamp a status transition: the fields to merge onto a task entering `status`
 // at `now` — enteredStatusAt + an appended, capped statusHistory. Pure (now is
 // passed in) so the substrate is deterministic and the downstream features
@@ -473,7 +485,7 @@ async function main(argv: string[]): Promise<number> {
       args: argv,
       options: {
         title: { type: "string", default: "Bounty Board" },
-        timeout: { type: "string", default: "1800" },
+        timeout: { type: "string", default: "7200" },
         "no-open": { type: "boolean", default: false },
         port: { type: "string", default: "0" },
         host: { type: "string", default: "127.0.0.1" },
@@ -1107,7 +1119,12 @@ async function main(argv: string[]): Promise<number> {
   if (!v["no-open"]) openBrowser(url);
 
   const idleTimer = setInterval(() => {
-    if ((performance.now() - lastActivity) / 1000 >= timeout) {
+    // open-timeout: a WS browser OR an agent SSE tail counts as "watched".
+    const subscriberCount = sockets.size + sseClients.size;
+    // While watched, count the board's presence as activity so the idle floor
+    // only begins to count down once the LAST subscriber has left.
+    if (subscriberCount > 0) touch();
+    if (shouldIdleClose(subscriberCount, performance.now() - lastActivity, timeout * 1000)) {
       resolveDone({ code: 124, reason: "timeout" });
     }
   }, 250);
@@ -1203,5 +1220,6 @@ export {
   isNoOpUpdate,
   main,
   parsePortFromSessionId,
+  shouldIdleClose,
   validateTask,
 };

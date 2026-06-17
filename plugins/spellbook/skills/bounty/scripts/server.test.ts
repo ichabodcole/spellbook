@@ -36,6 +36,7 @@ import {
   isNoOpMove,
   isNoOpUpdate,
   parsePortFromSessionId,
+  shouldIdleClose,
   type Task,
   type TaskStatus,
   validateTask,
@@ -450,6 +451,34 @@ describe("cardPassesFilter", () => {
     expect(cardPassesFilter(c, ["bug"], ["flint"])).toBe(true); // both match
     expect(cardPassesFilter(c, ["bug"], ["tycho"])).toBe(false); // tag ok, owner no
     expect(cardPassesFilter(c, ["ui"], ["flint"])).toBe(false); // owner ok, tag no
+  });
+});
+
+// ── idle-close decision (open-timeout — keep-alive-while-watched) ────────
+//
+// A board's idle floor (--timeout, default 2h) only counts down while it's
+// UNWATCHED. A live subscriber — a WS browser (in `sockets`) or an agent SSE
+// tail (in `sseClients`) — keeps it alive indefinitely; the floor means "linger
+// this long after the LAST subscriber leaves," not "max idle while connected."
+// shouldIdleClose is the clock-free decision; the real sweep also touch()es each
+// tick while watched so the floor counts from the last disconnect.
+
+describe("shouldIdleClose", () => {
+  const MIN = 60_000;
+  const FLOOR = 120 * MIN; // 2h
+
+  test("a watched board never closes, however long it's been idle", () => {
+    expect(shouldIdleClose(1, 999 * MIN, FLOOR)).toBe(false);
+    expect(shouldIdleClose(3, 999 * MIN, FLOOR)).toBe(false);
+  });
+  test("unwatched + past the floor → closes", () => {
+    expect(shouldIdleClose(0, 121 * MIN, FLOOR)).toBe(true);
+  });
+  test("unwatched but under the floor → stays open", () => {
+    expect(shouldIdleClose(0, 60 * MIN, FLOOR)).toBe(false);
+  });
+  test("unwatched exactly at the floor → closes (>=)", () => {
+    expect(shouldIdleClose(0, FLOOR, FLOOR)).toBe(true);
   });
 });
 
