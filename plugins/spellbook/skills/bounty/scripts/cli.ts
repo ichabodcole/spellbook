@@ -20,7 +20,8 @@
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
 //   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board
-//   bun cli.ts close | info | sessions | help
+//   bun cli.ts list                                        # running boards (live)
+//   bun cli.ts close | info | sessions | help              # sessions = saved snapshots
 //
 // Identity: --as <name> (or $BOUNTY_AS) stamps the event `by`, drives self-echo
 // suppression + claim/--mine. Ownership: --owner assigns; tail --owner/--mine
@@ -433,6 +434,71 @@ function cmdSessions() {
   if (!rows.length) process.stdout.write("no saved sessions\n");
 }
 
+type LiveBoard = { session_id: string; title: string; url: string; tasks: number };
+
+// Filter discovered sessions to the LIVE ones via an injected probe (task count
+// if the board answers, null if dead/stale). Probes run in parallel. Injecting
+// the probe keeps the live-filter unit-testable without spawning real daemons.
+async function liveBoards(
+  discovered: Session[],
+  probe: (s: Session) => Promise<number | null>,
+): Promise<LiveBoard[]> {
+  const probed = await Promise.all(
+    discovered.map(async (s) => {
+      const tasks = await probe(s);
+      return tasks === null
+        ? null
+        : { session_id: s.session_id, title: s.title, url: s.url, tasks };
+    }),
+  );
+  return probed.filter((b): b is LiveBoard => b !== null);
+}
+
+// Liveness probe: GET /state with a short timeout. Returns the task count if the
+// board answers, null if unreachable (a stale discovery file left by a daemon
+// that died without cleanup).
+async function probeBoard(s: Session): Promise<number | null> {
+  try {
+    const res = await fetch(`${s.url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { state?: { tasks?: unknown[] } };
+    return Array.isArray(body.state?.tasks) ? body.state.tasks.length : 0;
+  } catch {
+    return null;
+  }
+}
+
+// `list` — enumerate currently-RUNNING boards from the tmpdir discovery files
+// (bounty-<id>.json, minus the bounty-latest pointer), liveness-probe each, and
+// print only the live ones (id/task-count/url/title). Distinct from `sessions`,
+// which lists saved snapshots (including closed boards). For join-disambiguation
+// and seeing what's running before a command hits the wrong board.
+async function cmdList() {
+  let files: string[];
+  try {
+    files = readdirSync(tmpdir()).filter(
+      (f) => f.startsWith("bounty-") && f.endsWith(".json") && f !== "bounty-latest.json",
+    );
+  } catch {
+    files = [];
+  }
+  const discovered: Session[] = [];
+  for (const f of files) {
+    try {
+      const s = JSON.parse(readFileSync(join(tmpdir(), f), "utf8")) as Session;
+      if (s && typeof s.url === "string" && typeof s.session_id === "string") discovered.push(s);
+    } catch {
+      /* skip an unreadable / partial discovery file */
+    }
+  }
+  const live = await liveBoards(discovered, probeBoard);
+  live.sort((a, b) => a.session_id.localeCompare(b.session_id));
+  for (const b of live) {
+    process.stdout.write(`${b.session_id}  ${b.tasks} tasks  ${b.url}  — ${b.title}\n`);
+  }
+  if (!live.length) process.stdout.write("no running boards\n");
+}
+
 // Read all of stdin as a single string. Used by --stdin so free text (titles,
 // notes) lands verbatim regardless of shell metacharacters.
 async function readStdin(): Promise<string> {
@@ -453,7 +519,9 @@ const HELP = `bounty — an agent-driven task board.
   remove <id>                        delete a task
   message <text...> [--stdin]        show a toast on the board
   init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin)
-  close | info | sessions | help
+  list                               list currently-RUNNING boards (id/tasks/url/title)
+  sessions                           list saved SNAPSHOTS (incl. closed boards)
+  close | info | help
 
   --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped
   tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.
@@ -616,6 +684,9 @@ async function main(argv: string[]): Promise<number> {
     case "sessions":
       cmdSessions();
       break;
+    case "list":
+      await cmdList();
+      break;
     case "help":
     case "--help":
     case "-h":
@@ -634,4 +705,4 @@ if (import.meta.main) {
 }
 
 export type { Session };
-export { main, ownerInScope, parseTags, pickTailSession };
+export { liveBoards, main, ownerInScope, parseTags, pickTailSession };

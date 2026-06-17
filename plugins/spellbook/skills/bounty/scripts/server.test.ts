@@ -20,7 +20,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ownerInScope, parseTags, pickTailSession, type Session } from "./cli.ts";
+import { liveBoards, ownerInScope, parseTags, pickTailSession, type Session } from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -2041,6 +2041,36 @@ describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
 
   test("returns null when nothing resolves yet (no board up)", () => {
     expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
+});
+
+// ── liveBoards (running-board lister — `list`) ───────────────────────────
+//
+// `list` enumerates currently-RUNNING boards (distinct from `sessions`, which
+// lists snapshots incl. closed ones). liveBoards takes the discovered sessions
+// and an injected liveness probe (task count if the board answers, null if
+// dead/stale) and returns only the live ones — so a stale tmpdir discovery file
+// is silently skipped. Probe injected → unit-testable without real daemons.
+
+describe("liveBoards", () => {
+  const mk = (id: string): Session => ({
+    url: `http://127.0.0.1:1${id}`,
+    port: 1,
+    session_id: `bounty-${id}`,
+    title: `Board ${id}`,
+  });
+
+  test("includes only boards the probe reports live, carrying their task counts", async () => {
+    const probe = async (s: Session) =>
+      s.session_id === "bounty-b" ? null : s.session_id === "bounty-a" ? 3 : 0;
+    const live = await liveBoards([mk("a"), mk("b"), mk("c")], probe);
+    expect(live.map((l) => l.session_id).sort()).toEqual(["bounty-a", "bounty-c"]); // b stale, skipped
+    expect(live.find((l) => l.session_id === "bounty-a")?.tasks).toBe(3);
+    expect(live.find((l) => l.session_id === "bounty-a")?.title).toBe("Board a");
+  });
+
+  test("empty list when nothing is live", async () => {
+    expect(await liveBoards([mk("a"), mk("b")], async () => null)).toEqual([]);
   });
 });
 
