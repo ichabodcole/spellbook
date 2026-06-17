@@ -733,6 +733,73 @@ async function cmdStop() {
   printJson({ ok: true, stopped: true });
 }
 
+// Per-channel live-connection summary — the restart-safety read. Mirrors what
+// `doctor` reports under active_subscribers; only populated channels are listed.
+async function fetchActiveSubscribers(
+  port: number,
+): Promise<{ total: number; channels: Array<{ name: string; connections: number }> }> {
+  let total = 0;
+  const channels: Array<{ name: string; connections: number }> = [];
+  try {
+    const { data } = await api<PresenceResponse>(port, "GET", "/presence");
+    for (const ch of data?.channels ?? []) {
+      total += ch.connections;
+      if (ch.connections > 0) channels.push({ name: ch.name, connections: ch.connections });
+    }
+  } catch {
+    // best-effort — a presence hiccup shouldn't crash a lifecycle verb
+  }
+  return { total, channels };
+}
+
+async function cmdStart() {
+  // Ensure-running, no channel side-effect. Idempotent: report an existing
+  // daemon, or spawn a fresh one. The explicit "bring it up" verb — diagnostics
+  // (doctor/info/list) stay read-only and never spawn.
+  const existing = await readDaemonPort();
+  const port = existing ?? (await ensureDaemon());
+  printJson({ ok: true, port, already_running: existing !== null });
+}
+
+async function cmdRestart(opts: { force?: boolean }) {
+  const port = await readDaemonPort();
+  if (!port) {
+    // Nothing to tear down — just bring a fresh daemon up.
+    const fresh = await ensureDaemon();
+    printJson({ ok: true, restarted: true, port: fresh, previous_pid: null });
+    return;
+  }
+  // SAFETY: a restart forces every connected client to auto-reconnect. Refuse to
+  // tear down a working fleet unless explicitly forced — never silently drop it.
+  const { total, channels } = await fetchActiveSubscribers(port);
+  if (total > 0 && !opts.force) {
+    const where = channels.map((c) => `${c.name} (${c.connections})`).join(", ");
+    die(
+      `restart: ${total} active subscriber(s) across ${channels.length} channel(s) — ${where}. ` +
+        "A restart would force them all to reconnect. Re-run with --force (or --yes) to proceed anyway.",
+    );
+  }
+  // Capture the pid we're replacing, for the receipt.
+  let previousPid: number | null = null;
+  try {
+    const { data } = await api<RootInfo>(port, "GET", "/");
+    previousPid = data?.pid ?? null;
+  } catch {}
+  // Stop, then wait for the old daemon to actually go away — it unlinks its
+  // port/pid files on shutdown, so ensureDaemon spawns fresh rather than
+  // re-discovering the dying one.
+  try {
+    await api(port, "DELETE", "/");
+  } catch {}
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+    if ((await readDaemonPort()) === null) break;
+  }
+  const fresh = await ensureDaemon();
+  printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
+}
+
 async function cmdWatch(name: string | undefined) {
   // Channel name is optional — the page reads it from the URL hash and
   // defaults to "lobby" if absent. We pass through whatever the user gave
@@ -925,7 +992,19 @@ const BOOLEAN_FLAGS = new Set([
   "all",
   "human",
   "lurk",
+  "force",
+  "yes",
 ]);
+
+// Signature of a heredoc fumble: a line that is (or begins with) a
+// `bun … cli.ts … send` invocation. When a `send --stdin <<EOF` is botched, the
+// shell pipes the literal command line in as the body, which then gets posted —
+// corrupting the channel with `bun /…/cli.ts send <channel> --as … <text>`.
+// We refuse to post such a body unless --force is passed.
+const LEAKED_SEND_RE = /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\bsend\b/;
+function looksLikeLeakedSend(text: string): boolean {
+  return LEAKED_SEND_RE.test(text);
+}
 
 function parseFlags(argv: string[]): {
   positional: string[];
@@ -979,10 +1058,20 @@ async function main(argv: string[]): Promise<number> {
     case "send": {
       const name = positional[0];
       const from = resolveAlias(flags);
+      const hasInlineText = positional.length > 1;
       let text: string;
-      if (flags.stdin) {
-        // Bypass shell quoting entirely — read raw bytes from stdin.
-        // Trailing newline is stripped; everything else is preserved.
+      if (flags["body-file"]) {
+        // Read the body from a file — bypasses both shell quoting and any
+        // heredoc fumble. Trailing newline stripped, matching --stdin.
+        const path = flags["body-file"] as string;
+        const file = Bun.file(path);
+        if (!(await file.exists())) die(`send: --body-file not found: ${path}`);
+        text = (await file.text()).replace(/\n$/, "");
+      } else if (flags.stdin || (!hasInlineText && !process.stdin.isTTY)) {
+        // Read stdin — explicitly via --stdin, or by DEFAULT when no inline text
+        // was given and stdin is piped. The shell never gets to eat a token, so
+        // piping is the safe path and now needs no flag. Trailing newline
+        // stripped; everything else preserved.
         const buf: Buffer[] = [];
         for await (const chunk of process.stdin) buf.push(chunk as Buffer);
         text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
@@ -991,6 +1080,16 @@ async function main(argv: string[]): Promise<number> {
       }
       if (!from)
         die("send: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
+      // A fumbled heredoc can pipe the literal send invocation in as the body;
+      // refuse to post that rather than corrupt the channel with it (--force
+      // overrides for the rare case the text genuinely contains the command).
+      if (!flags.force && looksLikeLeakedSend(text)) {
+        die(
+          "send: that body looks like a leaked grapevine invocation (a fumbled " +
+            "heredoc?). Nothing was sent. Pipe the real body via --stdin or " +
+            "--body-file <path>, or pass --force to send it anyway.",
+        );
+      }
       await cmdSend(name, from, text, {
         quiet: !!flags.quiet,
         verbose: !!flags.verbose,
@@ -1047,6 +1146,13 @@ async function main(argv: string[]): Promise<number> {
     case "unarchive":
       await cmdArchive(positional[0], true);
       return 0;
+    case "start":
+    case "up":
+      await cmdStart();
+      return 0;
+    case "restart":
+      await cmdRestart({ force: !!flags.force || !!flags.yes });
+      return 0;
     case "stop":
       await cmdStop();
       return 0;
@@ -1068,7 +1174,8 @@ async function main(argv: string[]): Promise<number> {
 Usage:
   grapevine open <name> [--topic <text>]
   grapevine list
-  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--in-reply-to <id>] <text...>
+  grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
+                                    # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
   grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk]
   grapevine pull <name> [--since <id>]
   grapevine read <name> <id> [--text]   # one full message by id (--text = prose)
@@ -1081,6 +1188,8 @@ Usage:
   grapevine archive <name>          # read-only: keep history, reject sends
   grapevine unarchive <name>        # bring an archived channel back
   grapevine close <name>            # destructive: delete the message log
+  grapevine start                   # ensure the daemon is running (alias: up); no channel
+  grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard
   grapevine stop
   grapevine info
   grapevine doctor                  # health check — daemon, zombies, channels

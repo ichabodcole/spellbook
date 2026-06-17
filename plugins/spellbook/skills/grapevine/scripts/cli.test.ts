@@ -5,7 +5,7 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -34,6 +34,33 @@ function bunRun(args: string[]): Promise<{ code: number; stdout: string; stderr:
         stderr: Buffer.concat(err).toString("utf-8"),
       }),
     );
+  });
+}
+
+// Like bunRun, but feeds `input` to the child's stdin (stdin is a pipe, not
+// ignored). For exercising `send`'s stdin-reading paths without a real shell.
+function bunRunStdin(
+  args: string[],
+  input: string,
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  return new Promise((resolve) => {
+    const proc = spawn(process.execPath, [CLI, ...args], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    const out: Buffer[] = [];
+    const err: Buffer[] = [];
+    proc.stdout.on("data", (b) => out.push(b));
+    proc.stderr.on("data", (b) => err.push(b));
+    proc.on("exit", (code) =>
+      resolve({
+        code: code ?? -1,
+        stdout: Buffer.concat(out).toString("utf-8"),
+        stderr: Buffer.concat(err).toString("utf-8"),
+      }),
+    );
+    proc.stdin.write(input);
+    proc.stdin.end();
   });
 }
 
@@ -951,4 +978,130 @@ describe("grapevine cli", () => {
     expect(r.stderr).toMatch(/→|recipient/);
     a.proc.kill("SIGTERM");
   });
+
+  test("send reads stdin by default when no inline text is given", async () => {
+    await bunRun(["open", "test_defaultstdin"]);
+    const a = spawnTail("test_defaultstdin", ["--as", "listener"]);
+    await sleep(400);
+    // No --stdin flag and no inline text — the body comes from piped stdin.
+    const r = await bunRunStdin(
+      ["send", "test_defaultstdin", "--from", "piper"],
+      "piped body without the flag",
+    );
+    expect(r.code).toBe(0);
+    await sleep(300);
+    const got = a
+      .output()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l))
+      .find((m) => m.kind === "message" && m.from === "piper");
+    expect(got).toBeDefined();
+    expect(got.text).toBe("piped body without the flag");
+    a.proc.kill("SIGTERM");
+  });
+
+  test("send --body-file reads the body from a file, preserving metachars", async () => {
+    await bunRun(["open", "test_bodyfile"]);
+    const a = spawnTail("test_bodyfile", ["--as", "listener"]);
+    await sleep(400);
+    const bodyPath = join(HOME, "body.txt");
+    const body = "couldn't find `x` and $var — all > intact";
+    writeFileSync(bodyPath, `${body}\n`); // trailing newline stripped, like stdin
+    const r = await bunRun(["send", "test_bodyfile", "--from", "writer", "--body-file", bodyPath]);
+    expect(r.code).toBe(0);
+    await sleep(300);
+    const got = a
+      .output()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l))
+      .find((m) => m.kind === "message" && m.from === "writer");
+    expect(got).toBeDefined();
+    expect(got.text).toBe(body);
+    a.proc.kill("SIGTERM");
+  });
+
+  test("send rejects a leaked cli invocation in the body (and posts nothing)", async () => {
+    await bunRun(["open", "test_leak"]);
+    // A fumbled heredoc leaks the literal send invocation as the body.
+    const leaked =
+      "bun /Users/x/skills/grapevine/scripts/cli.ts send test_leak --as flint hello there\n" +
+      "second line of the corrupted body";
+    const r = await bunRunStdin(["send", "test_leak", "--from", "flint", "--stdin"], leaked);
+    expect(r.code).toBe(2);
+    expect(r.stderr.toLowerCase()).toContain("leaked");
+    // Nothing was posted — the corrupted body never reached the channel.
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string }) => c.name === "test_leak",
+    );
+    expect(ch.message_count).toBe(0);
+  });
+
+  test("send --force bypasses the leaked-invocation guard", async () => {
+    await bunRun(["open", "test_force"]);
+    const leaked = "bun /x/cli.ts send test_force --as flint genuinely meant to say this";
+    const r = await bunRunStdin(
+      ["send", "test_force", "--from", "flint", "--stdin", "--force"],
+      leaked,
+    );
+    expect(r.code).toBe(0);
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string }) => c.name === "test_force",
+    );
+    expect(ch.message_count).toBe(1);
+  });
+
+  // --- daemon lifecycle: start / restart -------------------------------------
+  // These manipulate the shared daemon, so they run LAST in the file. afterAll
+  // tears down whatever daemon is left standing.
+
+  test("start ensures a daemon is running with no channel side-effect", async () => {
+    const before = await bunRun(["list"]);
+    const channelsBefore = JSON.parse(before.stdout).channels.length;
+    const r = await bunRun(["start"]);
+    expect(r.code).toBe(0);
+    const data = JSON.parse(r.stdout);
+    expect(data.ok).toBe(true);
+    expect(typeof data.port).toBe("number");
+    // A live daemon is reachable...
+    const info = await bunRun(["info"]);
+    expect(JSON.parse(info.stdout).daemon).toBe(true);
+    // ...and `start` created no channel.
+    const after = await bunRun(["list"]);
+    expect(JSON.parse(after.stdout).channels.length).toBe(channelsBefore);
+  });
+
+  test("restart refuses to tear down a live fleet without --force", async () => {
+    await bunRun(["open", "restart_busy"]);
+    const t = spawnTail("restart_busy", ["--as", "listener"]);
+    await sleep(400); // let the subscription register presence
+    const infoBefore = await bunRun(["info"]);
+    const pidBefore = JSON.parse(infoBefore.stdout).pid;
+    const r = await bunRun(["restart"]);
+    expect(r.code).toBe(2);
+    expect(r.stderr.toLowerCase()).toMatch(/subscriber|--force|live/);
+    // Daemon untouched — same process, subscriber undisturbed.
+    const infoAfter = await bunRun(["info"]);
+    expect(JSON.parse(infoAfter.stdout).daemon).toBe(true);
+    expect(JSON.parse(infoAfter.stdout).pid).toBe(pidBefore);
+    t.proc.kill("SIGTERM");
+    await sleep(300);
+  });
+
+  test("restart --force respawns a fresh daemon (new pid)", async () => {
+    const infoBefore = await bunRun(["info"]);
+    const pidBefore = JSON.parse(infoBefore.stdout).pid;
+    const r = await bunRun(["restart", "--force"]);
+    expect(r.code).toBe(0);
+    const data = JSON.parse(r.stdout);
+    expect(data.ok).toBe(true);
+    expect(data.restarted).toBe(true);
+    // A daemon is running again, and it's a different process.
+    const infoAfter = await bunRun(["info"]);
+    expect(JSON.parse(infoAfter.stdout).daemon).toBe(true);
+    expect(JSON.parse(infoAfter.stdout).pid).not.toBe(pidBefore);
+  }, 10000);
 });
