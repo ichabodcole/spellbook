@@ -72,6 +72,40 @@
       .status-dot.connected { background: var(--accent-warm); box-shadow: 0 0 6px rgba(212, 154, 85, 0.5); }
       .status-dot.closed { background: var(--danger); }
       .session-id { color: var(--text-faint); }
+      /* surface-filter: a thin view-narrowing bar above the columns — the
+         human's lens (the agent already has --mine/--owner/--tag). Reuses the
+         card tag-chip palette; an active chip uses the SAME warm-gold the
+         "doing" status pill uses for its active state (no net-new language).
+         Clicking toggles a filter; non-matching cards are HIDDEN (not dimmed —
+         dim is card-aging's language) and the column counts track what's left.
+         View-only Alpine state; no server/WS. */
+      .filter-bar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+        max-width: 1200px; margin-bottom: 1rem;
+        font-size: 0.7rem; color: var(--text-faint);
+      }
+      .filter-bar .facet-label {
+        letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint);
+      }
+      .filter-bar .fchip {
+        font-size: 0.68rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+        background: var(--accent-neutral-bg); color: var(--accent-neutral-text);
+        border: 1px solid var(--border); cursor: pointer; user-select: none;
+        letter-spacing: 0.01em; transition: all 0.1s;
+      }
+      .filter-bar .fchip:hover { border-color: var(--border-hover); color: var(--text); }
+      .filter-bar .fchip.active {
+        background: var(--accent-warm-bg); border-color: var(--accent-warm); color: var(--accent-warm-text);
+      }
+      .filter-bar .facet-sep {
+        align-self: stretch; width: 1px; background: var(--border); margin: 0.15rem 0.35rem;
+      }
+      .filter-bar .clear {
+        margin-left: 0.25rem; padding: 0.1rem 0.3rem;
+        background: transparent; border: none; cursor: pointer;
+        color: var(--text-faint); font-size: 0.68rem; text-decoration: underline;
+      }
+      .filter-bar .clear:hover { color: var(--text); }
       .columns {
         display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;
         max-width: 1200px;
@@ -152,6 +186,32 @@
         display: inline-flex; align-items: center; gap: 0.25rem;
         margin-top: 0.3rem; font-size: 0.7rem; font-weight: 500;
         color: var(--danger);
+      }
+      /* Card-aging (#2): an overdue doing card is de-emphasized — the SAME dim
+         the blocked cards use (shared visual language), but no danger rail. The
+         age cue is muted/neutral, deliberately understated; the dim does the
+         signalling. */
+      .task.stale { opacity: 0.82; }
+      .task .age-cue {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        margin-top: 0.3rem; font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+      /* wip-cue: a SOFT, non-blocking nudge when an owner has 2+ cards in Doing
+         ("wrap one before pulling more"). Its OWN minimal language — deliberately
+         distinct from the others: NOT card-aging's dim/.stale (overdue), NOT
+         surface-filter's warm-gold active chip (doing/filter), NOT blocked's red
+         rail. A calm ice-blue whisper: a small hint line + a soft dot, no card
+         dim, no rail, no fill. Soft by design — it can never block the move (same
+         spirit as the Review gate). */
+      .task .wip-cue {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        margin-top: 0.3rem; font-size: 0.7rem;
+        color: var(--accent-cool-text);
+      }
+      .task .wip-cue::before {
+        content: ""; width: 6px; height: 6px; border-radius: 50%;
+        background: var(--accent-cool); opacity: 0.85;
       }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
@@ -299,6 +359,43 @@
       </div>
     </header>
 
+    <!-- surface-filter: view-narrowing bar. Only renders when the board has
+         tags or owners to filter on. Chips/pills are x-text only (untrusted
+         strings — XSS guard, same as the card rendering). Active filters live in
+         Alpine state (client-only); faceted OR-within / AND-across. -->
+    <template x-if="boardTags().length || boardOwners().length">
+      <div class="filter-bar">
+        <template x-if="boardTags().length">
+          <span class="facet-label">tags</span>
+        </template>
+        <template x-for="tag in boardTags()" :key="'ft-' + tag">
+          <span
+            class="fchip"
+            :class="{ active: activeTags.includes(tag) }"
+            x-text="tag"
+            @click="toggleTagFilter(tag)"
+          ></span>
+        </template>
+        <template x-if="boardTags().length && boardOwners().length">
+          <span class="facet-sep" aria-hidden="true"></span>
+        </template>
+        <template x-if="boardOwners().length">
+          <span class="facet-label">owners</span>
+        </template>
+        <template x-for="o in boardOwners()" :key="'fo-' + o">
+          <span
+            class="fchip"
+            :class="{ active: activeOwners.includes(o) }"
+            x-text="'@' + o"
+            @click="toggleOwnerFilter(o)"
+          ></span>
+        </template>
+        <template x-if="hasActiveFilters">
+          <button class="clear" @click="clearFilters()">clear</button>
+        </template>
+      </div>
+    </template>
+
     <div class="columns" :class="{ 'is-empty': tasks.length === 0 }">
       <template x-for="col in COLUMNS" :key="col.status">
         <section
@@ -316,7 +413,7 @@
             <template x-for="(task, idx) in tasksByStatus(col.status)" :key="task.id">
               <div
                 class="task"
-                :class="{ blocked: blockedCount(task) > 0 }"
+                :class="{ blocked: blockedCount(task) > 0, stale: !!staleInfo(task) }"
                 :data-task-id="task.id"
                 :data-task-status="task.status"
                 draggable="true"
@@ -338,6 +435,18 @@
                     class="blocked-cue"
                     x-text="'⛔ blocked by ' + blockedCount(task)"
                   ></div>
+                </template>
+                <!-- Card-aging (#2): an overdue doing card shows a muted ⏱ age
+                     cue (total age · overdue-by). x-text only; ticks live via
+                     `now`. staleInfo mirrors the server's cardOverdue. -->
+                <template x-if="staleInfo(task)">
+                  <div class="age-cue" x-text="staleLabel(task)"></div>
+                </template>
+                <!-- wip-cue: soft per-owner WIP nudge — shows on a doing card
+                     whose owner has 2+ in Doing. x-text only; non-blocking (purely
+                     visual). Its own ice-blue whisper; mirrors server ownersOverWip. -->
+                <template x-if="wipCued(task)">
+                  <div class="wip-cue" x-text="wipLabel(task)"></div>
                 </template>
                 <template x-if="task.notes">
                   <!-- x-text only (untrusted string). Clamped to 2 lines; click
@@ -460,6 +569,11 @@
           dragId: null, // id of the task currently being dragged
           detail: null, // task open in the detail modal, or null (#19)
           detailNotes: "", // editable description buffer (separate from the task)
+          now: Date.now(), // ticked every 30s so card-aging cues update live (#2)
+          ageTimer: null, // the card-aging tick interval
+          activeTags: [], // surface-filter: active tag filters (view-only)
+          activeOwners: [], // surface-filter: active owner filters (view-only)
+          WIP_THRESHOLD: 2, // wip-cue: an owner with >= this many in Doing gets nudged
           STATUSES: ["todo", "doing", "review", "done"],
           COLUMNS: [
             { status: "todo", label: "To do" },
@@ -482,10 +596,100 @@
             // The WS `init` message overrides it with canonical state shortly.
             this.title = document.title;
             this.connect();
+            // Card-aging (#2): advance `now` every 30s so the stale dim + age
+            // badge update live without a user action. Cheap — one assignment.
+            this.ageTimer = setInterval(() => {
+              this.now = Date.now();
+            }, 30000);
+            // surface-filter: restore the human's filters from a prior reload.
+            this.loadFilters();
+          },
+
+          destroy() {
+            if (this.ageTimer) clearInterval(this.ageTimer);
           },
 
           tasksByStatus(status) {
-            return this.tasks.filter((t) => t.status === status);
+            // surface-filter: narrow by the active view filter too, so both the
+            // rendered cards AND the column count (which reads the same call)
+            // track only what's visible.
+            return this.tasks.filter(
+              (t) => t.status === status && this.cardPassesFilter(t),
+            );
+          },
+
+          // ── surface-filter (human-side view narrowing) ──────────────────
+          // Distinct tags/owners for the filter bar. Built from the UNION of
+          // what's present on the board AND the active filters, so an active
+          // filter always has a visible, individually-toggleable chip — even if
+          // its cards are currently hidden or its tag/owner has since vanished
+          // (a stale persisted filter stays escapable, not just via "clear").
+          // Sorted for a stable bar.
+          boardTags() {
+            const s = new Set(this.activeTags);
+            for (const t of this.tasks) for (const tag of t.tags || []) s.add(tag);
+            return [...s].sort();
+          },
+          boardOwners() {
+            const s = new Set(this.activeOwners);
+            for (const t of this.tasks) if (t.owner) s.add(t.owner);
+            return [...s].sort();
+          },
+          get hasActiveFilters() {
+            return this.activeTags.length > 0 || this.activeOwners.length > 0;
+          },
+          toggleTagFilter(tag) {
+            const i = this.activeTags.indexOf(tag);
+            if (i === -1) this.activeTags.push(tag);
+            else this.activeTags.splice(i, 1);
+            this.persistFilters();
+          },
+          toggleOwnerFilter(owner) {
+            const i = this.activeOwners.indexOf(owner);
+            if (i === -1) this.activeOwners.push(owner);
+            else this.activeOwners.splice(i, 1);
+            this.persistFilters();
+          },
+          clearFilters() {
+            this.activeTags = [];
+            this.activeOwners = [];
+            this.persistFilters();
+          },
+          // MIRRORS the server's cardPassesFilter (server.ts) — the surface can't
+          // import it. Faceted: OR within a facet (any selected tag matches), AND
+          // across facets (tag-set AND owner-set). An empty facet = no filter on
+          // it → passes. Keep in lockstep with the canonical.
+          cardPassesFilter(task) {
+            const tagPass =
+              this.activeTags.length === 0 ||
+              (task.tags || []).some((t) => this.activeTags.includes(t));
+            const ownerPass =
+              this.activeOwners.length === 0 ||
+              (task.owner != null && this.activeOwners.includes(task.owner));
+            return tagPass && ownerPass;
+          },
+          // Remember the human's filters across the frequent board reloads.
+          // Best-effort (a private-mode/quota throw must never break the board);
+          // view-only, never touches server state. localStorage is per-origin
+          // (which includes the port), so each board keeps its own filters.
+          persistFilters() {
+            try {
+              localStorage.setItem(
+                "bounty:filters",
+                JSON.stringify({ tags: this.activeTags, owners: this.activeOwners }),
+              );
+            } catch {}
+          },
+          loadFilters() {
+            try {
+              const raw = localStorage.getItem("bounty:filters");
+              if (!raw) return;
+              const v = JSON.parse(raw);
+              if (Array.isArray(v.tags))
+                this.activeTags = v.tags.filter((x) => typeof x === "string");
+              if (Array.isArray(v.owners))
+                this.activeOwners = v.owners.filter((x) => typeof x === "string");
+            } catch {}
           },
 
           // How many of a task's blockers are still live (exist + not done). 0 =
@@ -496,6 +700,62 @@
               const b = this.tasks.find((t) => t.id === bid);
               return b && b.status !== "done";
             }).length;
+          },
+
+          // Card-aging (#2). MIRRORS the server's cardOverdue (server.ts) — the
+          // surface can't import it (inline Alpine), and the staleness depends on
+          // a live client-side `now`. Keep the two in lockstep. SIZE_MINUTES must
+          // match the server's. Returns {overdueByMs, ageMs} for an overdue doing
+          // card with an expected time, else null (no cue).
+          expectedMinutes(task) {
+            if (typeof task.expect === "number" && task.expect > 0) return task.expect;
+            const SIZE_MINUTES = { S: 5, M: 10, L: 20 };
+            return task.size && task.size in SIZE_MINUTES ? SIZE_MINUTES[task.size] : undefined;
+          },
+          staleInfo(task) {
+            if (task.status !== "doing" || typeof task.enteredStatusAt !== "number") return null;
+            const exp = this.expectedMinutes(task);
+            if (exp === undefined) return null;
+            const ageMs = this.now - task.enteredStatusAt;
+            const overdueByMs = ageMs - exp * 60000;
+            return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
+          },
+          // "⏱ Doing 25m · 12m over" — both total age and overdue-by (Cole's pick).
+          staleLabel(task) {
+            const s = this.staleInfo(task);
+            if (!s) return "";
+            const mins = (ms) => Math.max(1, Math.round(ms / 60000));
+            return `⏱ Doing ${mins(s.ageMs)}m · ${mins(s.overdueByMs)}m over`;
+          },
+
+          // wip-cue (soft per-owner WIP nudge). MIRRORS the server's ownersOverWip
+          // (server.ts) — the surface can't import it. Owners with >= WIP_THRESHOLD
+          // cards in Doing; unowned doing cards have no worker (excluded, and don't
+          // count toward any tally). No timer needed — status/owner are already
+          // reactive. Keep in lockstep with the canonical.
+          ownersOverWip() {
+            const counts = {};
+            for (const t of this.tasks) {
+              if (t.status === "doing" && t.owner != null) {
+                counts[t.owner] = (counts[t.owner] || 0) + 1;
+              }
+            }
+            const over = new Set();
+            for (const owner in counts) if (counts[owner] >= this.WIP_THRESHOLD) over.add(owner);
+            return over;
+          },
+          // A doing card is cued iff its owner is over the WIP limit. (A todo/
+          // review/done card never shows it, even if its owner is over in Doing.)
+          wipCued(task) {
+            return (
+              task.status === "doing" && task.owner != null && this.ownersOverWip().has(task.owner)
+            );
+          },
+          wipLabel(task) {
+            const n = this.tasks.filter(
+              (t) => t.status === "doing" && t.owner === task.owner,
+            ).length;
+            return `${n} in Doing — wrap one before pulling more`;
           },
 
           // ── outgoing ────────────────────────────────────────────────
