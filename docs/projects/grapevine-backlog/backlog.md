@@ -43,15 +43,17 @@ own merits if motivation accrues.
 
 ## Items
 
-### ~~Cross-channel broadcast (`announce` verb)~~ → Promoted to V1.7
+### ~~Cross-channel broadcast (`announce` verb)~~ → Shipped
 
-**Status:** Promoted **Originated:** 2026-05-27 **Promoted:** 2026-05-27 (same
+**Status:** Shipped **Originated:** 2026-05-27 **Promoted:** 2026-05-27 (same
 day, after the V1.6 rollout demonstrated the need concretely — release
 announcement + correction took eight manual sends across four channels; one
-`announce` call would have done each)
+`announce` call would have done each) **Shipped:** 2026-06-17
 
 See [grapevine-v1.7/proposal.md](../grapevine-v1.7/proposal.md) feature **#7**
-for the live design. Full sketch and open questions migrated there.
+for the live design. Full sketch and open questions migrated there. Design +
+implementation plan:
+[docs/projects/grapevine-announce/](../grapevine-announce/).
 
 This is a clean demonstration of the backlog → version promotion path: an idea
 graduates when motivation accrues, not on a fixed schedule.
