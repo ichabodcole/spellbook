@@ -155,7 +155,13 @@
       }
       .task .notes {
         font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; white-space: pre-wrap;
+        /* Clamp to 2 lines so a long note can't bloat the card; the full text
+           lives in the detail modal. Clickable — a dedicated affordance that
+           doesn't fight drag-to-move or the inline title edit. */
+        display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+        -webkit-box-orient: vertical; overflow: hidden; cursor: pointer;
       }
+      .task .notes:hover { color: var(--text); }
       .task-actions {
         display: flex; gap: 0.3rem; margin-top: 0.5rem; flex-wrap: wrap; align-items: center;
       }
@@ -175,6 +181,47 @@
         margin-left: auto;
       }
       .delete:hover { color: var(--danger); }
+      /* The always-present detail affordance (opens the modal — works for a
+         no-notes card too). Sits with the pills; delete keeps margin-left:auto
+         and stays on the far right. */
+      .detail {
+        font-size: 0.85rem; line-height: 1; padding: 0.15rem 0.4rem; border-radius: 4px;
+        cursor: pointer; border: 1px solid var(--border); background: transparent; color: var(--text-faint);
+      }
+      .detail:hover { border-color: var(--border-hover); color: var(--text); }
+      /* ── detail modal (#19): plain overlay + panel in the existing palette ── */
+      .modal-overlay {
+        position: fixed; inset: 0; z-index: 50; padding: 1rem;
+        background: rgba(0, 0, 0, 0.55);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .modal {
+        width: min(520px, 100%); background: var(--panel);
+        border: 1px solid var(--border-hover); border-radius: 10px;
+        padding: 1.1rem 1.2rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        display: flex; flex-direction: column; gap: 0.7rem;
+      }
+      .modal-title { margin: 0; font-size: 1rem; color: var(--text); word-break: break-word; }
+      .modal-label {
+        font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+      }
+      .modal-notes {
+        width: 100%; resize: vertical; min-height: 7rem;
+        background: var(--bg); color: var(--text);
+        border: 1px solid var(--border); border-radius: 6px;
+        padding: 0.5rem 0.6rem; font: inherit; font-size: 0.85rem; line-height: 1.45;
+      }
+      .modal-notes:focus { outline: none; border-color: var(--border-hover); }
+      .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.2rem; }
+      .modal-actions button {
+        font-size: 0.8rem; padding: 0.35rem 0.9rem; border-radius: 6px; cursor: pointer;
+        border: 1px solid var(--border); background: rgba(0, 0, 0, 0.2); color: var(--text-muted);
+      }
+      .modal-actions button.ghost:hover { border-color: var(--border-hover); color: var(--text); }
+      .modal-actions button.primary {
+        background: var(--accent-warm); border-color: var(--accent-warm); color: #1a1207; font-weight: 600;
+      }
+      .modal-actions button.primary:hover { background: #e4ab66; }
       .add-row { display: flex; gap: 0.4rem; margin-top: 0.75rem; }
       .add-row input {
         flex: 1; background: rgba(0,0,0,0.25); color: var(--text);
@@ -293,7 +340,14 @@
                   ></div>
                 </template>
                 <template x-if="task.notes">
-                  <div class="notes" x-text="task.notes"></div>
+                  <!-- x-text only (untrusted string). Clamped to 2 lines; click
+                       opens the detail modal for the full note + editing. -->
+                  <div
+                    class="notes"
+                    x-text="task.notes"
+                    @click="openDetail(task)"
+                    title="View / edit description"
+                  ></div>
                 </template>
                 <div class="task-actions">
                   <template x-for="s in STATUSES" :key="s">
@@ -304,6 +358,11 @@
                       @click="toggle(task, s)"
                     ></span>
                   </template>
+                  <button
+                    class="detail"
+                    @click="openDetail(task)"
+                    title="Details / edit description"
+                  >⋯</button>
                   <button class="delete" @click="remove(task)">delete</button>
                 </div>
                 <template x-if="task.tags && task.tags.length">
@@ -350,6 +409,34 @@
       </template>
     </div>
 
+    <!-- Detail modal (#19): full title + editable description. Closes on
+         Save / Cancel / Esc / click-outside. title via x-text, the editable
+         field is a value-bound <textarea> — never x-html. -->
+    <template x-if="detail">
+      <div
+        class="modal-overlay"
+        @click.self="closeDetail()"
+        @keydown.escape.window="closeDetail()"
+      >
+        <div class="modal" role="dialog" aria-modal="true">
+          <h3 class="modal-title" x-text="detail.title"></h3>
+          <label class="modal-label" for="detail-notes">Description</label>
+          <textarea
+            id="detail-notes"
+            class="modal-notes"
+            rows="7"
+            x-model="detailNotes"
+            x-init="$nextTick(() => $el.focus())"
+            placeholder="No description yet — add one…"
+          ></textarea>
+          <div class="modal-actions">
+            <button class="ghost" @click="closeDetail()">Cancel</button>
+            <button class="primary" @click="saveDetail()">Save</button>
+          </div>
+        </div>
+      </div>
+    </template>
+
     <script>
       // Server substitutes __WS_URL__ with JSON.stringify(url), which produces a
       // fully-quoted JS string literal — do NOT add quotes here.
@@ -371,6 +458,8 @@
           closedByServer: false,
           toastSeq: 0,
           dragId: null, // id of the task currently being dragged
+          detail: null, // task open in the detail modal, or null (#19)
+          detailNotes: "", // editable description buffer (separate from the task)
           STATUSES: ["todo", "doing", "review", "done"],
           COLUMNS: [
             { status: "todo", label: "To do" },
@@ -431,6 +520,25 @@
           },
           remove(task) {
             this.send({ type: "task.remove", id: task.id });
+          },
+          // ── detail modal (#19) ──────────────────────────────────────
+          openDetail(task) {
+            this.detail = task;
+            this.detailNotes = task.notes || ""; // buffer — don't mutate the task
+          },
+          closeDetail() {
+            this.detail = null;
+            this.detailNotes = "";
+          },
+          saveDetail() {
+            if (!this.detail) return;
+            const next = this.detailNotes;
+            // Send only on change; "" is a valid clear. Same task.edit verb the
+            // inline title edit uses — the daemon re-sanitizes + broadcasts.
+            if (next !== (this.detail.notes || "")) {
+              this.send({ type: "task.edit", id: this.detail.id, notes: next });
+            }
+            this.closeDetail();
           },
           onTitleBlur(task, el) {
             el.closest(".task").setAttribute("draggable", "true");

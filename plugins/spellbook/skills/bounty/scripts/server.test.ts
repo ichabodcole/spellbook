@@ -540,6 +540,94 @@ describe("input validation from browser", () => {
   }, 15000);
 });
 
+// ── task.edit notes (#19: the modal's editable description) ───────────────
+//
+// The browser used to edit titles only (task.edit carried `title`). card-detail
+// extends it to {id, title?, notes?} so the detail modal can persist an edited
+// description over the same verb. Notes are re-sanitized server-side: a string
+// (empty allowed — clears), non-strings rejected; the existing title path and
+// its non-empty guard are unchanged.
+
+describe("task.edit notes (card-detail #19)", () => {
+  async function editAndReadNotes(
+    seedNotes: string | undefined,
+    edit: Record<string, unknown>,
+  ): Promise<string | undefined> {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [
+        {
+          id: "x",
+          title: "X",
+          status: "todo",
+          ...(seedNotes !== undefined ? { notes: seedNotes } : {}),
+        },
+      ],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", ...edit }));
+    await new Promise((r) => setTimeout(r, 200));
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    ws.close();
+    proc.kill();
+    await proc.exited;
+    return body.state.tasks[0]?.notes;
+  }
+
+  test("sets notes from the modal (round-trips to canonical state)", async () => {
+    expect(await editAndReadNotes("old", { notes: "a new description" })).toBe("a new description");
+  }, 15000);
+
+  test("an empty-string notes clears the description", async () => {
+    expect(await editAndReadNotes("old", { notes: "" })).toBe("");
+  }, 15000);
+
+  test("a non-string notes is rejected silently (notes unchanged)", async () => {
+    expect(await editAndReadNotes("keep me", { notes: 42 })).toBe("keep me");
+  }, 15000);
+
+  test("title + notes in one edit both land", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "x", title: "old title", status: "todo", notes: "old notes" }],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", title: "new title", notes: "new notes" }));
+    await new Promise((r) => setTimeout(r, 200));
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    ws.close();
+    proc.kill();
+    await proc.exited;
+    expect(body.state.tasks[0].title).toBe("new title");
+    expect(body.state.tasks[0].notes).toBe("new notes");
+  }, 15000);
+
+  test("a notes-only edit leaves a non-empty title untouched", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedCmd(ready.url, {
+      type: "init",
+      title: "T",
+      tasks: [{ id: "x", title: "keep title", status: "todo" }],
+    });
+    const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+    await new Promise((r) => ws.addEventListener("open", r, { once: true }));
+    ws.send(JSON.stringify({ type: "task.edit", id: "x", notes: "added a note" }));
+    await new Promise((r) => setTimeout(r, 200));
+    const body = (await (await fetch(`${ready.url}/state`)).json()) as { state: BoardState };
+    ws.close();
+    proc.kill();
+    await proc.exited;
+    expect(body.state.tasks[0].title).toBe("keep title");
+    expect(body.state.tasks[0].notes).toBe("added a note");
+  }, 15000);
+});
+
 // ── Daemon HTTP surface (house pattern: /cmd + /state + /events) ──────────
 //
 // These exercise the agent-facing HTTP surface directly against a spawned

@@ -31,7 +31,7 @@
 //   {id, type:"connected" | "disconnected", by:"user"}
 //   {id, type:"task.toggle",  taskId, status, by, owner}  // ⚠ taskId, NOT id —
 //   {id, type:"task.move",    taskId, status, index, by, owner}  //  envelope id
-//   {id, type:"task.edit",    taskId, title, by, owner}   //   is the cursor; the
+//   {id, type:"task.edit",    taskId, title?, notes?, by, owner}  // is the cursor;
 //   {id, type:"task.add",     task, by, owner}            //   task id is nested
 //   {id, type:"task.update",  taskId, patch, by, owner}   //   / `taskId` so the
 //   {id, type:"task.remove",  taskId, by, owner}          //   spread can't clobber.
@@ -98,7 +98,7 @@ type ApplyResult = { ok: true; applied?: boolean; error?: string };
 type BrowserMsg =
   | { type: "task.toggle"; id: string; status: TaskStatus }
   | { type: "task.move"; id: string; status: TaskStatus; index: number }
-  | { type: "task.edit"; id: string; title: string }
+  | { type: "task.edit"; id: string; title?: string; notes?: string }
   | { type: "task.add"; task: Task }
   | { type: "task.remove"; id: string }
   | { type: "close" }; // the human dismisses the board ("Close board")
@@ -806,18 +806,29 @@ async function main(argv: string[]): Promise<number> {
               });
             }
           } else if (msg.type === "task.edit") {
-            // Validate: title must be a non-empty string after trim. A
-            // malformed edit (title:null, title:"") would otherwise corrupt
-            // the canonical task shape that gets re-broadcast and stored —
-            // empty titles in particular surface to the agent on submit as
-            // tasks with no readable label.
-            if (typeof msg.title !== "string" || msg.title.trim() === "") return;
-            if (applyTaskUpdate(state, msg.id, { title: msg.title })) {
-              broadcast({ type: "task.update", id: msg.id, patch: { title: msg.title } });
+            // One verb covers both the inline title edit and the detail modal's
+            // description edit (#19): {id, title?, notes?}. Re-sanitize each
+            // field — a malformed edit must not corrupt canonical state:
+            //   title — if present, a non-empty trimmed string (empty titles
+            //     surface to the agent as unreadable labels);
+            //   notes — if present, a string (empty IS allowed — it clears the
+            //     description). Both render via x-text, never x-html.
+            const patch: Partial<Task> = {};
+            if (msg.title !== undefined) {
+              if (typeof msg.title !== "string" || msg.title.trim() === "") return;
+              patch.title = msg.title;
+            }
+            if (msg.notes !== undefined) {
+              if (typeof msg.notes !== "string") return;
+              patch.notes = msg.notes;
+            }
+            if (Object.keys(patch).length === 0) return; // nothing to edit
+            if (applyTaskUpdate(state, msg.id, patch)) {
+              broadcast({ type: "task.update", id: msg.id, patch });
               emitEvent({
                 type: "task.edit",
                 taskId: msg.id,
-                title: msg.title,
+                ...patch,
                 by: "user",
                 owner: ownerOf(msg.id),
               });
