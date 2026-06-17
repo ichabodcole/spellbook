@@ -4,17 +4,18 @@ description:
   Bounty is a duplex agent↔user task board in the browser. Agent posts tasks;
   user drags between todo/doing/review/done columns, edits titles inline, adds
   or deletes tasks, or closes the board to end the session. The Review column is
-  a soft human-verification gate — the agent parks finished work there (rather
-  than Done) when it needs human eyes a passing test can't give. The agent
-  drives the board through a thin `cli.ts` over a persistent daemon — `open` to
-  spawn it, `state` to read back, `tail` (wrapped with Monitor) to react to user
-  actions live. Multiple agents can share one board via join.ts. HOST trigger
-  phrases — "open a task board", "spin up a bounty", "give me a board to track
-  this", or obvious variants. JOIN trigger phrases — "join my bounty", "connect
-  to the bounty", "the board is at <URL or id>", or obvious variants. Also
-  propose when the agent has produced 5+ discrete TODOs the user might want as a
-  workspace. Do NOT use for single tasks, narrative todos that aren't trackable,
-  or anything the user wants in chat. Requires Bun on PATH.
+  a soft verification gate — the agent parks finished work there (rather than
+  Done) when it needs a second set of eyes (human or agent) a passing test can't
+  give. The agent drives the board through a thin `cli.ts` over a persistent
+  daemon — `open` to spawn it, `state` to read back, `tail` (wrapped with
+  Monitor) to react to user actions live. Multiple agents can share one board
+  via join.ts. HOST trigger phrases — "open a task board", "spin up a bounty",
+  "give me a board to track this", or obvious variants. JOIN trigger phrases —
+  "join my bounty", "connect to the bounty", "the board is at <URL or id>", or
+  obvious variants. Also propose when the agent has produced 5+ discrete TODOs
+  the user might want as a workspace. Do NOT use for single tasks, narrative
+  todos that aren't trackable, or anything the user wants in chat. Requires Bun
+  on PATH.
 ---
 
 # Bounty Board
@@ -24,9 +25,7 @@ palette. Woolly mammoth puns are welcome where they fit naturally.
 
 An agent posts a list of tasks into a browser board; the user interacts with it
 (drags tasks between columns, edits titles inline, adds, deletes, closes the
-board) and both sides receive updates in real time. Built on the
-[`agent-surface-bun` recipe](../../../../recipes/skills/recipes/library/agent-surface-bun/RECIPE.md)
-— see that for the underlying pattern.
+board) and both sides receive updates in real time.
 
 Bounty follows the **house agent-interface pattern** shared with grapevine and
 imago: a **persistent daemon** holds the canonical state, and the agent drives
@@ -46,24 +45,33 @@ board with `join.ts`. Same canonical state under all of them.
 ## The columns — and the review gate
 
 The board has four columns: **To do → Doing → Review → Done**. Review is a
-human-verification gate, and deciding what passes through it is a judgment call
-you make per task:
+verification gate, and the principle is simply: **get a second set of eyes on
+work before it counts as done.** _Who_ reviews — and _whether_ a task needs a
+review at all — is a judgment call you make per task:
 
-- **Park a finished task in Review** (not Done) when it wants a human to look
-  before it counts as done — UI changes, anything that needs a manual smoke
-  test, behavior that passing tests don't fully capture. The user eyeballs it
-  and drags it to Done, or back to Doing if it needs more work.
+- **Park a finished task in Review** (not Done) when it wants another look first
+  — UI/UX changes, anything that needs a manual smoke test, behavior that
+  passing tests don't fully capture, or simply work that someone other than the
+  author should confirm. The reviewer drags it to Done, or back to Doing if it
+  needs more work.
+- **The reviewer can be a human _or_ an agent.** Sometimes a human is the right
+  judge ("does this UX feel right?"); sometimes the managing/lead agent
+  merge-verifies; sometimes you assign a peer agent — or yourself — to review.
+  Decide per task who's best placed to catch what a passing test can't. You can
+  **assign the review explicitly with `--owner`** (hand it to the human, a peer
+  agent, or yourself), so "you've been asked to review this" is itself a board
+  signal that lands in the reviewer's lane.
 - **Move straight to Done** when automated checks already cover it — pure
   functional changes or refactors where green tests are sufficient evidence. Not
-  everything needs a human glance; routing trivially-verified work through
-  Review just adds friction.
+  everything needs a review pass; routing trivially-verified work through Review
+  just adds friction.
 
 The gate is a **convention, not enforced** — the daemon accepts any status
-transition from either side. Let the task's test plan guide you: if it calls for
-human smoke-testing, route through Review; if green tests settle it, Done is
-fine. When genuinely unsure, prefer Review — a cheap glance beats a missed
-regression. A `message` toast is a good way to flag what you've put up for
-review and why.
+transition from any participant. Let the task guide you: if it wants a human's
+eye or a peer's review, route through Review and (optionally) assign the
+reviewer; if green tests settle it, Done is fine. When genuinely unsure, prefer
+Review — a cheap second look beats a missed regression. A `message` toast is a
+good way to flag what you've put up for review and why.
 
 ## When to Use
 
@@ -147,19 +155,20 @@ session by default; pass `--session <id>` to target a specific one.
 
 ### Verbs
 
-| Verb                                                                     | Does                                                                                   |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open] [--restore <id>]`            | spawn the daemon (or resume a saved session); print session JSON                       |
-| `state [--full] [--owner <name> \| --mine] [--as <name>]`                | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`           |
-| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`              | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since` |
-| `add <title…> [--status S] [--notes N] [--owner N] [--id ID] [--stdin]`  | add a task (optionally assigned)                                                       |
-| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--stdin]` | patch a task (`--owner` assigns/reassigns)                                             |
-| `claim <id> [--as <name>]`                                               | self-claim an **unowned** task (rejected if owned by another)                          |
-| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                | add / remove blocker edges (block is cycle-guarded; rejection is visible)              |
-| `remove <id>`                                                            | delete a task                                                                          |
-| `message <text…> [--stdin]`                                              | transient toast on the board                                                           |
-| `init [--title T] [--stdin-tasks]`                                       | seed the board (tasks = JSON array on stdin)                                           |
-| `close` / `info` / `sessions` / `help`                                   | end session / show session / list snapshots / usage                                    |
+| Verb                                                                                                                   | Does                                                                                                             |
+| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>]`                                                          | spawn the daemon (or resume a saved session); print session JSON                                                 |
+| `state [--full] [--owner <name> \| --mine] [--as <name>]`                                                              | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`                                     |
+| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`                                                            | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                           |
+| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                              |
+| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold) |
+| `claim <id> [--as <name>]`                                                                                             | self-claim an **unowned** task (rejected if owned by another)                                                    |
+| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                              | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                        |
+| `remove <id>`                                                                                                          | delete a task                                                                                                    |
+| `message <text…> [--stdin]`                                                                                            | transient toast on the board                                                                                     |
+| `init [--title T] [--stdin-tasks]`                                                                                     | seed the board (tasks = JSON array on stdin)                                                                     |
+| `list`                                                                                                                 | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)        |
+| `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                              |
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` (which reads the title
@@ -216,7 +225,7 @@ Monitor({
   description: "bounty events for <short purpose>",
   persistent: true,
   timeout_ms: 3600000,
-  command: "bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts tail --since 0"
+  command: "bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts tail --since 0 --session <id>"
 })
 ```
 
@@ -225,6 +234,15 @@ event id, so nothing is missed across the gap. When a notification arrives,
 react by issuing a `cli.ts update` / `message` (or nothing if it's not
 interesting), then end the turn — the Monitor stays armed. The `closed` frame
 ends the tail (exit 0); `TaskStop` the Monitor when you see it.
+
+**Pin a long-lived tail to its session.** On a host that may run more than one
+board, pass `--session <id>` so the Monitor's `tail` locks to _that_ board. An
+unpinned `tail` auto-pins the **first** session it resolves — it prints a
+`# pinned to session <id>` line on stderr and never consults the global `latest`
+pointer again, so a board opened later can't silently hijack the stream. (Before
+this guard, an unpinned long-lived tail re-resolved `latest` on every reconnect
+and could hop to another project's board mid-session.) Pinning explicitly is
+still clearer, and it also survives the no-board-yet startup window.
 
 ### Event frames
 
@@ -249,6 +267,7 @@ Each `tail` frame is `{ id, type, …, by }`:
 {id, type:"task.update",  taskId, patch, by, owner}      // agent patch
 {id, type:"task.remove",  taskId, by, owner}             // task deleted
 {id, type:"unblocked",    taskId, owner, by:"system"}    // last blocker cleared (owner-scoped)
+{id, type:"heartbeat",    taskId, owner, overdueByMs, expectedMinutes, by:"system"}  // doing task overran its size/expect (owner-scoped; re-pokes per period)
 {id, type:"closed",       reason, by:"system"}           // session ended (reason: user|timeout|close)
 ```
 
@@ -264,9 +283,16 @@ type Task = {
   id: string; // any unique string (you choose the scheme; cli.ts auto-generates if omitted)
   title: string;
   status: "todo" | "doing" | "review" | "done";
-  notes?: string; // optional, shown under the title
+  notes?: string; // optional; shown under the title (clamped on the card, editable in the detail modal)
   owner?: string; // optional assignee — shown as an @name badge; drives scoped tails
+  tags?: string[]; // optional labels — neutral chips on the card (set via --tag; trimmed, deduped, case preserved)
+  size?: "S" | "M" | "L"; // optional T-shirt size → expected minutes (S=5, M=10, L=20); drives the heartbeat poke
+  expect?: number; // optional explicit expected minutes — overrides size's default
   blockedBy?: string[]; // ids this task waits on (set via block/unblock); drives the blocked cue + unblocked event
+  // substrate (server-stamped, read-only): when it entered its current status + a capped visit log.
+  // Powers heartbeat; reused by the card-aging / metrics / leaderboard backlog.
+  enteredStatusAt?: number;
+  statusHistory?: { status: string; at: number }[];
 };
 ```
 
@@ -324,10 +350,12 @@ keep each worker's wake-set small instead of every event waking everyone.
   **stderr**.
 - **Self-echo suppression.** A scoped tail drops frames your own `--as` identity
   caused, so you don't wake on your own writes (applied after the scope filter).
-- **`review` is the human handoff cue.** Moving a task to **Review** is a status
-  change on an owned task — the human sees it on the **surface** (the Review
-  column) and the lead sees it on an **unfiltered** tail. No special event; the
-  board _is_ the signal (board = state, chat = substance).
+- **`review` is the handoff cue.** Moving a task to **Review** is a status
+  change on an owned task — whoever's reviewing sees it: the human on the
+  **surface** (the Review column), the lead on an **unfiltered** tail, and an
+  assigned reviewer on their **scoped** tail (assign the review with `--owner`
+  and it lands in their lane). No special event; the board _is_ the signal
+  (board = state, chat = substance).
 
 > **Ownership-transfer wake (by design).** An event frame carries the task's
 > owner **at the moment it happened** (post-change). So when a task is
@@ -336,6 +364,34 @@ keep each worker's wake-set small instead of every event waking everyone.
 > task left their lane. That's intentional: the board reflects new state, A sees
 > it on their next `cli.ts state`, and the reassigning lead conveys the _why_
 > over chat. Don't rely on the board to notify a former owner.
+
+### Multi-agent task-state ownership — who moves a card when
+
+Ownership (above) says _which_ tasks are yours; this is the _lifecycle_ — who
+slides a card across columns, and when. The rule that holds up under real
+multi-agent load: **the doer owns task-state.**
+
+- **Lead = dispatcher + reviewer.** Create the task, set `--owner`, and **leave
+  it in To do** — then hand it off over the back-channel (chat / grapevine).
+  Don't move it to Doing _for_ the worker: that records only _your_ intent (you
+  assume someone's on it), not whether anyone actually picked it up, so the
+  board fills with "Doing" cards nobody's working and you end up babysitting it.
+- **Owner moves its own card.** When you _actually start_, move your card **To
+  do → Doing** — that's the "I've taken this" signal the lead sees on `tail`.
+  When it's done and green, move it **Doing → Review** and post what you
+  parked + how to verify.
+- **Reviewer closes.** Review means a second set of eyes — a human glance, the
+  lead's merge-verify, or a peer agent you assign the review to (`--owner`).
+  Whoever reviews moves **Review → Done**, or bounces it back to **Doing** for
+  rework — the owner sees the bounce and picks it up.
+
+Why it holds: **Doing** becomes a trustworthy "genuinely being worked" signal
+instead of the lead's guess, the lead stops puppeteering the board, and the
+owner stays in the loop on acceptance vs. rework. It layers on the Review-gate +
+ownership/scoping above — those say _where the gate is_ and _whose lane it is_;
+this says _who slides the card_. (Validated across a long multi-agent build —
+the workers adopted it cleanly, even self-creating cards for work they picked
+up.)
 
 ### Dependencies (blocking)
 
@@ -357,14 +413,38 @@ flat list.
   that's already `done`. A blocker is "live" only if it still exists and isn't
   done — a deleted or done blocker doesn't block.
   - **A blocker must reach `done` — not `review` — to unblock dependents.**
-    Review is the human-verification gate (the blocker isn't finished yet), so a
-    blocker parked in Review keeps its dependents blocked until a human moves it
-    to Done. If you park a blocker in Review and its dependent stays stuck,
-    that's why — flag the review for a human (`message`) rather than waiting.
+    Review is the verification gate (the blocker isn't finished yet), so a
+    blocker parked in Review keeps its dependents blocked until a reviewer moves
+    it to Done. If you park a blocker in Review and its dependent stays stuck,
+    that's why — flag the review for whoever's reviewing (`message`) rather than
+    waiting.
 - **Surface cue:** a blocked task shows `⛔ blocked by N` and is visually
   de-emphasized. It's a **convention, not a lock** — the board still lets anyone
   move a blocked task (same soft-gate spirit as Review). The cue counts down
   live as blockers clear.
+
+### Heartbeat — nudge an owner when a Doing task overruns
+
+A task can declare how long it's expected to take, and the daemon pokes its
+owner if it sits in **Doing** past that — the safety net for an agent that
+silently stalls mid-task.
+
+- **Opt in per task.** Set a **T-shirt size** — `--size S|M|L` → **5 / 10 / 20
+  minutes** — or an explicit `--expect <minutes>` (which overrides the size's
+  default) on `add`/`update`. A task with neither is **not watched**; heartbeat
+  is opt-in, not a global timer.
+- **Three sizes by design — no XL.** Agents are fast; a code change rarely runs
+  past ~20 minutes. The absence of a "huge" size is deliberate: a task you'd
+  expect to take days is a signal to **break it down further**, not size it up.
+- **The poke.** When a Doing task overruns its expected time, the daemon fires
+  an owner-scoped `heartbeat` event (same wake-set as `unblocked` — only the
+  owner's `--owner`/`--mine` tail wakes) **plus a board toast** so the human
+  sees the staleness too. An _unowned_ overdue task gets the toast only.
+- **Re-pokes, proportionately.** It pokes once on overrun, then re-pokes **once
+  per expected-period** (so a big task isn't spammed and a small one still gets
+  timely nudges) until the card leaves Doing — at which point it auto-resets.
+- Built on the per-transition timestamp substrate (`enteredStatusAt`), the same
+  data the card-aging / metrics / leaderboard backlog will reuse.
 
 ## Exit Code Contract
 
@@ -431,16 +511,16 @@ opens a WebSocket to the daemon and bridges it to its own stdio.
 {"type":"task.add",    "task": Task}              // append a new task
 {"type":"task.toggle", "id": "...", "status": "todo|doing|review|done"}  // change status
 {"type":"task.move",   "id": "...", "status": "...", "index": N}  // status + position
-{"type":"task.edit",   "id": "...", "title": "..."}   // change the title
+{"type":"task.edit",   "id": "...", "title?": "...", "notes?": "..."}   // edit title and/or notes (notes "" clears)
 {"type":"task.remove", "id": "..."}
 {"type":"close"}                                  // disconnect cleanly
 ```
 
 These are the **WebSocket** verbs (the same ones the browser sends) — a joiner
 is a browser-equivalent participant. Note there's no `task.update` over WS: use
-the granular `task.toggle` (status) / `task.edit` (title) / `task.move` (drag)
-instead. Joiners also CAN'T push toasts (`message`) or reset state (`init`) —
-those are agent-`/cmd`-only; the daemon ignores them over WS.
+the granular `task.toggle` (status) / `task.edit` (title/notes) / `task.move`
+(drag) instead. Joiners also CAN'T push toasts (`message`) or reset state
+(`init`) — those are agent-`/cmd`-only; the daemon ignores them over WS.
 
 ### Join protocol — join.ts → agent (stdout, one JSON line per message)
 
