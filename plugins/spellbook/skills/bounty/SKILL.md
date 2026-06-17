@@ -224,7 +224,7 @@ Monitor({
   description: "bounty events for <short purpose>",
   persistent: true,
   timeout_ms: 3600000,
-  command: "bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts tail --since 0"
+  command: "bun ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/cli.ts tail --since 0 --session <id>"
 })
 ```
 
@@ -233,6 +233,15 @@ event id, so nothing is missed across the gap. When a notification arrives,
 react by issuing a `cli.ts update` / `message` (or nothing if it's not
 interesting), then end the turn — the Monitor stays armed. The `closed` frame
 ends the tail (exit 0); `TaskStop` the Monitor when you see it.
+
+**Pin a long-lived tail to its session.** On a host that may run more than one
+board, pass `--session <id>` so the Monitor's `tail` locks to _that_ board. An
+unpinned `tail` auto-pins the **first** session it resolves — it prints a
+`# pinned to session <id>` line on stderr and never consults the global `latest`
+pointer again, so a board opened later can't silently hijack the stream. (Before
+this guard, an unpinned long-lived tail re-resolved `latest` on every reconnect
+and could hop to another project's board mid-session.) Pinning explicitly is
+still clearer, and it also survives the no-board-yet startup window.
 
 ### Event frames
 
