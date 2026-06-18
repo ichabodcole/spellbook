@@ -1,4 +1,13 @@
-import { LayoutGrid, Link2, MessageSquareText, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
+import {
+  LayoutGrid,
+  Link2,
+  Link2Off,
+  MessageSquareText,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { entriesByKind, isLinked } from "../state/contextLibrary";
 import { IMAGO_CONTEXT_DND } from "../state/fileIntake";
@@ -237,7 +246,7 @@ function EntryCard({
                   : "text-faint hover:text-ink hover:bg-surface-3"
               }`}
             >
-              <Link2 className="w-3 h-3" />
+              {active ? <Link2 className="w-3 h-3" /> : <Link2Off className="w-3 h-3" />}
             </button>
           )}
           {/* delete — two-step */}

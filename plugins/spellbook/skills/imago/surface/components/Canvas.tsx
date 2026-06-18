@@ -11,7 +11,6 @@ import {
   Redo2,
   Sparkles,
   Undo2,
-  Unlink,
   WandSparkles,
   X,
 } from "lucide-react";
@@ -930,7 +929,7 @@ function ReferenceDrawer({
               {refVariants.map((v) => (
                 <div
                   key={v.id}
-                  className="relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
+                  className="group relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
                 >
                   <img
                     src={v.src}
@@ -960,7 +959,7 @@ function ReferenceDrawer({
                       e.stopPropagation();
                       send({ type: "ref.remove", id: v.id });
                     }}
-                    className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
+                    className="absolute top-0 right-0 bg-black/70 text-white rounded-bl opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -1040,7 +1039,7 @@ function ReferenceDrawer({
               <div
                 key={entry.id}
                 title={entry.content || entry.name}
-                className="relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
+                className="group relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
               >
                 {entry.image ? (
                   <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" />
@@ -1064,9 +1063,9 @@ function ReferenceDrawer({
                     e.stopPropagation();
                     send({ type: "context.unlink", id: entry.id, set: "active" });
                   }}
-                  className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
+                  className="absolute top-0 right-0 bg-black/70 text-white rounded-bl opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                 >
-                  <Unlink className="w-3 h-3" />
+                  <X className="w-3 h-3" />
                 </button>
               </div>
             ))}

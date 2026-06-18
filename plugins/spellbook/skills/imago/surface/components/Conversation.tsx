@@ -1,5 +1,6 @@
 import {
   ChevronDown,
+  ChevronLeft,
   ImagePlus,
   Link,
   Pencil,
@@ -204,7 +205,6 @@ function QuickPrompts({
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
-  const pickerTriggerRef = useRef<HTMLButtonElement>(null);
 
   // Bug 1 fix: reset picker state whenever the dropdown closes or opens so
   // reopening always shows the default prompt list, not a stale picker state.
@@ -350,7 +350,6 @@ function QuickPrompts({
                     <Plus className="w-3 h-3" /> New prompt
                   </button>
                   <button
-                    ref={pickerTriggerRef}
                     type="button"
                     onClick={() => setShowPicker((s) => !s)}
                     className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
@@ -362,17 +361,26 @@ function QuickPrompts({
             </>
           )}
           {showPicker && !editing && (
-            <LibraryPicker
-              triggerRef={pickerTriggerRef}
-              library={library}
-              kind="prompt"
-              excludeIds={quickPromptIds}
-              onPick={(id) => {
-                send({ type: "context.link", id, set: "quickPrompts" });
-                setShowPicker(false);
-              }}
-              onClose={() => setShowPicker(false)}
-            />
+            <>
+              <button
+                type="button"
+                onClick={() => setShowPicker(false)}
+                className="flex items-center gap-1 px-2 py-1 text-[12px] text-faint hover:text-ink"
+              >
+                <ChevronLeft className="w-3 h-3" /> back to quick prompts
+              </button>
+              <LibraryPicker
+                inline
+                library={library}
+                kind="prompt"
+                excludeIds={quickPromptIds}
+                onPick={(id) => {
+                  send({ type: "context.link", id, set: "quickPrompts" });
+                  setShowPicker(false);
+                }}
+                onClose={() => setShowPicker(false)}
+              />
+            </>
           )}
         </div>
       )}

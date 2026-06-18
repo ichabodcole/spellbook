@@ -4,28 +4,32 @@ import { createPortal } from "react-dom";
 import { entriesByKind } from "../state/contextLibrary";
 import type { ContextEntry, ContextKind } from "../state/types";
 
-// A small popover for picking a single entry from the context library, filtered
-// by `kind`. Used by the active-context tray (Task 7) and the composer
-// quick-prompt linker (Task 8).
+// A small picker for choosing a single entry from the context library, filtered
+// by `kind`. Used by the active-context tray (drawer) and the composer
+// quick-prompt linker.
 //
-// Rendered via a portal to document.body with fixed positioning so it escapes
-// any overflow-clip or stacking-context trap in the ancestor tree (the
-// active-context tray sits inside a drawer; the quick-prompts picker sits inside
-// a max-h-80 overflow-y-auto dropdown — both would clip an in-tree absolute
-// popover). The trigger ref is used to anchor the popover to the button.
-//
-// Outside-click uses the document pointerdown pattern (same as QuickPrompts in
-// Conversation.tsx) so there are no bare non-interactive divs tripping the
-// noStaticElementInteractions biome rule.
+// Two render modes:
+//   - DEFAULT (portal): rendered to document.body with fixed positioning anchored
+//     to `triggerRef`, so it escapes overflow-clip / stacking-context traps. Used
+//     by the active-context tray (it sits inside a drawer whose stacking context
+//     would otherwise trap an in-tree popover). Self-manages outside-click.
+//   - INLINE (`inline`): rendered in-place as a plain block, no portal, no fixed
+//     positioning, no own outside-click handling. Used by the composer
+//     quick-prompts dropdown, where the picker replaces the prompt list INSIDE the
+//     same dropdown panel: it shares the dropdown's scroll (so it isn't clipped)
+//     and the dropdown's own outside-click dismissal (so there's no portal/anchor/
+//     double-outside-click conflict — the trigger that opens it can unmount safely).
 export function LibraryPicker({
   triggerRef,
+  inline = false,
   library,
   kind,
   excludeIds,
   onPick,
   onClose,
 }: {
-  triggerRef: React.RefObject<HTMLElement | null>;
+  triggerRef?: React.RefObject<HTMLElement | null>;
+  inline?: boolean;
   library: ContextEntry[];
   kind: ContextKind;
   excludeIds: string[];
@@ -35,14 +39,15 @@ export function LibraryPicker({
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  // Fixed position anchored above the trigger button.
+  // Fixed position anchored above the trigger button (portal mode only).
   const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
 
-  // Measure the trigger's position and anchor the popover above it.
+  // Measure the trigger's position and anchor the popover above it (portal mode).
   // Re-runs on scroll/resize so it tracks if the trigger moves.
   useLayoutEffect(() => {
+    if (inline) return;
     function measure() {
-      const el = triggerRef.current;
+      const el = triggerRef?.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
       setPos({
@@ -57,22 +62,24 @@ export function LibraryPicker({
       window.removeEventListener("scroll", measure, { capture: true });
       window.removeEventListener("resize", measure);
     };
-  }, [triggerRef]);
+  }, [triggerRef, inline]);
 
   // Focus the search input on mount for immediate keyboard use.
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
-  // Outside-click + Escape close — mirrors QuickPrompts pattern exactly.
-  // Bug 2 fix: also treat the trigger button as "inside" so clicking it to
-  // open the picker doesn't simultaneously close it (the trigger is not inside
-  // the portaled rootRef, so without this exclusion that click fires onClose).
+  // Outside-click + Escape close (portal mode only — inline relies on the parent
+  // dropdown's own dismissal, since it renders inside that dropdown's root).
+  // Bug 2 fix: also treat the trigger button as "inside" so clicking it to open
+  // the picker doesn't simultaneously close it (the trigger is not inside the
+  // portaled rootRef, so without this exclusion that click fires onClose).
   useEffect(() => {
+    if (inline) return;
     const onDown = (e: PointerEvent) => {
       const target = e.target as Node;
       const insidePanel = rootRef.current?.contains(target) ?? false;
-      const insideTrigger = triggerRef.current?.contains(target) ?? false;
+      const insideTrigger = triggerRef?.current?.contains(target) ?? false;
       if (!insidePanel && !insideTrigger) onClose();
     };
     const onKey = (e: KeyboardEvent) => {
@@ -84,7 +91,7 @@ export function LibraryPicker({
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [onClose, triggerRef]);
+  }, [onClose, triggerRef, inline]);
 
   const byKind = entriesByKind(library, kind);
   const excludeSet = new Set(excludeIds);
@@ -104,17 +111,9 @@ export function LibraryPicker({
     onClose();
   }
 
-  // Don't render until we have a position (avoids a flash at 0,0).
-  if (!pos) return null;
-
-  return createPortal(
-    // Popover panel — fixed-positioned above the trigger, escapes any
-    // overflow-clip or stacking-context trap in the ancestor tree.
-    <div
-      ref={rootRef}
-      style={{ position: "fixed", left: pos.left, bottom: pos.bottom, width: 288, zIndex: 9999 }}
-      className="card flex flex-col gap-0.5 max-h-72 overflow-hidden shadow-xl"
-    >
+  // The panel contents — identical in both modes.
+  const body = (
+    <>
       {/* Search row */}
       <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
         <Search className="w-3 h-3 text-faint shrink-0" />
@@ -166,6 +165,31 @@ export function LibraryPicker({
           </div>
         ))}
       </div>
+    </>
+  );
+
+  // Inline mode: render in-place inside the parent dropdown (no portal, no fixed
+  // positioning). The parent's outside-click dismissal covers it.
+  if (inline) {
+    return (
+      <div ref={rootRef} className="flex flex-col gap-0.5 max-h-72 overflow-hidden">
+        {body}
+      </div>
+    );
+  }
+
+  // Portal mode: don't render until we have a position (avoids a flash at 0,0).
+  if (!pos) return null;
+
+  return createPortal(
+    // Popover panel — fixed-positioned above the trigger, escapes any
+    // overflow-clip or stacking-context trap in the ancestor tree.
+    <div
+      ref={rootRef}
+      style={{ position: "fixed", left: pos.left, bottom: pos.bottom, width: 288, zIndex: 9999 }}
+      className="card flex flex-col gap-0.5 max-h-72 overflow-hidden shadow-xl"
+    >
+      {body}
     </div>,
     document.body,
   );
