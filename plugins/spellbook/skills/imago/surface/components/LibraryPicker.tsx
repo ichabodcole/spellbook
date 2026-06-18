@@ -65,9 +65,15 @@ export function LibraryPicker({
   }, []);
 
   // Outside-click + Escape close — mirrors QuickPrompts pattern exactly.
+  // Bug 2 fix: also treat the trigger button as "inside" so clicking it to
+  // open the picker doesn't simultaneously close it (the trigger is not inside
+  // the portaled rootRef, so without this exclusion that click fires onClose).
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      const insidePanel = rootRef.current?.contains(target) ?? false;
+      const insideTrigger = triggerRef.current?.contains(target) ?? false;
+      if (!insidePanel && !insideTrigger) onClose();
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -78,7 +84,7 @@ export function LibraryPicker({
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [onClose]);
+  }, [onClose, triggerRef]);
 
   const byKind = entriesByKind(library, kind);
   const excludeSet = new Set(excludeIds);

@@ -206,13 +206,28 @@ function QuickPrompts({
   const rootRef = useRef<HTMLDivElement>(null);
   const pickerTriggerRef = useRef<HTMLButtonElement>(null);
 
+  // Bug 1 fix: reset picker state whenever the dropdown closes or opens so
+  // reopening always shows the default prompt list, not a stale picker state.
+  function openDropdown() {
+    setOpen(true);
+    setShowPicker(false);
+  }
+  function closeDropdown() {
+    setOpen(false);
+    setShowPicker(false);
+  }
+
   useEffect(() => {
     if (!open) return;
+    const dismiss = () => {
+      setOpen(false);
+      setShowPicker(false);
+    };
     const onDown = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) dismiss();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") dismiss();
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
@@ -254,90 +269,97 @@ function QuickPrompts({
     <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? closeDropdown() : openDropdown())}
         className="chip flex items-center gap-1"
       >
         <Zap className="w-3 h-3" /> quick prompts <ChevronDown className="w-3 h-3" />
       </button>
       {open && (
         <div className="absolute bottom-full mb-1 left-0 z-30 w-72 card p-1.5 flex flex-col gap-0.5 max-h-80 overflow-y-auto">
-          {prompts.map((p) => (
-            <div key={p.id} className="flex items-center gap-1 rounded hover:bg-accent/10">
-              <button
-                type="button"
-                onClick={() => {
-                  onPick(p.content);
-                  setOpen(false);
-                }}
-                title={p.content}
-                className="flex-1 min-w-0 text-left px-2 py-1 text-[12px] text-ink truncate"
-              >
-                {p.name}
-              </button>
-              <button
-                type="button"
-                title="Edit prompt"
-                onClick={() => startEdit(p)}
-                className="shrink-0 p-1 text-faint hover:text-ink"
-              >
-                <Pencil className="w-3 h-3" />
-              </button>
-              <button
-                type="button"
-                title="Remove from quick prompts"
-                onClick={() => send({ type: "context.unlink", id: p.id, set: "quickPrompts" })}
-                className="shrink-0 p-1 text-faint hover:text-ink"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-          {editing ? (
-            <div className="flex flex-col gap-1 border-t border-divider mt-1 pt-2">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="name"
-                className="bg-surface-2 border border-edge-2 rounded px-2 py-1 text-[12px] text-ink placeholder-faint focus:outline-none focus:border-accent/60"
-              />
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="prompt text"
-                rows={3}
-                className="textarea !resize-y text-[12px]"
-              />
-              <div className="flex items-center justify-end gap-1.5">
-                <button type="button" onClick={() => setEditing(null)} className="chip">
-                  cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={save}
-                  className="btn-primary !px-2.5 !py-1 text-[11px]"
-                >
-                  save
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-0.5 border-t border-divider mt-1 pt-1.5">
-              <button
-                type="button"
-                onClick={startNew}
-                className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
-              >
-                <Plus className="w-3 h-3" /> New prompt
-              </button>
-              <button
-                ref={pickerTriggerRef}
-                type="button"
-                onClick={() => setShowPicker((s) => !s)}
-                className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
-              >
-                <Link className="w-3 h-3" /> Link from library
-              </button>
-            </div>
+          {/* Bug 3 fix: hide the prompt list and action buttons while the picker
+              is open so only one panel is visible at a time. The picker renders
+              via a portal above, so the dropdown slot stays quiet. */}
+          {!showPicker && (
+            <>
+              {prompts.map((p) => (
+                <div key={p.id} className="flex items-center gap-1 rounded hover:bg-accent/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onPick(p.content);
+                      closeDropdown();
+                    }}
+                    title={p.content}
+                    className="flex-1 min-w-0 text-left px-2 py-1 text-[12px] text-ink truncate"
+                  >
+                    {p.name}
+                  </button>
+                  <button
+                    type="button"
+                    title="Edit prompt"
+                    onClick={() => startEdit(p)}
+                    className="shrink-0 p-1 text-faint hover:text-ink"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    title="Remove from quick prompts"
+                    onClick={() => send({ type: "context.unlink", id: p.id, set: "quickPrompts" })}
+                    className="shrink-0 p-1 text-faint hover:text-ink"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+              {editing ? (
+                <div className="flex flex-col gap-1 border-t border-divider mt-1 pt-2">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="name"
+                    className="bg-surface-2 border border-edge-2 rounded px-2 py-1 text-[12px] text-ink placeholder-faint focus:outline-none focus:border-accent/60"
+                  />
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="prompt text"
+                    rows={3}
+                    className="textarea !resize-y text-[12px]"
+                  />
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button type="button" onClick={() => setEditing(null)} className="chip">
+                      cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={save}
+                      className="btn-primary !px-2.5 !py-1 text-[11px]"
+                    >
+                      save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-0.5 border-t border-divider mt-1 pt-1.5">
+                  <button
+                    type="button"
+                    onClick={startNew}
+                    className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
+                  >
+                    <Plus className="w-3 h-3" /> New prompt
+                  </button>
+                  <button
+                    ref={pickerTriggerRef}
+                    type="button"
+                    onClick={() => setShowPicker((s) => !s)}
+                    className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
+                  >
+                    <Link className="w-3 h-3" /> Link from library
+                  </button>
+                </div>
+              )}
+            </>
           )}
           {showPicker && !editing && (
             <LibraryPicker
