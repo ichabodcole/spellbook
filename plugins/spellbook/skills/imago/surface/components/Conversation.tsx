@@ -1,6 +1,7 @@
 import {
   ChevronDown,
   ImagePlus,
+  Link,
   Pencil,
   Plus,
   SendHorizontal,
@@ -9,10 +10,12 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { resolveSet } from "../state/contextLibrary";
 import { variantLabel } from "../state/derive";
 import { processFiles } from "../state/fileIntake";
-import type { ClientToServer, ImagoState, Message, PromptEntry } from "../state/types";
+import type { ClientToServer, ContextEntry, ImagoState, Message } from "../state/types";
 import { flattenMarks } from "./annotations/flatten";
+import { LibraryPicker } from "./LibraryPicker";
 
 // Right pane: the dialogue spine + the composer. The composer is the single
 // input; shortcuts (the quick-prompt library) WRITE into it, "do" controls
@@ -121,7 +124,12 @@ export function Conversation({
         {/* quick-prompt library — picks populate the box (never fire behind the
             glass); editable/extensible by the user OR the agent */}
         <div className="flex items-center gap-1.5">
-          <QuickPrompts prompts={state.prompts} send={send} onPick={setDraft} />
+          <QuickPrompts
+            library={state.library}
+            quickPromptIds={state.quickPromptIds}
+            send={send}
+            onPick={setDraft}
+          />
         </div>
 
         {/* the box — taller by default, and resizable for a longer ramble */}
@@ -172,21 +180,29 @@ export function Conversation({
 
 // The quick-prompt library: a dropdown of reusable prompts that POPULATE the box
 // on pick (language-first — never fires behind the glass), with inline add/edit/
-// delete. Opens upward (it sits just above the textarea). Closes on pick / Esc /
+// unlink. Opens upward (it sits just above the textarea). Closes on pick / Esc /
 // outside-press (same document-pointerdown pattern as the toolbar flyouts).
+//
+// Data source: resolveSet(library, quickPromptIds) — only entries linked into the
+// quickPrompts set are shown here. ✕ unlinks (not delete); true delete lives in
+// the Context pane. "Link from library" opens LibraryPicker to link an existing
+// prompt. "+ New prompt" creates + links in one step (context.add with link).
 function QuickPrompts({
-  prompts,
+  library,
+  quickPromptIds,
   send,
   onPick,
 }: {
-  prompts: PromptEntry[];
+  library: ContextEntry[];
+  quickPromptIds: string[];
   send: (m: ClientToServer) => void;
   onPick: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<string | null>(null); // "new" | a prompt id | null
-  const [label, setLabel] = useState("");
-  const [text, setText] = useState("");
+  const [editing, setEditing] = useState<string | null>(null); // "new" | an entry id | null
+  const [showPicker, setShowPicker] = useState(false);
+  const [name, setName] = useState("");
+  const [content, setContent] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -205,25 +221,32 @@ function QuickPrompts({
     };
   }, [open]);
 
+  const prompts = resolveSet(library, quickPromptIds);
+
   function startNew() {
     setEditing("new");
-    setLabel("");
-    setText("");
+    setShowPicker(false);
+    setName("");
+    setContent("");
   }
-  function startEdit(p: PromptEntry) {
+  function startEdit(p: ContextEntry) {
     setEditing(p.id);
-    setLabel(p.label);
-    setText(p.text);
+    setShowPicker(false);
+    setName(p.name);
+    setContent(p.content);
   }
   function save() {
-    const l = label.trim();
-    const t = text.trim();
-    if (!l || !t) return;
-    if (editing === "new") send({ type: "prompt.add", label: l, text: t });
-    else if (editing) send({ type: "prompt.update", id: editing, label: l, text: t });
+    const n = name.trim();
+    const c = content.trim();
+    if (!n || !c) return;
+    if (editing === "new") {
+      send({ type: "context.add", kind: "prompt", name: n, content: c, link: "quickPrompts" });
+    } else if (editing) {
+      send({ type: "context.update", id: editing, name: n, content: c });
+    }
     setEditing(null);
-    setLabel("");
-    setText("");
+    setName("");
+    setContent("");
   }
 
   return (
@@ -242,13 +265,13 @@ function QuickPrompts({
               <button
                 type="button"
                 onClick={() => {
-                  onPick(p.text);
+                  onPick(p.content);
                   setOpen(false);
                 }}
-                title={p.text}
+                title={p.content}
                 className="flex-1 min-w-0 text-left px-2 py-1 text-[12px] text-ink truncate"
               >
-                {p.label}
+                {p.name}
               </button>
               <button
                 type="button"
@@ -260,8 +283,8 @@ function QuickPrompts({
               </button>
               <button
                 type="button"
-                title="Delete prompt"
-                onClick={() => send({ type: "prompt.remove", id: p.id })}
+                title="Remove from quick prompts"
+                onClick={() => send({ type: "context.unlink", id: p.id, set: "quickPrompts" })}
                 className="shrink-0 p-1 text-faint hover:text-ink"
               >
                 <X className="w-3 h-3" />
@@ -271,14 +294,14 @@ function QuickPrompts({
           {editing ? (
             <div className="flex flex-col gap-1 border-t border-divider mt-1 pt-2">
               <input
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="label"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="name"
                 className="bg-surface-2 border border-edge-2 rounded px-2 py-1 text-[12px] text-ink placeholder-faint focus:outline-none focus:border-accent/60"
               />
               <textarea
-                value={text}
-                onChange={(e) => setText(e.target.value)}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
                 placeholder="prompt text"
                 rows={3}
                 className="textarea !resize-y text-[12px]"
@@ -297,13 +320,34 @@ function QuickPrompts({
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={startNew}
-              className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink border-t border-divider mt-1 pt-2"
-            >
-              <Plus className="w-3 h-3" /> New prompt
-            </button>
+            <div className="flex flex-col gap-0.5 border-t border-divider mt-1 pt-1.5">
+              <button
+                type="button"
+                onClick={startNew}
+                className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
+              >
+                <Plus className="w-3 h-3" /> New prompt
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowPicker((s) => !s)}
+                className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
+              >
+                <Link className="w-3 h-3" /> Link from library
+              </button>
+            </div>
+          )}
+          {showPicker && !editing && (
+            <LibraryPicker
+              library={library}
+              kind="prompt"
+              excludeIds={quickPromptIds}
+              onPick={(id) => {
+                send({ type: "context.link", id, set: "quickPrompts" });
+                setShowPicker(false);
+              }}
+              onClose={() => setShowPicker(false)}
+            />
           )}
         </div>
       )}
