@@ -1,4 +1,4 @@
-import { LayoutGrid, MessageSquareText, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
+import { LayoutGrid, Link2, MessageSquareText, Pencil, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { entriesByKind, isLinked } from "../state/contextLibrary";
 import { IMAGO_CONTEXT_DND } from "../state/fileIntake";
@@ -182,12 +182,12 @@ function EntryCard({
       <div className="flex items-start gap-1 min-w-0">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1">
-            <span className="text-xs font-medium text-ink truncate">{entry.name}</span>
-            {active && (
-              <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-accent-ink bg-accent rounded px-1">
-                {entry.kind === "prompt" ? "in quick prompts" : "active"}
-              </span>
+            {entry.kind === "prompt" ? (
+              <MessageSquareText className="w-3.5 h-3.5 shrink-0 text-faint" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 shrink-0 text-faint" />
             )}
+            <span className="text-xs font-medium text-ink truncate">{entry.name}</span>
           </div>
           {!editing && (
             <p className="text-[11px] text-faint truncate mt-0.5">{entry.content || "—"}</p>
@@ -218,8 +218,8 @@ function EntryCard({
                     ? "Remove from quick prompts"
                     : "Remove from active context"
                   : entry.kind === "prompt"
-                    ? "Add to quick prompts"
-                    : "Add to active context"
+                    ? "Link to quick prompts"
+                    : "Link to active context"
               }
               aria-label={
                 active
@@ -227,17 +227,17 @@ function EntryCard({
                     ? "Remove from quick prompts"
                     : "Remove from active context"
                   : entry.kind === "prompt"
-                    ? "Add to quick prompts"
-                    : "Add to active context"
+                    ? "Link to quick prompts"
+                    : "Link to active context"
               }
               onClick={handleLink}
-              className={`p-1 rounded text-xs font-semibold ${
+              className={`p-1 rounded ${
                 active
                   ? "text-accent hover:text-ink hover:bg-surface-3"
-                  : "text-faint hover:text-ink hover:bg-surface-3"
+                  : "text-faint hover:text-body hover:bg-surface-3"
               }`}
             >
-              {active ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
+              <Link2 className="w-3 h-3" />
             </button>
           )}
           {/* delete — two-step */}

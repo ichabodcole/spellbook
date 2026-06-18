@@ -11,6 +11,7 @@ import {
   Redo2,
   Sparkles,
   Undo2,
+  Unlink,
   WandSparkles,
   X,
 } from "lucide-react";
@@ -1058,13 +1059,14 @@ function ReferenceDrawer({
                 <button
                   type="button"
                   title="Remove from active context (stays in Library)"
+                  aria-label="Remove from active context (stays in Library)"
                   onClick={(e) => {
                     e.stopPropagation();
                     send({ type: "context.unlink", id: entry.id, set: "active" });
                   }}
                   className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
                 >
-                  <X className="w-3 h-3" />
+                  <Unlink className="w-3 h-3" />
                 </button>
               </div>
             ))}
