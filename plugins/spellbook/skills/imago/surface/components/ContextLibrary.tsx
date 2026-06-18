@@ -234,7 +234,7 @@ function EntryCard({
               className={`p-1 rounded ${
                 active
                   ? "text-accent hover:text-ink hover:bg-surface-3"
-                  : "text-faint hover:text-body hover:bg-surface-3"
+                  : "text-faint hover:text-ink hover:bg-surface-3"
               }`}
             >
               <Link2 className="w-3 h-3" />
