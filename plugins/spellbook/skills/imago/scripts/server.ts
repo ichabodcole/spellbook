@@ -36,13 +36,13 @@ import index from "../surface/index.html";
 import { optimizeImageBuffer } from "../surface/state/imageOptimize.server";
 import {
   type Batch,
+  type ContextEntry,
   defaultState,
   type ImagoState,
   type Layer,
   MARK_TOOLS,
   type Mark,
   type Message,
-  type StyleEntry,
   type Variant,
 } from "../surface/state/types";
 
@@ -151,8 +151,8 @@ function variantForAgent(v: Variant): Omit<Variant, "src"> {
 function batchForAgent(b: Batch): Omit<Batch, "variants"> & { variants: Omit<Variant, "src">[] } {
   return { ...b, variants: b.variants.map(variantForAgent) };
 }
-function styleForAgent(st: StyleEntry): Omit<StyleEntry, "image"> {
-  const { image: _drop, ...rest } = st;
+function contextForAgent(e: ContextEntry): Omit<ContextEntry, "image"> {
+  const { image: _drop, ...rest } = e;
   return rest; // agent reads imagePath, not the inlined blob
 }
 
@@ -171,7 +171,7 @@ export function leanState(s: ImagoState) {
   return {
     ...s,
     batches: s.batches.map(batchForAgent),
-    styles: s.styles.map(styleForAgent),
+    library: s.library.map(contextForAgent),
     marksByVariant: Object.fromEntries(
       Object.entries(s.marksByVariant).map(([vid, marks]) => [vid, marks.map(markForAgent)]),
     ),

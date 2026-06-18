@@ -27,23 +27,34 @@ test("defaultState carries the title and empty artifact collections", () => {
   // same empty-object invariant; the server/surface index into it directly.
   expect(s.layersByVariant).toEqual({});
   expect(s.analysisCache).toEqual({});
+  expect(s.library).toBeInstanceOf(Array);
 });
 
-test("defaultState seeds the default style catalog (all inactive)", () => {
+test("defaultState seeds the unified library (prompts + styles) and linked sets", () => {
   const s = defaultState("t");
-  const names = s.styles.map((st) => st.name);
-  expect(names).toEqual(["anime", "painterly", "photoreal", "3d", "watercolor", "line art"]);
-  expect(s.styles.every((st) => st.active === false)).toBe(true);
-});
-
-test("defaultState seeds the 3 default quick-prompts with stable ids", () => {
-  const s = defaultState("t");
-  expect(s.prompts.map((p) => p.id)).toEqual(["describe", "palette", "lighting"]);
-  expect(s.prompts).toHaveLength(3);
-  for (const p of s.prompts) {
-    expect(typeof p.label).toBe("string");
-    expect(p.text.length).toBeGreaterThan(0);
-  }
+  const prompts = s.library.filter((e) => e.kind === "prompt");
+  const styles = s.library.filter((e) => e.kind === "style");
+  expect(prompts.map((p) => p.id)).toEqual(["describe", "palette", "lighting"]);
+  expect(styles.map((st) => st.name)).toEqual([
+    "anime",
+    "painterly",
+    "photoreal",
+    "3d",
+    "watercolor",
+    "line art",
+  ]);
+  // deterministic, reproducible style ids
+  expect(styles.map((st) => st.id)).toEqual([
+    "style-anime",
+    "style-painterly",
+    "style-photoreal",
+    "style-3d",
+    "style-watercolor",
+    "style-line-art",
+  ]);
+  // all 3 prompts are surfaced in the composer; no styles active by default
+  expect(s.quickPromptIds).toEqual(["describe", "palette", "lighting"]);
+  expect(s.activeContextIds).toEqual([]);
 });
 
 test("defaultState seeds the situational/derived flags the toolbar reads", () => {
@@ -57,14 +68,13 @@ test("defaultState seeds the situational/derived flags the toolbar reads", () =>
   expect(s.size).toBe("1K");
 });
 
-test("defaultState returns fresh (non-shared) style/prompt arrays per call", () => {
+test("defaultState returns fresh (non-shared) library per call", () => {
   const a = defaultState("a");
   const b = defaultState("b");
-  a.styles[0].active = true;
-  a.prompts[0].label = "mutated";
-  // Mutating one snapshot's catalog must not bleed into the other.
-  expect(b.styles[0].active).toBe(false);
-  expect(b.prompts[0].label).toBe("describe");
+  a.library[0].name = "mutated";
+  a.quickPromptIds.push("x");
+  expect(b.library[0].name).not.toBe("mutated");
+  expect(b.quickPromptIds).toEqual(["describe", "palette", "lighting"]);
 });
 
 // ── leanState projection ────────────────────────────────────────────────────
@@ -112,13 +122,14 @@ function fixtureWithBlobs(): ImagoState {
       },
     ],
   });
-  s.styles.push({
+  s.library.push({
+    id: "ctx-ghibli",
+    kind: "style",
     name: "ghibli",
-    active: true,
-    captured: true,
-    description: "soft painterly anime",
+    content: "soft painterly anime",
     image: "data:image/webp;base64,STYLEBLOB",
     imagePath: "/tmp/files/style-ghibli.webp",
+    captured: true,
   });
   s.marksByVariant = {
     v1: [{ id: "m1", tool: "pin", x: 0.5, y: 0.5, zOrder: 0 }],
@@ -153,20 +164,27 @@ test("leanState strips a ref variant's src but keeps refSelected/name/hash/analy
   expect(r.refSelected).toBe(true); // the agent reads refs as variants where refSelected
 });
 
-test("leanState strips style.image but keeps imagePath + description", () => {
+test("leanState strips a library entry's image but keeps imagePath + content", () => {
   const lean = leanState(fixtureWithBlobs());
-  const ghibli = lean.styles.find((st) => st.name === "ghibli") as Record<string, unknown>;
-  expect(ghibli.image).toBeUndefined();
-  expect(ghibli.imagePath).toBe("/tmp/files/style-ghibli.webp");
-  expect(ghibli.description).toBe("soft painterly anime");
-  expect(ghibli.captured).toBe(true);
-  expect(ghibli.active).toBe(true);
+  const g = lean.library.find((e) => e.id === "ctx-ghibli") as Record<string, unknown>;
+  expect(g.image).toBeUndefined();
+  expect(g.imagePath).toBe("/tmp/files/style-ghibli.webp");
+  expect(g.content).toBe("soft painterly anime");
+  expect(g.captured).toBe(true);
 });
 
-test("leanState preserves prompts and non-image marks verbatim", () => {
+test("leanState passes the linked sets through verbatim", () => {
+  const src = fixtureWithBlobs();
+  src.activeContextIds = ["ctx-ghibli"];
+  src.quickPromptIds = ["describe"];
+  const lean = leanState(src);
+  expect(lean.activeContextIds).toEqual(["ctx-ghibli"]);
+  expect(lean.quickPromptIds).toEqual(["describe"]);
+});
+
+test("leanState preserves non-image marks verbatim", () => {
   const src = fixtureWithBlobs();
   const lean = leanState(src);
-  expect(lean.prompts).toEqual(src.prompts);
   // fixture marks are a pin (no bitmap) → passed through unchanged
   expect(lean.marksByVariant).toEqual(src.marksByVariant);
 });
@@ -211,7 +229,7 @@ test("leanState does not mutate the source state (no blob loss in canonical)", (
   expect(src.batches.find((b) => b.id === "bref")?.variants[0].src).toBe(
     "data:image/webp;base64,REFBLOB",
   );
-  expect(src.styles.find((st) => st.name === "ghibli")?.image).toBe(
+  expect(src.library.find((e) => e.id === "ctx-ghibli")?.image).toBe(
     "data:image/webp;base64,STYLEBLOB",
   );
 });
