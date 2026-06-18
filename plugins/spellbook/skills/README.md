@@ -35,8 +35,6 @@ return to). The structural tell: conjurations ship a `daemon.ts` (or
 Don't hand-roll one. Run the **`inscribe`** authoring ritual
 (`.claude/skills/inscribe/`): it names the spell, checks the trigger registry,
 copies the `scaffold/`, points you at `grimoire/house-style.md`, and runs the
-fresh-agent test loop.
-
-> **Migration note:** the four spells above currently live in
-> `project-docs/plugins/toolbox/skills/`. They land here during the Spellbook
-> extraction — see `docs/projects/spellbook-extraction/proposal.md`.
+fresh-agent test loop. Before merging, run **`ward`** — the consistency
+checklist that keeps this table in sync with the marketplace manifest and the
+trigger registry.
