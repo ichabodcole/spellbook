@@ -1,22 +1,31 @@
 import { Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { entriesByKind } from "../state/contextLibrary";
 import type { ContextEntry, ContextKind } from "../state/types";
 
 // A small popover for picking a single entry from the context library, filtered
 // by `kind`. Used by the active-context tray (Task 7) and the composer
-// quick-prompt linker (Task 8) — not yet mounted anywhere; Tasks 7/8 wire it in.
+// quick-prompt linker (Task 8).
+//
+// Rendered via a portal to document.body with fixed positioning so it escapes
+// any overflow-clip or stacking-context trap in the ancestor tree (the
+// active-context tray sits inside a drawer; the quick-prompts picker sits inside
+// a max-h-80 overflow-y-auto dropdown — both would clip an in-tree absolute
+// popover). The trigger ref is used to anchor the popover to the button.
 //
 // Outside-click uses the document pointerdown pattern (same as QuickPrompts in
 // Conversation.tsx) so there are no bare non-interactive divs tripping the
 // noStaticElementInteractions biome rule.
 export function LibraryPicker({
+  triggerRef,
   library,
   kind,
   excludeIds,
   onPick,
   onClose,
 }: {
+  triggerRef: React.RefObject<HTMLElement | null>;
   library: ContextEntry[];
   kind: ContextKind;
   excludeIds: string[];
@@ -26,6 +35,29 @@ export function LibraryPicker({
   const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Fixed position anchored above the trigger button.
+  const [pos, setPos] = useState<{ left: number; bottom: number } | null>(null);
+
+  // Measure the trigger's position and anchor the popover above it.
+  // Re-runs on scroll/resize so it tracks if the trigger moves.
+  useLayoutEffect(() => {
+    function measure() {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setPos({
+        left: Math.max(8, Math.min(r.left, window.innerWidth - 296)),
+        bottom: window.innerHeight - r.top + 4,
+      });
+    }
+    measure();
+    window.addEventListener("scroll", measure, { capture: true, passive: true });
+    window.addEventListener("resize", measure, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", measure, { capture: true });
+      window.removeEventListener("resize", measure);
+    };
+  }, [triggerRef]);
 
   // Focus the search input on mount for immediate keyboard use.
   useEffect(() => {
@@ -66,12 +98,16 @@ export function LibraryPicker({
     onClose();
   }
 
-  return (
-    // Popover panel — positioned by the caller (absolute / relative wrapper).
-    // Mirrors QuickPrompts: card, z-30, w-72, bottom-full pattern.
+  // Don't render until we have a position (avoids a flash at 0,0).
+  if (!pos) return null;
+
+  return createPortal(
+    // Popover panel — fixed-positioned above the trigger, escapes any
+    // overflow-clip or stacking-context trap in the ancestor tree.
     <div
       ref={rootRef}
-      className="absolute bottom-full mb-1 left-0 z-30 w-72 card flex flex-col gap-0.5 max-h-72 overflow-hidden"
+      style={{ position: "fixed", left: pos.left, bottom: pos.bottom, width: 288, zIndex: 9999 }}
+      className="card flex flex-col gap-0.5 max-h-72 overflow-hidden shadow-xl"
     >
       {/* Search row */}
       <div className="flex items-center gap-1.5 px-2 pt-2 pb-1">
@@ -124,6 +160,7 @@ export function LibraryPicker({
           </div>
         ))}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

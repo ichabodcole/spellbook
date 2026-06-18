@@ -758,9 +758,17 @@ async function main(argv: string[]): Promise<number> {
       }
     } else if (t === "context.delete") {
       if (typeof msg.id === "string") {
+        const toDelete = state.library.find((x) => x.id === msg.id);
         state.library = state.library.filter((x) => x.id !== msg.id);
         state.activeContextIds = state.activeContextIds.filter((x) => x !== msg.id);
         state.quickPromptIds = state.quickPromptIds.filter((x) => x !== msg.id);
+        if (toDelete?.imagePath) {
+          try {
+            unlinkSync(toDelete.imagePath);
+          } catch {
+            /* best-effort — file may already be gone */
+          }
+        }
         broadcastState();
       }
     } else if (t === "context.link") {

@@ -185,7 +185,7 @@ function EntryCard({
             <span className="text-xs font-medium text-ink truncate">{entry.name}</span>
             {active && (
               <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-accent-ink bg-accent rounded px-1">
-                active
+                {entry.kind === "prompt" ? "in quick prompts" : "active"}
               </span>
             )}
           </div>
@@ -212,8 +212,24 @@ function EntryCard({
           {!editing && deleteStep === null && linkSet && (
             <button
               type="button"
-              title={active ? "Remove from active set" : "Add to active set"}
-              aria-label={active ? "Remove from active set" : "Add to active set"}
+              title={
+                active
+                  ? entry.kind === "prompt"
+                    ? "Remove from quick prompts"
+                    : "Remove from active context"
+                  : entry.kind === "prompt"
+                    ? "Add to quick prompts"
+                    : "Add to active context"
+              }
+              aria-label={
+                active
+                  ? entry.kind === "prompt"
+                    ? "Remove from quick prompts"
+                    : "Remove from active context"
+                  : entry.kind === "prompt"
+                    ? "Add to quick prompts"
+                    : "Add to active context"
+              }
               onClick={handleLink}
               className={`p-1 rounded text-xs font-semibold ${
                 active

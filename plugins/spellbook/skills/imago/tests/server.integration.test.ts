@@ -26,7 +26,7 @@
 //   - restore backfills newer fields (library, marksByVariant) from an old snapshot
 
 import { afterAll, describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -808,6 +808,43 @@ describe("context library — add / link / unlink / delete", () => {
     const st = await waitForState(s, (x) => !x.library.some((e) => e.id === id));
     expect(st.quickPromptIds).not.toContain(id);
     ws.close();
+  });
+
+  test("context.delete removes imagePath file from disk", async () => {
+    // Create a style entry WITH an image so the daemon materializes an imagePath.
+    const s = await spawnDaemon();
+    await postCmd(s, {
+      type: "context.add",
+      kind: "style",
+      name: "doomed-style",
+      content: "remove me",
+      image: PNG_1x1,
+    });
+    // Wait until the lean projection exposes an imagePath for the entry.
+    const lean = await waitForState(
+      s,
+      (x) => {
+        const e = x.library.find((e) => e.name === "doomed-style");
+        return !!e && !!(e as unknown as Record<string, unknown>).imagePath;
+      },
+      true,
+    );
+    const entry = lean.library.find((e) => e.name === "doomed-style") as unknown as {
+      id: string;
+      imagePath: string;
+    };
+    const { id, imagePath } = entry;
+    expect(typeof imagePath).toBe("string");
+    expect(existsSync(imagePath)).toBe(true);
+
+    // Delete the entry via WebSocket and wait for it to leave the library.
+    const ws = await openWs(s);
+    ws.send({ type: "context.delete", id });
+    await waitForState(s, (x) => !x.library.some((e) => e.id === id));
+    ws.close();
+
+    // The materialized file must have been removed from disk.
+    expect(existsSync(imagePath)).toBe(false);
   });
 
   test("agent context.add upserts a style on name and link:'active' attaches it", async () => {

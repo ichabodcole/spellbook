@@ -847,6 +847,7 @@ function ReferenceDrawer({
   const [ctxDragging, setCtxDragging] = useState(false);
   // Whether the LibraryPicker is open for the active-context tray
   const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerTriggerRef = useRef<HTMLButtonElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // refs are Variants flagged refSelected — drawer is the "selected" tray.
@@ -1071,6 +1072,7 @@ function ReferenceDrawer({
             {/* "+ link" button — opens LibraryPicker */}
             <div className="relative shrink-0">
               <button
+                ref={pickerTriggerRef}
                 type="button"
                 title="Link a style to active context"
                 onClick={() => setPickerOpen((o) => !o)}
@@ -1081,6 +1083,7 @@ function ReferenceDrawer({
               </button>
               {pickerOpen && (
                 <LibraryPicker
+                  triggerRef={pickerTriggerRef}
                   library={state.library}
                   kind="style"
                   excludeIds={state.activeContextIds}

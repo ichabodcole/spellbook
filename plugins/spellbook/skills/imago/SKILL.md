@@ -112,7 +112,8 @@ ride the focused variant + `selectedRefIds`; `context.capture` rides the focus.
 **Where the shapes live:** an event's full payload and the `state` snapshot are
 the `AgentEventPayload` and `ImagoState` types in `surface/state/types.ts` (the
 single contract). That's where field names come from — and where you read the
-ambient board state (`state.focus`, `state.refs[].selected`, `state.library`
+ambient board state (`state.focus`, `state.batches[].variants[].refSelected`
+(selected refs are variants where `refSelected` is true), `state.library`
 (unified Context Library of `ContextEntry`), `state.activeContextIds` (styles
 linked to the active-context tray), `state.quickPromptIds` (quick-prompts linked
 to the composer), `state.aspect`/`size`) plus ids: `state.batches[].id`,
@@ -148,9 +149,9 @@ There's no phase pipeline — react to what the user does:
   active). A captured style carries words + a canonical example image. Active
   styles + selected refs are ambient context you fold into generation (see
   `references/mediaforge.md`). The user adds + selects refs on the board
-  (ambient, no event); read `state.refs[].selected` — or take the
-  `selectedRefIds` that ride `say`/`marks.commit` — and `--ref` them when you
-  generate.
+  (ambient, no event); read `state.batches[].variants[].refSelected` — or take
+  the `selectedRefIds` that ride `say`/`marks.commit` — and `--ref` them when
+  you generate.
 - Ambiguous? `ask "<question>" --options "…"` (in-thread), or `handoff` to the
   terminal for anything bigger. The terminal is always there — the surface
   doesn't have to carry every exchange.
