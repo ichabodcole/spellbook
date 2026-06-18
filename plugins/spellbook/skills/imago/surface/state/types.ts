@@ -439,7 +439,7 @@ export type AgentEventPayload = {
 
 const DEFAULT_STYLE_NAMES = ["anime", "painterly", "photoreal", "3d", "watercolor", "line art"];
 // deterministic, reproducible id so seeding/restore don't churn ids
-const styleId = (name: string) => `style-${name.trim().toLowerCase().replace(/\s+/g, "-")}`;
+export const styleId = (name: string) => `style-${name.trim().toLowerCase().replace(/\s+/g, "-")}`;
 
 const DEFAULT_PROMPTS: ContextEntry[] = [
   {

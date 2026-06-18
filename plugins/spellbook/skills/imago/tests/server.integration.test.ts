@@ -900,8 +900,11 @@ describe("restore backfills newer fields from an old snapshot", () => {
     const s = await spawnDaemon(["--restore", sid], { IMAGO_HOME: home });
     const st = await getState(s);
 
-    // backfilled from defaults — library has the 3 default prompts + 6 default styles
-    expect(st.quickPromptIds).toEqual(["describe", "palette", "lighting"]);
+    // legacy snapshot only had styles (no prompts key) → quickPromptIds reset to empty,
+    // not backfilled from defaults (the legacy styles array is the authoritative source)
+    expect(st.quickPromptIds).toEqual([]);
+    // the single legacy style ("anime") is present exactly once — no duplicate from defaults
+    expect(st.library.filter((e) => e.kind === "style" && e.name === "anime")).toHaveLength(1);
     // marksByVariant present; legacy global marks folded into the focused variant
     expect(st.marksByVariant).toBeDefined();
     expect(ids(st.marksByVariant.v1)).toEqual(["legacy1"]);
@@ -1079,6 +1082,14 @@ describe("restore backfills newer fields from an old snapshot", () => {
     // no leftover legacy fields
     expect((st as Record<string, unknown>).styles).toBeUndefined();
     expect((st as Record<string, unknown>).prompts).toBeUndefined();
+
+    // Fix-1 regression guard: legacy "anime" + "describe" collide with defaultState seeds;
+    // the migration must clear the default-seeded collections before rebuilding.
+    const ids = st.library.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length); // no duplicate ids in the library
+    expect(st.quickPromptIds.filter((id) => id === "describe")).toHaveLength(1);
+    // the migrated default style is not duplicated
+    expect(st.library.filter((e) => e.kind === "style" && e.name === "anime")).toHaveLength(1);
 
     rmSync(home, { recursive: true, force: true });
   });

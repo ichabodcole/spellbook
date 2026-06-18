@@ -45,6 +45,7 @@ import {
   MARK_TOOLS,
   type Mark,
   type Message,
+  styleId,
   type Variant,
 } from "../surface/state/types";
 
@@ -1311,14 +1312,23 @@ async function main(argv: string[]): Promise<number> {
       imagePath?: string;
     };
     type LegacyPrompt = { id: string; label: string; text: string };
-    state.library ??= [];
-    state.activeContextIds ??= [];
-    state.quickPromptIds ??= [];
+    const isLegacyContext =
+      Array.isArray((state as { styles?: unknown }).styles) ||
+      Array.isArray((state as { prompts?: unknown }).prompts);
+    if (isLegacyContext) {
+      state.library = [];
+      state.activeContextIds = [];
+      state.quickPromptIds = [];
+    } else {
+      state.library ??= [];
+      state.activeContextIds ??= [];
+      state.quickPromptIds ??= [];
+    }
     const legacyStyles = (state as { styles?: LegacyStyle[] }).styles;
     if (Array.isArray(legacyStyles)) {
       for (const st of legacyStyles) {
         const name = normStyle(st.name);
-        const id = `style-${name.replace(/\s+/g, "-")}`;
+        const id = styleId(name);
         state.library.push({
           id,
           kind: "style",
