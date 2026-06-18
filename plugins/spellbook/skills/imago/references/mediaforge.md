@@ -300,24 +300,24 @@ bun cli.ts batch --kind edit --edited-from <variantId> \
   --prompt "<the edit instruction>" "<resultUrl…>"
 ```
 
-**Styles are durable, toggleable CONTEXT — like selected references, not
-ask-shortcuts.** A style = a name + a `description` (the look in words) + a
-canonical `image` (which "anime": Akira vs Ghibli vs manga — the picture pins
-it). They live in the drawer's Styles tab; toggling one sets `active`. The
-`active` styles are **ambient context** (read from `/state`, not pinged per
-toggle — `style.toggle` is not in your wake set, same as `focus`/`like`):
+**Styles are durable, linkable CONTEXT — like selected references, not
+ask-shortcuts.** A captured style = a name + words (the look) + a canonical
+example image (which "anime": Akira vs Ghibli vs manga — the picture pins it).
+Styles live in the unified Context Library; the ones linked into the
+active-context tray are **ambient context** (read from `/state`, not pinged —
+linking/unlinking a style doesn't wake you, same as `focus`/`like`):
 
-- **At generation,** read `state.styles.filter(s => s.active)` and factor each
-  in — put its `description` into the prompt AND pass its `imagePath` as a
-  `--ref` (a captured style's canonical image is a style reference, same as a
-  selected content ref). Selected styles + selected refs stack as the
-  conditioning set.
-- **`style.capture`** (the user pointed at the focused image) → analyze it, then
-  define the style with BOTH the words and a canonical example:
-  `cli.ts style "<name>" --description "<the look>" --image "<focused variant path>"`.
-  Pick a SPECIFIC name when the look is specific ("ghibli-soft", "1920s-pulp"),
-  not just "anime". (Post-V1: generate a few candidates and let the user pick
-  the representative; for now the focused image IS the canonical example.)
+- **At generation,** read the active styles: resolve `state.activeContextIds`
+  against `state.library` (each entry is a `ContextEntry`; field names live in
+  `surface/state/types.ts`, the single contract). For each, put its words into
+  the prompt AND pass its canonical image as a `--ref` (a captured style's image
+  is a style reference, same as a selected content ref). Active styles +
+  selected refs stack as the conditioning set.
+- **Capturing a style is a wake event (`context.capture`)** handled in SKILL.md
+  — it gives the exact `context style … --link active` command and where each
+  argument comes from; don't restate it here. Pick a SPECIFIC name when the look
+  is specific ("ghibli-soft", "1920s-pulp"), not just "anime"; the focused image
+  IS the canonical example.
 - **Conflict-flag (a board rule).** If the user's ask contradicts an active
   style — e.g. "make this photorealistic" while `anime` is active — point it out
   (`cli.ts say "heads up — you've got anime selected; want me to drop it for this, or keep it?"`)
