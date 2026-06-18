@@ -79,9 +79,32 @@ context-pane prompt-card mislabel. Capture loop not live-walked (needs a focused
 generation); the button is correctly focus-gated and the event emission is
 unit-tested.
 
+## Review-round refinements (cole's live review, pre-merge)
+
+After the build, cole reviewed the running surface and asked for polish — all
+done live (HMR) + verified:
+
+- **Subtler linked-state:** dropped the text badges; cards show a leading kind
+  icon + a link/unlink toggle (`Link2` highlighted when linked, `Link2Off` when
+  not).
+- **Hover-reveal remove:** the tray remove control is back to an **X**, shown
+  **on hover only** (active-context chips + References tiles).
+- **Modal editing:** a shared `ContentModal` (portaled, roomy 10-row content
+  field) replaces the cramped inline create/edit forms in both the Context pane
+  and the composer quick-prompts — better for long prompts/styles (and future
+  skills).
+- **Picker bugs fixed:** the composer "Link from library" picker had a
+  reset-on-close bug, an open-then-flash (trigger caught as outside-click), and
+  a two-panel layout; the portal also regressed into a blank dropdown (its
+  anchor unmounted on open). Reworked `LibraryPicker` with an **inline mode** —
+  the composer renders it in-dropdown (no portal/anchor/outside-click conflict)
+  with a "back to quick prompts" control; the drawer keeps the portal. All
+  verified live (open → pick → back; create-via-modal persists + auto-links).
+
 ## Result
 
-107 tests pass (was 97 pre-feature). Tests, build, biome all green.
+107 tests pass (was 97 pre-feature). Tests, build, biome all green through the
+build phase and the review-round refinements.
 
 ## Deferred (non-blocking)
 
