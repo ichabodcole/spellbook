@@ -11,6 +11,7 @@ import {
   Redo2,
   Sparkles,
   Undo2,
+  WandSparkles,
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -1013,9 +1014,20 @@ function ReferenceDrawer({
             if (dragged) send({ type: "context.link", id: dragged.id, set: "active" });
           }}
         >
-          {/* section label + link button */}
+          {/* section label + capture button */}
           <div className="flex items-center gap-2 text-[11px] mb-1.5">
             <span className="text-ink font-medium">Active context</span>
+            {state.focus && (
+              <button
+                type="button"
+                title="Capture style from focused image"
+                onClick={() => send({ type: "context.capture" })}
+                className="flex items-center gap-0.5 text-faint hover:text-accent-ink transition-colors"
+              >
+                <WandSparkles className="w-3 h-3" />
+                <span>capture style</span>
+              </button>
+            )}
             {activeContextEntries.length > 0 && (
               <span className="ml-auto text-accent-ink">{activeContextEntries.length} linked</span>
             )}

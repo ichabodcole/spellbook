@@ -63,27 +63,26 @@ session. `help` prints the full surface.
 > session or a temp-dir cleanup can drop it. Re-target explicitly with
 > `--session <id>` (your id is in the `open` output, or run `sessions`).
 
-| Verb                                                                                                 | What it does                                                                                   |
-| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `open [--title ..] [--no-open] [--timeout S] [--restore <id\|path>]`                                 | Spawn the daemon (opens the browser); prints session JSON (`port`, `session_id`, `files_dir`)  |
-| `sessions`                                                                                           | List saved, resumable sessions                                                                 |
-| `tail [--since N]`                                                                                   | Stream user events as JSONL — **wrap with Monitor** (see below)                                |
-| `state [--full]`                                                                                     | State snapshot — **lean by default** (image blobs stripped); `--full` for raw                  |
-| `say <text…>`                                                                                        | Post your dialogue into the conversation                                                       |
-| `propose <prompt…> [--n N]`                                                                          | Propose a prompt for the user to send (a Send ×N card; N≤4)                                    |
-| `ask <text…> [--options "a\|b\|c"]`                                                                  | Ask the user a question, in-thread                                                             |
-| `batch [--kind generate\|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] <src…>` | Post a produced batch; each `src` = http url, `data:` url, or file path (inlined)              |
-| `focus <batchId> <variantId>`                                                                        | Put a variant on the canvas                                                                    |
-| `style <name…> [--description ..] [--image <path\|url>]`                                             | Define a captured style — look in words + a canonical image (a toggleable context, like a ref) |
-| `prompt --label <name> --text <prompt>`                                                              | Save a reusable quick-prompt to the library (the user picks it to fill their input box)        |
-| `status on [text…] \| status off`                                                                    | Toggle the "imago working" spinner                                                             |
-| `cost <text…>`                                                                                       | Set the cumulative-spend display                                                               |
-| `handoff <text…> \| handoff --clear`                                                                 | Raise/clear a "questions in your terminal" escalation                                          |
-| `close` / `info` / `help`                                                                            | End the session / print session JSON / usage                                                   |
+| Verb                                                                                                 | What it does                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `open [--title ..] [--no-open] [--timeout S] [--restore <id\|path>]`                                 | Spawn the daemon (opens the browser); prints session JSON (`port`, `session_id`, `files_dir`)                                                                                                                                                          |
+| `sessions`                                                                                           | List saved, resumable sessions                                                                                                                                                                                                                         |
+| `tail [--since N]`                                                                                   | Stream user events as JSONL — **wrap with Monitor** (see below)                                                                                                                                                                                        |
+| `state [--full]`                                                                                     | State snapshot — **lean by default** (image blobs stripped); `--full` for raw                                                                                                                                                                          |
+| `say <text…>`                                                                                        | Post your dialogue into the conversation                                                                                                                                                                                                               |
+| `propose <prompt…> [--n N]`                                                                          | Propose a prompt for the user to send (a Send ×N card; N≤4)                                                                                                                                                                                            |
+| `ask <text…> [--options "a\|b\|c"]`                                                                  | Ask the user a question, in-thread                                                                                                                                                                                                                     |
+| `batch [--kind generate\|edit] [--prompt ..] [--tag ..] [--edited-from <vid>] [--summary ..] <src…>` | Post a produced batch; each `src` = http url, `data:` url, or file path (inlined)                                                                                                                                                                      |
+| `focus <batchId> <variantId>`                                                                        | Put a variant on the canvas                                                                                                                                                                                                                            |
+| `context.add { kind, name, content, image?, tags?, link? }`                                          | Add or upsert a Context Library entry. `kind`: `"style"` or `"quickPrompt"`. Styles upsert on normalized name (case-insensitive). `link` attaches the entry into a set: `"active"` (active-context tray) or `"quickPrompts"` (composer quick-prompts). |
+| `status on [text…] \| status off`                                                                    | Toggle the "imago working" spinner                                                                                                                                                                                                                     |
+| `cost <text…>`                                                                                       | Set the cumulative-spend display                                                                                                                                                                                                                       |
+| `handoff <text…> \| handoff --clear`                                                                 | Raise/clear a "questions in your terminal" escalation                                                                                                                                                                                                  |
+| `close` / `info` / `help`                                                                            | End the session / print session JSON / usage                                                                                                                                                                                                           |
 
 The user adds **reference images** from the browser (drag-drop / attach) — you
-never add those. Everything else (dialogue, proposals, batches, focus, styles)
-you post.
+never add those. Everything else (dialogue, proposals, batches, focus, context
+library entries) you post.
 
 ## Run it push-based — Monitor the tail, don't poll
 
@@ -96,11 +95,11 @@ react statelessly, one event per turn). Wrap the tail and filter to the events
 that want a response:
 
 ```
-cli.ts tail --session <id> | grep -E '"type":"(say|proposal\.send|proposal\.dismiss|style\.capture|marks\.commit|submit)"'
+cli.ts tail --session <id> | grep -E '"type":"(say|proposal\.send|proposal\.dismiss|context\.capture|marks\.commit|submit)"'
 ```
 
 That grep IS the wake set. **Ambient board state never reaches the stream at
-all** — focus, ref selection, likes, style toggles, aspect/size, pins,
+all** — focus, ref selection, likes, context link/unlink, aspect/size, pins,
 ref-library adds, and image imports are pieces moving on the board, not
 requests: read them from `state` when you next act, don't reply per-move. (The
 grep also keeps the lifecycle pings `ready`/`connected`/`disconnected`/`closed`
@@ -108,13 +107,15 @@ from waking a response turn.)
 
 **The imperatives carry their board context** — so you know _which image_ (and
 which refs) a request is about without a separate read: `say` and `marks.commit`
-ride the focused variant + `selectedRefIds`; `style.capture` rides the focus.
+ride the focused variant + `selectedRefIds`; `context.capture` rides the focus.
 
 **Where the shapes live:** an event's full payload and the `state` snapshot are
 the `AgentEventPayload` and `ImagoState` types in `surface/state/types.ts` (the
 single contract). That's where field names come from — and where you read the
-ambient board state (`state.focus`, `state.refs[].selected`, `state.styles`,
-`state.aspect`/`size`) plus ids: `state.batches[].id`,
+ambient board state (`state.focus`, `state.refs[].selected`, `state.library`
+(unified Context Library of `ContextEntry`), `state.activeContextIds` (styles
+linked to the active-context tray), `state.quickPromptIds` (quick-prompts linked
+to the composer), `state.aspect`/`size`) plus ids: `state.batches[].id`,
 `state.batches[].variants[].id` (+ `.path` for the on-disk image). Notifications
 truncate; read the full payload from the tail line or from `state`. Polling only
 when you happen to check leaves the user waiting.
@@ -139,10 +140,13 @@ There's no phase pipeline — react to what the user does:
   emit events at all — read them from `state` when you next act (and `say` /
   `marks.commit` already carry the current focus + `selectedRefIds`); never
   reply per-move.
-- **`style.capture`** — analyze the focused image, then
-  `style "<name>" --description "<the look>" --image "<focused variant path>"` —
-  a captured style carries words + a canonical example. Active styles + selected
-  refs are ambient context you fold into generation (see
+- **`context.capture`** — the user clicked "capture style" on the focused image.
+  Analyze the focused image, then respond with the `context.add` command:
+  `context.add { kind: "style", name: "<name>", content: "<the look>", image: "<focused variant path>", link: "active" }`.
+  The `link:"active"` field auto-attaches the captured style to the
+  active-context tray (preserving the old behavior where captured styles became
+  active). A captured style carries words + a canonical example image. Active
+  styles + selected refs are ambient context you fold into generation (see
   `references/mediaforge.md`). The user adds + selects refs on the board
   (ambient, no event); read `state.refs[].selected` — or take the
   `selectedRefIds` that ride `say`/`marks.commit` — and `--ref` them when you
