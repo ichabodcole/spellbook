@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.7.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.6.0...spellbook-v1.7.0) (2026-06-18)
+
+
+### Features
+
+* **imago:** active-context tray (drag + picker) replaces the styles toggle tab ([a07bb17](https://github.com/ichabodcole/spellbook/commit/a07bb178f47624e20329f6f1f4daeadb13d81e50))
+* **imago:** composer quick-prompts read the quickPrompts linked set (create+link, unlink) ([048e84f](https://github.com/ichabodcole/spellbook/commit/048e84fe5d0ca3c18083ee130d877dd96dc2cdfc))
+* **imago:** context library server handlers (add/update/delete/link/unlink/capture) ([e159b92](https://github.com/ichabodcole/spellbook/commit/e159b925aca4d4d70bda88060f7acbfbeb103233))
+* **imago:** migrate CLI style/prompt verbs → unified context verb ([2c82490](https://github.com/ichabodcole/spellbook/commit/2c824907ad93d13714a10bb748103ee8ead49bb2))
+* **imago:** pure context-library helpers (resolveSet/entriesByKind/isLinked) ([c6e3004](https://github.com/ichabodcole/spellbook/commit/c6e3004cc797feab38a2c6f35d04f73ff97d091a))
+* **imago:** replace inline create/edit forms with ContentModal ([5bce9e3](https://github.com/ichabodcole/spellbook/commit/5bce9e3cdec2595745b62db13e2dbeae7d1f87f0))
+* **imago:** restore migration folds legacy styles/prompts into the context library ([5f7fb41](https://github.com/ichabodcole/spellbook/commit/5f7fb411aedd1d85f0c4fdb22d38e07b5b783ae4))
+* **imago:** reusable LibraryPicker for linking entries from the library ([40bb24f](https://github.com/ichabodcole/spellbook/commit/40bb24ffdc04ae434574c02d53d8441f0a6717f7))
+* **imago:** rewire style capture to context.capture + update agent contract docs ([a26ebce](https://github.com/ichabodcole/spellbook/commit/a26ebce01eadfce1b7b675399dce0653c37e56ef))
+* **imago:** subtler icon-based link state on context library cards + tray chip ([984e29e](https://github.com/ichabodcole/spellbook/commit/984e29e3567585d4ae5411d3cb884da3968d128e))
+* **imago:** unify styles+prompts into ContextEntry library (contract + lean) ([fb9cdc8](https://github.com/ichabodcole/spellbook/commit/fb9cdc854e180362507475beddd17a951acd42c7))
+* **imago:** vertical library switcher + context library pane ([54e7960](https://github.com/ichabodcole/spellbook/commit/54e7960a622b158f1762e952e2371c5086b1c1d2))
+
+
+### Bug Fixes
+
+* **imago:** clear default-seeded library before migrating legacy snapshot ([a79899e](https://github.com/ichabodcole/spellbook/commit/a79899e030dc0fb39f8b0331609f9ac675d0d92c))
+* **imago:** inline quick-prompts picker (fix blank-dropdown regression) + hover-reveal tray X + unlinked icon ([96c5ef1](https://github.com/ichabodcole/spellbook/commit/96c5ef1cb2dbffc41c3fdb4c2e95d4d2eb37cdb9))
+* **imago:** LibraryPicker portal, kind-aware labels, disk cleanup on delete, SKILL.md ref drift ([98ff7a5](https://github.com/ichabodcole/spellbook/commit/98ff7a54364feb2c0d6bbd77ce085a9dbf8ab4ad))
+* **imago:** repair three QuickPrompts/LibraryPicker composer bugs ([bbff8b9](https://github.com/ichabodcole/spellbook/commit/bbff8b957919caffb065cc23f5759c8533d7ae1b))
+* **imago:** unlinked link-toggle hover uses text-ink (text-body is a composite, no hover variant) ([9eb6344](https://github.com/ichabodcole/spellbook/commit/9eb63448df2cf6a7d5101461beeb2b40477136f0))
+
 ## [1.6.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.5.0...spellbook-v1.6.0) (2026-06-17)
 
 
