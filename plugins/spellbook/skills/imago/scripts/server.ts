@@ -1301,11 +1301,59 @@ async function main(argv: string[]): Promise<number> {
     }
     delete (state as { refs?: unknown }).refs;
 
+    // context-library migration: legacy styles[]/prompts[] → unified library + sets.
+    type LegacyStyle = {
+      name: string;
+      active?: boolean;
+      captured?: boolean;
+      description?: string;
+      image?: string;
+      imagePath?: string;
+    };
+    type LegacyPrompt = { id: string; label: string; text: string };
+    state.library ??= [];
+    state.activeContextIds ??= [];
+    state.quickPromptIds ??= [];
+    const legacyStyles = (state as { styles?: LegacyStyle[] }).styles;
+    if (Array.isArray(legacyStyles)) {
+      for (const st of legacyStyles) {
+        const name = normStyle(st.name);
+        const id = `style-${name.replace(/\s+/g, "-")}`;
+        state.library.push({
+          id,
+          kind: "style",
+          name,
+          content: st.description ?? "",
+          image: st.image,
+          imagePath: st.imagePath,
+          captured: st.captured,
+        });
+        if (st.active) state.activeContextIds.push(id);
+      }
+    }
+    const legacyPrompts = (state as { prompts?: LegacyPrompt[] }).prompts;
+    if (Array.isArray(legacyPrompts)) {
+      for (const p of legacyPrompts) {
+        state.library.push({
+          id: p.id,
+          kind: "prompt",
+          name: p.label,
+          content: p.text,
+        });
+        state.quickPromptIds.push(p.id);
+      }
+    }
+    delete (state as { styles?: unknown }).styles;
+    delete (state as { prompts?: unknown }).prompts;
+
     for (const b of state.batches) {
       for (const v2 of b.variants) {
         if (v2.src) v2.path = saveDataUrl(sessionFilesDir, v2.id, v2.src) || v2.path;
         if (v2.analysis === undefined) v2.analysis = ""; // backfill pre-analysis snapshots
       }
+    }
+    for (const e of state.library) {
+      if (e.image) e.imagePath = saveDataUrl(sessionFilesDir, e.id, e.image) || e.imagePath;
     }
     // Migrate pre-durability snapshots: a legacy global `marks` array → the
     // focused variant's bucket. Then normalize zOrder within each bucket.

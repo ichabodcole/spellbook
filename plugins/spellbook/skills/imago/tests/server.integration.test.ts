@@ -1031,6 +1031,57 @@ describe("restore backfills newer fields from an old snapshot", () => {
 
     rmSync(home, { recursive: true, force: true });
   });
+
+  test("restore migrates legacy styles[]/prompts[] into the unified library", async () => {
+    const home = mkdtempSync(join(tmpdir(), "imago-home-"));
+    const sessionId = "legacy-ctx";
+    const snapDir = join(home, "snapshots"); // match the daemon's snapshot dir layout
+    mkdirSync(snapDir, { recursive: true });
+    const legacy = {
+      title: "old",
+      batches: [],
+      focus: null,
+      conversation: [],
+      styles: [
+        { name: "anime", active: false },
+        {
+          name: "ghibli",
+          active: true,
+          captured: true,
+          description: "soft",
+          image: PNG_1x1,
+        },
+      ],
+      prompts: [{ id: "describe", label: "describe", text: "Describe it." }],
+      pins: [],
+      marksByVariant: {},
+      layersByVariant: {},
+      analysisCache: {},
+      aspect: "1:1",
+      size: "1K",
+      status: { busy: false, text: "" },
+      cost: "",
+      handoff: "",
+      history: { canUndo: false, canRedo: false },
+      marksUnseen: false,
+    };
+    writeFileSync(join(snapDir, `${sessionId}.json`), JSON.stringify(legacy));
+    const s = await spawnDaemon(["--restore", sessionId], { IMAGO_HOME: home });
+    const st = await getState(s);
+    // prompt id preserved + surfaced
+    expect(st.library.find((e) => e.id === "describe")?.kind).toBe("prompt");
+    expect(st.quickPromptIds).toContain("describe");
+    // styles migrated; the active one is attached
+    const ghibli = st.library.find((e) => e.kind === "style" && e.name === "ghibli");
+    if (!ghibli) throw new Error("ghibli style missing from library");
+    expect(ghibli.content).toBe("soft");
+    expect(st.activeContextIds).toContain(ghibli.id);
+    // no leftover legacy fields
+    expect((st as Record<string, unknown>).styles).toBeUndefined();
+    expect((st as Record<string, unknown>).prompts).toBeUndefined();
+
+    rmSync(home, { recursive: true, force: true });
+  });
 });
 
 // Read the current event cursor from /state (so collectEvents can start AFTER
