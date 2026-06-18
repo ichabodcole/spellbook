@@ -9,7 +9,7 @@ cross-spell imports, no build step.
 | `digestify` | cantrip     | A one-shot reading/review surface with inline questions.    |
 | `grapevine` | conjuration | A standing daemon for agent-to-agent channels.              |
 | `bounty`    | conjuration | A live duplex Kanban board (human ↔ agent, real-time).      |
-| `magpie`    | conjuration | An image surface — drop an image, the agent orchestrates.   |
+| `magpie`    | cantrip     | Extract individual assets from a composite image into PNGs. |
 | `glamour`   | conjuration | A style studio — references in, re-castable style spec out. |
 | `imago`     | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.   |
 
