@@ -18,9 +18,12 @@
 //   - undo/redo peel/replay; a fresh add after undo clears redo; history flags
 //   - marksUnseen freshness: a mark edit sets it; commit clears it; a plain say
 //     without unseen marks does not re-attach
-//   - style.add materializes imagePath; lean strips the blob; toggle/remove
-//   - prompt.add/update/remove CRUD round-trip
-//   - restore backfills newer fields (prompts, marksByVariant) from an old snapshot
+//   - context.add creates a library entry; link puts it in a set
+//   - context.link/unlink toggles set membership; entry survives unlink
+//   - context.delete removes from library AND every set
+//   - agent context.add upserts a style on name; link attaches it
+//   - context.capture emits the agent event with the focus
+//   - restore backfills newer fields (library, marksByVariant) from an old snapshot
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
@@ -725,15 +728,15 @@ describe("agent event contract", () => {
     ws.close();
   });
 
-  test("style.capture carries the focused variant", async () => {
+  test("context.capture carries the focused variant", async () => {
     const s = await spawnDaemon();
     const { variantId } = await seedFocusedVariant(s);
     const ws = await openWs(s);
 
     const cursor = (await fetchCursor(s)) - 1;
-    const evP = collectEvents(s, cursor, (e) => e.type === "style.capture");
-    ws.send({ type: "style.capture" });
-    const cap = (await evP).find((e) => e.type === "style.capture") as
+    const evP = collectEvents(s, cursor, (e) => e.type === "context.capture");
+    ws.send({ type: "context.capture" });
+    const cap = (await evP).find((e) => e.type === "context.capture") as
       | { focus?: { variantId?: string } }
       | undefined;
 
@@ -742,83 +745,117 @@ describe("agent event contract", () => {
   });
 });
 
-// ── styles ─────────────────────────────────────────────────────────────────────
+// ── context library ───────────────────────────────────────────────────────────
 
-describe("style.add / toggle / remove", () => {
-  test("style.add materializes imagePath; lean strips the image blob", async () => {
-    const s = await spawnDaemon();
-    await postCmd(s, {
-      type: "style.add",
-      name: "Ghibli",
-      description: "soft painterly anime",
-      image: PNG_1x1,
-    });
-    const st = await waitForState(s, (x) => x.styles.some((y) => y.name === "ghibli"));
-    const full = st.styles.find((y) => y.name === "ghibli");
-    if (!full) throw new Error("ghibli style missing");
-    expect(full.captured).toBe(true);
-    expect(full.active).toBe(true);
-    expect(full.description).toBe("soft painterly anime");
-    expect(typeof full.imagePath).toBe("string");
-    expect((full.imagePath ?? "").length).toBeGreaterThan(0);
-    expect(full.image).toContain("data:"); // blob present in canonical state
-
-    const lean = await getState(s, true);
-    const leanStyle = lean.styles.find((y) => y.name === "ghibli");
-    expect(leanStyle?.image).toBeUndefined(); // stripped in the agent projection
-    expect(leanStyle?.imagePath).toBe(full.imagePath); // path survives
-  });
-
-  test("style.toggle flips active; style.remove drops it", async () => {
+describe("context library — add / link / unlink / delete", () => {
+  test("context.add creates a library entry; link puts it in a set", async () => {
     const s = await spawnDaemon();
     const ws = await openWs(s);
-
-    // toggle a default style on, then off
-    ws.send({ type: "style.toggle", name: "anime" });
-    let st = await waitForState(
-      s,
-      (x) => x.styles.find((y) => y.name === "anime")?.active === true,
-    );
-    expect(st.styles.find((y) => y.name === "anime")?.active).toBe(true);
-    ws.send({ type: "style.toggle", name: "anime" });
-    st = await waitForState(s, (x) => x.styles.find((y) => y.name === "anime")?.active === false);
-    expect(st.styles.find((y) => y.name === "anime")?.active).toBe(false);
-
-    // remove a style → gone from the catalog
-    ws.send({ type: "style.remove", name: "watercolor" });
-    st = await waitForState(s, (x) => !x.styles.some((y) => y.name === "watercolor"));
-    expect(st.styles.some((y) => y.name === "watercolor")).toBe(false);
+    ws.send({
+      type: "context.add",
+      kind: "prompt",
+      name: "moody",
+      content: "make it moody",
+      link: "quickPrompts",
+    });
+    const st = await waitForState(s, (x) => x.library.some((e) => e.name === "moody"));
+    const entry = st.library.find((e) => e.name === "moody");
+    if (!entry) throw new Error("moody entry missing");
+    expect(entry.kind).toBe("prompt");
+    expect(entry.content).toBe("make it moody");
+    expect(st.quickPromptIds).toContain(entry.id);
     ws.close();
   });
-});
 
-// ── prompts CRUD ─────────────────────────────────────────────────────────────
-
-describe("prompt.add / update / remove", () => {
-  test("CRUD round-trips in state.prompts", async () => {
+  test("context.link/unlink toggles set membership; idempotent; entry survives unlink", async () => {
     const s = await spawnDaemon();
     const ws = await openWs(s);
+    ws.send({
+      type: "context.add",
+      kind: "style",
+      name: "noir",
+      content: "high contrast b&w",
+    });
+    const added = await waitForState(s, (x) => x.library.some((e) => e.name === "noir"));
+    const noirEntry = added.library.find((e) => e.name === "noir");
+    if (!noirEntry) throw new Error("noir entry missing");
+    const id = noirEntry.id;
+    ws.send({ type: "context.link", id, set: "active" });
+    ws.send({ type: "context.link", id, set: "active" }); // idempotent
+    let st = await waitForState(s, (x) => x.activeContextIds.includes(id));
+    expect(st.activeContextIds.filter((x) => x === id)).toHaveLength(1);
+    ws.send({ type: "context.unlink", id, set: "active" });
+    st = await waitForState(s, (x) => !x.activeContextIds.includes(id));
+    expect(st.library.some((e) => e.id === id)).toBe(true); // unlink ≠ delete
+    ws.close();
+  });
 
-    ws.send({ type: "prompt.add", label: "cinematic", text: "shot on 35mm, shallow depth" });
-    let st = await waitForState(s, (x) => x.prompts.some((p) => p.label === "cinematic"));
-    const added = st.prompts.find((p) => p.label === "cinematic");
-    if (!added) throw new Error("added prompt missing");
-    expect(added.text).toBe("shot on 35mm, shallow depth");
-    expect(typeof added.id).toBe("string");
+  test("context.delete removes from library AND every set", async () => {
+    const s = await spawnDaemon();
+    const ws = await openWs(s);
+    ws.send({
+      type: "context.add",
+      kind: "prompt",
+      name: "doomed",
+      content: "x",
+      link: "quickPrompts",
+    });
+    const added = await waitForState(s, (x) => x.library.some((e) => e.name === "doomed"));
+    const doomedEntry = added.library.find((e) => e.name === "doomed");
+    if (!doomedEntry) throw new Error("doomed entry missing");
+    const id = doomedEntry.id;
+    ws.send({ type: "context.delete", id });
+    const st = await waitForState(s, (x) => !x.library.some((e) => e.id === id));
+    expect(st.quickPromptIds).not.toContain(id);
+    ws.close();
+  });
 
-    ws.send({ type: "prompt.update", id: added.id, label: "cine", text: "anamorphic, 2.39:1" });
-    st = await waitForState(s, (x) =>
-      x.prompts.some((p) => p.id === added.id && p.label === "cine"),
+  test("agent context.add upserts a style on name and link:'active' attaches it", async () => {
+    const s = await spawnDaemon();
+    await postCmd(s, {
+      type: "context.add",
+      kind: "style",
+      name: "Ghibli",
+      content: "soft",
+      image: PNG_1x1,
+      link: "active",
+    });
+    const st = await waitForState(s, (x) =>
+      x.library.some((e) => e.kind === "style" && e.name === "ghibli"),
     );
-    const updated = st.prompts.find((p) => p.id === added.id);
-    expect(updated?.label).toBe("cine");
-    expect(updated?.text).toBe("anamorphic, 2.39:1");
+    const style = st.library.find((e) => e.kind === "style" && e.name === "ghibli");
+    if (!style) throw new Error("ghibli style missing");
+    expect(st.activeContextIds).toContain(style.id);
+    // re-add same name → upsert (no duplicate), updates content
+    await postCmd(s, {
+      type: "context.add",
+      kind: "style",
+      name: "ghibli",
+      content: "soft painterly",
+    });
+    const st2 = await waitForState(
+      s,
+      (x) => x.library.find((e) => e.id === style.id)?.content === "soft painterly",
+    );
+    expect(st2.library.filter((e) => e.kind === "style" && e.name === "ghibli")).toHaveLength(1);
+    // lean strips the image blob, keeps imagePath
+    const lean = await getState(s, true);
+    const leanStyle = lean.library.find((e) => e.id === style.id) as Record<string, unknown>;
+    expect(leanStyle.image).toBeUndefined();
+    expect(typeof leanStyle.imagePath).toBe("string");
+  });
 
-    ws.send({ type: "prompt.remove", id: added.id });
-    st = await waitForState(s, (x) => !x.prompts.some((p) => p.id === added.id));
-    expect(st.prompts.some((p) => p.id === added.id)).toBe(false);
-    // the 3 defaults remain
-    expect(st.prompts).toHaveLength(3);
+  test("context.capture emits the agent event with the focus", async () => {
+    const s = await spawnDaemon();
+    const { batchId, variantId } = await seedFocusedVariant(s);
+    const cursor = (await fetchCursor(s)) - 1;
+    const evP = collectEvents(s, cursor, (e) => e.type === "context.capture");
+    const ws = await openWs(s);
+    ws.send({ type: "context.capture" });
+    const ev = (await evP).find((e) => e.type === "context.capture") as
+      | { focus?: { batchId?: string; variantId?: string } }
+      | undefined;
+    expect(ev?.focus).toEqual({ batchId, variantId });
     ws.close();
   });
 });
@@ -863,8 +900,8 @@ describe("restore backfills newer fields from an old snapshot", () => {
     const s = await spawnDaemon(["--restore", sid], { IMAGO_HOME: home });
     const st = await getState(s);
 
-    // backfilled from defaults
-    expect(st.prompts.map((p) => p.id)).toEqual(["describe", "palette", "lighting"]);
+    // backfilled from defaults — library has the 3 default prompts + 6 default styles
+    expect(st.quickPromptIds).toEqual(["describe", "palette", "lighting"]);
     // marksByVariant present; legacy global marks folded into the focused variant
     expect(st.marksByVariant).toBeDefined();
     expect(ids(st.marksByVariant.v1)).toEqual(["legacy1"]);
