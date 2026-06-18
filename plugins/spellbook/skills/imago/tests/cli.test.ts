@@ -48,3 +48,45 @@ test("mixed forms + positionals in one line", () => {
   expect(flags["edited-from"]).toBe("v-123");
   expect(pos).toEqual(["https://x/0.png", "https://x/1.png"]);
 });
+
+// context verb — builds the right context.add message shape via parseArgs
+test("context verb: style with content, image, and link parses correctly", () => {
+  const { pos, flags } = parseArgs([
+    "style",
+    "noir",
+    "--content=high contrast b&w",
+    "--image=/tmp/v-1.webp",
+    "--link=active",
+  ]);
+  // pos[0] is the kind; pos[1..] join into the name
+  expect(pos[0]).toBe("style");
+  expect(pos.slice(1).join(" ")).toBe("noir");
+  expect(flags.content).toBe("high contrast b&w");
+  expect(flags.image).toBe("/tmp/v-1.webp");
+  expect(flags.link).toBe("active");
+});
+
+test("context verb: prompt with quickPrompts link parses correctly", () => {
+  const { pos, flags } = parseArgs([
+    "prompt",
+    "describe",
+    "--content=Describe what you see in detail",
+    "--link=quickPrompts",
+  ]);
+  expect(pos[0]).toBe("prompt");
+  expect(pos.slice(1).join(" ")).toBe("describe");
+  expect(flags.content).toBe("Describe what you see in detail");
+  expect(flags.link).toBe("quickPrompts");
+});
+
+test("context verb: tags flag splits into array candidates", () => {
+  const { flags } = parseArgs(["--tags=cinematic,moody,dark"]);
+  // The CLI splits on commas; verify the raw flag value is correct pre-split
+  expect(flags.tags).toBe("cinematic,moody,dark");
+  // Simulate the CLI's split logic
+  const tags = (flags.tags as string)
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  expect(tags).toEqual(["cinematic", "moody", "dark"]);
+});

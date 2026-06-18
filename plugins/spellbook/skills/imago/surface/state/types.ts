@@ -387,7 +387,7 @@ export type AgentCommand =
 // pieces moving on the board; the agent READS them from /state when it's its move,
 // it does not get pinged on every toggle (that was just noise). To make that safe,
 // the imperatives that are "about an image" carry their board context: `say` and
-// `marks.commit` ride the focused variant + selected ref ids; `style.capture`
+// `marks.commit` ride the focused variant + selected ref ids; `context.capture`
 // rides the focus. Incremental annotation (mark.add/marks.clear) is likewise NOT
 // here — the agent reacts when the user COMMITS marks, not on every stroke.
 export const AGENT_EVENT_TYPES = Object.freeze([
