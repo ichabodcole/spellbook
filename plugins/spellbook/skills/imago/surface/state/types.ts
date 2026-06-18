@@ -86,25 +86,25 @@ export type Message = {
 // look. `captured` marks ones extracted from an image (the catalog loop-closer).
 // `name` is the key — normalized (trimmed, lowercased) on write so casing /
 // whitespace can't create duplicates.
-// A reusable style — durable, toggleable CONTEXT (like a selected reference, not
-// an ask-shortcut): when `active`, the agent factors it into generation. A
-// captured style carries a `description` (the look in words) AND a canonical
-// `image` (which "anime" — Akira vs Ghibli vs manga; the picture pins it). The
-// agent reads `description` + `imagePath` at generate time, like a selected ref.
-export type StyleEntry = {
+// A unified, reusable piece of textual agent-context. `kind` drives behavior +
+// default filter (a style materializes an image + acts as ambient context; a
+// prompt fills the composer) but is NOT a hard router — membership in a linked
+// set (see ImagoState.activeContextIds / quickPromptIds) is what surfaces it.
+// `tags` carry cross-kind findability. No `archived`: removal from a site is an
+// unlink; the only destroy is context.delete on the library.
+export type ContextKind = "prompt" | "style" | "skill" | "context";
+export type ContextEntry = {
+  id: string;
+  kind: ContextKind;
   name: string;
-  active: boolean;
-  captured?: boolean;
-  description?: string; // the agent's read of the look, in words
-  image?: string; // base64 canonical example (stripped in the lean agent projection)
-  imagePath?: string; // on-disk canonical image the agent can --ref
+  content: string;
+  tags?: string[];
+  image?: string; // base64 identity image (stripped in the lean agent projection)
+  imagePath?: string; // on-disk materialized image the agent can --ref
+  captured?: boolean; // style-only: extracted from an image
 };
-
-// A reusable quick-prompt: a named snippet that populates the composer (the
-// describe/palette/lighting "lenses" generalized into an editable library). The
-// user OR the agent can add/edit/remove; picking one fills the input box (a
-// shortcut for language — never fires behind the glass). Surfaced as a dropdown.
-export type PromptEntry = { id: string; label: string; text: string };
+// The named linked sets over `library` (the consumption sites).
+export type ContextSet = "active" | "quickPrompts";
 
 // A value the user pins to lock for the next generate (agent picks the rest).
 export type Pin = { key: string; value: string };
@@ -208,8 +208,9 @@ export type ImagoState = {
   batches: Batch[];
   focus: Focus | null; // the image on the canvas (null = blank "new" frame)
   conversation: Message[];
-  styles: StyleEntry[];
-  prompts: PromptEntry[]; // reusable quick-prompts (the editable lens library)
+  library: ContextEntry[]; // the unified, passive context catalog (styles + quick-prompts; skill/context reserved)
+  activeContextIds: string[]; // styles attached to the NEXT generation (the active-context tray)
+  quickPromptIds: string[]; // prompts surfaced in the composer quick-prompts list (a curated subset)
   pins: Pin[];
   marksByVariant: Record<string, Mark[]>; // durable annotation marks per variant id
   // CONTAINER metadata per variant: an ordered list of Layers (back→front) that
@@ -266,12 +267,20 @@ export type ClientToServer =
   | { type: "focus.clear" } // back to a blank "new" frame
   | { type: "variant.like"; id: string; liked: boolean }
   | { type: "variant.remove"; batchId: string; variantId: string } // delete a variant from the library (+ its marks/layers; drops the batch when empty); ambient (no agent event)
-  | { type: "style.toggle"; name: string }
-  | { type: "style.remove"; name: string } // drop a style from the catalog
-  | { type: "style.capture" } // ask the agent to extract this image's look
-  | { type: "prompt.add"; label: string; text: string } // add a reusable quick-prompt (server assigns id)
-  | { type: "prompt.update"; id: string; label: string; text: string }
-  | { type: "prompt.remove"; id: string }
+  | {
+      type: "context.add";
+      kind: ContextKind;
+      name: string;
+      content: string;
+      tags?: string[];
+      image?: string;
+      link?: ContextSet;
+    }
+  | { type: "context.update"; id: string; name?: string; content?: string; tags?: string[] }
+  | { type: "context.delete"; id: string } // the ONLY destroy (guarded by a UI confirm)
+  | { type: "context.link"; id: string; set: ContextSet } // add to a linked set
+  | { type: "context.unlink"; id: string; set: ContextSet } // remove from a linked set (the everyday ✕)
+  | { type: "context.capture" } // capture a style from the focused image
   | { type: "pin.add"; key: string; value: string }
   | { type: "pin.remove"; key: string }
   | { type: "ref.add"; image: { src: string; name?: string } } // import an external image as a variant + select it as a ref (dedup by hash → selects the existing one)
@@ -356,15 +365,14 @@ export type AgentCommand =
   // (ref.analyze removed — write a read onto any image via variant.analyze; refs are variants now)
   | { type: "variant.analyze"; id: string; text: string } // write your read onto a generated/imported image
   | {
-      // add/define a captured style in the catalog (the response to style.capture):
-      // a name + the look in words + a canonical example image (src → server
-      // materializes a path). Re-defining an existing name updates it.
-      type: "style.add";
+      type: "context.add";
+      kind: ContextKind;
       name: string;
-      description?: string;
-      image?: string; // base64 data-url; server saves it + sets imagePath
+      content: string;
+      tags?: string[];
+      image?: string;
+      link?: ContextSet;
     }
-  | { type: "prompt.add"; label: string; text: string } // save a reusable quick-prompt to the library
   | { type: "status"; busy: boolean; text?: string }
   | { type: "cost"; text: string }
   | { type: "handoff"; text: string } // "" clears (terminal-ask escape)
@@ -379,7 +387,7 @@ export type AgentCommand =
 // pieces moving on the board; the agent READS them from /state when it's its move,
 // it does not get pinged on every toggle (that was just noise). To make that safe,
 // the imperatives that are "about an image" carry their board context: `say` and
-// `marks.commit` ride the focused variant + selected ref ids; `style.capture`
+// `marks.commit` ride the focused variant + selected ref ids; `context.capture`
 // rides the focus. Incremental annotation (mark.add/marks.clear) is likewise NOT
 // here — the agent reacts when the user COMMITS marks, not on every stroke.
 export const AGENT_EVENT_TYPES = Object.freeze([
@@ -389,7 +397,7 @@ export const AGENT_EVENT_TYPES = Object.freeze([
   "say",
   "proposal.send",
   "proposal.dismiss",
-  "style.capture",
+  "context.capture",
   "marks.commit",
   "submit",
   "closed",
@@ -416,7 +424,7 @@ export type AgentEventPayload = {
   "proposal.dismiss": { id: string };
   // "extract this image's look" — carries the focused variant so the agent knows
   // which image to read (focus.set no longer notifies).
-  "style.capture": { focus: Focus | null };
+  "context.capture": { focus: Focus | null };
   "marks.commit": {
     text: string;
     batchId: string;
@@ -429,34 +437,28 @@ export type AgentEventPayload = {
   };
 };
 
-// The default catalog — clicking a chip tells the agent to apply its technique
-// for that look (not just append a keyword).
-const DEFAULT_STYLES: StyleEntry[] = [
-  { name: "anime", active: false },
-  { name: "painterly", active: false },
-  { name: "photoreal", active: false },
-  { name: "3d", active: false },
-  { name: "watercolor", active: false },
-  { name: "line art", active: false },
-];
+const DEFAULT_STYLE_NAMES = ["anime", "painterly", "photoreal", "3d", "watercolor", "line art"];
+// deterministic, reproducible id so seeding/restore don't churn ids
+export const styleId = (name: string) => `style-${name.trim().toLowerCase().replace(/\s+/g, "-")}`;
 
-// The default quick-prompt library — the old describe/palette/lighting lenses,
-// now editable. Stable ids so they survive restarts.
-const DEFAULT_PROMPTS: PromptEntry[] = [
+const DEFAULT_PROMPTS: ContextEntry[] = [
   {
     id: "describe",
-    label: "describe",
-    text: "Describe this image in detail — literally what is in it.",
+    kind: "prompt",
+    name: "describe",
+    content: "Describe this image in detail — literally what is in it.",
   },
   {
     id: "palette",
-    label: "palette",
-    text: "Break down the color palette — the key colors and how they work together.",
+    kind: "prompt",
+    name: "palette",
+    content: "Break down the color palette — the key colors and how they work together.",
   },
   {
     id: "lighting",
-    label: "lighting",
-    text: "Describe the lighting — direction, quality, mood — so I can reuse it.",
+    kind: "prompt",
+    name: "lighting",
+    content: "Describe the lighting — direction, quality, mood — so I can reuse it.",
   },
 ];
 
@@ -466,8 +468,17 @@ export function defaultState(title: string): ImagoState {
     batches: [],
     focus: null,
     conversation: [],
-    styles: DEFAULT_STYLES.map((s) => ({ ...s })),
-    prompts: DEFAULT_PROMPTS.map((p) => ({ ...p })),
+    library: [
+      ...DEFAULT_PROMPTS.map((p) => ({ ...p })),
+      ...DEFAULT_STYLE_NAMES.map((name) => ({
+        id: styleId(name),
+        kind: "style" as const,
+        name,
+        content: "",
+      })),
+    ],
+    activeContextIds: [],
+    quickPromptIds: DEFAULT_PROMPTS.map((p) => p.id),
     pins: [],
     marksByVariant: {},
     layersByVariant: {},

@@ -15,12 +15,14 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { resolveSet } from "../state/contextLibrary";
 import { focusedVariant, variantLabel } from "../state/derive";
 import {
   addImageLayerFiles,
   addImageLayerFromSrc,
   importFiles,
   processFiles,
+  readContextDrag,
   readImagoDrag,
 } from "../state/fileIntake";
 import {
@@ -37,6 +39,7 @@ import { flattenMarks } from "./annotations/flatten";
 import { DEFAULT_DRAW_STYLE, type DrawStyle } from "./annotations/style";
 import { TOOL_REGISTRY } from "./annotations/tools/registry";
 import { LayersPanel } from "./LayersPanel";
+import { LibraryPicker } from "./LibraryPicker";
 
 function frameDims(aspect: string): { w: number; h: number } {
   const [w, h] = (aspect.split(":").map(Number) as [number, number]) ?? [1, 1];
@@ -827,9 +830,10 @@ export function Canvas({ state, send }: { state: ImagoState; send: (m: ClientToS
 }
 
 // The reference drawer — a full-width strip pinned to the bottom of the canvas
-// pane. The "selected for the next generation" tray: it shows the variants flagged
-// refSelected; a forgiving drop target (and click-to-add) imports + selects new
-// references via ref.add. ✕ deselects (ref.remove); the image stays in the Library.
+// pane. Two mirrored sections side-by-side:
+//   Left: References tray (variants flagged refSelected; drop images to select).
+//   Right: Active-context tray (context-library styles linked as "active"; drag or
+//          picker to link, ✕ to unlink).
 function ReferenceDrawer({
   state,
   send,
@@ -837,17 +841,26 @@ function ReferenceDrawer({
   state: ImagoState;
   send: (m: ClientToServer) => void;
 }) {
-  const [dragging, setDragging] = useState(false);
-  const [activeTab, setActiveTab] = useState<"references" | "styles">("references");
+  // References tray drag state
+  const [refDragging, setRefDragging] = useState(false);
+  // Active-context tray drag state
+  const [ctxDragging, setCtxDragging] = useState(false);
+  // Whether the LibraryPicker is open for the active-context tray
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerTriggerRef = useRef<HTMLButtonElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
-  // refs are now Variants flagged refSelected — the drawer is the "selected" tray
-  // (browse all images in the Library; Phase-2 adds a References filter facet).
+
+  // refs are Variants flagged refSelected — drawer is the "selected" tray.
   const refVariants = state.batches.flatMap((b) => b.variants).filter((v) => v.refSelected);
   const selectedCount = refVariants.length;
-  const activeStyleCount = state.styles.filter((s) => s.active).length;
+
+  // Active context entries (style kind, resolved from library by id list)
+  const activeContextEntries = resolveSet(state.library, state.activeContextIds);
+
   // the focused image a reference can be composited onto (undefined on the blank
   // frame → the "add as layer" affordance is hidden).
   const focusedSrc = focusedVariant(state)?.src;
+
   // The analysis popover, anchored to the badge that opened it (fixed-positioned
   // so it escapes the drawer's overflow clipping). Keyed by ref id so it closes
   // itself if that ref is removed while open.
@@ -860,84 +873,63 @@ function ReferenceDrawer({
     : undefined;
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: drag-drop file zone
-    <div
-      className={`shrink-0 border-t px-3 py-2 transition-colors ${
-        dragging ? "border-accent/60 bg-accent/5" : "border-divider"
-      }`}
-      onDragOver={(e) => {
-        if (activeTab !== "references") return; // drops add references only
-        e.preventDefault();
-        if (!dragging) setDragging(true);
-      }}
-      onDragLeave={(e) => {
-        if (e.currentTarget === e.target) setDragging(false);
-      }}
-      onDrop={(e) => {
-        if (activeTab !== "references") return;
-        e.preventDefault();
-        setDragging(false);
-        if (e.dataTransfer.files.length) {
-          processFiles(e.dataTransfer.files, send); // OS files → import + select as refs
-          return;
-        }
-        // internal drag from the sidebar Library → flag that variant as a ref
-        const dragged = readImagoDrag(e.dataTransfer);
-        if (dragged?.variantId) send({ type: "ref.select", id: dragged.variantId, selected: true });
-      }}
-    >
-      {/* tabs — references + styles are both selectable, image-backed context the
-          agent reads at generation (toggle = ambient selection) */}
-      <div className="flex items-center gap-3 text-[11px] mb-1.5">
-        <button
-          type="button"
-          onClick={() => setActiveTab("references")}
-          className={
-            activeTab === "references" ? "text-ink font-medium" : "text-faint hover:text-ink"
-          }
+    <div className="shrink-0 border-t border-divider px-3 py-2">
+      {/* Two mirrored sections */}
+      <div className="flex gap-4">
+        {/* ── References tray ── */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: image drop zone — drag, not click */}
+        <div
+          className={`flex-1 min-w-0 rounded-md transition-colors ${
+            refDragging ? "ring-1 ring-accent/60 bg-accent/5" : ""
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!refDragging) setRefDragging(true);
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget === e.target) setRefDragging(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setRefDragging(false);
+            if (e.dataTransfer.files.length) {
+              processFiles(e.dataTransfer.files, send);
+              return;
+            }
+            const dragged = readImagoDrag(e.dataTransfer);
+            if (dragged?.variantId)
+              send({ type: "ref.select", id: dragged.variantId, selected: true });
+          }}
         >
-          References
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("styles")}
-          className={activeTab === "styles" ? "text-ink font-medium" : "text-faint hover:text-ink"}
-        >
-          Styles
-        </button>
-        {activeTab === "references" && selectedCount > 0 && (
-          <span className="ml-auto text-accent-ink">{selectedCount} selected</span>
-        )}
-        {activeTab === "styles" && activeStyleCount > 0 && (
-          <span className="ml-auto text-accent-ink">{activeStyleCount} active</span>
-        )}
-      </div>
+          {/* section label */}
+          <div className="flex items-center gap-2 text-[11px] mb-1.5">
+            <span className="text-ink font-medium">References</span>
+            {selectedCount > 0 && (
+              <span className="ml-auto text-accent-ink">{selectedCount} selected</span>
+            )}
+          </div>
 
-      {activeTab === "references" &&
-        (refVariants.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            className={`w-full h-[75px] rounded-md border border-dashed flex items-center justify-center gap-1.5 text-[11px] transition-colors ${
-              dragging
-                ? "border-accent/60 bg-accent/10 text-accent-ink"
-                : "border-edge-strong text-faint hover:text-ink hover:border-edge-hover"
-            }`}
-          >
-            <ImagePlus className="w-3.5 h-3.5" />
-            {dragging
-              ? "drop to add as a reference"
-              : "drag reference images here, or click to add"}
-          </button>
-        ) : (
-          // the "selected for the next generation" tray — every tile here is a
-          // refSelected variant; ✕ deselects (the image stays in your Library).
-          <div className="flex flex-col gap-1.5">
+          {refVariants.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className={`w-full h-[75px] rounded-md border border-dashed flex items-center justify-center gap-1.5 text-[11px] transition-colors ${
+                refDragging
+                  ? "border-accent/60 bg-accent/10 text-accent-ink"
+                  : "border-edge-strong text-faint hover:text-ink hover:border-edge-hover"
+              }`}
+            >
+              <ImagePlus className="w-3.5 h-3.5" />
+              {refDragging
+                ? "drop to add as a reference"
+                : "drag reference images here, or click to add"}
+            </button>
+          ) : (
             <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
               {refVariants.map((v) => (
                 <div
                   key={v.id}
-                  className="relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
+                  className="group relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
                 >
                   <img
                     src={v.src}
@@ -967,11 +959,10 @@ function ReferenceDrawer({
                       e.stopPropagation();
                       send({ type: "ref.remove", id: v.id });
                     }}
-                    className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
+                    className="absolute top-0 right-0 bg-black/70 text-white rounded-bl opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                   >
                     <X className="w-3 h-3" />
                   </button>
-                  {/* composite this reference onto the focused image as a layer */}
                   {focusedSrc && (
                     <button
                       type="button"
@@ -996,78 +987,116 @@ function ReferenceDrawer({
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        ))}
-
-      {activeTab === "styles" && (
-        <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
-          {state.styles.map((s) => (
-            <div
-              key={s.name}
-              title={s.description || s.name}
-              className={`relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 transition-shadow ${
-                s.active ? "ring-2 ring-accent" : "ring-1 ring-edge"
-              }`}
-            >
-              {s.image ? (
-                <img src={s.image} alt={s.name} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-surface-2 flex items-center justify-center p-1">
-                  <span className="text-[10px] text-ink text-center leading-tight break-words [overflow-wrap:anywhere]">
-                    {s.name}
-                  </span>
-                </div>
-              )}
-              {/* body click toggles the ambient style selection */}
-              <button
-                type="button"
-                title={
-                  s.active
-                    ? "Active — click to deselect"
-                    : "Click to use as ambient style context for the next generation"
-                }
-                onClick={() => send({ type: "style.toggle", name: s.name })}
-                className="absolute inset-0 cursor-pointer"
-              />
-              {/* name caption on image cards (chip cards already show the name) */}
-              {s.image && (
-                <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1 py-0.5 text-center truncate pointer-events-none">
-                  {s.name}
-                </span>
-              )}
-              {s.active && (
-                <span className="absolute top-0 left-0 bg-accent text-accent-fg rounded-br p-0.5 pointer-events-none">
-                  <Check className="w-3 h-3" />
-                </span>
-              )}
-              <button
-                type="button"
-                title="Remove style"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  send({ type: "style.remove", name: s.name });
-                }}
-                className="absolute top-0 right-0 bg-black/70 text-white rounded-bl"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </div>
-          ))}
-          {/* capture the focused image's look as a reusable style (agent analyzes
-              + defines it via style.add with a canonical image) */}
-          {state.focus && (
-            <button
-              type="button"
-              title="Capture this image's style"
-              onClick={() => send({ type: "style.capture" })}
-              className="w-[75px] h-[75px] shrink-0 rounded-md border border-dashed border-capture/40 text-capture-ink hover:border-capture flex flex-col items-center justify-center gap-1 transition-colors"
-            >
-              <WandSparkles className="w-4 h-4" />
-              <span className="text-[9px] leading-tight text-center">capture style</span>
-            </button>
           )}
         </div>
-      )}
+
+        {/* divider */}
+        <div className="w-px bg-divider self-stretch" />
+
+        {/* ── Active context tray ── */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: context-entry drop zone — drag, not click */}
+        <div
+          className={`flex-1 min-w-0 rounded-md transition-colors ${
+            ctxDragging ? "ring-1 ring-accent/60 bg-accent/5" : ""
+          }`}
+          onDragOver={(e) => {
+            // only accept context drags (not image drags)
+            if (!e.dataTransfer.types.includes("application/x-imago-context")) return;
+            e.preventDefault();
+            if (!ctxDragging) setCtxDragging(true);
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget === e.target) setCtxDragging(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setCtxDragging(false);
+            const dragged = readContextDrag(e.dataTransfer);
+            if (dragged) send({ type: "context.link", id: dragged.id, set: "active" });
+          }}
+        >
+          {/* section label + capture button */}
+          <div className="flex items-center gap-2 text-[11px] mb-1.5">
+            <span className="text-ink font-medium">Active context</span>
+            {state.focus && (
+              <button
+                type="button"
+                title="Capture style from focused image"
+                onClick={() => send({ type: "context.capture" })}
+                className="flex items-center gap-0.5 text-faint hover:text-accent-ink transition-colors"
+              >
+                <WandSparkles className="w-3 h-3" />
+                <span>capture style</span>
+              </button>
+            )}
+            {activeContextEntries.length > 0 && (
+              <span className="ml-auto text-accent-ink">{activeContextEntries.length} linked</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto px-1 py-1">
+            {activeContextEntries.map((entry) => (
+              <div
+                key={entry.id}
+                title={entry.content || entry.name}
+                className="group relative w-[75px] h-[75px] rounded-md overflow-hidden shrink-0 ring-2 ring-accent"
+              >
+                {entry.image ? (
+                  <img src={entry.image} alt={entry.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-surface-2 flex items-center justify-center p-1">
+                    <span className="text-[10px] text-ink text-center leading-tight break-words [overflow-wrap:anywhere]">
+                      {entry.name}
+                    </span>
+                  </div>
+                )}
+                {entry.image && (
+                  <span className="absolute bottom-0 inset-x-0 bg-black/60 text-white text-[9px] px-1 py-0.5 text-center truncate pointer-events-none">
+                    {entry.name}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  title="Remove from active context (stays in Library)"
+                  aria-label="Remove from active context (stays in Library)"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    send({ type: "context.unlink", id: entry.id, set: "active" });
+                  }}
+                  className="absolute top-0 right-0 bg-black/70 text-white rounded-bl opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+
+            {/* "+ link" button — opens LibraryPicker */}
+            <div className="relative shrink-0">
+              <button
+                ref={pickerTriggerRef}
+                type="button"
+                title="Link a style to active context"
+                onClick={() => setPickerOpen((o) => !o)}
+                className="w-[75px] h-[75px] rounded-md border border-dashed border-edge-strong text-faint hover:text-ink hover:border-edge-hover flex flex-col items-center justify-center gap-0.5 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="text-[9px]">link style</span>
+              </button>
+              {pickerOpen && (
+                <LibraryPicker
+                  triggerRef={pickerTriggerRef}
+                  library={state.library}
+                  kind="style"
+                  excludeIds={state.activeContextIds}
+                  onPick={(id) => send({ type: "context.link", id, set: "active" })}
+                  onClose={() => setPickerOpen(false)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <input
         ref={fileInput}
         type="file"

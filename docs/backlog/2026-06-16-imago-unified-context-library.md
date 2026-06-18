@@ -38,8 +38,16 @@ model the image library now uses.
   "anime" by accident and it was simply **gone** — no library, no undo. This is
   the exact `remove == destroy` mistake we fixed for references (where ✕ now
   _deselects_ and the asset stays in the library). Styles/prompts/skills should
-  _deactivate or archive_, not destroy. **Worth fixing sooner than the full
-  redesign.**
+  _deactivate or archive_, not destroy.
+  - **Decision (2026-06-16): do NOT pull this forward as a standalone fix.**
+    cole's question exposed why: making delete non-destructive _requires a
+    recovery surface_ — a place archived items live, where Restore and an
+    explicit, guarded **Delete-permanently** are offered (the two real intents:
+    "get this out of my way" vs. "destroy it forever"). That surface _is_ a
+    slice of this library, so a standalone version would either be throwaway
+    (undo-toast only — no real recovery/management) or it would quietly build
+    the library's archive facet anyway. Design archive/restore **once, here**,
+    shared across styles · prompts · skills.
 - The default style catalog (anime/painterly/photoreal/3d/watercolor/line art)
   has no way back once removed — a fresh-session reset is the only recovery.
 
@@ -62,14 +70,16 @@ of the image filter facets, one level up. Activation semantics per type (prompt
   or stay distinct?
 - Identity image association (optional) for text artifacts — reuse the
   image-variant materialization?
-- Migration of existing `styles[]` + `prompts[]` into the text library; and the
-  **non-destructive-delete** fix (deactivate/archive, never destroy) — pull that
-  forward as a standalone fix regardless of the larger redesign.
+- Migration of existing `styles[]` + `prompts[]` into the text library, carrying
+  the **non-destructive-delete** model (archive by default; Restore + guarded
+  permanent-delete from the archive facet). Per the 2026-06-16 decision above
+  this is designed _as part of_ this work, not pulled forward standalone.
 
 ## Not now
 
 cole flagged this as backlog/rethinking while finalizing the refs-as-assets PR.
-The one piece worth pulling forward independently is the **destructive style
-delete** (data-loss footgun) — see the
-[skills](./2026-06-16-imago-skills-methodologies.md) note for the related "save
-the thinking, not the click" principle.
+The destructive-delete footgun (data loss) is the sharpest prompt for it, but
+per the 2026-06-16 decision it is **not** a standalone pull-forward — the
+recovery surface it needs is this library's archive facet, so the two ship
+together. See the [skills](./2026-06-16-imago-skills-methodologies.md) note for
+the related "save the thinking, not the click" principle.

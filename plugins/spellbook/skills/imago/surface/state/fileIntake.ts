@@ -9,6 +9,23 @@ const IMG = /^image\//;
 // drag stashes the image's src here and the canvas drop reads it. Payload is
 // JSON { src, name }.
 export const IMAGO_IMAGE_DND = "application/x-imago-image";
+
+// Custom drag MIME for dragging a context-library entry (style/prompt) from
+// ContextLibrary into the Active-context tray in ReferenceDrawer. Payload is
+// JSON { id }.
+export const IMAGO_CONTEXT_DND = "application/x-imago-context";
+export function readContextDrag(dt: DataTransfer): { id: string } | null {
+  const raw = dt.getData(IMAGO_CONTEXT_DND);
+  if (!raw) return null;
+  try {
+    const o = JSON.parse(raw);
+    if (typeof o?.id !== "string") return null;
+    return { id: o.id };
+  } catch {
+    return null;
+  }
+}
+
 export function readImagoDrag(
   dt: DataTransfer,
 ): { src: string; name: string; variantId?: string } | null {

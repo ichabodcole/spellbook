@@ -1,10 +1,12 @@
 // surface/ImagoShell.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Canvas } from "./components/Canvas";
+import { ContextLibrary } from "./components/ContextLibrary";
 import { Conversation } from "./components/Conversation";
 import { EndedOverlay } from "./components/EndedOverlay";
 import { GenerationsRail } from "./components/GenerationsRail";
 import { Header } from "./components/Header";
+import { type LibraryPane, LibrarySwitcher } from "./components/LibrarySwitcher";
 import { WorkingBanner } from "./components/WorkingBanner";
 import type { ClientToServer, ImagoState } from "./state/types";
 
@@ -27,6 +29,7 @@ export function ImagoShell({
   status: string;
   ended: boolean;
 }) {
+  const [pane, setPane] = useState<LibraryPane>("images");
   const [working, setWorking] = useState(false);
   const [workingText, setWorkingText] = useState("");
   const workingSig = useRef("");
@@ -63,8 +66,13 @@ export function ImagoShell({
     <div className="h-screen flex flex-col overflow-hidden">
       <Header state={state} connectionStatus={status} send={send} />
       <WorkingBanner state={state} working={working} workingText={workingText} />
-      <div className="flex-1 grid grid-cols-[270px_1fr_360px] gap-3 p-3 min-h-0">
-        <GenerationsRail state={state} send={sendW} />
+      <div className="flex-1 grid grid-cols-[auto_270px_1fr_360px] gap-3 p-3 min-h-0">
+        <LibrarySwitcher pane={pane} onChange={setPane} />
+        {pane === "images" ? (
+          <GenerationsRail state={state} send={sendW} />
+        ) : (
+          <ContextLibrary state={state} send={sendW} />
+        )}
         <Canvas state={state} send={sendW} />
         <Conversation state={state} send={sendW} />
       </div>

@@ -36,13 +36,16 @@ import index from "../surface/index.html";
 import { optimizeImageBuffer } from "../surface/state/imageOptimize.server";
 import {
   type Batch,
+  type ContextEntry,
+  type ContextKind,
+  type ContextSet,
   defaultState,
   type ImagoState,
   type Layer,
   MARK_TOOLS,
   type Mark,
   type Message,
-  type StyleEntry,
+  styleId,
   type Variant,
 } from "../surface/state/types";
 
@@ -151,8 +154,8 @@ function variantForAgent(v: Variant): Omit<Variant, "src"> {
 function batchForAgent(b: Batch): Omit<Batch, "variants"> & { variants: Omit<Variant, "src">[] } {
   return { ...b, variants: b.variants.map(variantForAgent) };
 }
-function styleForAgent(st: StyleEntry): Omit<StyleEntry, "image"> {
-  const { image: _drop, ...rest } = st;
+function contextForAgent(e: ContextEntry): Omit<ContextEntry, "image"> {
+  const { image: _drop, ...rest } = e;
   return rest; // agent reads imagePath, not the inlined blob
 }
 
@@ -171,7 +174,7 @@ export function leanState(s: ImagoState) {
   return {
     ...s,
     batches: s.batches.map(batchForAgent),
-    styles: s.styles.map(styleForAgent),
+    library: s.library.map(contextForAgent),
     marksByVariant: Object.fromEntries(
       Object.entries(s.marksByVariant).map(([vid, marks]) => [vid, marks.map(markForAgent)]),
     ),
@@ -279,6 +282,72 @@ async function main(argv: string[]): Promise<number> {
     layers.push(layer);
     return layer.id;
   };
+  // ── context library helpers ──────────────────────────────────────────────────
+  function linkContext(id: string, set: ContextSet) {
+    if (!state.library.some((e) => e.id === id)) return;
+    const arr = set === "active" ? state.activeContextIds : state.quickPromptIds;
+    if (!arr.includes(id)) arr.push(id);
+  }
+  function unlinkContext(id: string, set: ContextSet) {
+    if (set === "active") state.activeContextIds = state.activeContextIds.filter((x) => x !== id);
+    else state.quickPromptIds = state.quickPromptIds.filter((x) => x !== id);
+  }
+  // Create (or, for styles, upsert-on-name) a library entry. Returns the entry id
+  // (existing id on a style upsert), or null if the payload is invalid.
+  function addContextEntry(msg: {
+    kind: ContextKind;
+    name: string;
+    content?: string;
+    tags?: string[];
+    image?: string;
+  }): string | null {
+    if (typeof msg.name !== "string" || !msg.name.trim()) return null;
+    const content = typeof msg.content === "string" ? msg.content : "";
+    const tags = Array.isArray(msg.tags) ? msg.tags : undefined;
+    const imageSrc =
+      typeof msg.image === "string" && msg.image.startsWith("data:") ? msg.image : undefined;
+    const imagePath = imageSrc
+      ? saveDataUrl(sessionFilesDir, newId("ctx"), imageSrc) || undefined
+      : undefined;
+    if (msg.kind === "style") {
+      const name = normStyle(msg.name);
+      const existing = state.library.find((e) => e.kind === "style" && normStyle(e.name) === name);
+      if (existing) {
+        if (content) existing.content = content;
+        if (tags) existing.tags = tags;
+        if (imageSrc) {
+          existing.image = imageSrc;
+          existing.imagePath = imagePath;
+          existing.captured = true;
+        }
+        return existing.id;
+      }
+      const id = newId("ctx");
+      state.library.push({
+        id,
+        kind: "style",
+        name,
+        content,
+        tags,
+        image: imageSrc,
+        imagePath,
+        captured: imageSrc ? true : undefined,
+      });
+      return id;
+    }
+    const id = newId("ctx");
+    state.library.push({
+      id,
+      kind: msg.kind,
+      name: msg.name.trim(),
+      content,
+      tags,
+      image: imageSrc,
+      imagePath,
+    });
+    return id;
+  }
+
   // A single element's natural container kind + label (used by group/ungroup).
   const kindForTool = (tool: Mark["tool"]): Layer["kind"] =>
     tool === "image" ? "image" : tool === "draw" ? "sketch" : "annotation";
@@ -526,46 +595,10 @@ async function main(argv: string[]): Promise<number> {
       // reuses the read (preserves the old ref.analyze behavior across the merge)
       if (hit.variant.hash) state.analysisCache[hit.variant.hash] = msg.text;
       broadcastState();
-    } else if (t === "style.add") {
-      if (typeof msg.name === "string" && msg.name.trim()) {
-        const name = normStyle(msg.name);
-        const description = typeof msg.description === "string" ? msg.description : undefined;
-        // a captured style carries a canonical example image — materialize it
-        const imageSrc =
-          typeof msg.image === "string" && msg.image.startsWith("data:") ? msg.image : undefined;
-        const imagePath = imageSrc
-          ? saveDataUrl(sessionFilesDir, newId("style"), imageSrc) || undefined
-          : undefined;
-        const existing = state.styles.find((s) => s.name === name);
-        if (existing) {
-          existing.active = true;
-          existing.captured = true;
-          if (description !== undefined) existing.description = description;
-          if (imageSrc) {
-            existing.image = imageSrc;
-            existing.imagePath = imagePath;
-          }
-        } else {
-          state.styles.push({
-            name,
-            active: true,
-            captured: true,
-            description,
-            image: imageSrc,
-            imagePath,
-          });
-        }
-        broadcastState();
-      }
-    } else if (t === "prompt.add") {
-      if (typeof msg.label === "string" && typeof msg.text === "string" && msg.text.trim()) {
-        state.prompts.push({
-          id: newId("prompt"),
-          label: msg.label.trim() || "prompt",
-          text: msg.text,
-        });
-        broadcastState();
-      }
+    } else if (t === "context.add") {
+      const id = addContextEntry(msg as Parameters<typeof addContextEntry>[0]);
+      if (id && msg.link) linkContext(id, msg.link as ContextSet);
+      if (id) broadcastState();
     } else if (t === "status") {
       state.status = {
         busy: msg.busy === true,
@@ -711,44 +744,46 @@ async function main(argv: string[]): Promise<number> {
       delete markUnseen[variantId];
       if (state.focus?.variantId === variantId) state.focus = null;
       broadcastState();
-    } else if (t === "style.toggle") {
-      if (typeof msg.name !== "string") return;
-      const name = normStyle(msg.name);
-      const s = state.styles.find((x) => x.name === name);
-      if (!s) return;
-      s.active = !s.active;
-      broadcastState();
-    } else if (t === "style.remove") {
-      if (typeof msg.name === "string") {
-        const name = normStyle(msg.name);
-        state.styles = state.styles.filter((x) => x.name !== name);
+    } else if (t === "context.add") {
+      const id = addContextEntry(msg as Parameters<typeof addContextEntry>[0]);
+      if (id && msg.link) linkContext(id, msg.link as ContextSet);
+      if (id) broadcastState();
+    } else if (t === "context.update") {
+      const e = state.library.find((x) => x.id === msg.id);
+      if (e) {
+        if (typeof msg.name === "string") e.name = msg.name.trim() || e.name;
+        if (typeof msg.content === "string") e.content = msg.content;
+        if (Array.isArray(msg.tags)) e.tags = msg.tags as string[];
         broadcastState();
       }
-    } else if (t === "prompt.add") {
-      if (typeof msg.label === "string" && typeof msg.text === "string" && msg.text.trim()) {
-        state.prompts.push({
-          id: newId("prompt"),
-          label: msg.label.trim() || "prompt",
-          text: msg.text,
-        });
-        broadcastState();
-      }
-    } else if (t === "prompt.update") {
-      const p = state.prompts.find((x) => x.id === msg.id);
-      if (p) {
-        if (typeof msg.label === "string") p.label = msg.label.trim() || p.label;
-        if (typeof msg.text === "string") p.text = msg.text;
-        broadcastState();
-      }
-    } else if (t === "prompt.remove") {
+    } else if (t === "context.delete") {
       if (typeof msg.id === "string") {
-        state.prompts = state.prompts.filter((x) => x.id !== msg.id);
+        const toDelete = state.library.find((x) => x.id === msg.id);
+        state.library = state.library.filter((x) => x.id !== msg.id);
+        state.activeContextIds = state.activeContextIds.filter((x) => x !== msg.id);
+        state.quickPromptIds = state.quickPromptIds.filter((x) => x !== msg.id);
+        if (toDelete?.imagePath) {
+          try {
+            unlinkSync(toDelete.imagePath);
+          } catch {
+            /* best-effort — file may already be gone */
+          }
+        }
         broadcastState();
       }
-    } else if (t === "style.capture") {
-      // carry the focused variant so the agent knows which image to read the
-      // look from (focus.set no longer notifies).
-      emitEvent({ type: "style.capture", focus: state.focus });
+    } else if (t === "context.link") {
+      if (typeof msg.id === "string") {
+        linkContext(msg.id, msg.set as ContextSet);
+        broadcastState();
+      }
+    } else if (t === "context.unlink") {
+      if (typeof msg.id === "string") {
+        unlinkContext(msg.id, msg.set as ContextSet);
+        broadcastState();
+      }
+    } else if (t === "context.capture") {
+      // carry the focused variant so the agent knows which image to read the look from
+      emitEvent({ type: "context.capture", focus: state.focus });
     } else if (t === "pin.add") {
       if (typeof msg.key !== "string" || typeof msg.value !== "string") return;
       const ex = state.pins.find((p) => p.key === msg.key);
@@ -1275,11 +1310,68 @@ async function main(argv: string[]): Promise<number> {
     }
     delete (state as { refs?: unknown }).refs;
 
+    // context-library migration: legacy styles[]/prompts[] → unified library + sets.
+    type LegacyStyle = {
+      name: string;
+      active?: boolean;
+      captured?: boolean;
+      description?: string;
+      image?: string;
+      imagePath?: string;
+    };
+    type LegacyPrompt = { id: string; label: string; text: string };
+    const isLegacyContext =
+      Array.isArray((state as { styles?: unknown }).styles) ||
+      Array.isArray((state as { prompts?: unknown }).prompts);
+    if (isLegacyContext) {
+      state.library = [];
+      state.activeContextIds = [];
+      state.quickPromptIds = [];
+    } else {
+      state.library ??= [];
+      state.activeContextIds ??= [];
+      state.quickPromptIds ??= [];
+    }
+    const legacyStyles = (state as { styles?: LegacyStyle[] }).styles;
+    if (Array.isArray(legacyStyles)) {
+      for (const st of legacyStyles) {
+        const name = normStyle(st.name);
+        const id = styleId(name);
+        state.library.push({
+          id,
+          kind: "style",
+          name,
+          content: st.description ?? "",
+          image: st.image,
+          imagePath: st.imagePath,
+          captured: st.captured,
+        });
+        if (st.active) state.activeContextIds.push(id);
+      }
+    }
+    const legacyPrompts = (state as { prompts?: LegacyPrompt[] }).prompts;
+    if (Array.isArray(legacyPrompts)) {
+      for (const p of legacyPrompts) {
+        state.library.push({
+          id: p.id,
+          kind: "prompt",
+          name: p.label,
+          content: p.text,
+        });
+        state.quickPromptIds.push(p.id);
+      }
+    }
+    delete (state as { styles?: unknown }).styles;
+    delete (state as { prompts?: unknown }).prompts;
+
     for (const b of state.batches) {
       for (const v2 of b.variants) {
         if (v2.src) v2.path = saveDataUrl(sessionFilesDir, v2.id, v2.src) || v2.path;
         if (v2.analysis === undefined) v2.analysis = ""; // backfill pre-analysis snapshots
       }
+    }
+    for (const e of state.library) {
+      if (e.image) e.imagePath = saveDataUrl(sessionFilesDir, e.id, e.image) || e.imagePath;
     }
     // Migrate pre-durability snapshots: a legacy global `marks` array → the
     // focused variant's bucket. Then normalize zOrder within each bucket.
