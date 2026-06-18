@@ -1,6 +1,7 @@
 import { LayoutGrid, MessageSquareText, Pencil, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { useState } from "react";
 import { entriesByKind, isLinked } from "../state/contextLibrary";
+import { IMAGO_CONTEXT_DND } from "../state/fileIntake";
 import type { ClientToServer, ContextEntry, ContextKind, ImagoState } from "../state/types";
 
 type KindFilter = "all" | "prompt" | "style";
@@ -166,10 +167,17 @@ function EntryCard({
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: drag source — dragStart, not click
     <div
       className={`rounded-md border p-2 flex flex-col gap-1 ${
         active ? "border-accent bg-surface-2" : "border-edge bg-surface-2"
       }`}
+      draggable={entry.kind === "style"}
+      onDragStart={
+        entry.kind === "style"
+          ? (e) => e.dataTransfer.setData(IMAGO_CONTEXT_DND, JSON.stringify({ id: entry.id }))
+          : undefined
+      }
     >
       <div className="flex items-start gap-1 min-w-0">
         <div className="flex-1 min-w-0">
