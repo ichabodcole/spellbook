@@ -12,6 +12,7 @@ import { useState } from "react";
 import { entriesByKind, isLinked } from "../state/contextLibrary";
 import { IMAGO_CONTEXT_DND } from "../state/fileIntake";
 import type { ClientToServer, ContextEntry, ContextKind, ImagoState } from "../state/types";
+import { ContentModal } from "./ContentModal";
 
 type KindFilter = "all" | "prompt" | "style";
 
@@ -39,114 +40,19 @@ function isActive(
   return false;
 }
 
-function NewEntryForm({
-  kind,
-  onSave,
-  onCancel,
-}: {
-  kind: ContextKind;
-  onSave: (name: string, content: string) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState("");
-  const [content, setContent] = useState("");
-  return (
-    <div className="border border-edge rounded-md p-2 flex flex-col gap-2 bg-surface-2">
-      <input
-        type="text"
-        placeholder="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full text-xs bg-surface-3 border border-edge rounded px-2 py-1 text-ink placeholder:text-faint"
-      />
-      <textarea
-        placeholder={kind === "style" ? "Style description…" : "Prompt text…"}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={2}
-        className="w-full text-xs bg-surface-3 border border-edge rounded px-2 py-1 text-ink placeholder:text-faint resize-none"
-      />
-      <div className="flex gap-1 justify-end">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-xs px-2 py-0.5 rounded text-faint hover:text-ink hover:bg-surface-3"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (name.trim()) onSave(name.trim(), content.trim());
-          }}
-          className="text-xs px-2 py-0.5 rounded bg-accent text-accent-ink hover:opacity-90"
-        >
-          Add
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function EditEntryForm({
-  entry,
-  onSave,
-  onCancel,
-}: {
-  entry: ContextEntry;
-  onSave: (name: string, content: string) => void;
-  onCancel: () => void;
-}) {
-  const [name, setName] = useState(entry.name);
-  const [content, setContent] = useState(entry.content);
-  return (
-    <div className="flex flex-col gap-2 mt-1">
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full text-xs bg-surface-3 border border-edge rounded px-2 py-1 text-ink"
-      />
-      <textarea
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        rows={2}
-        className="w-full text-xs bg-surface-3 border border-edge rounded px-2 py-1 text-ink resize-none"
-      />
-      <div className="flex gap-1 justify-end">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-xs px-2 py-0.5 rounded text-faint hover:text-ink hover:bg-surface-3"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            if (name.trim()) onSave(name.trim(), content.trim());
-          }}
-          className="text-xs px-2 py-0.5 rounded bg-accent text-accent-ink hover:opacity-90"
-        >
-          Save
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function EntryCard({
   entry,
   activeContextIds,
   quickPromptIds,
   send,
+  onEdit,
 }: {
   entry: ContextEntry;
   activeContextIds: string[];
   quickPromptIds: string[];
   send: (m: ClientToServer) => void;
+  onEdit: (entry: ContextEntry) => void;
 }) {
-  const [editing, setEditing] = useState(false);
   // two-step delete: null = idle, "confirm" = showing "Delete forever?" prompt
   const [deleteStep, setDeleteStep] = useState<null | "confirm">(null);
   const active = isActive(entry, activeContextIds, quickPromptIds);
@@ -159,11 +65,6 @@ function EntryCard({
     } else {
       send({ type: "context.link", id: entry.id, set: linkSet });
     }
-  };
-
-  const handleSaveEdit = (name: string, content: string) => {
-    send({ type: "context.update", id: entry.id, name, content });
-    setEditing(false);
   };
 
   const handleDelete = () => {
@@ -198,7 +99,7 @@ function EntryCard({
             )}
             <span className="text-xs font-medium text-ink truncate">{entry.name}</span>
           </div>
-          {!editing && (
+          {deleteStep === null && (
             <p className="text-[11px] text-faint truncate mt-0.5">{entry.content || "—"}</p>
           )}
         </div>
@@ -206,19 +107,19 @@ function EntryCard({
         {/* action buttons */}
         <div className="flex items-center gap-0.5 shrink-0">
           {/* edit */}
-          {!editing && deleteStep === null && (
+          {deleteStep === null && (
             <button
               type="button"
               title="Edit"
               aria-label="Edit"
-              onClick={() => setEditing(true)}
+              onClick={() => onEdit(entry)}
               className="p-1 rounded text-faint hover:text-ink hover:bg-surface-3"
             >
               <Pencil className="w-3 h-3" />
             </button>
           )}
           {/* link/unlink toggle */}
-          {!editing && deleteStep === null && linkSet && (
+          {deleteStep === null && linkSet && (
             <button
               type="button"
               title={
@@ -250,7 +151,7 @@ function EntryCard({
             </button>
           )}
           {/* delete — two-step */}
-          {!editing && deleteStep === null && (
+          {deleteStep === null && (
             <button
               type="button"
               title="Delete"
@@ -265,13 +166,8 @@ function EntryCard({
       </div>
 
       {/* style image preview */}
-      {entry.image && !editing && (
+      {entry.image && deleteStep === null && (
         <img src={entry.image} alt={entry.name} className="w-full rounded object-cover max-h-24" />
-      )}
-
-      {/* inline edit form */}
-      {editing && (
-        <EditEntryForm entry={entry} onSave={handleSaveEdit} onCancel={() => setEditing(false)} />
       )}
 
       {/* two-step delete confirm */}
@@ -298,6 +194,8 @@ function EntryCard({
   );
 }
 
+type ModalState = { mode: "new"; kind: ContextKind } | { mode: "edit"; entry: ContextEntry } | null;
+
 // The context library pane: a "Library" header + kind facet pills (All / Prompts
 // / Styles), then entry cards. Mirrors GenerationsRail's structure/styling.
 export function ContextLibrary({
@@ -308,21 +206,25 @@ export function ContextLibrary({
   send: (m: ClientToServer) => void;
 }) {
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
-  // which kind's "+ New" form is open (at most one at a time)
-  const [addingKind, setAddingKind] = useState<ContextKind | null>(null);
+  const [modal, setModal] = useState<ModalState>(null);
 
   const shown = kindFilter === "all" ? state.library : entriesByKind(state.library, kindFilter);
 
-  const handleAddNew = (kind: ContextKind, name: string, content: string) => {
-    const set = defaultSet(kind);
-    send({
-      type: "context.add",
-      kind,
-      name,
-      content,
-      ...(set ? { link: set } : {}),
-    });
-    setAddingKind(null);
+  const handleSave = (name: string, content: string) => {
+    if (!modal) return;
+    if (modal.mode === "new") {
+      const set = defaultSet(modal.kind);
+      send({
+        type: "context.add",
+        kind: modal.kind,
+        name,
+        content,
+        ...(set ? { link: set } : {}),
+      });
+    } else {
+      send({ type: "context.update", id: modal.entry.id, name, content });
+    }
+    setModal(null);
   };
 
   // Determine which kinds to show "+ New" buttons for in the current filter
@@ -345,7 +247,6 @@ export function ContextLibrary({
             aria-label={f.label}
             onClick={() => {
               setKindFilter(f.id);
-              setAddingKind(null);
             }}
             className={`p-1.5 rounded ${
               kindFilter === f.id
@@ -359,7 +260,7 @@ export function ContextLibrary({
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-3">
-        {shown.length === 0 && addingKind === null && (
+        {shown.length === 0 && (
           <p className="text-faint italic text-center mt-10 px-4">
             {kindFilter === "all"
               ? "no entries yet — add a prompt or style below"
@@ -374,31 +275,36 @@ export function ContextLibrary({
             activeContextIds={state.activeContextIds}
             quickPromptIds={state.quickPromptIds}
             send={send}
+            onEdit={(entry) => setModal({ mode: "edit", entry })}
           />
         ))}
 
         {/* "+ New" affordances per visible kind */}
         {addKinds.map((kind) => (
           <div key={kind}>
-            {addingKind === kind ? (
-              <NewEntryForm
-                kind={kind}
-                onSave={(name, content) => handleAddNew(kind, name, content)}
-                onCancel={() => setAddingKind(null)}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAddingKind(kind)}
-                className="w-full text-xs text-faint hover:text-ink flex items-center gap-1 py-1 px-1 rounded hover:bg-surface-3"
-              >
-                <Plus className="w-3 h-3" />
-                <span>New {kind}</span>
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setModal({ mode: "new", kind })}
+              className="w-full text-xs text-faint hover:text-ink flex items-center gap-1 py-1 px-1 rounded hover:bg-surface-3"
+            >
+              <Plus className="w-3 h-3" />
+              <span>New {kind}</span>
+            </button>
           </div>
         ))}
       </div>
+
+      {/* Modal portal — rendered here so it's within the ContextLibrary tree */}
+      {modal && (
+        <ContentModal
+          title={modal.mode === "new" ? `New ${modal.kind}` : `Edit ${modal.entry.kind}`}
+          initialName={modal.mode === "edit" ? modal.entry.name : ""}
+          initialContent={modal.mode === "edit" ? modal.entry.content : ""}
+          saveLabel={modal.mode === "new" ? "Add" : "Save"}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+        />
+      )}
     </aside>
   );
 }

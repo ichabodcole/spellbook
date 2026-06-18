@@ -16,6 +16,7 @@ import { variantLabel } from "../state/derive";
 import { processFiles } from "../state/fileIntake";
 import type { ClientToServer, ContextEntry, ImagoState, Message } from "../state/types";
 import { flattenMarks } from "./annotations/flatten";
+import { ContentModal } from "./ContentModal";
 import { LibraryPicker } from "./LibraryPicker";
 
 // Right pane: the dialogue spine + the composer. The composer is the single
@@ -188,6 +189,8 @@ export function Conversation({
 // quickPrompts set are shown here. ✕ unlinks (not delete); true delete lives in
 // the Context pane. "Link from library" opens LibraryPicker to link an existing
 // prompt. "+ New prompt" creates + links in one step (context.add with link).
+type QuickPromptsModal = { mode: "new" } | { mode: "edit"; entry: ContextEntry } | null;
+
 function QuickPrompts({
   library,
   quickPromptIds,
@@ -200,10 +203,8 @@ function QuickPrompts({
   onPick: (text: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<string | null>(null); // "new" | an entry id | null
+  const [modal, setModal] = useState<QuickPromptsModal>(null);
   const [showPicker, setShowPicker] = useState(false);
-  const [name, setName] = useState("");
-  const [content, setContent] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Bug 1 fix: reset picker state whenever the dropdown closes or opens so
@@ -227,7 +228,8 @@ function QuickPrompts({
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) dismiss();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") dismiss();
+      // Only dismiss dropdown on Escape when no modal is open (modal handles its own Escape)
+      if (e.key === "Escape" && !modal) dismiss();
     };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
@@ -235,34 +237,18 @@ function QuickPrompts({
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, modal]);
 
   const prompts = resolveSet(library, quickPromptIds);
 
-  function startNew() {
-    setEditing("new");
-    setShowPicker(false);
-    setName("");
-    setContent("");
-  }
-  function startEdit(p: ContextEntry) {
-    setEditing(p.id);
-    setShowPicker(false);
-    setName(p.name);
-    setContent(p.content);
-  }
-  function save() {
-    const n = name.trim();
-    const c = content.trim();
-    if (!n || !c) return;
-    if (editing === "new") {
-      send({ type: "context.add", kind: "prompt", name: n, content: c, link: "quickPrompts" });
-    } else if (editing) {
-      send({ type: "context.update", id: editing, name: n, content: c });
+  function handleModalSave(name: string, content: string) {
+    if (!modal) return;
+    if (modal.mode === "new") {
+      send({ type: "context.add", kind: "prompt", name, content, link: "quickPrompts" });
+    } else {
+      send({ type: "context.update", id: modal.entry.id, name, content });
     }
-    setEditing(null);
-    setName("");
-    setContent("");
+    setModal(null);
   }
 
   return (
@@ -297,7 +283,10 @@ function QuickPrompts({
                   <button
                     type="button"
                     title="Edit prompt"
-                    onClick={() => startEdit(p)}
+                    onClick={() => {
+                      setModal({ mode: "edit", entry: p });
+                      setOpen(false);
+                    }}
                     className="shrink-0 p-1 text-faint hover:text-ink"
                   >
                     <Pencil className="w-3 h-3" />
@@ -312,55 +301,28 @@ function QuickPrompts({
                   </button>
                 </div>
               ))}
-              {editing ? (
-                <div className="flex flex-col gap-1 border-t border-divider mt-1 pt-2">
-                  <input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="name"
-                    className="bg-surface-2 border border-edge-2 rounded px-2 py-1 text-[12px] text-ink placeholder-faint focus:outline-none focus:border-accent/60"
-                  />
-                  <textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="prompt text"
-                    rows={3}
-                    className="textarea !resize-y text-[12px]"
-                  />
-                  <div className="flex items-center justify-end gap-1.5">
-                    <button type="button" onClick={() => setEditing(null)} className="chip">
-                      cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={save}
-                      className="btn-primary !px-2.5 !py-1 text-[11px]"
-                    >
-                      save
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-0.5 border-t border-divider mt-1 pt-1.5">
-                  <button
-                    type="button"
-                    onClick={startNew}
-                    className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
-                  >
-                    <Plus className="w-3 h-3" /> New prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowPicker((s) => !s)}
-                    className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
-                  >
-                    <Link className="w-3 h-3" /> Link from library
-                  </button>
-                </div>
-              )}
+              <div className="flex flex-col gap-0.5 border-t border-divider mt-1 pt-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModal({ mode: "new" });
+                    setOpen(false);
+                  }}
+                  className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
+                >
+                  <Plus className="w-3 h-3" /> New prompt
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPicker((s) => !s)}
+                  className="flex items-center gap-1 px-2 py-1 text-[12px] text-accent-ink"
+                >
+                  <Link className="w-3 h-3" /> Link from library
+                </button>
+              </div>
             </>
           )}
-          {showPicker && !editing && (
+          {showPicker && (
             <>
               <button
                 type="button"
@@ -383,6 +345,18 @@ function QuickPrompts({
             </>
           )}
         </div>
+      )}
+
+      {/* Modal — portaled, independent of dropdown open state */}
+      {modal && (
+        <ContentModal
+          title={modal.mode === "new" ? "New prompt" : "Edit prompt"}
+          initialName={modal.mode === "edit" ? modal.entry.name : ""}
+          initialContent={modal.mode === "edit" ? modal.entry.content : ""}
+          saveLabel={modal.mode === "new" ? "Add" : "Save"}
+          onSave={handleModalSave}
+          onClose={() => setModal(null)}
+        />
       )}
     </div>
   );
