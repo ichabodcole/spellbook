@@ -1,8 +1,17 @@
 # Investigation: glamour — reframe as a method-spell in a composable suite
 
-Status: **design-exploration** (recommendations + open forks; pre-spec) · Mode:
-evaluative (what glamour _is_ vs. imago, where the boundary falls, how the
-surface should behave) · Date: 2026-06-19
+Status: **design-exploration → surface model validated via mockup** (a
+`glamour-v2` project follows) · Mode: evaluative (what glamour _is_ vs. imago,
+where the boundary falls, how the surface should behave) · Date: 2026-06-19
+
+> **Update (2026-06-19):** the surface model below (Decisions C/D) was taken
+> further in a throwaway mockup loop — `artifacts/unified-library-mockup.html`
+> is the converged reference. It resolved several open forks and shifted the
+> surface from "conversation-spine" to **gallery-central**. See **"Surface model
+> — resolved via mockup"** before the open-questions list. The next step is a
+> clean-rebuild **`glamour-v2`** project (see
+> `docs/projects/glamour-v2/proposal.md`), keeping v1 as a reference to mine —
+> not a refactor of it.
 
 ## Summary
 
@@ -252,32 +261,97 @@ composition pattern, its manifesto entry, and whatever it's named (candidates
 floated: a _working_, a _rite_, a _circle_) extract only after the concrete seam
 proves them.
 
+## Surface model — resolved via mockup (2026-06-19)
+
+A throwaway mockup loop (`artifacts/unified-library-mockup.html`, with two
+earlier explorations alongside it) converged the surface. It **refines C**
+(conversation moved from the spine to a sidebar; grounding is gallery
+selection), **confirms D** (no phases), and **resolves L1** plus the
+project-scope question. The model:
+
+- **The gallery is the workspace; chat is a sidebar.** The thing under
+  discussion _is_ imagery, so imagery is the board. The conversation-spine of
+  the first mockup became a right-hand sidebar; the center is the gallery.
+- **One unified library spanning media.** Reference images, context documents,
+  and generated images are all tiles in the _same_ grid (imago's "one medium,
+  many views," generalized to text + image). A `type` facet (References /
+  Context / Generated / Styles) filters; it is not a separate UI region.
+  Selecting a text item grounds a message exactly like selecting an image.
+  _(Non-MVP idea: let a text item carry an identifying image.)_
+- **Selection = grounding.** What you've selected is what the next message is
+  about. Single-click selects (drives details + grounding); modifier-click
+  multi-selects. **This replaces the conversation-spine + per-phase forms of
+  Decision C** — direct manipulation (star, like, the editable detail fields)
+  plus a chat sidebar, not stage-gated text inputs. (Resolves **C1**: both —
+  direct-manipulation fields _and_ conversation.)
+- **Persistent details fly-out, not a special focus mode.** Selecting any tile
+  shows its metadata in a sidebar attached to the gallery; enlarging just swaps
+  the grid for one large image — the sidebar is unchanged. (imago's
+  details-flyout pattern.)
+- **Generated-image metadata is first-class.** The details panel captures model,
+  prompt, seed, cost (+ room for custom fields), so feedback can be
+  model/prompt-aware ("the nano-banana one — try prompt variations").
+- **Zoom in / out is a co-presence lens.** Full palette → a focused
+  **mini-gallery** of a subset → an enlarged single. **Either party can scope
+  the set**: the human selects and hits "focus these"; the agent pushes a
+  subset. Symmetric attention-direction, not a viewer feature.
+- **Focus-mode agent drawer.** When the agent scopes a subset it gets a
+  contextual-ask drawer ("here are four — which reads most like grapevine?")
+  _distinct from the chat thread_ — the right home for "here's what I want you
+  to look at," leaving chat for general back-and-forth.
+- **Phases are gone (D confirmed).** The structured output is a **"Style guide"
+  view** you flip to; maturity is read from its section status (empty → forming
+  → agreed), not a stepper. The agent assembles it from the gallery
+  conversation; the human corrects it there.
+- **Project styles live in a separate tray, not the working library (resolves
+  L1).** Past styles are **not auto-loaded** into a session; they sit in a
+  project-scoped tray and are **deliberately brought in** as references. A style
+  is a compound "canonical shape" (text + canonical images). The library is
+  **project-scoped** — scoped to the checkout where the spell was cast (a house
+  style + per-app subsets for Spellbook; some other project's styles elsewhere),
+  **not** a global store. So L1 lands on **per-spell + deliberate bring-in**,
+  not a shared cross-spell store.
+- **D1 (the "what next?" risk) reads as addressed, to confirm in build.** With
+  the gallery accreting, the Style-guide "N of N solid" read, and the agent's
+  focus drawer directing attention, the absence of a stepper did not feel
+  disorienting in the mockup. Treat as provisionally resolved; watch it in the
+  v2 build.
+
 ## Consolidated open questions
 
 - **B1** — handoff: hard context-switch vs. embedded imago view? (lean hard
-  switch)
+  switch) — _still open_
 - **B2** — concrete artifact format across the glamour↔imago seam (spec module ⇄
-  style entry mapping).
-- **C1** — do per-influence structured fields stay as direct manipulation
-  alongside the conversation? (lean both)
-- **D1** — does the maturity model leave the human without a "what next" cue?
-  (biggest UX risk; prototype it)
-- **L1** — shared cross-spell library vs. per-spell + agent-shuttled handoff?
-  (lean per-spell + shuttle to start)
+  style entry mapping). — _still open_
+- **C1** — _resolved:_ both — direct-manipulation detail fields + a chat sidebar
+  (no stage-gated forms).
+- **D1** — _provisionally resolved_ via the gallery-central model (accretion +
+  style-guide solidity + focus drawer); confirm in the v2 build.
+- **L1** — _resolved:_ project-scoped, per-spell library in a separate tray with
+  deliberate bring-in; no shared cross-spell store for now.
+- **G1 (new)** — is generated-image metadata a fixed schema (model/prompt/seed/
+  cost) or freeform key-values? (lean fixed core + freeform extras)
 
 ## Recommended next step
 
-The cheapest way to de-risk the recommended direction is a **scrappy throwaway
-mockup** of the maturity-model glamour surface (conversation spine + grounded
-selection + a living style guide that fills in), to feel the D1 risk before
-committing — exactly the role the earlier imago canvas mockup played. After
-that, a focused spec on the first concrete slice (most likely: the
-grounded-conversation + assembled-guide core, _not_ the full bundle), with the
-glamour↔imago handoff specced as its own follow-on once B1/B2 are settled.
+The mockup did its job — the surface model feels right. Next is a **`glamour-v2`
+project**: a **clean rebuild** on the gallery-central / unified-library /
+co-presence model, **not** a refactor of the shipped glamour. Keep v1 in place
+as a reference to **mine** — it carries detailed pieces the mockup didn't
+represent (round grouping, lightbox/aspect view, cost display, narration kinds,
+the spec-module set, snapshot/restore) that may want to come forward. The v1
+files (`artifacts/` mockups + the shipped spell) can be retired once v2 lands.
+
+Proposal: `docs/projects/glamour-v2/proposal.md`.
 
 ## References
 
-- Glamour rebuild design (the deliberate V1 exclusions this revisits):
+- **Converged surface mockup (the reference for v2):**
+  `docs/projects/image-style-spell/artifacts/unified-library-mockup.html`
+  (earlier explorations: `maturity-model-mockup.html`,
+  `gallery-central-mockup.html`)
+- Glamour rebuild design (V1 — the deliberate exclusions this revisits + the
+  detailed pieces to mine for v2):
   `docs/projects/image-style-spell/glamour-rebuild-design.md`
 - Imago unified context library (the library model + non-destructive
   archive/restore lesson):

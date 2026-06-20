@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>glamour — unified-library mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      body {
+        background: #0b1120;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      [x-cloak] {
+        display: none !important;
+      }
+      .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body class="text-slate-200 antialiased">
+    <div x-data="glamour()" x-cloak class="flex flex-col h-screen">
+      <!-- ░░ State switcher (mockup chrome) ░░ -->
+      <div class="bg-amber-950/80 border-b border-amber-800/60 px-4 py-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[10px] uppercase tracking-wider text-amber-500/80 font-semibold mr-1"
+            >Session evolving →</span
+          >
+          <template x-for="s in states" :key="s.id">
+            <button
+              @click="setState(s.id)"
+              :class="state === s.id ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-amber-700'"
+              class="text-xs px-2.5 py-1 rounded border font-medium transition-colors"
+              x-text="s.label"
+            ></button>
+          </template>
+          <span class="ml-auto text-[10px] text-amber-500/60 italic"
+            >live: select → "focus these" to zoom in · ⤢ enlarge · ⌘/ctrl-click multi-select · "Project styles" to bring one in</span
+          >
+        </div>
+      </div>
+
+      <!-- ░░ App header ░░ -->
+      <header class="flex items-center gap-3 px-5 py-2.5 border-b border-slate-800 bg-slate-900/60">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+        </div>
+        <div class="leading-tight">
+          <div class="font-semibold text-slate-100 text-sm">glamour</div>
+          <div class="text-[11px] text-slate-500">
+            project <span class="text-slate-400">Spellbook</span> · composing
+            <span class="text-fuchsia-300">grapevine · twilight variant</span>
+          </div>
+        </div>
+        <button
+          @click="stylesDrawer = !stylesDrawer"
+          :class="stylesDrawer ? 'bg-slate-700 text-slate-100 border-slate-600' : 'bg-slate-800/60 text-slate-300 border-slate-700 hover:text-slate-100'"
+          class="ml-auto text-xs px-2.5 py-1.5 rounded-lg border font-medium flex items-center gap-1.5"
+        >
+          <i data-lucide="library" class="w-3.5 h-3.5 pointer-events-none"></i>
+          Project styles
+          <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-900 text-slate-400" x-text="projectStyles.length"></span>
+        </button>
+        <div class="flex items-center gap-1 bg-slate-800/70 border border-slate-700 rounded-lg p-0.5">
+          <button
+            @click="view = 'library'"
+            :class="view === 'library' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'"
+            class="text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5"
+          >
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5 pointer-events-none"></i> Library
+          </button>
+          <button
+            @click="view = 'style'"
+            :class="view === 'style' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'"
+            class="text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5"
+          >
+            <i data-lucide="book-open" class="w-3.5 h-3.5 pointer-events-none"></i> Style guide
+            <span class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-900 text-slate-400" x-text="styleSolid + '/' + style.length"></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ░░ Body ░░ -->
+      <div class="flex-1 min-h-0 grid relative" style="grid-template-columns: 1fr 340px">
+        <!-- ── LIBRARY COLUMN ── -->
+        <section class="flex flex-col min-h-0 bg-slate-950/40 border-r border-slate-800 relative">
+          <!-- STYLE GUIDE VIEW -->
+          <div x-show="view === 'style'" class="flex-1 overflow-y-auto p-5">
+            <div class="max-w-2xl mx-auto space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="book-open" class="w-4 h-4 text-fuchsia-300 pointer-events-none"></i>
+                <span class="font-semibold text-slate-100">grapevine · twilight variant</span>
+                <span class="ml-auto text-[10px] text-slate-500" x-text="styleSolid + ' of ' + style.length + ' sections solid'"></span>
+              </div>
+              <template x-for="sxi in style" :key="sxi.key">
+                <div class="rounded-lg border bg-slate-800/30 px-4 py-3" :class="sxi.status === 'agreed' ? 'border-emerald-700/40' : sxi.status === 'forming' ? 'border-amber-700/40' : 'border-slate-700/50'">
+                  <div class="flex items-center gap-2">
+                    <span class="w-1.5 h-1.5 rounded-full" :class="sxi.status === 'agreed' ? 'bg-emerald-400' : sxi.status === 'forming' ? 'bg-amber-400' : 'bg-slate-600'"></span>
+                    <span class="text-[12px] font-semibold" :class="sxi.status === 'empty' ? 'text-slate-500' : 'text-slate-200'" x-text="sxi.label"></span>
+                    <span class="ml-auto text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded" :class="sxi.status === 'agreed' ? 'bg-emerald-500/15 text-emerald-300' : sxi.status === 'forming' ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-700/40 text-slate-500'" x-text="sxi.status"></span>
+                  </div>
+                  <div x-show="sxi.content" class="text-[12px] text-slate-300 mt-1.5 leading-relaxed pl-3.5" x-text="sxi.content"></div>
+                  <div x-show="sxi.canon" class="grid grid-cols-3 gap-2 mt-2 pl-3.5">
+                    <template x-for="c in (sxi.canon || [])" :key="c.label">
+                      <div class="rounded overflow-hidden border border-slate-700">
+                        <div class="h-16 w-full" :class="c.grad"></div>
+                        <div class="text-[9px] text-slate-400 text-center py-0.5 bg-slate-900" x-text="c.label"></div>
+                      </div>
+                    </template>
+                  </div>
+                  <div x-show="sxi.prompts" class="space-y-1.5 mt-2 pl-3.5">
+                    <template x-for="p in (sxi.prompts || [])" :key="p">
+                      <div class="text-[11px] text-slate-400 font-mono bg-slate-900/60 border border-slate-700/50 rounded px-2 py-1.5" x-text="p"></div>
+                    </template>
+                  </div>
+                  <div x-show="sxi.status === 'empty'" class="text-[10px] text-slate-600 mt-1 pl-3.5">fills in as the conversation converges</div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- LIBRARY VIEW -->
+          <div x-show="view === 'library'" class="flex-1 min-h-0 flex flex-col">
+            <!-- toolbar -->
+            <div class="px-4 py-2 border-b border-slate-800 bg-slate-900/40 flex items-center gap-1.5 flex-wrap">
+              <template x-if="scope === 'all'">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-[10px] uppercase tracking-wide text-slate-500 font-semibold mr-1">Reference palette</span>
+                  <template x-for="f in filters" :key="f.id">
+                    <button @click="filter = f.id" :class="filter === f.id ? 'bg-slate-700 text-slate-100 border-slate-600' : 'bg-slate-800/50 text-slate-400 border-slate-700/60 hover:text-slate-200'" class="text-[11px] px-2 py-1 rounded-full border font-medium flex items-center gap-1">
+                      <span x-text="f.label"></span><span class="text-[9px] opacity-70" x-text="countOf(f.id)"></span>
+                    </button>
+                  </template>
+                </div>
+              </template>
+              <!-- focus banner (zoomed in) -->
+              <template x-if="scope === 'focus'">
+                <div class="flex items-center gap-2 w-full">
+                  <span class="inline-flex items-center gap-1.5 text-[12px] px-2.5 py-1 rounded-full" :class="focusOwner === 'agent' ? 'bg-violet-600/25 text-violet-200 border border-violet-500/40' : 'bg-fuchsia-600/20 text-fuchsia-200 border border-fuchsia-500/40'">
+                    <i :data-lucide="focusOwner === 'agent' ? 'bot' : 'crosshair'" class="w-3.5 h-3.5 pointer-events-none"></i>
+                    <span x-text="(focusOwner === 'agent' ? 'Agent focused' : 'You focused') + ' · ' + focusSet.length + ' items'"></span>
+                  </span>
+                  <span x-show="focusNote" class="text-[11px] text-slate-400 italic" x-text="focusNote"></span>
+                  <button @click="zoomOut()" class="ml-auto text-[11px] text-slate-300 hover:text-white flex items-center gap-1 border border-slate-700 hover:border-slate-500 rounded-full px-2.5 py-1">
+                    <i data-lucide="grid-3x3" class="w-3 h-3 pointer-events-none"></i> back to full library
+                  </button>
+                </div>
+              </template>
+            </div>
+
+            <!-- selection strip / focus action -->
+            <div x-show="scope === 'all' && selected.length > 0" class="px-4 py-1.5 border-b border-slate-800 bg-fuchsia-950/20 flex items-center gap-2 text-[11px]">
+              <span class="text-fuchsia-300" x-text="selected.length + ' selected'"></span>
+              <button @click="focusSelected()" class="flex items-center gap-1 text-fuchsia-200 border border-fuchsia-500/40 rounded-full px-2.5 py-1 hover:bg-fuchsia-600/20">
+                <i data-lucide="crosshair" class="w-3 h-3 pointer-events-none"></i> focus these
+              </button>
+              <button @click="selected = []" class="ml-auto text-slate-500 hover:text-slate-300">clear</button>
+            </div>
+
+            <!-- grid + flyout -->
+            <div class="flex-1 min-h-0 flex">
+              <div class="flex-1 overflow-y-auto p-4">
+                <!-- enlarged single -->
+                <template x-if="enlargedId && detailItem">
+                  <div class="h-full flex flex-col items-center justify-center">
+                    <button @click="enlargedId = null" class="self-start mb-3 flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-xs">
+                      <i data-lucide="minimize-2" class="w-4 h-4 pointer-events-none"></i> back
+                    </button>
+                    <template x-if="detailItem.text">
+                      <div class="w-full max-w-xl bg-slate-900/70 border border-slate-700 rounded-xl p-6">
+                        <div class="flex items-center gap-2 mb-3"><i data-lucide="file-text" class="w-4 h-4 text-sky-300 pointer-events-none"></i><span class="text-sm font-medium text-slate-200" x-text="detailItem.label"></span></div>
+                        <div class="text-[13px] text-slate-300 leading-relaxed whitespace-pre-line" x-text="detailItem.text"></div>
+                      </div>
+                    </template>
+                    <template x-if="!detailItem.text">
+                      <div class="w-full max-w-xl aspect-[4/3] rounded-xl border border-slate-700 shadow-2xl" :class="detailItem.grad"></div>
+                    </template>
+                  </div>
+                </template>
+
+                <!-- grid (full or focused subset) -->
+                <div x-show="!enlargedId" :class="scope === 'focus' ? 'grid-cols-2 gap-4' : 'grid-cols-3 gap-3'" class="grid">
+                  <template x-for="im in displayed" :key="im.id">
+                    <div @click="selectItem(im.id, $event)" :class="isSel(im.id) ? 'ring-2 ring-fuchsia-500 border-fuchsia-500/50' : 'border-slate-700/70 hover:border-slate-600'" class="group relative rounded-lg border bg-slate-800/40 overflow-hidden cursor-pointer transition-all">
+                      <!-- IMAGE -->
+                      <template x-if="!im.text">
+                        <div class="w-full relative" :class="(scope === 'focus' ? 'h-44 ' : 'h-28 ') + im.grad">
+                          <span class="absolute top-1.5 left-1.5 text-[8px] uppercase tracking-wide px-1.5 py-0.5 rounded-full font-semibold" :class="badgeClass(im.kind)" x-text="kindLabel(im.kind)"></span>
+                          <span x-show="im.fav" class="absolute top-1.5 right-1.5 text-[8px] bg-fuchsia-600 text-white px-1.5 py-0.5 rounded-full font-semibold">favorite</span>
+                          <span x-show="im.liked && !im.fav" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-rose-500/90 flex items-center justify-center"><i data-lucide="heart" class="w-3 h-3 text-white pointer-events-none"></i></span>
+                          <button @click.stop="enlarge(im.id)" class="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-md bg-slate-900/80 hover:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="enlarge"><i data-lucide="maximize-2" class="w-3.5 h-3.5 text-slate-200 pointer-events-none"></i></button>
+                        </div>
+                      </template>
+                      <!-- TEXT / STYLE -->
+                      <template x-if="im.text">
+                        <div class="w-full relative bg-slate-800/80 border-b border-slate-700/60 p-2.5" :class="scope === 'focus' ? 'h-44' : 'h-28'">
+                          <span class="absolute top-1.5 left-1.5 text-[8px] uppercase tracking-wide px-1.5 py-0.5 rounded-full font-semibold" :class="badgeClass(im.kind)" x-text="kindLabel(im.kind)"></span>
+                          <i :data-lucide="im.kind === 'style' ? 'palette' : 'file-text'" class="w-4 h-4 text-slate-500 mb-1 mt-3 pointer-events-none"></i>
+                          <div class="text-[10px] text-slate-400 leading-snug line-clamp-3 mt-1" x-text="im.text"></div>
+                          <!-- compound style: canonical thumbs -->
+                          <div x-show="im.canon" class="absolute bottom-2 left-2.5 right-2.5 flex gap-1">
+                            <template x-for="c in (im.canon || [])" :key="c.label"><div class="h-5 flex-1 rounded-sm" :class="c.grad"></div></template>
+                          </div>
+                          <button @click.stop="enlarge(im.id)" class="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-md bg-slate-900/80 hover:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" title="open"><i data-lucide="maximize-2" class="w-3.5 h-3.5 text-slate-200 pointer-events-none"></i></button>
+                        </div>
+                      </template>
+                      <div class="px-2 py-1.5">
+                        <div class="text-[11px] font-medium text-slate-200 truncate" x-text="im.label"></div>
+                        <div class="flex items-center gap-1 mt-0.5">
+                          <i x-show="im.analysis || im.why" data-lucide="message-square-text" class="w-3 h-3 text-fuchsia-400/70 pointer-events-none"></i>
+                          <span class="text-[10px] truncate" :class="(im.why || im.analysis) ? 'text-slate-400 italic' : 'text-slate-600'" x-text="im.why ? ('“' + im.why + '”') : (im.analysis ? 'annotated' : (im.batch || 'no notes yet'))"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- DETAILS FLY-OUT -->
+              <div x-show="detailItem" class="w-80 border-l border-slate-800 bg-slate-900/70 flex flex-col min-h-0">
+                <template x-if="detailItem">
+                  <div class="flex flex-col min-h-0">
+                    <div class="px-4 py-2.5 border-b border-slate-800 flex items-center gap-2">
+                      <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Details</span>
+                      <span class="text-[8px] uppercase px-1.5 py-0.5 rounded-full" :class="badgeClass(detailItem.kind)" x-text="kindLabel(detailItem.kind)"></span>
+                      <button @click="selected = []" class="ml-auto text-slate-500 hover:text-slate-300"><i data-lucide="x" class="w-3.5 h-3.5 pointer-events-none"></i></button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                      <template x-if="!detailItem.text"><div class="h-32 w-full rounded-lg border border-slate-700" :class="detailItem.grad"></div></template>
+                      <template x-if="detailItem.text"><div class="text-[11px] text-slate-400 bg-slate-800/50 border border-slate-700/60 rounded-lg p-2.5 leading-snug max-h-28 overflow-y-auto whitespace-pre-line" x-text="detailItem.text"></div></template>
+                      <div class="flex items-center gap-2">
+                        <span class="text-[13px] font-medium text-slate-200" x-text="detailItem.label"></span>
+                        <button x-show="!detailItem.text" @click="detailItem.liked = !detailItem.liked" class="ml-auto text-[11px] flex items-center gap-1 px-2 py-1 rounded border" :class="detailItem.liked ? 'text-rose-300 border-rose-500/50' : 'text-slate-400 border-slate-700 hover:border-rose-500'"><i data-lucide="heart" class="w-3.5 h-3.5 pointer-events-none"></i> like</button>
+                      </div>
+
+                      <!-- generation metadata (captured for generated images) -->
+                      <div x-show="detailItem.meta" class="rounded-lg border border-violet-700/30 bg-violet-950/20 p-2.5 space-y-1.5">
+                        <div class="flex items-center gap-1.5">
+                          <i data-lucide="cpu" class="w-3 h-3 text-violet-300 pointer-events-none"></i>
+                          <span class="text-[10px] uppercase tracking-wide text-violet-300/90 font-semibold">Generation</span>
+                        </div>
+                        <template x-if="detailItem.meta">
+                          <div class="space-y-1">
+                            <div class="flex gap-2 text-[11px]"><span class="text-slate-500 w-12 shrink-0">model</span><span class="text-slate-200 font-medium" x-text="detailItem.meta.model"></span></div>
+                            <div class="flex gap-2 text-[11px]"><span class="text-slate-500 w-12 shrink-0">prompt</span><span class="text-slate-300 font-mono leading-snug" x-text="detailItem.meta.prompt"></span></div>
+                            <div class="flex gap-2 text-[11px]"><span class="text-slate-500 w-12 shrink-0">seed</span><span class="text-slate-300 font-mono" x-text="detailItem.meta.seed"></span></div>
+                            <div class="flex gap-2 text-[11px]"><span class="text-slate-500 w-12 shrink-0">cost</span><span class="text-slate-300" x-text="detailItem.meta.cost"></span></div>
+                          </div>
+                        </template>
+                        <button class="text-[10px] text-violet-300/70 hover:text-violet-200 flex items-center gap-1 pt-0.5"><i data-lucide="plus" class="w-3 h-3 pointer-events-none"></i> add custom field</button>
+                      </div>
+
+                      <div>
+                        <div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="bot" class="w-3.5 h-3.5 text-violet-300 pointer-events-none"></i><span class="text-[12px] font-medium text-slate-200" x-text="detailItem.text ? 'Agent\'s note' : 'Agent\'s analysis'"></span><i data-lucide="pencil" class="w-3 h-3 text-slate-600 ml-auto pointer-events-none"></i></div>
+                        <textarea x-model="detailItem.analysis" rows="3" placeholder="not analyzed yet" class="w-full text-[12px] leading-relaxed bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 resize-none focus:outline-none focus:border-violet-500"></textarea>
+                      </div>
+                      <div>
+                        <div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="user" class="w-3.5 h-3.5 text-fuchsia-300 pointer-events-none"></i><span class="text-[12px] font-medium text-slate-200" x-text="detailItem.text ? 'Why it matters' : 'What you like'"></span><i data-lucide="pencil" class="w-3 h-3 text-slate-600 ml-auto pointer-events-none"></i></div>
+                        <textarea x-model="detailItem.why" rows="2" placeholder="say what pulls you about this…" class="w-full text-[12px] leading-relaxed bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 resize-none focus:outline-none focus:border-fuchsia-500"></textarea>
+                      </div>
+                      <div class="text-[10px] text-slate-500 leading-snug flex items-start gap-1.5 pt-1 border-t border-slate-800"><i data-lucide="info" class="w-3 h-3 mt-0.5 shrink-0 pointer-events-none"></i><span>Either of you can edit either field. Same panel whether the tile is in the grid, focused, or enlarged.</span></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- focus-mode agent drawer: contextual ask tied to the focused set (distinct from chat) -->
+            <div x-show="scope === 'focus' && focusMessage" class="border-t border-violet-700/40 bg-violet-950/30 px-4 py-2.5 flex items-start gap-2.5">
+              <div class="w-6 h-6 rounded-md bg-violet-600 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="bot" class="w-3.5 h-3.5 text-white pointer-events-none"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="text-[10px] uppercase tracking-wide text-violet-300/80 font-semibold">
+                  Agent · about these <span x-text="focusSet.length"></span>
+                </div>
+                <div class="text-[12px] text-slate-200 leading-snug mt-0.5" x-text="focusMessage"></div>
+              </div>
+              <span class="ml-auto text-[10px] text-slate-500 italic flex items-center gap-1 shrink-0 mt-0.5">
+                respond in chat <i data-lucide="arrow-right" class="w-3 h-3 pointer-events-none"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- ░ PROJECT STYLES DRAWER (slides over; bring-in is deliberate) ░ -->
+          <div x-show="stylesDrawer" x-transition.opacity class="absolute inset-0 z-10 bg-slate-950/60" @click="stylesDrawer = false" style="display: none"></div>
+          <div x-show="stylesDrawer" x-transition class="absolute top-0 left-0 bottom-0 z-20 w-80 bg-slate-900 border-r border-slate-700 shadow-2xl flex flex-col" style="display: none">
+            <div class="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
+              <i data-lucide="library" class="w-4 h-4 text-fuchsia-300 pointer-events-none"></i>
+              <span class="text-sm font-semibold text-slate-100">Styles · this project</span>
+              <button @click="stylesDrawer = false" class="ml-auto text-slate-500 hover:text-slate-300"><i data-lucide="x" class="w-4 h-4 pointer-events-none"></i></button>
+            </div>
+            <div class="px-4 py-2 text-[10px] text-slate-500 leading-snug border-b border-slate-800">
+              Styles you've defined in the Spellbook checkout. <span class="text-slate-400">Not loaded automatically</span> — bring one in to use it as a reference.
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 space-y-2">
+              <template x-for="st in projectStyles" :key="st.id">
+                <div :class="st.parent ? 'border-fuchsia-600/40 bg-fuchsia-950/20' : 'border-slate-700/60 bg-slate-800/40'" class="rounded-lg border p-3">
+                  <div class="flex items-center gap-1.5">
+                    <i :data-lucide="st.parent ? 'crown' : 'palette'" class="w-3.5 h-3.5 pointer-events-none" :class="st.parent ? 'text-fuchsia-300' : 'text-slate-400'"></i>
+                    <span class="text-[12px] font-medium text-slate-200" x-text="st.label"></span>
+                    <span x-show="st.isNew" class="ml-auto text-[8px] bg-emerald-600 text-white px-1 py-0.5 rounded-full">new</span>
+                  </div>
+                  <div class="text-[10px] text-slate-500 mt-1" x-text="st.text"></div>
+                  <div class="flex gap-1 mt-2">
+                    <template x-for="c in (st.canon || [])" :key="c.label"><div class="h-6 flex-1 rounded" :class="c.grad"></div></template>
+                  </div>
+                  <button @click="bringIn(st)" :disabled="inPalette(st.id)" class="mt-2 w-full text-[11px] rounded-md py-1.5 flex items-center justify-center gap-1 border" :class="inPalette(st.id) ? 'border-slate-700 text-slate-600 cursor-default' : 'border-fuchsia-500/40 text-fuchsia-200 hover:bg-fuchsia-600/20'">
+                    <i :data-lucide="inPalette(st.id) ? 'check' : 'arrow-right-to-line'" class="w-3 h-3 pointer-events-none"></i>
+                    <span x-text="inPalette(st.id) ? 'in palette' : 'bring into session'"></span>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── RIGHT: conversation ── -->
+        <aside class="bg-slate-900/40 flex flex-col min-h-0">
+          <div class="px-3 py-2 border-b border-slate-800 flex items-center gap-1.5">
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
+            <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Conversation</span>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            <template x-for="(m, i) in messages" :key="i">
+              <div :class="m.who === 'user' ? 'items-end' : 'items-start'" class="flex flex-col">
+                <div :class="m.who === 'user' ? 'bg-violet-600/20 border-violet-500/30' : 'bg-slate-800/60 border-slate-700/60'" class="rounded-xl border px-3 py-2 max-w-[92%]">
+                  <div x-show="m.ground" class="text-[10px] text-fuchsia-300/90 mb-1 flex items-center gap-1"><i :data-lucide="m.groundIcon || 'image'" class="w-3 h-3 pointer-events-none"></i><span x-text="'about: ' + (m.ground || '')"></span></div>
+                  <div class="text-[12px] leading-relaxed text-slate-200" x-text="m.text"></div>
+                  <div x-show="m.batch" class="text-[10px] text-violet-300/80 mt-1.5 flex items-center gap-1"><i data-lucide="images" class="w-3 h-3 pointer-events-none"></i><span x-text="m.batch"></span></div>
+                </div>
+                <span class="text-[10px] text-slate-600 mt-0.5" :class="m.who === 'user' ? 'mr-1' : 'ml-1'" x-text="m.who === 'user' ? 'you' : 'agent'"></span>
+              </div>
+            </template>
+          </div>
+          <div class="border-t border-slate-800 p-2.5">
+            <div x-show="selected.length > 0" class="text-[10px] text-fuchsia-300 mb-1.5 px-1 flex items-center gap-1"><i data-lucide="check-square" class="w-3 h-3 pointer-events-none"></i><span x-text="'grounded to ' + selected.length + ' selected item' + (selected.length > 1 ? 's' : '')"></span></div>
+            <div class="flex items-end gap-2 bg-slate-800/70 border border-slate-700 rounded-xl px-2.5 py-1.5">
+              <i data-lucide="paperclip" class="w-4 h-4 text-slate-500 mb-1 pointer-events-none"></i>
+              <div class="flex-1 text-[12px] text-slate-500 py-1" x-text="selected.length ? 'say what you like about the selection…' : 'talk about the style — drop files or images anytime…'"></div>
+              <button class="w-7 h-7 rounded-lg bg-violet-600 hover:bg-violet-500 flex items-center justify-center shrink-0"><i data-lucide="arrow-up" class="w-4 h-4 text-white pointer-events-none"></i></button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const G = {
+        grimoire: "bg-gradient-to-br from-amber-800 to-stone-950",
+        familiar: "bg-gradient-to-br from-violet-700 to-indigo-950",
+        nouveau: "bg-gradient-to-br from-rose-800 to-fuchsia-950",
+        vine: "bg-gradient-to-br from-emerald-800 to-teal-950",
+        dusk: "bg-gradient-to-br from-indigo-700 to-violet-950",
+        moon: "bg-gradient-to-br from-indigo-800 to-slate-950",
+        moth: "bg-gradient-to-br from-fuchsia-800 to-violet-950",
+        twilight: "bg-gradient-to-br from-violet-800 to-indigo-950",
+      };
+      function img(id, label, grad, kind, o = {}) {
+        return { id, label, grad, kind, analysis: o.analysis || "", why: o.why || "", liked: !!o.liked, fav: !!o.fav, batch: o.batch || "", meta: o.meta || null };
+      }
+      function doc(id, label, kind, text, o = {}) {
+        return { id, label, kind, text, analysis: o.analysis || "", why: o.why || "" };
+      }
+      function styleRef(id, label, text, canon, o = {}) {
+        return { id, label, kind: "style", text, canon, analysis: o.analysis || "", why: o.why || "" };
+      }
+      function sx(key, label, status, o = {}) {
+        return { key, label, status, content: o.content || "", canon: o.canon, prompts: o.prompts };
+      }
+
+      const SPEC = "grapevine: agent-to-agent channels.\nWants its own twilight identity\nwhile inheriting the house style.";
+      const HOUSE = styleRef("house", "cute-occult house style", "House style (parent) — warm sepia + violet ink, rounded forms, botanical frames.", [
+        { label: "h1", grad: G.moth }, { label: "h2", grad: G.familiar }, { label: "h3", grad: G.nouveau },
+      ], { analysis: "the parent — keep its bones (ink line, rounded forms), shift palette per app." });
+
+      // project styles tray (cross-session, scoped to this checkout) — NOT auto-loaded
+      const TRAY = [
+        { id: "house", label: "cute-occult house style", parent: true, text: "Parent house style.", canon: [{ label: "a", grad: G.moth }, { label: "b", grad: G.familiar }] },
+        { id: "bounty", label: "bounty board style", parent: false, text: "Per-app — warm parchment board.", canon: [{ label: "a", grad: G.grimoire }] },
+      ];
+
+      const SNAP = {
+        opening: {
+          tray: TRAY,
+          items: [doc("d1", "grapevine-spec.md", "context", SPEC, { analysis: "Read — needs its own twilight identity under the house style." }), img("r1", "vine-tangle.jpg", G.vine, "ref")],
+          style: [sx("understanding", "Understanding", "empty"), sx("direction", "Direction", "empty"), sx("palette", "Palette", "empty"), sx("consistency", "Consistency", "empty"), sx("prompts", "Re-cast prompts", "empty"), sx("canonical", "Canonical images", "empty")],
+          messages: [
+            { who: "user", ground: "grapevine-spec.md", groundIcon: "file-text", text: "Doing grapevine's twilight variant. It should inherit the house style but feel its own." },
+            { who: "agent", text: "Read the spec. Open Project styles and bring in the house style as our anchor — it won't be loaded unless you pull it in." },
+          ],
+        },
+        anchored: {
+          tray: TRAY,
+          items: [
+            doc("d1", "grapevine-spec.md", "context", SPEC, { why: "the brief" }),
+            { ...HOUSE, why: "our anchor — keep the ink bones" },
+            img("r1", "vine-tangle.jpg", G.vine, "ref", { fav: true, why: "the vine motif — grapevine's signature", analysis: "tangled organic line; fits the ink language." }),
+            img("r2", "dusk-window.jpg", G.dusk, "ref", { liked: true, why: "the twilight palette I want" }),
+          ],
+          style: [sx("understanding", "Understanding", "forming", { content: "House style's ink bones + rounded forms, re-lit into a twilight palette; vine as signature motif." }), sx("direction", "Direction", "empty"), sx("palette", "Palette", "empty"), sx("consistency", "Consistency", "empty"), sx("prompts", "Re-cast prompts", "empty"), sx("canonical", "Canonical images", "empty")],
+          messages: [
+            { who: "user", ground: "cute-occult house style", groundIcon: "crown", text: "Brought the house style in. Keep its bones; we shift to twilight and lean on the vine." },
+            { who: "agent", text: "Anchored. Understanding is forming — twilight re-lighting of the house style. Want a batch?" },
+          ],
+        },
+        generated: {
+          tray: TRAY,
+          items: [
+            doc("d1", "grapevine-spec.md", "context", SPEC),
+            { ...HOUSE, why: "anchor" },
+            img("r1", "vine-tangle.jpg", G.vine, "ref", { fav: true, why: "vine signature" }),
+            img("g1", "round 1 · A", G.twilight, "gen", { batch: "round 1", meta: { model: "nano-banana", prompt: "house-style ink line, indigo twilight, vine framing, rounded subject", seed: "42817", cost: "$0.011" } }),
+            img("g2", "round 1 · B", G.moon, "gen", { batch: "round 1", meta: { model: "nano-banana", prompt: "…cooler moonlit variant, less amber accent", seed: "90233", cost: "$0.011" } }),
+            img("g3", "round 1 · C", G.dusk, "gen", { batch: "round 1", meta: { model: "seedream-4", prompt: "…painterly dusk, softer line", seed: "11904", cost: "$0.019" } }),
+            img("g4", "round 1 · D", G.moth, "gen", { batch: "round 1", meta: { model: "seedream-4", prompt: "…heavier violet, moth motif", seed: "65120", cost: "$0.019" } }),
+          ],
+          // AGENT pushes a focus subset (zoom in), asks for reaction
+          focusPreset: { ids: ["g1", "g2", "g3", "g4"], owner: "agent", note: "react to these four", message: "I generated four off the twilight direction — two on nano-banana, two on seedream-4. Which reads most like grapevine while keeping the house bones? Tell me in chat and I'll fold it into the guide." },
+          style: [sx("understanding", "Understanding", "agreed", { content: "Twilight re-lighting of the house style; vine signature." }), sx("direction", "Direction", "forming", { content: "House ink line + rounded forms; indigo-violet twilight palette; vine framing." }), sx("palette", "Palette", "forming", { content: "Indigo & violet dusk, warm amber accent kept from the house style." }), sx("consistency", "Consistency", "empty"), sx("prompts", "Re-cast prompts", "empty"), sx("canonical", "Canonical images", "empty")],
+          messages: [
+            { who: "agent", text: "Generated four and pulled them into focus for you.", batch: "focus · round 1 (4)" },
+            { who: "agent", text: "Which of these reads most like grapevine while keeping the house bones?" },
+            { who: "user", ground: "round 1 · A", text: "A. The indigo keeps the ink line readable; D goes too purple." },
+          ],
+        },
+        codified: {
+          tray: [...TRAY, { id: "vine-tw", label: "grapevine · twilight variant", parent: false, isNew: true, text: "Per-app — twilight child of the house style.", canon: [{ label: "a", grad: G.twilight }, { label: "b", grad: G.vine }] }],
+          items: [
+            { ...HOUSE, why: "anchor" },
+            img("r1", "vine-tangle.jpg", G.vine, "ref", { fav: true, why: "vine signature" }),
+            img("g1", "round 1 · A", G.twilight, "gen", { fav: true, why: "the one", batch: "round 1", meta: { model: "nano-banana", prompt: "house-style ink line, indigo twilight, vine framing, rounded subject", seed: "42817", cost: "$0.011" } }),
+            img("g5", "imago · A perfected", G.twilight, "gen", { liked: true, analysis: "returned from imago — vine framing cleaned up", batch: "from imago", meta: { model: "imago edit (nano-banana)", prompt: "from round 1·A — clean vine framing, fix corner", seed: "42817→e3", cost: "$0.024" } }),
+          ],
+          style: [
+            sx("understanding", "Understanding", "agreed", { content: "Twilight re-lighting of the house style; vine signature; inherits ink line + rounded forms." }),
+            sx("direction", "Direction", "agreed", { content: "House ink line + rounded forms; indigo-violet twilight palette; vine framing; one warm accent light." }),
+            sx("palette", "Palette", "agreed", { content: "Indigo & violet dusk + retained warm amber accent. Darker than the parent, same ink black." }),
+            sx("consistency", "Consistency", "agreed", { content: "Inherits the house style; overrides palette + adds vine motif. Everything else stays house-consistent." }),
+            sx("prompts", "Re-cast prompts", "agreed", { prompts: ["hand-inked occult illustration, indigo-violet twilight, warm amber accent, rounded subject, vine framing, house-style line"] }),
+            sx("canonical", "Canonical images", "agreed", { canon: [{ label: "hero · twilight", grad: G.twilight }, { label: "vine frame", grad: G.vine }] }),
+          ],
+          messages: [
+            { who: "user", ground: "round 1 · A", text: "Take A into imago to clean the vine framing, then back." },
+            { who: "agent", text: "Perfected in imago, dropped back. Variant crystallized and saved to the project — it's in your Project styles tray now, as a child of the house style." },
+            { who: "user", text: "Open the tray — there it is. grapevine twilight, done." },
+          ],
+        },
+      };
+
+      function glamour() {
+        return {
+          state: "opening",
+          view: "library",
+          filter: "all",
+          selected: [],
+          enlargedId: null,
+          stylesDrawer: false,
+          scope: "all",
+          focusSet: [],
+          focusOwner: null,
+          focusNote: "",
+          focusMessage: "",
+          broughtIn: [],
+          states: [
+            { id: "opening", label: "1 · Opening" },
+            { id: "anchored", label: "2 · Anchor a style" },
+            { id: "generated", label: "3 · Agent focuses a batch" },
+            { id: "codified", label: "4 · Codified output" },
+          ],
+          filters: [
+            { id: "all", label: "All" },
+            { id: "ref", label: "References" },
+            { id: "context", label: "Context" },
+            { id: "gen", label: "Generated" },
+            { id: "style", label: "Styles" },
+          ],
+          get snap() {
+            return SNAP[this.state];
+          },
+          get items() {
+            return [...this.snap.items, ...this.broughtIn.filter((b) => !this.snap.items.some((i) => i.id === b.id))];
+          },
+          get projectStyles() {
+            return this.snap.tray;
+          },
+          get messages() {
+            return this.snap.messages;
+          },
+          get style() {
+            return this.snap.style;
+          },
+          get styleSolid() {
+            return this.style.filter((s) => s.status === "agreed").length;
+          },
+          get filtered() {
+            return this.filter === "all" ? this.items : this.items.filter((i) => i.kind === this.filter);
+          },
+          get displayed() {
+            if (this.scope === "focus") return this.items.filter((i) => this.focusSet.includes(i.id));
+            return this.filtered;
+          },
+          countOf(id) {
+            return id === "all" ? this.items.length : this.items.filter((i) => i.kind === id).length;
+          },
+          get detailItem() {
+            if (!this.selected.length) return null;
+            const id = this.selected[this.selected.length - 1];
+            return this.items.find((i) => i.id === id) || null;
+          },
+          kindLabel(k) {
+            return { ref: "reference", context: "context", gen: "generated", style: "style" }[k] || k;
+          },
+          badgeClass(k) {
+            return { ref: "bg-sky-600/80 text-white", context: "bg-slate-600/80 text-white", gen: "bg-violet-600/80 text-white", style: "bg-fuchsia-600/80 text-white" }[k] || "bg-slate-600/80 text-white";
+          },
+          setState(id) {
+            this.state = id;
+            this.selected = [];
+            this.enlargedId = null;
+            this.filter = "all";
+            this.view = "library";
+            this.broughtIn = [];
+            this.stylesDrawer = false;
+            const fp = this.snap.focusPreset;
+            if (fp) {
+              this.scope = "focus";
+              this.focusSet = [...fp.ids];
+              this.focusOwner = fp.owner;
+              this.focusNote = fp.note || "";
+              this.focusMessage = fp.message || "";
+            } else {
+              this.scope = "all";
+              this.focusSet = [];
+              this.focusOwner = null;
+              this.focusNote = "";
+              this.focusMessage = "";
+            }
+          },
+          selectItem(id, e) {
+            if (e && (e.metaKey || e.ctrlKey)) {
+              this.selected = this.selected.includes(id) ? this.selected.filter((x) => x !== id) : [...this.selected, id];
+            } else {
+              this.selected = [id];
+            }
+            this.enlargedId = null;
+          },
+          isSel(id) {
+            return this.selected.includes(id);
+          },
+          enlarge(id) {
+            this.selected = [id];
+            this.enlargedId = id;
+          },
+          focusSelected() {
+            if (!this.selected.length) return;
+            this.focusSet = [...this.selected];
+            this.focusOwner = "you";
+            this.focusNote = "";
+            this.focusMessage = "";
+            this.scope = "focus";
+            this.selected = [];
+          },
+          zoomOut() {
+            this.scope = "all";
+            this.focusSet = [];
+            this.focusOwner = null;
+            this.focusNote = "";
+            this.focusMessage = "";
+          },
+          inPalette(id) {
+            return this.items.some((i) => i.id === id);
+          },
+          bringIn(st) {
+            if (this.inPalette(st.id)) return;
+            this.broughtIn.push(styleRefFromTray(st));
+            this.stylesDrawer = false;
+          },
+        };
+      }
+      function styleRefFromTray(st) {
+        return { id: st.id, label: st.label, kind: "style", text: st.text, canon: st.canon, analysis: "", why: "" };
+      }
+
+      function renderIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+      let rafId = null;
+      const observer = new MutationObserver(() => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(renderIcons);
+      });
+      document.addEventListener("alpine:initialized", () => {
+        renderIcons();
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+      renderIcons();
+    </script>
+  </body>
+</html>
