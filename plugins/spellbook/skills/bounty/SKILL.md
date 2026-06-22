@@ -447,6 +447,17 @@ silently stalls mid-task.
 - **Re-pokes, proportionately.** It pokes once on overrun, then re-pokes **once
   per expected-period** (so a big task isn't spammed and a small one still gets
   timely nudges) until the card leaves Doing — at which point it auto-resets.
+- **A blocked card is never poked.** A Doing task with a live blocker (see
+  Dependencies) is legitimately waiting on a peer, not stalled, so the heartbeat
+  (and the surface's "stale" cue) skip it. This is why you should **model a
+  lockstep / serialize wait as a block edge**: when you park a card in Doing to
+  wait on a peer's gate, `block <id> --on <peer>` and the nag goes quiet for
+  free (and clears itself when the peer reaches `done`). An informal "I'll wait"
+  that never becomes a block edge will still get poked.
+- **Size long-by-nature work realistically.** A task that's genuinely long (e.g.
+  a real-browser verify) should carry `--size L` or an honest `--expect <min>`,
+  not a small size it's bound to overrun. If you can't predict the duration up
+  front, leaving it unsized (unwatched) is better than under-sizing it.
 - **You only hear it if you're tailing.** The `heartbeat` event lands on the
   board's event stream, so it reaches you only while you hold an owner-scoped
   tail (`tail --mine`/`--owner`, Monitor-wrapped). A worker that lives on a

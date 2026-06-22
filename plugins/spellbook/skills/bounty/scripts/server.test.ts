@@ -337,6 +337,16 @@ describe("computeDuePokes", () => {
     );
     expect(pokeState.has("d")).toBe(false);
   });
+  test("a blocked doing task is not poked even when overdue", () => {
+    const blocker: Task = { id: "x", title: "X", status: "doing", enteredStatusAt: 0 };
+    const { pokes } = computeDuePokes([doing({ blockedBy: ["x"] }), blocker], new Map(), 100 * MIN);
+    expect(pokes.find((p) => p.taskId === "d")).toBeUndefined();
+  });
+  test("pokes again once the blocker is done", () => {
+    const blocker: Task = { id: "x", title: "X", status: "done", enteredStatusAt: 0 };
+    const { pokes } = computeDuePokes([doing({ blockedBy: ["x"] }), blocker], new Map(), 100 * MIN);
+    expect(pokes.find((p) => p.taskId === "d")).toBeDefined();
+  });
 });
 
 describe("validateTask size/expect", () => {
@@ -375,23 +385,31 @@ describe("cardOverdue", () => {
   });
 
   test("null before the expected time elapses", () => {
-    expect(cardOverdue(card(), 4 * MIN)).toBeNull();
+    expect(cardOverdue(card(), [], 4 * MIN)).toBeNull();
   });
   test("returns overdue-by + age once past the expected time", () => {
-    expect(cardOverdue(card(), 7 * MIN)).toEqual({ overdueByMs: 2 * MIN, ageMs: 7 * MIN });
+    expect(cardOverdue(card(), [], 7 * MIN)).toEqual({ overdueByMs: 2 * MIN, ageMs: 7 * MIN });
   });
   test("null for a doing card with no size/expect (opt-in, mirrors heartbeat)", () => {
-    expect(cardOverdue(card({ size: undefined }), 100 * MIN)).toBeNull();
+    expect(cardOverdue(card({ size: undefined }), [], 100 * MIN)).toBeNull();
   });
   test("null for a non-doing card", () => {
-    expect(cardOverdue(card({ status: "review" }), 100 * MIN)).toBeNull();
+    expect(cardOverdue(card({ status: "review" }), [], 100 * MIN)).toBeNull();
   });
   test("null when the task hasn't been stamped (no enteredStatusAt)", () => {
-    expect(cardOverdue(card({ enteredStatusAt: undefined }), 100 * MIN)).toBeNull();
+    expect(cardOverdue(card({ enteredStatusAt: undefined }), [], 100 * MIN)).toBeNull();
   });
   test("expect overrides size for the threshold", () => {
-    expect(cardOverdue(card({ size: "S", expect: 10 }), 7 * MIN)).toBeNull(); // expect 10 > 7
-    expect(cardOverdue(card({ size: "S", expect: 10 }), 12 * MIN)?.overdueByMs).toBe(2 * MIN);
+    expect(cardOverdue(card({ size: "S", expect: 10 }), [], 7 * MIN)).toBeNull(); // expect 10 > 7
+    expect(cardOverdue(card({ size: "S", expect: 10 }), [], 12 * MIN)?.overdueByMs).toBe(2 * MIN);
+  });
+  test("null when blocked by a live blocker", () => {
+    const blocker: Task = { id: "x", title: "X", status: "doing", enteredStatusAt: 0 };
+    expect(cardOverdue(card({ blockedBy: ["x"] }), [blocker], 100 * MIN)).toBeNull();
+  });
+  test("not blocked once the blocker is done → returns overdue", () => {
+    const blocker: Task = { id: "x", title: "X", status: "done", enteredStatusAt: 0 };
+    expect(cardOverdue(card({ blockedBy: ["x"] }), [blocker], 100 * MIN)).not.toBeNull();
   });
 });
 

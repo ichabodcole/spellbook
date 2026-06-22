@@ -100,6 +100,19 @@ function expectedMinutes(task: Task): number | undefined {
   return undefined;
 }
 
+// A task is blocked iff a blockedBy id points at an EXISTING task that isn't
+// done yet (a missing or done blocker doesn't block) — the same predicate the
+// /state projection uses for `blocked`/`liveBlockers`. Pure + module-level so
+// the heartbeat poke + card-aging sweeps and reconcileBlocked all share it. A
+// blocked doing card is legitimately waiting on a peer, not stuck — neither
+// sweep should fire on it (#40; model the wait as `block <id> --on <peer>`).
+function isBlocked(task: Task, tasks: Task[]): boolean {
+  return (task.blockedBy ?? []).some((bid) => {
+    const b = tasks.find((t) => t.id === bid);
+    return b !== undefined && b.status !== "done";
+  });
+}
+
 type Poke = { taskId: string; owner?: string; overdueByMs: number; expectedMinutes: number };
 type PokeState = Map<string, number>; // taskId -> lastPokeAt (unix ms)
 
@@ -120,6 +133,7 @@ function computeDuePokes(
     if (task.status !== "doing" || task.enteredStatusAt === undefined) continue;
     const exp = expectedMinutes(task);
     if (exp === undefined) continue;
+    if (isBlocked(task, tasks)) continue; // legitimately waiting on a peer — not stuck
     const expMs = exp * 60_000;
     const overdueByMs = now - (task.enteredStatusAt + expMs);
     if (overdueByMs < 0) continue; // not overdue yet — no bookkeeping needed
@@ -142,10 +156,15 @@ function computeDuePokes(
 // clock-injected so it's unit-tested; the inline Alpine surface mirrors it (it
 // can't import — it ticks `now` client-side). NOT used by the daemon (no server
 // behavior change) — it's the canonical the surface copies.
-function cardOverdue(task: Task, now: number): { overdueByMs: number; ageMs: number } | null {
+function cardOverdue(
+  task: Task,
+  tasks: Task[],
+  now: number,
+): { overdueByMs: number; ageMs: number } | null {
   if (task.status !== "doing" || task.enteredStatusAt === undefined) return null;
   const exp = expectedMinutes(task);
   if (exp === undefined) return null;
+  if (isBlocked(task, tasks)) return null; // legitimately waiting on a peer — not stale
   const ageMs = now - task.enteredStatusAt;
   const overdueByMs = ageMs - exp * 60_000;
   return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
@@ -685,13 +704,8 @@ async function main(argv: string[]): Promise<number> {
   const ownerOf = (id: string) => state.tasks.find((t) => t.id === id)?.owner;
 
   // ── dependencies (Phase D) ──
-  // A task is blocked iff it has a blockedBy id pointing at an EXISTING task
-  // that isn't done yet. A missing (deleted) or done blocker doesn't block.
-  const isBlocked = (task: Task): boolean =>
-    (task.blockedBy ?? []).some((bid) => {
-      const b = state.tasks.find((t) => t.id === bid);
-      return b !== undefined && b.status !== "done";
-    });
+  // (the canonical `isBlocked(task, tasks)` predicate is module-level, shared
+  // with the heartbeat + card-aging sweeps.)
 
   // Can `from` reach `target` by following blockedBy edges? Used by the cycle
   // guard: adding edge id→b would close a loop iff b already reaches id. A
@@ -708,7 +722,7 @@ async function main(argv: string[]): Promise<number> {
   // the blocked→unblocked falling edge (never double-fire). Seeded from the
   // initial/restored board so already-blocked tasks don't spuriously fire.
   const prevBlocked = new Map<string, boolean>();
-  for (const t of state.tasks) prevBlocked.set(t.id, isBlocked(t));
+  for (const t of state.tasks) prevBlocked.set(t.id, isBlocked(t, state.tasks));
 
   // Run after every mutation: for each task, if it just went blocked→unblocked
   // (the last live blocker cleared, or its last live edge was removed) AND it
@@ -716,7 +730,7 @@ async function main(argv: string[]): Promise<number> {
   // O(n) walk — one mutation can unblock many tasks; board scale makes it free.
   function reconcileBlocked() {
     for (const task of state.tasks) {
-      const now = isBlocked(task);
+      const now = isBlocked(task, state.tasks);
       const was = prevBlocked.get(task.id) ?? false;
       if (was && !now && task.status !== "done") {
         emitEvent({ type: "unblocked", taskId: task.id, owner: task.owner, by: "system" });

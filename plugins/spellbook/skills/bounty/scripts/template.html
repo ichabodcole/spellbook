@@ -716,6 +716,9 @@
             if (task.status !== "doing" || typeof task.enteredStatusAt !== "number") return null;
             const exp = this.expectedMinutes(task);
             if (exp === undefined) return null;
+            // A blocked card is legitimately waiting on a peer — not stale (#40).
+            // Mirrors the daemon's cardOverdue isBlocked skip.
+            if (this.blockedCount(task) > 0) return null;
             const ageMs = this.now - task.enteredStatusAt;
             const overdueByMs = ageMs - exp * 60000;
             return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
