@@ -9,7 +9,7 @@ cross-spell imports, no build step.
 | `digestify` | cantrip     | A one-shot reading/review surface with inline questions.    |
 | `grapevine` | conjuration | A standing daemon for agent-to-agent channels.              |
 | `bounty`    | conjuration | A live duplex Kanban board (human ↔ agent, real-time).      |
-| `magpie`    | conjuration | An image surface — drop an image, the agent orchestrates.   |
+| `magpie`    | cantrip     | Extract individual assets from a composite image into PNGs. |
 | `glamour`   | conjuration | A style studio — references in, re-castable style spec out. |
 | `imago`     | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.   |
 
@@ -35,8 +35,6 @@ return to). The structural tell: conjurations ship a `daemon.ts` (or
 Don't hand-roll one. Run the **`inscribe`** authoring ritual
 (`.claude/skills/inscribe/`): it names the spell, checks the trigger registry,
 copies the `scaffold/`, points you at `grimoire/house-style.md`, and runs the
-fresh-agent test loop.
-
-> **Migration note:** the four spells above currently live in
-> `project-docs/plugins/toolbox/skills/`. They land here during the Spellbook
-> extraction — see `docs/projects/spellbook-extraction/proposal.md`.
+fresh-agent test loop. Before merging, run **`ward`** — the consistency
+checklist that keeps this table in sync with the marketplace manifest and the
+trigger registry.

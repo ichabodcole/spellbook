@@ -1,185 +1,168 @@
 # Project Summary
 
-**Last Updated:** 2026-05-29 **Project Status:** Early Development
+**Last Updated:** 2026-06-18 **Project Status:** Active Development (approaching
+a pre-release coherence pass)
 
 ## Overview
 
-**Spellbook** is a Claude Code plugin marketplace — and a grimoire of craft —
-for a category of artifact called **spells**: lightweight, standalone,
-Bun-served local surfaces with an agent as the runtime underneath. A spell isn't
-wired to a database or a conventional server; the agent orchestrates, the UI is
-served locally as a thin membrane, and authentication/API access live at the MCP
-layer. They are deliberately _not_ chat widgets (they get their own surface),
-_not_ generated fresh at runtime (built once, then frozen and refined), and
-_not_ transient (their effect can persist).
+**Spellbook** is a [Claude Code](https://claude.com/claude-code) plugin
+marketplace of **spells** — lightweight, standalone, purpose-built browser
+surfaces with an agent as the runtime underneath. A spell isn't wired to a
+database or a conventional server: the agent orchestrates, the UI is served
+locally by [Bun](https://bun.sh), and auth/API access live at the MCP layer so
+the client stays thin. Each spell ships as a self-contained skill — zip one
+folder and it runs anywhere `bun` is on PATH.
 
-The project was extracted from the `project-docs` toolbox once four such tools —
-Digestify, Grapevine, Bounty, Magpie — cohered into a distinct category with its
-own manifesto. Rather than just housing the code, the repo is structured to
-_embody_ the manifesto: the co-evolution machinery (house-style conventions,
-fresh-agent testing, scenario capture, a decay ledger) is a first-class citizen
-in a dedicated `grimoire/`.
+The project is two things at once. It's a **product** — six shipped spells
+spanning agent↔human and agent↔agent collaboration — and a **methodology lab**:
+an unusually developed craft system (the _grimoire_) for growing and pruning
+agent surfaces well. The guiding idea, newly crystallized, is **co-presence**: a
+spell is a board both human and agent work, each perceiving the shared object
+through its own channel (the human a UI, the agent state + events) and each
+acting through its own affordances — a structured conversation, not an
+input→service→output pipeline.
 
-The repo itself is brand new — one commit, with the bulk of the work still
-uncommitted in the working tree — even though the spells it contains are mature
-and battle-tested from their toolbox origins.
+The conceptual canon lives in `docs/PROJECT_MANIFESTO.md` (mirrored from the
+Operator workspace, which is the source of truth); the operational canon lives
+in `grimoire/house-style.md`.
 
 ## Core Technologies
 
-- **Primary Language:** TypeScript (Magpie's scripts are Python)
-- **Framework/Runtime:** Bun (spells are Bun processes; `bun` runs `.ts`
-  natively — no bundler, no build step)
-- **Build Tools:** None by design. Zip one spell folder and it runs anywhere
-  `bun` is on PATH.
-- **Key Dependencies:** `@types/bun`; MCP at the auth layer (per spell)
-- **Development Tools:** Biome (lint + format), Prettier (md/json/yaml), Husky
-  (git hooks), release-please (versioning), Zed config
+- **Primary Language:** TypeScript (one spell, magpie, is Python 3.11+)
+- **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
+- **UI:** React 19 + Tailwind 4 for rich surfaces (glamour, imago); Alpine.js
+  over CDN for light surfaces (bounty, digestify, grapevine watch)
+- **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
+- **Build Tools:** none at the spell level (Bun runs source directly); heavy
+  surfaces use a Bun bundler step inside their own setup
+- **Development Tools:** Biome (`.ts/.tsx/.json`, error-on-warnings), Prettier
+  (`.md`), Husky + lint-staged pre-commit, release-please for versioning
 
 ## Project Structure
 
 ```
-plugins/spellbook/            # the shipped plugin (marketplace source)
-  .claude-plugin/plugin.json
-  skills/
-    digestify/                # cantrip — one-shot review surface
-    grapevine/                # conjuration — agent-to-agent channel
-    bounty/                   # conjuration — live Kanban board (todo→doing→review→done)
-    magpie/                   # image asset extraction (Python; least surface-like)
-      SKILL.md  scripts/  assets/
-
-grimoire/                     # the craft (first-class, not generic docs)
-  house-style.md              # conventions — the source of truth
-  scenarios/                  # captured judgment (4 + template)
-  fresh-agent/                # cold-agent testing protocol + findings
-  decay-ledger.md             # rule reinforcement dates / removal candidates
-  trigger-registry.md         # reserved spell names
-
-scaffold/                     # intentionally empty — derived later
-.claude/skills/               # repo-dev-only: inscribe (author), ward (check)
-docs/                         # project-docs scaffold v4.4.0
-  PROJECT_MANIFESTO.md        # the "why" (mirrored from Operator)
-  architecture/                        # template-only (no doc yet)
-  projects/                            # five active projects (see below)
+plugins/spellbook/skills/   the six spells (+ READMEs); each self-contained
+grimoire/                   the craft: house-style, decay-ledger, trigger-registry,
+                            fresh-agent/, scenarios/
+docs/                       manifesto, projects/, backlog/, fragments/, reports/
+                            (architecture/specifications/playbooks/etc. are template-only)
+scaffold/                   starting point for a new spell
+.claude/skills/             the inscribe + ward authoring rituals
+.claude-plugin/             marketplace manifest
 ```
 
-Every spell is one self-contained folder following the same shape (see Key
-Insights). The `.claude-plugin/marketplace.json` at the root publishes the
-single `spellbook` plugin (v0.1.0).
+Each spell folder holds `SKILL.md` (the contract), `scripts/` (`cli.ts` + a
+`server.ts`/`daemon.ts` for conjurations), a surface (`surface/` React or
+`assets/` Alpine), `references/`, and `*.test.ts`.
+
+## The Spells
+
+Two kinds: a **cantrip** casts and resolves (no standing state); a
+**conjuration** runs a daemon you return to.
+
+| Spell       | Kind        | What it does                                                                 | Surface      |
+| ----------- | ----------- | ---------------------------------------------------------------------------- | ------------ |
+| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON   | Alpine-CDN   |
+| `magpie`    | cantrip     | Extracts individual assets from a composite image → PNGs (Python/OpenRouter) | none (CLI)   |
+| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface       | Alpine watch |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent             | Alpine-CDN   |
+| `glamour`   | conjuration | Style studio — influences in, a re-castable style spec + images out          | React 3-pane |
+| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                  | React 3-pane |
 
 ## Documented Systems
 
-- **The Manifesto** — what a spell _is_ and the cosmology/craft behind it (see
-  `docs/PROJECT_MANIFESTO.md`; living source is Operator).
-- **House Style** — the authoring conventions, each rule written as an
-  imperative
-  - boundary check + repeal criterion (see `grimoire/house-style.md`).
-- **Spell anatomy** — the shared shape of a spell (see
-  `plugins/spellbook/skills/README.md`). No dedicated `docs/architecture/` doc
-  exists yet; the three-actor / two-kind model lives across the manifesto,
-  house-style, and the `agent-surface-bun` recipe (in project-docs).
+The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
+**only templates** — by design. System knowledge lives in two places instead:
 
-## Application Specifications
-
-No technology-agnostic application specifications exist yet
-(`docs/specifications/` holds templates only). The manifesto + house-style +
-`plugins/spellbook/skills/README.md` together serve as the de facto
-specification of what a spell is and how it behaves.
+- **The manifesto** (`docs/PROJECT_MANIFESTO.md`) — what a spell is and why
+  (agent-as-runtime, surface-fit, co-presence, the cosmology, the craft loop).
+- **House style** (`grimoire/house-style.md`) — the operational conventions,
+  each an imperative + boundary check + repeal criterion.
 
 ## Recent Activity (Last 30 Days)
 
-All activity is concentrated in a 2026-05-28/29 burst.
-
 **Active Work Areas:**
 
-- **Extraction & repo setup**: spells migrated from the `project-docs` toolbox
-  into `plugins/spellbook/skills/`; marketplace + plugin manifest stood up;
-  grimoire seeded; `inscribe` and `ward` repo-dev skills authored.
-- **Grapevine feature work**: `grapevine-v1.7` (mid-design) and a
-  `grapevine-backlog`, migrated alongside the spells.
-- **Pre-release polish**: `spellbook-coherence` (close gaps to the new
-  standards) and `spellbook-rebrand` (a cohesive cute-occult identity).
-- **Dev platform**: Bun/Biome/Zed/Prettier/Husky initialized (the one commit).
+- **imago** — the heaviest track: layer system (containers, grouping,
+  multi-select, transforms), refs-as-assets (image-model unification), the
+  unified context library (passive catalog + linked sets), surface UX polish.
+- **glamour** — full React studio rebuild, shipped **V1.0** (media-forge image
+  generation, narration feed, cost tracking).
+- **grapevine** — `announce` (cross-channel broadcast) + **V1.7** (human as a
+  first-class participant; Alpine surface port).
+- **bounty** — wave-2: surface filters, card-aging cues, durability, `list`
+  verb; SKILL finalized.
+- **grimoire/docs** — co-presence captured as the shared spell shape;
+  decay-ledger refinements; archival of completed projects.
 
-**Recent Sessions:** None recorded yet (`docs/projects/*/sessions/` is empty).
+**Recent Sessions:**
 
-**Notable Changes:** Per the extraction proposal's status table, every migration
-step is **done in the working tree**; only the first commit of the migrated
-content is pending. Git history therefore shows only `e9f7201` (dev platform).
+- 2026-06-18 — imago ward + co-presence manifesto evolution (this session)
+- 2026-06-17 — imago unified context library (styles + prompts → passive
+  library)
+- 2026-06-16 — imago refs-as-assets Phase 1; layer system Phases 0–3
+
+**Notable:** frequent release-please cuts took the plugin from v1.0 →
+**v1.7.0**.
 
 ## Current Direction
 
-**Active Projects** (under `docs/projects/`):
+**Active Projects** (`docs/projects/`):
 
-- **spellbook-extraction** — _Approved (structure); migration functionally
-  complete in the working tree, first commit pending._ Splits the four spells
-  into this dedicated repo.
-- **spellbook-coherence** — _Draft._ A pre-release pass to close the gaps
-  between "the code runs" and the standards written since (surfaced by the
-  migration plus the `inscribe`/`ward` fresh-agent dogfood).
-- **spellbook-rebrand** — _Draft._ Pre-release cute-occult thematic rebrand
-  (renames cheapest now); graduated from the aesthetic fragment.
-- **grapevine-v1.7** — _Draft._ Promotes the human to a first-class channel
-  participant — the watch surface becomes a control plane.
-- **grapevine-backlog** — a `backlog.md` of grapevine ideas (no `proposal.md`).
+- `imago` — in progress (most active spell)
+- `image-style-spell` (glamour) — in progress / recently shipped V1.0
+- `spellbook-coherence` — planned: align migrated spells to conventions before
+  release
+- `spellbook-rebrand` — planned: unify spells under a cute-occult aesthetic +
+  renames
+- `grapevine-announce` — shipped (merged); `grapevine-backlog` — living triage
+- `media-forge-cli-gaps` — shipped analysis report
+- `digestify-image-viewer`, `spell-architecture-maturity` — backlog
 
-**In Progress Investigations:** None.
-
-**Deferred / parked** (out of scope for the extraction): the `wand` mage-facing
-CLI, a shipped `scaffold/` authoring skill, a publishable spell-creator, a
-feedback/report-issue capability, the `liaison` spell from the manifesto, and
-any net-new spells. The `wand` and spell-creator live as `docs/fragments/`
-sparks; the aesthetic/rebrand fragment has already **graduated** to the
-`spellbook-rebrand` project.
-
-The near-term trajectory is to land (commit) the migration, then begin the
-co-evolution loop in earnest — fresh-agent testing the migrated spells to
-validate the still-unproven `(seed)` rules.
+**Trajectory:** the spells exist and work; the near-term arc is **hardening and
+coherence toward a public release** — consistent conventions, a unified
+aesthetic/naming pass, and filling the per-spell gaps surfaced by use.
 
 ## Development Patterns & Practices
 
-- **The craft loop:** spells are _grown_, not written once — fresh-agent testing
-  (empirical) + scenario capture (theoretical), with rules that **decay by
-  default** unless reinforced (`grimoire/decay-ledger.md`).
-- **Authoring rituals:** `inscribe` (problem → prototype → coalescence → harden)
-  and `ward` (consistency checklist) — both repo-dev-only, both pointing at
-  `house-style.md` as source of truth rather than copying it.
-- **Governing authoring rule:** "architect for the reader's context, not your
-  own," tested by _reachability from the agent's trajectory._
-- **Documentation:** project-docs scaffold (v4.4.0); manifesto mirrored from
-  Operator. No playbooks or lessons-learned recorded yet.
+- **The grimoire** is the heart of the craft: `house-style.md` (~13 rules),
+  `decay-ledger.md` (rules decay unless reinforced), `trigger-registry.md`
+  (reserved names), `fresh-agent/` (6 cold-agent usability reports),
+  `scenarios/` (11 captured judgments). Reinforcement-driven decay keeps the
+  rule set from accreting.
+- **Authoring rituals:** `inscribe` grows a spell (design → prototype →
+  coalescence/naming → harden); `ward` is the pre-merge consistency checklist
+  (catches drift across the synced listings + version).
+- **The daemon + thin CLI pattern** for conjurations: canonical state in a
+  daemon, a stateless `cli.ts` (command in / `state` read-back / events out),
+  human surface on its own WebSocket channel.
+- **Versioning:** conventional commits drive release-please; `fix(...)` → patch,
+  `feat(...)` → minor. Don't hand-edit versions.
 
 ## Quick Start for New Contributors
 
 1. Install dependencies: `bun install`
-2. Format: `bun run format` · Lint: `bun run lint` (fix: `bun run lint:fix`)
-3. Tests: `bun test` (per CLAUDE.md; no aggregate test script defined yet)
-4. Read key docs, in order: `docs/PROJECT_MANIFESTO.md` (why) →
-   `plugins/spellbook/skills/README.md` (spell anatomy) →
-   `grimoire/house-style.md` (how). To author a spell, invoke the `inscribe`
-   skill; to start one today, clone an existing spell of the matching kind.
+2. Format / lint: `bun run format` · `bun run lint`
+3. Test a spell: `cd plugins/spellbook/skills/<spell> && bun test`
+4. Run a spell locally:
+   `bun plugins/spellbook/skills/<spell>/scripts/cli.ts <verb>`
+   (`open`/`info`/`help` for conjurations)
+5. Read first: `docs/PROJECT_MANIFESTO.md`, `grimoire/house-style.md`, and a
+   spell's `SKILL.md`
 
 ## Key Insights
 
-- **Every spell has three actors and two kinds.** Actors: the _surface_ (thin
-  local UI), the Bun process that serves it and bridges to the agent, and the
-  _agent_ (the runtime). Kinds: _cantrip_ (cast-and-resolve, no persistence —
-  Digestify) and _conjuration_ (a standing daemon that holds state — Grapevine,
-  Bounty). Spells honor an exit-code contract: `0` submitted, `2` bad input,
-  `124` idle timeout, `130` user cancelled. Magpie is the outlier — it ships as
-  Python asset-extraction scripts, not a Bun-served surface, so its registered
-  "conjuration" kind is worth reconciling.
-- **Git history understates the project.** Only the dev-platform commit is in
-  history; the spells, grimoire, and docs are uncommitted. Don't reason about
-  state from `git log` alone.
-- **The grimoire is the differentiator.** This isn't just a plugin repo — it's a
-  self-modifying craft system. Rules carry their own repeal criteria and
-  evaporate unless recurring scenarios reinforce them; most are still
-  unvalidated `(seed)` rows.
-- **Naming is a mechanic.** `trigger-registry.md` reserves canonical spell
-  _names_ (the future `wand` CLI tokens); the many conversational _invocations_
-  live in each `SKILL.md`. Names are reserved at coalescence, not genesis.
-- **`scaffold/` is empty on purpose** — it will be _derived_ from real spells
-  after the first net-new spell is authored, not pre-written.
+- **Agent-as-runtime, surface-as-membrane.** No database, no conventional
+  backend; the agent is the runtime and auth lives at the MCP layer.
+- **Co-presence is the defining shape** (manifesto §2): both parties see and act
+  on the shared work through their own channel. The anti-pattern to resist is
+  the traditional app's input→service→output pipeline.
+- **Two deliberate surface tiers:** React studios (glamour, imago) for rich
+  canvases; Alpine-CDN (bounty, digestify, grapevine) for boards/reviews.
+- **The grimoire is the real moat** — a self-pruning craft system most projects
+  lack; rules survive only by reinforcement.
+- **The manifesto is canonical in Operator**, mirrored here; edit it there and
+  re-sync.
 
 ---
 

@@ -1,7 +1,8 @@
 # Grapevine — Feature Backlog
 
-**Status:** Living document **Last Updated:** 2026-05-27 (V1.6.1 rollout
-retrospective added operator-family items + message edit)
+**Status:** Living document **Last Updated:** 2026-06-22 (`grapevine-feedback`
+channel triage — added truncation full-delivery, presence alias dedup, `pull`
+self-echo, and `close` soft-default items)
 
 ---
 
@@ -408,6 +409,106 @@ at first (agents reconnect constantly; their join/leave is noise).
 
 **Pairs with:** the V1.7 human marker (`who.humans`) — this is the push version
 of what `who` answers by poll today.
+
+---
+
+### Tail/notification body size — `--max` cap (shipped); hard clip is the Monitor layer
+
+**Status:** Partially shipped — `tail --max` (2026-06-22) **Originated:**
+2026-06-22 (`grapevine-feedback` triage — the **#1 friction by a wide margin**,
+named independently by cherry, robin, flint, maestro, and the full 5-seat
+dream-flute team; dream-flute called it "the UNANIMOUS #1 from every seat")
+
+**Correction to the original framing.** This was first written as if grapevine
+_truncated_ long messages. It does **not** — `tail` always emits the **full**
+`payload.text`; over `GRAPEVINE_TRUNCATION_HINT_THRESHOLD` (2000) it merely
+**prepends** a `truncation_hint` (`+N chars — full: read <ch> <id>`). The actual
+clip the agents hit is in the **Monitor / push-notification layer** that wraps
+`tail` (Claude Code tooling, external to grapevine), which has no documented max
+line length. So "`tail --full` / raise the threshold" was moot — full text was
+already on the stream; nothing in grapevine was truncating.
+
+**What shipped (the grapevine-side lever).** `tail --max <n>` (and the
+`GRAPEVINE_TAIL_MAX` env default) — an **opt-in** cap on the inline body
+grapevine emits in the tail frame: over the cap, the body is truncated to `n`
+chars **plus** the read-pointer hint, while the full message stays retrievable
+via `read <ch> <id>`. Off by default (full text inline, unchanged). Each
+consumer can hand its notification surface a deliberately-sized line tuned to
+what that surface actually shows — a low-budget host caps small + clean; a
+high-budget host sets `--max` large and gets whole messages inline. (cherry's
+exact ask: "make-configurable the threshold, e.g. `--max-line <n>` or env.")
+
+**Still open — the deeper fix lives in the Monitor layer, not grapevine.** Even
+with `--max`, the _hard_ clip a consumer sees is the notification harness's;
+`--max` only bounds the line grapevine hands it. The remaining candidates all
+belong to that push layer (Claude Code Monitor), out of grapevine's control:
+full-text-for-@mentions, a host-aware preview/expand, or a higher notification
+line budget. If that layer ever exposes a knob, the fix continues there — not in
+grapevine.
+
+---
+
+### Presence roster not deduped by alias
+
+**Status:** Sketched **Originated:** 2026-06-22 (`grapevine-feedback` triage —
+dream-flute #11 minor; maestro corroborates seeing `"fathom","fathom"`)
+
+**Idea:** `who` / presence lists the same alias twice when one seat holds two
+connections. The daemon keys subscribers by connection symbol
+(`subscribers: Map<symbol, Subscriber>`) and the `subscribers:[alias]` array is
+built from the map values without de-duping by alias, so a seat with two live
+connections appears twice in the roster.
+
+**Sketch:** de-dupe the `subscribers`/`humans` alias arrays by alias when
+building the presence response (keep `connections` as the raw count, since that
+field is honest about connection multiplicity). Small, contained — the visible
+roster should be one row per identity.
+
+**Open question:** should an anonymous (unnamed) seat still be counted/shown
+distinctly? Probably yes — only de-dupe _named_ aliases.
+
+---
+
+### `pull --as <alias>` self-echo suppression
+
+**Status:** Idea **Originated:** 2026-06-22 (`grapevine-feedback` triage — robin
+#8)
+
+**Idea:** `tail --as <alias>` filters the caller's own messages from the stream;
+`pull --since <id>` does not. Since `pull`'s dominant use is recovering a
+message the caller was notified about, the range result interleaves their own
+sends, which they hand-skip. Accept `--as`/`--from` on `pull` with tail's
+self-echo semantics.
+
+**Priority:** Low. robin noted it "largely evaporates" now that the
+`read <channel> <id>` single-message verb has shipped — strictly a fallback
+behind that. Capture so it isn't re-derived; don't schedule on its own.
+
+---
+
+### `close` soft-by-default (or a confirm guard)
+
+**Status:** Idea **Originated:** 2026-06-22 (`grapevine-feedback` triage — robin
+lost the full design dialogue of a shipped feature to a `close`)
+
+**Context:** `close` deletes the message log; robin closed two channels holding
+a shipped feature's design dialogue and the JSONL is gone. V1.7 shipped
+`archive`/`unarchive` as the non-destructive path, which mitigates this — but
+`close` is still **destructive-by-default**, and the safe path is opt-in, so the
+footgun remains for anyone who reaches for the obvious verb.
+
+**Options (a decision, not just a task):**
+
+- Leave as-is — `archive` is the documented safe path; `close` stays the
+  explicit "I mean it" verb. (Cheapest; relies on the user knowing `archive`
+  exists.)
+- Add a typed-confirmation / `--yes` guard to `close` so deletion isn't a
+  single-keystroke mistake.
+- Flip the default: `close` archives (soft-preserve), opt-in `--purge` deletes
+  (robin's suggested shape). Larger behavioral change; clearest safety story.
+
+**Note:** cross-references the `restart --force|--yes` live-fleet guard already
+shipped — same "destructive op wants a guard" instinct.
 
 ---
 

@@ -634,6 +634,46 @@ describe("grapevine cli", () => {
     proc.kill("SIGTERM");
   });
 
+  test("tail --max caps the inline body and still emits the read-pointer hint", async () => {
+    await bunRun(["open", "test_max"]);
+    const t = spawnTail("test_max", ["--as", "observer", "--max", "200"]);
+    await sleep(400);
+    await bunRun(["send", "test_max", "--from", "talker", "m".repeat(2500)]);
+    await sleep(400);
+    const line = t
+      .output()
+      .split("\n")
+      .filter(Boolean)
+      .find((l) => l.includes('"text"'));
+    expect(line).toBeDefined();
+    const payload = JSON.parse(line);
+    expect(payload.text.length).toBe(200); // inline body capped to --max
+    expect(payload.truncation_hint).toBeDefined();
+    expect(payload.truncation_hint).toContain("2500 chars"); // hint reports the TRUE total
+    expect(payload.truncation_hint).toContain(`read test_max ${payload.id}`);
+    // F17 order: hint serializes before .text so a downstream clip can't bury it.
+    expect(line.indexOf("truncation_hint")).toBeLessThan(line.indexOf('"text"'));
+    t.proc.kill("SIGTERM");
+  });
+
+  test("tail --max above the message length leaves the body intact (no cap, no hint)", async () => {
+    await bunRun(["open", "test_max_big"]);
+    const t = spawnTail("test_max_big", ["--as", "observer", "--max", "100000"]);
+    await sleep(400);
+    await bunRun(["send", "test_max_big", "--from", "talker", "k".repeat(2500)]);
+    await sleep(400);
+    const line = t
+      .output()
+      .split("\n")
+      .filter(Boolean)
+      .find((l) => l.includes('"text"'));
+    expect(line).toBeDefined();
+    const payload = JSON.parse(line);
+    expect(payload.text.length).toBe(2500); // full inline — consumer opted into a high cap
+    expect(payload.truncation_hint).toBeUndefined();
+    t.proc.kill("SIGTERM");
+  });
+
   test("grep returns regex-matched messages (case-insensitive default)", async () => {
     await bunRun(["open", "test_grep"]);
     await bunRun(["send", "test_grep", "--from", "a", "Apple pie"]);

@@ -84,6 +84,13 @@ The user adds **reference images** from the browser (drag-drop / attach) — you
 never add those. Everything else (dialogue, proposals, batches, focus, context
 library entries) you post.
 
+**Save a reusable quick prompt** (a go-to the user can pick in the composer):
+`context prompt "<label>" --content "<the prompt text>" --link quickPrompts`.
+Quick prompts are a composer convenience — the user picks one and it returns to
+you as a `say`/`proposal.send`; you don't auto-fold them into generation. Active
+**styles** (`--link active`) are the context you _do_ fold in (see The loop +
+`references/mediaforge.md`).
+
 ## Run it push-based — Monitor the tail, don't poll
 
 The single most important operating rule: **subscribe to the event stream and

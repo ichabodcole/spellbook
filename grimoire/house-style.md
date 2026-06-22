@@ -134,6 +134,26 @@ one pane.
   surface at all — don't conjure one for ceremony.
 - **Repeal when:** —
 
+### A spell is a shared workspace — design for co-presence, not a form to submit.
+
+A spell is a surface human and agent both work through: each **perceives** the
+shared work-object via its own channel (the human a rendered UI; the agent
+`state` + events at parity) and each **acts** via its own affordances (gestures
+vs. verbs). The _lean_ varies — co-creation (imago), observation-with-the-door-
+open (grapevine, bounty), co-ideation (digestify) — but co-presence does not.
+The failure mode is the traditional app's gravity: _input → service → output_, a
+surface that takes input and ships it somewhere instead of a place two parties
+keep working something together.
+
+- **Boundary check:** the test is **co-presence, not symmetry** — plenty stays
+  one-sided (the human drops a reference; the agent generates). For any
+  affordance ask: can _both_ parties see it (each through their lens), and is
+  the work-object actionable from _both_ seats? If you're building a
+  prompt-box-and-submit (words in, result out, no shared surface), the pipeline
+  has reasserted itself — stop. (The agent's half of "both see it" is
+  **readback-parity**: `state` must reach surface parity, computed not raw.)
+- **Repeal when:** —
+
 ### Keep the client thin — MCP at the auth layer.
 
 The surface is a membrane, not an app. No database, no conventional server.

@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>glamour — gallery-central mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      body {
+        background: #0b1120;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      [x-cloak] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body class="text-slate-200 antialiased">
+    <div x-data="glamour()" x-cloak class="flex flex-col h-screen relative">
+      <!-- ░░ State switcher (mockup chrome — NOT part of the design) ░░ -->
+      <div class="bg-amber-950/80 border-b border-amber-800/60 px-4 py-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span
+            class="text-[10px] uppercase tracking-wider text-amber-500/80 font-semibold mr-1"
+            >Session evolving →</span
+          >
+          <template x-for="s in states" :key="s.id">
+            <button
+              @click="setState(s.id)"
+              :class="state === s.id ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:border-amber-700'"
+              class="text-xs px-2.5 py-1 rounded border font-medium transition-colors"
+              x-text="s.label"
+            ></button>
+          </template>
+          <span class="ml-auto text-[10px] text-amber-500/60 italic"
+            >live: click tiles to select · ⛶ to focus · toggle Gallery/Style top-right</span
+          >
+        </div>
+      </div>
+
+      <!-- ░░ App header ░░ -->
+      <header
+        class="flex items-center gap-3 px-5 py-2.5 border-b border-slate-800 bg-slate-900/60"
+      >
+        <div
+          class="w-7 h-7 rounded-lg bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center"
+        >
+          <i data-lucide="sparkles" class="w-4 h-4 text-white"></i>
+        </div>
+        <div class="leading-tight">
+          <div class="font-semibold text-slate-100 text-sm">glamour</div>
+          <div class="text-[11px] text-slate-500">
+            project <span class="text-slate-400">Spellbook</span> · composing
+            <span class="text-fuchsia-300">cute-occult house style</span>
+          </div>
+        </div>
+        <!-- view toggle: gallery vs the codified output -->
+        <div
+          class="ml-auto flex items-center gap-1 bg-slate-800/70 border border-slate-700 rounded-lg p-0.5"
+        >
+          <button
+            @click="view = 'gallery'"
+            :class="view === 'gallery' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'"
+            class="text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5"
+          >
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5 pointer-events-none"></i>
+            Gallery
+          </button>
+          <button
+            @click="view = 'style'"
+            :class="view === 'style' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'"
+            class="text-xs px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5"
+          >
+            <i data-lucide="book-open" class="w-3.5 h-3.5 pointer-events-none"></i>
+            Style guide
+            <span
+              class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-900 text-slate-400"
+              x-text="styleSolid + '/' + style.length"
+            ></span>
+          </button>
+        </div>
+      </header>
+
+      <!-- ░░ Three regions ░░ -->
+      <div class="flex-1 min-h-0 grid" style="grid-template-columns: 230px 1fr 350px">
+        <!-- ── LEFT rail: context files + project styles ── -->
+        <aside class="border-r border-slate-800 bg-slate-900/30 flex flex-col min-h-0">
+          <!-- context files -->
+          <div class="px-3 py-2 border-b border-slate-800">
+            <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold"
+              >Context files</span
+            >
+          </div>
+          <div class="p-2.5 space-y-1.5 border-b border-slate-800">
+            <template x-for="f in contextFiles" :key="f.name">
+              <div
+                class="flex items-center gap-2 text-[11px] bg-slate-800/40 border border-slate-700/60 rounded px-2 py-1.5"
+              >
+                <i data-lucide="file-text" class="w-3.5 h-3.5 text-slate-400 pointer-events-none shrink-0"></i>
+                <span class="truncate text-slate-300" x-text="f.name"></span>
+                <span x-show="f.read" class="ml-auto text-[9px] text-emerald-400">read</span>
+              </div>
+            </template>
+            <div
+              class="rounded border border-dashed border-slate-700 text-slate-600 text-[10px] py-2 text-center"
+            >
+              drop a doc — or attach in chat
+            </div>
+          </div>
+          <!-- project styles (scoped to where the spell was cast) -->
+          <div class="px-3 py-2 flex items-center justify-between">
+            <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold"
+              >Styles · this project</span
+            >
+            <span class="text-[10px] text-slate-600" x-text="projectStyles.length"></span>
+          </div>
+          <div class="flex-1 overflow-y-auto px-2.5 pb-2.5 space-y-1.5">
+            <template x-for="st in projectStyles" :key="st.name">
+              <div
+                :class="st.parent ? 'border-fuchsia-600/40 bg-fuchsia-950/20' : 'border-slate-700/60 bg-slate-800/40'"
+                class="rounded-lg border px-2.5 py-2"
+              >
+                <div class="flex items-center gap-1.5">
+                  <i
+                    :data-lucide="st.parent ? 'crown' : 'palette'"
+                    class="w-3 h-3 pointer-events-none shrink-0"
+                    :class="st.parent ? 'text-fuchsia-300' : 'text-slate-400'"
+                  ></i>
+                  <span class="text-[11px] font-medium text-slate-200" x-text="st.name"></span>
+                  <span
+                    x-show="st.isNew"
+                    class="ml-auto text-[8px] bg-emerald-600 text-white px-1 py-0.5 rounded-full"
+                    >new</span
+                  >
+                </div>
+                <div class="text-[9px] text-slate-500 mt-0.5 pl-4" x-text="st.kind"></div>
+              </div>
+            </template>
+            <div class="text-[9px] text-slate-600 px-1 pt-1 leading-snug">
+              scoped to the Spellbook checkout — cast glamour elsewhere and you'd
+              see that project's styles
+            </div>
+          </div>
+        </aside>
+
+        <!-- ── CENTER: gallery OR style guide ── -->
+        <main class="flex flex-col min-h-0 bg-slate-950/40">
+          <!-- selection strip -->
+          <div
+            x-show="view === 'gallery'"
+            class="px-4 py-1.5 border-b border-slate-800 bg-slate-900/40 flex items-center gap-2 text-[11px]"
+          >
+            <template x-if="selected.length === 0">
+              <span class="text-slate-500">Nothing selected — chat is general. Click images to talk about them.</span>
+            </template>
+            <template x-if="selected.length > 0">
+              <span class="text-fuchsia-300 flex items-center gap-1.5">
+                <i data-lucide="check-square" class="w-3.5 h-3.5 pointer-events-none"></i>
+                <span x-text="selected.length + ' selected — your chat is about ' + (selected.length === 1 ? 'this image' : 'these images')"></span>
+              </span>
+            </template>
+            <button
+              x-show="selected.length > 0"
+              @click="selected = []"
+              class="ml-auto text-slate-500 hover:text-slate-300"
+            >
+              clear
+            </button>
+          </div>
+
+          <!-- GALLERY VIEW -->
+          <div x-show="view === 'gallery'" class="flex-1 overflow-y-auto p-4">
+            <template x-for="grp in galleryGroups" :key="grp.title">
+              <div class="mb-5">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold" x-text="grp.title"></span>
+                  <span class="h-px flex-1 bg-slate-800"></span>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                  <template x-for="im in grp.images" :key="im.id">
+                    <div
+                      @click="toggleSelect(im.id)"
+                      :class="isSel(im.id) ? 'ring-2 ring-fuchsia-500 border-fuchsia-500/50' : 'border-slate-700/70 hover:border-slate-600'"
+                      class="group relative rounded-lg border bg-slate-800/40 overflow-hidden cursor-pointer transition-all"
+                    >
+                      <div class="h-28 w-full relative" :class="im.grad">
+                        <!-- kind badge -->
+                        <span
+                          class="absolute top-1.5 left-1.5 text-[8px] uppercase tracking-wide px-1.5 py-0.5 rounded-full font-semibold"
+                          :class="im.kind === 'ref' ? 'bg-sky-600/80 text-white' : 'bg-violet-600/80 text-white'"
+                          x-text="im.kind === 'ref' ? 'reference' : 'generated'"
+                        ></span>
+                        <!-- liked / fav -->
+                        <span
+                          x-show="im.fav"
+                          class="absolute top-1.5 right-1.5 text-[8px] bg-fuchsia-600 text-white px-1.5 py-0.5 rounded-full font-semibold"
+                          >favorite</span
+                        >
+                        <span
+                          x-show="im.liked && !im.fav"
+                          class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-rose-500/90 flex items-center justify-center"
+                          ><i data-lucide="heart" class="w-3 h-3 text-white pointer-events-none"></i
+                        ></span>
+                        <!-- focus button -->
+                        <button
+                          @click.stop="openFocus(im)"
+                          class="absolute bottom-1.5 right-1.5 w-6 h-6 rounded-md bg-slate-900/80 hover:bg-slate-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="focus mode"
+                        >
+                          <i data-lucide="maximize-2" class="w-3.5 h-3.5 text-slate-200 pointer-events-none"></i>
+                        </button>
+                      </div>
+                      <div class="px-2 py-1.5">
+                        <div class="text-[11px] font-medium text-slate-200 truncate" x-text="im.label"></div>
+                        <div class="flex items-center gap-1 mt-0.5">
+                          <i
+                            x-show="im.analysis || im.why"
+                            data-lucide="message-square-text"
+                            class="w-3 h-3 text-fuchsia-400/70 pointer-events-none"
+                          ></i>
+                          <span
+                            class="text-[10px] truncate"
+                            :class="(im.why || im.analysis) ? 'text-slate-400 italic' : 'text-slate-600'"
+                            x-text="im.why ? ('“' + im.why + '”') : (im.analysis ? 'agent annotated' : 'no notes yet')"
+                          ></span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+            <div
+              x-show="galleryGroups.length === 0"
+              class="text-slate-600 text-sm text-center py-20"
+            >
+              empty board — drop reference images or just start talking
+            </div>
+          </div>
+
+          <!-- STYLE GUIDE VIEW (the codified output) -->
+          <div x-show="view === 'style'" class="flex-1 overflow-y-auto p-5">
+            <div class="max-w-2xl mx-auto space-y-3">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="book-open" class="w-4 h-4 text-fuchsia-300 pointer-events-none"></i>
+                <span class="font-semibold text-slate-100">cute-occult house style</span>
+                <span class="ml-auto text-[10px] text-slate-500" x-text="styleSolid + ' of ' + style.length + ' sections solid'"></span>
+              </div>
+              <template x-for="sx in style" :key="sx.key">
+                <div
+                  class="rounded-lg border bg-slate-800/30 px-4 py-3"
+                  :class="sx.status === 'agreed' ? 'border-emerald-700/40' : sx.status === 'forming' ? 'border-amber-700/40' : 'border-slate-700/50'"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="w-1.5 h-1.5 rounded-full"
+                      :class="sx.status === 'agreed' ? 'bg-emerald-400' : sx.status === 'forming' ? 'bg-amber-400' : 'bg-slate-600'"
+                    ></span>
+                    <span class="text-[12px] font-semibold" :class="sx.status === 'empty' ? 'text-slate-500' : 'text-slate-200'" x-text="sx.label"></span>
+                    <span
+                      class="ml-auto text-[9px] uppercase tracking-wide px-1.5 py-0.5 rounded"
+                      :class="sx.status === 'agreed' ? 'bg-emerald-500/15 text-emerald-300' : sx.status === 'forming' ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-700/40 text-slate-500'"
+                      x-text="sx.status"
+                    ></span>
+                  </div>
+                  <div x-show="sx.content" class="text-[12px] text-slate-300 mt-1.5 leading-relaxed pl-3.5" x-text="sx.content"></div>
+                  <div x-show="sx.canon" class="grid grid-cols-3 gap-2 mt-2 pl-3.5">
+                    <template x-for="c in (sx.canon || [])" :key="c.label">
+                      <div class="rounded overflow-hidden border border-slate-700">
+                        <div class="h-16 w-full" :class="c.grad"></div>
+                        <div class="text-[9px] text-slate-400 text-center py-0.5 bg-slate-900" x-text="c.label"></div>
+                      </div>
+                    </template>
+                  </div>
+                  <div x-show="sx.prompts" class="space-y-1.5 mt-2 pl-3.5">
+                    <template x-for="p in (sx.prompts || [])" :key="p">
+                      <div class="text-[11px] text-slate-400 font-mono bg-slate-900/60 border border-slate-700/50 rounded px-2 py-1.5" x-text="p"></div>
+                    </template>
+                  </div>
+                  <div x-show="sx.status === 'empty'" class="text-[10px] text-slate-600 mt-1 pl-3.5">fills in as the conversation converges</div>
+                </div>
+              </template>
+              <div class="text-[10px] text-slate-500 flex items-center gap-1.5 pt-1">
+                <i data-lucide="info" class="w-3 h-3 pointer-events-none"></i>
+                the agent assembles this from the gallery conversation — you correct it here
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <!-- ── RIGHT: conversation sidebar ── -->
+        <aside class="border-l border-slate-800 bg-slate-900/40 flex flex-col min-h-0">
+          <div class="px-3 py-2 border-b border-slate-800 flex items-center gap-1.5">
+            <i data-lucide="messages-square" class="w-3.5 h-3.5 text-slate-400 pointer-events-none"></i>
+            <span class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Conversation</span>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+            <template x-for="(m, i) in messages" :key="i">
+              <div :class="m.who === 'user' ? 'items-end' : 'items-start'" class="flex flex-col">
+                <div
+                  :class="m.who === 'user' ? 'bg-violet-600/20 border-violet-500/30' : 'bg-slate-800/60 border-slate-700/60'"
+                  class="rounded-xl border px-3 py-2 max-w-[92%]"
+                >
+                  <div x-show="m.ground" class="text-[10px] text-fuchsia-300/90 mb-1 flex items-center gap-1">
+                    <i data-lucide="image" class="w-3 h-3 pointer-events-none"></i>
+                    <span x-text="'about: ' + (m.ground || '')"></span>
+                  </div>
+                  <div x-show="m.file" class="text-[10px] text-sky-300/90 mb-1 flex items-center gap-1">
+                    <i data-lucide="paperclip" class="w-3 h-3 pointer-events-none"></i>
+                    <span x-text="m.file"></span>
+                  </div>
+                  <div class="text-[12px] leading-relaxed text-slate-200" x-text="m.text"></div>
+                  <div x-show="m.batch" class="text-[10px] text-violet-300/80 mt-1.5 flex items-center gap-1">
+                    <i data-lucide="images" class="w-3 h-3 pointer-events-none"></i>
+                    <span>added a batch to the gallery →</span>
+                  </div>
+                </div>
+                <span class="text-[10px] text-slate-600 mt-0.5" :class="m.who === 'user' ? 'mr-1' : 'ml-1'" x-text="m.who === 'user' ? 'you' : 'agent'"></span>
+              </div>
+            </template>
+          </div>
+          <div class="border-t border-slate-800 p-2.5">
+            <div
+              x-show="selected.length > 0"
+              class="text-[10px] text-fuchsia-300 mb-1.5 px-1 flex items-center gap-1"
+            >
+              <i data-lucide="image" class="w-3 h-3 pointer-events-none"></i>
+              <span x-text="'grounded to ' + selected.length + ' selected image' + (selected.length > 1 ? 's' : '')"></span>
+            </div>
+            <div class="flex items-end gap-2 bg-slate-800/70 border border-slate-700 rounded-xl px-2.5 py-1.5">
+              <i data-lucide="paperclip" class="w-4 h-4 text-slate-500 mb-1 pointer-events-none"></i>
+              <div class="flex-1 text-[12px] text-slate-500 py-1" x-text="selected.length ? 'say what you like about the selection…' : 'talk about the style…'"></div>
+              <button class="w-7 h-7 rounded-lg bg-violet-600 hover:bg-violet-500 flex items-center justify-center shrink-0">
+                <i data-lucide="arrow-up" class="w-4 h-4 text-white pointer-events-none"></i>
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- ░░ FOCUS / lightroom overlay ░░ -->
+      <div
+        x-show="focusImg"
+        @keydown.escape.window="focusImg = null"
+        class="absolute inset-0 z-20 bg-slate-950/90 flex items-stretch"
+        style="display: none"
+      >
+        <template x-if="focusImg">
+          <div class="flex-1 flex min-h-0">
+            <!-- large image -->
+            <div class="flex-1 flex flex-col items-center justify-center p-8 relative">
+              <button
+                @click="focusImg = null"
+                class="absolute top-4 left-4 flex items-center gap-1.5 text-slate-400 hover:text-slate-200 text-xs"
+              >
+                <i data-lucide="arrow-left" class="w-4 h-4 pointer-events-none"></i> back to gallery
+              </button>
+              <div class="w-full max-w-xl aspect-[4/3] rounded-xl border border-slate-700 shadow-2xl" :class="focusImg.grad"></div>
+              <div class="mt-3 flex items-center gap-2">
+                <span class="text-sm text-slate-200 font-medium" x-text="focusImg.label"></span>
+                <span
+                  class="text-[9px] uppercase px-1.5 py-0.5 rounded-full"
+                  :class="focusImg.kind === 'ref' ? 'bg-sky-600/80 text-white' : 'bg-violet-600/80 text-white'"
+                  x-text="focusImg.kind === 'ref' ? 'reference' : 'generated'"
+                ></span>
+                <button
+                  @click="focusImg.liked = !focusImg.liked"
+                  class="text-[11px] flex items-center gap-1 px-2 py-1 rounded border border-slate-700 hover:border-rose-500"
+                  :class="focusImg.liked ? 'text-rose-300 border-rose-500/50' : 'text-slate-400'"
+                >
+                  <i data-lucide="heart" class="w-3.5 h-3.5 pointer-events-none"></i> like
+                </button>
+              </div>
+            </div>
+            <!-- dual annotations (the asymmetry: both can edit either) -->
+            <div class="w-96 border-l border-slate-800 bg-slate-900/80 flex flex-col p-4 gap-4 overflow-y-auto">
+              <div class="text-[11px] uppercase tracking-wide text-slate-500 font-semibold">Focus · annotations</div>
+
+              <div>
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <i data-lucide="bot" class="w-3.5 h-3.5 text-violet-300 pointer-events-none"></i>
+                  <span class="text-[12px] font-medium text-slate-200">Agent's analysis</span>
+                  <i data-lucide="pencil" class="w-3 h-3 text-slate-600 ml-auto pointer-events-none"></i>
+                </div>
+                <textarea
+                  x-model="focusImg.analysis"
+                  rows="4"
+                  placeholder="agent hasn't analyzed this yet"
+                  class="w-full text-[12px] leading-relaxed bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 resize-none focus:outline-none focus:border-violet-500"
+                ></textarea>
+              </div>
+
+              <div>
+                <div class="flex items-center gap-1.5 mb-1.5">
+                  <i data-lucide="user" class="w-3.5 h-3.5 text-fuchsia-300 pointer-events-none"></i>
+                  <span class="text-[12px] font-medium text-slate-200">What you like</span>
+                  <i data-lucide="pencil" class="w-3 h-3 text-slate-600 ml-auto pointer-events-none"></i>
+                </div>
+                <textarea
+                  x-model="focusImg.why"
+                  rows="3"
+                  placeholder="say what pulls you about this one…"
+                  class="w-full text-[12px] leading-relaxed bg-slate-800/60 border border-slate-700 rounded-lg px-3 py-2 text-slate-300 resize-none focus:outline-none focus:border-fuchsia-500"
+                ></textarea>
+              </div>
+
+              <div class="text-[10px] text-slate-500 leading-snug flex items-start gap-1.5 pt-1 border-t border-slate-800">
+                <i data-lucide="info" class="w-3 h-3 mt-0.5 shrink-0 pointer-events-none"></i>
+                <span>Either of you can edit either field — the agent proposes its read, you correct it; you note what you like, the agent builds on it. (Edits here are live in this mockup.)</span>
+              </div>
+
+              <button
+                @click="focusImg = null"
+                class="mt-auto text-[12px] text-slate-300 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg py-2"
+              >
+                done — back to the board
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+
+    <script>
+      const G = {
+        grimoire: "bg-gradient-to-br from-amber-800 to-stone-950",
+        familiar: "bg-gradient-to-br from-violet-700 to-indigo-950",
+        nouveau: "bg-gradient-to-br from-rose-800 to-fuchsia-950",
+        candle: "bg-gradient-to-br from-orange-700 to-amber-950",
+        moon: "bg-gradient-to-br from-indigo-800 to-slate-950",
+        moth: "bg-gradient-to-br from-fuchsia-800 to-violet-950",
+        sigil: "bg-gradient-to-br from-teal-800 to-emerald-950",
+      };
+
+      function img(id, label, grad, kind, o = {}) {
+        return {
+          id,
+          label,
+          grad,
+          kind,
+          analysis: o.analysis || "",
+          why: o.why || "",
+          liked: !!o.liked,
+          fav: !!o.fav,
+          group: o.group || (kind === "ref" ? "References" : "Generated"),
+        };
+      }
+      function sx(key, label, status, o = {}) {
+        return { key, label, status, content: o.content || "", canon: o.canon, prompts: o.prompts };
+      }
+
+      const BASE_STYLES = [
+        { name: "bounty board", kind: "per-app style", parent: false },
+        { name: "grapevine", kind: "per-app style", parent: false },
+      ];
+
+      const SNAP = {
+        opening: {
+          contextFiles: [{ name: "spellbook-brand.md", read: true }],
+          projectStyles: BASE_STYLES,
+          images: [
+            img("r1", "vintage-grimoire.jpg", G.grimoire, "ref"),
+            img("r2", "cute-familiar.png", G.familiar, "ref"),
+          ],
+          style: [
+            sx("understanding", "Understanding", "empty"),
+            sx("direction", "Direction", "empty"),
+            sx("palette", "Palette", "empty"),
+            sx("consistency", "Consistency", "empty"),
+            sx("prompts", "Re-cast prompts", "empty"),
+            sx("canonical", "Canonical images", "empty"),
+          ],
+          messages: [
+            {
+              who: "user",
+              file: "spellbook-brand.md",
+              text: "Defining the Spellbook house style — cute but occult, friendly but a little uncanny. Dropped two refs and the brand doc.",
+            },
+            {
+              who: "agent",
+              text: "Read the brand doc. Pick the references that feel right and tell me what pulls you — select one and talk, or open it in focus to annotate.",
+            },
+          ],
+        },
+
+        annotating: {
+          contextFiles: [{ name: "spellbook-brand.md", read: true }],
+          projectStyles: BASE_STYLES,
+          images: [
+            img("r1", "vintage-grimoire.jpg", G.grimoire, "ref", {
+              fav: true,
+              why: "warm aged paper, not spooky-dark — occult that feels cozy",
+              analysis: "Hand-inked linework, warm sepia ground, ornamented borders. Reads 'old magic' without horror.",
+            }),
+            img("r2", "cute-familiar.png", G.familiar, "ref", {
+              liked: true,
+              why: "the rounded friendly creature — this is the 'cute' anchor",
+              analysis: "Soft rounded forms, big eyes, gentle violet palette. The approachable counterweight to the grimoire.",
+            }),
+            img("r3", "art-nouveau-border.jpg", G.nouveau, "ref", {
+              analysis: "Whiplash curves, botanical framing — a structural motif candidate.",
+            }),
+            img("r4", "candle-glow.png", G.candle, "ref"),
+          ],
+          style: [
+            sx("understanding", "Understanding", "forming", {
+              content: "Cozy occult: warm aged paper + hand-inked line, softened by rounded friendly forms. Old magic, not horror.",
+            }),
+            sx("direction", "Direction", "empty"),
+            sx("palette", "Palette", "empty"),
+            sx("consistency", "Consistency", "empty"),
+            sx("prompts", "Re-cast prompts", "empty"),
+            sx("canonical", "Canonical images", "empty"),
+          ],
+          messages: [
+            { who: "user", ground: "vintage-grimoire.jpg", text: "This is the heart — occult that feels cozy, warm paper not spooky-dark." },
+            { who: "user", ground: "cute-familiar.png", text: "And this is the 'cute' anchor. The two together are the tension I want." },
+            { who: "agent", text: "Got it — I annotated both with my read; correct me in focus if I'm off. I'm sketching an Understanding on the Style guide." },
+          ],
+        },
+
+        generated: {
+          contextFiles: [{ name: "spellbook-brand.md", read: true }],
+          projectStyles: BASE_STYLES,
+          images: [
+            img("r1", "vintage-grimoire.jpg", G.grimoire, "ref", { fav: true, why: "cozy occult anchor", analysis: "warm sepia, hand-inked, ornamented." }),
+            img("r2", "cute-familiar.png", G.familiar, "ref", { liked: true, why: "the cute anchor", analysis: "soft rounded forms, violet." }),
+            img("r3", "art-nouveau-border.jpg", G.nouveau, "ref", { analysis: "botanical framing motif." }),
+            img("g1", "round 1 · A", G.moth, "gen", { liked: true, why: "the moth-sigil — exactly the uncanny-cute I meant", group: "Generated · round 1" }),
+            img("g2", "round 1 · B", G.moon, "gen", { group: "Generated · round 1" }),
+            img("g3", "round 1 · C", G.sigil, "gen", { group: "Generated · round 1" }),
+          ],
+          style: [
+            sx("understanding", "Understanding", "agreed", { content: "Cozy occult: warm paper + hand-inked line, softened by rounded forms." }),
+            sx("direction", "Direction", "forming", { content: "Sepia-and-violet, ink linework with rounded friendly subjects; one warm light source; nouveau botanical frames." }),
+            sx("palette", "Palette", "forming", { content: "Aged sepia + warm candle amber, lifted by soft violet. No harsh black, no gore-red." }),
+            sx("consistency", "Consistency", "empty"),
+            sx("prompts", "Re-cast prompts", "empty"),
+            sx("canonical", "Canonical images", "empty"),
+          ],
+          messages: [
+            { who: "agent", text: "Generated a batch from the direction.", batch: true },
+            { who: "user", ground: "round 1 · A", text: "A is it — the moth-sigil is exactly the uncanny-cute balance. B's too dark, C lost the cute." },
+            { who: "agent", text: "Then sepia-violet with the moth/botanical motif is the spine. Folding that into Direction + Palette. Want more like A, or take A deeper in imago?" },
+          ],
+        },
+
+        codified: {
+          contextFiles: [{ name: "spellbook-brand.md", read: true }],
+          projectStyles: [
+            ...BASE_STYLES,
+            { name: "cute-occult house style", kind: "house style (parent)", parent: true, isNew: true },
+          ],
+          images: [
+            img("r1", "vintage-grimoire.jpg", G.grimoire, "ref", { fav: true, why: "cozy occult anchor" }),
+            img("r2", "cute-familiar.png", G.familiar, "ref", { liked: true, why: "the cute anchor" }),
+            img("g1", "round 1 · A", G.moth, "gen", { fav: true, why: "the moth-sigil hero", group: "Generated · round 1" }),
+            img("g4", "imago · A perfected", G.moth, "gen", { liked: true, analysis: "returned from imago — doorway fixed, familiar added", group: "From imago" }),
+            img("g5", "round 2 · refined", G.nouveau, "gen", { liked: true, group: "Generated · round 2" }),
+          ],
+          style: [
+            sx("understanding", "Understanding", "agreed", { content: "Cozy occult: warm paper + hand-inked line, softened by rounded forms. Old magic, not horror." }),
+            sx("direction", "Direction", "agreed", { content: "Sepia-and-violet ink linework; rounded friendly subjects; one warm light source; nouveau botanical frames." }),
+            sx("palette", "Palette", "agreed", { content: "Aged sepia, candle amber, soft violet. No harsh black, no gore-red." }),
+            sx("consistency", "Consistency", "agreed", { content: "Hand-inked outlines; warm single light; botanical framing; rounded silhouettes. Per-app styles inherit this and vary accent + subject." }),
+            sx("prompts", "Re-cast prompts", "agreed", {
+              prompts: [
+                "hand-inked occult illustration, warm sepia + soft violet, rounded friendly subject, candlelit, art-nouveau botanical border",
+                "(variant) same palette, cooler moonlit version for night scenes",
+              ],
+            }),
+            sx("canonical", "Canonical images", "agreed", {
+              canon: [
+                { label: "hero · moth-sigil", grad: G.moth },
+                { label: "familiar", grad: G.familiar },
+                { label: "frame", grad: G.nouveau },
+              ],
+            }),
+          ],
+          messages: [
+            { who: "user", ground: "round 1 · A", text: "Take A into imago — fix the doorway, add the familiar. Then come back." },
+            { who: "agent", text: "Perfected in imago and dropped it back on the board as 'A perfected'. The style guide is crystallized and saved to this project as the cute-occult house style — the per-app styles can inherit from it." },
+            { who: "user", ground: "Canonical images", text: "That's the house style. bounty and grapevine become subsets of it." },
+          ],
+        },
+      };
+
+      function glamour() {
+        return {
+          state: "opening",
+          view: "gallery",
+          selected: [],
+          focusImg: null,
+          states: [
+            { id: "opening", label: "1 · Opening" },
+            { id: "annotating", label: "2 · Annotating refs" },
+            { id: "generated", label: "3 · Generated batch" },
+            { id: "codified", label: "4 · Codified output" },
+          ],
+          get snap() {
+            return SNAP[this.state];
+          },
+          get images() {
+            return this.snap.images;
+          },
+          get contextFiles() {
+            return this.snap.contextFiles;
+          },
+          get projectStyles() {
+            return this.snap.projectStyles;
+          },
+          get messages() {
+            return this.snap.messages;
+          },
+          get style() {
+            return this.snap.style;
+          },
+          get styleSolid() {
+            return this.style.filter((s) => s.status === "agreed").length;
+          },
+          get galleryGroups() {
+            const order = [];
+            const map = {};
+            for (const im of this.images) {
+              if (!map[im.group]) {
+                map[im.group] = { title: im.group, images: [] };
+                order.push(map[im.group]);
+              }
+              map[im.group].images.push(im);
+            }
+            return order;
+          },
+          setState(id) {
+            this.state = id;
+            this.selected = [];
+            this.focusImg = null;
+            this.view = id === "codified" ? "gallery" : "gallery";
+          },
+          toggleSelect(id) {
+            this.selected = this.selected.includes(id)
+              ? this.selected.filter((x) => x !== id)
+              : [...this.selected, id];
+          },
+          isSel(id) {
+            return this.selected.includes(id);
+          },
+          openFocus(im) {
+            this.focusImg = im;
+          },
+        };
+      }
+
+      function renderIcons() {
+        if (window.lucide) window.lucide.createIcons();
+      }
+      let rafId = null;
+      const observer = new MutationObserver(() => {
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(renderIcons);
+      });
+      document.addEventListener("alpine:initialized", () => {
+        renderIcons();
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+      renderIcons();
+    </script>
+  </body>
+</html>

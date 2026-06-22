@@ -25,8 +25,10 @@ name. These are **lightweight, standalone, purpose-built surfaces with an agent
 as the runtime underneath.** A spell isn't wired to a database or a conventional
 server. The agent is the orchestrator; the UI is served locally; authentication
 and API access live at the MCP layer, which keeps the client thin. The surface
-is a membrane — you act on it, intents bubble up, the agent interprets and
-responds.
+is a membrane — and it faces both ways: you act on it and intents bubble up; the
+agent acts through it and the work appears on the same surface. Two parties with
+different faculties, present to each other through the one membrane between
+them.
 
 What they are _not_ matters as much as what they are:
 
@@ -52,7 +54,43 @@ runtime. This is an in-between stage on the road toward "the agent as the
 computer" — but a deliberately conservative one, durable where the generative
 frontier is disposable.
 
-## 2. Why "spells"
+## 2. The board, not the form
+
+A spell isn't a form you fill and submit — it's a **shared surface two kinds of
+party work through.** Human and agent sit on either side with **different
+faculties**: the human sees a rendered UI and acts with gestures; the agent
+reads the same state as data and events, at parity, and acts with verbs. The
+membrane faces both ways — each senses the other's presence and moves through
+it, though neither sees the same thing the same way. Call it **co-presence**:
+both parties are _at_ the work, each through the channel that fits them.
+
+Co-presence is the shared shape. What varies — and should — is the **lean**:
+
+- **Co-creation** (imago). A near-constant back-and-forth over a shared
+  artifact: the human reacts, the agent proposes, the image is made _together_.
+  Both hands on the table.
+- **Observation, with the door open** (grapevine, bounty). The real work is
+  agents coordinating underneath; the surface is the human's **window** into it
+  — see what's happening, step in when it matters. Deliberately asymmetric: one
+  side mostly doing, the other watching-and-occasionally-steering.
+- **Co-ideation** (digestify). The agent presents — here's what I think you need
+  to see, here are my questions — and the human reads on a good surface and
+  answers. A single structured round, not a standing collaboration.
+
+Different goals, same principle: each side can **see** the work (through its own
+lens) and **act** on it (through its own affordances); neither is reduced to a
+spectator or a submit button.
+
+The gravity all of this resists is the traditional app's shape: _input → service
+→ output._ A prompt box and a Generate button is a vending machine, not a board
+— words in, result out, no shared surface to keep working. imago started exactly
+there, and the whole interesting evolution was everything that pulled it away:
+generation became a _conversation about_ generation. The tell that you've
+slipped back: you're building something that takes input and ships it somewhere,
+instead of a place two parties keep working something together — whatever the
+lean.
+
+## 3. Why "spells"
 
 The artifacts are, functionally, **skills** — portable HTML and TypeScript you
 can zip up and hand to someone. "Spell" is one phoneme away, and the gap between
@@ -72,7 +110,7 @@ And it keeps the work honest. The moment building a spell stops feeling like
 _casting_ and starts feeling like _erecting a building_, you've drifted into the
 heavy machinery you were trying to avoid. The name does quality control.
 
-## 3. The cosmology
+## 4. The cosmology
 
 A working metaphor needs working nouns and verbs. These are the ones that fell
 out:
@@ -105,7 +143,7 @@ was about projection. Whether the surface is a mask the agent _wears_
 neutral form) is left open below — but "spell" mostly sidesteps it: a spell
 isn't worn or inhabited, it's conjured.
 
-## 4. The liaison — a spell whose effect is a translator
+## 5. The liaison — a spell whose effect is a translator
 
 The strongest signal from the multi-agent work: when several agents grind
 through something deep and technical and you drop in late, reconstructing the
@@ -132,7 +170,7 @@ and open threads) plus heavy synthesis only at decision points. The hard part
 isn't summarizing — it's the liaison modeling _what you already know_, so the
 brief carries the right context and no more.
 
-## 5. The deeper pattern — co-evolution
+## 6. The deeper pattern — co-evolution
 
 The apps were the surface. The thing underneath, the one that actually animates
 the interest, is **living, self-modifying systems** — and it shows up at three
@@ -155,7 +193,7 @@ invest in a **richer substrate** — better trails, better-structured docs — m
 than in making each agent a genius who reads everything. Make the nest carry the
 intelligence; keep the ants light.
 
-## 6. The craft — how spells are learned, and pruned
+## 7. The craft — how spells are learned, and pruned
 
 Spells aren't written once, they're grown. Two systems, which are really two
 halves of one loop:
@@ -222,7 +260,7 @@ reinforcement," and nobody has to make the frightening delete. Growth gets all
 the attention in these systems; decay is the half nobody builds, and it's the
 half that keeps the thing from collapsing under its own weight.
 
-## 7. Still open
+## 8. Still open
 
 Kept open on purpose:
 
@@ -233,6 +271,13 @@ Kept open on purpose:
 - **The summoned intelligence.** Behind a running spell — is it the one familiar
   showing up in different masks, or a fresh being summoned per spell? One
   persistent agent in many guises, or a swarm.
+- **How many at the table?** Co-presence is settled for one human and one agent.
+  The open edge is more seats — and what keeps scale from drowning the human.
+  The pattern already forming: past a couple of agents, you don't want them all
+  talking to the human at once; you want a **liaison** (§5) as the point person,
+  with the human still able to drop into the raw activity when they choose. How
+  foundational that role is — and whether it earns its own tooling — is
+  unproven.
 - **Mask or vessel.** Does a surface express a particular agent, or is it a
   neutral form any agent inhabits? Maybe the vessel is neutral until an agent
   steps in and makes it a persona.
