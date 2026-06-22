@@ -235,6 +235,21 @@ const TRUNCATION_HINT_THRESHOLD = parseInt(
   10,
 );
 
+// Optional inline-body cap for `tail` (opt-in via --max <n> or GRAPEVINE_TAIL_MAX).
+// When set, a body longer than the cap is truncated to `n` chars in the tail
+// frame (plus the read-pointer hint), so a push consumer can hand its
+// notification surface a deliberately-sized line. The FULL message is always
+// retrievable via `read <channel> <id>`. Undefined = no cap (full text inline —
+// today's default). Note: the hard clip a consumer ultimately sees is still the
+// Monitor/notification layer's; --max only bounds the line grapevine emits.
+// Rejects negative / non-numeric.
+function resolveTailMax(flag: unknown): number | undefined {
+  const raw = typeof flag === "string" ? flag : process.env.GRAPEVINE_TAIL_MAX;
+  if (raw === undefined) return undefined;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
 function die(msg: string, code = 2): never {
   process.stderr.write(`grapevine: ${msg}\n`);
   process.exit(code);
@@ -545,11 +560,12 @@ async function cmdTail(
     as?: string;
     human?: boolean;
     lurk?: boolean;
+    max?: number;
   },
 ) {
   if (!name)
     die(
-      "usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start] [--human] [--lurk]",
+      "usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start] [--human] [--lurk] [--max <n>]",
     );
   // --lurk receives messages but registers no presence — an invisible observer.
   // It overrides identity flags (a lurker has no name to show).
@@ -679,9 +695,15 @@ async function cmdTail(
           // The hint must serialize BEFORE `.text`: a notification clip lands
           // inside the long `.text`, so a hint trailing after it gets eaten
           // (F17). Spreading payload after the hint puts the hint first.
-          if (typeof payload.text === "string" && payload.text.length > TRUNCATION_HINT_THRESHOLD) {
+          if (
+            typeof payload.text === "string" &&
+            payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
+          ) {
             const truncation_hint = `+${payload.text.length} chars — full: read ${name} ${payload.id}`;
-            process.stdout.write(`${JSON.stringify({ truncation_hint, ...payload })}\n`);
+            // Cap the INLINE body when --max is set (the full message stays on
+            // disk → `read`); without --max, emit the full text (today's default).
+            const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
+            process.stdout.write(`${JSON.stringify({ truncation_hint, ...payload, text })}\n`);
           } else {
             process.stdout.write(`${JSON.stringify(payload)}\n`);
           }
@@ -1197,6 +1219,7 @@ async function main(argv: string[]): Promise<number> {
         as: resolveAlias(flags),
         human: !!flags.human,
         lurk: !!flags.lurk,
+        max: resolveTailMax(flags.max),
       });
       return 0;
     case "grep": {
@@ -1245,7 +1268,7 @@ Usage:
   grapevine list
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
-  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk]
+  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk] [--max <n>]
   grapevine pull <name> [--since <id>]
   grapevine read <name> <id> [--text]   # one full message by id (--text = prose)
   grapevine wait <name> [--since <id>] [--timeout <s>]
