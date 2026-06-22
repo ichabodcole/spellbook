@@ -1,7 +1,8 @@
 # Grapevine — Feature Backlog
 
-**Status:** Living document **Last Updated:** 2026-05-27 (V1.6.1 rollout
-retrospective added operator-family items + message edit)
+**Status:** Living document **Last Updated:** 2026-06-22 (`grapevine-feedback`
+channel triage — added truncation full-delivery, presence alias dedup, `pull`
+self-echo, and `close` soft-default items)
 
 ---
 
@@ -408,6 +409,107 @@ at first (agents reconnect constantly; their join/leave is noise).
 
 **Pairs with:** the V1.7 human marker (`who.humans`) — this is the push version
 of what `who` answers by poll today.
+
+---
+
+### Tail/notification full-delivery for coordination channels
+
+**Status:** Sketched **Originated:** 2026-06-22 (`grapevine-feedback` triage —
+this is the **#1 friction by a wide margin**, named independently by cherry,
+robin, flint, maestro, and the full 5-seat dream-flute team across multiple
+sessions; dream-flute called it "the UNANIMOUS #1 from every single seat")
+
+**The problem the first fix didn't close.** A prior pass already shipped the
+recovery path — the `read <channel> <id> [--text]` single-message verb, the
+`truncation_hint` that appends `+N chars — full: read <ch> <id>`, and a raised +
+env-configurable `GRAPEVINE_TRUNCATION_HINT_THRESHOLD` (default 2000). That made
+recovery _possible_, but on coordination-heavy channels the **long messages ARE
+the signal** (wire field-lists, gate semantics, peer corrections, multi-hop
+traces), so every substantive handoff still arrives clipped and every seat runs
+`read`/`pull` ~20+ times per session. The hint delivers the "who/that" but never
+the "what." The trade-off that makes truncation sensible on a chatty channel
+inverts on a coordination channel.
+
+**Candidate shapes (any one helps; not prescriptive):**
+
+- **`tail --full` / `--no-truncate`** — opt-in mode a team channel turns on so
+  the push surface delivers full bodies inline. Simplest; puts the choice with
+  the consumer who knows their host can handle it.
+- **Per-subscriber / per-channel higher threshold** — a coordination channel or
+  a lead role opts into a much larger (or unbounded) threshold.
+- **Auto-expand on @-mention** — deliver in full any message that mentions the
+  reader's own alias (my mentions arrive whole; ambient chatter still clipped).
+- **Full text + separate `preview` field** — stop truncating the payload; carry
+  both so the consumer chooses what to render. Cleanest, slightly larger frame.
+
+**Notes:** this is the single highest-motivation open item in the backlog by
+volume of independent corroboration. Likely a small-to-medium change on the tail
+consume path (`cli.ts` tail frame + maybe a daemon-side per-subscriber pref).
+Worth promoting on its own merits.
+
+---
+
+### Presence roster not deduped by alias
+
+**Status:** Sketched **Originated:** 2026-06-22 (`grapevine-feedback` triage —
+dream-flute #11 minor; maestro corroborates seeing `"fathom","fathom"`)
+
+**Idea:** `who` / presence lists the same alias twice when one seat holds two
+connections. The daemon keys subscribers by connection symbol
+(`subscribers: Map<symbol, Subscriber>`) and the `subscribers:[alias]` array is
+built from the map values without de-duping by alias, so a seat with two live
+connections appears twice in the roster.
+
+**Sketch:** de-dupe the `subscribers`/`humans` alias arrays by alias when
+building the presence response (keep `connections` as the raw count, since that
+field is honest about connection multiplicity). Small, contained — the visible
+roster should be one row per identity.
+
+**Open question:** should an anonymous (unnamed) seat still be counted/shown
+distinctly? Probably yes — only de-dupe _named_ aliases.
+
+---
+
+### `pull --as <alias>` self-echo suppression
+
+**Status:** Idea **Originated:** 2026-06-22 (`grapevine-feedback` triage — robin
+#8)
+
+**Idea:** `tail --as <alias>` filters the caller's own messages from the stream;
+`pull --since <id>` does not. Since `pull`'s dominant use is recovering a
+message the caller was notified about, the range result interleaves their own
+sends, which they hand-skip. Accept `--as`/`--from` on `pull` with tail's
+self-echo semantics.
+
+**Priority:** Low. robin noted it "largely evaporates" now that the
+`read <channel> <id>` single-message verb has shipped — strictly a fallback
+behind that. Capture so it isn't re-derived; don't schedule on its own.
+
+---
+
+### `close` soft-by-default (or a confirm guard)
+
+**Status:** Idea **Originated:** 2026-06-22 (`grapevine-feedback` triage — robin
+lost the full design dialogue of a shipped feature to a `close`)
+
+**Context:** `close` deletes the message log; robin closed two channels holding
+a shipped feature's design dialogue and the JSONL is gone. V1.7 shipped
+`archive`/`unarchive` as the non-destructive path, which mitigates this — but
+`close` is still **destructive-by-default**, and the safe path is opt-in, so the
+footgun remains for anyone who reaches for the obvious verb.
+
+**Options (a decision, not just a task):**
+
+- Leave as-is — `archive` is the documented safe path; `close` stays the
+  explicit "I mean it" verb. (Cheapest; relies on the user knowing `archive`
+  exists.)
+- Add a typed-confirmation / `--yes` guard to `close` so deletion isn't a
+  single-keystroke mistake.
+- Flip the default: `close` archives (soft-preserve), opt-in `--purge` deletes
+  (robin's suggested shape). Larger behavioral change; clearest safety story.
+
+**Note:** cross-references the `restart --force|--yes` live-fleet guard already
+shipped — same "destructive op wants a guard" instinct.
 
 ---
 
