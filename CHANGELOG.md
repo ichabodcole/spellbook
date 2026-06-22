@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.7.0...spellbook-v1.8.0) (2026-06-22)
+
+
+### Features
+
+* **bounty:** skip heartbeat + stale cue for blocked cards ([#40](https://github.com/ichabodcole/spellbook/issues/40)) ([e25a28d](https://github.com/ichabodcole/spellbook/commit/e25a28d18b4e7f74ae7897ecbb081c3f3304e24f))
+* **grapevine:** tail --max — opt-in inline body cap for push consumers ([6a9c5b8](https://github.com/ichabodcole/spellbook/commit/6a9c5b8b8150bb14a0655a9529c9f6e36a1febaa))
+
+
+### Bug Fixes
+
+* **imago:** correct stale context-library API in mediaforge reference ([6d8f6c2](https://github.com/ichabodcole/spellbook/commit/6d8f6c24f0945fc53d0c784ae6b3ea156435d1a9))
+
 ## [1.7.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.6.0...spellbook-v1.7.0) (2026-06-18)
 
 
