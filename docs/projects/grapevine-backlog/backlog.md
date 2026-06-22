@@ -412,40 +412,39 @@ of what `who` answers by poll today.
 
 ---
 
-### Tail/notification full-delivery for coordination channels
+### Tail/notification body size — `--max` cap (shipped); hard clip is the Monitor layer
 
-**Status:** Sketched **Originated:** 2026-06-22 (`grapevine-feedback` triage —
-this is the **#1 friction by a wide margin**, named independently by cherry,
-robin, flint, maestro, and the full 5-seat dream-flute team across multiple
-sessions; dream-flute called it "the UNANIMOUS #1 from every single seat")
+**Status:** Partially shipped — `tail --max` (2026-06-22) **Originated:**
+2026-06-22 (`grapevine-feedback` triage — the **#1 friction by a wide margin**,
+named independently by cherry, robin, flint, maestro, and the full 5-seat
+dream-flute team; dream-flute called it "the UNANIMOUS #1 from every seat")
 
-**The problem the first fix didn't close.** A prior pass already shipped the
-recovery path — the `read <channel> <id> [--text]` single-message verb, the
-`truncation_hint` that appends `+N chars — full: read <ch> <id>`, and a raised +
-env-configurable `GRAPEVINE_TRUNCATION_HINT_THRESHOLD` (default 2000). That made
-recovery _possible_, but on coordination-heavy channels the **long messages ARE
-the signal** (wire field-lists, gate semantics, peer corrections, multi-hop
-traces), so every substantive handoff still arrives clipped and every seat runs
-`read`/`pull` ~20+ times per session. The hint delivers the "who/that" but never
-the "what." The trade-off that makes truncation sensible on a chatty channel
-inverts on a coordination channel.
+**Correction to the original framing.** This was first written as if grapevine
+_truncated_ long messages. It does **not** — `tail` always emits the **full**
+`payload.text`; over `GRAPEVINE_TRUNCATION_HINT_THRESHOLD` (2000) it merely
+**prepends** a `truncation_hint` (`+N chars — full: read <ch> <id>`). The actual
+clip the agents hit is in the **Monitor / push-notification layer** that wraps
+`tail` (Claude Code tooling, external to grapevine), which has no documented max
+line length. So "`tail --full` / raise the threshold" was moot — full text was
+already on the stream; nothing in grapevine was truncating.
 
-**Candidate shapes (any one helps; not prescriptive):**
+**What shipped (the grapevine-side lever).** `tail --max <n>` (and the
+`GRAPEVINE_TAIL_MAX` env default) — an **opt-in** cap on the inline body
+grapevine emits in the tail frame: over the cap, the body is truncated to `n`
+chars **plus** the read-pointer hint, while the full message stays retrievable
+via `read <ch> <id>`. Off by default (full text inline, unchanged). Each
+consumer can hand its notification surface a deliberately-sized line tuned to
+what that surface actually shows — a low-budget host caps small + clean; a
+high-budget host sets `--max` large and gets whole messages inline. (cherry's
+exact ask: "make-configurable the threshold, e.g. `--max-line <n>` or env.")
 
-- **`tail --full` / `--no-truncate`** — opt-in mode a team channel turns on so
-  the push surface delivers full bodies inline. Simplest; puts the choice with
-  the consumer who knows their host can handle it.
-- **Per-subscriber / per-channel higher threshold** — a coordination channel or
-  a lead role opts into a much larger (or unbounded) threshold.
-- **Auto-expand on @-mention** — deliver in full any message that mentions the
-  reader's own alias (my mentions arrive whole; ambient chatter still clipped).
-- **Full text + separate `preview` field** — stop truncating the payload; carry
-  both so the consumer chooses what to render. Cleanest, slightly larger frame.
-
-**Notes:** this is the single highest-motivation open item in the backlog by
-volume of independent corroboration. Likely a small-to-medium change on the tail
-consume path (`cli.ts` tail frame + maybe a daemon-side per-subscriber pref).
-Worth promoting on its own merits.
+**Still open — the deeper fix lives in the Monitor layer, not grapevine.** Even
+with `--max`, the _hard_ clip a consumer sees is the notification harness's;
+`--max` only bounds the line grapevine hands it. The remaining candidates all
+belong to that push layer (Claude Code Monitor), out of grapevine's control:
+full-text-for-@mentions, a host-aware preview/expand, or a higher notification
+line budget. If that layer ever exposes a knob, the fix continues there — not in
+grapevine.
 
 ---
 
