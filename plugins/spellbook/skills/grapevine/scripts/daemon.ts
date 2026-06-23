@@ -462,6 +462,18 @@ async function handle(req: Request): Promise<Response> {
       } else if (body.explicit !== true && existsSync(ap)) {
         return json({ error: "archived", channel: body.name }, { status: 409 });
       }
+      // open --fresh: clear the channel for a new session, but ONLY when no seats
+      // are connected. A re-runnable convene must never wipe a live session.
+      let cleared = false;
+      let snapshot: string | null = null;
+      if (body.fresh === true) {
+        const existing = channels.get(body.name);
+        const liveSubs = existing ? existing.subscribers.size : 0;
+        if (liveSubs === 0) {
+          snapshot = snapshotAndClear(body.name);
+          cleared = true;
+        }
+      }
       const ch = loadChannel(body.name);
       if (unarchived) ch.archived = false;
       // Optional topic on open — only set if provided AND channel has no
@@ -482,6 +494,8 @@ async function handle(req: Request): Promise<Response> {
         subscribers: visibleSubs(ch).length,
         topic: ch.topic,
         unarchived,
+        cleared,
+        snapshot,
       });
     } catch (e) {
       return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });

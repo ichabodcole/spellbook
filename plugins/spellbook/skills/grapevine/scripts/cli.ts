@@ -109,6 +109,9 @@ type OpenResponse = {
   message_count?: number;
   subscribers?: number;
   topic?: string | null;
+  unarchived?: boolean;
+  cleared?: boolean;
+  snapshot?: string | null;
   error?: string;
 };
 
@@ -324,12 +327,13 @@ function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
 }
 
-async function cmdOpen(name: string, opts: { topic?: string; from?: string }) {
-  if (!name) die("usage: grapevine open <name> [--topic <text>]");
+async function cmdOpen(name: string, opts: { topic?: string; from?: string; fresh?: boolean }) {
+  if (!name) die("usage: grapevine open <name> [--topic <text>] [--fresh]");
   const port = await ensureDaemon();
   const body: Record<string, string | boolean> = { name, explicit: true };
   if (opts.topic !== undefined) body.topic = opts.topic;
   if (opts.from !== undefined) body.from = opts.from;
+  if (opts.fresh) body.fresh = true;
   const { status, data } = await api<OpenResponse>(port, "POST", "/channels", body);
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   printJson({ ok: true, channel: data });
@@ -1070,6 +1074,7 @@ const BOOLEAN_FLAGS = new Set([
   "human",
   "lurk",
   "force",
+  "fresh",
   "yes",
 ]);
 
@@ -1120,6 +1125,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdOpen(positional[0], {
         topic: flags.topic as string | undefined,
         from: resolveAlias(flags),
+        fresh: flags.fresh === true,
       });
       return 0;
     case "topic":

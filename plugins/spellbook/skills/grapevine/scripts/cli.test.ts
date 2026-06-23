@@ -1294,6 +1294,44 @@ describe("grapevine cli", () => {
     await bunRun(["close", "rs_live"]);
   });
 
+  test("open --fresh clears a dormant channel's history (V1.8)", async () => {
+    await bunRun(["open", "of_chan"]);
+    await bunRun(["send", "of_chan", "--from", "a", "stale one"]);
+    await bunRun(["send", "of_chan", "--from", "a", "stale two"]);
+
+    const fresh = await bunRun(["open", "of_chan", "--fresh"]);
+    expect(fresh.code).toBe(0);
+    expect(JSON.parse(fresh.stdout).channel.cleared).toBe(true);
+
+    expect(
+      JSON.parse((await bunRun(["pull", "of_chan", "--since", "0"])).stdout).messages.length,
+    ).toBe(0);
+  });
+
+  test("open --fresh does NOT clear a live channel (idempotent-convene guard) (V1.8)", async () => {
+    await bunRun(["open", "of_live"]);
+    await bunRun(["send", "of_live", "--from", "a", "in flight"]);
+
+    const tail = spawn(process.execPath, [CLI, "tail", "of_live", "--as", "seat"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(tail);
+    await sleep(400);
+
+    const fresh = await bunRun(["open", "of_live", "--fresh"]);
+    expect(fresh.code).toBe(0);
+    expect(JSON.parse(fresh.stdout).channel.cleared).toBe(false); // seats present → no clear
+    expect(
+      JSON.parse((await bunRun(["pull", "of_live", "--since", "0"])).stdout).messages.length,
+    ).toBe(1);
+
+    tail.kill("SIGTERM");
+    TRACKED_PROCS.delete(tail);
+    await sleep(200);
+    await bunRun(["close", "of_live"]);
+  });
+
   test("announce broadcasts to all active channels with a kind:announcement frame", async () => {
     // Two active channels, each with one subscriber tail.
     const a = spawnTail("ann_a", ["--as", "alice"]);
