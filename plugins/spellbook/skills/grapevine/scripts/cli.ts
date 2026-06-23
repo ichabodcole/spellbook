@@ -766,6 +766,26 @@ async function cmdClose(name: string) {
   printJson({ ok: true });
 }
 
+async function cmdReset(name: string, opts: { force?: boolean }) {
+  if (!name) die("usage: grapevine reset <name> [--force]");
+  const port = await ensureDaemon();
+  const body: Record<string, boolean> = {};
+  if (opts.force) body.force = true;
+  const { status, data } = await api<{ error?: string; subscribers?: number }>(
+    port,
+    "POST",
+    `/channels/${name}/reset`,
+    body,
+  );
+  if (status === 409 && data?.error === "live") {
+    die(
+      `channel has ${data.subscribers} live subscriber(s) — refusing to clear a live session. Re-run with --force to clear anyway (the log is snapshotted first).`,
+    );
+  }
+  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  printJson({ ok: true, ...data });
+}
+
 // Archive (read-only) or unarchive a channel (V1.7) — the non-destructive
 // alternative to close: history is preserved, sends are rejected, and the name
 // is locked from re-open until unarchived.
@@ -1231,6 +1251,9 @@ async function main(argv: string[]): Promise<number> {
     }
     case "close":
       await cmdClose(positional[0]);
+      return 0;
+    case "reset":
+      await cmdReset(positional[0], { force: flags.force === true });
       return 0;
     case "archive":
       await cmdArchive(positional[0], false);

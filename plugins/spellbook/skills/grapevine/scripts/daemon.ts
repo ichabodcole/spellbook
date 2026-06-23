@@ -34,6 +34,7 @@
 
 import {
   appendFileSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -66,6 +67,7 @@ const PLUGIN_VERSION = readPluginVersion();
 
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const CHANNELS_DIR = join(DATA_DIR, "channels");
+const ARCHIVE_DIR = join(DATA_DIR, "archive");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
 // Per-HOME identity config (V1.7) — the persisted default alias the CLI sets
@@ -150,6 +152,27 @@ function channelPath(name: string): string {
 function archivedPath(name: string): string {
   channelPath(name); // reuse name validation (throws on invalid)
   return join(CHANNELS_DIR, `${name}.archived`);
+}
+
+// Snapshot a channel's log to the archive dir, then clear the live log. Returns
+// the snapshot path, or null if there was nothing to snapshot. No subscriber
+// guard here — callers (reset / open --fresh) apply their own.
+function snapshotAndClear(name: string): string | null {
+  const p = channelPath(name); // validates the name
+  let snapshot: string | null = null;
+  if (existsSync(p)) {
+    mkdirSync(ARCHIVE_DIR, { recursive: true });
+    snapshot = join(ARCHIVE_DIR, `${name}-${Date.now()}.jsonl`);
+    copyFileSync(p, snapshot);
+    writeFileSync(p, "");
+  }
+  const ch = channels.get(name);
+  if (ch) {
+    ch.next_id = 1;
+    ch.topic = null;
+    ch.last_activity = Date.now();
+  }
+  return snapshot;
 }
 
 function loadChannel(name: string): Channel {
@@ -576,6 +599,22 @@ async function handle(req: Request): Promise<Response> {
       if (ch) ch.archived = true;
       return json({ ok: true, channel: name, archived: true });
     }
+    if (sub === "/reset" && method === "POST") {
+      const body = (await readJsonBody(req)) ?? {};
+      const ch = channels.get(name);
+      const liveSubs = ch ? ch.subscribers.size : 0;
+      if (liveSubs > 0 && body.force !== true) {
+        return json({ error: "live", channel: name, subscribers: liveSubs }, { status: 409 });
+      }
+      const snapshot = snapshotAndClear(name);
+      return json({
+        ok: true,
+        channel: name,
+        snapshot,
+        cleared: snapshot !== null,
+      });
+    }
+
     if (sub === "/unarchive" && method === "POST") {
       const ap = archivedPath(name);
       if (existsSync(ap)) {

@@ -1240,6 +1240,60 @@ describe("grapevine cli", () => {
     await bunRun(["close", "ann_guard"]);
   });
 
+  test("reset snapshots then clears the log (V1.8)", async () => {
+    await bunRun(["open", "rs_chan"]);
+    await bunRun(["send", "rs_chan", "--from", "a", "one"]);
+    await bunRun(["send", "rs_chan", "--from", "a", "two"]);
+
+    const res = await bunRun(["reset", "rs_chan"]);
+    expect(res.code).toBe(0);
+    const out = JSON.parse(res.stdout);
+    expect(out.cleared).toBe(true);
+    expect(typeof out.snapshot).toBe("string");
+    expect(existsSync(out.snapshot)).toBe(true); // snapshot written under ~/.grapevine/archive
+
+    // live log is now empty
+    const pull = await bunRun(["pull", "rs_chan", "--since", "0"]);
+    expect(JSON.parse(pull.stdout).messages.length).toBe(0);
+
+    // snapshot holds the prior two messages
+    const snap = readFileSync(out.snapshot, "utf-8").trim().split("\n").filter(Boolean);
+    expect(snap.length).toBe(2);
+  });
+
+  test("reset refuses a live channel without --force, proceeds with it (V1.8)", async () => {
+    await bunRun(["open", "rs_live"]);
+    await bunRun(["send", "rs_live", "--from", "a", "live one"]);
+
+    // a real subscriber makes the channel "live"
+    const tail = spawn(process.execPath, [CLI, "tail", "rs_live", "--as", "seat"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(tail);
+    await sleep(400); // let the tail subscribe
+
+    const blocked = await bunRun(["reset", "rs_live"]);
+    expect(blocked.code).not.toBe(0);
+    expect(blocked.stderr).toContain("--force");
+    // history survives the refused reset
+    expect(
+      JSON.parse((await bunRun(["pull", "rs_live", "--since", "0"])).stdout).messages.length,
+    ).toBe(1);
+
+    const forced = await bunRun(["reset", "rs_live", "--force"]);
+    expect(forced.code).toBe(0);
+    expect(JSON.parse(forced.stdout).cleared).toBe(true);
+
+    tail.kill("SIGTERM");
+    TRACKED_PROCS.delete(tail);
+    // Isolate the next test: let the daemon notice the disconnect, then remove
+    // the channel entirely so its subscriber can't be counted as an active
+    // recipient elsewhere (the announce test counts all active channels).
+    await sleep(200);
+    await bunRun(["close", "rs_live"]);
+  });
+
   test("announce broadcasts to all active channels with a kind:announcement frame", async () => {
     // Two active channels, each with one subscriber tail.
     const a = spawnTail("ann_a", ["--as", "alice"]);
