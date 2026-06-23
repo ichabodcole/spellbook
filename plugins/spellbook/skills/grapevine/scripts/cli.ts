@@ -1293,7 +1293,7 @@ async function main(argv: string[]): Promise<number> {
       process.stdout.write(`grapevine — agent-to-agent walkie-talkie
 
 Usage:
-  grapevine open <name> [--topic <text>]
+  grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)
   grapevine list
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
@@ -1306,6 +1306,7 @@ Usage:
   grapevine who <name>              # roster; the humans field lists humans
   grapevine alias [<name>]          # set/show your persisted alias (config.json)
   grapevine watch [<name>]          # open browser tab; live chat-bubble view
+  grapevine reset <name> [--force]           snapshot the log → ~/.grapevine/archive, then clear it
   grapevine archive <name>          # read-only: keep history, reject sends
   grapevine unarchive <name>        # bring an archived channel back
   grapevine close <name>            # destructive: delete the message log
