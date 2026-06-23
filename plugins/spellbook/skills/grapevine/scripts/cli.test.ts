@@ -353,15 +353,40 @@ describe("grapevine cli", () => {
     const pull = await bunRun(["pull", "test_arch", "--since", "0"]);
     expect(JSON.parse(pull.stdout).messages.length).toBe(1);
 
-    // the name is locked from re-open
+    // open auto-unarchives (the convene-at-start path): reopening a retired
+    // channel brings it back rather than failing.
     const reopen = await bunRun(["open", "test_arch"]);
-    expect(reopen.code).not.toBe(0);
+    expect(reopen.code).toBe(0);
+    expect(JSON.parse(reopen.stdout).channel.unarchived).toBe(true);
+    // and it is writable again immediately
+    const afterReopen = await bunRun(["send", "test_arch", "--from", "a", "back"]);
+    expect(afterReopen.code).toBe(0);
 
     // unarchive brings it back to writable
     const un = await bunRun(["unarchive", "test_arch"]);
     expect(JSON.parse(un.stdout).archived).toBe(false);
     const ok = await bunRun(["send", "test_arch", "--from", "a", "works again"]);
     expect(ok.code).toBe(0);
+  });
+
+  test("open auto-unarchives an archived channel (V1.8)", async () => {
+    await bunRun(["open", "au_chan"]);
+    await bunRun(["send", "au_chan", "--from", "a", "hi"]);
+    expect(JSON.parse((await bunRun(["archive", "au_chan"])).stdout).archived).toBe(true);
+
+    const reopen = await bunRun(["open", "au_chan"]);
+    expect(reopen.code).toBe(0);
+    expect(JSON.parse(reopen.stdout).channel.unarchived).toBe(true);
+
+    // history is intact (auto-unarchive does NOT clear)
+    const pull = await bunRun(["pull", "au_chan", "--since", "0"]);
+    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+
+    // list no longer shows it archived
+    const ch = JSON.parse((await bunRun(["list"])).stdout).channels.find(
+      (c: { name: string; archived?: boolean }) => c.name === "au_chan",
+    );
+    expect(ch.archived).toBe(false);
   });
 
   test("tail --lurk receives messages but is invisible to who (V1.7)", async () => {
@@ -1213,6 +1238,98 @@ describe("grapevine cli", () => {
     );
     expect(ch.message_count).toBe(0);
     await bunRun(["close", "ann_guard"]);
+  });
+
+  test("reset snapshots then clears the log (V1.8)", async () => {
+    await bunRun(["open", "rs_chan"]);
+    await bunRun(["send", "rs_chan", "--from", "a", "one"]);
+    await bunRun(["send", "rs_chan", "--from", "a", "two"]);
+
+    const res = await bunRun(["reset", "rs_chan"]);
+    expect(res.code).toBe(0);
+    const out = JSON.parse(res.stdout);
+    expect(out.cleared).toBe(true);
+    expect(typeof out.snapshot).toBe("string");
+    expect(existsSync(out.snapshot)).toBe(true); // snapshot written under ~/.grapevine/archive
+
+    // live log is now empty
+    const pull = await bunRun(["pull", "rs_chan", "--since", "0"]);
+    expect(JSON.parse(pull.stdout).messages.length).toBe(0);
+
+    // snapshot holds the prior two messages
+    const snap = readFileSync(out.snapshot, "utf-8").trim().split("\n").filter(Boolean);
+    expect(snap.length).toBe(2);
+  });
+
+  test("reset refuses a live channel without --force, proceeds with it (V1.8)", async () => {
+    await bunRun(["open", "rs_live"]);
+    await bunRun(["send", "rs_live", "--from", "a", "live one"]);
+
+    // a real subscriber makes the channel "live"
+    const tail = spawn(process.execPath, [CLI, "tail", "rs_live", "--as", "seat"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(tail);
+    await sleep(400); // let the tail subscribe
+
+    const blocked = await bunRun(["reset", "rs_live"]);
+    expect(blocked.code).not.toBe(0);
+    expect(blocked.stderr).toContain("--force");
+    // history survives the refused reset
+    expect(
+      JSON.parse((await bunRun(["pull", "rs_live", "--since", "0"])).stdout).messages.length,
+    ).toBe(1);
+
+    const forced = await bunRun(["reset", "rs_live", "--force"]);
+    expect(forced.code).toBe(0);
+    expect(JSON.parse(forced.stdout).cleared).toBe(true);
+
+    tail.kill("SIGTERM");
+    TRACKED_PROCS.delete(tail);
+    // Isolate the next test: let the daemon notice the disconnect, then remove
+    // the channel entirely so its subscriber can't be counted as an active
+    // recipient elsewhere (the announce test counts all active channels).
+    await sleep(200);
+    await bunRun(["close", "rs_live"]);
+  });
+
+  test("open --fresh clears a dormant channel's history (V1.8)", async () => {
+    await bunRun(["open", "of_chan"]);
+    await bunRun(["send", "of_chan", "--from", "a", "stale one"]);
+    await bunRun(["send", "of_chan", "--from", "a", "stale two"]);
+
+    const fresh = await bunRun(["open", "of_chan", "--fresh"]);
+    expect(fresh.code).toBe(0);
+    expect(JSON.parse(fresh.stdout).channel.cleared).toBe(true);
+
+    expect(
+      JSON.parse((await bunRun(["pull", "of_chan", "--since", "0"])).stdout).messages.length,
+    ).toBe(0);
+  });
+
+  test("open --fresh does NOT clear a live channel (idempotent-convene guard) (V1.8)", async () => {
+    await bunRun(["open", "of_live"]);
+    await bunRun(["send", "of_live", "--from", "a", "in flight"]);
+
+    const tail = spawn(process.execPath, [CLI, "tail", "of_live", "--as", "seat"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(tail);
+    await sleep(400);
+
+    const fresh = await bunRun(["open", "of_live", "--fresh"]);
+    expect(fresh.code).toBe(0);
+    expect(JSON.parse(fresh.stdout).channel.cleared).toBe(false); // seats present → no clear
+    expect(
+      JSON.parse((await bunRun(["pull", "of_live", "--since", "0"])).stdout).messages.length,
+    ).toBe(1);
+
+    tail.kill("SIGTERM");
+    TRACKED_PROCS.delete(tail);
+    await sleep(200);
+    await bunRun(["close", "of_live"]);
   });
 
   test("announce broadcasts to all active channels with a kind:announcement frame", async () => {

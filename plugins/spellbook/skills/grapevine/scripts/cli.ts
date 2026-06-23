@@ -109,6 +109,9 @@ type OpenResponse = {
   message_count?: number;
   subscribers?: number;
   topic?: string | null;
+  unarchived?: boolean;
+  cleared?: boolean;
+  snapshot?: string | null;
   error?: string;
 };
 
@@ -324,12 +327,13 @@ function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
 }
 
-async function cmdOpen(name: string, opts: { topic?: string; from?: string }) {
-  if (!name) die("usage: grapevine open <name> [--topic <text>]");
+async function cmdOpen(name: string, opts: { topic?: string; from?: string; fresh?: boolean }) {
+  if (!name) die("usage: grapevine open <name> [--topic <text>] [--fresh]");
   const port = await ensureDaemon();
-  const body: Record<string, string> = { name };
+  const body: Record<string, string | boolean> = { name, explicit: true };
   if (opts.topic !== undefined) body.topic = opts.topic;
   if (opts.from !== undefined) body.from = opts.from;
+  if (opts.fresh) body.fresh = true;
   const { status, data } = await api<OpenResponse>(port, "POST", "/channels", body);
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   printJson({ ok: true, channel: data });
@@ -766,6 +770,26 @@ async function cmdClose(name: string) {
   printJson({ ok: true });
 }
 
+async function cmdReset(name: string, opts: { force?: boolean }) {
+  if (!name) die("usage: grapevine reset <name> [--force]");
+  const port = await ensureDaemon();
+  const body: Record<string, boolean> = {};
+  if (opts.force) body.force = true;
+  const { status, data } = await api<{ error?: string; subscribers?: number }>(
+    port,
+    "POST",
+    `/channels/${name}/reset`,
+    body,
+  );
+  if (status === 409 && data?.error === "live") {
+    die(
+      `channel has ${data.subscribers} live subscriber(s) — refusing to clear a live session. Re-run with --force to clear anyway (the log is snapshotted first).`,
+    );
+  }
+  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  printJson({ ok: true, ...data });
+}
+
 // Archive (read-only) or unarchive a channel (V1.7) — the non-destructive
 // alternative to close: history is preserved, sends are rejected, and the name
 // is locked from re-open until unarchived.
@@ -1050,6 +1074,7 @@ const BOOLEAN_FLAGS = new Set([
   "human",
   "lurk",
   "force",
+  "fresh",
   "yes",
 ]);
 
@@ -1100,6 +1125,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdOpen(positional[0], {
         topic: flags.topic as string | undefined,
         from: resolveAlias(flags),
+        fresh: flags.fresh === true,
       });
       return 0;
     case "topic":
@@ -1232,6 +1258,9 @@ async function main(argv: string[]): Promise<number> {
     case "close":
       await cmdClose(positional[0]);
       return 0;
+    case "reset":
+      await cmdReset(positional[0], { force: flags.force === true });
+      return 0;
     case "archive":
       await cmdArchive(positional[0], false);
       return 0;
@@ -1264,7 +1293,7 @@ async function main(argv: string[]): Promise<number> {
       process.stdout.write(`grapevine — agent-to-agent walkie-talkie
 
 Usage:
-  grapevine open <name> [--topic <text>]
+  grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)
   grapevine list
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
@@ -1277,6 +1306,7 @@ Usage:
   grapevine who <name>              # roster; the humans field lists humans
   grapevine alias [<name>]          # set/show your persisted alias (config.json)
   grapevine watch [<name>]          # open browser tab; live chat-bubble view
+  grapevine reset <name> [--force]           snapshot the log → ~/.grapevine/archive, then clear it
   grapevine archive <name>          # read-only: keep history, reject sends
   grapevine unarchive <name>        # bring an archived channel back
   grapevine close <name>            # destructive: delete the message log
