@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.8.0...spellbook-v1.9.0) (2026-06-23)
+
+
+### Features
+
+* **grapevine:** open --fresh — clear a dormant channel, never a live one ([abaad5a](https://github.com/ichabodcole/spellbook/commit/abaad5a7974e874b3cf23352ec243a6d4006193c))
+* **grapevine:** open auto-unarchives an archived channel ([0b4c8ad](https://github.com/ichabodcole/spellbook/commit/0b4c8adf86da81d8a5c62a7fae8600b4eed7e12e))
+* **grapevine:** reset verb — snapshot-then-clear with live-subscriber guard ([9ffc502](https://github.com/ichabodcole/spellbook/commit/9ffc5029b77a8c5de17dba9813d3040289d0ecff))
+
+
+### Bug Fixes
+
+* **grapevine:** widen watch channel sidebar + truncate long names ([6eea5c0](https://github.com/ichabodcole/spellbook/commit/6eea5c0d7ef5e46873f04cda3feb2ead73c3703c))
+
 ## [1.8.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.7.0...spellbook-v1.8.0) (2026-06-22)
 
 
