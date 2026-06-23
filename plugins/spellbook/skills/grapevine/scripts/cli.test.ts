@@ -353,15 +353,40 @@ describe("grapevine cli", () => {
     const pull = await bunRun(["pull", "test_arch", "--since", "0"]);
     expect(JSON.parse(pull.stdout).messages.length).toBe(1);
 
-    // the name is locked from re-open
+    // open auto-unarchives (the convene-at-start path): reopening a retired
+    // channel brings it back rather than failing.
     const reopen = await bunRun(["open", "test_arch"]);
-    expect(reopen.code).not.toBe(0);
+    expect(reopen.code).toBe(0);
+    expect(JSON.parse(reopen.stdout).channel.unarchived).toBe(true);
+    // and it is writable again immediately
+    const afterReopen = await bunRun(["send", "test_arch", "--from", "a", "back"]);
+    expect(afterReopen.code).toBe(0);
 
     // unarchive brings it back to writable
     const un = await bunRun(["unarchive", "test_arch"]);
     expect(JSON.parse(un.stdout).archived).toBe(false);
     const ok = await bunRun(["send", "test_arch", "--from", "a", "works again"]);
     expect(ok.code).toBe(0);
+  });
+
+  test("open auto-unarchives an archived channel (V1.8)", async () => {
+    await bunRun(["open", "au_chan"]);
+    await bunRun(["send", "au_chan", "--from", "a", "hi"]);
+    expect(JSON.parse((await bunRun(["archive", "au_chan"])).stdout).archived).toBe(true);
+
+    const reopen = await bunRun(["open", "au_chan"]);
+    expect(reopen.code).toBe(0);
+    expect(JSON.parse(reopen.stdout).channel.unarchived).toBe(true);
+
+    // history is intact (auto-unarchive does NOT clear)
+    const pull = await bunRun(["pull", "au_chan", "--since", "0"]);
+    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+
+    // list no longer shows it archived
+    const ch = JSON.parse((await bunRun(["list"])).stdout).channels.find(
+      (c: { name: string; archived?: boolean }) => c.name === "au_chan",
+    );
+    expect(ch.archived).toBe(false);
   });
 
   test("tail --lurk receives messages but is invisible to who (V1.7)", async () => {

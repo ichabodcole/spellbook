@@ -418,12 +418,29 @@ async function handle(req: Request): Promise<Response> {
       return json({ error: "name required" }, { status: 400 });
     }
     try {
-      // An archived name is locked — unarchive it to bring it back, rather than
-      // silently reopening a channel someone deliberately retired.
-      if (existsSync(archivedPath(body.name))) {
+      // Auto-unarchive: the obvious verb does the obvious thing, so a
+      // convene-at-start wrapper never breaks on a channel a prior session retired.
+      // Auto-unarchive only for explicit `open` calls (body.explicit === true).
+      // Other verbs (pull, tail, who, read) also call POST /channels to ensure
+      // the channel is loaded, but should not silently unarchive a retired channel.
+      let unarchived = false;
+      const ap = archivedPath(body.name);
+      if (body.explicit === true && existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+        if (existsSync(ap)) {
+          return json(
+            { error: "unarchive failed — marker still present", channel: body.name },
+            { status: 500 },
+          );
+        }
+        unarchived = true;
+      } else if (body.explicit !== true && existsSync(ap)) {
         return json({ error: "archived", channel: body.name }, { status: 409 });
       }
       const ch = loadChannel(body.name);
+      if (unarchived) ch.archived = false;
       // Optional topic on open — only set if provided AND channel has no
       // topic yet (so re-opening doesn't clobber). To update later, use
       // the explicit PUT /topic endpoint.
@@ -441,6 +458,7 @@ async function handle(req: Request): Promise<Response> {
         message_count: ch.next_id - 1,
         subscribers: visibleSubs(ch).length,
         topic: ch.topic,
+        unarchived,
       });
     } catch (e) {
       return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });

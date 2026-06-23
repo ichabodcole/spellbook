@@ -327,7 +327,7 @@ function printJson(data: unknown) {
 async function cmdOpen(name: string, opts: { topic?: string; from?: string }) {
   if (!name) die("usage: grapevine open <name> [--topic <text>]");
   const port = await ensureDaemon();
-  const body: Record<string, string> = { name };
+  const body: Record<string, string | boolean> = { name, explicit: true };
   if (opts.topic !== undefined) body.topic = opts.topic;
   if (opts.from !== undefined) body.from = opts.from;
   const { status, data } = await api<OpenResponse>(port, "POST", "/channels", body);
