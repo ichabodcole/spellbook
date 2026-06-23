@@ -89,7 +89,7 @@
         flex: 1;
         min-height: 0;
         display: grid;
-        grid-template-columns: 220px 1fr 220px;
+        grid-template-columns: 280px 1fr 220px;
       }
       main {
         overflow-y: auto;
@@ -141,6 +141,8 @@
         gap: 2px;
         border-radius: 6px;
         transition: background-color 120ms ease;
+        flex: 1;
+        min-width: 0;
       }
       aside.left .row:hover {
         background: var(--bg-card);
@@ -170,6 +172,8 @@
         font-weight: 600;
       }
       aside.left a .name {
+        flex: 1;
+        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

@@ -34,6 +34,7 @@
 
 import {
   appendFileSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readdirSync,
@@ -66,6 +67,7 @@ const PLUGIN_VERSION = readPluginVersion();
 
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const CHANNELS_DIR = join(DATA_DIR, "channels");
+const ARCHIVE_DIR = join(DATA_DIR, "archive");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
 // Per-HOME identity config (V1.7) — the persisted default alias the CLI sets
@@ -150,6 +152,27 @@ function channelPath(name: string): string {
 function archivedPath(name: string): string {
   channelPath(name); // reuse name validation (throws on invalid)
   return join(CHANNELS_DIR, `${name}.archived`);
+}
+
+// Snapshot a channel's log to the archive dir, then clear the live log. Returns
+// the snapshot path, or null if there was nothing to snapshot. No subscriber
+// guard here — callers (reset / open --fresh) apply their own.
+function snapshotAndClear(name: string): string | null {
+  const p = channelPath(name); // validates the name
+  let snapshot: string | null = null;
+  if (existsSync(p)) {
+    mkdirSync(ARCHIVE_DIR, { recursive: true });
+    snapshot = join(ARCHIVE_DIR, `${name}-${Date.now()}.jsonl`);
+    copyFileSync(p, snapshot);
+    writeFileSync(p, "");
+  }
+  const ch = channels.get(name);
+  if (ch) {
+    ch.next_id = 1;
+    ch.topic = null;
+    ch.last_activity = Date.now();
+  }
+  return snapshot;
 }
 
 function loadChannel(name: string): Channel {
@@ -418,12 +441,41 @@ async function handle(req: Request): Promise<Response> {
       return json({ error: "name required" }, { status: 400 });
     }
     try {
-      // An archived name is locked — unarchive it to bring it back, rather than
-      // silently reopening a channel someone deliberately retired.
-      if (existsSync(archivedPath(body.name))) {
+      // Auto-unarchive: the obvious verb does the obvious thing, so a
+      // convene-at-start wrapper never breaks on a channel a prior session retired.
+      // Auto-unarchive only for explicit `open` calls (body.explicit === true).
+      // Other verbs (pull, tail, who, read) also call POST /channels to ensure
+      // the channel is loaded, but should not silently unarchive a retired channel.
+      let unarchived = false;
+      const ap = archivedPath(body.name);
+      if (body.explicit === true && existsSync(ap)) {
+        try {
+          unlinkSync(ap);
+        } catch {}
+        if (existsSync(ap)) {
+          return json(
+            { error: "unarchive failed — marker still present", channel: body.name },
+            { status: 500 },
+          );
+        }
+        unarchived = true;
+      } else if (body.explicit !== true && existsSync(ap)) {
         return json({ error: "archived", channel: body.name }, { status: 409 });
       }
+      // open --fresh: clear the channel for a new session, but ONLY when no seats
+      // are connected. A re-runnable convene must never wipe a live session.
+      let cleared = false;
+      let snapshot: string | null = null;
+      if (body.fresh === true) {
+        const existing = channels.get(body.name);
+        const liveSubs = existing ? existing.subscribers.size : 0;
+        if (liveSubs === 0) {
+          snapshot = snapshotAndClear(body.name);
+          cleared = true;
+        }
+      }
       const ch = loadChannel(body.name);
+      if (unarchived) ch.archived = false;
       // Optional topic on open — only set if provided AND channel has no
       // topic yet (so re-opening doesn't clobber). To update later, use
       // the explicit PUT /topic endpoint.
@@ -441,6 +493,9 @@ async function handle(req: Request): Promise<Response> {
         message_count: ch.next_id - 1,
         subscribers: visibleSubs(ch).length,
         topic: ch.topic,
+        unarchived,
+        cleared,
+        snapshot,
       });
     } catch (e) {
       return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
@@ -558,6 +613,22 @@ async function handle(req: Request): Promise<Response> {
       if (ch) ch.archived = true;
       return json({ ok: true, channel: name, archived: true });
     }
+    if (sub === "/reset" && method === "POST") {
+      const body = (await readJsonBody(req)) ?? {};
+      const ch = channels.get(name);
+      const liveSubs = ch ? ch.subscribers.size : 0;
+      if (liveSubs > 0 && body.force !== true) {
+        return json({ error: "live", channel: name, subscribers: liveSubs }, { status: 409 });
+      }
+      const snapshot = snapshotAndClear(name);
+      return json({
+        ok: true,
+        channel: name,
+        snapshot,
+        cleared: snapshot !== null,
+      });
+    }
+
     if (sub === "/unarchive" && method === "POST") {
       const ap = archivedPath(name);
       if (existsSync(ap)) {
