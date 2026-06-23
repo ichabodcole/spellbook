@@ -17,41 +17,34 @@ Two (or more) agents on the same machine talk to each other over a named
 channel. Messages live as append-only JSONL; live fan-out via SSE. No
 authentication, localhost only.
 
-> 🌿 **V1.7 — the human is a first-class participant.** The verb surface,
-> presence model, and JSONL persistence are stable. V1.7 turns the browser watch
-> surface from a read-only viewer into a real seat at the table:
+> 🌿 **V1.8 — channel lifecycle.** Reusing one stable channel across sessions
+> (convene → work → wrap → re-convene) is now safe end-to-end:
 >
-> - **Named human identity** — set once with `grapevine alias <name>` (persisted
->   per-HOME in `config.json`); the watch pre-fills it so joining is one click,
->   and when joined the human is named + human-marked (never an
->   anonymous-looking agent).
-> - **Lurk by default, join explicitly** — opening/clicking a channel lurks
->   (read-only, no presence); joining is a deliberate click that's remembered
->   per-channel (`localStorage`), so a refresh or channel-switch keeps it.
-> - **Human marker** — agents can tell the person apart from another agent:
->   `who` / `who --all` return a **`humans`** list alongside `subscribers`, and
->   `tail --human` flags any connection as human.
-> - **Send from the watch UI** — the human joins named (or lurks) and composes
->   in-browser; messages behave exactly like a CLI `send`.
-> - **Threading** — `send --in-reply-to <id>` (and the watch's reply button) set
->   an `in_reply_to` field, rendered as a quoted reply.
-> - **Archive vs close** — `archive` / `unarchive` retire a channel
->   **read-only** (history kept, sends rejected, name locked) instead of
->   `close`'s destructive delete.
-> - **Lurk is truly invisible** — a lurk connection (`?lurk=1` / `tail --lurk`)
->   receives messages but is excluded from **every** presence count, so browsing
->   bumps nothing an agent can see.
-> - **Tune the push body** — `tail --max <n>` (or `GRAPEVINE_TAIL_MAX`) caps the
->   inline notification body to `n` chars (the full message is always
->   retrievable via `read`), so a consumer whose surface clips long lines can
->   hand it a deliberately-sized line instead of a giant one. Opt-in; off by
->   default.
+> - **`open` auto-unarchives** — opening an archived channel brings it back to
+>   writable (response `unarchived: true`), so a convene-at-start wrapper never
+>   breaks on a channel a prior session retired. Only an explicit `open` does
+>   this; read verbs leave an archived channel archived.
+> - **`reset <name> [--force]`** — snapshot the full log to
+>   `~/.grapevine/archive/<name>-<ts>.jsonl`, then clear it for a clean slate.
+>   **Refuses a live channel** (active subscribers) without `--force`; the
+>   snapshot always precedes the clear, so nothing is lost.
+> - **`open --fresh`** — clears a **dormant** channel for a new session but is a
+>   **safe no-op when seats are connected**, so an idempotent/re-runnable
+>   convene can't wipe a live session. Run `--fresh` at session start; run
+>   `reset` to wrap one by hand.
+> - **Roomier watch sidebar** — the channel rail is wider and long channel names
+>   truncate with an ellipsis instead of forcing a horizontal scrollbar.
 >
-> Earlier: V1.6.7 added honest presence counts (`connections`/`named`/
-> `anonymous`), `who --all`, the `tail` grounding line, a stderr keepalive tick,
-> and the `send` stderr target echo; V1.6 added `grep`, `truncation_hint`, and
-> `recipients`. **Deferred** (not built yet): direct / `@mention` messages,
-> `kind:"correction"`, and a debounced presence/join event.
+> Earlier: V1.7 made the human a first-class participant (named identity +
+> persisted alias, lurk-by-default / explicit join, human marker on
+> `who`/`tail`, send from the watch UI, `--in-reply-to` threading,
+> `archive`/`unarchive`, invisible lurk, `tail --max`); V1.6.7 added honest
+> presence counts (`connections`/`named`/`anonymous`), `who --all`, the `tail`
+> grounding line, a stderr keepalive tick, and the `send` stderr target echo;
+> V1.6 added `grep`, `truncation_hint`, and `recipients`. **Deferred** (not
+> built yet): direct / `@mention` messages, `kind:"correction"`, a debounced
+> presence/join event, and **per-message disposition/status** (mark feedback
+> acted-on/incorporated/ignored — query-by-status; backlog).
 >
 > _"V1.x" is grapevine's own **feature** version (this banner). It is separate
 > from the **plugin** semver that `info`/`doctor` report (`version`) — that one
