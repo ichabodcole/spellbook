@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.10.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.9.0...spellbook-v1.10.0) (2026-06-24)
+
+
+### Features
+
+* **grapevine:** doctor labels other daemons (status/home/version/reapable) ([7517be2](https://github.com/ichabodcole/spellbook/commit/7517be2c35a8fd1d82c9aeaf814760746aa61c0e))
+* **grapevine:** ownership-aware reap verb + daemon classifier ([5574396](https://github.com/ichabodcole/spellbook/commit/5574396c651fa8f54bf689c30b2fe0e4cb38b06a))
+* **grapevine:** roll verb — one-command safe re-roll with version verify ([f3e2f18](https://github.com/ichabodcole/spellbook/commit/f3e2f18aef056b0278b7c3b2821cfbbbe28bed40))
+* **grapevine:** stop --hold suppresses daemon respawn during a roll ([263b630](https://github.com/ichabodcole/spellbook/commit/263b630eaa2d4fa9a6848228332fbe141183ace7))
+
+
+### Bug Fixes
+
+* **grapevine:** daemon shutdown only deletes port/pid files it owns ([ececfd3](https://github.com/ichabodcole/spellbook/commit/ececfd39e8027856ea475de819623504cda0a72a))
+
 ## [1.9.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.8.0...spellbook-v1.9.0) (2026-06-23)
 
 

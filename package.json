@@ -1,6 +1,6 @@
 {
   "name": "spellbook",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "module": "index.ts",
   "type": "module",
   "private": true,
