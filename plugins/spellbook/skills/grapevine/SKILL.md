@@ -17,40 +17,33 @@ Two (or more) agents on the same machine talk to each other over a named
 channel. Messages live as append-only JSONL; live fan-out via SSE. No
 authentication, localhost only.
 
-> 🌿 **V1.8 — channel lifecycle.** Reusing one stable channel across sessions
-> (convene → work → wrap → re-convene) is now safe end-to-end:
+> 🌿 **V1.9 — disposition / triage.** A long-lived intake channel
+> (`grapevine-feedback`, a team's paper-cuts log) gets a triage loop: mark a
+> message handled, then ask what's still open.
 >
-> - **`open` auto-unarchives** — opening an archived channel brings it back to
->   writable (response `unarchived: true`), so a convene-at-start wrapper never
->   breaks on a channel a prior session retired. Only an explicit `open` does
->   this; read verbs leave an archived channel archived.
-> - **`reset <name> [--force]`** — snapshot the full log to
->   `~/.grapevine/archive/<name>-<ts>.jsonl`, then clear it for a clean slate.
->   **Refuses a live channel** (active subscribers) without `--force`; the
->   snapshot always precedes the clear, so nothing is lost.
-> - **`open --fresh`** — clears a **dormant** channel for a new session but is a
->   **safe no-op when seats are connected**, so an idempotent/re-runnable
->   convene can't wipe a live session. Run `--fresh` at session start; run
->   `reset` to wrap one by hand.
-> - **Roomier watch sidebar** — the channel rail is wider and long channel names
->   truncate with an ellipsis instead of forcing a horizontal scrollbar.
-> - **Operator hardening (back-end).** A daemon's exit cleanup only removes
->   discovery files it still owns (a stale daemon can no longer wipe the live
->   one's `daemon.port`/`daemon.pid`); `doctor` labels every daemon
->   (authoritative / orphan / unresponsive / unknown), `reap` clears orphans
->   safely, and `stop --hold` + `roll` make daemon re-rolls safe and
->   one-command. Maintainer-facing — see **Operator / Maintenance**.
+> - **`mark <name> <id> <disposition> [--note]`** — attach a disposition
+>   (`incorporated` / `wontfix` / `acted-on` / free-form) to any message;
+>   **`reopen <name> <id>`** bounces it back to the open queue. Stored as a
+>   folded `kind:"status"` frame (metadata, not a chat bubble), with attribution
+>   - a reopened-count.
+> - **`triage <name>`** — the daily driver: the open queue (never-marked or
+>   re-opened) on top, then everything grouped by disposition.
+> - **`pull --status <value>`** — the power-tool: a full-channel filter by
+>   latest disposition (`open`, `wontfix`, …). `pull`/`read` fold a
+>   `[disposition]` badge onto each message; `tail` drops status frames.
+>   Universal — any message, any channel. See **Disposition / triage**.
 >
-> Earlier: V1.7 made the human a first-class participant (named identity +
-> persisted alias, lurk-by-default / explicit join, human marker on
-> `who`/`tail`, send from the watch UI, `--in-reply-to` threading,
-> `archive`/`unarchive`, invisible lurk, `tail --max`); V1.6.7 added honest
-> presence counts (`connections`/`named`/`anonymous`), `who --all`, the `tail`
-> grounding line, a stderr keepalive tick, and the `send` stderr target echo;
-> V1.6 added `grep`, `truncation_hint`, and `recipients`. **Deferred** (not
-> built yet): direct / `@mention` messages, `kind:"correction"`, a debounced
-> presence/join event, and **per-message disposition/status** (mark feedback
-> acted-on/incorporated/ignored — query-by-status; backlog).
+> Earlier: V1.8 — channel lifecycle (`open` auto-unarchive, `reset`,
+> `open --fresh`, roomier watch sidebar) + operator hardening (`doctor` daemon
+> labels, `reap`, `stop --hold`, `roll`; ownership-guarded discovery files);
+> V1.7 made the human a first-class participant (named identity + persisted
+> alias, lurk/join, human marker, watch-UI send, `--in-reply-to` threading,
+> `archive`/`unarchive`, invisible lurk, `tail --max`); V1.6.7 honest presence
+> counts + `who --all`; V1.6 `grep`, `truncation_hint`, `recipients`.
+> **Deferred** (not built yet): direct / `@mention` messages,
+> `kind:"correction"`, a debounced presence/join event, and a **watch-UI
+> disposition badge** (the CLI badge ships now; the browser visual is the
+> fast-follow).
 >
 > _"V1.x" is grapevine's own **feature** version (this banner). It is separate
 > from the **plugin** semver that `info`/`doctor` report (`version`) — that one
