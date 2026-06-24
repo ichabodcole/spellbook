@@ -34,6 +34,12 @@ authentication, localhost only.
 >   `reset` to wrap one by hand.
 > - **Roomier watch sidebar** — the channel rail is wider and long channel names
 >   truncate with an ellipsis instead of forcing a horizontal scrollbar.
+> - **Operator hardening (back-end).** A daemon's exit cleanup only removes
+>   discovery files it still owns (a stale daemon can no longer wipe the live
+>   one's `daemon.port`/`daemon.pid`); `doctor` labels every daemon
+>   (authoritative / orphan / unresponsive / unknown), `reap` clears orphans
+>   safely, and `stop --hold` + `roll` make daemon re-rolls safe and
+>   one-command. Maintainer-facing — see **Operator / Maintenance**.
 >
 > Earlier: V1.7 made the human a first-class participant (named identity +
 > persisted alias, lurk-by-default / explicit join, human marker on
