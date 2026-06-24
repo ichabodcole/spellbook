@@ -1532,10 +1532,10 @@ Usage:
   grapevine close <name>            # destructive: delete the message log
   grapevine start                   # ensure the daemon is running (alias: up); no channel
   grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard
-  grapevine roll [--force]          safely restart the daemon (stop+hold+respawn) and verify the version
-  grapevine stop
+  grapevine roll [--force]          # safe restart (stop+hold+respawn) + version verify — the recommended deploy step
+  grapevine stop [--hold <seconds>] # kill the daemon; --hold suppresses auto-respawn for <s> seconds (upgrade window)
   grapevine info
-  grapevine doctor                  # health check — daemon, zombies, channels
+  grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown
   grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune
 
 Env:
