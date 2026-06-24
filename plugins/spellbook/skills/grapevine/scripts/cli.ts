@@ -952,31 +952,15 @@ async function cmdDoctor() {
     }
   }
 
-  // Scan ps for other daemon processes. Filter to those running daemon.ts
-  // under a grapevine path. Excludes our authoritative daemon (so the
-  // "other_daemons" set is genuinely other).
-  const otherDaemons: Array<{ pid: number; command: string }> = [];
+  // Enumerate other daemon processes via the shared classifier. Each entry
+  // gains port/home/version/status/reapable so the operator has the full
+  // picture without needing a separate `reap --dry-run`.
+  const otherDaemons: Array<Awaited<ReturnType<typeof classifyDaemon>> & { command?: string }> = [];
+  const selfPid = authoritative?.pid as number | undefined;
   try {
-    const allPids = await listGrapevineDaemonPids();
-    // Run ps once more just to get the command strings for display (listGrapevineDaemonPids only returns pids).
-    const proc = spawn("ps", ["-eo", "pid,command"], {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const chunks: Buffer[] = [];
-    proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
-    await new Promise<void>((resolve) => proc.on("exit", () => resolve()));
-    const out = Buffer.concat(chunks).toString("utf-8");
-    const pidSet = new Set(allPids);
-    for (const line of out.split("\n")) {
-      if (!line.includes("daemon.ts")) continue;
-      if (!line.toLowerCase().includes("grapevine")) continue;
-      const m = line.match(/^\s*(\d+)\s+(.*)$/);
-      if (!m) continue;
-      const pid = parseInt(m[1], 10);
-      if (!pid) continue;
-      if (!pidSet.has(pid)) continue;
-      if (authoritative && pid === authoritative.pid) continue;
-      otherDaemons.push({ pid, command: m[2].trim() });
+    for (const pid of await listGrapevineDaemonPids()) {
+      if (selfPid && pid === selfPid) continue;
+      otherDaemons.push(await classifyDaemon(pid));
     }
   } catch {
     // ps unavailable; carry on with empty list
@@ -1005,9 +989,15 @@ async function cmdDoctor() {
       `Found ${otherDaemons.length} other grapevine daemon process(es) on this machine. ` +
         "They may be zombies from past runs OR daemons serving other HOMEs (different GRAPEVINE_HOME).",
     );
-    hints.push(
-      "To inspect a specific one: `lsof -p <pid>` (shows its listening port). To clean up: `kill <pid>` (or `kill -9` if needed).",
-    );
+    const reapableCount = otherDaemons.filter((d) => d.reapable).length;
+    if (reapableCount > 0) {
+      hints.push(
+        `Found ${reapableCount} reapable orphan daemon(s). Run \`grapevine reap\` to clear them safely.`,
+      );
+    }
+    if (otherDaemons.some((d) => d.status === "unresponsive")) {
+      hints.push("Some daemons are unresponsive; `grapevine reap --force` includes them.");
+    }
   }
   if (
     authoritative &&

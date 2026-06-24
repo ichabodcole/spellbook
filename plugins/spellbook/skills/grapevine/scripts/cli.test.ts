@@ -1430,6 +1430,31 @@ describe("grapevine cli", () => {
     await bunRun(["stop"]);
   });
 
+  test("doctor labels other daemons with status + reapable (V1.9)", async () => {
+    await bunRun(["start"]);
+    const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan2-"));
+    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+      env: { ...process.env, GRAPEVINE_HOME: orphanHome },
+      stdio: ["ignore", "ignore", "ignore"],
+      detached: true,
+    });
+    TRACKED_PROCS.add(op);
+    await sleep(800);
+    rmSync(join(orphanHome, "daemon.port"), { force: true });
+
+    const doc = JSON.parse((await bunRun(["doctor"])).stdout);
+    const entry = doc.other_daemons_on_machine.find((d: { pid: number }) => d.pid === op.pid);
+    expect(entry).toBeTruthy();
+    expect(entry.status).toBe("orphan");
+    expect(entry.reapable).toBe(true);
+    expect(doc.hints.some((h: string) => h.includes("reap"))).toBe(true);
+
+    op.kill("SIGTERM");
+    TRACKED_PROCS.delete(op);
+    rmSync(orphanHome, { recursive: true, force: true });
+    await bunRun(["stop"]);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
