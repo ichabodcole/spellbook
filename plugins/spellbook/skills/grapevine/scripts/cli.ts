@@ -48,7 +48,10 @@ type Message = {
   from: string;
   text: string;
   ts: number;
-  kind: "message" | "topic";
+  kind: "message" | "topic" | "announcement" | "status";
+  in_reply_to?: number;
+  target?: number;
+  disposition?: string;
 };
 
 // GET / — daemon liveness/info.
@@ -163,7 +166,7 @@ type TailPayload = {
   from?: string;
   text?: string;
   ts?: number;
-  kind?: "message" | "topic";
+  kind?: "message" | "topic" | "announcement" | "status";
   // shared
   channel?: string;
   topic?: string | null;
@@ -461,19 +464,40 @@ async function cmdAnnounce(
   printJson(out);
 }
 
-async function cmdPull(name: string, since: number) {
-  if (!name) die("usage: grapevine pull <channel> [--since <id>]");
+async function cmdPull(name: string, since: number, opts: { status?: string } = {}) {
+  if (!name) die("usage: grapevine pull <channel> [--since <id>] [--status <value>]");
   const port = await ensureDaemon();
   await api(port, "POST", "/channels", { name });
+
+  if (opts.status !== undefined) {
+    // Full-channel scan: filter by latest disposition, status frames excluded.
+    const badged = loadChannelMessagesBadged(name);
+    const filtered = badged.filter((m) => {
+      const dispArg = m.disposition !== undefined ? { disposition: m.disposition } : undefined;
+      return opts.status === "open" ? isOpen(dispArg) : m.disposition === opts.status;
+    });
+    const lastId = filtered.length ? filtered[filtered.length - 1].id : 0;
+    printJson({ ok: true, messages: filtered, cursor: lastId });
+    return;
+  }
+
+  // Since-window path (unchanged from Task 2).
   const { status, data } = await api<MessagesResponse>(
     port,
     "GET",
     `/channels/${name}/messages?since=${since}`,
   );
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
-  const msgs = data?.messages ?? [];
-  const cursor = msgs.length ? msgs[msgs.length - 1].id : since;
-  printJson({ ok: true, messages: msgs, cursor });
+  const rawMsgs = data?.messages ?? [];
+  const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
+  const disp = foldDispositions(name);
+  const annotated = rawMsgs
+    .filter((m) => m.kind !== "status")
+    .map((m) => {
+      const d = disp.get(m.id);
+      return d ? { ...m, disposition: d.disposition, reopens: d.reopens } : m;
+    });
+  printJson({ ok: true, messages: annotated, cursor });
 }
 
 async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
@@ -492,14 +516,22 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   const msg = (data?.messages ?? []).find((m) => m.id === id);
   if (!msg) die(`message ${id} not found in ${name}`, 1);
+  const dispMap = foldDispositions(name);
+  const d = dispMap.get(id);
+  const annotatedMsg = d ? { ...msg, disposition: d.disposition, reopens: d.reopens } : msg;
   if (opts.text) {
     // Prose mode: header + body, no JSON envelope, so a human (or an agent
     // recovering a truncated notification) can read it directly.
     const ts = new Date(msg.ts).toISOString();
-    process.stdout.write(`[${msg.id}] ${msg.from} · ${ts}\n${msg.text}\n`);
+    const dispPrefix = d
+      ? d.reopens > 0
+        ? `[${d.disposition} ↻${d.reopens}] `
+        : `[${d.disposition}] `
+      : "";
+    process.stdout.write(`${dispPrefix}[${msg.id}] ${msg.from} · ${ts}\n${msg.text}\n`);
     return;
   }
-  printJson({ ok: true, message: msg });
+  printJson({ ok: true, message: annotatedMsg });
 }
 
 async function cmdWait(name: string, since: number, timeoutS: number, alias: string | undefined) {
@@ -712,6 +744,8 @@ async function cmdTail(
           if (typeof payload.id === "number" && payload.id > highestSeen) {
             highestSeen = payload.id;
           }
+          // Drop status frames — disposition updates are metadata, not messages.
+          if (payload.kind === "status") continue;
           // Suppress self-echo: when --as is set, drop messages we sent
           // ourselves. The sender already got the receipt as the POST
           // response, so re-emitting it on tail is pure noise.
@@ -742,6 +776,97 @@ async function cmdTail(
     // are lost across reconnects.
     if (!stopped) await new Promise((r) => setTimeout(r, 200));
   }
+}
+
+function foldDispositions(name: string) {
+  const map = new Map<
+    number,
+    {
+      disposition: string;
+      from: string;
+      ts: number;
+      note: string;
+      reopens: number;
+    }
+  >();
+  const path = join(DATA_DIR, "channels", `${name}.jsonl`);
+  if (!existsSync(path)) return map;
+  for (const line of readFileSync(path, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    let m: Message;
+    try {
+      m = JSON.parse(line) as Message;
+    } catch {
+      continue;
+    }
+    if (m.kind !== "status" || typeof m.target !== "number" || typeof m.disposition !== "string")
+      continue;
+    const prev = map.get(m.target);
+    const reopens =
+      (prev?.reopens ?? 0) +
+      (m.disposition === "open" && prev && prev.disposition !== "open" ? 1 : 0);
+    map.set(m.target, {
+      disposition: m.disposition,
+      from: m.from,
+      ts: m.ts,
+      note: m.text,
+      reopens,
+    });
+  }
+  return map;
+}
+// "open" = no entry, or latest disposition is "open"
+function isOpen(d?: { disposition: string }) {
+  return !d || d.disposition === "open";
+}
+
+// Reads the full channel log, drops kind:"status" frames, and badges each
+// remaining message with its latest disposition via foldDispositions.
+function loadChannelMessagesBadged(
+  name: string,
+): (Message & { disposition?: string; reopens?: number })[] {
+  const logPath = join(DATA_DIR, "channels", `${name}.jsonl`);
+  if (!existsSync(logPath)) return [];
+  const disp = foldDispositions(name);
+  const messages: (Message & { disposition?: string; reopens?: number })[] = [];
+  for (const line of readFileSync(logPath, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    let m: Message;
+    try {
+      m = JSON.parse(line) as Message;
+    } catch {
+      continue;
+    }
+    if (m.kind === "status") continue;
+    const d = disp.get(m.id);
+    if (d) {
+      messages.push({ ...m, disposition: d.disposition, reopens: d.reopens });
+    } else {
+      messages.push(m);
+    }
+  }
+  return messages;
+}
+
+async function cmdTriage(name: string) {
+  if (!name) die("usage: grapevine triage <channel>");
+  const port = await ensureDaemon();
+  await api(port, "POST", "/channels", { name });
+  const badged = loadChannelMessagesBadged(name);
+  const open: typeof badged = [];
+  const by_status: Record<string, typeof badged> = {};
+  for (const m of badged) {
+    // isOpen expects a disposition entry object (or undefined for no entry).
+    const dispArg = m.disposition !== undefined ? { disposition: m.disposition } : undefined;
+    if (isOpen(dispArg)) {
+      open.push(m);
+    } else {
+      const key = m.disposition ?? "unknown";
+      if (!by_status[key]) by_status[key] = [];
+      by_status[key].push(m);
+    }
+  }
+  printJson({ ok: true, open, by_status });
 }
 
 async function cmdGrep(name: string, pattern: string, opts: { literal?: boolean; from?: string }) {
@@ -815,6 +940,23 @@ async function cmdReset(name: string, opts: { force?: boolean }) {
 // Archive (read-only) or unarchive a channel (V1.7) — the non-destructive
 // alternative to close: history is preserved, sends are rejected, and the name
 // is locked from re-open until unarchived.
+async function cmdMark(
+  name: string,
+  id: number,
+  disposition: string,
+  from: string,
+  opts: { note?: string },
+) {
+  if (!name || !Number.isFinite(id) || !disposition)
+    die("usage: grapevine mark <channel> <id> <disposition> [--note <text>] [--as <alias>]");
+  const port = await ensureDaemon();
+  const body: Record<string, unknown> = { from, target: id, disposition };
+  if (opts.note !== undefined) body.note = opts.note;
+  const { status, data } = await api<Message>(port, "POST", `/channels/${name}/status`, body);
+  if (status >= 400 || !data) die((data as { error?: string })?.error ?? `HTTP ${status}`);
+  printJson(data);
+}
+
 async function cmdArchive(name: string, unarchive: boolean) {
   const verb = unarchive ? "unarchive" : "archive";
   if (!name) die(`usage: grapevine ${verb} <channel>`);
@@ -1429,9 +1571,12 @@ async function main(argv: string[]): Promise<number> {
     }
     case "pull": {
       const since = flags.since ? parseInt(flags.since as string, 10) : 0;
-      await cmdPull(positional[0], since);
+      await cmdPull(positional[0], since, { status: flags.status as string | undefined });
       return 0;
     }
+    case "triage":
+      await cmdTriage(positional[0]);
+      return 0;
     case "read": {
       const id = positional[1] ? parseInt(positional[1], 10) : NaN;
       await cmdRead(positional[0], id, { text: !!flags.text });
@@ -1473,6 +1618,26 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     case "reset":
       await cmdReset(positional[0], { force: flags.force === true });
+      return 0;
+    case "mark":
+      await cmdMark(
+        positional[0],
+        parseInt(positional[1], 10),
+        positional.slice(2).join(" "),
+        resolveAlias(flags) ??
+          die("mark: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var"),
+        { note: flags.note as string | undefined },
+      );
+      return 0;
+    case "reopen":
+      await cmdMark(
+        positional[0],
+        parseInt(positional[1], 10),
+        "open",
+        resolveAlias(flags) ??
+          die("reopen: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var"),
+        { note: flags.note as string | undefined },
+      );
       return 0;
     case "archive":
       await cmdArchive(positional[0], false);
@@ -1518,7 +1683,10 @@ Usage:
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
   grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk] [--max <n>]
-  grapevine pull <name> [--since <id>]
+  grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)
+  grapevine triage <name>             # full-scan: open messages on top + grouped by_status
+  grapevine mark <name> <id> <disposition> [--note <text>]  # set disposition (incorporated|wontfix|deferred|…)
+  grapevine reopen <name> <id>        # bounce a message back to open
   grapevine read <name> <id> [--text]   # one full message by id (--text = prose)
   grapevine wait <name> [--since <id>] [--timeout <s>]
   grapevine grep <name> <pattern> [--literal] [--from <alias>]
