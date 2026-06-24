@@ -31,6 +31,7 @@ import { fileURLToPath } from "node:url";
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
+const HOLD_FILE = join(DATA_DIR, "daemon.hold");
 // Persisted identity config (V1.7) — `grapevine alias <name>` writes it; the
 // daemon serves it to the watch via GET /identity.
 const CONFIG_FILE = join(DATA_DIR, "config.json");
@@ -283,9 +284,30 @@ async function readDaemonPort(): Promise<number | null> {
   return null;
 }
 
+function holdActive(): number | null {
+  try {
+    if (!existsSync(HOLD_FILE)) return null;
+    const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
+    if (Number.isFinite(until) && until > Date.now()) return until;
+    try {
+      unlinkSync(HOLD_FILE);
+    } catch {} // expired → clean
+    return null;
+  } catch {
+    return null;
+  }
+}
+export function releaseHold() {
+  try {
+    if (existsSync(HOLD_FILE)) unlinkSync(HOLD_FILE);
+  } catch {}
+}
+
 async function ensureDaemon(): Promise<number> {
   let port = await readDaemonPort();
   if (port) return port;
+  if (holdActive())
+    die("daemon is held (respawn suppressed) — wait for the hold to clear or run `grapevine roll`");
   // Spawn detached so the daemon survives this CLI process exit.
   const proc = spawn(process.execPath, [DAEMON_SCRIPT], {
     detached: true,
@@ -802,16 +824,31 @@ async function cmdArchive(name: string, unarchive: boolean) {
   printJson({ ok: true, ...data });
 }
 
-async function cmdStop() {
+async function cmdStop(opts: { holdSeconds?: number } = {}) {
+  let heldUntil: number | undefined;
+  if (opts.holdSeconds && opts.holdSeconds > 0) {
+    heldUntil = Date.now() + opts.holdSeconds * 1000;
+    try {
+      writeFileSync(HOLD_FILE, String(heldUntil));
+    } catch {}
+  }
   const port = await readDaemonPort();
   if (!port) {
-    printJson({ ok: true, daemon: false });
+    printJson({
+      ok: true,
+      daemon: false,
+      ...(heldUntil !== undefined ? { held_until: heldUntil } : {}),
+    });
     return;
   }
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  printJson({ ok: true, stopped: true });
+  printJson({
+    ok: true,
+    stopped: true,
+    ...(heldUntil !== undefined ? { held_until: heldUntil } : {}),
+  });
 }
 
 // Per-channel live-connection summary — the restart-safety read. Mirrors what
@@ -838,6 +875,10 @@ async function cmdStart() {
   // daemon, or spawn a fresh one. The explicit "bring it up" verb — diagnostics
   // (doctor/info/list) stay read-only and never spawn.
   const existing = await readDaemonPort();
+  if (!existing && holdActive()) {
+    printJson({ ok: true, held: true, port: null });
+    return;
+  }
   const port = existing ?? (await ensureDaemon());
   printJson({ ok: true, port, already_running: existing !== null });
 }
@@ -1395,7 +1436,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdRestart({ force: !!flags.force || !!flags.yes });
       return 0;
     case "stop":
-      await cmdStop();
+      await cmdStop({ holdSeconds: flags.hold ? parseInt(String(flags.hold), 10) : undefined });
       return 0;
     case "watch":
       await cmdWatch(positional[0]);

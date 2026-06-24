@@ -70,6 +70,7 @@ const CHANNELS_DIR = join(DATA_DIR, "channels");
 const ARCHIVE_DIR = join(DATA_DIR, "archive");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
+const HOLD_FILE = join(DATA_DIR, "daemon.hold");
 // Per-HOME identity config (V1.7) — the persisted default alias the CLI sets
 // (`grapevine alias <name>`) and the watch surface reads via GET /identity so a
 // human has a consistent name across every grapevine without re-typing it.
@@ -924,6 +925,14 @@ function shutdown(code: number) {
 
 async function main() {
   ensureDirs();
+
+  // Delete an expired hold file for tidiness (the hold is enforced CLI-side).
+  try {
+    if (existsSync(HOLD_FILE)) {
+      const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
+      if (!Number.isFinite(until) || until <= Date.now()) unlinkSync(HOLD_FILE);
+    }
+  } catch {}
 
   // Check if a daemon is already running by reading the port file and
   // trying to ping it. If alive, exit 0 quietly — caller will discover.

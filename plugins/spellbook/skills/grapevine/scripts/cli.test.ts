@@ -1455,6 +1455,25 @@ describe("grapevine cli", () => {
     await bunRun(["stop"]);
   });
 
+  test("stop --hold suppresses respawn for the window (V1.9)", async () => {
+    await bunRun(["start"]);
+    const stop = await bunRun(["stop", "--hold", "3"]);
+    expect(JSON.parse(stop.stdout).held_until).toBeGreaterThan(Date.now());
+
+    // A verb that would normally ensureDaemon must NOT spawn while held.
+    const held = await bunRun(["start"]);
+    const parsed = JSON.parse(held.stdout);
+    expect(parsed.held).toBe(true);
+    expect(parsed.port ?? null).toBe(null);
+    expect(existsSync(join(HOME, "daemon.port"))).toBe(false);
+
+    // After the hold expires, a verb spawns normally.
+    await sleep(3200);
+    const after = await bunRun(["start"]);
+    expect(JSON.parse(after.stdout).port).toBeGreaterThan(0);
+    await bunRun(["stop"]);
+  }, 10000);
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
