@@ -1505,6 +1505,43 @@ describe("grapevine cli", () => {
     await bunRun(["stop"]);
   });
 
+  test("mark appends a kind:status frame referencing the target (V1.9)", async () => {
+    await bunRun(["open", "disp1"]);
+    await bunRun(["send", "disp1", "--from", "a", "feedback item"]); // id 1
+    const r = await bunRun([
+      "mark",
+      "disp1",
+      "1",
+      "incorporated",
+      "--note",
+      "shipped",
+      "--as",
+      "cole",
+    ]);
+    expect(r.code).toBe(0);
+    const f = JSON.parse(r.stdout);
+    expect(f.kind).toBe("status");
+    expect(f.target).toBe(1);
+    expect(f.disposition).toBe("incorporated");
+    expect(f.from).toBe("cole");
+    expect(f.text).toBe("shipped");
+  });
+
+  test("mark 404s on a nonexistent target (V1.9)", async () => {
+    await bunRun(["open", "disp_x"]);
+    const r = await bunRun(["mark", "disp_x", "999", "wontfix", "--as", "a"]);
+    expect(r.code).not.toBe(0);
+  });
+
+  test("reopen appends a status frame with disposition open (V1.9)", async () => {
+    await bunRun(["open", "disp2"]);
+    await bunRun(["send", "disp2", "--from", "a", "item"]); // id 1
+    await bunRun(["mark", "disp2", "1", "wontfix", "--as", "a"]);
+    const r = await bunRun(["reopen", "disp2", "1", "--as", "a"]);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).disposition).toBe("open");
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;

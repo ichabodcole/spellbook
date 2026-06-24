@@ -48,7 +48,10 @@ type Message = {
   from: string;
   text: string;
   ts: number;
-  kind: "message" | "topic";
+  kind: "message" | "topic" | "announcement" | "status";
+  in_reply_to?: number;
+  target?: number;
+  disposition?: string;
 };
 
 // GET / — daemon liveness/info.
@@ -815,6 +818,23 @@ async function cmdReset(name: string, opts: { force?: boolean }) {
 // Archive (read-only) or unarchive a channel (V1.7) — the non-destructive
 // alternative to close: history is preserved, sends are rejected, and the name
 // is locked from re-open until unarchived.
+async function cmdMark(
+  name: string,
+  id: number,
+  disposition: string,
+  from: string,
+  opts: { note?: string },
+) {
+  if (!name || !Number.isFinite(id) || !disposition)
+    die("usage: grapevine mark <channel> <id> <disposition> [--note <text>] [--as <alias>]");
+  const port = await ensureDaemon();
+  const body: Record<string, unknown> = { from, target: id, disposition };
+  if (opts.note !== undefined) body.note = opts.note;
+  const { status, data } = await api<Message>(port, "POST", `/channels/${name}/status`, body);
+  if (status >= 400 || !data) die((data as { error?: string })?.error ?? `HTTP ${status}`);
+  printJson(data);
+}
+
 async function cmdArchive(name: string, unarchive: boolean) {
   const verb = unarchive ? "unarchive" : "archive";
   if (!name) die(`usage: grapevine ${verb} <channel>`);
@@ -1473,6 +1493,26 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     case "reset":
       await cmdReset(positional[0], { force: flags.force === true });
+      return 0;
+    case "mark":
+      await cmdMark(
+        positional[0],
+        parseInt(positional[1], 10),
+        positional.slice(2).join(" "),
+        resolveAlias(flags) ??
+          die("mark: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var"),
+        { note: flags.note as string | undefined },
+      );
+      return 0;
+    case "reopen":
+      await cmdMark(
+        positional[0],
+        parseInt(positional[1], 10),
+        "open",
+        resolveAlias(flags) ??
+          die("reopen: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var"),
+        { note: flags.note as string | undefined },
+      );
       return 0;
     case "archive":
       await cmdArchive(positional[0], false);
