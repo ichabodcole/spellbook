@@ -25,7 +25,7 @@ authentication, localhost only.
 >   (`incorporated` / `wontfix` / `acted-on` / free-form) to any message;
 >   **`reopen <name> <id>`** bounces it back to the open queue. Stored as a
 >   folded `kind:"status"` frame (metadata, not a chat bubble), with attribution
->   - a reopened-count.
+>   and a reopened-count.
 > - **`triage <name>`** — the daily driver: the open queue (never-marked or
 >   re-opened) on top, then everything grouped by disposition.
 > - **`pull --status <value>`** — the power-tool: a full-channel filter by
