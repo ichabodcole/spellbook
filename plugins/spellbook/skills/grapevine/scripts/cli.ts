@@ -922,6 +922,58 @@ async function cmdRestart(opts: { force?: boolean }) {
   printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
 }
 
+async function cmdRoll(opts: { force?: boolean }) {
+  const port = await readDaemonPort();
+  if (!port) {
+    const fresh = await ensureDaemon();
+    printJson({ ok: true, rolled: true, previous_pid: null, port: fresh });
+    return;
+  }
+  const { total, channels } = await fetchActiveSubscribers(port);
+  if (total > 0 && !opts.force) {
+    const where = channels.map((c) => `${c.name} (${c.connections})`).join(", ");
+    die(
+      `roll: ${total} active subscriber(s) — ${where}. They'll auto-reconnect across the roll. Re-run with --force to proceed.`,
+    );
+  }
+  let previousPid: number | null = null;
+  try {
+    previousPid = (await api<RootInfo>(port, "GET", "/")).data?.pid ?? null;
+  } catch {}
+  // Stop with a short hold so a stale CLI can't win the respawn race; we hold the spawn ourselves.
+  const holdMs = 4000;
+  try {
+    writeFileSync(HOLD_FILE, String(Date.now() + holdMs));
+  } catch {}
+  try {
+    await api(port, "DELETE", "/");
+  } catch {}
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+    if ((await readDaemonPort()) === null) break;
+  }
+  releaseHold(); // our turn to spawn the new version
+  const fresh = await ensureDaemon();
+  let version: string | null = null;
+  try {
+    version = (await api<RootInfo>(fresh, "GET", "/")).data?.version ?? null;
+  } catch {}
+  let pid: number | null = null;
+  try {
+    pid = (await api<RootInfo>(fresh, "GET", "/")).data?.pid ?? null;
+  } catch {}
+  printJson({
+    ok: true,
+    rolled: true,
+    previous_pid: previousPid,
+    pid,
+    port: fresh,
+    version,
+    version_ok: version === PLUGIN_VERSION,
+  });
+}
+
 async function cmdWatch(name: string | undefined) {
   // Channel name is optional — the page reads it from the URL hash and
   // defaults to "lobby" if absent. We pass through whatever the user gave
@@ -1435,6 +1487,9 @@ async function main(argv: string[]): Promise<number> {
     case "restart":
       await cmdRestart({ force: !!flags.force || !!flags.yes });
       return 0;
+    case "roll":
+      await cmdRoll({ force: flags.force === true || flags.yes === true });
+      return 0;
     case "stop":
       await cmdStop({ holdSeconds: flags.hold ? parseInt(String(flags.hold), 10) : undefined });
       return 0;
@@ -1477,6 +1532,7 @@ Usage:
   grapevine close <name>            # destructive: delete the message log
   grapevine start                   # ensure the daemon is running (alias: up); no channel
   grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard
+  grapevine roll [--force]          safely restart the daemon (stop+hold+respawn) and verify the version
   grapevine stop
   grapevine info
   grapevine doctor                  # health check — daemon, zombies, channels

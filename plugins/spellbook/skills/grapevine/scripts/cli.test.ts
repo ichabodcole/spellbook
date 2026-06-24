@@ -1474,6 +1474,37 @@ describe("grapevine cli", () => {
     await bunRun(["stop"]);
   }, 10000);
 
+  test("roll restarts the daemon and verifies the version (V1.9)", async () => {
+    await bunRun(["start"]);
+    const before = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
+
+    const res = JSON.parse((await bunRun(["roll"])).stdout);
+    expect(res.rolled).toBe(true);
+    expect(res.previous_pid).toBe(before.pid);
+    expect(res.pid).not.toBe(before.pid); // a fresh daemon
+    expect(res.version_ok).toBe(true); // matches the CLI's PLUGIN_VERSION
+    expect(JSON.parse((await bunRun(["doctor"])).stdout).authoritative.pid).toBe(res.pid);
+    await bunRun(["stop"]);
+  }, 15000);
+
+  test("roll refuses active subscribers without --force (V1.9)", async () => {
+    await bunRun(["open", "roll_live"]);
+    const tail = spawn(process.execPath, [CLI, "tail", "roll_live", "--as", "seat"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(tail);
+    await sleep(400);
+    const blocked = await bunRun(["roll"]);
+    expect(blocked.code).not.toBe(0);
+    expect(blocked.stderr).toContain("--force");
+    tail.kill("SIGTERM");
+    TRACKED_PROCS.delete(tail);
+    await sleep(200);
+    await bunRun(["close", "roll_live"]);
+    await bunRun(["stop"]);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
