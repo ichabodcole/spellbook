@@ -1577,6 +1577,35 @@ describe("grapevine cli", () => {
     expect(lines.some((m) => m.text === "next")).toBe(true);
   });
 
+  test("pull --status filters by latest disposition; open = unmarked-or-reopened (V1.9)", async () => {
+    await bunRun(["open", "disp5"]);
+    await bunRun(["send", "disp5", "--from", "a", "one"]); // id1
+    await bunRun(["send", "disp5", "--from", "a", "two"]); // id2
+    await bunRun(["send", "disp5", "--from", "a", "three"]); // id3
+    await bunRun(["mark", "disp5", "1", "incorporated", "--as", "a"]);
+    await bunRun(["mark", "disp5", "2", "wontfix", "--as", "a"]);
+    await bunRun(["reopen", "disp5", "2", "--as", "a"]); // id2 back to open
+
+    const open = JSON.parse((await bunRun(["pull", "disp5", "--status", "open"])).stdout)
+      .messages.map((m: { id: number }) => m.id)
+      .sort();
+    expect(open).toEqual([2, 3]); // 2 reopened, 3 never marked
+    const inc = JSON.parse(
+      (await bunRun(["pull", "disp5", "--status", "incorporated"])).stdout,
+    ).messages.map((m: { id: number }) => m.id);
+    expect(inc).toEqual([1]);
+  });
+
+  test("triage groups open on top + dispositioned by status (V1.9)", async () => {
+    await bunRun(["open", "disp6"]);
+    await bunRun(["send", "disp6", "--from", "a", "one"]); // id1
+    await bunRun(["send", "disp6", "--from", "a", "two"]); // id2
+    await bunRun(["mark", "disp6", "1", "incorporated", "--as", "a"]);
+    const t = JSON.parse((await bunRun(["triage", "disp6"])).stdout);
+    expect(t.open.map((m: { id: number }) => m.id)).toEqual([2]);
+    expect(t.by_status.incorporated.map((m: { id: number }) => m.id)).toEqual([1]);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
