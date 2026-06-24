@@ -31,6 +31,7 @@ import { fileURLToPath } from "node:url";
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
+const HOLD_FILE = join(DATA_DIR, "daemon.hold");
 // Persisted identity config (V1.7) — `grapevine alias <name>` writes it; the
 // daemon serves it to the watch via GET /identity.
 const CONFIG_FILE = join(DATA_DIR, "config.json");
@@ -283,9 +284,30 @@ async function readDaemonPort(): Promise<number | null> {
   return null;
 }
 
+function holdActive(): number | null {
+  try {
+    if (!existsSync(HOLD_FILE)) return null;
+    const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
+    if (Number.isFinite(until) && until > Date.now()) return until;
+    try {
+      unlinkSync(HOLD_FILE);
+    } catch {} // expired → clean
+    return null;
+  } catch {
+    return null;
+  }
+}
+export function releaseHold() {
+  try {
+    if (existsSync(HOLD_FILE)) unlinkSync(HOLD_FILE);
+  } catch {}
+}
+
 async function ensureDaemon(): Promise<number> {
   let port = await readDaemonPort();
   if (port) return port;
+  if (holdActive())
+    die("daemon is held (respawn suppressed) — wait for the hold to clear or run `grapevine roll`");
   // Spawn detached so the daemon survives this CLI process exit.
   const proc = spawn(process.execPath, [DAEMON_SCRIPT], {
     detached: true,
@@ -802,16 +824,31 @@ async function cmdArchive(name: string, unarchive: boolean) {
   printJson({ ok: true, ...data });
 }
 
-async function cmdStop() {
+async function cmdStop(opts: { holdSeconds?: number } = {}) {
+  let heldUntil: number | undefined;
+  if (opts.holdSeconds && opts.holdSeconds > 0) {
+    heldUntil = Date.now() + opts.holdSeconds * 1000;
+    try {
+      writeFileSync(HOLD_FILE, String(heldUntil));
+    } catch {}
+  }
   const port = await readDaemonPort();
   if (!port) {
-    printJson({ ok: true, daemon: false });
+    printJson({
+      ok: true,
+      daemon: false,
+      ...(heldUntil !== undefined ? { held_until: heldUntil } : {}),
+    });
     return;
   }
   try {
     await api(port, "DELETE", "/");
   } catch {}
-  printJson({ ok: true, stopped: true });
+  printJson({
+    ok: true,
+    stopped: true,
+    ...(heldUntil !== undefined ? { held_until: heldUntil } : {}),
+  });
 }
 
 // Per-channel live-connection summary — the restart-safety read. Mirrors what
@@ -838,6 +875,10 @@ async function cmdStart() {
   // daemon, or spawn a fresh one. The explicit "bring it up" verb — diagnostics
   // (doctor/info/list) stay read-only and never spawn.
   const existing = await readDaemonPort();
+  if (!existing && holdActive()) {
+    printJson({ ok: true, held: true, port: null });
+    return;
+  }
   const port = existing ?? (await ensureDaemon());
   printJson({ ok: true, port, already_running: existing !== null });
 }
@@ -879,6 +920,58 @@ async function cmdRestart(opts: { force?: boolean }) {
   }
   const fresh = await ensureDaemon();
   printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
+}
+
+async function cmdRoll(opts: { force?: boolean }) {
+  const port = await readDaemonPort();
+  if (!port) {
+    const fresh = await ensureDaemon();
+    printJson({ ok: true, rolled: true, previous_pid: null, port: fresh });
+    return;
+  }
+  const { total, channels } = await fetchActiveSubscribers(port);
+  if (total > 0 && !opts.force) {
+    const where = channels.map((c) => `${c.name} (${c.connections})`).join(", ");
+    die(
+      `roll: ${total} active subscriber(s) — ${where}. They'll auto-reconnect across the roll. Re-run with --force to proceed.`,
+    );
+  }
+  let previousPid: number | null = null;
+  try {
+    previousPid = (await api<RootInfo>(port, "GET", "/")).data?.pid ?? null;
+  } catch {}
+  // Stop with a short hold so a stale CLI can't win the respawn race; we hold the spawn ourselves.
+  const holdMs = 4000;
+  try {
+    writeFileSync(HOLD_FILE, String(Date.now() + holdMs));
+  } catch {}
+  try {
+    await api(port, "DELETE", "/");
+  } catch {}
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+    if ((await readDaemonPort()) === null) break;
+  }
+  releaseHold(); // our turn to spawn the new version
+  const fresh = await ensureDaemon();
+  let version: string | null = null;
+  try {
+    version = (await api<RootInfo>(fresh, "GET", "/")).data?.version ?? null;
+  } catch {}
+  let pid: number | null = null;
+  try {
+    pid = (await api<RootInfo>(fresh, "GET", "/")).data?.pid ?? null;
+  } catch {}
+  printJson({
+    ok: true,
+    rolled: true,
+    previous_pid: previousPid,
+    pid,
+    port: fresh,
+    version,
+    version_ok: version === PLUGIN_VERSION,
+  });
 }
 
 async function cmdWatch(name: string | undefined) {
@@ -952,27 +1045,15 @@ async function cmdDoctor() {
     }
   }
 
-  // Scan ps for other daemon processes. Filter to those running daemon.ts
-  // under a grapevine path. Excludes our authoritative daemon (so the
-  // "other_daemons" set is genuinely other).
-  const otherDaemons: Array<{ pid: number; command: string }> = [];
+  // Enumerate other daemon processes via the shared classifier. Each entry
+  // gains port/home/version/status/reapable so the operator has the full
+  // picture without needing a separate `reap --dry-run`.
+  const otherDaemons: Array<Awaited<ReturnType<typeof classifyDaemon>> & { command?: string }> = [];
+  const selfPid = authoritative?.pid as number | undefined;
   try {
-    const proc = spawn("ps", ["-eo", "pid,command"], {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const chunks: Buffer[] = [];
-    proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
-    await new Promise<void>((resolve) => proc.on("exit", () => resolve()));
-    const out = Buffer.concat(chunks).toString("utf-8");
-    for (const line of out.split("\n")) {
-      if (!line.includes("daemon.ts")) continue;
-      if (!line.toLowerCase().includes("grapevine")) continue;
-      const m = line.match(/^\s*(\d+)\s+(.*)$/);
-      if (!m) continue;
-      const pid = parseInt(m[1], 10);
-      if (!pid) continue;
-      if (authoritative && pid === authoritative.pid) continue;
-      otherDaemons.push({ pid, command: m[2].trim() });
+    for (const pid of await listGrapevineDaemonPids()) {
+      if (selfPid && pid === selfPid) continue;
+      otherDaemons.push(await classifyDaemon(pid));
     }
   } catch {
     // ps unavailable; carry on with empty list
@@ -1001,9 +1082,15 @@ async function cmdDoctor() {
       `Found ${otherDaemons.length} other grapevine daemon process(es) on this machine. ` +
         "They may be zombies from past runs OR daemons serving other HOMEs (different GRAPEVINE_HOME).",
     );
-    hints.push(
-      "To inspect a specific one: `lsof -p <pid>` (shows its listening port). To clean up: `kill <pid>` (or `kill -9` if needed).",
-    );
+    const reapableCount = otherDaemons.filter((d) => d.reapable).length;
+    if (reapableCount > 0) {
+      hints.push(
+        `Found ${reapableCount} reapable orphan daemon(s). Run \`grapevine reap\` to clear them safely.`,
+      );
+    }
+    if (otherDaemons.some((d) => d.status === "unresponsive")) {
+      hints.push("Some daemons are unresponsive; `grapevine reap --force` includes them.");
+    }
   }
   if (
     authoritative &&
@@ -1063,6 +1150,131 @@ async function cmdInfo() {
   printJson({ ok: true, daemon: true, ...data });
 }
 
+// ── Daemon enumeration + classifier ──────────────────────────────────────────
+
+/** All grapevine daemon.ts pids visible on this machine (via `ps`). */
+async function listGrapevineDaemonPids(): Promise<number[]> {
+  const pids: number[] = [];
+  try {
+    const proc = spawn("ps", ["-eo", "pid,command"], {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const chunks: Buffer[] = [];
+    proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
+    await new Promise<void>((resolve) => proc.on("exit", () => resolve()));
+    const out = Buffer.concat(chunks).toString("utf-8");
+    for (const line of out.split("\n")) {
+      if (!line.includes("daemon.ts")) continue;
+      if (!line.toLowerCase().includes("grapevine")) continue;
+      const m = line.match(/^\s*(\d+)\s+/);
+      if (!m) continue;
+      const pid = parseInt(m[1], 10);
+      if (pid) pids.push(pid);
+    }
+  } catch {
+    // ps unavailable; return empty
+  }
+  return pids;
+}
+
+async function lsofListenPort(pid: number): Promise<number | null> {
+  try {
+    const proc = spawn("lsof", ["-aiTCP", "-sTCP:LISTEN", "-p", String(pid), "-P", "-n"], {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const chunks: Buffer[] = [];
+    proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
+    await new Promise<void>((r) => proc.on("exit", () => r()));
+    const m = Buffer.concat(chunks)
+      .toString("utf-8")
+      .match(/127\.0\.0\.1:(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+export type DaemonStatus = "authoritative" | "orphan" | "unresponsive" | "unknown";
+
+export async function classifyDaemon(pid: number): Promise<{
+  pid: number;
+  port: number | null;
+  home?: string;
+  version?: string | null;
+  status: DaemonStatus;
+  reapable: boolean;
+}> {
+  const port = await lsofListenPort(pid);
+  if (!port) return { pid, port: null, status: "unknown", reapable: false };
+  let info: RootInfo | null = null;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, {
+      signal: AbortSignal.timeout(800),
+    });
+    if (res.ok) info = (await res.json()) as RootInfo;
+  } catch {}
+  if (!info) return { pid, port, status: "unresponsive", reapable: false }; // reap only with --force (handled in cmdReap)
+  const home = info.data_dir as string;
+  let owns = false;
+  try {
+    const op = readFileSync(join(home, "daemon.port"), "utf-8").trim();
+    const oi = readFileSync(join(home, "daemon.pid"), "utf-8").trim();
+    owns = op === String(port) && oi === String(pid);
+  } catch {}
+  return owns
+    ? {
+        pid,
+        port,
+        home,
+        version: info.version ?? null,
+        status: "authoritative",
+        reapable: false,
+      }
+    : {
+        pid,
+        port,
+        home,
+        version: info.version ?? null,
+        status: "orphan",
+        reapable: true,
+      };
+}
+
+async function cmdReap(opts: { force?: boolean; dryRun?: boolean }) {
+  const selfPort = await readDaemonPort(); // current HOME authoritative (never reap)
+  let selfPid: number | null = null;
+  if (selfPort) {
+    try {
+      selfPid = (await api<RootInfo>(selfPort, "GET", "/")).data?.pid ?? null;
+    } catch {}
+  }
+  const pids = await listGrapevineDaemonPids();
+  const kept: unknown[] = [],
+    reaped: unknown[] = [],
+    skipped: unknown[] = [];
+  for (const pid of pids) {
+    const c = await classifyDaemon(pid);
+    const isSelf = pid === selfPid;
+    const shouldReap =
+      !isSelf && (c.reapable || (c.status === "unresponsive" && opts.force === true));
+    if (!shouldReap) {
+      kept.push(c);
+      continue;
+    }
+    if (opts.dryRun) {
+      skipped.push({ ...c, note: "dry-run" });
+      continue;
+    }
+    try {
+      process.kill(pid, "SIGTERM");
+      reaped.push(c);
+    } catch {
+      skipped.push({ ...c, note: "kill failed" });
+    }
+  }
+  printJson({ ok: true, dry_run: !!opts.dryRun, kept, reaped, skipped });
+}
+
 const BOOLEAN_FLAGS = new Set([
   "quiet",
   "from-start",
@@ -1076,6 +1288,7 @@ const BOOLEAN_FLAGS = new Set([
   "force",
   "fresh",
   "yes",
+  "dry-run",
 ]);
 
 // Signature of a heredoc fumble: a line that is (or begins with) a
@@ -1274,11 +1487,18 @@ async function main(argv: string[]): Promise<number> {
     case "restart":
       await cmdRestart({ force: !!flags.force || !!flags.yes });
       return 0;
+    case "roll":
+      await cmdRoll({ force: flags.force === true || flags.yes === true });
+      return 0;
     case "stop":
-      await cmdStop();
+      await cmdStop({ holdSeconds: flags.hold ? parseInt(String(flags.hold), 10) : undefined });
       return 0;
     case "watch":
       await cmdWatch(positional[0]);
+      return 0;
+    case "reap":
+    case "prune":
+      await cmdReap({ force: flags.force === true, dryRun: flags["dry-run"] === true });
       return 0;
     case "info":
       await cmdInfo();
@@ -1312,9 +1532,11 @@ Usage:
   grapevine close <name>            # destructive: delete the message log
   grapevine start                   # ensure the daemon is running (alias: up); no channel
   grapevine restart [--force|--yes] # stop + respawn fresh; --force to override the live-fleet guard
-  grapevine stop
+  grapevine roll [--force]          # safe restart (stop+hold+respawn) + version verify — the recommended deploy step
+  grapevine stop [--hold <seconds>] # kill the daemon; --hold suppresses auto-respawn for <s> seconds (upgrade window)
   grapevine info
-  grapevine doctor                  # health check — daemon, zombies, channels
+  grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown
+  grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune
 
 Env:
   GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).
