@@ -1542,6 +1542,41 @@ describe("grapevine cli", () => {
     expect(JSON.parse(r.stdout).disposition).toBe("open");
   });
 
+  test("pull drops status frames and badges the target's latest disposition (V1.9)", async () => {
+    await bunRun(["open", "disp3"]);
+    await bunRun(["send", "disp3", "--from", "a", "one"]); // id1
+    await bunRun(["send", "disp3", "--from", "a", "two"]); // id2
+    await bunRun(["mark", "disp3", "1", "wontfix", "--as", "a"]); // id3 (status)
+    await bunRun(["mark", "disp3", "1", "incorporated", "--as", "a"]); // id4 (status) — latest wins
+    const r = await bunRun(["pull", "disp3", "--since", "0"]);
+    const msgs = JSON.parse(r.stdout).messages;
+    // status frames are not in the list
+    expect(msgs.every((m: { kind: string }) => m.kind !== "status")).toBe(true);
+    expect(msgs.length).toBe(2);
+    const m1 = msgs.find((m: { id: number }) => m.id === 1);
+    expect(m1.disposition).toBe("incorporated"); // latest
+    const m2 = msgs.find((m: { id: number }) => m.id === 2);
+    expect(m2.disposition ?? null).toBe(null); // unmarked → no badge
+  });
+
+  test("tail drops status frames (V1.9)", async () => {
+    await bunRun(["open", "disp4"]);
+    await bunRun(["send", "disp4", "--from", "a", "item"]); // id1
+    const { proc, output } = spawnTail("disp4");
+    await sleep(400);
+    await bunRun(["mark", "disp4", "1", "acted-on", "--as", "a"]);
+    await bunRun(["send", "disp4", "--from", "a", "next"]);
+    await sleep(300);
+    proc.kill("SIGTERM");
+    const lines = output()
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+    expect(lines.some((m) => m.kind === "status")).toBe(false);
+    expect(lines.some((m) => m.text === "next")).toBe(true);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;

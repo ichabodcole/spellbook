@@ -166,7 +166,7 @@ type TailPayload = {
   from?: string;
   text?: string;
   ts?: number;
-  kind?: "message" | "topic";
+  kind?: "message" | "topic" | "announcement" | "status";
   // shared
   channel?: string;
   topic?: string | null;
@@ -474,9 +474,16 @@ async function cmdPull(name: string, since: number) {
     `/channels/${name}/messages?since=${since}`,
   );
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
-  const msgs = data?.messages ?? [];
-  const cursor = msgs.length ? msgs[msgs.length - 1].id : since;
-  printJson({ ok: true, messages: msgs, cursor });
+  const rawMsgs = data?.messages ?? [];
+  const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
+  const disp = foldDispositions(name);
+  const annotated = rawMsgs
+    .filter((m) => m.kind !== "status")
+    .map((m) => {
+      const d = disp.get(m.id);
+      return d ? { ...m, disposition: d.disposition, reopens: d.reopens } : m;
+    });
+  printJson({ ok: true, messages: annotated, cursor });
 }
 
 async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
@@ -495,14 +502,22 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   const msg = (data?.messages ?? []).find((m) => m.id === id);
   if (!msg) die(`message ${id} not found in ${name}`, 1);
+  const dispMap = foldDispositions(name);
+  const d = dispMap.get(id);
+  const annotatedMsg = d ? { ...msg, disposition: d.disposition, reopens: d.reopens } : msg;
   if (opts.text) {
     // Prose mode: header + body, no JSON envelope, so a human (or an agent
     // recovering a truncated notification) can read it directly.
     const ts = new Date(msg.ts).toISOString();
-    process.stdout.write(`[${msg.id}] ${msg.from} · ${ts}\n${msg.text}\n`);
+    const dispPrefix = d
+      ? d.reopens > 0
+        ? `[${d.disposition} ↻${d.reopens}] `
+        : `[${d.disposition}] `
+      : "";
+    process.stdout.write(`${dispPrefix}[${msg.id}] ${msg.from} · ${ts}\n${msg.text}\n`);
     return;
   }
-  printJson({ ok: true, message: msg });
+  printJson({ ok: true, message: annotatedMsg });
 }
 
 async function cmdWait(name: string, since: number, timeoutS: number, alias: string | undefined) {
@@ -715,6 +730,8 @@ async function cmdTail(
           if (typeof payload.id === "number" && payload.id > highestSeen) {
             highestSeen = payload.id;
           }
+          // Drop status frames — disposition updates are metadata, not messages.
+          if (payload.kind === "status") continue;
           // Suppress self-echo: when --as is set, drop messages we sent
           // ourselves. The sender already got the receipt as the POST
           // response, so re-emitting it on tail is pure noise.
@@ -745,6 +762,49 @@ async function cmdTail(
     // are lost across reconnects.
     if (!stopped) await new Promise((r) => setTimeout(r, 200));
   }
+}
+
+function foldDispositions(name: string) {
+  const map = new Map<
+    number,
+    {
+      disposition: string;
+      from: string;
+      ts: number;
+      note: string;
+      reopens: number;
+    }
+  >();
+  const path = join(DATA_DIR, "channels", `${name}.jsonl`);
+  if (!existsSync(path)) return map;
+  for (const line of readFileSync(path, "utf-8").split("\n")) {
+    if (!line.trim()) continue;
+    let m: Message;
+    try {
+      m = JSON.parse(line) as Message;
+    } catch {
+      continue;
+    }
+    if (m.kind !== "status" || typeof m.target !== "number" || typeof m.disposition !== "string")
+      continue;
+    const prev = map.get(m.target);
+    const reopens =
+      (prev?.reopens ?? 0) +
+      (m.disposition === "open" && prev && prev.disposition !== "open" ? 1 : 0);
+    map.set(m.target, {
+      disposition: m.disposition,
+      from: m.from,
+      ts: m.ts,
+      note: m.text,
+      reopens,
+    });
+  }
+  return map;
+}
+// "open" = no entry, or latest disposition is "open"
+// biome-ignore lint/correctness/noUnusedVariables: utility helper for disposition checks
+function isOpen(d?: { disposition: string }) {
+  return !d || d.disposition === "open";
 }
 
 async function cmdGrep(name: string, pattern: string, opts: { literal?: boolean; from?: string }) {
