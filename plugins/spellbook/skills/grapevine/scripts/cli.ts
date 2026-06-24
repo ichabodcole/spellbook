@@ -1683,8 +1683,10 @@ Usage:
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
   grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk] [--max <n>]
-  grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|…)
-  grapevine triage <name>             # full-scan: open messages on top + by_status groups
+  grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)
+  grapevine triage <name>             # full-scan: open messages on top + grouped by_status
+  grapevine mark <name> <id> <disposition> [--note <text>]  # set disposition (incorporated|wontfix|deferred|…)
+  grapevine reopen <name> <id>        # bounce a message back to open
   grapevine read <name> <id> [--text]   # one full message by id (--text = prose)
   grapevine wait <name> [--since <id>] [--timeout <s>]
   grapevine grep <name> <pattern> [--literal] [--from <alias>]
