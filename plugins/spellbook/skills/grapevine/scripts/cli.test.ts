@@ -1407,4 +1407,54 @@ describe("grapevine cli", () => {
       rmSync(pidFile);
     } catch {}
   });
+
+  test("classifyDaemon: a daemon whose own HOME points back to it is authoritative; otherwise orphan (V1.9)", async () => {
+    // Start a real daemon in this HOME — it writes HOME/daemon.port + daemon.pid.
+    await bunRun(["start"]);
+    const doc = JSON.parse((await bunRun(["doctor"])).stdout);
+    const pid = doc.authoritative.pid as number;
+    const { classifyDaemon } = await import("./cli.ts");
+
+    const auth = await classifyDaemon(pid);
+    expect(auth.status).toBe("authoritative");
+    expect(auth.reapable).toBe(false);
+
+    // Now clobber HOME's port file so the live daemon is no longer recognized by
+    // its own home → it classifies as an orphan (reapable).
+    writeFileSync(join(HOME, "daemon.port"), "59998");
+    const orphan = await classifyDaemon(pid);
+    expect(orphan.status).toBe("orphan");
+    expect(orphan.reapable).toBe(true);
+
+    // restore so teardown/stop is clean
+    await bunRun(["stop"]);
+  });
+
+  test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
+    await bunRun(["start"]); // authoritative for HOME
+    const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
+
+    // Spawn an orphan: a daemon under a DIFFERENT, throwaway home dir, then delete
+    // that home's port file so nothing recognizes it.
+    const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan-"));
+    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+      env: { ...process.env, GRAPEVINE_HOME: orphanHome },
+      stdio: ["ignore", "ignore", "ignore"],
+      detached: true,
+    });
+    TRACKED_PROCS.add(op);
+    await sleep(800);
+    rmSync(join(orphanHome, "daemon.port"), { force: true }); // now an orphan
+
+    const res = JSON.parse((await bunRun(["reap"])).stdout);
+    await sleep(300);
+    expect(res.reaped.some((r: { pid: number }) => r.pid === op.pid)).toBe(true);
+    expect(res.kept.some((k: { pid: number }) => k.pid === auth.pid)).toBe(true);
+    // the authoritative daemon is still alive
+    expect(JSON.parse((await bunRun(["doctor"])).stdout).authoritative.pid).toBe(auth.pid);
+
+    TRACKED_PROCS.delete(op);
+    rmSync(orphanHome, { recursive: true, force: true });
+    await bunRun(["stop"]);
+  });
 });

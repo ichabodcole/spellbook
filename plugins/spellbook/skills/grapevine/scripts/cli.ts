@@ -957,6 +957,8 @@ async function cmdDoctor() {
   // "other_daemons" set is genuinely other).
   const otherDaemons: Array<{ pid: number; command: string }> = [];
   try {
+    const allPids = await listGrapevineDaemonPids();
+    // Run ps once more just to get the command strings for display (listGrapevineDaemonPids only returns pids).
     const proc = spawn("ps", ["-eo", "pid,command"], {
       stdio: ["ignore", "pipe", "ignore"],
     });
@@ -964,6 +966,7 @@ async function cmdDoctor() {
     proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
     await new Promise<void>((resolve) => proc.on("exit", () => resolve()));
     const out = Buffer.concat(chunks).toString("utf-8");
+    const pidSet = new Set(allPids);
     for (const line of out.split("\n")) {
       if (!line.includes("daemon.ts")) continue;
       if (!line.toLowerCase().includes("grapevine")) continue;
@@ -971,6 +974,7 @@ async function cmdDoctor() {
       if (!m) continue;
       const pid = parseInt(m[1], 10);
       if (!pid) continue;
+      if (!pidSet.has(pid)) continue;
       if (authoritative && pid === authoritative.pid) continue;
       otherDaemons.push({ pid, command: m[2].trim() });
     }
@@ -1063,6 +1067,131 @@ async function cmdInfo() {
   printJson({ ok: true, daemon: true, ...data });
 }
 
+// ── Daemon enumeration + classifier ──────────────────────────────────────────
+
+/** All grapevine daemon.ts pids visible on this machine (via `ps`). */
+async function listGrapevineDaemonPids(): Promise<number[]> {
+  const pids: number[] = [];
+  try {
+    const proc = spawn("ps", ["-eo", "pid,command"], {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const chunks: Buffer[] = [];
+    proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
+    await new Promise<void>((resolve) => proc.on("exit", () => resolve()));
+    const out = Buffer.concat(chunks).toString("utf-8");
+    for (const line of out.split("\n")) {
+      if (!line.includes("daemon.ts")) continue;
+      if (!line.toLowerCase().includes("grapevine")) continue;
+      const m = line.match(/^\s*(\d+)\s+/);
+      if (!m) continue;
+      const pid = parseInt(m[1], 10);
+      if (pid) pids.push(pid);
+    }
+  } catch {
+    // ps unavailable; return empty
+  }
+  return pids;
+}
+
+async function lsofListenPort(pid: number): Promise<number | null> {
+  try {
+    const proc = spawn("lsof", ["-aiTCP", "-sTCP:LISTEN", "-p", String(pid), "-P", "-n"], {
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const chunks: Buffer[] = [];
+    proc.stdout?.on("data", (b) => chunks.push(b as Buffer));
+    await new Promise<void>((r) => proc.on("exit", () => r()));
+    const m = Buffer.concat(chunks)
+      .toString("utf-8")
+      .match(/127\.0\.0\.1:(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+export type DaemonStatus = "authoritative" | "orphan" | "unresponsive" | "unknown";
+
+export async function classifyDaemon(pid: number): Promise<{
+  pid: number;
+  port: number | null;
+  home?: string;
+  version?: string | null;
+  status: DaemonStatus;
+  reapable: boolean;
+}> {
+  const port = await lsofListenPort(pid);
+  if (!port) return { pid, port: null, status: "unknown", reapable: false };
+  let info: RootInfo | null = null;
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, {
+      signal: AbortSignal.timeout(800),
+    });
+    if (res.ok) info = (await res.json()) as RootInfo;
+  } catch {}
+  if (!info) return { pid, port, status: "unresponsive", reapable: false }; // reap only with --force (handled in cmdReap)
+  const home = info.data_dir as string;
+  let owns = false;
+  try {
+    const op = readFileSync(join(home, "daemon.port"), "utf-8").trim();
+    const oi = readFileSync(join(home, "daemon.pid"), "utf-8").trim();
+    owns = op === String(port) && oi === String(pid);
+  } catch {}
+  return owns
+    ? {
+        pid,
+        port,
+        home,
+        version: info.version ?? null,
+        status: "authoritative",
+        reapable: false,
+      }
+    : {
+        pid,
+        port,
+        home,
+        version: info.version ?? null,
+        status: "orphan",
+        reapable: true,
+      };
+}
+
+async function cmdReap(opts: { force?: boolean; dryRun?: boolean }) {
+  const selfPort = await readDaemonPort(); // current HOME authoritative (never reap)
+  let selfPid: number | null = null;
+  if (selfPort) {
+    try {
+      selfPid = (await api<RootInfo>(selfPort, "GET", "/")).data?.pid ?? null;
+    } catch {}
+  }
+  const pids = await listGrapevineDaemonPids();
+  const kept: unknown[] = [],
+    reaped: unknown[] = [],
+    skipped: unknown[] = [];
+  for (const pid of pids) {
+    const c = await classifyDaemon(pid);
+    const isSelf = pid === selfPid;
+    const shouldReap =
+      !isSelf && (c.reapable || (c.status === "unresponsive" && opts.force === true));
+    if (!shouldReap) {
+      kept.push(c);
+      continue;
+    }
+    if (opts.dryRun) {
+      skipped.push({ ...c, note: "dry-run" });
+      continue;
+    }
+    try {
+      process.kill(pid, "SIGTERM");
+      reaped.push(c);
+    } catch {
+      skipped.push({ ...c, note: "kill failed" });
+    }
+  }
+  printJson({ ok: true, dry_run: !!opts.dryRun, kept, reaped, skipped });
+}
+
 const BOOLEAN_FLAGS = new Set([
   "quiet",
   "from-start",
@@ -1076,6 +1205,7 @@ const BOOLEAN_FLAGS = new Set([
   "force",
   "fresh",
   "yes",
+  "dry-run",
 ]);
 
 // Signature of a heredoc fumble: a line that is (or begins with) a
@@ -1280,6 +1410,10 @@ async function main(argv: string[]): Promise<number> {
     case "watch":
       await cmdWatch(positional[0]);
       return 0;
+    case "reap":
+    case "prune":
+      await cmdReap({ force: flags.force === true, dryRun: flags["dry-run"] === true });
+      return 0;
     case "info":
       await cmdInfo();
       return 0;
@@ -1315,6 +1449,7 @@ Usage:
   grapevine stop
   grapevine info
   grapevine doctor                  # health check — daemon, zombies, channels
+  grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune
 
 Env:
   GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).
