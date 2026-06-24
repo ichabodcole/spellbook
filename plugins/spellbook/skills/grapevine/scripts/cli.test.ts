@@ -1362,4 +1362,49 @@ describe("grapevine cli", () => {
       expect(JSON.parse(line as string).kind).toBe("announcement");
     }
   });
+
+  test("a stale daemon's shutdown does not delete a newer daemon's port/pid files (V1.9 ownership guard)", async () => {
+    // Kill any lingering tail processes from prior tests so they can't
+    // reconnect after SIGTERM and trigger ensureDaemon → spawn → overwrite.
+    for (const proc of TRACKED_PROCS) {
+      try {
+        proc.kill("SIGTERM");
+      } catch {}
+    }
+    TRACKED_PROCS.clear();
+    await sleep(300);
+
+    // Start a real daemon (becomes authoritative for this HOME).
+    await bunRun(["start"]);
+    const before = JSON.parse((await bunRun(["doctor"])).stdout);
+    const livePid = before.authoritative.pid as number;
+    const livePort = before.authoritative.port as number;
+
+    // Simulate a NEWER daemon having claimed the files: overwrite port/pid with
+    // foreign values the running daemon does NOT own.
+    const portFile = join(HOME, "daemon.port");
+    const pidFile = join(HOME, "daemon.pid");
+    writeFileSync(portFile, "59999");
+    writeFileSync(pidFile, "999999");
+
+    // SIGTERM the (now non-owning) daemon — its shutdown must NOT delete the
+    // foreign files (pre-fix it deleted unconditionally).
+    process.kill(livePid, "SIGTERM");
+    await sleep(600);
+
+    expect(existsSync(portFile)).toBe(true);
+    expect(readFileSync(portFile, "utf-8").trim()).toBe("59999");
+    expect(existsSync(pidFile)).toBe(true);
+    expect(readFileSync(pidFile, "utf-8").trim()).toBe("999999");
+    // (livePort referenced so lint is happy; the daemon is gone now)
+    expect(typeof livePort).toBe("number");
+
+    // cleanup the foreign files so later tests start clean
+    try {
+      rmSync(portFile);
+    } catch {}
+    try {
+      rmSync(pidFile);
+    } catch {}
+  });
 });

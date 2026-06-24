@@ -898,10 +898,20 @@ async function handle(req: Request): Promise<Response> {
 let server: ReturnType<typeof Bun.serve> | null = null;
 let STARTED_AT = Date.now();
 
+// True iff the file exists and its trimmed content equals `expected`. Used so a
+// stale daemon never deletes lifecycle files a newer daemon now owns.
+export function fileHasValue(path: string, expected: string): boolean {
+  try {
+    return existsSync(path) && readFileSync(path, "utf-8").trim() === expected;
+  } catch {
+    return false;
+  }
+}
+
 function shutdown(code: number) {
   try {
-    if (existsSync(PORT_FILE)) unlinkSync(PORT_FILE);
-    if (existsSync(PID_FILE)) unlinkSync(PID_FILE);
+    if (server && fileHasValue(PORT_FILE, String(server.port))) unlinkSync(PORT_FILE);
+    if (fileHasValue(PID_FILE, String(process.pid))) unlinkSync(PID_FILE);
   } catch {}
   if (server) {
     Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]).finally(() =>
