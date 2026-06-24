@@ -34,6 +34,12 @@ authentication, localhost only.
 >   `reset` to wrap one by hand.
 > - **Roomier watch sidebar** — the channel rail is wider and long channel names
 >   truncate with an ellipsis instead of forcing a horizontal scrollbar.
+> - **Operator hardening (back-end).** A daemon's exit cleanup only removes
+>   discovery files it still owns (a stale daemon can no longer wipe the live
+>   one's `daemon.port`/`daemon.pid`); `doctor` labels every daemon
+>   (authoritative / orphan / unresponsive / unknown), `reap` clears orphans
+>   safely, and `stop --hold` + `roll` make daemon re-rolls safe and
+>   one-command. Maintainer-facing — see **Operator / Maintenance**.
 >
 > Earlier: V1.7 made the human a first-class participant (named identity +
 > persisted alias, lurk-by-default / explicit join, human marker on
@@ -183,6 +189,60 @@ grapevine open team-channel --fresh
 
 The pattern: run `open --fresh` when assembling a new session (idempotent,
 safe). Run `reset` when wrapping a completed one (explicit, snapshot kept).
+
+### Operator / Maintenance
+
+These verbs are for managing the daemon process itself — diagnosing, cleaning up
+orphans, and deploying updates safely.
+
+**Port-file ownership guard.** Each daemon only touches the `daemon.port` and
+`daemon.pid` discovery files when it is the authoritative owner of
+`$GRAPEVINE_HOME`. A stale or orphaned daemon from a prior session (different
+HOME, or crashed without cleanup) can no longer overwrite the live daemon's
+files — so a mis-fired `stop`/restart in an orphaned process can't silently
+break the current session's discoverability.
+
+**`doctor` labels.** `doctor` classifies every grapevine daemon on the machine
+into one of four labels:
+
+| Status          | Meaning                                                                                      |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `authoritative` | The live daemon a HOME's `daemon.port`/`daemon.pid` point back to. Never reaped.             |
+| `orphan`        | Responds, but its own HOME no longer points to it (dead/renamed HOME, race loser). Reapable. |
+| `unresponsive`  | Listening but not answering `GET /`. Reaped only with `--force`.                             |
+| `unknown`       | Port can't be resolved (e.g. `lsof` unavailable). Never reaped — keep on uncertainty.        |
+
+Each daemon also carries a derived **`reapable`** boolean (true for `orphan`,
+and for `unresponsive` only under `--force`) — never set for the current HOME's
+authoritative daemon.
+
+**`reap [--force] [--dry-run]`** — safe ownership-aware orphan cleanup. Only
+kills daemons classified as `reapable`; never touches the current HOME's
+authoritative daemon. `--force` extends the reap to `unresponsive` daemons (ones
+that are running but not responding to health checks). `--dry-run` reports what
+would be reaped without killing anything — a safe first look.
+
+**`stop [--hold <seconds>]`** — kills the daemon. `--hold <s>` writes a hold
+file that suppresses auto-respawn for `<s>` seconds, giving you a controlled
+window to swap the binary during an upgrade without a stale daemon racing back
+up. The hold clears when the timer expires (it self-cleans on the next check),
+or `roll` releases it as part of its own respawn. While a hold is active, verbs
+that would auto-spawn a daemon (and `start`) report the held state instead of
+starting one — so nothing races a daemon back up during the window.
+
+**`roll [--force]`** — the recommended one-command deploy step after a release.
+Performs a coordinated `stop --hold` + respawn + version verify in sequence,
+ensuring the new binary is running before returning. Guards against a live fleet
+(refuses if active subscribers exist unless `--force` is passed). Use this
+instead of `restart` when deploying a new version.
+
+Typical maintenance workflow after a release:
+
+```bash
+grapevine doctor        # labels each daemon: authoritative / orphan / unresponsive / unknown
+grapevine reap          # kill only the orphans, never the live daemon
+grapevine roll          # safe restart + version verify (after a release)
+```
 
 ### Presence Model
 

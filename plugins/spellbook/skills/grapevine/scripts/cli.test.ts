@@ -1362,4 +1362,174 @@ describe("grapevine cli", () => {
       expect(JSON.parse(line as string).kind).toBe("announcement");
     }
   });
+
+  test("a stale daemon's shutdown does not delete a newer daemon's port/pid files (V1.9 ownership guard)", async () => {
+    // Kill any lingering tail processes from prior tests so they can't
+    // reconnect after SIGTERM and trigger ensureDaemon → spawn → overwrite.
+    for (const proc of TRACKED_PROCS) {
+      try {
+        proc.kill("SIGTERM");
+      } catch {}
+    }
+    TRACKED_PROCS.clear();
+    await sleep(300);
+
+    // Start a real daemon (becomes authoritative for this HOME).
+    await bunRun(["start"]);
+    const before = JSON.parse((await bunRun(["doctor"])).stdout);
+    const livePid = before.authoritative.pid as number;
+    const livePort = before.authoritative.port as number;
+
+    // Simulate a NEWER daemon having claimed the files: overwrite port/pid with
+    // foreign values the running daemon does NOT own.
+    const portFile = join(HOME, "daemon.port");
+    const pidFile = join(HOME, "daemon.pid");
+    writeFileSync(portFile, "59999");
+    writeFileSync(pidFile, "999999");
+
+    // SIGTERM the (now non-owning) daemon — its shutdown must NOT delete the
+    // foreign files (pre-fix it deleted unconditionally).
+    process.kill(livePid, "SIGTERM");
+    await sleep(600);
+
+    expect(existsSync(portFile)).toBe(true);
+    expect(readFileSync(portFile, "utf-8").trim()).toBe("59999");
+    expect(existsSync(pidFile)).toBe(true);
+    expect(readFileSync(pidFile, "utf-8").trim()).toBe("999999");
+    // (livePort referenced so lint is happy; the daemon is gone now)
+    expect(typeof livePort).toBe("number");
+
+    // cleanup the foreign files so later tests start clean
+    try {
+      rmSync(portFile);
+    } catch {}
+    try {
+      rmSync(pidFile);
+    } catch {}
+  });
+
+  test("classifyDaemon: a daemon whose own HOME points back to it is authoritative; otherwise orphan (V1.9)", async () => {
+    // Start a real daemon in this HOME — it writes HOME/daemon.port + daemon.pid.
+    await bunRun(["start"]);
+    const doc = JSON.parse((await bunRun(["doctor"])).stdout);
+    const pid = doc.authoritative.pid as number;
+    const { classifyDaemon } = await import("./cli.ts");
+
+    const auth = await classifyDaemon(pid);
+    expect(auth.status).toBe("authoritative");
+    expect(auth.reapable).toBe(false);
+
+    // Now clobber HOME's port file so the live daemon is no longer recognized by
+    // its own home → it classifies as an orphan (reapable).
+    writeFileSync(join(HOME, "daemon.port"), "59998");
+    const orphan = await classifyDaemon(pid);
+    expect(orphan.status).toBe("orphan");
+    expect(orphan.reapable).toBe(true);
+
+    // restore so teardown/stop is clean
+    await bunRun(["stop"]);
+  });
+
+  test("doctor labels other daemons with status + reapable (V1.9)", async () => {
+    await bunRun(["start"]);
+    const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan2-"));
+    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+      env: { ...process.env, GRAPEVINE_HOME: orphanHome },
+      stdio: ["ignore", "ignore", "ignore"],
+      detached: true,
+    });
+    TRACKED_PROCS.add(op);
+    await sleep(800);
+    rmSync(join(orphanHome, "daemon.port"), { force: true });
+
+    const doc = JSON.parse((await bunRun(["doctor"])).stdout);
+    const entry = doc.other_daemons_on_machine.find((d: { pid: number }) => d.pid === op.pid);
+    expect(entry).toBeTruthy();
+    expect(entry.status).toBe("orphan");
+    expect(entry.reapable).toBe(true);
+    expect(doc.hints.some((h: string) => h.includes("reap"))).toBe(true);
+
+    op.kill("SIGTERM");
+    TRACKED_PROCS.delete(op);
+    rmSync(orphanHome, { recursive: true, force: true });
+    await bunRun(["stop"]);
+  });
+
+  test("stop --hold suppresses respawn for the window (V1.9)", async () => {
+    await bunRun(["start"]);
+    const stop = await bunRun(["stop", "--hold", "3"]);
+    expect(JSON.parse(stop.stdout).held_until).toBeGreaterThan(Date.now());
+
+    // A verb that would normally ensureDaemon must NOT spawn while held.
+    const held = await bunRun(["start"]);
+    const parsed = JSON.parse(held.stdout);
+    expect(parsed.held).toBe(true);
+    expect(parsed.port ?? null).toBe(null);
+    expect(existsSync(join(HOME, "daemon.port"))).toBe(false);
+
+    // After the hold expires, a verb spawns normally.
+    await sleep(3200);
+    const after = await bunRun(["start"]);
+    expect(JSON.parse(after.stdout).port).toBeGreaterThan(0);
+    await bunRun(["stop"]);
+  }, 10000);
+
+  test("roll restarts the daemon and verifies the version (V1.9)", async () => {
+    await bunRun(["start"]);
+    const before = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
+
+    const res = JSON.parse((await bunRun(["roll"])).stdout);
+    expect(res.rolled).toBe(true);
+    expect(res.previous_pid).toBe(before.pid);
+    expect(res.pid).not.toBe(before.pid); // a fresh daemon
+    expect(res.version_ok).toBe(true); // matches the CLI's PLUGIN_VERSION
+    expect(JSON.parse((await bunRun(["doctor"])).stdout).authoritative.pid).toBe(res.pid);
+    await bunRun(["stop"]);
+  }, 15000);
+
+  test("roll refuses active subscribers without --force (V1.9)", async () => {
+    await bunRun(["open", "roll_live"]);
+    const tail = spawn(process.execPath, [CLI, "tail", "roll_live", "--as", "seat"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(tail);
+    await sleep(400);
+    const blocked = await bunRun(["roll"]);
+    expect(blocked.code).not.toBe(0);
+    expect(blocked.stderr).toContain("--force");
+    tail.kill("SIGTERM");
+    TRACKED_PROCS.delete(tail);
+    await sleep(200);
+    await bunRun(["close", "roll_live"]);
+    await bunRun(["stop"]);
+  });
+
+  test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
+    await bunRun(["start"]); // authoritative for HOME
+    const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
+
+    // Spawn an orphan: a daemon under a DIFFERENT, throwaway home dir, then delete
+    // that home's port file so nothing recognizes it.
+    const orphanHome = mkdtempSync(join(tmpdir(), "gv-orphan-"));
+    const op = spawn(process.execPath, [join(import.meta.dir, "daemon.ts")], {
+      env: { ...process.env, GRAPEVINE_HOME: orphanHome },
+      stdio: ["ignore", "ignore", "ignore"],
+      detached: true,
+    });
+    TRACKED_PROCS.add(op);
+    await sleep(800);
+    rmSync(join(orphanHome, "daemon.port"), { force: true }); // now an orphan
+
+    const res = JSON.parse((await bunRun(["reap"])).stdout);
+    await sleep(300);
+    expect(res.reaped.some((r: { pid: number }) => r.pid === op.pid)).toBe(true);
+    expect(res.kept.some((k: { pid: number }) => k.pid === auth.pid)).toBe(true);
+    // the authoritative daemon is still alive
+    expect(JSON.parse((await bunRun(["doctor"])).stdout).authoritative.pid).toBe(auth.pid);
+
+    TRACKED_PROCS.delete(op);
+    rmSync(orphanHome, { recursive: true, force: true });
+    await bunRun(["stop"]);
+  });
 });

@@ -70,6 +70,7 @@ const CHANNELS_DIR = join(DATA_DIR, "channels");
 const ARCHIVE_DIR = join(DATA_DIR, "archive");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
 const PID_FILE = join(DATA_DIR, "daemon.pid");
+const HOLD_FILE = join(DATA_DIR, "daemon.hold");
 // Per-HOME identity config (V1.7) — the persisted default alias the CLI sets
 // (`grapevine alias <name>`) and the watch surface reads via GET /identity so a
 // human has a consistent name across every grapevine without re-typing it.
@@ -898,10 +899,20 @@ async function handle(req: Request): Promise<Response> {
 let server: ReturnType<typeof Bun.serve> | null = null;
 let STARTED_AT = Date.now();
 
+// True iff the file exists and its trimmed content equals `expected`. Used so a
+// stale daemon never deletes lifecycle files a newer daemon now owns.
+export function fileHasValue(path: string, expected: string): boolean {
+  try {
+    return existsSync(path) && readFileSync(path, "utf-8").trim() === expected;
+  } catch {
+    return false;
+  }
+}
+
 function shutdown(code: number) {
   try {
-    if (existsSync(PORT_FILE)) unlinkSync(PORT_FILE);
-    if (existsSync(PID_FILE)) unlinkSync(PID_FILE);
+    if (server && fileHasValue(PORT_FILE, String(server.port))) unlinkSync(PORT_FILE);
+    if (fileHasValue(PID_FILE, String(process.pid))) unlinkSync(PID_FILE);
   } catch {}
   if (server) {
     Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]).finally(() =>
@@ -914,6 +925,14 @@ function shutdown(code: number) {
 
 async function main() {
   ensureDirs();
+
+  // Delete an expired hold file for tidiness (the hold is enforced CLI-side).
+  try {
+    if (existsSync(HOLD_FILE)) {
+      const until = parseInt(readFileSync(HOLD_FILE, "utf-8").trim(), 10);
+      if (!Number.isFinite(until) || until <= Date.now()) unlinkSync(HOLD_FILE);
+    }
+  } catch {}
 
   // Check if a daemon is already running by reading the port file and
   // trying to ping it. If alive, exit 0 quietly — caller will discover.
