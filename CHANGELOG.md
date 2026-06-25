@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.12.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.11.0...spellbook-v1.12.0) (2026-06-25)
+
+
+### Features
+
+* **glamour:** rebuild as a grounded conversation surface ([62117ec](https://github.com/ichabodcole/spellbook/commit/62117ec58c7df6f8694bf920c9c1ddf181b0e969))
+* **glamour:** rebuild as a grounded conversation surface ([22f22ab](https://github.com/ichabodcole/spellbook/commit/22f22ab8e1379b251407a3a6bbf5bed47dd97f63))
+
 ## [1.11.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.10.0...spellbook-v1.11.0) (2026-06-25)
 
 
