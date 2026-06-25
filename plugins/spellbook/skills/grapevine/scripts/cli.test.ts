@@ -1505,6 +1505,107 @@ describe("grapevine cli", () => {
     await bunRun(["stop"]);
   });
 
+  test("mark appends a kind:status frame referencing the target (V1.9)", async () => {
+    await bunRun(["open", "disp1"]);
+    await bunRun(["send", "disp1", "--from", "a", "feedback item"]); // id 1
+    const r = await bunRun([
+      "mark",
+      "disp1",
+      "1",
+      "incorporated",
+      "--note",
+      "shipped",
+      "--as",
+      "cole",
+    ]);
+    expect(r.code).toBe(0);
+    const f = JSON.parse(r.stdout);
+    expect(f.kind).toBe("status");
+    expect(f.target).toBe(1);
+    expect(f.disposition).toBe("incorporated");
+    expect(f.from).toBe("cole");
+    expect(f.text).toBe("shipped");
+  });
+
+  test("mark 404s on a nonexistent target (V1.9)", async () => {
+    await bunRun(["open", "disp_x"]);
+    const r = await bunRun(["mark", "disp_x", "999", "wontfix", "--as", "a"]);
+    expect(r.code).not.toBe(0);
+  });
+
+  test("reopen appends a status frame with disposition open (V1.9)", async () => {
+    await bunRun(["open", "disp2"]);
+    await bunRun(["send", "disp2", "--from", "a", "item"]); // id 1
+    await bunRun(["mark", "disp2", "1", "wontfix", "--as", "a"]);
+    const r = await bunRun(["reopen", "disp2", "1", "--as", "a"]);
+    expect(r.code).toBe(0);
+    expect(JSON.parse(r.stdout).disposition).toBe("open");
+  });
+
+  test("pull drops status frames and badges the target's latest disposition (V1.9)", async () => {
+    await bunRun(["open", "disp3"]);
+    await bunRun(["send", "disp3", "--from", "a", "one"]); // id1
+    await bunRun(["send", "disp3", "--from", "a", "two"]); // id2
+    await bunRun(["mark", "disp3", "1", "wontfix", "--as", "a"]); // id3 (status)
+    await bunRun(["mark", "disp3", "1", "incorporated", "--as", "a"]); // id4 (status) — latest wins
+    const r = await bunRun(["pull", "disp3", "--since", "0"]);
+    const msgs = JSON.parse(r.stdout).messages;
+    // status frames are not in the list
+    expect(msgs.every((m: { kind: string }) => m.kind !== "status")).toBe(true);
+    expect(msgs.length).toBe(2);
+    const m1 = msgs.find((m: { id: number }) => m.id === 1);
+    expect(m1.disposition).toBe("incorporated"); // latest
+    const m2 = msgs.find((m: { id: number }) => m.id === 2);
+    expect(m2.disposition ?? null).toBe(null); // unmarked → no badge
+  });
+
+  test("tail drops status frames (V1.9)", async () => {
+    await bunRun(["open", "disp4"]);
+    await bunRun(["send", "disp4", "--from", "a", "item"]); // id1
+    const { proc, output } = spawnTail("disp4");
+    await sleep(400);
+    await bunRun(["mark", "disp4", "1", "acted-on", "--as", "a"]);
+    await bunRun(["send", "disp4", "--from", "a", "next"]);
+    await sleep(300);
+    proc.kill("SIGTERM");
+    const lines = output()
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l));
+    expect(lines.some((m) => m.kind === "status")).toBe(false);
+    expect(lines.some((m) => m.text === "next")).toBe(true);
+  });
+
+  test("pull --status filters by latest disposition; open = unmarked-or-reopened (V1.9)", async () => {
+    await bunRun(["open", "disp5"]);
+    await bunRun(["send", "disp5", "--from", "a", "one"]); // id1
+    await bunRun(["send", "disp5", "--from", "a", "two"]); // id2
+    await bunRun(["send", "disp5", "--from", "a", "three"]); // id3
+    await bunRun(["mark", "disp5", "1", "incorporated", "--as", "a"]);
+    await bunRun(["mark", "disp5", "2", "wontfix", "--as", "a"]);
+    await bunRun(["reopen", "disp5", "2", "--as", "a"]); // id2 back to open
+
+    const open = JSON.parse((await bunRun(["pull", "disp5", "--status", "open"])).stdout)
+      .messages.map((m: { id: number }) => m.id)
+      .sort();
+    expect(open).toEqual([2, 3]); // 2 reopened, 3 never marked
+    const inc = JSON.parse(
+      (await bunRun(["pull", "disp5", "--status", "incorporated"])).stdout,
+    ).messages.map((m: { id: number }) => m.id);
+    expect(inc).toEqual([1]);
+  });
+
+  test("triage groups open on top + dispositioned by status (V1.9)", async () => {
+    await bunRun(["open", "disp6"]);
+    await bunRun(["send", "disp6", "--from", "a", "one"]); // id1
+    await bunRun(["send", "disp6", "--from", "a", "two"]); // id2
+    await bunRun(["mark", "disp6", "1", "incorporated", "--as", "a"]);
+    const t = JSON.parse((await bunRun(["triage", "disp6"])).stdout);
+    expect(t.open.map((m: { id: number }) => m.id)).toEqual([2]);
+    expect(t.by_status.incorporated.map((m: { id: number }) => m.id)).toEqual([1]);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;

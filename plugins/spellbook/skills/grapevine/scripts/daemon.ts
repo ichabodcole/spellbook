@@ -91,10 +91,13 @@ type Message = {
   from: string;
   text: string;
   ts: number;
-  kind: "message" | "topic" | "announcement";
+  kind: "message" | "topic" | "announcement" | "status";
   // V1.7 threading — id of the message this one replies to (same channel).
   // Stored only when set; readers that don't understand it ignore it.
   in_reply_to?: number;
+  // V1.9 disposition — status frames reference the message being acted on.
+  target?: number;
+  disposition?: string;
 };
 
 type Subscriber = {
@@ -261,8 +264,9 @@ function appendMessage(
   name: string,
   from: string,
   text: string,
-  kind: "message" | "topic" | "announcement" = "message",
+  kind: Message["kind"] = "message",
   inReplyTo?: number,
+  extra?: Partial<Pick<Message, "target" | "disposition">>,
 ): Message {
   const ch = loadChannel(name);
   const msg: Message = {
@@ -273,6 +277,7 @@ function appendMessage(
     ts: Date.now(),
     kind,
     ...(typeof inReplyTo === "number" ? { in_reply_to: inReplyTo } : {}),
+    ...(extra ?? {}),
   };
   appendFileSync(channelPath(name), `${JSON.stringify(msg)}\n`);
   if (kind === "topic") ch.topic = text;
@@ -686,6 +691,29 @@ async function handle(req: Request): Promise<Response> {
       } catch (e) {
         return json({ error: e instanceof Error ? e.message : String(e) }, { status: 400 });
       }
+    }
+
+    if (sub === "/status" && method === "POST") {
+      const body = await readJsonBody(req);
+      if (
+        !body ||
+        typeof body.from !== "string" ||
+        typeof body.target !== "number" ||
+        typeof body.disposition !== "string"
+      ) {
+        return json({ error: "from, target, disposition required" }, { status: 400 });
+      }
+      // Target must be a real, non-status message in this channel.
+      const exists = readBacklog(name, 0).some((m) => m.id === body.target && m.kind !== "status");
+      if (!exists) {
+        return json({ error: `no message ${body.target} in ${name}` }, { status: 404 });
+      }
+      const note = typeof body.note === "string" ? body.note : "";
+      const m = appendMessage(name, body.from, note, "status", undefined, {
+        target: body.target as number,
+        disposition: body.disposition as string,
+      });
+      return json(m, { status: 201 });
     }
 
     if (sub === "/wait" && method === "GET") {
