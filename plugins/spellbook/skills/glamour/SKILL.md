@@ -7,24 +7,21 @@ description:
   the art direction for X", "capture the look I'm going for", "I have some
   reference images, help me find the style". Opens a standing browser studio: the
   user brings influence images + context (text/world docs) + intent, the agent
-  synthesizes a deep understanding and produces a structured **style spec** (the
-  durable artifact) plus representative generated images. Do NOT use for one-off
-  image generation or editing where no reusable style spec is wanted.
+  shapes a **living style guide** and posts generated images into a shared
+  gallery. Do NOT use for one-off image generation or editing where no reusable
+  style guide is wanted.
 ---
 
 # Glamour — compose a visual style
 
 A **glamour** is an enchantment cast over appearance. The user brings influences
-(reference images), context (world/brand docs), and intent; the agent
-synthesizes the look and hands back a **re-castable style spec** +
-representative imagery. The deliverable is the **spec**, not the pictures — the
-images illustrate the look so future generation can reproduce it.
+(reference images), context (world/brand docs), and intent; the agent shapes a
+**living style guide** and posts representative imagery. The deliverable is the
+**style spec/guide**, not the pictures — the images illustrate the look so
+future generation can reproduce it.
 
-Kind: **conjuration** — a standing daemon with a 3-pane studio the user works
-inside, holding state and snapshotting so a session can be restored. The agent
-does the thinking (reading references, synthesizing, generating via
-media-forge); the surface is the membrane where the user steers and the agent
-reports.
+Kind: **conjuration** — a standing daemon with a 3-pane browser studio the user
+works inside, holding state and snapshotting so a session can be restored.
 
 ## When to use
 
@@ -34,150 +31,254 @@ reports.
 - Open-ended exploration ("I don't know what I want, show me a range") as much
   as locking in a known look.
 
-**Two modes — infer from intent, don't ask mechanically:**
+glamour is one leg of the image-work suite:
 
-- **Style-capture (default)** — the deliverable is the style spec; generated
-  images are illustrative, not extractable. Most requests are this.
-- **Asset-board** — the user wants discrete assets pulled _out_ (logos,
-  stickers, icons, mascots) to use separately. Only here do the media-forge
-  **transform** verbs (background-removal, cutout, vector) belong; offering them
-  in style-capture mode misreads intent.
+| Spell   | Job                                      |
+| ------- | ---------------------------------------- |
+| glamour | Compose the style spec from references   |
+| imago   | Make / edit one image                    |
+| magpie  | Extract discrete assets from a composite |
+
+## The surface
+
+### Landing screen
+
+A fresh session (no messages yet) opens on a **landing screen** — "What are you
+here to do?" — instead of a cold blank workspace. Archetype cards let the user
+click to begin:
+
+- Mood board
+- Define a style
+- Logo / brand mark
+- Full brand board
+- Redecorate a space (via image generation)
+- Not sure yet
+
+Plus a **freeform textarea** underneath. Whichever path the user takes — card or
+freeform — the result becomes the **first message passed to the agent**, so the
+agent starts with real goal context.
+
+### Workspace — 3-pane shell
+
+Once the conversation starts the workspace appears:
+
+```
+┌───────────────────┬──────────────────────┬────────────────┐
+│  style-guide rail │      gallery         │  conversation  │
+│  (collapsible)    │  (center, fills)     │  (right, fixed)│
+└───────────────────┴──────────────────────┴────────────────┘
+```
+
+- **Style-guide rail (left)** — collapsible (collapse · open · wide). The living
+  style guide lives here. The user watches the agent update it in real time
+  alongside the conversation.
+- **Gallery (center)** — holds all items: user-dropped references, user-dropped
+  context, and agent-generated images. Mark filters + focus lens. Click a
+  thumbnail to enlarge (lightbox).
+- **Conversation (right)** — the dialogue thread. The user types; the agent
+  replies via `say`.
+
+### Living style guide (the rail)
+
+The style guide is shaped incrementally by the agent via `section`. Each section
+carries a **status** — literal values: **`empty` | `forming` | `agreed`** — and
+an optional content block. The agent sets status by its own judgment as the read
+firms up: `forming` once a section is drafted, `agreed` once settled with the
+user. The user does not set status directly. Standard sections (key names):
+
+| Key           | Purpose                                   |
+| ------------- | ----------------------------------------- |
+| understanding | What the style is / means (grounded read) |
+| direction     | Where the style is going                  |
+| palette       | Color direction + swatches                |
+| consistency   | Rules that hold across pieces             |
+| prompts       | Generation prompts / prompt blocks        |
+| canonical     | Live view of the user's pinned items      |
+
+The **palette section** supports structured **swatches** posted via
+`--colors "#hex:Name||#hex:Name"`. Each swatch renders as a color chip + label.
+
+The **canonical section is a live view of pinned (non-archived) items** — pin an
+image and its thumbnail appears there automatically. The agent's prose is
+optional context above the thumbnails. The agent does NOT hand-curate this list;
+it is driven entirely by the user's pin marks.
+
+### Gallery — what the agent can and cannot add
+
+- **References** — images the user drags in. **Context** — text/world/brand docs
+  (markdown/text) the user drags in. There is **no agent verb to add either**.
+  After `open` the agent waits until the user drops content.
+- **Generated images** — the agent posts these via `gen`. Each gen item carries
+  its model, round number, full prompt, and any custom metadata.
+
+**Reading dropped items:** every item in lean `state` carries a `path` — the
+on-disk location where the daemon materialized it (under `files_dir` from
+`open`). To inspect a reference image use `Read` on its `path` (the agent needs
+the real pixels for vision). To read a context doc use `Read` on its `path` as
+text. The lean snapshot strips `src`/`text` blobs but always keeps `path`.
+
+## Marks — the human→agent signal vocabulary
+
+Marks are how the user communicates intent to the agent. Each has one job:
+
+| Mark    | Emoji | Meaning                                                                                          | Agent interpretation                                                                    |
+| ------- | ----- | ------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| like    | ❤️    | _Taste signal._ "This is the vibe I respond to." Soft, in-the-moment.                            | Weigh as a soft positive vote when shaping direction/palette. NOT a commitment.         |
+| star    | ⭐    | _Shortlist._ "A candidate I'm carrying forward." The active working set.                         | Treat starred items as the shortlist to focus/iterate on. "My picks" = the starred set. |
+| pin     | 📌    | _Canonical._ "This defines the style." Drives the Canonical section + travels with `style-save`. | Strongest commitment — these define the style.                                          |
+| archive | 🗄️    | _Out._ "Hide it — rejected or done."                                                             | Out of consideration.                                                                   |
+
+Commitment ladder: **like** (taste) < **star** (shortlist) < **pin**
+(canonical); **archive** = negative / out.
+
+**Marks are AMBIENT** (_ambient = stored + readable on demand from state, never
+pushed as an event_). The user applying a like, star, pin, or archive mutates
+state and updates the surface immediately, but is **not** pushed as a tail
+event. The agent learns about marks by reading `state` when it inspects items or
+decides direction — not by waiting for an event. Similarly, selection and focus
+changes are ambient.
+
+The **Canonical section updates from pins automatically in the surface** — the
+agent does NOT need a pin event to keep it current; pins are reflected live in
+the rail. Read pins from `state` only when you want to reason about them.
+
+**Human per-item annotations are also ambient** — the user types a note on any
+item and it is stored on that item. Read them from `state` when the user
+references an image or you inspect an item closely.
 
 ## Verbs
 
-All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`. To
-target a specific session, put `--session <id>` **after the verb and its flags**
-(`cli.ts <verb> [args] --session <id>`) — the verb must be the first argument,
-so a leading `--session` is misread as the verb and fails. Default is the most
-recent session. `help` prints the full surface.
+All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`.
+Verb must be the first argument; pass `--session <id>` **after the verb** to
+target a specific session (default: most recent). `help` prints the full
+surface.
 
-> **"no running session" but your daemon is alive?** The most-recent-session
-> pointer (kept in the system temp dir, separate from the daemon) was lost — a
-> second session or temp-dir cleanup can drop it. Recover by re-targeting
-> explicitly: `--session <id>` (your id is in the `open` output, or run
-> `sessions`). The daemon itself is fine.
+> **`${CLAUDE_PLUGIN_ROOT}` unset?** Some harnesses leave it empty, silently
+> turning `${VAR}/skills/…` into `/skills/…` so bun fails with "module not
+> found." Substitute the absolute path to this skill's `scripts/cli.ts`.
 
-> `${CLAUDE_PLUGIN_ROOT}` resolves to the plugin's install path in Claude Code.
-> If it's unset in your shell (some harnesses leave it empty), substitute the
-> absolute path to this skill's `scripts/cli.ts` — an empty value silently turns
-> `${VAR}/skills/…` into `/skills/…` and `bun` fails with "module not found".
+> **"no running session" but daemon is alive?** The most-recent-session pointer
+> (system temp dir, separate from the daemon) was lost — a second session or
+> temp-dir cleanup can drop it. Recover with `--session <id>` (id is in the
+> `open` output). The daemon itself is fine.
 
-| Verb                                                                                          | What it does                                                                                    |
-| --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id\|path>]`            | Spawn the daemon (opens the browser); prints session JSON (`port`, `session_id`, `files_dir`)   |
-| `sessions`                                                                                    | List saved, resumable sessions                                                                  |
-| `tail [--since N]`                                                                            | Stream user events as JSONL — **wrap with Monitor** (see below)                                 |
-| `state [--full]`                                                                              | State snapshot — **lean by default** (image/text blobs stripped); `--full` for raw incl. base64 |
-| `intent <text…>`                                                                              | Set/replace the intent                                                                          |
-| `read <influenceId> <text…>`                                                                  | Post your per-image analysis (advances phase → analysis)                                        |
-| `phase <gather\|analysis\|direction\|prompts\|variants\|spec>`                                | Set the phase explicitly                                                                        |
-| `direction <text…> [--revision N]`                                                            | Post the synthesized direction (→ direction)                                                    |
-| `prompts "<p1>" "<p2>" …`                                                                     | Post the generation prompts (→ prompts)                                                         |
-| `variant (--url <u> \| --file <p> \| --src <dataurl>) [--prompt ..] [--label ..] [--round N]` | Add a generated variant (→ variants; image is optimized server-side)                            |
-| `variants-clear`                                                                              | Clear variants and increment the round                                                          |
-| `spec [--understanding ..] [--recreate ..] [--model ..] [--modules "palette=on,…"]`           | Write the style spec (→ spec). Flags are **space-form only**                                    |
-| `cost <text…>`                                                                                | Set the cumulative-spend display                                                                |
-| `handoff <text…> \| handoff --clear`                                                          | Raise/clear the "questions in your terminal" banner before a terminal `AskUserQuestion`         |
-| `narrate [--kind info\|working\|result\|error] <text…>`                                       | Append to the agent activity feed the user sees                                                 |
-| `status on [text…] \| status off`                                                             | Toggle the "agent working" spinner                                                              |
-| `say <text…>`                                                                                 | Ephemeral toast                                                                                 |
-| `close` / `info` / `help`                                                                     | End the session / print session JSON / usage                                                    |
+| Verb                                                                                                               | What it does                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--start-timeout S] [--restore <id\|path>]`             | Spawn the daemon (opens the browser); prints `{port, session_id, files_dir}`. `--no-open` suppresses the browser tab. `--timeout S` sets the session idle timeout (daemon retires an idle session after S seconds). `--start-timeout S` sets how long the CLI waits for the daemon's launch handshake (default 45 s; raise on cold first build). |
+| `tail [--since N]`                                                                                                 | Stream user events as JSONL — run via Monitor (see Operating rule below)                                                                                                                                                                                                                                                                         |
+| `state [--full]`                                                                                                   | State snapshot — lean by default (blobs stripped); `--full` for raw incl. base64                                                                                                                                                                                                                                                                 |
+| `intent <text…>`                                                                                                   | Set / replace the session intent                                                                                                                                                                                                                                                                                                                 |
+| `annotate <id> <text…>`                                                                                            | Write agent annotation onto a library item                                                                                                                                                                                                                                                                                                       |
+| `say <text…> [--kind ..]`                                                                                          | Post agent dialogue into the conversation                                                                                                                                                                                                                                                                                                        |
+| `section <key> [--status ..] [--content ..] [--prompts a\|\|b] [--colors "#hex:Name\|\|#hex:Name"]`                | Shape a style-guide section (`--colors` → palette swatches)                                                                                                                                                                                                                                                                                      |
+| `status on [text…] \| status off`                                                                                  | Toggle the "agent working" spinner                                                                                                                                                                                                                                                                                                               |
+| `gen (--url\|--file\|--src) --prompt .. --model .. --round N [--seed N] [--cost N] [--label ..] [--custom k=v,..]` | Post a generated image (optimized to webp server-side)                                                                                                                                                                                                                                                                                           |
+| `gen-cost <id> --cost <n>`                                                                                         | Backfill a generated image's cost                                                                                                                                                                                                                                                                                                                |
+| `gen-meta <id> [--prompt <text>] [--custom k=v,..]`                                                                | Backfill the real prompt / refs onto a gen                                                                                                                                                                                                                                                                                                       |
+| `focus <id…> [--note ..]`                                                                                          | Scope the gallery's focus lens to a subset; `--note` invites the user to weigh in on just those items (e.g. "which reads more X?")                                                                                                                                                                                                               |
+| `style-save <label…>`                                                                                              | Codify the current style (agreed sections + pinned/canonical images) into the **project tray** — a project-scoped, persistent set of saved styles reusable across sessions                                                                                                                                                                       |
+| `style-archive <id> [--restore]`                                                                                   | Archive (or `--restore`) a saved style from the tray                                                                                                                                                                                                                                                                                             |
+| `tray`                                                                                                             | List the project's saved styles                                                                                                                                                                                                                                                                                                                  |
+| `close`                                                                                                            | Shut down the session (writes the snapshot)                                                                                                                                                                                                                                                                                                      |
+| `info`                                                                                                             | Print the resolved session discovery JSON                                                                                                                                                                                                                                                                                                        |
+| `help`                                                                                                             | Show the full verb list                                                                                                                                                                                                                                                                                                                          |
 
-The user can only add **influences and context** from the browser (drag-drop) —
-the agent never adds those. Everything else (reads, direction, prompts,
-variants, spec) the agent posts.
+## Operating rule: Monitor the tail (push-based)
 
-## Run it push-based — Monitor the tail, don't poll
-
-The single most important operating rule: **subscribe to the event stream and
-react the instant the user acts.** Run `cli.ts tail` as a long-lived background
-process and wake on each new line — in Claude Code that's the **Monitor** tool
-(it backgrounds a command and turns each new stdout line into a fresh turn); in
-any runtime the shape is "tail in the background, react per line." Filter to the
-events that need an agent response:
+**Subscribe to the event stream and react the instant the user acts.** Use the
+Monitor tool with:
 
 ```
-tail -f <tail output> | grep -E '"type":"(nudge|feedback|steer|generate|submit|note|direction\.correct)"'
+bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts tail
 ```
+
+Each stdout line becomes a fresh turn. (`${CLAUDE_PLUGIN_ROOT}` must be the
+absolute path to this skill's `scripts/cli.ts` — see the variable warning in the
+Verbs section.)
+
+**After `open`, stay silent** until the first `message.user` or `item.add` event
+— the landing screen orients the user; don't post a greeting.
+
+The **only pushed tail events the agent reacts to** are **`message.user`** and
+**`item.add`**. Everything else — marks (like/star/pin/archive), selection,
+focus, and per-item annotations — is **ambient** (stored + readable on demand
+from state, never pushed as an event). Do not wait for those to arrive; read
+them from `state` when you inspect items or decide direction.
 
 Polling `state` only when you happen to check leaves the user staring at a
-spinner. Read the matching event's full payload from the tail output (event
-notifications truncate long text) or from `state`.
+spinner. Read full event payload from the tail line (notifications truncate long
+text) or from `state`.
 
-## The flow
+**Session end:** there is no explicit "done" event. Infer session end from the
+conversation (the user signals they're happy/done) or the tail stream ending.
+When that happens: call `style-save` first to persist the style to the project
+tray, then `close` to write the session snapshot. (`close` writes the snapshot
+only — it does NOT save the style to the tray.)
 
-`gather → analysis → direction → prompts → variants → spec`. The phase
-**auto-advances** when you post the matching artifact (`read` → analysis,
-`direction` → direction, `prompts` → prompts, first `variant` → variants, `spec`
-→ spec), so post content for the phase you're in and let it carry.
+## Generation via media-forge
 
-- **gather** — the user drops influences + context from the browser and
-  annotates (aspects, star, notes); **you cannot add them** — there is no agent
-  verb for it, so after `open` you wait in `gather` until they appear. Watch for
-  them: influences/contexts populate in `state` as the user drops, and `note`
-  events arrive on the tail. Don't post `read`s until `state.influences` is
-  non-empty (a `read` for an unknown influence id silently no-ops with
-  `ok:true`). To read images, `Read` the on-disk `path` of each influence
-  (vision needs real pixels); read context files at their `path` too.
-- **analysis** — post a `read` for **each** influence (the phase flips to
-  analysis on the first). The user reviews and may send **batched corrections**
-  (a `feedback` event, `scope:"analysis"`) — revise your reads and re-post.
-- **direction** — post the synthesized `direction`. The user accepts, or sends
-  `direction.correct` with `mode: "correct"` (that's wrong) vs `"augment"` (yes,
-  and…) — honor the distinction.
-- **prompts** — post `prompts`. User comments (batched `feedback`,
-  `scope:"prompts"`) or triggers `generate`.
-- **variants** — on `generate`, produce images via media-forge and post each as
-  a `variant` (with `--prompt`, `--label`, `--round`). The user likes / sets one
-  canonical / sends `steer` notes; on a steer+generate, produce the next round.
-- **spec** — post the `spec`: the `understanding` (core look); the four modules
-  `palette` / `consistency` / `motifs` / `dosdonts` (toggle via
-  `--modules "palette=on,motifs=off"`, each carries its own `content`); a
-  `--recreate` prompt; and a pinned `--model`. Pass flags **space-form**
-  (`--understanding "…"`, never `--understanding=…`). The user picks the
-  canonical image and exports.
+Generation runs through the **`media-forge` CLI** (a separate tool the user
+installs; `mf` / `media-forge` on PATH). Confirm it is available before
+generating: `media-forge models list`.
 
-When you must fall back to a terminal `AskUserQuestion`, raise a `handoff`
-banner first so the user knows to look there, and `handoff --clear` after.
+**Flow:**
 
-## The handoff is via the snapshot, not the submit event
+1. Run
+   `mf generate image --model <id> [--ref <path|url>] --n <count> --prompt "…" --format json`
+2. Lift `data.outputs[].presignedUrl` from the response
+3. Post each result:
+   `gen --url <presigned> --model <id> --round <N> --prompt "…" [--custom refs=…]`
 
-`submit` ends the session **and shuts the daemon down** — the live `submit`/
-`closed` event races that shutdown and is often lost. So: treat the daemon going
-away (the tail stream ends and won't reconnect / the session file disappears) as
-end-of-session, and read the final spec from the saved snapshot
-(`$GLAMOUR_HOME/snapshots/<session_id>.json`, default `~/.glamour`). Never block
-waiting on a live `submit`.
+`gen` fetches the URL and optimizes it to webp server-side.
 
-## Prompts and model routing
+**`--n` vs `--round` are different numbers.** `--n <count>` is a media-forge
+flag controlling how many images to generate per call. `--round <N>` is the
+iteration/round number you stamp on each `gen` so the gallery groups a batch —
+it is your counter, not media-forge's output count.
 
-- **Prompts are self-contained visual descriptions.** Strip invented proper
-  nouns the image model has no reference for (character/place names); describe
-  what's visually in frame. If a name must appear, specify it as visible
-  signage. Each prompt restates all the visual context it needs — no bleeding
-  context from one prompt to the next.
-- **Consistency:** carry the same STYLE + PALETTE prompt-blocks verbatim across
-  different subjects to hold one coherent look; `--ref` is for _same-character_
-  poses/expressions, not style.
-- **Routing:** explore cheap (e.g. grok-imagine, klein) → finalize on a clean
-  instruction-follower (nano-banana-2). Exact model ids, the content-type →
-  model matrix, per-model prompt structure, transform verbs, cost, and CLI
-  gotchas live in `references/mediaforge.md` (it ships with the skill). Read it
-  before generating; don't reproduce it here.
+**`--prompt` must be the actual prompt sent to media-forge** — the exact text,
+not a label. Use `gen-meta <id> --prompt "…"` to backfill if you passed a label
+by mistake. Reproducibility depends on it.
+
+**`--ref` on a media-forge call** does style-conditioning.
+`fal-ai/nano-banana-2` is the workhorse for ref/edit (up to 14 refs);
+`openai/gpt-image-2` is text-to-image only via media-forge (no `--ref`). For the
+current model roster, ref counts, cost, and CLI flags, run
+`media-forge models list` and `mf generate image --help` — don't rely on a
+hardcoded matrix here.
+
+**Exploration strategy:** go cheap first (explore prompt/ref variations), then
+finalize on a clean instruction-follower once direction is locked.
+
+## Snapshot handoff
+
+`close` snapshots the full session to
+`$GLAMOUR_HOME/snapshots/<session_id>.json`. Restore with `open --restore <id>`.
+
+**Call `style-save` before `close`** — `close` writes the session snapshot only.
+It does NOT persist the style to the project tray. `style-save` is the step that
+makes the style reusable across future sessions (verify with `tray`).
+
+**Read the final spec from the snapshot, not a live close event.** The `close`
+command shuts the daemon down immediately — the live `closed` event races that
+shutdown and is often lost. Treat the tail stream ending (and not reconnecting)
+as end-of-session, then read the snapshot.
 
 ## Prerequisites & limits
 
-- **Bun** on PATH (the daemon serves a Bun-bundled React surface; first `open`
-  builds it). Restore with `open --restore <id>`.
-- **`media-forge` CLI** on PATH — generation runs through it (see
-  `references/mediaforge.md`); it's a separate tool the user installs, so
-  confirm it with `media-forge status` / `media-forge ping` before relying on
-  it. Without it the gather → direction → prompts → spec flow still works, but
-  the variants phase can't generate; tell the user if it's missing.
-- The session snapshot lives at `$GLAMOUR_HOME/snapshots/<session_id>.json`
-  (default `~/.glamour`).
-- Report spend via media-forge's `usage summary` / `jobs get` — the `generate`
-  response alone doesn't carry per-job cost; surface it with `cost`.
+- **Bun** on PATH — the daemon serves a Bun-bundled React 19 surface; the first
+  `open` triggers the bundle build (can take ~10–45 s cold). If the handshake
+  times out, retry with `--start-timeout <seconds>` (default 45 s) — distinct
+  from `--timeout S` which controls the session idle timeout.
+- **`$GLAMOUR_HOME`** (default `~/.glamour`) — controls where session snapshots
+  are written. Override by setting the env var before calling `open`.
+- **`media-forge` CLI** on PATH — required for image generation. Without it the
+  conversation + style-guide flow works fully, but the agent cannot post
+  generated images. Tell the user if it is missing.
+- Session discovery files live in the system temp dir (`os.tmpdir()`) — on macOS
+  that is `/var/folders/.../T/`, not `/tmp`. If a session appears lost after a
+  failed `open` handshake, use `info` or `--session <id>` to re-target (the
+  daemon itself is usually still running).
 
 ## Feedback touchpoint
 

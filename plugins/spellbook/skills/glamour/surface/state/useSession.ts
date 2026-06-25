@@ -1,53 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ClientToServer, GlamourState, ServerToClient } from "./types";
-
-export type ConnStatus = "connecting" | "open" | "closed";
 
 export function useSession() {
   const [state, setState] = useState<GlamourState | null>(null);
-  const [status, setStatus] = useState<ConnStatus>("connecting");
-  const [ended, setEnded] = useState(false);
-  const ws = useRef<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${proto}//${location.host}/ws`;
-    let stop = false;
-    let ended = false; // session ended (submit/cancel/normal close) — do not reconnect
-    const connect = () => {
-      const sock = new WebSocket(url);
-      ws.current = sock;
-      sock.onopen = () => setStatus("open");
-      sock.onmessage = (e) => {
+    const ws = new WebSocket(`ws://${location.host}/ws`);
+    wsRef.current = ws;
+    ws.onmessage = (e) => {
+      try {
         const msg = JSON.parse(e.data) as ServerToClient;
         if (msg.type === "state") setState(msg.state);
-        else if (msg.type === "submit" || msg.type === "cancel") {
-          ended = true;
-          setEnded(true);
-          setStatus("closed");
-          sock.close();
-        } else if (msg.type === "message") {
-          console.info("[glamour]", msg.text);
-        }
-      };
-      sock.onclose = (ev) => {
-        setStatus("closed");
-        // Reconnect only on unexpected drops, never after a clean/ended close.
-        if (!stop && !ended && ev.code !== 1000 && ev.code !== 1001) {
-          setTimeout(connect, 800);
-        }
-      };
+      } catch (err) {
+        console.error("glamour: malformed ws frame", err);
+      }
     };
-    connect();
-    return () => {
-      stop = true;
-      ws.current?.close();
-    };
+    return () => ws.close();
   }, []);
 
-  const send = useCallback((msg: ClientToServer) => {
-    if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify(msg));
-  }, []);
+  const send = (m: ClientToServer) => {
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(m));
+  };
 
-  return { state, send, status, ended };
+  return { state, send };
 }
