@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.10.0...spellbook-v1.11.0) (2026-06-25)
+
+
+### Features
+
+* **grapevine:** fold disposition badges into pull/read; tail drops status frames ([d02f9d1](https://github.com/ichabodcole/spellbook/commit/d02f9d1a61294a28ebd1a4f0afbdd9e99fdda826))
+* **grapevine:** mark/reopen — append kind:status disposition frames ([1d5e205](https://github.com/ichabodcole/spellbook/commit/1d5e205e808e250ff4751739157135b10a60c455))
+* **grapevine:** pull --status filter + triage verb ([822a2a9](https://github.com/ichabodcole/spellbook/commit/822a2a9e4936a3ade6d1fed9bacadb8eb49a9cae))
+
 ## [1.10.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.9.0...spellbook-v1.10.0) (2026-06-24)
 
 
