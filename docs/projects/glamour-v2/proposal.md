@@ -1,6 +1,7 @@
 # Glamour v2 — gallery-central style discovery
 
-**Status:** Draft **Created:** 2026-06-19 **Author:** Cole Reed
+**Status:** Spec — locked for phased build **Created:** 2026-06-19 **Updated:**
+2026-06-21 **Author:** Cole Reed
 
 ---
 
@@ -108,11 +109,47 @@ back. End with a codified, re-castable style saved to the project's tray.
 **Future Considerations:** the imago handoff implementation; the composition
 pattern + its manifesto entry; cross-spell artifact interchange.
 
+## Build Sequencing
+
+v2 is built as **vertical slices**, not one monolithic plan. Each slice is
+independently usable end-to-end and gets its own implementation plan
+(`writing-plans`) + review pass. The MVP scope above is the union of slices 1–4;
+the slice boundaries are where the build is sequenced and reviewed.
+
+Throughout the build, **V1 stays installed and working** as the fallback. v2
+only replaces V1 once it passes the success criteria below (fresh-agent + ward)
+— so no slice has to be feature-complete-vs-V1 to be merged and dogfooded.
+
+1. **Skeleton + unified library.** Bun daemon (HTTP + WebSocket + SSE + POST
+   `/cmd`), the shared `types.ts` contract, the React shell, the unified library
+   grid (ref / context / gen tiles with type facets), the persistent details
+   fly-out, and snapshot/restore. Ports V1's proven spine (channels, lean state,
+   persistence, image optimization). Deliverable: drop refs/context, see them as
+   tiles, inspect a tile, resume a session.
+2. **Conversation + grounding + style guide.** The chat sidebar,
+   select-to-ground deixis (selection = what the next message is about), and the
+   agent-assembled **Style-guide view** that fills in (section status: empty →
+   forming → agreed). Deliverable: talk about selected tiles; watch the style
+   guide materialize and correct it. The co-presence heart.
+3. **Generation + focus lens.** media-forge probe generation with round / batch
+   grouping, generated-image metadata (G1), and the **zoom/focus co-presence
+   lens** (full → mini-gallery → enlarged) — human-initiated _and_
+   agent-initiated, with the focus-mode agent drawer. Deliverable: ask for a
+   batch, react to it, either party scopes a focus set.
+4. **Project-styles tray.** The project-scoped tray (styles not auto-loaded),
+   deliberate bring-in, and styles as compound "canonical shapes" (text +
+   canonical images). Non-destructive archive/restore. Deliverable: save a
+   codified style to the project; bring a prior style into a new session.
+
+The imago-handoff seam (B1/B2) and composition are **not** slices — they remain
+out of MVP (designed in shape only; see Open Questions).
+
 ## Technical Approach
 
 Built on the house surface stack — a Bun daemon (`Bun.serve`, canonical state,
-snapshots) + a React surface bundled by Bun, per `spell-surface-stack` and the
-V1 rebuild design. **Reuse imago's proven patterns** rather than reinventing:
+snapshots) + a React surface bundled by Bun, per `spell-surface-stack` and V1's
+proven channel/state patterns. **Reuse imago's proven patterns** rather than
+reinventing:
 
 - A single shared `types.ts` contract for all channels (the V1 keystone, kept).
 - Lean state projection (agent reads disk paths, not inlined blobs).
@@ -129,22 +166,60 @@ V1's phase/influences/variants model — hence a rebuild, not a refactor.
 
 **Key dependency:** media-forge (generation), as today.
 
-## Mining V1 (carry-forward checklist)
+## Mining V1 (carry-forward calls)
 
-V1 carries detailed work the mockup didn't represent. Evaluate each for
-carry-forward (the reason V1 stays in place):
+V1 turned out to be a **mature, shipped conjuration** — all nine items below are
+implemented there (`GlamourState`, HTTP + WebSocket + SSE + POST `/cmd`, ~19 CLI
+verbs). That makes V1 a rich mine of proven code; each item's call is resolved
+below, with the slice it lands in.
 
-- [ ] Round / batch grouping of generations
-- [ ] Lightbox / aspect-ratio view (vs. the mockup's simpler enlarge)
-- [ ] Cost display + per-generation cost capture
-- [ ] Narration kinds (`info | working | result | error`) — what survives the
-      move from a narration feed to a chat sidebar?
-- [ ] The spec-module set (palette / consistency / motifs / dos-donts) and
-      `recreatePrompt` + `model` — map onto the v2 style-guide sections
-- [ ] Snapshot/restore + session resumption (`open --restore`)
-- [ ] Image optimization on ingest (downscale + WebP / sharp)
-- [ ] Correct-vs-augment feedback framing
-- [ ] Terminal-handoff banner / lean-state behavior
+- **Round / batch grouping** — **Carry.** V1 tags each variant with a `round`
+  that increments on clear; v2 keeps round grouping for generation batches.
+  _(Slice 3.)_
+- **Lightbox / aspect-ratio view** — **Adapt (simplify).** V1 had no real aspect
+  metadata; v2 uses the mockup's simpler **enlarge** (grid swaps for one big
+  image, details fly-out unchanged). No separate lightbox component. The Slice-3
+  refinement adds **gallery traversal in the enlarged view** — prev/next
+  controls and left/right arrow-key nav that cycle through the whole
+  (faceted/selected) image set from wherever you opened it, so the human can
+  flip through the gallery without dropping back to the grid. _(Slice 1 enlarge;
+  traversal + refinement in 3.)_
+- **Cost display + per-generation cost** — **Adapt (upgrade).** V1's `cost` is
+  only a cumulative display string. v2 captures cost **per generation** as a
+  typed metadata field (part of G1); cumulative is a derived sum. _(Slice 3.)_
+- **Narration kinds (`info | working | result | error`)** — **Carry, remapped.**
+  V1's one-way narration feed becomes the **chat sidebar**; the four kinds
+  survive as message kinds (agent status vs. result vs. error still read
+  differently). _(Slice 2.)_
+- **Spec modules + `recreatePrompt` + `model`** — **Carry, remapped.** V1's four
+  modules (palette / consistency / motifs / dos-donts) + `understanding` map
+  onto the v2 **style-guide sections**; `recreatePrompt` + `model` live in
+  generation metadata and the style's "recreate" affordance. _(Slice 2 sections;
+  3 metadata.)_
+- **Snapshot/restore + resumption (`open --restore`)** — **Carry as-is.**
+  Debounced snapshot, restore by session-id or path, on-disk path
+  re-materialization so the agent's by-path reads survive a restore. Proven;
+  copy. _(Slice 1.)_
+- **Image optimization on ingest** — **Carry, upgraded.** Browser canvas
+  downscale + WebP on drop; server-side downscale + WebP for data-URLs (1200px /
+  q85). v2 drops V1's `sharp` dependency for the native **`Bun.Image`** API
+  (stable since Bun 1.3.14 — no native build step). _(Slice 1.)_
+- **Correct-vs-augment feedback framing** — **Carry.** V1's
+  `mode: "correct" | "augment"` on direction/notes is the right primitive for
+  grounded feedback; keep it on v2's selection-grounded messages. _(Slice 2.)_
+- **Terminal-handoff banner / lean-state** — **Split.** **Lean-state projection
+  carries** (essential — the agent reads disk paths, not inlined blobs; Slice
+  1). The **handoff banner defers** — it becomes the imago seam (B1/B2, out of
+  MVP).
+
+**Also carry (V1 extras the checklist didn't name):** the SSE event tail with
+replayable `?since=<id>` for agent monitoring (Slice 1);
+single-canonical-variant enforcement → reframed as the style guide's "canonical
+images" (Slice 4); session-discovery tmpfiles, idle timeout, debounced
+persistence (Slice 1, ops). **Drop:** V1's `advancePhase` auto-stepping (v2 has
+no phases). **Reconsider:** V1 lets only the _user_ add influences/contexts — v2
+keeps that for refs/context tiles, but the agent owns **generated** tiles (it
+produces them); spelled out in the ambient-vs-imperative event design.
 
 ## Impact & Risks
 
@@ -167,13 +242,60 @@ image-centric).
 **Complexity:** High — new state model + surface, multiple novel interactions
 (zoom lens, unified library, agent-driven focus).
 
-## Open Questions
+## Resolved Decisions
+
+- **G1 — generated-image metadata: fixed core + freeform extras.** A typed core
+  the surface understands — `model`, `prompt`, `seed`, `cost` (captured
+  per-generation, unlike V1's cumulative-only string) — plus an open
+  `custom: Record<string, string>` for the mockup's "add custom field"
+  affordance. Lands in Slice 3.
+
+## Parked enhancements (from Slice-1 dogfooding, 2026-06-22)
+
+Captured during the first hands-on session — desirable, not yet scheduled to a
+slice. Recorded here so they aren't lost; promote to a slice when prioritized.
+
+- **Item tags — human _and_ agent.** The `tags: string[]` field already exists
+  on `LibraryItem` (Slice 1 contract) but is unsurfaced. Surface it as editable
+  tags in the details fly-out (human tagging), and let the **agent** tag items
+  it ingests or generates (a `tags` command / annotation) — agent tagging
+  becomes a lightweight way to **relate images to each other** (group by motif,
+  subject, palette) that the gallery can then facet/filter on. Pairs naturally
+  with the existing kind facets. _(No slice yet; smallest home would extend the
+  fly-out + add an agent tag verb.)_
+- **Gallery traversal in the lightbox** — see the Lightbox mining entry above
+  (folded into the Slice-3 focus-lens refinement: prev/next + arrow-key cycling
+  through the set).
+- **Gallery thumbnail size control.** A small/medium/large toggle group that
+  scales the grid tiles, so the human can trade scan-density for detail. The
+  gallery is the primary scanning surface, so cheap size control has outsized
+  value. _(No slice yet; pure surface state — grid column/size class driven by a
+  toggle.)_
+- **Aspect-ratio (masonry) gallery mode — experiment.** An alternative to the
+  square thumbnails that lays images out in their **native aspect ratio**,
+  packed to fit well together (masonry/justified layout), so you read what's
+  actually in each image at a glance. Keep the square grid as the default (even,
+  easy to scan); this is a second view mode worth prototyping, not a
+  replacement. Lower priority than the size control. _(No slice yet;
+  experimental — a layout variant over the same library.)_
+- **Vision metadata on images (from 2026-06-23 Slices 1–3 dogfooding).** Two
+  related asks: (1) **auto-analyze on drop** — run a vision pass automatically
+  when an image lands so its description is just there (today it's
+  agent-initiated via the existing `agent` annotation, which already renders in
+  the details fly-out — demoed live, only the auto-trigger is missing); and (2)
+  **re-reference by description, not pixels** — use the stored description as a
+  cheap text proxy when grounding on an image again, so the agent reads the
+  description instead of re-ingesting the full image. (2) touches the
+  grounding + lean-state contract (an item could ground as text _or_ image) and
+  is a real token / quick-reference win — wants a short design note before
+  building. See `sessions/2026-06-23-slices1-3-dogfood-feedback.md`. _(No slice
+  yet.)_
+
+## Open Questions (deferred — tied to the imago seam, out of MVP)
 
 - **B1** — imago handoff: hard context-switch vs. embedded view? (lean hard
   switch)
 - **B2** — concrete artifact format across the glamour↔imago seam.
-- **G1** — generated-image metadata: fixed schema vs. freeform? (lean fixed core
-  - freeform extras)
 
 ## Success Criteria
 
@@ -193,6 +315,14 @@ image-centric).
   `docs/projects/image-style-spell/glamour-reframe-investigation.md`
 - Converged surface mockup:
   `docs/projects/image-style-spell/artifacts/unified-library-mockup.html`
-- V1 rebuild design (to mine):
-  `docs/projects/image-style-spell/glamour-rebuild-design.md`
+- **V1 code (the mine):** `plugins/spellbook/skills/glamour/` — `surface/state/`
+  (types, image optimization), `scripts/server.ts` (channels, lean state,
+  snapshot/restore), `scripts/cli.ts` (verbs).
+- V1 field data:
+  `docs/projects/image-style-spell/artifacts/glamour-dogfood-hollowbrook.md`,
+  `…/artifacts/glamour-dryrun-v3-findings.md`.
+- **Superseded** (pre-reframe, pipeline-shaped — useful only for its
+  agent-buildability principles + dogfood punch-list):
+  `docs/projects/image-style-spell/glamour-rebuild-design.md` and the
+  `…/plans/2026-06-10-glamour-rebuild-*` plans.
 - Co-presence: `docs/PROJECT_MANIFESTO.md` §2; `grimoire/house-style.md`
