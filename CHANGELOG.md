@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.14.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.13.0...spellbook-v1.14.0) (2026-06-28)
+
+
+### Features
+
+* **grapevine:** triage --human dashboard + dedupe presence roster ([1b902f8](https://github.com/ichabodcole/spellbook/commit/1b902f83721245d750df46f378451657b634c9cd))
+
+
+### Bug Fixes
+
+* **grapevine:** triage open queue is signal-only (skip topic/announcement frames) ([4117858](https://github.com/ichabodcole/spellbook/commit/4117858bae3162f83cccaa82ec18bb387981e5a1))
+
 ## [1.13.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.12.0...spellbook-v1.13.0) (2026-06-28)
 
 
