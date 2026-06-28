@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      * { margin: 0; box-sizing: border-box; }
+      body { width: 1200px; height: 750px; background: radial-gradient(circle at 28% 22%, #ffffff, #efe7d6); font-family: Inter, sans-serif; position: relative; overflow: hidden; }
+      .wordmark { position: absolute; top: 60px; left: 90px; font-family: Poppins; font-weight: 800; font-size: 92px; letter-spacing: -2px; color: #14181b; }
+      .mascot { position: absolute; top: 220px; left: 110px; width: 240px; height: 240px; border-radius: 50%; background: linear-gradient(140deg, #c9962b, #ecc878); box-shadow: 0 8px 30px rgba(201,150,43,.35); }
+      .mascot::after { content: ""; position: absolute; inset: 64px; border-radius: 50%; background: #14181b; clip-path: polygon(50% 0, 62% 38%, 100% 38%, 70% 62%, 82% 100%, 50% 76%, 18% 100%, 30% 62%, 0 38%, 38% 38%); }
+      .compass { position: absolute; top: 250px; left: 560px; color: #1fa3a3; }
+      .flag { position: absolute; top: 250px; left: 760px; color: #1fa3a3; }
+      .tagline { position: absolute; top: 430px; left: 560px; font-size: 30px; font-style: italic; color: #6f6c66; }
+      .palette { position: absolute; top: 560px; left: 110px; width: 620px; height: 90px; display: flex; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.12); }
+      .palette > div { flex: 1; }
+      .star { position: absolute; top: 540px; left: 920px; color: #c9962b; }
+    </style>
+  </head>
+  <body>
+    <div class="wordmark">BOUNTY</div>
+    <div class="mascot"></div>
+    <svg class="compass" width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8" fill="currentColor"/></svg>
+    <svg class="flag" width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+    <div class="tagline">claim it before it's gone</div>
+    <div class="palette"><div style="background:#14181b"></div><div style="background:#5b5bf0"></div><div style="background:#1fa3a3"></div><div style="background:#c9962b"></div><div style="background:#f6f1e7"></div></div>
+    <svg class="star" width="150" height="150" viewBox="0 0 24 24" fill="#c9962b"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg>
+  </body>
+</html>

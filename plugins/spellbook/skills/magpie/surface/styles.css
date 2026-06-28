@@ -1,0 +1,175 @@
+@import "tailwindcss";
+/* Scan this surface's components for class names regardless of the daemon's
+   launch cwd (cli.ts spawns the server from arbitrary directories). Without
+   this, Tailwind v4's auto content-detection roots at cwd and emits zero
+   utilities → an unstyled surface. */
+@source "./";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SEMANTIC THEME — the single source of truth for color (cloned from imago's
+   house theme). Components use the generated utilities (bg-surface, text-muted,
+   border-edge, bg-accent, …) — never raw hex. Edit tokens here, not markup.
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* surfaces (low → high elevation) */
+  --color-bg: #120e18; /* app background */
+  --color-bg-elev: #1a1422; /* gradient highlight */
+  --color-surface: #1b1626; /* cards, pills */
+  --color-surface-2: #140f1d; /* insets, wells, inputs, canvas backdrop */
+  --color-surface-3: #241d33; /* hover, raised chips, toasts */
+
+  /* borders */
+  --color-divider: #241d33; /* section/header dividers (quiet) */
+  --color-edge: #2e2640; /* default border */
+  --color-edge-2: #2a2238; /* inset border */
+  --color-edge-strong: #3a3050; /* segmented controls, outlines */
+  --color-edge-hover: #4a3f63; /* border on hover */
+
+  /* text */
+  --color-ink: #e2e8f0; /* primary text */
+  --color-ink-strong: #f5f3ff; /* headings */
+  --color-muted: #94a3b8; /* secondary text */
+  --color-faint: #64748b; /* tertiary / hints */
+
+  /* accent — magpie's violet (matches the house palette) */
+  --color-accent: #7c3aed;
+  --color-accent-hover: #8b5cf6;
+  --color-accent-ink: #c4b5fd; /* accent-tinted text on dark */
+  --color-accent-fg: #ffffff; /* text/icon on a solid accent fill */
+
+  /* intents */
+  --color-attention: #f59e0b; /* the agent needs you (amber) */
+  --color-attention-ink: #fcd34d;
+  --color-positive: #34d399; /* connected / good (emerald) */
+  --color-negative: #fb7185; /* dropped (rose) */
+}
+
+:root {
+  color-scheme: dark;
+
+  /* identity — element-type bands (magpie palette: gold marks, iridescent
+     pictorials, slate meta). Consumed only via var() — typeColor() builds the
+     name dynamically (`var(--color-type-${band})`), so the literals never appear
+     in scanned source. They live in a PLAIN :root, NOT @theme, on purpose:
+     @theme tree-shakes custom properties it doesn't see referenced literally,
+     which silently drops mark/meta (only pictorial survived, by accident). Plain
+     :root is authored CSS, emitted as-is. The end identity re-skin swaps these. */
+  --color-type-mark: #c9962b; /* wordmark / tagline / typography — treasure gold */
+  --color-type-pictorial: #5b5bf0; /* icon / illustration / sticker — iridescent indigo */
+  --color-type-meta: #6f6c66; /* palette / screenshot / other — slate */
+
+  /* phase-spine status (the top-bar stepper). Same plain-:root reason as the type
+     tokens above: referenced only via var() in PhaseStepper/PhaseGate, never as a
+     literal utility class, so @theme would tree-shake them away. `active` reuses
+     the theme accent; `upcoming` reuses surface-3/faint — only `sealed` needs its
+     own semantic token (a captured artifact = treasure gold). The end re-skin
+     swaps this in one place. */
+  --color-sealed: #c9962b; /* a sealed phase — captured artifact */
+}
+body {
+  margin: 0;
+  background: radial-gradient(
+    ellipse at top,
+    var(--color-bg-elev) 0%,
+    var(--color-bg) 60%
+  );
+}
+
+@keyframes pdot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* activity "wave" — equalizer bars used as the in-progress signal (e.g. the
+   Re-slice button while a cut runs). Bars inherit currentColor; stagger each
+   one's animation-delay inline. */
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply text-lg font-semibold text-ink-strong;
+  }
+  .section-title {
+    @apply text-[11px] font-semibold text-accent-ink/70 uppercase tracking-wider;
+  }
+  .label {
+    @apply text-xs text-faint;
+  }
+  .text-body {
+    @apply text-sm text-ink leading-relaxed;
+  }
+  .text-muted {
+    @apply text-sm text-muted;
+  }
+  .text-faint {
+    @apply text-xs text-faint;
+  }
+  .card {
+    @apply bg-surface border border-edge rounded-xl;
+  }
+  .inset {
+    @apply bg-surface-2 border border-edge-2 rounded-lg;
+  }
+  .btn-primary {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 bg-accent text-accent-fg hover:bg-accent-hover;
+  }
+  .btn-outline {
+    @apply text-sm px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 border border-edge-strong text-ink hover:bg-surface-3;
+  }
+  .btn-ghost {
+    @apply text-xs px-3 py-1.5 rounded-md border border-edge text-muted hover:text-ink hover:border-edge-strong transition-colors flex items-center justify-center gap-2;
+  }
+  .textarea {
+    @apply w-full bg-surface-2 border border-edge-2 text-sm text-ink px-3 py-2 rounded-lg placeholder-faint focus:outline-none focus:border-accent/60 resize-none;
+  }
+  .chip {
+    @apply text-xs px-2.5 py-1 rounded-full border border-edge-strong text-ink hover:bg-accent/20 hover:border-accent/40 hover:text-accent-ink transition-colors cursor-pointer;
+  }
+  .tile {
+    @apply relative rounded-lg overflow-hidden border border-edge aspect-square bg-surface-2;
+  }
+  .pulse-dot {
+    animation: pdot 1.6s ease-in-out infinite;
+  }
+  .activity-bar {
+    width: 2px;
+    height: 12px;
+    border-radius: 9999px;
+    background: currentColor;
+    transform-origin: center;
+    animation: wave 0.9s ease-in-out infinite;
+  }
+  /* canvas backdrop — dotted, reads as a movable surface */
+  .workspace {
+    background-color: var(--color-surface-2);
+    background-image: radial-gradient(
+      color-mix(in oklab, var(--color-muted) 14%, transparent) 1px,
+      transparent 1px
+    );
+    background-size: 18px 18px;
+  }
+  /* transparent-backdrop checker — alpha cutouts read as "no background" when
+     previewed against it (the swatch + the gallery cells). */
+  .checker {
+    background-color: var(--color-surface-2);
+    background-image: linear-gradient(45deg, var(--color-surface-3) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--color-surface-3) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--color-surface-3) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--color-surface-3) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+}
