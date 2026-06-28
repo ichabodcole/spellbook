@@ -1,5 +1,8 @@
 # Grapevine — Per-Message Disposition / Triage Implementation Plan
 
+> **Status:** Archived (Implemented) — mark/reopen/triage + `--status` filter
+> shipped; released in plugin v1.13.0. Archived 2026-06-27.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use

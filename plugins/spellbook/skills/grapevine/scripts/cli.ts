@@ -474,7 +474,11 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
     const badged = loadChannelMessagesBadged(name);
     const filtered = badged.filter((m) => {
       const dispArg = m.disposition !== undefined ? { disposition: m.disposition } : undefined;
-      return opts.status === "open" ? isOpen(dispArg) : m.disposition === opts.status;
+      // `--status open` mirrors triage's open bucket: signal-only, so non-message
+      // FYIs (topic/announcement) are excluded from the actionable queue.
+      return opts.status === "open"
+        ? m.kind === "message" && isOpen(dispArg)
+        : m.disposition === opts.status;
     });
     const lastId = filtered.length ? filtered[filtered.length - 1].id : 0;
     printJson({ ok: true, messages: filtered, cursor: lastId });
@@ -848,23 +852,55 @@ function loadChannelMessagesBadged(
   return messages;
 }
 
-async function cmdTriage(name: string) {
-  if (!name) die("usage: grapevine triage <channel>");
+type BadgedMessage = Message & { disposition?: string; reopens?: number };
+
+// Dashboard render of a triage scan: the open queue on top, then each
+// disposition group, one scannable line per message. Mirrors `read --text`
+// prose mode so a human (or an agent) reads it without parsing JSON.
+function renderTriageHuman(
+  name: string,
+  open: BadgedMessage[],
+  by_status: Record<string, BadgedMessage[]>,
+): string {
+  const line = (m: BadgedMessage) => {
+    const ts = new Date(m.ts).toISOString().slice(0, 16).replace("T", " ");
+    const reopen = m.reopens && m.reopens > 0 ? ` ↻${m.reopens}` : "";
+    const head = m.text.split("\n")[0];
+    const preview = head.length > 100 ? `${head.slice(0, 99)}…` : head;
+    return `  [${m.id}${reopen}] ${m.from} · ${ts} · ${preview}`;
+  };
+  const sections = [`${name} · triage\n`, `OPEN (${open.length})`];
+  sections.push(open.length ? open.map(line).join("\n") : "  —");
+  for (const [status, items] of Object.entries(by_status)) {
+    sections.push(`\n${status.toUpperCase()} (${items.length})`, items.map(line).join("\n"));
+  }
+  return `${sections.join("\n")}\n`;
+}
+
+async function cmdTriage(name: string, opts: { human?: boolean } = {}) {
+  if (!name) die("usage: grapevine triage <channel> [--human]");
   const port = await ensureDaemon();
   await api(port, "POST", "/channels", { name });
   const badged = loadChannelMessagesBadged(name);
-  const open: typeof badged = [];
-  const by_status: Record<string, typeof badged> = {};
+  const open: BadgedMessage[] = [];
+  const by_status: Record<string, BadgedMessage[]> = {};
   for (const m of badged) {
     // isOpen expects a disposition entry object (or undefined for no entry).
     const dispArg = m.disposition !== undefined ? { disposition: m.disposition } : undefined;
     if (isOpen(dispArg)) {
-      open.push(m);
+      // The open queue is signal-only: skip non-actionable frames (topic/
+      // announcement FYIs can never carry a disposition, so they'd otherwise
+      // pad "what's left?" forever).
+      if (m.kind === "message") open.push(m);
     } else {
       const key = m.disposition ?? "unknown";
       if (!by_status[key]) by_status[key] = [];
       by_status[key].push(m);
     }
+  }
+  if (opts.human) {
+    process.stdout.write(renderTriageHuman(name, open, by_status));
+    return;
   }
   printJson({ ok: true, open, by_status });
 }
@@ -1575,7 +1611,7 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     }
     case "triage":
-      await cmdTriage(positional[0]);
+      await cmdTriage(positional[0], { human: !!flags.human });
       return 0;
     case "read": {
       const id = positional[1] ? parseInt(positional[1], 10) : NaN;

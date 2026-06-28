@@ -1,5 +1,9 @@
 # Grapevine — Operator Roll-Safety Implementation Plan
 
+> **Status:** Archived (Implemented) — ownership guard + `reap`/`doctor`/`roll`
+>
+> - `stop --hold` shipped and merged; 8 tests added. Archived 2026-06-27.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use

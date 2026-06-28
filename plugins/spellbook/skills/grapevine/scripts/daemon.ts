@@ -314,26 +314,31 @@ function visibleSubs(ch: Channel): Subscriber[] {
   return Array.from(ch.subscribers.values()).filter((s) => !s.lurk);
 }
 
+// The roster is a set of distinct aliases — a seat with multiple live
+// connections (e.g. two tails under one alias) appears once. The connection
+// *counts* (`connections`/`named`) stay per-connection; only the name list
+// dedupes.
 function subscriberAliases(name: string): string[] {
   const ch = channels.get(name);
   if (!ch) return [];
-  const out: string[] = [];
+  const seen = new Set<string>();
   for (const sub of visibleSubs(ch)) {
-    if (sub.alias) out.push(sub.alias);
+    if (sub.alias) seen.add(sub.alias);
   }
-  return out.sort();
+  return Array.from(seen).sort();
 }
 
 // Named subscribers flagged as human (V1.7) — a subset of subscriberAliases,
 // so consumers can render `cole (human)` and agents can tell who is the human.
+// Deduped by alias for the same reason.
 function subscriberHumans(name: string): string[] {
   const ch = channels.get(name);
   if (!ch) return [];
-  const out: string[] = [];
+  const seen = new Set<string>();
   for (const sub of visibleSubs(ch)) {
-    if (sub.alias && sub.human) out.push(sub.alias);
+    if (sub.alias && sub.human) seen.add(sub.alias);
   }
-  return out.sort();
+  return Array.from(seen).sort();
 }
 
 function readBacklog(name: string, since: number): Message[] {

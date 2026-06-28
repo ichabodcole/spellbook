@@ -1,6 +1,8 @@
 # Spellbook Rebrand — unify the spells under one cute-occult aesthetic
 
-**Status:** Draft **Created:** 2026-05-29 **Author:** Cole Reed (with familiar)
+**Status:** In Progress (Naming Complete — tuskboard → bounty shipped; Visual
+Cohesion Deferred) **Created:** 2026-05-29 **Updated:** 2026-06-27 **Author:**
+Cole Reed (with familiar)
 
 ---
 

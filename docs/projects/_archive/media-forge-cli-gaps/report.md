@@ -1,9 +1,10 @@
 # media-forge CLI — capability gaps & feature asks
 
-**From:** Spellbook (glamour spell + model-evaluation work) **Status:** feedback
-/ discussion starter — clear asks + high-level design, not a final spec
-**Date:** 2026-06-02 **Audience:** the media-forge CLI maintainer/agent — to
-assess fit and co-design
+**From:** Spellbook (glamour spell + model-evaluation work) **Status:** Archived
+(Partially Implemented — see "Shipped" section; #3 param-passthrough and #4
+vector/SVG not pursued). Feedback loop closed; archived 2026-06-27. **Date:**
+2026-06-02 **Audience:** the media-forge CLI maintainer/agent — to assess fit
+and co-design
 
 ## Context
 

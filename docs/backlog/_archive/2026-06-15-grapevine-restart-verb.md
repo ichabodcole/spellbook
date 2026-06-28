@@ -1,6 +1,9 @@
 # Grapevine: add a `restart` (and `start`) verb for a clean daemon lifecycle
 
-**Added:** 2026-06-15
+**Added:** 2026-06-15 **Status:** Shipped (archived 2026-06-28) — `start` (alias
+`up`), `restart` (`--force`/`--yes`, live-fleet guard), and `roll`
+(stop-hold-respawn-verify) all landed via the grapevine-operator-roll-safety
+project. Lifecycle is now symmetric.
 
 Grapevine has `stop` but no `start` / `restart`, so the daemon lifecycle is
 asymmetric. The daemon auto-spawns on the first daemon-needing verb (`send` /

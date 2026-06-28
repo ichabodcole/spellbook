@@ -1,5 +1,8 @@
 # Grapevine `announce` Implementation Plan
 
+> **Status:** Archived (Implemented) — `announce` verb shipped and merged
+> (cli.ts/daemon.ts + watch UI; 3 tests pass). Archived 2026-06-27.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > superpowers:subagent-driven-development (recommended) or
 > superpowers:executing-plans to implement this plan task-by-task. Steps use

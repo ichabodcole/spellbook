@@ -1,6 +1,8 @@
 # Spellbook Coherence Pass — make the migrated set production-coherent
 
-**Status:** Draft **Created:** 2026-05-29 **Author:** Cole Reed (with familiar)
+**Status:** In Progress (~75% — Deliverable 3 typecheck gate blocks completion;
+bounty still needs its feedback touchpoint) **Created:** 2026-05-29 **Updated:**
+2026-06-27 **Author:** Cole Reed (with familiar)
 
 ---
 

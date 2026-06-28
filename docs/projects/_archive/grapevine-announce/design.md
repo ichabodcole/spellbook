@@ -1,8 +1,8 @@
 # Grapevine `announce` — cross-channel broadcast
 
-**Date:** 2026-06-17 **Status:** Draft (design) **Spell:** grapevine **Origin:**
-[grapevine-backlog](../grapevine-backlog/backlog.md) → promoted to V1.7 (feature
-#7), deferred there, revived here.
+**Date:** 2026-06-17 **Status:** Archived (Implemented 2026-06-17) **Spell:**
+grapevine **Origin:** [grapevine-backlog](../grapevine-backlog/backlog.md) →
+promoted to V1.7 (feature #7), deferred there, revived here.
 
 ## Overview
 

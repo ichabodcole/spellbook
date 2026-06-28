@@ -1,6 +1,9 @@
 # Glamour v2 — gallery-central style discovery
 
-**Status:** Spec — locked for phased build **Created:** 2026-06-19 **Updated:**
+**Status:** Archived (Implemented 2026-06-25) — cut over to the main glamour
+spell via commit `22f22ab`; all slices + Slice 3.5 cleanup + Slice 5 landing
+screen shipped, fresh-agent gate cleared. Live:
+`plugins/spellbook/skills/glamour/`. **Created:** 2026-06-19 **Updated:**
 2026-06-21 **Author:** Cole Reed
 
 ---
