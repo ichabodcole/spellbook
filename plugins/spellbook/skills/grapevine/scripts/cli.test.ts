@@ -1606,6 +1606,23 @@ describe("grapevine cli", () => {
     expect(t.by_status.incorporated.map((m: { id: number }) => m.id)).toEqual([1]);
   });
 
+  test("triage + --status open skip non-message frames (topic/announcement)", async () => {
+    await bunRun(["open", "disp7"]);
+    await bunRun(["send", "disp7", "--from", "a", "real item"]); // id1 (message)
+    await bunRun(["topic", "disp7", "kickoff"]); // appends a kind:"topic" frame
+    await bunRun(["announce", "--channels", "disp7", "--from", "a", "heads up"]); // kind:"announcement"
+
+    // The open queue is signal-only: only actionable kind:"message" frames.
+    const t = JSON.parse((await bunRun(["triage", "disp7"])).stdout);
+    expect(t.open.every((m: { kind: string }) => m.kind === "message")).toBe(true);
+    expect(t.open.map((m: { text: string }) => m.text)).toEqual(["real item"]);
+
+    // pull --status open mirrors triage's open bucket.
+    const open = JSON.parse((await bunRun(["pull", "disp7", "--status", "open"])).stdout).messages;
+    expect(open.every((m: { kind: string }) => m.kind === "message")).toBe(true);
+    expect(open.map((m: { text: string }) => m.text)).toEqual(["real item"]);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;

@@ -474,7 +474,11 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
     const badged = loadChannelMessagesBadged(name);
     const filtered = badged.filter((m) => {
       const dispArg = m.disposition !== undefined ? { disposition: m.disposition } : undefined;
-      return opts.status === "open" ? isOpen(dispArg) : m.disposition === opts.status;
+      // `--status open` mirrors triage's open bucket: signal-only, so non-message
+      // FYIs (topic/announcement) are excluded from the actionable queue.
+      return opts.status === "open"
+        ? m.kind === "message" && isOpen(dispArg)
+        : m.disposition === opts.status;
     });
     const lastId = filtered.length ? filtered[filtered.length - 1].id : 0;
     printJson({ ok: true, messages: filtered, cursor: lastId });
@@ -859,7 +863,10 @@ async function cmdTriage(name: string) {
     // isOpen expects a disposition entry object (or undefined for no entry).
     const dispArg = m.disposition !== undefined ? { disposition: m.disposition } : undefined;
     if (isOpen(dispArg)) {
-      open.push(m);
+      // The open queue is signal-only: skip non-actionable frames (topic/
+      // announcement FYIs can never carry a disposition, so they'd otherwise
+      // pad "what's left?" forever).
+      if (m.kind === "message") open.push(m);
     } else {
       const key = m.disposition ?? "unknown";
       if (!by_status[key]) by_status[key] = [];
