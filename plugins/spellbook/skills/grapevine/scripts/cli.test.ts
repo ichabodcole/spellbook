@@ -1623,6 +1623,35 @@ describe("grapevine cli", () => {
     expect(open.map((m: { text: string }) => m.text)).toEqual(["real item"]);
   });
 
+  test("triage --human renders a grouped readable dashboard (not JSON)", async () => {
+    await bunRun(["open", "disp8"]);
+    await bunRun(["send", "disp8", "--from", "a", "still open thing"]); // id1
+    await bunRun(["send", "disp8", "--from", "a", "done thing"]); // id2
+    await bunRun(["mark", "disp8", "2", "incorporated", "--as", "a"]);
+    const out = (await bunRun(["triage", "disp8", "--human"])).stdout;
+    expect(out.trimStart().startsWith("{")).toBe(false); // not a JSON envelope
+    expect(out).toContain("OPEN (1)");
+    expect(out).toContain("still open thing");
+    expect(out).toContain("INCORPORATED (1)");
+    expect(out).toContain("done thing");
+    // the open item appears above its disposition group
+    expect(out.indexOf("OPEN (1)")).toBeLessThan(out.indexOf("INCORPORATED (1)"));
+  });
+
+  test("presence roster dedupes a seat with multiple connections by alias", async () => {
+    await bunRun(["open", "dedup1"]);
+    const t1 = spawnTail("dedup1", ["--as", "fathom"]);
+    const t2 = spawnTail("dedup1", ["--as", "fathom"]);
+    await sleep(500); // let both subscriptions land
+    const who = JSON.parse((await bunRun(["who", "dedup1"])).stdout);
+    t1.proc.kill("SIGTERM");
+    t2.proc.kill("SIGTERM");
+    // the roster lists the alias once, even though two connections are present
+    expect(who.subscribers.filter((a: string) => a === "fathom")).toEqual(["fathom"]);
+    // connection count still reflects both live connections
+    expect(who.connections).toBeGreaterThanOrEqual(2);
+  });
+
   test("reap kills an orphan daemon but never the authoritative (V1.9)", async () => {
     await bunRun(["start"]); // authoritative for HOME
     const auth = JSON.parse((await bunRun(["doctor"])).stdout).authoritative;
