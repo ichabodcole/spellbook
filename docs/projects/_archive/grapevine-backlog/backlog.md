@@ -1,6 +1,15 @@
 # Grapevine — Feature Backlog
 
-**Status:** Living document **Last Updated:** 2026-06-22 (`grapevine-feedback`
+**Status:** Archived 2026-06-28 — retired in favor of the standard
+`docs/backlog/` flat-file system. The 8 still-open items were extracted to
+individual `docs/backlog/2026-06-28-grapevine-*.md` files (rename verb, extended
+doctor, pull self-echo, close soft-default, facilitation timer, message edit,
+presence events, standalone human CLI). Shipped items (`announce`, `doctor`
+minimal, `stop --hold`, `tail --max`, presence alias dedup, the V1.6.2 patch
+bundle) are recorded below as historical record. The "Possible future families"
+section is preserved here as not-yet-items (fragments).
+
+**Was:** Living document **Last Updated:** 2026-06-22 (`grapevine-feedback`
 channel triage — added truncation full-delivery, presence alias dedup, `pull`
 self-echo, and `close` soft-default items)
 

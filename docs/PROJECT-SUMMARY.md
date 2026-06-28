@@ -131,14 +131,19 @@ The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
   bounty); visual/mascot cohesion deferred
 - `spell-architecture-maturity` — backlog: canonicalize the grapevine-style
   (HTTP+CLI+Monitor) daemon pattern as the reference scaffold
-- `digestify-image-viewer`, `grapevine-backlog` — backlog / living triage
+- `digestify-image-viewer` — backlog
 
-**Recently archived (2026-06-27 doc-status pass):** `glamour-v2` (shipped — cut
-over to main glamour), `image-style-spell` (superseded by glamour-v2),
-`grapevine-announce`, `grapevine-channel-lifecycle`, `grapevine-disposition`,
+Grapevine feature ideas now live as individual items in `docs/backlog/`
+(`grapevine-*`) rather than a bespoke project; the `grapevine-backlog` living
+doc was archived 2026-06-28.
+
+**Recently archived:** `grapevine-backlog` (2026-06-28 — retired into
+`docs/backlog/`); `glamour-v2` (shipped — cut over to main glamour),
+`image-style-spell` (superseded by glamour-v2), `grapevine-announce`,
+`grapevine-channel-lifecycle`, `grapevine-disposition`,
 `grapevine-operator-roll-safety` (all shipped/merged), `media-forge-cli-gaps`
-(feedback loop closed). Earlier: `bounty-agent-usable`, `grapevine-v1.7`,
-`spellbook-extraction`.
+(feedback loop closed) (2026-06-27 doc-status pass). Earlier:
+`bounty-agent-usable`, `grapevine-v1.7`, `spellbook-extraction`.
 
 **Trajectory:** the spells exist and work; the near-term arc is **hardening and
 coherence toward a public release** — rebuilding/maturing individual spells
