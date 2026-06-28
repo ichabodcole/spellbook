@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.13.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.12.0...spellbook-v1.13.0) (2026-06-28)
+
+
+### Features
+
+* **magpie:** rebuild from cantrip to conjuration ([302405a](https://github.com/ichabodcole/spellbook/commit/302405a1c15d0d62e1c030a8eb323c0effa026df))
+* **magpie:** rebuild from cantrip to conjuration ([53cd11c](https://github.com/ichabodcole/spellbook/commit/53cd11c2989bd7d378de5dddebd0992eae16679e))
+
 ## [1.12.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.11.0...spellbook-v1.12.0) (2026-06-25)
 
 
