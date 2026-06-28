@@ -1,7 +1,7 @@
 # Project Summary
 
-**Last Updated:** 2026-06-18 **Project Status:** Active Development (approaching
-a pre-release coherence pass)
+**Last Updated:** 2026-06-27 **Project Status:** Active Development (hardening +
+coherence toward a public release)
 
 ## Overview
 
@@ -16,11 +16,11 @@ folder and it runs anywhere `bun` is on PATH.
 The project is two things at once. It's a **product** — six shipped spells
 spanning agent↔human and agent↔agent collaboration — and a **methodology lab**:
 an unusually developed craft system (the _grimoire_) for growing and pruning
-agent surfaces well. The guiding idea, newly crystallized, is **co-presence**: a
-spell is a board both human and agent work, each perceiving the shared object
-through its own channel (the human a UI, the agent state + events) and each
-acting through its own affordances — a structured conversation, not an
-input→service→output pipeline.
+agent surfaces well. The guiding idea is **co-presence**: a spell is a board
+both human and agent work, each perceiving the shared object through its own
+channel (the human a UI, the agent state + events) and each acting through its
+own affordances — a structured conversation, not an input→service→output
+pipeline.
 
 The conceptual canon lives in `docs/PROJECT_MANIFESTO.md` (mirrored from the
 Operator workspace, which is the source of truth); the operational canon lives
@@ -28,15 +28,17 @@ in `grimoire/house-style.md`.
 
 ## Core Technologies
 
-- **Primary Language:** TypeScript (one spell, magpie, is Python 3.11+)
+- **Primary Language:** TypeScript (two spells — magpie and imago — also use
+  Python 3.11+ for image work, e.g. `rembg`/background removal)
 - **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
-- **UI:** React 19 + Tailwind 4 for rich surfaces (glamour, imago); Alpine.js
-  over CDN for light surfaces (bounty, digestify, grapevine watch)
+- **UI:** React 19 + Tailwind 4 for rich surfaces (glamour, imago, magpie);
+  Alpine.js over CDN for light surfaces (bounty, digestify, grapevine watch)
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
 - **Build Tools:** none at the spell level (Bun runs source directly); heavy
   surfaces use a Bun bundler step inside their own setup
 - **Development Tools:** Biome (`.ts/.tsx/.json`, error-on-warnings), Prettier
   (`.md`), Husky + lint-staged pre-commit, release-please for versioning
+- **Current version:** spellbook **1.13.0**
 
 ## Project Structure
 
@@ -60,14 +62,19 @@ Each spell folder holds `SKILL.md` (the contract), `scripts/` (`cli.ts` + a
 Two kinds: a **cantrip** casts and resolves (no standing state); a
 **conjuration** runs a daemon you return to.
 
-| Spell       | Kind        | What it does                                                                 | Surface      |
-| ----------- | ----------- | ---------------------------------------------------------------------------- | ------------ |
-| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON   | Alpine-CDN   |
-| `magpie`    | cantrip     | Extracts individual assets from a composite image → PNGs (Python/OpenRouter) | none (CLI)   |
-| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface       | Alpine watch |
-| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent             | Alpine-CDN   |
-| `glamour`   | conjuration | Style studio — influences in, a re-castable style spec + images out          | React 3-pane |
-| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                  | React 3-pane |
+| Spell       | Kind        | What it does                                                                            | Surface        |
+| ----------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
+| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
+| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | Alpine watch   |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | Alpine-CDN     |
+| `glamour`   | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
+| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                             | React 3-pane   |
+| `magpie`    | conjuration | Extracts individual assets from a composite image; phased Intake→Slice→Remove→Export    | React + Alpine |
+
+> **New since last summary:** `magpie` graduated from a CLI-only **cantrip**
+> into a full **conjuration** — a multi-phase daemon (`cli.ts` + `server.ts` +
+> `backend.ts` + `discover.ts` + `remove.py`) with a React/Alpine studio and an
+> interactive agent feedback loop. Hybrid TypeScript + Python.
 
 ## Documented Systems
 
@@ -83,59 +90,75 @@ The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
 
 **Active Work Areas:**
 
-- **imago** — the heaviest track: layer system (containers, grouping,
-  multi-select, transforms), refs-as-assets (image-model unification), the
-  unified context library (passive catalog + linked sets), surface UX polish.
-- **glamour** — full React studio rebuild, shipped **V1.0** (media-forge image
-  generation, narration feed, cost tracking).
-- **grapevine** — `announce` (cross-channel broadcast) + **V1.7** (human as a
-  first-class participant; Alpine surface port).
-- **bounty** — wave-2: surface filters, card-aging cues, durability, `list`
-  verb; SKILL finalized.
-- **grimoire/docs** — co-presence captured as the shared spell shape;
-  decay-ledger refinements; archival of completed projects.
+- **magpie** — the current heaviest track: full rebuild from CLI cantrip to a
+  phased conjuration (phase spine + top-bar stepper, slices sub-phase,
+  background-removal phase with per-version model-suffixed files,
+  conversational/agent-driven phase advancement).
+- **grapevine** — substantial hardening: per-message **disposition/triage**
+  (mark/reopen/status filters), **channel lifecycle**
+  (`open`/`reset`/`--fresh`), daemon **roll-safety** (`roll`/`doctor`/`reap`),
+  cross-channel `announce`.
+- **glamour-v2** — rebuilt as a grounded conversation surface (gallery-centric
+  3-pane StudioShell, narration channels, media-forge image generation); a
+  dogfood locked the principle _implicit presence over explicit controls_.
+- **imago** — layer system (grouping, multi-select, transforms), refs-as-assets
+  (Reference→Variant unification), the unified context library.
+- **bounty** — matured to the house-daemon pattern: durability/restore,
+  ownership/scoping, `blockedBy` dependencies, surface filters and aging cues.
 
 **Recent Sessions:**
 
-- 2026-06-18 — imago ward + co-presence manifesto evolution (this session)
+- 2026-06-23 — glamour-v2 Slices 1–3 dogfood: implicit presence over explicit
+  controls
 - 2026-06-17 — imago unified context library (styles + prompts → passive
   library)
-- 2026-06-16 — imago refs-as-assets Phase 1; layer system Phases 0–3
+- 2026-06-16 — imago refs-as-assets Phase 1; layer-system Phase 3
 
-**Notable:** frequent release-please cuts took the plugin from v1.0 →
-**v1.7.0**.
+**Notable:** **13 release-please cuts in 30 days** took the plugin from v1.0 →
+**v1.13.0**.
 
 ## Current Direction
 
 **Active Projects** (`docs/projects/`):
 
-- `imago` — in progress (most active spell)
-- `image-style-spell` (glamour) — in progress / recently shipped V1.0
-- `spellbook-coherence` — planned: align migrated spells to conventions before
-  release
-- `spellbook-rebrand` — planned: unify spells under a cute-occult aesthetic +
-  renames
-- `grapevine-announce` — shipped (merged); `grapevine-backlog` — living triage
-- `media-forge-cli-gaps` — shipped analysis report
-- `digestify-image-viewer`, `spell-architecture-maturity` — backlog
+- `magpie-rebuild` — in progress (heaviest current track): CLI → phased
+  daemon+React studio
+- `imago` — in progress (mature, ongoing canvas/layer work)
+- `spellbook-coherence` — in progress (~75%): align migrated spells to
+  production standards (remaining: `tsc --noEmit` gate + bounty feedback
+  touchpoint)
+- `spellbook-rebrand` — in progress (~50%): naming front closed (tuskboard →
+  bounty); visual/mascot cohesion deferred
+- `spell-architecture-maturity` — backlog: canonicalize the grapevine-style
+  (HTTP+CLI+Monitor) daemon pattern as the reference scaffold
+- `digestify-image-viewer`, `grapevine-backlog` — backlog / living triage
+
+**Recently archived (2026-06-27 doc-status pass):** `glamour-v2` (shipped — cut
+over to main glamour), `image-style-spell` (superseded by glamour-v2),
+`grapevine-announce`, `grapevine-channel-lifecycle`, `grapevine-disposition`,
+`grapevine-operator-roll-safety` (all shipped/merged), `media-forge-cli-gaps`
+(feedback loop closed). Earlier: `bounty-agent-usable`, `grapevine-v1.7`,
+`spellbook-extraction`.
 
 **Trajectory:** the spells exist and work; the near-term arc is **hardening and
-coherence toward a public release** — consistent conventions, a unified
-aesthetic/naming pass, and filling the per-spell gaps surfaced by use.
+coherence toward a public release** — rebuilding/maturing individual spells
+(magpie, glamour, grapevine, bounty), consistent conventions, and a unified
+aesthetic/naming pass.
 
 ## Development Patterns & Practices
 
-- **The grimoire** is the heart of the craft: `house-style.md` (~13 rules),
+- **The grimoire** is the heart of the craft: `house-style.md`,
   `decay-ledger.md` (rules decay unless reinforced), `trigger-registry.md`
-  (reserved names), `fresh-agent/` (6 cold-agent usability reports),
-  `scenarios/` (11 captured judgments). Reinforcement-driven decay keeps the
-  rule set from accreting.
+  (reserved names), `fresh-agent/` (cold-agent usability reports), `scenarios/`
+  (captured judgments). Reinforcement-driven decay keeps the rule set from
+  accreting.
 - **Authoring rituals:** `inscribe` grows a spell (design → prototype →
   coalescence/naming → harden); `ward` is the pre-merge consistency checklist
   (catches drift across the synced listings + version).
 - **The daemon + thin CLI pattern** for conjurations: canonical state in a
-  daemon, a stateless `cli.ts` (command in / `state` read-back / events out),
-  human surface on its own WebSocket channel.
+  daemon, a stateless `cli.ts` (command in / `state` read-back / events out via
+  `Monitor`), human surface on its own channel. Emerging as the canonical
+  conjuration scaffold.
 - **Versioning:** conventional commits drive release-please; `fix(...)` → patch,
   `feat(...)` → minor. Don't hand-edit versions.
 
@@ -157,8 +180,11 @@ aesthetic/naming pass, and filling the per-spell gaps surfaced by use.
 - **Co-presence is the defining shape** (manifesto §2): both parties see and act
   on the shared work through their own channel. The anti-pattern to resist is
   the traditional app's input→service→output pipeline.
-- **Two deliberate surface tiers:** React studios (glamour, imago) for rich
-  canvases; Alpine-CDN (bounty, digestify, grapevine) for boards/reviews.
+- **Cantrip↔conjuration is a live spectrum, not a fixed label** — magpie just
+  crossed it, gaining a daemon and a surface as its job grew multi-phase.
+- **Two deliberate surface tiers:** React studios (glamour, imago, magpie) for
+  rich canvases; Alpine-CDN (bounty, digestify, grapevine watch) for
+  boards/reviews.
 - **The grimoire is the real moat** — a self-pruning craft system most projects
   lack; rules survive only by reinforcement.
 - **The manifesto is canonical in Operator**, mirrored here; edit it there and

@@ -1,7 +1,8 @@
 # Glamour rebuild — design spec
 
-**Date:** 2026-06-10 · **Status:** approved design, pre-plan · **Spell:**
-glamour (conjuration, mid-`inscribe` — no SKILL.md yet)
+**Date:** 2026-06-10 · **Status:** Archived (Superseded by glamour-v2, which was
+built and shipped as the new glamour) · **Spell:** glamour (conjuration,
+mid-`inscribe` — no SKILL.md yet)
 
 Rebuild of glamour's surface and agent⇄user protocol, driven by the live dogfood
 run on the Hollowbrook world. Findings + full punch-list:
