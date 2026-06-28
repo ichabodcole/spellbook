@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>magpie — background removal (layout sketch)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style type="text/tailwindcss">
+      @layer base {
+        :root {
+          --bg: #141417;
+          --surface: #1c1c21;
+          --surface-2: #232329;
+          --surface-3: #2b2b33;
+          --edge: #34343d;
+          --edge-strong: #45454f;
+          --ink: #e7e7ea;
+          --ink-strong: #fafafa;
+          --faint: #8a8a93;
+          --accent: #5b5bf0;
+          --accent-ink: #9b9bf5;
+          --positive: #3fb27f;
+          --attention: #d4a23a;
+          --negative: #d4564f;
+          --mark: #c9962b;
+          --pictorial: #5b5bf0;
+          --meta: #6f6c66;
+        }
+        body {
+          background: var(--bg);
+          color: var(--ink);
+          font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        }
+      }
+      @layer components {
+        .card {
+          @apply rounded-xl border;
+          background: var(--surface);
+          border-color: var(--edge);
+        }
+        .inset {
+          @apply rounded-lg border;
+          background: var(--surface-2);
+          border-color: var(--edge);
+        }
+        .section-title {
+          @apply text-[11px] font-semibold uppercase tracking-wider;
+          color: color-mix(in srgb, var(--accent-ink) 70%, transparent);
+        }
+        .page-title {
+          @apply text-base font-semibold;
+          color: var(--ink-strong);
+        }
+        .faint {
+          color: var(--faint);
+        }
+        .btn-primary {
+          @apply text-xs px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors;
+          background: var(--accent);
+          color: #fff;
+        }
+        .btn-primary:hover {
+          filter: brightness(1.08);
+        }
+        .btn-outline {
+          @apply text-xs px-3 py-1.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors border;
+          border-color: var(--edge-strong);
+          color: var(--ink);
+        }
+        .btn-outline:hover {
+          background: var(--surface-3);
+        }
+        .btn-ghost {
+          @apply text-xs px-2 py-1 rounded-md flex items-center justify-center gap-1.5 transition-colors border;
+          border-color: var(--edge);
+          color: var(--faint);
+        }
+        .btn-ghost:hover {
+          color: var(--ink);
+          border-color: var(--edge-strong);
+        }
+        .swatch {
+          @apply w-6 h-6 rounded-md border cursor-pointer transition-transform;
+          border-color: var(--edge-strong);
+        }
+        .swatch:hover {
+          transform: scale(1.08);
+        }
+        .swatch-on {
+          outline: 2px solid var(--accent);
+          outline-offset: 1px;
+        }
+        /* checker = transparent backdrop */
+        .checker {
+          background-image: linear-gradient(45deg, #2a2a30 25%, transparent 25%),
+            linear-gradient(-45deg, #2a2a30 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #2a2a30 75%),
+            linear-gradient(-45deg, transparent 75%, #2a2a30 75%);
+          background-size: 14px 14px;
+          background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+          background-color: #1f1f24;
+        }
+        .band-mark {
+          background: var(--mark);
+        }
+        .band-pictorial {
+          background: var(--pictorial);
+        }
+        .band-meta {
+          background: var(--meta);
+        }
+      }
+    </style>
+  </head>
+  <body x-data="sketch()" class="min-h-screen">
+    <!-- ── state switcher (amber bar) ─────────────────────────────────── -->
+    <div class="sticky top-0 z-30 bg-amber-950/80 backdrop-blur border-b border-amber-800/50">
+      <div class="px-4 pt-2 pb-0 flex items-center gap-1">
+        <span class="text-[10px] uppercase tracking-wider text-amber-500/80 mr-2 font-semibold"
+          >layout</span
+        >
+        <template x-for="g in groups" :key="g.id">
+          <button
+            @click="selectGroup(g.id)"
+            :class="group === g.id ? 'bg-amber-700/60 text-amber-100 border-amber-600/60' : 'text-amber-400/70 border-transparent hover:text-amber-200 hover:bg-amber-900/40'"
+            class="text-xs px-3 py-1.5 rounded-t border border-b-0 font-medium transition-colors"
+            x-text="g.label"
+          ></button>
+        </template>
+      </div>
+      <div class="px-4 py-1.5 flex items-center gap-1.5 bg-amber-900/30">
+        <template x-for="s in activeGroup.states" :key="s.id">
+          <button
+            @click="state = s.id"
+            :class="state === s.id ? 'bg-amber-600 text-white border-amber-600' : 'text-amber-200/80 border-amber-700/50 hover:bg-amber-800/40'"
+            class="text-[11px] px-2.5 py-1 rounded border font-medium transition-colors"
+            x-text="s.label"
+          ></button>
+        </template>
+        <span class="ml-auto text-[11px] text-amber-300/70 italic" x-text="activeGroup.note"></span>
+      </div>
+    </div>
+
+    <!-- ── app chrome ─────────────────────────────────────────────────── -->
+    <header
+      class="flex items-center gap-3 px-4 py-2.5 border-b"
+      style="border-color: var(--edge)"
+    >
+      <span class="page-title">🐦 magpie slices</span>
+      <span class="faint text-sm">— background removal</span>
+      <div class="ml-auto flex items-center gap-2 text-[11px] faint">
+        <span class="w-1.5 h-1.5 rounded-full" style="background: var(--positive)"></span>
+        connected
+        <span class="opacity-30">·</span>
+        <i data-lucide="eye" class="w-3 h-3"></i> magpie watching
+      </div>
+    </header>
+
+    <main class="p-3">
+      <!-- ════════════════ GROUP A — GALLERY ════════════════ -->
+      <template x-if="group === 'gallery'">
+        <div class="card p-3">
+          <!-- gallery toolbar -->
+          <div class="flex items-center gap-3 mb-3 flex-wrap">
+            <span class="section-title">Cutouts</span>
+            <span class="text-[11px] faint" x-text="`${removedCount}/${els.length} removed`"></span>
+            <div class="flex items-center gap-1.5 ml-2">
+              <span class="text-[11px] faint mr-1">backdrop</span>
+              <template x-for="b in backdrops" :key="b.id">
+                <div
+                  @click="backdrop = b.id"
+                  :class="[b.cls, backdrop === b.id ? 'swatch-on' : '']"
+                  class="swatch"
+                  :title="b.label"
+                ></div>
+              </template>
+            </div>
+            <div class="ml-auto flex items-center gap-2">
+              <button class="btn-outline"><i data-lucide="scissors" class="w-3.5 h-3.5 pointer-events-none"></i> Re-remove flagged</button>
+              <button class="btn-primary"><i data-lucide="layers" class="w-3.5 h-3.5 pointer-events-none"></i> Compare models</button>
+            </div>
+          </div>
+
+          <!-- gallery grid -->
+          <div class="grid grid-cols-3 gap-3">
+            <template x-for="el in els" :key="el.name">
+              <div class="inset overflow-hidden flex flex-col">
+                <!-- preview on the chosen backdrop (or 'kept whole' for no-alpha) -->
+                <div
+                  class="relative h-40 flex items-center justify-center"
+                  :class="el.alpha ? backdropCls : ''"
+                  :style="!el.alpha ? 'background: var(--surface-3)' : ''"
+                >
+                  <template x-if="el.alpha">
+                    <div x-html="el.glyph" class="scale-[1.4]"></div>
+                  </template>
+                  <template x-if="!el.alpha">
+                    <div class="text-center">
+                      <div x-html="el.glyph"></div>
+                      <div class="text-[10px] faint mt-2 flex items-center justify-center gap-1">
+                        <i data-lucide="shield" class="w-3 h-3 pointer-events-none"></i> kept whole (no alpha)
+                      </div>
+                    </div>
+                  </template>
+                  <span
+                    x-show="el.alpha"
+                    class="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded"
+                    style="background: rgba(0,0,0,.55)"
+                    :style="`color: ${backendColor(el.backend)}`"
+                    x-text="el.backend"
+                  ></span>
+                </div>
+                <!-- identity + actions -->
+                <div class="px-2.5 py-2 flex items-center gap-2 border-t" style="border-color: var(--edge)">
+                  <span class="text-[10px] font-bold px-1 rounded-sm" :class="'band-' + el.band" style="color: var(--bg)">●</span>
+                  <span class="text-xs truncate" x-text="el.name"></span>
+                  <div class="ml-auto flex items-center gap-1" x-show="el.alpha">
+                    <button class="btn-ghost" title="Compare models"><i data-lucide="layers" class="w-3 h-3 pointer-events-none"></i></button>
+                    <button class="btn-ghost" title="Re-remove"><i data-lucide="refresh-cw" class="w-3 h-3 pointer-events-none"></i></button>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- compare card overlay (state) -->
+          <template x-if="state === 'a-compare'">
+            <div class="mt-3 inset p-3">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="section-title">Compare · sticker_star_circle</span>
+                <span class="text-[11px] faint">pick the best removal</span>
+                <button class="btn-ghost ml-auto"><i data-lucide="x" class="w-3 h-3 pointer-events-none"></i> close</button>
+              </div>
+              <div class="grid grid-cols-3 gap-2">
+                <template x-for="c in candidates" :key="c.model">
+                  <div
+                    @click="picked = c.model"
+                    class="rounded-lg border p-2 cursor-pointer transition-colors"
+                    :style="picked === c.model ? 'border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent)' : 'border-color: var(--edge)'"
+                  >
+                    <div class="h-28 rounded flex items-center justify-center" :class="backdropCls">
+                      <div class="scale-[1.3]">★</div>
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-2">
+                      <span class="w-3 h-3 rounded-full flex items-center justify-center" :style="picked === c.model ? 'background: var(--accent)' : 'border:1px solid var(--edge-strong)'">
+                        <i x-show="picked === c.model" data-lucide="check" class="w-2 h-2 text-white pointer-events-none"></i>
+                      </span>
+                      <span class="text-xs" :style="`color:${backendColor(c.model)}`" x-text="c.model"></span>
+                      <span class="text-[10px] faint ml-auto" x-text="c.note"></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <div class="flex items-center gap-2 mt-3">
+                <span class="text-[11px] faint" x-text="`chosen: ${picked}`"></span>
+                <button class="btn-primary ml-auto"><i data-lucide="check" class="w-3.5 h-3.5 pointer-events-none"></i> Use this cutout</button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </template>
+
+      <!-- ════════════════ GROUP C — HYBRID + FOCUS COMPARE ════════════════ -->
+      <template x-if="group === 'hybrid'">
+        <div class="grid grid-cols-[1fr_320px] gap-3">
+          <!-- left: board canvas (kept, like slices phase) -->
+          <div class="card p-3 flex flex-col">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="section-title">Board</span>
+              <span class="text-[11px] faint ml-auto">backdrop</span>
+              <template x-for="b in backdrops" :key="b.id">
+                <div
+                  @click="backdrop = b.id"
+                  :class="[b.cls, backdrop === b.id ? 'swatch-on' : '']"
+                  class="swatch !w-5 !h-5"
+                  :title="b.label"
+                ></div>
+              </template>
+            </div>
+            <div
+              class="flex-1 rounded-lg flex items-center justify-center relative min-h-[360px]"
+              style="background: var(--surface-2); border: 1px solid var(--edge)"
+            >
+              <span class="faint text-xs absolute top-2 left-2">composite (boxes) — jump back to re-slice</span>
+              <div class="grid grid-cols-3 gap-6 opacity-90">
+                <div class="text-2xl font-black tracking-tight">BOUNTY</div>
+                <div class="text-3xl">★</div>
+                <div class="text-3xl">🧭</div>
+                <div class="text-xs italic faint self-center">claim it…</div>
+                <div class="flex gap-1 self-center">
+                  <span class="w-4 h-4 rounded" style="background:#1b1b1f"></span>
+                  <span class="w-4 h-4 rounded" style="background:#5b5bf0"></span>
+                  <span class="w-4 h-4 rounded" style="background:#3fb27f"></span>
+                  <span class="w-4 h-4 rounded" style="background:#c9962b"></span>
+                </div>
+                <div class="text-2xl self-center">⭐</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- right: cutout rail (overview) -->
+          <aside class="card flex flex-col">
+            <div class="flex items-center gap-2 px-3 py-2.5 border-b" style="border-color: var(--edge)">
+              <span class="section-title">Cutouts</span>
+              <span class="text-[11px] faint ml-auto" x-text="`${removedCount}/${els.length} removed`"></span>
+            </div>
+            <ul class="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
+              <template x-for="el in els" :key="el.name">
+                <li
+                  @click="el.alpha && (state = 'c-focus', focusEl = el)"
+                  class="rounded-md px-2 py-1.5 flex items-center gap-2 transition-colors"
+                  :class="el.alpha ? 'cursor-pointer hover:bg-[var(--surface-3)]' : 'opacity-80'"
+                >
+                  <div class="w-9 h-9 rounded flex items-center justify-center shrink-0" :class="el.alpha ? backdropCls : 'inset'">
+                    <div class="text-sm" x-html="el.glyph"></div>
+                  </div>
+                  <div class="min-w-0">
+                    <div class="text-xs truncate" x-text="el.name"></div>
+                    <div class="text-[10px] flex items-center gap-1">
+                      <template x-if="el.alpha">
+                        <span :style="`color:${backendColor(el.backend)}`" x-text="el.backend"></span>
+                      </template>
+                      <template x-if="!el.alpha">
+                        <span class="faint flex items-center gap-1"><i data-lucide="shield" class="w-2.5 h-2.5 pointer-events-none"></i> kept whole</span>
+                      </template>
+                    </div>
+                  </div>
+                  <i x-show="el.alpha" data-lucide="layers" class="w-3.5 h-3.5 ml-auto faint pointer-events-none" title="compare"></i>
+                </li>
+              </template>
+            </ul>
+            <div class="p-2 border-t" style="border-color: var(--edge)">
+              <button class="btn-primary w-full"><i data-lucide="scissors" class="w-3.5 h-3.5 pointer-events-none"></i> Remove backgrounds</button>
+            </div>
+          </aside>
+        </div>
+      </template>
+    </main>
+
+    <!-- ── FOCUS / COMPARE lightbox (group C) ─────────────────────────── -->
+    <template x-if="group === 'hybrid' && (state === 'c-focus' || state === 'c-processing')">
+      <div class="fixed inset-0 z-40 flex flex-col items-center justify-center p-8">
+        <div class="absolute inset-0" style="background: rgba(10,10,12,.85); backdrop-filter: blur(3px)" @click="state='c-rail'"></div>
+        <button class="absolute top-4 right-4 btn-ghost z-10" @click="state='c-rail'"><i data-lucide="x" class="w-4 h-4 pointer-events-none"></i></button>
+
+        <div class="relative z-10 w-full max-w-4xl">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-[10px] font-bold px-1 rounded-sm band-pictorial" style="color: var(--bg)">●</span>
+            <span class="text-sm" style="color: var(--ink-strong)" x-text="focusEl.name"></span>
+            <span class="text-[11px] faint" x-text="`· ${focusEl.kind || 'sticker'} · 2 / 6`"></span>
+            <!-- backdrop swatches travel with the focus view -->
+            <div class="ml-auto flex items-center gap-1.5">
+              <span class="text-[11px] faint mr-1">backdrop</span>
+              <template x-for="b in backdrops" :key="b.id">
+                <div @click="backdrop = b.id" :class="[b.cls, backdrop === b.id ? 'swatch-on' : '']" class="swatch !w-5 !h-5" :title="b.label"></div>
+              </template>
+            </div>
+          </div>
+
+          <!-- the model bake-off (THE second lightbox consumer → controls slot) -->
+          <div class="grid grid-cols-3 gap-3">
+            <template x-for="c in candidates" :key="c.model">
+              <div
+                @click="state==='c-focus' && (picked = c.model)"
+                class="rounded-lg border p-2.5 transition-colors"
+                :class="state==='c-focus' ? 'cursor-pointer' : ''"
+                :style="picked === c.model && state==='c-focus' ? 'border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent)' : 'border-color: var(--edge)'"
+              >
+                <div class="h-48 rounded flex items-center justify-center relative" :class="backdropCls">
+                  <template x-if="state === 'c-processing'">
+                    <div class="flex items-end gap-[3px] h-4" aria-hidden>
+                      <span class="w-0.5 rounded-full" style="background: var(--accent-ink); animation: wv .9s ease-in-out infinite; height:14px"></span>
+                      <span class="w-0.5 rounded-full" style="background: var(--accent-ink); animation: wv .9s ease-in-out .12s infinite; height:14px"></span>
+                      <span class="w-0.5 rounded-full" style="background: var(--accent-ink); animation: wv .9s ease-in-out .24s infinite; height:14px"></span>
+                      <span class="w-0.5 rounded-full" style="background: var(--accent-ink); animation: wv .9s ease-in-out .36s infinite; height:14px"></span>
+                    </div>
+                  </template>
+                  <template x-if="state === 'c-focus'">
+                    <div class="text-5xl">★</div>
+                  </template>
+                </div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0" :style="picked === c.model && state==='c-focus' ? 'background: var(--accent)' : 'border:1px solid var(--edge-strong)'">
+                    <i x-show="picked === c.model && state==='c-focus'" data-lucide="check" class="w-2.5 h-2.5 text-white pointer-events-none"></i>
+                  </span>
+                  <span class="text-xs" :style="`color:${backendColor(c.model)}`" x-text="c.model"></span>
+                  <span class="text-[10px] faint ml-auto" x-text="state==='c-processing' ? 'removing…' : c.note"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- the CONTROLS SLOT — varies by mode (here: compare actions) -->
+          <div class="flex items-center gap-2 mt-3">
+            <span class="text-[11px] faint" x-show="state==='c-focus'" x-text="`chosen: ${picked}`"></span>
+            <span class="text-[11px] faint flex items-center gap-1" x-show="state==='c-processing'">
+              <i data-lucide="loader" class="w-3 h-3 pointer-events-none"></i> running 3 backends…
+            </span>
+            <div class="ml-auto flex items-center gap-2">
+              <button class="btn-outline" @click="state='c-processing'; setTimeout(()=>state='c-focus', 1400)"><i data-lucide="refresh-cw" class="w-3.5 h-3.5 pointer-events-none"></i> Re-run</button>
+              <button class="btn-primary" :disabled="state==='c-processing'"><i data-lucide="check" class="w-3.5 h-3.5 pointer-events-none"></i> Use this cutout</button>
+            </div>
+          </div>
+          <p class="text-center text-[11px] faint mt-3 italic">
+            ← → cycle cutouts · this same lightbox = the generalized focus shell + a <b>controls slot</b> (compare here; good/redo in slices)
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <style>
+      @keyframes wv {
+        0%, 100% { transform: scaleY(0.35); }
+        50% { transform: scaleY(1); }
+      }
+    </style>
+
+    <script>
+      function sketch() {
+        return {
+          groups: [
+            { id: "gallery", label: "A · Gallery", note: "advance into a dedicated cutout gallery", states: [
+              { id: "a-removed", label: "Removed" },
+              { id: "a-compare", label: "Compare card" },
+            ] },
+            { id: "hybrid", label: "C · Hybrid + focus compare", note: "rail overview; model bake-off in the focus lightbox", states: [
+              { id: "c-rail", label: "Rail overview" },
+              { id: "c-focus", label: "Focus · compare" },
+              { id: "c-processing", label: "Focus · removing" },
+            ] },
+          ],
+          group: "hybrid",
+          state: "c-rail",
+          backdrop: "checker",
+          picked: "Bria",
+          focusEl: { name: "sticker_star_circle", kind: "sticker" },
+          backdrops: [
+            { id: "white", label: "white", cls: "bg-white" },
+            { id: "gray", label: "gray", cls: "bg-neutral-400" },
+            { id: "black", label: "black", cls: "bg-black" },
+            { id: "checker", label: "transparent", cls: "checker" },
+          ],
+          els: [
+            { name: "wordmark_bounty", glyph: '<span class="text-lg font-black tracking-tight">BOUNTY</span>', band: "mark", alpha: true, backend: "rembg", kind: "wordmark" },
+            { name: "sticker_star_circle", glyph: '<span class="text-2xl">★</span>', band: "pictorial", alpha: true, backend: "Bria", kind: "sticker" },
+            { name: "icon_compass", glyph: '<span class="text-2xl">🧭</span>', band: "pictorial", alpha: true, backend: "rembg", kind: "icon" },
+            { name: "tagline_claim", glyph: '<span class="text-xs italic faint">claim it…</span>', band: "mark", alpha: false, kind: "tagline" },
+            { name: "palette_colors", glyph: '<span class="inline-flex gap-1"><span class="w-4 h-4 rounded" style="background:#1b1b1f"></span><span class="w-4 h-4 rounded" style="background:#5b5bf0"></span><span class="w-4 h-4 rounded" style="background:#3fb27f"></span><span class="w-4 h-4 rounded" style="background:#c9962b"></span></span>', band: "meta", alpha: false, kind: "palette" },
+            { name: "icon_gold_star", glyph: '<span class="text-2xl">⭐</span>', band: "pictorial", alpha: true, backend: "Ideogram", kind: "icon" },
+          ],
+          candidates: [
+            { model: "rembg", note: "local · slight halo" },
+            { model: "Bria", note: "clean edges" },
+            { model: "Ideogram", note: "kept fine detail" },
+          ],
+          get activeGroup() {
+            return this.groups.find((g) => g.id === this.group);
+          },
+          get removedCount() {
+            return this.els.filter((e) => e.alpha).length;
+          },
+          get backdropCls() {
+            return this.backdrops.find((b) => b.id === this.backdrop).cls;
+          },
+          backendColor(m) {
+            return { rembg: "#9b9bf5", Bria: "#3fb27f", Ideogram: "#c9962b" }[m] || "#e7e7ea";
+          },
+          selectGroup(id) {
+            this.group = id;
+            this.state = this.groups.find((g) => g.id === id).states[0].id;
+          },
+        };
+      }
+      // debounced lucide refresh (skill gotcha: avoid MutationObserver loop)
+      let raf = null;
+      const refresh = () => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => window.lucide && window.lucide.createIcons());
+      };
+      new MutationObserver(refresh).observe(document.body, { childList: true, subtree: true });
+      document.addEventListener("alpine:initialized", refresh);
+      window.addEventListener("load", refresh);
+    </script>
+  </body>
+</html>

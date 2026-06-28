@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>magpie — bg removal · gallery + detail sidebar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style type="text/tailwindcss">
+      @layer base {
+        :root {
+          --bg: #141417; --surface: #1c1c21; --surface-2: #232329; --surface-3: #2b2b33;
+          --edge: #34343d; --edge-strong: #45454f; --ink: #e7e7ea; --ink-strong: #fafafa;
+          --faint: #8a8a93; --accent: #5b5bf0; --accent-ink: #9b9bf5; --positive: #3fb27f;
+          --attention: #d4a23a; --negative: #d4564f; --mark: #c9962b; --pictorial: #5b5bf0; --meta: #6f6c66;
+        }
+        body { background: var(--bg); color: var(--ink); font-family: ui-sans-serif, system-ui, sans-serif; }
+      }
+      @layer components {
+        .card { @apply rounded-xl border; background: var(--surface); border-color: var(--edge); }
+        .inset { @apply rounded-lg border; background: var(--surface-2); border-color: var(--edge); }
+        .section-title { @apply text-[11px] font-semibold uppercase tracking-wider; color: color-mix(in srgb, var(--accent-ink) 70%, transparent); }
+        .page-title { @apply text-base font-semibold; color: var(--ink-strong); }
+        .faint { color: var(--faint); }
+        .btn-primary { @apply text-xs px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors; background: var(--accent); color: #fff; }
+        .btn-primary:hover { filter: brightness(1.08); }
+        .btn-outline { @apply text-xs px-2.5 py-1.5 rounded-lg font-medium flex items-center justify-center gap-1.5 transition-colors border; border-color: var(--edge-strong); color: var(--ink); }
+        .btn-outline:hover { background: var(--surface-3); }
+        .btn-ghost { @apply text-[11px] px-2 py-1 rounded-md flex items-center justify-center gap-1.5 transition-colors border; border-color: var(--edge); color: var(--faint); }
+        .btn-ghost:hover { color: var(--ink); border-color: var(--edge-strong); }
+        .swatch { @apply w-5 h-5 rounded-md border cursor-pointer transition-transform; border-color: var(--edge-strong); }
+        .swatch:hover { transform: scale(1.1); }
+        .swatch-on { outline: 2px solid var(--accent); outline-offset: 1px; }
+        .checker {
+          background-image: linear-gradient(45deg,#2a2a30 25%,transparent 25%),linear-gradient(-45deg,#2a2a30 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#2a2a30 75%),linear-gradient(-45deg,transparent 75%,#2a2a30 75%);
+          background-size: 14px 14px; background-position: 0 0,0 7px,7px -7px,-7px 0; background-color: #1f1f24;
+        }
+        .band-mark { background: var(--mark); } .band-pictorial { background: var(--pictorial); } .band-meta { background: var(--meta); }
+      }
+      @keyframes wv { 0%,100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
+      .wbar { width: 2px; height: 14px; border-radius: 9999px; background: var(--accent-ink); animation: wv .9s ease-in-out infinite; }
+    </style>
+  </head>
+  <body x-data="sketch()" class="min-h-screen">
+    <!-- state switcher -->
+    <div class="sticky top-0 z-30 bg-amber-950/80 backdrop-blur border-b border-amber-800/50 px-4 py-1.5 flex items-center gap-1.5 flex-wrap">
+      <span class="text-[10px] uppercase tracking-wider text-amber-500/80 mr-1 font-semibold">flow</span>
+      <template x-for="s in states" :key="s.id">
+        <button @click="go(s.id)"
+          :class="state === s.id ? 'bg-amber-600 text-white border-amber-600' : 'text-amber-200/80 border-amber-700/50 hover:bg-amber-800/40'"
+          class="text-[11px] px-2.5 py-1 rounded border font-medium transition-colors" x-text="s.label"></button>
+      </template>
+      <span class="ml-auto text-[11px] text-amber-300/70 italic" x-text="stateNote"></span>
+    </div>
+
+    <!-- app chrome -->
+    <header class="flex items-center gap-3 px-4 py-2.5 border-b" style="border-color: var(--edge)">
+      <span class="page-title">🐦 magpie slices</span>
+      <span class="faint text-sm">— background removal</span>
+      <div class="ml-auto flex items-center gap-2 text-[11px] faint">
+        <!-- the human never picks a model; magpie orchestrates them in the background -->
+        <span class="flex items-center gap-1" title="magpie manages the removal models — you judge results, magpie picks which model to try">
+          <i data-lucide="cpu" class="w-3 h-3"></i> magpie picks models
+        </span>
+        <span class="opacity-30">·</span>
+        <span class="w-1.5 h-1.5 rounded-full" style="background: var(--positive)"></span> connected
+        <span class="opacity-30">·</span><i data-lucide="eye" class="w-3 h-3"></i> magpie watching
+      </div>
+    </header>
+
+    <!-- main split: gallery / expanded  +  detail sidebar -->
+    <main class="grid grid-cols-[1fr_340px] gap-3 p-3 items-start">
+      <!-- ════ LEFT: gallery grid OR expanded single item ════ -->
+      <section class="card p-3">
+        <!-- toolbar -->
+        <div class="flex items-center gap-3 mb-3 flex-wrap">
+          <template x-if="state !== 'expanded'">
+            <div class="flex items-center gap-3 flex-wrap w-full">
+              <span class="section-title">Cutouts</span>
+              <span class="text-[11px] faint" x-text="`${removedCount}/${els.length} removed`"></span>
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] faint mr-0.5">backdrop</span>
+                <template x-for="b in backdrops" :key="b.id">
+                  <div @click="backdrop=b.id" :class="[b.cls, backdrop===b.id?'swatch-on':'']" class="swatch" :title="b.label"></div>
+                </template>
+              </div>
+              <!-- batch action appears when items are flagged; model is picked from the registry -->
+              <div class="ml-auto flex items-center gap-2" x-show="flaggedCount > 0">
+                <span class="text-[11px]" style="color: var(--attention)" x-text="`${flaggedCount} flagged`"></span>
+                <button class="btn-primary">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 pointer-events-none"></i>
+                  Try a different removal on <span x-text="flaggedCount"></span>
+                </button>
+              </div>
+              <button x-show="flaggedCount === 0" class="btn-outline ml-auto"><i data-lucide="scissors" class="w-3.5 h-3.5 pointer-events-none"></i> Remove backgrounds</button>
+            </div>
+          </template>
+          <template x-if="state === 'expanded'">
+            <div class="flex items-center gap-3 w-full">
+              <button class="btn-ghost" @click="go('variants')"><i data-lucide="arrow-left" class="w-3.5 h-3.5 pointer-events-none"></i> back to gallery</button>
+              <span class="text-[10px] font-bold px-1 rounded-sm band-pictorial" style="color: var(--bg)">●</span>
+              <span class="text-sm" style="color: var(--ink-strong)" x-text="sel.name"></span>
+              <span class="text-[11px] faint" x-text="`· ${sel.kind} · ${model(sel.chosen).label}`"></span>
+              <div class="ml-auto flex items-center gap-1.5">
+                <span class="text-[11px] faint mr-0.5">backdrop</span>
+                <template x-for="b in backdrops" :key="b.id">
+                  <div @click="backdrop=b.id" :class="[b.cls, backdrop===b.id?'swatch-on':'']" class="swatch" :title="b.label"></div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- GALLERY GRID -->
+        <template x-if="state !== 'expanded'">
+          <div class="grid grid-cols-3 gap-3">
+            <template x-for="el in els" :key="el.name">
+              <div
+                @click="selName = el.name"
+                class="inset overflow-hidden flex flex-col cursor-pointer transition-all"
+                :style="selName === el.name ? 'outline: 2px solid var(--accent); outline-offset: -1px' : ''"
+              >
+                <div class="relative h-32 flex items-center justify-center" :class="el.alpha ? backdropCls : ''" :style="!el.alpha ? 'background: var(--surface-3)' : ''">
+                  <div x-html="el.glyph" class="scale-110"></div>
+                  <button x-show="el.alpha" @click.stop="el.flagged = !el.flagged"
+                    class="absolute top-1 left-1 w-5 h-5 rounded flex items-center justify-center transition-colors"
+                    :style="el.flagged ? 'background: var(--attention); color: var(--bg)' : 'background: rgba(0,0,0,.5); color: var(--faint)'"
+                    :title="el.flagged ? 'flagged — needs another model' : 'flag: try another model'">
+                    <i data-lucide="flag" class="w-3 h-3 pointer-events-none"></i>
+                  </button>
+                  <span x-show="el.alpha" class="absolute top-1 right-1 text-[10px] px-1.5 py-0.5 rounded" style="background: rgba(0,0,0,.55)" :style="`color:${model(el.chosen).color}`" x-text="model(el.chosen).label"></span>
+                  <span x-show="el.alpha && el.versions.length > 1" class="absolute bottom-1 right-1 text-[10px] px-1.5 py-0.5 rounded faint" style="background: rgba(0,0,0,.55)" x-text="`${el.versions.length} versions`"></span>
+                  <span x-show="!el.alpha" class="absolute bottom-1 left-1 text-[10px] faint flex items-center gap-1"><i data-lucide="shield" class="w-2.5 h-2.5 pointer-events-none"></i> kept whole</span>
+                </div>
+                <div class="px-2.5 py-1.5 flex items-center gap-2 border-t" style="border-color: var(--edge)">
+                  <span class="text-[10px] font-bold px-1 rounded-sm" :class="'band-'+el.band" style="color: var(--bg)">●</span>
+                  <span class="text-xs truncate" x-text="el.name"></span>
+                  <button x-show="el.alpha" @click.stop="selName=el.name; go('expanded')" class="ml-auto faint hover:text-[var(--ink)]" title="expand"><i data-lucide="maximize-2" class="w-3.5 h-3.5 pointer-events-none"></i></button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- EXPANDED single item (takes over the gallery area) -->
+        <template x-if="state === 'expanded'">
+          <div class="rounded-lg flex items-center justify-center min-h-[420px]" :class="backdropCls">
+            <div class="text-7xl" x-html="sel.glyph"></div>
+          </div>
+        </template>
+      </section>
+
+      <!-- ════ RIGHT: DETAIL SIDEBAR for the selected item ════ -->
+      <aside class="card flex flex-col">
+        <div class="flex items-center gap-2 px-3 py-2.5 border-b" style="border-color: var(--edge)">
+          <span class="section-title">Detail</span>
+          <span class="text-[11px] faint truncate ml-auto" x-text="sel.name"></span>
+        </div>
+
+        <div class="p-3 flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold px-1 rounded-sm" :class="'band-'+sel.band" style="color: var(--bg)">●</span>
+            <span class="text-sm" style="color: var(--ink-strong)" x-text="sel.name"></span>
+            <span class="text-[11px] faint" x-text="sel.kind"></span>
+            <button x-show="sel.alpha && state!=='expanded'" @click="go('expanded')" class="ml-auto btn-ghost"><i data-lucide="maximize-2" class="w-3 h-3 pointer-events-none"></i> expand</button>
+          </div>
+
+          <!-- current chosen version, big, on backdrop -->
+          <div class="rounded-lg h-40 flex items-center justify-center relative" :class="sel.alpha ? backdropCls : 'inset'">
+            <div class="text-4xl" x-html="sel.glyph"></div>
+            <span x-show="sel.alpha" class="absolute bottom-1.5 right-1.5 text-[10px] px-1.5 py-0.5 rounded" style="background: rgba(0,0,0,.55)" :style="`color:${model(sel.chosen).color}`" x-text="`active · ${model(sel.chosen).label}`"></span>
+          </div>
+
+          <template x-if="!sel.alpha">
+            <div class="inset p-3 text-[11px] faint flex items-center gap-2">
+              <i data-lucide="shield" class="w-4 h-4 pointer-events-none"></i>
+              <span><b style="color: var(--ink)">Kept whole.</b> <span x-text="sel.kind"></span>s skip background removal (flat color would be destroyed). Override below if you really want alpha.</span>
+            </div>
+          </template>
+
+          <!-- VERSIONS strip — selecting one IS choosing it (no extra Use click) -->
+          <template x-if="sel.alpha">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="section-title">Versions</span>
+                <span class="text-[11px] faint" x-text="`${sel.versions.length} · click to use`"></span>
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <template x-for="v in sel.versions" :key="v.model">
+                  <div @click="!v.processing && (sel.chosen = v.model)"
+                    class="flex items-center gap-2.5 rounded-lg border p-1.5 transition-colors"
+                    :class="v.processing ? '' : 'cursor-pointer'"
+                    :style="sel.chosen === v.model ? 'border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent)' : 'border-color: var(--edge)'">
+                    <div class="w-14 h-14 rounded flex items-center justify-center shrink-0" :class="backdropCls">
+                      <template x-if="v.processing">
+                        <div class="flex items-end gap-[3px]"><span class="wbar"></span><span class="wbar" style="animation-delay:.12s"></span><span class="wbar" style="animation-delay:.24s"></span></div>
+                      </template>
+                      <template x-if="!v.processing"><div class="text-xl" x-html="sel.glyph"></div></template>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full flex items-center justify-center shrink-0" :style="sel.chosen===v.model ? 'background: var(--accent)' : 'border:1px solid var(--edge-strong)'">
+                          <i x-show="sel.chosen===v.model" data-lucide="check" class="w-2 h-2 text-white pointer-events-none"></i>
+                        </span>
+                        <span class="text-xs" :style="`color:${model(v.model).color}`" x-text="model(v.model).label"></span>
+                        <span class="text-[9px] px-1 rounded faint" style="background: var(--surface-3)" x-text="model(v.model).kind"></span>
+                        <span x-show="sel.chosen===v.model" class="text-[9px] ml-auto" style="color: var(--accent-ink)">active</span>
+                      </div>
+                      <div class="text-[10px] faint mt-0.5 ml-4" x-text="v.processing ? 'removing…' : v.note"></div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- generation is a model-AGNOSTIC signal: the human asks for a
+                   different removal; magpie decides which model to try. The human
+                   judges the RESULT (in the strip), never picks the model. -->
+              <div class="mt-2.5">
+                <button @click="tryAnother()" :disabled="untried.length===0"
+                  class="btn-outline w-full" :style="untried.length===0 ? 'opacity:.45' : ''">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5 pointer-events-none"></i>
+                  Try a different removal
+                </button>
+                <div class="text-[10px] faint mt-1.5 flex items-center gap-1">
+                  <i data-lucide="info" class="w-3 h-3 pointer-events-none shrink-0"></i>
+                  <span x-show="untried.length>0">magpie picks a model at its discretion · the result lands in the strip above</span>
+                  <span x-show="untried.length===0">magpie has tried all its models · re-run any version from the strip</span>
+                </div>
+              </div>
+
+              <!-- flag only — selection above is the commit, so no 'Use' button -->
+              <div class="flex items-center gap-2 mt-3 pt-3 border-t" style="border-color: var(--edge)">
+                <button @click="sel.flagged=!sel.flagged" class="btn-ghost" :style="sel.flagged ? 'color: var(--attention); border-color: var(--attention)' : ''">
+                  <i data-lucide="flag" class="w-3 h-3 pointer-events-none"></i> <span x-text="sel.flagged ? 'Flagged for another model' : 'Flag this'"></span>
+                </button>
+              </div>
+            </div>
+          </template>
+        </div>
+      </aside>
+    </main>
+
+    <p class="text-center text-[11px] faint italic pb-6 px-8">
+      selecting a version = choosing it (no extra click) · "try a different removal" hands model choice to magpie — you judge results, not models · version strip = history of attempts · gallery multi-flag → batch · expand ⤢ keeps the sidebar · no modal
+    </p>
+
+    <script>
+      function sketch() {
+        return {
+          states: [
+            { id: "gallery", label: "1 · Gallery + detail" },
+            { id: "variants", label: "2 · Multiple versions" },
+            { id: "generating", label: "3 · Generating a version" },
+            { id: "flagged", label: "4 · Flag → batch retry" },
+            { id: "expanded", label: "5 · Expanded item" },
+          ],
+          state: "gallery",
+          notes: {
+            gallery: "one version → 'try a different removal' (magpie picks the model)",
+            variants: "version strip = history; click one → it's the active cutout",
+            generating: "magpie tries another model; the result lands in the strip",
+            flagged: "flag items that aren't working → batch a different removal",
+            expanded: "single item fills the canvas; sidebar stays open",
+          },
+          // ── the agent-supplied model registry (set once at startup, extensible) ──
+          // The surface renders whatever's here; adding a model needs NO app change.
+          models: [
+            { id: "rembg", label: "rembg", kind: "local", color: "#9b9bf5" },
+            { id: "bria", label: "Bria", kind: "cloud", color: "#3fb27f" },
+            { id: "ideogram", label: "Ideogram", kind: "cloud", color: "#c9962b" },
+          ],
+          backdrop: "checker",
+          selName: "sticker_star_circle",
+          backdrops: [
+            { id: "white", label: "white", cls: "bg-white" },
+            { id: "gray", label: "gray", cls: "bg-neutral-400" },
+            { id: "black", label: "black", cls: "bg-black" },
+            { id: "checker", label: "transparent", cls: "checker" },
+          ],
+          els: [
+            { name: "wordmark_bounty", glyph: '<span class="font-black tracking-tight">BOUNTY</span>', band: "mark", alpha: true, kind: "wordmark", flagged: false, chosen: "rembg", versions: [{ model: "rembg", note: "clean" }] },
+            { name: "sticker_star_circle", glyph: "★", band: "pictorial", alpha: true, kind: "sticker", flagged: false, chosen: "rembg", versions: [{ model: "rembg", note: "slight halo" }] },
+            { name: "icon_compass", glyph: "🧭", band: "pictorial", alpha: true, kind: "icon", flagged: false, chosen: "rembg", versions: [{ model: "rembg", note: "clean" }] },
+            { name: "tagline_claim", glyph: '<span class="text-xs italic faint">claim it…</span>', band: "mark", alpha: false, kind: "tagline", flagged: false, chosen: "", versions: [] },
+            { name: "palette_colors", glyph: '<span class="inline-flex gap-1"><span class="w-4 h-4 rounded" style="background:#1b1b1f"></span><span class="w-4 h-4 rounded" style="background:#5b5bf0"></span><span class="w-4 h-4 rounded" style="background:#3fb27f"></span><span class="w-4 h-4 rounded" style="background:#c9962b"></span></span>', band: "meta", alpha: false, kind: "palette", flagged: false, chosen: "", versions: [] },
+            { name: "icon_gold_star", glyph: "⭐", band: "pictorial", alpha: true, kind: "icon", flagged: false, chosen: "rembg", versions: [{ model: "rembg", note: "clean" }] },
+          ],
+          get sel() { return this.els.find((e) => e.name === this.selName); },
+          get removedCount() { return this.els.filter((e) => e.alpha).length; },
+          get flaggedCount() { return this.els.filter((e) => e.flagged).length; },
+          get backdropCls() { return this.backdrops.find((b) => b.id === this.backdrop).cls; },
+          get untried() { return this.models.filter((m) => !this.sel.versions.some((v) => v.model === m.id)); },
+          model(id) { return this.models.find((m) => m.id === id) || { id, label: id || "—", color: "#e7e7ea", kind: "" }; },
+          tryAnother() {
+            // model-agnostic: magpie picks the next unused model at its discretion
+            const next = this.untried[0];
+            if (!next) return;
+            this.sel.versions.push({ model: next.id, note: "", processing: true });
+            const v = this.sel.versions[this.sel.versions.length - 1];
+            setTimeout(() => { v.processing = false; v.note = next.kind === "cloud" ? "clean edges" : "kept detail"; this.sel.chosen = next.id; }, 1400);
+          },
+          go(id) {
+            this.state = id;
+            this.els.forEach((e) => { e.flagged = false; });
+            const sticker = this.els.find((e) => e.name === "sticker_star_circle");
+            if (id === "variants" || id === "expanded") {
+              this.selName = "sticker_star_circle";
+              sticker.versions = [
+                { model: "rembg", note: "slight halo" },
+                { model: "bria", note: "clean edges" },
+                { model: "ideogram", note: "kept fine detail" },
+              ];
+              sticker.chosen = "bria";
+            }
+            if (id === "generating") {
+              // magpie is mid-removal on a second model — the wavy entry in the strip
+              this.selName = "sticker_star_circle";
+              sticker.versions = [
+                { model: "rembg", note: "slight halo" },
+                { model: "bria", note: "", processing: true },
+              ];
+              sticker.chosen = "rembg";
+            }
+            if (id === "gallery") { sticker.versions = [{ model: "rembg", note: "slight halo" }]; sticker.chosen = "rembg"; }
+            if (id === "flagged") {
+              this.els.find((e) => e.name === "icon_compass").flagged = true;
+              this.els.find((e) => e.name === "icon_gold_star").flagged = true;
+              this.selName = "icon_compass";
+            }
+          },
+          get stateNote() { return this.notes[this.state]; },
+        };
+      }
+      let raf = null;
+      const refresh = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => window.lucide && window.lucide.createIcons()); };
+      new MutationObserver(refresh).observe(document.body, { childList: true, subtree: true });
+      document.addEventListener("alpine:initialized", refresh);
+      window.addEventListener("load", refresh);
+    </script>
+  </body>
+</html>

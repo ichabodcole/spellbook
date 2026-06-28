@@ -1,182 +1,204 @@
 ---
 name: magpie
 description:
-  Magpie extracts individual visual assets from a moodboard, branding board, or
-  composite image — picks out the distinct elements (mascots, icons, stickers,
-  logos, color palettes, UI mockups, type samples) and saves each as its own PNG
-  file, optionally with a transparent background. Trigger when the user says
-  "magpie this", "extract elements from this moodboard", "pull assets out of
-  this branding board", "extract the icons/stickers/mascots from this image",
-  "separate the elements in this image", or any obvious variant. Also consider
-  suggesting it proactively when the user shares an AI-generated branding/style
-  sheet image and the workflow needs individual asset files. Requires Python
-  3.11+ and an OPENROUTER_API_KEY env var (uses Gemini 3.5 Flash via OpenRouter
-  to identify elements).
+  Extract the individual visual assets out of a single composite image —
+  moodboard, branding board, sticker sheet, style frame — each as its own PNG,
+  with backgrounds removed where it makes sense. Use when the user says "magpie
+  this", "extract the elements/assets from this board", "pull the
+  icons/stickers/mascots out of this image", "separate the pieces of this
+  composite", "give me each of these as its own file", or opens an asset board
+  and wants the parts. Also worth proposing when the user has just received an
+  AI-generated branding/style board and the next step is using its pieces. Opens
+  a standing browser surface where the user reviews + steers the extraction
+  while the agent does the cutting/removal. Do NOT use for a single-element
+  image (nothing to separate) or a generic photo with no design-asset structure.
 ---
 
-# Magpie
+# Magpie — a co-presence asset-extraction surface
 
-A magpie picks individual shiny things out of a busy collection. This skill does
-the same with images: hand it a single composite image (moodboard, branding
-sheet, sticker sheet, style board) and it returns each distinct visual asset as
-its own file. Background removal is applied conditionally based on what each
-element is — stickers and illustrations get clean alpha; palettes and
-screenshots stay whole.
+A magpie picks individual shiny things out of a busy collection. Hand it one
+composite image and it returns each distinct asset as its own file —
+illustrations and stickers get clean alpha, palettes and screenshots stay whole.
+The deliverable is the **set of extracted assets** (a downloadable bundle); the
+surface is where the human judges results and the agent does the work.
 
-## When to Use
+Kind: **conjuration** — a standing daemon with a browser surface the user works
+inside, holding state and snapshotting so a session can be restored.
 
-Fire on direct asks: "magpie this", "extract elements from this moodboard",
-"pull the stickers out of this image", "separate these icons", "give me each of
-these assets as its own file."
+magpie is one leg of the image-work suite:
 
-Suggested invocation (propose first, don't fire): the user has just received an
-AI-generated branding board or moodboard image from another agent or tool, and
-the natural next step is using its elements somewhere. Example:
+| Spell   | Job                                      |
+| ------- | ---------------------------------------- |
+| glamour | Compose the style spec from references   |
+| imago   | Make / edit one image                    |
+| magpie  | Extract discrete assets from a composite |
 
-> "I see your branding board. Want me to use magpie to pull each element out as
-> a separate file with backgrounds removed?"
+## When to use
 
-Don't use for:
+- Direct asks: "magpie this", "extract the elements from this moodboard", "pull
+  the stickers/icons/mascots out of this image", "separate these assets", "give
+  me each of these as its own PNG".
+- Proactive (propose, don't fire): the user just got an AI-generated branding /
+  style board and the natural next step is using its pieces — "Want me to magpie
+  that board into separate asset files?"
 
-- A single-element image where there's nothing to extract — just rename the
-  file.
-- Photos with no design-asset structure (a vacation photo, a screenshot of a
-  single window). Magpie is for **composite images of distinct visual assets**,
-  not generic image segmentation.
+Not for a single-element image (just rename it) or a generic photo — magpie is
+for **composites of distinct visual assets**, not generic image segmentation.
 
-## Prerequisites
+## The surface — a four-phase process
 
-Magpie runs under Python 3.11+ and uses Gemini 3.5 Flash via OpenRouter for
-element discovery, plus the `rembg` library for background removal.
+The user drops a composite and the two of you work through it across a linear
+**top-bar stepper**. Each phase is an open→close exercise: the user steers, you
+do the work, the user **seals** the phase (conversationally — see the loop), and
+the sealed output feeds the next.
 
-- **Environment:** `OPENROUTER_API_KEY` must be set in the shell environment. If
-  missing, the discover step fails fast with a clear error; surface that to the
-  user and stop. **Do not attempt to install a key for them.**
-- **Python deps (installed once):** `pip install Pillow rembg`
-  - First `rembg` run downloads a ~176MB U2Net model to `~/.u2net/`.
-  - Subsequent runs are fast.
-
-## Two-Step Workflow
-
-The skill has two phases on purpose so the user can review what Magpie
-discovered before paying for the extraction. Both steps are cheap (single- digit
-cents for discover, free for extract) but the review step is the value add.
-
-### Step 1: Discover
-
-Run discover.py against the source image. It calls Gemini and writes a manifest
-JSON describing every distinct element found.
-
-```bash
-python3 "$CLAUDE_PLUGIN_ROOT/skills/magpie/scripts/discover.py" path/to/board.png
+```
+Intake  →  Slice  →  Remove  →  Export
+drop +     fine-tune  remove      bundle +
+discover   the cuts   backgrounds download
 ```
 
-Output:
+- **Intake** — the user drops a composite; you discover its elements. Auto-seals
+  to Slice once elements land.
+- **Slice** — an editable bounding-box canvas + a slices rail. The user nudges /
+  resizes / renames / retypes / drops boxes or draws a missed one; you cut the
+  boxes into raw crops (box-exact). The box **is** the only padding control.
+- **Remove** — a gallery of cutouts on a backdrop swatch. The user asks for
+  background removal, compares the resulting **versions** (one row per model
+  tried), picks the winner, and flags any that need a different model.
+- **Export** — pick which assets to include, then build a downloadable bundle
+  (`assets/` + `crops/` + `manifest.json` + a self-contained `gallery.html`).
 
-- Prints cost (~$0.01-0.03/image) + token counts to stdout
-- Lists each discovered element with type, name, and source-pixel bbox
-- Writes a manifest file at `<source_dir>/<image_stem>-manifest.json`
+**Co-presence model: the human judges _results_, the agent picks _models_ and
+does the work.** The bounding boxes and version rows are shared **game pieces**
+— the user manipulates them to show you what they mean; you read that state and
+act.
 
-Show the discovered list to the user. They may want to:
+## Verbs
 
-- Drop entries they don't need (edit the JSON, delete the line from
-  `elements[]`)
-- Rename entries (`"name": "icon_mammoth"` → `"name": "logo_mark"`)
-- Override the `type` field if Magpie misclassified (this affects bg-removal in
-  step 2)
-- Re-run discovery if the model missed something significant
+All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/magpie/scripts/cli.ts <verb>`. Verb
+first; pass `--session <id>` **after the verb** to target a specific session
+(default: most recent). `help` prints the full surface.
 
-### Step 2: Extract
+> **`${CLAUDE_PLUGIN_ROOT}` unset?** Some harnesses leave it empty, turning
+> `${VAR}/skills/…` into `/skills/…` so bun fails with "module not found."
+> Substitute the absolute path to this skill's `scripts/cli.ts`.
 
-Run extract.py with the manifest. It crops each element from the source and
-applies background removal conditionally.
+> **"no running session" but the daemon is alive?** The most-recent-session
+> pointer (system temp dir, separate from the daemon) was lost. Recover with
+> `--session <id>` (id is in the `open` output).
 
-```bash
-python3 "$CLAUDE_PLUGIN_ROOT/skills/magpie/scripts/extract.py" path/to/board-manifest.json
+| Verb                                                                                                | What it does                                                                                                        |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `open [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id\|path>]`                  | Spawn the daemon (opens the browser); prints `{port, session_id, files_dir}`                                        |
+| `sessions`                                                                                          | List saved (resumable) sessions                                                                                     |
+| `tail [--since N]`                                                                                  | Stream user events as JSONL — run via Monitor (see Operating rule)                                                  |
+| `state [--full]`                                                                                    | State snapshot — lean by default; `--full` for raw                                                                  |
+| `say <text…> [--stdin]`                                                                             | Post agent dialogue into the conversation (`--stdin` for piped NL text)                                             |
+| `ask <text…> [--options "a\|b"]`                                                                    | Ask the user a question in-thread                                                                                   |
+| `status on [text…] \| status off`                                                                   | Toggle the "magpie working" spinner                                                                                 |
+| `source <imagePath>`                                                                                | Register the composite under review (computes sha + size)                                                           |
+| `discover`                                                                                          | Run discovery on the current source → post the breakdown (needs `OPENROUTER_API_KEY`)                               |
+| `extract [--ids a,b] [--remove] [--alpha auto\|all\|none] [--pad N] [--model <m>] [--label <name>]` | Cut slices — crop-only by default; `--remove` adds rembg; `--model` picks a removal model                           |
+| `export [--ids a,b]`                                                                                | Build the downloadable bundle → `magpie-bundle.zip`, served for download                                            |
+| `element-add --bbox "x1,y1,x2,y2" [--name ..] [--type ..]` · `element-remove <id>`                  | Box / un-box a region (source px)                                                                                   |
+| `cmd [--stdin]`                                                                                     | POST a raw AgentCommand JSON body (the escape hatch — e.g. `elements.set`, `phase.set`, a `say` with an inline CTA) |
+| `close` · `info` · `help`                                                                           | Shut the session (writes snapshot) · session JSON · full verb list                                                  |
+
+## Operating rule: Monitor the tail (imperatives-only)
+
+**Subscribe to the event stream and react the instant the user hands you work.**
+Run via the Monitor tool:
+
+```
+bun ${CLAUDE_PLUGIN_ROOT}/skills/magpie/scripts/cli.ts tail
 ```
 
-Output:
+The tail pushes **imperatives only** — the moves where the user hands you work:
+`say`, `source.added`, `extract`, `removeBg`, `retryRemoval`, `phase.advance`,
+`phase.set`, `submit`, + lifecycle. **Ambient editing is NOT pushed** — box
+moves/renames/retypes/draws/drops, the re-run flag, version picks, and the
+backdrop swatch all mutate state silently. Don't wait for them; **read `state`
+when an imperative fires** to see the current boxes / flags / chosen versions.
 
-- One PNG per element at `<element_name>.png`
-- A second `<element_name>_alpha.png` for types eligible for background removal
-  (see Alpha Policy below)
-- A `gallery.html` for browser review
-- Default output directory: `<manifest_dir>/<image_stem>-extracted/`
+After `open`, stay quiet until the user does something. **Conversation is the
+primary channel** — the user mostly steers by talking to you; on-surface buttons
+are shortcuts for the same conversational acts (so don't expect a click for
+every move).
 
-## Manifest Schema
+## The loop — what to do on each imperative
 
-```json
-{
-  "source": "/abs/path/to/board.png",
-  "source_size": [1408, 768],
-  "source_sha256_16": "abc123...",
-  "model": "google/gemini-3.5-flash",
-  "cost_usd": 0.0235,
-  "tokens": { "prompt": 1365, "completion": 2414, "reasoning": 1389 },
-  "elements": [
-    {
-      "name": "icon_mammoth",
-      "type": "icon",
-      "box_2d": [675, 43, 789, 101],
-      "bbox_pixel": [61, 519, 142, 606]
-    }
-  ]
-}
-```
+| Imperative                                    | Do                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source.added {path}`                         | The user dropped a composite. `status on "discovering…"`, then `discover` (Gemini via `OPENROUTER_API_KEY`) — it posts the breakdown and auto-advances to Slice. Surface the element count + spend.                                                                                                 |
+| `extract {ids?}`                              | Cut raw crops: `extract` (all) or `extract --ids <ids>` (a re-cut subset). Crop-only — the box is the slice.                                                                                                                                                                                        |
+| `removeBg {ids?}`                             | Remove backgrounds with rembg: `extract --remove --ids <ids>` (absent ids → all alpha-eligible; the kept-whole types — palette / screenshot / typography — are skipped, never alpha'd). Lands as a `rembg` version.                                                                                 |
+| `retryRemoval {ids}`                          | "Try a different model." For each flagged item, read its `versions[]` to see what's been tried, pick an **unused** model, and run it (see Background removal). Lands as a new version row; the flag auto-clears.                                                                                    |
+| `phase.advance {phase}` / `phase.set {phase}` | Context, not an action — the user sealed/stepped to a phase. Note where they are (re-cuts likely after a back-step).                                                                                                                                                                                |
+| `export {ids?}`                               | Build the bundle: `export --ids <ids>`. It zips the chosen assets and the surface lights up a Download link.                                                                                                                                                                                        |
+| `say {text}`                                  | Respond in the thread (`say`). When you sense the user is ready to move on, you can advance for them (`cmd` → `{"type":"phase.set","phase":"<next>"}`) and/or offer a one-click CTA (`cmd` → `{"type":"say","text":"…","action":{"label":"Move to Remove →","command":{"type":"phase.advance"}}}`). |
 
-The `type` field is one of `wordmark`, `tagline`, `icon`, `illustration`,
-`sticker`, `palette`, `typography`, `screenshot`, `other`. The agent or user can
-override either `name` or `type` by editing the manifest before extract.py runs.
+Discover needs the source's on-disk path — read it from `state` (`source.path`).
+To inspect the board's pixels yourself, `Read` that path.
 
-`box_2d` is Gemini's normalized [0..1000] coordinate output preserved for audit;
-`bbox_pixel` is the [x1, y1, x2, y2] used by extract.py.
+## Background removal — local + cloud, discovered not hardcoded
 
-## Alpha Policy
+The `extract --remove` path runs **rembg** locally (default model). The alpha
+policy is **type-driven** (`--alpha auto`, the default under `--remove`):
+removal runs only on **illustration / sticker / icon / wordmark**; **palette /
+screenshot / typography are always kept whole** (flat color rembg would destroy)
+— `extract --remove` skips them, so those stay as their raw crop. For
+`retryRemoval`, run a genuinely **different** model — never re-run the same one:
 
-Background removal works well for graphics on a uniform background but
-**destroys flat-color content** like color palettes and screenshots. The
-`--alpha` flag controls how aggressive extract.py is:
+- **A different rembg model** (local, free): `extract --remove --model <name>` —
+  rembg ships a model zoo (`isnet-general-use`, `birefnet-general`, `u2netp`,
+  …).
+- **A cloud model** (often the cleanest edges):
+  `extract --remove --model <id> --label <friendly>`, where `<id>` is a
+  media-forge bg-remove model id (a provider path like
+  `fal-ai/bria/background/remove`). **Discover the available ids** —
+  `media-forge models list --format json`, the entries whose `operations`
+  include `bg-remove` — don't hardcode them; the catalog drifts. `media-forge`
+  (also `mf`) must be on PATH.
 
-| Policy           | Applies rembg to                                        |
-| ---------------- | ------------------------------------------------------- |
-| `auto` (default) | `illustration`, `sticker`, `icon`, `wordmark`           |
-| `all`            | everything except `palette`, `screenshot`, `typography` |
-| `none`           | nothing (raw crops only)                                |
+The cli routes by id shape (a `/` → media-forge, else rembg). The version's
+`model` label is what the user sees in the strip; `--label` sets a friendly one.
+**Models are never baked into the UI** — they appear only as labels on produced
+versions, and adding one needs no app change.
 
-`auto` is the right default for almost all cases. Override only when the user
-explicitly wants alpha on `tagline` / `other` types, or wants to skip alpha
-entirely.
+## Session lifecycle
 
-## Cost Awareness
+`close` snapshots the session to `$MAGPIE_HOME/snapshots/<session_id>.json`
+(default `~/.magpie`). Restore with `open --restore <id>`. The Export view shows
+the restore command. **Read the final state from the snapshot, not a live
+`closed` event** — `close` shuts the daemon immediately and the event can race
+the shutdown; treat the tail stream ending as end-of-session.
 
-Discover-step cost is printed in the script output and recorded in the manifest
-at `cost_usd`. Surface this to the user — they like knowing what the model spend
-was. Typical range: $0.005-0.03 per board depending on density.
+## Prerequisites & limits
 
-`temperature=0` makes responses deterministic, so re-running discover on the
-same image returns identical bboxes. A future iteration of this skill may add a
-cache by `source_sha256_16` to make repeat runs free.
+- **Bun** on PATH — the daemon serves a Bun-bundled React surface; the first
+  `open` triggers the bundle build (can take a few seconds cold).
+- **`OPENROUTER_API_KEY`** — required for `discover` (Gemini 3.5 Flash
+  identifies the elements; ~$0.01–0.03/board). If missing, `discover` fails fast
+  — surface it and stop; do not install a key.
+- **Python 3.11+ with `Pillow` + `rembg`** — required for cutting + local
+  background removal (`pip install Pillow rembg`). The first rembg run downloads
+  a model (~176MB); each additional rembg model downloads on first use.
+- **`media-forge` CLI** — optional, only for cloud background removal. Without
+  it, local rembg removal works fully.
+- **`$MAGPIE_HOME`** (default `~/.magpie`) — where snapshots are written.
+- The magpie family identity is **warm cream + iridescent indigo + treasure
+  gold** (the export `gallery.html`); keep it intact across the family.
 
-## Common Pitfalls
+## Feedback touchpoint
 
-- **`OPENROUTER_API_KEY` missing.** Surface the error and stop. Do not install a
-  key, do not skip the step, do not fall back silently.
-- **Source image not found from manifest path.** The manifest stores an absolute
-  path. If the source moves, edit the `"source"` field before running
-  extract.py, or pass a fresh manifest.
-- **rembg first-run download.** The first `extract.py` invocation downloads
-  ~176MB of model weights. If the user is on a slow connection, warn them.
-- **Manifest with no elements.** If discover returned an empty array (very
-  unusual — image with no recognizable assets), tell the user and ask what they
-  wanted; don't proceed with extract.
-- **Element type misclassification.** If Magpie marked a screenshot as
-  `illustration`, alpha-mode auto would destroy it. Spot-check the type column
-  in the discover output before extracting if anything looks off.
+At a natural close, surface friction so the tool improves:
 
-## Why Magpie Looks the Way It Does
+- **Agent friction** — if a verb misbehaved, the state/event shape fought you,
+  or the loop guidance was unclear, file a GitHub issue against the
+  **Spellbook** repo (`github.com/ichabodcole/spellbook`).
+- **Human** — when the user is on the surface, offer once (easy to skip):
+  "anything about magpie itself feel off or worth improving?" Route what they
+  say to the same issues.
 
-Magpie is the first skill in a longer arc: AI generates a branding board →
-Magpie extracts the assets → a future branding skill applies them. The gallery's
-branded aesthetic (warm cream + magpie-iridescent indigo + treasure-gold accent)
-is the visual identity for the Magpie family. Keep it intact across future skill
-additions to maintain identity continuity.
+This is feedback about the **tool**, not the assets being extracted.

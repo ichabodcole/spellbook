@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mockup — Magpie phase stepper (two forms)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+
+    <!--
+      ============================================================
+      THEME — Magpie identity (light) — reused from magpie-surface-mockup
+      cream paper · deep ink · iridescent indigo · treasure gold
+      Phase status reads in magpie's own palette:
+        sealed   = GOLD ✓  (a captured artifact — treasure)
+        active   = INDIGO  (the exercise you're in)
+        upcoming = MUTED   (ahead of you)
+      ============================================================
+    -->
+    <style type="text/tailwindcss">
+      :root {
+        --ink: #14181b;
+        --paper: #f6f1e7;
+        --paper-2: #efe8da;
+        --card: #fffdf8;
+        --indigo: #5b5bf0;
+        --indigo-soft: #ecebfe;
+        --gold: #c9962b;
+        --gold-soft: #f6ead0;
+        --line: #e2d9c6;
+        --muted-dot: #c9bda3;
+      }
+      body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--paper); color: var(--ink); }
+      .page-title { @apply text-2xl font-bold; font-family: "Poppins", sans-serif; color: var(--ink); }
+      .section-title { @apply text-[11px] font-semibold uppercase tracking-wide; color: #9a8f78; }
+      .text-faint { @apply text-xs; color: #9b988f; }
+      .text-muted { @apply text-sm; color: #6f6c66; }
+      .card { background: var(--card); border: 1px solid var(--line); @apply rounded-lg; }
+      .inset { background: var(--paper-2); border: 1px solid var(--line); @apply rounded-md; }
+      .chip { @apply text-[11px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center gap-1; }
+      .chip-indigo { background: var(--indigo-soft); color: #3b3bd0; border-color: #d8d6fb; }
+      .chip-gold { background: var(--gold-soft); color: #9a6f12; border-color: #ecdcb4; }
+      .chip-muted { background: var(--paper-2); color: #6f6c66; border-color: var(--line); }
+      .btn { @apply text-sm px-4 py-2 rounded-md font-medium transition-colors inline-flex items-center justify-center gap-2; }
+      .btn-primary { @apply btn text-white; background: var(--indigo); }
+      .btn-gold { @apply btn text-white; background: var(--gold); }
+      .btn-outline { @apply btn; border: 1px solid var(--line); color: var(--ink); background: var(--card); }
+
+      .dot { @apply w-2 h-2 rounded-full shrink-0; }
+      .dot-sealed { background: var(--gold); }
+      .dot-active { background: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-soft); }
+      .dot-upcoming { background: var(--muted-dot); }
+
+      .bd-transparent {
+        background-color: #fff;
+        background-image: linear-gradient(45deg,#d8d2c4 25%,transparent 25%),linear-gradient(-45deg,#d8d2c4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d8d2c4 75%),linear-gradient(-45deg,transparent 75%,#d8d2c4 75%);
+        background-size: 14px 14px; background-position: 0 0,0 7px,7px -7px,-7px 0;
+      }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("app", () => ({
+          // ── the form switcher (the thing we're comparing) ──
+          groups: [
+            { id: "topbar", label: "Top-bar stepper", states: [
+              { id: "slice", label: "In Slice" },
+              { id: "sealing", label: "Sealing Slice →" },
+              { id: "remove", label: "In Remove" },
+            ]},
+            { id: "sidebar", label: "Left-sidebar agenda", states: [
+              { id: "slice", label: "In Slice" },
+              { id: "remove", label: "In Remove" },
+              { id: "collapsed", label: "Rail collapsed" },
+            ]},
+          ],
+          group: "topbar",
+          state: "slice",
+          selectGroup(id) { this.group = id; this.state = this.groups.find(g => g.id === id).states[0].id; },
+          selectState(id) { this.state = id; },
+          get activeGroup() { return this.groups.find(g => g.id === this.group); },
+
+          // ── the phase spine (the agenda of exercises) ──
+          phases: [
+            { key: "intake", label: "Intake", icon: "image-up", blurb: "drop a composite",   artifact: "the board" },
+            { key: "slice",  label: "Slice",  icon: "scissors", blurb: "fine-tune the cuts",  artifact: "6 confirmed crops" },
+            { key: "remove", label: "Remove", icon: "eraser",   blurb: "remove backgrounds",  artifact: "chosen cutouts" },
+            { key: "export", label: "Export", icon: "package",  blurb: "bundle the assets",   artifact: "asset bundle" },
+          ],
+          get activeKey() { return this.state === "remove" ? "remove" : "slice"; },
+          get activeIdx() { return this.phases.findIndex(p => p.key === this.activeKey); },
+          phaseStatus(i) {
+            if (i < this.activeIdx) return "sealed";
+            if (i === this.activeIdx) return this.state === "sealing" ? "sealed" : "active";
+            return "upcoming";
+          },
+          dotClass(i) { return { sealed: "dot-sealed", active: "dot-active", upcoming: "dot-upcoming" }[this.phaseStatus(i)]; },
+          sealedCount() { return this.phases.filter((_, i) => this.phaseStatus(i) === "sealed").length; },
+
+          // mock content
+          slices: [
+            { name: "wordmark_magpie", type: "wordmark" }, { name: "mascot_main", type: "illustration" },
+            { name: "icon_extract", type: "icon" }, { name: "palette_colors", type: "palette" },
+            { name: "sticker_find_it", type: "sticker" }, { name: "screenshot_ui", type: "screenshot" },
+          ],
+          cutouts: ["mascot_main","icon_extract","sticker_find_it","sticker_mascot_heart","sticker_mascot_box","icon_export"],
+          chipClass(t) {
+            if (["wordmark","tagline","typography"].includes(t)) return "chip chip-gold";
+            if (["palette","screenshot","other"].includes(t)) return "chip chip-muted";
+            return "chip chip-indigo";
+          },
+
+          // ── shared phase body (static markup per state → safe as x-html) ──
+          get phaseBody() {
+            return this.activeKey === "remove" ? this.removeBody() : this.sliceBody();
+          },
+          sliceBody() {
+            const cards = this.slices.map(s => `
+              <div class="card p-2">
+                <div class="inset h-24 flex items-center justify-center text-[#b3a98f] text-xs">[ ${s.name} ]</div>
+                <div class="flex items-center gap-2 mt-2">
+                  <span class="text-xs font-medium truncate flex-1" style="color:var(--ink)">${s.name}</span>
+                  <span class="${this.chipClass(s.type)}">${s.type}</span>
+                </div>
+              </div>`).join("");
+            const sealing = this.state === "sealing";
+            return `
+              <div class="max-w-5xl mx-auto">
+                <div class="flex items-baseline gap-3 mb-1">
+                  <h2 class="page-title text-lg">Slice</h2>
+                  <span class="text-faint">open up — re-cut, drop, or draw a missed region; close down when the cuts look right.</span>
+                </div>
+                <p class="text-xs mb-4" style="color:#b3a98f">carried in from Intake → the board · 6 regions</p>
+                <div class="grid grid-cols-3 gap-3">${cards}</div>
+                <div class="card mt-5 p-4 flex items-center gap-4" style="border-color:#ecdcb4;background:var(--gold-soft)">
+                  <div class="flex-1">
+                    <div class="font-semibold flex items-center gap-2" style="color:var(--ink)"><i data-lucide="flag" class="w-4 h-4 pointer-events-none"></i> Close down the Slice phase?</div>
+                    <div class="text-xs text-muted mt-0.5">Seals <b>6 confirmed crops</b> and hands them to Background Removal as its starting point. You can step back later.</div>
+                  </div>
+                  <button class="btn-gold ${sealing ? 'opacity-70' : ''}">
+                    <i data-lucide="check" class="w-4 h-4 pointer-events-none"></i> ${sealing ? 'Sealing…' : 'Slices look good → Remove'}
+                  </button>
+                </div>
+              </div>`;
+          },
+          removeBody() {
+            const cards = this.cutouts.map(n => `
+              <div class="card p-2">
+                <div class="bd-transparent h-28 rounded flex items-center justify-center text-[10px] text-[#8a8478]">[ ${n} ]</div>
+                <div class="flex items-center gap-1.5 mt-2">
+                  <span class="text-[11px] font-medium truncate flex-1" style="color:var(--ink)">${n}</span>
+                  <span class="chip chip-indigo">rembg</span>
+                </div>
+              </div>`).join("");
+            return `
+              <div class="max-w-5xl mx-auto">
+                <div class="flex items-baseline gap-3 mb-1">
+                  <h2 class="page-title text-lg">Background Removal</h2>
+                  <span class="text-faint">open up — remove + compare versions; flag any that need another model.</span>
+                </div>
+                <p class="text-xs mb-4" style="color:#9a6f12">carried in from Slice → 6 confirmed crops ✓</p>
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="section-title">Backdrop</span>
+                  <span class="w-6 h-6 rounded border" style="background:#fff;border-color:var(--line)"></span>
+                  <span class="w-6 h-6 rounded border" style="background:#8a8a8a;border-color:var(--line)"></span>
+                  <span class="w-6 h-6 rounded border" style="background:#14181b;border-color:var(--line)"></span>
+                  <span class="w-6 h-6 rounded border bd-transparent" style="outline:2px solid var(--indigo);outline-offset:1px;border-color:var(--line)"></span>
+                </div>
+                <div class="grid grid-cols-4 gap-3">${cards}</div>
+                <div class="card mt-5 p-4 flex items-center gap-4" style="border-color:#ecdcb4;background:var(--gold-soft)">
+                  <div class="flex-1">
+                    <div class="font-semibold flex items-center gap-2" style="color:var(--ink)"><i data-lucide="flag" class="w-4 h-4 pointer-events-none"></i> Close down Background Removal?</div>
+                    <div class="text-xs text-muted mt-0.5">Seals the <b>chosen cutouts</b> and moves to Export, where you bundle + download.</div>
+                  </div>
+                  <button class="btn-gold"><i data-lucide="check" class="w-4 h-4 pointer-events-none"></i> Cutouts look good → Export</button>
+                </div>
+              </div>`;
+          },
+        }));
+      });
+
+      // debounced Lucide re-render (per skill guidance — no infinite observer loop)
+      let raf;
+      const draw = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(() => lucide.createIcons()); };
+      document.addEventListener("DOMContentLoaded", () => {
+        lucide.createIcons();
+        new MutationObserver(draw).observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+
+  <body x-data="app">
+    <!-- ════ state switcher (amber bar — this is a mockup, not the app) ════ -->
+    <div class="bg-amber-900 text-amber-50 sticky top-0 z-50 shadow">
+      <div class="px-4 pt-2 pb-0 flex items-center gap-1">
+        <span class="text-[11px] uppercase tracking-wide text-amber-300/80 mr-2">Form</span>
+        <template x-for="g in groups" :key="g.id">
+          <button @click="selectGroup(g.id)"
+            :class="group === g.id ? 'bg-amber-700/60 text-amber-50 border-amber-600/60' : 'text-amber-300/70 border-transparent hover:text-amber-100 hover:bg-amber-800/40'"
+            class="text-xs px-3 py-1.5 rounded-t border border-b-0 font-medium transition-colors" x-text="g.label"></button>
+        </template>
+        <span class="ml-auto text-[11px] text-amber-300/70">magpie · phase-stepper exploration</span>
+      </div>
+      <div class="px-4 py-1.5 flex items-center gap-1.5 bg-amber-800/40">
+        <span class="text-[11px] uppercase tracking-wide text-amber-300/80 mr-1">State</span>
+        <template x-for="s in activeGroup.states" :key="s.id">
+          <button @click="selectState(s.id)"
+            :class="state === s.id ? 'bg-amber-500 text-amber-950 border-amber-500' : 'bg-amber-950/40 text-amber-200 border-amber-700/60 hover:bg-amber-900'"
+            class="text-xs px-2.5 py-1 rounded border font-medium transition-colors" x-text="s.label"></button>
+        </template>
+      </div>
+    </div>
+
+    <!-- ════════════════════ FORM A — TOP-BAR STEPPER ════════════════════ -->
+    <template x-if="group === 'topbar'">
+      <div class="h-[calc(100vh-76px)] flex flex-col overflow-hidden">
+        <header class="flex items-center gap-3 px-4 py-2.5 bg-[var(--card)] border-b" style="border-color: var(--line)">
+          <span class="page-title text-lg">🐦 magpie</span>
+          <span class="text-faint">— branding board</span>
+          <span class="ml-auto text-[11px] flex items-center gap-1" style="color:#3b3bd0"><i data-lucide="eye" class="w-3 h-3 pointer-events-none"></i> magpie watching</span>
+        </header>
+
+        <!-- THE STEPPER (horizontal agenda) -->
+        <div class="px-6 py-3 bg-[var(--card)] border-b flex items-center gap-1 overflow-x-auto" style="border-color: var(--line)">
+          <template x-for="(p, i) in phases" :key="p.key">
+            <div class="flex items-center gap-1 shrink-0">
+              <div class="flex items-center gap-2.5 px-3 py-1.5 rounded-md" :class="phaseStatus(i) === 'active' ? 'bg-[var(--indigo-soft)]' : ''">
+                <span class="relative flex items-center justify-center w-6 h-6 rounded-full shrink-0"
+                      :style="phaseStatus(i)==='sealed' ? 'background:var(--gold)' : phaseStatus(i)==='active' ? 'background:var(--indigo)' : 'background:#e9e0cd'">
+                  <template x-if="phaseStatus(i) === 'sealed'"><i data-lucide="check" class="w-3.5 h-3.5 text-white pointer-events-none"></i></template>
+                  <template x-if="phaseStatus(i) !== 'sealed'"><i :data-lucide="p.icon" class="w-3.5 h-3.5 pointer-events-none" :class="phaseStatus(i)==='active' ? 'text-white' : 'text-[#b3a98f]'"></i></template>
+                </span>
+                <div class="leading-tight">
+                  <div class="text-sm font-semibold" :style="phaseStatus(i)==='upcoming' ? 'color:#b3a98f' : 'color:var(--ink)'" x-text="p.label"></div>
+                  <div class="text-[10px]" :style="phaseStatus(i)==='active' ? 'color:#3b3bd0' : 'color:#b3a98f'"
+                       x-text="phaseStatus(i)==='sealed' ? p.artifact + ' ✓' : phaseStatus(i)==='active' ? p.blurb : ''"></div>
+                </div>
+              </div>
+              <i x-show="i < phases.length - 1" data-lucide="chevron-right" class="w-4 h-4 pointer-events-none" style="color:var(--muted-dot)"></i>
+            </div>
+          </template>
+          <span class="ml-auto chip chip-gold shrink-0"><i data-lucide="lock" class="w-3 h-3 pointer-events-none"></i> <span x-text="sealedCount() + ' / ' + phases.length + ' sealed'"></span></span>
+        </div>
+
+        <div class="flex-1 min-h-0 overflow-auto p-5" x-html="phaseBody"></div>
+      </div>
+    </template>
+
+    <!-- ════════════════════ FORM B — LEFT-SIDEBAR AGENDA ════════════════════ -->
+    <template x-if="group === 'sidebar'">
+      <div class="h-[calc(100vh-76px)] flex overflow-hidden">
+        <!-- open rail -->
+        <template x-if="state !== 'collapsed'">
+          <aside class="w-64 shrink-0 bg-[var(--card)] border-r flex flex-col" style="border-color: var(--line)">
+            <div class="px-4 py-3 border-b flex items-center gap-2" style="border-color: var(--line)">
+              <span class="section-title">The process</span>
+              <span class="ml-auto chip chip-gold"><span x-text="sealedCount() + '/' + phases.length"></span></span>
+            </div>
+            <div class="flex-1 p-2 flex flex-col gap-1">
+              <template x-for="(p, i) in phases" :key="p.key">
+                <div class="rounded-md px-3 py-2.5 border transition-colors"
+                     :class="phaseStatus(i)==='active' ? 'bg-[var(--indigo-soft)] border-[#d8d6fb]' : 'border-transparent hover:bg-[var(--paper-2)]'">
+                  <div class="flex items-center gap-2">
+                    <span class="dot" :class="dotClass(i)"></span>
+                    <span class="text-sm font-semibold" :style="phaseStatus(i)==='upcoming' ? 'color:#b3a98f' : 'color:var(--ink)'" x-text="p.label"></span>
+                    <span class="ml-auto text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5 rounded"
+                          :style="phaseStatus(i)==='sealed' ? 'background:var(--gold-soft);color:#9a6f12' : phaseStatus(i)==='active' ? 'background:var(--indigo-soft);color:#3b3bd0' : 'color:#c1b59b'"
+                          x-text="phaseStatus(i)"></span>
+                  </div>
+                  <div class="text-[11px] mt-1 ml-4" :style="phaseStatus(i)==='active' ? 'color:#3b3bd0' : 'color:#b3a98f'"
+                       x-text="phaseStatus(i)==='sealed' ? '→ ' + p.artifact : p.blurb"></div>
+                </div>
+              </template>
+            </div>
+            <div class="p-3 border-t text-[11px] text-faint flex items-center gap-1" style="border-color: var(--line)">
+              <i data-lucide="info" class="w-3 h-3 pointer-events-none"></i> each sealed phase feeds the next
+            </div>
+          </aside>
+        </template>
+        <!-- collapsed rail (glamour's 48px strip — stacked dots + counter) -->
+        <template x-if="state === 'collapsed'">
+          <aside class="w-12 shrink-0 bg-[var(--card)] border-r flex flex-col items-center py-3 gap-3" style="border-color: var(--line)">
+            <i data-lucide="panel-left-open" class="w-4 h-4 pointer-events-none" style="color:#9b988f"></i>
+            <template x-for="(p, i) in phases" :key="p.key">
+              <span class="dot w-2.5 h-2.5" :class="dotClass(i)" :title="p.label"></span>
+            </template>
+            <span class="mt-auto text-[10px] font-semibold" style="color:#9a6f12" x-text="sealedCount() + '/' + phases.length"></span>
+          </aside>
+        </template>
+
+        <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <header class="flex items-center gap-3 px-4 py-2.5 bg-[var(--card)] border-b" style="border-color: var(--line)">
+            <span class="page-title text-lg">🐦 magpie</span>
+            <span class="text-faint">— branding board</span>
+            <span class="ml-auto text-[11px] flex items-center gap-1" style="color:#3b3bd0"><i data-lucide="eye" class="w-3 h-3 pointer-events-none"></i> magpie watching</span>
+          </header>
+          <div class="flex-1 min-h-0 overflow-auto p-5" x-html="phaseBody"></div>
+        </div>
+      </div>
+    </template>
+  </body>
+</html>

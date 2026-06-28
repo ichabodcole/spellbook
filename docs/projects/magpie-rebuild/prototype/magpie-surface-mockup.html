@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mockup — Magpie extraction surface</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+      tailwind.config = { darkMode: "class" };
+    </script>
+
+    <!--
+      ============================================================
+      THEME — Magpie identity (light)
+      cream paper · deep ink · iridescent indigo · treasure gold
+      A magpie: black/white bird, iridescent blue sheen, steals shiny gold.
+      ============================================================
+    -->
+    <style type="text/tailwindcss">
+      :root {
+        --ink: #14181b;        /* plumage black-blue, body text */
+        --paper: #f6f1e7;      /* warm cream canvas */
+        --paper-2: #efe8da;    /* recessed cream */
+        --card: #fffdf8;       /* near-white card */
+        --indigo: #5b5bf0;     /* iridescent primary */
+        --indigo-soft: #ecebfe;
+        --gold: #c9962b;       /* treasure accent */
+        --gold-soft: #f6ead0;
+        --line: #e2d9c6;       /* hairline on cream */
+      }
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+      }
+      .font-display { font-family: "Poppins", "Inter", sans-serif; }
+
+      /* ---- Typography ---- */
+      .page-title { @apply text-2xl font-bold; font-family: "Poppins", sans-serif; color: var(--ink); }
+      .section-title { @apply text-[11px] font-semibold uppercase tracking-wide; color: #9a8f78; }
+      .label { @apply text-xs; color: #8c8a85; }
+      .text-body { @apply text-sm leading-relaxed; color: var(--ink); }
+      .text-muted { @apply text-sm; color: #6f6c66; }
+      .text-faint { @apply text-xs; color: #9b988f; }
+      .text-mono { @apply text-xs font-mono; color: #b0a892; }
+
+      /* ---- Surfaces ---- */
+      .card { background: var(--card); border: 1px solid var(--line); @apply rounded-lg; }
+      .inset { background: var(--paper-2); border: 1px solid var(--line); @apply rounded-md; }
+      .panel-section { @apply px-5 py-4; border-bottom: 1px solid var(--line); }
+
+      /* ---- Badges / type chips ---- */
+      .chip { @apply text-[11px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center gap-1; }
+      .chip-indigo { background: var(--indigo-soft); color: #3b3bd0; border-color: #d8d6fb; }
+      .chip-gold { background: var(--gold-soft); color: #9a6f12; border-color: #ecdcb4; }
+      .chip-muted { background: var(--paper-2); color: #6f6c66; border-color: var(--line); }
+
+      /* ---- Buttons ---- */
+      .btn { @apply text-sm px-4 py-2 rounded-md font-medium transition-colors flex items-center justify-center gap-2; }
+      .btn-primary { @apply btn text-white; background: var(--indigo); }
+      .btn-primary:hover { background: #4a4ae6; }
+      .btn-gold { @apply btn text-white; background: var(--gold); }
+      .btn-gold:hover { background: #b6841f; }
+      .btn-outline { @apply btn; border: 1px solid var(--line); color: var(--ink); background: var(--card); }
+      .btn-outline:hover { background: var(--paper-2); }
+      .btn-ghost { @apply text-xs px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5; color: #6f6c66; }
+      .btn-ghost:hover { background: var(--paper-2); color: var(--ink); }
+
+      .input { background: var(--card); border: 1px solid var(--line); @apply text-sm px-3 py-1.5 rounded-md focus:outline-none; color: var(--ink); }
+      .input:focus { border-color: var(--indigo); }
+
+      .skeleton { background: linear-gradient(90deg, #ece4d4 25%, #f6f1e7 50%, #ece4d4 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
+      @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+      @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(91,91,240,.4);} 70%{box-shadow:0 0 0 8px rgba(91,91,240,0);} 100%{box-shadow:0 0 0 0 rgba(91,91,240,0);} }
+
+      /* backdrop swatches for judging cutouts */
+      .bd-white { background: #ffffff; }
+      .bd-gray { background: #8a8a8a; }
+      .bd-black { background: #14181b; }
+      .bd-transparent {
+        background-color: #fff;
+        background-image: linear-gradient(45deg,#d8d2c4 25%,transparent 25%),linear-gradient(-45deg,#d8d2c4 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d8d2c4 75%),linear-gradient(-45deg,transparent 75%,#d8d2c4 75%);
+        background-size: 16px 16px;
+        background-position: 0 0,0 8px,8px -8px,-8px 0;
+      }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet" />
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("app", () => ({
+          state: "landing",
+          backdrop: "white", // shared across judge/compare
+
+          // mock element breakdown (over the faux brand board)
+          elements: [
+            { id: "e1", name: "wordmark_bounty", type: "wordmark", color: "#5b5bf0", box: { top: 6, left: 8, w: 46, h: 14 }, status: "confirmed", judgment: null, backend: "rembg" },
+            { id: "e2", name: "mascot_fox",      type: "illustration", color: "#c9962b", box: { top: 26, left: 10, w: 26, h: 40 }, status: "confirmed", judgment: "good", backend: "media-forge:bria" },
+            { id: "e3", name: "icon_compass",    type: "icon", color: "#1fa3a3", box: { top: 30, left: 46, w: 14, h: 18 }, status: "confirmed", judgment: "redo", backend: "rembg" },
+            { id: "e4", name: "icon_flag",       type: "icon", color: "#1fa3a3", box: { top: 30, left: 64, w: 14, h: 18 }, status: "confirmed", judgment: "good", backend: "rembg" },
+            { id: "e5", name: "tagline",         type: "tagline", color: "#9a6f12", box: { top: 56, left: 46, w: 40, h: 8 }, status: "confirmed", judgment: null, backend: "rembg" },
+            { id: "e6", name: "palette_brand",   type: "palette", color: "#6f6c66", box: { top: 74, left: 10, w: 52, h: 12 }, status: "confirmed", judgment: "good", backend: "none" },
+            { id: "e7", name: "sticker_star",    type: "sticker", color: "#c9962b", box: { top: 70, left: 70, w: 16, h: 18 }, status: "dropped", judgment: null, backend: "media-forge:ideogram" },
+          ],
+          selectedId: "e3",
+          editingId: null,
+          drawing: false,
+
+          types: ["wordmark","tagline","icon","illustration","sticker","palette","typography","screenshot","other"],
+          backends: ["rembg","media-forge:bria","media-forge:ideogram","none"],
+
+          get confirmed() { return this.elements.filter(e => e.status !== "dropped"); },
+          get redoCount() { return this.elements.filter(e => e.judgment === "redo" && e.status !== "dropped").length; },
+          get goodCount() { return this.elements.filter(e => e.judgment === "good" && e.status !== "dropped").length; },
+          get selected() { return this.elements.find(e => e.id === this.selectedId) || this.confirmed[0]; },
+
+          chipClass(t) {
+            if (["wordmark","tagline","typography"].includes(t)) return "chip chip-gold";
+            if (["palette","screenshot","other"].includes(t)) return "chip chip-muted";
+            return "chip chip-indigo";
+          },
+          judge(e, v) { e.judgment = e.judgment === v ? null : v; },
+          drop(e) { e.status = e.status === "dropped" ? "confirmed" : "dropped"; },
+        }));
+      });
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+
+  <body class="min-h-screen">
+    <div x-data="app">
+      <!-- ===== Prototype state switcher (meta-chrome, amber) ===== -->
+      <div class="bg-amber-950/90 border-b border-amber-800 px-6 py-2 flex items-center gap-3 sticky top-0 z-50">
+        <span class="section-title text-amber-400">Magpie surface</span>
+        <div class="flex gap-1.5 flex-wrap">
+          <template x-for="s in [
+            {id:'landing',label:'1 · Bring in'},
+            {id:'discover',label:'2 · Discovering'},
+            {id:'breakdown',label:'3 · Breakdown'},
+            {id:'judge',label:'4 · Review & judge'},
+            {id:'compare',label:'5 · Compare models'},
+            {id:'retry',label:'6 · Selective retry'},
+            {id:'done',label:'7 · Done'}
+          ]" :key="s.id">
+            <button @click="state = s.id"
+              :class="state === s.id ? 'bg-amber-500 text-amber-950 border-amber-500' : 'bg-amber-900/40 text-amber-200 border-amber-700/60'"
+              class="text-xs px-2.5 py-1 rounded border font-medium" x-text="s.label"></button>
+          </template>
+        </div>
+      </div>
+
+      <!-- ===== App shell: header + (work area | conversation rail) ===== -->
+      <div class="max-w-[1200px] mx-auto px-5">
+        <!-- Header -->
+        <header class="flex items-center justify-between py-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white" style="background:linear-gradient(135deg,#14181b,#5b5bf0)">
+              <i data-lucide="feather" class="w-4 h-4 pointer-events-none"></i>
+            </div>
+            <div>
+              <div class="font-display text-lg font-bold leading-none">Magpie</div>
+              <div class="text-faint leading-none mt-0.5">bounty-brand-board.png</div>
+            </div>
+          </div>
+
+          <!-- backdrop toggle: native judging surface (shared, visible once we have cutouts) -->
+          <div class="flex items-center gap-3" x-show="['judge','compare','retry','done'].includes(state)">
+            <span class="section-title">Backdrop</span>
+            <div class="flex items-center gap-1.5">
+              <template x-for="b in ['white','gray','black','transparent']" :key="b">
+                <button @click="backdrop = b" :title="b"
+                  :class="backdrop === b ? 'ring-2 ring-offset-1' : 'opacity-70'"
+                  class="w-6 h-6 rounded border border-[var(--line)]"
+                  :style="`box-shadow: ${backdrop===b?'0 0 0 2px var(--indigo)':'none'}`">
+                  <span class="block w-full h-full rounded" :class="'bd-'+b"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+        </header>
+
+        <!-- main split -->
+        <div class="grid grid-cols-[1fr_320px] gap-5 pb-12">
+          <!-- ================= WORK AREA ================= -->
+          <main>
+            <!-- 1 · BRING IN -->
+            <section x-show="state === 'landing'" class="card p-10 text-center">
+              <div class="max-w-md mx-auto">
+                <div class="w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center text-white" style="background:linear-gradient(135deg,#14181b,#5b5bf0)">
+                  <i data-lucide="feather" class="w-7 h-7 pointer-events-none"></i>
+                </div>
+                <h1 class="page-title mb-2">Drop a composite</h1>
+                <p class="text-muted mb-6">A brand board, sticker sheet, moodboard — any image packed with distinct assets. Magpie pulls each one out clean.</p>
+                <div class="inset border-dashed border-2 rounded-xl py-10 px-6 mb-4" style="border-color:#cdbfa3">
+                  <i data-lucide="image-plus" class="w-8 h-8 mx-auto mb-2 pointer-events-none" style="color:#b0a892"></i>
+                  <p class="text-muted">Drop image here or <span style="color:var(--indigo)" class="font-medium">browse</span></p>
+                </div>
+                <button @click="state='discover'" class="btn-primary mx-auto">Bring it in <i data-lucide="arrow-right" class="w-4 h-4 pointer-events-none"></i></button>
+              </div>
+            </section>
+
+            <!-- 2 · DISCOVERING -->
+            <section x-show="state === 'discover'" class="card p-5">
+              <div class="relative rounded-lg overflow-hidden inset" style="height:380px">
+                <div class="absolute inset-0 skeleton opacity-60"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="card px-4 py-3 flex items-center gap-3 shadow-lg">
+                    <i data-lucide="loader" class="w-4 h-4 animate-spin pointer-events-none" style="color:var(--indigo)"></i>
+                    <span class="text-body">Scanning for distinct assets…</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between mt-3">
+                <span class="text-faint">Gemini 3.5 Flash · vision pass</span>
+                <span class="text-mono">est. $0.02</span>
+              </div>
+            </section>
+
+            <!-- 3 · BREAKDOWN — the canvas (confirm / rename / retype / drop / draw-missed) -->
+            <section x-show="state === 'breakdown'" class="grid grid-cols-[1fr_260px] gap-4">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <span class="section-title">Element breakdown</span>
+                  <button @click="drawing = !drawing" :class="drawing ? 'btn-gold' : 'btn-outline'" class="!text-xs !px-3 !py-1.5">
+                    <i data-lucide="square-dashed-mouse-pointer" class="w-3.5 h-3.5 pointer-events-none"></i>
+                    <span x-text="drawing ? 'Drawing missed region…' : 'Mark a missed region'"></span>
+                  </button>
+                </div>
+                <!-- the board with bbox overlays -->
+                <div class="relative card overflow-hidden" :style="`height:380px;${drawing ? 'cursor:crosshair' : ''}`">
+                  <div x-ref="board2" class="absolute inset-0">
+                    <!-- faux brand board content -->
+                    <div class="absolute inset-0" style="background:radial-gradient(circle at 30% 20%, #fff, #f0ead8)"></div>
+                    <div class="absolute font-display font-bold" style="top:7%;left:9%;font-size:clamp(14px,2.4vw,26px);color:#14181b">BOUNTY</div>
+                    <div class="absolute rounded-full" style="top:27%;left:11%;width:22%;aspect-ratio:1;background:linear-gradient(135deg,#c9962b,#e9c878)"></div>
+                    <div class="absolute" style="top:32%;left:48%;color:#1fa3a3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16 8 14 14 8 16 10 10 16 8" fill="currentColor"/></svg></div>
+                    <div class="absolute" style="top:32%;left:66%;color:#1fa3a3"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg></div>
+                    <div class="absolute text-[10px]" style="top:57%;left:47%;color:#6f6c66;font-style:italic">claim it before it's gone</div>
+                    <div class="absolute flex gap-0" style="top:75%;left:11%;width:52%;height:11%">
+                      <div class="flex-1" style="background:#14181b"></div><div class="flex-1" style="background:#5b5bf0"></div><div class="flex-1" style="background:#1fa3a3"></div><div class="flex-1" style="background:#c9962b"></div><div class="flex-1" style="background:#f6f1e7"></div>
+                    </div>
+                    <div class="absolute" style="top:71%;left:72%;color:#c9962b"><svg width="44" height="44" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15 9 22 9 16 14 18 21 12 17 6 21 8 14 2 9 9 9"/></svg></div>
+                  </div>
+                  <!-- overlays -->
+                  <template x-for="(e, i) in elements" :key="e.id">
+                    <div x-show="e.status !== 'dropped'"
+                      @click="selectedId = e.id"
+                      class="absolute rounded-sm transition-all cursor-pointer"
+                      :style="`top:${e.box.top}%;left:${e.box.left}%;width:${e.box.w}%;height:${e.box.h}%;border:2px solid ${e.color};background:${selectedId===e.id ? e.color+'22' : 'transparent'};${selectedId===e.id?'box-shadow:0 0 0 2px '+e.color+'55':''}`">
+                      <span class="absolute -top-2.5 -left-2 text-[10px] font-bold text-white rounded px-1" :style="`background:${e.color}`" x-text="i+1"></span>
+                    </div>
+                  </template>
+                </div>
+                <p class="text-faint mt-2" x-show="drawing">Drag a box around anything Magpie missed — it becomes a new <span class="font-medium">other</span> element you can rename.</p>
+              </div>
+
+              <!-- element list -->
+              <div>
+                <div class="section-title mb-2 flex items-center justify-between">
+                  <span>7 found</span><span class="text-mono">$0.021</span>
+                </div>
+                <div class="space-y-1.5">
+                  <template x-for="(e, i) in elements" :key="e.id">
+                    <div @click="selectedId = e.id"
+                      class="card px-2.5 py-2 cursor-pointer transition-all"
+                      :class="e.status==='dropped' ? 'opacity-45' : ''"
+                      :style="selectedId===e.id ? 'border-color:var(--indigo);box-shadow:0 0 0 1px var(--indigo)' : ''">
+                      <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded text-[10px] font-bold text-white flex items-center justify-center shrink-0" :style="`background:${e.color}`" x-text="i+1"></span>
+                        <template x-if="editingId !== e.id">
+                          <span class="text-sm font-medium truncate flex-1" :class="e.status==='dropped'?'line-through':''" x-text="e.name" @dblclick="editingId = e.id"></span>
+                        </template>
+                        <template x-if="editingId === e.id">
+                          <input class="input flex-1 !py-0.5 !text-sm" x-model="e.name" @keydown.enter="editingId=null" @blur="editingId=null" x-init="$nextTick(()=>$el.focus())" />
+                        </template>
+                        <button @click.stop="drop(e)" class="btn-icon shrink-0" :title="e.status==='dropped'?'restore':'drop'">
+                          <i :data-lucide="e.status==='dropped' ? 'rotate-ccw' : 'x'" class="w-3.5 h-3.5 pointer-events-none" style="color:#9b988f"></i>
+                        </button>
+                      </div>
+                      <div class="flex items-center gap-1.5 mt-1.5 pl-6">
+                        <button @click.stop="e.type = types[(types.indexOf(e.type)+1) % types.length]" :class="chipClass(e.type)" title="click to retype">
+                          <span x-text="e.type"></span><i data-lucide="chevrons-up-down" class="w-3 h-3 pointer-events-none opacity-60"></i>
+                        </button>
+                        <span class="text-faint" x-show="['palette','screenshot','typography'].includes(e.type)">· kept whole</span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+                <button @click="state='judge'" class="btn-primary w-full mt-3">Extract <span x-text="confirmed.length"></span> assets</button>
+              </div>
+            </section>
+
+            <!-- 4 · REVIEW & JUDGE — cutouts on the chosen backdrop, per-asset good/redo -->
+            <section x-show="state === 'judge'">
+              <div class="flex items-center justify-between mb-3">
+                <span class="section-title">Extracted assets — judge each</span>
+                <div class="flex items-center gap-3 text-xs">
+                  <span class="inline-flex items-center gap-1"><i data-lucide="check" class="w-3.5 h-3.5 pointer-events-none" style="color:var(--gold)"></i><span x-text="goodCount"></span> good</span>
+                  <span class="inline-flex items-center gap-1"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5 pointer-events-none" style="color:#d05b5b"></i><span x-text="redoCount"></span> redo</span>
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <template x-for="e in confirmed" :key="e.id">
+                  <div class="card overflow-hidden" :style="e.judgment==='redo' ? 'border-color:#e6b4b4' : (e.judgment==='good' ? 'border-color:var(--gold)' : '')">
+                    <div class="relative h-32 flex items-center justify-center" :class="'bd-'+backdrop">
+                      <!-- cutout stand-in -->
+                      <div class="text-center" :style="`color:${e.color}`">
+                        <i :data-lucide="e.type==='wordmark'||e.type==='tagline' ? 'type' : (e.type==='palette' ? 'swatch-book' : (e.type==='illustration' ? 'shapes' : 'star'))" class="w-10 h-10 mx-auto pointer-events-none"></i>
+                      </div>
+                      <span class="absolute top-1.5 left-1.5" :class="chipClass(e.type)" x-text="e.type"></span>
+                      <span x-show="e.judgment==='good'" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white" style="background:var(--gold)"><i data-lucide="check" class="w-3 h-3 pointer-events-none"></i></span>
+                    </div>
+                    <div class="px-2.5 py-2 flex items-center justify-between">
+                      <span class="text-sm font-medium truncate" x-text="e.name"></span>
+                      <div class="flex items-center gap-1">
+                        <button @click="judge(e,'good')" class="btn-icon" title="good"><i data-lucide="thumbs-up" class="w-4 h-4 pointer-events-none" :style="e.judgment==='good'?'color:var(--gold)':'color:#b0a892'"></i></button>
+                        <button @click="judge(e,'redo'); selectedId=e.id" class="btn-icon" title="redo"><i data-lucide="thumbs-down" class="w-4 h-4 pointer-events-none" :style="e.judgment==='redo'?'color:#d05b5b':'color:#b0a892'"></i></button>
+                        <button @click="selectedId=e.id; state='compare'" class="btn-icon" title="compare models"><i data-lucide="columns-2" class="w-4 h-4 pointer-events-none" style="color:#b0a892"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <div class="flex items-center gap-2 mt-4">
+                <button @click="state='retry'" class="btn-gold" :disabled="redoCount===0" :style="redoCount===0?'opacity:.5':''">
+                  <i data-lucide="refresh-cw" class="w-4 h-4 pointer-events-none"></i> Retry <span x-text="redoCount"></span> flagged
+                </button>
+                <button @click="state='done'" class="btn-outline">Looks good — finish</button>
+              </div>
+            </section>
+
+            <!-- 5 · COMPARE MODELS — bake-off grid for the selected asset -->
+            <section x-show="state === 'compare'">
+              <button @click="state='judge'" class="btn-ghost mb-2"><i data-lucide="arrow-left" class="w-3.5 h-3.5 pointer-events-none"></i> back to gallery</button>
+              <div class="flex items-center justify-between mb-3">
+                <div>
+                  <span class="section-title">Model bake-off</span>
+                  <div class="text-body font-medium" x-text="selected ? selected.name : ''"></div>
+                </div>
+                <label class="text-xs flex items-center gap-2" style="color:#6f6c66">
+                  <input type="checkbox" class="accent-[var(--indigo)]" />
+                  use winner for all <span class="chip chip-indigo" x-text="selected ? selected.type : ''"></span>
+                </label>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <template x-for="(b, bi) in ['rembg','media-forge:bria','media-forge:ideogram']" :key="b">
+                  <div class="card overflow-hidden cursor-pointer" @click="if(selected) selected.backend=b"
+                    :style="selected && selected.backend===b ? 'border-color:var(--indigo);box-shadow:0 0 0 2px var(--indigo)' : ''">
+                    <div class="relative h-40 flex items-center justify-center" :class="'bd-'+backdrop">
+                      <div :style="`color:${selected?selected.color:'#5b5bf0'}`"><i data-lucide="star" class="w-12 h-12 pointer-events-none" :style="bi===0?'filter:drop-shadow(0 0 0 #000)':''"></i></div>
+                      <!-- fake fringe hint on one backend to show why judging matters -->
+                      <span x-show="bi===2" class="absolute bottom-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded" style="background:#f6d6d6;color:#a33">dark fringe</span>
+                      <span x-show="selected && selected.backend===b" class="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-white" style="background:var(--indigo)"><i data-lucide="check" class="w-3 h-3 pointer-events-none"></i></span>
+                    </div>
+                    <div class="px-3 py-2 flex items-center justify-between">
+                      <span class="text-sm font-medium" x-text="b"></span>
+                      <span class="text-mono" x-text="bi===0?'local · free':'cloud · $0.01'"></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <div class="inset px-3 py-2 mt-3 text-faint flex items-center gap-2">
+                <i data-lucide="info" class="w-3.5 h-3.5 pointer-events-none"></i>
+                Flip the backdrop (top-right) to judge edge quality — cutouts only read against contrast.
+              </div>
+              <button @click="state='judge'" class="btn-primary mt-3">Use <span x-text="selected?selected.backend:''"></span></button>
+            </section>
+
+            <!-- 6 · SELECTIVE RETRY — re-cut only the flagged, keep the good locked -->
+            <section x-show="state === 'retry'">
+              <span class="section-title">Selective retry</span>
+              <p class="text-muted mb-3">Re-cut only what you flagged. The good ones are kept as-is — never regenerated.</p>
+
+              <div class="card divide-y" style="border-color:var(--line)">
+                <template x-for="e in confirmed" :key="e.id">
+                  <div class="flex items-center gap-3 px-3 py-2.5" :style="`border-color:var(--line)`">
+                    <div class="w-9 h-9 rounded flex items-center justify-center shrink-0" :class="'bd-'+backdrop" style="border:1px solid var(--line)">
+                      <i :data-lucide="e.judgment==='redo'?'rotate-ccw':'lock'" class="w-4 h-4 pointer-events-none" :style="e.judgment==='redo'?'color:#d05b5b':'color:#b0a892'"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium truncate" x-text="e.name"></div>
+                      <div class="text-faint" x-text="e.judgment==='redo' ? 'flagged — pick a different backend' : 'kept · ' + e.backend"></div>
+                    </div>
+                    <template x-if="e.judgment==='redo'">
+                      <button @click="e.backend = backends[(backends.indexOf(e.backend)+1) % backends.length]" class="btn-outline !text-xs !px-2.5 !py-1" title="click to change backend">
+                        <span x-text="e.backend"></span><i data-lucide="chevrons-up-down" class="w-3 h-3 pointer-events-none opacity-60"></i>
+                      </button>
+                    </template>
+                    <span x-show="e.judgment!=='redo'" class="chip chip-muted">locked</span>
+                  </div>
+                </template>
+              </div>
+              <button @click="elements.forEach(e=>{if(e.judgment==='redo')e.judgment='good'}); state='judge'" class="btn-gold mt-3">
+                <i data-lucide="refresh-cw" class="w-4 h-4 pointer-events-none"></i> Re-cut <span x-text="redoCount"></span> · keep <span x-text="goodCount"></span>
+              </button>
+            </section>
+
+            <!-- 7 · DONE -->
+            <section x-show="state === 'done'" class="card p-8 text-center">
+              <div class="w-12 h-12 rounded-full mx-auto mb-4 flex items-center justify-center text-white" style="background:var(--gold)">
+                <i data-lucide="check" class="w-6 h-6 pointer-events-none"></i>
+              </div>
+              <h1 class="page-title mb-1">6 assets ready</h1>
+              <p class="text-muted mb-5">Cropped clean, backgrounds judged. Hand off to a branding spell or download the set.</p>
+              <div class="flex items-center justify-center gap-2">
+                <button class="btn-primary"><i data-lucide="download" class="w-4 h-4 pointer-events-none"></i> Download .zip</button>
+                <button class="btn-outline"><i data-lucide="send" class="w-4 h-4 pointer-events-none"></i> Open in glamour</button>
+              </div>
+            </section>
+          </main>
+
+          <!-- ================= CONVERSATION RAIL (co-presence spine) ================= -->
+          <aside class="card flex flex-col" style="height:calc(100vh - 160px);position:sticky;top:120px">
+            <div class="panel-section flex items-center gap-2 !py-3">
+              <i data-lucide="messages-square" class="w-4 h-4 pointer-events-none" style="color:var(--indigo)"></i>
+              <span class="section-title !text-ink">Conversation</span>
+            </div>
+            <div class="flex-1 overflow-y-auto px-3 py-3 space-y-3">
+              <!-- agent -->
+              <div class="flex gap-2">
+                <div class="w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-white text-[10px]" style="background:var(--indigo)">M</div>
+                <div class="inset px-3 py-2 text-body">I found <b>7 elements</b> on the board. Confirm or adjust on the canvas — drop the star sticker if it's not an asset.</div>
+              </div>
+              <!-- user gesture, grounded -->
+              <div class="flex gap-2 flex-row-reverse" x-show="['judge','compare','retry','done'].includes(state)">
+                <div class="w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-[10px]" style="background:var(--gold-soft);color:#9a6f12">you</div>
+                <div class="px-3 py-2 text-body rounded-md" style="background:var(--gold-soft)">Dropped <b>sticker_star</b>, flagged <b>icon_compass</b> for redo.</div>
+              </div>
+              <!-- agent -->
+              <div class="flex gap-2" x-show="['compare','retry','done'].includes(state)">
+                <div class="w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-white text-[10px]" style="background:var(--indigo)">M</div>
+                <div class="inset px-3 py-2 text-body">For <b>icon_compass</b>, rembg left a dark fringe. Bria's cleaner here — want me to apply it to all icons?</div>
+              </div>
+              <div class="flex gap-2" x-show="state==='done'">
+                <div class="w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-white text-[10px]" style="background:var(--indigo)">M</div>
+                <div class="inset px-3 py-2 text-body">Re-cut the compass with Bria — clean now. All 6 assets judged good. ✨</div>
+              </div>
+            </div>
+            <!-- composer -->
+            <div class="p-3" style="border-top:1px solid var(--line)">
+              <div class="flex items-center gap-2">
+                <input class="input flex-1" placeholder="Tell Magpie what to fix…" />
+                <button class="btn-primary !px-2.5"><i data-lucide="arrow-up" class="w-4 h-4 pointer-events-none"></i></button>
+              </div>
+              <div class="flex items-center justify-between mt-2">
+                <span class="text-faint">⌘ feedback: report an issue</span>
+                <span class="text-mono">$0.04 spent</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("alpine:initialized", () => {
+        lucide.createIcons();
+        let pending = false;
+        const observer = new MutationObserver(() => {
+          if (pending) return;
+          pending = true;
+          requestAnimationFrame(() => { lucide.createIcons(); pending = false; });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    </script>
+  </body>
+</html>
