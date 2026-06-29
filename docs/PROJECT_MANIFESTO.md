@@ -19,10 +19,10 @@ room, not sedimented from the conversation that produced it._
 
 ## 1. The thing
 
-Across the toolbox — Digestify, Tuskboard, Grapevine, and whatever comes next —
-the same shape keeps appearing, and it's distinct enough to deserve its own
-name. These are **lightweight, standalone, purpose-built surfaces with an agent
-as the runtime underneath.** A spell isn't wired to a database or a conventional
+Across the toolbox — Digestify, Bounty, Grapevine, and whatever comes next — the
+same shape keeps appearing, and it's distinct enough to deserve its own name.
+These are **lightweight, standalone, purpose-built surfaces with an agent as the
+runtime underneath.** A spell isn't wired to a database or a conventional
 server. The agent is the orchestrator; the UI is served locally; authentication
 and API access live at the MCP layer, which keeps the client thin. The surface
 is a membrane — and it faces both ways: you act on it and intents bubble up; the
@@ -46,8 +46,8 @@ What they are _not_ matters as much as what they are:
   generative-UI path wants a heavy component-abstraction framework. Too heavy.
   The light path is a scaffold plus a house-style skill.
 - **Not transient.** A widget dies with the message that drew it. A spell's
-  effect can persist — Tuskboard is a place you go back to, not a flash of
-  light. It has its own state and identity.
+  effect can persist — Bounty is a place you go back to, not a flash of light.
+  It has its own state and identity.
 
 Underneath all of it: the UI is a thin, ephemeral layer; the agent is the
 runtime. This is an in-between stage on the road toward "the agent as the
@@ -66,7 +66,7 @@ both parties are _at_ the work, each through the channel that fits them.
 
 Co-presence is the shared shape. What varies — and should — is the **lean**:
 
-- **Co-creation** (imago). A near-constant back-and-forth over a shared
+- **Co-creation** (imago, glamour). A near-constant back-and-forth over a shared
   artifact: the human reacts, the agent proposes, the image is made _together_.
   Both hands on the table.
 - **Observation, with the door open** (grapevine, bounty). The real work is
@@ -294,6 +294,15 @@ Kept open on purpose:
   weight tomorrow. Today's tester can't see that — which is the meta-layer's
   real second job: watch across _time_ for what is coalescing and what is
   quietly going dead.
+- **Do the spells compose into a pipeline?** The set isn't one uber-app — each
+  spell is a focused piece of work, and they seem to chain: glamour as the
+  ideation lab you start in, imago where you go deep on a single piece with the
+  heavier tooling that demands, magpie at the tail where you harvest the
+  finished assets out. If that's real, the **lean** (§2) is partly a function of
+  _position_: conversation runs richest mid-stream where content is being
+  shaped, and thins toward the end — magpie still collaborates, but it's
+  resolution, not ideation. Whether "pipeline" is the right shape (versus looser
+  composition), and how general it is, are both unproven.
 
 ---
 

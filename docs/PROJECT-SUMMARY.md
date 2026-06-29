@@ -1,6 +1,6 @@
 # Project Summary
 
-**Last Updated:** 2026-06-27 **Project Status:** Active Development (hardening +
+**Last Updated:** 2026-06-29 **Project Status:** Active Development (hardening +
 coherence toward a public release)
 
 ## Overview
@@ -38,7 +38,7 @@ in `grimoire/house-style.md`.
   surfaces use a Bun bundler step inside their own setup
 - **Development Tools:** Biome (`.ts/.tsx/.json`, error-on-warnings), Prettier
   (`.md`), Husky + lint-staged pre-commit, release-please for versioning
-- **Current version:** spellbook **1.13.0**
+- **Current version:** spellbook **1.14.0**
 
 ## Project Structure
 
@@ -95,9 +95,11 @@ The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
   background-removal phase with per-version model-suffixed files,
   conversational/agent-driven phase advancement).
 - **grapevine** — substantial hardening: per-message **disposition/triage**
-  (mark/reopen/status filters), **channel lifecycle**
-  (`open`/`reset`/`--fresh`), daemon **roll-safety** (`roll`/`doctor`/`reap`),
-  cross-channel `announce`.
+  (mark/reopen/status filters), a **`triage --human` dashboard** (with
+  presence-roster dedupe), **channel lifecycle** (`open`/`reset`/`--fresh`),
+  daemon **roll-safety** (`roll`/`doctor`/`reap`), cross-channel `announce`.
+  Further feature ideas now staged as individual `docs/backlog/grapevine-*`
+  items (8 added 2026-06-28).
 - **glamour-v2** — rebuilt as a grounded conversation surface (gallery-centric
   3-pane StudioShell, narration channels, media-forge image generation); a
   dogfood locked the principle _implicit presence over explicit controls_.
@@ -114,8 +116,8 @@ The formal `docs/architecture/` and `docs/specifications/` trees exist but hold
   library)
 - 2026-06-16 — imago refs-as-assets Phase 1; layer-system Phase 3
 
-**Notable:** **13 release-please cuts in 30 days** took the plugin from v1.0 →
-**v1.13.0**.
+**Notable:** **14 release-please cuts in 30 days** took the plugin from v1.0 →
+**v1.14.0**.
 
 ## Current Direction
 
