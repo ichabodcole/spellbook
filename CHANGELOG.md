@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.14.0...spellbook-v1.15.0) (2026-06-30)
+
+
+### Features
+
+* **astrolabe:** cross-project observatory spell — daemon + bundled React surface ([5dfa9a8](https://github.com/ichabodcole/spellbook/commit/5dfa9a8d30d8ac744ff61f6c276be145b088ac99))
+
 ## [1.14.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.13.0...spellbook-v1.14.0) (2026-06-28)
 
 
