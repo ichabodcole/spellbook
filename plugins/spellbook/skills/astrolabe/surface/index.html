@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Astrolabe</title>
+    <!-- Bulletproof dark canvas: paint the bg before the bundle + styles.css
+         load, so a cold first open (Bun bundles lazily) doesn't flash white.
+         These two literals are the pre-boot fallback only; once styles.css
+         loads, the @theme tokens own the palette. -->
+    <style>
+      html {
+        color-scheme: dark;
+        background-color: #020617;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background-color: #020617;
+        color: #e2e8f0;
+      }
+    </style>
+    <link rel="stylesheet" href="./styles.css" />
+    <!-- Empty favicon placeholder so the browser never default-probes
+         /favicon.ico (a 404 before React mounts). reflectAttention finds this
+         link and updates its href to the live attention-dot data-URL. -->
+    <link rel="icon" href="data:," />
+  </head>
+  <!-- data-theme is the runtime theme hook: flip it to a sibling theme defined
+       in styles.css to reskin live (see the theme block there). -->
+  <body data-theme="astrolabe" class="antialiased">
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

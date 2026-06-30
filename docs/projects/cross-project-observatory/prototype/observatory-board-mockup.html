@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Observatory — mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = { darkMode: "class", theme: { extend: {} } };
+    </script>
+    <!-- bulletproof dark canvas (independent of Tailwind's base layer) -->
+    <style>
+      html { color-scheme: dark; }
+      body { background-color: #020617; color: #e2e8f0; min-height: 100vh; }
+    </style>
+    <style type="text/tailwind">
+      @layer components {
+        .page-title  { @apply text-lg font-semibold text-slate-100; }
+        .section-title { @apply text-xs font-semibold uppercase tracking-wider text-slate-400; }
+        .label       { @apply text-xs font-medium text-slate-400; }
+        .text-muted  { @apply text-slate-400; }
+        .text-faint  { @apply text-slate-500; }
+        .text-mono   { @apply font-mono text-xs text-slate-500; }
+        .link        { @apply text-violet-300 hover:text-violet-200 underline underline-offset-2; }
+
+        .card  { @apply rounded-xl border border-slate-800 bg-slate-900/60 shadow-sm; }
+        .inset { @apply rounded-lg border border-slate-800 bg-slate-950/50; }
+
+        .btn-primary { @apply inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-500 transition-colors; }
+        .btn-outline { @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-sm font-medium text-slate-200 hover:bg-slate-800 transition-colors; }
+        .btn-ghost   { @apply inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-slate-300 hover:bg-slate-800 transition-colors; }
+        .btn-nudge   { @apply inline-flex items-center gap-1.5 rounded-md border border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300 hover:border-violet-600/60 hover:text-violet-200 hover:bg-violet-600/10 transition-colors; }
+
+        .input    { @apply w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-600 focus:outline-none; }
+        .textarea { @apply w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-600 focus:border-violet-600 focus:outline-none resize-none; }
+
+        .chip { @apply inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset; }
+      }
+    </style>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  </head>
+
+  <body x-data="observatory" class="bg-slate-950 text-slate-200 antialiased min-h-screen">
+    <!-- live page-title dot demo: reflects the favicon/tab "needs you" signal -->
+    <span x-effect="document.title = pageTitle()" class="hidden"></span>
+
+    <!-- ── STATE SWITCHER (mockup chrome) ───────────────────────────── -->
+    <div class="sticky top-0 z-40 border-b border-amber-700/40 bg-amber-950/80 backdrop-blur">
+      <div class="px-4 py-1.5 flex items-center gap-1.5 flex-wrap">
+        <span class="text-[11px] font-semibold uppercase tracking-wider text-amber-300/80 mr-2">Mockup states</span>
+        <template x-for="s in states" :key="s.id">
+          <button
+            @click="state = s.id"
+            :class="state === s.id ? 'bg-amber-600 text-white border-amber-600' : 'bg-slate-800 text-slate-300 border-slate-600 hover:bg-slate-700'"
+            class="text-xs px-2.5 py-1 rounded border font-medium transition-colors"
+            x-text="s.label"
+          ></button>
+        </template>
+      </div>
+    </div>
+
+    <!-- ── APP CHROME: header ───────────────────────────────────────── -->
+    <header class="border-b border-slate-800 bg-slate-900/40">
+      <div class="mx-auto max-w-5xl px-5 py-3 flex items-center gap-3">
+        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-600/20 ring-1 ring-violet-500/40">
+          <i data-lucide="radar" class="w-4 h-4 text-violet-300 pointer-events-none"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center gap-2">
+            <span class="page-title">Observatory</span>
+            <span class="chip text-violet-300 bg-violet-500/10 ring-violet-500/30">working name</span>
+          </div>
+          <div class="text-faint text-xs">cross-project board · what's moving, what needs you</div>
+        </div>
+
+        <div class="flex items-center gap-1.5 text-xs text-slate-400">
+          <span class="relative flex h-2 w-2">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60"></span>
+            <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+          </span>
+          Live
+        </div>
+        <span class="text-faint text-xs" x-show="state !== 'empty'">
+          <span class="text-amber-300/80" x-text="attentionCount"></span> need you ·
+          <span x-text="activeCount"></span> active ·
+          <span x-text="quietCount"></span> quiet
+        </span>
+        <button class="btn-primary" @click="state = 'add'">
+          <i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i> Add project
+        </button>
+      </div>
+    </header>
+
+    <!-- title-dot hint -->
+    <div class="mx-auto max-w-5xl px-5 pt-3" x-show="attentionCount > 0 && (state === 'board' )">
+      <div class="text-[11px] text-amber-300/70 flex items-center gap-1.5">
+        <i data-lucide="app-window" class="w-3.5 h-3.5 pointer-events-none"></i>
+        Look at the browser tab — the title shows <span class="text-mono text-amber-300">● (<span x-text="attentionCount"></span>)</span> so you feel the nudge even on another tab.
+      </div>
+    </div>
+
+    <main class="mx-auto max-w-5xl px-5 py-5">
+      <!-- ════ BOARD (three zones) — board + calm ══════════════════════ -->
+      <template x-if="state === 'board' || state === 'calm'">
+        <div class="space-y-7">
+          <p class="text-xs text-muted" x-show="state==='calm'">
+            <span class="section-title">Layout</span> · nothing needs you — the quiet board. Active work hums; inactive projects are tucked into the collapsed band below.
+          </p>
+
+          <!-- ZONE 1 · NEEDS YOU -->
+          <section x-show="attentionList.length">
+            <div class="mb-2 flex items-center gap-2">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 pointer-events-none"></i>
+              <h2 class="text-sm font-semibold text-amber-200">Needs you</h2>
+              <span class="chip text-amber-200 bg-amber-500/20 ring-amber-500/50" x-text="attentionList.length"></span>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <template x-for="p in attentionList" :key="p.id">
+                <div x-html="cardAttention(p)"></div>
+              </template>
+            </div>
+          </section>
+
+          <!-- ZONE 2 · ACTIVE -->
+          <section x-show="activeList.length">
+            <div class="mb-2 flex items-center gap-2">
+              <span class="relative flex h-2 w-2">
+                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-50"></span>
+                <span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+              </span>
+              <h2 class="text-sm font-semibold text-slate-200">Active</h2>
+              <span class="chip text-emerald-300 bg-emerald-500/10 ring-emerald-500/30" x-text="activeList.length"></span>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <template x-for="p in activeList" :key="p.id">
+                <div x-html="cardActive(p)"></div>
+              </template>
+            </div>
+          </section>
+
+          <!-- ZONE 3 · QUIET (collapsible, muted) -->
+          <section x-show="quietList.length">
+            <button @click="quietOpen = !quietOpen" class="mb-2 flex items-center gap-2 text-slate-400 hover:text-slate-300 transition-colors">
+              <span class="transition-transform" :class="quietOpen ? '' : '-rotate-90'">
+                <i data-lucide="chevron-down" class="w-4 h-4 pointer-events-none"></i>
+              </span>
+              <span class="section-title">Quiet</span>
+              <span class="chip text-slate-400 bg-slate-500/10 ring-slate-500/30" x-text="quietList.length"></span>
+              <span class="text-faint text-xs">idle &amp; inactive</span>
+              <span class="text-faint text-xs ml-1" x-text="quietOpen ? '· hide' : '· show'"></span>
+            </button>
+            <div x-show="quietOpen" x-transition class="space-y-2">
+              <template x-for="p in quietList" :key="p.id">
+                <div x-html="cardQuiet(p)"></div>
+              </template>
+            </div>
+          </section>
+        </div>
+      </template>
+
+      <!-- ════ ADD PROJECT ═════════════════════════════════════════════ -->
+      <template x-if="state === 'add'">
+        <div class="mx-auto max-w-lg">
+          <div class="card p-5">
+            <div class="mb-4 flex items-center gap-2">
+              <i data-lucide="folder-plus" class="w-5 h-5 text-violet-300 pointer-events-none"></i>
+              <h2 class="page-title">Register a project</h2>
+            </div>
+            <p class="text-muted text-sm mb-4">The rare manual path — an agent usually does this. Registering only adds the card; an agent <em>joining</em> later is what makes it active.</p>
+            <div class="space-y-4">
+              <div><label class="label">Name</label><input class="input mt-1" value="Wand CLI" /></div>
+              <div><label class="label">Description</label><textarea rows="2" class="textarea mt-1">Unified `wand` launcher for casting spells by name.</textarea></div>
+              <div><label class="label">Path</label><input class="input mt-1 font-mono text-xs" value="~/Projects/Spellbook/packages/wand" /></div>
+              <div>
+                <label class="label">Avatar <span class="text-faint">· project identity, auto-generated if unset</span></label>
+                <div class="mt-1 flex items-center gap-3">
+                  <div :class="draft.av" class="flex h-12 w-12 items-center justify-center rounded-xl text-xl ring-1"><span x-text="draft.glyph"></span></div>
+                  <button class="btn-outline" @click="shuffleAvatar()"><i data-lucide="shuffle" class="w-4 h-4 pointer-events-none"></i> Shuffle</button>
+                  <span class="text-faint text-xs">color + glyph seeded from the name</span>
+                </div>
+              </div>
+              <div class="inset p-3 flex items-start gap-2">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 mt-0.5 pointer-events-none"></i>
+                <div class="text-xs text-muted">Checked against <strong class="text-slate-200" x-text="projects.length"></strong> existing projects — no path or name collision.</div>
+              </div>
+            </div>
+            <div class="mt-5 flex justify-end gap-2">
+              <button class="btn-ghost" @click="state = 'board'">Cancel</button>
+              <button class="btn-primary" @click="state = 'board'"><i data-lucide="check" class="w-4 h-4 pointer-events-none"></i> Register</button>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ════ DRILL-DOWN DRAWER (future / phase 2) ════════════════════ -->
+      <template x-if="state === 'drawer'">
+        <div class="relative">
+          <div class="grid gap-3 sm:grid-cols-2 opacity-40 pointer-events-none">
+            <template x-for="p in attentionList.concat(activeList)" :key="p.id">
+              <div x-html="cardActive(p)"></div>
+            </template>
+          </div>
+          <div class="absolute right-0 top-0 h-full w-full sm:w-96 card p-5 shadow-2xl">
+            <div class="flex items-start gap-3">
+              <div class="flex h-12 w-12 items-center justify-center rounded-xl text-xl ring-1 bg-violet-500/20 text-violet-200 ring-violet-500/40">🎨</div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2"><h2 class="page-title">Imago Layers</h2><span class="chip text-violet-300 bg-violet-500/10 ring-violet-500/30">future · phase 2</span></div>
+                <div class="text-mono">~/Projects/imago</div>
+              </div>
+              <button class="btn-ghost text-slate-400 hover:text-slate-200" @click="state='board'"><i data-lucide="x" class="w-5 h-5 pointer-events-none"></i></button>
+            </div>
+            <div class="mt-4 space-y-3">
+              <div class="chip text-amber-200 bg-amber-500/20 ring-amber-500/50"><i data-lucide="alert-triangle" class="w-3 h-3 pointer-events-none"></i> Needs you</div>
+              <div class="inset p-3 text-sm text-slate-200">“Which merge strategy for overlapping layers — flatten, or keep as a group?”</div>
+              <div>
+                <div class="section-title mb-1">Session history <span class="text-faint normal-case font-normal">· future, not MVP</span></div>
+                <ul class="space-y-1 text-xs text-muted">
+                  <li>2m — paused, awaiting decision</li>
+                  <li>14m — applied transform to 3 layers</li>
+                  <li>31m — started this scope of work</li>
+                </ul>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button class="btn-outline"><i data-lucide="terminal" class="w-4 h-4 pointer-events-none"></i> Open terminal</button>
+                <button class="btn-primary"><i data-lucide="bell-ring" class="w-4 h-4 pointer-events-none"></i> Nudge</button>
+              </div>
+              <p class="text-faint text-[11px] pt-2">Drawer + inline reply is parked for phase 2 — shown here only to feel the drill-down.</p>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <!-- ════ EMPTY / FIRST RUN ═══════════════════════════════════════ -->
+      <template x-if="state === 'empty'">
+        <div class="mx-auto max-w-md text-center py-16">
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800/60 ring-1 ring-slate-700"><i data-lucide="radar" class="w-7 h-7 text-slate-500 pointer-events-none"></i></div>
+          <h2 class="page-title mb-1">Nothing in the sky yet</h2>
+          <p class="text-muted text-sm mb-5">Register your projects, then have an agent <span class="text-mono">join</span> one to bring it online.</p>
+          <div class="flex justify-center gap-2"><button class="btn-primary" @click="state='add'"><i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i> Add a project</button></div>
+          <div class="inset mt-6 p-3 text-left">
+            <div class="text-mono text-slate-400">$ observatory add --path ~/Projects/imago</div>
+            <div class="text-mono text-slate-400">$ observatory join imago   <span class="text-slate-600"># from inside a project agent</span></div>
+          </div>
+        </div>
+      </template>
+    </main>
+
+    <footer class="mx-auto max-w-5xl px-5 pb-10 pt-2 text-faint text-[11px]">Throwaway prototype · fake data · exploring the surface before building the daemon.</footer>
+
+    <script>
+      let scheduled = false;
+      const renderIcons = () => {
+        if (scheduled) return;
+        scheduled = true;
+        requestAnimationFrame(() => { scheduled = false; window.lucide && lucide.createIcons(); });
+      };
+      new MutationObserver(renderIcons).observe(document.body, { childList: true, subtree: true });
+      document.addEventListener("DOMContentLoaded", renderIcons);
+
+      document.addEventListener("alpine:init", () => {
+        const STATUS = {
+          working:   { label: "Working",   dot: "bg-emerald-400", chip: "text-emerald-300 bg-emerald-500/10 ring-emerald-500/30" },
+          attention: { label: "Needs you", dot: "bg-amber-400",   chip: "text-amber-200 bg-amber-500/20 ring-amber-500/50" },
+          idle:      { label: "Idle",      dot: "bg-slate-500",   chip: "text-slate-400 bg-slate-500/10 ring-slate-500/30" },
+          stale:     { label: "Stale",     dot: "bg-slate-600",   chip: "text-slate-500 bg-slate-600/10 ring-slate-600/30" },
+          done:      { label: "Done",      dot: "bg-sky-400",     chip: "text-sky-300 bg-sky-500/10 ring-sky-500/30" },
+        };
+
+        const PROJECTS = [
+          { id: "imago", name: "Imago Layers", glyph: "🎨", av: "bg-violet-500/20 text-violet-200 ring-violet-500/40",
+            status: "attention", connected: true, tagline: "Layer system · phase 3", last: "1m ago", path: "~/Projects/imago",
+            question: "Which merge strategy for overlapping layers — flatten into one, or keep them as an addressable group? It changes the layer data shape, so I paused before committing." },
+          { id: "operator", name: "Operator Sync", glyph: "🔭", av: "bg-cyan-500/20 text-cyan-200 ring-cyan-500/40",
+            status: "attention", connected: true, tagline: "Docs curation", last: "5m ago", path: "~/Projects/operator",
+            question: "The curation pass flagged 3 docs as stale and superseded. Approve deleting them, or do you want to review the list first?" },
+          { id: "grapevine", name: "Grapevine V2", glyph: "🍇", av: "bg-fuchsia-500/20 text-fuchsia-200 ring-fuchsia-500/40",
+            status: "working", connected: true, tagline: "Hardening the daemon", last: "2m ago", path: "~/Projects/Spellbook",
+            summary: "Roll-safety verbs landed and the suite is green. Now wiring the SSE reconnect path so watch surfaces survive a daemon restart — after that, polishing the triage dashboard." },
+          { id: "magpie", name: "Magpie Export", glyph: "🐦", av: "bg-indigo-500/20 text-indigo-200 ring-indigo-500/40",
+            status: "working", connected: true, tagline: "Background removal", last: "just now", path: "~/Projects/magpie",
+            summary: "Cutting 8 assets from the moodboard; 3 done so far. Next up is the per-version model-suffixed file output, then wiring the export view." },
+          { id: "docs", name: "Docs Deploy", glyph: "📄", av: "bg-sky-500/20 text-sky-200 ring-sky-500/40",
+            status: "done", connected: false, tagline: "Deploy", last: "20m ago", path: "~/Projects/docs",
+            summary: "Preview built and deployed cleanly. Agent has exited." },
+          { id: "rebrand", name: "Spellbook Rebrand", glyph: "✨", av: "bg-amber-500/20 text-amber-200 ring-amber-500/40",
+            status: "idle", connected: false, tagline: "Paused", last: "4h ago", path: "~/Projects/Spellbook",
+            summary: "No agent connected. Visual-cohesion work is deferred." },
+          { id: "bounty", name: "Bounty Metrics", glyph: "🎯", av: "bg-rose-500/20 text-rose-200 ring-rose-500/40",
+            status: "stale", connected: false, tagline: "", last: "6h ago", path: "~/Projects/bounty",
+            summary: "Last heartbeat 6h ago — the agent likely exited without disconnecting." },
+        ];
+
+        const PALETTE = [
+          { av: "bg-violet-500/20 text-violet-200 ring-violet-500/40", glyph: "🪄" },
+          { av: "bg-emerald-500/20 text-emerald-200 ring-emerald-500/40", glyph: "🌿" },
+          { av: "bg-sky-500/20 text-sky-200 ring-sky-500/40", glyph: "🔮" },
+          { av: "bg-amber-500/20 text-amber-200 ring-amber-500/40", glyph: "⚡" },
+          { av: "bg-rose-500/20 text-rose-200 ring-rose-500/40", glyph: "🜂" },
+          { av: "bg-cyan-500/20 text-cyan-200 ring-cyan-500/40", glyph: "🛰️" },
+        ];
+
+        Alpine.data("observatory", () => ({
+          STATUS,
+          projects: PROJECTS,
+          state: "board",
+          quietOpen: true,
+          draft: { ...PALETTE[0] },
+          states: [
+            { id: "board",  label: "1 · Board (zones)" },
+            { id: "calm",   label: "2 · Board — all calm" },
+            { id: "add",    label: "3 · Add project" },
+            { id: "drawer", label: "4 · Drill-down (future)" },
+            { id: "empty",  label: "5 · Empty / first run" },
+          ],
+
+          get displayProjects() {
+            if (this.state === "calm") {
+              return this.projects.map((p) =>
+                p.status === "attention"
+                  ? { ...p, status: "working", tagline: p.tagline, summary: "Back to work — resolved and continuing.", question: undefined }
+                  : p
+              );
+            }
+            return this.projects;
+          },
+          get attentionList() { return this.displayProjects.filter((p) => p.status === "attention"); },
+          get activeList()    { return this.displayProjects.filter((p) => p.status === "working"); },
+          get quietList()     { return this.displayProjects.filter((p) => ["idle", "stale", "done"].includes(p.status)); },
+          get attentionCount() { return this.attentionList.length; },
+          get activeCount()    { return this.activeList.length; },
+          get quietCount()     { return this.quietList.length; },
+
+          pageTitle() {
+            const n = this.state === "empty" ? 0 : this.attentionCount;
+            return (n > 0 ? `● (${n}) ` : "") + "Observatory — mockup";
+          },
+          shuffleAvatar() {
+            this.draft._i = ((this.draft._i ?? 0) + 1) % PALETTE.length;
+            this.draft = { ...PALETTE[this.draft._i], _i: this.draft._i };
+          },
+
+          presence(p) {
+            return p.connected
+              ? `<span class="inline-flex items-center gap-1 text-[11px] text-emerald-400"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>agent connected</span>`
+              : `<span class="inline-flex items-center gap-1 text-[11px] text-slate-500"><span class="h-1.5 w-1.5 rounded-full border border-slate-600"></span>no agent</span>`;
+          },
+          head(p) {
+            const s = this.STATUS[p.status];
+            return `
+              <div class="flex items-start gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg ring-1 ${p.av}">${p.glyph}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate font-medium text-slate-100">${p.name}</div>
+                  <div class="font-mono text-[11px] text-slate-500 truncate">${p.path}</div>
+                </div>
+                <span class="chip ${s.chip} shrink-0"><span class="h-1.5 w-1.5 rounded-full ${s.dot}"></span>${s.label}</span>
+              </div>`;
+          },
+          tagline(p) {
+            return p.tagline
+              ? `<div class="text-[11px] font-semibold uppercase tracking-wide text-violet-300/80">${p.tagline}</div>`
+              : "";
+          },
+          foot(p, extraBtn) {
+            return `
+              <div class="flex items-center justify-between pt-1">
+                <div class="flex items-center gap-3">${this.presence(p)}<span class="text-[11px] text-slate-500">${p.last}</span></div>
+                <div class="flex gap-1.5">
+                  ${extraBtn || ""}
+                  <button class="btn-nudge"><span class="pointer-events-none">Nudge</span></button>
+                </div>
+              </div>`;
+          },
+
+          cardAttention(p) {
+            const openBtn = `<button class="btn-nudge !border-amber-600/60 !text-amber-200 !bg-amber-600/10"><span class="pointer-events-none">Open</span></button>`;
+            return `
+              <div class="card p-4 border-amber-500/50 bg-amber-500/[0.05] ring-1 ring-amber-500/20 h-full flex flex-col gap-3">
+                ${this.head(p)}
+                ${this.tagline(p)}
+                <div class="rounded-lg border border-amber-600/30 bg-amber-950/30 p-3 text-sm text-amber-100">${p.question}</div>
+                ${this.foot(p, openBtn)}
+              </div>`;
+          },
+          cardActive(p) {
+            return `
+              <div class="card p-4 h-full flex flex-col gap-2.5">
+                ${this.head(p)}
+                ${this.tagline(p)}
+                <div class="text-sm text-slate-300 leading-relaxed flex-1">${p.summary || ""}</div>
+                ${this.foot(p)}
+              </div>`;
+          },
+          cardQuiet(p) {
+            const s = this.STATUS[p.status];
+            return `
+              <div class="flex items-center gap-3 rounded-lg border border-slate-800/60 bg-slate-900/30 px-3 py-2 opacity-70">
+                <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-base ring-1 ${p.av}">${p.glyph}</div>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2"><span class="truncate text-sm font-medium text-slate-300">${p.name}</span></div>
+                  <div class="truncate text-xs text-slate-500">${p.summary || ""}</div>
+                </div>
+                <span class="chip ${s.chip} shrink-0"><span class="h-1.5 w-1.5 rounded-full ${s.dot}"></span>${s.label}</span>
+                <span class="text-[11px] text-slate-600 shrink-0 w-16 text-right">${p.last}</span>
+              </div>`;
+          },
+        }));
+      });
+    </script>
+  </body>
+</html>
