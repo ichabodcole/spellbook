@@ -19,14 +19,15 @@ skill — zip one folder and it runs anywhere `bun` is on PATH.
 
 ## The spells
 
-| Spell       | Kind        | What it conjures                                                  |
-| ----------- | ----------- | ----------------------------------------------------------------- |
-| `digestify` | cantrip     | A one-shot reading/review surface with inline questions.          |
-| `grapevine` | conjuration | A standing daemon for agent-to-agent channels.                    |
-| `bounty`    | conjuration | A live duplex Kanban board (human ↔ agent, real-time).            |
-| `magpie`    | conjuration | A surface to extract each asset from a composite image into PNGs. |
-| `glamour`   | conjuration | A style studio — references in, re-castable style spec out.       |
-| `imago`     | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.         |
+| Spell       | Kind        | What it conjures                                                    |
+| ----------- | ----------- | ------------------------------------------------------------------- |
+| `digestify` | cantrip     | A one-shot reading/review surface with inline questions.            |
+| `grapevine` | conjuration | A standing daemon for agent-to-agent channels.                      |
+| `bounty`    | conjuration | A live duplex Kanban board (human ↔ agent, real-time).              |
+| `magpie`    | conjuration | A surface to extract each asset from a composite image into PNGs.   |
+| `glamour`   | conjuration | A style studio — references in, re-castable style spec out.         |
+| `imago`     | conjuration | A canvas — create⟷annotate⟷edit images in a conversation.           |
+| `astrolabe` | conjuration | A standing observatory — live state across every project in flight. |
 
 **Cantrip** = cast-and-resolve: spawn → the user acts → submit → JSON on stdout
 → exit. **Conjuration** = something with duration: a daemon or board you return
@@ -47,7 +48,7 @@ Spellbook is a Claude Code plugin marketplace. From inside Claude Code:
 /plugin install spellbook@spellbook-marketplace
 ```
 
-That installs the `spellbook` plugin (all six spells) plus the authoring
+That installs the `spellbook` plugin (all seven spells) plus the authoring
 rituals. Each spell needs **`bun`** on your PATH; a couple lean on extra CLIs
 they'll tell you about (e.g. `imago`/`glamour` generate through `media-forge`).
 

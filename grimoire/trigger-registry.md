@@ -33,14 +33,15 @@ meaning to summon anything, is a bug.
 
 ## Reserved spells
 
-| Name        | Kind        | Conjures                                                                   | Status  |
-| ----------- | ----------- | -------------------------------------------------------------------------- | ------- |
-| `digestify` | cantrip     | One-shot reading/review surface, inline questions                          | shipped |
-| `grapevine` | conjuration | Agent-to-agent channel daemon                                              | shipped |
-| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done)                          | shipped |
-| `magpie`    | conjuration | Extract individual assets from a composite image → PNG files               | shipped |
-| `glamour`   | conjuration | Compose a visual style from influences → re-castable spec + images         | shipped |
-| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation with the agent | shipped |
+| Name        | Kind        | Conjures                                                                      | Status  |
+| ----------- | ----------- | ----------------------------------------------------------------------------- | ------- |
+| `digestify` | cantrip     | One-shot reading/review surface, inline questions                             | shipped |
+| `grapevine` | conjuration | Agent-to-agent channel daemon                                                 | shipped |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done)                             | shipped |
+| `magpie`    | conjuration | Extract individual assets from a composite image → PNG files                  | shipped |
+| `glamour`   | conjuration | Compose a visual style from influences → re-castable spec + images            | shipped |
+| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation with the agent    | shipped |
+| `astrolabe` | conjuration | Cross-project observatory — live status of many projects, presence, needs-you | shipped |
 
 ## Retired names (renamed away — don't reuse)
 
@@ -65,6 +66,15 @@ the wand argument is not.)
   argument. Prefer evocative, set-apart names over descriptive ones; the
   set-apartness is what keeps the CLI namespace unambiguous. (Grimoires used
   Latin for the same reason; the current names are English but distinctive.)
+- **Two naming shapes.** _Artifact-noun_ spells name a thing you start/open and
+  an agent joins or appears in (grapevine, bounty, astrolabe); _act_ spells name
+  the doing (digestify). A standing conjuration you return to wants an
+  artifact-noun — the everyday verbs then read naturally around it, instead of
+  forcing "cast"/"create" onto an awkward fit.
+- **The name is spoken.** Casting is incantation, so the token must be easy to
+  _say_, not just to read. (`astrolabe` was chosen over `orrery` — the tighter
+  literal metaphor — because "orrery" is awkward to pronounce aloud; a name you
+  stumble over is a fumbled cast.)
 - The name is _not_ the sole conversational trigger — the skill description
   carries the full, plural set of invocation phrasings and lenses.
 - The verbs _inside_ a conjuration (grapevine's `tail`, `who`, `send`) are a

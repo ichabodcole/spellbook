@@ -1,0 +1,93 @@
+@import "tailwindcss";
+/* Scan .ts too (not just .tsx): board.ts carries the RINGS identity-tint class
+   strings, and Tailwind only generates utilities it finds as literal text. */
+@source "./**/*.{ts,tsx}";
+
+/* ───────────────────────────────────────────────────────────────────────────
+   THEME — the single source of truth for color + radius (ported 1:1 from t13).
+
+   Tailwind v4 @theme emits these as :root vars AND generates the utilities
+   (bg-surface, text-ink, border-edge, bg-attention/20, rounded-card, …), so the
+   React markup carries no raw palette/radius literal. Names + values mirror
+   imago/glamour's taxonomy verbatim so the spells harmonize.
+
+   Runtime theme switch (the digestify-style capability kept from t13): the
+   generated utilities reference var(--color-*), so an alternate theme is one
+   override block —
+       [data-theme="midnight"] { --color-bg: #000; --color-surface: #0a0a12; … }
+   — and flipping <body data-theme="…"> reskins live. astrolabe IS the default
+   theme, so it needs no redundant override block: on the v4 bundled surface,
+   @theme is the single source that t13's :root block was on the CDN.
+
+   NOT themed: the 8-hue avatar RINGS (per-project identity tints) live in the
+   component layer as Tailwind's stock palette — identity, not palette.
+   ─────────────────────────────────────────────────────────────────────────── */
+@theme {
+  /* surfaces (low → high elevation) */
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-surface-2: #020617;
+  --color-surface-3: #1e293b;
+
+  /* borders */
+  --color-edge: #1e293b;
+  --color-edge-strong: #334155;
+  --color-divider: #1e293b;
+
+  /* text (strong → faint) */
+  --color-ink-strong: #f1f5f9;
+  --color-ink: #e2e8f0;
+  --color-ink-2: #cbd5e1;
+  --color-muted: #94a3b8;
+  --color-faint: #64748b;
+  --color-faint-2: #475569;
+
+  /* accent (violet) */
+  --color-accent: #7c3aed;
+  --color-accent-hover: #8b5cf6;
+  --color-accent-ink: #c4b5fd;
+  --color-accent-ink-2: #ddd6fe;
+  --color-accent-fg: #ffffff;
+
+  /* intent · attention (amber) — the agent needs you */
+  --color-attention: #f59e0b;
+  --color-attention-icon: #fbbf24;
+  --color-attention-ink: #fde68a;
+  --color-attention-ink-2: #fcd34d;
+  --color-attention-strong: #d97706;
+  --color-attention-surface: #451a03;
+  --color-attention-surface-ink: #fef3c7;
+
+  /* intent · positive (emerald) — connected / working */
+  --color-positive: #34d399;
+  --color-positive-surface: #10b981;
+  --color-positive-ink: #6ee7b7;
+
+  /* intent · idle (slate) — the quiet zone */
+  --color-idle: #64748b;
+  --color-idle-strong: #475569;
+
+  /* intent · danger (rose) — form errors */
+  --color-danger-strong: #e11d48;
+  --color-danger-ink: #fecdd3;
+  --color-danger-surface: #4c0519;
+
+  /* radius */
+  --radius-chip: 9999px;
+  --radius-control-sm: 0.375rem;
+  --radius-control: 0.5rem;
+  --radius-card: 0.75rem;
+  --radius-card-lg: 1rem;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+  }
+}
