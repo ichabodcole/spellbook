@@ -15,6 +15,9 @@ CHANGELOG.md
 .codex/
 .scratch/
 
+# anthill team footprint (living docs + config — prose pheromone, hand-wrapped)
+.anthill/
+
 # Credentials
 .operator
 

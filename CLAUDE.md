@@ -1,3 +1,6 @@
+> **Agents:** this repo runs an anthill team — see [`AGENTS.md`](./AGENTS.md)
+> for the team, its seats, and how to engage it (`/anthill:convene`).
+
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`

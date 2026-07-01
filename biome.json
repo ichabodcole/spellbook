@@ -10,7 +10,8 @@
       "!!**/dist",
       "!!**/out",
       "!!**/coverage",
-      "!!**/target"
+      "!!**/target",
+      "!!**/.anthill"
     ]
   },
   "formatter": {

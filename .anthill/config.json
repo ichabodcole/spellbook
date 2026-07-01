@@ -1,0 +1,44 @@
+{
+  "version": 2,
+  "channel": "spellbook",
+  "lead": "prospero",
+  "seats": [
+    {
+      "handle": "prospero",
+      "role": "lead",
+      "scope": "orchestration, the file-scoped atomic land, human liaison, and repo ops (release-please cuts, dependency updates, marketplace.json / plugin.json manifests)",
+      "spawn": false
+    },
+    {
+      "handle": "daedalus",
+      "role": "engine",
+      "scope": "the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests",
+      "spawn": true
+    },
+    {
+      "handle": "circe",
+      "role": "surface",
+      "scope": "the spell surfaces — React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention)",
+      "spawn": true
+    },
+    {
+      "handle": "thoth",
+      "role": "grimoire",
+      "scope": "the craft canon and its tooling — grimoire/house-style.md, decay-ledger, trigger-registry, manifesto sync, naming/coalescence — and the inscribe / ward authoring rituals they must stay in lockstep with",
+      "spawn": true
+    },
+    {
+      "handle": "cassandra",
+      "role": "verify",
+      "scope": "cold-agent usability (fresh-agent reports) and integration — drives the assembled spell end-to-end in a realistic environment and calls the failures",
+      "spawn": true
+    }
+  ],
+  "grounding": [
+    "CLAUDE.md",
+    "docs/PROJECT_MANIFESTO.md",
+    "grimoire/house-style.md",
+    "docs/PROJECT-SUMMARY.md"
+  ],
+  "launch": "claude \"/anthill:join {handle}\""
+}
