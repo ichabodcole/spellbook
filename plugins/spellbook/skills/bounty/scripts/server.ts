@@ -832,7 +832,12 @@ async function main(argv: string[]): Promise<number> {
         emitEvent({ type: "task.update", taskId: msg.id, patch, by, owner: ownerOf(msg.id) });
         return { ok: true, applied: true };
       }
-      return { ok: true, applied: false };
+      // applyTaskUpdate returned false here = the task doesn't exist (no-ops on
+      // an existing task were already caught above with NO error). Carry an error
+      // so the CLI can tell a not-found / mis-routed update (a visible failure,
+      // #62) apart from a benign no-op (both are applied:false, but only this one
+      // is a real failure).
+      return { ok: true, applied: false, error: `no such task ${msg.id}` };
     } else if (msg.type === "task.remove") {
       const owner = ownerOf(msg.id); // before removal
       if (applyTaskRemove(state, msg.id)) {
@@ -840,7 +845,9 @@ async function main(argv: string[]): Promise<number> {
         emitEvent({ type: "task.remove", taskId: msg.id, by, owner });
         return { ok: true, applied: true };
       }
-      return { ok: true, applied: false };
+      // Not found (remove has no no-op path) — carry an error so a mis-routed
+      // remove surfaces as a visible failure (#62), like update above.
+      return { ok: true, applied: false, error: `no such task ${msg.id}` };
     } else if (msg.type === "task.block") {
       const task = state.tasks.find((t) => t.id === msg.id);
       if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };

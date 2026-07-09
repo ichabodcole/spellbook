@@ -20,7 +20,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { liveBoards, ownerInScope, parseTags, pickTailSession, type Session } from "./cli.ts";
+import {
+  liveBoards,
+  ownerInScope,
+  parseTags,
+  pickTailSession,
+  resolveSession,
+  type Session,
+} from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -1836,6 +1843,50 @@ describe("ownership scoping (Phase C E2E)", () => {
       await runCli(["close", "--session", session], { env });
     }
   }, 25000);
+
+  test("update/remove of a not-found id fail visibly (nonzero, no {ok:true}) — #62", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "real", "--id", "real", "--session", session], { env });
+    try {
+      // A mis-routed (not-found) update must NOT print a silent {ok:true}.
+      const badUpd = await runCli(["update", "ghost", "--status", "done", "--session", session], {
+        env,
+      });
+      expect(badUpd.code).toBe(1);
+      expect(badUpd.stdout).not.toContain('"ok":true');
+      expect(badUpd.stderr).toContain("ghost");
+
+      // A not-found remove is the same visible failure.
+      const badRm = await runCli(["remove", "ghost", "--session", session], { env });
+      expect(badRm.code).toBe(1);
+      expect(badRm.stdout).not.toContain('"ok":true');
+
+      // An EXISTING task still updates + removes with exit 0 + a success line.
+      const okUpd = await runCli(["update", "real", "--status", "doing", "--session", session], {
+        env,
+      });
+      expect(okUpd.code).toBe(0);
+      expect((JSON.parse(okUpd.stdout) as { updated?: string }).updated).toBe("real");
+
+      // A legitimate NO-OP update (doing→doing) is applied:false with NO error —
+      // it must stay benign (exit 0), not be mistaken for a mis-route (#62 edge).
+      const noop = await runCli(["update", "real", "--status", "doing", "--session", session], {
+        env,
+      });
+      expect(noop.code).toBe(0);
+      expect(noop.stderr).not.toContain("no such task");
+      expect((JSON.parse(noop.stdout) as { noop?: boolean }).noop).toBe(true);
+
+      const okRm = await runCli(["remove", "real", "--session", session], { env });
+      expect(okRm.code).toBe(0);
+      expect((JSON.parse(okRm.stdout) as { removed?: string }).removed).toBe("real");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 25000);
 });
 
 // ── Dependencies (Phase D) — blockedBy, cycle guard, unblocked ───────────
@@ -2239,6 +2290,65 @@ describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
 
   test("returns null when nothing resolves yet (no board up)", () => {
     expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
+});
+
+// ── resolveSession (session targeting precedence — #59) ──────────────────
+//
+// An un-pinned verb must NOT silently fall onto a stranger board that merely
+// opened more recently. resolveSession picks the target in precedence order:
+// --session flag > $BOUNTY_SESSION > nearest `.bounty-session` (walking up from
+// cwd) > undefined (caller falls back to the `latest` pointer). env/startDir/
+// readFile are injected (like pickTailSession's `read`) so precedence is pure
+// and testable without a real cwd/filesystem.
+
+describe("resolveSession (session targeting precedence)", () => {
+  // A file-reader over a { path: contents } map — everything else is absent.
+  const reader = (files: Record<string, string>) => (p: string) => files[p] ?? null;
+  const noFiles = reader({});
+
+  test("explicit --session flag wins over everything", () => {
+    expect(
+      resolveSession(
+        { session: "flag-id" },
+        { BOUNTY_SESSION: "env-id" },
+        "/a/b/c",
+        reader({ "/a/b/c/.bounty-session": "file-id" }),
+      ),
+    ).toBe("flag-id");
+  });
+
+  test("$BOUNTY_SESSION used when no flag (over the file)", () => {
+    expect(
+      resolveSession(
+        {},
+        { BOUNTY_SESSION: "env-id" },
+        "/a/b/c",
+        reader({ "/a/b/c/.bounty-session": "file-id" }),
+      ),
+    ).toBe("env-id");
+  });
+
+  test("nearest walked-up .bounty-session used when no flag/env", () => {
+    // Marker lives at /a, cwd is /a/b/c → walk up finds it.
+    expect(resolveSession({}, {}, "/a/b/c", reader({ "/a/.bounty-session": "  file-id\n" }))).toBe(
+      "file-id",
+    ); // trimmed
+  });
+
+  test("undefined when nothing resolves (falls back to `latest`)", () => {
+    expect(resolveSession({}, {}, "/a/b/c", noFiles)).toBeUndefined();
+  });
+
+  test("an empty/whitespace .bounty-session keeps walking up", () => {
+    expect(
+      resolveSession(
+        {},
+        {},
+        "/a/b/c",
+        reader({ "/a/b/c/.bounty-session": "   \n", "/a/.bounty-session": "root-id" }),
+      ),
+    ).toBe("root-id");
   });
 });
 

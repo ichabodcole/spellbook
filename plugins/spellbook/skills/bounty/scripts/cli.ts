@@ -5,7 +5,7 @@
 // streams board events as JSONL for Monitor to wrap.
 //
 // Lifecycle:
-//   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>]  # spawn a daemon
+//   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin]  # spawn a daemon (--pin binds it to cwd via .bounty-session)
 //   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
 //   bun cli.ts state [--full] [--owner <name> | --mine] [--as <name>]    # scoped read-back
 //     Each task carries derived `blocked` + `liveBlockers:[{id,title,status}]`
@@ -27,15 +27,18 @@
 // suppression + claim/--mine. Ownership: --owner assigns; tail --owner/--mine
 // scopes a worker's wake-set to its own + claimable tasks (client-side filter).
 // --stdin reads the title from stdin (bypasses shell quoting — apostrophes,
-// quotes, ampersands, angle brackets all land verbatim). All verbs target the
-// most recent session by default; pass --session <id> to target a specific one.
+// quotes, ampersands, angle brackets all land verbatim). Session targeting
+// (#59) resolves in precedence order: --session <id> > $BOUNTY_SESSION > the
+// nearest `.bounty-session` file walking up from cwd > the most-recent board
+// (the `latest` pointer). `open --pin` writes cwd/.bounty-session so a team can
+// bind a board to its project directory.
 //
 // Discipline: structured payload on stdout (one JSON line); liveness, echoes,
 // and diagnostics on stderr — never merge them. Exit 2 on bad args, 0 on a
 // successful verb; `tail` exits 0 on the daemon's `closed` event.
 
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,6 +72,44 @@ function printJson(data: unknown) {
 
 function sessionFilePath(session?: string): string {
   return session ? join(tmpdir(), `bounty-${session}.json`) : join(tmpdir(), "bounty-latest.json");
+}
+
+// Resolve which board a verb targets, in precedence order (#59) — an un-pinned
+// verb must NOT silently fall onto a stranger board that merely opened more
+// recently:
+//   1. explicit --session <id> (flags) — always wins;
+//   2. $BOUNTY_SESSION env var;
+//   3. the nearest `.bounty-session` file found by walking UP from cwd (its
+//      trimmed contents = the session id) — a project-root-style marker binding
+//      a board to a directory tree (written by `open --pin`);
+//   4. otherwise undefined → the caller falls back to the `latest` pointer
+//      (prior behavior).
+// env/startDir/readFile are injected (like pickTailSession's `read`) so the
+// precedence is unit-testable without a real cwd/filesystem.
+function resolveSession(
+  flags: Record<string, string | boolean>,
+  env: Record<string, string | undefined> = process.env,
+  startDir: string = process.cwd(),
+  readFile: (path: string) => string | null = (p) => {
+    try {
+      return readFileSync(p, "utf8");
+    } catch {
+      return null;
+    }
+  },
+): string | undefined {
+  if (typeof flags.session === "string") return flags.session;
+  if (env.BOUNTY_SESSION) return env.BOUNTY_SESSION;
+  let dir = startDir;
+  while (true) {
+    const contents = readFile(join(dir, ".bounty-session"));
+    const id = contents?.trim();
+    if (id) return id;
+    const parent = dirname(dir);
+    if (parent === dir) break; // reached the filesystem root
+    dir = parent;
+  }
+  return undefined;
 }
 
 function readSession(session?: string): Session | null {
@@ -250,6 +291,20 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
         const r = await fetch(`http://127.0.0.1:${s.port}/state`);
         if (r.ok) {
           printJson(s);
+          // --pin: bind this board to the cwd so un-pinned verbs run here resolve
+          // to it (via the `.bounty-session` walk-up in resolveSession) instead
+          // of the machine-wide `latest` pointer (#59).
+          if (flags.pin) {
+            const pinPath = join(process.cwd(), ".bounty-session");
+            try {
+              writeFileSync(pinPath, `${s.session_id}\n`);
+              process.stderr.write(`# pinned board ${s.session_id} → ${pinPath}\n`);
+            } catch (e) {
+              process.stderr.write(
+                `bounty: could not write ${pinPath}: ${e instanceof Error ? e.message : String(e)}\n`,
+              );
+            }
+          }
           return;
         }
       } catch {
@@ -507,7 +562,7 @@ async function readStdin(): Promise<string> {
 
 const HELP = `bounty — an agent-driven task board.
 
-  open   [--title ..] [--timeout S] [--no-open] [--restore <id>]   spawn a board daemon
+  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin]   spawn a board daemon (--pin binds it to cwd)
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
@@ -526,12 +581,14 @@ const HELP = `bounty — an agent-driven task board.
   --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped
   tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.
   --stdin reads the title from stdin (verbatim — survives apostrophes, quotes,
-  &, <, >). Add --session <id> to target a specific session (default: most recent).`;
+  &, <, >). Session targeting resolves --session <id> > $BOUNTY_SESSION >
+  nearest .bounty-session (walking up from cwd) > most-recent board. Use
+  open --pin to write cwd/.bounty-session and bind a board to this directory.`;
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
   const { pos, flags } = parseArgs(rest);
-  const session = typeof flags.session === "string" ? flags.session : undefined;
+  const session = resolveSession(flags);
   const as = resolveAs(flags);
 
   switch (verb) {
@@ -599,7 +656,21 @@ async function main(argv: string[]): Promise<number> {
       if (upExpect !== undefined) patch.expect = upExpect;
       if (Object.keys(patch).length === 0)
         die("update: nothing to change (give --status/--title/--notes/--owner/--tag/--stdin)");
-      await postCmd(session, { type: "task.update", id, patch }, { as });
+      // Surface the daemon's outcome (like claim/block), distinguishing the two
+      // kinds of applied:false: WITH an error = not-found / rejected (e.g. the
+      // verb mis-routed to a stranger board) → a visible, nonzero failure, never
+      // a silent {ok:true} (#62). WITHOUT an error = a legitimate no-op (the task
+      // already held this value, e.g. doing→doing) → benign success, since the
+      // task exists and the board is right.
+      const res = await postCmd(session, { type: "task.update", id, patch }, { as, quiet: true });
+      if (res.applied) {
+        printJson({ ok: true, updated: id });
+      } else if (res.error) {
+        process.stderr.write(`bounty: ${res.error}\n`);
+        return 1;
+      } else {
+        printJson({ ok: true, updated: id, noop: true });
+      }
       break;
     }
     case "claim": {
@@ -648,10 +719,22 @@ async function main(argv: string[]): Promise<number> {
       }
       break;
     }
-    case "remove":
-      if (!pos[0]) die("usage: remove <id>");
-      await postCmd(session, { type: "task.remove", id: pos[0] }, { as });
+    case "remove": {
+      const id = pos[0];
+      if (!id) die("usage: remove <id>");
+      // Same applied-check as update (#62): a not-found remove (mis-routed to
+      // another board) must fail visibly, not print a silent success.
+      const res = await postCmd(session, { type: "task.remove", id }, { as, quiet: true });
+      if (res.applied) {
+        printJson({ ok: true, removed: id });
+      } else {
+        process.stderr.write(
+          `bounty: ${res.error ?? `no such task ${id} (wrong board? pass --session)`}\n`,
+        );
+        return 1;
+      }
       break;
+    }
     case "message": {
       const text = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!text) die("usage: message <text...> [--stdin]");
@@ -705,4 +788,4 @@ if (import.meta.main) {
 }
 
 export type { Session };
-export { liveBoards, main, ownerInScope, parseTags, pickTailSession };
+export { liveBoards, main, ownerInScope, parseTags, pickTailSession, resolveSession };
