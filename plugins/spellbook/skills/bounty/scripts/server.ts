@@ -50,7 +50,14 @@
 // or an agent cli.ts close → reason "close"), 2 bad args, 124 idle timeout. The
 // board is a conjuration — there's no "cancel"/130 discard path.
 
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,6 +71,14 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // the same path, so override BOUNTY_HOME to relocate both.
 const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
 const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
+
+// Durable, append-only diagnostics log (#64). The daemon runs headless — cli.ts
+// `open` spawns it with stdout/stderr discarded — so a death (idle-close, crash,
+// signal) currently leaves no trace. Every lifecycle transition appends ONE JSON
+// line here; cli.ts additionally points the child's native stderr at this same
+// file so Bun's own hard-abort output (which JS handlers can't catch) lands too.
+// Diagnostics only — no board behavior reads this.
+const DAEMON_LOG = join(BOUNTY_HOME, "daemon.log");
 
 type TaskStatus = "todo" | "doing" | "review" | "done";
 type StatusVisit = { status: TaskStatus; at: number }; // a single transition (unix ms)
@@ -548,6 +563,52 @@ async function main(argv: string[]): Promise<number> {
     if (embedded !== null) port = embedded;
   }
 
+  // Diagnostics (#64): append ONE structured JSON line per lifecycle event to
+  // $BOUNTY_HOME/daemon.log. Closes over `sessionId` (read at call time, so a
+  // pre-bind crash logs "" and a post-bind one logs the real id). The whole
+  // write is wrapped so logging can NEVER throw inside the daemon. Date/new Date
+  // is fine here — this is the daemon process, not a workflow script.
+  const logDaemon = (reason: string, extra?: Record<string, unknown>) => {
+    try {
+      mkdirSync(BOUNTY_HOME, { recursive: true });
+      const line = JSON.stringify({
+        ts: new Date().toISOString(),
+        session_id: sessionId,
+        pid: process.pid,
+        reason,
+        ...extra,
+      });
+      appendFileSync(DAEMON_LOG, `${line}\n`);
+    } catch {
+      /* diagnostics must never crash or throw in the daemon */
+    }
+  };
+
+  // Crash + signal handlers catch the JS-level and OS-level deaths that headless
+  // stdio otherwise swallows. There is no prior signal handling to compose with,
+  // and these preserve the pre-existing behavior (an untrapped crash/signal still
+  // dies) — they only add the missing log line. The graceful-shutdown path
+  // (snapshot save on `done`) is unaffected: it runs on the clean close/timeout
+  // route, not through these.
+  process.on("uncaughtException", (e) => {
+    logDaemon("uncaughtException", {
+      error: String(e),
+      stack: e instanceof Error ? e.stack : undefined,
+    });
+    process.exit(1);
+  });
+  process.on("unhandledRejection", (e) => {
+    logDaemon("unhandledRejection", { error: String(e) });
+  });
+  process.on("SIGTERM", () => {
+    logDaemon("signal", { signal: "SIGTERM" });
+    process.exit(143);
+  });
+  process.on("SIGINT", () => {
+    logDaemon("signal", { signal: "SIGINT" });
+    process.exit(130);
+  });
+
   const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
@@ -832,7 +893,12 @@ async function main(argv: string[]): Promise<number> {
         emitEvent({ type: "task.update", taskId: msg.id, patch, by, owner: ownerOf(msg.id) });
         return { ok: true, applied: true };
       }
-      return { ok: true, applied: false };
+      // applyTaskUpdate returned false here = the task doesn't exist (no-ops on
+      // an existing task were already caught above with NO error). Carry an error
+      // so the CLI can tell a not-found / mis-routed update (a visible failure,
+      // #62) apart from a benign no-op (both are applied:false, but only this one
+      // is a real failure).
+      return { ok: true, applied: false, error: `no such task ${msg.id}` };
     } else if (msg.type === "task.remove") {
       const owner = ownerOf(msg.id); // before removal
       if (applyTaskRemove(state, msg.id)) {
@@ -840,7 +906,9 @@ async function main(argv: string[]): Promise<number> {
         emitEvent({ type: "task.remove", taskId: msg.id, by, owner });
         return { ok: true, applied: true };
       }
-      return { ok: true, applied: false };
+      // Not found (remove has no no-op path) — carry an error so a mis-routed
+      // remove surfaces as a visible failure (#62), like update above.
+      return { ok: true, applied: false, error: `no such task ${msg.id}` };
     } else if (msg.type === "task.block") {
       const task = state.tasks.find((t) => t.id === msg.id);
       if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
@@ -1108,6 +1176,7 @@ async function main(argv: string[]): Promise<number> {
   const url = `http://${host}:${boundPort}`;
   // First frame on the event log (id 1) — bookends the stream with `closed`.
   emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, by: "system" });
+  logDaemon("ready", { port: boundPort });
 
   // Discovery: write session info to predictable temp files so joining
   // agents can find this board without copy-paste. Two files:
@@ -1202,6 +1271,15 @@ async function main(argv: string[]): Promise<number> {
   }, 30_000);
 
   const { code, reason } = await done;
+  // Known-exit diagnostics (#64). `subscribers` at an idle-timeout exit is the
+  // key signal: if it idle-closes with subscribers > 0 the idle logic is the
+  // culprit; if 0, no tail was actually connected. Captured BEFORE teardown
+  // closes the sockets/SSE clients so the count is the live one at exit.
+  logDaemon("exit", {
+    reason,
+    subscribers: sockets.size + sseClients.size,
+    idleMs: performance.now() - lastActivity,
+  });
   clearInterval(idleTimer);
   clearInterval(snapTimer);
   clearInterval(heartbeatTimer);

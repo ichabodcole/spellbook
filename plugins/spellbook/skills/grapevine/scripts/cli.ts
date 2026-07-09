@@ -1479,6 +1479,22 @@ function looksLikeLeakedSend(text: string): boolean {
   return LEAKED_SEND_RE.test(text);
 }
 
+// Shell-metacharacter footgun (#60): a body passed as an INLINE positional arg
+// is exposed to the caller's shell, which command-substitutes backticks /
+// `$(...)` / `${...}` BEFORE grapevine sees it — corrupting or partially
+// executing code-bearing messages. The CLI can't un-substitute what the shell
+// already ate; the honest fix is to steer callers to the shell-free paths
+// (--body-file / --stdin / default-stdin). When metacharacters SURVIVE into an
+// inline body (e.g. the caller happened to single-quote), they're intact this
+// time — but the pattern is a latent footgun, so we warn (never block: the
+// message is fine as received). Absent-metachar inline bodies are either plain
+// text (safe) or already-substituted (undetectable) — so we only warn on the
+// detectable risky pattern.
+const SHELL_METACHAR_RE = /`|\$\(|\$\{/;
+export function looksShellRisky(text: string): boolean {
+  return SHELL_METACHAR_RE.test(text);
+}
+
 function parseFlags(argv: string[]): {
   positional: string[];
   flags: Record<string, string | boolean>;
@@ -1534,6 +1550,7 @@ async function main(argv: string[]): Promise<number> {
       const from = resolveAlias(flags);
       const hasInlineText = positional.length > 1;
       let text: string;
+      let fromInline = false;
       if (flags["body-file"]) {
         // Read the body from a file — bypasses both shell quoting and any
         // heredoc fumble. Trailing newline stripped, matching --stdin.
@@ -1551,6 +1568,7 @@ async function main(argv: string[]): Promise<number> {
         text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
       } else {
         text = positional.slice(1).join(" ");
+        fromInline = true;
       }
       if (!from)
         die("send: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
@@ -1564,6 +1582,16 @@ async function main(argv: string[]): Promise<number> {
             "--body-file <path>, or pass --force to send it anyway.",
         );
       }
+      // Shell-metachar footgun warning (#60): the body survived intact this
+      // time, but passing code-bearing text inline is a latent footgun. Nudge to
+      // the shell-free paths. On stderr (never blocks the send).
+      if (fromInline && looksShellRisky(text)) {
+        process.stderr.write(
+          "# ⚠ inline body contains shell metacharacters (backtick, $(), curly-brace vars). " +
+            "It was sent as-is, but the shell can command-substitute these before " +
+            "grapevine sees them — use --body-file or --stdin for code-bearing messages.\n",
+        );
+      }
       await cmdSend(name, from, text, {
         quiet: !!flags.quiet,
         verbose: !!flags.verbose,
@@ -1575,6 +1603,7 @@ async function main(argv: string[]): Promise<number> {
       const from = resolveAlias(flags);
       const hasInlineText = positional.length > 0;
       let text: string;
+      let fromInline = false;
       if (flags["body-file"]) {
         const path = flags["body-file"] as string;
         const file = Bun.file(path);
@@ -1586,6 +1615,7 @@ async function main(argv: string[]): Promise<number> {
         text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
       } else {
         text = positional.join(" ");
+        fromInline = true;
       }
       if (!from)
         die("announce: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
@@ -1594,6 +1624,13 @@ async function main(argv: string[]): Promise<number> {
           "announce: that body looks like a leaked grapevine invocation (a fumbled " +
             "heredoc?). Nothing was sent. Pipe the real body via --stdin or " +
             "--body-file <path>, or pass --force to send it anyway.",
+        );
+      }
+      if (fromInline && looksShellRisky(text)) {
+        process.stderr.write(
+          "# ⚠ inline body contains shell metacharacters (backtick, $(), curly-brace vars). " +
+            "It was sent as-is, but the shell can command-substitute these before " +
+            "grapevine sees them — use --body-file or --stdin for code-bearing messages.\n",
         );
       }
       const channels = flags.channels

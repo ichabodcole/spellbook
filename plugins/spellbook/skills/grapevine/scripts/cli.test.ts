@@ -8,6 +8,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { looksShellRisky } from "./cli.ts";
 
 const HOME = mkdtempSync(join(tmpdir(), "grapevine-test-"));
 const CLI = join(import.meta.dir, "cli.ts");
@@ -1678,5 +1679,22 @@ describe("grapevine cli", () => {
     TRACKED_PROCS.delete(op);
     rmSync(orphanHome, { recursive: true, force: true });
     await bunRun(["stop"]);
+  });
+});
+
+describe("looksShellRisky (#60 inline-body footgun predicate)", () => {
+  // Brace-expansion inputs are built as "$" + "{...}" so this file contains no
+  // literal dollar-brace sequence (which biome's noTemplateCurlyInString flags).
+  test("flags bodies with backticks, command-substitution, or brace vars", () => {
+    expect(looksShellRisky("run `git add`")).toBe(true);
+    expect(looksShellRisky("value is $(whoami)")).toBe(true);
+    expect(looksShellRisky(`path $${"{HOME}/x"}`)).toBe(true);
+    expect(looksShellRisky(`a \`b\` and $(c) and $${"{d}"}`)).toBe(true);
+  });
+  test("does NOT flag plain text or lone $ (no false positives on normal messages)", () => {
+    expect(looksShellRisky("just a normal message")).toBe(false);
+    expect(looksShellRisky("it costs $5 and it's fine")).toBe(false);
+    expect(looksShellRisky("apostrophes ' and quotes \" are fine")).toBe(false);
+    expect(looksShellRisky("")).toBe(false);
   });
 });

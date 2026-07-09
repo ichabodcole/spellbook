@@ -20,7 +20,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { liveBoards, ownerInScope, parseTags, pickTailSession, type Session } from "./cli.ts";
+import {
+  liveBoards,
+  ownerInScope,
+  parseTags,
+  pickTailSession,
+  resolveSession,
+  type Session,
+} from "./cli.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -1555,6 +1562,39 @@ describe("cli.ts ↔ daemon parity", () => {
     }
   }, 20000);
 
+  test("daemon.log records ready + exit lifecycle lines (#64 diagnostics)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["close", "--session", session], { env });
+    const logPath = join(home, "daemon.log");
+    // The `exit` line lands as the daemon tears down, which races the CLI close
+    // returning — poll briefly for it rather than reading once.
+    // The shutdown line carries the CloseReason as `reason` (the extra spread
+    // wins over the "exit" label) plus the subscribers/idleMs signal — that
+    // subscribers/idleMs pair is how we tell it apart from a `ready` line.
+    const isExit = (l: { reason: string; subscribers?: number }) =>
+      l.subscribers !== undefined && l.reason !== "ready";
+    const readMine = () =>
+      (existsSync(logPath) ? readFileSync(logPath, "utf8") : "")
+        .split("\n")
+        .filter((l) => l.trim())
+        .map((l) => JSON.parse(l) as { reason: string; session_id: string; subscribers?: number })
+        .filter((l) => l.session_id === session);
+    let mine = readMine();
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && !mine.some(isExit)) {
+      await new Promise((r) => setTimeout(r, 80));
+      mine = readMine();
+    }
+    expect(existsSync(logPath)).toBe(true);
+    expect(mine.some((l) => l.reason === "ready")).toBe(true);
+    expect(mine.some(isExit)).toBe(true);
+    // A CLI close resolves the daemon with reason "close".
+    expect(mine.find(isExit)?.reason).toBe("close");
+  }, 20000);
+
   test("add --stdin lands arbitrary text verbatim (the #7 quoting guard)", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
@@ -1832,6 +1872,50 @@ describe("ownership scoping (Phase C E2E)", () => {
       const ok = await runCli(["claim", "F", "--as", "bob", "--session", session], { env });
       expect(ok.code).toBe(0);
       expect((JSON.parse(ok.stdout) as { owner?: string }).owner).toBe("bob");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 25000);
+
+  test("update/remove of a not-found id fail visibly (nonzero, no {ok:true}) — #62", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "real", "--id", "real", "--session", session], { env });
+    try {
+      // A mis-routed (not-found) update must NOT print a silent {ok:true}.
+      const badUpd = await runCli(["update", "ghost", "--status", "done", "--session", session], {
+        env,
+      });
+      expect(badUpd.code).toBe(1);
+      expect(badUpd.stdout).not.toContain('"ok":true');
+      expect(badUpd.stderr).toContain("ghost");
+
+      // A not-found remove is the same visible failure.
+      const badRm = await runCli(["remove", "ghost", "--session", session], { env });
+      expect(badRm.code).toBe(1);
+      expect(badRm.stdout).not.toContain('"ok":true');
+
+      // An EXISTING task still updates + removes with exit 0 + a success line.
+      const okUpd = await runCli(["update", "real", "--status", "doing", "--session", session], {
+        env,
+      });
+      expect(okUpd.code).toBe(0);
+      expect((JSON.parse(okUpd.stdout) as { updated?: string }).updated).toBe("real");
+
+      // A legitimate NO-OP update (doing→doing) is applied:false with NO error —
+      // it must stay benign (exit 0), not be mistaken for a mis-route (#62 edge).
+      const noop = await runCli(["update", "real", "--status", "doing", "--session", session], {
+        env,
+      });
+      expect(noop.code).toBe(0);
+      expect(noop.stderr).not.toContain("no such task");
+      expect((JSON.parse(noop.stdout) as { noop?: boolean }).noop).toBe(true);
+
+      const okRm = await runCli(["remove", "real", "--session", session], { env });
+      expect(okRm.code).toBe(0);
+      expect((JSON.parse(okRm.stdout) as { removed?: string }).removed).toBe("real");
     } finally {
       await runCli(["close", "--session", session], { env });
     }
@@ -2239,6 +2323,65 @@ describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
 
   test("returns null when nothing resolves yet (no board up)", () => {
     expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
+});
+
+// ── resolveSession (session targeting precedence — #59) ──────────────────
+//
+// An un-pinned verb must NOT silently fall onto a stranger board that merely
+// opened more recently. resolveSession picks the target in precedence order:
+// --session flag > $BOUNTY_SESSION > nearest `.bounty-session` (walking up from
+// cwd) > undefined (caller falls back to the `latest` pointer). env/startDir/
+// readFile are injected (like pickTailSession's `read`) so precedence is pure
+// and testable without a real cwd/filesystem.
+
+describe("resolveSession (session targeting precedence)", () => {
+  // A file-reader over a { path: contents } map — everything else is absent.
+  const reader = (files: Record<string, string>) => (p: string) => files[p] ?? null;
+  const noFiles = reader({});
+
+  test("explicit --session flag wins over everything", () => {
+    expect(
+      resolveSession(
+        { session: "flag-id" },
+        { BOUNTY_SESSION: "env-id" },
+        "/a/b/c",
+        reader({ "/a/b/c/.bounty-session": "file-id" }),
+      ),
+    ).toBe("flag-id");
+  });
+
+  test("$BOUNTY_SESSION used when no flag (over the file)", () => {
+    expect(
+      resolveSession(
+        {},
+        { BOUNTY_SESSION: "env-id" },
+        "/a/b/c",
+        reader({ "/a/b/c/.bounty-session": "file-id" }),
+      ),
+    ).toBe("env-id");
+  });
+
+  test("nearest walked-up .bounty-session used when no flag/env", () => {
+    // Marker lives at /a, cwd is /a/b/c → walk up finds it.
+    expect(resolveSession({}, {}, "/a/b/c", reader({ "/a/.bounty-session": "  file-id\n" }))).toBe(
+      "file-id",
+    ); // trimmed
+  });
+
+  test("undefined when nothing resolves (falls back to `latest`)", () => {
+    expect(resolveSession({}, {}, "/a/b/c", noFiles)).toBeUndefined();
+  });
+
+  test("an empty/whitespace .bounty-session keeps walking up", () => {
+    expect(
+      resolveSession(
+        {},
+        {},
+        "/a/b/c",
+        reader({ "/a/b/c/.bounty-session": "   \n", "/a/.bounty-session": "root-id" }),
+      ),
+    ).toBe("root-id");
   });
 });
 

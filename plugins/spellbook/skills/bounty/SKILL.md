@@ -146,6 +146,16 @@ discovery files to `<tmpdir>/bounty-<session_id>.json` + `bounty-latest.json`,
 so joiners and later verbs find the board. Every verb targets the most recent
 session by default; pass `--session <id>` to target a specific one.
 
+> **Pin the board when more than one may be open (multi-team / multi-project).**
+> The "most recent session" default means that if a _second_ board opens on the
+> machine (another project's team), your un-pinned verbs silently retarget to it
+> — cards land on the wrong board with no error. To bind a team's verbs to its
+> own board, use one of (highest precedence first): `--session <id>` on the verb
+> · `$BOUNTY_SESSION=<id>` in the env · a `.bounty-session` file (containing the
+> id) discovered by walking up from the cwd. `open --pin` writes
+> `.bounty-session` into the cwd for you, so a project directory auto-pins every
+> later verb. When any pin is set, the `latest` pointer is never consulted.
+
 > **Heads up on `$CLAUDE_PLUGIN_ROOT`.** It resolves to the plugin's install
 > path in Claude Code. If it's unset in your shell (some harnesses leave it
 > empty), substitute the absolute path
@@ -311,6 +321,10 @@ type Task = {
   omitted (the `-p<port>` suffix encodes the bound port for session-recovery
   semantics matching digestify).
 - `--restore <id>` — resume a saved board (see Durability below).
+- `--pin` — write `.bounty-session` (this board's id) into the cwd so every
+  later verb run from this directory tree auto-targets **this** board, not
+  merely the most-recent one (see the pin note above — matters when multiple
+  boards may be open on the machine).
 
 ### Durability
 
