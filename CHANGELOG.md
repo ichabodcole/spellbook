@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.15.1](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.15.0...spellbook-v1.15.1) (2026-07-09)
+
+
+### Bug Fixes
+
+* **bounty:** capture daemon deaths in a diagnostics log (toward [#64](https://github.com/ichabodcole/spellbook/issues/64)) ([e10c994](https://github.com/ichabodcole/spellbook/commit/e10c9947bb20ef39192678efbe54c1a6785ae491))
+* **bounty:** fail loudly on mis-routed writes + pin the target board ([b72240d](https://github.com/ichabodcole/spellbook/commit/b72240d1c6c29e4bcce56071a2faa5289dcf7470))
+* **grapevine:** warn when an inline body carries shell metacharacters ([cc35636](https://github.com/ichabodcole/spellbook/commit/cc35636abb75b42e6c22dc30d082b4da0404e615))
+
 ## [1.15.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.14.0...spellbook-v1.15.0) (2026-06-30)
 
 
