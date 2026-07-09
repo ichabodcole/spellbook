@@ -38,7 +38,7 @@
 // successful verb; `tail` exits 0 on the daemon's `closed` event.
 
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, openSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -271,12 +271,26 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   if (flags["no-open"]) args.push("--no-open");
 
   const prevId = readSession()?.session_id;
+  // Point the detached daemon's native stderr at the durable diagnostics log
+  // (#64) so Bun's OWN hard-abort output — the crash traces JS handlers can't
+  // catch, which "ignore" used to discard — is captured on the same file the
+  // daemon appends its lifecycle lines to. Best-effort: fall back to "ignore" if
+  // the fd can't be opened (never block `open` on logging). stdin+stdout stay
+  // ignored.
+  let stderr: "ignore" | number = "ignore";
+  try {
+    const bountyHome = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
+    mkdirSync(bountyHome, { recursive: true });
+    stderr = openSync(join(bountyHome, "daemon.log"), "a");
+  } catch {
+    stderr = "ignore";
+  }
   // node:child_process (not Bun.spawn) is deliberate + matches imago/grapevine:
   // the daemon must SURVIVE this CLI process exiting, which needs detached:true
   // + unref(). Bun.spawn can't detach a surviving daemon.
   const proc = spawn(process.execPath, args, {
     detached: true,
-    stdio: ["ignore", "ignore", "ignore"],
+    stdio: ["ignore", "ignore", stderr],
     env: process.env,
     cwd: join(SCRIPT_DIR, ".."),
   });

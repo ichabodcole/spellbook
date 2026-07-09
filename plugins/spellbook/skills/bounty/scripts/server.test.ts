@@ -1562,6 +1562,39 @@ describe("cli.ts ↔ daemon parity", () => {
     }
   }, 20000);
 
+  test("daemon.log records ready + exit lifecycle lines (#64 diagnostics)", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["close", "--session", session], { env });
+    const logPath = join(home, "daemon.log");
+    // The `exit` line lands as the daemon tears down, which races the CLI close
+    // returning — poll briefly for it rather than reading once.
+    // The shutdown line carries the CloseReason as `reason` (the extra spread
+    // wins over the "exit" label) plus the subscribers/idleMs signal — that
+    // subscribers/idleMs pair is how we tell it apart from a `ready` line.
+    const isExit = (l: { reason: string; subscribers?: number }) =>
+      l.subscribers !== undefined && l.reason !== "ready";
+    const readMine = () =>
+      (existsSync(logPath) ? readFileSync(logPath, "utf8") : "")
+        .split("\n")
+        .filter((l) => l.trim())
+        .map((l) => JSON.parse(l) as { reason: string; session_id: string; subscribers?: number })
+        .filter((l) => l.session_id === session);
+    let mine = readMine();
+    const deadline = Date.now() + 3000;
+    while (Date.now() < deadline && !mine.some(isExit)) {
+      await new Promise((r) => setTimeout(r, 80));
+      mine = readMine();
+    }
+    expect(existsSync(logPath)).toBe(true);
+    expect(mine.some((l) => l.reason === "ready")).toBe(true);
+    expect(mine.some(isExit)).toBe(true);
+    // A CLI close resolves the daemon with reason "close".
+    expect(mine.find(isExit)?.reason).toBe("close");
+  }, 20000);
+
   test("add --stdin lands arbitrary text verbatim (the #7 quoting guard)", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
