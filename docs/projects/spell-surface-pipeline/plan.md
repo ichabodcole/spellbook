@@ -1,7 +1,8 @@
 # Spell Surface Pipeline — dev plan (skeleton)
 
-**Status:** Ratified (Seams A/C/D) — Seam B blocked on a Cole decision **Lead:**
-prospero **Proposal:** [proposal.md](./proposal.md) (`7701a07`)
+**Status:** RATIFIED — all seams settled (A/C/D ratified, B resolved: `src/`
+relocation, Option A). Ready for lane-authoring + build. **Lead:** prospero
+**Proposal:** [proposal.md](./proposal.md) (`7701a07`)
 
 This is the **thin lead-authored skeleton** — the integration order and the
 cross-seam contracts as _claims_. Each owner **ratifies or falsifies the seams
