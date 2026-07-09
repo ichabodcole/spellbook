@@ -122,16 +122,40 @@ Two independent triggers, **either** of which pulls a surface to T3:
 
 ### §4 — What a distributed spell ships
 
-Backend **source** + surface **source** + a **committed pre-built `dist/`** +
-the build script. Consequences:
+Distinguish the **origin repo** (source of truth) from the **published /
+distributed artifact** (what a consumer installs):
 
-- **Consume-as-is** = zero surface deps at the destination; the surface is an
-  inert static artifact that cannot trigger a coupling failure.
-- **Fork-to-hack** = edit source, `bun run dev` (on-the-fly + HMR), rebuild for
-  release.
+- **Origin repo** keeps everything, but **split across two trees** (ruling,
+  `prospero` session): buildable source lives at a top-level
+  `src/<spell>/<aspect>/` tree (today `src/<spell>/surface/` + `bunfig.toml`,
+  plus `src/<spell>/build.ts`), _outside_ the plugin; the deployed spell folder
+  `plugins/spellbook/skills/<spell>/` holds backend source + the committed
+  pre-built `dist/`. `src/` = build-input only — backend source stays authored
+  in the deployed folder until it ever needs building, at which point it moves
+  to `src/<spell>/backend/` additively (the `<aspect>` shape absorbs it with no
+  refactor).
+- **Published artifact is surface-source-free by construction:** the marketplace
+  copies the whole git-tracked plugin subtree and there is **no file-exclusion
+  mechanism** in Claude Code (verified) — so the exclusion is achieved by
+  **relocation, not a packaging filter**: surface source simply isn't in the
+  shipped subtree. The artifact ships `dist/` + backend source, cannot trigger a
+  surface coupling failure (the surface is an inert pre-built bundle with zero
+  deps at the destination), and stays light as interfaces get richer.
 
-Hackability is preserved exactly where it is used (active development);
-robustness holds everywhere it matters (arbitrary destinations).
+Consequences:
+
+- **Consume-as-is** = install the published artifact; the daemon serves the
+  pre-built `dist/`, touching no surface source or deps.
+- **Fork-to-hack** = go to the **origin repo**, edit the surface source under
+  `src/<spell>/surface/`, `bun run dev` (on-the-fly + HMR), rebuild `dist/`. A
+  slim "source lives at &lt;repo&gt;" pointer in `SKILL.md` is a deferred future
+  nicety.
+
+**"Self-contained" now describes the deployed spell folder** (dist + backend =
+everything needed to run), not the dev layout — authoring is split, deployment
+is whole. (A spell committed _into_ its consuming repo — as
+`media-buffet:library` was — is the degenerate case where origin and destination
+coincide.)
 
 ### §5 — The guardrail (the Astryx lesson, as a rule)
 
