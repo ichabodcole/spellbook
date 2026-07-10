@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.15.1...spellbook-v1.16.0) (2026-07-10)
+
+
+### Features
+
+* **bounty:** caller-owned session keys for deterministic board binding ([9f61575](https://github.com/ichabodcole/spellbook/commit/9f61575808a4d4a3d79d437ce2aa657d6fedd22a))
+* **grapevine:** bounded tail catch-up (--last) + uniform recovery pointer ([574bce3](https://github.com/ichabodcole/spellbook/commit/574bce3df4e52406bafb396ae5b3a0fecbbbbaf2))
+
 ## [1.15.1](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.15.0...spellbook-v1.15.1) (2026-07-09)
 
 
