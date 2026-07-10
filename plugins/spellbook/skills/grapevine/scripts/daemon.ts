@@ -856,7 +856,17 @@ async function handle(req: Request): Promise<Response> {
       // V1.7 — a lurk connection receives messages but is excluded from every
       // presence count, so browsing a channel is genuinely invisible.
       const lurk = ["1", "true"].includes(url.searchParams.get("lurk") ?? "");
-      const backlog = since >= 0 ? readBacklog(name, since) : [];
+      // #68 — `tail --last N`: backfill the most recent N messages, then go
+      // live. The daemon holds the log, so the slice is computed here
+      // (race-free) as an effective `since` = latest_id - N; it overrides
+      // `since`. A cold mid-session joiner can thus catch up on a bounded volume
+      // without knowing a cursor (--since) or replaying the whole log
+      // (--from-start). N is clamped to ≥0; N=0 backfills nothing (live only).
+      const lastRaw = url.searchParams.get("last");
+      const lastN = lastRaw !== null ? parseInt(lastRaw, 10) : Number.NaN;
+      const hasLast = Number.isFinite(lastN) && lastN >= 0;
+      const effectiveSince = hasLast ? Math.max(-1, ch.next_id - 1 - lastN) : since;
+      const backlog = effectiveSince >= 0 ? readBacklog(name, effectiveSince) : [];
 
       // We stash the per-stream cleanup fn on the controller so cancel() can
       // reach it via `this`. ReadableStream's typings don't model arbitrary
@@ -879,7 +889,7 @@ async function handle(req: Request): Promise<Response> {
           // grounding context before any messages arrive.
           controller.enqueue(
             enc.encode(
-              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since, as: alias, topic: ch.topic, latest_id: ch.next_id - 1 })}\n\n`,
+              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1 })}\n\n`,
             ),
           );
           // Replay backlog before live tail begins.
