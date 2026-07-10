@@ -5,7 +5,7 @@
 // streams board events as JSONL for Monitor to wrap.
 //
 // Lifecycle:
-//   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin]  # spawn a daemon (--pin binds it to cwd via .bounty-session)
+//   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]  # spawn a daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently — #69)
 //   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
 //   bun cli.ts state [--full] [--owner <name> | --mine] [--as <name>]    # scoped read-back
 //     Each task carries derived `blocked` + `liveBlockers:[{id,title,status}]`
@@ -28,17 +28,29 @@
 // scopes a worker's wake-set to its own + claimable tasks (client-side filter).
 // --stdin reads the title from stdin (bypasses shell quoting — apostrophes,
 // quotes, ampersands, angle brackets all land verbatim). Session targeting
-// (#59) resolves in precedence order: --session <id> > $BOUNTY_SESSION > the
-// nearest `.bounty-session` file walking up from cwd > the most-recent board
-// (the `latest` pointer). `open --pin` writes cwd/.bounty-session so a team can
-// bind a board to its project directory.
+// (#59, #69) resolves in precedence order: --session-key <key> > --session <id>
+// > $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > the nearest `.bounty-session` file
+// walking up from cwd > the most-recent board (the `latest` pointer). A
+// `--session-key` is a caller-owned handle that DERIVES a stable, project-scoped
+// board id (#69) — so `open --session-key K` is idempotent and every verb
+// re-derives the same board, with no random id to carry. `open --pin` writes
+// cwd/.bounty-session so a team can bind a board to its project directory.
 //
 // Discipline: structured payload on stdout (one JSON line); liveness, echoes,
 // and diagnostics on stderr — never merge them. Exit 2 on bad args, 0 on a
 // successful verb; `tail` exits 0 on the daemon's `closed` event.
 
 import { spawn } from "node:child_process";
-import { mkdirSync, openSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import {
+  existsSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -74,18 +86,81 @@ function sessionFilePath(session?: string): string {
   return session ? join(tmpdir(), `bounty-${session}.json`) : join(tmpdir(), "bounty-latest.json");
 }
 
-// Resolve which board a verb targets, in precedence order (#59) — an un-pinned
-// verb must NOT silently fall onto a stranger board that merely opened more
-// recently:
-//   1. explicit --session <id> (flags) — always wins;
-//   2. $BOUNTY_SESSION env var;
-//   3. the nearest `.bounty-session` file found by walking UP from cwd (its
-//      trimmed contents = the session id) — a project-root-style marker binding
+// ── Caller-owned session keys (#69) ──────────────────────────────────────
+// A coordinating caller (anthill, or any multi-board consumer) binds every
+// command to ITS board via a key IT chooses — deterministic by construction,
+// never the global `latest` pointer, and never a random daemon-minted id it has
+// to carry (which goes stale). The key isn't stored as an opaque handle; it
+// DERIVES a stable session id, so the whole existing bounty-<id>.json +
+// resolveSession + latest machinery works unchanged. The derived id is
+// PROJECT-SCOPED (hashed with the repo root), so the same key in two repos is
+// two boards — the collision guard for "same key, different project". Same key +
+// same repo derives the SAME id → an idempotent `open` attaches (intended
+// share), never hijacks; a verb in a subdir binds the same board `open` made at
+// the root.
+
+// Filesystem-safe slug of a caller key: lowercased, non-alnum runs → single
+// dash, trimmed, capped — keeps the derived id legible (`k-anthill-team-<hash>`).
+export function slugifyKey(key: string): string {
+  return key
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
+}
+
+// The scope a key binds to: the nearest ancestor holding a `.git` marker (the
+// repo root), else the starting dir. Walking to the repo root — not raw cwd —
+// is what makes `open` at the root and a verb in a subdir derive the SAME id.
+// `exists` is injected so the walk is pure/testable.
+export function findScopeRoot(
+  startDir: string,
+  exists: (path: string) => boolean = existsSync,
+): string {
+  let dir = startDir;
+  while (true) {
+    if (exists(join(dir, ".git"))) return dir;
+    const parent = dirname(dir);
+    if (parent === dir) return startDir; // no repo root → the cwd itself is the scope
+    dir = parent;
+  }
+}
+
+// Derive the stable, project-scoped board id for a caller key. Deterministic:
+// same (key, scopeRoot) → same id, always.
+export function deriveSessionId(key: string, scopeRoot: string): string {
+  const slug = slugifyKey(key);
+  const scopeHash = createHash("sha256").update(scopeRoot).digest("hex").slice(0, 8);
+  return slug ? `k-${slug}-${scopeHash}` : `k-${scopeHash}`;
+}
+
+// Resolve a caller key to its board id: find the scope root from startDir, then
+// derive. The single entry point shared by resolveSession (verbs) and cmdOpen
+// (spawn), so both agree on the id for a given key + cwd.
+export function sessionKeyToId(
+  key: string,
+  startDir: string = process.cwd(),
+  exists: (path: string) => boolean = existsSync,
+): string {
+  return deriveSessionId(key, findScopeRoot(startDir, exists));
+}
+
+// Resolve which board a verb targets, in precedence order (#59, extended by
+// #69) — an un-pinned verb must NOT silently fall onto a stranger board that
+// merely opened more recently:
+//   1. `--session-key <key>` (flags) — a caller-owned key, DERIVED to its
+//      scoped board id (#69); the most explicit "this exact board" a
+//      coordinator can state, bound by construction;
+//   2. explicit --session <id> (flags) — a raw board id;
+//   3. $BOUNTY_SESSION_KEY env var — a key, derived like (1) (#69);
+//   4. $BOUNTY_SESSION env var — a raw board id;
+//   5. the nearest `.bounty-session` file found by walking UP from cwd (its
+//      trimmed contents = the board id) — a project-root-style marker binding
 //      a board to a directory tree (written by `open --pin`);
-//   4. otherwise undefined → the caller falls back to the `latest` pointer
+//   6. otherwise undefined → the caller falls back to the `latest` pointer
 //      (prior behavior).
-// env/startDir/readFile are injected (like pickTailSession's `read`) so the
-// precedence is unit-testable without a real cwd/filesystem.
+// env/startDir/readFile/exists are injected (like pickTailSession's `read`) so
+// the precedence is unit-testable without a real cwd/filesystem.
 function resolveSession(
   flags: Record<string, string | boolean>,
   env: Record<string, string | undefined> = process.env,
@@ -97,8 +172,12 @@ function resolveSession(
       return null;
     }
   },
+  exists: (path: string) => boolean = existsSync,
 ): string | undefined {
+  if (typeof flags["session-key"] === "string")
+    return sessionKeyToId(flags["session-key"], startDir, exists);
   if (typeof flags.session === "string") return flags.session;
+  if (env.BOUNTY_SESSION_KEY) return sessionKeyToId(env.BOUNTY_SESSION_KEY, startDir, exists);
   if (env.BOUNTY_SESSION) return env.BOUNTY_SESSION;
   let dir = startDir;
   while (true) {
@@ -263,12 +342,79 @@ function newTaskId(): string {
 
 // ── verbs ───────────────────────────────────────────────────────────
 
+// Read a board's discovery file and confirm its daemon actually answers — the
+// attach-vs-spawn decision for keyed open (#69). Returns the live Session, or
+// null if absent or stale.
+async function boardIfLive(session: string): Promise<Session | null> {
+  const s = readSession(session);
+  if (!s) return null;
+  try {
+    const r = await fetch(`http://127.0.0.1:${s.port}/state`);
+    return r.ok ? s : null;
+  } catch {
+    return null;
+  }
+}
+
+// --pin: bind a board to the cwd so un-pinned verbs run here resolve to it (via
+// the `.bounty-session` walk-up in resolveSession) instead of the machine-wide
+// `latest` pointer (#59). For a keyed open this persists the DERIVED id, so the
+// pinned marker and a fresh `--session-key` derive to the same board.
+function writePin(sessionId: string) {
+  const pinPath = join(process.cwd(), ".bounty-session");
+  try {
+    writeFileSync(pinPath, `${sessionId}\n`);
+    process.stderr.write(`# pinned board ${sessionId} → ${pinPath}\n`);
+  } catch (e) {
+    process.stderr.write(
+      `bounty: could not write ${pinPath}: ${e instanceof Error ? e.message : String(e)}\n`,
+    );
+  }
+}
+
 async function cmdOpen(flags: Record<string, string | boolean>) {
+  // #69: a caller-owned key derives a deterministic, project-scoped board id, and
+  // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
+  // to (nothing spawned), a dead/absent one is (re)spawned under the same id. So
+  // re-running open, or reusing the key after a crash, CONVERGES on one board
+  // instead of forking a stranger daemon. `--fresh` forces a clean board (tears
+  // down any live one first). Unkeyed open is unchanged (always spawns).
+  const key =
+    typeof flags["session-key"] === "string"
+      ? flags["session-key"]
+      : (process.env.BOUNTY_SESSION_KEY ?? undefined);
+  const forcedId = key ? sessionKeyToId(key) : undefined;
+
+  if (forcedId) {
+    const live = await boardIfLive(forcedId);
+    if (live && !flags.fresh) {
+      // Idempotent attach — the board for this key is already up. Emit the same
+      // discovery JSON a spawn would, so the caller gets port/url either way.
+      printJson(live);
+      process.stderr.write(`# attached to existing board ${forcedId} (key "${key}")\n`);
+      if (flags.pin) writePin(forcedId);
+      return;
+    }
+    if (live && flags.fresh) {
+      // Replace it: close the live board over its own protocol, then wait for it
+      // to actually go down (its exit unlinks bounty-<forcedId>.json) so the new
+      // daemon's file write can't be clobbered by the departing one's cleanup.
+      try {
+        await api(live.port, "POST", "/cmd", { type: "close" });
+      } catch {
+        /* already gone */
+      }
+      const gone = Date.now() + 3000;
+      while (Date.now() < gone && (await boardIfLive(forcedId))) await sleep(80);
+    }
+  }
+
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));
   if (flags.restore) args.push("--restore", String(flags.restore));
   if (flags["no-open"]) args.push("--no-open");
+  if (forcedId) args.push("--id", forcedId); // force the daemon's id to the derived key id
 
   const prevId = readSession()?.session_id;
   // Point the detached daemon's native stderr at the durable diagnostics log
@@ -299,26 +445,17 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
     await sleep(80);
-    const s = readSession();
-    if (s && s.session_id !== prevId) {
+    // A keyed open polls its OWN board file (deterministic id) — not `latest`,
+    // which a concurrent open could win. Unkeyed open keeps the legacy
+    // read-latest-until-the-id-changes behavior.
+    const s = forcedId ? readSession(forcedId) : readSession();
+    const isUp = forcedId ? !!s : !!(s && s.session_id !== prevId);
+    if (s && isUp) {
       try {
         const r = await fetch(`http://127.0.0.1:${s.port}/state`);
         if (r.ok) {
           printJson(s);
-          // --pin: bind this board to the cwd so un-pinned verbs run here resolve
-          // to it (via the `.bounty-session` walk-up in resolveSession) instead
-          // of the machine-wide `latest` pointer (#59).
-          if (flags.pin) {
-            const pinPath = join(process.cwd(), ".bounty-session");
-            try {
-              writeFileSync(pinPath, `${s.session_id}\n`);
-              process.stderr.write(`# pinned board ${s.session_id} → ${pinPath}\n`);
-            } catch (e) {
-              process.stderr.write(
-                `bounty: could not write ${pinPath}: ${e instanceof Error ? e.message : String(e)}\n`,
-              );
-            }
-          }
+          if (flags.pin) writePin(s.session_id);
           return;
         }
       } catch {
@@ -576,7 +713,7 @@ async function readStdin(): Promise<string> {
 
 const HELP = `bounty — an agent-driven task board.
 
-  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin]   spawn a board daemon (--pin binds it to cwd)
+  open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)
   state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
@@ -595,9 +732,14 @@ const HELP = `bounty — an agent-driven task board.
   --as <name> (or $BOUNTY_AS) is your identity — stamped on events (for scoped
   tail + self-echo suppression) and used by claim/--mine. --owner assigns a task.
   --stdin reads the title from stdin (verbatim — survives apostrophes, quotes,
-  &, <, >). Session targeting resolves --session <id> > $BOUNTY_SESSION >
-  nearest .bounty-session (walking up from cwd) > most-recent board. Use
-  open --pin to write cwd/.bounty-session and bind a board to this directory.`;
+  &, <, >). Session targeting resolves --session-key <key> > --session <id> >
+  $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > nearest .bounty-session (walking up
+  from cwd) > most-recent board. A --session-key is a caller-owned handle: it
+  derives a stable, project-scoped board id, so open --session-key K is
+  idempotent (attaches to a live board for K, respawns a dead one; --fresh
+  forces a clean one), and every verb re-derives the same id — deterministic
+  board binding with no stored/latest pointer. Or use open --pin to write
+  cwd/.bounty-session and bind a board to this directory.`;
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
