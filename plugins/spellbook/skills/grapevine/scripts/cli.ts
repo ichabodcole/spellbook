@@ -6,7 +6,7 @@
 //   bun cli.ts open <name>
 //   bun cli.ts list
 //   bun cli.ts send <name> --from <alias> <text...>
-//   bun cli.ts tail <name> [--since <id>] [--from-start]
+//   bun cli.ts tail <name> [--since <id>] [--from-start] [--last <n>]
 //   bun cli.ts read <name> <id> [--text]
 //   bun cli.ts close <name>
 //   bun cli.ts stop
@@ -619,6 +619,7 @@ async function cmdTail(
   opts: {
     since?: number;
     fromStart?: boolean;
+    last?: number;
     as?: string;
     human?: boolean;
     lurk?: boolean;
@@ -627,7 +628,7 @@ async function cmdTail(
 ) {
   if (!name)
     die(
-      "usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start] [--human] [--lurk] [--max <n>]",
+      "usage: grapevine tail <name> [--as <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]",
     );
   // --lurk receives messages but registers no presence — an invisible observer.
   // It overrides identity flags (a lurker has no name to show).
@@ -655,7 +656,11 @@ async function cmdTail(
     const asParam = myAlias ? `&as=${encodeURIComponent(myAlias)}` : "";
     const humanParam = opts.human && !opts.lurk ? "&human=1" : "";
     const lurkParam = opts.lurk ? "&lurk=1" : "";
-    const url = `http://127.0.0.1:${port}/channels/${name}/tail?since=${highestSeen}${asParam}${humanParam}${lurkParam}`;
+    // #68 — `--last N` only rides the FIRST connection (while we've seen nothing
+    // yet, highestSeen < 0). Once any message lands, highestSeen advances and a
+    // reconnect resumes from it via `since` — never re-backfilling the window.
+    const lastParam = opts.last !== undefined && highestSeen < 0 ? `&last=${opts.last}` : "";
+    const url = `http://127.0.0.1:${port}/channels/${name}/tail?since=${highestSeen}${lastParam}${asParam}${humanParam}${lurkParam}`;
 
     let res: Response;
     try {
@@ -754,22 +759,28 @@ async function cmdTail(
           // ourselves. The sender already got the receipt as the POST
           // response, so re-emitting it on tail is pure noise.
           if (myAlias && payload.from === myAlias) continue;
-          // Mark messages whose body exceeds the notification cap so consumers
-          // know the preview is incomplete and should `read` the full text.
-          // The hint must serialize BEFORE `.text`: a notification clip lands
-          // inside the long `.text`, so a hint trailing after it gets eaten
-          // (F17). Spreading payload after the hint puts the hint first.
+          // #67 — front-load a recovery pointer on EVERY message frame, so the
+          // read coordinates survive a downstream notification clip. Monitor
+          // truncates at its OWN cap (below our hint threshold, and one we can't
+          // observe here); a message it clips would otherwise lose its trailing
+          // `id` and become unrecoverable — the reader is left inferring the id.
+          // Every frame therefore carries a FRONT-loaded `read <channel> <id>`,
+          // either as the richer `truncation_hint` (genuinely-long messages —
+          // the "+N chars, you're definitely missing content" alarm) or as the
+          // compact `full` pointer (everything else). Serializing it before the
+          // long `.text` is what makes it survive the clip (F17).
+          const readRef = `read ${name} ${payload.id}`;
           if (
             typeof payload.text === "string" &&
             payload.text.length > (opts.max ?? TRUNCATION_HINT_THRESHOLD)
           ) {
-            const truncation_hint = `+${payload.text.length} chars — full: read ${name} ${payload.id}`;
+            const truncation_hint = `+${payload.text.length} chars — full: ${readRef}`;
             // Cap the INLINE body when --max is set (the full message stays on
             // disk → `read`); without --max, emit the full text (today's default).
             const text = opts.max !== undefined ? payload.text.slice(0, opts.max) : payload.text;
             process.stdout.write(`${JSON.stringify({ truncation_hint, ...payload, text })}\n`);
           } else {
-            process.stdout.write(`${JSON.stringify(payload)}\n`);
+            process.stdout.write(`${JSON.stringify({ full: readRef, ...payload })}\n`);
           }
         } catch (e) {
           process.stderr.write(`# bad sse data: ${e instanceof Error ? e.message : String(e)}\n`);
@@ -1673,6 +1684,7 @@ async function main(argv: string[]): Promise<number> {
       await cmdTail(positional[0], {
         since: flags.since ? parseInt(flags.since as string, 10) : undefined,
         fromStart: !!flags["from-start"],
+        last: flags.last !== undefined ? parseInt(flags.last as string, 10) : undefined,
         as: resolveAlias(flags),
         human: !!flags.human,
         lurk: !!flags.lurk,
@@ -1755,7 +1767,8 @@ Usage:
   grapevine list
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
-  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--human] [--lurk] [--max <n>]
+  grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]
+       # --last <n>: backfill the most recent n messages then go live (bounded catch-up for a cold joiner)
   grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)
   grapevine triage <name>             # full-scan: open messages on top + grouped by_status
   grapevine mark <name> <id> <disposition> [--note <text>]  # set disposition (incorporated|wontfix|deferred|…)

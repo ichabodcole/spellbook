@@ -21,12 +21,16 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  deriveSessionId,
+  findScopeRoot,
   liveBoards,
   ownerInScope,
   parseTags,
   pickTailSession,
   resolveSession,
   type Session,
+  sessionKeyToId,
+  slugifyKey,
 } from "./cli.ts";
 import {
   applyTaskAdd,
@@ -2382,6 +2386,65 @@ describe("resolveSession (session targeting precedence)", () => {
         reader({ "/a/b/c/.bounty-session": "   \n", "/a/.bounty-session": "root-id" }),
       ),
     ).toBe("root-id");
+  });
+});
+
+// ── caller-owned session keys (#69) ──────────────────────────────────────
+//
+// A coordinating caller binds every command to ITS board via a key IT chooses.
+// The key isn't stored opaquely — it DERIVES a stable, project-scoped board id,
+// so the existing bounty-<id>.json machinery is reused unchanged. Same key +
+// same repo → same id (idempotent attach / intended share); same key + a
+// different repo → a different id (the collision guard). All pure/injectable.
+
+describe("session keys (caller-owned board binding — #69)", () => {
+  // A `.git`-presence probe over an allow-list of paths — everything else absent.
+  const gitAt = (present: string[]) => (p: string) => present.includes(p);
+
+  test("slugifyKey: filesystem-safe, lowercased, trimmed, capped", () => {
+    expect(slugifyKey("Anthill Team!")).toBe("anthill-team");
+    expect(slugifyKey("  a//b  ")).toBe("a-b");
+    expect(slugifyKey("***")).toBe(""); // no alnum → empty slug
+    expect(slugifyKey("x".repeat(50)).length).toBe(32); // capped
+  });
+
+  test("findScopeRoot: nearest ancestor with .git, else the start dir", () => {
+    expect(findScopeRoot("/a/b/c", gitAt(["/a/.git"]))).toBe("/a"); // walked up to repo root
+    expect(findScopeRoot("/a/b/c", gitAt(["/a/b/c/.git"]))).toBe("/a/b/c"); // root is the cwd
+    expect(findScopeRoot("/a/b/c", gitAt([]))).toBe("/a/b/c"); // no repo → cwd is the scope
+  });
+
+  test("deriveSessionId: deterministic, legible, scope-sensitive", () => {
+    const idA = deriveSessionId("team", "/repo/a");
+    expect(idA).toBe(deriveSessionId("team", "/repo/a")); // stable across calls
+    expect(idA.startsWith("k-team-")).toBe(true); // legible slug + `k-` marker
+    expect(deriveSessionId("team", "/repo/b")).not.toBe(idA); // different scope → different board
+    expect(deriveSessionId("***", "/repo/a").startsWith("k-")).toBe(true); // empty slug still valid
+  });
+
+  test("sessionKeyToId: open-at-root and a verb-in-subdir derive the SAME id", () => {
+    const present = gitAt(["/repo/.git"]);
+    const atRoot = sessionKeyToId("team", "/repo", present);
+    const atSubdir = sessionKeyToId("team", "/repo/pkg/x", present);
+    expect(atSubdir).toBe(atRoot); // both resolve scope to /repo → identical board
+  });
+
+  test("resolveSession: --session-key derives, at the top of precedence", () => {
+    const present = gitAt(["/repo/.git"]);
+    expect(
+      resolveSession({ "session-key": "team", session: "raw" }, {}, "/repo/x", () => null, present),
+    ).toBe(sessionKeyToId("team", "/repo/x", present)); // key beats a raw --session
+  });
+
+  test("resolveSession: $BOUNTY_SESSION_KEY derives, under the explicit flags", () => {
+    const present = gitAt([]);
+    expect(resolveSession({}, { BOUNTY_SESSION_KEY: "team" }, "/w", () => null, present)).toBe(
+      sessionKeyToId("team", "/w", present),
+    );
+  });
+
+  test("resolveSession: a raw --session still wins when no key is given", () => {
+    expect(resolveSession({ session: "raw-id" }, {}, "/w", () => null, gitAt([]))).toBe("raw-id");
   });
 });
 

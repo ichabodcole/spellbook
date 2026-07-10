@@ -150,11 +150,37 @@ session by default; pass `--session <id>` to target a specific one.
 > The "most recent session" default means that if a _second_ board opens on the
 > machine (another project's team), your un-pinned verbs silently retarget to it
 > — cards land on the wrong board with no error. To bind a team's verbs to its
-> own board, use one of (highest precedence first): `--session <id>` on the verb
-> · `$BOUNTY_SESSION=<id>` in the env · a `.bounty-session` file (containing the
+> own board, use one of (highest precedence first): `--session-key <key>` on the
+> verb · `--session <id>` on the verb · `$BOUNTY_SESSION_KEY=<key>` in the env ·
+> `$BOUNTY_SESSION=<id>` in the env · a `.bounty-session` file (containing the
 > id) discovered by walking up from the cwd. `open --pin` writes
 > `.bounty-session` into the cwd for you, so a project directory auto-pins every
 > later verb. When any pin is set, the `latest` pointer is never consulted.
+
+> **Caller-owned session keys — deterministic binding for a coordinator (#69).**
+> A `--session <id>` targets a board by its _daemon-minted_ id, which the caller
+> has to discover and carry (and which goes stale). A `--session-key <key>` is a
+> handle **you** choose: it derives a **stable, project-scoped board id**
+> (`k-<slug>-<hash-of-repo-root>`), so a coordinating tool binds every command
+> to _its_ board by construction — no `latest`, no discovery, no stored id.
+>
+> - `open --session-key K` is **idempotent**: a live board for K is **attached
+>   to** (nothing new spawned), a dead/absent one is **(re)spawned** under the
+>   same id. Re-running it, or reusing K after a crash, converges on one board.
+>   `open --session-key K --fresh` tears down any live board for K and starts
+>   clean (for reusing a key across sessions).
+> - The id is **project-scoped** (hashed with the repo root): the same key in
+>   two different repos is two independent boards; the same key in the _same_
+>   repo (even from a subdirectory) is the _same_ board — an intended share,
+>   never a silent hijack.
+> - Every verb accepts `--session-key K` (or read it from
+>   `$BOUNTY_SESSION_KEY`), re-deriving the same id each time.
+>   `open --pin --session-key K` persists the derived id to `.bounty-session`.
+>
+> A team coordinator (e.g. anthill) can therefore run
+> `open --session-key <team-channel>` at start and pass
+> `--session-key <team-channel>` on every seat command — one key it owns, no
+> wrong-board writes.
 
 > **Heads up on `$CLAUDE_PLUGIN_ROOT`.** It resolves to the plugin's install
 > path in Claude Code. If it's unset in your shell (some harnesses leave it
@@ -165,20 +191,20 @@ session by default; pass `--session <id>` to target a specific one.
 
 ### Verbs
 
-| Verb                                                                                                                   | Does                                                                                                             |
-| ---------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `open [--title T] [--timeout S] [--no-open] [--restore <id>]`                                                          | spawn the daemon (or resume a saved session); print session JSON                                                 |
-| `state [--full] [--owner <name> \| --mine] [--as <name>]`                                                              | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`                                     |
-| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`                                                            | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                           |
-| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                              |
-| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold) |
-| `claim <id> [--as <name>]`                                                                                             | self-claim an **unowned** task (rejected if owned by another)                                                    |
-| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                              | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                        |
-| `remove <id>`                                                                                                          | delete a task                                                                                                    |
-| `message <text…> [--stdin]`                                                                                            | transient toast on the board                                                                                     |
-| `init [--title T] [--stdin-tasks]`                                                                                     | seed the board (tasks = JSON array on stdin)                                                                     |
-| `list`                                                                                                                 | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)        |
-| `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                              |
+| Verb                                                                                                                   | Does                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                  | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69) |
+| `state [--full] [--owner <name> \| --mine] [--as <name>]`                                                              | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`                                                         |
+| `tail [--since N] [--owner <name> \| --mine] [--as <name>]`                                                            | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                               |
+| `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                                                  |
+| `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold)                     |
+| `claim <id> [--as <name>]`                                                                                             | self-claim an **unowned** task (rejected if owned by another)                                                                        |
+| `block <id> --on <id>[,…]` / `unblock <id> --on <id>[,…]`                                                              | add / remove blocker edges (block is cycle-guarded; rejection is visible)                                                            |
+| `remove <id>`                                                                                                          | delete a task                                                                                                                        |
+| `message <text…> [--stdin]`                                                                                            | transient toast on the board                                                                                                         |
+| `init [--title T] [--stdin-tasks]`                                                                                     | seed the board (tasks = JSON array on stdin)                                                                                         |
+| `list`                                                                                                                 | list currently-**running** boards (id · tasks · url · title) — distinct from `sessions` (saved snapshots)                            |
+| `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                                                  |
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
 `&`, `<`, `>`, or `$`, pipe it through `--stdin` (which reads the title

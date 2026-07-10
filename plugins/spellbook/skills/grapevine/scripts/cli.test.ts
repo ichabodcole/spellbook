@@ -206,6 +206,44 @@ describe("grapevine cli", () => {
     expect(JSON.parse(lines[1]).text).toBe("msg2");
   });
 
+  test("--last N backfills only the most recent N, then goes live (#68)", async () => {
+    await bunRun(["open", "test_last"]);
+    for (const n of [1, 2, 3, 4, 5]) await bunRun(["send", "test_last", "--from", "a", `m${n}`]);
+    // Cold joiner asks for the last 2 of 5 — no cursor, not the whole log.
+    const { proc, output } = spawnTail("test_last", ["--last", "2"]);
+    await sleep(400);
+    // A live message after subscribe still arrives (the tail didn't stop at the backfill).
+    await bunRun(["send", "test_last", "--from", "b", "live"]);
+    await sleep(300);
+    proc.kill("SIGTERM");
+    const texts = output()
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l))
+      .filter((m) => m.from) // drop the grounding frame (no `from`)
+      .map((m) => m.text);
+    expect(texts).toEqual(["m4", "m5", "live"]); // last 2 backfilled + the live one, not m1–m3
+  });
+
+  test("--last 0 backfills nothing but still tails live (#68)", async () => {
+    await bunRun(["open", "test_last0"]);
+    await bunRun(["send", "test_last0", "--from", "a", "old"]);
+    const { proc, output } = spawnTail("test_last0", ["--last", "0"]);
+    await sleep(400);
+    await bunRun(["send", "test_last0", "--from", "b", "new"]);
+    await sleep(300);
+    proc.kill("SIGTERM");
+    const texts = output()
+      .trim()
+      .split("\n")
+      .filter(Boolean)
+      .map((l) => JSON.parse(l))
+      .filter((m) => m.from) // drop the grounding frame (no `from`)
+      .map((m) => m.text);
+    expect(texts).toEqual(["new"]); // no backfill of "old", live "new" still flows
+  });
+
   test("two tails get the same message", async () => {
     await bunRun(["open", "test6"]);
     const a = spawnTail("test6");
@@ -633,6 +671,29 @@ describe("grapevine cli", () => {
     expect(line).toBeDefined();
     const payload = JSON.parse(line);
     expect(payload.truncation_hint).toBeUndefined();
+    t.proc.kill("SIGTERM");
+  });
+
+  test("every message frame front-loads a `full` read pointer, surviving a clip (#67)", async () => {
+    await bunRun(["open", "test_ref"]);
+    const t = spawnTail("test_ref", ["--as", "observer"]);
+    await sleep(400);
+    // A SHORT message (below the hint threshold) — the gap #67 names: Monitor may
+    // still clip it, and without a front-loaded pointer its trailing id is lost.
+    await bunRun(["send", "test_ref", "--from", "talker", "short one"]);
+    await sleep(400);
+    const line = t
+      .output()
+      .split("\n")
+      .filter(Boolean)
+      .find((l) => l.includes('"text"'));
+    expect(line).toBeDefined();
+    const payload = JSON.parse(line);
+    expect(payload.truncation_hint).toBeUndefined(); // short → no "+N chars" alarm
+    expect(payload.full).toBe(`read test_ref ${payload.id}`); // but recovery is still there
+    // Front-loaded: `full` serializes BEFORE `text`, so a downstream clip of the
+    // long body can't eat the recovery coordinates.
+    expect(line.indexOf('"full"')).toBeLessThan(line.indexOf('"text"'));
     t.proc.kill("SIGTERM");
   });
 
