@@ -1,0 +1,4 @@
+# Serve-time Tailwind for the dev-mode surface bundle. Bun reads bunfig.toml
+# from cwd ONLY, so cli.ts pins the daemon's cwd to this directory.
+[serve.static]
+plugins = ["bun-plugin-tailwind"]

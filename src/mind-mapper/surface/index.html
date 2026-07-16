@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mind Mapper</title>
+    <!-- Pre-boot dark canvas so a cold first open (Bun bundles lazily) doesn't
+         flash white; once styles.css loads, the @theme tokens own the palette. -->
+    <style>
+      html {
+        color-scheme: dark;
+        background-color: #020617;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background-color: #020617;
+        color: #e2e8f0;
+      }
+    </style>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="data:," />
+  </head>
+  <body data-theme="mind-mapper" class="antialiased">
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

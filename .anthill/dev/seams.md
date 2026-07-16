@@ -122,3 +122,32 @@ trees.
 **Proof:** cassandra's dry-run rehearsal — `git clone` the branch, inspect the would-be
 `plugins/spellbook/skills/astrolabe/` subtree: `dist/` present, `surface/`/`bunfig.toml` absent. And
 the real release cut (Cole-gated).
+
+## Contract 5 — Serving a src/-relocated surface (dev mode)
+
+**Owner:** daedalus · **Pointed at from:** circe, prospero · _(refines Contracts 1 & 4; accreted mind-mapper spike session, 2026-07-16)_
+
+**The contract, stated once:** when surface source lives at `src/<spell>/` (Contract 4), the spell's `cli.ts` must pin the spawned daemon's **cwd to `src/<spell>/`** — not the skill root — or bunfig's Tailwind plugin is **silently skipped**; and the dev-only dynamic import of `surface/index.html` becomes a deep relative specifier from the skill's `scripts/` dir.
+Two operational corollaries:
+- **Routes bake at boot; only data re-reads live.** A `server.ts` change is not served until the daemon restarts — "endpoint landed" ≠ "endpoint served" (phantom-404 class). Data files read per-request need no restart.
+- Pre-re-home astrolabe pins cwd to the skill root; its branch hits this (plus the root-tsconfig DOM libs addition) at merge — prospero holds the merge-note.
+
+**Why it bites:** the failure is silent (surface renders unstyled or daemon 404s a live route) and each symptom masquerades as a different bug.
+
+**Proof:** mind-mapper `cli.ts` + green `server.test.ts` booting through the pin (commit 9d46940 and successors).
+
+## Contract 6 — Span anchors are whitespace-tolerant by contract
+
+**Owner:** circe (dataset/anchoring) · **Pointed at from:** daedalus, any renderer or lint consumer
+
+**The contract, stated once:** a span anchor expressed as a verbatim excerpt must be matched into doc content with **`\s+`-joined (whitespace-tolerant) matching**, never byte-exact — the repo formatter (prettier/biome) reflows committed markdown, so a byte-exact matcher is a latent drift bug, not a stricter one. This is a **data contract** between whoever authors anchors and every consumer that resolves them (viewer highlight today; lint tomorrow). If V1 keeps excerpt anchoring alongside/before offset-based source-log anchoring, this clause travels with it.
+
+**Proof:** post-reflow validator run + browser-verified highlight across a prettier-inserted line break (mind-mapper spike, commits d3599aa/934f422).
+
+## Contract 7 — The spike map wire (StubMap v3) is the V1 schema negotiation baseline
+
+**Owner:** daedalus (wire) + circe (shape) co-own · **Pointed at from:** prospero
+
+**The contract, stated once:** the vine-ratified StubMap v3 shape — `docs[]` (id/title/kind) in `/state`, doc content via `GET /doc/:id` `{id,title,kind,content}`, `node.sources[{docId, span}]`, `edge.provenance: asserted|derived`, `edge.direction?: "both"`, `pending?` staging flags — is **spike-throwaway as data but the baseline as design**: V1's real schema gets negotiated as diffs against it, not from scratch. The durable process is also named here: seam changes are **proposed additive-optional → one ack from the other owner → lead ratifies**, which kept both sides green through three versions in one session.
+
+**Proof:** commits de55ff9 (v2), 6223522 (v3); ratifications at spellbook vine msgs 4/6, 14/17, 37–39.

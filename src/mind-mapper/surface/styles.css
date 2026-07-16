@@ -1,0 +1,80 @@
+@import "tailwindcss";
+/* Tailwind only emits utilities it finds as literal text — keep the @source
+   glob so classes referenced from .ts (not just .tsx) survive. */
+@source "./**/*.{ts,tsx}";
+
+/* Semantic tokens (house convention: no raw palette in markup). Names follow
+   the imago/glamour taxonomy; tier/provenance tokens are this surface's own
+   vocabulary — tier reads at a glance, provenance is never blended. */
+@theme {
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-surface-raised: #16213b;
+  --color-ink: #e2e8f0;
+  --color-ink-dim: #94a3b8;
+  --color-ink-faint: #64748b;
+  --color-edge: #1e293b;
+  --color-attention: #f59e0b;
+
+  /* Tier — node identity. */
+  --color-canon: #d9a94e;
+  --color-thread-tier: #a78bfa;
+  --color-story-local: #5eead4;
+  --color-background-tier: #64748b;
+
+  /* Staging overlay — pending proposals, whatever their tier. */
+  --color-pending: #f59e0b;
+
+  /* shadcn variable names, mapped onto the house token layer (adoption card
+     t-609741be): vendored ui/ components keep their stock shadcn class
+     vocabulary (bg-popover, focus:bg-accent, …) while resolving to spell
+     tokens. Only the names the vendored set consumes — grow with use. */
+  --color-popover: #16213b;
+  --color-popover-foreground: #e2e8f0;
+  --color-accent: #1e293b;
+  --color-accent-foreground: #e2e8f0;
+  --color-border: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  --color-background: #020617;
+  --color-foreground: #e2e8f0;
+  --color-secondary: #16213b;
+  --color-ring: #64748b;
+
+  --font-story: "Iowan Old Style", Palatino, Georgia, "Times New Roman", serif;
+}
+
+/* React Flow chrome, retuned to the night-table palette. */
+.react-flow {
+  background: var(--color-bg);
+}
+.react-flow__attribution {
+  background: transparent;
+  color: var(--color-ink-faint);
+}
+.react-flow__edge-text {
+  fill: var(--color-ink-dim);
+  font-size: 10px;
+}
+.react-flow__edge-textbg {
+  fill: var(--color-bg);
+}
+.mm-edge-derived .react-flow__edge-text {
+  font-style: italic;
+  fill: var(--color-ink-faint);
+}
+.react-flow__controls {
+  box-shadow: none;
+  border: 1px solid var(--color-edge);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-edge);
+}
+.react-flow__controls-button svg {
+  fill: var(--color-ink-dim);
+}
+.react-flow__controls-button:hover {
+  background: var(--color-surface-raised);
+}
