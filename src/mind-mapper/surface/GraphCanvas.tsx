@@ -13,10 +13,12 @@ import {
   MarkerType,
   type Node,
   type NodeProps,
+  Panel,
   Position,
   ReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import {
   CircleDashed,
   Crosshair,
@@ -29,6 +31,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MapNode, NodeKind, StubMap, Tier } from "./types";
+import { Button } from "./ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -137,7 +140,9 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
 
 const nodeTypes = { idea: IdeaNode };
 
-function layout(
+export type LayoutMode = "tree" | "physics";
+
+function dagreLayout(
   map: StubMap,
   onCommand: (command: NodeCommand, node: MapNode) => void,
 ): Node<IdeaNodeData>[] {
@@ -156,6 +161,73 @@ function layout(
       data: { node: n, onCommand: (command) => onCommand(command, n) },
     };
   });
+}
+
+const FORCE_CANVAS_W = 1400;
+const FORCE_CANVAS_H = 900;
+const FORCE_SETTLE_TICKS = 300;
+
+// Settle-then-snapshot (vine msg 54/56, Cole's ruling pending on whether the
+// motion itself is the point): runs the simulation to rest synchronously and
+// returns final positions, the same one-shot shape dagreLayout already has —
+// deliberately NOT wired to a live tick loop yet. `computeForcePositions`
+// is kept separate from the Node[] mapping below so a later live-animated
+// mode can reuse it per-frame (call with fewer ticks, or none, in a
+// requestAnimationFrame loop) without restructuring this function.
+export function computeForcePositions(map: StubMap): Map<string, { x: number; y: number }> {
+  type SimNode = { id: string; x: number; y: number };
+  const nodes: SimNode[] = map.nodes.map((n, i) => {
+    // Deterministic starting ring (not Math.random — reasoning-turn
+    // reproducibility) so re-toggling the same map settles the same way.
+    const angle = (i / Math.max(1, map.nodes.length)) * Math.PI * 2;
+    return {
+      id: n.id,
+      x: FORCE_CANVAS_W / 2 + Math.cos(angle) * 200,
+      y: FORCE_CANVAS_H / 2 + Math.sin(angle) * 200,
+    };
+  });
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  const links = map.edges
+    .filter((e) => nodeIds.has(e.source) && nodeIds.has(e.target))
+    .map((e) => ({ source: e.source, target: e.target }));
+
+  const sim = forceSimulation(nodes)
+    .force("charge", forceManyBody().strength(-500))
+    .force(
+      "link",
+      forceLink(links)
+        .id((d: unknown) => (d as SimNode).id)
+        .distance(150),
+    )
+    .force("center", forceCenter(FORCE_CANVAS_W / 2, FORCE_CANVAS_H / 2))
+    .stop();
+  for (let i = 0; i < FORCE_SETTLE_TICKS; i++) sim.tick();
+
+  return new Map(nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
+}
+
+function forceLayout(
+  map: StubMap,
+  onCommand: (command: NodeCommand, node: MapNode) => void,
+): Node<IdeaNodeData>[] {
+  const positions = computeForcePositions(map);
+  return map.nodes.map((n) => {
+    const pos = positions.get(n.id) ?? { x: 0, y: 0 };
+    return {
+      id: n.id,
+      type: "idea",
+      position: { x: pos.x - NODE_W / 2, y: pos.y - NODE_H / 2 },
+      data: { node: n, onCommand: (command) => onCommand(command, n) },
+    };
+  });
+}
+
+function layout(
+  mode: LayoutMode,
+  map: StubMap,
+  onCommand: (command: NodeCommand, node: MapNode) => void,
+): Node<IdeaNodeData>[] {
+  return mode === "physics" ? forceLayout(map, onCommand) : dagreLayout(map, onCommand);
 }
 
 function toFlowEdges(map: StubMap): Edge[] {
@@ -232,17 +304,18 @@ export function GraphCanvas({
   // unconditional setState here is an infinite render loop), and applies
   // external deselects (chip ×) back onto node state, guarded the same way.
   const [nodes, setNodes] = useState<Node<IdeaNodeData>[]>([]);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("tree");
   const edges = useMemo(() => toFlowEdges(map), [map]);
   const lastReported = useRef<string>("");
 
   // Commands dispatch through a ref so a new callback identity never forces
-  // a node-state rebuild (layout depends on the map alone).
+  // a node-state rebuild (layout depends on the map + mode alone).
   const commandRef = useRef(onNodeCommand);
   commandRef.current = onNodeCommand;
 
   useEffect(() => {
-    setNodes(layout(map, (command, node) => commandRef.current(command, node)));
-  }, [map]);
+    setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
+  }, [map, layoutMode]);
 
   useEffect(() => {
     const want = [...selectedIds].sort().join(",");
@@ -313,6 +386,17 @@ export function GraphCanvas({
     >
       <Background gap={24} size={1} color="var(--color-edge)" />
       <Controls position="top-left" showInteractive={false} />
+      <Panel position="top-right">
+        <Button
+          variant="outline"
+          size="auto"
+          className="px-2 py-1 text-[10px] uppercase tracking-wide"
+          title={layoutMode === "tree" ? "Switch to physics layout" : "Switch to tree layout"}
+          onClick={() => setLayoutMode((m) => (m === "tree" ? "physics" : "tree"))}
+        >
+          {layoutMode === "tree" ? "tree" : "physics"}
+        </Button>
+      </Panel>
     </ReactFlow>
   );
 }

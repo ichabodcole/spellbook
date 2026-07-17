@@ -50,6 +50,8 @@ Cross-project consumer negotiation (e.g. the Operator doc-linking channel) is my
 - After a batch card-add, seats can claim by stale memory of the board — announce batch-adds with card ids and require claims against fresh `state` (the focus/force mix-up, session 2026-07-16; fix captured by circe too).
 - Crossed vine messages (two seats reporting past each other) resolve by re-reading the channel before acting, not by trusting the latest notification — msgs 18/19 same session.
 - Untracked files hide from pathspec commits: a seat's "landed" can silently omit a new file (styles.css, commit 934f422 caught it) — when reviewing a land, check `git status` for strays, not just the named paths.
+- **Cut the feature branch AT CONVENE, not at wrap** — the V1 session built 27 commits directly on develop because convene skipped init-branch; the retro-branch fix (branch at tip, reset develop) was clean only because nothing was pushed. Make branch creation part of the convene checklist reflex.
+- Emitted event payloads are seams: if a bus emit shape isn't written where a consumer can read it, the consumer WILL guess wrong (P3 badge bug) — thin-event conventions go in seams.md the day they're designed, not at wrap.
 - A spike closes when its load-bearing uncertainty is resolved, not when feature ideas stop arriving — everything after that point sorts into known-build (V1 plan) or new bounded uncertainty (its own experiment card).
 
 ## Anti-patterns
@@ -63,4 +65,6 @@ Cross-project consumer negotiation (e.g. the Operator doc-linking channel) is my
 - Astrolabe-branch merge coordination: root tsconfig gained DOM/DOM.Iterable libs and Contract 5's cwd-pin refinement applies — reconcile when that branch merges.
 - The unified-scaffold recipe now has real inputs: circe's shadcn-on-Base-UI port findings + the retrofit audit's port/skip reasoning + Contract 5 — thoth should synthesize these when next seated.
 - V1 planning via anthill:plan; force-layout card parked on the board as the experiment marker.
-- Consider naming the flag-before-land discipline in the SOP (circe's suggestion; it earned it).
+- Consider naming the flag-before-land discipline in the SOP (circe's suggestion; it earned it — held five-for-five across spike + V1).
+- House-style candidates for thoth's next seating: unique daemon-entrypoint filenames (or argv markers) per spell + the exact-PID-kill counter-pattern (pgrep before pkill); the pkill incident + cassandra's repeated-use confirmation are the evidence.
+- V1 dogfood rounds are Cole-gated and unstarted: a real brain-dump session, and linked-Hollowbrook via Operator extract_links when their deploy lands.

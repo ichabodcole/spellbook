@@ -69,6 +69,8 @@ serve-time) — same plugin, both modes, no second toolchain. The surface's `sty
 "./**/*.{ts,tsx}"`** directive must survive into any scaffold template (Tailwind only emits
 utilities it finds as literal text; dynamically-referenced classes vanish without it).
 
+**Amendment (mind-mapper V1, 2026-07-17):** when the entrypoint is HTML, `naming` must be the **`{entry, chunk, asset}` object form with the entry UNHASHED** (`index.html`), never a single naming string — a uniform `[name]-[hash]` hashes the HTML entry, which silently defeats Contract 1's `dist/index.html` release-mode check (daemon stays in dev mode against a real dist/; found live, mind-mapper commit 3b8b652). Chunks/assets keep the hash.
+
 **Why it bites:** `dist/` is **gitignored** — an un-committed `dist/` never enters the marketplace
 git-clone, so release mode has nothing to serve. And if the served static root doesn't match the
 relative `./` asset hrefs, the board paints blank. daedalus's static serve and circe's `dist/` shape
@@ -151,3 +153,31 @@ Two operational corollaries:
 **The contract, stated once:** the vine-ratified StubMap v3 shape — `docs[]` (id/title/kind) in `/state`, doc content via `GET /doc/:id` `{id,title,kind,content}`, `node.sources[{docId, span}]`, `edge.provenance: asserted|derived`, `edge.direction?: "both"`, `pending?` staging flags — is **spike-throwaway as data but the baseline as design**: V1's real schema gets negotiated as diffs against it, not from scratch. The durable process is also named here: seam changes are **proposed additive-optional → one ack from the other owner → lead ratifies**, which kept both sides green through three versions in one session.
 
 **Proof:** commits de55ff9 (v2), 6223522 (v3); ratifications at spellbook vine msgs 4/6, 14/17, 37–39.
+
+## Contract 8 — Mind-mapper V1 architecture (dumb daemon · storage split · one bus, two transports)
+
+**Owner:** daedalus · **Pointed at from:** circe, prospero, cassandra · _(ratified at V1 plan phase, 2026-07-16, vine msgs 3–6; supersedes nothing — extends Contract 7's baseline)_
+
+**The contract, stated once:** the mind-mapper daemon is a **dumb state authority** — no LLM calls; all intelligence (extraction, drafting, relate-checks, conversation) lives in the **casting agent** via CLI verbs. Storage split: markdown docs under `~/.mind-mapper/projects/<id>/docs/` own all prose/knowledge; one `bun:sqlite` file owns the graph index (doc+anchor provenance per Contract 6), staging proposals, the conversation log (`messages` table, FTS5-indexed alongside docs), and search. **Honest-rebuild clause:** re-index recovers wikilinks and re-anchors claims; it never re-runs extraction — a doc rebuild is not claim recovery. Event bus: one `emit()` fans out to **WS `/events`** (browser) and a resumable SSE-shaped **`GET /events?since=<cursor>`** (agent `tail`); events are **per-entity patches, never wholesale array replaces** (the surface feeds them through React Flow's apply-changes path); snapshot refetch is the sole gap recovery.
+
+**Why it bites:** any daemon-side "helpfulness" (auto-extraction, prose composition in the ratify path) silently violates map-as-view and the co-presence intent bus; a wholesale-array event resurrects the spike's infinite-render-loop class.
+
+**Proof:** pending — pin to the P1 gate tests (restart-loses-nothing-ratified) and the plan ratify record (`docs/projects/mind-mapper/plan.md`, Ratified decisions).
+
+
+## Contract 9 — Mind-mapper V1 wire (successor detail to Contracts 7/8)
+
+**Owner:** daedalus (wire) · **Co-owner:** circe (consumption) · _(ratified across the V1 build session, 2026-07-16/17; proof: 86-test suite + cassandra's two gate drives)_
+
+**The contract, stated once:**
+- `GET /state` → `{ project, docs[], nodes[], edges[], proposals[], conversation[], lens, cursor }`; docs content-free; `GET /doc/:id` envelope unchanged from the spike. Everything is project-scoped (`--project` / `?project=`) — a missing scope is a 404.
+- `GET /search?q=` → `{hits:[{kind: node|doc|message, id, title, snippet?, score}]}` — nodes by title/synopsis, docs+messages by FTS5; node hits rank first at equal score; shape reserves `kind:"vector"` for V2.
+- **Ratified events are THIN:** `node.ratified`/`edge.ratified` carry `{id, proposalId}` only — consumers flip the proposal by id and backfill the entity via snapshot refetch. Proposal terminal status string is **`ratified`** (not "accepted").
+- Events carry `{seq, epoch}`; epoch is random per daemon boot — a stale `--since` watermark is detectable by epoch mismatch (no durable event log, per Contract 8).
+- Messages: `{id, seq, role: "user"|"agent", kind, text, ground: string[]|null, ts}` (`ground` = selection-context node ids; null normalized client-side).
+- `/ingest` JSON body key is **`text`** (not `content`).
+- Edge proposals may reference **proposal ids as endpoints**; ratify resolves them via `proposals.result_node_id` and errors ("ratify node proposal <id> first") if the endpoint hasn't ratified.
+- **Schema evolution mechanism:** on open, `db.ts` column-diffs actual vs expected (`PRAGMA table_info`) and applies **additive-only** `ALTER TABLE ADD COLUMN`; non-additive changes hard-error naming the store path. The pinning test opens a store created at the PREVIOUS schema shape (that test design is the load-bearing part).
+- The lens **persists across restarts** (addressable view-state in sqlite); `look-here` is fire-once, no table.
+
+**Why it bites:** every clause above was either guessed wrong by a consumer or discovered missing during the build (the badge bug, the search-shape divergence, cassandra's 404s and unvalidated edge endpoints) — this contract is the accumulated corrections, stated once.

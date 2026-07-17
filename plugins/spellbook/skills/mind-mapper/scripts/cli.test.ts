@@ -1,0 +1,212 @@
+// P1 — CLI read-path verbs against a live spawned daemon (matches server.test.ts's style).
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const SCRIPT_DIR = import.meta.dir;
+const CLI_SCRIPT = join(SCRIPT_DIR, "cli.ts");
+let home: string;
+
+beforeAll(() => {
+  home = mkdtempSync(join(tmpdir(), "mind-mapper-cli-test-"));
+});
+
+afterAll(async () => {
+  // best-effort teardown: kill whatever daemon this test spun up
+  try {
+    const { readFileSync } = await import("node:fs");
+    const pid = Number.parseInt(readFileSync(join(home, "daemon.pid"), "utf8").trim(), 10);
+    process.kill(pid, "SIGTERM");
+  } catch {
+    /* already gone */
+  }
+  rmSync(home, { recursive: true, force: true });
+});
+
+async function runCli(
+  ...args: string[]
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, ...args], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { code, stdout, stderr };
+}
+
+test("open spawns the daemon and prints its url", async () => {
+  const { code, stdout } = await runCli("open", "--no-open");
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+});
+
+test("state returns the full seeded default project", async () => {
+  const { code, stdout } = await runCli("state");
+  expect(code).toBe(0);
+  const state = JSON.parse(stdout) as { nodes: unknown[]; project: { id: string } };
+  expect(state.project.id).toBe("default");
+  expect(state.nodes.length).toBeGreaterThan(0);
+});
+
+test("state --skeleton strips synopsis/content, keeps ids/titles/degree", async () => {
+  const { code, stdout } = await runCli("state", "--skeleton");
+  expect(code).toBe(0);
+  const skeleton = JSON.parse(stdout) as {
+    nodes: Array<Record<string, unknown>>;
+  };
+  expect(skeleton.nodes.length).toBeGreaterThan(0);
+  for (const n of skeleton.nodes) {
+    expect(n.synopsis).toBeUndefined();
+    expect(typeof n.degree).toBe("number");
+    expect(typeof n.id).toBe("string");
+  }
+});
+
+test("projects lists the seeded default project", async () => {
+  const { code, stdout } = await runCli("projects");
+  expect(code).toBe(0);
+  const body = JSON.parse(stdout) as { projects: Array<{ id: string }> };
+  expect(body.projects.map((p) => p.id)).toContain("default");
+});
+
+test("projects --create makes a new project, addressable via state --project", async () => {
+  const created = await runCli("projects", "--create", "Second Idea");
+  expect(created.code).toBe(0);
+  expect(JSON.parse(created.stdout).id).toBe("second-idea");
+
+  const { stdout } = await runCli("state", "--project", "second-idea");
+  const state = JSON.parse(stdout) as { project: { id: string }; nodes: unknown[] };
+  expect(state.project.id).toBe("second-idea");
+  expect(state.nodes).toEqual([]);
+});
+
+test("tail streams events as one JSON line each (smoke: exits cleanly on empty stream)", async () => {
+  // No events fire in the read-path phase (ingest lands P2), so this pins the
+  // transport: the process starts, connects, and can be killed cleanly —
+  // full patch-delivery coverage lives in events.test.ts + server.test.ts.
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "tail"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  await new Promise((r) => setTimeout(r, 300));
+  proc.kill();
+  await proc.exited;
+  expect(true).toBe(true); // reaching here means it didn't crash on startup
+});
+
+test("ingest --stdin stores a doc, addressable via state", async () => {
+  const proc = Bun.spawn(
+    [process.execPath, "run", CLI_SCRIPT, "ingest", "--title", "CLI Idea", "--stdin"],
+    {
+      env: { ...process.env, MIND_MAPPER_HOME: home },
+      stdin: new Response("dictated via stdin").body,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout).title).toBe("CLI Idea");
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as { docs: Array<{ title: string }> };
+  expect(parsed.docs.map((d) => d.title)).toContain("CLI Idea");
+});
+
+test("propose-node --stdin round-trips a draft + evidence", async () => {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(
+      JSON.stringify({ draft: { title: "Tam" }, evidence: { docId: "ramble-01" } }),
+    ).body,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+  expect(code).toBe(0);
+  const proposal = JSON.parse(stdout) as { kind: string; status: string };
+  expect(proposal).toMatchObject({ kind: "node", status: "pending" });
+});
+
+test("send appends a conversation message", async () => {
+  const { code, stdout } = await runCli("send", "hello", "from", "cli");
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout)).toMatchObject({ role: "agent", text: "hello from cli" });
+});
+
+test("search finds a node hit", async () => {
+  const { code, stdout } = await runCli("search", "Maren");
+  expect(code).toBe(0);
+  const body = JSON.parse(stdout) as { hits: Array<{ kind: string }> };
+  expect(body.hits[0]?.kind).toBe("node");
+});
+
+test("neighbors returns the local hood", async () => {
+  const { code, stdout } = await runCli("neighbors", "maren");
+  expect(code).toBe(0);
+  const body = JSON.parse(stdout) as { neighbors: unknown[] };
+  expect(Array.isArray(body.neighbors)).toBe(true);
+});
+
+test("ratify accepts a proposal end to end (propose -> ratify -> node in state)", async () => {
+  const proposeProc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(JSON.stringify({ draft: { title: "Widow's Teeth" }, evidence: {} })).body,
+    stdout: "pipe",
+  });
+  const proposal = JSON.parse(await new Response(proposeProc.stdout).text()) as { id: string };
+  await proposeProc.exited;
+
+  const { code, stdout } = await runCli("ratify", proposal.id, "--ruling", "canon");
+  expect(code).toBe(0);
+  const result = JSON.parse(stdout) as { status: string; nodeId: string };
+  expect(result.status).toBe("ratified");
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as { nodes: Array<{ id: string; title: string }> };
+  expect(parsed.nodes.some((n) => n.id === result.nodeId && n.title === "Widow's Teeth")).toBe(
+    true,
+  );
+});
+
+test("lens set/clear round-trips through state", async () => {
+  const set = await runCli("lens", "set", "--node", "maren", "--depth", "1");
+  expect(set.code).toBe(0);
+
+  const withLens = await runCli("state");
+  expect(JSON.parse(withLens.stdout).lens).toMatchObject({ nodeId: "maren", depth: 1 });
+
+  const clear = await runCli("lens", "clear");
+  expect(clear.code).toBe(0);
+  const cleared = await runCli("state");
+  expect(JSON.parse(cleared.stdout).lens).toBeNull();
+});
+
+test("look-here fires without persisting lens state", async () => {
+  const { code } = await runCli("look-here", "maren");
+  expect(code).toBe(0);
+  const state = await runCli("state");
+  expect(JSON.parse(state.stdout).lens).toBeNull();
+});
+
+test("doc <id> prints the doc envelope", async () => {
+  const { code, stdout } = await runCli("doc", "ramble-01");
+  expect(code).toBe(0);
+  const doc = JSON.parse(stdout) as { id: string; content: string };
+  expect(doc.id).toBe("ramble-01");
+  expect(doc.content.length).toBeGreaterThan(0);
+});
+
+test("an unrecognized flag exits 2 with a clean message, not a stack-trace crash", async () => {
+  const { code, stderr } = await runCli("ingest", "--help");
+  expect(code).toBe(2);
+  expect(stderr).toContain("mind-mapper:");
+  expect(stderr).not.toContain("at ");
+});

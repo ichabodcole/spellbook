@@ -23,6 +23,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.4.16",
     "@types/bun": "latest",
+    "@types/d3-force": "^3.0.10",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "bun-plugin-tailwind": "^0.1.2",
@@ -38,6 +39,7 @@
     "@base-ui/react": "^1.6.0",
     "@dagrejs/dagre": "^3.0.0",
     "@xyflow/react": "^12.11.2",
+    "d3-force": "^3.0.0",
     "lucide-react": "^1.17.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

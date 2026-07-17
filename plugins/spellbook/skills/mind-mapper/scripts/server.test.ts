@@ -84,6 +84,190 @@ test("GET /doc/:id 404s for unknown ids and traversal attempts", async () => {
   }
 });
 
+test("GET /projects lists the seeded default project", async () => {
+  const res = await fetch(`${url}/projects`);
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as { projects: Array<{ id: string; title: string }> };
+  expect(body.projects.map((p) => p.id)).toContain("default");
+});
+
+test("POST /projects creates a new project, GET /state?project scopes to it", async () => {
+  const created = await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "second-idea", title: "Second Idea" }),
+  });
+  expect(created.status).toBe(200);
+
+  const state = (await (await fetch(`${url}/state?project=second-idea`)).json()) as {
+    project: { id: string };
+    nodes: unknown[];
+  };
+  expect(state.project.id).toBe("second-idea");
+  expect(state.nodes).toEqual([]); // genuinely empty, not seeded like default
+});
+
+test("WS /events connects and stays open (transport smoke check)", async () => {
+  const wsUrl = url.replace("http://", "ws://");
+  const ws = new WebSocket(`${wsUrl}/events`);
+  await new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("no open within 5s")), 5000);
+    ws.addEventListener("open", () => {
+      clearTimeout(timer);
+      resolve();
+    });
+    ws.addEventListener("error", reject);
+  });
+  expect(ws.readyState).toBe(WebSocket.OPEN);
+  await new Promise<void>((resolve) => {
+    ws.addEventListener("close", () => resolve());
+    ws.close();
+  });
+});
+
+test("GET /events (SSE) responds with the event-stream content type", async () => {
+  const res = await fetch(`${url}/events`);
+  expect(res.headers.get("content-type")).toContain("text/event-stream");
+  await res.body?.cancel();
+});
+
+test("POST /ingest (JSON) stores the doc, GET /state reflects it, bumps cursor", async () => {
+  const before = (await (await fetch(`${url}/state`)).json()) as { cursor: number };
+  const res = await fetch(`${url}/ingest`, {
+    method: "POST",
+    body: JSON.stringify({ title: "New idea", text: "a fresh brain-dump" }),
+  });
+  expect(res.status).toBe(200);
+  const doc = (await res.json()) as { id: string; title: string };
+  expect(doc.title).toBe("New idea");
+
+  const after = (await (await fetch(`${url}/state`)).json()) as {
+    docs: Array<{ id: string }>;
+    cursor: number;
+  };
+  expect(after.docs.map((d) => d.id)).toContain(doc.id);
+  expect(after.cursor).toBeGreaterThan(before.cursor);
+});
+
+test("POST /proposals inserts a pending node proposal", async () => {
+  const res = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({
+      kind: "node",
+      draft: { title: "Edda" },
+      evidence: { docId: "ramble-01", span: "Edda keeps the mill" },
+    }),
+  });
+  expect(res.status).toBe(200);
+  const proposal = (await res.json()) as { status: string; kind: string };
+  expect(proposal.status).toBe("pending");
+  expect(proposal.kind).toBe("node");
+
+  const state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; status: string }>;
+  };
+  expect(state.proposals.some((p) => p.status === "pending")).toBe(true);
+});
+
+test("POST /proposals rejects an unknown kind", async () => {
+  const res = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "nope", draft: {} }),
+  });
+  expect(res.status).toBe(400);
+});
+
+test("POST /send appends a message, GET /state reflects it", async () => {
+  const res = await fetch(`${url}/send`, {
+    method: "POST",
+    body: JSON.stringify({ role: "agent", kind: "turn", text: "hello there" }),
+  });
+  expect(res.status).toBe(200);
+  const message = (await res.json()) as { role: string; text: string };
+  expect(message).toMatchObject({ role: "agent", text: "hello there" });
+
+  const state = (await (await fetch(`${url}/state`)).json()) as {
+    conversation: Array<{ text: string }>;
+  };
+  expect(state.conversation.some((m) => m.text === "hello there")).toBe(true);
+});
+
+test("POST /send rejects a bad role", async () => {
+  const res = await fetch(`${url}/send`, {
+    method: "POST",
+    body: JSON.stringify({ role: "nope", text: "x" }),
+  });
+  expect(res.status).toBe(400);
+});
+
+test("GET /search returns typed hits, node hits ranked first", async () => {
+  const res = await fetch(`${url}/search?q=${encodeURIComponent("Maren")}`);
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as { hits: Array<{ kind: string; id: string }> };
+  expect(body.hits.length).toBeGreaterThan(0);
+  expect(body.hits[0]?.kind).toBe("node");
+});
+
+test("GET /neighbors/:id returns the local hood", async () => {
+  const res = await fetch(`${url}/neighbors/maren?depth=1`);
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as { neighbors: Array<{ id: string }> };
+  expect(Array.isArray(body.neighbors)).toBe(true);
+});
+
+test("POST /proposals/:id/ruling ratifies a node proposal and creates it", async () => {
+  const proposeRes = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title: "Sela" }, evidence: {} }),
+  });
+  const proposal = (await proposeRes.json()) as { id: string };
+
+  const res = await fetch(`${url}/proposals/${proposal.id}/ruling`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "thread" }),
+  });
+  expect(res.status).toBe(200);
+  const result = (await res.json()) as { status: string; nodeId: string };
+  expect(result.status).toBe("ratified");
+
+  const state = (await (await fetch(`${url}/state`)).json()) as {
+    nodes: Array<{ id: string; title: string }>;
+  };
+  expect(state.nodes.some((n) => n.id === result.nodeId && n.title === "Sela")).toBe(true);
+});
+
+test("POST /proposals/:id/ruling rejects an unknown ruling", async () => {
+  const res = await fetch(`${url}/proposals/nope/ruling`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "bogus" }),
+  });
+  expect(res.status).toBe(400);
+});
+
+test("POST /lens sets the lens, GET /state reflects it; DELETE /lens clears it", async () => {
+  const setRes = await fetch(`${url}/lens`, {
+    method: "POST",
+    body: JSON.stringify({ owner: "agent", nodeId: "maren", depth: 1 }),
+  });
+  expect(setRes.status).toBe(200);
+
+  const withLens = (await (await fetch(`${url}/state`)).json()) as {
+    lens: { owner: string; nodeId: string; depth: number } | null;
+  };
+  expect(withLens.lens).toEqual({ owner: "agent", nodeId: "maren", depth: 1 });
+
+  const clearRes = await fetch(`${url}/lens`, { method: "DELETE" });
+  expect(clearRes.status).toBe(200);
+  const cleared = (await (await fetch(`${url}/state`)).json()) as { lens: unknown };
+  expect(cleared.lens).toBeNull();
+});
+
+test("POST /look-here/:id fires without persisting lens state", async () => {
+  const res = await fetch(`${url}/look-here/maren`, { method: "POST" });
+  expect(res.status).toBe(200);
+  const state = (await (await fetch(`${url}/state`)).json()) as { lens: unknown };
+  expect(state.lens).toBeNull();
+});
+
 test("GET /doc/:id serves the envelope for docs that have landed", async () => {
   const state = (await (await fetch(`${url}/state`)).json()) as {
     docs?: Array<{ id: string; title: string; kind: string }>;
