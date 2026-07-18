@@ -6,9 +6,10 @@
 // Conversation stays local-only until P2 wires it to the real bus
 // (plan/circe.md P2.3) — there's no agent behind it yet either way.
 
+import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ContextRail } from "./ContextRail";
-import { ConversationPanel } from "./ConversationPanel";
+import { ConversationPanel, type ScrollRequest } from "./ConversationPanel";
 import { DocViewer } from "./DocViewer";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
@@ -17,12 +18,34 @@ import { NodeDetail } from "./NodeDetail";
 import { ProjectPicker } from "./ProjectPicker";
 import { ReviewQueue } from "./ReviewQueue";
 import { SearchPalette } from "./SearchPalette";
+import { type CitedBy, parseCitedBody } from "./state/deleteFlow";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
 import { pendingEdgesFrom, pendingNodesFrom } from "./state/pendingOverlay";
+import { dotState, type PresenceDot } from "./state/presence";
+import { PROJECT_STORAGE_KEY, rememberProject, resolveInitialProject } from "./state/urlProject";
 import { useProjectState } from "./state/useProjectState";
-import type { Doc, Lens, MapNode, Message, ProjectState, Ruling, WireMessage } from "./types";
+import type {
+  Doc,
+  DocMeta,
+  Lens,
+  MapNode,
+  Message,
+  MessageSourceRef,
+  ProjectState,
+  Ruling,
+  WireMessage,
+} from "./types";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
 import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 // Wire → display adapter (types.ts note): the wire's `kind` is a free-form
 // string (server default "turn"); the display Message narrows it to the two
@@ -68,9 +91,31 @@ type OpenDoc = { doc: Doc; highlight?: string };
 
 const DEFAULT_LENS: Lens = { owner: null, nodeId: null, depth: 1 };
 
+// T8 — presence dot rendering (tokens only; the vocabulary reuses existing
+// axes: attention = broken, faint = quiet, story-local = alive).
+const DOT_CLASS: Record<PresenceDot, string> = {
+  unreachable: "bg-attention",
+  "connected-no-agent": "bg-ink-faint",
+  "agent-here": "bg-story-local",
+};
+
+const DOT_TITLE: Record<PresenceDot, string> = {
+  unreachable: "daemon unreachable",
+  "connected-no-agent": "connected — no agent on this project",
+  "agent-here": "an agent is here",
+};
+
+// Client-side backstop for the thinking indicator (the server TTL should
+// beat this; ~60s means a dropped idle event can't pin the pulse forever).
+const THINKING_TTL_MS = 60_000;
+
 export function App() {
-  const [projectId, setProjectId] = useState<string | undefined>(undefined);
-  const { state, error, lookHere } = useProjectState(projectId);
+  // T2 project-in-URL: an explicit ?project= (a shared link) beats the
+  // remembered last board beats undefined (daemon default resolves it).
+  const [projectId, setProjectId] = useState<string | undefined>(() =>
+    resolveInitialProject(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)),
+  );
+  const { state, error, status, lookHere, agentActivity } = useProjectState(projectId);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // A peripheral write (send/ingest) failing degrades into this dismissible
   // notice, never into the conversation — the browser has no business
@@ -89,12 +134,51 @@ export function App() {
     query: "",
   });
   const [focusRequest, setFocusRequest] = useState<{ nodeId: string; seq: number } | null>(null);
+  // T5 — the two-stage delete flow (Claim A): stage 1 confirms intent,
+  // stage 2 (citedBy set, populated from the 409) shows provenance counts
+  // before force. The SAME dialog escalates — never two dialogs.
+  const [deleteTarget, setDeleteTarget] = useState<{
+    doc: DocMeta;
+    citedBy: CitedBy | null;
+  } | null>(null);
+  // T9 — the double-click node sketch form.
+  const [nodeForm, setNodeForm] = useState<{ title: string; synopsis: string } | null>(null);
+  // T8 — agent activity → the conversation panel's thinking pulse.
+  const [thinking, setThinking] = useState(false);
+  // T11 — imperative scroll-to-message request for the conversation panel.
+  const [scrollRequest, setScrollRequest] = useState<ScrollRequest | null>(null);
+
+  // Thinking pulse lifecycle: non-idle activity lights it (and arms the
+  // client TTL backstop), idle clears it. The third clear — any agent
+  // message landing — is its own effect below.
+  useEffect(() => {
+    if (!agentActivity) return;
+    if (agentActivity.state === "idle") {
+      setThinking(false);
+      return;
+    }
+    setThinking(true);
+    const t = setTimeout(() => setThinking(false), THINKING_TTL_MS);
+    return () => clearTimeout(t);
+  }, [agentActivity]);
+
+  // A reply IS done-thinking, whatever the activity stream said last.
+  const lastMessage = state?.conversation[state.conversation.length - 1];
+  useEffect(() => {
+    if (lastMessage?.role === "agent") setThinking(false);
+  }, [lastMessage]);
 
   // Once the daemon resolves the default project, mirror its id into the
   // picker so switching projects re-mounts useProjectState explicitly rather
-  // than riding an implicit undefined.
+  // than riding an implicit undefined. Also mirrored into the URL + storage
+  // (T2) — but ONLY here, where projectId was undefined by construction: an
+  // explicit ?project= seeded projectId at mount, so this effect never
+  // overrides a shared link.
   useEffect(() => {
-    if (state && !projectId) setProjectId(state.project.id);
+    if (state && !projectId) {
+      setProjectId(state.project.id);
+      rememberProject(state.project.id);
+    }
   }, [state, projectId]);
 
   // P3.3 — the agent half of the lens contract (spike's own comment flagged
@@ -246,13 +330,16 @@ export function App() {
   // message.posted; the reducer applies it back into state.conversation on
   // the WS round-trip (no local optimistic append, so there is exactly one
   // source of truth for what was actually said).
-  const sendMessage = (text: string, ground: string[]) =>
+  // `kind` defaults to the ordinary turn; Analyze (Claim G) posts
+  // kind:"analyze" — explicit intent, same conversational wire, no new
+  // machinery. `ground` carries the prefix grammar (bare = node, doc:<id>).
+  const sendMessage = (text: string, ground: string[], kind = "turn") =>
     fetch(`/send${projectQs}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         role: "user",
-        kind: "turn",
+        kind,
         text,
         ground: ground.length ? ground : undefined,
       }),
@@ -302,6 +389,70 @@ export function App() {
         setNotice(`couldn't rule on that (${e instanceof Error ? e.message : String(e)}).`),
       );
 
+  // T9 — human authoring: both sketches POST to the same /proposals
+  // endpoint the agent uses, author:"user" (Claim D). No optimistic
+  // append — the pending overlay renders the sketch when proposal.added
+  // round-trips (one source of truth, same as messages).
+  const proposeAsUser = (kind: "node" | "edge", draft: Record<string, unknown>) =>
+    fetch(`/proposals${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, draft, evidence: {}, author: "user" }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`propose ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't sketch that (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
+  const submitNodeForm = () => {
+    if (!nodeForm) return;
+    const title = nodeForm.title.trim();
+    if (!title) return;
+    const synopsis = nodeForm.synopsis.trim();
+    proposeAsUser("node", synopsis ? { title, synopsis } : { title });
+    setNodeForm(null);
+  };
+
+  // T5 — the delete flow's fetch half (the 409-body parse is pure,
+  // state/deleteFlow.ts). Unforced first, always; a recognizable cited-409
+  // escalates the SAME dialog to its provenance stage; anything else
+  // degrades to the notice bar.
+  const requestDelete = (force: boolean) => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.doc.id;
+    const forceQs = projectQs ? `${projectQs}&force=1` : "?force=1";
+    fetch(`/doc/${id}${force ? forceQs : projectQs}`, { method: "DELETE" })
+      .then(async (r) => {
+        if (r.ok) {
+          setDeleteTarget(null);
+          return;
+        }
+        if (r.status === 409) {
+          const cited = parseCitedBody(await r.json().catch(() => null));
+          if (cited) {
+            setDeleteTarget((t) => (t ? { ...t, citedBy: cited } : t));
+            return;
+          }
+        }
+        throw new Error(`delete ${r.status}`);
+      })
+      .catch((e) => {
+        setDeleteTarget(null);
+        setNotice(`couldn't delete that document (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
+  // An open viewer for a doc that no longer exists closes — whoever deleted
+  // it (this surface's flow or an agent's cli doc delete), the doc.deleted
+  // reducer filter is the one truth this watches.
+  useEffect(() => {
+    if (openDoc && state && !state.docs.some((d) => d.id === openDoc.doc.id)) {
+      setOpenDoc(null);
+    }
+  }, [state, openDoc]);
+
   // A doc that won't open degrades to the notice bar — it must never take
   // the board down with it.
   const openDocById = (docId: string, highlight?: string) => {
@@ -318,6 +469,7 @@ export function App() {
 
   const switchProject = (id: string) => {
     setProjectId(id);
+    rememberProject(id);
     setSelectedIds([]);
     setOpenDoc(null);
     setLens(DEFAULT_LENS);
@@ -341,6 +493,10 @@ export function App() {
 
   const messages = state.conversation.map(toDisplayMessage);
   const pendingCount = state.proposals.filter((p) => p.status === "pending").length;
+  // T8 — layer 1 (my socket) and layer 2 (agent tails) stay separate;
+  // dotState is the pure rule. `presence` is defensive-read: a pre-V1.x
+  // daemon simply reads as no-agent, never crashes.
+  const dot = dotState(status, state.presence?.agents ?? 0);
 
   return (
     <div className="flex h-screen flex-col bg-bg text-ink">
@@ -357,10 +513,19 @@ export function App() {
             review · {pendingCount}
           </Button>
         )}
-        <span className="ml-auto text-xs text-ink-faint">
+        <span className="ml-auto flex items-center gap-2 text-xs text-ink-faint">
+          <span className="flex items-center gap-1.5" role="status" title={DOT_TITLE[dot]}>
+            <span className={`h-2 w-2 rounded-full ${DOT_CLASS[dot]}`} aria-hidden />
+            <span className="sr-only">{DOT_TITLE[dot]}</span>
+          </span>
           {state.docs.length} docs · {state.nodes.length} ideas · {state.edges.length} relations
         </span>
       </header>
+      {status === "closed" && (
+        <div className="border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention">
+          disconnected — the daemon isn't answering; sends are off. retrying…
+        </div>
+      )}
       {notice && (
         <div className="flex items-center justify-between border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention">
           <span>{notice}</span>
@@ -388,6 +553,8 @@ export function App() {
           onIngestBlank={(title) => {
             ingestBlank(title, ingestJson);
           }}
+          onAnalyze={(doc) => sendMessage(`Analyze: ${doc.title}`, [`doc:${doc.id}`], "analyze")}
+          onDelete={(doc) => setDeleteTarget({ doc, citedBy: null })}
         />
         <div className="relative min-w-0 flex-1">
           <GraphCanvas
@@ -403,7 +570,77 @@ export function App() {
             }}
             highlightIds={matches ? matches.map((n) => n.id) : null}
             focusRequest={focusRequest}
+            onConnect={(source, target) => proposeAsUser("edge", { source, target })}
+            onPaneDoubleClick={() => setNodeForm({ title: "", synopsis: "" })}
           />
+          {nodeForm && (
+            <div className="absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur">
+              <p className="mb-2 text-[10px] uppercase tracking-widest text-ink-faint">
+                sketch an idea
+              </p>
+              <input
+                // biome-ignore lint/a11y/noAutofocus: the form only exists because the user just summoned it
+                autoFocus
+                value={nodeForm.title}
+                onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setNodeForm(null);
+                  if (e.key === "Enter") submitNodeForm();
+                }}
+                placeholder="title…"
+                aria-label="New idea title"
+                className="w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
+              />
+              <Textarea
+                value={nodeForm.synopsis}
+                onChange={(e) => setNodeForm({ ...nodeForm, synopsis: e.target.value })}
+                onKeyDown={(e) => e.key === "Escape" && setNodeForm(null)}
+                placeholder="a line about it… (optional)"
+                className="mt-1.5 min-h-12 p-1.5 text-xs"
+              />
+              {/* Placement honesty (ratified): the sketch lands where layout
+                  puts it, not where you double-clicked — no position rides
+                  the schema. */}
+              <div className="mt-2 flex items-center justify-between gap-1.5">
+                <p className="text-[10px] italic text-ink-faint">lands as a pending sketch.</p>
+                <div className="flex gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="auto"
+                    className="px-2 py-1"
+                    onClick={() => setNodeForm(null)}
+                  >
+                    cancel
+                  </Button>
+                  <Button
+                    size="auto"
+                    className="px-2 py-1"
+                    onClick={submitNodeForm}
+                    disabled={!nodeForm.title.trim()}
+                  >
+                    sketch
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          {!search.open && (
+            <Button
+              size="icon"
+              onClick={() => setSearch({ open: true, query: "" })}
+              aria-label="Find a node"
+              title="Find a node (⌘K or /)"
+              // The palette's own perch (left-1/2 top-4) — the button morphs
+              // into it on click; drops to top-14 under an active FocusBar,
+              // same dodge NodeDetail does. Every keyboard summon gets a
+              // clickable twin.
+              className={`absolute left-1/2 z-10 -translate-x-1/2 bg-surface/90 backdrop-blur ${
+                lens.owner ? "top-14" : "top-4"
+              }`}
+            >
+              <Search size={13} />
+            </Button>
+          )}
           {search.open && (
             <SearchPalette
               matches={matches ?? []}
@@ -427,7 +664,14 @@ export function App() {
                 node={detailNode}
                 docs={state.docs}
                 onVerb={(verb, node) => sendMessage(`${verb} — ${node.title}`, [node.id])}
-                onOpenSource={(s) => openDocById(s.docId, s.span)}
+                onOpenSource={(s) => openDocById(s.docId, s.span ?? undefined)}
+                onOpenMessageSource={(s: MessageSourceRef) =>
+                  setScrollRequest((r) => ({
+                    messageId: s.messageId,
+                    span: s.span,
+                    seq: (r?.seq ?? 0) + 1,
+                  }))
+                }
                 onFocus={(node) => setLens({ owner: "user", nodeId: node.id, depth: 1 })}
                 onClose={() => setDetailOpen(false)}
               />
@@ -446,12 +690,17 @@ export function App() {
           <ReviewQueue
             proposals={state.proposals}
             docs={state.docs}
+            nodes={state.nodes}
             onRule={ruleProposal}
             onClose={() => setReviewOpen(false)}
           />
         )}
         <ConversationPanel
           nodes={state.nodes}
+          docs={state.docs}
+          disabled={status === "closed"}
+          thinking={thinking}
+          scrollRequest={scrollRequest}
           selection={selection}
           onDeselect={(id) => setSelectedIds((ids) => ids.filter((x) => x !== id))}
           messages={messages}
@@ -463,6 +712,50 @@ export function App() {
           }
         />
       </div>
+      {deleteTarget && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {deleteTarget.citedBy
+                  ? `"${deleteTarget.doc.title}" is still cited`
+                  : `delete "${deleteTarget.doc.title}"?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget.citedBy
+                  ? `${deleteTarget.citedBy.nodes} node${
+                      deleteTarget.citedBy.nodes === 1 ? "" : "s"
+                    } and ${deleteTarget.citedBy.proposals} pending proposal${
+                      deleteTarget.citedBy.proposals === 1 ? "" : "s"
+                    } cite it. The nodes survive (the map is a view, not the doc), but the pending proposals lose this evidence.`
+                  : "The document and its file go away. Ideas already ratified from it stay on the map."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="ghost"
+                size="auto"
+                className="px-2.5 py-1"
+                onClick={() => setDeleteTarget(null)}
+              >
+                cancel
+              </Button>
+              <Button
+                size="auto"
+                className="px-2.5 py-1 text-attention"
+                onClick={() => requestDelete(Boolean(deleteTarget.citedBy))}
+              >
+                {deleteTarget.citedBy ? "delete anyway" : "delete"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }

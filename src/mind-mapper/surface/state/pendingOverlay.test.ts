@@ -10,9 +10,10 @@ function nodeProposal(overrides: Partial<Proposal> = {}): Proposal {
     id: "prop-1",
     kind: "node",
     draft: { title: "The story-toll", synopsis: "Paid in untold stories.", kind: "concept" },
-    evidence: { docId: "toll-ramble", span: "a story you have never told" },
+    evidence: { docId: "toll-ramble", messageId: null, span: "a story you have never told" },
     suggestedTier: "thread",
     status: "pending",
+    author: "agent",
     ...overrides,
   };
 }
@@ -50,8 +51,17 @@ test("an untrusted draft.kind falls back to 'concept', an untrusted suggestedTie
   expect(node?.tier).toBe("thread");
 });
 
+test("message-grounded evidence becomes a message source on the synthetic node (Claim E)", () => {
+  const [node] = pendingNodesFrom([
+    nodeProposal({ evidence: { docId: null, messageId: "m-1", span: "said in passing" } }),
+  ]);
+  expect(node?.sources).toEqual([{ messageId: "m-1", span: "said in passing" }]);
+});
+
 test("a missing evidence.docId means no sources array, not an empty one", () => {
-  const [node] = pendingNodesFrom([nodeProposal({ evidence: { docId: null, span: null } })]);
+  const [node] = pendingNodesFrom([
+    nodeProposal({ evidence: { docId: null, messageId: null, span: null } }),
+  ]);
   expect(node?.sources).toBeUndefined();
 });
 

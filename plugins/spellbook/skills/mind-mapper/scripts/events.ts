@@ -9,13 +9,22 @@
 
 const REPLAY_BUFFER_SIZE = 1000;
 
+// The COMPLETE bus vocabulary — every emit() site's kind must be listed here
+// (the look.here drift hid from this union for a whole build; keep it total).
+// NOT listed: "epoch.changed" — that line is CLI-synthesized by tail on
+// reconnect, never a bus event (the browser WS never sees it).
 type EventKind =
   | "doc.added"
+  | "doc.deleted"
+  | "doc.marked"
   | "node.ratified"
   | "edge.ratified"
   | "proposal.added"
   | "message.posted"
-  | "lens.set";
+  | "lens.set"
+  | "look.here"
+  | "presence.changed"
+  | "agent.activity";
 
 interface BusEvent {
   seq: number;

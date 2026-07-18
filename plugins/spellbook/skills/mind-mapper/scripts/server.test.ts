@@ -60,11 +60,11 @@ test("GET /state returns the ratified StubMap shape", async () => {
   for (const n of map.nodes) {
     expect(typeof n.id).toBe("string");
     expect(typeof n.title).toBe("string");
-    expect(["canon", "thread", "story-local", "background"]).toContain(n.tier);
+    expect(["canon", "thread", "story-local", "background"]).toContain(n.tier as string);
   }
   const ids = new Set(map.nodes.map((n) => n.id));
   for (const e of map.edges) {
-    expect(["asserted", "derived"]).toContain(e.provenance);
+    expect(["asserted", "derived"]).toContain(e.provenance as string);
     expect(ids.has(e.source as string)).toBe(true); // no dangling refs
     expect(ids.has(e.target as string)).toBe(true);
   }
@@ -266,6 +266,65 @@ test("POST /look-here/:id fires without persisting lens state", async () => {
   expect(res.status).toBe(200);
   const state = (await (await fetch(`${url}/state`)).json()) as { lens: unknown };
   expect(state.lens).toBeNull();
+});
+
+test("POST /doc/:id/mark marks the doc; /state carries mark with stale; unknown doc 400s", async () => {
+  const ingest = await fetch(`${url}/ingest`, {
+    method: "POST",
+    body: JSON.stringify({ title: "Markable", text: "prose to vouch for" }),
+  });
+  const doc = (await ingest.json()) as { id: string };
+
+  const res = await fetch(`${url}/doc/${doc.id}/mark`, {
+    method: "POST",
+    body: JSON.stringify({ status: "analyzed", note: "two claims proposed" }),
+  });
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as { docId: string; mark: Record<string, unknown> };
+  expect(body.docId).toBe(doc.id);
+  expect(body.mark).toMatchObject({ author: "agent", status: "analyzed" });
+
+  const state = (await (await fetch(`${url}/state`)).json()) as {
+    docs: Array<{ id: string; mark?: { status: string; stale: boolean } }>;
+  };
+  const marked = state.docs.find((d) => d.id === doc.id);
+  expect(marked?.mark).toMatchObject({ status: "analyzed", stale: false });
+
+  const bad = await fetch(`${url}/doc/no-such-doc/mark`, {
+    method: "POST",
+    body: JSON.stringify({ status: "read" }),
+  });
+  expect(bad.status).toBe(400);
+});
+
+test("DELETE /doc/:id — 404 unknown, 409 {error:cited, citedBy} when cited, 200 with ?force=1", async () => {
+  const ingest = await fetch(`${url}/ingest`, {
+    method: "POST",
+    body: JSON.stringify({ title: "Deletable", text: "doomed prose" }),
+  });
+  const doc = (await ingest.json()) as { id: string };
+
+  // Cite it from a pending proposal.
+  await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title: "D" }, evidence: { docId: doc.id } }),
+  });
+
+  expect((await fetch(`${url}/doc/no-such-doc`, { method: "DELETE" })).status).toBe(404);
+
+  const conflict = await fetch(`${url}/doc/${doc.id}`, { method: "DELETE" });
+  expect(conflict.status).toBe(409);
+  const body = (await conflict.json()) as {
+    error: string;
+    citedBy: { nodes: number; proposals: number };
+  };
+  expect(body.error).toBe("cited");
+  expect(body.citedBy).toEqual({ nodes: 0, proposals: 1 });
+
+  const forced = await fetch(`${url}/doc/${doc.id}?force=1`, { method: "DELETE" });
+  expect(forced.status).toBe(200);
+  const state = (await (await fetch(`${url}/state`)).json()) as { docs: Array<{ id: string }> };
+  expect(state.docs.map((d) => d.id)).not.toContain(doc.id);
 });
 
 test("GET /doc/:id serves the envelope for docs that have landed", async () => {

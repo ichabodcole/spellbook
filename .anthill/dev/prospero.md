@@ -54,6 +54,12 @@ Cross-project consumer negotiation (e.g. the Operator doc-linking channel) is my
 - Emitted event payloads are seams: if a bus emit shape isn't written where a consumer can read it, the consumer WILL guess wrong (P3 badge bug) — thin-event conventions go in seams.md the day they're designed, not at wrap.
 - A spike closes when its load-bearing uncertainty is resolved, not when feature ideas stop arriving — everything after that point sorts into known-build (V1 plan) or new bounded uncertainty (its own experiment card).
 
+- Subagent-mode re-dispatches route by AGENT THREAD, not seat identity — the V1.x re-gate went to daedalus's thread (the builder) instead of cassandra's, and only his honesty flagged it.
+Before continuing an agent, verify the thread IS the seat you mean (the board-claim fresh-state rule, applied to agent threads).
+- Ratify runtime-behavior claims only with a measured repro (daedalus's enqueue-throw clause died on first contact with Bun) — a 20-line scratchpad repro before ratification is cheaper than a red rig.
+- The V1.x round proved the two-round gate shape: cold drive → falsifications → owner rework → COLD re-drive by the same non-owner.
+The builder's own probes of his fix passed identically but prove nothing — independence is the property, not the probe list.
+
 ## Anti-patterns
 
 - Letting a "later"-tagged card sit adjacent to an active one with a similar title — retitle or re-note parked cards so they can't be claimed by title-adjacency.

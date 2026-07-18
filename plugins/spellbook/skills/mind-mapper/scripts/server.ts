@@ -16,9 +16,11 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { openStore } from "./db.ts";
+import { CitedError, deleteDoc } from "./docs.ts";
 import { createEventBus, type EventBus } from "./events.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
 import { clearLens, lookHere, setLens } from "./lens.ts";
+import { markDoc } from "./marks.ts";
 import { neighbors } from "./neighbors.ts";
 import {
   createProject,
@@ -82,10 +84,27 @@ const PID_FILE = join(HOME, "daemon.pid");
 
 // One open Database + event bus per project, opened lazily and kept open for
 // the daemon's lifetime (sqlite connections are cheap to hold, expensive to
-// reopen per request).
-const projects = new Map<string, { db: Database; bus: EventBus; meta: ProjectMeta }>();
+// reopen per request). `agents` is Claim C's standing-presence counter — it
+// lives HERE (per-project map entry, adjusted at the SSE subscription site)
+// because the bus's listener set is transport-blind: only the subscription
+// site knows an agent tail from a browser WS. `activityTimer` is the ~60s
+// TTL that turns a silent agent back to idle.
+interface ProjectEntry {
+  db: Database;
+  bus: EventBus;
+  meta: ProjectMeta;
+  agents: number;
+  activityTimer: ReturnType<typeof setTimeout> | null;
+}
 
-function loadProject(id?: string): { db: Database; bus: EventBus; meta: ProjectMeta } {
+const projects = new Map<string, ProjectEntry>();
+
+// A connection WITHOUT ?project= (the browser WS on first mount, an unscoped
+// agent tail) resolves through the same default-project path as every other
+// unscoped request — attribution to the daemon-resolved default project is
+// what keeps project-scoped presence.changed fan-out honest (plan-v1x,
+// Claim C scoping edge).
+function loadProject(id?: string): ProjectEntry {
   const meta = resolveProject(HOME, id);
   const existing = projects.get(meta.id);
   if (existing) return existing;
@@ -96,9 +115,41 @@ function loadProject(id?: string): { db: Database; bus: EventBus; meta: ProjectM
     const isFresh = (db.query("SELECT COUNT(*) as n FROM docs").get() as { n: number }).n === 0;
     if (isFresh) seedDefaultProject(db, join(dir, "docs"), STUB_DATA_DIR);
   }
-  const entry = { db, bus: createEventBus(), meta };
+  const entry: ProjectEntry = { db, bus: createEventBus(), meta, agents: 0, activityTimer: null };
   projects.set(meta.id, entry);
   return entry;
+}
+
+// Presence = who is receiving (the grapevine `who` model): agents-only,
+// counted at SSE subscribe/unsubscribe. Accuracy is bounded by the keepalive
+// (Claim F): a dead socket only tears down when the next keepalive write
+// throws, so the decrement can lag by up to one tick — never dangle.
+function adjustAgents(entry: ProjectEntry, delta: number): void {
+  entry.agents = Math.max(0, entry.agents + delta);
+  entry.bus.emit("presence.changed", { agents: entry.agents });
+}
+
+function activityTtlMs(): number {
+  const v = Number.parseInt(process.env.MIND_MAPPER_ACTIVITY_TTL_MS ?? "", 10);
+  return Number.isFinite(v) && v > 0 ? v : 60_000;
+}
+
+// Claim C's active-attention half: fire-and-forget, no table, no
+// persistence (like look.here). A non-idle state arms the per-project TTL
+// timer; on fire the daemon emits a SYNTHETIC idle so a crashed agent can't
+// leave "thinking…" stuck on the surface.
+function postActivity(entry: ProjectEntry, state: "received" | "thinking" | "idle"): void {
+  if (entry.activityTimer !== null) {
+    clearTimeout(entry.activityTimer);
+    entry.activityTimer = null;
+  }
+  entry.bus.emit("agent.activity", { state });
+  if (state !== "idle") {
+    entry.activityTimer = setTimeout(() => {
+      entry.activityTimer = null;
+      entry.bus.emit("agent.activity", { state: "idle" });
+    }, activityTtlMs());
+  }
 }
 
 // Seam v2 (vine msgs 13–17): GET /doc/:id → { id, title, kind, content } —
@@ -137,22 +188,67 @@ function openBrowser(url: string): void {
   }
 }
 
-function sseResponse(bus: EventBus, since: number): Response {
+// Keepalive tick (Claim F): a comment frame every ~15s keeps a healthy SSE
+// connection observably alive — the cli's idle watchdog is calibrated to ~3
+// missed ticks. Env override is for tests only.
+//
+// Dead-socket detection (measured, Bun 1.3.14 — corrects the ratified
+// enqueue-throw mechanism): enqueue on an orphaned stream NEVER throws (it
+// buffers silently), but a vanished client — raw socket death or an
+// aborted client fetch — fires BOTH req.signal "abort" and the stream's
+// cancel(). Teardown therefore listens on the request signal and keeps the
+// enqueue try/catch only as belt-and-braces. (Known hole, accepted: Bun's
+// own fetch reader.cancel() closes nothing client-side and is invisible to
+// the server — real clients close the socket.)
+function keepaliveMs(): number {
+  const v = Number.parseInt(process.env.MIND_MAPPER_KEEPALIVE_MS ?? "", 10);
+  return Number.isFinite(v) && v > 0 ? v : 15_000;
+}
+
+function sseResponse(
+  bus: EventBus,
+  since: number,
+  hooks: { onOpen?: () => void; onClose?: () => void } = {},
+  signal?: AbortSignal,
+): Response {
   let unsubscribe: (() => void) | null = null;
+  let keepalive: ReturnType<typeof setInterval> | null = null;
+  let closed = false;
+  // Every exit path (clean cancel, enqueue-throw on a dead controller)
+  // funnels through here exactly once — Claim C's presence decrement rides
+  // hooks.onClose, so this funnel is what bounds presence accuracy.
+  const teardown = () => {
+    if (closed) return;
+    closed = true;
+    if (keepalive !== null) clearInterval(keepalive);
+    unsubscribe?.();
+    hooks.onClose?.();
+  };
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder();
+      const safeEnqueue = (chunk: string) => {
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(chunk));
+        } catch {
+          teardown();
+        }
+      };
       // An opening comment flushes the response headers immediately — some
       // HTTP clients (Bun's own fetch() included) otherwise buffer until the
       // first byte of body arrives, so an SSE stream that's genuinely quiet
       // between events would leave the caller's fetch() unresolved.
-      controller.enqueue(encoder.encode(": connected\n\n"));
+      safeEnqueue(": connected\n\n");
       unsubscribe = bus.subscribe(since, (event) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+        safeEnqueue(`data: ${JSON.stringify(event)}\n\n`);
       });
+      keepalive = setInterval(() => safeEnqueue(": keepalive\n\n"), keepaliveMs());
+      signal?.addEventListener("abort", teardown, { once: true });
+      hooks.onOpen?.();
     },
     cancel() {
-      unsubscribe?.();
+      teardown();
     },
   });
   return new Response(stream, {
@@ -222,7 +318,7 @@ async function main(argv: string[]): Promise<number> {
         const projectId = url.searchParams.get("project") ?? undefined;
 
         if (path === "/events") {
-          const { bus } = loadProject(projectId);
+          const entry = loadProject(projectId);
           if (req.headers.get("upgrade") === "websocket") {
             const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
             const ok = srv.upgrade(req, {
@@ -232,12 +328,48 @@ async function main(argv: string[]): Promise<number> {
             return new Response("upgrade failed", { status: 500 });
           }
           const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
-          return sseResponse(bus, Number.isFinite(since) ? since : 0);
+          // SSE = an agent tail (the browser rides the WS above; presence is
+          // agents-only, ruled). The subscription site is the ONE place that
+          // knows this, so the presence counter adjusts here.
+          return sseResponse(
+            entry.bus,
+            Number.isFinite(since) ? since : 0,
+            {
+              onOpen: () => adjustAgents(entry, 1),
+              onClose: () => adjustAgents(entry, -1),
+            },
+            req.signal,
+          );
         }
 
         if (req.method === "GET" && path === "/state") {
-          const { db, bus, meta } = loadProject(projectId);
-          return Response.json(readState(db, meta, bus.cursor(), bus.epoch));
+          const entry = loadProject(projectId);
+          const { db, bus, meta } = entry;
+          return Response.json({
+            ...readState(db, meta, bus.cursor(), bus.epoch, projectDir(HOME, meta.id)),
+            presence: { agents: entry.agents },
+          });
+        }
+
+        if (req.method === "POST" && path === "/activity") {
+          const entry = loadProject(projectId);
+          return req
+            .json()
+            .then((body) => {
+              const { state } = body as { state?: unknown };
+              if (state !== "received" && state !== "thinking" && state !== "idle") {
+                throw new Error("state must be received|thinking|idle");
+              }
+              postActivity(entry, state);
+              return Response.json({ ok: true, state });
+            })
+            .catch(
+              (e) =>
+                new Response(
+                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                  { status: 400, headers: { "Content-Type": "application/json" } },
+                ),
+            );
         }
         if (req.method === "GET" && path === "/projects") {
           return Response.json({ projects: listProjects(HOME) });
@@ -301,17 +433,24 @@ async function main(argv: string[]): Promise<number> {
           return req
             .json()
             .then((body) => {
-              const { kind, draft, evidence, suggestedTier } = body as {
+              const { kind, draft, evidence, suggestedTier, author } = body as {
                 kind?: unknown;
                 draft?: unknown;
                 evidence?: unknown;
                 suggestedTier?: unknown;
+                author?: unknown;
               };
               if (kind !== "node" && kind !== "edge") throw new Error("kind must be node or edge");
+              if (author !== undefined && author !== "user" && author !== "agent") {
+                throw new Error("author must be user or agent");
+              }
               const input = {
                 draft,
-                evidence: (evidence as { docId?: string; span?: string } | undefined) ?? {},
+                evidence:
+                  (evidence as { docId?: string; messageId?: string; span?: string } | undefined) ??
+                  {},
                 suggestedTier: typeof suggestedTier === "string" ? suggestedTier : undefined,
+                author: author as "user" | "agent" | undefined,
               };
               const proposal =
                 kind === "node" ? proposeNode(db, bus, input) : proposeEdge(db, bus, input);
@@ -379,7 +518,15 @@ async function main(argv: string[]): Promise<number> {
           return req
             .json()
             .then((body) => {
-              const { ruling, docEdit } = body as { ruling?: unknown; docEdit?: unknown };
+              // docId/span are the additive ratify-time-attach fields (P3
+              // gate ruling) — passed through verbatim; ratify() owns every
+              // constraint (evidence-less only, node-only, slug, existence).
+              const { ruling, docEdit, docId, span } = body as {
+                ruling?: unknown;
+                docEdit?: unknown;
+                docId?: unknown;
+                span?: unknown;
+              };
               if (
                 ruling !== "canon" &&
                 ruling !== "thread" &&
@@ -392,6 +539,8 @@ async function main(argv: string[]): Promise<number> {
                 proposalId,
                 ruling,
                 docEdit: typeof docEdit === "string" ? docEdit : undefined,
+                docId: typeof docId === "string" ? docId : undefined,
+                span: typeof span === "string" ? span : undefined,
               });
               return Response.json(result);
             })
@@ -440,6 +589,62 @@ async function main(argv: string[]): Promise<number> {
           const { bus } = loadProject(projectId);
           lookHere(bus, path.slice("/look-here/".length));
           return Response.json({ ok: true });
+        }
+
+        if (req.method === "DELETE" && path.startsWith("/doc/")) {
+          const { db, bus, meta } = loadProject(projectId);
+          const id = path.slice("/doc/".length);
+          const force = url.searchParams.has("force");
+          try {
+            const result = deleteDoc(db, bus, projectDir(HOME, meta.id), id, force);
+            if (!result) {
+              return new Response('{"error":"unknown doc"}', {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return Response.json({ ok: true, id });
+          } catch (e) {
+            if (e instanceof CitedError) {
+              return new Response(JSON.stringify({ error: "cited", citedBy: e.citedBy }), {
+                status: 409,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return new Response(
+              JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+              { status: 400, headers: { "Content-Type": "application/json" } },
+            );
+          }
+        }
+
+        if (req.method === "POST" && path.startsWith("/doc/") && path.endsWith("/mark")) {
+          const { db, bus, meta } = loadProject(projectId);
+          const id = path.slice("/doc/".length, -"/mark".length);
+          return req
+            .json()
+            .then((body) => {
+              const { author, note, status } = body as {
+                author?: unknown;
+                note?: unknown;
+                status?: unknown;
+              };
+              if (typeof status !== "string") throw new Error("mark requires a status string");
+              const mark = markDoc(db, bus, projectDir(HOME, meta.id), {
+                docId: id,
+                author: typeof author === "string" ? author : "agent",
+                note: typeof note === "string" ? note : undefined,
+                status,
+              });
+              return Response.json({ docId: id, mark });
+            })
+            .catch(
+              (e) =>
+                new Response(
+                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                  { status: 400, headers: { "Content-Type": "application/json" } },
+                ),
+            );
         }
 
         if (req.method === "GET" && path.startsWith("/doc/")) {
@@ -523,4 +728,4 @@ if (import.meta.main) {
   process.exit(await main(process.argv.slice(2)));
 }
 
-export { main, readDoc };
+export { main, readDoc, sseResponse };

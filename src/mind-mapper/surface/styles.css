@@ -43,6 +43,34 @@
   --font-story: "Iowan Old Style", Palatino, Georgia, "Times New Roman", serif;
 }
 
+/* ActivityIndicator's pulse (ported from glamour; the component is adapted
+   to tokens, the keyframes come along verbatim). */
+@keyframes equalize {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* Message-evidence flash (T11) — a one-shot attention pulse on the anchored
+   bubble; the class is applied per scrollRequest and removed after the
+   animation so a repeat request re-fires it. */
+@keyframes mm-flash {
+  0% {
+    background-color: color-mix(in srgb, var(--color-canon) 25%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.mm-message-flash {
+  animation: mm-flash 1.6s ease-out;
+  border-radius: 8px;
+}
+
 /* React Flow chrome, retuned to the night-table palette. */
 .react-flow {
   background: var(--color-bg);

@@ -63,3 +63,22 @@ Don't grind through the whole casting doc silently and dump every friction point
 
 Untested: whether a resumed `tail --since <n>` CLI call against a restarted daemon (mismatched epoch) actually behaves the way the design intends (detect + full resnapshot) — worth a dedicated drive once an agent workflow actually depends on long-lived `tail` sessions surviving a restart (P4/dogfooding likely surfaces this naturally).
 Worth proposing to prospero: a light "verify checklist" template for future gate assignments (steps / PASS-FAIL format / friction-list format) now that P2 and P3 both used the same two-layer report shape successfully — codifying it would save re-deriving the format each time, though it's not yet clear if that's premature (only two gates run so far).
+
+## P3 gate lessons (V1.x, 2026-07-17)
+
+The propose-node stdin shape is `{draft:{title,synopsis,docEdit?}, suggestedTier?, evidence:{docId|messageId, span}}` — `suggestedTier` is TOP-LEVEL, a `tier` key inside `draft` is silently ignored, and a flat (no `draft` wrapper) body dies with a raw SQLite "NOT NULL constraint failed: proposals.draft_json" instead of a shape hint.
+Ratify's `--ruling` vocabulary is the tier itself (`canon|thread|story-local|reject`), not accept/reject — the casting draft never states this and a cold agent guesses wrong on the first try.
+The human-sketched (author:"user", evidence-less) doc-home flow the draft describes is impossible as written: `ratify --doc-edit` hard-requires the proposal's own `evidence_doc_id` and there is no evidence-attach route, so the only working path is plain ratify → node with empty `sources[]`.
+The HTTP proposal route is `POST /proposals` (not /propose); a probing POST that 200s HAS side effects — my endpoint probe minted a real pending proposal, so probe with invalid bodies or clean up after.
+Tail resilience is stronger than the spec asks: on daemon death it re-reads daemon.port and reconnects across a PORT CHANGE, synthesizing `epoch.changed` — but `open` has no port knob, so "restart on the same port" is not actually drivable from the CLI.
+Presence decrement on tail kill is effectively immediate (socket close), not keepalive-bounded — no need to wait out the 15s tick when verifying.
+`send` takes positional text (no `--stdin`), unlike ingest/propose which are `--stdin` JSON — the asymmetry is a cold-agent trap worth a line in the casting doc.
+zsh note that keeps biting: `$CLI ...` with a multi-word command string fails (no word splitting) — define a `cli() { bun ...cli.ts "$@"; }` function at the top of every drive block, and env does not persist between Bash calls, so re-export MIND_MAPPER_HOME every time.
+[re-gate round 2, executed by daedalus — coordinator routed the brief to the engine seat's thread; note the gate was NOT cold, the builder drove it] Ratify-time attach guards are enforced at BOTH layers (cli usage error AND daemon 400) — probe the daemon directly with curl for guard gates, the cli's local check can mask a missing engine guard. Also: `draft.tier` really is silently swallowed (suggestedTier comes back null, no warning) — a proposer who nests the tier gets a null-tier queue row with no signal; worth a watch item if it bites a real casting.
+
+## P3 re-gate lessons (items 7+10 rework, 2026-07-17)
+
+The ratify-time attach (`--doc <docId> --doc-edit <file> [--span]`) closed the inversion gap cleanly: node gets a real `{docId, span}` sources row, the doc-edit is written and search-reindexed, and all three guards (evidenced proposal, missing --doc-edit, edge proposal) fail loud on BOTH the cli and the raw wire — probe the wire separately, because the cli's local flag check can mask whether the daemon enforces the same rule.
+When probing a wire guard, mind guard ordering: my docId-without-docEdit probe first bounced off the "already carries evidence" guard because I reused an evidenced proposal — mint a fresh fixture per guard or the error you get isn't the guard you're testing.
+A re-gate should re-verify draft text AND live behavior in the same drive — two of the five draft corrections (send `--kind turn`, "--doc must already exist") carried implicit claims the original findings never tested, and both held; the draft-example flags are themselves testable claims.
+Routing note for future gates: if the re-gate request arrives via a slip, confirm the assignee isn't the feature's builder before treating a prior "pass" as cold evidence (daedalus correctly bounced it this time).

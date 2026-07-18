@@ -14,7 +14,7 @@
 // reinventing it.
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ProjectState, ServerEvent } from "../types";
+import type { AgentActivityState, ProjectState, ServerEvent } from "../types";
 import { applyEvent, isGap } from "./reducer";
 
 export type ConnStatus = "connecting" | "open" | "closed";
@@ -27,6 +27,13 @@ export function useProjectState(projectId?: string) {
   // part of ProjectState: it's a signal, not state; seq makes repeats on the
   // same node re-fire downstream effects.
   const [lookHere, setLookHere] = useState<{ nodeId: string; seq: number } | null>(null);
+  // Same {payload, seq} idiom for the agent's active-attention signal
+  // (agent.activity, Claim C) — repeats of the same state must re-fire the
+  // consumer's TTL reset.
+  const [agentActivity, setAgentActivity] = useState<{
+    state: AgentActivityState;
+    seq: number;
+  } | null>(null);
   const ws = useRef<WebSocket | null>(null);
 
   const fetchSnapshot = useCallback(() => {
@@ -73,10 +80,20 @@ export function useProjectState(projectId?: string) {
       };
       sock.onmessage = (e) => {
         const event = JSON.parse(e.data) as ServerEvent;
+        // Ephemeral kinds surface as signals BUT still fall through to the
+        // reducer below — the ephemeral-event cursor clause (Contract 9
+        // amendment): the emit consumed a seq, so an early return here
+        // would freeze the cursor and turn every subsequent event into a
+        // phantom gap → one wholesale /state refetch per fire-once signal
+        // (this was a real bug on the look.here path).
         if (event.kind === "look.here") {
           const nodeId = (event.payload as { nodeId?: string })?.nodeId;
           if (nodeId) setLookHere((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
-          return; // never touches ProjectState
+        } else if (event.kind === "agent.activity") {
+          const s = (event.payload as { state?: string })?.state;
+          if (s === "received" || s === "thinking" || s === "idle") {
+            setAgentActivity((r) => ({ state: s, seq: (r?.seq ?? 0) + 1 }));
+          }
         }
         setState((prev) => {
           // Snapshot hasn't landed yet — safe to drop: the pending
@@ -124,5 +141,5 @@ export function useProjectState(projectId?: string) {
     // effect's own body also reads projectId directly for the WS query string.
   }, [fetchSnapshot, projectId]);
 
-  return { state, error, status, lookHere };
+  return { state, error, status, lookHere, agentActivity };
 }

@@ -18,14 +18,16 @@ function baseState(): ProjectState {
         id: "prop-1",
         kind: "node",
         draft: { title: "The Hollow" },
-        evidence: { docId: "ramble-01", span: null },
+        evidence: { docId: "ramble-01", messageId: null, span: null },
         suggestedTier: "thread",
         status: "pending",
+        author: "agent",
       },
     ],
     conversation: [],
     lens: { owner: null, nodeId: null, depth: 1 },
     cursor: 5,
+    presence: { agents: 0 },
   };
 }
 
@@ -75,6 +77,97 @@ test("a ratified event whose proposalId matches nothing is a harmless no-op on p
     payload: { id: "x", proposalId: "no-such-proposal" },
   });
   expect(next.proposals).toEqual(baseState().proposals);
+});
+
+test("doc.deleted filters the doc out and advances cursor", () => {
+  const state = {
+    ...baseState(),
+    docs: [{ id: "ramble-01", title: "R1", kind: "ramble" as const }],
+  };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "doc.deleted",
+    payload: { id: "ramble-01" },
+  });
+  expect(next.docs).toEqual([]);
+  expect(next.cursor).toBe(6);
+  // Nodes SURVIVE a doc delete (map-as-view, Claim A).
+  expect(next.nodes).toEqual(state.nodes);
+});
+
+test("doc.marked upserts the full inline mark onto the doc, stale=false by construction", () => {
+  const state = {
+    ...baseState(),
+    docs: [{ id: "ramble-01", title: "R1", kind: "ramble" as const }],
+  };
+  const mark = { author: "agent", note: "nothing worth extracting", status: "analyzed", ts: 123 };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "doc.marked",
+    payload: { docId: "ramble-01", mark },
+  });
+  expect(next.docs[0]?.mark).toEqual({ ...mark, stale: false });
+  expect(next.cursor).toBe(6);
+});
+
+test("doc.marked replaces an existing mark (latest wins)", () => {
+  const state = {
+    ...baseState(),
+    docs: [
+      {
+        id: "ramble-01",
+        title: "R1",
+        kind: "ramble" as const,
+        mark: { author: "agent", note: null, status: "skimmed", ts: 1, stale: true },
+      },
+    ],
+  };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "doc.marked",
+    payload: {
+      docId: "ramble-01",
+      mark: { author: "agent", note: null, status: "analyzed", ts: 2 },
+    },
+  });
+  expect(next.docs[0]?.mark?.status).toBe("analyzed");
+  expect(next.docs[0]?.mark?.stale).toBe(false);
+});
+
+test("presence.changed sets presence and advances cursor", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "presence.changed",
+    payload: { agents: 2 },
+  });
+  expect(next.presence).toEqual({ agents: 2 });
+  expect(next.cursor).toBe(6);
+});
+
+// The ephemeral-event cursor clause (Contract 9 amendment): fire-once
+// signals still consumed a seq on the bus, so they MUST advance the cursor
+// here — the old hook early-returned look.here around the reducer, freezing
+// the cursor so every later event read as a phantom gap (wholesale refetch
+// per signal; fatal at agent.activity's 2–3×-per-turn rate).
+test("look.here advances cursor without touching state", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "look.here",
+    payload: { nodeId: "maren" },
+  });
+  expect(next.cursor).toBe(6);
+  expect(next.lens).toEqual(baseState().lens);
+  expect(next.nodes).toEqual(baseState().nodes);
+});
+
+test("agent.activity advances cursor without touching state", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "agent.activity",
+    payload: { state: "thinking" },
+  });
+  expect(next.cursor).toBe(6);
+  expect(next.conversation).toEqual([]);
 });
 
 test("proposal.added upserts by id into proposals", () => {

@@ -12,9 +12,19 @@
 //   propose-edge  same shape, kind: "edge" (source/target may be a real node
 //                 id OR a pending proposal's id — ratify resolves the latter)
 //   doc <id>      GET /doc/:id → the doc envelope on stdout
+//   doc delete <id> [--force]  DELETE /doc/:id → 409 {error:"cited", citedBy}
+//                 when cited and unforced; --force cascades
+//   mark <docId> --status <s> [--note <t>]  POST /doc/:id/mark → append a
+//                 status mark (doc.marked carries the full mark inline)
+//   activity <received|thinking|idle>  POST /activity → fire-and-forget
+//                 agent.activity signal (~60s TTL emits synthetic idle)
 //   search <q...> GET /search → {hits: [{kind: node|doc|message, ...}]}
 //   neighbors <id> [--depth 1]  GET /neighbors/:id → local hood + edge reasons
 //   ratify <id> --ruling canon|thread|story-local|reject [--doc-edit <file>]
+//                 [--doc <docId> --span <text>]  ratify-time evidence attach:
+//                 for an EVIDENCE-LESS node proposal only, --doc names the doc
+//                 home (must exist; requires --doc-edit) and mints the node's
+//                 sources row with the optional --span excerpt
 //   lens set --node <id> [--depth n] | lens clear
 //   look-here <nodeId>  fire-once attention nudge, not persisted
 //   send          <text...> [--role user|agent] [--kind] [--ground a,b] → POST /send
@@ -85,6 +95,11 @@ function openBrowser(url: string): void {
   const cmd =
     process.platform === "darwin" ? "open" : process.platform === "win32" ? "start" : "xdg-open";
   spawn(cmd, [url], { detached: true, stdio: "ignore" }).unref();
+}
+
+function envMs(name: string, fallback: number): number {
+  const v = Number.parseInt(process.env[name] ?? "", 10);
+  return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
 function requireDaemon(): number {
@@ -181,26 +196,83 @@ async function dispatch(argv: string[]): Promise<number> {
       strict: true,
       allowPositionals: false,
     });
-    const port = requireDaemon();
-    const params = new URLSearchParams({ since: parsed.values.since as string });
-    if (parsed.values.project) params.set("project", parsed.values.project);
-    const res = await fetch(`http://127.0.0.1:${port}/events?${params}`);
-    if (!res.body) return 0;
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = "";
+    requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
+    // Watchdog ≈ 3 missed server keepalives (15s tick, Claim F); env
+    // overrides are for the scripted-fake-server tests only.
+    const idleMs = envMs("MIND_MAPPER_TAIL_IDLE_MS", 45_000);
+    const retryMs = envMs("MIND_MAPPER_TAIL_RETRY_MS", 1_000);
+    const since = Number.parseInt(parsed.values.since as string, 10);
+    let cursor = Number.isFinite(since) ? since : 0;
+    let epoch: string | null = null;
+
+    // Standing, self-healing loop (Monitor-shaped): each connection attempt
+    // gets its own AbortController plus a rolling idle watchdog reset on
+    // every received RAW chunk before frame parsing — keepalive comments must
+    // feed the watchdog even though the data-line filter discards them. On
+    // fire (or any transport error): abort → reconnect with the last-seen
+    // seq. A reconnect that lands on a different epoch means the daemon
+    // restarted: reset the cursor to 0 and synthesize an {kind:
+    // "epoch.changed"} stdout line so the casting agent refetches state —
+    // CLI-synthesized only, never a bus event (the browser WS never sees it).
     for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      for (let idx = buf.indexOf("\n\n"); idx !== -1; idx = buf.indexOf("\n\n")) {
-        const frame = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
-        const dataLine = frame.split("\n").find((l) => l.startsWith("data: "));
-        if (dataLine) process.stdout.write(`${dataLine.slice("data: ".length)}\n`);
+      const port = livePort();
+      if (port === null) {
+        await new Promise((r) => setTimeout(r, retryMs));
+        continue;
       }
+      const params = new URLSearchParams({ since: String(cursor) });
+      if (parsed.values.project) params.set("project", parsed.values.project);
+      const controller = new AbortController();
+      let watchdog: ReturnType<typeof setTimeout> | null = null;
+      const resetWatchdog = () => {
+        if (watchdog !== null) clearTimeout(watchdog);
+        watchdog = setTimeout(() => controller.abort(), idleMs);
+      };
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/events?${params}`, {
+          signal: controller.signal,
+        });
+        if (!res.body) throw new Error("no body");
+        resetWatchdog();
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          resetWatchdog(); // raw chunk, before frame parsing
+          buf += decoder.decode(value, { stream: true });
+          for (let idx = buf.indexOf("\n\n"); idx !== -1; idx = buf.indexOf("\n\n")) {
+            const frame = buf.slice(0, idx);
+            buf = buf.slice(idx + 2);
+            const dataLine = frame.split("\n").find((l) => l.startsWith("data: "));
+            if (!dataLine) continue;
+            const line = dataLine.slice("data: ".length);
+            try {
+              const event = JSON.parse(line) as { seq?: unknown; epoch?: unknown };
+              if (typeof event.epoch === "string") {
+                if (epoch !== null && event.epoch !== epoch) {
+                  cursor = 0;
+                  process.stdout.write(
+                    `${JSON.stringify({ kind: "epoch.changed", epoch: event.epoch })}\n`,
+                  );
+                }
+                epoch = event.epoch;
+              }
+              if (typeof event.seq === "number") cursor = event.seq;
+            } catch {
+              /* non-JSON data line — pass through untracked */
+            }
+            process.stdout.write(`${line}\n`);
+          }
+        }
+      } catch {
+        /* watchdog abort or transport error — reconnect below */
+      } finally {
+        if (watchdog !== null) clearTimeout(watchdog);
+      }
+      await new Promise((r) => setTimeout(r, retryMs));
     }
-    return 0;
   }
 
   if (verb === "projects") {
@@ -277,8 +349,9 @@ async function dispatch(argv: string[]): Promise<number> {
     }
     const input = JSON.parse(await Bun.stdin.text()) as {
       draft: unknown;
-      evidence?: { docId?: string; span?: string };
+      evidence?: { docId?: string; messageId?: string; span?: string };
       suggestedTier?: string;
+      author?: string;
     };
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -289,6 +362,7 @@ async function dispatch(argv: string[]): Promise<number> {
         draft: input.draft,
         evidence: input.evidence ?? {},
         suggestedTier: input.suggestedTier,
+        author: input.author,
       }),
     });
     process.stdout.write(`${await res.text()}\n`);
@@ -298,18 +372,57 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "doc") {
     const parsed = parseArgs({
       args: rest,
-      options: { project: { type: "string" } },
+      options: { project: { type: "string" }, force: { type: "boolean", default: false } },
       strict: true,
       allowPositionals: true,
     });
-    const id = parsed.positionals[0];
+    // `doc delete <id>` overloads the positional (a doc literally slugged
+    // "delete" is unaddressable — accepted for the record, plan-v1x).
+    const isDelete = parsed.positionals[0] === "delete";
+    const id = isDelete ? parsed.positionals[1] : parsed.positionals[0];
     if (!id) {
-      process.stderr.write("usage: cli.ts doc <id> [--project <id>]\n");
+      process.stderr.write("usage: cli.ts doc <id> | doc delete <id> [--force] [--project <id>]\n");
+      return 2;
+    }
+    const port = requireDaemon();
+    const params = new URLSearchParams();
+    if (parsed.values.project) params.set("project", parsed.values.project);
+    if (isDelete && parsed.values.force) params.set("force", "1");
+    const qs = params.size > 0 ? `?${params}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/doc/${id}${qs}`, {
+      method: isDelete ? "DELETE" : "GET",
+    });
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
+  if (verb === "mark") {
+    const parsed = parseArgs({
+      args: rest,
+      options: {
+        status: { type: "string" },
+        note: { type: "string" },
+        author: { type: "string", default: "agent" },
+        project: { type: "string" },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+    const docId = parsed.positionals[0];
+    if (!docId || !parsed.values.status) {
+      process.stderr.write("usage: cli.ts mark <docId> --status <s> [--note <t>]\n");
       return 2;
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
-    const res = await fetch(`http://127.0.0.1:${port}/doc/${id}${qs}`);
+    const res = await fetch(`http://127.0.0.1:${port}/doc/${docId}/mark${qs}`, {
+      method: "POST",
+      body: JSON.stringify({
+        author: parsed.values.author,
+        note: parsed.values.note,
+        status: parsed.values.status,
+      }),
+    });
     process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
   }
@@ -360,6 +473,8 @@ async function dispatch(argv: string[]): Promise<number> {
       options: {
         ruling: { type: "string" },
         "doc-edit": { type: "string" },
+        doc: { type: "string" },
+        span: { type: "string" },
         project: { type: "string" },
       },
       strict: true,
@@ -367,7 +482,15 @@ async function dispatch(argv: string[]): Promise<number> {
     });
     const proposalId = parsed.positionals[0];
     if (!proposalId || !parsed.values.ruling) {
-      process.stderr.write("usage: cli.ts ratify <proposalId> --ruling <r> [--doc-edit <file>]\n");
+      process.stderr.write(
+        "usage: cli.ts ratify <proposalId> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <text>]\n",
+      );
+      return 2;
+    }
+    // --doc requires --doc-edit — the daemon enforces it too, but a local
+    // usage error beats a round-trip for the common slip.
+    if (parsed.values.doc && !parsed.values["doc-edit"]) {
+      process.stderr.write("mind-mapper: --doc requires --doc-edit (the drafted doc home)\n");
       return 2;
     }
     const docEdit = parsed.values["doc-edit"]
@@ -377,7 +500,12 @@ async function dispatch(argv: string[]): Promise<number> {
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/proposals/${proposalId}/ruling${qs}`, {
       method: "POST",
-      body: JSON.stringify({ ruling: parsed.values.ruling, docEdit }),
+      body: JSON.stringify({
+        ruling: parsed.values.ruling,
+        docEdit,
+        docId: parsed.values.doc,
+        span: parsed.values.span,
+      }),
     });
     process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
@@ -438,6 +566,28 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  if (verb === "activity") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { project: { type: "string" } },
+      strict: true,
+      allowPositionals: true,
+    });
+    const state = parsed.positionals[0];
+    if (state !== "received" && state !== "thinking" && state !== "idle") {
+      process.stderr.write("usage: cli.ts activity <received|thinking|idle>\n");
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/activity${qs}`, {
+      method: "POST",
+      body: JSON.stringify({ state }),
+    });
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
   if (verb === "send") {
     const parsed = parseArgs({
       args: rest,
@@ -471,7 +621,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|doc|search|neighbors|ratify|lens|look-here|send>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|doc|mark|search|neighbors|ratify|lens|look-here|send|activity>\n",
   );
   return 2;
 }

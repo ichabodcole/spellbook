@@ -3,8 +3,17 @@
 // candidate node-action vocabulary (Sensecape's Explain / Questions /
 // Subtopics) as stubs — no agent behind them in the spike.
 
-import { Crosshair, FileText, HelpCircle, ListTree, ScrollText, X } from "lucide-react";
-import type { DocMeta, MapNode, SourceRef } from "./types";
+import {
+  Crosshair,
+  FileText,
+  HelpCircle,
+  ListTree,
+  MessageSquare,
+  ScrollText,
+  X,
+} from "lucide-react";
+import type { DocMeta, DocSourceRef, MapNode, MessageSourceRef } from "./types";
+import { isDocSource } from "./types";
 import { Button } from "./ui/button";
 
 const VERBS = [
@@ -18,13 +27,17 @@ export function NodeDetail({
   docs,
   onVerb,
   onOpenSource,
+  onOpenMessageSource,
   onFocus,
   onClose,
 }: {
   node: MapNode;
   docs: DocMeta[];
   onVerb: (verb: string, node: MapNode) => void;
-  onOpenSource: (source: SourceRef) => void;
+  onOpenSource: (source: DocSourceRef) => void;
+  // T11 — message-grounded evidence (Claim E): click navigates the
+  // conversation panel to the anchored message instead of opening a doc.
+  onOpenMessageSource: (source: MessageSourceRef) => void;
   onFocus: (node: MapNode) => void;
   onClose: () => void;
 }) {
@@ -63,19 +76,43 @@ export function NodeDetail({
         <div className="flex flex-col gap-1">
           <div className="text-[10px] uppercase tracking-widest text-ink-faint">Sources</div>
           {node.sources.map((s) => {
-            const doc = docs.find((d) => d.id === s.docId);
-            if (!doc) return null;
+            if (isDocSource(s)) {
+              // A docId absent from docs[] is tolerated by rendering
+              // nothing (Claim A: nodes survive a doc delete; the stale
+              // ref must never crash the card).
+              const doc = docs.find((d) => d.id === s.docId);
+              if (!doc) return null;
+              return (
+                <Button
+                  key={`${s.docId}:${s.span ?? ""}`}
+                  variant="card"
+                  size="auto"
+                  onClick={() => onOpenSource(s)}
+                  className="justify-start rounded-md bg-secondary px-2 py-1.5"
+                >
+                  <FileText size={12} className="mt-0.5 shrink-0 self-start" aria-hidden />
+                  <span className="min-w-0">
+                    <span className="block truncate">{doc.title}</span>
+                    {s.span && (
+                      <span className="mt-0.5 block truncate text-[11px] italic text-ink-faint">
+                        "{s.span}"
+                      </span>
+                    )}
+                  </span>
+                </Button>
+              );
+            }
             return (
               <Button
-                key={`${s.docId}:${s.span ?? ""}`}
+                key={`${s.messageId}:${s.span ?? ""}`}
                 variant="card"
                 size="auto"
-                onClick={() => onOpenSource(s)}
+                onClick={() => onOpenMessageSource(s)}
                 className="justify-start rounded-md bg-secondary px-2 py-1.5"
               >
-                <FileText size={12} className="mt-0.5 shrink-0 self-start" aria-hidden />
+                <MessageSquare size={12} className="mt-0.5 shrink-0 self-start" aria-hidden />
                 <span className="min-w-0">
-                  <span className="block truncate">{doc.title}</span>
+                  <span className="block truncate">from the conversation</span>
                   {s.span && (
                     <span className="mt-0.5 block truncate text-[11px] italic text-ink-faint">
                       "{s.span}"

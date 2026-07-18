@@ -11,10 +11,18 @@
 // which converges on POST /ingest — the rail itself stays a dumb list
 // renderer plus these two entry points, no ingest logic inline here.
 
-import { BookOpen, Mic, Plus, ScrollText, Upload } from "lucide-react";
+import { BookOpen, Mic, Plus, ScrollText, Sparkles, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import type { DocKind, DocMeta } from "./types";
 import { Button } from "./ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "./ui/context-menu";
 import { Textarea } from "./ui/textarea";
 
 const KIND_ICON: Record<DocKind, typeof BookOpen> = {
@@ -23,7 +31,9 @@ const KIND_ICON: Record<DocKind, typeof BookOpen> = {
   bible: BookOpen,
 };
 
-const KIND_BADGE: Record<DocKind, string> = {
+// Exported as the surface's doc-kind tint vocabulary — MessageBubble's
+// doc-ref chips (Claim G) reuse it so a doc reads the same color everywhere.
+export const KIND_BADGE: Record<DocKind, string> = {
   ramble: "bg-pending/20 text-pending",
   story: "bg-story-local/20 text-story-local",
   bible: "bg-canon/20 text-canon",
@@ -36,6 +46,8 @@ export function ContextRail({
   onIngestFiles,
   onIngestText,
   onIngestBlank,
+  onAnalyze,
+  onDelete,
 }: {
   docs: DocMeta[];
   openDocId: string | null;
@@ -43,6 +55,11 @@ export function ContextRail({
   onIngestFiles: (files: FileList) => void;
   onIngestText: (title: string, text: string) => void;
   onIngestBlank: (title: string) => void;
+  // T5/T6 — the doc card context menu's two verbs. Analyze is a normal
+  // conversational message (Claim G); Delete only STARTS the confirm flow
+  // (Claim A: the unforced DELETE is never fired from the raw click).
+  onAnalyze: (doc: DocMeta) => void;
+  onDelete: (doc: DocMeta) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
   const [composing, setComposing] = useState(false);
@@ -134,25 +151,53 @@ export function ContextRail({
             const Icon = KIND_ICON[d.kind];
             const open = d.id === openDocId;
             return (
-              <Button
-                key={d.id}
-                variant="card"
-                size="auto"
-                onClick={() => onOpen(d.id)}
-                className={`flex-col items-start gap-0 p-2.5 ${
-                  open ? "border-ring bg-secondary ring-1 ring-ring/40" : ""
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <Icon size={13} className="shrink-0 text-ink-dim" aria-hidden />
-                  <span
-                    className={`rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${KIND_BADGE[d.kind]}`}
+              <ContextMenu key={d.id}>
+                <ContextMenuTrigger>
+                  <Button
+                    variant="card"
+                    size="auto"
+                    onClick={() => onOpen(d.id)}
+                    className={`flex-col items-start gap-0 p-2.5 ${
+                      open ? "border-ring bg-secondary ring-1 ring-ring/40" : ""
+                    }`}
                   >
-                    {d.kind}
-                  </span>
-                </div>
-                <p className="mt-1.5 w-full truncate text-xs text-ink">{d.title}</p>
-              </Button>
+                    <div className="flex items-center gap-1.5">
+                      <Icon size={13} className="shrink-0 text-ink-dim" aria-hidden />
+                      <span
+                        className={`rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${KIND_BADGE[d.kind]}`}
+                      >
+                        {d.kind}
+                      </span>
+                    </div>
+                    <p className="mt-1.5 w-full truncate text-xs text-ink">{d.title}</p>
+                    {d.mark && (
+                      // T7 — the live mark (Claim B): status text, stale
+                      // tint when the file moved on after the mark vouched
+                      // for it. The note rides as a hover title — the badge
+                      // stays a glance, not a paragraph.
+                      <p
+                        className={`mt-1 w-full truncate text-[9px] ${
+                          d.mark.stale ? "text-attention" : "text-ink-faint"
+                        }`}
+                        title={d.mark.note ?? undefined}
+                      >
+                        {d.mark.status}
+                        {d.mark.stale ? " · stale" : ""} · {d.mark.author}
+                      </p>
+                    )}
+                  </Button>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ContextMenuLabel>{d.title}</ContextMenuLabel>
+                  <ContextMenuItem onClick={() => onAnalyze(d)}>
+                    <Sparkles /> Analyze
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem onClick={() => onDelete(d)} className="text-attention">
+                    <Trash2 /> Delete…
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             );
           })
         )}

@@ -4,13 +4,20 @@
 // history gets real estate; the copy invites working-through, not Q&A.
 // Selection-as-context rides as tier-colored chips above the input (the
 // mapper's ground is typed nodes, so chips carry tier where glamour shows a
-// count line). No agent behind it in the spike — the seed message says so in
-// the agent's own bubble.
+// count line).
+//
+// T11 — message-evidence navigation: every bubble is anchorable
+// (data-message-id), a scrollRequest {messageId, span, seq} imperative prop
+// scrolls to + flash-highlights the anchored message (span matched
+// whitespace-tolerantly within the text, Contract 6), and the unconditional
+// autoscroll-to-bottom YIELDS while a request is being serviced — otherwise
+// any concurrent message would yank the viewport off the evidence.
 
 import { SendHorizontal, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator } from "./ActivityIndicator";
 import { MessageBubble } from "./MessageBubble";
-import type { MapNode, Message, Tier } from "./types";
+import type { DocMeta, MapNode, Message, Tier } from "./types";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
@@ -22,28 +29,73 @@ const TIER_CHIP: Record<Tier, string> = {
   background: "border-background-tier/60 text-background-tier",
 };
 
+// How long a serviced scroll request holds the viewport (and the flash)
+// before autoscroll may resume.
+const FLASH_MS = 2000;
+
+export type ScrollRequest = { messageId: string; span?: string | null; seq: number };
+
 export function ConversationPanel({
   nodes,
+  docs,
   selection,
   onDeselect,
   messages,
   onSend,
+  disabled = false,
+  thinking = false,
+  scrollRequest,
 }: {
   nodes: MapNode[];
+  docs: DocMeta[];
   selection: MapNode[];
   onDeselect: (id: string) => void;
   messages: Message[];
   onSend: (text: string) => void;
+  // Daemon unreachable (T1) — sends would silently vanish, so the composer
+  // goes quiet rather than pretending.
+  disabled?: boolean;
+  // T8 — the agent is composing (agent.activity): the indicator sits where
+  // the reply will land.
+  thinking?: boolean;
+  scrollRequest?: ScrollRequest | null;
 }) {
   const [draft, setDraft] = useState("");
   const historyRef = useRef<HTMLDivElement>(null);
+  // The flash is render state; the yield is a ref (the autoscroll effect
+  // must see it synchronously, not a render behind).
+  const [flash, setFlash] = useState<{ messageId: string; span?: string | null } | null>(null);
+  const servicingRef = useRef(false);
+  // Seeded from the mount-time prop so a remount never replays a stale
+  // request (the focusRequest idiom).
+  const lastSeq = useRef(scrollRequest?.seq ?? 0);
+
+  useEffect(() => {
+    if (!scrollRequest || scrollRequest.seq === lastSeq.current) return;
+    lastSeq.current = scrollRequest.seq;
+    const el = historyRef.current?.querySelector(
+      `[data-message-id="${CSS.escape(scrollRequest.messageId)}"]`,
+    );
+    if (!el) return;
+    servicingRef.current = true;
+    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    setFlash({ messageId: scrollRequest.messageId, span: scrollRequest.span });
+    const t = setTimeout(() => {
+      servicingRef.current = false;
+      setFlash(null);
+    }, FLASH_MS);
+    return () => clearTimeout(t);
+  }, [scrollRequest]);
 
   useEffect(() => {
     if (messages.length === 0) return;
+    // Yield to an in-flight evidence scroll — the bottom can wait.
+    if (servicingRef.current) return;
     historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight });
   }, [messages]);
 
   const submit = () => {
+    if (disabled) return;
     const text = draft.trim();
     if (!text) return;
     onSend(text);
@@ -58,8 +110,22 @@ export function ConversationPanel({
             think out loud — pull nodes into context and work through where it goes.
           </p>
         ) : (
-          messages.map((m) => <MessageBubble key={m.id} message={m} nodes={nodes} />)
+          messages.map((m) => (
+            <div
+              key={m.id}
+              data-message-id={m.id}
+              className={flash?.messageId === m.id ? "mm-message-flash" : undefined}
+            >
+              <MessageBubble
+                message={m}
+                nodes={nodes}
+                docs={docs}
+                highlightSpan={flash?.messageId === m.id ? flash.span : undefined}
+              />
+            </div>
+          ))
         )}
+        {thinking && <ActivityIndicator />}
       </div>
 
       <div className="border-t border-edge p-3">
@@ -82,6 +148,7 @@ export function ConversationPanel({
           </div>
         )}
         <Textarea
+          disabled={disabled}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -98,7 +165,7 @@ export function ConversationPanel({
           className="min-h-16 max-h-64 resize-y p-2 text-xs"
         />
         <div className="mt-2 flex justify-end">
-          <Button onClick={submit} disabled={!draft.trim()}>
+          <Button onClick={submit} disabled={disabled || !draft.trim()}>
             <SendHorizontal size={12} />
             Send
           </Button>

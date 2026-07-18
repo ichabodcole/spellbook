@@ -32,9 +32,13 @@ export function pendingNodesFrom(proposals: Proposal[]): MapNode[] {
         tier,
         synopsis: str(d.synopsis),
         pending: true,
+        // Claim E: evidence grounds in a doc OR a message (mutually
+        // exclusive at intake) — either becomes the synthetic node's source.
         sources: p.evidence.docId
           ? [{ docId: p.evidence.docId, span: p.evidence.span ?? undefined }]
-          : undefined,
+          : p.evidence.messageId
+            ? [{ messageId: p.evidence.messageId, span: p.evidence.span ?? undefined }]
+            : undefined,
       };
     });
 }

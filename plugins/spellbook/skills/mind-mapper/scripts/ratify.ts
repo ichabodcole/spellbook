@@ -6,6 +6,11 @@
 // edge.ratified. On reject: marks rejected, touches nothing else, no
 // justification required (ratified contract).
 //
+// Ratify-time evidence attach (P3 gate ruling): `--doc <docId> --doc-edit
+// <file> [--span <text>]` lets the ruling attach a doc home to an
+// EVIDENCE-LESS node proposal (the human-sketch inversion) — writes the
+// drafted doc, re-indexes, and mints the node's sources row.
+//
 // Edge endpoint resolution (cassandra's P2 cold-agent gate finding): an edge
 // draft's source/target may reference either a real node id OR a pending
 // NODE proposal's id (the node doesn't exist yet, only its proposal does).
@@ -25,7 +30,15 @@ type Ruling = "canon" | "thread" | "story-local" | "reject";
 interface RatifyInput {
   proposalId: string;
   ruling: Ruling;
-  docEdit?: string; // full new content for the proposal's evidence doc
+  docEdit?: string; // full new content for the proposal's evidence doc (or --doc attach target)
+  // Ratify-time evidence attach (P3 gate ruling): a doc home minted at
+  // ruling time for an EVIDENCE-LESS node proposal — the human-sketch
+  // inversion, where the human already believes the claim and the agent
+  // drafts its doc home. Invalid whenever the proposal already carries
+  // evidence (doc or message), and node proposals only (edges carry no
+  // sources rows). Requires docEdit — the attach IS the drafted doc home.
+  docId?: string;
+  span?: string; // optional excerpt for the minted sources row (nullable)
 }
 
 interface RatifyResult {
@@ -40,6 +53,7 @@ interface ProposalRow {
   kind: string;
   draft_json: string;
   evidence_doc_id: string | null;
+  evidence_message_id: string | null;
   evidence_span: string | null;
   status: string;
 }
@@ -62,7 +76,7 @@ function resolveNodeRef(db: Database, ref: string): string {
 function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput): RatifyResult {
   const row = db
     .query(
-      "SELECT id, kind, draft_json, evidence_doc_id, evidence_span, status FROM proposals WHERE id = ?",
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, status FROM proposals WHERE id = ?",
     )
     .get(input.proposalId) as ProposalRow | null;
   if (!row) throw new Error(`unknown proposal: ${input.proposalId}`);
@@ -75,33 +89,63 @@ function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput
     return { id: input.proposalId, status: "rejected" };
   }
 
+  // Ratify-time evidence attach (--doc): valid ONLY for an evidence-less
+  // node proposal, and only alongside the doc-edit that drafts its home —
+  // all constraints fail loud at intake (same spirit as mark), before any
+  // write lands.
+  if (input.docId !== undefined) {
+    if (row.evidence_doc_id || row.evidence_message_id) {
+      throw new Error(
+        `proposal ${input.proposalId} already carries evidence; --doc is for evidence-less proposals`,
+      );
+    }
+    if (input.docEdit === undefined) {
+      throw new Error("--doc requires --doc-edit (the attach is the agent drafting the doc home)");
+    }
+    if (row.kind !== "node") {
+      throw new Error(
+        "--doc is invalid for edge proposals — edges carry no sources rows; attach evidence to the endpoint nodes instead",
+      );
+    }
+    if (!SLUG_RE.test(input.docId)) {
+      throw new Error(`--doc is not a valid doc slug: ${input.docId}`);
+    }
+    if (!db.query("SELECT 1 FROM docs WHERE id = ?").get(input.docId)) {
+      throw new Error(`unknown doc: ${input.docId}`);
+    }
+  }
+  // The doc a --doc-edit lands in: the proposal's own evidence doc, or the
+  // ratify-time attach target for an evidence-less proposal.
+  const homeDocId = row.evidence_doc_id ?? input.docId ?? null;
+
   if (input.docEdit !== undefined) {
-    if (!row.evidence_doc_id) {
-      throw new Error(`proposal ${input.proposalId} has no evidence doc to edit`);
+    if (!homeDocId) {
+      // Claim E sharpening: message evidence takes no --doc-edit — the
+      // transcript is the source and the daemon never writes messages.
+      throw new Error(
+        row.evidence_message_id
+          ? `proposal ${input.proposalId} has message evidence — --doc-edit is invalid for message-grounded proposals`
+          : `proposal ${input.proposalId} has no evidence doc to edit (attach one with --doc)`,
+      );
     }
     // Defense in depth: propose.ts rejects non-slug evidence ids at intake,
     // but this row may predate that guard (or come from another writer) —
     // never let a stored id reach the filesystem unvalidated.
-    if (!SLUG_RE.test(row.evidence_doc_id)) {
-      throw new Error(
-        `refusing doc edit: evidence doc id is not a valid slug: ${row.evidence_doc_id}`,
-      );
+    if (!SLUG_RE.test(homeDocId)) {
+      throw new Error(`refusing doc edit: evidence doc id is not a valid slug: ${homeDocId}`);
     }
-    writeFileSync(join(docsDir, `${row.evidence_doc_id}.md`), input.docEdit);
+    writeFileSync(join(docsDir, `${homeDocId}.md`), input.docEdit);
     // Keep the search index true to the doc it indexes (Claim B: sqlite owns
     // search OVER the prose the docs own) — a ratified edit must re-index,
     // or search keeps matching the pre-edit text (review finding).
-    db.run("DELETE FROM docs_fts WHERE doc_id = ?", [row.evidence_doc_id]);
-    db.run("INSERT INTO docs_fts (doc_id, content) VALUES (?, ?)", [
-      row.evidence_doc_id,
-      input.docEdit,
-    ]);
+    db.run("DELETE FROM docs_fts WHERE doc_id = ?", [homeDocId]);
+    db.run("INSERT INTO docs_fts (doc_id, content) VALUES (?, ?)", [homeDocId, input.docEdit]);
   }
   // Every accept logs, with or without a doc edit — the changelog is the
   // attributed what-changed record, not a doc-write side effect.
   appendFileSync(
     join(docsDir, "..", "changelog.txt"),
-    `ratified ${input.proposalId} (${input.ruling})${row.evidence_doc_id ? ` -> ${row.evidence_doc_id}.md` : ""}${input.docEdit !== undefined ? " (doc edited)" : ""}\n`,
+    `ratified ${input.proposalId} (${input.ruling})${homeDocId ? ` -> ${homeDocId}.md` : ""}${input.docEdit !== undefined ? " (doc edited)" : ""}\n`,
   );
 
   const draft = JSON.parse(row.draft_json) as Record<string, unknown>;
@@ -120,6 +164,22 @@ function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput
         nodeId,
         row.evidence_doc_id,
         row.evidence_span,
+      ]);
+    }
+    if (row.evidence_message_id) {
+      db.run("INSERT INTO message_sources (node_id, message_id, span) VALUES (?, ?, ?)", [
+        nodeId,
+        row.evidence_message_id,
+        row.evidence_span,
+      ]);
+    }
+    // Ratify-time attach: the minted doc home becomes the node's source
+    // (only reachable when the proposal was evidence-less — guarded above).
+    if (input.docId !== undefined) {
+      db.run("INSERT INTO sources (node_id, doc_id, span) VALUES (?, ?, ?)", [
+        nodeId,
+        input.docId,
+        input.span ?? null,
       ]);
     }
     db.run("UPDATE proposals SET status = 'ratified', result_node_id = ? WHERE id = ?", [

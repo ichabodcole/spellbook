@@ -12,9 +12,11 @@ const SCRIPT_DIR = import.meta.dir;
 const SOURCE_FILES = [
   "cli.ts",
   "db.ts",
+  "docs.ts",
   "events.ts",
   "ingest.ts",
   "lens.ts",
+  "marks.ts",
   "neighbors.ts",
   "project.ts",
   "propose.ts",

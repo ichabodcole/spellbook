@@ -7,18 +7,25 @@
 // resume-point for events already ephemeral by design).
 
 import type { Database } from "bun:sqlite";
+import { type DocMark, docFileMtime, readDocMarks } from "./marks.ts";
 import type { ProjectMeta } from "./project.ts";
 
 interface Doc {
   id: string;
   title: string;
   kind: string;
+  // Claim B: latest mark, with `stale` computed server-side at read time
+  // (current file mtime vs the mark's snapshot; missing file → stale).
+  // Absent when the doc has never been marked.
+  mark?: DocMark & { stale: boolean };
 }
 
-interface NodeSource {
-  docId: string;
-  span: string | null;
-}
+// Claim E: node.sources[] is the union of doc-grounded and message-grounded
+// provenance. Doc entries stay byte-identical to the pre-union shape
+// ({docId, span}) — additive for every existing consumer.
+type NodeSource =
+  | { docId: string; span: string | null }
+  | { messageId: string; span: string | null };
 
 interface Node {
   id: string;
@@ -42,10 +49,13 @@ interface Proposal {
   id: string;
   kind: string;
   draft: unknown;
-  evidence: { docId: string | null; span: string | null };
+  evidence: { docId: string | null; messageId: string | null; span: string | null };
   suggestedTier: string | null;
   status: string;
   resultNodeId: string | null;
+  // Claim D: the wire ALWAYS carries "user"|"agent", never null — a null
+  // column value (pre-author row) normalizes to "agent" at read time.
+  author: "user" | "agent";
 }
 
 interface Message {
@@ -76,8 +86,31 @@ interface ProjectState {
   epoch: string;
 }
 
-function readState(db: Database, project: ProjectMeta, cursor = 0, epoch = ""): ProjectState {
-  const docs = db.query("SELECT id, title, kind FROM docs ORDER BY created_at").all() as Doc[];
+// `projectRoot` (the directory holding docs/) is needed only for mark
+// staleness — without it, marks still merge but read as stale (an
+// unverifiable mark vouches for nothing). The daemon always passes it.
+function readState(
+  db: Database,
+  project: ProjectMeta,
+  cursor = 0,
+  epoch = "",
+  projectRoot?: string,
+): ProjectState {
+  const docRows = db
+    .query("SELECT id, title, kind, path FROM docs ORDER BY created_at")
+    .all() as Array<{ id: string; title: string; kind: string; path: string }>;
+  const pathByDoc = new Map(docRows.map((row) => [row.id, row.path]));
+  const marks = readDocMarks(db, (docId) => {
+    const relPath = pathByDoc.get(docId);
+    if (projectRoot === undefined || relPath === undefined) return null;
+    return docFileMtime(projectRoot, relPath);
+  });
+  const docs: Doc[] = docRows.map((row) => {
+    const mark = marks.get(row.id);
+    return mark
+      ? { id: row.id, title: row.title, kind: row.kind, mark }
+      : { id: row.id, title: row.title, kind: row.kind };
+  });
 
   const nodeRows = db
     .query("SELECT id, kind, tier, title, synopsis FROM nodes ORDER BY created_at")
@@ -87,10 +120,22 @@ function readState(db: Database, project: ProjectMeta, cursor = 0, epoch = ""): 
     doc_id: string;
     span: string | null;
   }>;
+  const messageSourceRows = db
+    .query("SELECT node_id, message_id, span FROM message_sources")
+    .all() as Array<{
+    node_id: string;
+    message_id: string;
+    span: string | null;
+  }>;
   const sourcesByNode = new Map<string, NodeSource[]>();
   for (const row of sourceRows) {
     const list = sourcesByNode.get(row.node_id) ?? [];
     list.push({ docId: row.doc_id, span: row.span });
+    sourcesByNode.set(row.node_id, list);
+  }
+  for (const row of messageSourceRows) {
+    const list = sourcesByNode.get(row.node_id) ?? [];
+    list.push({ messageId: row.message_id, span: row.span });
     sourcesByNode.set(row.node_id, list);
   }
   const nodes: Node[] = nodeRows.map((row) => ({
@@ -104,26 +149,33 @@ function readState(db: Database, project: ProjectMeta, cursor = 0, epoch = ""): 
 
   const proposalRows = db
     .query(
-      "SELECT id, kind, draft_json, evidence_doc_id, evidence_span, suggested_tier, status, result_node_id FROM proposals ORDER BY created_at",
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author FROM proposals ORDER BY created_at",
     )
     .all() as Array<{
     id: string;
     kind: string;
     draft_json: string;
     evidence_doc_id: string | null;
+    evidence_message_id: string | null;
     evidence_span: string | null;
     suggested_tier: string | null;
     status: string;
     result_node_id: string | null;
+    author: string | null;
   }>;
   const proposals: Proposal[] = proposalRows.map((row) => ({
     id: row.id,
     kind: row.kind,
     draft: JSON.parse(row.draft_json),
-    evidence: { docId: row.evidence_doc_id, span: row.evidence_span },
+    evidence: {
+      docId: row.evidence_doc_id,
+      messageId: row.evidence_message_id,
+      span: row.evidence_span,
+    },
     suggestedTier: row.suggested_tier,
     status: row.status,
     resultNodeId: row.result_node_id,
+    author: row.author === "user" ? "user" : "agent",
   }));
 
   const messageRows = db

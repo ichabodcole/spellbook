@@ -204,6 +204,74 @@ test("doc <id> prints the doc envelope", async () => {
   expect(doc.content.length).toBeGreaterThan(0);
 });
 
+test("mark round-trips: cli mark → state carries the mark", async () => {
+  const { code, stdout } = await runCli(
+    "mark",
+    "ramble-01",
+    "--status",
+    "analyzed",
+    "--note",
+    "checked, nothing new",
+  );
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout)).toMatchObject({
+    docId: "ramble-01",
+    mark: { author: "agent", status: "analyzed", note: "checked, nothing new" },
+  });
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as {
+    docs: Array<{ id: string; mark?: { status: string } }>;
+  };
+  expect(parsed.docs.find((d) => d.id === "ramble-01")?.mark?.status).toBe("analyzed");
+});
+
+test("doc delete round-trips: cited exits 2 with the 409 body, --force removes the doc", async () => {
+  const ingest = Bun.spawn(
+    [process.execPath, "run", CLI_SCRIPT, "ingest", "--title", "Doomed", "--stdin"],
+    {
+      env: { ...process.env, MIND_MAPPER_HOME: home },
+      stdin: new Response("doomed prose").body,
+      stdout: "pipe",
+    },
+  );
+  const doc = JSON.parse(await new Response(ingest.stdout).text()) as { id: string };
+  await ingest.exited;
+
+  const propose = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(JSON.stringify({ draft: { title: "D" }, evidence: { docId: doc.id } }))
+      .body,
+    stdout: "pipe",
+  });
+  await propose.exited;
+
+  const cited = await runCli("doc", "delete", doc.id);
+  expect(cited.code).toBe(2);
+  expect(JSON.parse(cited.stdout)).toMatchObject({
+    error: "cited",
+    citedBy: { nodes: 0, proposals: 1 },
+  });
+
+  const forced = await runCli("doc", "delete", doc.id, "--force");
+  expect(forced.code).toBe(0);
+  expect(JSON.parse(forced.stdout)).toEqual({ ok: true, id: doc.id });
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as { docs: Array<{ id: string }> };
+  expect(parsed.docs.map((d) => d.id)).not.toContain(doc.id);
+});
+
+test("activity posts a casting-loop state; a bad state exits 2 with usage", async () => {
+  const ok = await runCli("activity", "thinking");
+  expect(ok.code).toBe(0);
+  expect(JSON.parse(ok.stdout)).toEqual({ ok: true, state: "thinking" });
+
+  const bad = await runCli("activity", "pondering");
+  expect(bad.code).toBe(2);
+  expect(bad.stderr).toContain("received|thinking|idle");
+});
+
 test("an unrecognized flag exits 2 with a clean message, not a stack-trace crash", async () => {
   const { code, stderr } = await runCli("ingest", "--help");
   expect(code).toBe(2);

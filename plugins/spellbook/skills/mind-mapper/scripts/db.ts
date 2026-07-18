@@ -18,7 +18,7 @@ import { Database } from "bun:sqlite";
 // always addable to a populated table.
 const ADDITIVE_COLUMNS: Record<string, string[]> = {
   messages: ["id", "kind", "ground_json"],
-  proposals: ["result_node_id"],
+  proposals: ["result_node_id", "author", "evidence_message_id"],
 };
 
 function backfillColumns(db: Database, path: string): void {
@@ -80,6 +80,13 @@ CREATE TABLE IF NOT EXISTS sources (
 -- proposal id as its source/target and have ratify resolve it once that
 -- node proposal itself ratifies (P3 finding from cassandra's cold-agent
 -- drive: this endpoint-resolution mechanism was previously unvalidated).
+--
+-- author/evidence_message_id (V1.x Claims D/E): nullable-TEXT-only because
+-- they arrived via ADDITIVE_COLUMNS after the original shape shipped — the
+-- fresh-install shape must equal the migrated shape. "author defaults to
+-- agent" is expressed as null-normalized-at-read (state.ts), never as a
+-- NOT NULL DEFAULT here. evidence_message_id is mutually exclusive with
+-- evidence_doc_id (enforced at propose intake, not by the schema).
 CREATE TABLE IF NOT EXISTS proposals (
   id TEXT PRIMARY KEY,
   kind TEXT NOT NULL,
@@ -89,7 +96,33 @@ CREATE TABLE IF NOT EXISTS proposals (
   suggested_tier TEXT,
   status TEXT NOT NULL DEFAULT 'pending',
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
-  result_node_id TEXT
+  result_node_id TEXT,
+  author TEXT,
+  evidence_message_id TEXT
+);
+
+-- V1.x Claim B: append-only mark trail; latest-per-doc is the live mark.
+-- doc_mtime snapshots the doc file's mtime (ms) at mark time — staleness is
+-- computed at read time (current mtime > doc_mtime), never stored or
+-- emitted. New table, additive by construction — no migration machinery.
+CREATE TABLE IF NOT EXISTS doc_marks (
+  id TEXT PRIMARY KEY,
+  doc_id TEXT NOT NULL,
+  author TEXT NOT NULL,
+  note TEXT,
+  status TEXT NOT NULL,
+  doc_mtime INTEGER,
+  ts INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+-- V1.x Claim E: conversation evidence. sources.doc_id is NOT NULL and SQLite
+-- can't relax that additively, so message-grounded provenance gets a sibling
+-- table instead of a nullable column — readState merges both into
+-- node.sources[] as the union {docId, span} | {messageId, span}.
+CREATE TABLE IF NOT EXISTS message_sources (
+  node_id TEXT NOT NULL,
+  message_id TEXT NOT NULL,
+  span TEXT
 );
 
 -- id/kind/ground_json are nullable here even though application code always

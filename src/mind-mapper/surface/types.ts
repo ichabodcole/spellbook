@@ -8,10 +8,24 @@ export type Provenance = "asserted" | "derived";
 
 export type DocKind = "ramble" | "story" | "bible";
 
+// Claim B: the latest mark on a doc (append-only trail server-side; the wire
+// carries only the live one). `stale` is computed server-side at /state read
+// time (doc file mtime > marked mtime; missing file → stale) and NEVER rides
+// the doc.marked event — the reducer supplies `stale: false` for a
+// just-made mark (it was minted against the current file by construction).
+export type DocMark = {
+  author: string;
+  note: string | null;
+  status: string;
+  ts: number;
+};
+
 export type DocMeta = {
   id: string;
   title: string;
   kind: DocKind;
+  // Absent when the doc has never been marked.
+  mark?: DocMark & { stale: boolean };
 };
 
 // Content-on-demand half of seam v2: GET /doc/:id returns meta + content.
@@ -19,10 +33,27 @@ export type Doc = DocMeta & { content: string };
 
 // span is a VERBATIM excerpt (stub-grade anchoring — the viewer
 // find-and-highlights it; offsets belong to the real source-log).
-export type SourceRef = {
+//
+// Claim E: a source grounds in EITHER a doc or a conversation message, never
+// both (mutual exclusion enforced at propose intake) — a proper either-shape
+// union, not an all-optional bag. Doc entries stay byte-identical to the
+// pre-union shape, so every existing consumer is untouched; message entries
+// are the new branch (state.ts merges the message_sources sibling table).
+export type DocSourceRef = {
   docId: string;
-  span?: string;
+  span?: string | null;
 };
+
+export type MessageSourceRef = {
+  messageId: string;
+  span?: string | null;
+};
+
+export type SourceRef = DocSourceRef | MessageSourceRef;
+
+export function isDocSource(s: SourceRef): s is DocSourceRef {
+  return "docId" in s;
+}
 
 export type MapNode = {
   id: string;
@@ -109,11 +140,13 @@ export type ProposalStatus = "pending" | "ratified" | "rejected";
 export type Ruling = "canon" | "thread" | "story-local" | "reject";
 
 // Distinct from SourceRef: a ratified node's sources always carry a real
-// docId (the sources table's doc_id column is NOT NULL); a proposal's
-// evidence columns are nullable until the agent actually attaches one
-// (propose.ts's evidenceDocId/evidenceSpan default to null).
+// ground (doc or message); a proposal's evidence columns are nullable until
+// the agent actually attaches one (propose.ts defaults all three to null).
+// Claim E: docId and messageId are mutually exclusive at intake — at most
+// one is ever non-null on the wire.
 export type ProposalEvidence = {
   docId: string | null;
+  messageId: string | null;
   span: string | null;
 };
 
@@ -127,6 +160,9 @@ export type Proposal = {
   evidence: ProposalEvidence;
   suggestedTier: Tier;
   status: ProposalStatus;
+  // Claim D: who sketched it. The wire ALWAYS carries "user"|"agent" — the
+  // nullable column normalizes to "agent" in readState, never reaches here.
+  author: "user" | "agent";
 };
 
 export type ProjectState = {
@@ -141,18 +177,32 @@ export type ProjectState = {
   // surface supplies the spike's zoomed-out default when it sees null.
   lens: Lens | null;
   cursor: number;
+  // Claim C: agents-only standing presence (agent = open SSE tail; the
+  // browser WS is the human side and deliberately never counts).
+  presence: { agents: number };
 };
 
 export type ServerEventKind =
   | "doc.added"
+  | "doc.deleted"
+  | "doc.marked"
   | "node.ratified"
   | "edge.ratified"
   | "proposal.added"
   | "message.posted"
   | "lens.set"
-  // Fire-once viewport nudge (payload {nodeId}) — NOT a lens change; the
-  // reducer ignores it and useProjectState surfaces it as lookHere.
+  | "presence.changed"
+  // Ephemeral kinds (Contract 9 amendment): fire-once signals, no state
+  // row — but every emit consumed a seq, so they still route THROUGH
+  // applyEvent (default case advances the cursor) and useProjectState
+  // surfaces them separately via the {payload, seq} idiom.
+  | "agent.activity"
+  // Fire-once viewport nudge (payload {nodeId}) — NOT a lens change.
   | "look.here";
+
+// Claim C's active-attention signal (POST /activity → agent.activity event);
+// non-idle arms a server-side ~60s TTL that emits a synthetic "idle".
+export type AgentActivityState = "received" | "thinking" | "idle";
 
 export type ServerEvent = {
   seq: number;

@@ -52,6 +52,13 @@ export type GraphCanvasProps = {
   // Imperative "look here": bump seq to pan/zoom the canvas to a node. The
   // same primitive an agent-side "look here" verb will drive in V1.
   focusRequest?: { nodeId: string; seq: number } | null;
+  // T9 human authoring — drag a handle-to-handle connection to sketch an
+  // edge claim (the caller proposes it; nothing lands until ratified).
+  onConnect?: (source: string, target: string) => void;
+  // T9 human authoring — double-click empty pane to sketch a node claim.
+  // Placement honesty (ratified): the click point is NOT carried — the
+  // schema has no positions, layout decides where the sketch lands.
+  onPaneDoubleClick?: () => void;
 };
 
 const NODE_W = 190;
@@ -298,6 +305,8 @@ export function GraphCanvas({
   onNodeCommand,
   highlightIds,
   focusRequest,
+  onConnect,
+  onPaneDoubleClick,
 }: GraphCanvasProps) {
   // React Flow is used semi-controlled: this component owns node state (so
   // drag + click-select work), reports selection upward (deduped — an
@@ -374,12 +383,30 @@ export function GraphCanvas({
       }}
       onNodesChange={(changes) => setNodes((nds) => applyNodeChanges(changes, nds))}
       onSelectionChange={handleSelectionChange}
+      // T9: a completed handle-to-handle drag reports the sketch upward;
+      // React Flow never adds the edge itself here — the pending overlay
+      // renders it when the proposal.added round-trip lands (one source of
+      // truth, same as messages).
+      onConnect={(conn) => {
+        if (conn.source && conn.target && conn.source !== conn.target) {
+          onConnect?.(conn.source, conn.target);
+        }
+      }}
+      // T9: double-click sketches a node — but only on the empty pane
+      // (React Flow has no pane-scoped double-click callback, so this DOM
+      // handler checks the event target; node/edge double-clicks pass by).
+      onDoubleClick={(e) => {
+        if (e.target instanceof Element && e.target.classList.contains("react-flow__pane")) {
+          onPaneDoubleClick?.();
+        }
+      }}
+      zoomOnDoubleClick={false}
       fitView
       minZoom={0.3}
       maxZoom={2}
       proOptions={{ hideAttribution: false }}
       nodesDraggable
-      nodesConnectable={false}
+      nodesConnectable={Boolean(onConnect)}
       selectionOnDrag
       panOnScroll
       multiSelectionKeyCode="Shift"

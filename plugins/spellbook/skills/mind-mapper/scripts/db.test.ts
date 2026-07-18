@@ -21,7 +21,16 @@ test("openStore creates all ratified tables in a fresh dir", () => {
       .query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
       .all()
       .map((r) => (r as { name: string }).name);
-    for (const expected of ["docs", "edges", "messages", "nodes", "proposals", "sources"]) {
+    for (const expected of [
+      "docs",
+      "doc_marks",
+      "edges",
+      "messages",
+      "message_sources",
+      "nodes",
+      "proposals",
+      "sources",
+    ]) {
       expect(tables).toContain(expected);
     }
     db.close();
@@ -98,6 +107,61 @@ test("openStore backfills columns added after a table's original shape shipped",
     db.run(
       "INSERT INTO messages (id, project_id, seq, role, kind, text, ground_json) VALUES (?, ?, ?, ?, ?, ?, ?)",
       ["m1", "default", 2, "user", "turn", "hi again", null],
+    );
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("openStore backfills author/evidence_message_id onto a previous-shape proposals table", () => {
+  const dir = tempDir();
+  try {
+    const path = join(dir, "store.sqlite");
+    // Mint a store under the PREVIOUS proposals shape (V1-as-shipped: has
+    // result_node_id, predates author + evidence_message_id) — the load-bearing
+    // test design: a fresh store can never catch this class of bug, only a
+    // genuinely-older store re-opened by current code can.
+    const oldSchemaDb = new Database(path, { create: true });
+    oldSchemaDb.exec(`
+      CREATE TABLE proposals (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        draft_json TEXT NOT NULL,
+        evidence_doc_id TEXT,
+        evidence_span TEXT,
+        suggested_tier TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        result_node_id TEXT
+      );
+    `);
+    oldSchemaDb.run(
+      "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, status) VALUES (?, ?, ?, ?, 'pending')",
+      ["p1", "node", '{"title":"Edda"}', "ramble-01"],
+    );
+    oldSchemaDb.close();
+
+    // Open with the CURRENT db.ts — must not throw, must add the new columns.
+    const db = openStore(path);
+    const columns = new Set(
+      (db.query("PRAGMA table_info(proposals)").all() as Array<{ name: string }>).map(
+        (c) => c.name,
+      ),
+    );
+    for (const expected of ["author", "evidence_message_id"]) expect(columns).toContain(expected);
+
+    // The pre-existing row survives with the new columns nulled (null is
+    // normalized to "agent" at read time, never rewritten in place).
+    const row = db
+      .query("SELECT id, author, evidence_message_id FROM proposals WHERE id = 'p1'")
+      .get() as { id: string; author: string | null; evidence_message_id: string | null };
+    expect(row).toEqual({ id: "p1", author: null, evidence_message_id: null });
+
+    // And a NEW row through the current write path works end to end.
+    db.run(
+      "INSERT INTO proposals (id, kind, draft_json, author, evidence_message_id, status) VALUES (?, ?, ?, ?, ?, 'pending')",
+      ["p2", "node", "{}", "user", null],
     );
     db.close();
   } finally {
