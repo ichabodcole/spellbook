@@ -4,17 +4,36 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createProject, listProjects, resolveProject } from "./project.ts";
+import {
+  createProject,
+  listProjects,
+  NeedsProjectError,
+  resolveProject,
+  UnknownProjectError,
+} from "./project.ts";
 
 function tempHome(): string {
   return mkdtempSync(join(tmpdir(), "mind-mapper-project-test-"));
 }
 
-test("resolveProject with no id returns the default project, creating it", () => {
+test("resolveProject with no id on a projectless store throws NeedsProjectError (no auto-mint)", () => {
   const home = tempHome();
   try {
+    expect(() => resolveProject(home)).toThrow(NeedsProjectError);
+    // And it minted NOTHING — a projectless store booting empty IS the
+    // feature (Round 3 lead ruling: the demo seed drops with the auto-mint).
+    expect(existsSync(join(home, "projects"))).toBe(false);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test("resolveProject with no id resolves an EXISTING default dir (legacy stores keep working unscoped)", () => {
+  const home = tempHome();
+  try {
+    createProject(home, "default", "Default");
     const p = resolveProject(home);
-    expect(p.id).toBe("default");
+    expect(p).toEqual({ id: "default", title: "Default" });
     expect(existsSync(join(home, "projects", "default", "docs"))).toBe(true);
     expect(existsSync(join(home, "projects", "default", "store.sqlite"))).toBe(true);
   } finally {
@@ -34,10 +53,10 @@ test("resolveProject with an id resolves that project without creating a new one
   }
 });
 
-test("resolveProject with an unknown id throws rather than silently creating one", () => {
+test("resolveProject with an unknown id throws UnknownProjectError rather than silently creating one", () => {
   const home = tempHome();
   try {
-    expect(() => resolveProject(home, "nope")).toThrow();
+    expect(() => resolveProject(home, "nope")).toThrow(UnknownProjectError);
   } finally {
     rmSync(home, { recursive: true, force: true });
   }

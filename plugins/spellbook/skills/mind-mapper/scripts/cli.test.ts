@@ -46,7 +46,65 @@ test("open spawns the daemon and prints its url", async () => {
   expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
 });
 
-test("state returns the full seeded default project", async () => {
+test("state on a projectless store exits 2 with the needs-project shape (no auto-mint)", async () => {
+  const { code, stdout } = await runCli("state");
+  expect(code).toBe(2);
+  expect(JSON.parse(stdout)).toEqual({ error: "needs-project", projects: [] });
+});
+
+test("open --project refuses an unknown id — open never mints a project", async () => {
+  const { code, stderr } = await runCli("open", "--no-open", "--project", "never-was");
+  expect(code).toBe(2);
+  expect(stderr).toContain("unknown project: never-was");
+});
+
+test("projects --create Default makes the store usable unscoped (the legacy default shape)", async () => {
+  const created = await runCli("projects", "--create", "Default");
+  expect(created.code).toBe(0);
+  expect(JSON.parse(created.stdout).id).toBe("default");
+
+  const { code, stdout } = await runCli("state");
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout).project.id).toBe("default");
+});
+
+test("open --project appends ?project= to the printed url", async () => {
+  const { code, stdout } = await runCli("open", "--no-open", "--project", "default");
+  expect(code).toBe(0);
+  expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/\?project=default$/);
+});
+
+test("ingest + propose + ratify seed the dataset the read-path verbs use", async () => {
+  const ingest = Bun.spawn(
+    [process.execPath, "run", CLI_SCRIPT, "ingest", "--title", "Ramble 01", "--stdin"],
+    {
+      env: { ...process.env, MIND_MAPPER_HOME: home },
+      stdin: new Response("Maren keeps the bakery. Edda keeps the mill.").body,
+      stdout: "pipe",
+    },
+  );
+  const doc = JSON.parse(await new Response(ingest.stdout).text()) as { id: string };
+  await ingest.exited;
+  expect(doc.id).toBe("ramble-01");
+
+  const propose = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(
+      JSON.stringify({
+        draft: { title: "Maren", synopsis: "the baker" },
+        evidence: { docId: "ramble-01", span: "Maren keeps the bakery" },
+      }),
+    ).body,
+    stdout: "pipe",
+  });
+  const proposal = JSON.parse(await new Response(propose.stdout).text()) as { id: string };
+  await propose.exited;
+
+  const ratified = await runCli("ratify", proposal.id, "--ruling", "canon");
+  expect(ratified.code).toBe(0);
+});
+
+test("state returns the project snapshot with the created data", async () => {
   const { code, stdout } = await runCli("state");
   expect(code).toBe(0);
   const state = JSON.parse(stdout) as { nodes: unknown[]; project: { id: string } };
@@ -68,7 +126,7 @@ test("state --skeleton strips synopsis/content, keeps ids/titles/degree", async 
   }
 });
 
-test("projects lists the seeded default project", async () => {
+test("projects lists the created default project", async () => {
   const { code, stdout } = await runCli("projects");
   expect(code).toBe(0);
   const body = JSON.parse(stdout) as { projects: Array<{ id: string }> };
@@ -135,6 +193,23 @@ test("propose-node --stdin round-trips a draft + evidence", async () => {
   expect(proposal).toMatchObject({ kind: "node", status: "pending" });
 });
 
+test("propose-edge with wrong endpoint keys succeeds but mirrors the daemon warning to stderr", async () => {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-edge", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(JSON.stringify({ draft: { from: "a", to: "b" }, evidence: {} })).body,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  expect(code).toBe(0); // accepted — opacity holds
+  expect(JSON.parse(stdout)).toMatchObject({ kind: "edge", status: "pending" });
+  expect(stderr).toContain('"source"/"target"');
+});
+
 test("send appends a conversation message", async () => {
   const { code, stdout } = await runCli("send", "hello", "from", "cli");
   expect(code).toBe(0);
@@ -176,6 +251,46 @@ test("ratify accepts a proposal end to end (propose -> ratify -> node in state)"
   );
 });
 
+test("zone loop round-trips through the CLI: create → propose --zone → promote → guarded delete", async () => {
+  const created = await runCli("zone", "create", "Messy", "Ideas");
+  expect(created.code).toBe(0);
+  expect(JSON.parse(created.stdout)).toEqual({ id: "messy-ideas", name: "Messy Ideas" });
+
+  const listed = await runCli("zone", "list");
+  expect(JSON.parse(listed.stdout).zones).toEqual([{ id: "messy-ideas", name: "Messy Ideas" }]);
+
+  const propose = Bun.spawn(
+    [process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin", "--zone", "messy-ideas"],
+    {
+      env: { ...process.env, MIND_MAPPER_HOME: home },
+      stdin: new Response(JSON.stringify({ draft: { title: "Wisp" }, evidence: {} })).body,
+      stdout: "pipe",
+    },
+  );
+  const proposal = JSON.parse(await new Response(propose.stdout).text()) as {
+    id: string;
+    zoneId: string;
+  };
+  await propose.exited;
+  expect(proposal.zoneId).toBe("messy-ideas");
+
+  // Ratify-of-zoned refused; promote moves it to the main queue.
+  const refused = await runCli("ratify", proposal.id, "--ruling", "thread");
+  expect(refused.code).toBe(2);
+  expect(refused.stdout).toContain("promote first");
+  const promoted = await runCli("promote", proposal.id);
+  expect(promoted.code).toBe(0);
+  expect(JSON.parse(promoted.stdout)).toEqual({ id: proposal.id });
+
+  // Zone is empty now (move, not duplicate) — delete needs no --yes; a
+  // populated one would 409 without it (exercised at the server tier).
+  const deleted = await runCli("zone", "delete", "messy-ideas");
+  expect(deleted.code).toBe(0);
+
+  const ratified = await runCli("ratify", proposal.id, "--ruling", "thread");
+  expect(ratified.code).toBe(0);
+});
+
 test("lens set/clear round-trips through state", async () => {
   const set = await runCli("lens", "set", "--node", "maren", "--depth", "1");
   expect(set.code).toBe(0);
@@ -187,6 +302,23 @@ test("lens set/clear round-trips through state", async () => {
   expect(clear.code).toBe(0);
   const cleared = await runCli("state");
   expect(JSON.parse(cleared.stdout).lens).toBeNull();
+});
+
+test("lens set --doc round-trips; --node/--doc exclusive at parse time", async () => {
+  const both = await runCli("lens", "set", "--node", "maren", "--doc", "ramble-01");
+  expect(both.code).toBe(2);
+  expect(both.stderr).toContain("not both");
+
+  const set = await runCli("lens", "set", "--doc", "ramble-01");
+  expect(set.code).toBe(0);
+  expect(JSON.parse(set.stdout)).toEqual({
+    owner: "agent",
+    nodeId: null,
+    depth: null,
+    docId: "ramble-01",
+  });
+  const clear = await runCli("lens", "clear");
+  expect(clear.code).toBe(0);
 });
 
 test("look-here fires without persisting lens state", async () => {

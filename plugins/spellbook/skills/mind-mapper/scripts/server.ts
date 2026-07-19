@@ -25,19 +25,21 @@ import { neighbors } from "./neighbors.ts";
 import {
   createProject,
   listProjects,
+  NeedsProjectError,
   type ProjectMeta,
   projectDir,
   resolveProject,
+  SLUG_RE,
+  UnknownProjectError,
 } from "./project.ts";
-import { proposeEdge, proposeNode } from "./propose.ts";
+import { edgeDraftWarning, proposeEdge, proposeNode } from "./propose.ts";
 import { ratify } from "./ratify.ts";
 import { search } from "./search.ts";
-import { seedDefaultProject } from "./seed.ts";
 import { sendMessage } from "./send.ts";
 import { readState } from "./state.ts";
+import { createZone, deleteZone, listZones, promote, ZoneNotEmptyError } from "./zones.ts";
 
 const SCRIPT_DIR = import.meta.dir;
-const STUB_DATA_DIR = join(SCRIPT_DIR, "..", "data");
 // Absolute skill-root path (not cwd) — seams Contract 1's release-mode
 // requirement, so dist/ resolves the same regardless of the daemon's
 // working directory.
@@ -101,9 +103,15 @@ const projects = new Map<string, ProjectEntry>();
 
 // A connection WITHOUT ?project= (the browser WS on first mount, an unscoped
 // agent tail) resolves through the same default-project path as every other
-// unscoped request — attribution to the daemon-resolved default project is
-// what keeps project-scoped presence.changed fan-out honest (plan-v1x,
-// Claim C scoping edge).
+// unscoped request — attribution to the daemon-resolved default project (IF
+// one exists, Round 3 narrowing) is what keeps project-scoped
+// presence.changed fan-out honest (plan-v1x, Claim C scoping edge).
+//
+// Round 3 (Claim P1): no auto-mint, no demo seed — resolveProject throws
+// NeedsProjectError on a projectless unscoped request, and the fetch
+// handler's projectFailure funnel turns that into the ratified 409. SSE and
+// WS both pass through here BEFORE any stream/upgrade exists, so a refused
+// connection never touches presence.
 function loadProject(id?: string): ProjectEntry {
   const meta = resolveProject(HOME, id);
   const existing = projects.get(meta.id);
@@ -111,13 +119,29 @@ function loadProject(id?: string): ProjectEntry {
 
   const dir = projectDir(HOME, meta.id);
   const db = openStore(join(dir, "store.sqlite"));
-  if (meta.id === "default") {
-    const isFresh = (db.query("SELECT COUNT(*) as n FROM docs").get() as { n: number }).n === 0;
-    if (isFresh) seedDefaultProject(db, join(dir, "docs"), STUB_DATA_DIR);
-  }
   const entry: ProjectEntry = { db, bus: createEventBus(), meta, agents: 0, activityTimer: null };
   projects.set(meta.id, entry);
   return entry;
+}
+
+// The one honest shape for "you can't have a board yet" (ratified over a
+// 200-marker — a fake ProjectState lies to consumers; one fetch branch is
+// honest): 409 {error:"needs-project", projects:[...]} for a projectless
+// store, 404 for a named-but-unknown scope. Anything else rethrows.
+function projectFailure(e: unknown): Response {
+  if (e instanceof NeedsProjectError) {
+    return new Response(JSON.stringify({ error: "needs-project", projects: listProjects(HOME) }), {
+      status: 409,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  if (e instanceof UnknownProjectError) {
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  throw e;
 }
 
 // Presence = who is receiving (the grapevine `who` model): agents-only,
@@ -317,357 +341,476 @@ async function main(argv: string[]): Promise<number> {
         const path = url.pathname;
         const projectId = url.searchParams.get("project") ?? undefined;
 
-        if (path === "/events") {
-          const entry = loadProject(projectId);
-          if (req.headers.get("upgrade") === "websocket") {
+        // Every scoped route calls loadProject SYNCHRONOUSLY before any
+        // body/stream work, so this one funnel turns a project-resolution
+        // failure into the ratified 409/404 everywhere at once — the SSE
+        // response is refused pre-stream and the WS upgrade is refused
+        // outright (no presence increment on either).
+        try {
+          if (path === "/events") {
+            const entry = loadProject(projectId);
+            if (req.headers.get("upgrade") === "websocket") {
+              const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
+              const ok = srv.upgrade(req, {
+                data: { since: Number.isFinite(since) ? since : 0, projectId },
+              });
+              if (ok) return undefined;
+              return new Response("upgrade failed", { status: 500 });
+            }
             const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
-            const ok = srv.upgrade(req, {
-              data: { since: Number.isFinite(since) ? since : 0, projectId },
-            });
-            if (ok) return undefined;
-            return new Response("upgrade failed", { status: 500 });
-          }
-          const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
-          // SSE = an agent tail (the browser rides the WS above; presence is
-          // agents-only, ruled). The subscription site is the ONE place that
-          // knows this, so the presence counter adjusts here.
-          return sseResponse(
-            entry.bus,
-            Number.isFinite(since) ? since : 0,
-            {
-              onOpen: () => adjustAgents(entry, 1),
-              onClose: () => adjustAgents(entry, -1),
-            },
-            req.signal,
-          );
-        }
-
-        if (req.method === "GET" && path === "/state") {
-          const entry = loadProject(projectId);
-          const { db, bus, meta } = entry;
-          return Response.json({
-            ...readState(db, meta, bus.cursor(), bus.epoch, projectDir(HOME, meta.id)),
-            presence: { agents: entry.agents },
-          });
-        }
-
-        if (req.method === "POST" && path === "/activity") {
-          const entry = loadProject(projectId);
-          return req
-            .json()
-            .then((body) => {
-              const { state } = body as { state?: unknown };
-              if (state !== "received" && state !== "thinking" && state !== "idle") {
-                throw new Error("state must be received|thinking|idle");
-              }
-              postActivity(entry, state);
-              return Response.json({ ok: true, state });
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
+            // SSE = an agent tail (the browser rides the WS above; presence is
+            // agents-only, ruled). The subscription site is the ONE place that
+            // knows this, so the presence counter adjusts here.
+            return sseResponse(
+              entry.bus,
+              Number.isFinite(since) ? since : 0,
+              {
+                onOpen: () => adjustAgents(entry, 1),
+                onClose: () => adjustAgents(entry, -1),
+              },
+              req.signal,
             );
-        }
-        if (req.method === "GET" && path === "/projects") {
-          return Response.json({ projects: listProjects(HOME) });
-        }
-        if (req.method === "POST" && path === "/projects") {
-          return req
-            .json()
-            .then((body) => {
-              const { id, title } = body as { id?: unknown; title?: unknown };
-              if (typeof id !== "string" || typeof title !== "string") {
-                return new Response('{"error":"id and title required"}', {
-                  status: 400,
+          }
+
+          if (req.method === "GET" && path === "/state") {
+            const entry = loadProject(projectId);
+            const { db, bus, meta } = entry;
+            const state = readState(db, meta, bus.cursor(), bus.epoch, projectDir(HOME, meta.id));
+            // ?zone=<id> narrows proposals[] to that zone — a convenience for
+            // focused agent reads (the default response is INCLUSIVE, tagged
+            // with zoneId; the main view is zoneId == null at render, ruled).
+            const zoneId = url.searchParams.get("zone");
+            if (zoneId !== null) {
+              if (!state.zones.some((z) => z.id === zoneId)) {
+                return new Response(JSON.stringify({ error: `unknown zone: ${zoneId}` }), {
+                  status: 404,
                   headers: { "Content-Type": "application/json" },
                 });
               }
-              const meta = createProject(HOME, id, title);
-              return Response.json(meta);
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  {
+              state.proposals = state.proposals.filter((p) => p.zoneId === zoneId);
+            }
+            return Response.json({
+              ...state,
+              presence: { agents: entry.agents },
+            });
+          }
+
+          if (path === "/zones" && req.method === "GET") {
+            const { db } = loadProject(projectId);
+            return Response.json({ zones: listZones(db) });
+          }
+          if (path === "/zones" && req.method === "POST") {
+            const { db, bus } = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { name } = body as { name?: unknown };
+                if (typeof name !== "string") throw new Error("name required");
+                return Response.json(createZone(db, bus, name));
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+          if (req.method === "DELETE" && path.startsWith("/zones/")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/zones/".length);
+            const yes = url.searchParams.has("yes");
+            try {
+              const result = deleteZone(db, bus, id, yes);
+              if (!result) {
+                return new Response('{"error":"unknown zone"}', {
+                  status: 404,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+              return Response.json({ ok: true, id });
+            } catch (e) {
+              if (e instanceof ZoneNotEmptyError) {
+                return new Response(
+                  JSON.stringify({ error: "zone-not-empty", proposals: e.proposals }),
+                  { status: 409, headers: { "Content-Type": "application/json" } },
+                );
+              }
+              return new Response(
+                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+          }
+
+          if (req.method === "POST" && path === "/activity") {
+            const entry = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { state } = body as { state?: unknown };
+                if (state !== "received" && state !== "thinking" && state !== "idle") {
+                  throw new Error("state must be received|thinking|idle");
+                }
+                postActivity(entry, state);
+                return Response.json({ ok: true, state });
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+          if (req.method === "GET" && path === "/projects") {
+            return Response.json({ projects: listProjects(HOME) });
+          }
+          if (req.method === "POST" && path === "/projects") {
+            return req
+              .json()
+              .then((body) => {
+                const { id, title } = body as { id?: unknown; title?: unknown };
+                if (typeof id !== "string" || typeof title !== "string") {
+                  return new Response('{"error":"id and title required"}', {
                     status: 400,
                     headers: { "Content-Type": "application/json" },
-                  },
-                ),
-            );
-        }
-        if (req.method === "POST" && path === "/ingest") {
-          const { db, bus, meta } = loadProject(projectId);
-          const docsDir = join(projectDir(HOME, meta.id), "docs");
-          const contentType = req.headers.get("content-type") ?? "";
-          const handle = contentType.includes("multipart/form-data")
-            ? req.formData().then(async (form) => {
-                const file = form.get("file");
-                if (!(file instanceof File)) throw new Error("multipart body missing 'file'");
-                const title = (form.get("title") as string | null) ?? file.name;
-                return ingestFile(db, bus, docsDir, title, await file.text());
-              })
-            : req.json().then((body) => {
-                const { title, text } = body as { title?: unknown; text?: unknown };
-                if (typeof title !== "string" || typeof text !== "string") {
-                  throw new Error("title and text required");
+                  });
                 }
-                return ingestText(db, bus, docsDir, title, text);
-              });
-          return handle
-            .then((doc) => Response.json(doc))
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
-            );
-        }
-
-        if (req.method === "POST" && path === "/proposals") {
-          const { db, bus } = loadProject(projectId);
-          return req
-            .json()
-            .then((body) => {
-              const { kind, draft, evidence, suggestedTier, author } = body as {
-                kind?: unknown;
-                draft?: unknown;
-                evidence?: unknown;
-                suggestedTier?: unknown;
-                author?: unknown;
-              };
-              if (kind !== "node" && kind !== "edge") throw new Error("kind must be node or edge");
-              if (author !== undefined && author !== "user" && author !== "agent") {
-                throw new Error("author must be user or agent");
-              }
-              const input = {
-                draft,
-                evidence:
-                  (evidence as { docId?: string; messageId?: string; span?: string } | undefined) ??
-                  {},
-                suggestedTier: typeof suggestedTier === "string" ? suggestedTier : undefined,
-                author: author as "user" | "agent" | undefined,
-              };
-              const proposal =
-                kind === "node" ? proposeNode(db, bus, input) : proposeEdge(db, bus, input);
-              return Response.json(proposal);
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
-            );
-        }
-
-        if (req.method === "POST" && path === "/send") {
-          const { db, bus, meta } = loadProject(projectId);
-          return req
-            .json()
-            .then((body) => {
-              const { role, kind, text, ground } = body as {
-                role?: unknown;
-                kind?: unknown;
-                text?: unknown;
-                ground?: unknown;
-              };
-              if ((role !== "user" && role !== "agent") || typeof text !== "string") {
-                throw new Error("role (user|agent) and text required");
-              }
-              const message = sendMessage(db, bus, meta.id, {
-                role,
-                kind: typeof kind === "string" ? kind : "turn",
-                text,
-                ground: Array.isArray(ground) ? (ground as string[]) : undefined,
-              });
-              return Response.json(message);
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
-            );
-        }
-
-        if (req.method === "GET" && path === "/search") {
-          const { db } = loadProject(projectId);
-          const q = url.searchParams.get("q") ?? "";
-          return Response.json({ hits: search(db, q) });
-        }
-
-        if (req.method === "GET" && path.startsWith("/neighbors/")) {
-          const { db } = loadProject(projectId);
-          const depth = Number.parseInt(url.searchParams.get("depth") ?? "1", 10);
-          const id = path.slice("/neighbors/".length);
-          return Response.json({
-            neighbors: neighbors(db, id, Number.isFinite(depth) && depth > 0 ? depth : 1),
-          });
-        }
-
-        if (req.method === "POST" && path.startsWith("/proposals/") && path.endsWith("/ruling")) {
-          const { db, bus, meta } = loadProject(projectId);
-          const proposalId = path.slice("/proposals/".length, -"/ruling".length);
-          const docsDir = join(projectDir(HOME, meta.id), "docs");
-          return req
-            .json()
-            .then((body) => {
-              // docId/span are the additive ratify-time-attach fields (P3
-              // gate ruling) — passed through verbatim; ratify() owns every
-              // constraint (evidence-less only, node-only, slug, existence).
-              const { ruling, docEdit, docId, span } = body as {
-                ruling?: unknown;
-                docEdit?: unknown;
-                docId?: unknown;
-                span?: unknown;
-              };
-              if (
-                ruling !== "canon" &&
-                ruling !== "thread" &&
-                ruling !== "story-local" &&
-                ruling !== "reject"
-              ) {
-                throw new Error("ruling must be canon|thread|story-local|reject");
-              }
-              const result = ratify(db, bus, docsDir, {
-                proposalId,
-                ruling,
-                docEdit: typeof docEdit === "string" ? docEdit : undefined,
-                docId: typeof docId === "string" ? docId : undefined,
-                span: typeof span === "string" ? span : undefined,
-              });
-              return Response.json(result);
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
-            );
-        }
-
-        if (req.method === "POST" && path === "/lens") {
-          const { db, bus, meta } = loadProject(projectId);
-          return req
-            .json()
-            .then((body) => {
-              const { owner, nodeId, depth } = body as {
-                owner?: unknown;
-                nodeId?: unknown;
-                depth?: unknown;
-              };
-              if (typeof owner !== "string") throw new Error("owner required");
-              const lens = setLens(db, bus, meta.id, {
-                owner,
-                nodeId: typeof nodeId === "string" ? nodeId : null,
-                depth: typeof depth === "number" ? depth : null,
-              });
-              return Response.json(lens);
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
-            );
-        }
-        if (req.method === "DELETE" && path === "/lens") {
-          const { db, bus, meta } = loadProject(projectId);
-          clearLens(db, bus, meta.id);
-          return Response.json({ ok: true });
-        }
-
-        if (req.method === "POST" && path.startsWith("/look-here/")) {
-          const { bus } = loadProject(projectId);
-          lookHere(bus, path.slice("/look-here/".length));
-          return Response.json({ ok: true });
-        }
-
-        if (req.method === "DELETE" && path.startsWith("/doc/")) {
-          const { db, bus, meta } = loadProject(projectId);
-          const id = path.slice("/doc/".length);
-          const force = url.searchParams.has("force");
-          try {
-            const result = deleteDoc(db, bus, projectDir(HOME, meta.id), id, force);
-            if (!result) {
-              return new Response('{"error":"unknown doc"}', {
-                status: 404,
-                headers: { "Content-Type": "application/json" },
-              });
-            }
-            return Response.json({ ok: true, id });
-          } catch (e) {
-            if (e instanceof CitedError) {
-              return new Response(JSON.stringify({ error: "cited", citedBy: e.citedBy }), {
-                status: 409,
-                headers: { "Content-Type": "application/json" },
-              });
-            }
-            return new Response(
-              JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-              { status: 400, headers: { "Content-Type": "application/json" } },
-            );
+                const meta = createProject(HOME, id, title);
+                return Response.json(meta);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    {
+                      status: 400,
+                      headers: { "Content-Type": "application/json" },
+                    },
+                  ),
+              );
           }
-        }
+          if (req.method === "POST" && path === "/ingest") {
+            const { db, bus, meta } = loadProject(projectId);
+            const docsDir = join(projectDir(HOME, meta.id), "docs");
+            const contentType = req.headers.get("content-type") ?? "";
+            const handle = contentType.includes("multipart/form-data")
+              ? req.formData().then(async (form) => {
+                  const file = form.get("file");
+                  if (!(file instanceof File)) throw new Error("multipart body missing 'file'");
+                  const title = (form.get("title") as string | null) ?? file.name;
+                  return ingestFile(db, bus, docsDir, title, await file.text());
+                })
+              : req.json().then((body) => {
+                  const { title, text } = body as { title?: unknown; text?: unknown };
+                  if (typeof title !== "string" || typeof text !== "string") {
+                    throw new Error("title and text required");
+                  }
+                  return ingestText(db, bus, docsDir, title, text);
+                });
+            return handle
+              .then((doc) => Response.json(doc))
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
 
-        if (req.method === "POST" && path.startsWith("/doc/") && path.endsWith("/mark")) {
-          const { db, bus, meta } = loadProject(projectId);
-          const id = path.slice("/doc/".length, -"/mark".length);
-          return req
-            .json()
-            .then((body) => {
-              const { author, note, status } = body as {
-                author?: unknown;
-                note?: unknown;
-                status?: unknown;
-              };
-              if (typeof status !== "string") throw new Error("mark requires a status string");
-              const mark = markDoc(db, bus, projectDir(HOME, meta.id), {
-                docId: id,
-                author: typeof author === "string" ? author : "agent",
-                note: typeof note === "string" ? note : undefined,
-                status,
-              });
-              return Response.json({ docId: id, mark });
-            })
-            .catch(
-              (e) =>
-                new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                ),
+          if (req.method === "POST" && path === "/proposals") {
+            const { db, bus } = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { kind, draft, evidence, suggestedTier, author, zone } = body as {
+                  kind?: unknown;
+                  draft?: unknown;
+                  evidence?: unknown;
+                  suggestedTier?: unknown;
+                  author?: unknown;
+                  zone?: unknown;
+                };
+                if (kind !== "node" && kind !== "edge")
+                  throw new Error("kind must be node or edge");
+                if (author !== undefined && author !== "user" && author !== "agent") {
+                  throw new Error("author must be user or agent");
+                }
+                const input = {
+                  draft,
+                  evidence:
+                    (evidence as
+                      | { docId?: string; messageId?: string; span?: string }
+                      | undefined) ?? {},
+                  suggestedTier: typeof suggestedTier === "string" ? suggestedTier : undefined,
+                  author: author as "user" | "agent" | undefined,
+                  zone: typeof zone === "string" ? zone : undefined,
+                };
+                const proposal =
+                  kind === "node" ? proposeNode(db, bus, input) : proposeEdge(db, bus, input);
+                // Gate rework: an edge draft with missing/wrong endpoint keys
+                // is ACCEPTED (opaque intake, Contract 8) but the response
+                // carries an additive `warning` naming the expected keys —
+                // the cold agent hears about the fumble in the same turn,
+                // not at ratify. Never stored, never in /state.
+                const warning = kind === "edge" ? edgeDraftWarning(input.draft) : null;
+                return Response.json(warning ? { ...proposal, warning } : proposal);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
+          if (req.method === "POST" && path === "/send") {
+            const { db, bus, meta } = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { role, kind, text, ground } = body as {
+                  role?: unknown;
+                  kind?: unknown;
+                  text?: unknown;
+                  ground?: unknown;
+                };
+                if ((role !== "user" && role !== "agent") || typeof text !== "string") {
+                  throw new Error("role (user|agent) and text required");
+                }
+                const message = sendMessage(db, bus, meta.id, {
+                  role,
+                  kind: typeof kind === "string" ? kind : "turn",
+                  text,
+                  ground: Array.isArray(ground) ? (ground as string[]) : undefined,
+                });
+                return Response.json(message);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
+          if (req.method === "GET" && path === "/search") {
+            const { db } = loadProject(projectId);
+            const q = url.searchParams.get("q") ?? "";
+            return Response.json({ hits: search(db, q) });
+          }
+
+          if (req.method === "GET" && path.startsWith("/neighbors/")) {
+            const { db } = loadProject(projectId);
+            const depth = Number.parseInt(url.searchParams.get("depth") ?? "1", 10);
+            const id = path.slice("/neighbors/".length);
+            return Response.json({
+              neighbors: neighbors(db, id, Number.isFinite(depth) && depth > 0 ? depth : 1),
+            });
+          }
+
+          if (
+            req.method === "POST" &&
+            path.startsWith("/proposals/") &&
+            path.endsWith("/promote")
+          ) {
+            const { db, bus } = loadProject(projectId);
+            const proposalId = path.slice("/proposals/".length, -"/promote".length);
+            try {
+              return Response.json(promote(db, bus, proposalId));
+            } catch (e) {
+              return new Response(
+                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+          }
+
+          if (req.method === "POST" && path.startsWith("/proposals/") && path.endsWith("/ruling")) {
+            const { db, bus, meta } = loadProject(projectId);
+            const proposalId = path.slice("/proposals/".length, -"/ruling".length);
+            const docsDir = join(projectDir(HOME, meta.id), "docs");
+            return req
+              .json()
+              .then((body) => {
+                // docId/span are the additive ratify-time-attach fields (P3
+                // gate ruling) — passed through verbatim; ratify() owns every
+                // constraint (evidence-less only, node-only, slug, existence).
+                const { ruling, docEdit, docId, span } = body as {
+                  ruling?: unknown;
+                  docEdit?: unknown;
+                  docId?: unknown;
+                  span?: unknown;
+                };
+                if (
+                  ruling !== "canon" &&
+                  ruling !== "thread" &&
+                  ruling !== "story-local" &&
+                  ruling !== "reject"
+                ) {
+                  throw new Error("ruling must be canon|thread|story-local|reject");
+                }
+                const result = ratify(db, bus, docsDir, {
+                  proposalId,
+                  ruling,
+                  docEdit: typeof docEdit === "string" ? docEdit : undefined,
+                  docId: typeof docId === "string" ? docId : undefined,
+                  span: typeof span === "string" ? span : undefined,
+                });
+                return Response.json(result);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
+          if (req.method === "POST" && path === "/lens") {
+            const { db, bus, meta } = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { owner, nodeId, depth, docId } = body as {
+                  owner?: unknown;
+                  nodeId?: unknown;
+                  depth?: unknown;
+                  docId?: unknown;
+                };
+                if (typeof owner !== "string") throw new Error("owner required");
+                // Claim V2 intake: node XOR doc, exactly one; depth is a
+                // node-lens knob only; a doc lens must name a real doc slug
+                // (same fail-loud spirit as mark/propose intake).
+                const hasNode = typeof nodeId === "string";
+                const hasDoc = typeof docId === "string";
+                if (hasNode === hasDoc) {
+                  throw new Error("lens requires exactly one of nodeId or docId");
+                }
+                if (hasDoc && depth !== undefined && depth !== null) {
+                  throw new Error("depth applies to a node lens only");
+                }
+                if (hasDoc) {
+                  if (!SLUG_RE.test(docId as string)) {
+                    throw new Error(`docId is not a valid doc slug: ${String(docId)}`);
+                  }
+                  if (!db.query("SELECT 1 FROM docs WHERE id = ?").get(docId as string)) {
+                    throw new Error(`unknown doc: ${String(docId)}`);
+                  }
+                }
+                const lens = setLens(db, bus, meta.id, {
+                  owner,
+                  nodeId: hasNode ? (nodeId as string) : null,
+                  depth: hasNode && typeof depth === "number" ? depth : null,
+                  docId: hasDoc ? (docId as string) : null,
+                });
+                return Response.json(lens);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+          if (req.method === "DELETE" && path === "/lens") {
+            const { db, bus, meta } = loadProject(projectId);
+            clearLens(db, bus, meta.id);
+            return Response.json({ ok: true });
+          }
+
+          if (req.method === "POST" && path.startsWith("/look-here/")) {
+            const { bus } = loadProject(projectId);
+            lookHere(bus, path.slice("/look-here/".length));
+            return Response.json({ ok: true });
+          }
+
+          if (req.method === "DELETE" && path.startsWith("/doc/")) {
+            const { db, bus, meta } = loadProject(projectId);
+            const id = path.slice("/doc/".length);
+            const force = url.searchParams.has("force");
+            try {
+              const result = deleteDoc(db, bus, projectDir(HOME, meta.id), id, force);
+              if (!result) {
+                return new Response('{"error":"unknown doc"}', {
+                  status: 404,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+              return Response.json({ ok: true, id });
+            } catch (e) {
+              if (e instanceof CitedError) {
+                return new Response(JSON.stringify({ error: "cited", citedBy: e.citedBy }), {
+                  status: 409,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+              return new Response(
+                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+          }
+
+          if (req.method === "POST" && path.startsWith("/doc/") && path.endsWith("/mark")) {
+            const { db, bus, meta } = loadProject(projectId);
+            const id = path.slice("/doc/".length, -"/mark".length);
+            return req
+              .json()
+              .then((body) => {
+                const { author, note, status } = body as {
+                  author?: unknown;
+                  note?: unknown;
+                  status?: unknown;
+                };
+                if (typeof status !== "string") throw new Error("mark requires a status string");
+                const mark = markDoc(db, bus, projectDir(HOME, meta.id), {
+                  docId: id,
+                  author: typeof author === "string" ? author : "agent",
+                  note: typeof note === "string" ? note : undefined,
+                  status,
+                });
+                return Response.json({ docId: id, mark });
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
+          if (req.method === "GET" && path.startsWith("/doc/")) {
+            const { db, meta } = loadProject(projectId);
+            const doc = readDoc(
+              db,
+              join(projectDir(HOME, meta.id), "docs"),
+              path.slice("/doc/".length),
             );
-        }
-
-        if (req.method === "GET" && path.startsWith("/doc/")) {
-          const { db, meta } = loadProject(projectId);
-          const doc = readDoc(
-            db,
-            join(projectDir(HOME, meta.id), "docs"),
-            path.slice("/doc/".length),
-          );
-          if (doc) return Response.json(doc);
-          return new Response('{"error":"unknown doc"}', {
+            if (doc) return Response.json(doc);
+            return new Response('{"error":"unknown doc"}', {
+              status: 404,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+          if (mode === "release") {
+            const asset = serveDist(path);
+            if (asset) return asset;
+          }
+          return new Response('{"error":"not found"}', {
             status: 404,
             headers: { "Content-Type": "application/json" },
           });
+        } catch (e) {
+          return projectFailure(e);
         }
-        if (mode === "release") {
-          const asset = serveDist(path);
-          if (asset) return asset;
-        }
-        return new Response('{"error":"not found"}', {
-          status: 404,
-          headers: { "Content-Type": "application/json" },
-        });
       },
       websocket: {
         open(ws) {

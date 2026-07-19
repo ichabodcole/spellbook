@@ -56,6 +56,11 @@ interface Proposal {
   // Claim D: the wire ALWAYS carries "user"|"agent", never null — a null
   // column value (pre-author row) normalizes to "agent" at read time.
   author: "user" | "agent";
+  // Round 3 (Claim Z1, as ruled): the wire ALWAYS carries zoneId — null
+  // means main queue. /state.proposals[] INCLUDES zoned rows (tagged, no
+  // default exclusion) so snapshot merge and event ingestion obey ONE rule;
+  // the main view is `zoneId == null` at render, and ?zone=<id> narrows.
+  zoneId: string | null;
 }
 
 interface Message {
@@ -68,10 +73,20 @@ interface Message {
   ts: number;
 }
 
+// Round 3 (Claim V2): one lens row, two modes — node XOR doc, enforced by
+// construction (setLens writes every column on upsert; the /lens route
+// validates the XOR). The wire ALWAYS carries docId (null on a node lens /
+// clear) — additive-optional for pre-doc-lens consumers.
 interface Lens {
   owner: string;
   nodeId: string | null;
   depth: number | null;
+  docId: string | null;
+}
+
+interface Zone {
+  id: string;
+  name: string;
 }
 
 interface ProjectState {
@@ -79,6 +94,7 @@ interface ProjectState {
   docs: Doc[];
   nodes: Node[];
   edges: Edge[];
+  zones: Zone[];
   proposals: Proposal[];
   conversation: Message[];
   lens: Lens | null;
@@ -147,9 +163,11 @@ function readState(
     .query("SELECT id, source, target, label, provenance, direction FROM edges ORDER BY created_at")
     .all() as Edge[];
 
+  const zones = db.query("SELECT id, name FROM zones ORDER BY ts, id").all() as Zone[];
+
   const proposalRows = db
     .query(
-      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author FROM proposals ORDER BY created_at",
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author, zone_id FROM proposals ORDER BY created_at",
     )
     .all() as Array<{
     id: string;
@@ -162,6 +180,7 @@ function readState(
     status: string;
     result_node_id: string | null;
     author: string | null;
+    zone_id: string | null;
   }>;
   const proposals: Proposal[] = proposalRows.map((row) => ({
     id: row.id,
@@ -176,6 +195,7 @@ function readState(
     status: row.status,
     resultNodeId: row.result_node_id,
     author: row.author === "user" ? "user" : "agent",
+    zoneId: row.zone_id,
   }));
 
   const messageRows = db
@@ -202,14 +222,19 @@ function readState(
   }));
 
   const lensRow = db
-    .query("SELECT owner, node_id, depth FROM lens WHERE project_id = ?")
-    .get(project.id) as { owner: string; node_id: string | null; depth: number | null } | null;
+    .query("SELECT owner, node_id, depth, doc_id FROM lens WHERE project_id = ?")
+    .get(project.id) as {
+    owner: string;
+    node_id: string | null;
+    depth: number | null;
+    doc_id: string | null;
+  } | null;
   const lens: Lens | null = lensRow
-    ? { owner: lensRow.owner, nodeId: lensRow.node_id, depth: lensRow.depth }
+    ? { owner: lensRow.owner, nodeId: lensRow.node_id, depth: lensRow.depth, docId: lensRow.doc_id }
     : null;
 
-  return { project, docs, nodes, edges, proposals, conversation, lens, cursor, epoch };
+  return { project, docs, nodes, edges, zones, proposals, conversation, lens, cursor, epoch };
 }
 
-export type { Doc, Edge, Lens, Message, Node, NodeSource, ProjectState, Proposal };
+export type { Doc, Edge, Lens, Message, Node, NodeSource, ProjectState, Proposal, Zone };
 export { readState };

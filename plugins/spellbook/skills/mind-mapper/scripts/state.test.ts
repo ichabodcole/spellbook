@@ -24,6 +24,7 @@ test("readState assembles an empty project with the ratified shape", () => {
       docs: [],
       nodes: [],
       edges: [],
+      zones: [],
       proposals: [],
       conversation: [],
       lens: null,
@@ -89,15 +90,28 @@ test("readState reflects seeded rows, docs stay content-free", () => {
       1,
     ]);
 
+    db.run("INSERT INTO zones (id, name) VALUES (?, ?)", ["messy-ideas", "Messy Ideas"]);
+    db.run(
+      "INSERT INTO proposals (id, kind, draft_json, status, zone_id) VALUES (?, ?, ?, 'pending', ?)",
+      ["p2", "node", JSON.stringify({ title: "Wisp" }), "messy-ideas"],
+    );
+
     const state = readState(db, { id: "default", title: "Default" });
     expect(state.docs).toEqual([{ id: "ramble-01", title: "Ramble", kind: "ramble" }]);
+    // Zones surface in the snapshot; zoned proposals are INCLUDED, tagged
+    // (the ruled inclusive shape — main view filters zoneId == null).
+    expect(state.zones).toEqual([{ id: "messy-ideas", name: "Messy Ideas" }]);
+    expect(state.proposals.find((p) => p.id === "p2")).toMatchObject({
+      id: "p2",
+      zoneId: "messy-ideas",
+    });
     expect(state.nodes[0]).toMatchObject({ id: "maren", title: "Maren" });
     expect(state.nodes[0]?.sources).toEqual([
       { docId: "ramble-01", span: "the baker of Hollowbrook" },
       { docId: "bible-maren", span: null },
     ]);
     expect(state.edges[0]).toMatchObject({ id: "e1", source: "maren", target: "hollowbrook" });
-    expect(state.proposals[0]).toMatchObject({ id: "p1", status: "pending" });
+    expect(state.proposals[0]).toMatchObject({ id: "p1", status: "pending", zoneId: null });
     expect(state.conversation[0]).toMatchObject({
       id: "m1",
       seq: 1,
@@ -106,7 +120,7 @@ test("readState reflects seeded rows, docs stay content-free", () => {
       text: "hello",
       ground: ["maren"],
     });
-    expect(state.lens).toEqual({ owner: "human", nodeId: "maren", depth: 1 });
+    expect(state.lens).toEqual({ owner: "human", nodeId: "maren", depth: 1, docId: null });
     expect(state.cursor).toBe(0);
   } finally {
     db.close();

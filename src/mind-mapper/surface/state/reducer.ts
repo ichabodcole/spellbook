@@ -14,6 +14,7 @@ import type {
   Proposal,
   ServerEvent,
   WireMessage,
+  Zone,
 } from "../types";
 
 // A resumed/duplicate event (seq <= cursor) is a no-op — dedupe on WS
@@ -89,12 +90,52 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         cursor: event.seq,
       };
     }
+    // The payload is the full tagged Proposal (zoneId always carried, Claim
+    // Z1) — the upsert lands it in the INCLUSIVE store untouched; views
+    // segregate by zoneId at render, so this one rule serves snapshot merge
+    // and event ingestion identically.
     case "proposal.added":
       return {
         ...state,
         proposals: upsertById(state.proposals, event.payload as Proposal),
         cursor: event.seq,
       };
+    case "zone.created": {
+      const zone = event.payload as Zone;
+      if (typeof zone?.id !== "string") return { ...state, cursor: event.seq };
+      return {
+        ...state,
+        zones: state.zones.some((z) => z.id === zone.id) ? state.zones : [...state.zones, zone],
+        cursor: event.seq,
+      };
+    }
+    case "zone.deleted": {
+      // Thin ({id} only, Claim Z1) — the delete cascaded the zone's
+      // proposals server-side, so consumers drop that zone's rows locally: a
+      // SCOPED drop, never a wholesale replace (main-queue and other-zone
+      // proposals are untouched by construction).
+      const { id } = event.payload as { id?: unknown };
+      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      return {
+        ...state,
+        zones: state.zones.filter((z) => z.id !== id),
+        proposals: state.proposals.filter((p) => p.zoneId !== id),
+        cursor: event.seq,
+      };
+    }
+    case "proposal.promoted": {
+      // Thin ({id} only, Claim Z2) — promotion is a MOVE: with the inclusive
+      // store the reducer's whole job is clearing zoneId on the row, which
+      // re-homes it to the main review queue at render. Draft/evidence/
+      // status untouched (it stays a normal pending item).
+      const { id } = event.payload as { id?: unknown };
+      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      return {
+        ...state,
+        proposals: state.proposals.map((p) => (p.id === id ? { ...p, zoneId: null } : p)),
+        cursor: event.seq,
+      };
+    }
     case "message.posted":
       return {
         ...state,

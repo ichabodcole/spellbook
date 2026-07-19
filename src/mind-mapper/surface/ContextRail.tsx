@@ -11,7 +11,7 @@
 // which converges on POST /ingest — the rail itself stays a dumb list
 // renderer plus these two entry points, no ingest logic inline here.
 
-import { BookOpen, Mic, Plus, ScrollText, Sparkles, Trash2, Upload } from "lucide-react";
+import { BookOpen, Crosshair, Mic, Plus, ScrollText, Sparkles, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
 import type { DocKind, DocMeta } from "./types";
 import { Button } from "./ui/button";
@@ -47,6 +47,7 @@ export function ContextRail({
   onIngestText,
   onIngestBlank,
   onAnalyze,
+  onDocLens,
   onDelete,
 }: {
   docs: DocMeta[];
@@ -59,6 +60,10 @@ export function ContextRail({
   // conversational message (Claim G); Delete only STARTS the confirm flow
   // (Claim A: the unforced DELETE is never fired from the raw click).
   onAnalyze: (doc: DocMeta) => void;
+  // V2 — "Show extracted nodes": sets the doc lens. Lives in the context
+  // menu AND as the card's hover crosshair twin — single-click keeps meaning
+  // open-viewer (ruled: falsified card-click-as-lens at ratify).
+  onDocLens: (doc: DocMeta) => void;
   onDelete: (doc: DocMeta) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
@@ -153,44 +158,62 @@ export function ContextRail({
             return (
               <ContextMenu key={d.id}>
                 <ContextMenuTrigger>
-                  <Button
-                    variant="card"
-                    size="auto"
-                    onClick={() => onOpen(d.id)}
-                    className={`flex-col items-start gap-0 p-2.5 ${
-                      open ? "border-ring bg-secondary ring-1 ring-ring/40" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <Icon size={13} className="shrink-0 text-ink-dim" aria-hidden />
-                      <span
-                        className={`rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${KIND_BADGE[d.kind]}`}
-                      >
-                        {d.kind}
-                      </span>
-                    </div>
-                    <p className="mt-1.5 w-full truncate text-xs text-ink">{d.title}</p>
-                    {d.mark && (
-                      // T7 — the live mark (Claim B): status text, stale
-                      // tint when the file moved on after the mark vouched
-                      // for it. The note rides as a hover title — the badge
-                      // stays a glance, not a paragraph.
-                      <p
-                        className={`mt-1 w-full truncate text-[9px] ${
-                          d.mark.stale ? "text-attention" : "text-ink-faint"
-                        }`}
-                        title={d.mark.note ?? undefined}
-                      >
-                        {d.mark.status}
-                        {d.mark.stale ? " · stale" : ""} · {d.mark.author}
-                      </p>
-                    )}
-                  </Button>
+                  {/* The hover crosshair is a SIBLING overlay, not a child —
+                      a button nested in a button is invalid HTML, and the
+                      twin must not hijack the card's open-viewer click. */}
+                  <div className="group relative">
+                    <Button
+                      variant="card"
+                      size="auto"
+                      onClick={() => onOpen(d.id)}
+                      className={`flex-col items-start gap-0 p-2.5 ${
+                        open ? "border-ring bg-secondary ring-1 ring-ring/40" : ""
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <Icon size={13} className="shrink-0 text-ink-dim" aria-hidden />
+                        <span
+                          className={`rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${KIND_BADGE[d.kind]}`}
+                        >
+                          {d.kind}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 w-full truncate text-xs text-ink">{d.title}</p>
+                      {d.mark && (
+                        // T7 — the live mark (Claim B): status text, stale
+                        // tint when the file moved on after the mark vouched
+                        // for it. The note rides as a hover title — the badge
+                        // stays a glance, not a paragraph.
+                        <p
+                          className={`mt-1 w-full truncate text-[9px] ${
+                            d.mark.stale ? "text-attention" : "text-ink-faint"
+                          }`}
+                          title={d.mark.note ?? undefined}
+                        >
+                          {d.mark.status}
+                          {d.mark.stale ? " · stale" : ""} · {d.mark.author}
+                        </p>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label={`Show nodes extracted from ${d.title}`}
+                      title="Show extracted nodes"
+                      onClick={() => onDocLens(d)}
+                      className="absolute right-1.5 top-1.5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+                    >
+                      <Crosshair size={11} />
+                    </Button>
+                  </div>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuLabel>{d.title}</ContextMenuLabel>
                   <ContextMenuItem onClick={() => onAnalyze(d)}>
                     <Sparkles /> Analyze
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={() => onDocLens(d)}>
+                    <Crosshair /> Show extracted nodes
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem onClick={() => onDelete(d)} className="text-attention">

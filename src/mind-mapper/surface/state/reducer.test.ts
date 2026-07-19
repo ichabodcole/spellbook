@@ -13,6 +13,7 @@ function baseState(): ProjectState {
     docs: [],
     nodes: [{ id: "maren", title: "Maren", kind: "cast", tier: "canon", synopsis: "..." }],
     edges: [],
+    zones: [],
     proposals: [
       {
         id: "prop-1",
@@ -22,10 +23,11 @@ function baseState(): ProjectState {
         suggestedTier: "thread",
         status: "pending",
         author: "agent",
+        zoneId: null,
       },
     ],
     conversation: [],
-    lens: { owner: null, nodeId: null, depth: 1 },
+    lens: { owner: null, nodeId: null, depth: 1, docId: null },
     cursor: 5,
     presence: { agents: 0 },
   };
@@ -187,6 +189,85 @@ test("proposal.added upserts by id into proposals", () => {
   expect(next.proposals[0]?.id).toBe("prop-1");
 });
 
+// Round 3 (Claims Z1/Z2) — the zone event cases.
+
+test("zone.created appends the zone (and dedupes a repeat)", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "zone.created",
+    payload: { id: "wild-ideas", name: "Wild ideas" },
+  });
+  expect(next.zones).toEqual([{ id: "wild-ideas", name: "Wild ideas" }]);
+  expect(next.cursor).toBe(6);
+  const again = applyEvent(next, {
+    seq: 7,
+    kind: "zone.created",
+    payload: { id: "wild-ideas", name: "Wild ideas" },
+  });
+  expect(again.zones).toHaveLength(1);
+});
+
+function zonedProposal(id: string, zoneId: string): ProjectState["proposals"][number] {
+  return { ...baseState().proposals[0], id, zoneId } as ProjectState["proposals"][number];
+}
+
+test("zone.deleted drops the zone AND that zone's proposals — a scoped drop, never wholesale", () => {
+  const state: ProjectState = {
+    ...baseState(),
+    zones: [
+      { id: "wild-ideas", name: "Wild ideas" },
+      { id: "keep", name: "Keep" },
+    ],
+    proposals: [
+      ...baseState().proposals, // main-queue row (zoneId null)
+      zonedProposal("z-1", "wild-ideas"),
+      zonedProposal("z-2", "keep"),
+    ],
+  };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "zone.deleted",
+    payload: { id: "wild-ideas" },
+  });
+  expect(next.zones).toEqual([{ id: "keep", name: "Keep" }]);
+  expect(next.proposals.map((p) => p.id)).toEqual(["prop-1", "z-2"]);
+});
+
+test("proposal.promoted clears zoneId on the row (thin event, move-not-duplicate)", () => {
+  const state: ProjectState = {
+    ...baseState(),
+    zones: [{ id: "wild-ideas", name: "Wild ideas" }],
+    proposals: [zonedProposal("z-1", "wild-ideas")],
+  };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "proposal.promoted",
+    payload: { id: "z-1" },
+  });
+  expect(next.proposals[0]?.zoneId).toBeNull();
+  expect(next.proposals[0]?.status).toBe("pending");
+  expect(next.proposals[0]?.draft).toEqual(state.proposals[0]?.draft);
+});
+
+test("a zone-tagged proposal.added upserts into the INCLUSIVE store untouched (views segregate, not the reducer)", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "proposal.added",
+    payload: {
+      id: "z-new",
+      kind: "node",
+      draft: { title: "A wild one" },
+      evidence: { docId: null, messageId: null, span: null },
+      suggestedTier: "thread",
+      status: "pending",
+      author: "agent",
+      zoneId: "wild-ideas",
+    },
+  });
+  expect(next.proposals).toHaveLength(2);
+  expect(next.proposals[1]?.zoneId).toBe("wild-ideas");
+});
+
 test("message.posted appends the wire message to conversation", () => {
   const next = applyEvent(baseState(), {
     seq: 6,
@@ -205,13 +286,22 @@ test("message.posted appends the wire message to conversation", () => {
   expect(next.conversation[0]?.role).toBe("agent");
 });
 
-test("lens.set replaces the lens wholesale", () => {
+test("lens.set replaces the lens wholesale (docId always carried — null on a node lens)", () => {
   const next = applyEvent(baseState(), {
     seq: 6,
     kind: "lens.set",
-    payload: { owner: "agent", nodeId: "maren", depth: 2 },
+    payload: { owner: "agent", nodeId: "maren", depth: 2, docId: null },
   });
-  expect(next.lens).toEqual({ owner: "agent", nodeId: "maren", depth: 2 });
+  expect(next.lens).toEqual({ owner: "agent", nodeId: "maren", depth: 2, docId: null });
+});
+
+test("lens.set carries the doc variant (nodeId null, depth null, docId set)", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "lens.set",
+    payload: { owner: "agent", nodeId: null, depth: null, docId: "ramble-01" },
+  });
+  expect(next.lens).toEqual({ owner: "agent", nodeId: null, depth: null, docId: "ramble-01" });
 });
 
 test("an event at or before the current cursor is a no-op (dedupe on resume)", () => {

@@ -71,10 +71,16 @@ export type MapNode = {
 // your attention).
 export type FocusOwner = "user" | "agent" | null;
 
+// Round 3 (Claim V2): one lens row, two modes — node XOR doc, enforced by
+// construction server-side (the upsert writes every column; POST /lens
+// validates the XOR). The wire ALWAYS carries docId (null on a node lens /
+// clear); depth is a node-lens knob only (null on a doc lens) — consumers
+// default it to 1 where a node-lens number is needed.
 export type Lens = {
   owner: FocusOwner;
   nodeId: string | null;
-  depth: number;
+  depth: number | null;
+  docId: string | null;
 };
 
 // Conversation shapes follow glamour's Message idiom (who/kind/ground) so a
@@ -135,6 +141,13 @@ export type ProjectMeta = {
   title: string;
 };
 
+// Round 3 (Claim Z1) — a named staging pen for proposals. Ids are SLUGS
+// derived from the name (conversational referenceability); no rename.
+export type Zone = {
+  id: string;
+  name: string;
+};
+
 export type ProposalKind = "node" | "edge";
 export type ProposalStatus = "pending" | "ratified" | "rejected";
 export type Ruling = "canon" | "thread" | "story-local" | "reject";
@@ -163,6 +176,12 @@ export type Proposal = {
   // Claim D: who sketched it. The wire ALWAYS carries "user"|"agent" — the
   // nullable column normalizes to "agent" in readState, never reaches here.
   author: "user" | "agent";
+  // Round 3 (Claim Z1, as ruled): ALWAYS carried — null means main queue.
+  // The store is INCLUSIVE (zoned rows present, tagged): snapshot merge and
+  // event upsert obey ONE rule, and every VIEW segregates at render
+  // (main = zoneId == null; a zone view = its own id). Payload-tagging is
+  // the mechanism because events are project-scoped, never zone-scoped.
+  zoneId: string | null;
 };
 
 export type ProjectState = {
@@ -170,6 +189,8 @@ export type ProjectState = {
   docs: DocMeta[];
   nodes: MapNode[];
   edges: MapEdge[];
+  // Round 3 (Claim Z1): the store's zones, in creation order.
+  zones: Zone[];
   proposals: Proposal[];
   conversation: WireMessage[];
   // null until a lens has ever been set for this project (no row yet) —
@@ -182,6 +203,20 @@ export type ProjectState = {
   presence: { agents: number };
 };
 
+// GET /search wire hit (search.ts; prospero's one-endpoint ruling, vine msg
+// 36). Round 3 (Claim S1): kind:"proposal" = a PENDING proposal matched over
+// its parsed draft; those hits carry zoneId (null = main queue) so the
+// palette can switch to the zone view before focusing. `kind:"vector"` is
+// reserved for V2 — treat unknown kinds as off-board, never a crash.
+export type SearchHit = {
+  kind: "node" | "doc" | "message" | "proposal";
+  id: string;
+  title: string;
+  snippet?: string;
+  score: number;
+  zoneId?: string | null;
+};
+
 export type ServerEventKind =
   | "doc.added"
   | "doc.deleted"
@@ -192,6 +227,13 @@ export type ServerEventKind =
   | "message.posted"
   | "lens.set"
   | "presence.changed"
+  // Round 3 (Claims Z1/Z2) — zone.created {id, name}; zone.deleted {id}
+  // (THIN: consumers drop that zone's proposals locally — a scoped drop,
+  // never a wholesale replace); proposal.promoted {id} (THIN: the inclusive
+  // store clears zoneId on the row).
+  | "zone.created"
+  | "zone.deleted"
+  | "proposal.promoted"
   // Ephemeral kinds (Contract 9 amendment): fire-once signals, no state
   // row — but every emit consumed a seq, so they still route THROUGH
   // applyEvent (default case advances the cursor) and useProjectState

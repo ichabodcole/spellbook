@@ -1,9 +1,12 @@
 #!/usr/bin/env bun
 
-// mind-mapper — P1+P2+P3 cli, the full V1 verb set:
+// mind-mapper — the full verb set (V1 + V1.x + Round 3):
 //   open          spawn (or find) the daemon, print its url, open the browser
+//                 --project <id> scopes the url (?project=); open never mints —
+//                 an unknown id errors (use projects --create first)
 //   state         GET /state → the real project snapshot on stdout
 //                 --skeleton returns ids/titles/degree only (context budgeting)
+//                 fresh store with no project → the needs-project 409, exit 2
 //   tail          Monitor-shaped: GET /events?since=<cursor> SSE → one JSON
 //                 line per event on stdout
 //   projects      list saved projects; --create <title> makes a new one
@@ -11,6 +14,12 @@
 //   propose-node  --stdin JSON {draft, evidence, suggestedTier?} → POST /proposals
 //   propose-edge  same shape, kind: "edge" (source/target may be a real node
 //                 id OR a pending proposal's id — ratify resolves the latter)
+//                 --zone <id> stages the proposal in a zone
+//   zone          create <name> (slug id derived) | list | delete <id> [--yes]
+//                 (delete cascades the zone's proposals; populated zones 409
+//                 without --yes)
+//   promote <id>  move a zoned pending proposal to the main review queue
+//                 (edge endpoints must promote first — error names them)
 //   doc <id>      GET /doc/:id → the doc envelope on stdout
 //   doc delete <id> [--force]  DELETE /doc/:id → 409 {error:"cited", citedBy}
 //                 when cited and unforced; --force cascades
@@ -25,9 +34,13 @@
 //                 for an EVIDENCE-LESS node proposal only, --doc names the doc
 //                 home (must exist; requires --doc-edit) and mints the node's
 //                 sources row with the optional --span excerpt
-//   lens set --node <id> [--depth n] | lens clear
+//   lens set (--node <id> [--depth n] | --doc <docId>) | lens clear
 //   look-here <nodeId>  fire-once attention nudge, not persisted
-//   send          <text...> [--role user|agent] [--kind] [--ground a,b] → POST /send
+//   send          body chain: --body-file <path> > --stdin > inline <text...> >
+//                 piped stdin; [--role user|agent] [--kind] [--ground a,b]
+//                 [--force] → POST /send. Empty resolved body = exit 2. The
+//                 piped default HANGS with no pipe under agent shells — always
+//                 pass a body (--body-file preferred for prose).
 //
 // --project <id> is accepted by every verb above except open (scopes to a
 // non-default project; omit for the default project).
@@ -159,12 +172,26 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "open") {
     const parsed = parseArgs({
       args: rest,
-      options: { "no-open": { type: "boolean", default: false } },
+      options: { "no-open": { type: "boolean", default: false }, project: { type: "string" } },
       strict: true,
       allowPositionals: false,
     });
     const port = await ensureDaemon();
-    const url = `http://127.0.0.1:${port}`;
+    // --project scopes the printed URL + spawned browser (?project= rides
+    // along). Open never mints: an unknown id is a usage error pointing at
+    // `projects --create`, not a silent new store.
+    const project = parsed.values.project;
+    if (project !== undefined) {
+      const res = await fetch(`http://127.0.0.1:${port}/projects`);
+      const body = (await res.json()) as { projects: Array<{ id: string }> };
+      if (!body.projects.some((p) => p.id === project)) {
+        process.stderr.write(
+          `mind-mapper: unknown project: ${project} (open never creates one — use \`projects --create <title>\` first)\n`,
+        );
+        return 2;
+      }
+    }
+    const url = `http://127.0.0.1:${port}${project ? `/?project=${encodeURIComponent(project)}` : ""}`;
     if (!parsed.values["no-open"]) openBrowser(url);
     process.stdout.write(`${JSON.stringify({ ok: true, url })}\n`);
     return 0;
@@ -180,13 +207,16 @@ async function dispatch(argv: string[]): Promise<number> {
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/state${qs}`);
-    if (parsed.values.skeleton) {
+    // A non-ok /state (409 needs-project on a fresh store, 404 unknown
+    // project) passes its JSON body through and exits 2 — the skeleton
+    // transform only runs on a real snapshot.
+    if (parsed.values.skeleton && res.ok) {
       const state = (await res.json()) as Parameters<typeof toSkeleton>[0];
       process.stdout.write(`${JSON.stringify(toSkeleton(state))}\n`);
     } else {
       process.stdout.write(`${await res.text()}\n`);
     }
-    return 0;
+    return res.ok ? 0 : 2;
   }
 
   if (verb === "tail") {
@@ -232,6 +262,14 @@ async function dispatch(argv: string[]): Promise<number> {
         const res = await fetch(`http://127.0.0.1:${port}/events?${params}`, {
           signal: controller.signal,
         });
+        // A refused connection (409 needs-project on a projectless store,
+        // 404 unknown project) is a usage error, not a transport blip —
+        // retrying it forever would just spin silently.
+        if (res.status === 409 || res.status === 404) {
+          process.stderr.write(`mind-mapper: tail refused: ${await res.text()}\n`);
+          if (watchdog !== null) clearTimeout(watchdog);
+          return 2;
+        }
         if (!res.body) throw new Error("no body");
         resetWatchdog();
         const reader = res.body.getReader();
@@ -339,7 +377,11 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "propose-node" || verb === "propose-edge") {
     const parsed = parseArgs({
       args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
+      options: {
+        stdin: { type: "boolean", default: false },
+        project: { type: "string" },
+        zone: { type: "string" },
+      },
       strict: true,
       allowPositionals: false,
     });
@@ -363,7 +405,88 @@ async function dispatch(argv: string[]): Promise<number> {
         evidence: input.evidence ?? {},
         suggestedTier: input.suggestedTier,
         author: input.author,
+        // --zone stages the proposal in a zone (flag wins; the stdin JSON
+        // stays the draft/evidence shape — zone is routing, not content).
+        zone: parsed.values.zone,
       }),
+    });
+    const responseText = await res.text();
+    process.stdout.write(`${responseText}\n`);
+    // Mirror the daemon's additive edge-draft warning to stderr — a cold
+    // agent scanning for problems sees it even if it doesn't parse stdout.
+    if (res.ok && verb === "propose-edge") {
+      try {
+        const { warning } = JSON.parse(responseText) as { warning?: string };
+        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+      } catch {
+        /* body is what it is */
+      }
+    }
+    return res.ok ? 0 : 2;
+  }
+
+  if (verb === "zone") {
+    const sub = rest[0];
+    const parsed = parseArgs({
+      args: rest.slice(1),
+      options: { yes: { type: "boolean", default: false }, project: { type: "string" } },
+      strict: true,
+      allowPositionals: true,
+    });
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    if (sub === "create") {
+      const name = parsed.positionals.join(" ");
+      if (!name) {
+        process.stderr.write("usage: cli.ts zone create <name>\n");
+        return 2;
+      }
+      const res = await fetch(`http://127.0.0.1:${port}/zones${qs}`, {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "list") {
+      const res = await fetch(`http://127.0.0.1:${port}/zones${qs}`);
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "delete") {
+      const id = parsed.positionals[0];
+      if (!id) {
+        process.stderr.write("usage: cli.ts zone delete <id> [--yes]\n");
+        return 2;
+      }
+      const params = new URLSearchParams();
+      if (parsed.values.project) params.set("project", parsed.values.project);
+      if (parsed.values.yes) params.set("yes", "1");
+      const dqs = params.size > 0 ? `?${params}` : "";
+      const res = await fetch(`http://127.0.0.1:${port}/zones/${id}${dqs}`, { method: "DELETE" });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    process.stderr.write("usage: cli.ts zone <create <name> | list | delete <id> [--yes]>\n");
+    return 2;
+  }
+
+  if (verb === "promote") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { project: { type: "string" } },
+      strict: true,
+      allowPositionals: true,
+    });
+    const id = parsed.positionals[0];
+    if (!id) {
+      process.stderr.write("usage: cli.ts promote <proposalId>\n");
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/proposals/${id}/promote${qs}`, {
+      method: "POST",
     });
     process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
@@ -517,6 +640,7 @@ async function dispatch(argv: string[]): Promise<number> {
       args: rest.slice(1),
       options: {
         node: { type: "string" },
+        doc: { type: "string" },
         depth: { type: "string" },
         owner: { type: "string", default: "agent" },
         project: { type: "string" },
@@ -524,6 +648,17 @@ async function dispatch(argv: string[]): Promise<number> {
       strict: true,
       allowPositionals: false,
     });
+    // Round 3 (Claim V2): one lens, two modes — --node and --doc are
+    // exclusive at parse time (the daemon enforces the XOR too, but the
+    // common slip should fail before a round-trip).
+    if (parsed.values.node !== undefined && parsed.values.doc !== undefined) {
+      process.stderr.write("mind-mapper: lens set takes --node OR --doc, not both\n");
+      return 2;
+    }
+    if (parsed.values.doc !== undefined && parsed.values.depth !== undefined) {
+      process.stderr.write("mind-mapper: --depth applies to a node lens only\n");
+      return 2;
+    }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     if (sub === "set") {
@@ -532,6 +667,7 @@ async function dispatch(argv: string[]): Promise<number> {
         body: JSON.stringify({
           owner: parsed.values.owner,
           nodeId: parsed.values.node,
+          docId: parsed.values.doc,
           depth: parsed.values.depth ? Number.parseInt(parsed.values.depth, 10) : undefined,
         }),
       });
@@ -543,7 +679,9 @@ async function dispatch(argv: string[]): Promise<number> {
       process.stdout.write(`${await res.text()}\n`);
       return res.ok ? 0 : 2;
     }
-    process.stderr.write("usage: cli.ts lens <set --node <id> [--depth n] | clear>\n");
+    process.stderr.write(
+      "usage: cli.ts lens <set (--node <id> [--depth n] | --doc <docId>) | clear>\n",
+    );
     return 2;
   }
 
@@ -596,14 +734,64 @@ async function dispatch(argv: string[]): Promise<number> {
         kind: { type: "string", default: "turn" },
         ground: { type: "string" },
         project: { type: "string" },
+        "body-file": { type: "string" },
+        stdin: { type: "boolean", default: false },
+        force: { type: "boolean", default: false },
       },
       strict: true,
       allowPositionals: true,
     });
-    const text = parsed.positionals.join(" ");
-    if (!text) {
-      process.stderr.write("usage: cli.ts send <text...>\n");
+    // Round 3 (Claim C1): grapevine's body-resolution chain, precedence
+    // --body-file > --stdin > inline positional > piped-stdin default.
+    // Sharp edge (measured, house-wide): the piped-stdin default HANGS
+    // FOREVER under agent shells (isTTY null, no EOF) — no read timeout on
+    // purpose (it would break slow pipes); always pass a body.
+    const hasInline = parsed.positionals.length > 0;
+    let text: string;
+    let fromInline = false;
+    if (parsed.values["body-file"] !== undefined) {
+      const path = parsed.values["body-file"];
+      if (!existsSync(path)) {
+        process.stderr.write(`mind-mapper: send: --body-file not found: ${path}\n`);
+        return 2;
+      }
+      // Trailing newline stripped (files and heredocs end with one; the
+      // message shouldn't) — matching --stdin, and grapevine.
+      text = readFileSync(path, "utf8").replace(/\n$/, "");
+    } else if (parsed.values.stdin || (!hasInline && !process.stdin.isTTY)) {
+      text = (await Bun.stdin.text()).replace(/\n$/, "");
+    } else {
+      text = parsed.positionals.join(" ");
+      fromInline = true;
+    }
+    // An EMPTY resolved body is a usage error (exit 2), whatever path
+    // produced it — a blank message helps nobody and usually means a fumble.
+    if (text === "") {
+      process.stderr.write(
+        "usage: cli.ts send <text...> | --body-file <path> | --stdin\n" +
+          "mind-mapper: send resolved an empty body — nothing sent\n",
+      );
       return 2;
+    }
+    // A fumbled heredoc pipes the literal send invocation in as the body —
+    // refuse to post that (narrowed to the send verb; --force overrides for
+    // a body that genuinely quotes the command).
+    if (!parsed.values.force && /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\bsend\b/.test(text)) {
+      process.stderr.write(
+        "mind-mapper: that body looks like a leaked cli invocation (a fumbled heredoc?). " +
+          "Nothing was sent. Pipe the real body via --stdin or --body-file <path>, " +
+          "or pass --force to send it anyway.\n",
+      );
+      return 2;
+    }
+    // Inline bodies with surviving shell metacharacters made it through THIS
+    // time — warn (stderr, never blocks) and steer to the shell-free paths.
+    if (fromInline && /`|\$\(|\$\{/.test(text)) {
+      process.stderr.write(
+        "# warning: inline body contains shell metacharacters (backtick, $(), curly-brace vars). " +
+          "It was sent as-is, but the shell can command-substitute these first — " +
+          "use --body-file or --stdin for code-bearing messages.\n",
+      );
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -621,7 +809,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|doc|mark|search|neighbors|ratify|lens|look-here|send|activity>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|zone|promote|doc|mark|search|neighbors|ratify|lens|look-here|send|activity>\n",
   );
   return 2;
 }

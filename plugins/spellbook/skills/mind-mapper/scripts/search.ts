@@ -10,11 +10,14 @@
 import type { Database } from "bun:sqlite";
 
 interface SearchHit {
-  kind: "node" | "doc" | "message";
+  kind: "node" | "doc" | "message" | "proposal";
   id: string;
   title: string;
   snippet?: string;
   score: number;
+  // Round 3 (Claim S1): proposal hits carry their zone tag (null = main
+  // queue) so the palette can switch to the zone view before focusing.
+  zoneId?: string | null;
 }
 
 // FTS5's bareword query syntax treats hyphens/colons as operators — quoting
@@ -45,6 +48,40 @@ function search(db: Database, query: string): SearchHit[] {
     snippet: row.synopsis || undefined,
     score: row.score * 10, // node hits outrank lexical FTS scores at any tie
   }));
+
+  // Round 3 (Claim S1): pending proposals, matched in JS over the PARSED
+  // draft (SQL LIKE over raw draft_json matches key names and escape
+  // sequences — ruled out at ratify). Score = the node formula ×9 (title 18 /
+  // synopsis 9): match quality dominates tier, and an equal-quality match
+  // ranks the ratified node first (20/10 vs 18/9).
+  const lowerQuery = query.toLowerCase();
+  const proposalRows = db
+    .query("SELECT id, draft_json, zone_id FROM proposals WHERE status = 'pending'")
+    .all() as Array<{ id: string; draft_json: string; zone_id: string | null }>;
+  const proposalHits: SearchHit[] = [];
+  if (lowerQuery !== "") {
+    for (const row of proposalRows) {
+      let draft: Record<string, unknown>;
+      try {
+        draft = JSON.parse(row.draft_json) as Record<string, unknown>;
+      } catch {
+        continue; // an unparsable draft simply can't match
+      }
+      const title = typeof draft.title === "string" ? draft.title : "";
+      const synopsis = typeof draft.synopsis === "string" ? draft.synopsis : "";
+      const titleMatch = title.toLowerCase().includes(lowerQuery);
+      const synopsisMatch = synopsis.toLowerCase().includes(lowerQuery);
+      if (!titleMatch && !synopsisMatch) continue;
+      proposalHits.push({
+        kind: "proposal",
+        id: row.id,
+        title: title || "Untitled",
+        snippet: synopsis || undefined,
+        score: (titleMatch ? 2 : 1) * 9,
+        zoneId: row.zone_id,
+      });
+    }
+  }
 
   const phrase = ftsPhrase(query);
   const docRows = db
@@ -79,7 +116,7 @@ function search(db: Database, query: string): SearchHit[] {
     score: -row.rank,
   }));
 
-  return [...nodeHits, ...docHits, ...messageHits].sort((a, b) => {
+  return [...nodeHits, ...proposalHits, ...docHits, ...messageHits].sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     if (a.kind === "node" && b.kind !== "node") return -1;
     if (b.kind === "node" && a.kind !== "node") return 1;

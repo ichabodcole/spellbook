@@ -28,19 +28,46 @@
   /* shadcn variable names, mapped onto the house token layer (adoption card
      t-609741be): vendored ui/ components keep their stock shadcn class
      vocabulary (bg-popover, focus:bg-accent, …) while resolving to spell
-     tokens. Only the names the vendored set consumes — grow with use. */
-  --color-popover: #16213b;
-  --color-popover-foreground: #e2e8f0;
-  --color-accent: #1e293b;
-  --color-accent-foreground: #e2e8f0;
-  --color-border: #1e293b;
-  --color-muted-foreground: #94a3b8;
-  --color-background: #020617;
-  --color-foreground: #e2e8f0;
-  --color-secondary: #16213b;
-  --color-ring: #64748b;
+     tokens. Only the names the vendored set consumes — grow with use.
+     var() references, not copied values (T1): the light palette below
+     overrides only the house tokens and the aliases follow for free. */
+  --color-popover: var(--color-surface-raised);
+  --color-popover-foreground: var(--color-ink);
+  --color-accent: var(--color-edge);
+  --color-accent-foreground: var(--color-ink);
+  --color-border: var(--color-edge);
+  --color-muted-foreground: var(--color-ink-dim);
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-secondary: var(--color-surface-raised);
+  --color-ring: var(--color-ink-faint);
 
   --font-story: "Iowan Old Style", Palatino, Georgia, "Times New Roman", serif;
+}
+
+/* T1 — the light palette, written ONCE as house-token overrides (the shadcn
+   aliases above are var() refs, so they follow). Unlayered on purpose:
+   @theme lands in @layer theme, and unlayered declarations beat layered ones
+   regardless of order — this block wins without a specificity fight. The
+   attribute lives on <html> (pre-paint script in index.html); <body>'s own
+   data-theme carries the spell name, untouched. */
+[data-theme="light"] {
+  color-scheme: light;
+  --color-bg: #f7f6f3;
+  --color-surface: #fdfcfa;
+  --color-surface-raised: #efece6;
+  --color-ink: #1e293b;
+  --color-ink-dim: #475569;
+  --color-ink-faint: #8b93a1;
+  --color-edge: #ddd8cf;
+  --color-attention: #b45309;
+
+  --color-canon: #a16207;
+  --color-thread-tier: #7c3aed;
+  --color-story-local: #0f766e;
+  --color-background-tier: #64748b;
+
+  --color-pending: #b45309;
 }
 
 /* ActivityIndicator's pulse (ported from glamour; the component is adapted
@@ -71,12 +98,97 @@
   border-radius: 8px;
 }
 
+/* C2 — the span-level evidence mark (both bubble kinds; the markdown flash
+   mints these via DOM, so the styling lives here, not in a Tailwind class
+   the @source scan would have to see). */
+.mm-span-mark {
+  background-color: color-mix(in srgb, var(--color-canon) 25%, transparent);
+  color: var(--color-ink);
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* C2 — agent-bubble markdown, scaled to the bubble's text-xs register.
+   Tokens only; margins collapse at the bubble edges so a single-paragraph
+   reply renders exactly like the old plain-text bubble did. */
+.mm-markdown :is(p, ul, ol, pre, blockquote, h1, h2, h3, h4, h5, h6) {
+  margin: 0 0 0.55em;
+}
+.mm-markdown > :last-child {
+  margin-bottom: 0;
+}
+.mm-markdown :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-story);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-ink);
+}
+.mm-markdown h1 {
+  font-size: 1.25em;
+}
+.mm-markdown h2 {
+  font-size: 1.15em;
+}
+.mm-markdown :is(h3, h4, h5, h6) {
+  font-size: 1.05em;
+}
+.mm-markdown :is(ul, ol) {
+  padding-left: 1.25em;
+}
+.mm-markdown ul {
+  list-style: disc;
+}
+.mm-markdown ol {
+  list-style: decimal;
+}
+.mm-markdown li {
+  margin: 0.15em 0;
+}
+.mm-markdown code {
+  font-size: 0.95em;
+  background-color: color-mix(in srgb, var(--color-bg) 65%, transparent);
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+}
+.mm-markdown pre {
+  background-color: color-mix(in srgb, var(--color-bg) 65%, transparent);
+  border: 1px solid var(--color-edge);
+  border-radius: 6px;
+  padding: 0.5em 0.65em;
+  overflow-x: auto;
+}
+.mm-markdown pre code {
+  background: none;
+  padding: 0;
+}
+.mm-markdown blockquote {
+  border-left: 2px solid var(--color-edge);
+  padding-left: 0.65em;
+  color: var(--color-ink-dim);
+}
+.mm-markdown a {
+  color: var(--color-canon);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.mm-markdown hr {
+  border: 0;
+  border-top: 1px solid var(--color-edge);
+  margin: 0.6em 0;
+}
+
 /* React Flow chrome, retuned to the night-table palette. */
 .react-flow {
   background: var(--color-bg);
 }
-.react-flow__attribution {
+/* Doubled class beats the library's .react-flow__panel.react-flow__attribution
+   compound (found verifying T1 in dark: the default half-white plate
+   resurfaced against the night palette). */
+.react-flow__attribution.react-flow__attribution {
   background: transparent;
+  color: var(--color-ink-faint);
+}
+.react-flow__attribution a {
   color: var(--color-ink-faint);
 }
 .react-flow__edge-text {

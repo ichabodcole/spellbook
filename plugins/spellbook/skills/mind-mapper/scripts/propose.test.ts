@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStore } from "./db.ts";
 import { createEventBus } from "./events.ts";
-import { proposeEdge, proposeNode } from "./propose.ts";
+import { edgeDraftWarning, proposeEdge, proposeNode } from "./propose.ts";
 import { readState } from "./state.ts";
 
 function tempDb() {
@@ -175,6 +175,40 @@ test("proposeNode emits a proposal.added patch, not the whole proposals array", 
     expect(received).toEqual([
       { seq: 1, epoch: bus.epoch, kind: "proposal.added", payload: proposal },
     ]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// R3 gate rework: edgeDraftWarning is advisory shape-checking that never
+// blocks intake — draft opacity (Contract 8) means wrong keys are STORED,
+// but the caller gets told which keys the ratify path will actually read.
+test("edgeDraftWarning: null for a well-keyed draft, names the missing endpoint key(s), tolerates junk", () => {
+  expect(edgeDraftWarning({ source: "a", target: "b", label: "links" })).toBeNull();
+  // Extra keys are fine — only the endpoint keys are load-bearing.
+  expect(edgeDraftWarning({ source: "a", target: "b", note: "extra" })).toBeNull();
+
+  expect(edgeDraftWarning({ from: "a", to: "b", label: "links" })).toContain("source/target");
+  expect(edgeDraftWarning({ source: "a", label: "half" })).toContain("target");
+  expect(edgeDraftWarning({ source: "a", label: "half" })).not.toContain("source/");
+  // Non-string endpoint values warn too — ratify stringifies, but the intent
+  // was almost certainly wrong.
+  expect(edgeDraftWarning({ source: 1, target: "b" })).toContain("source");
+  expect(edgeDraftWarning(null)).toContain("not an object");
+  expect(edgeDraftWarning("just a string")).toContain("not an object");
+});
+
+test("a wrong-keyed edge draft still inserts (opacity holds) — the warning is advice, not a gate", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const proposal = proposeEdge(db, bus, {
+      draft: { from: "a", to: "b", label: "links" },
+      evidence: {},
+    });
+    expect(proposal.status).toBe("pending");
+    expect(proposal.draft).toEqual({ from: "a", to: "b", label: "links" });
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

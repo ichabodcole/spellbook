@@ -6,10 +6,11 @@
 // Conversation stays local-only until P2 wires it to the real bus
 // (plan/circe.md P2.3) — there's no agent behind it yet either way.
 
-import { Search } from "lucide-react";
+import { Moon, Search, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
-import { ConversationPanel, type ScrollRequest } from "./ConversationPanel";
+import { type ComposerSeed, ConversationPanel, type ScrollRequest } from "./ConversationPanel";
 import { DocViewer } from "./DocViewer";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
@@ -19,22 +20,34 @@ import { ProjectPicker } from "./ProjectPicker";
 import { ReviewQueue } from "./ReviewQueue";
 import { SearchPalette } from "./SearchPalette";
 import { type CitedBy, parseCitedBody } from "./state/deleteFlow";
+import { docLensNodeIds } from "./state/docLens";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
 import { pendingEdgesFrom, pendingNodesFrom } from "./state/pendingOverlay";
 import { dotState, type PresenceDot } from "./state/presence";
-import { PROJECT_STORAGE_KEY, rememberProject, resolveInitialProject } from "./state/urlProject";
+import { type PaletteRow, paletteRows } from "./state/searchRows";
+import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
+import {
+  forgetStoredProject,
+  PROJECT_STORAGE_KEY,
+  type ProjectSource,
+  rememberProject,
+  resolveInitialProjectWithSource,
+} from "./state/urlProject";
 import { useProjectState } from "./state/useProjectState";
+import { parseZoneNotEmptyBody, type ZoneNotEmpty } from "./state/zoneFlow";
+import { mainProposals, zoneMapFrom, zoneOf } from "./state/zoneView";
 import type {
   Doc,
   DocMeta,
   Lens,
-  MapNode,
   Message,
   MessageSourceRef,
   ProjectState,
   Ruling,
+  SearchHit,
   WireMessage,
+  Zone,
 } from "./types";
 import {
   AlertDialog,
@@ -46,6 +59,8 @@ import {
 } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import { type BoardView, ViewToggle } from "./ViewToggle";
+import { ZoneTabs } from "./ZoneTabs";
 
 // Wire → display adapter (types.ts note): the wire's `kind` is a free-form
 // string (server default "turn"); the display Message narrows it to the two
@@ -89,7 +104,7 @@ function lensSet(map: ProjectState, nodeId: string, depth: number): Set<string> 
 // sent us here (from a node's source link; rail opens carry none).
 type OpenDoc = { doc: Doc; highlight?: string };
 
-const DEFAULT_LENS: Lens = { owner: null, nodeId: null, depth: 1 };
+const DEFAULT_LENS: Lens = { owner: null, nodeId: null, depth: 1, docId: null };
 
 // T8 — presence dot rendering (tokens only; the vocabulary reuses existing
 // axes: attention = broken, faint = quiet, story-local = alive).
@@ -112,10 +127,16 @@ const THINKING_TTL_MS = 60_000;
 export function App() {
   // T2 project-in-URL: an explicit ?project= (a shared link) beats the
   // remembered last board beats undefined (daemon default resolves it).
-  const [projectId, setProjectId] = useState<string | undefined>(() =>
-    resolveInitialProject(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)),
+  // Round 3 (Claim P1): the SOURCE rides along — a 404 on a stale STORED id
+  // degrades quietly to the landing, a 404 on an explicit URL id is said
+  // honestly (it was the user's own assertion, not our memory).
+  const [initialProject] = useState(() =>
+    resolveInitialProjectWithSource(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)),
   );
-  const { state, error, status, lookHere, agentActivity } = useProjectState(projectId);
+  const [projectId, setProjectId] = useState<string | undefined>(initialProject.id);
+  const [projectSource, setProjectSource] = useState<ProjectSource>(initialProject.source);
+  const { state, error, status, needsProject, notFound, lookHere, agentActivity } =
+    useProjectState(projectId);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // A peripheral write (send/ingest) failing degrades into this dismissible
   // notice, never into the conversation — the browser has no business
@@ -147,6 +168,45 @@ export function App() {
   const [thinking, setThinking] = useState(false);
   // T11 — imperative scroll-to-message request for the conversation panel.
   const [scrollRequest, setScrollRequest] = useState<ScrollRequest | null>(null);
+  // V1 — map|grid view. App-local render state (finding 6: the grid is a
+  // rendering, not board state — not stored, not synced).
+  const [view, setView] = useState<BoardView>("map");
+  // Z3 — which board is showing: null = main, else a zone id. View-local
+  // like `view` (the store is inclusive; a tab switch is free — no refetch).
+  const [activeZone, setActiveZone] = useState<string | null>(null);
+  // Z1 — the two-stage zone-delete flow, deleteFlow's idiom: stage 1
+  // confirms intent, stage 2 (notEmpty set, populated from the 409) states
+  // the proposal count being discarded before ?yes=1. SAME dialog escalates.
+  const [zoneDelete, setZoneDelete] = useState<{
+    zone: Zone;
+    notEmpty: ZoneNotEmpty | null;
+  } | null>(null);
+  // Agent-follow across a zone switch: the focus target parks here (with the
+  // board it's waiting for) while setActiveZone re-renders the canvas, then
+  // flushes as a focusRequest one frame later — the fresh zone map must
+  // exist before fitView can find the node.
+  const [pendingFocus, setPendingFocus] = useState<{
+    nodeId: string;
+    zone: string | null;
+  } | null>(null);
+  // C3 — structured verbs seed the composer, they don't send (the house
+  // rule, Claim C3): the verb text lands as the draft, selection narrows to
+  // the node so the ground chip previews what will ride onSend. Analyze
+  // (doc menu) keeps direct-send — it IS the intent. Focus stays a command.
+  const [composerSeed, setComposerSeed] = useState<ComposerSeed | null>(null);
+  const seedComposer = (text: string, nodeId: string) => {
+    setSelectedIds([nodeId]);
+    setComposerSeed((s) => ({ text, seq: (s?.seq ?? 0) + 1 }));
+  };
+  // T1 — theme. The pre-paint script (index.html) already resolved and
+  // stamped the attribute before React booted; state seeds from the DOM so
+  // the two never disagree at mount. applyTheme writes attribute + storage.
+  const [theme, setTheme] = useState<Theme>(() => readAppliedTheme());
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    applyTheme(next);
+    setTheme(next);
+  };
 
   // Thinking pulse lifecycle: non-idle activity lights it (and arms the
   // client TTL backstop), idle clears it. The third clear — any agent
@@ -167,6 +227,48 @@ export function App() {
   useEffect(() => {
     if (lastMessage?.role === "agent") setThinking(false);
   }, [lastMessage]);
+
+  // Z3 agent-follow (ratified): a focus target that lives in a zone switches
+  // the board to that zone FIRST, then focuses — co-presence over
+  // view-stickiness (and symmetrically, a main-graph target switches back to
+  // main). Dispatched through a ref so the effects below don't re-run on
+  // every state/zone change (the established ref-dispatcher idiom).
+  const followFocus = (nodeId: string) => {
+    // undefined = a real node (main graph); null = main-queue proposal;
+    // string = its zone.
+    const zone = state ? (zoneOf(state.proposals, nodeId) ?? null) : null;
+    if (zone !== activeZone) {
+      setPendingFocus({ nodeId, zone });
+      setActiveZone(zone);
+    } else {
+      setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
+    }
+  };
+  const followRef = useRef(followFocus);
+  followRef.current = followFocus;
+
+  // The flush half of the zone-switch focus: fires once the board showing is
+  // the one the target waits for. The rAF hop lets the canvas commit the
+  // fresh map before fitView goes looking for the node (same timing class as
+  // the composer-seed caret, R3 C3).
+  useEffect(() => {
+    if (!pendingFocus || pendingFocus.zone !== activeZone) return;
+    const { nodeId } = pendingFocus;
+    setPendingFocus(null);
+    const raf = requestAnimationFrame(() =>
+      setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 })),
+    );
+    return () => cancelAnimationFrame(raf);
+  }, [pendingFocus, activeZone]);
+
+  // A zone deleted under us (this surface's flow or an agent's cli zone
+  // delete — the reducer's zone.deleted drop is the one truth) re-homes the
+  // view to main rather than stranding it on a board that no longer exists.
+  useEffect(() => {
+    if (activeZone && state && !state.zones.some((z) => z.id === activeZone)) {
+      setActiveZone(null);
+    }
+  }, [state, activeZone]);
 
   // Once the daemon resolves the default project, mirror its id into the
   // picker so switching projects re-mounts useProjectState explicitly rather
@@ -197,8 +299,7 @@ export function App() {
     lastServerLensRef.current = incoming;
     setLens(incoming);
     if (incoming.owner === "agent" && incoming.nodeId) {
-      const nodeId = incoming.nodeId;
-      setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
+      followRef.current(incoming.nodeId);
     }
   }, [state?.lens]);
 
@@ -208,7 +309,7 @@ export function App() {
   // viewport and clobbered lens state).
   useEffect(() => {
     if (!lookHere) return;
-    setFocusRequest((r) => ({ nodeId: lookHere.nodeId, seq: (r?.seq ?? 0) + 1 }));
+    followRef.current(lookHere.nodeId);
   }, [lookHere]);
 
   // Summon the palette with cmd/ctrl-K or "/" (when not already typing).
@@ -228,18 +329,36 @@ export function App() {
   // Ratified nodes/edges never carry `pending` themselves (only the
   // proposals table is staging-tier) — the board's pending overlay is
   // derived per proposal and merged in, not read off the entities directly.
+  // Z1 (the ratified one-rule): the store is INCLUSIVE, so the MAIN board
+  // derives from mainProposals (zoneId == null) — and because snapshot merge
+  // and event upsert both feed state.proposals, this single filter is the
+  // segregation at both ingestion points.
   const mapWithPending = useMemo(() => {
     if (!state) return state;
+    const main = mainProposals(state.proposals);
     return {
       ...state,
-      nodes: [...state.nodes, ...pendingNodesFrom(state.proposals)],
-      edges: [...state.edges, ...pendingEdgesFrom(state.proposals)],
+      nodes: [...state.nodes, ...pendingNodesFrom(main)],
+      edges: [...state.edges, ...pendingEdgesFrom(main)],
     };
   }, [state]);
 
+  // Z3 — the zone board: the SAME canvas fed that zone's proposals,
+  // un-dashed by derivation (zoneView.ts owns the rule + its tests).
+  const boardMap = useMemo(() => {
+    if (!state || !mapWithPending) return mapWithPending;
+    if (!activeZone) return mapWithPending;
+    // Context endpoints resolve against the MAIN board's nodes INCLUDING its
+    // pending synthetics — so a zoned edge whose endpoint was just promoted
+    // keeps rendering, with the promoted endpoint wearing its main-queue
+    // dashed styling inside the zone (an honest "this one left") — found in
+    // the promote drive, where the edge silently vanished instead.
+    return { ...state, ...zoneMapFrom(state.proposals, activeZone, mapWithPending.nodes) };
+  }, [state, mapWithPending, activeZone]);
+
   const selection = useMemo(
-    () => (mapWithPending ? mapWithPending.nodes.filter((n) => selectedIds.includes(n.id)) : []),
-    [mapWithPending, selectedIds],
+    () => (boardMap ? boardMap.nodes.filter((n) => selectedIds.includes(n.id)) : []),
+    [boardMap, selectedIds],
   );
 
   const projectQs = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
@@ -254,11 +373,11 @@ export function App() {
   // carry those. A failed/not-yet-landed /search degrades to the spike's
   // client-side substring filter rather than breaking the palette — a
   // peripheral fetch failure never takes the board down (the P1/P2 reflex).
-  const [remoteNodeIds, setRemoteNodeIds] = useState<string[] | null>(null);
+  const [remoteHits, setRemoteHits] = useState<SearchHit[] | null>(null);
   useEffect(() => {
     const q = search.query.trim();
     if (!search.open || !q) {
-      setRemoteNodeIds(null);
+      setRemoteHits(null);
       return;
     }
     let cancelled = false;
@@ -268,15 +387,12 @@ export function App() {
           if (!r.ok) throw new Error(`search ${r.status}`);
           return r.json();
         })
-        .then((body: { hits?: Array<{ kind: string; id: string }> }) => {
+        .then((body: { hits?: SearchHit[] }) => {
           if (cancelled) return;
-          const ids = Array.isArray(body.hits)
-            ? body.hits.filter((h) => h.kind === "node").map((h) => h.id)
-            : null;
-          setRemoteNodeIds(ids);
+          setRemoteHits(Array.isArray(body.hits) ? body.hits : null);
         })
         .catch(() => {
-          if (!cancelled) setRemoteNodeIds(null);
+          if (!cancelled) setRemoteHits(null);
         });
     }, 200);
     return () => {
@@ -285,39 +401,60 @@ export function App() {
     };
   }, [search, projectQs]);
 
-  // Scoped to ratified nodes only (pending drafts aren't yet real ideas to
-  // search for) — same scoping the client-side fallback always had.
-  const matches = useMemo(() => {
+  // S1 — proposal hits resolve against the pending synthetic nodes across
+  // EVERY zone (the proposal id is the synthetic node id): a zoned hit must
+  // be resolvable before the pick switches the board over to it.
+  const pendingAll = useMemo(() => (state ? pendingNodesFrom(state.proposals) : []), [state]);
+
+  // S1 — hit kinds survive this memo (searchRows.ts, pure + tested): rows
+  // keep node|proposal apart and off-board doc/message matches keep their
+  // counts for the honest no-results state. The client-side substring
+  // fallback (a failed /search never takes the palette down) stays scoped to
+  // ratified nodes, as it always was.
+  const palette = useMemo(() => {
     if (!state || !search.open || !search.query.trim()) return null;
-    if (remoteNodeIds) {
-      const byId = new Map(state.nodes.map((n) => [n.id, n]));
-      return remoteNodeIds.map((id) => byId.get(id)).filter((n): n is MapNode => Boolean(n));
-    }
+    if (remoteHits) return paletteRows(remoteHits, state.nodes, pendingAll);
     const q = search.query.trim().toLowerCase();
     const inTitle = state.nodes.filter((n) => n.title.toLowerCase().includes(q));
     const inSynopsis = state.nodes.filter(
       (n) => !n.title.toLowerCase().includes(q) && n.synopsis.toLowerCase().includes(q),
     );
-    return [...inTitle, ...inSynopsis];
-  }, [state, search, remoteNodeIds]);
+    return {
+      rows: [...inTitle, ...inSynopsis].map(
+        (node): PaletteRow => ({ kind: "node", node, zoneId: null }),
+      ),
+      offBoard: { docs: 0, messages: 0 },
+    };
+  }, [state, search, remoteHits, pendingAll]);
 
-  const pickSearchResult = (node: MapNode) => {
+  const pickSearchResult = (row: PaletteRow) => {
     setSearch({ open: false, query: "" });
-    setSelectedIds([node.id]);
-    setFocusRequest((r) => ({ nodeId: node.id, seq: (r?.seq ?? 0) + 1 }));
+    setSelectedIds([row.node.id]);
+    // Zoned hits switch to their zone view first (followFocus's rule — the
+    // same one lens.set/look.here obey), then the existing focusRequest path
+    // lands on the element: proposal id IS the synthetic node id.
+    followFocus(row.node.id);
   };
 
-  // What the lens admits onto the canvas; the full (pending-merged) map when
-  // nothing is focused.
+  // What the lens admits onto the active board; the full board when nothing
+  // is focused. The lens has no zone dimension (ruled) — it narrows whatever
+  // board is showing. V2: the doc branch admits nodes with a source in that
+  // doc (+ edges among them, docLens.ts); marks-but-no-nodes renders
+  // honestly empty. Grid equality is free: BOTH views consume this memo.
   const visibleMap = useMemo(() => {
-    if (!mapWithPending || !lens.owner || !lens.nodeId) return mapWithPending;
-    const keep = lensSet(mapWithPending, lens.nodeId, lens.depth);
+    if (!boardMap || !lens.owner) return boardMap;
+    const keep = lens.docId
+      ? docLensNodeIds(boardMap.nodes, lens.docId)
+      : lens.nodeId
+        ? lensSet(boardMap, lens.nodeId, lens.depth ?? 1)
+        : null;
+    if (!keep) return boardMap;
     return {
-      ...mapWithPending,
-      nodes: mapWithPending.nodes.filter((n) => keep.has(n.id)),
-      edges: mapWithPending.edges.filter((e) => keep.has(e.source) && keep.has(e.target)),
+      ...boardMap,
+      nodes: boardMap.nodes.filter((n) => keep.has(n.id)),
+      edges: boardMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target)),
     };
-  }, [mapWithPending, lens]);
+  }, [boardMap, lens]);
   const detailNode = selection.length > 0 ? selection[selection.length - 1] : null;
 
   // A dismissed detail card comes back when attention moves to another node.
@@ -392,12 +529,21 @@ export function App() {
   // T9 — human authoring: both sketches POST to the same /proposals
   // endpoint the agent uses, author:"user" (Claim D). No optimistic
   // append — the pending overlay renders the sketch when proposal.added
-  // round-trips (one source of truth, same as messages).
+  // round-trips (one source of truth, same as messages). Z3: a sketch made
+  // while a zone board is showing lands IN that zone (mess is licensed
+  // there; a sketch silently escaping to the main queue would lie about
+  // where you drew it).
   const proposeAsUser = (kind: "node" | "edge", draft: Record<string, unknown>) =>
     fetch(`/proposals${projectQs}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind, draft, evidence: {}, author: "user" }),
+      body: JSON.stringify({
+        kind,
+        draft,
+        evidence: {},
+        author: "user",
+        ...(activeZone && { zone: activeZone }),
+      }),
     })
       .then((r) => {
         if (!r.ok) throw new Error(`propose ${r.status}`);
@@ -405,6 +551,81 @@ export function App() {
       .catch((e) =>
         setNotice(`couldn't sketch that (${e instanceof Error ? e.message : String(e)}).`),
       );
+
+  // Z2 — promote: a MOVE to the main review queue. The endpoint-order error
+  // (an edge whose endpoint proposal is still zoned) comes back as a plain
+  // 400 whose message names the endpoint to promote first — surfaced
+  // verbatim, never paraphrased into something vaguer.
+  const promoteProposal = (id: string) =>
+    fetch(`/proposals/${id}/promote${projectQs}`, { method: "POST" })
+      .then(async (r) => {
+        if (r.ok) return;
+        const body = (await r.json().catch(() => null)) as { error?: unknown } | null;
+        throw new Error(typeof body?.error === "string" ? body.error : `promote ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't promote that (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
+  // Z1 — zone create (the tab strip's + zone). The daemon derives the slug
+  // id from this name and answers zone.created on the bus — no optimistic
+  // tab, one source of truth, same as every other write here.
+  const createZone = (name: string) =>
+    fetch(`/zones${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    })
+      .then(async (r) => {
+        if (r.ok) {
+          const zone = (await r.json()) as Zone;
+          setActiveZone(zone.id);
+          return;
+        }
+        const body = (await r.json().catch(() => null)) as { error?: unknown } | null;
+        throw new Error(typeof body?.error === "string" ? body.error : `zone ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't create that zone (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
+  // Z1 — the zone-delete fetch half (the 409-body parse is pure,
+  // state/zoneFlow.ts). Unforced first, always; a recognizable
+  // zone-not-empty 409 escalates the SAME dialog to its count stage;
+  // anything else degrades to the notice bar.
+  const requestZoneDelete = (yes: boolean) => {
+    if (!zoneDelete) return;
+    const id = zoneDelete.zone.id;
+    const yesQs = projectQs ? `${projectQs}&yes=1` : "?yes=1";
+    fetch(`/zones/${id}${yes ? yesQs : projectQs}`, { method: "DELETE" })
+      .then(async (r) => {
+        if (r.ok) {
+          setZoneDelete(null);
+          return;
+        }
+        if (r.status === 409) {
+          const notEmpty = parseZoneNotEmptyBody(await r.json().catch(() => null));
+          if (notEmpty) {
+            setZoneDelete((t) => (t ? { ...t, notEmpty } : t));
+            return;
+          }
+        }
+        throw new Error(`zone delete ${r.status}`);
+      })
+      .catch((e) => {
+        setZoneDelete(null);
+        setNotice(`couldn't delete that zone (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
+  // A tab switch clears view-local attention — selection and the local lens
+  // both name elements of the board being left.
+  const switchZone = (zoneId: string | null) => {
+    if (zoneId === activeZone) return;
+    setActiveZone(zoneId);
+    setSelectedIds([]);
+    setLens(DEFAULT_LENS);
+  };
 
   const submitNodeForm = () => {
     if (!nodeForm) return;
@@ -469,6 +690,10 @@ export function App() {
 
   const switchProject = (id: string) => {
     setProjectId(id);
+    // An explicit pick supersedes whatever the initial id's origin was — a
+    // later 404 on THIS id (project deleted underneath us) reads as honest
+    // news, not a stale memory to silently clear.
+    setProjectSource("url");
     rememberProject(id);
     setSelectedIds([]);
     setOpenDoc(null);
@@ -476,6 +701,56 @@ export function App() {
     lastServerLensRef.current = null;
   };
 
+  // Claim P1 — stale STORED id: the project we remembered no longer exists.
+  // Forget it and fall back to unscoped resolution (a legacy store re-homes
+  // to its default; a projectless store answers needs-project → the landing).
+  // Never the error screen — nothing is broken, our memory was just old.
+  useEffect(() => {
+    if (notFound && projectSource === "stored") {
+      forgetStoredProject();
+      setProjectSource("none");
+      setProjectId(undefined);
+    }
+  }, [notFound, projectSource]);
+
+  // Claim P1 — pick-or-create landing: the store has no default project (and
+  // named none), so there is no board to render yet. Re-homes the same
+  // ProjectPicker the header carries; picking or creating re-scopes the hook
+  // and the WS opens scoped then (never unscoped on a projectless store).
+  if (needsProject) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink">
+        <h1 className="font-story text-xl">Mind Mapper</h1>
+        <p className="text-xs text-ink-dim">
+          {needsProject.length > 0
+            ? "no board is open — pick a project, or start a new one."
+            : "nothing here yet — name a project to start the first board."}
+        </p>
+        <ProjectPicker currentId={undefined} onSelect={switchProject} />
+      </main>
+    );
+  }
+  if (notFound) {
+    // The stored-id case degrades via the effect above (this renders for at
+    // most a frame before projectId flips) — the lasting version of this
+    // screen is the explicit-?project= 404, said honestly.
+    if (projectSource === "stored") {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-bg text-ink-faint">
+          unrolling the map…
+        </main>
+      );
+    }
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink">
+        <p className="text-xs text-attention">
+          project “{projectId}” doesn't exist on this daemon.
+        </p>
+        <p className="text-xs text-ink-dim">pick another board, or start one:</p>
+        <ProjectPicker currentId={undefined} onSelect={switchProject} />
+      </main>
+    );
+  }
   if (error) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-bg text-attention">
@@ -492,7 +767,10 @@ export function App() {
   }
 
   const messages = state.conversation.map(toDisplayMessage);
-  const pendingCount = state.proposals.filter((p) => p.status === "pending").length;
+  // The review badge counts the MAIN queue only (Z1's segregation rule):
+  // zoned proposals aren't reviewable until promoted — counting them would
+  // advertise rulings the queue can't offer.
+  const pendingCount = mainProposals(state.proposals).filter((p) => p.status === "pending").length;
   // T8 — layer 1 (my socket) and layer 2 (agent tails) stay separate;
   // dotState is the pure rule. `presence` is defensive-read: a pre-V1.x
   // daemon simply reads as no-agent, never crashes.
@@ -519,8 +797,29 @@ export function App() {
             <span className="sr-only">{DOT_TITLE[dot]}</span>
           </span>
           {state.docs.length} docs · {state.nodes.length} ideas · {state.edges.length} relations
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            onClick={toggleTheme}
+          >
+            {theme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
+          </Button>
         </span>
       </header>
+      {/* Z3 — the zone tab strip: a second row, only when zones exist (the
+          first zone arrives conversationally — equal capabilities — or via
+          an agent's `zone create`). */}
+      {state.zones.length > 0 && (
+        <ZoneTabs
+          zones={state.zones}
+          active={activeZone}
+          onSwitch={switchZone}
+          onCreate={createZone}
+          onDelete={(zone) => setZoneDelete({ zone, notEmpty: null })}
+        />
+      )}
       {status === "closed" && (
         <div className="border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention">
           disconnected — the daemon isn't answering; sends are off. retrying…
@@ -554,25 +853,58 @@ export function App() {
             ingestBlank(title, ingestJson);
           }}
           onAnalyze={(doc) => sendMessage(`Analyze: ${doc.title}`, [`doc:${doc.id}`], "analyze")}
+          // V2 — the doc lens's surface shortcut (single-click stays
+          // open-viewer, ruled): a local user-owned doc lens; the FocusBar
+          // doc pill + visibleMap doc branch take it from here.
+          onDocLens={(doc) => setLens({ owner: "user", nodeId: null, depth: null, docId: doc.id })}
           onDelete={(doc) => setDeleteTarget({ doc, citedBy: null })}
         />
         <div className="relative min-w-0 flex-1">
-          <GraphCanvas
-            // Remount on lens change so the viewport re-fits the new
-            // neighborhood (layout recomputes on map change regardless).
-            key={`${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.depth}`}
-            map={visibleMap ?? mapWithPending ?? state}
-            selectedIds={selectedIds}
-            onSelect={setSelectedIds}
-            onNodeCommand={(command, node) => {
-              if (command === "Focus") setLens({ owner: "user", nodeId: node.id, depth: 1 });
-              else sendMessage(`${command} — ${node.title}`, [node.id]);
-            }}
-            highlightIds={matches ? matches.map((n) => n.id) : null}
-            focusRequest={focusRequest}
-            onConnect={(source, target) => proposeAsUser("edge", { source, target })}
-            onPaneDoubleClick={() => setNodeForm({ title: "", synopsis: "" })}
-          />
+          {view === "map" ? (
+            <GraphCanvas
+              // Remount on lens change so the viewport re-fits the new
+              // neighborhood (layout recomputes on map change regardless).
+              // Deliberately NOT keyed on activeZone: a zone switch swaps the
+              // map in place, so the agent-follow focusRequest (flushed one
+              // frame after the switch) finds a live canvas instance instead
+              // of a fresh mount that would swallow it.
+              key={`${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`}
+              map={visibleMap ?? boardMap ?? state}
+              selectedIds={selectedIds}
+              onSelect={setSelectedIds}
+              promotable={activeZone !== null}
+              onNodeCommand={(command, node) => {
+                if (command === "Focus")
+                  setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null });
+                else if (command === "Promote") promoteProposal(node.id);
+                else seedComposer(`${command} — ${node.title}`, node.id);
+              }}
+              highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
+              focusRequest={focusRequest}
+              onConnect={(source, target) => proposeAsUser("edge", { source, target })}
+              onPaneDoubleClick={() => setNodeForm({ title: "", synopsis: "" })}
+              panelTopRight={<ViewToggle view={view} onView={setView} />}
+              panelBelowBar={Boolean(lens.owner)}
+            />
+          ) : (
+            <>
+              {/* V1 — the SAME visibleMap + matches the canvas gets: lens
+                  narrows and search dims the grid by construction. */}
+              <CardGrid
+                map={visibleMap ?? boardMap ?? state}
+                highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
+                selectedIds={selectedIds}
+                onSelect={setSelectedIds}
+              />
+              {/* The toggle keeps its canvas-Panel perch in grid view too —
+                  switching never moves the control out from under the
+                  pointer. Same FocusBar dodge as the map view's Panel row:
+                  the bar must never cover the way out of a view. */}
+              <div className={`absolute right-4 z-10 ${lens.owner ? "top-14" : "top-4"}`}>
+                <ViewToggle view={view} onView={setView} />
+              </div>
+            </>
+          )}
           {nodeForm && (
             <div className="absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur">
               <p className="mb-2 text-[10px] uppercase tracking-widest text-ink-faint">
@@ -643,7 +975,8 @@ export function App() {
           )}
           {search.open && (
             <SearchPalette
-              matches={matches ?? []}
+              rows={palette?.rows ?? []}
+              offBoard={palette?.offBoard ?? { docs: 0, messages: 0 }}
               query={search.query}
               onQuery={(query) => setSearch({ open: true, query })}
               onPick={pickSearchResult}
@@ -652,18 +985,26 @@ export function App() {
           )}
           <FocusBar
             lens={lens}
-            title={state.nodes.find((n) => n.id === lens.nodeId)?.title ?? ""}
+            title={
+              lens.docId
+                ? (state.docs.find((d) => d.id === lens.docId)?.title ?? lens.docId)
+                : (state.nodes.find((n) => n.id === lens.nodeId)?.title ?? "")
+            }
             count={visibleMap?.nodes.length ?? 0}
             onDepth={(depth) => setLens((l) => ({ ...l, depth }))}
             onZoomOut={() => setLens(DEFAULT_LENS)}
           />
           <MapKey />
           {detailNode && detailOpen && (
-            <div className={`absolute right-4 z-10 ${lens.owner ? "top-14" : "top-4"}`}>
+            // The detail card perches BELOW the top-right control row in
+            // both views (V1 made that row load-bearing: covering the view
+            // toggle would trap the user in a view), and drops further under
+            // an active FocusBar.
+            <div className={`absolute right-4 z-10 ${lens.owner ? "top-24" : "top-14"}`}>
               <NodeDetail
                 node={detailNode}
                 docs={state.docs}
-                onVerb={(verb, node) => sendMessage(`${verb} — ${node.title}`, [node.id])}
+                onVerb={(verb, node) => seedComposer(`${verb} — ${node.title}`, node.id)}
                 onOpenSource={(s) => openDocById(s.docId, s.span ?? undefined)}
                 onOpenMessageSource={(s: MessageSourceRef) =>
                   setScrollRequest((r) => ({
@@ -672,7 +1013,9 @@ export function App() {
                     seq: (r?.seq ?? 0) + 1,
                   }))
                 }
-                onFocus={(node) => setLens({ owner: "user", nodeId: node.id, depth: 1 })}
+                onFocus={(node) =>
+                  setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null })
+                }
                 onClose={() => setDetailOpen(false)}
               />
             </div>
@@ -688,7 +1031,7 @@ export function App() {
         )}
         {reviewOpen && (
           <ReviewQueue
-            proposals={state.proposals}
+            proposals={mainProposals(state.proposals)}
             docs={state.docs}
             nodes={state.nodes}
             onRule={ruleProposal}
@@ -701,6 +1044,7 @@ export function App() {
           disabled={status === "closed"}
           thinking={thinking}
           scrollRequest={scrollRequest}
+          composerSeed={composerSeed}
           selection={selection}
           onDeselect={(id) => setSelectedIds((ids) => ids.filter((x) => x !== id))}
           messages={messages}
@@ -751,6 +1095,48 @@ export function App() {
                 onClick={() => requestDelete(Boolean(deleteTarget.citedBy))}
               >
                 {deleteTarget.citedBy ? "delete anyway" : "delete"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {zoneDelete && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setZoneDelete(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {zoneDelete.notEmpty
+                  ? `"${zoneDelete.zone.name}" isn't empty`
+                  : `delete zone "${zoneDelete.zone.name}"?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {zoneDelete.notEmpty
+                  ? `${zoneDelete.notEmpty.proposals} proposal${
+                      zoneDelete.notEmpty.proposals === 1 ? "" : "s"
+                    } go${zoneDelete.notEmpty.proposals === 1 ? "es" : ""} with it — a zone is a disposable sandbox, and deleting it discards everything still inside. Promote what's worth keeping first.`
+                  : "The zone and anything still staged inside it go away. Promoted proposals already left for the main queue and stay."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="ghost"
+                size="auto"
+                className="px-2.5 py-1"
+                onClick={() => setZoneDelete(null)}
+              >
+                cancel
+              </Button>
+              <Button
+                size="auto"
+                className="px-2.5 py-1 text-attention"
+                onClick={() => requestZoneDelete(Boolean(zoneDelete.notEmpty))}
+              >
+                {zoneDelete.notEmpty ? "delete anyway" : "delete"}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

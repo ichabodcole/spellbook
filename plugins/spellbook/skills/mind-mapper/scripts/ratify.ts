@@ -56,6 +56,7 @@ interface ProposalRow {
   evidence_message_id: string | null;
   evidence_span: string | null;
   status: string;
+  zone_id: string | null;
 }
 
 function resolveNodeRef(db: Database, ref: string): string {
@@ -76,12 +77,20 @@ function resolveNodeRef(db: Database, ref: string): string {
 function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput): RatifyResult {
   const row = db
     .query(
-      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, status FROM proposals WHERE id = ?",
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, status, zone_id FROM proposals WHERE id = ?",
     )
     .get(input.proposalId) as ProposalRow | null;
   if (!row) throw new Error(`unknown proposal: ${input.proposalId}`);
   if (row.status !== "pending") {
     throw new Error(`proposal ${input.proposalId} already ${row.status}`);
+  }
+  // Round 3 (Claim Z2): ratification is a MAIN-GRAPH act — a zoned proposal
+  // must be promoted out of its staging pen before it can be ruled on
+  // (rejection included: zone delete is the only in-zone disposal).
+  if (row.zone_id !== null) {
+    throw new Error(
+      `proposal ${input.proposalId} is in zone ${row.zone_id} — promote first (ratification is a main-queue act)`,
+    );
   }
 
   if (input.ruling === "reject") {

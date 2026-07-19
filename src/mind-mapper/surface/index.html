@@ -4,8 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Mind Mapper</title>
-    <!-- Pre-boot dark canvas so a cold first open (Bun bundles lazily) doesn't
-         flash white; once styles.css loads, the @theme tokens own the palette. -->
+    <!-- T1 pre-paint: resolve the theme BEFORE first paint (stored choice >
+         OS preference > dark) so neither palette ever flashes the other.
+         Mirrors state/theme.ts resolveInitialTheme — keep the two in sync. -->
+    <script>
+      (() => {
+        let t = null;
+        try {
+          t = localStorage.getItem("mind-mapper:theme");
+        } catch {}
+        if (t !== "light" && t !== "dark") {
+          t = matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+    <!-- Pre-boot canvas in the resolved palette so a cold first open (Bun
+         bundles lazily) doesn't flash; once styles.css loads, the @theme
+         tokens own the palette. -->
     <style>
       html {
         color-scheme: dark;
@@ -16,6 +32,14 @@
         min-height: 100vh;
         background-color: #020617;
         color: #e2e8f0;
+      }
+      html[data-theme="light"] {
+        color-scheme: light;
+        background-color: #f7f6f3;
+      }
+      html[data-theme="light"] body {
+        background-color: #f7f6f3;
+        color: #1e293b;
       }
     </style>
     <link rel="stylesheet" href="./styles.css" />

@@ -101,6 +101,15 @@ export function ProjectPicker({
         onChange={(e) => onSelect(e.target.value)}
         className="rounded border border-edge bg-surface px-1.5 py-0.5 text-ink"
       >
+        {/* No current selection (the pick-or-create landing): an inert
+            placeholder row keeps the first real project pickable — a select
+            whose value already shows the first option never fires onChange
+            for it. */}
+        {currentId === undefined && (
+          <option value="" disabled>
+            pick a project…
+          </option>
+        )}
         {projects.map((p) => (
           <option key={p.id} value={p.id}>
             {p.title}

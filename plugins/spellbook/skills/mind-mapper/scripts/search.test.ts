@@ -124,6 +124,115 @@ test("a node hit ranks before a doc/message hit at an equal score", () => {
   }
 });
 
+test("search finds pending proposals via JS draft match: title 18, synopsis 9, zoneId carried", () => {
+  const { dir, db } = tempDb();
+  try {
+    db.run("INSERT INTO zones (id, name) VALUES (?, ?)", ["messy", "Messy"]);
+    db.run(
+      "INSERT INTO proposals (id, kind, draft_json, status, zone_id) VALUES (?, ?, ?, 'pending', ?)",
+      ["p-title", "node", JSON.stringify({ title: "Wisp light", synopsis: "a flicker" }), "messy"],
+    );
+    db.run("INSERT INTO proposals (id, kind, draft_json, status) VALUES (?, ?, ?, 'pending')", [
+      "p-syn",
+      "node",
+      JSON.stringify({ title: "Other", synopsis: "the wisp returns" }),
+    ]);
+
+    const hits = search(db, "wisp");
+    expect(hits).toEqual([
+      {
+        kind: "proposal",
+        id: "p-title",
+        title: "Wisp light",
+        snippet: "a flicker",
+        score: 18,
+        zoneId: "messy",
+      },
+      {
+        kind: "proposal",
+        id: "p-syn",
+        title: "Other",
+        snippet: "the wisp returns",
+        score: 9,
+        zoneId: null,
+      },
+    ]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("proposal search is pending-only — ratified and rejected drafts never hit", () => {
+  const { dir, db } = tempDb();
+  try {
+    db.run("INSERT INTO proposals (id, kind, draft_json, status) VALUES (?, ?, ?, 'ratified')", [
+      "p-done",
+      "node",
+      JSON.stringify({ title: "Wisp done" }),
+    ]);
+    db.run("INSERT INTO proposals (id, kind, draft_json, status) VALUES (?, ?, ?, 'rejected')", [
+      "p-no",
+      "node",
+      JSON.stringify({ title: "Wisp rejected" }),
+    ]);
+    expect(search(db, "wisp")).toEqual([]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an equal-quality match ranks the ratified node above the pending proposal (20 > 18, 10 > 9)", () => {
+  const { dir, db } = tempDb();
+  try {
+    db.run("INSERT INTO nodes (id, kind, tier, title, synopsis) VALUES (?, ?, ?, ?, ?)", [
+      "wisp",
+      "concept",
+      "thread",
+      "Wisp",
+      "ratified flicker",
+    ]);
+    db.run("INSERT INTO proposals (id, kind, draft_json, status) VALUES (?, ?, ?, 'pending')", [
+      "p1",
+      "node",
+      JSON.stringify({ title: "Wisp twin", synopsis: "pending flicker" }),
+    ]);
+    const byTitle = search(db, "wisp");
+    expect(byTitle.map((h) => h.kind)).toEqual(["node", "proposal"]);
+
+    const bySynopsis = search(db, "flicker");
+    expect(bySynopsis.map((h) => h.kind)).toEqual(["node", "proposal"]);
+    expect(bySynopsis.map((h) => h.score)).toEqual([10, 9]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a proposal draft without string title/synopsis is tolerated, never a crash", () => {
+  const { dir, db } = tempDb();
+  try {
+    db.run("INSERT INTO proposals (id, kind, draft_json, status) VALUES (?, ?, ?, 'pending')", [
+      "p-odd",
+      "node",
+      JSON.stringify({ source: "a", target: "b" }),
+    ]);
+    db.run("INSERT INTO proposals (id, kind, draft_json, status) VALUES (?, ?, ?, 'pending')", [
+      "p-title-only",
+      "node",
+      JSON.stringify({ title: "Lone wisp" }),
+    ]);
+    const hits = search(db, "wisp");
+    expect(hits).toEqual([
+      { kind: "proposal", id: "p-title-only", title: "Lone wisp", score: 18, zoneId: null },
+    ]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("search returns empty for an absent term, not an error", () => {
   const { dir, db } = tempDb();
   try {

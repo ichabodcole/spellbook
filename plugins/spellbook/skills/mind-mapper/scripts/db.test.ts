@@ -30,6 +30,7 @@ test("openStore creates all ratified tables in a fresh dir", () => {
       "nodes",
       "proposals",
       "sources",
+      "zones",
     ]) {
       expect(tables).toContain(expected);
     }
@@ -163,6 +164,111 @@ test("openStore backfills author/evidence_message_id onto a previous-shape propo
       "INSERT INTO proposals (id, kind, draft_json, author, evidence_message_id, status) VALUES (?, ?, ?, ?, ?, 'pending')",
       ["p2", "node", "{}", "user", null],
     );
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("openStore backfills zone_id onto a previous-shape (V1.x) proposals table and creates zones", () => {
+  const dir = tempDir();
+  try {
+    const path = join(dir, "store.sqlite");
+    // Mint a store under the PREVIOUS proposals shape (V1.x-as-shipped: has
+    // author + evidence_message_id, predates zone_id) — the load-bearing test
+    // design: only a genuinely-older store re-opened by current code can
+    // catch a missing backfill.
+    const oldSchemaDb = new Database(path, { create: true });
+    oldSchemaDb.exec(`
+      CREATE TABLE proposals (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        draft_json TEXT NOT NULL,
+        evidence_doc_id TEXT,
+        evidence_span TEXT,
+        suggested_tier TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        result_node_id TEXT,
+        author TEXT,
+        evidence_message_id TEXT
+      );
+    `);
+    oldSchemaDb.run(
+      "INSERT INTO proposals (id, kind, draft_json, author, status) VALUES (?, ?, ?, ?, 'pending')",
+      ["p1", "node", '{"title":"Edda"}', "agent"],
+    );
+    oldSchemaDb.close();
+
+    const db = openStore(path);
+    const columns = new Set(
+      (db.query("PRAGMA table_info(proposals)").all() as Array<{ name: string }>).map(
+        (c) => c.name,
+      ),
+    );
+    expect(columns).toContain("zone_id");
+
+    // The pre-existing row survives with zone_id null — a main-queue proposal
+    // by construction (the main graph is zone_id IS NULL).
+    const row = db.query("SELECT id, zone_id FROM proposals WHERE id = 'p1'").get() as {
+      id: string;
+      zone_id: string | null;
+    };
+    expect(row).toEqual({ id: "p1", zone_id: null });
+
+    // The new zones table lands via CREATE TABLE IF NOT EXISTS on the same open.
+    const tables = db
+      .query("SELECT name FROM sqlite_master WHERE type='table' AND name='zones'")
+      .all();
+    expect(tables).toHaveLength(1);
+
+    // And a NEW zoned row through the current write path works end to end.
+    db.run("INSERT INTO zones (id, name) VALUES (?, ?)", ["messy", "Messy"]);
+    db.run(
+      "INSERT INTO proposals (id, kind, draft_json, zone_id, status) VALUES (?, ?, ?, ?, 'pending')",
+      ["p2", "node", "{}", "messy"],
+    );
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("openStore backfills doc_id onto a previous-shape lens table", () => {
+  const dir = tempDir();
+  try {
+    const path = join(dir, "store.sqlite");
+    // Mint a store under the PREVIOUS lens shape (pre-doc-lens: no doc_id),
+    // with a live node lens in it.
+    const oldSchemaDb = new Database(path, { create: true });
+    oldSchemaDb.exec(`
+      CREATE TABLE lens (
+        project_id TEXT PRIMARY KEY,
+        owner TEXT NOT NULL,
+        node_id TEXT,
+        depth INTEGER
+      );
+    `);
+    oldSchemaDb.run("INSERT INTO lens (project_id, owner, node_id, depth) VALUES (?, ?, ?, ?)", [
+      "default",
+      "human",
+      "maren",
+      1,
+    ]);
+    oldSchemaDb.close();
+
+    const db = openStore(path);
+    const columns = new Set(
+      (db.query("PRAGMA table_info(lens)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    expect(columns).toContain("doc_id");
+
+    // The pre-existing node lens survives untouched — doc_id null IS the
+    // node-lens variant (XOR holds without a rewrite).
+    const row = db
+      .query("SELECT project_id, node_id, doc_id FROM lens WHERE project_id = 'default'")
+      .get() as { project_id: string; node_id: string | null; doc_id: string | null };
+    expect(row).toEqual({ project_id: "default", node_id: "maren", doc_id: null });
     db.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });

@@ -20,6 +20,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import {
+  ArrowUpFromLine,
   CircleDashed,
   Crosshair,
   HelpCircle,
@@ -29,7 +30,7 @@ import {
   ScrollText,
   User,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MapNode, NodeKind, StubMap, Tier } from "./types";
 import { Button } from "./ui/button";
 import {
@@ -59,6 +60,20 @@ export type GraphCanvasProps = {
   // Placement honesty (ratified): the click point is NOT carried — the
   // schema has no positions, layout decides where the sketch lands.
   onPaneDoubleClick?: () => void;
+  // V1 — App's view control (map|grid) rides the canvas Panel top-right,
+  // next to the layout toggle. A slot, not view state: the canvas stays
+  // ignorant of the grid's existence (the tree|physics toggle shows only in
+  // map view for free — this component is only mounted there).
+  panelTopRight?: ReactNode;
+  // Round 3 (Claim Z2/Z3) — zone context only: every node here is a zoned
+  // proposal, so the context menu gains Promote (a MOVE to the main review
+  // queue). The main board never sets this — promotion is meaningless there.
+  promotable?: boolean;
+  // An active FocusBar spans the canvas top edge and would COVER this Panel
+  // row (a control that switches views must never be coverable by what it
+  // controls — found live when Playwright couldn't click the toggle under a
+  // doc lens). The caller sets this whenever its bar is showing.
+  panelBelowBar?: boolean;
 };
 
 const NODE_W = 190;
@@ -66,21 +81,24 @@ const NODE_H = 76;
 
 // Literal class strings on purpose — Tailwind's @source scan only sees
 // literal text, so tier styling lives in a lookup, never string-built.
-const TIER_CARD: Record<Tier, string> = {
+// Exported (with KIND_ICON / TIER_LABEL below) as the node-card vocabulary —
+// CardGrid (V1) reuses them so a node reads identically in both views; the
+// literal-text constraint makes shared lookups the reuse unit.
+export const TIER_CARD: Record<Tier, string> = {
   canon: "border-canon text-canon",
   thread: "border-thread-tier text-thread-tier",
   "story-local": "border-story-local text-story-local",
   background: "border-background-tier text-background-tier",
 };
 
-const TIER_LABEL: Record<Tier, string> = {
+export const TIER_LABEL: Record<Tier, string> = {
   canon: "canon",
   thread: "thread",
   "story-local": "story-local",
   background: "background",
 };
 
-const KIND_ICON: Record<NodeKind, typeof User> = {
+export const KIND_ICON: Record<NodeKind, typeof User> = {
   cast: User,
   place: MapPin,
   concept: Lightbulb,
@@ -88,13 +106,15 @@ const KIND_ICON: Record<NodeKind, typeof User> = {
 };
 
 // The node command vocabulary (context menu; born plural per t-609741be —
-// future commands include agent actions).
-export type NodeCommand = "Focus" | "Explain" | "Questions" | "Subtopics";
+// future commands include agent actions). Promote appears in zone context
+// only (Claim Z3).
+export type NodeCommand = "Focus" | "Explain" | "Questions" | "Subtopics" | "Promote";
 
 type IdeaNodeData = {
   node: MapNode;
   onCommand: (command: NodeCommand) => void;
   dimmed?: boolean;
+  promotable?: boolean;
 };
 
 function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
@@ -130,6 +150,11 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
         <ContextMenuItem onClick={() => data.onCommand("Focus")}>
           <Crosshair /> Focus
         </ContextMenuItem>
+        {data.promotable && (
+          <ContextMenuItem onClick={() => data.onCommand("Promote")}>
+            <ArrowUpFromLine /> Promote to main
+          </ContextMenuItem>
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem onClick={() => data.onCommand("Explain")}>
           <ScrollText /> Explain
@@ -307,6 +332,9 @@ export function GraphCanvas({
   focusRequest,
   onConnect,
   onPaneDoubleClick,
+  panelTopRight,
+  promotable,
+  panelBelowBar,
 }: GraphCanvasProps) {
   // React Flow is used semi-controlled: this component owns node state (so
   // drag + click-select work), reports selection upward (deduped — an
@@ -339,13 +367,21 @@ export function GraphCanvas({
     });
   }, [selectedIds]);
 
-  // Search dim is a render-time overlay on node data — node STATE (positions,
-  // selection) stays untouched by keystrokes.
+  // Search dim (and the zone view's promotable flag) are render-time
+  // overlays on node data — node STATE (positions, selection) stays
+  // untouched by keystrokes and view context alike.
   const renderNodes = useMemo(() => {
-    if (!highlightIds) return nodes;
-    const keep = new Set(highlightIds);
-    return nodes.map((n) => ({ ...n, data: { ...n.data, dimmed: !keep.has(n.id) } }));
-  }, [nodes, highlightIds]);
+    const keep = highlightIds ? new Set(highlightIds) : null;
+    if (!keep && !promotable) return nodes;
+    return nodes.map((n) => ({
+      ...n,
+      data: {
+        ...n.data,
+        ...(keep && { dimmed: !keep.has(n.id) }),
+        ...(promotable && { promotable: true }),
+      },
+    }));
+  }, [nodes, highlightIds, promotable]);
 
   // Answer a focusRequest with a smooth pan/zoom to the node. lastSeq seeds
   // from the mount-time prop so a remount (the lens keys this component)
@@ -413,7 +449,16 @@ export function GraphCanvas({
     >
       <Background gap={24} size={1} color="var(--color-edge)" />
       <Controls position="top-left" showInteractive={false} />
-      <Panel position="top-right">
+      <Panel
+        position="top-right"
+        className="flex items-center gap-1.5"
+        // Inline, not a margin utility: React Flow's own `.react-flow__panel`
+        // rule is UNLAYERED vendor CSS, so it beats any layered Tailwind
+        // margin (the same precedence trap as the attribution plate, seat
+        // doc R3 T1) — an inline style is the one thing that always wins.
+        style={panelBelowBar ? { top: 40 } : undefined}
+      >
+        {panelTopRight}
         <Button
           variant="outline"
           size="auto"

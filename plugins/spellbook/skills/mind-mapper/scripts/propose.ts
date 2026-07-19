@@ -17,6 +17,10 @@ interface ProposeInput {
   // Claim D: who sketched this proposal. Omitted → "agent" (the historical
   // default — every pre-author row was an agent proposal).
   author?: "user" | "agent";
+  // Round 3 (Claim Z1): stage this proposal in a zone. Omitted → main queue
+  // (zone_id null). Must name an existing zone — a dangling zone_id would
+  // orphan the proposal out of every view.
+  zone?: string;
 }
 
 function insertProposal(
@@ -58,6 +62,16 @@ function insertProposal(
   if (input.author !== undefined && input.author !== "user" && input.author !== "agent") {
     throw new Error(`author must be user or agent, got: ${String(input.author)}`);
   }
+  // Zone intake guard (Round 3): same fail-loud-at-intake spirit as docId —
+  // an unknown zone is a usage error here, never a dangling row later.
+  if (input.zone !== undefined) {
+    if (!SLUG_RE.test(input.zone)) {
+      throw new Error(`zone is not a valid zone slug: ${input.zone}`);
+    }
+    if (!db.query("SELECT 1 FROM zones WHERE id = ?").get(input.zone)) {
+      throw new Error(`unknown zone: ${input.zone}`);
+    }
+  }
   const evidenceDocId = input.evidence.docId ?? null;
   const evidenceMessageId = input.evidence.messageId ?? null;
   const evidenceSpan = input.evidence.span ?? null;
@@ -66,12 +80,26 @@ function insertProposal(
   // the fresh-install shape equals the migrated shape (Claim D); the wire
   // never carries null (readState normalizes pre-column rows).
   const author = input.author ?? "agent";
+  const zoneId = input.zone ?? null;
 
   db.run(
-    "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)",
-    [id, kind, draftJson, evidenceDocId, evidenceMessageId, evidenceSpan, suggestedTier, author],
+    "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author, zone_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+    [
+      id,
+      kind,
+      draftJson,
+      evidenceDocId,
+      evidenceMessageId,
+      evidenceSpan,
+      suggestedTier,
+      author,
+      zoneId,
+    ],
   );
 
+  // propose emits the FULL proposal object, so proposal.added carries zoneId
+  // for free — payload-tagging is the mechanism (events are project-scoped
+  // and can never be zone-scoped; consumers filter by the tag).
   const proposal: Proposal = {
     id,
     kind,
@@ -81,9 +109,27 @@ function insertProposal(
     status: "pending",
     resultNodeId: null,
     author,
+    zoneId,
   };
   bus.emit("proposal.added", proposal as unknown as Record<string, unknown>);
   return proposal;
+}
+
+// R3 gate rework (cassandra's cold drive): an edge draft with the WRONG
+// endpoint keys (from/to, src/dst…) sails through opaque intake, bypasses
+// promote's endpoint-order guard (unknown refs pass by design), and only
+// dies at ratify — the worst possible distance from the mistake. This is a
+// WARNING, never a reject: draft opacity stays sacred (Contract 8), the
+// daemon just names the missing keys next to the accepted proposal so the
+// cold agent hears about it in the same turn.
+function edgeDraftWarning(draft: unknown): string | null {
+  if (draft === null || typeof draft !== "object") {
+    return 'edge draft is not an object — expected {"source": "<node-or-proposal-id>", "target": "<node-or-proposal-id>", "label": "..."}; stored as-is (opaque intake), but ratify will fail on it';
+  }
+  const d = draft as Record<string, unknown>;
+  const missing = ["source", "target"].filter((key) => typeof d[key] !== "string");
+  if (missing.length === 0) return null;
+  return `edge draft has no string ${missing.join("/")} key(s) — endpoints ride "source"/"target" (node or pending node-proposal ids); other keys are NOT rejected (the draft is opaque to the daemon), but ratify will fail to resolve the endpoints`;
 }
 
 function proposeNode(db: Database, bus: EventBus, input: ProposeInput): Proposal {
@@ -95,4 +141,4 @@ function proposeEdge(db: Database, bus: EventBus, input: ProposeInput): Proposal
 }
 
 export type { ProposeInput };
-export { proposeEdge, proposeNode };
+export { edgeDraftWarning, proposeEdge, proposeNode };

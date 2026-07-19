@@ -55,6 +55,13 @@ beforeAll(async () => {
   const ready = JSON.parse(line) as { url: string; port: number };
   url = ready.url;
   port = ready.port;
+  // Round 3: no auto-mint — presence attribution's default-project clause is
+  // "the daemon-resolved default IF one exists", so this rig creates it (the
+  // legacy-store shape unscoped connections attribute to).
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "default", title: "Default" }),
+  });
 });
 
 afterAll(() => {

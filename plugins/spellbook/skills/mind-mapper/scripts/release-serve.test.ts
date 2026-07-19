@@ -4,29 +4,25 @@
 // source in release mode, not just that it happens to work when both exist
 // side by side.
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const SCRIPT_DIR = import.meta.dir;
-const SOURCE_FILES = [
-  "cli.ts",
-  "db.ts",
-  "docs.ts",
-  "events.ts",
-  "ingest.ts",
-  "lens.ts",
-  "marks.ts",
-  "neighbors.ts",
-  "project.ts",
-  "propose.ts",
-  "ratify.ts",
-  "search.ts",
-  "seed.ts",
-  "send.ts",
-  "server.ts",
-  "state.ts",
-];
+// Every non-test engine module ships — a glob, not a hand-maintained mirror
+// (the mirror shipped a broken release twice: marks.ts, docs.ts; then bounced
+// zones.ts. A new module is in the copied tree by construction now).
+const SOURCE_FILES = readdirSync(SCRIPT_DIR).filter(
+  (f) => f.endsWith(".ts") && !f.endsWith(".test.ts"),
+);
 
 let skillRoot: string;
 let home: string;
@@ -41,8 +37,6 @@ beforeAll(async () => {
   for (const file of SOURCE_FILES) {
     cpSync(join(SCRIPT_DIR, file), join(skillRoot, "scripts", file));
   }
-  cpSync(join(SCRIPT_DIR, "..", "data"), join(skillRoot, "data"), { recursive: true });
-
   // The dist/ a real `build.ts` would produce — flat, hashed-ish names,
   // relative hrefs (Contract 2's shape). Content is fake but the shape is
   // what release-mode serving actually reads.
@@ -116,9 +110,20 @@ test("an unknown static path 404s (not a silent fallthrough)", async () => {
   expect(res.status).toBe(404);
 });
 
-test("the backend (/state) still works in release mode — the daemon is not surface-only", async () => {
-  const res = await fetch(`${url}/state`);
+test("the backend still works in release mode — fresh store 409s needs-project, then a created project serves", async () => {
+  // The marketplace-install experience: a fresh store has NO projects and no
+  // demo seed — unscoped /state is the ratified 409, not a fake board.
+  const fresh = await fetch(`${url}/state`);
+  expect(fresh.status).toBe(409);
+  expect(await fresh.json()).toEqual({ error: "needs-project", projects: [] });
+
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "release-idea", title: "Release Idea" }),
+  });
+  const res = await fetch(`${url}/state?project=release-idea`);
   expect(res.status).toBe(200);
-  const state = (await res.json()) as { nodes: unknown[] };
-  expect(state.nodes.length).toBeGreaterThan(0);
+  const state = (await res.json()) as { project: { id: string }; nodes: unknown[] };
+  expect(state.project.id).toBe("release-idea");
+  expect(state.nodes).toEqual([]);
 });

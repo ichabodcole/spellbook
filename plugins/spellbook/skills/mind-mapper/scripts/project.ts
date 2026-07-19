@@ -49,14 +49,37 @@ function createProject(home: string, id: string, title: string): ProjectMeta {
   return { id, title };
 }
 
+// Round 3 (Claim P1, as corrected): a projectless store boots EMPTY — the
+// default project is never auto-minted (and the demo-seed path is gone with
+// it, lead ruling). An unscoped request resolves to "default" iff its dir
+// already exists (legacy stores keep working unscoped, no migration); else
+// this typed error surfaces as 409 {error:"needs-project", projects:[...]}
+// from every scoped endpoint, and the surface renders pick-or-create.
+class NeedsProjectError extends Error {
+  constructor() {
+    super("no project scope and no default project — create or pick one");
+    this.name = "NeedsProjectError";
+  }
+}
+
+// Unknown-but-named scope stays its own failure (a 404, per Contract 9) —
+// distinct from the projectless 409: the caller named something that isn't
+// there, not nothing at all.
+class UnknownProjectError extends Error {
+  constructor(id: string) {
+    super(`unknown project: ${id}`);
+    this.name = "UnknownProjectError";
+  }
+}
+
 function resolveProject(home: string, id?: string): ProjectMeta {
   if (id === undefined) {
     const dir = projectDir(home, DEFAULT_PROJECT_ID);
-    if (!existsSync(dir)) return createProject(home, DEFAULT_PROJECT_ID, "Default");
+    if (!existsSync(dir)) throw new NeedsProjectError();
     return readMeta(dir, DEFAULT_PROJECT_ID);
   }
   const dir = projectDir(home, id);
-  if (!existsSync(dir)) throw new Error(`unknown project: ${id}`);
+  if (!existsSync(dir)) throw new UnknownProjectError(id);
   return readMeta(dir, id);
 }
 
@@ -69,4 +92,11 @@ function listProjects(home: string): ProjectMeta[] {
 }
 
 export type { ProjectMeta };
-export { createProject, listProjects, projectDir, resolveProject };
+export {
+  createProject,
+  listProjects,
+  NeedsProjectError,
+  projectDir,
+  resolveProject,
+  UnknownProjectError,
+};

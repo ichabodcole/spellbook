@@ -35,6 +35,11 @@ const FLASH_MS = 2000;
 
 export type ScrollRequest = { messageId: string; span?: string | null; seq: number };
 
+// C3 — a structured verb seeding the composer (the {payload, seq} idiom):
+// sets the draft and focuses the input; the human appends intent or sends
+// as-is. The ground chips ride selection, not this request.
+export type ComposerSeed = { text: string; seq: number };
+
 export function ConversationPanel({
   nodes,
   docs,
@@ -45,6 +50,7 @@ export function ConversationPanel({
   disabled = false,
   thinking = false,
   scrollRequest,
+  composerSeed,
 }: {
   nodes: MapNode[];
   docs: DocMeta[];
@@ -59,9 +65,11 @@ export function ConversationPanel({
   // the reply will land.
   thinking?: boolean;
   scrollRequest?: ScrollRequest | null;
+  composerSeed?: ComposerSeed | null;
 }) {
   const [draft, setDraft] = useState("");
   const historyRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   // The flash is render state; the yield is a ref (the autoscroll effect
   // must see it synchronously, not a render behind).
   const [flash, setFlash] = useState<{ messageId: string; span?: string | null } | null>(null);
@@ -69,6 +77,26 @@ export function ConversationPanel({
   // Seeded from the mount-time prop so a remount never replays a stale
   // request (the focusRequest idiom).
   const lastSeq = useRef(scrollRequest?.seq ?? 0);
+  const lastSeedSeq = useRef(composerSeed?.seq ?? 0);
+
+  // C3 — service a composer seed: overwrite the draft (a seed IS the new
+  // intent; merging with a stale half-typed draft would garble both) and put
+  // the caret at the end, ready for the human to append or just send.
+  useEffect(() => {
+    if (!composerSeed || composerSeed.seq === lastSeedSeq.current) return;
+    lastSeedSeq.current = composerSeed.seq;
+    setDraft(composerSeed.text);
+    const len = composerSeed.text.length;
+    // Caret after the commit that carries the new value — setSelectionRange
+    // against the not-yet-updated controlled value would clamp to the old
+    // draft's length.
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(len, len);
+    });
+  }, [composerSeed]);
 
   useEffect(() => {
     if (!scrollRequest || scrollRequest.seq === lastSeq.current) return;
@@ -148,6 +176,7 @@ export function ConversationPanel({
           </div>
         )}
         <Textarea
+          ref={inputRef}
           disabled={disabled}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}

@@ -18,7 +18,10 @@ import { Database } from "bun:sqlite";
 // always addable to a populated table.
 const ADDITIVE_COLUMNS: Record<string, string[]> = {
   messages: ["id", "kind", "ground_json"],
-  proposals: ["result_node_id", "author", "evidence_message_id"],
+  proposals: ["result_node_id", "author", "evidence_message_id", "zone_id"],
+  // Round 3 (Claim V2): doc-lens — lens rows written before the doc mode
+  // shipped simply carry a null doc_id (a node lens, unchanged).
+  lens: ["doc_id"],
 };
 
 function backfillColumns(db: Database, path: string): void {
@@ -87,6 +90,10 @@ CREATE TABLE IF NOT EXISTS sources (
 -- agent" is expressed as null-normalized-at-read (state.ts), never as a
 -- NOT NULL DEFAULT here. evidence_message_id is mutually exclusive with
 -- evidence_doc_id (enforced at propose intake, not by the schema).
+-- zone_id (Round 3, Claim Z1): nullable — the main graph is zone_id IS NULL,
+-- so every pre-zones row is a main-queue proposal by construction. Zone
+-- contents are PROPOSALS ONLY (nodes/edges never carry zone_id): a zone is
+-- staging, and promotion (zone_id -> NULL) is the only exit.
 CREATE TABLE IF NOT EXISTS proposals (
   id TEXT PRIMARY KEY,
   kind TEXT NOT NULL,
@@ -98,7 +105,18 @@ CREATE TABLE IF NOT EXISTS proposals (
   created_at INTEGER NOT NULL DEFAULT (unixepoch()),
   result_node_id TEXT,
   author TEXT,
-  evidence_message_id TEXT
+  evidence_message_id TEXT,
+  zone_id TEXT
+);
+
+-- Round 3 (Claim Z1): a zone is a named staging pen for proposals — nothing
+-- else. Ids are SLUGS derived from the name (conversational
+-- referenceability, ruled); no rename in this round. Per-project by
+-- construction (each project owns its own store.sqlite).
+CREATE TABLE IF NOT EXISTS zones (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  ts INTEGER NOT NULL DEFAULT (unixepoch())
 );
 
 -- V1.x Claim B: append-only mark trail; latest-per-doc is the live mark.
@@ -141,11 +159,16 @@ CREATE TABLE IF NOT EXISTS messages (
   ground_json TEXT
 );
 
+-- doc_id (Round 3, Claim V2): the doc-lens variant. node_id XOR doc_id is
+-- enforced at the write path (setLens writes every column on upsert, the
+-- /lens route validates the XOR) — the schema stays permissive so the
+-- ADD COLUMN backfill can land on populated stores.
 CREATE TABLE IF NOT EXISTS lens (
   project_id TEXT PRIMARY KEY,
   owner TEXT NOT NULL,
   node_id TEXT,
-  depth INTEGER
+  depth INTEGER,
+  doc_id TEXT
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS docs_fts USING fts5(doc_id UNINDEXED, content);

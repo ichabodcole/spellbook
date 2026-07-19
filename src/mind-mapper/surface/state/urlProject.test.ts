@@ -1,7 +1,11 @@
 // Pure-logic tests for the project-in-URL precedence — no DOM, no network.
 
 import { expect, test } from "bun:test";
-import { resolveInitialProject, withProjectParam } from "./urlProject";
+import {
+  resolveInitialProject,
+  resolveInitialProjectWithSource,
+  withProjectParam,
+} from "./urlProject";
 
 test("URL ?project= wins over a stored value", () => {
   expect(resolveInitialProject("?project=atlas", "stored-proj")).toBe("atlas");
@@ -29,6 +33,30 @@ test("URL param values are trimmed", () => {
 
 test("URL-encoded project ids decode", () => {
   expect(resolveInitialProject("?project=my%20project", null)).toBe("my project");
+});
+
+// Round 3 (Claim P1): the source rides along so a 404 on the initial id can
+// degrade differently — stored ids fall back quietly, URL ids get an honest
+// "doesn't exist" (they're the user's own assertion).
+test("source is 'url' when ?project= decides", () => {
+  expect(resolveInitialProjectWithSource("?project=atlas", "stored-proj")).toEqual({
+    id: "atlas",
+    source: "url",
+  });
+});
+
+test("source is 'stored' when localStorage decides", () => {
+  expect(resolveInitialProjectWithSource("", "stored-proj")).toEqual({
+    id: "stored-proj",
+    source: "stored",
+  });
+});
+
+test("source is 'none' when nothing decides (blank values don't count)", () => {
+  expect(resolveInitialProjectWithSource("?project=%20%20", "  ")).toEqual({
+    id: undefined,
+    source: "none",
+  });
 });
 
 test("withProjectParam sets the param on an empty search", () => {

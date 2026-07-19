@@ -14,6 +14,7 @@ function nodeProposal(overrides: Partial<Proposal> = {}): Proposal {
     suggestedTier: "thread",
     status: "pending",
     author: "agent",
+    zoneId: null,
     ...overrides,
   };
 }
