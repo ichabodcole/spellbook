@@ -37,10 +37,12 @@ test("doc.added appends a new doc and advances cursor", () => {
   const event: ServerEvent = {
     seq: 6,
     kind: "doc.added",
-    payload: { id: "ramble-02", title: "Ramble 2", kind: "ramble" },
+    payload: { id: "ramble-02", title: "Ramble 2", kind: "ramble", kindAuthor: null },
   };
   const next = applyEvent(baseState(), event);
-  expect(next.docs).toEqual([{ id: "ramble-02", title: "Ramble 2", kind: "ramble" }]);
+  expect(next.docs).toEqual([
+    { id: "ramble-02", title: "Ramble 2", kind: "ramble", kindAuthor: null },
+  ]);
   expect(next.cursor).toBe(6);
 });
 
@@ -84,7 +86,7 @@ test("a ratified event whose proposalId matches nothing is a harmless no-op on p
 test("doc.deleted filters the doc out and advances cursor", () => {
   const state = {
     ...baseState(),
-    docs: [{ id: "ramble-01", title: "R1", kind: "ramble" as const }],
+    docs: [{ id: "ramble-01", title: "R1", kind: "ramble", kindAuthor: null }],
   };
   const next = applyEvent(state, {
     seq: 6,
@@ -100,7 +102,7 @@ test("doc.deleted filters the doc out and advances cursor", () => {
 test("doc.marked upserts the full inline mark onto the doc, stale=false by construction", () => {
   const state = {
     ...baseState(),
-    docs: [{ id: "ramble-01", title: "R1", kind: "ramble" as const }],
+    docs: [{ id: "ramble-01", title: "R1", kind: "ramble", kindAuthor: null }],
   };
   const mark = { author: "agent", note: "nothing worth extracting", status: "analyzed", ts: 123 };
   const next = applyEvent(state, {
@@ -119,7 +121,8 @@ test("doc.marked replaces an existing mark (latest wins)", () => {
       {
         id: "ramble-01",
         title: "R1",
-        kind: "ramble" as const,
+        kind: "ramble",
+        kindAuthor: null,
         mark: { author: "agent", note: null, status: "skimmed", ts: 1, stale: true },
       },
     ],
@@ -336,4 +339,128 @@ test("isGap: a skipped seq is a gap", () => {
 test("isGap: a stale/duplicate seq is not treated as a gap (it's a no-op, handled separately)", () => {
   expect(isGap(5, 5)).toBe(false);
   expect(isGap(5, 3)).toBe(false);
+});
+
+// Round 4 (A1) — actions.set {targetId, actions}: wholesale metadata
+// replace onto whichever entity wears the target id (node OR pending
+// proposal — disjoint UUID spaces, so one pass over both is unambiguous).
+
+test("actions.set replaces the actions array on a matching node", () => {
+  const slots = [{ id: "jungian", label: "Explore archetypes", seed: "Explore archetypes — " }];
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "actions.set",
+    payload: { targetId: "maren", actions: slots },
+  });
+  expect(next.nodes[0]?.actions).toEqual(slots);
+  expect(next.cursor).toBe(6);
+});
+
+test("actions.set replaces the actions array on a matching proposal", () => {
+  const slots = [{ id: "a", label: "A", seed: "A — " }];
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "actions.set",
+    payload: { targetId: "prop-1", actions: slots },
+  });
+  expect(next.proposals[0]?.actions).toEqual(slots);
+});
+
+test("actions.set is wholesale — a second set replaces, never merges", () => {
+  const first = applyEvent(baseState(), {
+    seq: 6,
+    kind: "actions.set",
+    payload: { targetId: "maren", actions: [{ id: "a", label: "A", seed: "A" }] },
+  });
+  const second = applyEvent(first, {
+    seq: 7,
+    kind: "actions.set",
+    payload: { targetId: "maren", actions: [{ id: "b", label: "B", seed: "B" }] },
+  });
+  expect(second.nodes[0]?.actions).toEqual([{ id: "b", label: "B", seed: "B" }]);
+});
+
+test("actions.set with an empty array clears back to wire absence (absent = none)", () => {
+  const withSlots = applyEvent(baseState(), {
+    seq: 6,
+    kind: "actions.set",
+    payload: { targetId: "maren", actions: [{ id: "a", label: "A", seed: "A" }] },
+  });
+  const cleared = applyEvent(withSlots, {
+    seq: 7,
+    kind: "actions.set",
+    payload: { targetId: "maren", actions: [] },
+  });
+  expect(cleared.nodes[0]?.actions).toBeUndefined();
+});
+
+test("actions.set on an unknown target advances the cursor and touches nothing", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "actions.set",
+    payload: { targetId: "no-such-target", actions: [{ id: "a", label: "A", seed: "A" }] },
+  });
+  expect(next.cursor).toBe(6);
+  expect(next.nodes).toEqual(baseState().nodes);
+  expect(next.proposals).toEqual(baseState().proposals);
+});
+
+// The ratify re-home path (Contract 9 A1): NO actions.set is emitted when a
+// proposal's slots re-home onto the minted node — the thin node.ratified
+// event triggers the snapshot refetch that carries them to the new id. The
+// reducer's half of that bargain: flip the proposal WITHOUT stripping its
+// actions (nothing is lost in the window before the refetch lands).
+test("node.ratified keeps the flipped proposal's actions intact for the refetch window", () => {
+  const state = baseState();
+  const target = state.proposals[0];
+  if (!target) throw new Error("fixture missing");
+  target.actions = [{ id: "a", label: "A", seed: "A" }];
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "node.ratified",
+    payload: { id: "the-hollow", proposalId: "prop-1" },
+  });
+  expect(next.proposals[0]?.status).toBe("ratified");
+  expect(next.proposals[0]?.actions).toEqual([{ id: "a", label: "A", seed: "A" }]);
+});
+
+// R4 K1 — doc.kind {docId, kind, author}.
+
+test("doc.kind sets kind + kindAuthor on the matching doc", () => {
+  const state = {
+    ...baseState(),
+    docs: [{ id: "ramble-01", title: "R1", kind: null, kindAuthor: null }],
+  };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "doc.kind",
+    payload: { docId: "ramble-01", kind: "bible", author: "user" },
+  });
+  expect(next.docs[0]?.kind).toBe("bible");
+  expect(next.docs[0]?.kindAuthor).toBe("user");
+  expect(next.cursor).toBe(6);
+});
+
+test("doc.kind with kind null clears BOTH kind and author (a clear un-attributes)", () => {
+  const state = {
+    ...baseState(),
+    docs: [{ id: "ramble-01", title: "R1", kind: "story", kindAuthor: "agent" as const }],
+  };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "doc.kind",
+    payload: { docId: "ramble-01", kind: null, author: null },
+  });
+  expect(next.docs[0]?.kind).toBeNull();
+  expect(next.docs[0]?.kindAuthor).toBeNull();
+});
+
+test("doc.kind on an unknown doc advances the cursor and touches nothing", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "doc.kind",
+    payload: { docId: "no-such-doc", kind: "bible", author: "user" },
+  });
+  expect(next.cursor).toBe(6);
+  expect(next.docs).toEqual(baseState().docs);
 });

@@ -27,6 +27,21 @@ import { SLUG_RE } from "./project.ts";
 
 type Ruling = "canon" | "thread" | "story-local" | "reject";
 
+// Round 4 (R1) — the in-zone refusal, typed (the CitedError/ZoneNotEmptyError
+// family): carries the zoneId so a menu can branch on {error:"zoned", zoneId}
+// (409 at the server) instead of string-matching prose. Semantics unchanged:
+// ratification — reject included — is a main-queue act; promote first.
+class ZonedError extends Error {
+  zoneId: string;
+  constructor(proposalId: string, zoneId: string) {
+    super(
+      `proposal ${proposalId} is in zone ${zoneId} — promote first (ratification is a main-queue act)`,
+    );
+    this.name = "ZonedError";
+    this.zoneId = zoneId;
+  }
+}
+
 interface RatifyInput {
   proposalId: string;
   ruling: Ruling;
@@ -88,13 +103,14 @@ function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput
   // must be promoted out of its staging pen before it can be ruled on
   // (rejection included: zone delete is the only in-zone disposal).
   if (row.zone_id !== null) {
-    throw new Error(
-      `proposal ${input.proposalId} is in zone ${row.zone_id} — promote first (ratification is a main-queue act)`,
-    );
+    throw new ZonedError(input.proposalId, row.zone_id);
   }
 
   if (input.ruling === "reject") {
     db.run("UPDATE proposals SET status = 'rejected' WHERE id = ?", [input.proposalId]);
+    // A1: a rejected proposal's action slots die with it — a slot on a dead
+    // target would dangle out of every view.
+    db.run("DELETE FROM node_actions WHERE target_id = ?", [input.proposalId]);
     return { id: input.proposalId, status: "rejected" };
   }
 
@@ -195,6 +211,10 @@ function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput
       nodeId,
       input.proposalId,
     ]);
+    // A1: re-home the proposal's action slots onto the minted node id (the
+    // stigmergy payoff — slots survive ratification; nodeId is a fresh UUID,
+    // so the PK move can never collide).
+    db.run("UPDATE node_actions SET target_id = ? WHERE target_id = ?", [nodeId, input.proposalId]);
     bus.emit("node.ratified", { id: nodeId, proposalId: input.proposalId });
     return { id: input.proposalId, status: "ratified", nodeId };
   }
@@ -213,9 +233,12 @@ function ratify(db: Database, bus: EventBus, docsDir: string, input: RatifyInput
     ],
   );
   db.run("UPDATE proposals SET status = 'ratified' WHERE id = ?", [input.proposalId]);
+  // A1: actions live on ratified NODES and pending proposals only — an edge
+  // proposal's slots have nowhere to re-home, so they die with the ruling.
+  db.run("DELETE FROM node_actions WHERE target_id = ?", [input.proposalId]);
   bus.emit("edge.ratified", { id: edgeId, proposalId: input.proposalId });
   return { id: input.proposalId, status: "ratified", edgeId };
 }
 
 export type { RatifyInput, RatifyResult, Ruling };
-export { ratify };
+export { ratify, ZonedError };

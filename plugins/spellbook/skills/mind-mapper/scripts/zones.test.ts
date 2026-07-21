@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { openStore } from "./db.ts";
 import { type BusEvent, createEventBus } from "./events.ts";
 import { proposeEdge, proposeNode } from "./propose.ts";
-import { ratify } from "./ratify.ts";
+import { ratify, ZonedError } from "./ratify.ts";
 import { readState } from "./state.ts";
 import { createZone, deleteZone, listZones, promote, ZoneNotEmptyError } from "./zones.ts";
 
@@ -233,12 +233,19 @@ test("ratify refuses a still-zoned proposal: promote first (zone delete is the o
     createZone(db, bus, "Messy");
     const zoned = proposeNode(db, bus, { draft: { title: "Z" }, evidence: {}, zone: "messy" });
     // Both accept AND reject are refused in-zone — ratification (either way)
-    // is a main-queue act.
-    expect(() => ratify(db, bus, docsDir, { proposalId: zoned.id, ruling: "canon" })).toThrow(
-      /in zone messy — promote first/,
-    );
+    // is a main-queue act. R1: the refusal is TYPED (ZonedError carrying the
+    // zoneId) so the wire can 409 {error:"zoned", zoneId} for menus.
+    let thrown: unknown;
+    try {
+      ratify(db, bus, docsDir, { proposalId: zoned.id, ruling: "canon" });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(ZonedError);
+    expect((thrown as ZonedError).zoneId).toBe("messy");
+    expect((thrown as ZonedError).message).toMatch(/in zone messy — promote first/);
     expect(() => ratify(db, bus, docsDir, { proposalId: zoned.id, ruling: "reject" })).toThrow(
-      /in zone messy — promote first/,
+      ZonedError,
     );
 
     promote(db, bus, zoned.id);

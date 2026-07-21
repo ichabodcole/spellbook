@@ -7,16 +7,27 @@
 // from GraphCanvas, never duplicated — one lookup, two views. Card click =
 // select (NodeDetail opens via the existing selection derivation); grid
 // state is view-local, not board state.
+//
+// R4 R1 — every card wraps the SAME NodeContextMenu chassis the canvas
+// uses: the standard verbs, ruling verbs on pending proposals (ratify
+// anywhere), and A1's action slots, identical in both views by construction.
 
 import { KIND_ICON, TIER_CARD, TIER_LABEL } from "./GraphCanvas";
+import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import { groupByTierKind } from "./state/cardGrid";
-import type { StubMap } from "./types";
+import type { NodeMenuInfo } from "./state/nodeMenu";
+import type { ActionSlot, MapNode, Ruling, StubMap } from "./types";
 
 export function CardGrid({
   map,
   highlightIds,
   selectedIds,
   onSelect,
+  onNodeCommand,
+  menus,
+  onRule,
+  onAction,
+  promotable,
 }: {
   map: StubMap;
   // Same contract as GraphCanvas: null = no search active; otherwise the ids
@@ -24,6 +35,12 @@ export function CardGrid({
   highlightIds?: string[] | null;
   selectedIds: string[];
   onSelect: (ids: string[]) => void;
+  // Same contracts as GraphCanvas (one chassis, two views).
+  onNodeCommand: (command: NodeCommand, node: MapNode) => void;
+  menus?: Map<string, NodeMenuInfo>;
+  onRule?: (proposalId: string, ruling: Ruling) => void;
+  onAction?: (action: ActionSlot, node: MapNode) => void;
+  promotable?: boolean;
 }) {
   const groups = groupByTierKind(map.nodes);
   const keep = highlightIds ? new Set(highlightIds) : null;
@@ -53,33 +70,42 @@ export function CardGrid({
                 </h3>
                 <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-2">
                   {kindGroup.nodes.map((n) => (
-                    <button
+                    <NodeContextMenu
                       key={n.id}
-                      type="button"
-                      onClick={() => onSelect([n.id])}
-                      className={`rounded-lg border bg-surface px-3 py-2 text-left shadow-lg transition-all ${TIER_CARD[n.tier]} ${
-                        n.pending ? "border-dashed" : ""
-                      } ${selectedIds.includes(n.id) ? "ring-2 ring-ink shadow-xl" : ""} ${
-                        keep && !keep.has(n.id) ? "opacity-20" : ""
-                      }`}
+                      node={n}
+                      menu={menus?.get(n.id)}
+                      promotable={promotable}
+                      onCommand={(command) => onNodeCommand(command, n)}
+                      onRule={onRule}
+                      onAction={onAction}
                     >
-                      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest">
-                        <span>{TIER_LABEL[n.tier]}</span>
-                        {n.pending && (
-                          <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
-                            proposed
-                          </span>
+                      <button
+                        type="button"
+                        onClick={() => onSelect([n.id])}
+                        className={`h-full w-full rounded-lg border bg-surface px-3 py-2 text-left shadow-lg transition-all ${TIER_CARD[n.tier]} ${
+                          n.pending ? "border-dashed" : ""
+                        } ${selectedIds.includes(n.id) ? "ring-2 ring-ink shadow-xl" : ""} ${
+                          keep && !keep.has(n.id) ? "opacity-20" : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest">
+                          <span>{TIER_LABEL[n.tier]}</span>
+                          {n.pending && (
+                            <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
+                              proposed
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 font-story text-[15px] leading-tight text-ink">
+                          {n.title}
+                        </div>
+                        {n.synopsis && (
+                          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ink-dim">
+                            {n.synopsis}
+                          </p>
                         )}
-                      </div>
-                      <div className="mt-1 font-story text-[15px] leading-tight text-ink">
-                        {n.title}
-                      </div>
-                      {n.synopsis && (
-                        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-ink-dim">
-                          {n.synopsis}
-                        </p>
-                      )}
-                    </button>
+                      </button>
+                    </NodeContextMenu>
                   ))}
                 </div>
               </div>

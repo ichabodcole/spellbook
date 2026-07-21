@@ -7,13 +7,18 @@
 // resume-point for events already ephemeral by design).
 
 import type { Database } from "bun:sqlite";
+import { type ActionSlot, readActions } from "./actions.ts";
 import { type DocMark, docFileMtime, readDocMarks } from "./marks.ts";
 import type { ProjectMeta } from "./project.ts";
 
 interface Doc {
   id: string;
   title: string;
-  kind: string;
+  // Round 4 (K1): null = untyped ('' sentinel at rest, normalized here —
+  // absence is honest; the ingest defaults died). kindAuthor is who asserted
+  // the kind ("user"|"agent"); null = unattributed (legacy or untyped).
+  kind: string | null;
+  kindAuthor: "user" | "agent" | null;
   // Claim B: latest mark, with `stale` computed server-side at read time
   // (current file mtime vs the mark's snapshot; missing file → stale).
   // Absent when the doc has never been marked.
@@ -34,6 +39,9 @@ interface Node {
   title: string;
   synopsis: string;
   sources: NodeSource[];
+  // Round 4 (A1): agent-authored action slots — absent = none (additive for
+  // every existing consumer; the surface renders 4 + scroll).
+  actions?: ActionSlot[];
 }
 
 interface Edge {
@@ -61,6 +69,9 @@ interface Proposal {
   // default exclusion) so snapshot merge and event ingestion obey ONE rule;
   // the main view is `zoneId == null` at render, and ?zone=<id> narrows.
   zoneId: string | null;
+  // Round 4 (A1): actions attach to PENDING proposals too (Cole's constraint,
+  // met via the target-keyed table) — absent = none.
+  actions?: ActionSlot[];
 }
 
 interface Message {
@@ -113,8 +124,14 @@ function readState(
   projectRoot?: string,
 ): ProjectState {
   const docRows = db
-    .query("SELECT id, title, kind, path FROM docs ORDER BY created_at")
-    .all() as Array<{ id: string; title: string; kind: string; path: string }>;
+    .query("SELECT id, title, kind, path, kind_author FROM docs ORDER BY created_at")
+    .all() as Array<{
+    id: string;
+    title: string;
+    kind: string;
+    path: string;
+    kind_author: string | null;
+  }>;
   const pathByDoc = new Map(docRows.map((row) => [row.id, row.path]));
   const marks = readDocMarks(db, (docId) => {
     const relPath = pathByDoc.get(docId);
@@ -123,9 +140,14 @@ function readState(
   });
   const docs: Doc[] = docRows.map((row) => {
     const mark = marks.get(row.id);
+    // '' → null at read (K1's rest-vs-wire split); kind_author normalizes to
+    // the union or null (a stray stored value reads as unattributed).
+    const kind = row.kind === "" ? null : row.kind;
+    const kindAuthor =
+      row.kind_author === "user" || row.kind_author === "agent" ? row.kind_author : null;
     return mark
-      ? { id: row.id, title: row.title, kind: row.kind, mark }
-      : { id: row.id, title: row.title, kind: row.kind };
+      ? { id: row.id, title: row.title, kind, kindAuthor, mark }
+      : { id: row.id, title: row.title, kind, kindAuthor };
   });
 
   const nodeRows = db
@@ -154,10 +176,17 @@ function readState(
     list.push({ messageId: row.message_id, span: row.span });
     sourcesByNode.set(row.node_id, list);
   }
-  const nodes: Node[] = nodeRows.map((row) => ({
-    ...row,
-    sources: sourcesByNode.get(row.id) ?? [],
-  }));
+  // A1: one read serves both merges — actions attach to nodes AND pending
+  // proposals by target id (absent = none, additive-optional).
+  const actionsByTarget = readActions(db);
+  const nodes: Node[] = nodeRows.map((row) => {
+    const actions = actionsByTarget.get(row.id);
+    return {
+      ...row,
+      sources: sourcesByNode.get(row.id) ?? [],
+      ...(actions ? { actions } : {}),
+    };
+  });
 
   const edges = db
     .query("SELECT id, source, target, label, provenance, direction FROM edges ORDER BY created_at")
@@ -182,21 +211,25 @@ function readState(
     author: string | null;
     zone_id: string | null;
   }>;
-  const proposals: Proposal[] = proposalRows.map((row) => ({
-    id: row.id,
-    kind: row.kind,
-    draft: JSON.parse(row.draft_json),
-    evidence: {
-      docId: row.evidence_doc_id,
-      messageId: row.evidence_message_id,
-      span: row.evidence_span,
-    },
-    suggestedTier: row.suggested_tier,
-    status: row.status,
-    resultNodeId: row.result_node_id,
-    author: row.author === "user" ? "user" : "agent",
-    zoneId: row.zone_id,
-  }));
+  const proposals: Proposal[] = proposalRows.map((row) => {
+    const actions = actionsByTarget.get(row.id);
+    return {
+      id: row.id,
+      kind: row.kind,
+      draft: JSON.parse(row.draft_json),
+      evidence: {
+        docId: row.evidence_doc_id,
+        messageId: row.evidence_message_id,
+        span: row.evidence_span,
+      },
+      suggestedTier: row.suggested_tier,
+      status: row.status,
+      resultNodeId: row.result_node_id,
+      author: row.author === "user" ? "user" : "agent",
+      zoneId: row.zone_id,
+      ...(actions ? { actions } : {}),
+    };
+  });
 
   const messageRows = db
     .query(

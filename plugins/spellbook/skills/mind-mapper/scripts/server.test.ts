@@ -506,13 +506,14 @@ test("POST /proposals/:id/promote moves a zoned proposal to the main queue; CLI-
   });
   const proposal = (await proposed.json()) as { id: string };
 
-  // Ratify-of-zoned refused at the wire, naming the move out.
+  // Ratify-of-zoned refused at the wire — R1: typed 409 {error:"zoned",
+  // zoneId} (menus branch on it without string-matching).
   const refused = await fetch(`${url}/proposals/${proposal.id}/ruling`, {
     method: "POST",
     body: JSON.stringify({ ruling: "thread" }),
   });
-  expect(refused.status).toBe(400);
-  expect(((await refused.json()) as { error: string }).error).toContain("promote first");
+  expect(refused.status).toBe(409);
+  expect(await refused.json()).toEqual({ error: "zoned", zoneId: "promote-pen" });
 
   const promoted = await fetch(`${url}/proposals/${proposal.id}/promote`, { method: "POST" });
   expect(promoted.status).toBe(200);
@@ -545,4 +546,101 @@ test("GET /doc/:id serves the envelope for docs that have landed", async () => {
     expect(doc.kind).toBe(d.kind);
     expect(doc.content.length).toBeGreaterThan(0);
   }
+});
+
+// Round 4 (K1) — doc kind honesty over the wire: ingest never types a doc,
+// POST /doc/:id/kind asserts one (mark route family), null clears.
+test("an ingested doc is untyped on the wire; POST /doc/:id/kind sets, clears, 404s and 400s", async () => {
+  await fetch(`${url}/ingest`, {
+    method: "POST",
+    body: JSON.stringify({ title: "Kind Probe", text: "typed later" }),
+  });
+  const untyped = (await (await fetch(`${url}/doc/kind-probe`)).json()) as {
+    kind: string | null;
+  };
+  expect(untyped.kind).toBeNull(); // /doc/:id envelope loosened to string|null
+
+  const set = await fetch(`${url}/doc/kind-probe/kind`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "worldbuilding", author: "user" }),
+  });
+  expect(set.status).toBe(200);
+  expect(await set.json()).toEqual({
+    docId: "kind-probe",
+    kind: "worldbuilding",
+    kindAuthor: "user",
+  });
+  let state = (await (await fetch(`${url}/state`)).json()) as {
+    docs: Array<{ id: string; kind: string | null; kindAuthor: string | null }>;
+  };
+  expect(state.docs.find((d) => d.id === "kind-probe")).toMatchObject({
+    kind: "worldbuilding",
+    kindAuthor: "user",
+  });
+
+  const cleared = await fetch(`${url}/doc/kind-probe/kind`, {
+    method: "POST",
+    body: JSON.stringify({ kind: null }),
+  });
+  expect(cleared.status).toBe(200);
+  expect(await cleared.json()).toEqual({ docId: "kind-probe", kind: null, kindAuthor: null });
+  state = (await (await fetch(`${url}/state`)).json()) as {
+    docs: Array<{ id: string; kind: string | null; kindAuthor: string | null }>;
+  };
+  expect(state.docs.find((d) => d.id === "kind-probe")).toMatchObject({
+    kind: null,
+    kindAuthor: null,
+  });
+
+  const missing = await fetch(`${url}/doc/no-such-doc/kind`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "x", author: "agent" }),
+  });
+  expect(missing.status).toBe(404);
+  const badAuthor = await fetch(`${url}/doc/kind-probe/kind`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "x", author: "gremlin" }),
+  });
+  expect(badAuthor.status).toBe(400);
+});
+
+// Round 4 (A1) — the action-slot wire: PUT replaces wholesale, DELETE
+// clears, unknown targets 404, bad shapes 400.
+test("PUT /actions/:targetId attaches slots that ride /state; DELETE clears; 404/400 fail loud", async () => {
+  const proposed = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title: "Actionable" }, evidence: {} }),
+  });
+  const proposal = (await proposed.json()) as { id: string };
+  const slot = { id: "explore", label: "Explore this", seed: "Explore — " };
+
+  const put = await fetch(`${url}/actions/${proposal.id}`, {
+    method: "PUT",
+    body: JSON.stringify([slot]),
+  });
+  expect(put.status).toBe(200);
+  expect(await put.json()).toEqual({ targetId: proposal.id, actions: [slot] });
+
+  let state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; actions?: unknown }>;
+  };
+  expect(state.proposals.find((p) => p.id === proposal.id)?.actions).toEqual([slot]);
+
+  const del = await fetch(`${url}/actions/${proposal.id}`, { method: "DELETE" });
+  expect(del.status).toBe(200);
+  state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; actions?: unknown }>;
+  };
+  expect(state.proposals.find((p) => p.id === proposal.id)?.actions).toBeUndefined();
+
+  const missing = await fetch(`${url}/actions/no-such-target`, {
+    method: "PUT",
+    body: JSON.stringify([slot]),
+  });
+  expect(missing.status).toBe(404);
+  const badShape = await fetch(`${url}/actions/${proposal.id}`, {
+    method: "PUT",
+    body: JSON.stringify({ not: "an array" }),
+  });
+  expect(badShape.status).toBe(400);
 });

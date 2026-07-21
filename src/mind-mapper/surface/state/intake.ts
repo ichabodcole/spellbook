@@ -6,11 +6,10 @@
 // Wire confirmed against the real POST /ingest (server.ts, commit 9695611,
 // vine msg 25) — NOT the shape first guessed at msg 23: JSON body is
 // `{title, text}` (not `content`), multipart fields are `title` + `file`
-// only. There is no kind override yet — the server always tags a multipart
-// drop "story" (ingestFile's default) and a JSON body "ramble" (ingestText's
-// default), so a blank "+ new document" lands as "ramble" until a kind
-// param exists server-side. Flagged, not blocking — ship what the wire
-// actually supports.
+// only. R4 K1 killed the ingest kind defaults ("story"/"ramble" are dead):
+// a fresh doc is UNTYPED (kind null, no badge) until someone asserts a kind
+// via `doc kind` / POST /doc/:id/kind — the old flagged-not-blocking note
+// about default tags is resolved by that honesty, not by a kind param here.
 
 export type IngestJsonPost = (body: { title: string; text: string }) => Promise<void>;
 export type IngestFilePost = (form: FormData) => Promise<void>;

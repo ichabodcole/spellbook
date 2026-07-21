@@ -18,7 +18,7 @@
 
 import { CheckSquare, FileText } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
-import { KIND_BADGE } from "./ContextRail";
+import { kindBadgeClass, NEUTRAL_BADGE } from "./state/docKind";
 import { resolveGroundRef } from "./state/groundRefs";
 import { renderMarkdown } from "./state/markdown";
 import { mapRangeToNodes } from "./state/spanFlash";
@@ -114,9 +114,12 @@ export function MessageBubble({
           <CheckSquare className="h-3 w-3" />
           about:{nodeTitles.length > 0 && <span>{nodeTitles.join(", ")}</span>}
           {docRefs.map((r) => (
+            // K1: the chip is a doc REFERENCE (it renders the title either
+            // way), so an untyped doc wears the neutral plate rather than
+            // absence — the no-badge rule applies to kind badges only.
             <span
               key={r.doc.id}
-              className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${KIND_BADGE[r.doc.kind]}`}
+              className={`flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${kindBadgeClass(r.doc.kind) ?? NEUTRAL_BADGE}`}
             >
               <FileText className="h-2.5 w-2.5" aria-hidden />
               {r.doc.title}

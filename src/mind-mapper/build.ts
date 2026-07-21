@@ -13,6 +13,13 @@
 // which only wires Bun's dev SERVE path) — same plugin, both modes, no
 // second toolchain (Contract 2).
 
+// Round 4 (B1): clean → build → stamp. dist/ is rm'd before every build
+// (hashed chunk names otherwise ACCUMULATE stale siblings across builds),
+// and a successful build writes dist/build.json {commit, builtAt} — the
+// stamp server.ts reads once at boot in release mode to log provenance and
+// detect a stale dist against a live src tree.
+
+import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import tailwind from "bun-plugin-tailwind";
 
@@ -29,7 +36,20 @@ const OUTDIR = join(
   "dist",
 );
 
+// Best-effort commit stamp — "unknown" is tolerated (a tarball build has no
+// .git; the stamp still dates the dist).
+function currentCommit(): string {
+  try {
+    const proc = Bun.spawnSync(["git", "rev-parse", "--short", "HEAD"], { cwd: SCRIPT_DIR });
+    const out = proc.stdout.toString().trim();
+    return proc.exitCode === 0 && out !== "" ? out : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
 async function main(): Promise<number> {
+  rmSync(OUTDIR, { recursive: true, force: true });
   const result = await Bun.build({
     entrypoints: [ENTRY],
     outdir: OUTDIR,
@@ -54,10 +74,17 @@ async function main(): Promise<number> {
     return 1;
   }
 
+  // The stamp lands AFTER a successful build only — a failed build leaves no
+  // dist/ (rm'd above), so a half-built tree can never wear a fresh stamp.
+  const stamp = { commit: currentCommit(), builtAt: new Date().toISOString() };
+  writeFileSync(join(OUTDIR, "build.json"), `${JSON.stringify(stamp, null, 2)}\n`);
+
   for (const artifact of result.outputs) {
     process.stdout.write(`${artifact.path.replace(`${OUTDIR}/`, "")} (${artifact.kind})\n`);
   }
-  process.stdout.write(`mind-mapper: built ${result.outputs.length} file(s) -> ${OUTDIR}\n`);
+  process.stdout.write(
+    `mind-mapper: built ${result.outputs.length} file(s) -> ${OUTDIR} (${stamp.commit} @ ${stamp.builtAt})\n`,
+  );
   return 0;
 }
 

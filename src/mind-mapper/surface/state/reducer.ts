@@ -7,6 +7,7 @@
 // since the event still consumed a seq the bus won't reissue.
 
 import type {
+  ActionSlot,
   DocMark,
   DocMeta,
   Lens,
@@ -64,6 +65,26 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       // only docs[] filters; stale source refs are tolerated by consumers.
       const { id } = event.payload as { id?: unknown };
       return { ...state, docs: state.docs.filter((d) => d.id !== id), cursor: event.seq };
+    }
+    case "doc.kind": {
+      // R4 K1 — {docId, kind, author}: kind already wire-normalized (null,
+      // never ''); a clear (kind null) un-attributes too (author null),
+      // which the payload carries by construction.
+      const { docId, kind, author } = event.payload as {
+        docId?: unknown;
+        kind?: unknown;
+        author?: unknown;
+      };
+      if (typeof docId !== "string") return { ...state, cursor: event.seq };
+      const nextKind = typeof kind === "string" ? kind : null;
+      const nextAuthor = author === "user" || author === "agent" ? author : null;
+      return {
+        ...state,
+        docs: state.docs.map((d) =>
+          d.id === docId ? { ...d, kind: nextKind, kindAuthor: nextAuthor } : d,
+        ),
+        cursor: event.seq,
+      };
     }
     case "doc.marked": {
       // Full mark inline (Claim B ruling — marks are small and append-only;
@@ -133,6 +154,34 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
       return {
         ...state,
         proposals: state.proposals.map((p) => (p.id === id ? { ...p, zoneId: null } : p)),
+        cursor: event.seq,
+      };
+    }
+    case "actions.set": {
+      // Round 4 (A1) — WHOLESALE metadata replace, the one deliberate
+      // exception to per-entity patching (the slots are metadata riding a
+      // node/pending proposal, not an entity of their own). Empty array
+      // clears back to wire absence. The ratify re-home emits NO actions.set
+      // — the thin ratified event's snapshot refetch carries the slots onto
+      // the minted node, so this case never has to move them.
+      const { targetId, actions } = event.payload as {
+        targetId?: unknown;
+        actions?: unknown;
+      };
+      if (typeof targetId !== "string" || !Array.isArray(actions)) {
+        return { ...state, cursor: event.seq };
+      }
+      const slots = actions as ActionSlot[];
+      const apply = <T extends { id: string; actions?: ActionSlot[] }>(list: T[]): T[] =>
+        list.map((item) => {
+          if (item.id !== targetId) return item;
+          const { actions: _dropped, ...rest } = item;
+          return slots.length > 0 ? ({ ...rest, actions: slots } as T) : (rest as unknown as T);
+        });
+      return {
+        ...state,
+        nodes: apply(state.nodes),
+        proposals: apply(state.proposals),
         cursor: event.seq,
       };
     }

@@ -141,3 +141,30 @@ test("an EMPTY resolved body is a usage error exit 2 on every path", async () =>
   const viaFile = await runCli(["send", "--body-file", emptyPath]);
   expect(viaFile.code).toBe(2);
 });
+
+// Round 4 gate rework — the round's one silent-loss edge: parseArgs'
+// single-value --ground kept only the LAST repeat (exit 0, refs dropped).
+// --ground is `multiple` now: repeats ACCUMULATE, and each value still
+// splits on commas — both forms, mixed, land every ref.
+test("repeated --ground flags accumulate (and commas still split) — no silent last-wins loss", async () => {
+  const sent = await runCli([
+    "send",
+    "grounded body",
+    "--ground",
+    "node-a,node-b",
+    "--ground",
+    "doc:ramble-01",
+  ]);
+  expect(sent.code).toBe(0);
+  const { stdout } = await runCli(["state"]);
+  const state = JSON.parse(stdout) as { conversation: Array<{ ground: string[] | null }> };
+  expect(state.conversation.at(-1)?.ground).toEqual(["node-a", "node-b", "doc:ramble-01"]);
+});
+
+test("--ground tolerates stray commas/blank fragments without minting empty refs", async () => {
+  const sent = await runCli(["send", "tidy ground", "--ground", "node-a,", "--ground", ""]);
+  expect(sent.code).toBe(0);
+  const { stdout } = await runCli(["state"]);
+  const state = JSON.parse(stdout) as { conversation: Array<{ ground: string[] | null }> };
+  expect(state.conversation.at(-1)?.ground).toEqual(["node-a"]);
+});

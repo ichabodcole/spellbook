@@ -47,6 +47,14 @@ beforeAll(async () => {
   );
   writeFileSync(join(skillRoot, "dist", "chunk-abc123.js"), "console.log('release mode');");
   writeFileSync(join(skillRoot, "dist", "chunk-abc123.css"), "body { margin: 0; }");
+  // Round 4 (B1): the stamp build.ts writes after a successful build. This
+  // rig has no src tree next to it (and MIND_MAPPER_SRC_DIR is unset), so
+  // the boot must read the stamp and report stale:false — a source-free
+  // marketplace install never warns.
+  writeFileSync(
+    join(skillRoot, "dist", "build.json"),
+    JSON.stringify({ commit: "abc1234", builtAt: "2026-07-19T00:00:00.000Z" }),
+  );
 
   // The gate's actual assertion: surface source is NOT present in this tree.
   expect(existsSync(join(skillRoot, "surface"))).toBe(false);
@@ -75,8 +83,18 @@ beforeAll(async () => {
       reject(new Error("daemon stdout closed before ready line"));
     })();
   });
-  const ready = JSON.parse(line) as { url: string; mode: string };
+  const ready = JSON.parse(line) as {
+    url: string;
+    mode: string;
+    buildInfo?: { commit: string; builtAt: string; stale: boolean };
+  };
   expect(ready.mode).toBe("release");
+  // B1: the boot line carries the stamp additively.
+  expect(ready.buildInfo).toEqual({
+    commit: "abc1234",
+    builtAt: "2026-07-19T00:00:00.000Z",
+    stale: false,
+  });
   url = ready.url;
 });
 
@@ -110,6 +128,79 @@ test("an unknown static path 404s (not a silent fallthrough)", async () => {
   expect(res.status).toBe(404);
 });
 
+test("a src tree newer than builtAt flags STALE DIST: stderr warning + stale:true on the wire", async () => {
+  // A fixture src tree with a file mtime of NOW, against a builtAt in the
+  // past — the dev-checkout staleness case (MIND_MAPPER_SRC_DIR is the
+  // test-only override for the src-tree location).
+  const srcDir = mkdtempSync(join(tmpdir(), "mind-mapper-release-src-"));
+  const staleHome = mkdtempSync(join(tmpdir(), "mind-mapper-release-stale-home-"));
+  mkdirSync(join(srcDir, "components"), { recursive: true });
+  writeFileSync(join(srcDir, "components", "App.tsx"), "// newer than the dist");
+
+  const staleProc = Bun.spawn(
+    [process.execPath, "run", join(skillRoot, "scripts", "server.ts"), "--no-open", "--port", "0"],
+    {
+      cwd: skillRoot,
+      env: { ...process.env, MIND_MAPPER_HOME: staleHome, MIND_MAPPER_SRC_DIR: srcDir },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+  try {
+    const line = await new Promise<string>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("stale daemon did not print ready")), 10_000);
+      (async () => {
+        const reader = (staleProc.stdout as ReadableStream<Uint8Array>).getReader();
+        let buf = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += new TextDecoder().decode(value);
+          const nl = buf.indexOf("\n");
+          if (nl !== -1) {
+            clearTimeout(timer);
+            resolve(buf.slice(0, nl));
+            return;
+          }
+        }
+        reject(new Error("stale daemon stdout closed before ready line"));
+      })();
+    });
+    const ready = JSON.parse(line) as {
+      mode: string;
+      buildInfo?: { stale: boolean };
+    };
+    expect(ready.mode).toBe("release");
+    expect(ready.buildInfo?.stale).toBe(true);
+
+    // The stderr warning names the fix.
+    const stderrText = await new Promise<string>((resolve) => {
+      let buf = "";
+      const reader = (staleProc.stderr as ReadableStream<Uint8Array>).getReader();
+      const timer = setTimeout(() => resolve(buf), 2000);
+      (async () => {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += new TextDecoder().decode(value);
+          if (buf.includes("STALE DIST")) {
+            clearTimeout(timer);
+            resolve(buf);
+            return;
+          }
+        }
+        clearTimeout(timer);
+        resolve(buf);
+      })();
+    });
+    expect(stderrText).toContain("STALE DIST");
+  } finally {
+    staleProc.kill();
+    rmSync(srcDir, { recursive: true, force: true });
+    rmSync(staleHome, { recursive: true, force: true });
+  }
+});
+
 test("the backend still works in release mode — fresh store 409s needs-project, then a created project serves", async () => {
   // The marketplace-install experience: a fresh store has NO projects and no
   // demo seed — unscoped /state is the ratified 409, not a fake board.
@@ -126,4 +217,15 @@ test("the backend still works in release mode — fresh store 409s needs-project
   const state = (await res.json()) as { project: { id: string }; nodes: unknown[] };
   expect(state.project.id).toBe("release-idea");
   expect(state.nodes).toEqual([]);
+});
+
+test("/state carries buildInfo in release mode (handler spread, stale:false without a src tree)", async () => {
+  const res = await fetch(`${url}/state?project=release-idea`);
+  expect(res.status).toBe(200);
+  const state = (await res.json()) as { buildInfo?: unknown };
+  expect(state.buildInfo).toEqual({
+    commit: "abc1234",
+    builtAt: "2026-07-19T00:00:00.000Z",
+    stale: false,
+  });
 });

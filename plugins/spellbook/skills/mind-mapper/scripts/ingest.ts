@@ -30,28 +30,29 @@ function uniqueId(db: Database, title: string): string {
   return id;
 }
 
+// Round 4 (K1): the ingest kind defaults ("ramble"/"story") died — a fresh
+// doc is honestly untyped ('' sentinel at rest, kind null on the wire) until
+// someone asserts a kind via POST /doc/:id/kind. Intake never guesses.
 function storeDoc(
   db: Database,
   bus: EventBus,
   docsDir: string,
   title: string,
   content: string,
-  kind: string,
 ): Doc {
   const id = uniqueId(db, title);
   if (!existsSync(docsDir)) throw new Error(`docs dir does not exist: ${docsDir}`);
   writeFileSync(join(docsDir, `${id}.md`), content);
-  db.run("INSERT INTO docs (id, title, kind, path) VALUES (?, ?, ?, ?)", [
+  db.run("INSERT INTO docs (id, title, kind, path, kind_author) VALUES (?, ?, '', ?, NULL)", [
     id,
     title,
-    kind,
     `docs/${id}.md`,
   ]);
   db.run("INSERT INTO docs_fts (rowid, doc_id, content) VALUES (last_insert_rowid(), ?, ?)", [
     id,
     content,
   ]);
-  const doc: Doc = { id, title, kind };
+  const doc: Doc = { id, title, kind: null, kindAuthor: null };
   bus.emit("doc.added", doc as unknown as Record<string, unknown>);
   return doc;
 }
@@ -62,9 +63,8 @@ function ingestText(
   docsDir: string,
   title: string,
   text: string,
-  kind = "ramble",
 ): Doc {
-  return storeDoc(db, bus, docsDir, title, text, kind);
+  return storeDoc(db, bus, docsDir, title, text);
 }
 
 function ingestFile(
@@ -73,9 +73,8 @@ function ingestFile(
   docsDir: string,
   title: string,
   content: string,
-  kind = "story",
 ): Doc {
-  return storeDoc(db, bus, docsDir, title, content, kind);
+  return storeDoc(db, bus, docsDir, title, content);
 }
 
 export { ingestFile, ingestText };

@@ -14,8 +14,10 @@ const REPLAY_BUFFER_SIZE = 1000;
 // NOT listed: "epoch.changed" — that line is CLI-synthesized by tail on
 // reconnect, never a bus event (the browser WS never sees it).
 type EventKind =
+  | "actions.set"
   | "doc.added"
   | "doc.deleted"
+  | "doc.kind"
   | "doc.marked"
   | "node.ratified"
   | "edge.ratified"

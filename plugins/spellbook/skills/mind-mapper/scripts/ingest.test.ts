@@ -22,14 +22,17 @@ test("ingestText writes the doc file, inserts a docs row, emits doc.added", () =
     const bus = createEventBus();
     const doc = ingestText(db, bus, docsDir, "Morning walk", "I keep circling back to the Edge.");
     expect(doc.title).toBe("Morning walk");
-    expect(doc.kind).toBe("ramble");
+    // Round 4 (K1): ingest never guesses a kind — untyped is null on the
+    // wire ('' sentinel at rest), unattributed (kindAuthor null).
+    expect(doc.kind).toBeNull();
+    expect(doc.kindAuthor).toBeNull();
     expect(existsSync(join(docsDir, `${doc.id}.md`))).toBe(true);
     expect(readFileSync(join(docsDir, `${doc.id}.md`), "utf8")).toBe(
       "I keep circling back to the Edge.",
     );
 
-    const row = db.query("SELECT id, title, kind FROM docs WHERE id = ?").get(doc.id);
-    expect(row).toEqual({ id: doc.id, title: "Morning walk", kind: "ramble" });
+    const row = db.query("SELECT id, title, kind, kind_author FROM docs WHERE id = ?").get(doc.id);
+    expect(row).toEqual({ id: doc.id, title: "Morning walk", kind: "", kind_author: null });
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

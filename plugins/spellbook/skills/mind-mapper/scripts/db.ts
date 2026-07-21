@@ -18,6 +18,9 @@ import { Database } from "bun:sqlite";
 // always addable to a populated table.
 const ADDITIVE_COLUMNS: Record<string, string[]> = {
   messages: ["id", "kind", "ground_json"],
+  // Round 4 (K1): who asserted a doc's kind ("user"|"agent"). Nullable —
+  // legacy rows are honestly unattributed (kindAuthor null on the wire).
+  docs: ["kind_author"],
   proposals: ["result_node_id", "author", "evidence_message_id", "zone_id"],
   // Round 3 (Claim V2): doc-lens — lens rows written before the doc mode
   // shipped simply carry a null doc_id (a node lens, unchanged).
@@ -45,12 +48,19 @@ function backfillColumns(db: Database, path: string): void {
 }
 
 const SCHEMA = `
+-- kind (Round 4, K1): SQLite cannot relax NOT NULL additively (measured,
+-- ratify scratch 2026-07-19), so "untyped" is the '' sentinel at rest,
+-- null-normalized at read everywhere it rides the wire. The ingest defaults
+-- ("ramble"/"story") died with this — a fresh doc is '' until someone
+-- asserts a kind. kind_author is nullable-TEXT-only because it arrived via
+-- ADDITIVE_COLUMNS after the original shape shipped (fresh-equals-migrated).
 CREATE TABLE IF NOT EXISTS docs (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   kind TEXT NOT NULL,
   path TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  kind_author TEXT
 );
 
 CREATE TABLE IF NOT EXISTS nodes (
@@ -169,6 +179,16 @@ CREATE TABLE IF NOT EXISTS lens (
   node_id TEXT,
   depth INTEGER,
   doc_id TEXT
+);
+
+-- Round 4 (A1): agent-authored action slots, target-keyed — target_id is a
+-- node id OR a PENDING proposal's id (disjoint UUID spaces, measured; the
+-- lens precedent: agent-writable metadata, not staged, not ratified).
+-- Lifecycle rides the owners: ratify re-homes the row onto the minted node
+-- id, reject deletes it, zone delete cascades it, promote is a no-op.
+CREATE TABLE IF NOT EXISTS node_actions (
+  target_id TEXT PRIMARY KEY,
+  actions_json TEXT NOT NULL
 );
 
 CREATE VIRTUAL TABLE IF NOT EXISTS docs_fts USING fts5(doc_id UNINDEXED, content);

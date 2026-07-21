@@ -274,10 +274,11 @@ test("zone loop round-trips through the CLI: create → propose --zone → promo
   await propose.exited;
   expect(proposal.zoneId).toBe("messy-ideas");
 
-  // Ratify-of-zoned refused; promote moves it to the main queue.
+  // Ratify-of-zoned refused (R1: the typed 409 body passes through verbatim);
+  // promote moves it to the main queue.
   const refused = await runCli("ratify", proposal.id, "--ruling", "thread");
   expect(refused.code).toBe(2);
-  expect(refused.stdout).toContain("promote first");
+  expect(JSON.parse(refused.stdout)).toEqual({ error: "zoned", zoneId: "messy-ideas" });
   const promoted = await runCli("promote", proposal.id);
   expect(promoted.code).toBe(0);
   expect(JSON.parse(promoted.stdout)).toEqual({ id: proposal.id });

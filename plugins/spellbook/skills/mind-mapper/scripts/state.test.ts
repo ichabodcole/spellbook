@@ -97,7 +97,11 @@ test("readState reflects seeded rows, docs stay content-free", () => {
     );
 
     const state = readState(db, { id: "default", title: "Default" });
-    expect(state.docs).toEqual([{ id: "ramble-01", title: "Ramble", kind: "ramble" }]);
+    // K1: an existing stored kind survives unchanged (only '' normalizes to
+    // null); kindAuthor null = honestly unattributed (legacy row).
+    expect(state.docs).toEqual([
+      { id: "ramble-01", title: "Ramble", kind: "ramble", kindAuthor: null },
+    ]);
     // Zones surface in the snapshot; zoned proposals are INCLUDED, tagged
     // (the ruled inclusive shape — main view filters zoneId == null).
     expect(state.zones).toEqual([{ id: "messy-ideas", name: "Messy Ideas" }]);
@@ -122,6 +126,32 @@ test("readState reflects seeded rows, docs stay content-free", () => {
     });
     expect(state.lens).toEqual({ owner: "human", nodeId: "maren", depth: 1, docId: null });
     expect(state.cursor).toBe(0);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("readState normalizes the '' kind sentinel to null and carries a set kind + author", () => {
+  const { dir, db } = tempDb();
+  try {
+    db.run("INSERT INTO docs (id, title, kind, path, kind_author) VALUES (?, ?, '', ?, NULL)", [
+      "untyped-01",
+      "Untyped",
+      "docs/untyped-01.md",
+    ]);
+    db.run("INSERT INTO docs (id, title, kind, path, kind_author) VALUES (?, ?, ?, ?, ?)", [
+      "typed-01",
+      "Typed",
+      "worldbuilding",
+      "docs/typed-01.md",
+      "user",
+    ]);
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.docs).toEqual([
+      { id: "untyped-01", title: "Untyped", kind: null, kindAuthor: null },
+      { id: "typed-01", title: "Typed", kind: "worldbuilding", kindAuthor: "user" },
+    ]);
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

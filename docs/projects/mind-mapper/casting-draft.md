@@ -62,12 +62,19 @@ All verbs: `bun plugins/spellbook/skills/mind-mapper/scripts/cli.ts <verb>`.
 
 ## The loop
 
-**Announce your attention (`activity`):** post `activity received` the moment a
-human message arrives, `activity thinking` when you start composing or
-analyzing, and `activity idle` when you finish a beat. It is fire-and-forget (no
-table, no reply) and drives the surface's presence/thinking indicator; if you
-crash mid-thought the daemon clears it after ~60s, so a missed `idle` is
-recoverable — but post it anyway. Your reply (`send`) also reads as done.
+**Announce your attention (`activity`):** the daemon now handles `received` FOR
+you — a human message arriving while your tail is connected auto-emits
+`agent.activity received` (you'll see it echo; don't post it yourself). Your
+part is the middle and end of the beat: `activity thinking` when you start
+composing or analyzing, `activity idle` if a beat ends without a reply. Any
+write of yours (`send`, `propose-*`, `ratify`, `mark`) also resolves the auto
+state, and a `send` reads as the turn's terminal act — it clears your `thinking`
+too (re-post `thinking` explicitly if you keep working after a reply). **If you
+go silent for ~60s after a message lands, the daemon escalates to `stalled`**
+("agent may be stuck") — it persists until you act or post a state, so a single
+write on waking clears it. You can never post `stalled` yourself (400 — daemon
+vocabulary only). `thinking` still decays to a synthetic `idle` after ~60s, so a
+crash never leaves the indicator stuck.
 
 **When a doc arrives (`doc.added`):** this is AMBIENT staging, not an intent —
 the human may be setting the table for a conversation. Acknowledge it; extract
@@ -121,6 +128,28 @@ ratify. The daemon does answer such a propose with an additive `warning` field
 Threads-registry rule generalized). Over-proposing is fine; expensive rejection
 is not — pre-classify honestly, don't pad.
 
+**Doc kinds (`doc kind`):** an ingested doc has NO kind — `state.docs[]` shows
+`kind: null` and the surface renders no badge (absence, not "unclassified"). The
+daemon never guesses one. When you can classify a doc honestly — usually after
+reading it — assert the kind: `doc kind <docId> <kind> [--author user|agent]`
+(author defaults to `agent`; pass `user` only when relaying the human's explicit
+classification). `doc kind <docId> --clear` un-types it (the attribution clears
+with it). `kindAuthor` rides `state.docs[]` so everyone can see whether a kind
+was human-asserted or your call. Kind vocabulary is freeform (`ramble`, `story`,
+`worldbuilding`, …) — classify honestly, don't pad.
+
+**Action slots (`actions`):** leave conversational shortcuts on the board —
+per-node (or per-pending-proposal) follow-ups the human can click instead of
+typing:
+`actions <targetId> --set '[{"id":"jungian","label":"Explore Jungian archetypes","seed":"Explore Jungian archetypes for this figure — "}]'`
+(or `--stdin` for bigger arrays; `--clear` removes them). A click seeds the
+human's composer with your `seed` text plus the target as ground — it NEVER
+auto-sends, so write seeds as openers, not commands. The set is wholesale (each
+`--set` replaces the target's whole list). Keep it to ~4 sharp slots — more
+stores fine but warns, and the surface shows 4 + scroll. Slots survive
+ratification (they move to the new node); they die with a reject or a zone
+delete. Refresh them as the conversation moves — stale affordances are noise.
+
 **Mark every analysis (`mark`):** after ANY analysis pass — including a null
 result — leave a mark:
 `mark <docId> --status analyzed --note "<what you found>"`. "Nothing worth
@@ -141,8 +170,9 @@ Evidence is doc- OR message-grounded, never both. **A message-grounded proposal
 takes no `--doc-edit` at ratify** — there is no doc to fold it into; if the idea
 deserves a doc home, that's the bridge below. When a chat thread coheres into a
 thing, offer the bridge: "this looks like it wants to be a doc — mint it?" — on
-yes, `ingest --title <t> --stdin` with your synthesis, then propose its claims
-against the new doc.
+yes, `ingest --title <t> --stdin` with your synthesis (or
+`ingest --title <t> --file <path>` when the content already lives in a file),
+then propose its claims against the new doc.
 
 **Human-sketched proposals (`author: "user"`):** the human can sketch nodes and
 edges directly on the canvas; these arrive as `proposal.added` with
@@ -182,8 +212,9 @@ brainstorming variants, a what-if subgraph, bulk extraction you haven't triaged
    **Edge ordering mirrors ratify:** an edge whose endpoints are still-zoned
    node proposals refuses to promote and names the endpoint to promote first.
 4. The human rules in the main queue as usual. **Ratify refuses a still-zoned
-   proposal** ("promote first") — ratification, including reject, is a
-   main-queue act.
+   proposal** with a typed 409 `{"error": "zoned", "zoneId": "<zone>"}` — branch
+   on the `error` key, then promote it out of the named zone first
+   (ratification, including reject, is a main-queue act).
 
 **There is no reject-in-zone.** The only in-zone disposal is
 `zone delete <id> [--yes]`, which discards the zone WITH its proposals (a
@@ -215,6 +246,13 @@ replaces the other, `--node`/`--doc` are mutually exclusive, and `--depth`
 applies to a node lens only. `lens clear` when the focus widens;
 `look-here <id>` as a one-shot pointer while explaining. Steer attention, don't
 grab it — one look-here per beat, not per sentence.
+
+**Grounding a send:** attach refs with `--ground "node-a,node-b,doc:ramble-01"`
+— one flag, comma-separated (bare id = node or pending-proposal ref, `doc:<id>`
+= doc ref). Repeating the flag also works and ACCUMULATES
+(`--ground node-a --ground doc:x` lands all refs; older builds silently kept
+only the last repeat, so prefer the single comma-separated form when unsure of
+the CLI's vintage).
 
 **Sending (`send`) — pass a body, always.** The body resolves through a chain,
 first hit wins: `--body-file <path>` → `--stdin` → inline positional text →

@@ -11,9 +11,20 @@
 // which converges on POST /ingest — the rail itself stays a dumb list
 // renderer plus these two entry points, no ingest logic inline here.
 
-import { BookOpen, Crosshair, Mic, Plus, ScrollText, Sparkles, Trash2, Upload } from "lucide-react";
+import {
+  BookOpen,
+  Crosshair,
+  FileText,
+  Mic,
+  Plus,
+  ScrollText,
+  Sparkles,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useState } from "react";
-import type { DocKind, DocMeta } from "./types";
+import { kindAuthorClass, kindAuthorTitle, kindBadgeClass } from "./state/docKind";
+import type { DocMeta } from "./types";
 import { Button } from "./ui/button";
 import {
   ContextMenu,
@@ -25,19 +36,19 @@ import {
 } from "./ui/context-menu";
 import { Textarea } from "./ui/textarea";
 
-const KIND_ICON: Record<DocKind, typeof BookOpen> = {
+// R4 K1 — kind is string | null now (the closed union died with the ingest
+// defaults): guarded lookup, FileText for null/unknown (a doc is a doc).
+// The tint vocabulary moved to state/docKind.ts (pure + tested) —
+// MessageBubble's doc-ref chips import it from there too.
+const KIND_ICON: Record<string, typeof BookOpen> = {
   ramble: Mic,
   story: ScrollText,
   bible: BookOpen,
 };
 
-// Exported as the surface's doc-kind tint vocabulary — MessageBubble's
-// doc-ref chips (Claim G) reuse it so a doc reads the same color everywhere.
-export const KIND_BADGE: Record<DocKind, string> = {
-  ramble: "bg-pending/20 text-pending",
-  story: "bg-story-local/20 text-story-local",
-  bible: "bg-canon/20 text-canon",
-};
+function kindIcon(kind: string | null): typeof BookOpen {
+  return (kind && KIND_ICON[kind]) || FileText;
+}
 
 export function ContextRail({
   docs,
@@ -153,7 +164,8 @@ export function ContextRail({
           </p>
         ) : (
           docs.map((d) => {
-            const Icon = KIND_ICON[d.kind];
+            const Icon = kindIcon(d.kind);
+            const badge = kindBadgeClass(d.kind);
             const open = d.id === openDocId;
             return (
               <ContextMenu key={d.id}>
@@ -172,11 +184,18 @@ export function ContextRail({
                     >
                       <div className="flex items-center gap-1.5">
                         <Icon size={13} className="shrink-0 text-ink-dim" aria-hidden />
-                        <span
-                          className={`rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${KIND_BADGE[d.kind]}`}
-                        >
-                          {d.kind}
-                        </span>
+                        {/* K1: null kind = NO badge (absence, not an
+                            "unclassified" chip); when set, the border says
+                            who asserted it — solid you, dashed agent, none
+                            for legacy unattributed rows. */}
+                        {badge && d.kind && (
+                          <span
+                            title={kindAuthorTitle(d.kindAuthor)}
+                            className={`rounded-full px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${badge} ${kindAuthorClass(d.kindAuthor)}`}
+                          >
+                            {d.kind}
+                          </span>
+                        )}
                       </div>
                       <p className="mt-1.5 w-full truncate text-xs text-ink">{d.title}</p>
                       {d.mark && (

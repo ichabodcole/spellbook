@@ -7,7 +7,9 @@ import { resolveGroundRef } from "./groundRefs";
 const nodes: MapNode[] = [
   { id: "maren", title: "Maren", kind: "cast", tier: "canon", synopsis: "" },
 ];
-const docs: DocMeta[] = [{ id: "toll-ramble", title: "The Toll Ramble", kind: "ramble" }];
+const docs: DocMeta[] = [
+  { id: "toll-ramble", title: "The Toll Ramble", kind: "ramble", kindAuthor: null },
+];
 
 test("a bare id resolves as a node ref", () => {
   expect(resolveGroundRef("maren", nodes, docs)).toEqual({

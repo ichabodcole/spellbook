@@ -58,9 +58,12 @@ export function DocViewer({
     <section className="flex min-w-0 flex-1 flex-col border-l border-edge bg-surface">
       <div className="flex items-center gap-2 border-b border-edge px-4 py-2">
         <h2 className="min-w-0 truncate font-story text-sm text-ink">{doc.title}</h2>
-        <span className="rounded bg-surface-raised px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-dim">
-          {doc.kind}
-        </span>
+        {/* K1: null kind = no chip at all (absence, not an empty pill). */}
+        {doc.kind && (
+          <span className="rounded bg-surface-raised px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-dim">
+            {doc.kind}
+          </span>
+        )}
         <Button
           variant="ghost"
           size="icon-xs"

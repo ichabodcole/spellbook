@@ -11,12 +11,21 @@
 // without the surface build graph present (Contract 1's "why it bites").
 
 import type { Database } from "bun:sqlite";
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
+import { clearActions, setActions } from "./actions.ts";
 import { openStore } from "./db.ts";
-import { CitedError, deleteDoc } from "./docs.ts";
+import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
 import { createEventBus, type EventBus } from "./events.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
 import { clearLens, lookHere, setLens } from "./lens.ts";
@@ -33,7 +42,7 @@ import {
   UnknownProjectError,
 } from "./project.ts";
 import { edgeDraftWarning, proposeEdge, proposeNode } from "./propose.ts";
-import { ratify } from "./ratify.ts";
+import { ratify, ZonedError } from "./ratify.ts";
 import { search } from "./search.ts";
 import { sendMessage } from "./send.ts";
 import { readState } from "./state.ts";
@@ -54,6 +63,55 @@ function resolveMode(): "dev" | "release" {
   const override = process.env.SPELLBOOK_SURFACE_MODE;
   if (override === "dev" || override === "release") return override;
   return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+// Round 4 (B1) — the build stamp. Release mode reads dist/build.json ONCE at
+// boot (boot-time staleness is honest — routes bake at boot anyway); a
+// missing/corrupt stamp is tolerated (pre-stamp dists keep serving, no
+// buildInfo). Staleness: iff the surface SOURCE tree exists next to this
+// checkout (existsSync-guarded — a source-free marketplace install never
+// walks, never warns) and its newest file mtime postdates builtAt, the dist
+// is stale — stderr warning + stale:true on the wire. MIND_MAPPER_SRC_DIR is
+// a test-only override for the src-tree location.
+interface BuildInfo {
+  commit: string;
+  builtAt: string;
+  stale: boolean;
+}
+
+const SRC_SURFACE_DIR =
+  process.env.MIND_MAPPER_SRC_DIR ??
+  join(SKILL_ROOT, "..", "..", "..", "..", "src", "mind-mapper", "surface");
+
+function newestMtimeMs(dir: string): number {
+  let newest = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    const mtime = entry.isDirectory() ? newestMtimeMs(path) : statSync(path).mtimeMs;
+    if (mtime > newest) newest = mtime;
+  }
+  return newest;
+}
+
+function readBuildInfo(): BuildInfo | null {
+  const stampPath = join(DIST_DIR, "build.json");
+  if (!existsSync(stampPath)) return null;
+  let stamp: { commit?: unknown; builtAt?: unknown };
+  try {
+    stamp = JSON.parse(readFileSync(stampPath, "utf8")) as typeof stamp;
+  } catch {
+    return null;
+  }
+  if (typeof stamp.commit !== "string" || typeof stamp.builtAt !== "string") return null;
+  let stale = false;
+  if (existsSync(SRC_SURFACE_DIR)) {
+    try {
+      stale = newestMtimeMs(SRC_SURFACE_DIR) > Date.parse(stamp.builtAt);
+    } catch {
+      stale = false; // an unreadable src tree proves nothing
+    }
+  }
+  return { commit: stamp.commit, builtAt: stamp.builtAt, stale };
 }
 
 const STATIC_CONTENT_TYPES: Record<string, string> = {
@@ -89,14 +147,20 @@ const PID_FILE = join(HOME, "daemon.pid");
 // reopen per request). `agents` is Claim C's standing-presence counter — it
 // lives HERE (per-project map entry, adjusted at the SSE subscription site)
 // because the bus's listener set is transport-blind: only the subscription
-// site knows an agent tail from a browser WS. `activityTimer` is the ~60s
-// TTL that turns a silent agent back to idle.
+// site knows an agent tail from a browser WS.
+//
+// Round 4 (ACT1): activityState/activitySource track the LIVE activity so
+// agent writes can resolve it — "auto" is a daemon-flipped state (the /send
+// auto-received, the TTL'd stalled), "explicit" is a POST /activity. All
+// in-memory: a restart honestly clears to no-signal.
 interface ProjectEntry {
   db: Database;
   bus: EventBus;
   meta: ProjectMeta;
   agents: number;
   activityTimer: ReturnType<typeof setTimeout> | null;
+  activityState: string | null;
+  activitySource: "auto" | "explicit" | null;
 }
 
 const projects = new Map<string, ProjectEntry>();
@@ -119,7 +183,15 @@ function loadProject(id?: string): ProjectEntry {
 
   const dir = projectDir(HOME, meta.id);
   const db = openStore(join(dir, "store.sqlite"));
-  const entry: ProjectEntry = { db, bus: createEventBus(), meta, agents: 0, activityTimer: null };
+  const entry: ProjectEntry = {
+    db,
+    bus: createEventBus(),
+    meta,
+    agents: 0,
+    activityTimer: null,
+    activityState: null,
+    activitySource: null,
+  };
   projects.set(meta.id, entry);
   return entry;
 }
@@ -158,32 +230,70 @@ function activityTtlMs(): number {
   return Number.isFinite(v) && v > 0 ? v : 60_000;
 }
 
-// Claim C's active-attention half: fire-and-forget, no table, no
-// persistence (like look.here). A non-idle state arms the per-project TTL
-// timer; on fire the daemon emits a SYNTHETIC idle so a crashed agent can't
-// leave "thinking…" stuck on the surface.
-function postActivity(entry: ProjectEntry, state: "received" | "thinking" | "idle"): void {
+// Claim C's active-attention half, Round 4 (ACT1) supersession of the TTL
+// clause: fire-and-forget, no table, no persistence. TTL escalation is
+// state-aware now — `received` older than the TTL escalates to a
+// daemon-synthesized `stalled` ("agent may be stuck"; persists, NO further
+// timer), while `thinking` still decays to a synthetic `idle` (a crashed
+// agent can't leave "thinking…" stuck on the surface). `stalled` is
+// daemon-only vocabulary — POST /activity rejects it (the epoch.changed
+// asymmetry precedent). Every emit rides the normal bus path (seq-consuming
+// — the ephemeral-cursor clause holds).
+function postActivity(
+  entry: ProjectEntry,
+  state: "received" | "thinking" | "idle",
+  source: "auto" | "explicit",
+): void {
   if (entry.activityTimer !== null) {
     clearTimeout(entry.activityTimer);
     entry.activityTimer = null;
   }
+  entry.activityState = state === "idle" ? null : state;
+  entry.activitySource = state === "idle" ? null : source;
   entry.bus.emit("agent.activity", { state });
-  if (state !== "idle") {
+  if (state === "received") {
     entry.activityTimer = setTimeout(() => {
       entry.activityTimer = null;
+      entry.activityState = "stalled";
+      entry.activitySource = "auto"; // resolvable by any agent write, whoever set the received
+      entry.bus.emit("agent.activity", { state: "stalled" });
+    }, activityTtlMs());
+  } else if (state === "thinking") {
+    entry.activityTimer = setTimeout(() => {
+      entry.activityTimer = null;
+      entry.activityState = null;
+      entry.activitySource = null;
       entry.bus.emit("agent.activity", { state: "idle" });
     }, activityTtlMs());
+  }
+}
+
+// ACT1's resolution half: an agent-authored write is evidence the agent is
+// alive and acting, so it resolves any AUTO state (received/stalled) to
+// idle. A role:"agent" send ALSO resolves explicit `thinking` — a reply is
+// the turn's terminal act (closed open-question; re-set thinking explicitly
+// for send-then-more-work). Other explicit states stand until an explicit
+// idle or the TTL.
+function resolveActivity(entry: ProjectEntry, opts: { terminalAct?: boolean } = {}): void {
+  const resolvesExplicitThinking =
+    opts.terminalAct === true &&
+    entry.activitySource === "explicit" &&
+    entry.activityState === "thinking";
+  if (entry.activitySource === "auto" || resolvesExplicitThinking) {
+    postActivity(entry, "idle", "auto");
   }
 }
 
 // Seam v2 (vine msgs 13–17): GET /doc/:id → { id, title, kind, content } —
 // title/kind/path from the docs table, content from the file at that path,
 // both read per-request. JSON 404 for an unknown id OR a missing file.
+// Round 4 (K1): kind loosens to string | null — the '' sentinel at rest
+// normalizes to null here, same as /state.docs[].
 function readDoc(
   db: Database,
   dir: string,
   id: string,
-): { id: string; title: string; kind: string; content: string } | null {
+): { id: string; title: string; kind: string | null; content: string } | null {
   // Slug guard — ids are agreed slugs; anything else (path traversal,
   // separators) is not a doc.
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) return null;
@@ -196,7 +306,12 @@ function readDoc(
   const file = join(dir, "..", row.path);
   if (!existsSync(file)) return null;
   try {
-    return { id, title: row.title, kind: row.kind, content: readFileSync(file, "utf8") };
+    return {
+      id,
+      title: row.title,
+      kind: row.kind === "" ? null : row.kind,
+      content: readFileSync(file, "utf8"),
+    };
   } catch {
     return null;
   }
@@ -306,6 +421,21 @@ async function main(argv: string[]): Promise<number> {
 
   const mode = resolveMode();
 
+  // B1: read the stamp once at boot (release only). Boot-time staleness is
+  // honest — routes bake at boot, so what was true at boot stays the served
+  // truth until a restart anyway.
+  const buildInfo = mode === "release" ? readBuildInfo() : null;
+  if (buildInfo) {
+    process.stderr.write(
+      `mind-mapper: serving dist built at ${buildInfo.builtAt} (${buildInfo.commit})\n`,
+    );
+    if (buildInfo.stale) {
+      process.stderr.write(
+        "mind-mapper: STALE DIST — src/mind-mapper/surface/ has files newer than the dist build; run `bun run src/mind-mapper/build.ts` and restart\n",
+      );
+    }
+  }
+
   // dev: the dynamic string-literal import keeps the surface graph off the
   // module load path (Contract 1's "why it bites" — a top-level static
   // import would force Bun to resolve it at daemon LOAD, crashing a
@@ -389,9 +519,14 @@ async function main(argv: string[]): Promise<number> {
               }
               state.proposals = state.proposals.filter((p) => p.zoneId === zoneId);
             }
+            // buildInfo spreads AT THE HANDLER, not through readState — a
+            // daemon-level fact like presence (the exported ProjectState
+            // type under-reports the wire here too; Contract 9 as-built
+            // note). Release mode only; absent otherwise.
             return Response.json({
               ...state,
               presence: { agents: entry.agents },
+              ...(buildInfo ? { buildInfo } : {}),
             });
           }
 
@@ -443,16 +578,53 @@ async function main(argv: string[]): Promise<number> {
             }
           }
 
+          // Round 4 (A1): PUT replaces a target's action slots wholesale
+          // (empty array clears), DELETE clears — target is a node or a
+          // PENDING proposal, anything else 404s; shape/byte-cap fail 400.
+          if ((req.method === "PUT" || req.method === "DELETE") && path.startsWith("/actions/")) {
+            const { db, bus } = loadProject(projectId);
+            const targetId = path.slice("/actions/".length);
+            const handle =
+              req.method === "DELETE"
+                ? Promise.resolve(clearActions(db, bus, targetId))
+                : req.json().then((body) => setActions(db, bus, targetId, body));
+            return handle
+              .then((result) => {
+                if (!result) {
+                  return new Response('{"error":"unknown target (node or pending proposal)"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(result);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
           if (req.method === "POST" && path === "/activity") {
             const entry = loadProject(projectId);
             return req
               .json()
               .then((body) => {
                 const { state } = body as { state?: unknown };
+                // ACT1: `stalled` is daemon-synthesized vocabulary ONLY —
+                // rejecting it here is the epoch.changed asymmetry again (a
+                // client may hear it, never say it).
+                if (state === "stalled") {
+                  throw new Error(
+                    "stalled is daemon-synthesized only — post received|thinking|idle",
+                  );
+                }
                 if (state !== "received" && state !== "thinking" && state !== "idle") {
                   throw new Error("state must be received|thinking|idle");
                 }
-                postActivity(entry, state);
+                postActivity(entry, state, "explicit");
                 return Response.json({ ok: true, state });
               })
               .catch(
@@ -521,7 +693,8 @@ async function main(argv: string[]): Promise<number> {
           }
 
           if (req.method === "POST" && path === "/proposals") {
-            const { db, bus } = loadProject(projectId);
+            const entry = loadProject(projectId);
+            const { db, bus } = entry;
             return req
               .json()
               .then((body) => {
@@ -556,6 +729,10 @@ async function main(argv: string[]): Promise<number> {
                 // the cold agent hears about the fumble in the same turn,
                 // not at ratify. Never stored, never in /state.
                 const warning = kind === "edge" ? edgeDraftWarning(input.draft) : null;
+                // ACT1: an AGENT-authored propose (author defaults to agent)
+                // is evidence of activity — it resolves auto states; a
+                // user-sketched proposal (surface canvas) is not the agent's.
+                if (proposal.author === "agent") resolveActivity(entry);
                 return Response.json(warning ? { ...proposal, warning } : proposal);
               })
               .catch(
@@ -568,7 +745,8 @@ async function main(argv: string[]): Promise<number> {
           }
 
           if (req.method === "POST" && path === "/send") {
-            const { db, bus, meta } = loadProject(projectId);
+            const entry = loadProject(projectId);
+            const { db, bus, meta } = entry;
             return req
               .json()
               .then((body) => {
@@ -587,6 +765,17 @@ async function main(argv: string[]): Promise<number> {
                   text,
                   ground: Array.isArray(ground) ? (ground as string[]) : undefined,
                 });
+                // ACT1 auto-flip: a human message with an agent tail on this
+                // project reads as "received" without the agent saying so —
+                // emitted AFTER message.posted (two seqs, ordered). No agent
+                // connected → no flip (the presence dot already says nobody's
+                // home). An agent send is the turn's terminal act: it
+                // resolves auto states AND explicit thinking to idle.
+                if (role === "user" && entry.agents >= 1) {
+                  postActivity(entry, "received", "auto");
+                } else if (role === "agent") {
+                  resolveActivity(entry, { terminalAct: true });
+                }
                 return Response.json(message);
               })
               .catch(
@@ -631,7 +820,8 @@ async function main(argv: string[]): Promise<number> {
           }
 
           if (req.method === "POST" && path.startsWith("/proposals/") && path.endsWith("/ruling")) {
-            const { db, bus, meta } = loadProject(projectId);
+            const entry = loadProject(projectId);
+            const { db, bus, meta } = entry;
             const proposalId = path.slice("/proposals/".length, -"/ruling".length);
             const docsDir = join(projectDir(HOME, meta.id), "docs");
             return req
@@ -661,15 +851,26 @@ async function main(argv: string[]): Promise<number> {
                   docId: typeof docId === "string" ? docId : undefined,
                   span: typeof span === "string" ? span : undefined,
                 });
+                // ACT1: ratify is on the agent-write list (no authorship on
+                // this wire) — it resolves auto states unconditionally.
+                resolveActivity(entry);
                 return Response.json(result);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
-              );
+              .catch((e) => {
+                // R1: the in-zone refusal is typed — 409 {error:"zoned",
+                // zoneId} so menus branch without string-matching (the
+                // CitedError/ZoneNotEmptyError family).
+                if (e instanceof ZonedError) {
+                  return new Response(JSON.stringify({ error: "zoned", zoneId: e.zoneId }), {
+                    status: 409,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return new Response(
+                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                  { status: 400, headers: { "Content-Type": "application/json" } },
+                );
+              });
           }
 
           if (req.method === "POST" && path === "/lens") {
@@ -758,8 +959,43 @@ async function main(argv: string[]): Promise<number> {
             }
           }
 
+          // Round 4 (K1) — mark route family: 404-first for unknown/non-slug
+          // ids, 400 for a bad payload. kind: null clears (author nulled too).
+          if (req.method === "POST" && path.startsWith("/doc/") && path.endsWith("/kind")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/doc/".length, -"/kind".length);
+            return req
+              .json()
+              .then((body) => {
+                const { kind, author } = body as { kind?: unknown; author?: unknown };
+                if (kind !== null && typeof kind !== "string") {
+                  throw new Error("kind must be a string, or null to clear");
+                }
+                const result = setDocKind(db, bus, {
+                  docId: id,
+                  kind: kind as string | null,
+                  author: typeof author === "string" ? author : undefined,
+                });
+                if (!result) {
+                  return new Response('{"error":"unknown doc"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(result);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
           if (req.method === "POST" && path.startsWith("/doc/") && path.endsWith("/mark")) {
-            const { db, bus, meta } = loadProject(projectId);
+            const entry = loadProject(projectId);
+            const { db, bus, meta } = entry;
             const id = path.slice("/doc/".length, -"/mark".length);
             return req
               .json()
@@ -770,12 +1006,15 @@ async function main(argv: string[]): Promise<number> {
                   status?: unknown;
                 };
                 if (typeof status !== "string") throw new Error("mark requires a status string");
+                const resolvedAuthor = typeof author === "string" ? author : "agent";
                 const mark = markDoc(db, bus, projectDir(HOME, meta.id), {
                   docId: id,
-                  author: typeof author === "string" ? author : "agent",
+                  author: resolvedAuthor,
                   note: typeof note === "string" ? note : undefined,
                   status,
                 });
+                // ACT1: an agent-authored mark resolves auto states.
+                if (resolvedAuthor === "agent") resolveActivity(entry);
                 return Response.json({ docId: id, mark });
               })
               .catch(
@@ -845,7 +1084,9 @@ async function main(argv: string[]): Promise<number> {
       `mind-mapper: could not write discovery files: ${e instanceof Error ? e.message : String(e)}\n`,
     );
   }
-  process.stdout.write(`${JSON.stringify({ url, port: server.port, mode })}\n`);
+  process.stdout.write(
+    `${JSON.stringify({ url, port: server.port, mode, ...(buildInfo ? { buildInfo } : {}) })}\n`,
+  );
   if (!parsed.values["no-open"]) openBrowser(url);
 
   // Standing until killed (SIGTERM/SIGINT) — no idle timeout in V1.

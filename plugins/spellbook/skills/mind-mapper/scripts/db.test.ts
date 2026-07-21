@@ -234,6 +234,66 @@ test("openStore backfills zone_id onto a previous-shape (V1.x) proposals table a
   }
 });
 
+test("openStore backfills kind_author onto a previous-shape docs table (fresh equals migrated)", () => {
+  const dir = tempDir();
+  try {
+    const path = join(dir, "store.sqlite");
+    // Mint a store under the PREVIOUS docs shape (Round 3-as-shipped: kind
+    // NOT NULL, no kind_author) with a populated row — only a genuinely-older
+    // store re-opened by current code can catch a missing backfill.
+    const oldSchemaDb = new Database(path, { create: true });
+    oldSchemaDb.exec(`
+      CREATE TABLE docs (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        path TEXT NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      );
+    `);
+    oldSchemaDb.run("INSERT INTO docs (id, title, kind, path) VALUES (?, ?, ?, ?)", [
+      "ramble-01",
+      "Ramble",
+      "ramble",
+      "docs/ramble-01.md",
+    ]);
+    oldSchemaDb.close();
+
+    const db = openStore(path);
+    const migratedColumns = (
+      db.query("PRAGMA table_info(docs)").all() as Array<{ name: string }>
+    ).map((c) => c.name);
+    expect(migratedColumns).toContain("kind_author");
+
+    // The pre-existing row keeps its stored kind, kind_author nulled —
+    // legacy rows are honestly unattributed (K1 ruling).
+    const row = db.query("SELECT id, kind, kind_author FROM docs WHERE id = 'ramble-01'").get() as {
+      id: string;
+      kind: string;
+      kind_author: string | null;
+    };
+    expect(row).toEqual({ id: "ramble-01", kind: "ramble", kind_author: null });
+    db.close();
+
+    // Fresh-equals-migrated: a brand-new store's docs column set must be
+    // identical to what the backfill produced (the migration doctrine's
+    // load-bearing invariant).
+    const freshDir = tempDir();
+    try {
+      const fresh = openStore(join(freshDir, "store.sqlite"));
+      const freshColumns = (
+        fresh.query("PRAGMA table_info(docs)").all() as Array<{ name: string }>
+      ).map((c) => c.name);
+      expect(freshColumns.sort()).toEqual(migratedColumns.sort());
+      fresh.close();
+    } finally {
+      rmSync(freshDir, { recursive: true, force: true });
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("openStore backfills doc_id onto a previous-shape lens table", () => {
   const dir = tempDir();
   try {

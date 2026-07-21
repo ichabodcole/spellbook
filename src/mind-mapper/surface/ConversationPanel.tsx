@@ -13,10 +13,11 @@
 // autoscroll-to-bottom YIELDS while a request is being serviced — otherwise
 // any concurrent message would yank the viewport off the evidence.
 
-import { SendHorizontal, X } from "lucide-react";
+import { AlertTriangle, SendHorizontal, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator } from "./ActivityIndicator";
 import { MessageBubble } from "./MessageBubble";
+import type { AgentBadge } from "./state/activity";
 import type { DocMeta, MapNode, Message, Tier } from "./types";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -48,7 +49,7 @@ export function ConversationPanel({
   messages,
   onSend,
   disabled = false,
-  thinking = false,
+  agentBadge = null,
   scrollRequest,
   composerSeed,
 }: {
@@ -61,9 +62,10 @@ export function ConversationPanel({
   // Daemon unreachable (T1) — sends would silently vanish, so the composer
   // goes quiet rather than pretending.
   disabled?: boolean;
-  // T8 — the agent is composing (agent.activity): the indicator sits where
-  // the reply will land.
-  thinking?: boolean;
+  // T8/R4 ACT1 — the agent's live badge, where the reply will land:
+  // "thinking" pulses; "stalled" renders its own STATIC attention branch
+  // (never the pulse — false-liveness would vouch for a stuck agent).
+  agentBadge?: AgentBadge;
   scrollRequest?: ScrollRequest | null;
   composerSeed?: ComposerSeed | null;
 }) {
@@ -153,7 +155,15 @@ export function ConversationPanel({
             </div>
           ))
         )}
-        {thinking && <ActivityIndicator />}
+        {agentBadge === "thinking" && <ActivityIndicator />}
+        {agentBadge === "stalled" && (
+          // STATIC on purpose — no animation, no pulse: the honest signal
+          // for "received your message, then went quiet past the TTL".
+          <div className="flex items-center gap-2 text-[11px] text-attention" role="status">
+            <AlertTriangle size={12} aria-hidden />
+            <span>agent may be stuck — it took this in, then went quiet.</span>
+          </div>
+        )}
       </div>
 
       <div className="border-t border-edge p-3">

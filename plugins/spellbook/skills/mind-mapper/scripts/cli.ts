@@ -23,8 +23,15 @@
 //   doc <id>      GET /doc/:id → the doc envelope on stdout
 //   doc delete <id> [--force]  DELETE /doc/:id → 409 {error:"cited", citedBy}
 //                 when cited and unforced; --force cascades
+//   doc kind <docId> <kind> [--author user|agent] | doc kind <docId> --clear
+//                 POST /doc/:id/kind — assert (or clear) a doc's kind; ingest
+//                 never guesses one (untyped = kind null on the wire)
 //   mark <docId> --status <s> [--note <t>]  POST /doc/:id/mark → append a
 //                 status mark (doc.marked carries the full mark inline)
+//   actions <targetId> (--set <json> | --stdin | --clear)  PUT/DELETE
+//                 /actions/:targetId — replace (wholesale) or clear the
+//                 action slots on a node or PENDING proposal; json is an
+//                 array of {id, label, seed}; >4 entries warns (soft cap)
 //   activity <received|thinking|idle>  POST /activity → fire-and-forget
 //                 agent.activity signal (~60s TTL emits synthetic idle)
 //   search <q...> GET /search → {hits: [{kind: node|doc|message, ...}]}
@@ -38,6 +45,7 @@
 //   look-here <nodeId>  fire-once attention nudge, not persisted
 //   send          body chain: --body-file <path> > --stdin > inline <text...> >
 //                 piped stdin; [--role user|agent] [--kind] [--ground a,b]
+//                 (repeatable — repeats accumulate, commas split either way)
 //                 [--force] → POST /send. Empty resolved body = exit 2. The
 //                 piped default HANGS with no pipe under agent shells — always
 //                 pass a body (--body-file preferred for prose).
@@ -495,16 +503,49 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "doc") {
     const parsed = parseArgs({
       args: rest,
-      options: { project: { type: "string" }, force: { type: "boolean", default: false } },
+      options: {
+        project: { type: "string" },
+        force: { type: "boolean", default: false },
+        clear: { type: "boolean", default: false },
+        author: { type: "string", default: "agent" },
+      },
       strict: true,
       allowPositionals: true,
     });
-    // `doc delete <id>` overloads the positional (a doc literally slugged
-    // "delete" is unaddressable — accepted for the record, plan-v1x).
+    // `doc delete <id>` / `doc kind <id>` overload the positional (a doc
+    // literally slugged "delete"/"kind" is unaddressable — accepted for the
+    // record, plan-v1x).
+    // Round 4 (K1): `doc kind <docId> <kind...> [--author user|agent]` sets,
+    // `doc kind <docId> --clear` clears (author nulls with it). The ingest
+    // defaults died — this verb is how a doc gets typed at all.
+    if (parsed.positionals[0] === "kind") {
+      const docId = parsed.positionals[1];
+      const kindWords = parsed.positionals.slice(2).join(" ");
+      if (!docId || (kindWords === "" && !parsed.values.clear)) {
+        process.stderr.write(
+          "usage: cli.ts doc kind <docId> <kind> [--author user|agent] | doc kind <docId> --clear\n",
+        );
+        return 2;
+      }
+      const port = requireDaemon();
+      const qs = parsed.values.project
+        ? `?project=${encodeURIComponent(parsed.values.project)}`
+        : "";
+      const res = await fetch(`http://127.0.0.1:${port}/doc/${docId}/kind${qs}`, {
+        method: "POST",
+        body: JSON.stringify(
+          parsed.values.clear ? { kind: null } : { kind: kindWords, author: parsed.values.author },
+        ),
+      });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
     const isDelete = parsed.positionals[0] === "delete";
     const id = isDelete ? parsed.positionals[1] : parsed.positionals[0];
     if (!id) {
-      process.stderr.write("usage: cli.ts doc <id> | doc delete <id> [--force] [--project <id>]\n");
+      process.stderr.write(
+        "usage: cli.ts doc <id> | doc delete <id> [--force] | doc kind <docId> <kind|--clear> [--project <id>]\n",
+      );
       return 2;
     }
     const port = requireDaemon();
@@ -704,6 +745,52 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  if (verb === "actions") {
+    const parsed = parseArgs({
+      args: rest,
+      options: {
+        set: { type: "string" },
+        stdin: { type: "boolean", default: false },
+        clear: { type: "boolean", default: false },
+        project: { type: "string" },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+    const targetId = parsed.positionals[0];
+    const modes = [parsed.values.set !== undefined, parsed.values.stdin, parsed.values.clear];
+    if (!targetId || modes.filter(Boolean).length !== 1) {
+      process.stderr.write(
+        "usage: cli.ts actions <targetId> (--set <json> | --stdin | --clear)\n" +
+          "  target is a node id or a PENDING proposal id; json is an array of\n" +
+          '  {"id", "label", "seed"} — empty array (or --clear) removes the slots\n',
+      );
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const target = `http://127.0.0.1:${port}/actions/${targetId}${qs}`;
+    const res = parsed.values.clear
+      ? await fetch(target, { method: "DELETE" })
+      : await fetch(target, {
+          method: "PUT",
+          body: parsed.values.stdin ? await Bun.stdin.text() : (parsed.values.set as string),
+        });
+    const responseText = await res.text();
+    process.stdout.write(`${responseText}\n`);
+    // Mirror the daemon's additive soft-cap warning to stderr (the
+    // edgeDraftWarning pattern — a cold agent scanning for problems sees it).
+    if (res.ok) {
+      try {
+        const { warning } = JSON.parse(responseText) as { warning?: string };
+        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+      } catch {
+        /* body is what it is */
+      }
+    }
+    return res.ok ? 0 : 2;
+  }
+
   if (verb === "activity") {
     const parsed = parseArgs({
       args: rest,
@@ -732,7 +819,10 @@ async function dispatch(argv: string[]): Promise<number> {
       options: {
         role: { type: "string", default: "agent" },
         kind: { type: "string", default: "turn" },
-        ground: { type: "string" },
+        // Round 4 gate rework: `multiple` — a single-value --ground silently
+        // kept only the LAST repeat (parseArgs last-wins; cassandra lost 2 of
+        // 3 refs with exit 0). Repeats accumulate now; commas still split.
+        ground: { type: "string", multiple: true },
         project: { type: "string" },
         "body-file": { type: "string" },
         stdin: { type: "boolean", default: false },
@@ -801,7 +891,15 @@ async function dispatch(argv: string[]): Promise<number> {
         role: parsed.values.role,
         kind: parsed.values.kind,
         text,
-        ground: parsed.values.ground ? parsed.values.ground.split(",") : undefined,
+        // Flatten repeats, split commas, drop blank fragments — an empty
+        // resolved list posts as no ground at all (never [""]).
+        ground: (() => {
+          const refs = (parsed.values.ground ?? [])
+            .flatMap((g) => g.split(","))
+            .map((g) => g.trim())
+            .filter((g) => g !== "");
+          return refs.length > 0 ? refs : undefined;
+        })(),
       }),
     });
     process.stdout.write(`${await res.text()}\n`);
@@ -809,7 +907,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|zone|promote|doc|mark|search|neighbors|ratify|lens|look-here|send|activity>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|zone|promote|doc|mark|actions|search|neighbors|ratify|lens|look-here|send|activity>\n",
   );
   return 2;
 }

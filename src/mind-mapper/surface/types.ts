@@ -6,7 +6,10 @@ export type Tier = "canon" | "thread" | "story-local" | "background";
 export type NodeKind = "cast" | "place" | "concept" | "thread";
 export type Provenance = "asserted" | "derived";
 
-export type DocKind = "ramble" | "story" | "bible";
+// Round 4 (K1) — doc kind honesty: the closed DocKind union died with the
+// ingest defaults. `kind` is a free-form string when someone asserted one,
+// null when nobody has (wire-normalized from the '' rest sentinel) — and
+// null renders as ABSENCE, never an "unclassified" chip.
 
 // Claim B: the latest mark on a doc (append-only trail server-side; the wire
 // carries only the live one). `stale` is computed server-side at /state read
@@ -23,13 +26,24 @@ export type DocMark = {
 export type DocMeta = {
   id: string;
   title: string;
-  kind: DocKind;
+  kind: string | null;
+  // K1: who asserted the kind — "user" | "agent" when kind is set, null on
+  // legacy/untyped rows (honestly unattributed). ALWAYS carried on
+  // /state.docs[]; the /doc/:id envelope does NOT carry it.
+  kindAuthor: "user" | "agent" | null;
   // Absent when the doc has never been marked.
   mark?: DocMark & { stale: boolean };
 };
 
-// Content-on-demand half of seam v2: GET /doc/:id returns meta + content.
-export type Doc = DocMeta & { content: string };
+// Content-on-demand half of seam v2: GET /doc/:id → {id, title, kind,
+// content} — its OWN envelope, not DocMeta + content (no kindAuthor, no
+// mark; K1 loosened kind to string | null here too).
+export type Doc = {
+  id: string;
+  title: string;
+  kind: string | null;
+  content: string;
+};
 
 // span is a VERBATIM excerpt (stub-grade anchoring — the viewer
 // find-and-highlights it; offsets belong to the real source-log).
@@ -55,6 +69,15 @@ export function isDocSource(s: SourceRef): s is DocSourceRef {
   return "docId" in s;
 }
 
+// Round 4 (A1) — an agent-authored conversational shortcut pinned to a node
+// or a PENDING proposal (engine-owned metadata, actions.ts): a click SEEDS
+// the composer with `seed` + the target as ground, never auto-sends.
+export type ActionSlot = {
+  id: string;
+  label: string;
+  seed: string;
+};
+
 export type MapNode = {
   id: string;
   title: string;
@@ -63,6 +86,8 @@ export type MapNode = {
   synopsis: string;
   pending?: boolean;
   sources?: SourceRef[];
+  // Round 4 (A1): absent = none (additive-optional on the wire).
+  actions?: ActionSlot[];
 };
 
 // The lens — addressable view-state (vine msg 15). FocusOwner reuses
@@ -182,6 +207,11 @@ export type Proposal = {
   // (main = zoneId == null; a zone view = its own id). Payload-tagging is
   // the mechanism because events are project-scoped, never zone-scoped.
   zoneId: string | null;
+  // Round 4 (A1): actions attach to PENDING proposals too (Cole's
+  // constraint) — absent = none. Ratify RE-HOMES them onto the minted node
+  // (no actions.set is emitted for that move: the thin ratified event's
+  // snapshot refetch is what carries the slots to their new home).
+  actions?: ActionSlot[];
 };
 
 export type ProjectState = {
@@ -201,6 +231,11 @@ export type ProjectState = {
   // Claim C: agents-only standing presence (agent = open SSE tail; the
   // browser WS is the human side and deliberately never counts).
   presence: { agents: number };
+  // R4 B1: release mode only, spread AT THE HANDLER like presence (the
+  // engine's exported ProjectState under-reports the wire — grep server.ts,
+  // not state.ts). Absent in dev mode / on a pre-stamp dist / from an old
+  // daemon = render NO footer.
+  buildInfo?: { commit: string; builtAt: string; stale: boolean };
 };
 
 // GET /search wire hit (search.ts; prospero's one-endpoint ruling, vine msg
@@ -220,6 +255,9 @@ export type SearchHit = {
 export type ServerEventKind =
   | "doc.added"
   | "doc.deleted"
+  // Round 4 (K1) — {docId, kind, author}: kind wire-normalized (null, never
+  // ''), author null only when kind is null (a clear un-attributes).
+  | "doc.kind"
   | "doc.marked"
   | "node.ratified"
   | "edge.ratified"
@@ -234,6 +272,10 @@ export type ServerEventKind =
   | "zone.created"
   | "zone.deleted"
   | "proposal.promoted"
+  // Round 4 (A1) — {targetId, actions}: the FULL new array (wholesale
+  // metadata replace — deliberately not a per-entity patch; the entity is
+  // the node/proposal, the slots are metadata riding it).
+  | "actions.set"
   // Ephemeral kinds (Contract 9 amendment): fire-once signals, no state
   // row — but every emit consumed a seq, so they still route THROUGH
   // applyEvent (default case advances the cursor) and useProjectState
@@ -242,9 +284,12 @@ export type ServerEventKind =
   // Fire-once viewport nudge (payload {nodeId}) — NOT a lens change.
   | "look.here";
 
-// Claim C's active-attention signal (POST /activity → agent.activity event);
-// non-idle arms a server-side ~60s TTL that emits a synthetic "idle".
-export type AgentActivityState = "received" | "thinking" | "idle";
+// Claim C's active-attention signal (POST /activity → agent.activity event).
+// R4 ACT1 (supersedes Claim C's TTL clause): the server TTL is state-aware —
+// received → stalled (daemon-synthesized ONLY, persists until an agent write
+// or explicit set resolves it; POST /activity rejects it), thinking → idle
+// unchanged. A daemon restart honestly clears to no-signal (in-memory).
+export type AgentActivityState = "received" | "thinking" | "idle" | "stalled";
 
 export type ServerEvent = {
   seq: number;

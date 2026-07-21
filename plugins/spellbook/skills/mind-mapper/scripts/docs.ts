@@ -67,4 +67,36 @@ function deleteDoc(
   return { id };
 }
 
-export { CitedError, deleteDoc };
+// Round 4 (K1) — `doc kind <docId> <kind> [--clear]` backing (mark route
+// family: slug + exists guards fail loud, 404-first at the server). kind
+// null = clear: writes the '' sentinel at rest AND nulls kind_author (an
+// untyped doc has no assertor). A string kind requires an author — the badge
+// styles asserted-by-user vs agent-set, so an unattributed set would lie.
+// Emits doc.kind {docId, kind, author} with the WIRE shape (null, never '').
+function setDocKind(
+  db: Database,
+  bus: EventBus,
+  input: { docId: string; kind: string | null; author?: string },
+): { docId: string; kind: string | null; kindAuthor: "user" | "agent" | null } | null {
+  if (!SLUG_RE.test(input.docId)) return null;
+  if (!db.query("SELECT 1 FROM docs WHERE id = ?").get(input.docId)) return null;
+  if (input.kind !== null && (typeof input.kind !== "string" || input.kind === "")) {
+    throw new Error("kind must be a non-empty string, or null to clear");
+  }
+  let kindAuthor: "user" | "agent" | null = null;
+  if (input.kind !== null) {
+    if (input.author !== "user" && input.author !== "agent") {
+      throw new Error("setting a kind requires author user|agent");
+    }
+    kindAuthor = input.author;
+  }
+  db.run("UPDATE docs SET kind = ?, kind_author = ? WHERE id = ?", [
+    input.kind ?? "",
+    kindAuthor,
+    input.docId,
+  ]);
+  bus.emit("doc.kind", { docId: input.docId, kind: input.kind, author: kindAuthor });
+  return { docId: input.docId, kind: input.kind, kindAuthor };
+}
+
+export { CitedError, deleteDoc, setDocKind };

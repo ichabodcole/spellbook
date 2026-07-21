@@ -6,7 +6,7 @@
 // Conversation stays local-only until P2 wires it to the real bus
 // (plan/circe.md P2.3) — there's no agent behind it yet either way.
 
-import { Moon, Search, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
@@ -15,14 +15,19 @@ import { DocViewer } from "./DocViewer";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
 import { MapKey } from "./MapKey";
+import type { NodeCommand } from "./NodeContextMenu";
 import { NodeDetail } from "./NodeDetail";
 import { ProjectPicker } from "./ProjectPicker";
 import { ReviewQueue } from "./ReviewQueue";
 import { SearchPalette } from "./SearchPalette";
+import { type AgentBadge, badgeFor, badgeHasClientTtl } from "./state/activity";
+import { buildFooterText } from "./state/buildInfo";
 import { type CitedBy, parseCitedBody } from "./state/deleteFlow";
 import { docLensNodeIds } from "./state/docLens";
+import { groundBundle } from "./state/groundBundle";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
+import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
 import { pendingEdgesFrom, pendingNodesFrom } from "./state/pendingOverlay";
 import { dotState, type PresenceDot } from "./state/presence";
 import { type PaletteRow, paletteRows } from "./state/searchRows";
@@ -38,9 +43,11 @@ import { useProjectState } from "./state/useProjectState";
 import { parseZoneNotEmptyBody, type ZoneNotEmpty } from "./state/zoneFlow";
 import { mainProposals, zoneMapFrom, zoneOf } from "./state/zoneView";
 import type {
+  ActionSlot,
   Doc,
   DocMeta,
   Lens,
+  MapNode,
   Message,
   MessageSourceRef,
   ProjectState,
@@ -122,6 +129,8 @@ const DOT_TITLE: Record<PresenceDot, string> = {
 
 // Client-side backstop for the thinking indicator (the server TTL should
 // beat this; ~60s means a dropped idle event can't pin the pulse forever).
+// R4 ACT1: the backstop applies to the PULSE only — a stalled badge has no
+// timer behind it and must persist until an agent write resolves it.
 const THINKING_TTL_MS = 60_000;
 
 export function App() {
@@ -150,10 +159,11 @@ export function App() {
   // The user's own Focus clicks stay local-only (no lens-write endpoint from
   // the surface yet); the agent's incoming lens.set events are synced below.
   const [lens, setLens] = useState<Lens>(DEFAULT_LENS);
-  const [search, setSearch] = useState<{ open: boolean; query: string }>({
-    open: false,
-    query: "",
-  });
+  // R4 S1 (ratified): the palette is permanent chrome — the `open` flag
+  // died; only the query is state. ⌘K / "/" focus the always-present input
+  // through this ref (its own clickable twin — the summon house rule).
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [focusRequest, setFocusRequest] = useState<{ nodeId: string; seq: number } | null>(null);
   // T5 — the two-stage delete flow (Claim A): stage 1 confirms intent,
   // stage 2 (citedBy set, populated from the 409) shows provenance counts
@@ -164,8 +174,10 @@ export function App() {
   } | null>(null);
   // T9 — the double-click node sketch form.
   const [nodeForm, setNodeForm] = useState<{ title: string; synopsis: string } | null>(null);
-  // T8 — agent activity → the conversation panel's thinking pulse.
-  const [thinking, setThinking] = useState(false);
+  // T8 — agent activity → the conversation panel's badge. R4 ACT1 makes it
+  // tri-state: the thinking pulse, or the STATIC stalled branch (a
+  // daemon-synthesized "agent may be stuck" that must never look alive).
+  const [agentBadge, setAgentBadge] = useState<AgentBadge>(null);
   // T11 — imperative scroll-to-message request for the conversation panel.
   const [scrollRequest, setScrollRequest] = useState<ScrollRequest | null>(null);
   // V1 — map|grid view. App-local render state (finding 6: the grid is a
@@ -208,24 +220,32 @@ export function App() {
     setTheme(next);
   };
 
-  // Thinking pulse lifecycle: non-idle activity lights it (and arms the
-  // client TTL backstop), idle clears it. The third clear — any agent
-  // message landing — is its own effect below.
+  // Badge lifecycle (per-clear-trigger effect discipline): activity events
+  // map through badgeFor (state/activity.ts) — received/thinking light the
+  // pulse and arm the client TTL backstop; idle clears; stalled sets its
+  // OWN badge with NO client TTL (it arrived with no server timer behind it
+  // and persists until an agent write resolves it — decaying it to blank
+  // would hide a stuck agent). The timeout's functional guard means a timer
+  // that outlives a state change can only ever clear the pulse it was armed
+  // for, never a stalled badge that superseded it.
   useEffect(() => {
     if (!agentActivity) return;
-    if (agentActivity.state === "idle") {
-      setThinking(false);
-      return;
-    }
-    setThinking(true);
-    const t = setTimeout(() => setThinking(false), THINKING_TTL_MS);
+    const badge = badgeFor(agentActivity.state);
+    setAgentBadge(badge);
+    if (!badgeHasClientTtl(badge)) return;
+    const t = setTimeout(
+      () => setAgentBadge((b) => (b === "thinking" ? null : b)),
+      THINKING_TTL_MS,
+    );
     return () => clearTimeout(t);
   }, [agentActivity]);
 
-  // A reply IS done-thinking, whatever the activity stream said last.
+  // A reply IS done-thinking, whatever the activity stream said last — and
+  // it clears a stalled badge too (an agent write resolves auto-state
+  // server-side; this is the local mirror of that ruling).
   const lastMessage = state?.conversation[state.conversation.length - 1];
   useEffect(() => {
-    if (lastMessage?.role === "agent") setThinking(false);
+    if (lastMessage?.role === "agent") setAgentBadge(null);
   }, [lastMessage]);
 
   // Z3 agent-follow (ratified): a focus target that lives in a zone switches
@@ -312,14 +332,17 @@ export function App() {
     followRef.current(lookHere.nodeId);
   }, [lookHere]);
 
-  // Summon the palette with cmd/ctrl-K or "/" (when not already typing).
+  // Summon = focus, not open (R4 S1): cmd/ctrl-K or "/" (when not already
+  // typing) puts the caret in the permanent input; select() means typing
+  // replaces a leftover query instead of appending to it.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const typing =
         e.target instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(e.target.tagName);
       if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
         e.preventDefault();
-        setSearch({ open: true, query: "" });
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -361,6 +384,27 @@ export function App() {
     [boardMap, selectedIds],
   );
 
+  // R4 R1 — the ratify-anywhere menu info, derived view-blind over the
+  // INCLUSIVE store (state/nodeMenu.ts): one map serves canvas and grid,
+  // main board and zone alike.
+  const nodeMenus = useMemo(
+    () => (state ? menuInfoFor(state.nodes, state.proposals) : undefined),
+    [state],
+  );
+
+  // One command handler for both views (map + grid share the chassis).
+  const handleNodeCommand = (command: NodeCommand, node: MapNode) => {
+    if (command === "Focus") setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null });
+    else if (command === "Promote") promoteProposal(node.id);
+    else seedComposer(`${command} — ${node.title}`, node.id);
+  };
+
+  // R4 A1 — an action-slot click seeds the composer with the slot's seed
+  // text and narrows selection to the target (so it rides `ground` on send).
+  // NEVER auto-sends: the human appends intent or sends as-is (the C3 house
+  // rule — structured verbs seed, they don't speak for you).
+  const handleAction = (action: ActionSlot, node: MapNode) => seedComposer(action.seed, node.id);
+
   const projectQs = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
 
   // P3.2 — the daemon's `search` verb (FTS5), debounced. Ruled shape (vine
@@ -375,8 +419,8 @@ export function App() {
   // peripheral fetch failure never takes the board down (the P1/P2 reflex).
   const [remoteHits, setRemoteHits] = useState<SearchHit[] | null>(null);
   useEffect(() => {
-    const q = search.query.trim();
-    if (!search.open || !q) {
+    const q = searchQuery.trim();
+    if (!q) {
       setRemoteHits(null);
       return;
     }
@@ -399,7 +443,7 @@ export function App() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [search, projectQs]);
+  }, [searchQuery, projectQs]);
 
   // S1 — proposal hits resolve against the pending synthetic nodes across
   // EVERY zone (the proposal id is the synthetic node id): a zoned hit must
@@ -412,9 +456,9 @@ export function App() {
   // fallback (a failed /search never takes the palette down) stays scoped to
   // ratified nodes, as it always was.
   const palette = useMemo(() => {
-    if (!state || !search.open || !search.query.trim()) return null;
+    if (!state || !searchQuery.trim()) return null;
     if (remoteHits) return paletteRows(remoteHits, state.nodes, pendingAll);
-    const q = search.query.trim().toLowerCase();
+    const q = searchQuery.trim().toLowerCase();
     const inTitle = state.nodes.filter((n) => n.title.toLowerCase().includes(q));
     const inSynopsis = state.nodes.filter(
       (n) => !n.title.toLowerCase().includes(q) && n.synopsis.toLowerCase().includes(q),
@@ -425,10 +469,13 @@ export function App() {
       ),
       offBoard: { docs: 0, messages: 0 },
     };
-  }, [state, search, remoteHits, pendingAll]);
+  }, [state, searchQuery, remoteHits, pendingAll]);
 
   const pickSearchResult = (row: PaletteRow) => {
-    setSearch({ open: false, query: "" });
+    // A pick clears the query (the result list collapses; the dim lifts)
+    // and yields focus back toward the board — the input itself stays.
+    setSearchQuery("");
+    searchInputRef.current?.blur();
     setSelectedIds([row.node.id]);
     // Zoned hits switch to their zone view first (followFocus's rule — the
     // same one lens.set/look.here obey), then the existing focusRequest path
@@ -511,16 +558,20 @@ export function App() {
       );
 
   // Review-queue ruling — one keystroke per the contract, no draft to
-  // compose. Ratify write-path landing (daedalus's P3 engine card) determines
-  // the exact response shape; the request shape is the ratified contract.
+  // compose. R4 R1: the same handler now serves the ratify-anywhere menus,
+  // so refusals surface body.error verbatim (promoteProposal precedent) —
+  // and the typed zoned 409 renders its promote-first teaching
+  // (rulingErrorMessage, state/nodeMenu.ts).
   const ruleProposal = (id: string, ruling: Ruling) =>
     fetch(`/proposals/${id}/ruling${projectQs}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ruling }),
     })
-      .then((r) => {
-        if (!r.ok) throw new Error(`ruling ${r.status}`);
+      .then(async (r) => {
+        if (r.ok) return;
+        const body = (await r.json().catch(() => null)) as unknown;
+        throw new Error(rulingErrorMessage(r.status, body));
       })
       .catch((e) =>
         setNotice(`couldn't rule on that (${e instanceof Error ? e.message : String(e)}).`),
@@ -873,13 +924,11 @@ export function App() {
               selectedIds={selectedIds}
               onSelect={setSelectedIds}
               promotable={activeZone !== null}
-              onNodeCommand={(command, node) => {
-                if (command === "Focus")
-                  setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null });
-                else if (command === "Promote") promoteProposal(node.id);
-                else seedComposer(`${command} — ${node.title}`, node.id);
-              }}
+              onNodeCommand={handleNodeCommand}
               highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
+              menus={nodeMenus}
+              onRule={ruleProposal}
+              onAction={handleAction}
               focusRequest={focusRequest}
               onConnect={(source, target) => proposeAsUser("edge", { source, target })}
               onPaneDoubleClick={() => setNodeForm({ title: "", synopsis: "" })}
@@ -895,6 +944,11 @@ export function App() {
                 highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
                 selectedIds={selectedIds}
                 onSelect={setSelectedIds}
+                menus={nodeMenus}
+                onRule={ruleProposal}
+                onAction={handleAction}
+                promotable={activeZone !== null}
+                onNodeCommand={handleNodeCommand}
               />
               {/* The toggle keeps its canvas-Panel perch in grid view too —
                   switching never moves the control out from under the
@@ -956,33 +1010,18 @@ export function App() {
               </div>
             </div>
           )}
-          {!search.open && (
-            <Button
-              size="icon"
-              onClick={() => setSearch({ open: true, query: "" })}
-              aria-label="Find a node"
-              title="Find a node (⌘K or /)"
-              // The palette's own perch (left-1/2 top-4) — the button morphs
-              // into it on click; drops to top-14 under an active FocusBar,
-              // same dodge NodeDetail does. Every keyboard summon gets a
-              // clickable twin.
-              className={`absolute left-1/2 z-10 -translate-x-1/2 bg-surface/90 backdrop-blur ${
-                lens.owner ? "top-14" : "top-4"
-              }`}
-            >
-              <Search size={13} />
-            </Button>
-          )}
-          {search.open && (
-            <SearchPalette
-              rows={palette?.rows ?? []}
-              offBoard={palette?.offBoard ?? { docs: 0, messages: 0 }}
-              query={search.query}
-              onQuery={(query) => setSearch({ open: true, query })}
-              onPick={pickSearchResult}
-              onClose={() => setSearch({ open: false, query: "" })}
-            />
-          )}
+          {/* R4 S1 — the palette renders permanently at its perch (the
+              icon button died; the input is its own clickable twin) and
+              keeps the FocusBar top-14 dodge the button carried. */}
+          <SearchPalette
+            rows={palette?.rows ?? []}
+            offBoard={palette?.offBoard ?? { docs: 0, messages: 0 }}
+            query={searchQuery}
+            onQuery={setSearchQuery}
+            onPick={pickSearchResult}
+            inputRef={searchInputRef}
+            belowBar={Boolean(lens.owner)}
+          />
           <FocusBar
             lens={lens}
             title={
@@ -1042,20 +1081,40 @@ export function App() {
           nodes={state.nodes}
           docs={state.docs}
           disabled={status === "closed"}
-          thinking={thinking}
+          agentBadge={agentBadge}
           scrollRequest={scrollRequest}
           composerSeed={composerSeed}
           selection={selection}
           onDeselect={(id) => setSelectedIds((ids) => ids.filter((x) => x !== id))}
           messages={messages}
+          // R4 G1 — the single choke point: selection ∪ open doc (the
+          // ratified open-doc-is-rail-selection mapping), bundled by the
+          // pure tested helper. groundRefs.ts already renders the doc: ref
+          // back as a chip on the round-trip.
           onSend={(text) =>
             sendMessage(
               text,
-              selection.map((n) => n.id),
+              groundBundle(
+                selection.map((n) => n.id),
+                openDoc?.doc.id ?? null,
+              ),
             )
           }
         />
       </div>
+      {/* R4 B1 — the build-stamp footer: release mode only (buildInfo is
+          spread at the /state handler; absent = dev mode / pre-stamp dist /
+          old daemon = no footer at all). A full-width strip, not a board
+          overlay — nothing for the coverage audit to cover. */}
+      {state.buildInfo && (
+        <footer
+          className={`border-t border-edge bg-surface px-4 py-0.5 text-[9px] ${
+            state.buildInfo.stale ? "text-attention" : "text-ink-faint"
+          }`}
+        >
+          {buildFooterText(state.buildInfo)}
+        </footer>
+      )}
       {deleteTarget && (
         <AlertDialog
           open

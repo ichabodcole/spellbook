@@ -18,6 +18,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentActivityState, ProjectMeta, ProjectState, ServerEvent } from "../types";
+import { parseActivityState } from "./activity";
 import { applyEvent, isGap } from "./reducer";
 
 export type ConnStatus = "connecting" | "open" | "closed";
@@ -125,8 +126,11 @@ export function useProjectState(projectId?: string) {
             const nodeId = (event.payload as { nodeId?: string })?.nodeId;
             if (nodeId) setLookHere((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
           } else if (event.kind === "agent.activity") {
-            const s = (event.payload as { state?: string })?.state;
-            if (s === "received" || s === "thinking" || s === "idle") {
+            // parseActivityState (state/activity.ts) knows the full R4
+            // vocabulary incl. the daemon-synthesized `stalled`; unknown
+            // future states drop silently rather than crashing the board.
+            const s = parseActivityState((event.payload as { state?: string })?.state);
+            if (s) {
               setAgentActivity((r) => ({ state: s, seq: (r?.seq ?? 0) + 1 }));
             }
           }

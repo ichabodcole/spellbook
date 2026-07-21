@@ -185,8 +185,10 @@ test("POST /activity emits agent.activity, and the TTL fires a synthetic idle; b
       .filter((e) => e.kind === "agent.activity")
       .map((e) => (e.payload as { state: string }).state);
   expect(await until(async () => activityStates().includes("thinking"), 2000)).toBe(true);
-  // The TTL (150ms) turns silence into a synthetic idle.
+  // The TTL (150ms) turns thinking-silence into a synthetic idle (ACT1: only
+  // `received` escalates to stalled; thinking decays quietly).
   expect(await until(async () => activityStates().includes("idle"), 2000)).toBe(true);
+  expect(activityStates()).not.toContain("stalled");
   watcher.close();
 
   const bad = await fetch(`${url}/activity`, {
@@ -194,6 +196,138 @@ test("POST /activity emits agent.activity, and the TTL fires a synthetic idle; b
     body: JSON.stringify({ state: "pondering" }),
   });
   expect(bad.status).toBe(400);
+});
+
+// Round 4 (ACT1) — the CHANGED TTL rig: `received` older than the TTL
+// escalates to a daemon-synthesized `stalled` that PERSISTS (no decay to
+// idle/blank) until an agent write resolves it.
+test("received older than the TTL escalates to stalled, which persists until an agent write resolves it", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "act1-stall", title: "Stall" }),
+  });
+  const watcher = await collectWs("act1-stall");
+  await new Promise((r) => setTimeout(r, 100));
+  const activityStates = () =>
+    watcher.events
+      .filter((e) => e.kind === "agent.activity")
+      .map((e) => (e.payload as { state: string }).state);
+
+  await fetch(`${url}/activity?project=act1-stall`, {
+    method: "POST",
+    body: JSON.stringify({ state: "received" }),
+  });
+  expect(await until(async () => activityStates().includes("stalled"), 2000)).toBe(true);
+  // Stalled persists: wait out several more TTL windows — no synthetic idle,
+  // no second stalled (the escalation timer does not re-arm).
+  await new Promise((r) => setTimeout(r, 500));
+  expect(activityStates()).toEqual(["received", "stalled"]);
+
+  // An agent write (a role:agent send) resolves it to idle.
+  await fetch(`${url}/send?project=act1-stall`, {
+    method: "POST",
+    body: JSON.stringify({ role: "agent", text: "sorry, was digging" }),
+  });
+  expect(await until(async () => activityStates().includes("idle"), 2000)).toBe(true);
+  watcher.close();
+});
+
+test("POST /activity rejects stalled — daemon-synthesized vocabulary only", async () => {
+  const res = await fetch(`${url}/activity`, {
+    method: "POST",
+    body: JSON.stringify({ state: "stalled" }),
+  });
+  expect(res.status).toBe(400);
+  expect(((await res.json()) as { error: string }).error).toContain("daemon-synthesized");
+});
+
+// ACT1 auto-flip: a role:user send while an agent tail is connected emits
+// received (source auto) AFTER message.posted — two seqs, ordered. No tail →
+// no flip.
+test("a user send with an agent tail connected auto-emits received after message.posted; no tail, no flip", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "act1-auto", title: "Auto" }),
+  });
+  const watcher = await collectWs("act1-auto");
+  await new Promise((r) => setTimeout(r, 100));
+
+  // No agent tail yet: no flip.
+  await fetch(`${url}/send?project=act1-auto`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", text: "anyone home?" }),
+  });
+  expect(
+    await until(async () => watcher.events.some((e) => e.kind === "message.posted"), 2000),
+  ).toBe(true);
+  await new Promise((r) => setTimeout(r, 100));
+  expect(watcher.events.filter((e) => e.kind === "agent.activity")).toHaveLength(0);
+
+  // Connect an agent tail; now a user send flips received, ordered after the
+  // message.posted seq.
+  const ac = new AbortController();
+  const tail = await fetch(`${url}/events?project=act1-auto`, { signal: ac.signal });
+  await (tail.body as ReadableStream<Uint8Array>).getReader().read();
+  expect(await until(async () => (await agents("act1-auto")) === 1, 2000)).toBe(true);
+
+  await fetch(`${url}/send?project=act1-auto`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", text: "now?" }),
+  });
+  expect(
+    await until(
+      async () =>
+        watcher.events.some(
+          (e) =>
+            e.kind === "agent.activity" && (e.payload as { state: string }).state === "received",
+        ),
+      2000,
+    ),
+  ).toBe(true);
+  const posted = watcher.events.filter((e) => e.kind === "message.posted").at(-1) as {
+    seq: number;
+  };
+  const received = watcher.events.find(
+    (e) => e.kind === "agent.activity" && (e.payload as { state: string }).state === "received",
+  ) as { seq: number };
+  expect(received.seq).toBe(posted.seq + 1); // emitted AFTER message.posted, both seq-consuming
+
+  ac.abort();
+  watcher.close();
+});
+
+test("an agent send resolves explicit thinking to idle before the TTL (the turn's terminal act)", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "act1-turn", title: "Turn" }),
+  });
+  const watcher = await collectWs("act1-turn");
+  await new Promise((r) => setTimeout(r, 100));
+
+  await fetch(`${url}/activity?project=act1-turn`, {
+    method: "POST",
+    body: JSON.stringify({ state: "thinking" }),
+  });
+  await fetch(`${url}/send?project=act1-turn`, {
+    method: "POST",
+    body: JSON.stringify({ role: "agent", text: "here's what I found" }),
+  });
+  expect(
+    await until(
+      async () =>
+        watcher.events.some(
+          (e) => e.kind === "agent.activity" && (e.payload as { state: string }).state === "idle",
+        ),
+      2000,
+    ),
+  ).toBe(true);
+  // Exactly one idle — the resolve, not a later TTL duplicate.
+  await new Promise((r) => setTimeout(r, 400));
+  const idles = watcher.events.filter(
+    (e) => e.kind === "agent.activity" && (e.payload as { state: string }).state === "idle",
+  );
+  expect(idles).toHaveLength(1);
+  watcher.close();
 });
 
 test("an explicit idle clears the TTL timer: no duplicate synthetic idle later", async () => {

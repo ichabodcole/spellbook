@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStore } from "./db.ts";
-import { CitedError, deleteDoc } from "./docs.ts";
+import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
 import { createEventBus } from "./events.ts";
 import { proposeNode } from "./propose.ts";
 import { ratify } from "./ratify.ts";
@@ -159,6 +159,78 @@ test("zombie-write hole closed: post-delete ratify of a formerly-citing pending 
     expect(() =>
       ratify(db, bus, docsDir, { proposalId: second.id, ruling: "canon", docEdit: "prose" }),
     ).toThrow(/no evidence doc to edit/);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Round 4 (K1) — setDocKind: assert/clear a doc's kind with attribution.
+test("setDocKind sets kind + author, emits doc.kind, and round-trips through readState", () => {
+  const { dir, docsDir, db } = tempProject();
+  try {
+    const bus = createEventBus();
+    addDoc(db, docsDir, "ramble-01");
+    const received: Array<Record<string, unknown>> = [];
+    bus.subscribe(0, (event) => received.push(event as unknown as Record<string, unknown>));
+
+    const result = setDocKind(db, bus, {
+      docId: "ramble-01",
+      kind: "worldbuilding",
+      author: "user",
+    });
+    expect(result).toEqual({ docId: "ramble-01", kind: "worldbuilding", kindAuthor: "user" });
+    expect(received).toEqual([
+      {
+        seq: 1,
+        epoch: bus.epoch,
+        kind: "doc.kind",
+        payload: { docId: "ramble-01", kind: "worldbuilding", author: "user" },
+      },
+    ]);
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.docs[0]).toMatchObject({ kind: "worldbuilding", kindAuthor: "user" });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("setDocKind with kind null clears to the '' sentinel and nulls the author", () => {
+  const { dir, docsDir, db } = tempProject();
+  try {
+    const bus = createEventBus();
+    addDoc(db, docsDir, "ramble-01");
+    setDocKind(db, bus, { docId: "ramble-01", kind: "notes", author: "agent" });
+    const result = setDocKind(db, bus, { docId: "ramble-01", kind: null });
+    expect(result).toEqual({ docId: "ramble-01", kind: null, kindAuthor: null });
+    const row = db.query("SELECT kind, kind_author FROM docs WHERE id = 'ramble-01'").get() as {
+      kind: string;
+      kind_author: string | null;
+    };
+    expect(row).toEqual({ kind: "", kind_author: null }); // '' at rest, null on the wire
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.docs[0]).toMatchObject({ kind: null, kindAuthor: null });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("setDocKind fails loud: unknown/non-slug docs are null (404), a set without a valid author throws", () => {
+  const { dir, docsDir, db } = tempProject();
+  try {
+    const bus = createEventBus();
+    addDoc(db, docsDir, "ramble-01");
+    expect(setDocKind(db, bus, { docId: "no-such-doc", kind: "x", author: "agent" })).toBeNull();
+    expect(setDocKind(db, bus, { docId: "../evil", kind: "x", author: "agent" })).toBeNull();
+    expect(() => setDocKind(db, bus, { docId: "ramble-01", kind: "x" })).toThrow(/author/);
+    expect(() => setDocKind(db, bus, { docId: "ramble-01", kind: "x", author: "gremlin" })).toThrow(
+      /author/,
+    );
+    expect(() => setDocKind(db, bus, { docId: "ramble-01", kind: "", author: "agent" })).toThrow(
+      /non-empty/,
+    );
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

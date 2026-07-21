@@ -60,6 +60,11 @@ Before continuing an agent, verify the thread IS the seat you mean (the board-cl
 - The V1.x round proved the two-round gate shape: cold drive → falsifications → owner rework → COLD re-drive by the same non-owner.
 The builder's own probes of his fix passed identically but prove nothing — independence is the property, not the probe list.
 
+- The R4 gate passed on the FIRST cold drive — the causal chain worth preserving: seam claims ratified (2/7 falsified pre-build) → Contract 9 amendments landed BEFORE consumer contact → casting-draft amended by the builder as each verb landed.
+The two-round shape is the safety net, not the expectation; the ratify round is what shrinks it.
+- Parallel seats on one shared tree: a seat's verification BUILD bakes peers' uncommitted src into committed artifacts (daedalus's dist rebuild captured circe's in-flight edits) — artifact rebuilds are a land-time act for the lead, or need a clean-tree check first (fed upstream as anthill feedback).
+- Same-day drive→merge→convene→build→gate is sustainable when the drive findings are triaged INTO the plan skeleton while fresh — the drive-3 findings doc's triage header WAS the round-4 scope, no re-derivation.
+
 ## Anti-patterns
 
 - Letting a "later"-tagged card sit adjacent to an active one with a similar title — retitle or re-note parked cards so they can't be claimed by title-adjacency.
@@ -74,3 +79,5 @@ The builder's own probes of his fix passed identically but prove nothing — ind
 - Consider naming the flag-before-land discipline in the SOP (circe's suggestion; it earned it — held five-for-five across spike + V1).
 - House-style candidates for thoth's next seating: unique daemon-entrypoint filenames (or argv markers) per spell + the exact-PID-kill counter-pattern (pgrep before pkill); the pkill incident + cassandra's repeated-use confirmation are the evidence.
 - V1 dogfood rounds are Cole-gated and unstarted: a real brain-dump session, and linked-Hollowbrook via Operator extract_links when their deploy lands.
+- House-style candidate for thoth (returned by daedalus at R4 gate rework, applied live in casting-draft): casting/SKILL docs quote typed error KEYS verbatim and paraphrase only the remedy — prose-quoting error strings drifts from the wire.
+- OKF (Google's Open Knowledge Format) is on Cole's adoption radar for Operator — if it lands, the mapper's Operator importer and an OKF boundary adapter converge into one round-5 work item.

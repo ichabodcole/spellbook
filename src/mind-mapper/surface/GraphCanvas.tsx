@@ -19,28 +19,12 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
-import {
-  ArrowUpFromLine,
-  CircleDashed,
-  Crosshair,
-  HelpCircle,
-  Lightbulb,
-  ListTree,
-  MapPin,
-  ScrollText,
-  User,
-} from "lucide-react";
+import { CircleDashed, Lightbulb, MapPin, User } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MapNode, NodeKind, StubMap, Tier } from "./types";
+import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
+import type { NodeMenuInfo } from "./state/nodeMenu";
+import type { ActionSlot, MapNode, NodeKind, Ruling, StubMap, Tier } from "./types";
 import { Button } from "./ui/button";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuSeparator,
-  ContextMenuTrigger,
-} from "./ui/context-menu";
 
 export type GraphCanvasProps = {
   map: StubMap;
@@ -74,6 +58,13 @@ export type GraphCanvasProps = {
   // controls — found live when Playwright couldn't click the toggle under a
   // doc lens). The caller sets this whenever its bar is showing.
   panelBelowBar?: boolean;
+  // R4 R1 — per-target menu info (ruling verbs for pending proposals),
+  // keyed by the id the rendered node wears (state/nodeMenu.ts). A
+  // render-time overlay like `dimmed`, never node state.
+  menus?: Map<string, NodeMenuInfo>;
+  onRule?: (proposalId: string, ruling: Ruling) => void;
+  // R4 A1 — action-slot click (seeds the composer; the caller owns that).
+  onAction?: (action: ActionSlot, node: MapNode) => void;
 };
 
 const NODE_W = 190;
@@ -105,16 +96,16 @@ export const KIND_ICON: Record<NodeKind, typeof User> = {
   thread: CircleDashed,
 };
 
-// The node command vocabulary (context menu; born plural per t-609741be —
-// future commands include agent actions). Promote appears in zone context
-// only (Claim Z3).
-export type NodeCommand = "Focus" | "Explain" | "Questions" | "Subtopics" | "Promote";
-
 type IdeaNodeData = {
   node: MapNode;
   onCommand: (command: NodeCommand) => void;
   dimmed?: boolean;
   promotable?: boolean;
+  // R4 R1 — render-time menu overlay + ref-stable ruling dispatcher (the
+  // chassis is shared with CardGrid, NodeContextMenu.tsx).
+  menu?: NodeMenuInfo;
+  onRule?: (proposalId: string, ruling: Ruling) => void;
+  onAction?: (action: ActionSlot, node: MapNode) => void;
 };
 
 function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
@@ -122,51 +113,35 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
   const Icon = KIND_ICON[n.kind];
   const steeping = n.tier === "background";
   return (
-    <ContextMenu>
-      <ContextMenuTrigger>
-        <div
-          className={`w-[190px] rounded-lg border bg-surface px-3 py-2 shadow-lg transition-all ${TIER_CARD[n.tier]} ${
-            n.pending ? "border-dashed" : ""
-          } ${steeping ? "opacity-60 blur-[0.3px]" : ""} ${
-            selected ? "ring-2 ring-ink shadow-xl" : ""
-          } ${data.dimmed ? "opacity-20" : ""}`}
-        >
-          <Handle type="target" position={Position.Top} className="!bg-edge !border-0" />
-          <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest">
-            <Icon size={11} aria-hidden />
-            <span>{TIER_LABEL[n.tier]}</span>
-            {n.pending && (
-              <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
-                proposed
-              </span>
-            )}
-          </div>
-          <div className="mt-1 font-story text-[15px] leading-tight text-ink">{n.title}</div>
-          <Handle type="source" position={Position.Bottom} className="!bg-edge !border-0" />
+    <NodeContextMenu
+      node={n}
+      menu={data.menu}
+      promotable={data.promotable}
+      onCommand={data.onCommand}
+      onRule={data.onRule}
+      onAction={data.onAction}
+    >
+      <div
+        className={`w-[190px] rounded-lg border bg-surface px-3 py-2 shadow-lg transition-all ${TIER_CARD[n.tier]} ${
+          n.pending ? "border-dashed" : ""
+        } ${steeping ? "opacity-60 blur-[0.3px]" : ""} ${
+          selected ? "ring-2 ring-ink shadow-xl" : ""
+        } ${data.dimmed ? "opacity-20" : ""}`}
+      >
+        <Handle type="target" position={Position.Top} className="!bg-edge !border-0" />
+        <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest">
+          <Icon size={11} aria-hidden />
+          <span>{TIER_LABEL[n.tier]}</span>
+          {n.pending && (
+            <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
+              proposed
+            </span>
+          )}
         </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent>
-        <ContextMenuLabel>{n.title}</ContextMenuLabel>
-        <ContextMenuItem onClick={() => data.onCommand("Focus")}>
-          <Crosshair /> Focus
-        </ContextMenuItem>
-        {data.promotable && (
-          <ContextMenuItem onClick={() => data.onCommand("Promote")}>
-            <ArrowUpFromLine /> Promote to main
-          </ContextMenuItem>
-        )}
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => data.onCommand("Explain")}>
-          <ScrollText /> Explain
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => data.onCommand("Questions")}>
-          <HelpCircle /> Questions
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => data.onCommand("Subtopics")}>
-          <ListTree /> Subtopics
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+        <div className="mt-1 font-story text-[15px] leading-tight text-ink">{n.title}</div>
+        <Handle type="source" position={Position.Bottom} className="!bg-edge !border-0" />
+      </div>
+    </NodeContextMenu>
   );
 }
 
@@ -335,6 +310,9 @@ export function GraphCanvas({
   panelTopRight,
   promotable,
   panelBelowBar,
+  menus,
+  onRule,
+  onAction,
 }: GraphCanvasProps) {
   // React Flow is used semi-controlled: this component owns node state (so
   // drag + click-select work), reports selection upward (deduped — an
@@ -346,9 +324,22 @@ export function GraphCanvas({
   const lastReported = useRef<string>("");
 
   // Commands dispatch through a ref so a new callback identity never forces
-  // a node-state rebuild (layout depends on the map + mode alone).
+  // a node-state rebuild (layout depends on the map + mode alone). Rulings
+  // ride the same idiom — the dispatcher below stays identity-stable.
   const commandRef = useRef(onNodeCommand);
   commandRef.current = onNodeCommand;
+  const ruleRef = useRef(onRule);
+  ruleRef.current = onRule;
+  const dispatchRule = useCallback(
+    (proposalId: string, ruling: Ruling) => ruleRef.current?.(proposalId, ruling),
+    [],
+  );
+  const actionRef = useRef(onAction);
+  actionRef.current = onAction;
+  const dispatchAction = useCallback(
+    (action: ActionSlot, node: MapNode) => actionRef.current?.(action, node),
+    [],
+  );
 
   useEffect(() => {
     setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
@@ -367,21 +358,24 @@ export function GraphCanvas({
     });
   }, [selectedIds]);
 
-  // Search dim (and the zone view's promotable flag) are render-time
-  // overlays on node data — node STATE (positions, selection) stays
-  // untouched by keystrokes and view context alike.
+  // Search dim (and the zone view's promotable flag, and R1's menu info) are
+  // render-time overlays on node data — node STATE (positions, selection)
+  // stays untouched by keystrokes and view context alike.
   const renderNodes = useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
-    if (!keep && !promotable) return nodes;
+    if (!keep && !promotable && !menus) return nodes;
     return nodes.map((n) => ({
       ...n,
       data: {
         ...n.data,
         ...(keep && { dimmed: !keep.has(n.id) }),
         ...(promotable && { promotable: true }),
+        menu: menus?.get(n.id),
+        onRule: dispatchRule,
+        onAction: dispatchAction,
       },
     }));
-  }, [nodes, highlightIds, promotable]);
+  }, [nodes, highlightIds, promotable, menus, dispatchRule, dispatchAction]);
 
   // Answer a focusRequest with a smooth pan/zoom to the node. lastSeq seeds
   // from the mount-time prop so a remount (the lens keys this component)

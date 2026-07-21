@@ -2340,6 +2340,16 @@
     }
   }
 
+  .border-current\/50 {
+    border-color: currentColor;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-current\/50 {
+      border-color: color-mix(in oklab, currentcolor 50%, transparent);
+    }
+  }
+
   .border-edge {
     border-color: var(--color-edge);
   }

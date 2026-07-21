@@ -23,6 +23,7 @@ Conjuration backends (server.ts / daemon.ts / backend.ts), each spell's thin cli
 Currently live: mind-mapper's full V1 engine — db.ts (sqlite schema + additive backfill), project.ts, state.ts, events.ts, seed.ts, ingest.ts, propose.ts, send.ts, ratify.ts, search.ts, neighbors.ts, lens.ts, server.ts, cli.ts — built P1→P4 in one session on `feature/mind-mapper-v1` (V1 acceptance passed, release mode verified against circe's real dist).
 V1.x Track A (P1e, `feature/mind-mapper-v1x`) added marks.ts (doc marks + read-time staleness), docs.ts (delete + CitedError), tail hardening (server keepalive + cli watchdog/epoch resync), presence + activity at the SSE site, proposal author, and message evidence (message_sources sibling table) — 7 chapter commits, suite 122 tests.
 Round 3 (P1e, `feature/mind-mapper-zones`) added zones.ts (staging pens + move-not-duplicate promote), the no-auto-mint project lifecycle (NeedsProjectError → 409 needs-project, demo seed deleted), kind:"proposal" search hits, grapevine's send body chain, and doc-lens — 8 chapter commits, mind-mapper suite 174 tests.
+Round 4 (P1, `feature/mind-mapper-round4`) added actions.ts (target-keyed slots, ratify re-homes), doc-kind honesty ('' sentinel at rest / null on the wire, kind_author), the ACT1 activity automation (auto-received, stalled TTL escalation, agent-write resolution), the B1 build stamp + stale-dist guard, and the typed zoned 409 — 5 chapter commits, mind-mapper suite 197 tests; all Contract 9 R4 amendments in seams.md.
 Reference implementation for the full house pattern: astrolabe's server.ts/cli.ts (cmd/state/events + WS, presence ref-counting, debounced snapshots) — note astrolabe itself still predates the release-mode split; mind-mapper's server.ts is now the first MERGED reference for Contract 1/2 release-mode serve.
 
 ## Boundaries
@@ -118,6 +119,26 @@ Wrapping spike endpoints in the house {state, cursor} envelope "for consistency"
 Committing without announcing leave-outs on a shared tree — the pathspec discipline alone doesn't communicate what you deliberately left for another seat.
 Asserting "no engine impact" from memory — check the actual load path (module-load vs serve-time, root deps vs bundled) before saying it.
 
+**A relative env path handed to a cwd-pinned daemon points two processes at two different directories.**
+`MIND_MAPPER_HOME=.anthill/...` resolved against MY cwd in cli.ts but against `src/mind-mapper/` in the daemon it spawned (Contract 5's cwd pin), so discovery files landed where the CLI never looked — "daemon did not come up" with a perfectly healthy daemon running.
+Rule: any path that crosses a spawn boundary into a cwd-pinned process must be absolute (the tests already do this via mkdtemp; it's the ad-hoc drive that trips).
+Pin: R4 build session scratch drive; the stray daemon was cleaned by exact-PID kill per the pkill scar above.
+
+**A verification build on a shared tree bakes peers' UNCOMMITTED work into committed artifacts.**
+Running the real `build.ts` to verify B1 regenerated dist/ from a surface tree carrying circe's in-flight P1 edits — correct build, wrong content to land; `git status` on dist caught it before a commit swept her half-done work into a "mine" chapter.
+Rule: on a shared tree, verify a release build end-to-end but RESTORE the committed artifact after (checkout + drop untracked outputs); the real dist refresh belongs to finalize/release, after every seat's source has landed.
+Pin: R4 B1 chapter — dist restored, release-cut prerequisite noted in the Contract 9 amendment.
+
+**Shared-daemon test rigs are order-coupled through daemon-global state — insertion position is part of the test design.**
+My /state-buildInfo test minted a project BEFORE the fresh-store-409 test ran, breaking its "projects: []" assertion two tests away; same class as the event-replay bleed (cursor discipline) but for STORE state, not bus state.
+Rule: in a rig with one shared daemon, a new test either appends after the state-sensitive ones or scopes to its own project — never inserts mid-file on vibes.
+Pin: release-serve.test.ts, R4 (buildInfo test relocated below the fresh-store gate).
+
+**When a ratified write-list says "agent-authored", read authorship off the wire's own fields, not off the route.**
+ACT1's resolution list (send/propose/ratify/mark) qualifies only send by role, but propose and mark CARRY an author field — resolving a user-sketched proposal as "agent activity" would lie, so the honest reading gates propose/mark on their own author and leaves ratify (no authorship on that wire) unconditional.
+Generalizes: a wire that already models authorship is the source of truth for authorship-conditional behavior; stated as-built in the Contract 9 amendment so circe/cassandra don't re-derive it.
+Pin: server.ts resolveActivity call sites, presence.test.ts ACT1 rig.
+
 **One synchronous resolve site + one outer try/catch = a wire-wide error contract for free.**
 Round 3's needs-project 409 had to come from EVERY scoped endpoint (~15 routes, SSE pre-stream, WS pre-upgrade); because every route calls `loadProject()` SYNCHRONOUSLY before any body/stream work, wrapping the whole fetch dispatch in one try/catch (`projectFailure` funnel: typed NeedsProjectError → 409, UnknownProjectError → 404, else rethrow) covered all of them without touching a single route.
 The load-bearing property is the ordering discipline: resolve-scope-first means the funnel can't miss a route and can't intercept a body-parse error (those live in per-route .catch chains, which the sync throw never reaches).
@@ -152,4 +173,6 @@ The V1 wire (thin-ratified-events, the `{hits}` search shape, additive-column-ba
 Bun-fetch `reader.cancel()` invisibility is a latent presence leak for any client that disconnects that way (none of ours do — cli uses AbortController, browsers close sockets); if a stuck count ever shows, this is the first suspect.
 ~~release-serve.test.ts's SOURCE_FILES mirror~~ — RESOLVED Round 3: it's a `readdirSync` glob now (the mirror bounced a third module, zones.ts, before dying); the failure class is deleted.
 The V1.x additions kept `readState` growing positional optional params (cursor, epoch, projectRoot) — a fourth caller-supplied field should tip it to an options object.
+The new CLI parse tiers (doc kind's positional overload, actions' set/stdin/clear exclusivity) are verified by a live drive but carry no cli.test.ts rows — if either verb grows another flag, pin the parse tier first.
+The repo dist/ predates the B1 stamp — the release cut (or circe's P2 finalize) must re-run `bun run src/mind-mapper/build.ts` so build.json actually ships; until then release boots serve with no buildInfo (tolerated by design).
 Bun test passing is not a typecheck: `tsc --noEmit` still gates test files — `Bun.serve().port` is `number | undefined` (narrow once in the helper, not per call site) and `Record<string, unknown>` fields need an `as string` before `toContain`; run the tsc sweep on new test files before handing off.
