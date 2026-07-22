@@ -12,6 +12,7 @@ import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
 import { type ComposerSeed, ConversationPanel, type ScrollRequest } from "./ConversationPanel";
 import { DocViewer } from "./DocViewer";
+import { FilterControl } from "./FilterControl";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
 import { IngestionTray } from "./IngestionTray";
@@ -33,6 +34,7 @@ import {
   parseNodeCitedBody,
 } from "./state/deleteFlow";
 import { docLensNodeIds } from "./state/docLens";
+import { EMPTY_FILTER, filterFacets, filterMap, type MapFilter } from "./state/filter";
 import { groundBundle } from "./state/groundBundle";
 import { processingItems } from "./state/ingestionQueue";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
@@ -198,6 +200,10 @@ export function App() {
   // V1 — map|grid view. App-local render state (finding 6: the grid is a
   // rendering, not board state — not stored, not synced).
   const [view, setView] = useState<BoardView>("map");
+  // FILTER (R7) — the faceted filter (Status / Tier / Tags). View-local like
+  // `view` (a filter is a rendering, not board state — not stored, not synced);
+  // both map + grid consume the filteredMap it drives.
+  const [filter, setFilter] = useState<MapFilter>(EMPTY_FILTER);
   // Z3 — which board is showing: null = main, else a zone id. View-local
   // like `view` (the store is inclusive; a tab switch is free — no refetch).
   const [activeZone, setActiveZone] = useState<string | null>(null);
@@ -607,6 +613,22 @@ export function App() {
       edges: submapMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target)),
     };
   }, [submapMap, lens]);
+
+  // FILTER (R7, finding #8) — TERMINAL to the board chain, AFTER visibleMap
+  // (filtering before the lens BFS would distort the neighborhood — ruled). It
+  // HIDES non-matching nodes (distinct from spotlight's DIM); both views consume
+  // it. A filter change is a map change, so it rides R6 mergeLayout (positions +
+  // selection preserved). The facet OPTIONS derive from the PRE-filter map so an
+  // option never vanishes as you select it.
+  const filteredMap = useMemo(
+    () => (visibleMap ? filterMap(visibleMap, filter) : visibleMap),
+    [visibleMap, filter],
+  );
+  const filterFacetOptions = useMemo(
+    () => (visibleMap ? filterFacets(visibleMap) : { statuses: [], tiers: [], tags: [] }),
+    [visibleMap],
+  );
+
   const detailNode = selection.length > 0 ? selection[selection.length - 1] : null;
 
   // A dismissed detail card comes back when attention moves to another node.
@@ -1256,7 +1278,7 @@ export function App() {
               // frame after the switch) finds a live canvas instance instead
               // of a fresh mount that would swallow it.
               key={`${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`}
-              map={visibleMap ?? submapMap ?? state}
+              map={filteredMap ?? submapMap ?? state}
               selectedIds={selectedIds}
               onSelect={setSelectedIds}
               promotable={activeZone !== null}
@@ -1312,6 +1334,7 @@ export function App() {
                     enabled={selectedIds.length >= 2}
                     onToggle={() => setSpotlightOn((s) => !s)}
                   />
+                  <FilterControl filter={filter} facets={filterFacetOptions} onFilter={setFilter} />
                   <ViewToggle view={view} onView={setView} />
                 </>
               }
@@ -1322,7 +1345,7 @@ export function App() {
               {/* V1 — the SAME visibleMap + matches the canvas gets: lens
                   narrows and search dims the grid by construction. */}
               <CardGrid
-                map={visibleMap ?? submapMap ?? state}
+                map={filteredMap ?? submapMap ?? state}
                 highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
                 selectedIds={selectedIds}
                 onSelect={setSelectedIds}
@@ -1336,7 +1359,10 @@ export function App() {
                   switching never moves the control out from under the
                   pointer. Same FocusBar dodge as the map view's Panel row:
                   the bar must never cover the way out of a view. */}
-              <div className={`absolute right-4 z-10 ${lens.owner ? "top-14" : "top-4"}`}>
+              <div
+                className={`absolute right-4 z-10 flex items-center gap-1.5 ${lens.owner ? "top-14" : "top-4"}`}
+              >
+                <FilterControl filter={filter} facets={filterFacetOptions} onFilter={setFilter} />
                 <ViewToggle view={view} onView={setView} />
               </div>
             </>
