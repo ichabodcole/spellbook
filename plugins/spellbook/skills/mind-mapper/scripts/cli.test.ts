@@ -646,6 +646,31 @@ test("tags --set then --clear round-trips through the CLI", async () => {
   expect(usage.stderr).toContain("--set");
 });
 
+// Round 7 (TAGS) — propose-node --stdin with a top-level `tags` key must
+// forward the tags into the POST body (the single-verb CLI path bug cassandra's
+// cold gate caught: the route + batch attach tags, the single verb silently
+// dropped them). Drives the doc's "add tags to any propose-node stdin body".
+test("propose-node --stdin forwards top-level tags onto the pending proposal", async () => {
+  const p = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(
+      JSON.stringify({ draft: { title: "Tagged at propose" }, evidence: {}, tags: ["gamma"] }),
+    ).body,
+    stdout: "pipe",
+  });
+  const proposal = JSON.parse(await new Response(p.stdout).text()) as {
+    id: string;
+    tags?: string[];
+  };
+  await p.exited;
+  // The minted proposal echoes the tags (not tags:null — the bug's signature).
+  expect(proposal.tags).toEqual(["gamma"]);
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as { proposals: Array<{ id: string; tags?: string[] }> };
+  expect(parsed.proposals.find((pr) => pr.id === proposal.id)?.tags).toEqual(["gamma"]);
+});
+
 // Round 7 (PORT) — `open --port N` forwards the flag through ensureDaemon into
 // the daemon's spawn args; the server binds it and writes N to daemon.port.
 // Uses its own fresh HOME so no live daemon short-circuits the port (the

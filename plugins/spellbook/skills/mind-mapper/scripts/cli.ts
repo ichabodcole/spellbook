@@ -434,6 +434,10 @@ async function dispatch(argv: string[]): Promise<number> {
       evidence?: { docId?: string; messageId?: string; span?: string };
       suggestedTier?: string;
       author?: string;
+      // Round 7 (TAGS): propose-time tags ride the stdin JSON — must be
+      // forwarded into the POST body, or the /proposals route never sees them
+      // (the batch path forwards its node tags; the single verb must too).
+      tags?: string[];
     };
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -448,6 +452,8 @@ async function dispatch(argv: string[]): Promise<number> {
         // --zone stages the proposal in a zone (flag wins; the stdin JSON
         // stays the draft/evidence shape — zone is routing, not content).
         zone: parsed.values.zone,
+        // TAGS: forward the stdin tags (the route validates the shape).
+        tags: input.tags,
       }),
     });
     const responseText = await res.text();
