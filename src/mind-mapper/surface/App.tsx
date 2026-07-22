@@ -23,6 +23,7 @@ import { ProjectPicker } from "./ProjectPicker";
 import { ReviewQueue } from "./ReviewQueue";
 import { SearchPalette } from "./SearchPalette";
 import { SpotlightToggle } from "./SpotlightToggle";
+import { SubmapAppendModal } from "./SubmapAppendModal";
 import { SubmapBreadcrumb } from "./SubmapBreadcrumb";
 import { SubmapGroupModal } from "./SubmapGroupModal";
 import { type AgentBadge, badgeFor, badgeHasClientTtl } from "./state/activity";
@@ -47,6 +48,7 @@ import { shouldDismissSearch } from "./state/searchDismiss";
 import { type PaletteRow, paletteRows } from "./state/searchRows";
 import { computeSpotlight } from "./state/spotlight";
 import { breadcrumbTrail, submapView } from "./state/submap";
+import { type BatchRuling, buildSubmapAppend, pendingNodeProposalIds } from "./state/submapAppend";
 import { ratifiedSelection, submapChildTargets } from "./state/submapGroup";
 import { existingTags } from "./state/tags";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
@@ -186,6 +188,9 @@ export function App() {
   // R6 SUBMAP-CREATE — the group-ratified-nodes-under-a-parent modal: the
   // selected ratified nodes gathered when the affordance is clicked.
   const [submapGroup, setSubmapGroup] = useState<{ nodes: MapNode[] } | null>(null);
+  // R7 SUBMAPPEND — the pending-group variant: ≥2 selected PENDING proposals to
+  // ratify-batch into a submap (the ids gathered when the affordance is clicked).
+  const [submapAppend, setSubmapAppend] = useState<{ pendingIds: string[] } | null>(null);
   // IC-a/IC-b — the free-text (dictation-first) add-node modal. `connectFrom`
   // null = a plain add (pane right-click → one node proposal); a node id = a
   // drag-connect-to-blank (onConnectEnd) → a node+edge batch anchored to that
@@ -1042,6 +1047,41 @@ export function App() {
       });
   };
 
+  // R7 SUBMAPPEND — commit the pending-group modal: the surface's FIRST
+  // ratify-batch call. Ratify every selected pending proposal at ONE top-level
+  // ruling and nest the non-parent children under the chosen parent (pending OR
+  // an existing real node — the batch's idMap resolves either). Then drill into
+  // the parent's new submap (its minted node id from idMap, or its own id when
+  // the parent was already a real node). One round-trip, no per-proposal tier.
+  const commitSubmapAppend = (parentRef: string, ruling: BatchRuling) => {
+    if (!submapAppend) return;
+    const { ids, anchors } = buildSubmapAppend(submapAppend.pendingIds, parentRef);
+    fetch(`/proposals/ratify-batch${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ruling, ids, anchors }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = (await r.json().catch(() => null)) as { error?: unknown } | null;
+          throw new Error(typeof body?.error === "string" ? body.error : `ratify ${r.status}`);
+        }
+        return (await r.json()) as { idMap?: Record<string, string> };
+      })
+      .then((res) => {
+        // A pending parent's real node id lives in idMap; an existing-node
+        // parent isn't in idMap and drills in under its own id.
+        const parentNodeId = res.idMap?.[parentRef] ?? parentRef;
+        setSubmapAppend(null);
+        setSelectedIds([]);
+        switchAnchor(parentNodeId);
+      })
+      .catch((e) => {
+        setSubmapAppend(null);
+        setNotice(`couldn't nest those (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
   // An open viewer for a doc that no longer exists closes — whoever deleted
   // it (this surface's flow or an agent's cli doc delete), the doc.deleted
   // reducer filter is the one truth this watches.
@@ -1159,6 +1199,11 @@ export function App() {
   // board only (a zone view holds proposals, so this is empty there anyway).
   const ratifiedSel =
     activeZone === null ? ratifiedSelection(state.nodes, state.proposals, selectedIds) : [];
+  // R7 SUBMAPPEND — the selected PENDING NODE proposals (main-queue, node-kind;
+  // edges have no anchor). ≥2 gates the "ratify & nest as a submap" affordance,
+  // main board only (a zoned proposal can't ratify while zoned).
+  const selectedPendingNodes =
+    activeZone === null ? pendingNodeProposalIds(state.proposals, selectedIds) : [];
   // R6 QUEUE — the raw items being curated (pure derive over the inclusive
   // store; decoupled from the active board view).
   const processing = processingItems(state.proposals);
@@ -1329,6 +1374,20 @@ export function App() {
                       submap · {ratifiedSel.length}
                     </Button>
                   )}
+                  {/* R7 SUBMAPPEND — ratify ≥2 selected PENDING proposals into a
+                      submap in one ratify-batch call (the pending mirror of the
+                      ratified "submap" affordance above). */}
+                  {selectedPendingNodes.length >= 2 && (
+                    <Button
+                      variant="outline"
+                      size="auto"
+                      className="px-2 py-1 text-[10px] uppercase tracking-wide text-pending"
+                      title="Ratify the selected proposals and nest them as a submap"
+                      onClick={() => setSubmapAppend({ pendingIds: selectedPendingNodes })}
+                    >
+                      nest · {selectedPendingNodes.length}
+                    </Button>
+                  )}
                   <SpotlightToggle
                     active={spotlightOn}
                     enabled={selectedIds.length >= 2}
@@ -1430,6 +1489,14 @@ export function App() {
               nodes={submapGroup.nodes}
               onPickParent={commitSubmapGroup}
               onCancel={() => setSubmapGroup(null)}
+            />
+          )}
+          {submapAppend && (
+            <SubmapAppendModal
+              proposals={pendingAll.filter((n) => submapAppend.pendingIds.includes(n.id))}
+              existingNodes={state.nodes}
+              onCommit={commitSubmapAppend}
+              onCancel={() => setSubmapAppend(null)}
             />
           )}
           {/* R4 S1 — the palette renders permanently at its perch (the
