@@ -46,9 +46,12 @@ All verbs: `bun plugins/spellbook/skills/mind-mapper/scripts/cli.ts <verb>`.
    **Tail is self-healing** — it reconnects on its own after silence or a
    dropped connection; don't restart it. It survives a daemon restart even when
    the daemon comes back on a **different port**: every reconnect re-reads
-   `daemon.port`, so the tail follows the daemon wherever it lands. (`open` has
-   no port pin — a restarted daemon picks a fresh ephemeral port and the URL you
-   noted for the human may change; re-run `open` to get the current one.) One
+   `daemon.port`, so the tail follows the daemon wherever it lands. (By default
+   a restarted daemon picks a fresh ephemeral port and the URL you noted for the
+   human may change; re-run `open` for the current one — OR pin a STABLE port on
+   the FIRST open with `open --port <n>` so a browser refresh reconnects across
+   a restart. Wrinkle: `--port` against an already-live daemon is ignored, and a
+   port already in use makes the daemon fail to come up — pick a free one.) One
    line needs action: `{"kind":"epoch.changed","epoch":...}` means the daemon
    restarted and your event cursor was reset — **refetch `state` before acting
    on anything else** (events you didn't see are folded into the fresh
