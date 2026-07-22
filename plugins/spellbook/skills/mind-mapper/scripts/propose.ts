@@ -23,12 +23,17 @@ interface ProposeInput {
   zone?: string;
 }
 
-function insertProposal(
+// Round 5 (CLI1): validate + compute the row and the wire object, but do NOT
+// insert or emit — the single-propose path inserts+emits immediately, the
+// batch path defers both (all inserts inside ONE db.transaction(), all emits
+// AFTER commit so a rollback leaks no proposal.added). Splitting here is what
+// lets both paths share one intake contract without the batch smuggling a
+// mid-transaction emit.
+function buildProposal(
   db: Database,
-  bus: EventBus,
   kind: "node" | "edge",
   input: ProposeInput,
-): Proposal {
+): { proposal: Proposal; insert: () => void } {
   const id = crypto.randomUUID();
   // The draft stays OPAQUE (Claim A) but not ABSENT — a missing draft used
   // to surface as a raw "NOT NULL constraint failed: proposals.draft_json";
@@ -82,21 +87,6 @@ function insertProposal(
   const author = input.author ?? "agent";
   const zoneId = input.zone ?? null;
 
-  db.run(
-    "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author, zone_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
-    [
-      id,
-      kind,
-      draftJson,
-      evidenceDocId,
-      evidenceMessageId,
-      evidenceSpan,
-      suggestedTier,
-      author,
-      zoneId,
-    ],
-  );
-
   // propose emits the FULL proposal object, so proposal.added carries zoneId
   // for free — payload-tagging is the mechanism (events are project-scoped
   // and can never be zone-scoped; consumers filter by the tag).
@@ -111,8 +101,119 @@ function insertProposal(
     author,
     zoneId,
   };
+  const insert = () =>
+    db.run(
+      "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author, zone_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+      [
+        id,
+        kind,
+        draftJson,
+        evidenceDocId,
+        evidenceMessageId,
+        evidenceSpan,
+        suggestedTier,
+        author,
+        zoneId,
+      ],
+    );
+  return { proposal, insert };
+}
+
+function insertProposal(
+  db: Database,
+  bus: EventBus,
+  kind: "node" | "edge",
+  input: ProposeInput,
+): Proposal {
+  const { proposal, insert } = buildProposal(db, kind, input);
+  insert();
   bus.emit("proposal.added", proposal as unknown as Record<string, unknown>);
   return proposal;
+}
+
+// Round 5 (CLI1) — batch propose. Mints a UUID per node, registers each under
+// its LOCAL ref (an opaque author-chosen string like "n1", never persisted —
+// disjoint from the minted UUIDs), then resolves each edge endpoint via
+// `refToId.get(x) ?? x`: a local ref becomes the freshly-minted node id, while
+// a real node/proposal id (or an unresolvable ref — ratify owns dangling-ref
+// errors) passes through unchanged. Opacity holds: a missing endpoint key
+// stays missing (spread injects `undefined`, which JSON.stringify drops), so
+// the stored edge draft is byte-identical to a single-propose of the same
+// draft. All validation runs BEFORE the transaction (pure reads + throws), all
+// inserts run INSIDE it, all emits AFTER commit — a throw at any stage leaves
+// zero rows and leaks zero events.
+interface BatchNodeInput {
+  ref: string;
+  draft: unknown;
+  suggestedTier?: string;
+  evidence?: { docId?: string; messageId?: string; span?: string };
+  author?: "user" | "agent";
+}
+interface BatchEdgeInput {
+  draft: unknown;
+  suggestedTier?: string;
+  evidence?: { docId?: string; messageId?: string; span?: string };
+  author?: "user" | "agent";
+}
+interface BatchInput {
+  nodes?: BatchNodeInput[];
+  edges?: BatchEdgeInput[];
+}
+
+function batchPropose(
+  db: Database,
+  bus: EventBus,
+  input: BatchInput,
+): { refToId: Record<string, string>; proposals: Proposal[] } {
+  const refToId = new Map<string, string>();
+  const built: Array<{ proposal: Proposal; insert: () => void }> = [];
+
+  for (const n of input.nodes ?? []) {
+    if (typeof n.ref !== "string" || n.ref === "") {
+      throw new Error('each batch node needs a non-empty string "ref"');
+    }
+    if (refToId.has(n.ref)) throw new Error(`duplicate batch node ref: ${n.ref}`);
+    const b = buildProposal(db, "node", {
+      draft: n.draft,
+      evidence: n.evidence ?? {},
+      suggestedTier: n.suggestedTier,
+      author: n.author,
+    });
+    refToId.set(n.ref, b.proposal.id);
+    built.push(b);
+  }
+
+  for (const e of input.edges ?? []) {
+    // Resolve local refs against the just-minted node ids; keep the draft
+    // otherwise opaque (Contract 8).
+    let draft = e.draft;
+    if (draft !== null && typeof draft === "object") {
+      const d = draft as Record<string, unknown>;
+      draft = {
+        ...d,
+        source: refToId.get(String(d.source)) ?? d.source,
+        target: refToId.get(String(d.target)) ?? d.target,
+      };
+    }
+    built.push(
+      buildProposal(db, "edge", {
+        draft,
+        evidence: e.evidence ?? {},
+        suggestedTier: e.suggestedTier,
+        author: e.author,
+      }),
+    );
+  }
+
+  const run = db.transaction(() => {
+    for (const b of built) b.insert();
+  });
+  run();
+  // AFTER commit only — a rollback must never leak a proposal.added.
+  for (const b of built) {
+    bus.emit("proposal.added", b.proposal as unknown as Record<string, unknown>);
+  }
+  return { refToId: Object.fromEntries(refToId), proposals: built.map((b) => b.proposal) };
 }
 
 // R3 gate rework (cassandra's cold drive): an edge draft with the WRONG
@@ -140,5 +241,5 @@ function proposeEdge(db: Database, bus: EventBus, input: ProposeInput): Proposal
   return insertProposal(db, bus, "edge", input);
 }
 
-export type { ProposeInput };
-export { edgeDraftWarning, proposeEdge, proposeNode };
+export type { BatchEdgeInput, BatchInput, BatchNodeInput, ProposeInput };
+export { batchPropose, edgeDraftWarning, proposeEdge, proposeNode };

@@ -12,6 +12,7 @@
 // uses: the standard verbs, ruling verbs on pending proposals (ratify
 // anywhere), and A1's action slots, identical in both views by construction.
 
+import { FolderTree } from "lucide-react";
 import { KIND_ICON, TIER_CARD, TIER_LABEL } from "./GraphCanvas";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import { groupByTierKind } from "./state/cardGrid";
@@ -93,6 +94,15 @@ export function CardGrid({
                           {n.pending && (
                             <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
                               proposed
+                            </span>
+                          )}
+                          {!n.pending && (n.submapChildCount ?? 0) > 0 && (
+                            <span
+                              className="ml-auto flex items-center gap-0.5 rounded-sm border border-thread-tier px-1 normal-case tracking-normal text-thread-tier"
+                              title={`has a submap (${n.submapChildCount} inside)`}
+                            >
+                              <FolderTree size={9} aria-hidden />
+                              {n.submapChildCount}
                             </span>
                           )}
                         </div>

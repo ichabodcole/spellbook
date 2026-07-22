@@ -24,6 +24,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { clearActions, setActions } from "./actions.ts";
+import { anchorNode } from "./anchor.ts";
 import { openStore } from "./db.ts";
 import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
 import { createEventBus, type EventBus } from "./events.ts";
@@ -41,12 +42,26 @@ import {
   SLUG_RE,
   UnknownProjectError,
 } from "./project.ts";
-import { edgeDraftWarning, proposeEdge, proposeNode } from "./propose.ts";
+import {
+  type BatchInput,
+  batchPropose,
+  edgeDraftWarning,
+  proposeEdge,
+  proposeNode,
+} from "./propose.ts";
 import { ratify, ZonedError } from "./ratify.ts";
 import { search } from "./search.ts";
 import { sendMessage } from "./send.ts";
 import { readState } from "./state.ts";
-import { createZone, deleteZone, listZones, promote, ZoneNotEmptyError } from "./zones.ts";
+import {
+  createZone,
+  deleteZone,
+  listZones,
+  moveProposalToZone,
+  promote,
+  UnknownZoneError,
+  ZoneNotEmptyError,
+} from "./zones.ts";
 
 const SCRIPT_DIR = import.meta.dir;
 // Absolute skill-root path (not cwd) — seams Contract 1's release-mode
@@ -230,6 +245,19 @@ function activityTtlMs(): number {
   return Number.isFinite(v) && v > 0 ? v : 60_000;
 }
 
+// Round 5 (SW1) — the stall window is its own knob now. `received → stalled`
+// is a DIFFERENT judgment than `thinking → idle`: it fires while the agent is
+// deliberating (a longer, human-paced beat), not while a crashed agent leaves
+// "thinking…" stuck. 60s false-fired twice during normal drive-4 deliberation,
+// so the received-grace widens to 150s by default while thinking keeps the
+// tighter 60s (a stuck spinner should clear fast). The liveness-gate was
+// rejected: a connected tail proves transport, not agent liveness (a hung
+// agent keeps its tail open).
+function stallTtlMs(): number {
+  const v = Number.parseInt(process.env.MIND_MAPPER_STALL_TTL_MS ?? "", 10);
+  return Number.isFinite(v) && v > 0 ? v : 150_000;
+}
+
 // Claim C's active-attention half, Round 4 (ACT1) supersession of the TTL
 // clause: fire-and-forget, no table, no persistence. TTL escalation is
 // state-aware now — `received` older than the TTL escalates to a
@@ -257,7 +285,7 @@ function postActivity(
       entry.activityState = "stalled";
       entry.activitySource = "auto"; // resolvable by any agent write, whoever set the received
       entry.bus.emit("agent.activity", { state: "stalled" });
-    }, activityTtlMs());
+    }, stallTtlMs());
   } else if (state === "thinking") {
     entry.activityTimer = setTimeout(() => {
       entry.activityTimer = null;
@@ -519,6 +547,29 @@ async function main(argv: string[]): Promise<number> {
               }
               state.proposals = state.proposals.filter((p) => p.zoneId === zoneId);
             }
+            // Round 5 (SG1): ?anchor=<id> is a server-side CLI/agent narrow to
+            // one node's submap — the anchor node itself plus its direct
+            // children, and the edges among that set. The SURFACE does NOT use
+            // this (it consumes the inclusive snapshot + submapChildCount and
+            // derives the submap client-side, so the breadcrumb parent-walk
+            // stays possible); this is a convenience for context-budgeted agent
+            // reads, mirroring ?zone. Unknown anchor id → 404.
+            const anchorId = url.searchParams.get("anchor");
+            if (anchorId !== null) {
+              if (!state.nodes.some((n) => n.id === anchorId)) {
+                return new Response(JSON.stringify({ error: `unknown anchor node: ${anchorId}` }), {
+                  status: 404,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+              state.nodes = state.nodes.filter(
+                (n) => n.anchorNodeId === anchorId || n.id === anchorId,
+              );
+              const visible = new Set(state.nodes.map((n) => n.id));
+              state.edges = state.edges.filter(
+                (e) => visible.has(e.source) && visible.has(e.target),
+              );
+            }
             // buildInfo spreads AT THE HANDLER, not through readState — a
             // daemon-level fact like presence (the exported ProjectState
             // type under-reports the wire here too; Contract 9 as-built
@@ -692,6 +743,38 @@ async function main(argv: string[]): Promise<number> {
               );
           }
 
+          // Round 5 (CLI1): batch propose — mint nodes, resolve edge endpoints
+          // against the just-minted ids (local refs), insert in ONE
+          // transaction, emit per-proposal AFTER commit. Kills the
+          // N-subprocess casting script (finding #10). Checked before the
+          // exact-match /proposals route below (disjoint path anyway).
+          if (req.method === "POST" && path === "/proposals/batch") {
+            const entry = loadProject(projectId);
+            const { db, bus } = entry;
+            return req
+              .json()
+              .then((body) => {
+                const { nodes, edges } = body as { nodes?: unknown; edges?: unknown };
+                const result = batchPropose(db, bus, {
+                  nodes: Array.isArray(nodes) ? (nodes as BatchInput["nodes"]) : [],
+                  edges: Array.isArray(edges) ? (edges as BatchInput["edges"]) : [],
+                });
+                // A batch is the casting agent's bulk write — an agent-authored
+                // proposal in it is evidence of activity (resolves auto states,
+                // same as a single agent propose). A wholly user-sketched batch
+                // is not the agent's.
+                if (result.proposals.some((p) => p.author === "agent")) resolveActivity(entry);
+                return Response.json(result);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
           if (req.method === "POST" && path === "/proposals") {
             const entry = loadProject(projectId);
             const { db, bus } = entry;
@@ -793,6 +876,44 @@ async function main(argv: string[]): Promise<number> {
             return Response.json({ hits: search(db, q) });
           }
 
+          // Round 5 (CLI1): read one full message by id (grapevine `read`
+          // precedent) so the casting agent stops scraping the tail log for a
+          // message body. Project-scoped — a message from another project is a
+          // 404 here, same as every other scoped read. Ground grammar matches
+          // readState (ground_json → string[] | null).
+          if (req.method === "GET" && path.startsWith("/message/")) {
+            const { db, meta } = loadProject(projectId);
+            const id = path.slice("/message/".length);
+            const row = db
+              .query(
+                "SELECT id, seq, role, kind, text, ground_json, ts FROM messages WHERE id = ? AND project_id = ?",
+              )
+              .get(id, meta.id) as {
+              id: string;
+              seq: number;
+              role: "user" | "agent";
+              kind: string;
+              text: string;
+              ground_json: string | null;
+              ts: number;
+            } | null;
+            if (!row) {
+              return new Response('{"error":"unknown message"}', {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return Response.json({
+              id: row.id,
+              seq: row.seq,
+              role: row.role,
+              kind: row.kind,
+              text: row.text,
+              ground: row.ground_json ? (JSON.parse(row.ground_json) as string[]) : null,
+              ts: row.ts,
+            });
+          }
+
           if (req.method === "GET" && path.startsWith("/neighbors/")) {
             const { db } = loadProject(projectId);
             const depth = Number.parseInt(url.searchParams.get("depth") ?? "1", 10);
@@ -800,6 +921,42 @@ async function main(argv: string[]): Promise<number> {
             return Response.json({
               neighbors: neighbors(db, id, Number.isFinite(depth) && depth > 0 ? depth : 1),
             });
+          }
+
+          // Round 5 (IC-c): move a PENDING proposal into a zone (or null =
+          // to main) — the inverse of promote. Unknown proposal → 404,
+          // unknown zone → 404 (typed), non-pending → 400.
+          if (req.method === "POST" && path.startsWith("/proposals/") && path.endsWith("/zone")) {
+            const { db, bus } = loadProject(projectId);
+            const proposalId = path.slice("/proposals/".length, -"/zone".length);
+            return req
+              .json()
+              .then((body) => {
+                const { zoneId } = body as { zoneId?: unknown };
+                if (zoneId !== null && typeof zoneId !== "string") {
+                  throw new Error("zoneId must be a zone id string, or null to move to main");
+                }
+                const result = moveProposalToZone(db, bus, proposalId, zoneId);
+                if (!result) {
+                  return new Response('{"error":"unknown proposal"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(result);
+              })
+              .catch((e) => {
+                if (e instanceof UnknownZoneError) {
+                  return new Response(JSON.stringify({ error: e.message }), {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return new Response(
+                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                  { status: 400, headers: { "Content-Type": "application/json" } },
+                );
+              });
           }
 
           if (
@@ -817,6 +974,32 @@ async function main(argv: string[]): Promise<number> {
                 { status: 400, headers: { "Content-Type": "application/json" } },
               );
             }
+          }
+
+          // Round 5 (SG1): anchor a real node under a parent (submap tree), or
+          // clear it (parentId: null → top-level). The FIRST /nodes/* route.
+          // Cycle guard lives in anchor.ts (ancestor-walk + defensive seen);
+          // AnchorError → 400, everything else is the generic 400. Emits
+          // node.anchored (thin).
+          if (req.method === "POST" && path.startsWith("/nodes/") && path.endsWith("/anchor")) {
+            const { db, bus } = loadProject(projectId);
+            const nodeId = path.slice("/nodes/".length, -"/anchor".length);
+            return req
+              .json()
+              .then((body) => {
+                const { parentId } = body as { parentId?: unknown };
+                if (parentId !== null && typeof parentId !== "string") {
+                  throw new Error("parentId must be a node id string, or null to clear");
+                }
+                return Response.json(anchorNode(db, bus, nodeId, parentId));
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
           }
 
           if (req.method === "POST" && path.startsWith("/proposals/") && path.endsWith("/ruling")) {

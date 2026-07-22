@@ -64,6 +64,31 @@ test("node.ratified flips the matching proposal to ratified and does NOT fabrica
   expect(next.nodes).toEqual(baseState().nodes);
 });
 
+test("node.anchored flips the node's anchorNodeId locally (thin event)", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "node.anchored",
+    payload: { nodeId: "maren", anchorNodeId: "the-hollow" },
+  });
+  expect(next.nodes[0]?.anchorNodeId).toBe("the-hollow");
+  expect(next.cursor).toBe(6);
+});
+
+test("node.anchored with null anchorNodeId clears to top-level", () => {
+  const anchored: ProjectState = {
+    ...baseState(),
+    nodes: [
+      { ...baseState().nodes[0], anchorNodeId: "the-hollow" } as ProjectState["nodes"][number],
+    ],
+  };
+  const next = applyEvent(anchored, {
+    seq: 6,
+    kind: "node.anchored",
+    payload: { nodeId: "maren", anchorNodeId: null },
+  });
+  expect(next.nodes[0]?.anchorNodeId).toBeNull();
+});
+
 test("edge.ratified flips the matching proposal to ratified and does NOT fabricate an edge", () => {
   const next = applyEvent(baseState(), {
     seq: 6,

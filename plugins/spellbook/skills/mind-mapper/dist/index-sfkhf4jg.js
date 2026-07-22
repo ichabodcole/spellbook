@@ -18095,8 +18095,11 @@ var BookOpen = createLucideIcon("book-open", __iconNode7);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
 var __iconNode8 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
 var Check = createLucideIcon("check", __iconNode8);
+// node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
+var __iconNode9 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/circle-dashed.mjs
-var __iconNode9 = [
+var __iconNode10 = [
   ["path", { d: "M10.1 2.182a10 10 0 0 1 3.8 0", key: "5ilxe3" }],
   ["path", { d: "M13.9 21.818a10 10 0 0 1-3.8 0", key: "11zvb9" }],
   ["path", { d: "M17.609 3.721a10 10 0 0 1 2.69 2.7", key: "1iw5b2" }],
@@ -18106,18 +18109,18 @@ var __iconNode9 = [
   ["path", { d: "M3.721 6.391a10 10 0 0 1 2.7-2.69", key: "1mcia2" }],
   ["path", { d: "M6.391 20.279a10 10 0 0 1-2.69-2.7", key: "1fvljs" }]
 ];
-var CircleDashed = createLucideIcon("circle-dashed", __iconNode9);
+var CircleDashed = createLucideIcon("circle-dashed", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/crosshair.mjs
-var __iconNode10 = [
+var __iconNode11 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["line", { x1: "22", x2: "18", y1: "12", y2: "12", key: "l9bcsi" }],
   ["line", { x1: "6", x2: "2", y1: "12", y2: "12", key: "13hhkx" }],
   ["line", { x1: "12", x2: "12", y1: "6", y2: "2", key: "10w3f3" }],
   ["line", { x1: "12", x2: "12", y1: "22", y2: "18", key: "15g9kq" }]
 ];
-var Crosshair = createLucideIcon("crosshair", __iconNode10);
+var Crosshair = createLucideIcon("crosshair", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode11 = [
+var __iconNode12 = [
   [
     "path",
     {
@@ -18130,17 +18133,50 @@ var __iconNode11 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode11);
+var FileText = createLucideIcon("file-text", __iconNode12);
+// node_modules/lucide-react/dist/esm/icons/flashlight.mjs
+var __iconNode13 = [
+  ["path", { d: "M12 13v1", key: "176q98" }],
+  [
+    "path",
+    {
+      d: "M17 2a1 1 0 0 1 1 1v4a3 3 0 0 1-.6 1.8l-.6.8A4 4 0 0 0 16 12v8a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-8a4 4 0 0 0-.8-2.4l-.6-.8A3 3 0 0 1 6 7V3a1 1 0 0 1 1-1z",
+      key: "17vh7j"
+    }
+  ],
+  ["path", { d: "M6 6h12", key: "n6hhss" }]
+];
+var Flashlight = createLucideIcon("flashlight", __iconNode13);
+// node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
+var __iconNode14 = [
+  [
+    "path",
+    {
+      d: "M20 10a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2.5a1 1 0 0 1-.8-.4l-.9-1.2A1 1 0 0 0 15 3h-2a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z",
+      key: "hod4my"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "M20 21a1 1 0 0 0 1-1v-3a1 1 0 0 0-1-1h-2.9a1 1 0 0 1-.88-.55l-.42-.85a1 1 0 0 0-.92-.6H13a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1Z",
+      key: "w4yl2u"
+    }
+  ],
+  ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
+  ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
+];
+var FolderTree = createLucideIcon("folder-tree", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/layout-grid.mjs
-var __iconNode12 = [
+var __iconNode15 = [
   ["rect", { width: "7", height: "7", x: "3", y: "3", rx: "1", key: "1g98yp" }],
   ["rect", { width: "7", height: "7", x: "14", y: "3", rx: "1", key: "6d4xhi" }],
   ["rect", { width: "7", height: "7", x: "14", y: "14", rx: "1", key: "nxv5o0" }],
   ["rect", { width: "7", height: "7", x: "3", y: "14", rx: "1", key: "1bb6yr" }]
 ];
-var LayoutGrid = createLucideIcon("layout-grid", __iconNode12);
+var LayoutGrid = createLucideIcon("layout-grid", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/lightbulb.mjs
-var __iconNode13 = [
+var __iconNode16 = [
   [
     "path",
     {
@@ -18151,18 +18187,18 @@ var __iconNode13 = [
   ["path", { d: "M9 18h6", key: "x1upvd" }],
   ["path", { d: "M10 22h4", key: "ceow96" }]
 ];
-var Lightbulb = createLucideIcon("lightbulb", __iconNode13);
+var Lightbulb = createLucideIcon("lightbulb", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode14 = [
+var __iconNode17 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode14);
+var ListTree = createLucideIcon("list-tree", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/map-pin.mjs
-var __iconNode15 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -18172,9 +18208,9 @@ var __iconNode15 = [
   ],
   ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
 ];
-var MapPin = createLucideIcon("map-pin", __iconNode15);
+var MapPin = createLucideIcon("map-pin", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/map.mjs
-var __iconNode16 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -18185,9 +18221,9 @@ var __iconNode16 = [
   ["path", { d: "M15 5.764v15", key: "1pn4in" }],
   ["path", { d: "M9 3.236v15", key: "1uimfh" }]
 ];
-var Map2 = createLucideIcon("map", __iconNode16);
+var Map2 = createLucideIcon("map", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode17 = [
+var __iconNode20 = [
   [
     "path",
     {
@@ -18196,19 +18232,19 @@ var __iconNode17 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode17);
+var MessageSquare = createLucideIcon("message-square", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/mic.mjs
-var __iconNode18 = [
+var __iconNode21 = [
   ["path", { d: "M12 19v3", key: "npa21l" }],
   ["path", { d: "M19 10v2a7 7 0 0 1-14 0v-2", key: "1vc78b" }],
   ["rect", { x: "9", y: "2", width: "6", height: "13", rx: "3", key: "s6n7sd" }]
 ];
-var Mic = createLucideIcon("mic", __iconNode18);
+var Mic = createLucideIcon("mic", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/minus.mjs
-var __iconNode19 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
-var Minus = createLucideIcon("minus", __iconNode19);
+var __iconNode22 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
+var Minus = createLucideIcon("minus", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode20 = [
+var __iconNode23 = [
   [
     "path",
     {
@@ -18217,15 +18253,15 @@ var __iconNode20 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode20);
+var Moon = createLucideIcon("moon", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode21 = [
+var __iconNode24 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode21);
+var Plus = createLucideIcon("plus", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/scroll-text.mjs
-var __iconNode22 = [
+var __iconNode25 = [
   ["path", { d: "M15 12h-5", key: "r7krc0" }],
   ["path", { d: "M15 8h-5", key: "1khuty" }],
   ["path", { d: "M19 17V5a2 2 0 0 0-2-2H4", key: "zz82l3" }],
@@ -18237,15 +18273,15 @@ var __iconNode22 = [
     }
   ]
 ];
-var ScrollText = createLucideIcon("scroll-text", __iconNode22);
+var ScrollText = createLucideIcon("scroll-text", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode23 = [
+var __iconNode26 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode23);
+var Search = createLucideIcon("search", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode24 = [
+var __iconNode27 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -18256,37 +18292,48 @@ var __iconNode24 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode24);
+var Sun = createLucideIcon("sun", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode25 = [
+var __iconNode28 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode25);
+var Trash2 = createLucideIcon("trash-2", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode26 = [
+var __iconNode29 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode26);
+var Upload = createLucideIcon("upload", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode27 = [
+var __iconNode30 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode27);
+var User = createLucideIcon("user", __iconNode30);
+// node_modules/lucide-react/dist/esm/icons/waypoints.mjs
+var __iconNode31 = [
+  ["path", { d: "m10.586 5.414-5.172 5.172", key: "4mc350" }],
+  ["path", { d: "m18.586 13.414-5.172 5.172", key: "8c96vv" }],
+  ["path", { d: "M6 12h12", key: "8npq4p" }],
+  ["circle", { cx: "12", cy: "20", r: "2", key: "144qzu" }],
+  ["circle", { cx: "12", cy: "4", r: "2", key: "muu5ef" }],
+  ["circle", { cx: "20", cy: "12", r: "2", key: "1xzzfp" }],
+  ["circle", { cx: "4", cy: "12", r: "2", key: "1hvhnz" }]
+];
+var Waypoints = createLucideIcon("waypoints", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode28 = [
+var __iconNode32 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode28);
+var X = createLucideIcon("x", __iconNode32);
 // src/mind-mapper/surface/App.tsx
-var import_react19 = __toESM(require_react(), 1);
+var import_react20 = __toESM(require_react(), 1);
 
 // node_modules/@dagrejs/dagre/dist/dagre.esm.js
 var ge = Object.defineProperty;
@@ -41614,6 +41661,20 @@ function NodeContextMenu({
               " Focus"
             ]
           }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
+            onClick: () => onCommand("Select connected"),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Waypoints, {}, undefined, false, undefined, this),
+              " Select connected"
+            ]
+          }, undefined, true, undefined, this),
+          (node.submapChildCount ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
+            onClick: () => onCommand("Enter submap"),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+              " Enter submap"
+            ]
+          }, undefined, true, undefined, this),
           promotable && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
             onClick: () => onCommand("Promote"),
             children: [
@@ -41785,7 +41846,18 @@ function IdeaNode({ data, selected: selected2 }) {
             n.pending && /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
               className: "ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending",
               children: "proposed"
-            }, undefined, false, undefined, this)
+            }, undefined, false, undefined, this),
+            !n.pending && (n.submapChildCount ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+              className: "ml-auto flex items-center gap-0.5 rounded-sm border border-thread-tier px-1 normal-case tracking-normal text-thread-tier",
+              title: `has a submap (${n.submapChildCount} inside)`,
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(FolderTree, {
+                  size: 9,
+                  "aria-hidden": true
+                }, undefined, false, undefined, this),
+                n.submapChildCount
+              ]
+            }, undefined, true, undefined, this)
           ]
         }, undefined, true, undefined, this),
         /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("div", {
@@ -41903,9 +41975,12 @@ function GraphCanvas({
   onSelect,
   onNodeCommand,
   highlightIds,
+  spotlight,
   focusRequest,
   onConnect,
-  onPaneDoubleClick,
+  onConnectToBlank,
+  onAddNode,
+  onEnterSubmap,
   panelTopRight,
   promotable,
   panelBelowBar,
@@ -41917,6 +41992,10 @@ function GraphCanvas({
   const [layoutMode, setLayoutMode] = import_react9.useState("tree");
   const edges = import_react9.useMemo(() => toFlowEdges(map), [map]);
   const lastReported = import_react9.useRef("");
+  const pendingSelect = import_react9.useRef(null);
+  const pendingTimer = import_react9.useRef(null);
+  const connectSource = import_react9.useRef(null);
+  const connectCompleted = import_react9.useRef(false);
   const commandRef = import_react9.useRef(onNodeCommand);
   commandRef.current = onNodeCommand;
   const ruleRef = import_react9.useRef(onRule);
@@ -41930,29 +42009,62 @@ function GraphCanvas({
   }, [map, layoutMode]);
   import_react9.useEffect(() => {
     const want = [...selectedIds].sort().join(",");
+    lastReported.current = want;
+    pendingSelect.current = want;
+    if (pendingTimer.current)
+      clearTimeout(pendingTimer.current);
+    pendingTimer.current = setTimeout(() => {
+      pendingSelect.current = null;
+    }, 300);
+    const wanted = new Set(selectedIds);
     setNodes((nds) => {
-      const have = nds.filter((n) => n.selected).map((n) => n.id).sort().join(",");
-      if (have === want)
-        return nds;
-      return nds.map((n) => ({ ...n, selected: selectedIds.includes(n.id) }));
+      let changed = false;
+      const next = nds.map((n) => {
+        const shouldSelect = wanted.has(n.id);
+        if (Boolean(n.selected) === shouldSelect)
+          return n;
+        changed = true;
+        return { ...n, selected: shouldSelect };
+      });
+      return changed ? next : nds;
     });
   }, [selectedIds]);
   const renderNodes = import_react9.useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
-    if (!keep && !promotable && !menus)
+    const lit = spotlight?.nodes ?? null;
+    if (!keep && !lit && !promotable && !menus)
       return nodes;
-    return nodes.map((n) => ({
-      ...n,
-      data: {
-        ...n.data,
-        ...keep && { dimmed: !keep.has(n.id) },
-        ...promotable && { promotable: true },
-        menu: menus?.get(n.id),
-        onRule: dispatchRule,
-        onAction: dispatchAction
-      }
-    }));
-  }, [nodes, highlightIds, promotable, menus, dispatchRule, dispatchAction]);
+    return nodes.map((n) => {
+      const searchDim = keep ? !keep.has(n.id) : false;
+      const spotDim = lit ? !lit.has(n.id) : false;
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          ...(keep || lit) && { dimmed: searchDim || spotDim },
+          ...promotable && { promotable: true },
+          menu: menus?.get(n.id),
+          onRule: dispatchRule,
+          onAction: dispatchAction
+        }
+      };
+    });
+  }, [nodes, highlightIds, spotlight, promotable, menus, dispatchRule, dispatchAction]);
+  const renderEdges = import_react9.useMemo(() => {
+    const lit = spotlight?.edges ?? null;
+    if (!lit)
+      return edges;
+    return edges.map((e) => {
+      if (lit.has(e.id))
+        return e;
+      return {
+        ...e,
+        style: { ...e.style, opacity: 0.08 },
+        labelStyle: { ...e.labelStyle, opacity: 0.12 },
+        labelBgStyle: { ...e.labelBgStyle, fillOpacity: 0.12 }
+      };
+    });
+  }, [edges, spotlight]);
   const instanceRef = import_react9.useRef(null);
   const lastSeq = import_react9.useRef(focusRequest?.seq ?? 0);
   import_react9.useEffect(() => {
@@ -41968,6 +42080,15 @@ function GraphCanvas({
   const handleSelectionChange = import_react9.useCallback(({ nodes: sel }) => {
     const ids = sel.map((n) => n.id);
     const key = [...ids].sort().join(",");
+    if (pendingSelect.current !== null) {
+      if (key === pendingSelect.current) {
+        pendingSelect.current = null;
+        if (pendingTimer.current)
+          clearTimeout(pendingTimer.current);
+        lastReported.current = key;
+      }
+      return;
+    }
     if (key === lastReported.current)
       return;
     lastReported.current = key;
@@ -41975,22 +42096,37 @@ function GraphCanvas({
   }, [onSelect]);
   return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(index2, {
     nodes: renderNodes,
-    edges,
+    edges: renderEdges,
     nodeTypes,
     onInit: (instance) => {
       instanceRef.current = instance;
     },
     onNodesChange: (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
     onSelectionChange: handleSelectionChange,
+    onConnectStart: (_2, params) => {
+      connectSource.current = params.nodeId ?? null;
+      connectCompleted.current = false;
+    },
     onConnect: (conn) => {
+      connectCompleted.current = true;
       if (conn.source && conn.target && conn.source !== conn.target) {
         onConnect?.(conn.source, conn.target);
       }
     },
-    onDoubleClick: (e) => {
-      if (e.target instanceof Element && e.target.classList.contains("react-flow__pane")) {
-        onPaneDoubleClick?.();
+    onConnectEnd: (event) => {
+      const src = connectSource.current;
+      connectSource.current = null;
+      if (connectCompleted.current || !src || !onConnectToBlank)
+        return;
+      const target = event.target;
+      if (target instanceof Element && target.classList.contains("react-flow__pane")) {
+        onConnectToBlank(src);
       }
+    },
+    onNodeDoubleClick: (_2, node) => onEnterSubmap?.(node.id),
+    onPaneContextMenu: (event) => {
+      event.preventDefault();
+      onAddNode?.();
     },
     zoomOnDoubleClick: false,
     fitView: true,
@@ -42120,7 +42256,18 @@ function CardGrid({
                           n.pending && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
                             className: "ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending",
                             children: "proposed"
-                          }, undefined, false, undefined, this)
+                          }, undefined, false, undefined, this),
+                          !n.pending && (n.submapChildCount ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+                            className: "ml-auto flex items-center gap-0.5 rounded-sm border border-thread-tier px-1 normal-case tracking-normal text-thread-tier",
+                            title: `has a submap (${n.submapChildCount} inside)`,
+                            children: [
+                              /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(FolderTree, {
+                                size: 9,
+                                "aria-hidden": true
+                              }, undefined, false, undefined, this),
+                              n.submapChildCount
+                            ]
+                          }, undefined, true, undefined, this)
                         ]
                       }, undefined, true, undefined, this),
                       /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
@@ -48411,6 +48558,11 @@ function SearchPalette({
 }) {
   const [active, setActive] = import_react16.useState(0);
   const activeIndex = Math.min(active, Math.max(0, rows.length - 1));
+  const dismiss = () => {
+    onQuery("");
+    setActive(0);
+    inputRef.current?.blur();
+  };
   const onKeyDown = (e) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -48425,9 +48577,7 @@ function SearchPalette({
         onPick(pick);
     } else if (e.key === "Escape") {
       e.preventDefault();
-      onQuery("");
-      setActive(0);
-      inputRef.current?.blur();
+      dismiss();
     }
   };
   const offBoardNote = offBoardLine(offBoard);
@@ -48454,7 +48604,12 @@ function SearchPalette({
             "aria-label": "Find a node",
             className: "min-w-0 flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("kbd", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+            variant: "ghost",
+            size: "auto",
+            onClick: dismiss,
+            "aria-label": "Clear search",
+            title: "Clear search (Esc)",
             className: "rounded border border-border px-1 text-[9px] text-muted-foreground",
             children: "esc"
           }, undefined, false, undefined, this)
@@ -48508,6 +48663,78 @@ function SearchPalette({
           ]
         }, row.node.id, true, undefined, this))
       }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/mind-mapper/surface/SpotlightToggle.tsx
+var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+function SpotlightToggle({
+  active,
+  enabled,
+  onToggle
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
+    variant: "outline",
+    size: "auto",
+    "aria-pressed": active,
+    "aria-label": "Highlight shared connections",
+    title: enabled ? "Highlight the connections these nodes share" : "Select 2+ nodes to highlight shared connections",
+    disabled: !enabled,
+    onClick: onToggle,
+    className: `px-2 py-1 text-[10px] uppercase tracking-wide ${active ? "bg-secondary text-foreground" : ""}`,
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Flashlight, {
+        size: 11,
+        "aria-hidden": true
+      }, undefined, false, undefined, this),
+      " shared"
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/mind-mapper/surface/SubmapBreadcrumb.tsx
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+function SubmapBreadcrumb({
+  trail,
+  onNavigate
+}) {
+  if (trail.length === 0)
+    return null;
+  const crumbClass = (isCurrent) => `px-1.5 py-0.5 text-xs ${isCurrent ? "text-ink" : "text-ink-dim hover:text-ink"}`;
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("nav", {
+    "aria-label": "Submap breadcrumb",
+    className: "flex items-center gap-0.5 border-b border-edge bg-surface px-4 py-0.5",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+        variant: "ghost",
+        size: "auto",
+        className: crumbClass(false),
+        onClick: () => onNavigate(null),
+        children: "top"
+      }, undefined, false, undefined, this),
+      trail.map((node, i) => {
+        const isCurrent = i === trail.length - 1;
+        return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+          className: "flex items-center gap-0.5",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ChevronRight, {
+              size: 11,
+              "aria-hidden": true,
+              className: "text-ink-faint"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+              variant: "ghost",
+              size: "auto",
+              className: crumbClass(isCurrent),
+              "aria-current": isCurrent ? "page" : undefined,
+              disabled: isCurrent,
+              onClick: () => onNavigate(node.id),
+              children: node.title
+            }, undefined, false, undefined, this)
+          ]
+        }, node.id, true, undefined, this);
+      })
     ]
   }, undefined, true, undefined, this);
 }
@@ -48622,6 +48849,30 @@ async function ingestBlank(title, post) {
   await post({ title: t, text: "" });
 }
 
+// src/mind-mapper/surface/state/neighborhood.ts
+function lensSet(map, nodeId, depth) {
+  const adjacent = new Map;
+  for (const e of map.edges) {
+    adjacent.set(e.source, [...adjacent.get(e.source) ?? [], e.target]);
+    adjacent.set(e.target, [...adjacent.get(e.target) ?? [], e.source]);
+  }
+  const seen = new Set([nodeId]);
+  let frontier = [nodeId];
+  for (let hop = 0;hop < depth; hop++) {
+    const next = [];
+    for (const id2 of frontier) {
+      for (const n of adjacent.get(id2) ?? []) {
+        if (!seen.has(n)) {
+          seen.add(n);
+          next.push(n);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return seen;
+}
+
 // src/mind-mapper/surface/state/nodeMenu.ts
 var ACCEPT_RULINGS = new Set(["canon", "thread", "story-local"]);
 function menuInfoFor(nodes, proposals) {
@@ -48694,6 +48945,15 @@ function dotState(status, agents) {
   return agents > 0 ? "agent-here" : "connected-no-agent";
 }
 
+// src/mind-mapper/surface/state/searchDismiss.ts
+function shouldDismissSearch(activeTag, isSearchInput, hasQuery) {
+  if (isSearchInput)
+    return true;
+  if (activeTag === "INPUT" || activeTag === "TEXTAREA")
+    return false;
+  return hasQuery;
+}
+
 // src/mind-mapper/surface/state/searchRows.ts
 function paletteRows(hits, nodes, pendingNodes) {
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -48716,6 +48976,54 @@ function paletteRows(hits, nodes, pendingNodes) {
     }
   }
   return { rows, offBoard };
+}
+
+// src/mind-mapper/surface/state/spotlight.ts
+function computeSpotlight(map, selectedIds) {
+  if (selectedIds.length < 2)
+    return null;
+  const neighborSets = selectedIds.map((id2) => {
+    const s = lensSet(map, id2, 1);
+    s.delete(id2);
+    return s;
+  });
+  let shared = new Set(neighborSets[0]);
+  for (const ns of neighborSets.slice(1)) {
+    shared = new Set([...shared].filter((x3) => ns.has(x3)));
+  }
+  const nodes = new Set([...selectedIds, ...shared]);
+  const edges = new Set;
+  for (const e of map.edges) {
+    if (nodes.has(e.source) && nodes.has(e.target))
+      edges.add(e.id);
+  }
+  return { nodes, edges };
+}
+
+// src/mind-mapper/surface/state/submap.ts
+var anchorOf = (n) => n.anchorNodeId ?? null;
+function submapView(map, activeAnchor) {
+  const nodes = activeAnchor === null ? map.nodes.filter((n) => anchorOf(n) === null) : map.nodes.filter((n) => anchorOf(n) === activeAnchor || n.id === activeAnchor);
+  const present = new Set(nodes.map((n) => n.id));
+  const edges = map.edges.filter((e) => present.has(e.source) && present.has(e.target));
+  return { nodes, edges };
+}
+function breadcrumbTrail(nodes, activeAnchor) {
+  if (!activeAnchor)
+    return [];
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const trail = [];
+  const seen = new Set;
+  let cur = activeAnchor;
+  while (cur && !seen.has(cur)) {
+    seen.add(cur);
+    const node = byId.get(cur);
+    if (!node)
+      break;
+    trail.push(node);
+    cur = anchorOf(node);
+  }
+  return trail.reverse();
 }
 
 // src/mind-mapper/surface/state/theme.ts
@@ -48882,6 +49190,17 @@ function applyEvent(state, event) {
         cursor: event.seq
       };
     }
+    case "node.anchored": {
+      const { nodeId, anchorNodeId } = event.payload;
+      if (typeof nodeId !== "string")
+        return { ...state, cursor: event.seq };
+      const nextAnchor = typeof anchorNodeId === "string" ? anchorNodeId : null;
+      return {
+        ...state,
+        nodes: state.nodes.map((n) => n.id === nodeId ? { ...n, anchorNodeId: nextAnchor } : n),
+        cursor: event.seq
+      };
+    }
     case "message.posted":
       return {
         ...state,
@@ -49019,6 +49338,12 @@ function parseZoneNotEmptyBody(body) {
   if (typeof b.proposals !== "number")
     return null;
   return { proposals: b.proposals };
+}
+
+// src/mind-mapper/surface/state/zoneGroup.ts
+function selectedPendingProposalIds(proposals, selectedIds) {
+  const eligible = new Set(proposals.filter((p2) => p2.status === "pending" && p2.zoneId === null).map((p2) => p2.id));
+  return selectedIds.filter((id2) => eligible.has(id2));
 }
 
 // src/mind-mapper/surface/state/zoneView.ts
@@ -49831,7 +50156,7 @@ function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
 // src/mind-mapper/surface/ui/alert-dialog.tsx
-var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
 var AlertDialog = exports_index_parts3.Root;
 var AlertDialogTrigger2 = exports_index_parts3.Trigger;
 function AlertDialogContent({
@@ -49839,12 +50164,12 @@ function AlertDialogContent({
   children: children2,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(exports_index_parts3.Portal, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts3.Portal, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(exports_index_parts3.Backdrop, {
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts3.Backdrop, {
         className: "fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(exports_index_parts3.Popup, {
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts3.Popup, {
         className: cn2("fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-5 text-popover-foreground shadow-xl", className),
         ...props,
         children: children2
@@ -49853,19 +50178,19 @@ function AlertDialogContent({
   }, undefined, true, undefined, this);
 }
 function AlertDialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
     className: cn2("flex flex-col gap-1.5", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
     className: cn2("mt-4 flex justify-end gap-2", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(exports_index_parts3.Title, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts3.Title, {
     className: cn2("text-sm font-semibold text-foreground", className),
     ...props
   }, undefined, false, undefined, this);
@@ -49874,23 +50199,23 @@ function AlertDialogDescription({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(exports_index_parts3.Description, {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(exports_index_parts3.Description, {
     className: cn2("text-xs leading-relaxed text-muted-foreground", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/ViewToggle.tsx
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
 function ViewToggle({
   view,
   onView
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("fieldset", {
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("fieldset", {
     className: "m-0 flex overflow-hidden rounded-md border border-border p-0",
     "aria-label": "Board view",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         "aria-pressed": view === "map",
@@ -49899,14 +50224,14 @@ function ViewToggle({
         onClick: () => onView("map"),
         className: `rounded-none px-2 py-1 text-[10px] uppercase tracking-wide ${view === "map" ? "bg-secondary text-foreground" : ""}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Map2, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Map2, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
           " map"
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         "aria-pressed": view === "grid",
@@ -49915,7 +50240,7 @@ function ViewToggle({
         onClick: () => onView("grid"),
         className: `rounded-none border-l border-border px-2 py-1 text-[10px] uppercase tracking-wide ${view === "grid" ? "bg-secondary text-foreground" : ""}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(LayoutGrid, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(LayoutGrid, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
@@ -49926,9 +50251,93 @@ function ViewToggle({
   }, undefined, true, undefined, this);
 }
 
-// src/mind-mapper/surface/ZoneTabs.tsx
+// src/mind-mapper/surface/ZoneGroupModal.tsx
 var import_react18 = __toESM(require_react(), 1);
-var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+function ZoneGroupModal({
+  count,
+  zones,
+  onPickExisting,
+  onCreateNew,
+  onCancel
+}) {
+  const [name, setName] = import_react18.useState("");
+  const submitNew = () => {
+    if (name.trim())
+      onCreateNew(name);
+  };
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+    className: "absolute left-1/2 top-1/3 z-30 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+        className: "mb-2 text-[10px] uppercase tracking-widest text-ink-faint",
+        children: [
+          "group ",
+          count,
+          " proposal",
+          count === 1 ? "" : "s",
+          " into a zone"
+        ]
+      }, undefined, true, undefined, this),
+      zones.length > 0 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        className: "mb-2 flex flex-wrap gap-1.5",
+        children: zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
+          variant: "outline",
+          size: "auto",
+          className: "px-2 py-0.5 text-xs text-pending",
+          onClick: () => onPickExisting(z2.id),
+          children: z2.name
+        }, z2.id, false, undefined, this))
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        className: "flex items-center gap-1.5",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("input", {
+            autoFocus: true,
+            value: name,
+            onChange: (e) => setName(e.target.value),
+            onKeyDown: (e) => {
+              if (e.key === "Enter")
+                submitNew();
+              if (e.key === "Escape")
+                onCancel();
+            },
+            placeholder: "new zone name…",
+            "aria-label": "New zone name",
+            className: "w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
+            size: "auto",
+            className: "flex items-center gap-0.5 px-2 py-1 text-xs",
+            onClick: submitNew,
+            disabled: !name.trim(),
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Plus, {
+                size: 11,
+                "aria-hidden": true
+              }, undefined, false, undefined, this),
+              " new"
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        className: "mt-2 flex justify-end",
+        children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
+          variant: "ghost",
+          size: "auto",
+          className: "px-2 py-1 text-xs",
+          onClick: onCancel,
+          children: "cancel"
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/mind-mapper/surface/ZoneTabs.tsx
+var import_react19 = __toESM(require_react(), 1);
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
 function ZoneTabs({
   zones,
   active,
@@ -49936,10 +50345,10 @@ function ZoneTabs({
   onCreate,
   onDelete
 }) {
-  const [creating, setCreating] = import_react18.useState(false);
-  const [name, setName] = import_react18.useState("");
-  const inputRef = import_react18.useRef(null);
-  import_react18.useEffect(() => {
+  const [creating, setCreating] = import_react19.useState(false);
+  const [name, setName] = import_react19.useState("");
+  const inputRef = import_react19.useRef(null);
+  import_react19.useEffect(() => {
     if (creating)
       inputRef.current?.focus();
   }, [creating]);
@@ -49952,20 +50361,20 @@ function ZoneTabs({
     setCreating(false);
   };
   const tabClass = (isActive) => `rounded-none border-b-2 px-2 py-1 text-xs ${isActive ? "border-ink text-ink" : "border-transparent text-ink-dim hover:text-ink"}`;
-  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
     className: "flex items-center gap-1 border-b border-edge bg-surface px-4",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: tabClass(active === null),
         onClick: () => onSwitch(null),
         children: "main"
       }, undefined, false, undefined, this),
-      zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(ContextMenu, {
+      zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ContextMenu, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(ContextMenuTrigger3, {
-            children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ContextMenuTrigger3, {
+            children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
               variant: "ghost",
               size: "auto",
               className: `${tabClass(active === z2.id)} text-pending ${active === z2.id ? "border-pending" : ""}`,
@@ -49973,12 +50382,12 @@ function ZoneTabs({
               children: z2.name
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(ContextMenuContent, {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ContextMenuContent, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(ContextMenuLabel, {
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ContextMenuLabel, {
                 children: z2.name
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ContextMenuItem, {
                 onClick: () => onDelete(z2),
                 className: "text-attention",
                 children: "Delete zone…"
@@ -49987,10 +50396,10 @@ function ZoneTabs({
           }, undefined, true, undefined, this)
         ]
       }, z2.id, true, undefined, this)),
-      creating ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+      creating ? /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
         className: "ml-1 flex items-center gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("input", {
             ref: inputRef,
             value: name,
             onChange: (e) => setName(e.target.value),
@@ -50004,7 +50413,7 @@ function ZoneTabs({
             "aria-label": "New zone name",
             className: "w-32 rounded border border-edge bg-bg px-1.5 py-0.5 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
             size: "auto",
             className: "px-2 py-0.5 text-xs",
             onClick: submit,
@@ -50012,13 +50421,13 @@ function ZoneTabs({
             children: "create"
           }, undefined, false, undefined, this)
         ]
-      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: "ml-1 gap-1 px-1.5 py-1 text-xs text-ink-faint hover:text-ink",
         onClick: () => setCreating(true),
         children: [
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Plus, {
+          /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Plus, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
@@ -50030,7 +50439,7 @@ function ZoneTabs({
 }
 
 // src/mind-mapper/surface/App.tsx
-var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
 function toDisplayMessage(m2) {
   return {
     id: m2.id,
@@ -50039,28 +50448,6 @@ function toDisplayMessage(m2) {
     text: m2.text,
     ground: m2.ground ?? []
   };
-}
-function lensSet(map, nodeId, depth) {
-  const adjacent = new Map;
-  for (const e of map.edges) {
-    adjacent.set(e.source, [...adjacent.get(e.source) ?? [], e.target]);
-    adjacent.set(e.target, [...adjacent.get(e.target) ?? [], e.source]);
-  }
-  const seen = new Set([nodeId]);
-  let frontier = [nodeId];
-  for (let hop = 0;hop < depth; hop++) {
-    const next = [];
-    for (const id2 of frontier) {
-      for (const n of adjacent.get(id2) ?? []) {
-        if (!seen.has(n)) {
-          seen.add(n);
-          next.push(n);
-        }
-      }
-    }
-    frontier = next;
-  }
-  return seen;
 }
 var DEFAULT_LENS = { owner: null, nodeId: null, depth: 1, docId: null };
 var DOT_CLASS = {
@@ -50075,39 +50462,42 @@ var DOT_TITLE = {
 };
 var THINKING_TTL_MS = 60000;
 function App() {
-  const [initialProject] = import_react19.useState(() => resolveInitialProjectWithSource(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)));
-  const [projectId, setProjectId] = import_react19.useState(initialProject.id);
-  const [projectSource, setProjectSource] = import_react19.useState(initialProject.source);
+  const [initialProject] = import_react20.useState(() => resolveInitialProjectWithSource(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)));
+  const [projectId, setProjectId] = import_react20.useState(initialProject.id);
+  const [projectSource, setProjectSource] = import_react20.useState(initialProject.source);
   const { state, error: error2, status, needsProject, notFound, lookHere, agentActivity } = useProjectState(projectId);
-  const [selectedIds, setSelectedIds] = import_react19.useState([]);
-  const [notice, setNotice] = import_react19.useState(null);
-  const [reviewOpen, setReviewOpen] = import_react19.useState(false);
-  const [openDoc, setOpenDoc] = import_react19.useState(null);
-  const [detailOpen, setDetailOpen] = import_react19.useState(true);
-  const [lens, setLens] = import_react19.useState(DEFAULT_LENS);
-  const [searchQuery, setSearchQuery] = import_react19.useState("");
-  const searchInputRef = import_react19.useRef(null);
-  const [focusRequest, setFocusRequest] = import_react19.useState(null);
-  const [deleteTarget, setDeleteTarget] = import_react19.useState(null);
-  const [nodeForm, setNodeForm] = import_react19.useState(null);
-  const [agentBadge, setAgentBadge] = import_react19.useState(null);
-  const [scrollRequest, setScrollRequest] = import_react19.useState(null);
-  const [view, setView] = import_react19.useState("map");
-  const [activeZone, setActiveZone] = import_react19.useState(null);
-  const [zoneDelete, setZoneDelete] = import_react19.useState(null);
-  const [pendingFocus, setPendingFocus] = import_react19.useState(null);
-  const [composerSeed, setComposerSeed] = import_react19.useState(null);
+  const [selectedIds, setSelectedIds] = import_react20.useState([]);
+  const [notice, setNotice] = import_react20.useState(null);
+  const [reviewOpen, setReviewOpen] = import_react20.useState(false);
+  const [openDoc, setOpenDoc] = import_react20.useState(null);
+  const [detailOpen, setDetailOpen] = import_react20.useState(true);
+  const [lens, setLens] = import_react20.useState(DEFAULT_LENS);
+  const [searchQuery, setSearchQuery] = import_react20.useState("");
+  const searchInputRef = import_react20.useRef(null);
+  const [focusRequest, setFocusRequest] = import_react20.useState(null);
+  const [spotlightOn, setSpotlightOn] = import_react20.useState(false);
+  const [deleteTarget, setDeleteTarget] = import_react20.useState(null);
+  const [addNode, setAddNode] = import_react20.useState(null);
+  const [agentBadge, setAgentBadge] = import_react20.useState(null);
+  const [scrollRequest, setScrollRequest] = import_react20.useState(null);
+  const [view, setView] = import_react20.useState("map");
+  const [activeZone, setActiveZone] = import_react20.useState(null);
+  const [activeAnchor, setActiveAnchor] = import_react20.useState(null);
+  const [zoneGroup, setZoneGroup] = import_react20.useState(null);
+  const [zoneDelete, setZoneDelete] = import_react20.useState(null);
+  const [pendingFocus, setPendingFocus] = import_react20.useState(null);
+  const [composerSeed, setComposerSeed] = import_react20.useState(null);
   const seedComposer = (text3, nodeId) => {
     setSelectedIds([nodeId]);
     setComposerSeed((s) => ({ text: text3, seq: (s?.seq ?? 0) + 1 }));
   };
-  const [theme, setTheme] = import_react19.useState(() => readAppliedTheme());
+  const [theme, setTheme] = import_react20.useState(() => readAppliedTheme());
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     applyTheme(next);
     setTheme(next);
   };
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (!agentActivity)
       return;
     const badge = badgeFor(agentActivity.state);
@@ -50118,7 +50508,7 @@ function App() {
     return () => clearTimeout(t);
   }, [agentActivity]);
   const lastMessage = state?.conversation[state.conversation.length - 1];
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (lastMessage?.role === "agent")
       setAgentBadge(null);
   }, [lastMessage]);
@@ -50131,9 +50521,9 @@ function App() {
       setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
     }
   };
-  const followRef = import_react19.useRef(followFocus);
+  const followRef = import_react20.useRef(followFocus);
   followRef.current = followFocus;
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (!pendingFocus || pendingFocus.zone !== activeZone)
       return;
     const { nodeId } = pendingFocus;
@@ -50141,19 +50531,24 @@ function App() {
     const raf = requestAnimationFrame(() => setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 })));
     return () => cancelAnimationFrame(raf);
   }, [pendingFocus, activeZone]);
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (activeZone && state && !state.zones.some((z2) => z2.id === activeZone)) {
       setActiveZone(null);
     }
   }, [state, activeZone]);
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
+    if (activeAnchor && state && !state.nodes.some((n) => n.id === activeAnchor)) {
+      setActiveAnchor(null);
+    }
+  }, [state, activeAnchor]);
+  import_react20.useEffect(() => {
     if (state && !projectId) {
       setProjectId(state.project.id);
       rememberProject(state.project.id);
     }
   }, [state, projectId]);
-  const lastServerLensRef = import_react19.useRef(null);
-  import_react19.useEffect(() => {
+  const lastServerLensRef = import_react20.useRef(null);
+  import_react20.useEffect(() => {
     if (!state?.lens || state.lens === lastServerLensRef.current)
       return;
     const incoming = state.lens;
@@ -50163,24 +50558,31 @@ function App() {
       followRef.current(incoming.nodeId);
     }
   }, [state?.lens]);
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (!lookHere)
       return;
     followRef.current(lookHere.nodeId);
   }, [lookHere]);
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     const onKey = (e) => {
+      const activeTag = document.activeElement?.tagName ?? null;
       const typing = e.target instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(e.target.tagName);
       if (e.key === "k" && (e.metaKey || e.ctrlKey) || e.key === "/" && !typing) {
         e.preventDefault();
         searchInputRef.current?.focus();
         searchInputRef.current?.select();
+      } else if (e.key === "Escape") {
+        const isSearchInput = document.activeElement === searchInputRef.current;
+        if (shouldDismissSearch(activeTag, isSearchInput, Boolean(searchQuery))) {
+          setSearchQuery("");
+          searchInputRef.current?.blur();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
-  const mapWithPending = import_react19.useMemo(() => {
+  }, [searchQuery]);
+  const mapWithPending = import_react20.useMemo(() => {
     if (!state)
       return state;
     const main = mainProposals(state.proposals);
@@ -50190,18 +50592,30 @@ function App() {
       edges: [...state.edges, ...pendingEdgesFrom(main)]
     };
   }, [state]);
-  const boardMap = import_react19.useMemo(() => {
+  const boardMap = import_react20.useMemo(() => {
     if (!state || !mapWithPending)
       return mapWithPending;
     if (!activeZone)
       return mapWithPending;
     return { ...state, ...zoneMapFrom(state.proposals, activeZone, mapWithPending.nodes) };
   }, [state, mapWithPending, activeZone]);
-  const selection2 = import_react19.useMemo(() => boardMap ? boardMap.nodes.filter((n) => selectedIds.includes(n.id)) : [], [boardMap, selectedIds]);
-  const nodeMenus = import_react19.useMemo(() => state ? menuInfoFor(state.nodes, state.proposals) : undefined, [state]);
+  const submapMap = import_react20.useMemo(() => boardMap ? { ...boardMap, ...submapView(boardMap, activeAnchor) } : boardMap, [boardMap, activeAnchor]);
+  const breadcrumb = import_react20.useMemo(() => boardMap ? breadcrumbTrail(boardMap.nodes, activeAnchor) : [], [boardMap, activeAnchor]);
+  const selection2 = import_react20.useMemo(() => submapMap ? submapMap.nodes.filter((n) => selectedIds.includes(n.id)) : [], [submapMap, selectedIds]);
+  const spotlightSets = import_react20.useMemo(() => spotlightOn && submapMap ? computeSpotlight(submapMap, selectedIds) : null, [spotlightOn, submapMap, selectedIds]);
+  import_react20.useEffect(() => {
+    if (spotlightOn && selectedIds.length < 2)
+      setSpotlightOn(false);
+  }, [spotlightOn, selectedIds]);
+  const nodeMenus = import_react20.useMemo(() => state ? menuInfoFor(state.nodes, state.proposals) : undefined, [state]);
   const handleNodeCommand = (command, node) => {
     if (command === "Focus")
       setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null });
+    else if (command === "Select connected") {
+      if (submapMap)
+        setSelectedIds([...lensSet(submapMap, node.id, 1)]);
+    } else if (command === "Enter submap")
+      enterSubmap(node.id);
     else if (command === "Promote")
       promoteProposal(node.id);
     else
@@ -50209,8 +50623,8 @@ function App() {
   };
   const handleAction = (action, node) => seedComposer(action.seed, node.id);
   const projectQs = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
-  const [remoteHits, setRemoteHits] = import_react19.useState(null);
-  import_react19.useEffect(() => {
+  const [remoteHits, setRemoteHits] = import_react20.useState(null);
+  import_react20.useEffect(() => {
     const q2 = searchQuery.trim();
     if (!q2) {
       setRemoteHits(null);
@@ -50236,8 +50650,8 @@ function App() {
       clearTimeout(t);
     };
   }, [searchQuery, projectQs]);
-  const pendingAll = import_react19.useMemo(() => state ? pendingNodesFrom(state.proposals) : [], [state]);
-  const palette = import_react19.useMemo(() => {
+  const pendingAll = import_react20.useMemo(() => state ? pendingNodesFrom(state.proposals) : [], [state]);
+  const palette = import_react20.useMemo(() => {
     if (!state || !searchQuery.trim())
       return null;
     if (remoteHits)
@@ -50256,21 +50670,21 @@ function App() {
     setSelectedIds([row.node.id]);
     followFocus(row.node.id);
   };
-  const visibleMap = import_react19.useMemo(() => {
-    if (!boardMap || !lens.owner)
-      return boardMap;
-    const keep = lens.docId ? docLensNodeIds(boardMap.nodes, lens.docId) : lens.nodeId ? lensSet(boardMap, lens.nodeId, lens.depth ?? 1) : null;
+  const visibleMap = import_react20.useMemo(() => {
+    if (!submapMap || !lens.owner)
+      return submapMap;
+    const keep = lens.docId ? docLensNodeIds(submapMap.nodes, lens.docId) : lens.nodeId ? lensSet(submapMap, lens.nodeId, lens.depth ?? 1) : null;
     if (!keep)
-      return boardMap;
+      return submapMap;
     return {
-      ...boardMap,
-      nodes: boardMap.nodes.filter((n) => keep.has(n.id)),
-      edges: boardMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target))
+      ...submapMap,
+      nodes: submapMap.nodes.filter((n) => keep.has(n.id)),
+      edges: submapMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target))
     };
-  }, [boardMap, lens]);
+  }, [submapMap, lens]);
   const detailNode = selection2.length > 0 ? selection2[selection2.length - 1] : null;
   const detailNodeId = detailNode?.id;
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (detailNodeId)
       setDetailOpen(true);
   }, [detailNodeId]);
@@ -50342,6 +50756,46 @@ function App() {
     const body = await r.json().catch(() => null);
     throw new Error(typeof body?.error === "string" ? body.error : `zone ${r.status}`);
   }).catch((e) => setNotice(`couldn't create that zone (${e instanceof Error ? e.message : String(e)}).`));
+  const proposalZoneMove = (id2, zoneId) => fetch(`/proposals/${id2}/zone${projectQs}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ zoneId })
+  }).then((r) => {
+    if (!r.ok)
+      throw new Error(`zone-move ${r.status}`);
+  });
+  const commitGroupInto = (zoneId) => {
+    if (!zoneGroup)
+      return;
+    Promise.all(zoneGroup.pendingIds.map((id2) => proposalZoneMove(id2, zoneId))).then(() => {
+      setActiveZone(zoneId);
+      setActiveAnchor(null);
+      setSelectedIds([]);
+      setZoneGroup(null);
+    }).catch((e) => {
+      setZoneGroup(null);
+      setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`);
+    });
+  };
+  const commitGroupNewZone = (name) => {
+    const n = name.trim();
+    if (!n)
+      return;
+    fetch(`/zones${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: n })
+    }).then(async (r) => {
+      if (!r.ok) {
+        const body = await r.json().catch(() => null);
+        throw new Error(typeof body?.error === "string" ? body.error : `zone ${r.status}`);
+      }
+      return await r.json();
+    }).then((zone) => commitGroupInto(zone.id)).catch((e) => {
+      setZoneGroup(null);
+      setNotice(`couldn't create that zone (${e instanceof Error ? e.message : String(e)}).`);
+    });
+  };
   const requestZoneDelete = (yes) => {
     if (!zoneDelete)
       return;
@@ -50369,18 +50823,45 @@ function App() {
     if (zoneId === activeZone)
       return;
     setActiveZone(zoneId);
+    setActiveAnchor(null);
     setSelectedIds([]);
     setLens(DEFAULT_LENS);
   };
-  const submitNodeForm = () => {
-    if (!nodeForm)
+  const switchAnchor = (anchor) => {
+    if (anchor === activeAnchor)
       return;
-    const title = nodeForm.title.trim();
-    if (!title)
+    setActiveAnchor(anchor);
+    setSelectedIds([]);
+    setLens(DEFAULT_LENS);
+  };
+  const enterSubmap = (nodeId) => {
+    const node = state?.nodes.find((n) => n.id === nodeId);
+    if (!node || (node.submapChildCount ?? 0) === 0)
       return;
-    const synopsis = nodeForm.synopsis.trim();
-    proposeAsUser("node", synopsis ? { title, synopsis } : { title });
-    setNodeForm(null);
+    switchAnchor(nodeId);
+  };
+  const proposeBatchConnect = (source, title) => fetch(`/proposals/batch${projectQs}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      nodes: [{ ref: "new", draft: { title }, author: "user" }],
+      edges: [{ draft: { source, target: "new" }, author: "user" }]
+    })
+  }).then((r) => {
+    if (!r.ok)
+      throw new Error(`propose ${r.status}`);
+  }).catch((e) => setNotice(`couldn't sketch that (${e instanceof Error ? e.message : String(e)}).`));
+  const submitAddNode = () => {
+    if (!addNode)
+      return;
+    const text3 = addNode.text.trim();
+    if (!text3)
+      return;
+    if (addNode.connectFrom)
+      proposeBatchConnect(addNode.connectFrom, text3);
+    else
+      proposeAsUser("node", { title: text3 });
+    setAddNode(null);
   };
   const requestDelete = (force) => {
     if (!deleteTarget)
@@ -50405,7 +50886,7 @@ function App() {
       setNotice(`couldn't delete that document (${e instanceof Error ? e.message : String(e)}).`);
     });
   };
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (openDoc && state && !state.docs.some((d) => d.id === openDoc.doc.id)) {
       setOpenDoc(null);
     }
@@ -50426,7 +50907,7 @@ function App() {
     setLens(DEFAULT_LENS);
     lastServerLensRef.current = null;
   };
-  import_react19.useEffect(() => {
+  import_react20.useEffect(() => {
     if (notFound && projectSource === "stored") {
       forgetStoredProject();
       setProjectSource("none");
@@ -50434,18 +50915,18 @@ function App() {
     }
   }, [notFound, projectSource]);
   if (needsProject) {
-    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("main", {
       className: "flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("h1", {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("h1", {
           className: "font-story text-xl",
           children: "Mind Mapper"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
           className: "text-xs text-ink-dim",
           children: needsProject.length > 0 ? "no board is open — pick a project, or start a new one." : "nothing here yet — name a project to start the first board."
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ProjectPicker, {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ProjectPicker, {
           currentId: undefined,
           onSelect: switchProject
         }, undefined, false, undefined, this)
@@ -50454,15 +50935,15 @@ function App() {
   }
   if (notFound) {
     if (projectSource === "stored") {
-      return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("main", {
+      return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("main", {
         className: "flex min-h-screen items-center justify-center bg-bg text-ink-faint",
         children: "unrolling the map…"
       }, undefined, false, undefined, this);
     }
-    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("main", {
       className: "flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
           className: "text-xs text-attention",
           children: [
             "project “",
@@ -50470,11 +50951,11 @@ function App() {
             "” doesn't exist on this daemon."
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
           className: "text-xs text-ink-dim",
           children: "pick another board, or start one:"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ProjectPicker, {
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ProjectPicker, {
           currentId: undefined,
           onSelect: switchProject
         }, undefined, false, undefined, this)
@@ -50482,7 +50963,7 @@ function App() {
     }, undefined, true, undefined, this);
   }
   if (error2) {
-    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("main", {
       className: "flex min-h-screen items-center justify-center bg-bg text-attention",
       children: [
         "something broke: ",
@@ -50492,29 +50973,30 @@ function App() {
     }, undefined, true, undefined, this);
   }
   if (!state) {
-    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("main", {
       className: "flex min-h-screen items-center justify-center bg-bg text-ink-faint",
       children: "unrolling the map…"
     }, undefined, false, undefined, this);
   }
   const messages = state.conversation.map(toDisplayMessage);
   const pendingCount = mainProposals(state.proposals).filter((p2) => p2.status === "pending").length;
+  const selectedPending = activeZone === null ? selectedPendingProposalIds(state.proposals, selectedIds) : [];
   const dot = dotState(status, state.presence?.agents ?? 0);
-  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
     className: "flex h-screen flex-col bg-bg text-ink",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("header", {
         className: "flex items-baseline gap-3 border-b border-edge bg-surface px-4 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("h1", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("h1", {
             className: "font-story text-lg text-ink",
             children: "Mind Mapper"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ProjectPicker, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ProjectPicker, {
             currentId: projectId,
             onSelect: switchProject
           }, undefined, false, undefined, this),
-          pendingCount > 0 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+          pendingCount > 0 && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "px-2 py-0.5 text-xs text-pending",
@@ -50524,19 +51006,19 @@ function App() {
               pendingCount
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
             className: "ml-auto flex items-center gap-2 text-xs text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
                 className: "flex items-center gap-1.5",
                 role: "status",
                 title: DOT_TITLE[dot],
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
                     className: `h-2 w-2 rounded-full ${DOT_CLASS[dot]}`,
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
                     className: "sr-only",
                     children: DOT_TITLE[dot]
                   }, undefined, false, undefined, this)
@@ -50548,15 +51030,15 @@ function App() {
               " ideas · ",
               state.edges.length,
               " relations",
-              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                 variant: "ghost",
                 size: "icon",
                 "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
                 title: theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
                 onClick: toggleTheme,
-                children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Sun, {
+                children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Sun, {
                   size: 13
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Moon, {
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Moon, {
                   size: 13
                 }, undefined, false, undefined, this)
               }, undefined, false, undefined, this)
@@ -50564,24 +51046,28 @@ function App() {
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state.zones.length > 0 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ZoneTabs, {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ZoneTabs, {
         zones: state.zones,
         active: activeZone,
         onSwitch: switchZone,
         onCreate: createZone,
         onDelete: (zone) => setZoneDelete({ zone, notEmpty: null })
       }, undefined, false, undefined, this),
-      status === "closed" && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(SubmapBreadcrumb, {
+        trail: breadcrumb,
+        onNavigate: switchAnchor
+      }, undefined, false, undefined, this),
+      status === "closed" && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
         className: "border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention",
         children: "disconnected — the daemon isn't answering; sends are off. retrying…"
       }, undefined, false, undefined, this),
-      notice && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      notice && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
         className: "flex items-center justify-between border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
             children: notice
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("button", {
             type: "button",
             onClick: () => setNotice(null),
             "aria-label": "Dismiss",
@@ -50590,10 +51076,10 @@ function App() {
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
         className: "flex min-h-0 flex-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ContextRail, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ContextRail, {
             docs: state.docs,
             openDocId: openDoc?.doc.id ?? null,
             onOpen: (docId) => openDocById(docId),
@@ -50610,31 +51096,54 @@ function App() {
             onDocLens: (doc) => setLens({ owner: "user", nodeId: null, depth: null, docId: doc.id }),
             onDelete: (doc) => setDeleteTarget({ doc, citedBy: null })
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
             className: "relative min-w-0 flex-1",
             children: [
-              view === "map" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(GraphCanvas, {
-                map: visibleMap ?? boardMap ?? state,
+              view === "map" ? /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(GraphCanvas, {
+                map: visibleMap ?? submapMap ?? state,
                 selectedIds,
                 onSelect: setSelectedIds,
                 promotable: activeZone !== null,
                 onNodeCommand: handleNodeCommand,
                 highlightIds: palette ? palette.rows.map((r) => r.node.id) : null,
+                spotlight: spotlightSets,
                 menus: nodeMenus,
                 onRule: ruleProposal,
                 onAction: handleAction,
                 focusRequest,
                 onConnect: (source, target) => proposeAsUser("edge", { source, target }),
-                onPaneDoubleClick: () => setNodeForm({ title: "", synopsis: "" }),
-                panelTopRight: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ViewToggle, {
-                  view,
-                  onView: setView
-                }, undefined, false, undefined, this),
+                onConnectToBlank: activeZone === null ? (src) => setAddNode({ text: "", connectFrom: src }) : undefined,
+                onAddNode: () => setAddNode({ text: "", connectFrom: null }),
+                onEnterSubmap: enterSubmap,
+                panelTopRight: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(jsx_dev_runtime25.Fragment, {
+                  children: [
+                    selectedPending.length > 0 && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
+                      variant: "outline",
+                      size: "auto",
+                      className: "px-2 py-1 text-[10px] uppercase tracking-wide text-pending",
+                      title: "Group the selected proposals into a zone",
+                      onClick: () => setZoneGroup({ pendingIds: selectedPending }),
+                      children: [
+                        "group · ",
+                        selectedPending.length
+                      ]
+                    }, undefined, true, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(SpotlightToggle, {
+                      active: spotlightOn,
+                      enabled: selectedIds.length >= 2,
+                      onToggle: () => setSpotlightOn((s) => !s)
+                    }, undefined, false, undefined, this),
+                    /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ViewToggle, {
+                      view,
+                      onView: setView
+                    }, undefined, false, undefined, this)
+                  ]
+                }, undefined, true, undefined, this),
                 panelBelowBar: Boolean(lens.owner)
-              }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(jsx_dev_runtime22.Fragment, {
+              }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(jsx_dev_runtime25.Fragment, {
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(CardGrid, {
-                    map: visibleMap ?? boardMap ?? state,
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(CardGrid, {
+                    map: visibleMap ?? submapMap ?? state,
                     highlightIds: palette ? palette.rows.map((r) => r.node.id) : null,
                     selectedIds,
                     onSelect: setSelectedIds,
@@ -50644,65 +51153,60 @@ function App() {
                     promotable: activeZone !== null,
                     onNodeCommand: handleNodeCommand
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
                     className: `absolute right-4 z-10 ${lens.owner ? "top-14" : "top-4"}`,
-                    children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ViewToggle, {
+                    children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ViewToggle, {
                       view,
                       onView: setView
                     }, undefined, false, undefined, this)
                   }, undefined, false, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              nodeForm && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+              addNode && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
                 className: "absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
                     className: "mb-2 text-[10px] uppercase tracking-widest text-ink-faint",
-                    children: "sketch an idea"
+                    children: addNode.connectFrom ? "sketch a connected idea" : "sketch an idea"
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("input", {
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Textarea, {
                     autoFocus: true,
-                    value: nodeForm.title,
-                    onChange: (e) => setNodeForm({ ...nodeForm, title: e.target.value }),
+                    value: addNode.text,
+                    onChange: (e) => setAddNode({ ...addNode, text: e.target.value }),
                     onKeyDown: (e) => {
                       if (e.key === "Escape")
-                        setNodeForm(null);
-                      if (e.key === "Enter")
-                        submitNodeForm();
+                        setAddNode(null);
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        submitAddNode();
+                      }
                     },
-                    placeholder: "title…",
-                    "aria-label": "New idea title",
-                    className: "w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
+                    placeholder: "what's the idea?…",
+                    "aria-label": "New idea",
+                    className: "min-h-16 p-1.5 text-xs"
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Textarea, {
-                    value: nodeForm.synopsis,
-                    onChange: (e) => setNodeForm({ ...nodeForm, synopsis: e.target.value }),
-                    onKeyDown: (e) => e.key === "Escape" && setNodeForm(null),
-                    placeholder: "a line about it… (optional)",
-                    className: "mt-1.5 min-h-12 p-1.5 text-xs"
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                  /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
                     className: "mt-2 flex items-center justify-between gap-1.5",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
                         className: "text-[10px] italic text-ink-faint",
                         children: "lands as a pending sketch."
                       }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
                         className: "flex gap-1.5",
                         children: [
-                          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                             variant: "ghost",
                             size: "auto",
                             className: "px-2 py-1",
-                            onClick: () => setNodeForm(null),
+                            onClick: () => setAddNode(null),
                             children: "cancel"
                           }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                             size: "auto",
                             className: "px-2 py-1",
-                            onClick: submitNodeForm,
-                            disabled: !nodeForm.title.trim(),
+                            onClick: submitAddNode,
+                            disabled: !addNode.text.trim(),
                             children: "sketch"
                           }, undefined, false, undefined, this)
                         ]
@@ -50711,7 +51215,14 @@ function App() {
                   }, undefined, true, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(SearchPalette, {
+              zoneGroup && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ZoneGroupModal, {
+                count: zoneGroup.pendingIds.length,
+                zones: state.zones,
+                onPickExisting: commitGroupInto,
+                onCreateNew: commitGroupNewZone,
+                onCancel: () => setZoneGroup(null)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(SearchPalette, {
                 rows: palette?.rows ?? [],
                 offBoard: palette?.offBoard ?? { docs: 0, messages: 0 },
                 query: searchQuery,
@@ -50720,17 +51231,17 @@ function App() {
                 inputRef: searchInputRef,
                 belowBar: Boolean(lens.owner)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(FocusBar, {
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(FocusBar, {
                 lens,
                 title: lens.docId ? state.docs.find((d) => d.id === lens.docId)?.title ?? lens.docId : state.nodes.find((n) => n.id === lens.nodeId)?.title ?? "",
                 count: visibleMap?.nodes.length ?? 0,
                 onDepth: (depth) => setLens((l) => ({ ...l, depth })),
                 onZoomOut: () => setLens(DEFAULT_LENS)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(MapKey, {}, undefined, false, undefined, this),
-              detailNode && detailOpen && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(MapKey, {}, undefined, false, undefined, this),
+              detailNode && detailOpen && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
                 className: `absolute right-4 z-10 ${lens.owner ? "top-24" : "top-14"}`,
-                children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(NodeDetail, {
+                children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(NodeDetail, {
                   node: detailNode,
                   docs: state.docs,
                   onVerb: (verb, node) => seedComposer(`${verb} — ${node.title}`, node.id),
@@ -50746,19 +51257,19 @@ function App() {
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          openDoc && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(DocViewer, {
+          openDoc && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DocViewer, {
             doc: openDoc.doc,
             highlight: openDoc.highlight,
             onClose: () => setOpenDoc(null)
           }, `${openDoc.doc.id}:${openDoc.highlight ?? ""}`, false, undefined, this),
-          reviewOpen && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ReviewQueue, {
+          reviewOpen && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ReviewQueue, {
             proposals: mainProposals(state.proposals),
             docs: state.docs,
             nodes: state.nodes,
             onRule: ruleProposal,
             onClose: () => setReviewOpen(false)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ConversationPanel, {
+          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ConversationPanel, {
             nodes: state.nodes,
             docs: state.docs,
             disabled: status === "closed",
@@ -50772,38 +51283,38 @@ function App() {
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("footer", {
+      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("footer", {
         className: `border-t border-edge bg-surface px-4 py-0.5 text-[9px] ${state.buildInfo.stale ? "text-attention" : "text-ink-faint"}`,
         children: buildFooterText(state.buildInfo)
       }, undefined, false, undefined, this),
-      deleteTarget && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialog, {
+      deleteTarget && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setDeleteTarget(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogTitle, {
                   children: deleteTarget.citedBy ? `"${deleteTarget.doc.title}" is still cited` : `delete "${deleteTarget.doc.title}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogDescription, {
                   children: deleteTarget.citedBy ? `${deleteTarget.citedBy.nodes} node${deleteTarget.citedBy.nodes === 1 ? "" : "s"} and ${deleteTarget.citedBy.proposals} pending proposal${deleteTarget.citedBy.proposals === 1 ? "" : "s"} cite it. The nodes survive (the map is a view, not the doc), but the pending proposals lose this evidence.` : "The document and its file go away. Ideas already ratified from it stay on the map."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setDeleteTarget(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => requestDelete(Boolean(deleteTarget.citedBy)),
@@ -50814,34 +51325,34 @@ function App() {
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      zoneDelete && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialog, {
+      zoneDelete && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setZoneDelete(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogTitle, {
                   children: zoneDelete.notEmpty ? `"${zoneDelete.zone.name}" isn't empty` : `delete zone "${zoneDelete.zone.name}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogDescription, {
                   children: zoneDelete.notEmpty ? `${zoneDelete.notEmpty.proposals} proposal${zoneDelete.notEmpty.proposals === 1 ? "" : "s"} go${zoneDelete.notEmpty.proposals === 1 ? "es" : ""} with it — a zone is a disposable sandbox, and deleting it discards everything still inside. Promote what's worth keeping first.` : "The zone and anything still staged inside it go away. Promoted proposals already left for the main queue and stay."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setZoneDelete(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => requestZoneDelete(Boolean(zoneDelete.notEmpty)),
@@ -50857,7 +51368,7 @@ function App() {
 }
 
 // src/mind-mapper/surface/main.tsx
-var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime23.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime26.jsxDEV(App, {}, undefined, false, undefined, this));

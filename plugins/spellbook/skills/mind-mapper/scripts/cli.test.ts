@@ -411,3 +411,112 @@ test("an unrecognized flag exits 2 with a clean message, not a stack-trace crash
   expect(stderr).toContain("mind-mapper:");
   expect(stderr).not.toContain("at ");
 });
+
+// Round 5 (CLI1) — propose-batch mints nodes and resolves local edge refs in
+// one call; read fetches a full message by id.
+test("propose-batch --stdin resolves local refs and returns the ref→id map", async () => {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-batch", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(
+      JSON.stringify({
+        nodes: [
+          { ref: "x", draft: { title: " Port town" } },
+          { ref: "y", draft: { title: "Salt trade" } },
+        ],
+        edges: [{ draft: { source: "x", target: "y", label: "runs on" } }],
+      }),
+    ).body,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+  expect(code).toBe(0);
+  const body = JSON.parse(stdout) as {
+    refToId: Record<string, string>;
+    proposals: Array<{ kind: string; draft: { source?: string; target?: string } }>;
+  };
+  expect(typeof body.refToId.x).toBe("string");
+  const edge = body.proposals.find((p) => p.kind === "edge");
+  expect(edge?.draft.source).toBe(body.refToId.x);
+  expect(edge?.draft.target).toBe(body.refToId.y);
+});
+
+test("propose-batch without --stdin exits 2 with usage", async () => {
+  const { code, stderr } = await runCli("propose-batch");
+  expect(code).toBe(2);
+  expect(stderr).toContain("--stdin");
+});
+
+test("read <id> returns the full message row; unknown id exits 2", async () => {
+  const sent = await runCli("send", "a durable line", "--role", "agent");
+  const message = JSON.parse(sent.stdout) as { id: string };
+
+  const read = await runCli("read", message.id);
+  expect(read.code).toBe(0);
+  expect(JSON.parse(read.stdout)).toMatchObject({ text: "a durable line", role: "agent" });
+
+  const missing = await runCli("read", "no-such-message");
+  expect(missing.code).toBe(2);
+  expect(JSON.parse(missing.stdout)).toMatchObject({ error: "unknown message" });
+});
+
+// Round 5 (SG1) — node anchor round-trips through the CLI.
+test("node anchor --to sets a parent, --clear resets to top-level", async () => {
+  // Two fresh nodes via propose + ratify.
+  async function ratify(title: string): Promise<string> {
+    const p = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+      env: { ...process.env, MIND_MAPPER_HOME: home },
+      stdin: new Response(JSON.stringify({ draft: { title }, evidence: {} })).body,
+      stdout: "pipe",
+    });
+    const { id } = JSON.parse(await new Response(p.stdout).text()) as { id: string };
+    await p.exited;
+    const r = await runCli("ratify", id, "--ruling", "canon");
+    return (JSON.parse(r.stdout) as { nodeId: string }).nodeId;
+  }
+  const parent = await ratify("Anchor Parent");
+  const child = await ratify("Anchor Child");
+
+  const anchored = await runCli("node", "anchor", child, "--to", parent);
+  expect(anchored.code).toBe(0);
+  expect(JSON.parse(anchored.stdout)).toEqual({ nodeId: child, anchorNodeId: parent });
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as {
+    nodes: Array<{ id: string; anchorNodeId: string | null; submapChildCount: number }>;
+  };
+  expect(parsed.nodes.find((n) => n.id === child)?.anchorNodeId).toBe(parent);
+  expect(parsed.nodes.find((n) => n.id === parent)?.submapChildCount).toBe(1);
+
+  const cleared = await runCli("node", "anchor", child, "--clear");
+  expect(cleared.code).toBe(0);
+  expect(JSON.parse(cleared.stdout)).toEqual({ nodeId: child, anchorNodeId: null });
+});
+
+test("node anchor with neither --to nor --clear exits 2 with usage", async () => {
+  const { code, stderr } = await runCli("node", "anchor", "some-id");
+  expect(code).toBe(2);
+  expect(stderr).toContain("--to");
+});
+
+// Round 5 (IC-c) — proposal zone <id> --to / --clear round-trips.
+test("proposal zone moves a pending proposal into a zone and back through the CLI", async () => {
+  const created = await runCli("zone", "create", "Sandbox");
+  expect(created.code).toBe(0);
+
+  const p = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(JSON.stringify({ draft: { title: "Sandbox Wisp" }, evidence: {} })).body,
+    stdout: "pipe",
+  });
+  const { id } = JSON.parse(await new Response(p.stdout).text()) as { id: string };
+  await p.exited;
+
+  const into = await runCli("proposal", "zone", id, "--to", "sandbox");
+  expect(into.code).toBe(0);
+  expect(JSON.parse(into.stdout)).toEqual({ id, zoneId: "sandbox" });
+
+  const back = await runCli("proposal", "zone", id, "--clear");
+  expect(back.code).toBe(0);
+  expect(JSON.parse(back.stdout)).toEqual({ id, zoneId: null });
+});

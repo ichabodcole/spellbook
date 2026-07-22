@@ -64,6 +64,9 @@ The builder's own probes of his fix passed identically but prove nothing — ind
 The two-round shape is the safety net, not the expectation; the ratify round is what shrinks it.
 - Parallel seats on one shared tree: a seat's verification BUILD bakes peers' uncommitted src into committed artifacts (daedalus's dist rebuild captured circe's in-flight edits) — artifact rebuilds are a land-time act for the lead, or need a clean-tree check first (fed upstream as anthill feedback).
 - Same-day drive→merge→convene→build→gate is sustainable when the drive findings are triaged INTO the plan skeleton while fresh — the drive-3 findings doc's triage header WAS the round-4 scope, no re-derivation.
+- When a skeleton seam claim gets falsified by BOTH owners independently onto the same prior precedent (R5 submap-scoping → the R3 zones inclusive-snapshot ruling), that convergence is the strongest possible signal the precedent is load-bearing house architecture — promote it from "a ruling" to a named invariant the next plan cites up front, not re-derives.
+- A round that CHANGES A NUMBER the casting-draft already states (R5 split the 60s stall into 150s/60s) leaves the doc's stale figure as the most dangerous gap — the code is more correct AND the doc actively teaches the old behavior. Casting-draft prose is the lead's to fix (not implementation); grep the doc for any constant a build round touches, at plan time, and list it as a doc-delta in the plan.
+- Gate-fix ownership: a doc-only gate failure (casting-draft prose) is the LEAD's rework, not a seat's — fix it directly and cold-re-drive the single item (resume the gate agent's thread with a focused re-verify), don't spin the whole gate again.
 
 ## Anti-patterns
 

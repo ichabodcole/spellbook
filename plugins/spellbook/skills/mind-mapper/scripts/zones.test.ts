@@ -10,7 +10,15 @@ import { type BusEvent, createEventBus } from "./events.ts";
 import { proposeEdge, proposeNode } from "./propose.ts";
 import { ratify, ZonedError } from "./ratify.ts";
 import { readState } from "./state.ts";
-import { createZone, deleteZone, listZones, promote, ZoneNotEmptyError } from "./zones.ts";
+import {
+  createZone,
+  deleteZone,
+  listZones,
+  moveProposalToZone,
+  promote,
+  UnknownZoneError,
+  ZoneNotEmptyError,
+} from "./zones.ts";
 
 function tempDb() {
   const dir = mkdtempSync(join(tmpdir(), "mind-mapper-zones-test-"));
@@ -263,6 +271,79 @@ test("deleteZone returns null for unknown or non-slug ids (server 404s first)", 
     const bus = createEventBus();
     expect(deleteZone(db, bus, "nope", true)).toBeNull();
     expect(deleteZone(db, bus, "../evil", true)).toBeNull();
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Round 5 (IC-c) — moveProposalToZone: the zone IN-door (inverse of promote).
+test("moveProposalToZone moves a pending main proposal INTO a zone and re-emits the full proposal", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    createZone(db, bus, "Messy Ideas");
+    const proposal = proposeNode(db, bus, { draft: { title: "Wisp" }, evidence: {} });
+    expect(proposal.zoneId).toBeNull(); // starts in main
+
+    // Subscribe at the CURRENT cursor so the original proposal.added (zoneId
+    // null, from proposeNode) doesn't replay and mask the re-emit.
+    const received: BusEvent[] = [];
+    bus.subscribe(bus.cursor(), (e) => received.push(e));
+    const result = moveProposalToZone(db, bus, proposal.id, "messy-ideas");
+    expect(result).toEqual({ id: proposal.id, zoneId: "messy-ideas" });
+
+    // The row is now tagged; a full proposal.added re-emit carries the zoneId.
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.proposals.find((p) => p.id === proposal.id)?.zoneId).toBe("messy-ideas");
+    const emit = received.find((e) => e.kind === "proposal.added");
+    expect((emit?.payload as { zoneId: string }).zoneId).toBe("messy-ideas");
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("moveProposalToZone with null delegates to promote (moves to main, thin proposal.promoted)", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    createZone(db, bus, "Messy Ideas");
+    const proposal = proposeNode(db, bus, {
+      draft: { title: "Wisp" },
+      evidence: {},
+      zone: "messy-ideas",
+    });
+    expect(proposal.zoneId).toBe("messy-ideas");
+
+    const received: BusEvent[] = [];
+    bus.subscribe(0, (e) => received.push(e));
+    const result = moveProposalToZone(db, bus, proposal.id, null);
+    expect(result).toEqual({ id: proposal.id, zoneId: null });
+    expect(readState(db, { id: "default", title: "Default" }).proposals[0]?.zoneId).toBeNull();
+    expect(received.map((e) => e.kind)).toContain("proposal.promoted");
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("moveProposalToZone: unknown proposal → null, unknown zone → UnknownZoneError, non-pending → error", () => {
+  const { dir, docsDir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    createZone(db, bus, "Messy Ideas");
+
+    expect(moveProposalToZone(db, bus, "no-such-proposal", "messy-ideas")).toBeNull();
+
+    const proposal = proposeNode(db, bus, { draft: { title: "Wisp" }, evidence: {} });
+    expect(() => moveProposalToZone(db, bus, proposal.id, "ghost-zone")).toThrow(UnknownZoneError);
+
+    // Ratify it, then a move must refuse a non-pending proposal.
+    ratify(db, bus, docsDir, { proposalId: proposal.id, ruling: "canon" });
+    expect(() => moveProposalToZone(db, bus, proposal.id, "messy-ideas")).toThrow(
+      /already ratified/,
+    );
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

@@ -66,6 +66,16 @@ export function SearchPalette({
   // Clamp the active row as the result set shrinks under it.
   const activeIndex = Math.min(active, Math.max(0, rows.length - 1));
 
+  // Clear the query, reset the cursor, and yield focus — the palette itself
+  // never leaves (permanent chrome, R4 S1). The kbd twin and the input's own
+  // Escape both call this; the window-level Escape (App) mirrors it for the
+  // focus-on-the-board case.
+  const dismiss = () => {
+    onQuery("");
+    setActive(0);
+    inputRef.current?.blur();
+  };
+
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -78,11 +88,8 @@ export function SearchPalette({
       const pick = rows[activeIndex];
       if (pick) onPick(pick);
     } else if (e.key === "Escape") {
-      // Escape clears and yields focus — the palette itself never leaves.
       e.preventDefault();
-      onQuery("");
-      setActive(0);
-      inputRef.current?.blur();
+      dismiss();
     }
   };
 
@@ -108,9 +115,16 @@ export function SearchPalette({
           aria-label="Find a node"
           className="min-w-0 flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
-        <kbd className="rounded border border-border px-1 text-[9px] text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="auto"
+          onClick={dismiss}
+          aria-label="Clear search"
+          title="Clear search (Esc)"
+          className="rounded border border-border px-1 text-[9px] text-muted-foreground"
+        >
           esc
-        </kbd>
+        </Button>
       </div>
       {query && (
         <div className="max-h-64 overflow-y-auto p-1">

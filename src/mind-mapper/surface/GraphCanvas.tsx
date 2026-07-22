@@ -19,7 +19,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
-import { CircleDashed, Lightbulb, MapPin, User } from "lucide-react";
+import { CircleDashed, FolderTree, Lightbulb, MapPin, User } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import type { NodeMenuInfo } from "./state/nodeMenu";
@@ -34,16 +34,30 @@ export type GraphCanvasProps = {
   // Search coupling (t-934fc210): null = no search active; otherwise the ids
   // that match — everything else dims.
   highlightIds?: string[] | null;
+  // R5 SL — the spotlight lens: null = inactive; otherwise the LIT sets (the
+  // selected nodes ∪ their shared neighbors, and the joining edges). Its OWN
+  // dim channel, separate from search's highlightIds (they'd collide): nodes
+  // reuse the opacity-20 idiom, edges get the NEW render overlay below.
+  spotlight?: { nodes: Set<string>; edges: Set<string> } | null;
   // Imperative "look here": bump seq to pan/zoom the canvas to a node. The
   // same primitive an agent-side "look here" verb will drive in V1.
   focusRequest?: { nodeId: string; seq: number } | null;
-  // T9 human authoring — drag a handle-to-handle connection to sketch an
-  // edge claim (the caller proposes it; nothing lands until ratified).
+  // T9 human authoring — drag a handle-to-handle connection between two
+  // EXISTING nodes to sketch an edge claim (the caller proposes it; nothing
+  // lands until ratified).
   onConnect?: (source: string, target: string) => void;
-  // T9 human authoring — double-click empty pane to sketch a node claim.
-  // Placement honesty (ratified): the click point is NOT carried — the
-  // schema has no positions, layout decides where the sketch lands.
-  onPaneDoubleClick?: () => void;
+  // R5 IC-b — a drag that ENDS ON THE EMPTY PANE (no target node) sketches a
+  // NEW node connected to the source (the pending-endpoint pattern; the caller
+  // fans a node+edge proposal in one batch). Fixes the dead drag. Absent =
+  // the affordance is off (e.g. inside a zone, where a batch can't tag it).
+  onConnectToBlank?: (sourceNodeId: string) => void;
+  // R5 IC-a — right-click the empty pane to add a node (free-text modal). The
+  // caller opens it; placement honesty holds (no click point carried — layout
+  // decides where the sketch lands). Replaces the retired pane double-click.
+  onAddNode?: () => void;
+  // R5 SG2 — double-click a node to enter its submap (the caller drills the
+  // view in; the double-click's old job — sketch a node — moved to onAddNode).
+  onEnterSubmap?: (nodeId: string) => void;
   // V1 — App's view control (map|grid) rides the canvas Panel top-right,
   // next to the layout toggle. A slot, not view state: the canvas stays
   // ignorant of the grid's existence (the tree|physics toggle shows only in
@@ -135,6 +149,18 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
           {n.pending && (
             <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
               proposed
+            </span>
+          )}
+          {/* SG2 — the "has a submap" folder affordance (double-click / menu
+              to enter). Never on a pending proposal (count 0 there); shares the
+              ml-auto slot with the proposed badge, which never co-occurs. */}
+          {!n.pending && (n.submapChildCount ?? 0) > 0 && (
+            <span
+              className="ml-auto flex items-center gap-0.5 rounded-sm border border-thread-tier px-1 normal-case tracking-normal text-thread-tier"
+              title={`has a submap (${n.submapChildCount} inside)`}
+            >
+              <FolderTree size={9} aria-hidden />
+              {n.submapChildCount}
             </span>
           )}
         </div>
@@ -304,9 +330,12 @@ export function GraphCanvas({
   onSelect,
   onNodeCommand,
   highlightIds,
+  spotlight,
   focusRequest,
   onConnect,
-  onPaneDoubleClick,
+  onConnectToBlank,
+  onAddNode,
+  onEnterSubmap,
   panelTopRight,
   promotable,
   panelBelowBar,
@@ -322,6 +351,21 @@ export function GraphCanvas({
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("tree");
   const edges = useMemo(() => toFlowEdges(map), [map]);
   const lastReported = useRef<string>("");
+  // When App DRIVES the selection (Focus, search-pick, SC's multi-select),
+  // React Flow emits transitional onSelectionChange events (the stale prior
+  // selection, then the new one) as it reconciles the controlled `nodes`
+  // prop. Feeding those back through onSelect ping-pongs App→RF→App forever
+  // ("Maximum update depth") — a MULTI-select set (SC) never settles. So a
+  // pending App-driven key gates the reverse channel: transitional reports
+  // are ignored until React Flow confirms the exact key we asked for (or a
+  // short safety timer elapses, so a missed confirm can't freeze selection).
+  const pendingSelect = useRef<string | null>(null);
+  const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // IC-b — drag-connect tracking: onConnectStart records the source node;
+  // onConnect (a landed connection) marks it completed; onConnectEnd fires the
+  // dead-drag path only when the drag ended UNCOMPLETED on the empty pane.
+  const connectSource = useRef<string | null>(null);
+  const connectCompleted = useRef(false);
 
   // Commands dispatch through a ref so a new callback identity never forces
   // a node-state rebuild (layout depends on the map + mode alone). Rulings
@@ -347,35 +391,81 @@ export function GraphCanvas({
 
   useEffect(() => {
     const want = [...selectedIds].sort().join(",");
+    // Claim this as the last reported selection BEFORE the setNodes below
+    // re-renders: React Flow echoes an external (App-driven) selection back
+    // through onSelectionChange, and without this claim a programmatic
+    // MULTI-node select (SC) ping-pongs App→RF→App forever ("Maximum update
+    // depth"). A genuine user change reports a different key and is honored.
+    lastReported.current = want;
+    // Arm the reverse-channel gate: ignore React Flow's transitional echoes
+    // until it confirms this exact selection. The timer is a safety net.
+    pendingSelect.current = want;
+    if (pendingTimer.current) clearTimeout(pendingTimer.current);
+    pendingTimer.current = setTimeout(() => {
+      pendingSelect.current = null;
+    }, 300);
+    const wanted = new Set(selectedIds);
     setNodes((nds) => {
-      const have = nds
-        .filter((n) => n.selected)
-        .map((n) => n.id)
-        .sort()
-        .join(",");
-      if (have === want) return nds;
-      return nds.map((n) => ({ ...n, selected: selectedIds.includes(n.id) }));
+      // Replace ONLY the nodes whose selected flag actually flips — a
+      // wholesale `nds.map(n => ({...n}))` hands React Flow all-new node
+      // objects, which it treats as a fresh graph and reconciles by
+      // collapsing a multi-selection back to the single active node (SC's
+      // programmatic multi-select then oscillates forever). Identity-stable
+      // untouched nodes let React Flow hold the full selection.
+      let changed = false;
+      const next = nds.map((n) => {
+        const shouldSelect = wanted.has(n.id);
+        if (Boolean(n.selected) === shouldSelect) return n;
+        changed = true;
+        return { ...n, selected: shouldSelect };
+      });
+      return changed ? next : nds;
     });
   }, [selectedIds]);
 
-  // Search dim (and the zone view's promotable flag, and R1's menu info) are
-  // render-time overlays on node data — node STATE (positions, selection)
-  // stays untouched by keystrokes and view context alike.
+  // Search dim, the SL spotlight dim (its own channel), the zone view's
+  // promotable flag, and R1's menu info are render-time overlays on node
+  // data — node STATE (positions, selection) stays untouched by keystrokes,
+  // spotlight, and view context alike. Search and spotlight OR into the one
+  // opacity-20 visual (same look, two independent sources).
   const renderNodes = useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
-    if (!keep && !promotable && !menus) return nodes;
-    return nodes.map((n) => ({
-      ...n,
-      data: {
-        ...n.data,
-        ...(keep && { dimmed: !keep.has(n.id) }),
-        ...(promotable && { promotable: true }),
-        menu: menus?.get(n.id),
-        onRule: dispatchRule,
-        onAction: dispatchAction,
-      },
-    }));
-  }, [nodes, highlightIds, promotable, menus, dispatchRule, dispatchAction]);
+    const lit = spotlight?.nodes ?? null;
+    if (!keep && !lit && !promotable && !menus) return nodes;
+    return nodes.map((n) => {
+      const searchDim = keep ? !keep.has(n.id) : false;
+      const spotDim = lit ? !lit.has(n.id) : false;
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          ...((keep || lit) && { dimmed: searchDim || spotDim }),
+          ...(promotable && { promotable: true }),
+          menu: menus?.get(n.id),
+          onRule: dispatchRule,
+          onAction: dispatchAction,
+        },
+      };
+    });
+  }, [nodes, highlightIds, spotlight, promotable, menus, dispatchRule, dispatchAction]);
+
+  // R5 SL edge-dim — the NEW plumbing the lens never needed. toFlowEdges bakes
+  // opacity by provenance/pending only; this overlay drops every non-lit edge
+  // (path + label + label plate) to a faint trace so the joining edges read as
+  // the spotlight, and restores untouched when inactive.
+  const renderEdges = useMemo(() => {
+    const lit = spotlight?.edges ?? null;
+    if (!lit) return edges;
+    return edges.map((e) => {
+      if (lit.has(e.id)) return e;
+      return {
+        ...e,
+        style: { ...e.style, opacity: 0.08 },
+        labelStyle: { ...e.labelStyle, opacity: 0.12 },
+        labelBgStyle: { ...e.labelBgStyle, fillOpacity: 0.12 },
+      };
+    });
+  }, [edges, spotlight]);
 
   // Answer a focusRequest with a smooth pan/zoom to the node. lastSeq seeds
   // from the mount-time prop so a remount (the lens keys this component)
@@ -396,6 +486,17 @@ export function GraphCanvas({
     ({ nodes: sel }: { nodes: Node[] }) => {
       const ids = sel.map((n) => n.id);
       const key = [...ids].sort().join(",");
+      // Gate on a pending App-driven selection: swallow transitional echoes,
+      // and when React Flow confirms the exact key, close the gate WITHOUT
+      // re-reporting (App already holds it).
+      if (pendingSelect.current !== null) {
+        if (key === pendingSelect.current) {
+          pendingSelect.current = null;
+          if (pendingTimer.current) clearTimeout(pendingTimer.current);
+          lastReported.current = key;
+        }
+        return;
+      }
       if (key === lastReported.current) return;
       lastReported.current = key;
       onSelect(ids);
@@ -406,29 +507,48 @@ export function GraphCanvas({
   return (
     <ReactFlow
       nodes={renderNodes}
-      edges={edges}
+      edges={renderEdges}
       nodeTypes={nodeTypes}
       onInit={(instance) => {
         instanceRef.current = instance;
       }}
       onNodesChange={(changes) => setNodes((nds) => applyNodeChanges(changes, nds))}
       onSelectionChange={handleSelectionChange}
-      // T9: a completed handle-to-handle drag reports the sketch upward;
-      // React Flow never adds the edge itself here — the pending overlay
-      // renders it when the proposal.added round-trip lands (one source of
-      // truth, same as messages).
+      // IC-b: record the drag's source node and reset the completed flag.
+      onConnectStart={(_, params) => {
+        connectSource.current = params.nodeId ?? null;
+        connectCompleted.current = false;
+      }}
+      // T9: a completed handle-to-handle drag between two EXISTING nodes
+      // reports the sketch upward; React Flow never adds the edge itself here
+      // — the pending overlay renders it when the proposal.added round-trip
+      // lands (one source of truth, same as messages). Mark completed so the
+      // onConnectEnd dead-drag path stands down.
       onConnect={(conn) => {
+        connectCompleted.current = true;
         if (conn.source && conn.target && conn.source !== conn.target) {
           onConnect?.(conn.source, conn.target);
         }
       }}
-      // T9: double-click sketches a node — but only on the empty pane
-      // (React Flow has no pane-scoped double-click callback, so this DOM
-      // handler checks the event target; node/edge double-clicks pass by).
-      onDoubleClick={(e) => {
-        if (e.target instanceof Element && e.target.classList.contains("react-flow__pane")) {
-          onPaneDoubleClick?.();
+      // IC-b: the dead drag — a connection dropped on the empty pane (no target
+      // node). Sketch a NEW node connected to the source. Guard on the pane
+      // class so a drop onto a node (already handled by onConnect) passes by.
+      onConnectEnd={(event) => {
+        const src = connectSource.current;
+        connectSource.current = null;
+        if (connectCompleted.current || !src || !onConnectToBlank) return;
+        const target = event.target;
+        if (target instanceof Element && target.classList.contains("react-flow__pane")) {
+          onConnectToBlank(src);
         }
+      }}
+      // SG2: double-click a node → enter its submap (the old pane-double-click
+      // sketch job moved to onAddNode / right-click).
+      onNodeDoubleClick={(_, node) => onEnterSubmap?.(node.id)}
+      // IC-a: right-click the empty pane → add a node (free-text modal).
+      onPaneContextMenu={(event) => {
+        event.preventDefault();
+        onAddNode?.();
       }}
       zoomOnDoubleClick={false}
       fitView

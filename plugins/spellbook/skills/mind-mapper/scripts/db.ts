@@ -21,6 +21,11 @@ const ADDITIVE_COLUMNS: Record<string, string[]> = {
   // Round 4 (K1): who asserted a doc's kind ("user"|"agent"). Nullable —
   // legacy rows are honestly unattributed (kindAuthor null on the wire).
   docs: ["kind_author"],
+  // Round 5 (SG1): a node's parent in the submap tree (null = top-level).
+  // Nullable — legacy rows are top-level by construction. Real-nodes-only:
+  // proposals are never anchored (they ratify into a node, THEN can be
+  // anchored). kind_author precedent (additive after the shape shipped).
+  nodes: ["anchor_node_id"],
   proposals: ["result_node_id", "author", "evidence_message_id", "zone_id"],
   // Round 3 (Claim V2): doc-lens — lens rows written before the doc mode
   // shipped simply carry a null doc_id (a node lens, unchanged).
@@ -63,13 +68,19 @@ CREATE TABLE IF NOT EXISTS docs (
   kind_author TEXT
 );
 
+-- anchor_node_id (Round 5, SG1): a node's parent in the submap tree —
+-- nullable-TEXT-only because it arrived via ADDITIVE_COLUMNS after the
+-- original shape shipped (fresh-equals-migrated). null = top-level; a strict
+-- tree (one anchor per node), orthogonal to zone_id. Cycle-freedom is
+-- enforced at the write path (anchor.ts ancestor-walk), never by the schema.
 CREATE TABLE IF NOT EXISTS nodes (
   id TEXT PRIMARY KEY,
   kind TEXT NOT NULL,
   tier TEXT NOT NULL,
   title TEXT NOT NULL,
   synopsis TEXT NOT NULL,
-  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  anchor_node_id TEXT
 );
 
 CREATE TABLE IF NOT EXISTS edges (

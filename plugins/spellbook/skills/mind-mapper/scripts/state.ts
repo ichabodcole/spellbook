@@ -39,6 +39,16 @@ interface Node {
   title: string;
   synopsis: string;
   sources: NodeSource[];
+  // Round 5 (SG1): the node's parent in the submap tree (null = top-level).
+  // ALWAYS carried — `/state.nodes[]` is INCLUSIVE (every node tagged, like
+  // proposals[] carry zoneId); the surface derives the submap view client-side
+  // by filtering on this, and the breadcrumb by walking it. `?anchor=<id>` is
+  // a server-side CLI/agent narrow, NOT the surface path.
+  anchorNodeId: string | null;
+  // Server-derived count of nodes anchored under this one (GROUP-BY over the
+  // FULL table, on EVERY node in EVERY response incl. scoped) — a "has submap"
+  // badge without a second query. 0 = leaf.
+  submapChildCount: number;
   // Round 4 (A1): agent-authored action slots — absent = none (additive for
   // every existing consumer; the surface renders 4 + scroll).
   actions?: ActionSlot[];
@@ -151,8 +161,24 @@ function readState(
   });
 
   const nodeRows = db
-    .query("SELECT id, kind, tier, title, synopsis FROM nodes ORDER BY created_at")
-    .all() as Array<Omit<Node, "sources">>;
+    .query("SELECT id, kind, tier, title, synopsis, anchor_node_id FROM nodes ORDER BY created_at")
+    .all() as Array<{
+    id: string;
+    kind: string;
+    tier: string;
+    title: string;
+    synopsis: string;
+    anchor_node_id: string | null;
+  }>;
+  // SG1: submapChildCount is a GROUP-BY over the FULL nodes table — computed
+  // once here and attached to every node, so a scoped/narrowed response still
+  // reports the true child count (the badge must not lie in a submap view).
+  const childCountRows = db
+    .query(
+      "SELECT anchor_node_id AS parent, COUNT(*) AS n FROM nodes WHERE anchor_node_id IS NOT NULL GROUP BY anchor_node_id",
+    )
+    .all() as Array<{ parent: string; n: number }>;
+  const submapChildCount = new Map(childCountRows.map((r) => [r.parent, r.n]));
   const sourceRows = db.query("SELECT node_id, doc_id, span FROM sources").all() as Array<{
     node_id: string;
     doc_id: string;
@@ -182,7 +208,13 @@ function readState(
   const nodes: Node[] = nodeRows.map((row) => {
     const actions = actionsByTarget.get(row.id);
     return {
-      ...row,
+      id: row.id,
+      kind: row.kind,
+      tier: row.tier,
+      title: row.title,
+      synopsis: row.synopsis,
+      anchorNodeId: row.anchor_node_id,
+      submapChildCount: submapChildCount.get(row.id) ?? 0,
       sources: sourcesByNode.get(row.id) ?? [],
       ...(actions ? { actions } : {}),
     };
@@ -269,5 +301,48 @@ function readState(
   return { project, docs, nodes, edges, zones, proposals, conversation, lens, cursor, epoch };
 }
 
+// Round 5 (IC-c): read ONE proposal in the exact wire shape readState
+// produces (evidence union, author normalized, zoneId, actions attached). The
+// zone-move endpoint re-emits `proposal.added` with this so an inclusive
+// consumer re-tags the row without clobbering its actions — the same shape a
+// fresh /state would report. Returns null for an unknown id.
+function readProposalById(db: Database, id: string): Proposal | null {
+  const row = db
+    .query(
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author, zone_id FROM proposals WHERE id = ?",
+    )
+    .get(id) as {
+    id: string;
+    kind: string;
+    draft_json: string;
+    evidence_doc_id: string | null;
+    evidence_message_id: string | null;
+    evidence_span: string | null;
+    suggested_tier: string | null;
+    status: string;
+    result_node_id: string | null;
+    author: string | null;
+    zone_id: string | null;
+  } | null;
+  if (!row) return null;
+  const actions = readActions(db).get(row.id);
+  return {
+    id: row.id,
+    kind: row.kind,
+    draft: JSON.parse(row.draft_json),
+    evidence: {
+      docId: row.evidence_doc_id,
+      messageId: row.evidence_message_id,
+      span: row.evidence_span,
+    },
+    suggestedTier: row.suggested_tier,
+    status: row.status,
+    resultNodeId: row.result_node_id,
+    author: row.author === "user" ? "user" : "agent",
+    zoneId: row.zone_id,
+    ...(actions ? { actions } : {}),
+  };
+}
+
 export type { Doc, Edge, Lens, Message, Node, NodeSource, ProjectState, Proposal, Zone };
-export { readState };
+export { readProposalById, readState };

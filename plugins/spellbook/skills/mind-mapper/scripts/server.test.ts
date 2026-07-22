@@ -644,3 +644,189 @@ test("PUT /actions/:targetId attaches slots that ride /state; DELETE clears; 404
   });
   expect(badShape.status).toBe(400);
 });
+
+// Round 5 (CLI1) — POST /proposals/batch: mint nodes, resolve edge endpoints
+// against local refs in ONE transaction, return the ref→id map.
+test("POST /proposals/batch resolves local refs and returns the ref→id map", async () => {
+  const res = await fetch(`${url}/proposals/batch`, {
+    method: "POST",
+    body: JSON.stringify({
+      nodes: [
+        { ref: "a", draft: { title: "Alpha" } },
+        { ref: "b", draft: { title: "Beta" } },
+      ],
+      edges: [{ draft: { source: "a", target: "b", label: "precedes" } }],
+    }),
+  });
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as {
+    refToId: Record<string, string>;
+    proposals: Array<{ id: string; kind: string; draft: unknown }>;
+  };
+  expect(typeof body.refToId.a).toBe("string");
+  expect(typeof body.refToId.b).toBe("string");
+  expect(body.proposals).toHaveLength(3);
+  const edge = body.proposals.find((p) => p.kind === "edge");
+  expect(edge?.draft).toMatchObject({ source: body.refToId.a, target: body.refToId.b });
+});
+
+// Round 5 (CLI1) — GET /message/:id: full row by id, project-scoped, 404 unknown.
+test("GET /message/:id returns the full message row, 404 unknown, 404 cross-project", async () => {
+  const sent = await fetch(`${url}/send`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", text: "read me back", ground: ["some-node"] }),
+  });
+  const message = (await sent.json()) as { id: string };
+
+  const hit = await fetch(`${url}/message/${message.id}`);
+  expect(hit.status).toBe(200);
+  const row = (await hit.json()) as { text: string; role: string; ground: string[] | null };
+  expect(row.text).toBe("read me back");
+  expect(row.role).toBe("user");
+  expect(row.ground).toEqual(["some-node"]);
+
+  const unknown = await fetch(`${url}/message/no-such-message`);
+  expect(unknown.status).toBe(404);
+
+  // The message lives on the default project — a scoped read on another
+  // project must not find it.
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "msg-other", title: "Other" }),
+  });
+  const crossProject = await fetch(`${url}/message/${message.id}?project=msg-other`);
+  expect(crossProject.status).toBe(404);
+});
+
+// Round 5 (SG1) — node anchoring: POST /nodes/:id/anchor builds the submap
+// tree, /state stays inclusive with submapChildCount, /state?anchor narrows.
+async function ratifyNode(title: string): Promise<string> {
+  const proposed = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title }, evidence: {} }),
+  });
+  const { id } = (await proposed.json()) as { id: string };
+  const ruled = await fetch(`${url}/proposals/${id}/ruling`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  return ((await ruled.json()) as { nodeId: string }).nodeId;
+}
+
+test("POST /nodes/:id/anchor anchors a node; /state is inclusive w/ submapChildCount; ?anchor narrows", async () => {
+  const parent = await ratifyNode("Parent Node");
+  const childA = await ratifyNode("Child A");
+  const childB = await ratifyNode("Child B");
+
+  const anchored = await fetch(`${url}/nodes/${childA}/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: parent }),
+  });
+  expect(anchored.status).toBe(200);
+  expect(await anchored.json()).toEqual({ nodeId: childA, anchorNodeId: parent });
+  await fetch(`${url}/nodes/${childB}/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: parent }),
+  });
+
+  // Inclusive snapshot: every node tagged; the parent reports 2 children.
+  const state = (await (await fetch(`${url}/state`)).json()) as {
+    nodes: Array<{ id: string; anchorNodeId: string | null; submapChildCount: number }>;
+  };
+  const parentNode = state.nodes.find((n) => n.id === parent);
+  expect(parentNode?.submapChildCount).toBe(2);
+  expect(state.nodes.find((n) => n.id === childA)?.anchorNodeId).toBe(parent);
+  // The parent is still present in the inclusive snapshot (not hidden).
+  expect(state.nodes.some((n) => n.id === parent)).toBe(true);
+
+  // ?anchor narrows to the submap: the anchor node + its direct children only.
+  const narrowed = (await (await fetch(`${url}/state?anchor=${parent}`)).json()) as {
+    nodes: Array<{ id: string }>;
+  };
+  const ids = new Set(narrowed.nodes.map((n) => n.id));
+  expect(ids.has(parent)).toBe(true);
+  expect(ids.has(childA)).toBe(true);
+  expect(ids.has(childB)).toBe(true);
+  // childCount is still true in the narrowed view (GROUP-BY over the full table).
+  expect(narrowed.nodes.find((n) => n.id === parent)).toMatchObject({});
+
+  // clear moves childA back to top-level.
+  const cleared = await fetch(`${url}/nodes/${childA}/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: null }),
+  });
+  expect(cleared.status).toBe(200);
+  expect(await cleared.json()).toEqual({ nodeId: childA, anchorNodeId: null });
+});
+
+test("anchor rejects self/cycle/unknown with 400; ?anchor unknown node 404s", async () => {
+  const a = await ratifyNode("Cycle A");
+  const b = await ratifyNode("Cycle B");
+  await fetch(`${url}/nodes/${b}/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: a }),
+  }); // a <- b
+
+  const self = await fetch(`${url}/nodes/${a}/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: a }),
+  });
+  expect(self.status).toBe(400);
+  const cycle = await fetch(`${url}/nodes/${a}/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: b }), // a under b, but b descends from a
+  });
+  expect(cycle.status).toBe(400);
+  const unknownNode = await fetch(`${url}/nodes/no-such-node/anchor`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: a }),
+  });
+  expect(unknownNode.status).toBe(400);
+
+  const badAnchorQuery = await fetch(`${url}/state?anchor=no-such-node`);
+  expect(badAnchorQuery.status).toBe(404);
+});
+
+// Round 5 (IC-c) — POST /proposals/:id/zone: move a pending proposal into a
+// zone (or null to main). Unknown proposal 404, unknown zone 404, non-pending 400.
+test("POST /proposals/:id/zone moves into a zone and back; 404/404/400 fail loud", async () => {
+  await fetch(`${url}/zones`, { method: "POST", body: JSON.stringify({ name: "In Door" }) });
+  const proposed = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title: "Movable" }, evidence: {} }),
+  });
+  const { id } = (await proposed.json()) as { id: string };
+
+  const moved = await fetch(`${url}/proposals/${id}/zone`, {
+    method: "POST",
+    body: JSON.stringify({ zoneId: "in-door" }),
+  });
+  expect(moved.status).toBe(200);
+  expect(await moved.json()).toEqual({ id, zoneId: "in-door" });
+
+  let state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; zoneId: string | null }>;
+  };
+  expect(state.proposals.find((p) => p.id === id)?.zoneId).toBe("in-door");
+
+  const back = await fetch(`${url}/proposals/${id}/zone`, {
+    method: "POST",
+    body: JSON.stringify({ zoneId: null }),
+  });
+  expect(back.status).toBe(200);
+  state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; zoneId: string | null }>;
+  };
+  expect(state.proposals.find((p) => p.id === id)?.zoneId).toBeNull();
+
+  const unknownProposal = await fetch(`${url}/proposals/no-such/zone`, {
+    method: "POST",
+    body: JSON.stringify({ zoneId: "in-door" }),
+  });
+  expect(unknownProposal.status).toBe(404);
+  const unknownZone = await fetch(`${url}/proposals/${id}/zone`, {
+    method: "POST",
+    body: JSON.stringify({ zoneId: "ghost-zone" }),
+  });
+  expect(unknownZone.status).toBe(404);
+});

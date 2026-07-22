@@ -24,6 +24,7 @@ Currently live: mind-mapper's full V1 engine — db.ts (sqlite schema + additive
 V1.x Track A (P1e, `feature/mind-mapper-v1x`) added marks.ts (doc marks + read-time staleness), docs.ts (delete + CitedError), tail hardening (server keepalive + cli watchdog/epoch resync), presence + activity at the SSE site, proposal author, and message evidence (message_sources sibling table) — 7 chapter commits, suite 122 tests.
 Round 3 (P1e, `feature/mind-mapper-zones`) added zones.ts (staging pens + move-not-duplicate promote), the no-auto-mint project lifecycle (NeedsProjectError → 409 needs-project, demo seed deleted), kind:"proposal" search hits, grapevine's send body chain, and doc-lens — 8 chapter commits, mind-mapper suite 174 tests.
 Round 4 (P1, `feature/mind-mapper-round4`) added actions.ts (target-keyed slots, ratify re-homes), doc-kind honesty ('' sentinel at rest / null on the wire, kind_author), the ACT1 activity automation (auto-received, stalled TTL escalation, agent-write resolution), the B1 build stamp + stale-dist guard, and the typed zoned 409 — 5 chapter commits, mind-mapper suite 197 tests; all Contract 9 R4 amendments in seams.md.
+Round 5 (P1, `feature/mind-mapper-round5`) added the split stall TTL (SW1: MIND_MAPPER_STALL_TTL_MS governs received→stalled, activity knob keeps thinking→idle), batch-propose + message-read (CLI1: POST /proposals/batch with local-ref resolution in one txn + GET /message/:id), node-anchored submaps (SG1: anchor.ts cycle guard, nodes.anchor_node_id, inclusive snapshot + submapChildCount + ?anchor narrow, node.anchored thin event), and the zone in-door (IC-c: POST /proposals/:id/zone move-in) — 4 code chapters + 1 casting-draft chapter, mind-mapper suite 224 tests; all Contract 9 R5 amendments in seams.md.
 Reference implementation for the full house pattern: astrolabe's server.ts/cli.ts (cmd/state/events + WS, presence ref-counting, debounced snapshots) — note astrolabe itself still predates the release-mode split; mind-mapper's server.ts is now the first MERGED reference for Contract 1/2 release-mode serve.
 
 ## Boundaries
@@ -161,6 +162,34 @@ Cassandra's cold drive proposed an edge with from/to keys — opaque intake stor
 The fix that respects Contract 8 is a WARNING, not a reject: `edgeDraftWarning()` names the load-bearing keys in the propose response (additive `warning` field, CLI mirrors to stderr) while the draft stays stored verbatim.
 Generalizes: wherever a payload is opaque BY CONTRACT but one consumer reads specific keys (ratify reads draft.source/target), intake should advise on those keys in the same turn — "opaque" bounds what you reject, not what you say.
 Pin: propose.ts edgeDraftWarning, gate-rework commit 75abf96.
+
+**A transactional/bulk variant of a single-write verb must factor validation+row-build APART from insert+emit.**
+CLI1's batch-propose couldn't reuse `insertProposal` — it emits `proposal.added` inline, and emitting inside a `db.transaction()` leaks events on a rollback.
+The fix was a `buildProposal` (validate + compute the row + the wire object, return an `insert` closure, NO emit) shared by both paths: the single path calls insert+emit immediately; the batch validates ALL first (pure reads + throws), inserts ALL inside one txn, emits ALL after commit.
+The load-bearing ordering is validate-before-txn / emit-after-commit — a throw at any stage then leaves zero rows AND zero events by construction, not by luck.
+Generalizes: whenever you add a bulk or transactional twin of an emitting write, extract the no-side-effect build step first; the emit is the thing that must never ride inside the transaction.
+Pin: propose.ts buildProposal/batchPropose, propose.test.ts atomicity test (throwing batch → zero rows, zero events).
+
+**Re-emitting `proposal.added` for an EXISTING entity must carry the FULL current wire shape, or a consumer that replaces-by-id clobbers fields the event omitted.**
+IC-c's move-into-a-zone re-tags an existing proposal's zoneId; the R3 mechanism is to re-emit `proposal.added` (full object) so inclusive consumers update the row.
+Hand-building a partial payload would drop `actions` (a pending proposal can carry them) — so I added `readProposalById` (state.ts) that returns EXACTLY the shape readState produces, and emit that.
+Rule: a re-emit-of-existing is only safe through the same single-source reader that builds the snapshot row; never hand-assemble a "good enough" payload for an entity a consumer holds.
+Pin: state.ts readProposalById, zones.ts moveProposalToZone.
+
+**The event-replay bleed (subscribe at cursor, not 0) bites re-emits too, not just cross-test collectors.**
+The move-into-zone test subscribed at `0` and asserted the FIRST `proposal.added` had the new zoneId — but the ORIGINAL propose (zoneId null) replays from the buffer and masks the re-emit.
+Same rule as the cross-test collector scar: a collector watching for a re-emit of an entity must subscribe at `bus.cursor()` so the entity's earlier events don't replay into the assertion.
+Pin: zones.test.ts move-into-zone test (`bus.subscribe(bus.cursor(), …)`).
+
+**To prove two env knobs are independent in ONE shared daemon, set them to clearly different values and key the assertion on timing.**
+SW1 split the stall TTL from the activity TTL; the presence rig runs `MIND_MAPPER_ACTIVITY_TTL_MS=150` + `MIND_MAPPER_STALL_TTL_MS=600` (asymmetric on purpose) and asserts `received` produces ONLY `received` at 350ms (past the activity knob, before the stall knob) then `stalled` by the stall window — a received firing on the old shared value would betray itself at 150ms.
+Generalizes: independence of two timers isn't provable at equal values; the asymmetric-knob-plus-timing-checkpoint is the cheap proof.
+Pin: presence.test.ts "received→stalled reads MIND_MAPPER_STALL_TTL_MS, not the activity knob".
+
+**tsc is still not caught by `bun test` — `noUncheckedIndexedAccess` makes `Record<string,string>` indexing `string | undefined`.**
+My batch tests wrote `expect(...).toBe(refToId.n1)` — green under bun test, but tsc rejects it (`.toBe(string)` given `string | undefined`).
+`toMatchObject({ source: refToId.n1 })` tolerates the union (a partial matcher accepts any value); prefer it over `.toBe` when the expected side comes off an indexed access.
+Re-confirms the standing rule: run `tsc --noEmit -p .` on new/changed test files before handing off — a fourth session where bun-green ≠ tsc-clean.
 
 ## Candidates
 

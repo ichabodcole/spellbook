@@ -70,11 +70,17 @@ composing or analyzing, `activity idle` if a beat ends without a reply. Any
 write of yours (`send`, `propose-*`, `ratify`, `mark`) also resolves the auto
 state, and a `send` reads as the turn's terminal act — it clears your `thinking`
 too (re-post `thinking` explicitly if you keep working after a reply). **If you
-go silent for ~60s after a message lands, the daemon escalates to `stalled`**
-("agent may be stuck") — it persists until you act or post a state, so a single
-write on waking clears it. You can never post `stalled` yourself (400 — daemon
-vocabulary only). `thinking` still decays to a synthetic `idle` after ~60s, so a
-crash never leaves the indicator stuck.
+go silent for ~150s after a message auto-sets `received`, the daemon escalates
+to `stalled`** ("agent may be stuck") — it persists until you act or post a
+state, so a single write on waking clears it. You can never post `stalled`
+yourself (400 — daemon vocabulary only). These are two independent knobs (Round
+5, Contract 9 SUPERSESSION 3): the `received → stalled` grace defaults to ~150s
+(`MIND_MAPPER_STALL_TTL_MS`) — deliberately wide so normal deliberation before
+your first write doesn't read as stuck — while `thinking` still decays to a
+synthetic `idle` after ~60s (`MIND_MAPPER_ACTIVITY_TTL_MS`), so a crash never
+leaves the indicator stuck. Practical upshot: you have real room before the
+board calls you stuck, but posting `thinking` as your first act on a message
+you'll work on is still the honest signal.
 
 **When a doc arrives (`doc.added`):** this is AMBIENT staging, not an intent —
 the human may be setting the table for a conversation. Acknowledge it; extract
@@ -123,10 +129,45 @@ opaque to the daemon, so a `from`/`to` draft is stored as-is, slips past
 promote's endpoint-order guard (unknown refs pass by design), and only fails at
 ratify. The daemon does answer such a propose with an additive `warning` field
 (mirrored to stderr by the CLI) naming the expected keys — treat that warning as
-"fix and re-propose", don't ratify through it. Before proposing a new entity,
-`search` + `neighbors` for what already exists: **reuse before you invent** (the
-Threads-registry rule generalized). Over-proposing is fine; expensive rejection
-is not — pre-classify honestly, don't pad.
+"fix and re-propose", don't ratify through it.
+
+**Batch proposing (`propose-batch --stdin`) — the fast path for a whole
+extraction.** When one analysis pass yields several nodes AND the edges between
+them, don't fire N subprocesses — send them in ONE call:
+
+```json
+{
+  "nodes": [
+    {
+      "ref": "n1",
+      "draft": { "title": "Comedy", "synopsis": "..." },
+      "suggestedTier": "thread",
+      "evidence": { "docId": "ramble-01", "span": "..." }
+    },
+    { "ref": "n2", "draft": { "title": "Darkness", "synopsis": "..." } }
+  ],
+  "edges": [
+    { "draft": { "source": "n1", "target": "n2", "label": "contrasts with" } }
+  ]
+}
+```
+
+Each node carries a **local `ref`** — an arbitrary string you choose (`"n1"`,
+`"comedy"`, …), scoped to THIS batch only, never persisted. An edge's `source`/
+`target` may be one of those local refs (resolved server-side to the freshly
+minted node id), a **real existing node id**, or a **pending proposal id** — the
+daemon resolves local refs and passes everything else through unchanged. So a
+batch can mint two nodes and the edge between them atomically. The response is
+`{refToId: {"n1": "<uuid>", ...}, proposals: [...]}` — read `refToId` to learn
+what each local ref became. The whole batch is **one transaction**: if any row
+is invalid, NOTHING is written and no events fire (so a partial extraction can't
+half-land). Same intake rules as the single verbs (draft required, evidence is
+doc XOR message, slug-guarded). The single `propose-node`/`propose-edge` verbs
+are unchanged — use them for a one-off; reach for `propose-batch` whenever a
+pass produces a cluster. Before proposing a new entity, `search` + `neighbors`
+for what already exists: **reuse before you invent** (the Threads-registry rule
+generalized). Over-proposing is fine; expensive rejection is not — pre-classify
+honestly, don't pad.
 
 **Doc kinds (`doc kind`):** an ingested doc has NO kind — `state.docs[]` shows
 `kind: null` and the surface renders no badge (absence, not "unclassified"). The
@@ -174,13 +215,19 @@ yes, `ingest --title <t> --stdin` with your synthesis (or
 `ingest --title <t> --file <path>` when the content already lives in a file),
 then propose its claims against the new doc.
 
-**Human-sketched proposals (`author: "user"`):** the human can sketch nodes and
-edges directly on the canvas; these arrive as `proposal.added` with
-`author: "user"`, carry **no evidence**, and INVERT the usual flow — the human
-already believes the claim, what's missing is its doc home. **You attach the doc
-home at ratify time:** find (or bridge into existence) the right doc, write its
-new content — the sketch's sentence folded in, in that doc's own voice — and
-when the human confirms, run
+**Human-sketched proposals (`author: "user"`) are your cue to act, not just to
+wait.** The human can sketch nodes and edges directly on the canvas; these
+arrive as `proposal.added` with `author: "user"` and carry **no evidence**. A
+raw human NODE proposal is a signal aimed at you: its draft is usually terse (a
+title, maybe a fragment), so **refine it** — read the surrounding graph
+(`neighbors`, `search`), sharpen the draft's synopsis in your own analysis, and
+**propose the connecting edges** you can see (this node relates to what's
+already on the board). The human composes the intent; you supply the
+intelligence around it. Then comes ratification, which INVERTS the usual flow —
+the human already believes the claim, what's missing is its doc home. **You
+attach the doc home at ratify time:** find (or bridge into existence) the right
+doc, write its new content — the sketch's sentence folded in, in that doc's own
+voice — and when the human confirms, run
 
 ```
 ratify <id> --ruling <r> --doc <docId> --doc-edit <file> [--span "<excerpt>"]
@@ -206,7 +253,11 @@ brainstorming variants, a what-if subgraph, bulk extraction you haven't triaged
 2. `propose-node --zone <id> --stdin` / `propose-edge --zone <id> --stdin` —
    zoned proposals carry `zoneId` on the wire and are INCLUDED in `state`'s
    `proposals[]` (filter by `zoneId`; `state --project X` + `?zone=<id>` on the
-   HTTP side narrows to one zone). The main queue is `zoneId: null`.
+   HTTP side narrows to one zone). The main queue is `zoneId: null`. To move an
+   EXISTING pending proposal into a zone after the fact (e.g. the human grouped
+   a few on the canvas), use `proposal zone <proposalId> --to <id>` — the
+   inverse of promote; `proposal zone <proposalId> --clear` moves it back to
+   main (same as `promote`). Pending-only; unknown zone is a 404.
 3. `promote <proposalId>` — MOVES the proposal to the main review queue (same
    row, zone tag cleared; the zone keeps no copy). Promote is pending-only.
    **Edge ordering mirrors ratify:** an edge whose endpoints are still-zoned
@@ -221,6 +272,26 @@ brainstorming variants, a what-if subgraph, bulk extraction you haven't triaged
 populated zone refuses without `--yes` and reports the count — relay it and get
 a yes). Wrong-in-zone ideas just die with the zone; only promoted ones ever face
 a ruling.
+
+**Submaps (`node anchor`) — nesting the map.** A big graph can hide a coherent
+cluster inside one node ("everything about the harbor lives under _Harbor_").
+Anchor a **real, ratified node** under a parent to nest it:
+`node anchor <nodeId> --to <parentId>` (`--clear` moves it back to top-level).
+It is a **strict tree** — one parent per node, cycles rejected (a node can't
+anchor to itself or to any of its own descendants) — and **orthogonal to zones**
+(a node's zone history has nothing to do with its anchor). Anchoring is
+**real-nodes-only**: proposals are never anchored (they anchor only after they
+ratify into a node), and `ratify` is unchanged — anchoring is a separate,
+deliberate act. Every node in `state.nodes[]` carries `anchorNodeId` (null =
+top-level) and a server-derived `submapChildCount` (how many nodes hang under it
+— the surface badges "has submap" off this). The default `state` snapshot is
+FLAT and inclusive (every node tagged, none hidden — the surface derives the
+nested view and the breadcrumb itself). For a context-budgeted read of just one
+submap, `state --project X` + `?anchor=<nodeId>` on the HTTP side narrows to
+that node plus its direct children and the edges among them (an unknown anchor
+id is a 404). Use anchoring when the human asks to "tuck these under X" or when
+a region has clearly cohered into a sub-topic — don't auto-nest; it's a
+structural act the human should want.
 
 **Ratification:** never ratify your own proposals unprompted. The human rules
 from the review queue (or tells you in chat — then you run
@@ -267,6 +338,14 @@ diff against `state.conversation[].text` for byte-fidelity checks; one trailing
 newline is stripped); an empty resolved body is a usage error (exit 2); a body
 that looks like a leaked `cli.ts send` invocation is refused — re-send via
 `--body-file`, or `--force` if you really mean it.
+
+**Reading one message back (`read <id>` / `message <id>`):** when you have a
+message id — from a proposal's `evidence.messageId`, a `ground` ref, or a search
+hit — pull its full row with `read <messageId>` instead of scraping the tail log
+or re-fetching all of `state.conversation`. It returns
+`{id, seq, role, kind, text, ground, ts}`, project-scoped (an id from another
+project is a 404). Handy for grounding a message-evidence proposal in the exact
+verbatim `text`.
 
 **Note:** `search` takes a bare positional query (`search maren`, no flag).
 Search also returns `kind: "proposal"` hits — pending only, matched on the

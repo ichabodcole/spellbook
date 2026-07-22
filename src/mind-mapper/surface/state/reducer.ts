@@ -185,6 +185,26 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         cursor: event.seq,
       };
     }
+    case "node.anchored": {
+      // Round 5 (SG1) — THIN {nodeId, anchorNodeId}: flip the referenced
+      // node's anchorNodeId locally (the one thing the payload proves). The
+      // derived submapChildCount can shift on the OTHER end (an old/new
+      // parent), which this thin event can't carry — the ratified-events
+      // doctrine covers it: a snapshot refetch backfills the true counts.
+      // (Anchor is a rare, deliberate act; the surface's own moves already
+      // re-fetch, and an agent's move is corrected on the next /state read.)
+      const { nodeId, anchorNodeId } = event.payload as {
+        nodeId?: unknown;
+        anchorNodeId?: unknown;
+      };
+      if (typeof nodeId !== "string") return { ...state, cursor: event.seq };
+      const nextAnchor = typeof anchorNodeId === "string" ? anchorNodeId : null;
+      return {
+        ...state,
+        nodes: state.nodes.map((n) => (n.id === nodeId ? { ...n, anchorNodeId: nextAnchor } : n)),
+        cursor: event.seq,
+      };
+    }
     case "message.posted":
       return {
         ...state,

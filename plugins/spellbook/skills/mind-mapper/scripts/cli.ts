@@ -15,11 +15,23 @@
 //   propose-edge  same shape, kind: "edge" (source/target may be a real node
 //                 id OR a pending proposal's id — ratify resolves the latter)
 //                 --zone <id> stages the proposal in a zone
+//   propose-batch --stdin JSON {nodes:[{ref, draft, ...}], edges:[{draft:{
+//                 source, target, label?}}]} — one transaction; an edge
+//                 endpoint may be a node's LOCAL REF (resolved to the minted
+//                 id server-side), a real node id, or a pending proposal id.
+//                 Returns {refToId, proposals}
+//   read <id>     GET /message/:id → the full message row (alias: message <id>)
+//   node anchor <id> (--to <parentId> | --clear)  POST /nodes/:id/anchor —
+//                 anchor a real node under a parent in the submap tree, or
+//                 --clear to move it back to top-level (cycles rejected)
 //   zone          create <name> (slug id derived) | list | delete <id> [--yes]
 //                 (delete cascades the zone's proposals; populated zones 409
 //                 without --yes)
 //   promote <id>  move a zoned pending proposal to the main review queue
 //                 (edge endpoints must promote first — error names them)
+//   proposal zone <id> (--to <zoneId> | --clear)  POST /proposals/:id/zone —
+//                 move a PENDING proposal INTO a zone (the inverse of promote),
+//                 or --clear to move it back to main
 //   doc <id>      GET /doc/:id → the doc envelope on stdout
 //   doc delete <id> [--force]  DELETE /doc/:id → 409 {error:"cited", citedBy}
 //                 when cited and unforced; --force cascades
@@ -433,6 +445,89 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  if (verb === "propose-batch") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
+      strict: true,
+      allowPositionals: false,
+    });
+    if (!parsed.values.stdin) {
+      process.stderr.write(
+        "mind-mapper: propose-batch requires --stdin JSON " +
+          "{nodes:[{ref, draft, suggestedTier?, evidence?}], edges:[{draft:{source, target, label?}}]}\n" +
+          "  an edge endpoint may be a node LOCAL REF (matches a node's ref in this batch),\n" +
+          "  a real node id, or a pending proposal id — local refs resolve to minted ids server-side\n",
+      );
+      return 2;
+    }
+    const input = JSON.parse(await Bun.stdin.text()) as { nodes?: unknown; edges?: unknown };
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/proposals/batch${qs}`, {
+      method: "POST",
+      body: JSON.stringify({ nodes: input.nodes ?? [], edges: input.edges ?? [] }),
+    });
+    // Response carries {refToId: {<ref>: <mintedId>}, proposals: [...]} — the
+    // ref→id map is the point (an edge in the same batch names a node by ref).
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
+  if (verb === "node") {
+    const sub = rest[0];
+    const parsed = parseArgs({
+      args: rest.slice(1),
+      options: {
+        to: { type: "string" },
+        clear: { type: "boolean", default: false },
+        project: { type: "string" },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+    if (sub !== "anchor") {
+      process.stderr.write("usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear)\n");
+      return 2;
+    }
+    const id = parsed.positionals[0];
+    const hasTo = parsed.values.to !== undefined;
+    if (!id || (hasTo && parsed.values.clear) || (!hasTo && !parsed.values.clear)) {
+      process.stderr.write(
+        "usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear)\n" +
+          "  --to anchors the node under <parentId> (a real node id); --clear moves it to top-level\n",
+      );
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}/anchor${qs}`, {
+      method: "POST",
+      body: JSON.stringify({ parentId: parsed.values.clear ? null : parsed.values.to }),
+    });
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
+  if (verb === "read" || verb === "message") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { project: { type: "string" } },
+      strict: true,
+      allowPositionals: true,
+    });
+    const id = parsed.positionals[0];
+    if (!id) {
+      process.stderr.write("usage: cli.ts read <messageId>\n");
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/message/${id}${qs}`);
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
   if (verb === "zone") {
     const sub = rest[0];
     const parsed = parseArgs({
@@ -495,6 +590,41 @@ async function dispatch(argv: string[]): Promise<number> {
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/proposals/${id}/promote${qs}`, {
       method: "POST",
+    });
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
+  if (verb === "proposal") {
+    const sub = rest[0];
+    const parsed = parseArgs({
+      args: rest.slice(1),
+      options: {
+        to: { type: "string" },
+        clear: { type: "boolean", default: false },
+        project: { type: "string" },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+    if (sub !== "zone") {
+      process.stderr.write("usage: cli.ts proposal zone <id> (--to <zoneId> | --clear)\n");
+      return 2;
+    }
+    const id = parsed.positionals[0];
+    const hasTo = parsed.values.to !== undefined;
+    if (!id || (hasTo && parsed.values.clear) || (!hasTo && !parsed.values.clear)) {
+      process.stderr.write(
+        "usage: cli.ts proposal zone <proposalId> (--to <zoneId> | --clear)\n" +
+          "  --to moves a PENDING proposal INTO <zoneId>; --clear moves it back to the main queue\n",
+      );
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/proposals/${id}/zone${qs}`, {
+      method: "POST",
+      body: JSON.stringify({ zoneId: parsed.values.clear ? null : parsed.values.to }),
     });
     process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
@@ -907,7 +1037,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|zone|promote|doc|mark|actions|search|neighbors|ratify|lens|look-here|send|activity>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|zone|promote|proposal|node|doc|mark|actions|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
   );
   return 2;
 }

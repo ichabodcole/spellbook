@@ -16,6 +16,7 @@
 import type { Database } from "bun:sqlite";
 import type { EventBus } from "./events.ts";
 import { SLUG_RE } from "./project.ts";
+import { readProposalById } from "./state.ts";
 
 interface Zone {
   id: string;
@@ -137,5 +138,70 @@ function promote(db: Database, bus: EventBus, proposalId: string): { id: string 
   return { id: proposalId };
 }
 
+// Round 5 (IC-c) — the zone IN-door: move a PENDING proposal INTO a zone (the
+// inverse of promote, which moves OUT to main). Completes the drive-3
+// group-selected-into-a-zone gap (the surface's zone-create affordance).
+// `zoneId === null` is the to-main move — delegates to promote() so the two
+// share one exit (the edge endpoint-order guard + thin proposal.promoted
+// event). A move INTO a zone re-emits the FULL proposal (with the new zoneId)
+// via readProposalById so an inclusive consumer re-tags the row without
+// clobbering its actions (the R3 payload-tagging mechanism).
+//
+// Errors, distinct so the server maps them to distinct statuses: unknown
+// proposal → null (server 404s), unknown zone → typed UnknownZoneError (404),
+// non-pending → a plain Error (400).
+class UnknownZoneError extends Error {
+  constructor(zoneId: string) {
+    super(`unknown zone: ${zoneId}`);
+    this.name = "UnknownZoneError";
+  }
+}
+
+function moveProposalToZone(
+  db: Database,
+  bus: EventBus,
+  proposalId: string,
+  zoneId: string | null,
+): { id: string; zoneId: string | null } | null {
+  const row = db
+    .query("SELECT id, status, zone_id FROM proposals WHERE id = ?")
+    .get(proposalId) as {
+    id: string;
+    status: string;
+    zone_id: string | null;
+  } | null;
+  if (!row) return null; // server 404s
+  if (row.status !== "pending") {
+    throw new Error(
+      `proposal ${proposalId} already ${row.status} — only pending proposals move between zones`,
+    );
+  }
+
+  // To-main move IS a promote — reuse it (guard + thin proposal.promoted).
+  if (zoneId === null) {
+    promote(db, bus, proposalId);
+    return { id: proposalId, zoneId: null };
+  }
+
+  // Move INTO a zone — the zone must exist (same fail-loud spirit as propose
+  // --zone), then re-tag and re-emit the full proposal so consumers update
+  // the zoneId on the row they already hold.
+  if (!db.query("SELECT 1 FROM zones WHERE id = ?").get(zoneId)) {
+    throw new UnknownZoneError(zoneId);
+  }
+  db.run("UPDATE proposals SET zone_id = ? WHERE id = ?", [zoneId, proposalId]);
+  const proposal = readProposalById(db, proposalId);
+  if (proposal) bus.emit("proposal.added", proposal as unknown as Record<string, unknown>);
+  return { id: proposalId, zoneId };
+}
+
 export type { Zone };
-export { createZone, deleteZone, listZones, promote, ZoneNotEmptyError };
+export {
+  createZone,
+  deleteZone,
+  listZones,
+  moveProposalToZone,
+  promote,
+  UnknownZoneError,
+  ZoneNotEmptyError,
+};

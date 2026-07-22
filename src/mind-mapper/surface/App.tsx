@@ -20,6 +20,8 @@ import { NodeDetail } from "./NodeDetail";
 import { ProjectPicker } from "./ProjectPicker";
 import { ReviewQueue } from "./ReviewQueue";
 import { SearchPalette } from "./SearchPalette";
+import { SpotlightToggle } from "./SpotlightToggle";
+import { SubmapBreadcrumb } from "./SubmapBreadcrumb";
 import { type AgentBadge, badgeFor, badgeHasClientTtl } from "./state/activity";
 import { buildFooterText } from "./state/buildInfo";
 import { type CitedBy, parseCitedBody } from "./state/deleteFlow";
@@ -27,10 +29,14 @@ import { docLensNodeIds } from "./state/docLens";
 import { groundBundle } from "./state/groundBundle";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
+import { lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
 import { pendingEdgesFrom, pendingNodesFrom } from "./state/pendingOverlay";
 import { dotState, type PresenceDot } from "./state/presence";
+import { shouldDismissSearch } from "./state/searchDismiss";
 import { type PaletteRow, paletteRows } from "./state/searchRows";
+import { computeSpotlight } from "./state/spotlight";
+import { breadcrumbTrail, submapView } from "./state/submap";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import {
   forgetStoredProject,
@@ -41,6 +47,7 @@ import {
 } from "./state/urlProject";
 import { useProjectState } from "./state/useProjectState";
 import { parseZoneNotEmptyBody, type ZoneNotEmpty } from "./state/zoneFlow";
+import { selectedPendingProposalIds } from "./state/zoneGroup";
 import { mainProposals, zoneMapFrom, zoneOf } from "./state/zoneView";
 import type {
   ActionSlot,
@@ -50,7 +57,6 @@ import type {
   MapNode,
   Message,
   MessageSourceRef,
-  ProjectState,
   Ruling,
   SearchHit,
   WireMessage,
@@ -67,6 +73,7 @@ import {
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { type BoardView, ViewToggle } from "./ViewToggle";
+import { ZoneGroupModal } from "./ZoneGroupModal";
 import { ZoneTabs } from "./ZoneTabs";
 
 // Wire → display adapter (types.ts note): the wire's `kind` is a free-form
@@ -80,31 +87,6 @@ function toDisplayMessage(m: WireMessage): Message {
     text: m.text,
     ground: m.ground ?? [],
   };
-}
-
-// The neighborhood the lens admits: BFS over edges (undirected) from the
-// focus node, out to `depth` hops.
-function lensSet(map: ProjectState, nodeId: string, depth: number): Set<string> {
-  const adjacent = new Map<string, string[]>();
-  for (const e of map.edges) {
-    adjacent.set(e.source, [...(adjacent.get(e.source) ?? []), e.target]);
-    adjacent.set(e.target, [...(adjacent.get(e.target) ?? []), e.source]);
-  }
-  const seen = new Set([nodeId]);
-  let frontier = [nodeId];
-  for (let hop = 0; hop < depth; hop++) {
-    const next: string[] = [];
-    for (const id of frontier) {
-      for (const n of adjacent.get(id) ?? []) {
-        if (!seen.has(n)) {
-          seen.add(n);
-          next.push(n);
-        }
-      }
-    }
-    frontier = next;
-  }
-  return seen;
 }
 
 // The doc being read: content fetched on demand, highlight = the span that
@@ -165,6 +147,10 @@ export function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [focusRequest, setFocusRequest] = useState<{ nodeId: string; seq: number } | null>(null);
+  // R5 SL — the spotlight toggle (its own dim channel, distinct from search).
+  // The lit sets are DERIVED below from this flag + selection + board; the
+  // flag is the only state (toggling off restores by construction).
+  const [spotlightOn, setSpotlightOn] = useState(false);
   // T5 — the two-stage delete flow (Claim A): stage 1 confirms intent,
   // stage 2 (citedBy set, populated from the 409) shows provenance counts
   // before force. The SAME dialog escalates — never two dialogs.
@@ -172,8 +158,11 @@ export function App() {
     doc: DocMeta;
     citedBy: CitedBy | null;
   } | null>(null);
-  // T9 — the double-click node sketch form.
-  const [nodeForm, setNodeForm] = useState<{ title: string; synopsis: string } | null>(null);
+  // IC-a/IC-b — the free-text (dictation-first) add-node modal. `connectFrom`
+  // null = a plain add (pane right-click → one node proposal); a node id = a
+  // drag-connect-to-blank (onConnectEnd) → a node+edge batch anchored to that
+  // source. Replaces the retired T9 structured title/synopsis form.
+  const [addNode, setAddNode] = useState<{ text: string; connectFrom: string | null } | null>(null);
   // T8 — agent activity → the conversation panel's badge. R4 ACT1 makes it
   // tri-state: the thinking pulse, or the STATIC stalled branch (a
   // daemon-synthesized "agent may be stuck" that must never look alive).
@@ -186,6 +175,15 @@ export function App() {
   // Z3 — which board is showing: null = main, else a zone id. View-local
   // like `view` (the store is inclusive; a tab switch is free — no refetch).
   const [activeZone, setActiveZone] = useState<string | null>(null);
+  // SG2 — which submap is showing: null = top-level, else the anchor node id.
+  // View-local, parallel to activeZone (the inclusive snapshot holds the whole
+  // tree; drilling in/out is a client filter, no refetch). Reset on zone
+  // switch (submap navigation is a main-board act) and when the anchor node
+  // vanishes (below).
+  const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  // IC-c — the group-selected-into-a-zone modal: the pending main-queue
+  // proposal ids being moved, gathered when the affordance is clicked.
+  const [zoneGroup, setZoneGroup] = useState<{ pendingIds: string[] } | null>(null);
   // Z1 — the two-stage zone-delete flow, deleteFlow's idiom: stage 1
   // confirms intent, stage 2 (notEmpty set, populated from the 409) states
   // the proposal count being discarded before ?yes=1. SAME dialog escalates.
@@ -290,6 +288,17 @@ export function App() {
     }
   }, [state, activeZone]);
 
+  // SG2 — the anchor node gone (deleted, or un-anchored so it's no longer a
+  // submap root under us — an agent's `node anchor --clear`) re-homes the view
+  // to the top level rather than stranding it on a submap that no longer
+  // exists. A node whose children all left still has a valid (empty) submap;
+  // only the anchor node's own disappearance re-homes.
+  useEffect(() => {
+    if (activeAnchor && state && !state.nodes.some((n) => n.id === activeAnchor)) {
+      setActiveAnchor(null);
+    }
+  }, [state, activeAnchor]);
+
   // Once the daemon resolves the default project, mirror its id into the
   // picker so switching projects re-mounts useProjectState explicitly rather
   // than riding an implicit undefined. Also mirrored into the URL + storage
@@ -334,20 +343,30 @@ export function App() {
 
   // Summon = focus, not open (R4 S1): cmd/ctrl-K or "/" (when not already
   // typing) puts the caret in the permanent input; select() means typing
-  // replaces a leftover query instead of appending to it.
+  // replaces a leftover query instead of appending to it. R5 (bug #11):
+  // Escape is the dismiss counterpart, lifted here so it works whether or not
+  // the input holds focus — shouldDismissSearch guards it off the nodeForm /
+  // composer / dialog Escape (each owns its own).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      const activeTag = document.activeElement?.tagName ?? null;
       const typing =
         e.target instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(e.target.tagName);
       if ((e.key === "k" && (e.metaKey || e.ctrlKey)) || (e.key === "/" && !typing)) {
         e.preventDefault();
         searchInputRef.current?.focus();
         searchInputRef.current?.select();
+      } else if (e.key === "Escape") {
+        const isSearchInput = document.activeElement === searchInputRef.current;
+        if (shouldDismissSearch(activeTag, isSearchInput, Boolean(searchQuery))) {
+          setSearchQuery("");
+          searchInputRef.current?.blur();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [searchQuery]);
 
   // Ratified nodes/edges never carry `pending` themselves (only the
   // proposals table is staging-tier) — the board's pending overlay is
@@ -379,10 +398,42 @@ export function App() {
     return { ...state, ...zoneMapFrom(state.proposals, activeZone, mapWithPending.nodes) };
   }, [state, mapWithPending, activeZone]);
 
-  const selection = useMemo(
-    () => (boardMap ? boardMap.nodes.filter((n) => selectedIds.includes(n.id)) : []),
-    [boardMap, selectedIds],
+  // SG2 — the submap slice: filter the board to the active anchor's children
+  // (or the top-level un-anchored nodes when null). Slots between zone and
+  // lens (mapWithPending → zoneMapFrom → submapView → visibleMap); the derive
+  // is pure + tested (state/submap.ts), client-side because a server ?anchor=
+  // scope would hide the ancestors the breadcrumb walk needs (ratified).
+  const submapMap = useMemo(
+    () => (boardMap ? { ...boardMap, ...submapView(boardMap, activeAnchor) } : boardMap),
+    [boardMap, activeAnchor],
   );
+
+  // The breadcrumb walks the FULL board's anchors (not the filtered submap
+  // slice, which only holds one level) so every ancestor resolves.
+  const breadcrumb = useMemo(
+    () => (boardMap ? breadcrumbTrail(boardMap.nodes, activeAnchor) : []),
+    [boardMap, activeAnchor],
+  );
+
+  const selection = useMemo(
+    () => (submapMap ? submapMap.nodes.filter((n) => selectedIds.includes(n.id)) : []),
+    [submapMap, selectedIds],
+  );
+
+  // SL — the lit sets, derived only while the toggle is on and ≥2 are
+  // selected (computeSpotlight returns null otherwise). Over the submap slice
+  // so pending/zone/submap context is respected, same as SC.
+  const spotlightSets = useMemo(
+    () => (spotlightOn && submapMap ? computeSpotlight(submapMap, selectedIds) : null),
+    [spotlightOn, submapMap, selectedIds],
+  );
+
+  // Keep the pressed state honest: if the selection drops below two, the
+  // spotlight has nothing to intersect — turn the toggle off so it doesn't
+  // silently re-engage when a later pair happens to get selected.
+  useEffect(() => {
+    if (spotlightOn && selectedIds.length < 2) setSpotlightOn(false);
+  }, [spotlightOn, selectedIds]);
 
   // R4 R1 — the ratify-anywhere menu info, derived view-blind over the
   // INCLUSIVE store (state/nodeMenu.ts): one map serves canvas and grid,
@@ -395,6 +446,12 @@ export function App() {
   // One command handler for both views (map + grid share the chassis).
   const handleNodeCommand = (command: NodeCommand, node: MapNode) => {
     if (command === "Focus") setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null });
+    else if (command === "Select connected") {
+      // SC — union the node's depth-1 neighbors (incl. itself) into the
+      // selection, computed over the ACTIVE submap slice so pending/zone/submap
+      // context is respected. Nodes only (edges-in-selection is a follow-on).
+      if (submapMap) setSelectedIds([...lensSet(submapMap, node.id, 1)]);
+    } else if (command === "Enter submap") enterSubmap(node.id);
     else if (command === "Promote") promoteProposal(node.id);
     else seedComposer(`${command} — ${node.title}`, node.id);
   };
@@ -489,19 +546,19 @@ export function App() {
   // doc (+ edges among them, docLens.ts); marks-but-no-nodes renders
   // honestly empty. Grid equality is free: BOTH views consume this memo.
   const visibleMap = useMemo(() => {
-    if (!boardMap || !lens.owner) return boardMap;
+    if (!submapMap || !lens.owner) return submapMap;
     const keep = lens.docId
-      ? docLensNodeIds(boardMap.nodes, lens.docId)
+      ? docLensNodeIds(submapMap.nodes, lens.docId)
       : lens.nodeId
-        ? lensSet(boardMap, lens.nodeId, lens.depth ?? 1)
+        ? lensSet(submapMap, lens.nodeId, lens.depth ?? 1)
         : null;
-    if (!keep) return boardMap;
+    if (!keep) return submapMap;
     return {
-      ...boardMap,
-      nodes: boardMap.nodes.filter((n) => keep.has(n.id)),
-      edges: boardMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target)),
+      ...submapMap,
+      nodes: submapMap.nodes.filter((n) => keep.has(n.id)),
+      edges: submapMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target)),
     };
-  }, [boardMap, lens]);
+  }, [submapMap, lens]);
   const detailNode = selection.length > 0 ? selection[selection.length - 1] : null;
 
   // A dismissed detail card comes back when attention moves to another node.
@@ -640,6 +697,59 @@ export function App() {
         setNotice(`couldn't create that zone (${e instanceof Error ? e.message : String(e)}).`),
       );
 
+  // IC-c — move a PENDING proposal INTO a zone (POST /proposals/:id/zone, the
+  // inverse of promote). Used by the group-selected-into-a-zone flow.
+  const proposalZoneMove = (id: string, zoneId: string) =>
+    fetch(`/proposals/${id}/zone${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ zoneId }),
+    }).then((r) => {
+      if (!r.ok) throw new Error(`zone-move ${r.status}`);
+    });
+
+  // IC-c — commit the group modal into an EXISTING zone: move each selected
+  // pending proposal in, then switch the board to that zone (attention follows
+  // the work) and clear the modal + selection.
+  const commitGroupInto = (zoneId: string) => {
+    if (!zoneGroup) return;
+    Promise.all(zoneGroup.pendingIds.map((id) => proposalZoneMove(id, zoneId)))
+      .then(() => {
+        setActiveZone(zoneId);
+        setActiveAnchor(null);
+        setSelectedIds([]);
+        setZoneGroup(null);
+      })
+      .catch((e) => {
+        setZoneGroup(null);
+        setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
+  // IC-c — commit the group modal into a NEW zone: create it (the daemon
+  // derives the slug id and returns the Zone), then move each proposal in.
+  const commitGroupNewZone = (name: string) => {
+    const n = name.trim();
+    if (!n) return;
+    fetch(`/zones${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: n }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = (await r.json().catch(() => null)) as { error?: unknown } | null;
+          throw new Error(typeof body?.error === "string" ? body.error : `zone ${r.status}`);
+        }
+        return (await r.json()) as Zone;
+      })
+      .then((zone) => commitGroupInto(zone.id))
+      .catch((e) => {
+        setZoneGroup(null);
+        setNotice(`couldn't create that zone (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
   // Z1 — the zone-delete fetch half (the 409-body parse is pure,
   // state/zoneFlow.ts). Unforced first, always; a recognizable
   // zone-not-empty 409 escalates the SAME dialog to its count stage;
@@ -670,21 +780,67 @@ export function App() {
   };
 
   // A tab switch clears view-local attention — selection and the local lens
-  // both name elements of the board being left.
+  // both name elements of the board being left. It also drops any open submap:
+  // submap navigation is a main-board act (zones and submaps are orthogonal,
+  // but the surface keeps one drill-context at a time to stay legible).
   const switchZone = (zoneId: string | null) => {
     if (zoneId === activeZone) return;
     setActiveZone(zoneId);
+    setActiveAnchor(null);
     setSelectedIds([]);
     setLens(DEFAULT_LENS);
   };
 
-  const submitNodeForm = () => {
-    if (!nodeForm) return;
-    const title = nodeForm.title.trim();
-    if (!title) return;
-    const synopsis = nodeForm.synopsis.trim();
-    proposeAsUser("node", synopsis ? { title, synopsis } : { title });
-    setNodeForm(null);
+  // SG2 — drill into / navigate submaps. Clears view-local attention like a
+  // zone switch (selection + lens name the board being left). enterSubmap
+  // gates on the node actually HAVING a submap — a childless drill would
+  // strand the user on a board holding only the context node.
+  const switchAnchor = (anchor: string | null) => {
+    if (anchor === activeAnchor) return;
+    setActiveAnchor(anchor);
+    setSelectedIds([]);
+    setLens(DEFAULT_LENS);
+  };
+  const enterSubmap = (nodeId: string) => {
+    const node = state?.nodes.find((n) => n.id === nodeId);
+    if (!node || (node.submapChildCount ?? 0) === 0) return;
+    switchAnchor(nodeId);
+  };
+
+  // IC-b — the drag-connect batch: one node proposal + one edge proposal from
+  // the drag's source to the new node, in a single txn (propose-batch, local
+  // ref resolves the pending endpoint). author:"user" — this is a human
+  // sketch, not the casting loop's bulk write. No zone tagging (batch can't;
+  // the affordance is gated to the main board upstream), so this always lands
+  // in the main queue.
+  const proposeBatchConnect = (source: string, title: string) =>
+    fetch(`/proposals/batch${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nodes: [{ ref: "new", draft: { title }, author: "user" }],
+        edges: [{ draft: { source, target: "new" }, author: "user" }],
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`propose ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't sketch that (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
+  // IC-a/IC-b — the free-text add-node modal's submit. A drag-connect (connectFrom
+  // set) fans a node+edge batch; a plain add sketches one node. The free text
+  // becomes the node's title (the agent's proposal.added is its refine signal —
+  // no separate message). No optimistic append — the pending overlay renders it
+  // when proposal.added round-trips (one source of truth, same as messages).
+  const submitAddNode = () => {
+    if (!addNode) return;
+    const text = addNode.text.trim();
+    if (!text) return;
+    if (addNode.connectFrom) proposeBatchConnect(addNode.connectFrom, text);
+    else proposeAsUser("node", { title: text });
+    setAddNode(null);
   };
 
   // T5 — the delete flow's fetch half (the 409-body parse is pure,
@@ -822,6 +978,12 @@ export function App() {
   // zoned proposals aren't reviewable until promoted — counting them would
   // advertise rulings the queue can't offer.
   const pendingCount = mainProposals(state.proposals).filter((p) => p.status === "pending").length;
+  // IC-c — the pending main-queue proposals currently selected (pure, tested):
+  // the only things a "group into zone" move can carry, and the gate for the
+  // affordance. Only offered on the main board (a zone view's synthetics are
+  // already zoned).
+  const selectedPending =
+    activeZone === null ? selectedPendingProposalIds(state.proposals, selectedIds) : [];
   // T8 — layer 1 (my socket) and layer 2 (agent tails) stay separate;
   // dotState is the pure rule. `presence` is defensive-read: a pre-V1.x
   // daemon simply reads as no-agent, never crashes.
@@ -859,18 +1021,19 @@ export function App() {
           </Button>
         </span>
       </header>
-      {/* Z3 — the zone tab strip: a second row, only when zones exist (the
-          first zone arrives conversationally — equal capabilities — or via
-          an agent's `zone create`). */}
-      {state.zones.length > 0 && (
-        <ZoneTabs
-          zones={state.zones}
-          active={activeZone}
-          onSwitch={switchZone}
-          onCreate={createZone}
-          onDelete={(zone) => setZoneDelete({ zone, notEmpty: null })}
-        />
-      )}
+      {/* Z3 — the zone tab strip. R5 IC-c: ALWAYS rendered now (was gated on
+          zones existing), so the FIRST zone is mintable from the UI too — the
+          `+ zone` affordance closes the drive-3 first-zone-agent-only gap. */}
+      <ZoneTabs
+        zones={state.zones}
+        active={activeZone}
+        onSwitch={switchZone}
+        onCreate={createZone}
+        onDelete={(zone) => setZoneDelete({ zone, notEmpty: null })}
+      />
+      {/* SG2 — the submap breadcrumb: a strip (like the tabs) only while a
+          submap is open; renders null otherwise. */}
+      <SubmapBreadcrumb trail={breadcrumb} onNavigate={switchAnchor} />
       {status === "closed" && (
         <div className="border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention">
           disconnected — the daemon isn't answering; sends are off. retrying…
@@ -920,19 +1083,51 @@ export function App() {
               // frame after the switch) finds a live canvas instance instead
               // of a fresh mount that would swallow it.
               key={`${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`}
-              map={visibleMap ?? boardMap ?? state}
+              map={visibleMap ?? submapMap ?? state}
               selectedIds={selectedIds}
               onSelect={setSelectedIds}
               promotable={activeZone !== null}
               onNodeCommand={handleNodeCommand}
               highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
+              spotlight={spotlightSets}
               menus={nodeMenus}
               onRule={ruleProposal}
               onAction={handleAction}
               focusRequest={focusRequest}
               onConnect={(source, target) => proposeAsUser("edge", { source, target })}
-              onPaneDoubleClick={() => setNodeForm({ title: "", synopsis: "" })}
-              panelTopRight={<ViewToggle view={view} onView={setView} />}
+              // IC-b — the dead-drag path (drop on empty pane). Off inside a
+              // zone: a batch can't tag the zone, so a sketch would silently
+              // escape to main (placement dishonesty) — undefined disables it.
+              onConnectToBlank={
+                activeZone === null
+                  ? (src) => setAddNode({ text: "", connectFrom: src })
+                  : undefined
+              }
+              // IC-a — right-click the pane to add a node (free-text modal).
+              onAddNode={() => setAddNode({ text: "", connectFrom: null })}
+              // SG2 — double-click a node to enter its submap.
+              onEnterSubmap={enterSubmap}
+              panelTopRight={
+                <>
+                  {selectedPending.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="auto"
+                      className="px-2 py-1 text-[10px] uppercase tracking-wide text-pending"
+                      title="Group the selected proposals into a zone"
+                      onClick={() => setZoneGroup({ pendingIds: selectedPending })}
+                    >
+                      group · {selectedPending.length}
+                    </Button>
+                  )}
+                  <SpotlightToggle
+                    active={spotlightOn}
+                    enabled={selectedIds.length >= 2}
+                    onToggle={() => setSpotlightOn((s) => !s)}
+                  />
+                  <ViewToggle view={view} onView={setView} />
+                </>
+              }
               panelBelowBar={Boolean(lens.owner)}
             />
           ) : (
@@ -940,7 +1135,7 @@ export function App() {
               {/* V1 — the SAME visibleMap + matches the canvas gets: lens
                   narrows and search dims the grid by construction. */}
               <CardGrid
-                map={visibleMap ?? boardMap ?? state}
+                map={visibleMap ?? submapMap ?? state}
                 highlightIds={palette ? palette.rows.map((r) => r.node.id) : null}
                 selectedIds={selectedIds}
                 onSelect={setSelectedIds}
@@ -959,34 +1154,32 @@ export function App() {
               </div>
             </>
           )}
-          {nodeForm && (
+          {addNode && (
             <div className="absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur">
               <p className="mb-2 text-[10px] uppercase tracking-widest text-ink-faint">
-                sketch an idea
+                {addNode.connectFrom ? "sketch a connected idea" : "sketch an idea"}
               </p>
-              <input
-                // biome-ignore lint/a11y/noAutofocus: the form only exists because the user just summoned it
-                autoFocus
-                value={nodeForm.title}
-                onChange={(e) => setNodeForm({ ...nodeForm, title: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setNodeForm(null);
-                  if (e.key === "Enter") submitNodeForm();
-                }}
-                placeholder="title…"
-                aria-label="New idea title"
-                className="w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
-              />
+              {/* IC-a: a single free-text field (dictation-first) — say it in
+                  your own words; the agent's refine (its proposal.added) is the
+                  next move, no structured title/synopsis form. Cmd/Ctrl+Enter
+                  sketches, Escape cancels. */}
               <Textarea
-                value={nodeForm.synopsis}
-                onChange={(e) => setNodeForm({ ...nodeForm, synopsis: e.target.value })}
-                onKeyDown={(e) => e.key === "Escape" && setNodeForm(null)}
-                placeholder="a line about it… (optional)"
-                className="mt-1.5 min-h-12 p-1.5 text-xs"
+                autoFocus
+                value={addNode.text}
+                onChange={(e) => setAddNode({ ...addNode, text: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setAddNode(null);
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    submitAddNode();
+                  }
+                }}
+                placeholder="what's the idea?…"
+                aria-label="New idea"
+                className="min-h-16 p-1.5 text-xs"
               />
               {/* Placement honesty (ratified): the sketch lands where layout
-                  puts it, not where you double-clicked — no position rides
-                  the schema. */}
+                  puts it, not where you clicked — no position rides the schema. */}
               <div className="mt-2 flex items-center justify-between gap-1.5">
                 <p className="text-[10px] italic text-ink-faint">lands as a pending sketch.</p>
                 <div className="flex gap-1.5">
@@ -994,21 +1187,30 @@ export function App() {
                     variant="ghost"
                     size="auto"
                     className="px-2 py-1"
-                    onClick={() => setNodeForm(null)}
+                    onClick={() => setAddNode(null)}
                   >
                     cancel
                   </Button>
                   <Button
                     size="auto"
                     className="px-2 py-1"
-                    onClick={submitNodeForm}
-                    disabled={!nodeForm.title.trim()}
+                    onClick={submitAddNode}
+                    disabled={!addNode.text.trim()}
                   >
                     sketch
                   </Button>
                 </div>
               </div>
             </div>
+          )}
+          {zoneGroup && (
+            <ZoneGroupModal
+              count={zoneGroup.pendingIds.length}
+              zones={state.zones}
+              onPickExisting={commitGroupInto}
+              onCreateNew={commitGroupNewZone}
+              onCancel={() => setZoneGroup(null)}
+            />
           )}
           {/* R4 S1 — the palette renders permanently at its perch (the
               icon button died; the input is its own clickable twin) and

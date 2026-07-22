@@ -28,7 +28,13 @@ beforeAll(async () => {
         ...process.env,
         MIND_MAPPER_HOME: home,
         MIND_MAPPER_KEEPALIVE_MS: "25",
+        // Round 5 (SW1): the two TTLs are ASYMMETRIC here on purpose — the
+        // activity knob (thinking→idle) is short, the stall knob
+        // (received→stalled) is long — so the independence test can prove each
+        // arm reads its OWN knob (a received that fired on the 150ms activity
+        // knob would betray the pre-split shared value).
         MIND_MAPPER_ACTIVITY_TTL_MS: "150",
+        MIND_MAPPER_STALL_TTL_MS: "600",
       },
       stdout: "pipe",
     },
@@ -218,8 +224,8 @@ test("received older than the TTL escalates to stalled, which persists until an 
     body: JSON.stringify({ state: "received" }),
   });
   expect(await until(async () => activityStates().includes("stalled"), 2000)).toBe(true);
-  // Stalled persists: wait out several more TTL windows — no synthetic idle,
-  // no second stalled (the escalation timer does not re-arm).
+  // Stalled persists: wait past the stalled emit — no synthetic idle, no
+  // second stalled (the escalation timer does not re-arm).
   await new Promise((r) => setTimeout(r, 500));
   expect(activityStates()).toEqual(["received", "stalled"]);
 
@@ -229,6 +235,35 @@ test("received older than the TTL escalates to stalled, which persists until an 
     body: JSON.stringify({ role: "agent", text: "sorry, was digging" }),
   });
   expect(await until(async () => activityStates().includes("idle"), 2000)).toBe(true);
+  watcher.close();
+});
+
+// Round 5 (SW1) — the two TTLs are independent knobs. The rig runs
+// ACTIVITY_TTL=150 (thinking→idle) and STALL_TTL=600 (received→stalled): a
+// `received` must NOT escalate at the 150ms activity window (the pre-split
+// shared behavior) and must escalate at the 600ms stall window.
+test("received→stalled reads MIND_MAPPER_STALL_TTL_MS, not the activity knob", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "sw1-split", title: "Split" }),
+  });
+  const watcher = await collectWs("sw1-split");
+  await new Promise((r) => setTimeout(r, 100));
+  const activityStates = () =>
+    watcher.events
+      .filter((e) => e.kind === "agent.activity")
+      .map((e) => (e.payload as { state: string }).state);
+
+  await fetch(`${url}/activity?project=sw1-split`, {
+    method: "POST",
+    body: JSON.stringify({ state: "received" }),
+  });
+  // Past the 150ms activity window, well before the 600ms stall window: only
+  // the initial `received` — no escalation on the wrong knob.
+  await new Promise((r) => setTimeout(r, 350));
+  expect(activityStates()).toEqual(["received"]);
+  // The stall window (600ms) then escalates to stalled.
+  expect(await until(async () => activityStates().includes("stalled"), 2000)).toBe(true);
   watcher.close();
 });
 

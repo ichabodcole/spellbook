@@ -88,6 +88,16 @@ export type MapNode = {
   sources?: SourceRef[];
   // Round 4 (A1): absent = none (additive-optional on the wire).
   actions?: ActionSlot[];
+  // Round 5 (SG1) — node-anchored submap containment. On real nodes the wire
+  // ALWAYS carries both (state.ts): anchorNodeId null = top-level, a string =
+  // this node lives inside that parent's submap; submapChildCount is
+  // server-derived (GROUP-BY over the FULL nodes table, present on EVERY node
+  // in EVERY response incl. scoped ones — the badge must not lie in a submap
+  // view). Optional here because the synthetic pending nodes the surface mints
+  // (pendingOverlay / zoneView) default them: a proposal stays top-level until
+  // ratified (SG1), so consumers read `anchorNodeId ?? null` / `submapChildCount ?? 0`.
+  anchorNodeId?: string | null;
+  submapChildCount?: number;
 };
 
 // The lens — addressable view-state (vine msg 15). FocusOwner reuses
@@ -272,6 +282,11 @@ export type ServerEventKind =
   | "zone.created"
   | "zone.deleted"
   | "proposal.promoted"
+  // Round 5 (SG1) — {nodeId, anchorNodeId}: a THIN event (like the ratified
+  // pair). The reducer flips the node's anchorNodeId locally; submapChildCount
+  // recovers via the ratified-events snapshot-refetch doctrine (a re-anchor
+  // changes a parent's child count, which only a fresh /state carries).
+  | "node.anchored"
   // Round 4 (A1) — {targetId, actions}: the FULL new array (wholesale
   // metadata replace — deliberately not a per-entity patch; the entity is
   // the node/proposal, the slots are metadata riding it).

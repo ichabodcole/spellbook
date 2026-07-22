@@ -10,10 +10,12 @@ import {
   ArrowUpFromLine,
   Check,
   Crosshair,
+  FolderTree,
   HelpCircle,
   ListTree,
   ScrollText,
   Sparkles,
+  Waypoints,
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -30,7 +32,20 @@ import {
 
 // The node command vocabulary (born plural per t-609741be — future commands
 // include agent actions). Promote appears in zone context only (Claim Z3).
-export type NodeCommand = "Focus" | "Explain" | "Questions" | "Subtopics" | "Promote";
+// R5 SC: "Select connected" unions the node's depth-1 neighbors into the
+// selection (a selection op, not a conversational verb — App handles it
+// directly rather than seeding the composer).
+// R5 SG2: "Enter submap" navigates the canvas into this node's submap (its
+// anchored children), the clickable twin of a node double-click. A navigation
+// verb (App handles it directly), grouped with Focus / Select connected.
+export type NodeCommand =
+  | "Focus"
+  | "Select connected"
+  | "Enter submap"
+  | "Explain"
+  | "Questions"
+  | "Subtopics"
+  | "Promote";
 
 export function NodeContextMenu({
   node,
@@ -64,6 +79,17 @@ export function NodeContextMenu({
         <ContextMenuItem onClick={() => onCommand("Focus")}>
           <Crosshair /> Focus
         </ContextMenuItem>
+        <ContextMenuItem onClick={() => onCommand("Select connected")}>
+          <Waypoints /> Select connected
+        </ContextMenuItem>
+        {/* SG2 — only nodes that actually HAVE a submap offer the drill-in
+            (the badge says so); a proposal can't (it stays top-level until
+            ratified) so submapChildCount is 0 there by construction. */}
+        {(node.submapChildCount ?? 0) > 0 && (
+          <ContextMenuItem onClick={() => onCommand("Enter submap")}>
+            <FolderTree /> Enter submap
+          </ContextMenuItem>
+        )}
         {promotable && (
           <ContextMenuItem onClick={() => onCommand("Promote")}>
             <ArrowUpFromLine /> Promote to main

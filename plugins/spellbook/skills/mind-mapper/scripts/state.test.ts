@@ -157,3 +157,29 @@ test("readState normalizes the '' kind sentinel to null and carries a set kind +
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// Round 5 (SG1): every node carries anchorNodeId (null = top-level) and a
+// server-derived submapChildCount (GROUP-BY over the full table).
+test("readState tags each node with anchorNodeId and submapChildCount", () => {
+  const { dir, db } = tempDb();
+  try {
+    for (const id of ["root", "a", "b"]) {
+      db.run(
+        "INSERT INTO nodes (id, kind, tier, title, synopsis) VALUES (?, 'concept','canon',?, '')",
+        [id, id],
+      );
+    }
+    // a and b anchored under root.
+    db.run("UPDATE nodes SET anchor_node_id = 'root' WHERE id IN ('a','b')");
+
+    const state = readState(db, { id: "default", title: "Default" });
+    const byId = new Map(state.nodes.map((n) => [n.id, n]));
+    expect(byId.get("root")?.anchorNodeId).toBeNull();
+    expect(byId.get("root")?.submapChildCount).toBe(2);
+    expect(byId.get("a")?.anchorNodeId).toBe("root");
+    expect(byId.get("a")?.submapChildCount).toBe(0);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

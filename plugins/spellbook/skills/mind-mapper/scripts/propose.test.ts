@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStore } from "./db.ts";
 import { createEventBus } from "./events.ts";
-import { edgeDraftWarning, proposeEdge, proposeNode } from "./propose.ts";
+import { batchPropose, edgeDraftWarning, proposeEdge, proposeNode } from "./propose.ts";
 import { readState } from "./state.ts";
 
 function tempDb() {
@@ -209,6 +209,135 @@ test("a wrong-keyed edge draft still inserts (opacity holds) — the warning is 
     });
     expect(proposal.status).toBe("pending");
     expect(proposal.draft).toEqual({ from: "a", to: "b", label: "links" });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// Round 5 (CLI1) — batch propose: mint nodes, resolve edge endpoints against
+// local refs, one transaction, emit per-proposal AFTER commit.
+test("batchPropose resolves local edge refs to minted node ids and returns the ref→id map", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const emitted: Array<{ kind: string; payload: Record<string, unknown> }> = [];
+    bus.subscribe(0, (e) => emitted.push({ kind: e.kind, payload: e.payload }));
+
+    const { refToId, proposals } = batchPropose(db, bus, {
+      nodes: [
+        { ref: "n1", draft: { title: "Comedy", synopsis: "" } },
+        { ref: "n2", draft: { title: "Darkness", synopsis: "" } },
+      ],
+      edges: [{ draft: { source: "n1", target: "n2", label: "contrasts" } }],
+    });
+
+    // ref→id map returned; both refs minted to real UUIDs.
+    expect(typeof refToId.n1).toBe("string");
+    expect(typeof refToId.n2).toBe("string");
+    expect(refToId.n1).not.toBe(refToId.n2);
+    expect(proposals).toHaveLength(3);
+
+    // The stored edge draft carries the RESOLVED minted ids, not "n1"/"n2".
+    const state = readState(db, { id: "default", title: "Default" });
+    const edge = state.proposals.find((p) => p.kind === "edge");
+    expect(edge?.draft).toMatchObject({
+      source: refToId.n1,
+      target: refToId.n2,
+      label: "contrasts",
+    });
+
+    // Three rows persisted, three proposal.added events, all AFTER commit.
+    expect(state.proposals).toHaveLength(3);
+    expect(emitted).toHaveLength(3);
+    expect(emitted.every((e) => e.kind === "proposal.added")).toBe(true);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("batchPropose passes real node/proposal ids and unknown refs through unchanged (opacity)", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    // A pre-existing real node the batch edge references by id.
+    db.run(
+      "INSERT INTO nodes (id, kind, tier, title, synopsis) VALUES ('real-node','concept','canon','R','')",
+    );
+
+    const { refToId } = batchPropose(db, bus, {
+      nodes: [{ ref: "n1", draft: { title: "New", weird: { nested: true } } }],
+      edges: [
+        { draft: { source: "n1", target: "real-node", label: "links" } },
+        // an unknown ref (neither a batch ref nor a real id) passes through —
+        // ratify owns dangling-ref errors, not the batch.
+        { draft: { source: "real-node", target: "ghost", label: "dangles" } },
+      ],
+    });
+
+    const state = readState(db, { id: "default", title: "Default" });
+    // Opaque node draft round-trips verbatim, nested keys and all.
+    const node = state.proposals.find((p) => p.kind === "node");
+    expect(node?.draft).toEqual({ title: "New", weird: { nested: true } });
+
+    const edges = state.proposals.filter((p) => p.kind === "edge");
+    const linked = edges.find((e) => (e.draft as { label: string }).label === "links");
+    expect(linked?.draft).toMatchObject({ source: refToId.n1, target: "real-node" });
+    const dangling = edges.find((e) => (e.draft as { label: string }).label === "dangles");
+    expect(dangling?.draft).toMatchObject({ target: "ghost" });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("batchPropose is atomic: a throwing batch leaves zero rows and leaks zero events", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const emitted: unknown[] = [];
+    bus.subscribe(0, (e) => emitted.push(e));
+
+    // The second node trips the evidence-slug guard — the whole batch aborts.
+    expect(() =>
+      batchPropose(db, bus, {
+        nodes: [
+          { ref: "n1", draft: { title: "Good" } },
+          { ref: "n2", draft: { title: "Bad" }, evidence: { docId: "NOT A SLUG" } },
+        ],
+        edges: [{ draft: { source: "n1", target: "n2" } }],
+      }),
+    ).toThrow(/not a valid doc slug/);
+
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.proposals).toEqual([]); // nothing persisted
+    expect(emitted).toEqual([]); // nothing emitted
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("batchPropose rejects a missing or duplicate node ref", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    expect(() =>
+      batchPropose(db, bus, {
+        nodes: [
+          { ref: "n1", draft: { title: "A" } },
+          { ref: "n1", draft: { title: "B" } },
+        ],
+      }),
+    ).toThrow(/duplicate batch node ref/);
+    expect(() =>
+      batchPropose(db, bus, {
+        nodes: [{ ref: "", draft: { title: "A" } }],
+      }),
+    ).toThrow(/non-empty string/);
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.proposals).toEqual([]);
   } finally {
     db.close();
     rmSync(dir, { recursive: true, force: true });

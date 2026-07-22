@@ -21,6 +21,7 @@ type EventKind =
   | "doc.marked"
   | "node.ratified"
   | "edge.ratified"
+  | "node.anchored"
   | "proposal.added"
   | "proposal.promoted"
   | "zone.created"
