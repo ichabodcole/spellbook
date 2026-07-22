@@ -202,6 +202,17 @@ CREATE TABLE IF NOT EXISTS node_actions (
   actions_json TEXT NOT NULL
 );
 
+-- Round 7 (TAGS): freeform agent-curated tags, target-keyed — the exact twin
+-- of node_actions. target_id is a node id OR a PENDING proposal's id (the same
+-- disjoint-UUID-space, pending-carry, re-home-on-ratify lifecycle). Stored as a
+-- json string[] (FREEFORM — the engine stores strings; vocab/curation is a
+-- surface concern). New table, additive by construction (CREATE TABLE IF NOT
+-- EXISTS — no ADDITIVE_COLUMNS entry, like zones/node_actions).
+CREATE TABLE IF NOT EXISTS node_tags (
+  target_id TEXT PRIMARY KEY,
+  tags_json TEXT NOT NULL
+);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS docs_fts USING fts5(doc_id UNINDEXED, content);
 
 -- Explicit dual-write from send.ts at insert time (not a trigger) — simpler,

@@ -58,6 +58,8 @@ function deleteNode(
     db.run("DELETE FROM sources WHERE node_id = ?", [id]);
     db.run("DELETE FROM message_sources WHERE node_id = ?", [id]);
     db.run("DELETE FROM node_actions WHERE target_id = ?", [id]);
+    // TAGS: the node's tags are owned detritus too (twin of node_actions).
+    db.run("DELETE FROM node_tags WHERE target_id = ?", [id]);
     // A lens pointing at this node loses its subject (per-project single row).
     db.run("DELETE FROM lens WHERE node_id = ?", [id]);
     // The ratified proposal's result_node_id is LEFT intact (history — the
@@ -78,6 +80,8 @@ function deleteProposal(db: Database, bus: EventBus, id: string): { id: string }
   if (!db.query("SELECT 1 FROM proposals WHERE id = ?").get(id)) return null;
   db.transaction(() => {
     db.run("DELETE FROM node_actions WHERE target_id = ?", [id]);
+    // TAGS: cascade the proposal's tags with it (twin of node_actions).
+    db.run("DELETE FROM node_tags WHERE target_id = ?", [id]);
     db.run("DELETE FROM proposals WHERE id = ?", [id]);
   })();
   bus.emit("proposal.deleted", { id });

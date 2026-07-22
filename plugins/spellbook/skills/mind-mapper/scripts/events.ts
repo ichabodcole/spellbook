@@ -15,6 +15,7 @@ const REPLAY_BUFFER_SIZE = 1000;
 // reconnect, never a bus event (the browser WS never sees it).
 type EventKind =
   | "actions.set"
+  | "tags.set"
   | "doc.added"
   | "doc.deleted"
   | "doc.kind"

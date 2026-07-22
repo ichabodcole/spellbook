@@ -27,6 +27,8 @@ test("openStore creates all ratified tables in a fresh dir", () => {
       "edges",
       "messages",
       "message_sources",
+      "node_actions",
+      "node_tags",
       "nodes",
       "proposals",
       "sources",
@@ -390,6 +392,81 @@ test("openStore backfills doc_id onto a previous-shape lens table", () => {
       .get() as { project_id: string; node_id: string | null; doc_id: string | null };
     expect(row).toEqual({ project_id: "default", node_id: "maren", doc_id: null });
     db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("openStore adds node_tags (new table) to a pre-node_tags store; fresh equals migrated", () => {
+  const dir = tempDir();
+  try {
+    const path = join(dir, "store.sqlite");
+    // Mint a store WITHOUT node_tags (the pre-R7 shape) carrying a node and a
+    // proposal — a new table lands via CREATE TABLE IF NOT EXISTS on open, but
+    // only a genuinely-older store proves the open doesn't error against
+    // pre-existing data (the migration-doctrine test design).
+    const oldSchemaDb = new Database(path, { create: true });
+    oldSchemaDb.exec(`
+      CREATE TABLE nodes (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        tier TEXT NOT NULL,
+        title TEXT NOT NULL,
+        synopsis TEXT NOT NULL,
+        created_at INTEGER NOT NULL DEFAULT (unixepoch())
+      );
+      CREATE TABLE node_actions (
+        target_id TEXT PRIMARY KEY,
+        actions_json TEXT NOT NULL
+      );
+    `);
+    oldSchemaDb.run("INSERT INTO nodes (id, kind, tier, title, synopsis) VALUES (?, ?, ?, ?, ?)", [
+      "maren",
+      "cast",
+      "canon",
+      "Maren",
+      "the baker",
+    ]);
+    oldSchemaDb.close();
+
+    // node_tags absent before, present after — no error, no duplicate.
+    const db = openStore(path);
+    const tables = db
+      .query("SELECT name FROM sqlite_master WHERE type='table' AND name='node_tags'")
+      .all();
+    expect(tables).toHaveLength(1);
+
+    // A new tags row through the current write path works end to end.
+    db.run("INSERT INTO node_tags (target_id, tags_json) VALUES (?, ?)", ["maren", '["theme"]']);
+    const row = db
+      .query("SELECT target_id, tags_json FROM node_tags WHERE target_id = 'maren'")
+      .get() as {
+      target_id: string;
+      tags_json: string;
+    };
+    expect(row).toEqual({ target_id: "maren", tags_json: '["theme"]' });
+    const migratedColumns = (
+      db.query("PRAGMA table_info(node_tags)").all() as Array<{ name: string }>
+    )
+      .map((c) => c.name)
+      .sort();
+    db.close();
+
+    // Fresh-equals-migrated: a brand-new store's node_tags shape must equal
+    // what the current open produced against the older store.
+    const freshDir = tempDir();
+    try {
+      const fresh = openStore(join(freshDir, "store.sqlite"));
+      const freshColumns = (
+        fresh.query("PRAGMA table_info(node_tags)").all() as Array<{ name: string }>
+      )
+        .map((c) => c.name)
+        .sort();
+      expect(freshColumns).toEqual(migratedColumns);
+      fresh.close();
+    } finally {
+      rmSync(freshDir, { recursive: true, force: true });
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

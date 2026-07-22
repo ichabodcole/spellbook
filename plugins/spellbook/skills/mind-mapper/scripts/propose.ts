@@ -7,6 +7,7 @@ import type { Database } from "bun:sqlite";
 import type { EventBus } from "./events.ts";
 import { SLUG_RE } from "./project.ts";
 import type { Proposal } from "./state.ts";
+import { parseTags } from "./tags.ts";
 
 interface ProposeInput {
   draft: unknown;
@@ -21,6 +22,10 @@ interface ProposeInput {
   // (zone_id null). Must name an existing zone — a dangling zone_id would
   // orphan the proposal out of every view.
   zone?: string;
+  // Round 7 (TAGS): freeform tags to attach at propose time — written to the
+  // target-keyed node_tags row keyed by this proposal's id (so they carry
+  // pre-ratify and re-home on ratify). Omitted → no tags.
+  tags?: string[];
 }
 
 // Round 5 (CLI1): validate + compute the row and the wire object, but do NOT
@@ -77,6 +82,11 @@ function buildProposal(
       throw new Error(`unknown zone: ${input.zone}`);
     }
   }
+  // TAGS: validate here (pure — the parse guard throws before any write), so a
+  // bad shape fails intake, not mid-transaction. Empty/absent → no row.
+  const tags = input.tags !== undefined ? parseTags(input.tags) : [];
+  const tagsJson = tags.length > 0 ? JSON.stringify(tags) : null;
+
   const evidenceDocId = input.evidence.docId ?? null;
   const evidenceMessageId = input.evidence.messageId ?? null;
   const evidenceSpan = input.evidence.span ?? null;
@@ -100,8 +110,9 @@ function buildProposal(
     resultNodeId: null,
     author,
     zoneId,
+    ...(tags.length > 0 ? { tags } : {}),
   };
-  const insert = () =>
+  const insert = () => {
     db.run(
       "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author, zone_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
       [
@@ -116,6 +127,12 @@ function buildProposal(
         zoneId,
       ],
     );
+    // TAGS: the target-keyed row rides the SAME insert closure (so a batch
+    // writes it inside the one db.transaction() — atomic with the proposal).
+    if (tagsJson !== null) {
+      db.run("INSERT INTO node_tags (target_id, tags_json) VALUES (?, ?)", [id, tagsJson]);
+    }
+  };
   return { proposal, insert };
 }
 
@@ -148,6 +165,10 @@ interface BatchNodeInput {
   suggestedTier?: string;
   evidence?: { docId?: string; messageId?: string; span?: string };
   author?: "user" | "agent";
+  // Round 7 (TAGS): a batched node may carry propose-time tags (written to its
+  // node_tags row inside the batch's one transaction). Edges carry no tags
+  // (an edge has no target-keyed metadata to re-home).
+  tags?: string[];
 }
 interface BatchEdgeInput {
   draft: unknown;
@@ -178,6 +199,7 @@ function batchPropose(
       evidence: n.evidence ?? {},
       suggestedTier: n.suggestedTier,
       author: n.author,
+      tags: n.tags,
     });
     refToId.set(n.ref, b.proposal.id);
     built.push(b);

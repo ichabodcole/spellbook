@@ -71,12 +71,15 @@ function deleteZone(db: Database, bus: EventBus, id: string, yes: boolean): { id
     db.query("SELECT COUNT(*) as n FROM proposals WHERE zone_id = ?").get(id) as { n: number }
   ).n;
   if (!yes && count > 0) throw new ZoneNotEmptyError(count);
-  // A1: the zone's proposals take their action slots with them (delete the
-  // slots BEFORE the proposals — the target ids are about to vanish).
+  // A1/TAGS: the zone's proposals take their action slots AND tags with them
+  // (delete both BEFORE the proposals — the target ids are about to vanish).
   db.run(
     "DELETE FROM node_actions WHERE target_id IN (SELECT id FROM proposals WHERE zone_id = ?)",
     [id],
   );
+  db.run("DELETE FROM node_tags WHERE target_id IN (SELECT id FROM proposals WHERE zone_id = ?)", [
+    id,
+  ]);
   db.run("DELETE FROM proposals WHERE zone_id = ?", [id]);
   db.run("DELETE FROM zones WHERE id = ?", [id]);
   bus.emit("zone.deleted", { id });

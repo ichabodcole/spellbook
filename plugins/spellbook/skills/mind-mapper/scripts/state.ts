@@ -10,6 +10,7 @@ import type { Database } from "bun:sqlite";
 import { type ActionSlot, readActions } from "./actions.ts";
 import { type DocMark, docFileMtime, readDocMarks } from "./marks.ts";
 import type { ProjectMeta } from "./project.ts";
+import { readTags } from "./tags.ts";
 
 interface Doc {
   id: string;
@@ -52,6 +53,9 @@ interface Node {
   // Round 4 (A1): agent-authored action slots — absent = none (additive for
   // every existing consumer; the surface renders 4 + scroll).
   actions?: ActionSlot[];
+  // Round 7 (TAGS): freeform agent-curated tags — absent = none (additive;
+  // the target-keyed twin of actions, so nodes carry them the same way).
+  tags?: string[];
 }
 
 interface Edge {
@@ -82,6 +86,9 @@ interface Proposal {
   // Round 4 (A1): actions attach to PENDING proposals too (Cole's constraint,
   // met via the target-keyed table) — absent = none.
   actions?: ActionSlot[];
+  // Round 7 (TAGS): tags attach to PENDING proposals too (same target-keyed
+  // table) — a proposal carries tags pre-ratify and re-homes them on ratify.
+  tags?: string[];
 }
 
 interface Message {
@@ -202,11 +209,13 @@ function readState(
     list.push({ messageId: row.message_id, span: row.span });
     sourcesByNode.set(row.node_id, list);
   }
-  // A1: one read serves both merges — actions attach to nodes AND pending
-  // proposals by target id (absent = none, additive-optional).
+  // A1/TAGS: one read each serves both merges — actions AND tags attach to
+  // nodes AND pending proposals by target id (absent = none, additive-optional).
   const actionsByTarget = readActions(db);
+  const tagsByTarget = readTags(db);
   const nodes: Node[] = nodeRows.map((row) => {
     const actions = actionsByTarget.get(row.id);
+    const tags = tagsByTarget.get(row.id);
     return {
       id: row.id,
       kind: row.kind,
@@ -217,6 +226,7 @@ function readState(
       submapChildCount: submapChildCount.get(row.id) ?? 0,
       sources: sourcesByNode.get(row.id) ?? [],
       ...(actions ? { actions } : {}),
+      ...(tags ? { tags } : {}),
     };
   });
 
@@ -245,6 +255,7 @@ function readState(
   }>;
   const proposals: Proposal[] = proposalRows.map((row) => {
     const actions = actionsByTarget.get(row.id);
+    const tags = tagsByTarget.get(row.id);
     return {
       id: row.id,
       kind: row.kind,
@@ -260,6 +271,7 @@ function readState(
       author: row.author === "user" ? "user" : "agent",
       zoneId: row.zone_id,
       ...(actions ? { actions } : {}),
+      ...(tags ? { tags } : {}),
     };
   });
 
@@ -326,6 +338,11 @@ function readProposalById(db: Database, id: string): Proposal | null {
   } | null;
   if (!row) return null;
   const actions = readActions(db).get(row.id);
+  // TAGS: the clobber catch — the zone-move re-emit runs through here, so tags
+  // must ride the full shape beside actions, or a move-into-zone re-emit drops
+  // the proposal's tags on an inclusive consumer (the full-shape-on-re-emit
+  // lesson — the same reason actions were added here).
+  const tags = readTags(db).get(row.id);
   return {
     id: row.id,
     kind: row.kind,
@@ -341,6 +358,7 @@ function readProposalById(db: Database, id: string): Proposal | null {
     author: row.author === "user" ? "user" : "agent",
     zoneId: row.zone_id,
     ...(actions ? { actions } : {}),
+    ...(tags ? { tags } : {}),
   };
 }
 

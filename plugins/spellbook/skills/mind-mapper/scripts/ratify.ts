@@ -144,6 +144,8 @@ function buildRatify(
         // A1: a rejected proposal's action slots die with it — a slot on a
         // dead target would dangle out of every view.
         db.run("DELETE FROM node_actions WHERE target_id = ?", [input.proposalId]);
+        // TAGS: same — a rejected proposal's tags die with it (twin of actions).
+        db.run("DELETE FROM node_tags WHERE target_id = ?", [input.proposalId]);
       },
       writeDoc: null,
       changelogLine: null,
@@ -266,6 +268,12 @@ function buildRatify(
           nodeId,
           input.proposalId,
         ]);
+        // TAGS: re-home the proposal's tags onto the minted node id too (the
+        // twin re-home — nodeId is a fresh UUID so the PK move can't collide).
+        db.run("UPDATE node_tags SET target_id = ? WHERE target_id = ?", [
+          nodeId,
+          input.proposalId,
+        ]);
       },
       emit: () => bus.emit("node.ratified", { id: nodeId, proposalId: input.proposalId }),
       result: { id: input.proposalId, status: "ratified", nodeId },
@@ -296,6 +304,9 @@ function buildRatify(
       // A1: actions live on ratified NODES and pending proposals only — an edge
       // proposal's slots have nowhere to re-home, so they die with the ruling.
       db.run("DELETE FROM node_actions WHERE target_id = ?", [input.proposalId]);
+      // TAGS: same — an edge accept has no node to re-home tags onto (edges
+      // carry no target-keyed metadata), so they die with the ruling.
+      db.run("DELETE FROM node_tags WHERE target_id = ?", [input.proposalId]);
     },
     emit: () => bus.emit("edge.ratified", { id: edgeId, proposalId: input.proposalId }),
     result: { id: input.proposalId, status: "ratified", edgeId },
