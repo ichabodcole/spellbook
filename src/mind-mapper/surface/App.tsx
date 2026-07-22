@@ -218,6 +218,14 @@ export function App() {
   // switch (submap navigation is a main-board act) and when the anchor node
   // vanishes (below).
   const [activeAnchor, setActiveAnchor] = useState<string | null>(null);
+  // R7 SUBMAPPEND — a drill-in that must WAIT for a freshly-minted parent. The
+  // pending-group ratify-batch mints the parent node, but the surface's local
+  // state gains it only when the node.ratified snapshot refetch lands — so
+  // drilling in immediately would set activeAnchor to a node that isn't in
+  // state yet, and the SG2 re-home effect below would bounce it straight back
+  // to top-level. Park the target here; an effect flushes it once the node
+  // arrives (the pendingFocus idiom).
+  const [pendingAnchor, setPendingAnchor] = useState<string | null>(null);
   // IC-c — the group-selected-into-a-zone modal: the pending main-queue
   // proposal ids being moved, gathered when the affordance is clicked.
   const [zoneGroup, setZoneGroup] = useState<{ pendingIds: string[] } | null>(null);
@@ -882,6 +890,23 @@ export function App() {
     switchAnchor(nodeId);
   };
 
+  // R7 SUBMAPPEND — flush the deferred drill-in once the freshly-minted parent
+  // node has landed in state (the ratify-batch snapshot refetch). Drilling in
+  // earlier would set activeAnchor to a not-yet-present node and the SG2 re-home
+  // effect would bounce it back to top-level. Inlines switchAnchor's body (the
+  // stable setStates) rather than calling it — no submapChildCount gate
+  // (enterSubmap's) because the children's anchorNodeId flips ride the same
+  // snapshot, and no dep churn from a per-render closure.
+  useEffect(() => {
+    if (!pendingAnchor || !state) return;
+    if (state.nodes.some((n) => n.id === pendingAnchor)) {
+      setActiveAnchor(pendingAnchor);
+      setSelectedIds([]);
+      setLens(DEFAULT_LENS);
+      setPendingAnchor(null);
+    }
+  }, [pendingAnchor, state]);
+
   // IC-b — the drag-connect batch: one node proposal + one edge proposal from
   // the drag's source to the new node, in a single txn (propose-batch, local
   // ref resolves the pending endpoint). author:"user" — this is a human
@@ -1070,11 +1095,14 @@ export function App() {
       })
       .then((res) => {
         // A pending parent's real node id lives in idMap; an existing-node
-        // parent isn't in idMap and drills in under its own id.
+        // parent isn't in idMap and drills in under its own id. Park it — the
+        // deferred-drill effect flushes once the minted node lands in state (a
+        // just-minted parent isn't in local state until the refetch, so an
+        // immediate drill would bounce off the SG2 re-home guard).
         const parentNodeId = res.idMap?.[parentRef] ?? parentRef;
         setSubmapAppend(null);
         setSelectedIds([]);
-        switchAnchor(parentNodeId);
+        setPendingAnchor(parentNodeId);
       })
       .catch((e) => {
         setSubmapAppend(null);
