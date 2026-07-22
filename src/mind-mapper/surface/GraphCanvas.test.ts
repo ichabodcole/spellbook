@@ -4,11 +4,29 @@
 // the seat-doc reflex (pixels + a11y tree), not unit-tested here.
 
 import { expect, test } from "bun:test";
-import { computeForcePositions } from "./GraphCanvas";
-import type { StubMap } from "./types";
+import type { Node } from "@xyflow/react";
+import { computeForcePositions, type IdeaNodeData, mergeLayout } from "./GraphCanvas";
+import type { MapNode, StubMap } from "./types";
 
 function node(id: string): StubMap["nodes"][number] {
   return { id, title: id, kind: "concept", tier: "thread", synopsis: "" };
+}
+
+// A minimal flow node for mergeLayout (RENDER, finding #5) — only the fields
+// the merge touches (id, position, selected, data) matter.
+function flowNode(
+  id: string,
+  x: number,
+  y: number,
+  extra: Partial<Node<IdeaNodeData>> = {},
+): Node<IdeaNodeData> {
+  return {
+    id,
+    type: "idea",
+    position: { x, y },
+    data: { node: node(id) as MapNode, onCommand: () => {} },
+    ...extra,
+  };
 }
 
 test("every node gets a finite, defined position", () => {
@@ -71,4 +89,50 @@ test("an edge referencing a node not in the map is dropped, not thrown", () => {
 
 test("an empty map settles to an empty position map", () => {
   expect(computeForcePositions({ docs: [], nodes: [], edges: [] }).size).toBe(0);
+});
+
+// RENDER (finding #5) — mergeLayout: merge fresh layout onto prior on-screen
+// nodes so a rapid proposal.added burst can't drop settled nodes.
+
+test("a known id keeps its on-screen position and selection, takes the fresh data", () => {
+  const prev = [flowNode("a", 100, 200, { selected: true })];
+  // Fresh layout re-computed the position AND carries new node data.
+  const freshData = { node: { ...node("a"), title: "A renamed" } as MapNode, onCommand: () => {} };
+  const fresh = [{ ...flowNode("a", 999, 999), data: freshData }];
+  const [merged] = mergeLayout(prev, fresh);
+  expect(merged?.position).toEqual({ x: 100, y: 200 }); // preserved
+  expect(merged?.selected).toBe(true); // preserved
+  expect(merged?.data.node.title).toBe("A renamed"); // fresh data flows through
+});
+
+test("a new id takes the freshly-computed layout position", () => {
+  const prev = [flowNode("a", 100, 200)];
+  const fresh = [flowNode("a", 10, 10), flowNode("b", 50, 60)];
+  const merged = mergeLayout(prev, fresh);
+  const b = merged.find((n) => n.id === "b");
+  expect(b?.position).toEqual({ x: 50, y: 60 });
+});
+
+test("a departed id is dropped (absent from fresh)", () => {
+  const prev = [flowNode("a", 100, 200), flowNode("gone", 5, 5)];
+  const fresh = [flowNode("a", 10, 10)];
+  const merged = mergeLayout(prev, fresh);
+  expect(merged.map((n) => n.id)).toEqual(["a"]);
+});
+
+test("a burst (fresh superset) preserves every earlier node's position — the drop bug", () => {
+  // The bug: each proposal.added tick blindly replaced nodes; an async
+  // onNodesChange race dropped earlier ones. mergeLayout, fed the full fresh
+  // set each tick, keeps every settled node.
+  const prev = [flowNode("n1", 1, 1), flowNode("n2", 2, 2), flowNode("n3", 3, 3)];
+  const fresh = [
+    flowNode("n1", 900, 900),
+    flowNode("n2", 900, 900),
+    flowNode("n3", 900, 900),
+    flowNode("n4", 40, 40),
+  ];
+  const merged = mergeLayout(prev, fresh);
+  expect(merged.map((n) => n.id)).toEqual(["n1", "n2", "n3", "n4"]);
+  expect(merged.find((n) => n.id === "n1")?.position).toEqual({ x: 1, y: 1 });
+  expect(merged.find((n) => n.id === "n4")?.position).toEqual({ x: 40, y: 40 });
 });

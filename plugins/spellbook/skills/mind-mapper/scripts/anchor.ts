@@ -65,4 +65,4 @@ function anchorNode(
   return { nodeId, anchorNodeId: parentId };
 }
 
-export { AnchorError, anchorNode };
+export { AnchorError, anchorGuard, anchorNode };

@@ -27,7 +27,10 @@ function ContextMenuContent({
       <ContextMenuPrimitive.Positioner className="outline-none">
         <ContextMenuPrimitive.Popup
           className={cn(
-            "z-50 min-w-[10rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg",
+            // max-w bounds a long node title in the label header (MENU(b),
+            // finding #3) — the menu used to span the page; min-w keeps the
+            // verb rows from collapsing.
+            "z-50 min-w-[10rem] max-w-xs overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg",
             className,
           )}
           {...props}

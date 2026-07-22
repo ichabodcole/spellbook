@@ -26,6 +26,7 @@ import { parseArgs } from "node:util";
 import { clearActions, setActions } from "./actions.ts";
 import { anchorNode } from "./anchor.ts";
 import { openStore } from "./db.ts";
+import { deleteNode, deleteProposal, NodeCitedError } from "./del.ts";
 import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
 import { createEventBus, type EventBus } from "./events.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
@@ -49,7 +50,7 @@ import {
   proposeEdge,
   proposeNode,
 } from "./propose.ts";
-import { ratify, ZonedError } from "./ratify.ts";
+import { ratify, ratifyBatch, ZonedError } from "./ratify.ts";
 import { search } from "./search.ts";
 import { sendMessage } from "./send.ts";
 import { readState } from "./state.ts";
@@ -775,6 +776,57 @@ async function main(argv: string[]): Promise<number> {
               );
           }
 
+          // Round 6 (RB): ratify a node+edge set in ONE call/txn, returning the
+          // old→new id map. Auto-partitions nodes-before-edges; NO auto-include
+          // of unlisted edges; one top-level ruling; anchors[] ratify-then-nest.
+          // Checked before the /proposals/:id/ruling route (disjoint path).
+          if (req.method === "POST" && path === "/proposals/ratify-batch") {
+            const entry = loadProject(projectId);
+            const { db, bus, meta } = entry;
+            const docsDir = join(projectDir(HOME, meta.id), "docs");
+            return req
+              .json()
+              .then((body) => {
+                const { ruling, ids, anchors } = body as {
+                  ruling?: unknown;
+                  ids?: unknown;
+                  anchors?: unknown;
+                };
+                if (
+                  ruling !== "canon" &&
+                  ruling !== "thread" &&
+                  ruling !== "story-local" &&
+                  ruling !== "reject"
+                ) {
+                  throw new Error("ruling must be canon|thread|story-local|reject");
+                }
+                if (!Array.isArray(ids)) throw new Error("ratify-batch requires ids: [proposalId]");
+                const result = ratifyBatch(db, bus, docsDir, {
+                  ruling,
+                  ids: ids as string[],
+                  anchors: Array.isArray(anchors)
+                    ? (anchors as Array<{ node: string; parent: string }>)
+                    : undefined,
+                });
+                // A batch ratify is an agent write (no authorship on the wire)
+                // — it resolves auto activity states, same as single ratify.
+                resolveActivity(entry);
+                return Response.json(result);
+              })
+              .catch((e) => {
+                if (e instanceof ZonedError) {
+                  return new Response(JSON.stringify({ error: "zoned", zoneId: e.zoneId }), {
+                    status: 409,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return new Response(
+                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                  { status: 400, headers: { "Content-Type": "application/json" } },
+                );
+              });
+          }
+
           if (req.method === "POST" && path === "/proposals") {
             const entry = loadProject(projectId);
             const { db, bus } = entry;
@@ -1002,6 +1054,53 @@ async function main(argv: string[]): Promise<number> {
               );
           }
 
+          // Round 6 (DEL): hard-delete a node. Unforced + cited → typed 409
+          // {error:"cited", citedBy:{edges, children}}; unknown → 404; force
+          // cascades (edges gone, children re-parented to top-level, detritus
+          // gone, lens cleared). Emits node.deleted (thin).
+          if (req.method === "DELETE" && path.startsWith("/nodes/")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/nodes/".length);
+            const force = url.searchParams.has("force");
+            try {
+              const result = deleteNode(db, bus, id, force);
+              if (!result) {
+                return new Response('{"error":"unknown node"}', {
+                  status: 404,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+              return Response.json({ ok: true, id });
+            } catch (e) {
+              if (e instanceof NodeCitedError) {
+                return new Response(JSON.stringify({ error: "cited", citedBy: e.citedBy }), {
+                  status: 409,
+                  headers: { "Content-Type": "application/json" },
+                });
+              }
+              return new Response(
+                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                { status: 400, headers: { "Content-Type": "application/json" } },
+              );
+            }
+          }
+
+          // Round 6 (DEL): thin proposal delete — NO guard (a dependent pending
+          // edge lives in opaque draft_json and fails safe at its own ratify).
+          // Unknown → 404; emits proposal.deleted (thin).
+          if (req.method === "DELETE" && path.startsWith("/proposals/")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/proposals/".length);
+            const result = deleteProposal(db, bus, id);
+            if (!result) {
+              return new Response('{"error":"unknown proposal"}', {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return Response.json({ ok: true, id });
+          }
+
           if (req.method === "POST" && path.startsWith("/proposals/") && path.endsWith("/ruling")) {
             const entry = loadProject(projectId);
             const { db, bus, meta } = entry;
@@ -1013,11 +1112,15 @@ async function main(argv: string[]): Promise<number> {
                 // docId/span are the additive ratify-time-attach fields (P3
                 // gate ruling) — passed through verbatim; ratify() owns every
                 // constraint (evidence-less only, node-only, slug, existence).
-                const { ruling, docEdit, docId, span } = body as {
+                // Round 6 (RB): additive `anchor` = the single-call ratify-and-
+                // nest twin — implemented AS ratifyBatch({ids:[id], anchors:[
+                // {node:id, parent:anchor}]}), so node-only + atomic fall out.
+                const { ruling, docEdit, docId, span, anchor } = body as {
                   ruling?: unknown;
                   docEdit?: unknown;
                   docId?: unknown;
                   span?: unknown;
+                  anchor?: unknown;
                 };
                 if (
                   ruling !== "canon" &&
@@ -1026,6 +1129,19 @@ async function main(argv: string[]): Promise<number> {
                   ruling !== "reject"
                 ) {
                   throw new Error("ruling must be canon|thread|story-local|reject");
+                }
+                if (typeof anchor === "string") {
+                  if (ruling === "reject")
+                    throw new Error("--anchor is invalid with a reject ruling");
+                  const batch = ratifyBatch(db, bus, docsDir, {
+                    ruling,
+                    ids: [proposalId],
+                    anchors: [{ node: proposalId, parent: anchor }],
+                  });
+                  resolveActivity(entry);
+                  // Return the single RatifyResult (the twin's shape), plus the
+                  // idMap for the caller that wants the minted id.
+                  return Response.json({ ...batch.ratified[0], idMap: batch.idMap });
                 }
                 const result = ratify(db, bus, docsDir, {
                   proposalId,

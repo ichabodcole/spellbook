@@ -243,6 +243,33 @@ message evidence errors) and **node proposals only** — a user-sketched edge ju
 ratifies normally (edges carry no sources). Don't re-litigate the claim; give it
 a home.
 
+**The free-text box is a COMMAND channel, not just a sketch pad.** A raw
+`author: "user"` node whose text reads as an INSTRUCTION ("research the harbor
+district", "break this into sub-threads", "find sources on X") is not a claim to
+ratify — it's a task aimed at you. Do the work it asks (research, `search`,
+extract, synthesize a doc), then **clear the raw node with
+`proposal delete <id>` and propose the curated structure** (the real
+nodes/edges/threads, and a doc home if the work earned one). Refine-in-place =
+remove-and-repropose: there is **no proposal-edit endpoint** (R6 adds none), so
+a raw command node resolves by DELETE + fresh proposals, never by editing it.
+**Use `proposal delete`, NOT `ratify --ruling reject`, to clear raw instruction
+litter** — reject is a recorded judgment on a genuine claim ("considered,
+declined, kept as history"); delete is a hard remove for something that was
+never a claim. While you're working the task, a raw `author: "user"` proposal
+that you haven't touched yet IS the "processing" signal the surface renders (it
+styles an untouched user proposal as "curating") — your DELETE-or-ratify is what
+drains it from the tray.
+
+**Context-doc facilitator touchpoint (agent-judged, #2).** When you create or
+curate a node from research, decide _as facilitator_ whether the background work
+earned its own **context doc** — a durable doc home capturing what you found.
+**Subject nodes tend to** (a person, place, concept the human will return to and
+that has real substance behind it); **thread nodes tend not to** (a passing
+connection, a one-off relation). This is optional and per-your-judgment — NOT
+one-doc-per-node. Mint it with `ingest` (then ground the node's evidence in it)
+only when the doc would be re-read; a node whose synopsis says everything needs
+no doc.
+
 **Zones (the messy sandbox):** when an exploration wants room to be wrong —
 brainstorming variants, a what-if subgraph, bulk extraction you haven't triaged
 — stage it in a zone instead of flooding the main review queue. The loop:
@@ -353,6 +380,56 @@ draft's title/synopsis, tagged with their `zoneId` — so a half-formed idea is
 findable before it's ratified. The lens **persists across daemon restarts** (it
 is addressable view-state, not an ephemeral signal) — clear it when the working
 focus genuinely ends, don't assume a restart resets it.
+
+**Ratifying a cluster in one call (`ratify-batch --stdin`).** When the human oks
+a whole extraction at once — several nodes AND the edges between them, or a
+group they want reconnected — don't fire N `ratify` subprocesses. Send the id
+list in ONE call:
+
+```json
+{
+  "ruling": "canon",
+  "ids": ["<nodeProposalId>", "<nodeProposalId>", "<edgeProposalId>"],
+  "anchors": [{ "node": "<nodeProposalId>", "parent": "<parentId>" }]
+}
+```
+
+It returns
+`{idMap: {"<oldProposalId>": "<mintedNodeId>", ...}, ratified: [...]}` —
+**`idMap` is the point**: it hands you every old proposal id → real node id in
+one round-trip, which is exactly what reconnects a pending edge whose endpoints
+were proposal ids (finding #8's fix, in one call). The engine
+**auto-partitions** — list ids in any order and it ratifies all nodes before all
+edges, resolving each edge endpoint (a proposal id) to its just-minted node id
+via the idMap. **It does NOT auto-include unlisted edges** — only the ids you
+name ratify (no silent ratifications). ONE top-level `ruling` for the whole
+batch; **`reject` is not a batch act** (reject excludes a proposal — reject it
+singly). Optional `anchors[]` nests ratify-then-anchor in the same atomic call
+(each `node`/`parent` may be a batched proposal id — resolved via idMap — or a
+real node id). The **whole batch is one transaction**: any failure (a dangling
+endpoint, an anchor cycle) writes NOTHING and fires no events — a half-oked
+cluster can't half-land.
+
+**Ratify-and-nest in one step (`ratify --anchor <parentId>`).** For a single
+node proposal the human wants ratified AND tucked under a parent at once:
+`ratify <id> --ruling <r> --anchor <parentId>` — ratifies the node, then anchors
+the minted node under `<parentId>`, atomically. Node proposals only (an edge has
+no node to nest); invalid with `--ruling reject`.
+
+**Deleting (`node delete` / `proposal delete`) — the retract.** Both you and the
+human can hard-delete, equal-capability. **`proposal delete <id>`** drops a
+proposal outright (pending, rejected, or ratified) — thin, no confirmation; this
+is the litter-clearing path for raw command nodes (above).
+**`node delete <id> [--force]`** removes a ratified node: an unforced delete of
+a CITED node exits `{error: "cited", citedBy: {edges, children}}` (edges
+touching it + child nodes anchored under it) — relay those counts and get an
+explicit yes before `--force`. A forced delete cascades: its edges vanish, its
+**submap children re-parent to top-level (they are NOT deleted — real ratified
+knowledge survives the parent)**, its detritus (sources, action slots) is
+cleared, and a lens pointing at it is cleared; the ratified proposal's history
+stays intact. Delete is a HARD remove; **reject** (`ratify --ruling reject`) is
+a recorded judgment kept as history — reach for reject on a genuine claim you're
+declining, delete on something that should leave no trace.
 
 ## Discipline (the short list)
 

@@ -6,7 +6,7 @@
 // Conversation stays local-only until P2 wires it to the real bus
 // (plan/circe.md P2.3) — there's no agent behind it yet either way.
 
-import { Moon, Sun } from "lucide-react";
+import { Loader, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
@@ -14,6 +14,7 @@ import { type ComposerSeed, ConversationPanel, type ScrollRequest } from "./Conv
 import { DocViewer } from "./DocViewer";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
+import { IngestionTray } from "./IngestionTray";
 import { MapKey } from "./MapKey";
 import type { NodeCommand } from "./NodeContextMenu";
 import { NodeDetail } from "./NodeDetail";
@@ -22,21 +23,29 @@ import { ReviewQueue } from "./ReviewQueue";
 import { SearchPalette } from "./SearchPalette";
 import { SpotlightToggle } from "./SpotlightToggle";
 import { SubmapBreadcrumb } from "./SubmapBreadcrumb";
+import { SubmapGroupModal } from "./SubmapGroupModal";
 import { type AgentBadge, badgeFor, badgeHasClientTtl } from "./state/activity";
 import { buildFooterText } from "./state/buildInfo";
-import { type CitedBy, parseCitedBody } from "./state/deleteFlow";
+import {
+  type CitedBy,
+  type NodeCitedBy,
+  parseCitedBody,
+  parseNodeCitedBody,
+} from "./state/deleteFlow";
 import { docLensNodeIds } from "./state/docLens";
 import { groundBundle } from "./state/groundBundle";
+import { processingItems } from "./state/ingestionQueue";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
 import { lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
-import { pendingEdgesFrom, pendingNodesFrom } from "./state/pendingOverlay";
+import { pendingEdgesFrom, pendingNodesFrom, resultNodeIdMap } from "./state/pendingOverlay";
 import { dotState, type PresenceDot } from "./state/presence";
 import { shouldDismissSearch } from "./state/searchDismiss";
 import { type PaletteRow, paletteRows } from "./state/searchRows";
 import { computeSpotlight } from "./state/spotlight";
 import { breadcrumbTrail, submapView } from "./state/submap";
+import { ratifiedSelection, submapChildTargets } from "./state/submapGroup";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import {
   forgetStoredProject,
@@ -158,6 +167,22 @@ export function App() {
     doc: DocMeta;
     citedBy: CitedBy | null;
   } | null>(null);
+  // R6 DEL — the board's delete flow (nodes + proposals), sibling of the doc
+  // flow above. `kind` is decided at open time from the target id (a pending/
+  // rejected proposal id vs a real ratified node id). Only the node path has a
+  // cited-guard: `citedBy` (edges + children) escalates the SAME dialog to its
+  // provenance stage before a force delete; a proposal delete is single-stage
+  // (thin, no guard — the litter-clearing path).
+  const [deleteNode, setDeleteNode] = useState<{
+    node: MapNode;
+    kind: "node" | "proposal";
+    citedBy: NodeCitedBy | null;
+  } | null>(null);
+  // R6 QUEUE — the ingestion tray toggle (ReviewQueue's idiom).
+  const [ingestOpen, setIngestOpen] = useState(false);
+  // R6 SUBMAP-CREATE — the group-ratified-nodes-under-a-parent modal: the
+  // selected ratified nodes gathered when the affordance is clicked.
+  const [submapGroup, setSubmapGroup] = useState<{ nodes: MapNode[] } | null>(null);
   // IC-a/IC-b — the free-text (dictation-first) add-node modal. `connectFrom`
   // null = a plain add (pane right-click → one node proposal); a node id = a
   // drag-connect-to-blank (onConnectEnd) → a node+edge batch anchored to that
@@ -378,10 +403,15 @@ export function App() {
   const mapWithPending = useMemo(() => {
     if (!state) return state;
     const main = mainProposals(state.proposals);
+    // EF (finding #8): re-point a still-pending edge whose endpoint node
+    // proposal has ratified, so it follows to the real node instead of
+    // dangling. The map is built over the FULL proposal set — a pending main
+    // edge can name a proposal that ratified from anywhere.
+    const resolve = resultNodeIdMap(state.proposals);
     return {
       ...state,
       nodes: [...state.nodes, ...pendingNodesFrom(main)],
-      edges: [...state.edges, ...pendingEdgesFrom(main)],
+      edges: [...state.edges, ...pendingEdgesFrom(main, resolve)],
     };
   }, [state]);
 
@@ -453,7 +483,18 @@ export function App() {
       if (submapMap) setSelectedIds([...lensSet(submapMap, node.id, 1)]);
     } else if (command === "Enter submap") enterSubmap(node.id);
     else if (command === "Promote") promoteProposal(node.id);
+    else if (command === "Delete") openDelete(node);
     else seedComposer(`${command} — ${node.title}`, node.id);
+  };
+
+  // R6 DEL — open the delete dialog, deciding node-vs-proposal by the target
+  // id: a rendered node whose id names a proposal in the inclusive store is a
+  // pending synthetic (proposal delete, thin); anything else is a real ratified
+  // node (node delete, with the cited-guard). The two id spaces are disjoint —
+  // a ratified node's minted id never equals a proposal id.
+  const openDelete = (node: MapNode) => {
+    const kind = state?.proposals.some((p) => p.id === node.id) ? "proposal" : "node";
+    setDeleteNode({ node, kind, citedBy: null });
   };
 
   // R4 A1 — an action-slot click seeds the composer with the slot's seed
@@ -872,6 +913,87 @@ export function App() {
       });
   };
 
+  // R6 DEL — the NODE delete's fetch half (the 409-body parse is pure,
+  // state/deleteFlow.ts). Unforced first, always; a recognizable node-cited
+  // 409 (edges + children) escalates the SAME dialog to its provenance stage;
+  // anything else degrades to the notice bar. On force the daemon cascades
+  // (drop touching edges, re-parent children) and emits node.deleted, which
+  // the reducer reconciles locally.
+  const requestNodeDelete = (force: boolean) => {
+    if (!deleteNode) return;
+    const id = deleteNode.node.id;
+    const forceQs = projectQs ? `${projectQs}&force=1` : "?force=1";
+    fetch(`/nodes/${id}${force ? forceQs : projectQs}`, { method: "DELETE" })
+      .then(async (r) => {
+        if (r.ok) {
+          setDeleteNode(null);
+          return;
+        }
+        if (r.status === 409) {
+          const cited = parseNodeCitedBody(await r.json().catch(() => null));
+          if (cited) {
+            setDeleteNode((t) => (t ? { ...t, citedBy: cited } : t));
+            return;
+          }
+        }
+        throw new Error(`delete ${r.status}`);
+      })
+      .catch((e) => {
+        setDeleteNode(null);
+        setNotice(`couldn't delete that idea (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
+  // R6 DEL — the PROPOSAL delete (thin, no guard): the litter-clearing path
+  // shared by the dialog's proposal branch AND the ingestion tray's per-item
+  // discard. Emits proposal.deleted; the reducer drops the row.
+  const deleteProposal = (id: string) =>
+    fetch(`/proposals/${id}${projectQs}`, { method: "DELETE" })
+      .then((r) => {
+        if (!r.ok) throw new Error(`delete ${r.status}`);
+        setDeleteNode((t) => (t?.node.id === id ? null : t));
+      })
+      .catch((e) =>
+        setNotice(`couldn't discard that (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
+  // R6 SUBMAP-CREATE — anchor a node under a parent (the FIRST /nodes/* write
+  // the surface makes; SG1's post-ratify, real-nodes-only act). One call per
+  // child; the daemon emits node.anchored, the reducer flips each child's
+  // anchorNodeId locally.
+  const anchorNode = (id: string, parentId: string) =>
+    fetch(`/nodes/${id}/anchor${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentId }),
+    }).then((r) => {
+      if (!r.ok) throw new Error(`anchor ${r.status}`);
+    });
+
+  // R6 SUBMAP-CREATE — commit the group modal: anchor every selected node
+  // EXCEPT the chosen parent under it, then drill into the new submap so the
+  // human SEES the grouped children in their home (switchAnchor, not
+  // enterSubmap — the local anchorNodeId flips populate the view immediately;
+  // the parent's submapChildCount badge backfills on the next snapshot, the
+  // known thin-node.anchored count tolerance).
+  const commitSubmapGroup = (parentId: string) => {
+    if (!submapGroup) return;
+    const children = submapChildTargets(
+      submapGroup.nodes.map((n) => n.id),
+      parentId,
+    );
+    Promise.all(children.map((id) => anchorNode(id, parentId)))
+      .then(() => {
+        setSubmapGroup(null);
+        setSelectedIds([]);
+        switchAnchor(parentId);
+      })
+      .catch((e) => {
+        setSubmapGroup(null);
+        setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`);
+      });
+  };
+
   // An open viewer for a doc that no longer exists closes — whoever deleted
   // it (this surface's flow or an agent's cli doc delete), the doc.deleted
   // reducer filter is the one truth this watches.
@@ -984,6 +1106,14 @@ export function App() {
   // already zoned).
   const selectedPending =
     activeZone === null ? selectedPendingProposalIds(state.proposals, selectedIds) : [];
+  // R6 SUBMAP-CREATE — the selected RATIFIED nodes (real-nodes-only, the mirror
+  // of selectedPending). ≥2 gates the "group under a node" affordance; main
+  // board only (a zone view holds proposals, so this is empty there anyway).
+  const ratifiedSel =
+    activeZone === null ? ratifiedSelection(state.nodes, state.proposals, selectedIds) : [];
+  // R6 QUEUE — the raw items being curated (pure derive over the inclusive
+  // store; decoupled from the active board view).
+  const processing = processingItems(state.proposals);
   // T8 — layer 1 (my socket) and layer 2 (agent tails) stay separate;
   // dotState is the pure rule. `presence` is defensive-read: a pre-V1.x
   // daemon simply reads as no-agent, never crashes.
@@ -1002,6 +1132,19 @@ export function App() {
             onClick={() => setReviewOpen((o) => !o)}
           >
             review · {pendingCount}
+          </Button>
+        )}
+        {/* R6 QUEUE — the ingestion tray toggle: raw human input awaiting
+            curation. Shown only when something's ingesting (like review). */}
+        {processing.length > 0 && (
+          <Button
+            variant="outline"
+            size="auto"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs text-pending"
+            onClick={() => setIngestOpen((o) => !o)}
+          >
+            <Loader size={11} className="animate-pulse" aria-hidden />
+            ingesting · {processing.length}
           </Button>
         )}
         <span className="ml-auto flex items-center gap-2 text-xs text-ink-faint">
@@ -1120,6 +1263,20 @@ export function App() {
                       group · {selectedPending.length}
                     </Button>
                   )}
+                  {/* R6 SUBMAP-CREATE — group ≥2 selected RATIFIED nodes under
+                      one of them as a submap (real-nodes-only; the mirror of the
+                      pending "group into zone" above). */}
+                  {ratifiedSel.length >= 2 && (
+                    <Button
+                      variant="outline"
+                      size="auto"
+                      className="px-2 py-1 text-[10px] uppercase tracking-wide"
+                      title="Group the selected ideas under one as a submap"
+                      onClick={() => setSubmapGroup({ nodes: ratifiedSel })}
+                    >
+                      submap · {ratifiedSel.length}
+                    </Button>
+                  )}
                   <SpotlightToggle
                     active={spotlightOn}
                     enabled={selectedIds.length >= 2}
@@ -1212,6 +1369,13 @@ export function App() {
               onCancel={() => setZoneGroup(null)}
             />
           )}
+          {submapGroup && (
+            <SubmapGroupModal
+              nodes={submapGroup.nodes}
+              onPickParent={commitSubmapGroup}
+              onCancel={() => setSubmapGroup(null)}
+            />
+          )}
           {/* R4 S1 — the palette renders permanently at its perch (the
               icon button died; the input is its own clickable twin) and
               keeps the FocusBar top-14 dodge the button carried. */}
@@ -1277,6 +1441,13 @@ export function App() {
             nodes={state.nodes}
             onRule={ruleProposal}
             onClose={() => setReviewOpen(false)}
+          />
+        )}
+        {ingestOpen && (
+          <IngestionTray
+            items={processing}
+            onDelete={deleteProposal}
+            onClose={() => setIngestOpen(false)}
           />
         )}
         <ConversationPanel
@@ -1356,6 +1527,55 @@ export function App() {
                 onClick={() => requestDelete(Boolean(deleteTarget.citedBy))}
               >
                 {deleteTarget.citedBy ? "delete anyway" : "delete"}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      {deleteNode && (
+        <AlertDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setDeleteNode(null);
+          }}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {deleteNode.citedBy
+                  ? `"${deleteNode.node.title}" is still cited`
+                  : `delete "${deleteNode.node.title}"?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteNode.kind === "proposal"
+                  ? "This removes the proposal from the board. (Reject keeps it as history; delete is a hard remove.)"
+                  : deleteNode.citedBy
+                    ? `${deleteNode.citedBy.edges} relation${
+                        deleteNode.citedBy.edges === 1 ? "" : "s"
+                      } and ${deleteNode.citedBy.children} submap child${
+                        deleteNode.citedBy.children === 1 ? "" : "ren"
+                      } reference it. Deleting drops those relations and re-homes the children to the top level — the children survive (they're real ideas).`
+                    : "The idea is removed from the map. Relations touching it and any submap children go with the force step if it's still cited."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <Button
+                variant="ghost"
+                size="auto"
+                className="px-2.5 py-1"
+                onClick={() => setDeleteNode(null)}
+              >
+                cancel
+              </Button>
+              <Button
+                size="auto"
+                className="px-2.5 py-1 text-attention"
+                onClick={() => {
+                  if (deleteNode.kind === "proposal") deleteProposal(deleteNode.node.id);
+                  else requestNodeDelete(Boolean(deleteNode.citedBy));
+                }}
+              >
+                {deleteNode.citedBy ? "delete anyway" : "delete"}
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

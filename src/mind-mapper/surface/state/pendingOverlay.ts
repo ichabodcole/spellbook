@@ -32,6 +32,11 @@ export function pendingNodesFrom(proposals: Proposal[]): MapNode[] {
         tier,
         synopsis: str(d.synopsis),
         pending: true,
+        // PROC (R6): a pending author:"user" proposal is raw human input the
+        // agent will curate — flag it so the canvas renders a distinct
+        // "curating" state (client-only, off the wire's `author`; no schema
+        // change). Absent on agent proposals (a normal pending sketch).
+        processing: p.author === "user",
         // Claim E: evidence grounds in a doc OR a message (mutually
         // exclusive at intake) — either becomes the synthetic node's source.
         sources: p.evidence.docId
@@ -43,17 +48,36 @@ export function pendingNodesFrom(proposals: Proposal[]): MapNode[] {
     });
 }
 
+// EF (finding #8): a ratified node proposal carries its minted node id as
+// `resultNodeId` (R5 wire). Build a proposalId→nodeId map so pendingEdgesFrom
+// can re-point a still-pending edge that was drafted against the OLD proposal
+// id — otherwise the instant the endpoint ratifies the edge names a non-node
+// id, renders to nothing, and (its ids being non-empty) slips past the
+// emptiness filter below: the edge silently dangles and vanishes.
+export function resultNodeIdMap(proposals: Proposal[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const p of proposals) {
+    if (p.resultNodeId) m.set(p.id, p.resultNodeId);
+  }
+  return m;
+}
+
 // An edge proposal whose draft omits a real source/target is unrenderable —
-// dropped rather than shown as a dangling half-edge.
-export function pendingEdgesFrom(proposals: Proposal[]): MapEdge[] {
+// dropped rather than shown as a dangling half-edge. `resolve` (EF) re-points
+// each endpoint proposalId → minted nodeId BEFORE the drop-filter, so an edge
+// keeps rendering (as a pending edge to the now-real node) once its endpoint
+// node proposal ratifies. Omitted = no re-point (the zone view, where a zoned
+// proposal can't ratify while zoned — Contract 9 R3 "promote first").
+export function pendingEdgesFrom(proposals: Proposal[], resolve?: Map<string, string>): MapEdge[] {
+  const repoint = (id: string) => resolve?.get(id) ?? id;
   return proposals
     .filter((p) => p.status === "pending" && p.kind === "edge")
     .map((p) => {
       const d = p.draft;
       return {
         id: p.id,
-        source: str(d.source),
-        target: str(d.target),
+        source: repoint(str(d.source)),
+        target: repoint(str(d.target)),
         label: str(d.label),
         provenance: "asserted" as const,
         pending: true,

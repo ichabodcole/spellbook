@@ -830,3 +830,118 @@ test("POST /proposals/:id/zone moves into a zone and back; 404/404/400 fail loud
   });
   expect(unknownZone.status).toBe(404);
 });
+
+// Round 6 (RB/DEL) — each test mints its OWN project to stay clear of the
+// shared default's order-coupled state (daedalus's shared-daemon scar).
+async function freshProject(id: string): Promise<string> {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id, title: id }),
+  });
+  return `${url}/state?project=${id}`;
+}
+async function proposeNodeWire(project: string, title: string): Promise<string> {
+  const res = await fetch(`${url}/proposals?project=${project}`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title }, evidence: {} }),
+  });
+  return ((await res.json()) as { id: string }).id;
+}
+
+test("POST /proposals/ratify-batch ratifies a node+edge set in one call, returns idMap", async () => {
+  await freshProject("rb-batch");
+  const a = await proposeNodeWire("rb-batch", "A");
+  const b = await proposeNodeWire("rb-batch", "B");
+  const edgeRes = await fetch(`${url}/proposals?project=rb-batch`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "edge", draft: { source: a, target: b, label: "rel" } }),
+  });
+  const e = ((await edgeRes.json()) as { id: string }).id;
+  const res = await fetch(`${url}/proposals/ratify-batch?project=rb-batch`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon", ids: [e, a, b] }),
+  });
+  expect(res.status).toBe(200);
+  const body = (await res.json()) as { idMap: Record<string, string>; ratified: unknown[] };
+  expect(body.idMap[a]).toBeDefined();
+  expect(body.ratified).toHaveLength(3);
+  const state = (await (await fetch(`${url}/state?project=rb-batch`)).json()) as {
+    edges: Array<{ source: string; target: string }>;
+  };
+  expect(state.edges[0]).toMatchObject({ source: body.idMap[a], target: body.idMap[b] });
+});
+
+test("POST /proposals/:id/ruling with --anchor ratifies then nests (the single twin)", async () => {
+  await freshProject("rb-anchor");
+  const parent = await proposeNodeWire("rb-anchor", "Parent");
+  const parentRuling = await fetch(`${url}/proposals/${parent}/ruling?project=rb-anchor`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  const parentId = ((await parentRuling.json()) as { nodeId: string }).nodeId;
+  const child = await proposeNodeWire("rb-anchor", "Child");
+  const res = await fetch(`${url}/proposals/${child}/ruling?project=rb-anchor`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon", anchor: parentId }),
+  });
+  expect(res.status).toBe(200);
+  const state = (await (await fetch(`${url}/state?project=rb-anchor`)).json()) as {
+    nodes: Array<{ title: string; anchorNodeId: string | null }>;
+  };
+  expect(state.nodes.find((n) => n.title === "Child")?.anchorNodeId).toBe(parentId);
+});
+
+test("DELETE /nodes/:id — cited 409, force 200 cascade, unknown 404", async () => {
+  await freshProject("del-node");
+  const a = await proposeNodeWire("del-node", "A");
+  const b = await proposeNodeWire("del-node", "B");
+  const ra = await fetch(`${url}/proposals/${a}/ruling?project=del-node`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  const aId = ((await ra.json()) as { nodeId: string }).nodeId;
+  const rb = await fetch(`${url}/proposals/${b}/ruling?project=del-node`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  const bId = ((await rb.json()) as { nodeId: string }).nodeId;
+  // Ratify an edge A→B so A is cited.
+  const edgeRes = await fetch(`${url}/proposals?project=del-node`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "edge", draft: { source: aId, target: bId } }),
+  });
+  const e = ((await edgeRes.json()) as { id: string }).id;
+  await fetch(`${url}/proposals/${e}/ruling?project=del-node`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+
+  const cited = await fetch(`${url}/nodes/${aId}?project=del-node`, { method: "DELETE" });
+  expect(cited.status).toBe(409);
+  expect(await cited.json()).toEqual({ error: "cited", citedBy: { edges: 1, children: 0 } });
+
+  const forced = await fetch(`${url}/nodes/${aId}?project=del-node&force=1`, { method: "DELETE" });
+  expect(forced.status).toBe(200);
+  const state = (await (await fetch(`${url}/state?project=del-node`)).json()) as {
+    nodes: unknown[];
+    edges: unknown[];
+  };
+  expect(state.nodes).toHaveLength(1); // B survives
+  expect(state.edges).toHaveLength(0); // edge cascaded
+
+  const unknown = await fetch(`${url}/nodes/ghost?project=del-node`, { method: "DELETE" });
+  expect(unknown.status).toBe(404);
+});
+
+test("DELETE /proposals/:id — thin delete, unknown 404", async () => {
+  await freshProject("del-prop");
+  const p = await proposeNodeWire("del-prop", "raw");
+  const del = await fetch(`${url}/proposals/${p}?project=del-prop`, { method: "DELETE" });
+  expect(del.status).toBe(200);
+  const state = (await (await fetch(`${url}/state?project=del-prop`)).json()) as {
+    proposals: unknown[];
+  };
+  expect(state.proposals).toHaveLength(0);
+  const unknown = await fetch(`${url}/proposals/ghost?project=del-prop`, { method: "DELETE" });
+  expect(unknown.status).toBe(404);
+});

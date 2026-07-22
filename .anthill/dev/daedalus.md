@@ -24,6 +24,7 @@ Currently live: mind-mapper's full V1 engine — db.ts (sqlite schema + additive
 V1.x Track A (P1e, `feature/mind-mapper-v1x`) added marks.ts (doc marks + read-time staleness), docs.ts (delete + CitedError), tail hardening (server keepalive + cli watchdog/epoch resync), presence + activity at the SSE site, proposal author, and message evidence (message_sources sibling table) — 7 chapter commits, suite 122 tests.
 Round 3 (P1e, `feature/mind-mapper-zones`) added zones.ts (staging pens + move-not-duplicate promote), the no-auto-mint project lifecycle (NeedsProjectError → 409 needs-project, demo seed deleted), kind:"proposal" search hits, grapevine's send body chain, and doc-lens — 8 chapter commits, mind-mapper suite 174 tests.
 Round 4 (P1, `feature/mind-mapper-round4`) added actions.ts (target-keyed slots, ratify re-homes), doc-kind honesty ('' sentinel at rest / null on the wire, kind_author), the ACT1 activity automation (auto-received, stalled TTL escalation, agent-write resolution), the B1 build stamp + stale-dist guard, and the typed zoned 409 — 5 chapter commits, mind-mapper suite 197 tests; all Contract 9 R4 amendments in seams.md.
+Round 6 (P1, `feature/mind-mapper-round6`) extracted `buildRatify` from ratify (the buildProposal factoring, now with three deferred lanes — db apply / fs writeDoc / changelogLine + emit), added ratify-batch (RB: one-txn node+edge set with an old→new idMap, auto-partition, no-auto-include, atomic) + `ratify --anchor` (the single ratify-then-nest twin, implemented AS a one-id ratifyBatch), del.ts (DEL: node delete with NodeCitedError + force-cascade-that-re-parents-children, thin proposal delete), and the thin `proposal.rejected` event (finding #4 — reject emitted nothing) — 4 chapter commits, mind-mapper suite 251 tests (was 224), all Contract 9 R6 amendments in seams.md.
 Round 5 (P1, `feature/mind-mapper-round5`) added the split stall TTL (SW1: MIND_MAPPER_STALL_TTL_MS governs received→stalled, activity knob keeps thinking→idle), batch-propose + message-read (CLI1: POST /proposals/batch with local-ref resolution in one txn + GET /message/:id), node-anchored submaps (SG1: anchor.ts cycle guard, nodes.anchor_node_id, inclusive snapshot + submapChildCount + ?anchor narrow, node.anchored thin event), and the zone in-door (IC-c: POST /proposals/:id/zone move-in) — 4 code chapters + 1 casting-draft chapter, mind-mapper suite 224 tests; all Contract 9 R5 amendments in seams.md.
 Reference implementation for the full house pattern: astrolabe's server.ts/cli.ts (cmd/state/events + WS, presence ref-counting, debounced snapshots) — note astrolabe itself still predates the release-mode split; mind-mapper's server.ts is now the first MERGED reference for Contract 1/2 release-mode serve.
 
@@ -190,6 +191,34 @@ Pin: presence.test.ts "received→stalled reads MIND_MAPPER_STALL_TTL_MS, not th
 My batch tests wrote `expect(...).toBe(refToId.n1)` — green under bun test, but tsc rejects it (`.toBe(string)` given `string | undefined`).
 `toMatchObject({ source: refToId.n1 })` tolerates the union (a partial matcher accepts any value); prefer it over `.toBe` when the expected side comes off an indexed access.
 Re-confirms the standing rule: run `tsc --noEmit -p .` on new/changed test files before handing off — a fourth session where bun-green ≠ tsc-clean.
+
+**The buildX-then-loop factoring generalizes past propose — ratify now uses it too, and it forced a subtle split.**
+Round 6 factored `buildRatify` out of `ratify()` exactly as `buildProposal` was factored from `insertProposal`, so ratify could loop inside a `db.transaction()` for the batch.
+The non-obvious part: ratify's side effects are THREE kinds, not one — fs doc-write, fs changelog-append, and the bus emit — and each leaks differently on rollback.
+The clean shape returns them all deferred: `apply()` (db-only, the only thing that goes inside the txn), `writeDoc` (deferred fs, single-ratify-only since batch carries no docEdit), `changelogLine` (caller appends after commit), `emit` (caller fires after commit).
+Single ratify runs them inline in the original order and stays byte-identical; batch runs all apply() in the txn and defers every fs write + emit to after commit.
+Generalizes further: whenever an emitting write also touches the filesystem, the factoring must separate db / fs / emit into three deferred lanes, not two — the fs writes leak on rollback just like the emit.
+Pin: ratify.ts buildRatify/ratifyBatch, ratify-batch.test.ts atomicity test (throwing batch → zero rows, zero events, zero changelog lines).
+
+**A cross-entity resolver (idMap) belongs in the build step, injected — not hardcoded to the db.**
+Batch edges reference node PROPOSAL ids whose `result_node_id` isn't written until their own apply() runs inside the txn — so resolving edge endpoints against the db alone can't work pre-txn.
+The fix: `buildRatify` takes an optional `resolveRef` (defaults to `resolveNodeRef(db)`); the batch passes `(ref) => idMap[ref] ?? resolveNodeRef(db, ref)`, consulting the in-progress mint map FIRST.
+This also gives the "NO auto-include of unlisted edges" guarantee for free: an unratified, unlisted node proposal isn't in the idMap and `resolveNodeRef` throws "ratify node proposal X first" — the same error single ratify gives.
+Generalizes: a batch/transactional twin that resolves cross-references among its own not-yet-committed members needs the resolver as an injected seam over an in-progress map, never a fixed db lookup.
+Pin: ratify.ts resolver closure, ratify-batch.test.ts "does NOT auto-include an unlisted edge".
+
+**Some validation genuinely can't precede the txn — and that's atomically fine as long as emits are post-commit.**
+The plan said "anchorGuard per anchor BEFORE the txn," but a batch anchors just-MINTED nodes that have no row until their apply() runs inside the txn — anchorGuard's existence + cycle walk can't see them pre-txn.
+Resolution: do the resolvable structural checks before the txn (refs resolve to a batched-or-real id, no self-anchor), and run the full `anchorGuard` INSIDE the txn after node inserts.
+It's atomically equivalent because bun:sqlite's `db.transaction()` rolls back on a throw AND every emit/changelog append is deferred to after commit — so a guard failure inside the txn still leaves zero rows, zero events, zero changelog lines.
+Lesson: "validate before the txn" is a means to atomicity, not the end; when a check depends on in-txn state, moving it inside the txn preserves atomicity as long as nothing observable (emit/fs) rides inside the txn.
+Pin: ratify.ts ratifyBatch anchor block, ratify-batch.test.ts atomicity test (a cycle among batched anchors rolls the whole batch back).
+
+**The anthill commit tool DOES stage untracked additions — it only refuses PRE-staged content beyond your paths.**
+Correcting a half-remembered scar: I git-added upcoming chapters' new files ahead of time and the tool refused ("index has staged content beyond your paths").
+`git reset` then let the tool add its own named paths — it staged brand-new files (del.ts, del.test.ts) fine on its own.
+The real constraint is narrower than "untracked files need a manual git add": the tool stages exactly its path args (tracked mods AND untracked new files); what it can't do is stage a DELETION (the older scar) — that still needs the direct `git commit -- <paths>` fallback.
+Rule: never pre-stage on a shared tree; hand the tool one chapter's paths at a time and let it stage them.
 
 ## Candidates
 

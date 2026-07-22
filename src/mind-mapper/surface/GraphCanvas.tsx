@@ -19,7 +19,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
-import { CircleDashed, FolderTree, Lightbulb, MapPin, User } from "lucide-react";
+import { CircleDashed, FolderTree, Lightbulb, Loader, MapPin, User } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import type { NodeMenuInfo } from "./state/nodeMenu";
@@ -110,7 +110,7 @@ export const KIND_ICON: Record<NodeKind, typeof User> = {
   thread: CircleDashed,
 };
 
-type IdeaNodeData = {
+export type IdeaNodeData = {
   node: MapNode;
   onCommand: (command: NodeCommand) => void;
   dimmed?: boolean;
@@ -137,7 +137,7 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
     >
       <div
         className={`w-[190px] rounded-lg border bg-surface px-3 py-2 shadow-lg transition-all ${TIER_CARD[n.tier]} ${
-          n.pending ? "border-dashed" : ""
+          n.processing ? "border-dotted" : n.pending ? "border-dashed" : ""
         } ${steeping ? "opacity-60 blur-[0.3px]" : ""} ${
           selected ? "ring-2 ring-ink shadow-xl" : ""
         } ${data.dimmed ? "opacity-20" : ""}`}
@@ -146,10 +146,21 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest">
           <Icon size={11} aria-hidden />
           <span>{TIER_LABEL[n.tier]}</span>
-          {n.pending && (
-            <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
-              proposed
+          {/* PROC (R6) — a raw author:"user" proposal reads as "curating" (the
+              agent will refine it), DISTINCT from a plain agent "proposed"
+              sketch. A gentle pulse: this is a genuinely in-progress state that
+              resolves on ratify/delete (not the stalled-badge false-liveness
+              case — that one stays static). */}
+          {n.processing ? (
+            <span className="ml-auto flex animate-pulse items-center gap-0.5 rounded-sm border border-dotted border-pending px-1 normal-case tracking-normal text-pending">
+              <Loader size={9} aria-hidden /> curating
             </span>
+          ) : (
+            n.pending && (
+              <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
+                proposed
+              </span>
+            )
           )}
           {/* SG2 — the "has a submap" folder affordance (double-click / menu
               to enter). Never on a pending proposal (count 0 there); shares the
@@ -164,7 +175,11 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
             </span>
           )}
         </div>
-        <div className="mt-1 font-story text-[15px] leading-tight text-ink">{n.title}</div>
+        {/* MENU(b) — clamp a long title to two lines on the fixed-width card
+            (NODE_W); it used to overflow the box. */}
+        <div className="mt-1 line-clamp-2 font-story text-[15px] leading-tight text-ink">
+          {n.title}
+        </div>
         <Handle type="source" position={Position.Bottom} className="!bg-edge !border-0" />
       </div>
     </NodeContextMenu>
@@ -261,6 +276,28 @@ function layout(
   onCommand: (command: NodeCommand, node: MapNode) => void,
 ): Node<IdeaNodeData>[] {
   return mode === "physics" ? forceLayout(map, onCommand) : dagreLayout(map, onCommand);
+}
+
+// RENDER (finding #5): the layout effect used to blind-`setNodes(layout(...))`
+// on every `map` change — a wholesale replace that races React Flow's async
+// ResizeObserver onNodesChange across a rapid proposal.added burst (each event
+// is its own render tick), dropping earlier nodes from view. mergeLayout is the
+// deterministic fix: for the FULL fresh node set, a KNOWN id keeps its
+// on-screen position + selection (drag-safe, and the burst-race can't drop it),
+// a NEW id takes the freshly-computed layout position, and a DEPARTED id is
+// dropped (simply absent from `fresh`). Data is always the fresh copy
+// (pending→ratified, title, submapChildCount, the identity-stable command
+// closure). Bonus: a re-layout no longer clobbers a manual drag position.
+export function mergeLayout(
+  prev: Node<IdeaNodeData>[],
+  fresh: Node<IdeaNodeData>[],
+): Node<IdeaNodeData>[] {
+  const prevById = new Map(prev.map((n) => [n.id, n]));
+  return fresh.map((f) => {
+    const existing = prevById.get(f.id);
+    if (!existing) return f;
+    return { ...f, position: existing.position, selected: existing.selected };
+  });
 }
 
 function toFlowEdges(map: StubMap): Edge[] {
@@ -385,8 +422,16 @@ export function GraphCanvas({
     [],
   );
 
+  // RENDER (finding #5): a MAP change merges by id (mergeLayout — an in-flight
+  // proposal.added burst can't drop settled nodes, and drags survive); a
+  // layout-MODE toggle is a full replace (recompute ALL positions, or tree↔
+  // physics would preserve stale positions and do nothing).
+  const prevLayoutMode = useRef(layoutMode);
   useEffect(() => {
-    setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
+    const fresh = layout(layoutMode, map, (command, node) => commandRef.current(command, node));
+    const modeChanged = prevLayoutMode.current !== layoutMode;
+    prevLayoutMode.current = layoutMode;
+    setNodes((prev) => (modeChanged ? fresh : mergeLayout(prev, fresh)));
   }, [map, layoutMode]);
 
   useEffect(() => {

@@ -124,6 +124,90 @@ test("doc.deleted filters the doc out and advances cursor", () => {
   expect(next.nodes).toEqual(state.nodes);
 });
 
+// Round 6 (DEL/REJECT) — the three thin retract/decline events.
+
+test("node.deleted drops the node, drops edges touching it, and re-homes its children (force cascade, local)", () => {
+  const state: ProjectState = {
+    ...baseState(),
+    nodes: [
+      { id: "maren", title: "Maren", kind: "cast", tier: "canon", synopsis: "..." },
+      // A child anchored under maren — force delete re-parents it to top-level.
+      {
+        id: "child",
+        title: "Child",
+        kind: "concept",
+        tier: "thread",
+        synopsis: "...",
+        anchorNodeId: "maren",
+      },
+      { id: "other", title: "Other", kind: "place", tier: "thread", synopsis: "..." },
+    ],
+    edges: [
+      { id: "e-in", source: "other", target: "maren", label: "", provenance: "asserted" },
+      { id: "e-out", source: "maren", target: "other", label: "", provenance: "asserted" },
+      { id: "e-keep", source: "other", target: "child", label: "", provenance: "asserted" },
+    ],
+  };
+  const next = applyEvent(state, { seq: 6, kind: "node.deleted", payload: { id: "maren" } });
+  // The node is gone.
+  expect(next.nodes.map((n) => n.id)).toEqual(["child", "other"]);
+  // Its child re-homed to top-level (anchorNodeId cleared).
+  expect(next.nodes.find((n) => n.id === "child")?.anchorNodeId).toBeNull();
+  // Both edges touching maren dropped; the unrelated one survives.
+  expect(next.edges.map((e) => e.id)).toEqual(["e-keep"]);
+  expect(next.cursor).toBe(6);
+});
+
+test("node.deleted with a non-string id advances the cursor and touches nothing", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "node.deleted",
+    payload: { id: 123 },
+  });
+  expect(next.cursor).toBe(6);
+  expect(next.nodes).toEqual(baseState().nodes);
+});
+
+test("proposal.deleted hard-removes the proposal row (litter-clearing)", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "proposal.deleted",
+    payload: { id: "prop-1" },
+  });
+  expect(next.proposals).toEqual([]);
+  expect(next.cursor).toBe(6);
+});
+
+test("proposal.rejected flips the row to rejected (decline-with-history, leaves the canvas)", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "proposal.rejected",
+    payload: { id: "prop-1" },
+  });
+  // Flipped, NOT dropped — the row survives as history, but status !== pending
+  // means every board overlay stops rendering it.
+  expect(next.proposals).toHaveLength(1);
+  expect(next.proposals[0]?.status).toBe("rejected");
+  expect(next.proposals[0]?.draft).toEqual(baseState().proposals[0]?.draft);
+  expect(next.cursor).toBe(6);
+});
+
+test("a delete/reject event whose id matches nothing is a harmless no-op that still advances the cursor", () => {
+  const del = applyEvent(baseState(), {
+    seq: 6,
+    kind: "proposal.deleted",
+    payload: { id: "no-such" },
+  });
+  expect(del.proposals).toEqual(baseState().proposals);
+  expect(del.cursor).toBe(6);
+  const rej = applyEvent(baseState(), {
+    seq: 6,
+    kind: "proposal.rejected",
+    payload: { id: "no-such" },
+  });
+  expect(rej.proposals).toEqual(baseState().proposals);
+});
+
 test("doc.marked upserts the full inline mark onto the doc, stale=false by construction", () => {
   const state = {
     ...baseState(),

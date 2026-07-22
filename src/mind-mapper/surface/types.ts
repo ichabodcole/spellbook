@@ -85,6 +85,13 @@ export type MapNode = {
   tier: Tier;
   synopsis: string;
   pending?: boolean;
+  // Round 6 (PROC) — a CLIENT-ONLY overlay (like `pending`): true on the
+  // synthetic node of a pending `author:"user"` proposal, so the canvas can
+  // render it in a distinct "curating" state (the agent will refine the raw
+  // human input). Derived off the wire's `author` (pendingOverlay.ts) — no
+  // schema change; real nodes never carry it. Leaves when the proposal
+  // ratifies (curated node appears) or is deleted.
+  processing?: boolean;
   sources?: SourceRef[];
   // Round 4 (A1): absent = none (additive-optional on the wire).
   actions?: ActionSlot[];
@@ -222,6 +229,13 @@ export type Proposal = {
   // (no actions.set is emitted for that move: the thin ratified event's
   // snapshot refetch is what carries the slots to their new home).
   actions?: ActionSlot[];
+  // Round 6 (EF, finding #8): the minted node id once this proposal has
+  // ratified (R5 wire — `proposals.result_node_id`; an undocumented-but-
+  // emitted surface per Contract 9's as-built note). Absent while pending.
+  // The pending overlay re-points a still-pending edge's endpoint from a
+  // ratified node-proposal's OLD id to this, so the edge follows its endpoint
+  // to the real node instead of dangling and vanishing.
+  resultNodeId?: string;
 };
 
 export type ProjectState = {
@@ -282,6 +296,16 @@ export type ServerEventKind =
   | "zone.created"
   | "zone.deleted"
   | "proposal.promoted"
+  // Round 6 (DEL/REJECT) — three THIN retract/decline events (payload {id}).
+  // node.deleted: the ratified node is gone — the reducer drops it AND (the
+  // server force-cascade the thin payload can't carry) locally drops edges
+  // touching it + re-homes its anchored children to top-level. proposal.deleted:
+  // hard-remove the proposal row (the litter-clearing path). proposal.rejected:
+  // decline-with-history — flip the row to "rejected" so it leaves the canvas /
+  // queue WITHOUT a refetch (reject previously emitted nothing — finding #3).
+  | "node.deleted"
+  | "proposal.deleted"
+  | "proposal.rejected"
   // Round 5 (SG1) — {nodeId, anchorNodeId}: a THIN event (like the ratified
   // pair). The reducer flips the node's anchorNodeId locally; submapChildCount
   // recovers via the ratified-events snapshot-refetch doctrine (a re-anchor

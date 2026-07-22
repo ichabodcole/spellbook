@@ -15,6 +15,7 @@ import {
   ListTree,
   ScrollText,
   Sparkles,
+  Trash2,
   Waypoints,
   X,
 } from "lucide-react";
@@ -38,6 +39,10 @@ import {
 // R5 SG2: "Enter submap" navigates the canvas into this node's submap (its
 // anchored children), the clickable twin of a node double-click. A navigation
 // verb (App handles it directly), grouped with Focus / Select connected.
+// R6 DEL: "Delete" is the human's retract — the equal-capability twin of the
+// agent's CLI `node delete` / `proposal delete`. App decides node-vs-proposal
+// by the target id (a pending/rejected proposal id vs a real node id) and owns
+// the confirm dialog + the node cited-guard escalation.
 export type NodeCommand =
   | "Focus"
   | "Select connected"
@@ -45,7 +50,8 @@ export type NodeCommand =
   | "Explain"
   | "Questions"
   | "Subtopics"
-  | "Promote";
+  | "Promote"
+  | "Delete";
 
 export function NodeContextMenu({
   node,
@@ -75,7 +81,10 @@ export function NodeContextMenu({
     <ContextMenu>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuLabel>{node.title}</ContextMenuLabel>
+        {/* MENU(b) — truncate a long title to one ellipsised line (the Popup
+            max-w bounds it); the vendored default stays un-truncated so the
+            flex "agent suggests" label below is unaffected. */}
+        <ContextMenuLabel className="truncate">{node.title}</ContextMenuLabel>
         <ContextMenuItem onClick={() => onCommand("Focus")}>
           <Crosshair /> Focus
         </ContextMenuItem>
@@ -159,6 +168,14 @@ export function NodeContextMenu({
             </div>
           </>
         )}
+        {/* R6 DEL — the human's retract, always offered (equal-capability with
+            the agent's CLI delete). Distinct from Reject/Withdraw above: reject
+            declines a proposal WITH history; delete is a hard remove (and on a
+            ratified node, the cited-guard + force cascade run in App). */}
+        <ContextMenuSeparator />
+        <ContextMenuItem className="text-attention" onClick={() => onCommand("Delete")}>
+          <Trash2 /> Delete
+        </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
   );

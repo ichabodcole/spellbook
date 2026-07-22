@@ -474,6 +474,44 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  if (verb === "ratify-batch") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
+      strict: true,
+      allowPositionals: false,
+    });
+    if (!parsed.values.stdin) {
+      process.stderr.write(
+        "mind-mapper: ratify-batch requires --stdin JSON " +
+          '{ruling: "canon|thread|story-local", ids: [proposalId], anchors?: [{node, parent}]}\n' +
+          "  ratifies the set in ONE call/txn; nodes ratify before edges (auto-partitioned),\n" +
+          "  edge endpoints + anchor refs resolve old proposal ids → minted node ids via the\n" +
+          "  returned idMap. NO auto-include of unlisted edges; reject is not a batch act.\n",
+      );
+      return 2;
+    }
+    const input = JSON.parse(await Bun.stdin.text()) as {
+      ruling?: unknown;
+      ids?: unknown;
+      anchors?: unknown;
+    };
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/proposals/ratify-batch${qs}`, {
+      method: "POST",
+      body: JSON.stringify({
+        ruling: input.ruling,
+        ids: input.ids ?? [],
+        anchors: input.anchors,
+      }),
+    });
+    // Response carries {idMap: {<oldProposalId>: <mintedNodeId>}, ratified:[...]}
+    // — the idMap is the point (reconnect an edge/anchor to the real node).
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
   if (verb === "node") {
     const sub = rest[0];
     const parsed = parseArgs({
@@ -481,13 +519,35 @@ async function dispatch(argv: string[]): Promise<number> {
       options: {
         to: { type: "string" },
         clear: { type: "boolean", default: false },
+        force: { type: "boolean", default: false },
         project: { type: "string" },
       },
       strict: true,
       allowPositionals: true,
     });
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    // Round 6 (DEL): `node delete <id> [--force]` — 409 {error:"cited",
+    // citedBy:{edges, children}} when cited and unforced; --force cascades
+    // (edges gone, children re-parented to top-level, detritus gone).
+    if (sub === "delete") {
+      const id = parsed.positionals[0];
+      if (!id) {
+        process.stderr.write("usage: cli.ts node delete <nodeId> [--force]\n");
+        return 2;
+      }
+      const port = requireDaemon();
+      const params = new URLSearchParams();
+      if (parsed.values.project) params.set("project", parsed.values.project);
+      if (parsed.values.force) params.set("force", "1");
+      const dqs = params.size > 0 ? `?${params}` : "";
+      const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}${dqs}`, { method: "DELETE" });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
     if (sub !== "anchor") {
-      process.stderr.write("usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear)\n");
+      process.stderr.write(
+        "usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear) | node delete <nodeId> [--force]\n",
+      );
       return 2;
     }
     const id = parsed.positionals[0];
@@ -500,7 +560,6 @@ async function dispatch(argv: string[]): Promise<number> {
       return 2;
     }
     const port = requireDaemon();
-    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}/anchor${qs}`, {
       method: "POST",
       body: JSON.stringify({ parentId: parsed.values.clear ? null : parsed.values.to }),
@@ -607,8 +666,29 @@ async function dispatch(argv: string[]): Promise<number> {
       strict: true,
       allowPositionals: true,
     });
+    const pqs = parsed.values.project
+      ? `?project=${encodeURIComponent(parsed.values.project)}`
+      : "";
+    // Round 6 (DEL): `proposal delete <id>` — thin, no guard (drop row +
+    // cascade node_actions). The litter-clearing path (clear a raw
+    // instruction-node through DELETE, not reject).
+    if (sub === "delete") {
+      const id = parsed.positionals[0];
+      if (!id) {
+        process.stderr.write("usage: cli.ts proposal delete <proposalId>\n");
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(`http://127.0.0.1:${port}/proposals/${id}${pqs}`, {
+        method: "DELETE",
+      });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
     if (sub !== "zone") {
-      process.stderr.write("usage: cli.ts proposal zone <id> (--to <zoneId> | --clear)\n");
+      process.stderr.write(
+        "usage: cli.ts proposal zone <id> (--to <zoneId> | --clear) | proposal delete <id>\n",
+      );
       return 2;
     }
     const id = parsed.positionals[0];
@@ -769,6 +849,7 @@ async function dispatch(argv: string[]): Promise<number> {
         "doc-edit": { type: "string" },
         doc: { type: "string" },
         span: { type: "string" },
+        anchor: { type: "string" },
         project: { type: "string" },
       },
       strict: true,
@@ -777,7 +858,7 @@ async function dispatch(argv: string[]): Promise<number> {
     const proposalId = parsed.positionals[0];
     if (!proposalId || !parsed.values.ruling) {
       process.stderr.write(
-        "usage: cli.ts ratify <proposalId> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <text>]\n",
+        "usage: cli.ts ratify <proposalId> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <text>] [--anchor <parentId>]\n",
       );
       return 2;
     }
@@ -799,6 +880,9 @@ async function dispatch(argv: string[]): Promise<number> {
         docEdit,
         docId: parsed.values.doc,
         span: parsed.values.span,
+        // Round 6 (RB): --anchor <parentId> ratifies then nests the minted
+        // node under <parentId> in one atomic call (node proposals only).
+        anchor: parsed.values.anchor,
       }),
     });
     process.stdout.write(`${await res.text()}\n`);
@@ -1037,7 +1121,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|zone|promote|proposal|node|doc|mark|actions|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
   );
   return 2;
 }

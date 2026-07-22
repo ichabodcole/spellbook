@@ -520,3 +520,100 @@ test("proposal zone moves a pending proposal into a zone and back through the CL
   expect(back.code).toBe(0);
   expect(JSON.parse(back.stdout)).toEqual({ id, zoneId: null });
 });
+
+// Round 6 (RB/DEL) CLI round-trips — a dedicated project keeps the shared
+// default's seeded dataset out of the assertions.
+async function runCliStdin(
+  args: string[],
+  body: string,
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, ...args], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(body).body,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { code, stdout, stderr };
+}
+
+test("ratify-batch --stdin ratifies a node+edge set and returns the idMap", async () => {
+  await runCli("projects", "--create", "R6 Batch");
+  const a = JSON.parse(
+    (
+      await runCliStdin(
+        ["propose-node", "--stdin", "--project", "r6-batch"],
+        JSON.stringify({ draft: { title: "A" } }),
+      )
+    ).stdout,
+  ) as { id: string };
+  const b = JSON.parse(
+    (
+      await runCliStdin(
+        ["propose-node", "--stdin", "--project", "r6-batch"],
+        JSON.stringify({ draft: { title: "B" } }),
+      )
+    ).stdout,
+  ) as { id: string };
+  const e = JSON.parse(
+    (
+      await runCliStdin(
+        ["propose-edge", "--stdin", "--project", "r6-batch"],
+        JSON.stringify({ draft: { source: a.id, target: b.id, label: "rel" } }),
+      )
+    ).stdout,
+  ) as { id: string };
+  const { code, stdout } = await runCliStdin(
+    ["ratify-batch", "--stdin", "--project", "r6-batch"],
+    JSON.stringify({ ruling: "canon", ids: [e.id, a.id, b.id] }),
+  );
+  expect(code).toBe(0);
+  const body = JSON.parse(stdout) as { idMap: Record<string, string> };
+  expect(body.idMap[a.id]).toBeDefined();
+  const state = JSON.parse((await runCli("state", "--project", "r6-batch")).stdout) as {
+    edges: unknown[];
+  };
+  expect(state.edges).toHaveLength(1);
+});
+
+test("node delete --force and proposal delete round-trip via the CLI", async () => {
+  await runCli("projects", "--create", "R6 Del");
+  const p = JSON.parse(
+    (
+      await runCliStdin(
+        ["propose-node", "--stdin", "--project", "r6-del"],
+        JSON.stringify({ draft: { title: "Solo" } }),
+      )
+    ).stdout,
+  ) as { id: string };
+  const ratified = JSON.parse(
+    (await runCli("ratify", p.id, "--ruling", "canon", "--project", "r6-del")).stdout,
+  ) as { nodeId: string };
+  const del = await runCli("node", "delete", ratified.nodeId, "--force", "--project", "r6-del");
+  expect(del.code).toBe(0);
+  expect(JSON.parse(del.stdout)).toEqual({ ok: true, id: ratified.nodeId });
+
+  // A leftover pending proposal → proposal delete drops it.
+  const p2 = JSON.parse(
+    (
+      await runCliStdin(
+        ["propose-node", "--stdin", "--project", "r6-del"],
+        JSON.stringify({ draft: { title: "raw" } }),
+      )
+    ).stdout,
+  ) as { id: string };
+  const pdel = await runCli("proposal", "delete", p2.id, "--project", "r6-del");
+  expect(pdel.code).toBe(0);
+  const state = JSON.parse((await runCli("state", "--project", "r6-del")).stdout) as {
+    proposals: Array<{ id: string }>;
+    nodes: unknown[];
+  };
+  // p2 (the raw pending proposal) is gone; the ratified proposal p survives as
+  // history (node delete leaves result_node_id), and its node was force-deleted.
+  expect(state.proposals.some((pr) => pr.id === p2.id)).toBe(false);
+  expect(state.nodes).toHaveLength(0);
+});

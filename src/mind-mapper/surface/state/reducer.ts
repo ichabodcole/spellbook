@@ -102,6 +102,55 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         cursor: event.seq,
       };
     }
+    case "node.deleted": {
+      // Round 6 (DEL) — THIN {id}, but a server FORCE delete cascaded more
+      // than the node: it dropped every edge touching the node and re-parented
+      // its anchored children to top-level. The thin payload can't carry that,
+      // and node.deleted is NOT on useProjectState's ratified-refetch path, so
+      // the reducer reconciles it LOCALLY (co-presence: the human sees the
+      // cascade immediately, no round-trip). submapChildCount on a FORMER
+      // parent of the deleted node may drift by one until the next /state read
+      // (the node.anchored derived-count tolerance) — a rare, self-correcting
+      // cosmetic, never a dangling edge or an orphaned child.
+      const { id } = event.payload as { id?: unknown };
+      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      return {
+        ...state,
+        nodes: state.nodes
+          .filter((n) => n.id !== id)
+          .map((n) => (n.anchorNodeId === id ? { ...n, anchorNodeId: null } : n)),
+        edges: state.edges.filter((e) => e.source !== id && e.target !== id),
+        cursor: event.seq,
+      };
+    }
+    case "proposal.deleted": {
+      // Round 6 (DEL) — THIN {id}, hard remove: drop the proposal row (the
+      // litter-clearing path; mirrors the doc.deleted filter). A dependent
+      // pending edge lives only in opaque draft_json and fails safe at its own
+      // ratify (Contract 8) — nothing else to reconcile here.
+      const { id } = event.payload as { id?: unknown };
+      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      return {
+        ...state,
+        proposals: state.proposals.filter((p) => p.id !== id),
+        cursor: event.seq,
+      };
+    }
+    case "proposal.rejected": {
+      // Round 6 (REJECT, finding #3) — THIN {id}: reject is decline-WITH-history
+      // (DISTINCT from delete's hard remove), so flip the row's status to
+      // "rejected" rather than dropping it. Every board overlay filters to
+      // status === "pending" (pendingOverlay / mainProposals / review queue), so
+      // the flip makes the proposal leave the canvas + queue WITHOUT a refetch —
+      // the live fix for reject previously emitting nothing.
+      const { id } = event.payload as { id?: unknown };
+      if (typeof id !== "string") return { ...state, cursor: event.seq };
+      return {
+        ...state,
+        proposals: state.proposals.map((p) => (p.id === id ? { ...p, status: "rejected" } : p)),
+        cursor: event.seq,
+      };
+    }
     case "node.ratified":
     case "edge.ratified": {
       const payload = event.payload as { id: string; proposalId?: unknown };

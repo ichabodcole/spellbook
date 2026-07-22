@@ -12,7 +12,7 @@
 // uses: the standard verbs, ruling verbs on pending proposals (ratify
 // anywhere), and A1's action slots, identical in both views by construction.
 
-import { FolderTree } from "lucide-react";
+import { FolderTree, Loader } from "lucide-react";
 import { KIND_ICON, TIER_CARD, TIER_LABEL } from "./GraphCanvas";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import { groupByTierKind } from "./state/cardGrid";
@@ -84,17 +84,25 @@ export function CardGrid({
                         type="button"
                         onClick={() => onSelect([n.id])}
                         className={`h-full w-full rounded-lg border bg-surface px-3 py-2 text-left shadow-lg transition-all ${TIER_CARD[n.tier]} ${
-                          n.pending ? "border-dashed" : ""
+                          n.processing ? "border-dotted" : n.pending ? "border-dashed" : ""
                         } ${selectedIds.includes(n.id) ? "ring-2 ring-ink shadow-xl" : ""} ${
                           keep && !keep.has(n.id) ? "opacity-20" : ""
                         }`}
                       >
                         <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest">
                           <span>{TIER_LABEL[n.tier]}</span>
-                          {n.pending && (
-                            <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
-                              proposed
+                          {/* PROC (R6) — curating badge, identical to the canvas
+                              (one house vocabulary, two views). */}
+                          {n.processing ? (
+                            <span className="ml-auto flex animate-pulse items-center gap-0.5 rounded-sm border border-dotted border-pending px-1 normal-case tracking-normal text-pending">
+                              <Loader size={9} aria-hidden /> curating
                             </span>
+                          ) : (
+                            n.pending && (
+                              <span className="ml-auto rounded-sm border border-dashed border-pending px-1 normal-case tracking-normal text-pending">
+                                proposed
+                              </span>
+                            )
                           )}
                           {!n.pending && (n.submapChildCount ?? 0) > 0 && (
                             <span

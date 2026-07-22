@@ -63,6 +63,23 @@ test("ratify reject marks rejected, writes no node/edge, no doc-edit required", 
   }
 });
 
+test("ratify reject emits a thin proposal.rejected {id} event (finding #4)", () => {
+  const { dir, docsDir, db } = tempProject();
+  try {
+    const bus = createEventBus();
+    const proposal = proposeNode(db, bus, { draft: { title: "Sela" }, evidence: {} });
+    const received: Array<{ kind: string; payload: unknown }> = [];
+    bus.subscribe(bus.cursor(), (e) => received.push(e as never));
+    ratify(db, bus, docsDir, { proposalId: proposal.id, ruling: "reject" });
+    const rejected = received.find((e) => e.kind === "proposal.rejected");
+    expect(rejected).toBeDefined();
+    expect(rejected?.payload).toEqual({ id: proposal.id });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("ratifying an already-ratified proposal throws (idempotency guard)", () => {
   const { dir, docsDir, db } = tempProject();
   try {

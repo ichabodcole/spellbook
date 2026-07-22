@@ -2030,6 +2030,11 @@
     border-style: dashed;
   }
 
+  .border-dotted {
+    --tw-border-style: dotted;
+    border-style: dotted;
+  }
+
   .\!border-amber-600\/60 {
     border-color: #dd740099 !important;
   }
@@ -5946,6 +5951,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:text-attention:hover {
+      color: var(--color-attention);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:text-foreground:hover {
       color: var(--color-foreground);
     }
@@ -6136,6 +6147,12 @@
   @media (min-width: 40rem) {
     .sm\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 80rem) {
+    .xl\:w-80 {
+      width: calc(var(--spacing) * 80);
     }
   }
 
