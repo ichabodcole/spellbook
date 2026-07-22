@@ -617,3 +617,39 @@ test("node delete --force and proposal delete round-trip via the CLI", async () 
   expect(state.proposals.some((pr) => pr.id === p2.id)).toBe(false);
   expect(state.nodes).toHaveLength(0);
 });
+
+// Round 7 (PORT) — `open --port N` forwards the flag through ensureDaemon into
+// the daemon's spawn args; the server binds it and writes N to daemon.port.
+// Uses its own fresh HOME so no live daemon short-circuits the port (the
+// live-daemon-ignores-N wrinkle) — and its own daemon teardown.
+test("open --port N binds the daemon to N (forwarded through ensureDaemon)", async () => {
+  // Grab a free port by opening an ephemeral server, reading its port, closing.
+  const probe = Bun.serve({ port: 0, fetch: () => new Response("ok") });
+  const wanted = probe.port; // Bun.serve().port is number | undefined — narrow once
+  probe.stop(true);
+  if (wanted === undefined) throw new Error("probe server did not report a port");
+
+  const portHome = mkdtempSync(join(tmpdir(), "mind-mapper-cli-port-test-"));
+  try {
+    const proc = Bun.spawn(
+      [process.execPath, "run", CLI_SCRIPT, "open", "--no-open", "--port", String(wanted)],
+      { env: { ...process.env, MIND_MAPPER_HOME: portHome }, stdout: "pipe", stderr: "pipe" },
+    );
+    const [stdout, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
+    expect(code).toBe(0);
+    // The printed url carries the requested port, and so does the discovery file.
+    expect(JSON.parse(stdout).url).toBe(`http://127.0.0.1:${wanted}`);
+    const { readFileSync } = await import("node:fs");
+    const written = Number.parseInt(readFileSync(join(portHome, "daemon.port"), "utf8").trim(), 10);
+    expect(written).toBe(wanted);
+  } finally {
+    try {
+      const { readFileSync } = await import("node:fs");
+      const pid = Number.parseInt(readFileSync(join(portHome, "daemon.pid"), "utf8").trim(), 10);
+      process.kill(pid, "SIGTERM");
+    } catch {
+      /* already gone */
+    }
+    rmSync(portHome, { recursive: true, force: true });
+  }
+});

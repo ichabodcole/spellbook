@@ -4,6 +4,12 @@
 //   open          spawn (or find) the daemon, print its url, open the browser
 //                 --project <id> scopes the url (?project=); open never mints —
 //                 an unknown id errors (use projects --create first)
+//                 --port <n> binds a STABLE port so a browser refresh reconnects
+//                 across an environment-reap + restart. Two wrinkles: (1) against
+//                 a LIVE daemon --port N is IGNORED (open returns the existing
+//                 daemon) — the stable url holds only if the FIRST open set it;
+//                 (2) if port N is already in use the daemon exits and this poll
+//                 times out ("daemon did not come up") — pick a free port.
 //   state         GET /state → the real project snapshot on stdout
 //                 --skeleton returns ids/titles/degree only (context budgeting)
 //                 fresh store with no project → the needs-project 409, exit 2
@@ -106,14 +112,20 @@ function livePort(): number | null {
   }
 }
 
-async function ensureDaemon(): Promise<number> {
+async function ensureDaemon(port?: string): Promise<number> {
   const running = livePort();
+  // Round 7 (PORT): a live daemon IGNORES --port — the stable-url guarantee
+  // only holds if the FIRST open set the port (the daemon binds once at boot).
   if (running !== null) return running;
-  const proc = spawn(process.execPath, ["run", SERVER_SCRIPT, "--no-open"], {
-    detached: true,
-    stdio: "ignore",
-    cwd: daemonCwd(),
-  });
+  const proc = spawn(
+    process.execPath,
+    ["run", SERVER_SCRIPT, "--no-open", ...(port ? ["--port", String(port)] : [])],
+    {
+      detached: true,
+      stdio: "ignore",
+      cwd: daemonCwd(),
+    },
+  );
   proc.unref();
   // Poll discovery until the daemon writes its port (cold Bun bundle can lag).
   for (let i = 0; i < 100; i++) {
@@ -192,11 +204,15 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "open") {
     const parsed = parseArgs({
       args: rest,
-      options: { "no-open": { type: "boolean", default: false }, project: { type: "string" } },
+      options: {
+        "no-open": { type: "boolean", default: false },
+        project: { type: "string" },
+        port: { type: "string" },
+      },
       strict: true,
       allowPositionals: false,
     });
-    const port = await ensureDaemon();
+    const port = await ensureDaemon(parsed.values.port);
     // --project scopes the printed URL + spawned browser (?project= rides
     // along). Open never mints: an unknown id is a usage error pointing at
     // `projects --create`, not a silent new store.
