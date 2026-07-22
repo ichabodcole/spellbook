@@ -9,6 +9,8 @@
 import {
   ArrowUpFromLine,
   Check,
+  ChevronsDown,
+  ChevronsUp,
   Crosshair,
   FolderTree,
   HelpCircle,
@@ -31,6 +33,12 @@ import {
   ContextMenuTrigger,
 } from "./ui/context-menu";
 
+// RATIFYFIX (finding #7) — the human's tier picker when the agent's
+// suggestedTier isn't a valid ruling (a casting-draft "cast"/"background"
+// slip). Flat items, not a submenu (the vendored context-menu has no Submenu
+// primitive). Every entry is a valid Ruling App.ruleProposal dispatches.
+const RATIFY_TIERS: Exclude<Ruling, "reject">[] = ["canon", "thread", "story-local"];
+
 // The node command vocabulary (born plural per t-609741be — future commands
 // include agent actions). Promote appears in zone context only (Claim Z3).
 // R5 SC: "Select connected" unions the node's depth-1 neighbors into the
@@ -46,6 +54,8 @@ import {
 export type NodeCommand =
   | "Focus"
   | "Select connected"
+  | "Select children"
+  | "Select parents"
   | "Enter submap"
   | "Explain"
   | "Questions"
@@ -91,6 +101,15 @@ export function NodeContextMenu({
         <ContextMenuItem onClick={() => onCommand("Select connected")}>
           <Waypoints /> Select connected
         </ContextMenuItem>
+        {/* DIRSELECT — directed depth-1 siblings alongside the undirected
+            "Select connected": children = OUTGOING edges, parents = INCOMING
+            (a direction:"both" edge counts for both). */}
+        <ContextMenuItem onClick={() => onCommand("Select children")}>
+          <ChevronsDown /> Select children
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => onCommand("Select parents")}>
+          <ChevronsUp /> Select parents
+        </ContextMenuItem>
         {/* SG2 — only nodes that actually HAVE a submap offer the drill-in
             (the badge says so); a proposal can't (it stays top-level until
             ratified) so submapChildCount is 0 there by construction. */}
@@ -108,13 +127,26 @@ export function NodeContextMenu({
           onRule &&
           (ruling.author === "agent" ? (
             <>
-              {ratifyAs && (
+              {ratifyAs ? (
                 <ContextMenuItem
                   className="text-pending"
                   onClick={() => onRule(ruling.proposalId, ratifyAs)}
                 >
                   <Check /> Ratify as {ratifyAs}
                 </ContextMenuItem>
+              ) : (
+                // RATIFYFIX — no one-keystroke ratify (unrecognized suggested
+                // tier); offer the three valid rulings flat so the human picks,
+                // instead of leaving a Reject-only dead end.
+                RATIFY_TIERS.map((tier) => (
+                  <ContextMenuItem
+                    key={tier}
+                    className="text-pending"
+                    onClick={() => onRule(ruling.proposalId, tier)}
+                  >
+                    <Check /> Ratify as {tier}
+                  </ContextMenuItem>
+                ))
               )}
               <ContextMenuItem
                 className="text-ink-faint"

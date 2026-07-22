@@ -29,3 +29,28 @@ export function lensSet(map: { edges: MapEdge[] }, nodeId: string, depth: number
   }
   return seen;
 }
+
+// DIRSELECT (finding #2) — directed depth-1 siblings, distinct from the
+// undirected lensSet above: "children" = OUTGOING (edge.source === id →
+// target), "parents" = INCOMING (edge.target === id → source). Ruling: a
+// `direction:"both"` edge counts for BOTH — a mutual claim makes the neighbor
+// a child AND a parent. Always includes the node itself (a select op, like
+// select-connected). Depth-1 only.
+export function directedSet(
+  map: { edges: MapEdge[] },
+  nodeId: string,
+  dir: "children" | "parents",
+): Set<string> {
+  const result = new Set([nodeId]);
+  for (const e of map.edges) {
+    const both = e.direction === "both";
+    if (dir === "children") {
+      if (e.source === nodeId) result.add(e.target);
+      if (both && e.target === nodeId) result.add(e.source);
+    } else {
+      if (e.target === nodeId) result.add(e.source);
+      if (both && e.source === nodeId) result.add(e.target);
+    }
+  }
+  return result;
+}

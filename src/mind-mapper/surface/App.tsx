@@ -37,7 +37,7 @@ import { groundBundle } from "./state/groundBundle";
 import { processingItems } from "./state/ingestionQueue";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
-import { lensSet } from "./state/neighborhood";
+import { directedSet, lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
 import { pendingEdgesFrom, pendingNodesFrom, resultNodeIdMap } from "./state/pendingOverlay";
 import { dotState, type PresenceDot } from "./state/presence";
@@ -481,6 +481,12 @@ export function App() {
       // selection, computed over the ACTIVE submap slice so pending/zone/submap
       // context is respected. Nodes only (edges-in-selection is a follow-on).
       if (submapMap) setSelectedIds([...lensSet(submapMap, node.id, 1)]);
+    } else if (command === "Select children") {
+      // DIRSELECT — OUTGOING depth-1 siblings (both-edges count too), over the
+      // active submap slice like Select connected.
+      if (submapMap) setSelectedIds([...directedSet(submapMap, node.id, "children")]);
+    } else if (command === "Select parents") {
+      if (submapMap) setSelectedIds([...directedSet(submapMap, node.id, "parents")]);
     } else if (command === "Enter submap") enterSubmap(node.id);
     else if (command === "Promote") promoteProposal(node.id);
     else if (command === "Delete") openDelete(node);
@@ -1431,6 +1437,15 @@ export function App() {
             key={`${openDoc.doc.id}:${openDoc.highlight ?? ""}`}
             doc={openDoc.doc}
             highlight={openDoc.highlight}
+            nodes={state.nodes}
+            proposals={state.proposals}
+            // BACKLINKS — route a clicked reference back to the map: select +
+            // followFocus (zone/submap-aware), the inverse of the node→doc
+            // onOpenSource jump (the search-pick precedent).
+            onNavigate={(id) => {
+              setSelectedIds([id]);
+              followFocus(id);
+            }}
             onClose={() => setOpenDoc(null)}
           />
         )}

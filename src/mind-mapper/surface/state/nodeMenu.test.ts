@@ -37,6 +37,17 @@ test("a background suggestion has NO one-keystroke accept — background is a Ti
   expect(menus.get("bg-1")?.ruling?.ratifyAs).toBeNull();
 });
 
+// RATIFYFIX (finding #7): a proposal whose suggestedTier is not even a valid
+// Tier (the casting-draft "cast" slip) must ALSO narrow to null — the trigger
+// condition for the menu's three flat "Ratify as canon/thread/story-local"
+// fallback items (an agent proposal with ratifyAs === null is otherwise a
+// Reject-only dead end).
+test("an unrecognized tier narrows ratifyAs to null (the RATIFYFIX fallback trigger)", () => {
+  const menus = menuInfoFor([], [proposal({ id: "cast-1", suggestedTier: "cast" as never })]);
+  expect(menus.get("cast-1")?.ruling?.ratifyAs).toBeNull();
+  expect(menus.get("cast-1")?.ruling?.author).toBe("agent");
+});
+
 test("a user-authored sketch carries its author so the menu can offer withdraw only", () => {
   const menus = menuInfoFor([], [proposal({ id: "sketch-1", author: "user" })]);
   expect(menus.get("sketch-1")?.ruling?.author).toBe("user");
