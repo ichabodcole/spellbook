@@ -107,6 +107,15 @@ top-level key reaches the review queue). Evidence grounds in exactly one of
 `docId` or `messageId`, plus a `span` — a verbatim excerpt (whitespace-tolerant
 matching is the contract — never trust byte offsets).
 
+**The tier vocabulary is exactly `canon | thread | story-local`** (the same
+three the human rules with, minus `reject`). `suggestedTier` is a HINT toward
+one of those three — nothing else. Do NOT emit `"cast"` (that's a node _kind_,
+not a tier) or `"background"` (a steeping-context STANCE, not a tier) — an
+unrecognized `suggestedTier` used to leave a proposal with no one-keystroke
+ratify action, forcing the human into a pick-a-tier submenu. Omit
+`suggestedTier` entirely when you genuinely can't judge; never invent a fourth
+value.
+
 **The EDGE stdin shape** (for `propose-edge --stdin`) is:
 
 ```json
@@ -190,6 +199,19 @@ auto-sends, so write seeds as openers, not commands. The set is wholesale (each
 stores fine but warns, and the surface shows 4 + scroll. Slots survive
 ratification (they move to the new node); they die with a reject or a zone
 delete. Refresh them as the conversation moves — stale affordances are noise.
+
+**Tags (`tags`):** freeform labels on a node or a PENDING proposal — the
+metadata the surface's filter narrows by.
+`tags <targetId> --set '["theme", "needs-source"]'` (or `--stdin` for a bigger
+array; `--clear` removes them). The set is wholesale — each `--set` replaces the
+target's whole list. Tags are FREEFORM strings (no fixed vocabulary — the
+surface suggests reuse of existing tags, but the engine stores whatever you
+send); keep them short and reuse existing ones so the folksonomy stays coherent.
+You can also attach tags AT PROPOSE TIME: add a top-level `"tags": ["..."]` key
+to any `propose-node` / `propose-batch` node stdin body — they attach to the
+pending proposal and **re-home onto the node on ratify** (same lifecycle as
+action slots: they die with a reject, an edge accept, or a zone delete). Tags
+ride `state.nodes[].tags` and `state.proposals[].tags` (absent = none).
 
 **Mark every analysis (`mark`):** after ANY analysis pass — including a null
 result — leave a mark:
@@ -435,9 +457,11 @@ declining, delete on something that should leave no trace.
 
 - State a relationship once, at its home; the reverse perspective is its own
   claim with its own label. Asymmetry is signal.
-- Tier honestly: canon only when ruled; thread for parked-but-on-the-board;
-  story-local for one-off color; background is steeping context (never explain
-  it on-page in generated material).
+- Tier honestly — the vocabulary is `canon | thread | story-local`, nothing
+  else: canon only when ruled; thread for parked-but-on-the-board; story-local
+  for one-off color. "Background" is a steeping-context STANCE (unexplained
+  scaffolding you keep in mind, never explain on-page in generated material) —
+  it is NOT a tier and never a `suggestedTier` value; don't emit it as one.
 - Budget context: skeleton first, expand on demand, never transitive-crawl the
   graph into your window (the documented failure mode).
 - The daemon never composes prose — every doc edit you hand `ratify` is yours,
