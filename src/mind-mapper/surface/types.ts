@@ -95,6 +95,11 @@ export type MapNode = {
   sources?: SourceRef[];
   // Round 4 (A1): absent = none (additive-optional on the wire).
   actions?: ActionSlot[];
+  // Round 7 (TAGS): freeform agent-curated tags (the node_tags twin of
+  // actions) — absent = none (the actions-attach shape, additive-optional).
+  // Real nodes carry them off the wire; the surface's synthetic pending nodes
+  // (pendingOverlay) copy them from the proposal so a pending card shows chips.
+  tags?: string[];
   // Round 5 (SG1) — node-anchored submap containment. On real nodes the wire
   // ALWAYS carries both (state.ts): anchorNodeId null = top-level, a string =
   // this node lives inside that parent's submap; submapChildCount is
@@ -229,6 +234,13 @@ export type Proposal = {
   // (no actions.set is emitted for that move: the thin ratified event's
   // snapshot refetch is what carries the slots to their new home).
   actions?: ActionSlot[];
+  // Round 7 (TAGS): tags attach to PENDING proposals too (the target-keyed
+  // node_tags table, same lifecycle as actions) — absent = none. Carried from
+  // CREATION (propose-time tags ride proposal.added) AND on a zone-move
+  // re-emit (readProposalById), so the chip render must read them on first
+  // paint from the snapshot, not assume they only arrive via tags.set. Ratify
+  // RE-HOMES them onto the minted node (no tags.set is emitted for that move).
+  tags?: string[];
   // Round 6 (EF, finding #8): the minted node id once this proposal has
   // ratified (R5 wire — `proposals.result_node_id`; an undocumented-but-
   // emitted surface per Contract 9's as-built note). Absent while pending.
@@ -315,6 +327,10 @@ export type ServerEventKind =
   // metadata replace — deliberately not a per-entity patch; the entity is
   // the node/proposal, the slots are metadata riding it).
   | "actions.set"
+  // Round 7 (TAGS) — {targetId, tags}: the FULL new array (wholesale metadata
+  // replace, the actions.set precedent — freeform tags ride a node/pending
+  // proposal, not an entity of their own). Empty array clears to wire absence.
+  | "tags.set"
   // Ephemeral kinds (Contract 9 amendment): fire-once signals, no state
   // row — but every emit consumed a seq, so they still route THROUGH
   // applyEvent (default case advances the cursor) and useProjectState

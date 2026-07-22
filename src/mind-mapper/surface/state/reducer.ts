@@ -234,6 +234,34 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         cursor: event.seq,
       };
     }
+    case "tags.set": {
+      // Round 7 (TAGS) — WHOLESALE metadata replace, the actions.set precedent
+      // (freeform tags ride a node/pending proposal, not an entity of their
+      // own). A FULL-array replace, never a merge — `tags.set` is exactly like
+      // `actions.set` in this respect. Empty array clears back to wire absence
+      // (absent = none). Disjoint id spaces, so one pass over both is
+      // unambiguous.
+      const { targetId, tags } = event.payload as {
+        targetId?: unknown;
+        tags?: unknown;
+      };
+      if (typeof targetId !== "string" || !Array.isArray(tags)) {
+        return { ...state, cursor: event.seq };
+      }
+      const list = tags as string[];
+      const apply = <T extends { id: string; tags?: string[] }>(items: T[]): T[] =>
+        items.map((item) => {
+          if (item.id !== targetId) return item;
+          const { tags: _dropped, ...rest } = item;
+          return list.length > 0 ? ({ ...rest, tags: list } as T) : (rest as unknown as T);
+        });
+      return {
+        ...state,
+        nodes: apply(state.nodes),
+        proposals: apply(state.proposals),
+        cursor: event.seq,
+      };
+    }
     case "node.anchored": {
       // Round 5 (SG1) — THIN {nodeId, anchorNodeId}: flip the referenced
       // node's anchorNodeId locally (the one thing the payload proves). The

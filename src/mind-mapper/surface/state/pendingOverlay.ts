@@ -44,6 +44,11 @@ export function pendingNodesFrom(proposals: Proposal[]): MapNode[] {
           : p.evidence.messageId
             ? [{ messageId: p.evidence.messageId, span: p.evidence.span ?? undefined }]
             : undefined,
+        // TAGS (R7, finding #2): tags ride the proposal from creation, so the
+        // synthetic pending node copies them straight from the snapshot — a
+        // pending card shows its chips on first paint, not only after tags.set.
+        // absent = none (#3): only a non-empty list lands.
+        ...(p.tags && p.tags.length > 0 ? { tags: p.tags } : {}),
       };
     });
 }

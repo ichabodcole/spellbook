@@ -31,6 +31,16 @@ test("a pending node proposal becomes a synthetic MapNode with pending:true and 
   });
 });
 
+test("TAGS (R7): a pending proposal's tags ride onto the synthetic node from creation", () => {
+  const [node] = pendingNodesFrom([nodeProposal({ tags: ["draft", "urgent"] })]);
+  expect(node?.tags).toEqual(["draft", "urgent"]);
+});
+
+test("TAGS (R7): an absent tags key means no tags on the synthetic node (absent = none)", () => {
+  const [node] = pendingNodesFrom([nodeProposal()]);
+  expect(node?.tags).toBeUndefined();
+});
+
 test("a non-pending (already-ruled) proposal is excluded", () => {
   expect(pendingNodesFrom([nodeProposal({ status: "ratified" })])).toEqual([]);
 });

@@ -46,6 +46,7 @@ import { type PaletteRow, paletteRows } from "./state/searchRows";
 import { computeSpotlight } from "./state/spotlight";
 import { breadcrumbTrail, submapView } from "./state/submap";
 import { ratifiedSelection, submapChildTargets } from "./state/submapGroup";
+import { existingTags } from "./state/tags";
 import { applyTheme, readAppliedTheme, type Theme } from "./state/theme";
 import {
   forgetStoredProject,
@@ -963,6 +964,25 @@ export function App() {
         setNotice(`couldn't discard that (${e instanceof Error ? e.message : String(e)}).`),
       );
 
+  // TAGS (R7) — wholesale-replace a target's tags (PUT /tags/:targetId; the
+  // body IS the bare array, setTags parses it directly). Target = a node id OR
+  // a pending proposal's synthetic id (the synthetic-node-id-IS-proposal-id
+  // convention). No optimistic edit — tags.set round-trips through the reducer
+  // (one source of truth, same as every write here); a failure degrades to the
+  // notice bar, never the board.
+  const setNodeTags = (targetId: string, tags: string[]) =>
+    fetch(`/tags/${targetId}${projectQs}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tags),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`tags ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't update tags (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
   // R6 SUBMAP-CREATE — anchor a node under a parent (the FIRST /nodes/* write
   // the surface makes; SG1's post-ratify, real-nodes-only act). One call per
   // child; the daemon emits node.anchored, the reducer flips each child's
@@ -1124,6 +1144,10 @@ export function App() {
   // dotState is the pure rule. `presence` is defensive-read: a pre-V1.x
   // daemon simply reads as no-agent, never crashes.
   const dot = dotState(status, state.presence?.agents ?? 0);
+  // TAGS (R7) — the client-derived existing-tag set for NodeDetail's reuse
+  // autocomplete (finding #4: the engine keeps no registry; this is the union
+  // of every node's + proposal's tags off the snapshot we already hold).
+  const allTags = existingTags(state.nodes, state.proposals);
 
   return (
     <div className="flex h-screen flex-col bg-bg text-ink">
@@ -1415,6 +1439,8 @@ export function App() {
               <NodeDetail
                 node={detailNode}
                 docs={state.docs}
+                existingTags={allTags}
+                onSetTags={setNodeTags}
                 onVerb={(verb, node) => seedComposer(`${verb} — ${node.title}`, node.id)}
                 onOpenSource={(s) => openDocById(s.docId, s.span ?? undefined)}
                 onOpenMessageSource={(s: MessageSourceRef) =>

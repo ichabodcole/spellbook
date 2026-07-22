@@ -23,6 +23,7 @@ import { CircleDashed, FolderTree, Lightbulb, Loader, MapPin, User } from "lucid
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import type { NodeMenuInfo } from "./state/nodeMenu";
+import { TAG_CHIP } from "./state/tags";
 import type { ActionSlot, MapNode, NodeKind, Ruling, StubMap, Tier } from "./types";
 import { Button } from "./ui/button";
 
@@ -180,6 +181,25 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
         <div className="mt-1 line-clamp-2 font-story text-[15px] leading-tight text-ink">
           {n.title}
         </div>
+        {/* TAGS (R7) — a freeform-tag row UNDER the title (a new row, not the
+            crowded ml-auto header slot which holds proposed/curating/submap).
+            Capped to 3 chips + a "+N" so a heavily-tagged card can't balloon;
+            the full set lives in NodeDetail. absent = none = no row. */}
+        {n.tags && n.tags.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {n.tags.slice(0, 3).map((t) => (
+              <span
+                key={t}
+                className={`max-w-full truncate rounded-sm px-1 py-px text-[9px] ${TAG_CHIP}`}
+              >
+                {t}
+              </span>
+            ))}
+            {n.tags.length > 3 && (
+              <span className="text-[9px] text-ink-faint">+{n.tags.length - 3}</span>
+            )}
+          </div>
+        )}
         <Handle type="source" position={Position.Bottom} className="!bg-edge !border-0" />
       </div>
     </NodeContextMenu>

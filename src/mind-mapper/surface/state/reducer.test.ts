@@ -514,6 +514,68 @@ test("actions.set on an unknown target advances the cursor and touches nothing",
   expect(next.proposals).toEqual(baseState().proposals);
 });
 
+// Round 7 (TAGS) — tags.set {targetId, tags}: wholesale metadata replace onto
+// whichever entity wears the target id (node OR pending proposal), the exact
+// actions.set precedent. A FULL-array replace, never a merge (finding #1).
+
+test("tags.set replaces the tags array on a matching node", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "tags.set",
+    payload: { targetId: "maren", tags: ["protagonist", "haunted"] },
+  });
+  expect(next.nodes[0]?.tags).toEqual(["protagonist", "haunted"]);
+  expect(next.cursor).toBe(6);
+});
+
+test("tags.set replaces the tags array on a matching pending proposal", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "tags.set",
+    payload: { targetId: "prop-1", tags: ["draft"] },
+  });
+  expect(next.proposals[0]?.tags).toEqual(["draft"]);
+});
+
+test("tags.set is wholesale — a second set replaces, never merges", () => {
+  const first = applyEvent(baseState(), {
+    seq: 6,
+    kind: "tags.set",
+    payload: { targetId: "maren", tags: ["a", "b"] },
+  });
+  const second = applyEvent(first, {
+    seq: 7,
+    kind: "tags.set",
+    payload: { targetId: "maren", tags: ["c"] },
+  });
+  expect(second.nodes[0]?.tags).toEqual(["c"]);
+});
+
+test("tags.set with an empty array clears back to wire absence (absent = none)", () => {
+  const withTags = applyEvent(baseState(), {
+    seq: 6,
+    kind: "tags.set",
+    payload: { targetId: "maren", tags: ["x"] },
+  });
+  const cleared = applyEvent(withTags, {
+    seq: 7,
+    kind: "tags.set",
+    payload: { targetId: "maren", tags: [] },
+  });
+  expect(cleared.nodes[0]?.tags).toBeUndefined();
+});
+
+test("tags.set on an unknown target advances the cursor and touches nothing", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "tags.set",
+    payload: { targetId: "no-such-target", tags: ["x"] },
+  });
+  expect(next.cursor).toBe(6);
+  expect(next.nodes).toEqual(baseState().nodes);
+  expect(next.proposals).toEqual(baseState().proposals);
+});
+
 // The ratify re-home path (Contract 9 A1): NO actions.set is emitted when a
 // proposal's slots re-home onto the minted node — the thin node.ratified
 // event triggers the snapshot refetch that carries them to the new id. The

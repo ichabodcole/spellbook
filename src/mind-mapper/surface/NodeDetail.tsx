@@ -10,8 +10,11 @@ import {
   ListTree,
   MessageSquare,
   ScrollText,
+  Tag,
   X,
 } from "lucide-react";
+import { useState } from "react";
+import { addTag, removeTag, TAG_CHIP, tagSuggestions } from "./state/tags";
 import type { DocMeta, DocSourceRef, MapNode, MessageSourceRef } from "./types";
 import { isDocSource } from "./types";
 import { Button } from "./ui/button";
@@ -25,6 +28,8 @@ const VERBS = [
 export function NodeDetail({
   node,
   docs,
+  existingTags,
+  onSetTags,
   onVerb,
   onOpenSource,
   onOpenMessageSource,
@@ -33,6 +38,13 @@ export function NodeDetail({
 }: {
   node: MapNode;
   docs: DocMeta[];
+  // TAGS (R7): the client-derived existing-tag set (union of every node's +
+  // proposal's tags — the engine keeps no registry) for the reuse autocomplete.
+  existingTags: string[];
+  // Target is the node id OR — for a pending proposal's synthetic node — the
+  // proposal id (the synthetic-node-id-IS-proposal-id convention makes one
+  // target key serve both). A wholesale PUT of the WHOLE new list.
+  onSetTags: (targetId: string, tags: string[]) => void;
   onVerb: (verb: string, node: MapNode) => void;
   onOpenSource: (source: DocSourceRef) => void;
   // T11 — message-grounded evidence (Claim E): click navigates the
@@ -124,6 +136,7 @@ export function NodeDetail({
           })}
         </div>
       )}
+      <TagsSection node={node} existingTags={existingTags} onSetTags={onSetTags} />
       <div className="flex flex-col gap-1.5">
         <div className="text-[10px] uppercase tracking-widest text-ink-faint">Ask the map</div>
         <div className="flex gap-1.5">
@@ -139,6 +152,104 @@ export function NodeDetail({
             </Button>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// TAGS (R7) — the Tags section beside Sources: current tags as removable chips,
+// an input to add one, and a reuse-suggestion dropdown over the client-derived
+// existing-tag set (curation is a surface concern; the engine stores freeform
+// strings). Every edit PUTs the WHOLE new list (wholesale replace), routed by
+// the node id — which, for a pending proposal's synthetic node, IS the proposal
+// id (the target-keyed node_tags table).
+function TagsSection({
+  node,
+  existingTags,
+  onSetTags,
+}: {
+  node: MapNode;
+  existingTags: string[];
+  onSetTags: (targetId: string, tags: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
+  const [focused, setFocused] = useState(false);
+  const current = node.tags ?? [];
+  const suggestions = focused ? tagSuggestions(existingTags, current, draft).slice(0, 6) : [];
+
+  const commit = (raw: string) => {
+    const next = addTag(current, raw);
+    if (next !== current) onSetTags(node.id, next);
+    setDraft("");
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint">
+        <Tag size={10} aria-hidden /> Tags
+      </div>
+      {current.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {current.map((t) => (
+            <span
+              key={t}
+              className={`flex items-center gap-0.5 rounded-sm px-1.5 py-0.5 text-[10px] ${TAG_CHIP}`}
+            >
+              {t}
+              <button
+                type="button"
+                aria-label={`Remove tag ${t}`}
+                onClick={() => onSetTags(node.id, removeTag(current, t))}
+                className="text-ink-faint hover:text-attention"
+              >
+                <X size={10} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div className="relative">
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onFocus={() => setFocused(true)}
+          // Blur is deferred so a mousedown on a suggestion still fires (the
+          // suggestion's onMouseDown preventDefault keeps focus, but the delay
+          // is the belt-and-braces for a plain click too).
+          onBlur={() => setTimeout(() => setFocused(false), 120)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit(draft);
+            } else if (e.key === "Escape" && draft) {
+              e.preventDefault();
+              e.stopPropagation();
+              setDraft("");
+            }
+          }}
+          placeholder="add a tag…"
+          aria-label="Add a tag"
+          className="w-full rounded-md border border-edge bg-secondary px-2 py-1 text-xs text-ink placeholder:text-ink-faint focus:border-ring focus:outline-none"
+        />
+        {suggestions.length > 0 && (
+          <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-32 overflow-y-auto rounded-md border border-edge bg-surface-raised py-1 shadow-xl">
+            {suggestions.map((s) => (
+              <li key={s}>
+                <button
+                  type="button"
+                  // Keep the input focused through the click so the dropdown
+                  // doesn't blur-close before the handler runs.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => commit(s)}
+                  className="flex w-full items-center gap-1 px-2 py-1 text-left text-xs text-ink-dim hover:bg-secondary hover:text-ink"
+                >
+                  <Tag size={10} className="shrink-0 text-ink-faint" aria-hidden />
+                  <span className="min-w-0 truncate">{s}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
