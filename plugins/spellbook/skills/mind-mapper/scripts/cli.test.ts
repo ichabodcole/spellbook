@@ -618,6 +618,34 @@ test("node delete --force and proposal delete round-trip via the CLI", async () 
   expect(state.nodes).toHaveLength(0);
 });
 
+// Round 7 (TAGS) — the tags verb round-trips wholesale-set and clear against a
+// PENDING proposal; tags ride /state.
+test("tags --set then --clear round-trips through the CLI", async () => {
+  const p = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "propose-node", "--stdin"], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    stdin: new Response(JSON.stringify({ draft: { title: "Taggable CLI" }, evidence: {} })).body,
+    stdout: "pipe",
+  });
+  const { id } = JSON.parse(await new Response(p.stdout).text()) as { id: string };
+  await p.exited;
+
+  const set = await runCli("tags", id, "--set", JSON.stringify(["alpha", "beta"]));
+  expect(set.code).toBe(0);
+  expect(JSON.parse(set.stdout)).toEqual({ targetId: id, tags: ["alpha", "beta"] });
+
+  const state = await runCli("state");
+  const parsed = JSON.parse(state.stdout) as { proposals: Array<{ id: string; tags?: string[] }> };
+  expect(parsed.proposals.find((pr) => pr.id === id)?.tags).toEqual(["alpha", "beta"]);
+
+  const cleared = await runCli("tags", id, "--clear");
+  expect(cleared.code).toBe(0);
+  expect(JSON.parse(cleared.stdout)).toEqual({ targetId: id, tags: [] });
+
+  const usage = await runCli("tags", id);
+  expect(usage.code).toBe(2);
+  expect(usage.stderr).toContain("--set");
+});
+
 // Round 7 (PORT) — `open --port N` forwards the flag through ensureDaemon into
 // the daemon's spawn args; the server binds it and writes N to daemon.port.
 // Uses its own fresh HOME so no live daemon short-circuits the port (the

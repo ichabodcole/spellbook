@@ -50,6 +50,10 @@
 //                 /actions/:targetId — replace (wholesale) or clear the
 //                 action slots on a node or PENDING proposal; json is an
 //                 array of {id, label, seed}; >4 entries warns (soft cap)
+//   tags <targetId> (--set <json> | --stdin | --clear)  PUT/DELETE
+//                 /tags/:targetId — replace (wholesale) or clear the freeform
+//                 tags on a node or PENDING proposal; json is an array of
+//                 strings; tags also ride propose-* stdin JSON (a `tags` key)
 //   activity <received|thinking|idle>  POST /activity → fire-and-forget
 //                 agent.activity signal (~60s TTL emits synthetic idle)
 //   search <q...> GET /search → {hits: [{kind: node|doc|message, ...}]}
@@ -1021,6 +1025,43 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  // Round 7 (TAGS) — twin of the actions verb: wholesale replace / clear a
+  // target's freeform tags. Target is a node id or a PENDING proposal id.
+  if (verb === "tags") {
+    const parsed = parseArgs({
+      args: rest,
+      options: {
+        set: { type: "string" },
+        stdin: { type: "boolean", default: false },
+        clear: { type: "boolean", default: false },
+        project: { type: "string" },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+    const targetId = parsed.positionals[0];
+    const modes = [parsed.values.set !== undefined, parsed.values.stdin, parsed.values.clear];
+    if (!targetId || modes.filter(Boolean).length !== 1) {
+      process.stderr.write(
+        "usage: cli.ts tags <targetId> (--set <json> | --stdin | --clear)\n" +
+          "  target is a node id or a PENDING proposal id; json is an array of\n" +
+          "  freeform strings — empty array (or --clear) removes the tags\n",
+      );
+      return 2;
+    }
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const target = `http://127.0.0.1:${port}/tags/${targetId}${qs}`;
+    const res = parsed.values.clear
+      ? await fetch(target, { method: "DELETE" })
+      : await fetch(target, {
+          method: "PUT",
+          body: parsed.values.stdin ? await Bun.stdin.text() : (parsed.values.set as string),
+        });
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
   if (verb === "activity") {
     const parsed = parseArgs({
       args: rest,
@@ -1137,7 +1178,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
   );
   return 2;
 }

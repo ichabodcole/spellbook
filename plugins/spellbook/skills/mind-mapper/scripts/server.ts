@@ -54,6 +54,7 @@ import { ratify, ratifyBatch, ZonedError } from "./ratify.ts";
 import { search } from "./search.ts";
 import { sendMessage } from "./send.ts";
 import { readState } from "./state.ts";
+import { clearTags, setTags } from "./tags.ts";
 import {
   createZone,
   deleteZone,
@@ -659,6 +660,35 @@ async function main(argv: string[]): Promise<number> {
               );
           }
 
+          // Round 7 (TAGS): PUT replaces a target's tags wholesale (empty array
+          // clears), DELETE clears — target is a node or a PENDING proposal,
+          // anything else 404s; shape/byte-cap fail 400. Twin of /actions/.
+          if ((req.method === "PUT" || req.method === "DELETE") && path.startsWith("/tags/")) {
+            const { db, bus } = loadProject(projectId);
+            const targetId = path.slice("/tags/".length);
+            const handle =
+              req.method === "DELETE"
+                ? Promise.resolve(clearTags(db, bus, targetId))
+                : req.json().then((body) => setTags(db, bus, targetId, body));
+            return handle
+              .then((result) => {
+                if (!result) {
+                  return new Response('{"error":"unknown target (node or pending proposal)"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(result);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
           if (req.method === "POST" && path === "/activity") {
             const entry = loadProject(projectId);
             return req
@@ -833,13 +863,14 @@ async function main(argv: string[]): Promise<number> {
             return req
               .json()
               .then((body) => {
-                const { kind, draft, evidence, suggestedTier, author, zone } = body as {
+                const { kind, draft, evidence, suggestedTier, author, zone, tags } = body as {
                   kind?: unknown;
                   draft?: unknown;
                   evidence?: unknown;
                   suggestedTier?: unknown;
                   author?: unknown;
                   zone?: unknown;
+                  tags?: unknown;
                 };
                 if (kind !== "node" && kind !== "edge")
                   throw new Error("kind must be node or edge");
@@ -855,6 +886,9 @@ async function main(argv: string[]): Promise<number> {
                   suggestedTier: typeof suggestedTier === "string" ? suggestedTier : undefined,
                   author: author as "user" | "agent" | undefined,
                   zone: typeof zone === "string" ? zone : undefined,
+                  // TAGS: propose-time tags ride through; buildProposal's parse
+                  // guard validates the shape (400 on a non-string[]).
+                  tags: Array.isArray(tags) ? (tags as string[]) : undefined,
                 };
                 const proposal =
                   kind === "node" ? proposeNode(db, bus, input) : proposeEdge(db, bus, input);

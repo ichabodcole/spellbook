@@ -645,6 +645,64 @@ test("PUT /actions/:targetId attaches slots that ride /state; DELETE clears; 404
   expect(badShape.status).toBe(400);
 });
 
+// Round 7 (TAGS) — the tag wire: PUT replaces wholesale, DELETE clears, tags
+// ride /state, propose-time tags attach to the pending proposal, unknown
+// targets 404, bad shapes 400.
+test("PUT /tags/:targetId attaches tags that ride /state; propose tags; DELETE clears; 404/400", async () => {
+  const proposed = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title: "Taggable" }, evidence: {} }),
+  });
+  const proposal = (await proposed.json()) as { id: string };
+
+  const put = await fetch(`${url}/tags/${proposal.id}`, {
+    method: "PUT",
+    body: JSON.stringify(["theme", "wip"]),
+  });
+  expect(put.status).toBe(200);
+  expect(await put.json()).toEqual({ targetId: proposal.id, tags: ["theme", "wip"] });
+
+  let state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; tags?: unknown }>;
+  };
+  expect(state.proposals.find((p) => p.id === proposal.id)?.tags).toEqual(["theme", "wip"]);
+
+  const del = await fetch(`${url}/tags/${proposal.id}`, { method: "DELETE" });
+  expect(del.status).toBe(200);
+  state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; tags?: unknown }>;
+  };
+  expect(state.proposals.find((p) => p.id === proposal.id)?.tags).toBeUndefined();
+
+  // Propose-time tags attach to the pending proposal in one call.
+  const tagged = await fetch(`${url}/proposals`, {
+    method: "POST",
+    body: JSON.stringify({
+      kind: "node",
+      draft: { title: "Pretagged" },
+      evidence: {},
+      tags: ["character"],
+    }),
+  });
+  const taggedProposal = (await tagged.json()) as { id: string; tags?: unknown };
+  expect(taggedProposal.tags).toEqual(["character"]);
+  state = (await (await fetch(`${url}/state`)).json()) as {
+    proposals: Array<{ id: string; tags?: unknown }>;
+  };
+  expect(state.proposals.find((p) => p.id === taggedProposal.id)?.tags).toEqual(["character"]);
+
+  const missing = await fetch(`${url}/tags/no-such-target`, {
+    method: "PUT",
+    body: JSON.stringify(["x"]),
+  });
+  expect(missing.status).toBe(404);
+  const badShape = await fetch(`${url}/tags/${proposal.id}`, {
+    method: "PUT",
+    body: JSON.stringify({ not: "an array" }),
+  });
+  expect(badShape.status).toBe(400);
+});
+
 // Round 5 (CLI1) — POST /proposals/batch: mint nodes, resolve edge endpoints
 // against local refs in ONE transaction, return the ref→id map.
 test("POST /proposals/batch resolves local refs and returns the ref→id map", async () => {
