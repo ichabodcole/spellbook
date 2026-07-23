@@ -703,6 +703,102 @@ test("PUT /tags/:targetId attaches tags that ride /state; propose tags; DELETE c
   expect(badShape.status).toBe(400);
 });
 
+// Round 9 (Job Queue) — the /jobs* wire: create → rides /state.jobs[]; update;
+// atomic claim (409 on a foreign owner); release; subtasks; delete; 404s.
+test("/jobs*: create rides /state, update, atomic claim 409, release, subtasks, delete, 404s", async () => {
+  const created = await fetch(`${url}/jobs`, {
+    method: "POST",
+    body: JSON.stringify({ title: "Draft the prologue", deliverable: "doc:prologue" }),
+  });
+  expect(created.status).toBe(200);
+  const job = (await created.json()) as { id: string; status: string; claimedBy: string | null };
+  expect(job.status).toBe("queued");
+  expect(job.claimedBy).toBeNull();
+
+  // Seeds the sidebar via /state.
+  let state = (await (await fetch(`${url}/state`)).json()) as {
+    jobs: Array<{ id: string; title: string; deliverable: string | null }>;
+  };
+  expect(state.jobs.find((j) => j.id === job.id)?.deliverable).toBe("doc:prologue");
+
+  // GET /jobs list route.
+  const listed = (await (await fetch(`${url}/jobs`)).json()) as { jobs: Array<{ id: string }> };
+  expect(listed.jobs.some((j) => j.id === job.id)).toBe(true);
+
+  // Update a scalar field.
+  const updated = await fetch(`${url}/jobs/${job.id}`, {
+    method: "POST",
+    body: JSON.stringify({ status: "blocked", detail: "waiting" }),
+  });
+  expect(((await updated.json()) as { status: string }).status).toBe("blocked");
+
+  // Atomic claim.
+  const claimed = await fetch(`${url}/jobs/${job.id}/claim`, {
+    method: "POST",
+    body: JSON.stringify({ owner: "circe" }),
+  });
+  expect(claimed.status).toBe(200);
+  const claimedJob = (await claimed.json()) as { status: string; claimedBy: string };
+  expect(claimedJob.status).toBe("running");
+  expect(claimedJob.claimedBy).toBe("circe");
+
+  // A foreign owner is refused with the typed 409.
+  const conflict = await fetch(`${url}/jobs/${job.id}/claim`, {
+    method: "POST",
+    body: JSON.stringify({ owner: "daedalus" }),
+  });
+  expect(conflict.status).toBe(409);
+  expect(await conflict.json()).toEqual({ error: "claimed", claimedBy: "circe" });
+
+  // Release clears the lease.
+  const released = await fetch(`${url}/jobs/${job.id}/release`, { method: "POST" });
+  expect(((await released.json()) as { claimedBy: string | null }).claimedBy).toBeNull();
+
+  // Subtasks: add then check.
+  const withSub = (await (
+    await fetch(`${url}/jobs/${job.id}/subtask`, {
+      method: "POST",
+      body: JSON.stringify({ op: "add", label: "outline" }),
+    })
+  ).json()) as { subtasks: Array<{ id: string; label: string; done: boolean }> };
+  expect(withSub.subtasks[0]?.label).toBe("outline");
+  const subtaskId = withSub.subtasks[0]?.id as string;
+  const checked = (await (
+    await fetch(`${url}/jobs/${job.id}/subtask`, {
+      method: "POST",
+      body: JSON.stringify({ op: "check", subtaskId }),
+    })
+  ).json()) as { subtasks: Array<{ done: boolean }> };
+  expect(checked.subtasks[0]?.done).toBe(true);
+
+  // 404s + a 400 bad status.
+  expect(
+    (
+      await fetch(`${url}/jobs/no-such/claim`, {
+        method: "POST",
+        body: JSON.stringify({ owner: "x" }),
+      })
+    ).status,
+  ).toBe(404);
+  expect(
+    (
+      await fetch(`${url}/jobs/${job.id}`, {
+        method: "POST",
+        body: JSON.stringify({ status: "bogus" }),
+      })
+    ).status,
+  ).toBe(400);
+
+  // Delete leaves.
+  const del = await fetch(`${url}/jobs/${job.id}`, { method: "DELETE" });
+  expect(del.status).toBe(200);
+  state = (await (await fetch(`${url}/state`)).json()) as {
+    jobs: Array<{ id: string; title: string; deliverable: string | null }>;
+  };
+  expect(state.jobs.some((j) => j.id === job.id)).toBe(false);
+  expect((await fetch(`${url}/jobs/${job.id}`, { method: "DELETE" })).status).toBe(404);
+});
+
 // Round 5 (CLI1) — POST /proposals/batch: mint nodes, resolve edge endpoints
 // against local refs in ONE transaction, return the ref→id map.
 test("POST /proposals/batch resolves local refs and returns the ref→id map", async () => {

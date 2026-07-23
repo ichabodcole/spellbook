@@ -54,6 +54,14 @@
 //                 /tags/:targetId — replace (wholesale) or clear the freeform
 //                 tags on a node or PENDING proposal; json is an array of
 //                 strings; tags also ride propose-* stdin JSON (a `tags` key)
+//   job           create --title T [--status s] [--deliverable ref] [--detail x]
+//                 | update <id> [--title/--status/--deliverable/--detail]
+//                 | claim <id> --owner <who> (atomic lease; 409 if held by
+//                   another owner) | release <id> | subtask <id> (--add <label>
+//                   | --check <subtaskId> | --uncheck <subtaskId>) | list
+//                 | delete <id>. A persisted unit of AGENT WORK (status +
+//                 sub-tasks + deliverable + owner); create/update also take a
+//                 full JSON body via --stdin / --body-file
 //   activity <received|thinking|idle>  POST /activity → fire-and-forget
 //                 agent.activity signal (~60s TTL emits synthetic idle)
 //   search <q...> GET /search → {hits: [{kind: node|doc|message, ...}]}
@@ -1068,6 +1076,174 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  // Round 9 (Job Queue) — the `job` verb: create/update/claim/release/subtask/
+  // list/delete, copying the `proposal <sub>` lifecycle shape + the tags
+  // body-builder discipline. EVERY field is threaded into the POST body (the R7
+  // gate scar: a hand-written body-builder is a MIRROR of the route's field set
+  // and drifts silently — so update forwards each provided scalar, subtask
+  // forwards op + label|subtaskId, claim forwards owner).
+  if (verb === "job") {
+    const sub = rest[0];
+    const parsed = parseArgs({
+      args: rest.slice(1),
+      options: {
+        title: { type: "string" },
+        status: { type: "string" },
+        deliverable: { type: "string" },
+        detail: { type: "string" },
+        owner: { type: "string" },
+        add: { type: "string" },
+        check: { type: "string" },
+        uncheck: { type: "string" },
+        stdin: { type: "boolean", default: false },
+        "body-file": { type: "string" },
+        project: { type: "string" },
+      },
+      strict: true,
+      allowPositionals: true,
+    });
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const base = (port: number, suffix = "") => `http://127.0.0.1:${port}/jobs${suffix}${qs}`;
+    // A JSON body from --body-file > --stdin overrides the flag-built body (the
+    // send precedence chain), so a full job can be piped in one shot.
+    const bodyFromSource = async (): Promise<Record<string, unknown> | null> => {
+      if (parsed.values["body-file"] !== undefined) {
+        const p = parsed.values["body-file"];
+        if (!existsSync(p)) {
+          process.stderr.write(`mind-mapper: job: --body-file not found: ${p}\n`);
+          return null;
+        }
+        return JSON.parse(readFileSync(p, "utf8")) as Record<string, unknown>;
+      }
+      if (parsed.values.stdin) return JSON.parse(await Bun.stdin.text()) as Record<string, unknown>;
+      return null;
+    };
+
+    if (sub === "list") {
+      const port = requireDaemon();
+      const res = await fetch(base(port));
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "create") {
+      const override = await bodyFromSource();
+      const body = override ?? {
+        title: parsed.values.title,
+        status: parsed.values.status,
+        deliverable: parsed.values.deliverable,
+        detail: parsed.values.detail,
+      };
+      if (typeof body.title !== "string" || body.title === "") {
+        process.stderr.write(
+          "usage: cli.ts job create --title <t> [--status <s>] [--deliverable <ref>] [--detail <x>]\n" +
+            "  or: cli.ts job create (--stdin | --body-file <path>) with JSON {title, status?, deliverable?, detail?}\n",
+        );
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(base(port), { method: "POST", body: JSON.stringify(body) });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "update") {
+      const id = parsed.positionals[0];
+      if (!id) {
+        process.stderr.write(
+          "usage: cli.ts job update <id> [--title <t>] [--status <s>] [--deliverable <ref>] [--detail <x>]\n",
+        );
+        return 2;
+      }
+      const override = await bodyFromSource();
+      // Forward only the flags that were PROVIDED (thread every field — the R7
+      // body-mirror scar); a bare `job update <id>` with no fields is a usage
+      // error, not a silent no-op POST.
+      const body: Record<string, unknown> =
+        override ??
+        Object.fromEntries(
+          (["title", "status", "deliverable", "detail"] as const)
+            .filter((k) => parsed.values[k] !== undefined)
+            .map((k) => [k, parsed.values[k]]),
+        );
+      if (Object.keys(body).length === 0) {
+        process.stderr.write(
+          "usage: cli.ts job update <id> (at least one of --title|--status|--deliverable|--detail)\n",
+        );
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(base(port, `/${id}`), { method: "POST", body: JSON.stringify(body) });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "claim") {
+      const id = parsed.positionals[0];
+      if (!id || parsed.values.owner === undefined) {
+        process.stderr.write("usage: cli.ts job claim <id> --owner <who>\n");
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(base(port, `/${id}/claim`), {
+        method: "POST",
+        body: JSON.stringify({ owner: parsed.values.owner }),
+      });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "release") {
+      const id = parsed.positionals[0];
+      if (!id) {
+        process.stderr.write("usage: cli.ts job release <id>\n");
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(base(port, `/${id}/release`), { method: "POST" });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "subtask") {
+      const id = parsed.positionals[0];
+      const modes = [
+        parsed.values.add !== undefined,
+        parsed.values.check !== undefined,
+        parsed.values.uncheck !== undefined,
+      ];
+      if (!id || modes.filter(Boolean).length !== 1) {
+        process.stderr.write(
+          "usage: cli.ts job subtask <id> (--add <label> | --check <subtaskId> | --uncheck <subtaskId>)\n",
+        );
+        return 2;
+      }
+      const jobBody =
+        parsed.values.add !== undefined
+          ? { op: "add", label: parsed.values.add }
+          : parsed.values.check !== undefined
+            ? { op: "check", subtaskId: parsed.values.check }
+            : { op: "uncheck", subtaskId: parsed.values.uncheck };
+      const port = requireDaemon();
+      const res = await fetch(base(port, `/${id}/subtask`), {
+        method: "POST",
+        body: JSON.stringify(jobBody),
+      });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    if (sub === "delete") {
+      const id = parsed.positionals[0];
+      if (!id) {
+        process.stderr.write("usage: cli.ts job delete <id>\n");
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(base(port, `/${id}`), { method: "DELETE" });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
+    process.stderr.write(
+      "usage: cli.ts job <create|update <id>|claim <id> --owner <who>|release <id>|subtask <id> ...|list|delete <id>>\n",
+    );
+    return 2;
+  }
+
   if (verb === "activity") {
     const parsed = parseArgs({
       args: rest,
@@ -1184,7 +1360,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
+    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|job|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
   );
   return 2;
 }

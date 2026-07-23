@@ -30,6 +30,17 @@ import { deleteNode, deleteProposal, NodeCitedError } from "./del.ts";
 import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
 import { createEventBus, type EventBus } from "./events.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
+import {
+  addSubtask,
+  ClaimConflictError,
+  claimJob,
+  createJob,
+  deleteJob,
+  readJobs,
+  releaseJob,
+  setSubtaskDone,
+  updateJob,
+} from "./jobs.ts";
 import { clearLens, lookHere, setLens } from "./lens.ts";
 import { markDoc } from "./marks.ts";
 import { neighbors } from "./neighbors.ts";
@@ -679,6 +690,172 @@ async function main(argv: string[]): Promise<number> {
                   });
                 }
                 return Response.json(result);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+
+          // Round 9 (Job Queue) — /jobs* routes. Order matters: the exact
+          // /jobs routes and the /jobs/:id/<sub> routes are checked BEFORE the
+          // bare POST /jobs/:id update (the /proposals/:id/zone-before-DELETE
+          // precedent). Every handler is loadProject → mutator → {404 on null,
+          // 400 on throw, 409 on a typed claim conflict}.
+          if (req.method === "GET" && path === "/jobs") {
+            const { db } = loadProject(projectId);
+            return Response.json({ jobs: readJobs(db) });
+          }
+          if (req.method === "POST" && path === "/jobs") {
+            const { db, bus, meta } = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { title, status, deliverable, detail } = body as {
+                  title?: unknown;
+                  status?: unknown;
+                  deliverable?: unknown;
+                  detail?: unknown;
+                };
+                const job = createJob(db, bus, {
+                  project: meta.id,
+                  title: title as string,
+                  status: typeof status === "string" ? status : undefined,
+                  deliverable: typeof deliverable === "string" ? deliverable : null,
+                  detail: typeof detail === "string" ? detail : null,
+                });
+                return Response.json(job);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+          if (req.method === "POST" && path.startsWith("/jobs/") && path.endsWith("/claim")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/jobs/".length, -"/claim".length);
+            return req
+              .json()
+              .then((body) => {
+                const { owner } = body as { owner?: unknown };
+                const job = claimJob(db, bus, id, owner as string);
+                if (!job) {
+                  return new Response('{"error":"unknown job"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(job);
+              })
+              .catch((e) => {
+                if (e instanceof ClaimConflictError) {
+                  return new Response(
+                    JSON.stringify({ error: "claimed", claimedBy: e.claimedBy }),
+                    { status: 409, headers: { "Content-Type": "application/json" } },
+                  );
+                }
+                return new Response(
+                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                  { status: 400, headers: { "Content-Type": "application/json" } },
+                );
+              });
+          }
+          if (req.method === "POST" && path.startsWith("/jobs/") && path.endsWith("/release")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/jobs/".length, -"/release".length);
+            const job = releaseJob(db, bus, id);
+            if (!job) {
+              return new Response('{"error":"unknown job"}', {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return Response.json(job);
+          }
+          if (req.method === "POST" && path.startsWith("/jobs/") && path.endsWith("/subtask")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/jobs/".length, -"/subtask".length);
+            return req
+              .json()
+              .then((body) => {
+                const { op, label, subtaskId } = body as {
+                  op?: unknown;
+                  label?: unknown;
+                  subtaskId?: unknown;
+                };
+                let job = null;
+                if (op === "add") {
+                  job = addSubtask(db, bus, id, label as string);
+                } else if (op === "check" || op === "uncheck") {
+                  job = setSubtaskDone(db, bus, id, subtaskId as string, op === "check");
+                } else {
+                  throw new Error("op must be add|check|uncheck");
+                }
+                if (!job) {
+                  return new Response('{"error":"unknown job"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(job);
+              })
+              .catch(
+                (e) =>
+                  new Response(
+                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                  ),
+              );
+          }
+          if (req.method === "DELETE" && path.startsWith("/jobs/")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/jobs/".length);
+            const result = deleteJob(db, bus, id);
+            if (!result) {
+              return new Response('{"error":"unknown job"}', {
+                status: 404,
+                headers: { "Content-Type": "application/json" },
+              });
+            }
+            return Response.json({ ok: true, id });
+          }
+          // Bare update — MUST come after the /jobs/:id/<sub> routes above.
+          if (req.method === "POST" && path.startsWith("/jobs/")) {
+            const { db, bus } = loadProject(projectId);
+            const id = path.slice("/jobs/".length);
+            return req
+              .json()
+              .then((body) => {
+                const { title, status, deliverable, detail } = body as {
+                  title?: unknown;
+                  status?: unknown;
+                  deliverable?: unknown;
+                  detail?: unknown;
+                };
+                const patch: {
+                  title?: string;
+                  status?: string;
+                  deliverable?: string | null;
+                  detail?: string | null;
+                } = {};
+                if (title !== undefined) patch.title = title as string;
+                if (status !== undefined) patch.status = status as string;
+                if (deliverable !== undefined) patch.deliverable = deliverable as string | null;
+                if (detail !== undefined) patch.detail = detail as string | null;
+                const job = updateJob(db, bus, id, patch);
+                if (!job) {
+                  return new Response('{"error":"unknown job"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(job);
               })
               .catch(
                 (e) =>

@@ -8,6 +8,7 @@
 
 import type { Database } from "bun:sqlite";
 import { type ActionSlot, readActions } from "./actions.ts";
+import { type Job, readJobs } from "./jobs.ts";
 import { type DocMark, docFileMtime, readDocMarks } from "./marks.ts";
 import type { ProjectMeta } from "./project.ts";
 import { readTags } from "./tags.ts";
@@ -125,6 +126,9 @@ interface ProjectState {
   zones: Zone[];
   proposals: Proposal[];
   conversation: Message[];
+  // Round 9 (Job Queue): the persisted agent-work units seed the sidebar (D3 —
+  // events keep it live thereafter). Unfiltered per-project read.
+  jobs: Job[];
   lens: Lens | null;
   cursor: number;
   epoch: string;
@@ -310,7 +314,21 @@ function readState(
     ? { owner: lensRow.owner, nodeId: lensRow.node_id, depth: lensRow.depth, docId: lensRow.doc_id }
     : null;
 
-  return { project, docs, nodes, edges, zones, proposals, conversation, lens, cursor, epoch };
+  const jobs = readJobs(db);
+
+  return {
+    project,
+    docs,
+    nodes,
+    edges,
+    zones,
+    proposals,
+    conversation,
+    jobs,
+    lens,
+    cursor,
+    epoch,
+  };
 }
 
 // Round 5 (IC-c): read ONE proposal in the exact wire shape readState

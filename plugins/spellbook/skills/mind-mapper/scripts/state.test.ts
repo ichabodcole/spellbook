@@ -27,6 +27,7 @@ test("readState assembles an empty project with the ratified shape", () => {
       zones: [],
       proposals: [],
       conversation: [],
+      jobs: [],
       lens: null,
       cursor: 0,
       epoch: "",

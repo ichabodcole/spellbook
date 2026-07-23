@@ -30,6 +30,14 @@ type EventKind =
   | "proposal.deleted"
   | "zone.created"
   | "zone.deleted"
+  // Round 9 (Job Queue): added/updated/claimed carry the FULL Job entity (D3 —
+  // wholesale replace-by-id, the tags.set idiom); deleted is thin {id}.
+  // job.claimed is kept DISTINCT from job.updated (a claim is a compare-and-set
+  // lease acquisition, the multi-agent on-ramp's headline signal).
+  | "job.added"
+  | "job.updated"
+  | "job.claimed"
+  | "job.deleted"
   | "message.posted"
   | "lens.set"
   | "look.here"

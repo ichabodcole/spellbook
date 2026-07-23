@@ -213,6 +213,30 @@ CREATE TABLE IF NOT EXISTS node_tags (
   tags_json TEXT NOT NULL
 );
 
+-- Round 9 (Job Queue): a first-class, persisted unit of AGENT WORK — status +
+-- sub-tasks + a deliverable + an OWNER (claimed_by, the lease). New table,
+-- additive by construction (CREATE TABLE IF NOT EXISTS — NO ADDITIVE_COLUMNS
+-- entry, the zones/node_actions/node_tags precedent). First-class-with-a-
+-- status-column follows the proposals shape. claimed_by / deliverable / detail
+-- are nullable (unclaimed / no output / no notes); subtasks_json defaults '[]'
+-- ([{id,label,done}], D4 — the checklist rides its job, no child table).
+-- created_at/updated_at are app-written epoch MS (NOT a unixepoch() default —
+-- updated_at must bump on every mutation with sub-second ordering). Liveness is
+-- DERIVED client-side from agent.activity (D2) — there is deliberately NO
+-- last_seen/heartbeat column here.
+CREATE TABLE IF NOT EXISTS jobs (
+  id TEXT PRIMARY KEY,
+  project TEXT NOT NULL,
+  title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'queued',
+  claimed_by TEXT,
+  deliverable TEXT,
+  subtasks_json TEXT NOT NULL DEFAULT '[]',
+  detail TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS docs_fts USING fts5(doc_id UNINDEXED, content);
 
 -- Explicit dual-write from send.ts at insert time (not a trigger) — simpler,

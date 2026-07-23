@@ -671,6 +671,58 @@ test("propose-node --stdin forwards top-level tags onto the pending proposal", a
   expect(parsed.proposals.find((pr) => pr.id === proposal.id)?.tags).toEqual(["gamma"]);
 });
 
+// Round 9 (Job Queue) — the `job` verb threads every field into the POST body
+// (the R7 body-mirror scar) across create/update/claim/subtask/list/delete.
+test("job verb: create/update/claim/subtask/list/delete round-trip the body shape", async () => {
+  const created = await runCli(
+    "job",
+    "create",
+    "--title",
+    "CLI job",
+    "--deliverable",
+    "doc:out",
+    "--detail",
+    "notes",
+  );
+  expect(created.code).toBe(0);
+  const job = JSON.parse(created.stdout) as {
+    id: string;
+    status: string;
+    deliverable: string;
+    detail: string;
+  };
+  // Every flag threaded through — not dropped (the mirror-drift signature).
+  expect(job.status).toBe("queued");
+  expect(job.deliverable).toBe("doc:out");
+  expect(job.detail).toBe("notes");
+
+  const updated = await runCli("job", "update", job.id, "--status", "running");
+  expect(JSON.parse(updated.stdout).status).toBe("running");
+
+  const claimed = await runCli("job", "claim", job.id, "--owner", "cli-agent");
+  expect(JSON.parse(claimed.stdout).claimedBy).toBe("cli-agent");
+
+  const sub = await runCli("job", "subtask", job.id, "--add", "step one");
+  const subtasks = JSON.parse(sub.stdout).subtasks as Array<{ id: string; label: string }>;
+  expect(subtasks[0]?.label).toBe("step one");
+  const checked = await runCli("job", "subtask", job.id, "--check", subtasks[0]?.id as string);
+  expect((JSON.parse(checked.stdout).subtasks as Array<{ done: boolean }>)[0]?.done).toBe(true);
+
+  const listed = await runCli("job", "list");
+  expect(
+    (JSON.parse(listed.stdout).jobs as Array<{ id: string }>).some((j) => j.id === job.id),
+  ).toBe(true);
+
+  const del = await runCli("job", "delete", job.id);
+  expect(del.code).toBe(0);
+  expect(JSON.parse(del.stdout)).toEqual({ ok: true, id: job.id });
+
+  // Guards: create without a title, claim without an owner, unknown sub.
+  expect((await runCli("job", "create")).code).toBe(2);
+  expect((await runCli("job", "claim", "x")).code).toBe(2);
+  expect((await runCli("job", "bogus")).code).toBe(2);
+});
+
 // Round 7 (PORT) — `open --port N` forwards the flag through ensureDaemon into
 // the daemon's spawn args; the server binds it and writes N to daemon.port.
 // Uses its own fresh HOME so no live daemon short-circuits the port (the
