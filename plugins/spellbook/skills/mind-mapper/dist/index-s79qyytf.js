@@ -18036,8 +18036,33 @@ var __iconNode2 = [
   ]
 ];
 var Funnel = createLucideIcon("funnel", __iconNode2);
-// node_modules/lucide-react/dist/esm/icons/send-horizontal.mjs
+// node_modules/lucide-react/dist/esm/icons/layers.mjs
 var __iconNode3 = [
+  [
+    "path",
+    {
+      d: "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
+      key: "zw3jo"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
+      key: "1wduqc"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
+      key: "kqbvx6"
+    }
+  ]
+];
+var Layers = createLucideIcon("layers", __iconNode3);
+// node_modules/lucide-react/dist/esm/icons/send-horizontal.mjs
+var __iconNode4 = [
   [
     "path",
     {
@@ -18047,9 +18072,9 @@ var __iconNode3 = [
   ],
   ["path", { d: "M6 12h16", key: "s4cdu5" }]
 ];
-var SendHorizontal = createLucideIcon("send-horizontal", __iconNode3);
+var SendHorizontal = createLucideIcon("send-horizontal", __iconNode4);
 // node_modules/lucide-react/dist/esm/icons/sparkles.mjs
-var __iconNode4 = [
+var __iconNode5 = [
   [
     "path",
     {
@@ -18061,18 +18086,18 @@ var __iconNode4 = [
   ["path", { d: "M22 4h-4", key: "gwowj6" }],
   ["circle", { cx: "4", cy: "20", r: "2", key: "6kqj1y" }]
 ];
-var Sparkles = createLucideIcon("sparkles", __iconNode4);
+var Sparkles = createLucideIcon("sparkles", __iconNode5);
 // node_modules/lucide-react/dist/esm/icons/square-check-big.mjs
-var __iconNode5 = [
+var __iconNode6 = [
   [
     "path",
     { d: "M21 10.656V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12.344", key: "2acyp4" }
   ],
   ["path", { d: "m9 11 3 3L22 4", key: "1pflzl" }]
 ];
-var SquareCheckBig = createLucideIcon("square-check-big", __iconNode5);
+var SquareCheckBig = createLucideIcon("square-check-big", __iconNode6);
 // node_modules/lucide-react/dist/esm/icons/triangle-alert.mjs
-var __iconNode6 = [
+var __iconNode7 = [
   [
     "path",
     {
@@ -18083,16 +18108,34 @@ var __iconNode6 = [
   ["path", { d: "M12 9v4", key: "juzpu7" }],
   ["path", { d: "M12 17h.01", key: "p32p05" }]
 ];
-var TriangleAlert = createLucideIcon("triangle-alert", __iconNode6);
+var TriangleAlert = createLucideIcon("triangle-alert", __iconNode7);
+// node_modules/lucide-react/dist/esm/icons/wand-sparkles.mjs
+var __iconNode8 = [
+  [
+    "path",
+    {
+      d: "m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72",
+      key: "ul74o6"
+    }
+  ],
+  ["path", { d: "m14 7 3 3", key: "1r5n42" }],
+  ["path", { d: "M5 6v4", key: "ilb8ba" }],
+  ["path", { d: "M19 14v4", key: "blhpug" }],
+  ["path", { d: "M10 2v2", key: "7u0qdc" }],
+  ["path", { d: "M7 8H3", key: "zfb6yr" }],
+  ["path", { d: "M21 16h-4", key: "1cnmox" }],
+  ["path", { d: "M11 3H9", key: "1obp7u" }]
+];
+var WandSparkles = createLucideIcon("wand-sparkles", __iconNode8);
 // node_modules/lucide-react/dist/esm/icons/arrow-up-from-line.mjs
-var __iconNode7 = [
+var __iconNode9 = [
   ["path", { d: "m18 9-6-6-6 6", key: "kcunyi" }],
   ["path", { d: "M12 3v14", key: "7cf3v8" }],
   ["path", { d: "M5 21h14", key: "11awu3" }]
 ];
-var ArrowUpFromLine = createLucideIcon("arrow-up-from-line", __iconNode7);
+var ArrowUpFromLine = createLucideIcon("arrow-up-from-line", __iconNode9);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode8 = [
+var __iconNode10 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -18102,27 +18145,27 @@ var __iconNode8 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode8);
+var BookOpen = createLucideIcon("book-open", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode9 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode9);
+var __iconNode11 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+var Check = createLucideIcon("check", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode10 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode10);
+var __iconNode12 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/chevrons-down.mjs
-var __iconNode11 = [
+var __iconNode13 = [
   ["path", { d: "m7 6 5 5 5-5", key: "1lc07p" }],
   ["path", { d: "m7 13 5 5 5-5", key: "1d48rs" }]
 ];
-var ChevronsDown = createLucideIcon("chevrons-down", __iconNode11);
+var ChevronsDown = createLucideIcon("chevrons-down", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/chevrons-up.mjs
-var __iconNode12 = [
+var __iconNode14 = [
   ["path", { d: "m17 11-5-5-5 5", key: "e8nh98" }],
   ["path", { d: "m17 18-5-5-5 5", key: "2avn1x" }]
 ];
-var ChevronsUp = createLucideIcon("chevrons-up", __iconNode12);
+var ChevronsUp = createLucideIcon("chevrons-up", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/circle-dashed.mjs
-var __iconNode13 = [
+var __iconNode15 = [
   ["path", { d: "M10.1 2.182a10 10 0 0 1 3.8 0", key: "5ilxe3" }],
   ["path", { d: "M13.9 21.818a10 10 0 0 1-3.8 0", key: "11zvb9" }],
   ["path", { d: "M17.609 3.721a10 10 0 0 1 2.69 2.7", key: "1iw5b2" }],
@@ -18132,24 +18175,24 @@ var __iconNode13 = [
   ["path", { d: "M3.721 6.391a10 10 0 0 1 2.7-2.69", key: "1mcia2" }],
   ["path", { d: "M6.391 20.279a10 10 0 0 1-2.69-2.7", key: "1fvljs" }]
 ];
-var CircleDashed = createLucideIcon("circle-dashed", __iconNode13);
+var CircleDashed = createLucideIcon("circle-dashed", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/corner-down-right.mjs
-var __iconNode14 = [
+var __iconNode16 = [
   ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
   ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
 ];
-var CornerDownRight = createLucideIcon("corner-down-right", __iconNode14);
+var CornerDownRight = createLucideIcon("corner-down-right", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/crosshair.mjs
-var __iconNode15 = [
+var __iconNode17 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["line", { x1: "22", x2: "18", y1: "12", y2: "12", key: "l9bcsi" }],
   ["line", { x1: "6", x2: "2", y1: "12", y2: "12", key: "13hhkx" }],
   ["line", { x1: "12", x2: "12", y1: "6", y2: "2", key: "10w3f3" }],
   ["line", { x1: "12", x2: "12", y1: "22", y2: "18", key: "15g9kq" }]
 ];
-var Crosshair = createLucideIcon("crosshair", __iconNode15);
+var Crosshair = createLucideIcon("crosshair", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode16 = [
+var __iconNode18 = [
   [
     "path",
     {
@@ -18162,9 +18205,9 @@ var __iconNode16 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode16);
+var FileText = createLucideIcon("file-text", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/flashlight.mjs
-var __iconNode17 = [
+var __iconNode19 = [
   ["path", { d: "M12 13v1", key: "176q98" }],
   [
     "path",
@@ -18175,9 +18218,9 @@ var __iconNode17 = [
   ],
   ["path", { d: "M6 6h12", key: "n6hhss" }]
 ];
-var Flashlight = createLucideIcon("flashlight", __iconNode17);
+var Flashlight = createLucideIcon("flashlight", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode18 = [
+var __iconNode20 = [
   [
     "path",
     {
@@ -18195,17 +18238,17 @@ var __iconNode18 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode18);
+var FolderTree = createLucideIcon("folder-tree", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/layout-grid.mjs
-var __iconNode19 = [
+var __iconNode21 = [
   ["rect", { width: "7", height: "7", x: "3", y: "3", rx: "1", key: "1g98yp" }],
   ["rect", { width: "7", height: "7", x: "14", y: "3", rx: "1", key: "6d4xhi" }],
   ["rect", { width: "7", height: "7", x: "14", y: "14", rx: "1", key: "nxv5o0" }],
   ["rect", { width: "7", height: "7", x: "3", y: "14", rx: "1", key: "1bb6yr" }]
 ];
-var LayoutGrid = createLucideIcon("layout-grid", __iconNode19);
+var LayoutGrid = createLucideIcon("layout-grid", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/lightbulb.mjs
-var __iconNode20 = [
+var __iconNode22 = [
   [
     "path",
     {
@@ -18216,18 +18259,18 @@ var __iconNode20 = [
   ["path", { d: "M9 18h6", key: "x1upvd" }],
   ["path", { d: "M10 22h4", key: "ceow96" }]
 ];
-var Lightbulb = createLucideIcon("lightbulb", __iconNode20);
+var Lightbulb = createLucideIcon("lightbulb", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode21 = [
+var __iconNode23 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode21);
+var ListTree = createLucideIcon("list-tree", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode22 = [
+var __iconNode24 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -18237,9 +18280,9 @@ var __iconNode22 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode22);
+var Loader = createLucideIcon("loader", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/map-pin.mjs
-var __iconNode23 = [
+var __iconNode25 = [
   [
     "path",
     {
@@ -18249,9 +18292,9 @@ var __iconNode23 = [
   ],
   ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
 ];
-var MapPin = createLucideIcon("map-pin", __iconNode23);
+var MapPin = createLucideIcon("map-pin", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/map.mjs
-var __iconNode24 = [
+var __iconNode26 = [
   [
     "path",
     {
@@ -18262,9 +18305,9 @@ var __iconNode24 = [
   ["path", { d: "M15 5.764v15", key: "1pn4in" }],
   ["path", { d: "M9 3.236v15", key: "1uimfh" }]
 ];
-var Map2 = createLucideIcon("map", __iconNode24);
+var Map2 = createLucideIcon("map", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode25 = [
+var __iconNode27 = [
   [
     "path",
     {
@@ -18273,19 +18316,19 @@ var __iconNode25 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode25);
+var MessageSquare = createLucideIcon("message-square", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/mic.mjs
-var __iconNode26 = [
+var __iconNode28 = [
   ["path", { d: "M12 19v3", key: "npa21l" }],
   ["path", { d: "M19 10v2a7 7 0 0 1-14 0v-2", key: "1vc78b" }],
   ["rect", { x: "9", y: "2", width: "6", height: "13", rx: "3", key: "s6n7sd" }]
 ];
-var Mic = createLucideIcon("mic", __iconNode26);
+var Mic = createLucideIcon("mic", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/minus.mjs
-var __iconNode27 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
-var Minus = createLucideIcon("minus", __iconNode27);
+var __iconNode29 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
+var Minus = createLucideIcon("minus", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode28 = [
+var __iconNode30 = [
   [
     "path",
     {
@@ -18294,15 +18337,15 @@ var __iconNode28 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode28);
+var Moon = createLucideIcon("moon", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode29 = [
+var __iconNode31 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode29);
+var Plus = createLucideIcon("plus", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/scroll-text.mjs
-var __iconNode30 = [
+var __iconNode32 = [
   ["path", { d: "M15 12h-5", key: "r7krc0" }],
   ["path", { d: "M15 8h-5", key: "1khuty" }],
   ["path", { d: "M19 17V5a2 2 0 0 0-2-2H4", key: "zz82l3" }],
@@ -18314,15 +18357,15 @@ var __iconNode30 = [
     }
   ]
 ];
-var ScrollText = createLucideIcon("scroll-text", __iconNode30);
+var ScrollText = createLucideIcon("scroll-text", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode31 = [
+var __iconNode33 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode31);
+var Search = createLucideIcon("search", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode32 = [
+var __iconNode34 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -18333,9 +18376,9 @@ var __iconNode32 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode32);
+var Sun = createLucideIcon("sun", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/tag.mjs
-var __iconNode33 = [
+var __iconNode35 = [
   [
     "path",
     {
@@ -18345,31 +18388,31 @@ var __iconNode33 = [
   ],
   ["circle", { cx: "7.5", cy: "7.5", r: ".5", fill: "currentColor", key: "kqv944" }]
 ];
-var Tag = createLucideIcon("tag", __iconNode33);
+var Tag = createLucideIcon("tag", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode34 = [
+var __iconNode36 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode34);
+var Trash2 = createLucideIcon("trash-2", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode35 = [
+var __iconNode37 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode35);
+var Upload = createLucideIcon("upload", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode36 = [
+var __iconNode38 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode36);
+var User = createLucideIcon("user", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/waypoints.mjs
-var __iconNode37 = [
+var __iconNode39 = [
   ["path", { d: "m10.586 5.414-5.172 5.172", key: "4mc350" }],
   ["path", { d: "m18.586 13.414-5.172 5.172", key: "8c96vv" }],
   ["path", { d: "M6 12h12", key: "8npq4p" }],
@@ -18378,15 +18421,15 @@ var __iconNode37 = [
   ["circle", { cx: "20", cy: "12", r: "2", key: "1xzzfp" }],
   ["circle", { cx: "4", cy: "12", r: "2", key: "1hvhnz" }]
 ];
-var Waypoints = createLucideIcon("waypoints", __iconNode37);
+var Waypoints = createLucideIcon("waypoints", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode38 = [
+var __iconNode40 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode38);
+var X = createLucideIcon("x", __iconNode40);
 // src/mind-mapper/surface/App.tsx
-var import_react23 = __toESM(require_react(), 1);
+var import_react22 = __toESM(require_react(), 1);
 
 // node_modules/@dagrejs/dagre/dist/dagre.esm.js
 var ge = Object.defineProperty;
@@ -29833,6 +29876,152 @@ function manyBody_default() {
 }
 // src/mind-mapper/surface/GraphCanvas.tsx
 var import_react9 = __toESM(require_react(), 1);
+
+// src/mind-mapper/surface/state/nodeActions.ts
+var TIER_ORDER = ["canon", "thread", "story-local"];
+function ratifyTierOptions(ratifyAs) {
+  if (ratifyAs && TIER_ORDER.includes(ratifyAs)) {
+    return [
+      { tier: ratifyAs, suggested: true },
+      ...TIER_ORDER.filter((t) => t !== ratifyAs).map((t) => ({ tier: t, suggested: false }))
+    ];
+  }
+  return TIER_ORDER.map((t) => ({ tier: t, suggested: false }));
+}
+function buildNodeActions(node, menu, promotable, dispatch2) {
+  const { onCommand, onRule, onAction } = dispatch2;
+  const items = [];
+  items.push({
+    key: "focus",
+    label: "Focus",
+    icon: Crosshair,
+    tone: "default",
+    group: "focus",
+    run: () => onCommand("Focus")
+  });
+  items.push({
+    key: "select",
+    label: "Select",
+    icon: Waypoints,
+    tone: "default",
+    group: "select",
+    submenu: [
+      {
+        key: "select-connected",
+        label: "Select connected",
+        icon: Waypoints,
+        tone: "default",
+        group: "select",
+        run: () => onCommand("Select connected")
+      },
+      {
+        key: "select-children",
+        label: "Select children",
+        icon: ChevronsDown,
+        tone: "default",
+        group: "select",
+        run: () => onCommand("Select children")
+      },
+      {
+        key: "select-parents",
+        label: "Select parents",
+        icon: ChevronsUp,
+        tone: "default",
+        group: "select",
+        run: () => onCommand("Select parents")
+      }
+    ],
+    run: () => {}
+  });
+  if ((node.submapChildCount ?? 0) > 0) {
+    items.push({
+      key: "enter-submap",
+      label: "Enter submap",
+      icon: FolderTree,
+      tone: "default",
+      group: "navigate",
+      run: () => onCommand("Enter submap")
+    });
+  }
+  if (promotable) {
+    items.push({
+      key: "promote",
+      label: "Promote to main",
+      icon: ArrowUpFromLine,
+      tone: "default",
+      group: "navigate",
+      run: () => onCommand("Promote")
+    });
+  }
+  const ruling = menu?.ruling;
+  if (ruling && onRule) {
+    if (ruling.author === "agent") {
+      for (const { tier, suggested } of ratifyTierOptions(ruling.ratifyAs)) {
+        items.push({
+          key: `ratify-${tier}`,
+          label: `Ratify as ${tier}`,
+          icon: Check,
+          tone: "pending",
+          group: "ratify",
+          suggested,
+          run: () => onRule(ruling.proposalId, tier)
+        });
+      }
+      items.push({
+        key: "reject",
+        label: "Reject",
+        icon: X,
+        tone: "faint",
+        group: "ratify",
+        run: () => onRule(ruling.proposalId, "reject")
+      });
+    } else {
+      items.push({
+        key: "withdraw",
+        label: "Withdraw sketch",
+        icon: X,
+        tone: "faint",
+        group: "ratify",
+        run: () => onRule(ruling.proposalId, "reject")
+      });
+    }
+  }
+  for (const [label, icon, command] of [
+    ["Explain", ScrollText, "Explain"],
+    ["Questions", CircleQuestionMark, "Questions"],
+    ["Subtopics", ListTree, "Subtopics"]
+  ]) {
+    items.push({
+      key: `verb-${command}`,
+      label,
+      icon,
+      tone: "default",
+      group: "verbs",
+      run: () => onCommand(command)
+    });
+  }
+  if (menu?.actions && onAction) {
+    for (const action of menu.actions) {
+      items.push({
+        key: `slot-${action.id}`,
+        label: action.label,
+        icon: Sparkles,
+        tone: "agent",
+        group: "slots",
+        run: () => onAction(action, node)
+      });
+    }
+  }
+  items.push({
+    key: "delete",
+    label: "Delete",
+    icon: Trash2,
+    tone: "danger",
+    group: "danger",
+    run: () => onCommand("Delete")
+  });
+  return items;
+}
 
 // node_modules/@base-ui/react/context-menu/index.parts.mjs
 var exports_index_parts2 = {};
@@ -41683,10 +41872,63 @@ function ContextMenuLabel({
     }, undefined, false, undefined, this)
   }, undefined, false, undefined, this);
 }
+var ContextMenuSub = exports_index_parts2.SubmenuRoot;
+function ContextMenuSubTrigger({
+  className,
+  children: children2,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts2.SubmenuTrigger, {
+    className: cn2("flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground data-[popup-open]:bg-accent [&_svg]:pointer-events-none [&_svg]:size-3.5 [&_svg]:shrink-0", className),
+    ...props,
+    children: [
+      children2,
+      /* @__PURE__ */ jsx_dev_runtime.jsxDEV(ChevronRight, {
+        className: "ml-auto"
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function ContextMenuSubContent({
+  className,
+  children: children2,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts2.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts2.Positioner, {
+      className: "outline-none",
+      children: /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts2.Popup, {
+        className: cn2("z-50 min-w-[9rem] max-w-xs overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-lg", className),
+        ...props,
+        children: children2
+      }, undefined, false, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
 
 // src/mind-mapper/surface/NodeContextMenu.tsx
 var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
-var RATIFY_TIERS = ["canon", "thread", "story-local"];
+var NEST_TIERS = ["canon", "thread", "story-local"];
+var TONE_CLASS = {
+  default: "",
+  pending: "text-pending",
+  danger: "text-attention",
+  agent: "text-thread-tier",
+  faint: "text-ink-faint"
+};
+var SECTION_BREAK = new Set(["verbs", "slots", "danger"]);
+function ItemRow({ item }) {
+  const Icon2 = item.icon;
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
+    className: `${TONE_CLASS[item.tone]} ${item.suggested ? "font-semibold" : ""}`,
+    onClick: () => item.run(),
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Icon2, {}, undefined, false, undefined, this),
+      " ",
+      item.label
+    ]
+  }, undefined, true, undefined, this);
+}
 function NodeContextMenu({
   node,
   menu,
@@ -41694,10 +41936,16 @@ function NodeContextMenu({
   onCommand,
   onRule,
   onAction,
+  multi,
+  selectionCount,
+  onGroupSubmap,
+  onNestSubmap,
+  onGroupZone,
   children: children2
 }) {
-  const ruling = menu?.ruling;
-  const ratifyAs = ruling?.ratifyAs ?? null;
+  const items = buildNodeActions(node, menu, promotable, { onCommand, onRule, onAction });
+  const showMulti = multi && (selectionCount ?? 0) >= 2;
+  let prevGroup = "";
   return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenu, {
     children: [
       /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuTrigger3, {
@@ -41709,142 +41957,96 @@ function NodeContextMenu({
             className: "truncate",
             children: node.title
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Focus"),
+          showMulti && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(jsx_dev_runtime2.Fragment, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Crosshair, {}, undefined, false, undefined, this),
-              " Focus"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Select connected"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Waypoints, {}, undefined, false, undefined, this),
-              " Select connected"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Select children"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ChevronsDown, {}, undefined, false, undefined, this),
-              " Select children"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Select parents"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ChevronsUp, {}, undefined, false, undefined, this),
-              " Select parents"
-            ]
-          }, undefined, true, undefined, this),
-          (node.submapChildCount ?? 0) > 0 && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Enter submap"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
-              " Enter submap"
-            ]
-          }, undefined, true, undefined, this),
-          promotable && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Promote"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ArrowUpFromLine, {}, undefined, false, undefined, this),
-              " Promote to main"
-            ]
-          }, undefined, true, undefined, this),
-          ruling && onRule && (ruling.author === "agent" ? /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(jsx_dev_runtime2.Fragment, {
-            children: [
-              ratifyAs ? /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-                className: "text-pending",
-                onClick: () => onRule(ruling.proposalId, ratifyAs),
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Check, {}, undefined, false, undefined, this),
-                  " Ratify as ",
-                  ratifyAs
-                ]
-              }, undefined, true, undefined, this) : RATIFY_TIERS.map((tier) => /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-                className: "text-pending",
-                onClick: () => onRule(ruling.proposalId, tier),
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Check, {}, undefined, false, undefined, this),
-                  " Ratify as ",
-                  tier
-                ]
-              }, tier, true, undefined, this)),
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-                className: "text-ink-faint",
-                onClick: () => onRule(ruling.proposalId, "reject"),
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(X, {}, undefined, false, undefined, this),
-                  " Reject"
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            className: "text-ink-faint",
-            onClick: () => onRule(ruling.proposalId, "reject"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(X, {}, undefined, false, undefined, this),
-              " Withdraw sketch"
-            ]
-          }, undefined, true, undefined, this)),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Explain"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ScrollText, {}, undefined, false, undefined, this),
-              " Explain"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Questions"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(CircleQuestionMark, {}, undefined, false, undefined, this),
-              " Questions"
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            onClick: () => onCommand("Subtopics"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ListTree, {}, undefined, false, undefined, this),
-              " Subtopics"
-            ]
-          }, undefined, true, undefined, this),
-          menu?.actions && onAction && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(jsx_dev_runtime2.Fragment, {
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
               /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuLabel, {
-                className: "flex items-center gap-1.5 normal-case tracking-normal text-thread-tier",
+                className: "flex items-center gap-1.5 normal-case tracking-normal text-ink-dim",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Sparkles, {
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Layers, {
                     size: 10,
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  " agent suggests"
+                  " ",
+                  selectionCount,
+                  " selected"
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
-                className: "max-h-32 overflow-y-auto",
-                children: menu.actions.map((action) => /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-                  className: "text-thread-tier",
-                  onClick: () => onAction(action, node),
-                  children: [
-                    /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Sparkles, {}, undefined, false, undefined, this),
-                    " ",
-                    action.label
-                  ]
-                }, action.id, true, undefined, this))
-              }, undefined, false, undefined, this)
+              multi.groupSubmap && onGroupSubmap && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
+                onClick: () => onGroupSubmap(node.id),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+                  " Group under this as submap"
+                ]
+              }, undefined, true, undefined, this),
+              multi.nestSubmap && onNestSubmap && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSub, {
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSubTrigger, {
+                    className: "text-pending",
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(FolderTree, {}, undefined, false, undefined, this),
+                      " Nest under this as submap"
+                    ]
+                  }, undefined, true, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSubContent, {
+                    children: NEST_TIERS.map((tier) => /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
+                      className: "text-pending",
+                      onClick: () => onNestSubmap(node.id, tier),
+                      children: [
+                        "Ratify all as ",
+                        tier
+                      ]
+                    }, tier, true, undefined, this))
+                  }, undefined, false, undefined, this)
+                ]
+              }, undefined, true, undefined, this),
+              multi.groupZone && onGroupZone && /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
+                className: "text-pending",
+                onClick: () => onGroupZone(),
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Layers, {}, undefined, false, undefined, this),
+                  " Group selected into a zone…"
+                ]
+              }, undefined, true, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSeparator, {}, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuItem, {
-            className: "text-attention",
-            onClick: () => onCommand("Delete"),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Trash2, {}, undefined, false, undefined, this),
-              " Delete"
-            ]
-          }, undefined, true, undefined, this)
+          items.flatMap((item) => {
+            const rows = [];
+            if (SECTION_BREAK.has(item.group) && item.group !== prevGroup) {
+              rows.push(/* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSeparator, {}, `${item.key}-sep`, false, undefined, this));
+            }
+            if (item.group === "slots" && prevGroup !== "slots") {
+              rows.push(/* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuLabel, {
+                className: "flex items-center gap-1.5 normal-case tracking-normal text-thread-tier",
+                children: "agent suggests"
+              }, `${item.key}-label`, false, undefined, this));
+            }
+            prevGroup = item.group;
+            if (item.submenu) {
+              const Icon2 = item.icon;
+              rows.push(/* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSub, {
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSubTrigger, {
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Icon2, {}, undefined, false, undefined, this),
+                      " ",
+                      item.label
+                    ]
+                  }, undefined, true, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ContextMenuSubContent, {
+                    children: item.submenu.map((sub) => /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ItemRow, {
+                      item: sub
+                    }, sub.key, false, undefined, this))
+                  }, undefined, false, undefined, this)
+                ]
+              }, item.key, true, undefined, this));
+            } else {
+              rows.push(/* @__PURE__ */ jsx_dev_runtime2.jsxDEV(ItemRow, {
+                item
+              }, item.key, false, undefined, this));
+            }
+            return rows;
+          })
         ]
       }, undefined, true, undefined, this)
     ]
@@ -41938,6 +42140,11 @@ function IdeaNode({ data, selected: selected2 }) {
     onCommand: data.onCommand,
     onRule: data.onRule,
     onAction: data.onAction,
+    multi: data.multi,
+    selectionCount: data.selectionCount,
+    onGroupSubmap: data.onGroupSubmap,
+    onNestSubmap: data.onNestSubmap,
+    onGroupZone: data.onGroupZone,
     children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("div", {
       className: `w-[190px] rounded-lg border bg-surface px-3 py-2 shadow-lg transition-all ${TIER_CARD[n.tier]} ${n.processing ? "border-dotted" : n.pending ? "border-dashed" : ""} ${steeping ? "opacity-60 blur-[0.3px]" : ""} ${selected2 ? "ring-2 ring-ink shadow-xl" : ""} ${data.dimmed ? "opacity-20" : ""}`,
       children: [
@@ -42065,13 +42272,19 @@ function forceLayout(map, onCommand) {
 function layout(mode, map, onCommand) {
   return mode === "physics" ? forceLayout(map, onCommand) : dagreLayout(map, onCommand);
 }
-function mergeLayout(prev, fresh) {
+function mergeLayout(prev, fresh, carry) {
   const prevById = new Map(prev.map((n) => [n.id, n]));
   return fresh.map((f) => {
     const existing = prevById.get(f.id);
-    if (!existing)
-      return f;
-    return { ...f, position: existing.position, selected: existing.selected };
+    if (existing)
+      return { ...f, position: existing.position, selected: existing.selected };
+    const proposalId = carry?.alias?.get(f.id);
+    if (proposalId) {
+      const pos = prevById.get(proposalId)?.position ?? carry?.posMemory?.get(proposalId);
+      if (pos)
+        return { ...f, position: pos };
+    }
+    return f;
   });
 }
 function toFlowEdges(map) {
@@ -42133,7 +42346,13 @@ function GraphCanvas({
   panelBelowBar,
   menus,
   onRule,
-  onAction
+  onAction,
+  ratifyAlias,
+  multiMenus,
+  selectionCount,
+  onGroupSubmap,
+  onNestSubmap,
+  onGroupZone
 }) {
   const [nodes, setNodes] = import_react9.useState([]);
   const [layoutMode, setLayoutMode] = import_react9.useState("tree");
@@ -42143,6 +42362,9 @@ function GraphCanvas({
   const pendingTimer = import_react9.useRef(null);
   const connectSource = import_react9.useRef(null);
   const connectCompleted = import_react9.useRef(false);
+  const posMemory = import_react9.useRef(new Map);
+  const aliasRef = import_react9.useRef(ratifyAlias);
+  aliasRef.current = ratifyAlias;
   const commandRef = import_react9.useRef(onNodeCommand);
   commandRef.current = onNodeCommand;
   const ruleRef = import_react9.useRef(onRule);
@@ -42151,13 +42373,32 @@ function GraphCanvas({
   const actionRef = import_react9.useRef(onAction);
   actionRef.current = onAction;
   const dispatchAction = import_react9.useCallback((action, node) => actionRef.current?.(action, node), []);
+  const groupSubmapRef = import_react9.useRef(onGroupSubmap);
+  groupSubmapRef.current = onGroupSubmap;
+  const dispatchGroupSubmap = import_react9.useCallback((parentId) => groupSubmapRef.current?.(parentId), []);
+  const nestSubmapRef = import_react9.useRef(onNestSubmap);
+  nestSubmapRef.current = onNestSubmap;
+  const dispatchNestSubmap = import_react9.useCallback((parentId, tier) => nestSubmapRef.current?.(parentId, tier), []);
+  const groupZoneRef = import_react9.useRef(onGroupZone);
+  groupZoneRef.current = onGroupZone;
+  const dispatchGroupZone = import_react9.useCallback(() => groupZoneRef.current?.(), []);
   const prevLayoutMode = import_react9.useRef(layoutMode);
   import_react9.useEffect(() => {
     const fresh = layout(layoutMode, map, (command, node) => commandRef.current(command, node));
     const modeChanged = prevLayoutMode.current !== layoutMode;
     prevLayoutMode.current = layoutMode;
-    setNodes((prev) => modeChanged ? fresh : mergeLayout(prev, fresh));
+    setNodes((prev) => {
+      for (const n of prev)
+        posMemory.current.set(n.id, n.position);
+      if (modeChanged)
+        return fresh;
+      return mergeLayout(prev, fresh, { alias: aliasRef.current, posMemory: posMemory.current });
+    });
   }, [map, layoutMode]);
+  const retidy = import_react9.useCallback(() => {
+    posMemory.current.clear();
+    setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
+  }, [layoutMode, map]);
   import_react9.useEffect(() => {
     const want = [...selectedIds].sort().join(",");
     lastReported.current = want;
@@ -42183,7 +42424,7 @@ function GraphCanvas({
   const renderNodes = import_react9.useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
     const lit = spotlight?.nodes ?? null;
-    if (!keep && !lit && !promotable && !menus)
+    if (!keep && !lit && !promotable && !menus && !multiMenus)
       return nodes;
     return nodes.map((n) => {
       const searchDim = keep ? !keep.has(n.id) : false;
@@ -42196,11 +42437,29 @@ function GraphCanvas({
           ...promotable && { promotable: true },
           menu: menus?.get(n.id),
           onRule: dispatchRule,
-          onAction: dispatchAction
+          onAction: dispatchAction,
+          multi: multiMenus?.get(n.id) ?? null,
+          selectionCount,
+          onGroupSubmap: dispatchGroupSubmap,
+          onNestSubmap: dispatchNestSubmap,
+          onGroupZone: dispatchGroupZone
         }
       };
     });
-  }, [nodes, highlightIds, spotlight, promotable, menus, dispatchRule, dispatchAction]);
+  }, [
+    nodes,
+    highlightIds,
+    spotlight,
+    promotable,
+    menus,
+    dispatchRule,
+    dispatchAction,
+    multiMenus,
+    selectionCount,
+    dispatchGroupSubmap,
+    dispatchNestSubmap,
+    dispatchGroupZone
+  ]);
   const renderEdges = import_react9.useMemo(() => {
     const lit = spotlight?.edges ?? null;
     if (!lit)
@@ -42308,6 +42567,20 @@ function GraphCanvas({
           /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
+            className: "flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide",
+            title: "Tidy — re-run the layout and reset positions",
+            onClick: retidy,
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(WandSparkles, {
+                size: 11,
+                "aria-hidden": true
+              }, undefined, false, undefined, this),
+              "tidy"
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Button, {
+            variant: "outline",
+            size: "auto",
             className: "px-2 py-1 text-[10px] uppercase tracking-wide",
             title: layoutMode === "tree" ? "Switch to physics layout" : "Switch to tree layout",
             onClick: () => setLayoutMode((m2) => m2 === "tree" ? "physics" : "tree"),
@@ -42320,11 +42593,11 @@ function GraphCanvas({
 }
 
 // src/mind-mapper/surface/state/cardGrid.ts
-var TIER_ORDER = ["canon", "thread", "story-local", "background"];
+var TIER_ORDER2 = ["canon", "thread", "story-local", "background"];
 var KIND_ORDER = ["cast", "place", "concept", "thread"];
 function groupByTierKind(nodes) {
   const out = [];
-  for (const tier of TIER_ORDER) {
+  for (const tier of TIER_ORDER2) {
     const inTier = nodes.filter((n) => n.tier === tier);
     if (inTier.length === 0)
       continue;
@@ -42350,7 +42623,11 @@ function CardGrid({
   menus,
   onRule,
   onAction,
-  promotable
+  promotable,
+  multiMenus,
+  onGroupSubmap,
+  onNestSubmap,
+  onGroupZone
 }) {
   const groups = groupByTierKind(map.nodes);
   const keep = highlightIds ? new Set(highlightIds) : null;
@@ -42393,6 +42670,11 @@ function CardGrid({
                   onCommand: (command) => onNodeCommand(command, n),
                   onRule,
                   onAction,
+                  multi: multiMenus?.get(n.id) ?? null,
+                  selectionCount: selectedIds.length,
+                  onGroupSubmap,
+                  onNestSubmap,
+                  onGroupZone,
                   children: /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("button", {
                     type: "button",
                     onClick: () => onSelect([n.id]),
@@ -48093,9 +48375,6 @@ function BacklinkRow({
   }, undefined, false, undefined, this);
 }
 
-// src/mind-mapper/surface/FilterControl.tsx
-var import_react14 = __toESM(require_react(), 1);
-
 // src/mind-mapper/surface/state/filter.ts
 var EMPTY_FILTER = { status: [], tier: [], tags: [] };
 function isEmptyFilter(f) {
@@ -48127,7 +48406,7 @@ function filterMap(map, f) {
   return { ...map, nodes, edges };
 }
 var STATUS_ORDER = ["ratified", "pending"];
-var TIER_ORDER2 = ["canon", "thread", "story-local", "background"];
+var TIER_ORDER3 = ["canon", "thread", "story-local", "background"];
 function filterFacets(map) {
   const statusesPresent = new Set(map.nodes.map(statusOf));
   const tiersPresent = new Set(map.nodes.map((n) => n.tier));
@@ -48137,7 +48416,7 @@ function filterFacets(map) {
       tags.add(t);
   return {
     statuses: STATUS_ORDER.filter((s) => statusesPresent.has(s)),
-    tiers: TIER_ORDER2.filter((t) => tiersPresent.has(t)),
+    tiers: TIER_ORDER3.filter((t) => tiersPresent.has(t)),
     tags: [...tags].sort((a2, b) => a2.localeCompare(b))
   };
 }
@@ -48145,8 +48424,977 @@ function toggleFacet(values2, value) {
   return values2.includes(value) ? values2.filter((v2) => v2 !== value) : [...values2, value];
 }
 
-// src/mind-mapper/surface/FilterControl.tsx
+// node_modules/@base-ui/react/popover/index.parts.mjs
+var exports_index_parts3 = {};
+__export(exports_index_parts3, {
+  createHandle: () => createPopoverHandle,
+  Viewport: () => PopoverViewport,
+  Trigger: () => PopoverTrigger,
+  Title: () => PopoverTitle,
+  Root: () => PopoverRoot,
+  Positioner: () => PopoverPositioner,
+  Portal: () => PopoverPortal,
+  Popup: () => PopoverPopup,
+  Handle: () => PopoverHandle,
+  Description: () => PopoverDescription,
+  Close: () => PopoverClose,
+  Backdrop: () => PopoverBackdrop,
+  Arrow: () => PopoverArrow
+});
+
+// node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
+var React88 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/root/PopoverRootContext.mjs
+var React86 = __toESM(require_react(), 1);
+"use client";
+var PopoverRootContext = /* @__PURE__ */ React86.createContext(undefined);
+if (true)
+  PopoverRootContext.displayName = "PopoverRootContext";
+function usePopoverRootContext(optional) {
+  const context = React86.useContext(PopoverRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: PopoverRootContext is missing. Popover parts must be placed within <Popover.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/popover/store/PopoverStore.mjs
+var React87 = __toESM(require_react(), 1);
+var ReactDOM8 = __toESM(require_react_dom(), 1);
+"use client";
+function createInitialState2() {
+  return {
+    ...createInitialPopupStoreState(),
+    disabled: false,
+    modal: false,
+    focusManagerModal: false,
+    instantType: undefined,
+    openMethod: null,
+    openChangeReason: null,
+    titleElementId: undefined,
+    descriptionElementId: undefined,
+    stickIfOpen: true,
+    nested: false,
+    openOnHover: false,
+    closeDelay: 0,
+    hasViewport: false
+  };
+}
+var selectors3 = {
+  ...popupStoreSelectors,
+  disabled: createSelector((state) => state.disabled),
+  instantType: createSelector((state) => state.instantType),
+  openMethod: createSelector((state) => state.openMethod),
+  openChangeReason: createSelector((state) => state.openChangeReason),
+  modal: createSelector((state) => state.modal),
+  focusManagerModal: createSelector((state) => state.focusManagerModal),
+  stickIfOpen: createSelector((state) => state.stickIfOpen),
+  titleElementId: createSelector((state) => state.titleElementId),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  openOnHover: createSelector((state) => state.openOnHover),
+  closeDelay: createSelector((state) => state.closeDelay),
+  hasViewport: createSelector((state) => state.hasViewport)
+};
+
+class PopoverStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const initial2 = {
+      ...createInitialState2(),
+      ...initialState
+    };
+    const triggerElements = new PopupTriggerMap;
+    if (initial2.open && initialState?.mounted === undefined) {
+      initial2.mounted = true;
+    }
+    initial2.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(initial2, {
+      popupRef: /* @__PURE__ */ React87.createRef(),
+      backdropRef: /* @__PURE__ */ React87.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React87.createRef(),
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined,
+      triggerFocusTargetRef: /* @__PURE__ */ React87.createRef(),
+      beforeContentFocusGuardRef: /* @__PURE__ */ React87.createRef(),
+      stickIfOpenTimeout: new Timeout,
+      triggerElements
+    }, selectors3);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    const isHover = eventDetails.reason === exports_reason_parts.triggerHover;
+    const isKeyboardClick = eventDetails.reason === exports_reason_parts.triggerPress && eventDetails.event.detail === 0;
+    const isDismissClose = !nextOpen && (eventDetails.reason === exports_reason_parts.escapeKey || eventDetails.reason == null);
+    const shouldPreventUnmountOnClose = attachPreventUnmountOnClose(eventDetails);
+    const activeTriggerId = this.select("activeTriggerId");
+    if (!nextOpen && eventDetails.reason === exports_reason_parts.closePress && eventDetails.trigger == null && activeTriggerId != null) {
+      eventDetails.trigger = this.context.triggerElements.getById(activeTriggerId) ?? this.select("activeTriggerElement") ?? undefined;
+    }
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const changeState = () => {
+      const updatedState = {
+        open: nextOpen,
+        openChangeReason: eventDetails.reason
+      };
+      setPopupOpenState(updatedState, nextOpen, eventDetails.trigger, shouldPreventUnmountOnClose());
+      this.update(updatedState);
+    };
+    if (isHover) {
+      this.set("stickIfOpen", true);
+      this.context.stickIfOpenTimeout.start(PATIENT_CLICK_THRESHOLD, () => {
+        this.set("stickIfOpen", false);
+      });
+      ReactDOM8.flushSync(changeState);
+    } else {
+      changeState();
+    }
+    if (isKeyboardClick || isDismissClose) {
+      this.set("instantType", isKeyboardClick ? "click" : "dismiss");
+    } else if (eventDetails.reason === exports_reason_parts.focusOut) {
+      this.set("instantType", "focus");
+    } else {
+      this.set("instantType", undefined);
+    }
+  };
+  static useStore(externalStore, initialState) {
+    const {
+      store,
+      internalStore
+    } = usePopupStore(externalStore, (floatingId, nested) => new PopoverStore(initialState, floatingId, nested));
+    React87.useEffect(() => internalStore?.disposeEffect(), [internalStore]);
+    return store;
+  }
+  disposeEffect = () => {
+    return this.context.stickIfOpenTimeout.disposeEffect();
+  };
+}
+
+// node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function PopoverRootComponent({
+  props
+}) {
+  const {
+    children: children2,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    modal = false,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const store = PopoverStore.useStore(handle?.store, {
+    modal,
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp
+  });
+  useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerIdProp);
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  const nested = useFloatingParentNodeId() != null;
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store, () => {
+    store.update({
+      stickIfOpen: true,
+      openChangeReason: null
+    });
+  });
+  store.useSyncedValues({
+    modal,
+    nested
+  });
+  React88.useEffect(() => {
+    if (!open) {
+      store.context.stickIfOpenTimeout.clear();
+    }
+  }, [store, open]);
+  const handleImperativeClose = React88.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React88.useImperativeHandle(props.actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+  const shouldRenderInteractions = open || mounted;
+  const popoverContext = React88.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime20.jsxs(PopoverRootContext.Provider, {
+    value: popoverContext,
+    children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverInteractions, {
+      store,
+      modal
+    }), typeof children2 === "function" ? children2({
+      payload
+    }) : children2]
+  });
+}
+function PopoverRoot(props) {
+  if (usePopoverRootContext(true)) {
+    return /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverRootComponent, {
+      props
+    });
+  }
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(FloatingTree, {
+    children: /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverRootComponent, {
+      props
+    })
+  });
+}
+function PopoverInteractions({
+  store,
+  modal
+}) {
+  const floatingRootContext = store.useState("floatingRootContext");
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent: {
+      mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+      touch: "sloppy"
+    }
+  });
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = React88.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, dismiss.floating), [dismiss.floating]);
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps
+  });
+  return null;
+}
+// node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
+var React89 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/utils/constants.mjs
+var OPEN_DELAY = 300;
+
+// node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PopoverTrigger = /* @__PURE__ */ React89.forwardRef(function PopoverTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    handle,
+    payload,
+    openOnHover = false,
+    delay = OPEN_DELAY,
+    closeDelay = 0,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const rootContext = usePopoverRootContext(true);
+  const store = handle?.store ?? rootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Popover.Trigger> must be either used within a <Popover.Root> component or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const isTriggerActive = store.useState("isTriggerActive", thisTriggerId);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React89.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload,
+    disabled: disabled2,
+    openOnHover,
+    closeDelay
+  });
+  const openReason = store.useState("openChangeReason");
+  const stickIfOpen = store.useState("stickIfOpen");
+  const openMethod = store.useState("openMethod");
+  const focusManagerModal = store.useState("focusManagerModal");
+  const hoverProps = useHoverReferenceInteraction(floatingContext, {
+    enabled: !disabled2 && floatingContext != null && openOnHover && (openMethod !== "touch" || openReason !== exports_reason_parts.triggerPress),
+    mouseOnly: true,
+    move: false,
+    handleClose: safePolygon(),
+    restMs: delay,
+    delay: {
+      close: closeDelay
+    },
+    triggerElementRef,
+    isActiveTrigger: isTriggerActive,
+    isClosing: () => store.select("transitionStatus") === "ending"
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null,
+    stickIfOpen
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const stateAttributesMapping4 = {
+    open(value) {
+      if (value && openReason === exports_reason_parts.triggerPress) {
+        return pressableTriggerOpenStateMapping.open(value);
+      }
+      return triggerOpenStateMapping.open(value);
+    }
+  };
+  const {
+    preFocusGuardRef,
+    handlePreFocusGuardFocus,
+    handleFocusTargetFocus
+  } = useTriggerFocusGuards(store, triggerElementRef);
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const element2 = useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, hoverProps, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: stateAttributesMapping4
+  });
+  if (isMountedByThisTrigger && !focusManagerModal) {
+    return /* @__PURE__ */ import_jsx_runtime21.jsxs(React89.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime21.jsx(FocusGuard, {
+        ref: preFocusGuardRef,
+        onFocus: handlePreFocusGuardFocus
+      }), /* @__PURE__ */ import_jsx_runtime21.jsx(React89.Fragment, {
+        children: element2
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime21.jsx(FocusGuard, {
+        ref: store.context.triggerFocusTargetRef,
+        onFocus: handleFocusTargetFocus
+      })]
+    });
+  }
+  return /* @__PURE__ */ import_jsx_runtime21.jsx(React89.Fragment, {
+    children: element2
+  }, thisTriggerId);
+});
+if (true)
+  PopoverTrigger.displayName = "PopoverTrigger";
+// node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
+var React91 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/portal/PopoverPortalContext.mjs
+var React90 = __toESM(require_react(), 1);
+"use client";
+var PopoverPortalContext = /* @__PURE__ */ React90.createContext(undefined);
+if (true)
+  PopoverPortalContext.displayName = "PopoverPortalContext";
+function usePopoverPortalContext() {
+  const value = React90.useContext(PopoverPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Popover.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PopoverPortal = /* @__PURE__ */ React91.forwardRef(function PopoverPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = usePopoverRootContext();
+  const mounted = store.useState("mounted");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime22.jsx(PopoverPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime22.jsx(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps
+    })
+  });
+});
+if (true)
+  PopoverPortal.displayName = "PopoverPortal";
+// node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
+var React93 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/positioner/PopoverPositionerContext.mjs
+var React92 = __toESM(require_react(), 1);
+"use client";
+var PopoverPositionerContext = /* @__PURE__ */ React92.createContext(undefined);
+if (true)
+  PopoverPositionerContext.displayName = "PopoverPositionerContext";
+function usePopoverPositionerContext() {
+  const context = React92.useContext(PopoverPositionerContext);
+  if (!context) {
+    throw new Error("Base UI: PopoverPositionerContext is missing. PopoverPositioner parts must be placed within <Popover.Positioner>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
+var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PopoverPositioner = /* @__PURE__ */ React93.forwardRef(function PopoverPositioner2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    anchor,
+    positionMethod = "absolute",
+    side = "bottom",
+    align = "center",
+    sideOffset = 0,
+    alignOffset = 0,
+    collisionBoundary = "clipping-ancestors",
+    collisionPadding = 5,
+    arrowPadding = 5,
+    sticky = false,
+    disableAnchorTracking = false,
+    collisionAvoidance = POPUP_COLLISION_AVOIDANCE,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const keepMounted = usePopoverPortalContext();
+  const nodeId = useFloatingNodeId();
+  const floatingRootContext = store.useState("floatingRootContext");
+  const mounted = store.useState("mounted");
+  const open = store.useState("open");
+  const openReason = store.useState("openChangeReason");
+  const triggerElement = store.useState("activeTriggerElement");
+  const modal = store.useState("modal");
+  const openMethod = store.useState("openMethod");
+  const positionerElement = store.useState("positionerElement");
+  const instantType = store.useState("instantType");
+  const transitionStatus = store.useState("transitionStatus");
+  const hasViewport = store.useState("hasViewport");
+  const prevTriggerElementRef = React93.useRef(null);
+  const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
+  const positioning = useAnchorPositioning({
+    anchor,
+    floatingRootContext,
+    positionMethod,
+    mounted,
+    side,
+    sideOffset,
+    align,
+    alignOffset,
+    arrowPadding,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    disableAnchorTracking,
+    keepMounted,
+    nodeId,
+    collisionAvoidance,
+    adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
+  });
+  const domReference = floatingRootContext.useState("domReferenceElement");
+  useIsoLayoutEffect(() => {
+    const currentTriggerElement = domReference;
+    const prevTriggerElement = prevTriggerElementRef.current;
+    if (currentTriggerElement) {
+      prevTriggerElementRef.current = currentTriggerElement;
+    }
+    if (prevTriggerElement && currentTriggerElement && currentTriggerElement !== prevTriggerElement) {
+      store.set("instantType", undefined);
+      const ac = new AbortController;
+      runOnceAnimationsFinish(() => {
+        store.set("instantType", "trigger-change");
+      }, ac.signal);
+      return () => {
+        ac.abort();
+      };
+    }
+    return;
+  }, [domReference, runOnceAnimationsFinish, store]);
+  useAnchoredPopupScrollLock(open && modal === true && openReason !== exports_reason_parts.triggerHover, openMethod === "touch", positionerElement, triggerElement);
+  const setPositionerElement = React93.useCallback((element3) => {
+    store.set("positionerElement", element3);
+  }, [store]);
+  const state = {
+    open,
+    side: positioning.side,
+    align: positioning.align,
+    anchorHidden: positioning.anchorHidden,
+    instant: instantType
+  };
+  const element2 = usePositioner(componentProps, state, {
+    styles: positioning.positionerStyles,
+    transitionStatus,
+    props: elementProps,
+    refs: [forwardedRef, setPositionerElement],
+    hidden: !mounted,
+    inert: !open
+  });
+  return /* @__PURE__ */ import_jsx_runtime23.jsxs(PopoverPositionerContext.Provider, {
+    value: positioning,
+    children: [mounted && modal === true && openReason !== exports_reason_parts.triggerHover && /* @__PURE__ */ import_jsx_runtime23.jsx(InternalBackdrop, {
+      ref: store.context.internalBackdropRef,
+      inert: inertValue(!open),
+      cutout: triggerElement
+    }), /* @__PURE__ */ import_jsx_runtime23.jsx(FloatingNode, {
+      id: nodeId,
+      children: element2
+    })]
+  });
+});
+if (true)
+  PopoverPositioner.displayName = "PopoverPositioner";
+// node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
+var React95 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/closePart.mjs
+var React94 = __toESM(require_react(), 1);
+var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var ClosePartContext = /* @__PURE__ */ React94.createContext(undefined);
+if (true)
+  ClosePartContext.displayName = "ClosePartContext";
+function useClosePartCount() {
+  const [closePartCount, setClosePartCount] = React94.useState(0);
+  const register2 = useStableCallback(() => {
+    setClosePartCount((count) => count + 1);
+    return () => {
+      setClosePartCount((count) => Math.max(0, count - 1));
+    };
+  });
+  const context = React94.useMemo(() => ({
+    register: register2
+  }), [register2]);
+  return {
+    context,
+    hasClosePart: closePartCount > 0
+  };
+}
+function ClosePartProvider(props) {
+  const {
+    value,
+    children: children2
+  } = props;
+  return /* @__PURE__ */ import_jsx_runtime24.jsx(ClosePartContext.Provider, {
+    value,
+    children: children2
+  });
+}
+function useClosePartRegistration() {
+  const context = React94.useContext(ClosePartContext);
+  useIsoLayoutEffect(() => {
+    return context?.register();
+  }, [context]);
+}
+
+// node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
+var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var PopoverPopup = /* @__PURE__ */ React95.forwardRef(function PopoverPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    initialFocus,
+    finalFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const positioner = usePopoverPositionerContext();
+  const insideToolbar = useToolbarRootContext(true) != null;
+  const {
+    context: closePartContext,
+    hasClosePart
+  } = useClosePartCount();
+  const open = store.useState("open");
+  const openMethod = store.useState("openMethod");
+  const instantType = store.useState("instantType");
+  const transitionStatus = store.useState("transitionStatus");
+  const popupProps = store.useState("popupProps");
+  const titleId = store.useState("titleElementId");
+  const descriptionId = store.useState("descriptionElementId");
+  const modal = store.useState("modal");
+  const mounted = store.useState("mounted");
+  const openReason = store.useState("openChangeReason");
+  const activeTriggerElement = store.useState("activeTriggerElement");
+  const floatingContext = store.useState("floatingRootContext");
+  const floatingId = floatingContext.useState("floatingId");
+  const disabled2 = store.useState("disabled");
+  const openOnHover = store.useState("openOnHover");
+  const closeDelay = store.useState("closeDelay");
+  const popupId = elementProps.id ?? floatingId;
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  useHoverFloatingInteraction(floatingContext, {
+    enabled: openOnHover && !disabled2,
+    closeDelay
+  });
+  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
+  const focusManagerModal = modal !== false && hasClosePart;
+  store.useSyncedValue("focusManagerModal", focusManagerModal);
+  const setPopupElement = React95.useCallback((element3) => {
+    store.set("popupElement", element3);
+  }, [store]);
+  const state = {
+    open,
+    side: positioner.side,
+    align: positioner.align,
+    instant: instantType,
+    transitionStatus
+  };
+  const element2 = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    props: [popupProps, {
+      id: popupId,
+      role: "dialog",
+      ...FOCUSABLE_POPUP_PROPS,
+      "aria-labelledby": titleId,
+      "aria-describedby": descriptionId,
+      onKeyDown(event) {
+        if (insideToolbar && COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      }
+    }, getDisabledMountTransitionStyles(transitionStatus), elementProps],
+    stateAttributesMapping: stateAttributesMapping4
+  });
+  return /* @__PURE__ */ import_jsx_runtime25.jsx(FloatingFocusManager, {
+    context: floatingContext,
+    openInteractionType: openMethod,
+    modal: focusManagerModal,
+    disabled: !mounted || openReason === exports_reason_parts.triggerHover,
+    initialFocus: resolvedInitialFocus,
+    returnFocus: finalFocus,
+    restoreFocus: "popup",
+    previousFocusableElement: isHTMLElement(activeTriggerElement) ? activeTriggerElement : undefined,
+    nextFocusableElement: store.context.triggerFocusTargetRef,
+    beforeContentFocusGuardRef: store.context.beforeContentFocusGuardRef,
+    children: /* @__PURE__ */ import_jsx_runtime25.jsx(ClosePartProvider, {
+      value: closePartContext,
+      children: element2
+    })
+  });
+});
+if (true)
+  PopoverPopup.displayName = "PopoverPopup";
+// node_modules/@base-ui/react/popover/arrow/PopoverArrow.mjs
+var React96 = __toESM(require_react(), 1);
+"use client";
+var PopoverArrow = /* @__PURE__ */ React96.forwardRef(function PopoverArrow2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const open = store.useState("open");
+  const {
+    arrowRef,
+    side,
+    align,
+    arrowUncentered,
+    arrowStyles
+  } = usePopoverPositionerContext();
+  const state = {
+    open,
+    side,
+    align,
+    uncentered: arrowUncentered
+  };
+  const element2 = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, arrowRef],
+    props: [{
+      style: arrowStyles,
+      "aria-hidden": true
+    }, elementProps],
+    stateAttributesMapping: popupStateMapping
+  });
+  return element2;
+});
+if (true)
+  PopoverArrow.displayName = "PopoverArrow";
+// node_modules/@base-ui/react/popover/backdrop/PopoverBackdrop.mjs
+var React97 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping5 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var PopoverBackdrop = /* @__PURE__ */ React97.forwardRef(function PopoverBackdrop2(props, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = props;
+  const {
+    store
+  } = usePopoverRootContext();
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const openReason = store.useState("openChangeReason");
+  const state = {
+    open,
+    transitionStatus
+  };
+  const element2 = useRenderElement("div", props, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: openReason === exports_reason_parts.triggerHover ? "none" : undefined,
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    stateAttributesMapping: stateAttributesMapping5
+  });
+  return element2;
+});
+if (true)
+  PopoverBackdrop.displayName = "PopoverBackdrop";
+// node_modules/@base-ui/react/popover/title/PopoverTitle.mjs
+var React98 = __toESM(require_react(), 1);
+"use client";
+var PopoverTitle = /* @__PURE__ */ React98.forwardRef(function PopoverTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const id2 = useBaseUiId(elementProps.id);
+  store.useSyncedValueWithCleanup("titleElementId", id2);
+  const element2 = useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id: id2
+    }, elementProps]
+  });
+  return element2;
+});
+if (true)
+  PopoverTitle.displayName = "PopoverTitle";
+// node_modules/@base-ui/react/popover/description/PopoverDescription.mjs
+var React99 = __toESM(require_react(), 1);
+"use client";
+var PopoverDescription = /* @__PURE__ */ React99.forwardRef(function PopoverDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const id2 = useBaseUiId(elementProps.id);
+  store.useSyncedValueWithCleanup("descriptionElementId", id2);
+  const element2 = useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id: id2
+    }, elementProps]
+  });
+  return element2;
+});
+if (true)
+  PopoverDescription.displayName = "PopoverDescription";
+// node_modules/@base-ui/react/popover/close/PopoverClose.mjs
+var React100 = __toESM(require_react(), 1);
+"use client";
+var PopoverClose = /* @__PURE__ */ React100.forwardRef(function PopoverClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    buttonRef,
+    getButtonProps
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled: false,
+    native: nativeButton
+  });
+  const {
+    store
+  } = usePopoverRootContext();
+  useClosePartRegistration();
+  const element2 = useRenderElement("button", componentProps, {
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick(event) {
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+      }
+    }, elementProps, getButtonProps]
+  });
+  return element2;
+});
+if (true)
+  PopoverClose.displayName = "PopoverClose";
+// node_modules/@base-ui/react/popover/viewport/PopoverViewport.mjs
+var React101 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/viewport/PopoverViewportCssVars.mjs
+var PopoverViewportCssVars = /* @__PURE__ */ function(PopoverViewportCssVars2) {
+  PopoverViewportCssVars2["popupWidth"] = "--popup-width";
+  PopoverViewportCssVars2["popupHeight"] = "--popup-height";
+  return PopoverViewportCssVars2;
+}({});
+
+// node_modules/@base-ui/react/popover/viewport/PopoverViewport.mjs
+"use client";
+var stateAttributesMapping6 = {
+  activationDirection: (value) => value ? {
+    "data-activation-direction": value
+  } : null
+};
+var PopoverViewport = /* @__PURE__ */ React101.forwardRef(function PopoverViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    children: children2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const {
+    side
+  } = usePopoverPositionerContext();
+  const instantType = store.useState("instantType");
+  const {
+    children: childrenToRender,
+    state: viewportState
+  } = usePopupViewport({
+    store,
+    side,
+    cssVars: PopoverViewportCssVars,
+    children: children2
+  });
+  const state = {
+    activationDirection: viewportState.activationDirection,
+    transitioning: viewportState.transitioning,
+    instant: instantType
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [elementProps, {
+      children: childrenToRender
+    }],
+    stateAttributesMapping: stateAttributesMapping6
+  });
+});
+if (true)
+  PopoverViewport.displayName = "PopoverViewport";
+// node_modules/@base-ui/react/popover/store/PopoverHandle.mjs
+class PopoverHandle {
+  constructor() {
+    this.store = new PopoverStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) ?? undefined : undefined;
+    if (triggerId && !triggerElement) {
+      throw new Error(`Base UI: PopoverHandle.open: No trigger found with id "${triggerId}".`);
+    }
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createPopoverHandle() {
+  return new PopoverHandle;
+}
+// src/mind-mapper/surface/ui/popover.tsx
 var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var Popover = exports_index_parts3.Root;
+var PopoverTrigger3 = exports_index_parts3.Trigger;
+function PopoverContent({
+  className,
+  children: children2,
+  sideOffset = 6,
+  align = "end",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(exports_index_parts3.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(exports_index_parts3.Positioner, {
+      sideOffset,
+      align,
+      className: "outline-none",
+      children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(exports_index_parts3.Popup, {
+        className: cn2("z-50 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl outline-none", className),
+        ...props,
+        children: children2
+      }, undefined, false, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/mind-mapper/surface/FilterControl.tsx
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 var STATUS_LABEL = {
   ratified: "ratified",
   pending: "pending"
@@ -48156,7 +49404,7 @@ function FacetChip({
   active,
   onToggle
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
     type: "button",
     onClick: onToggle,
     "aria-pressed": active,
@@ -48169,46 +49417,44 @@ function FilterControl({
   facets,
   onFilter
 }) {
-  const [open, setOpen] = import_react14.useState(false);
   const count = activeFilterCount(filter2);
   const hasFacets = facets.statuses.length > 0 || facets.tiers.length > 0 || facets.tags.length > 0;
   if (!hasFacets)
     return null;
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-    className: "relative",
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Popover, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
-        variant: "outline",
-        size: "auto",
-        className: `flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide ${count > 0 ? "text-ink" : "text-ink-dim"}`,
-        title: "Filter the board by status, tier, or tag",
-        "aria-expanded": open,
-        onClick: () => setOpen((o) => !o),
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PopoverTrigger3, {
+        render: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button, {
+          variant: "outline",
+          size: "auto",
+          className: `flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide ${count > 0 ? "text-ink" : "text-ink-dim"}`,
+          title: "Filter the board by status, tier, or tag",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Funnel, {
+              size: 11,
+              "aria-hidden": true
+            }, undefined, false, undefined, this),
+            "filter",
+            count > 0 ? ` · ${count}` : ""
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PopoverContent, {
+        className: "w-56",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Funnel, {
-            size: 11,
-            "aria-hidden": true
-          }, undefined, false, undefined, this),
-          "filter",
-          count > 0 ? ` · ${count}` : ""
-        ]
-      }, undefined, true, undefined, this),
-      open && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
-        className: "absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
             className: "mb-2 flex items-center justify-between",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
                 className: "text-[10px] uppercase tracking-widest text-ink-faint",
                 children: "filter"
               }, undefined, false, undefined, this),
-              count > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
+              count > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
                 type: "button",
                 onClick: () => onFilter({ status: [], tier: [], tags: [] }),
                 className: "flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(X, {
+                  /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(X, {
                     size: 10
                   }, undefined, false, undefined, this),
                   " clear"
@@ -48216,25 +49462,25 @@ function FilterControl({
               }, undefined, true, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          facets.statuses.length > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetGroup, {
+          facets.statuses.length > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetGroup, {
             label: "Status",
-            children: facets.statuses.map((s) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetChip, {
+            children: facets.statuses.map((s) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetChip, {
               label: STATUS_LABEL[s],
               active: filter2.status.includes(s),
               onToggle: () => onFilter({ ...filter2, status: toggleFacet(filter2.status, s) })
             }, s, false, undefined, this))
           }, undefined, false, undefined, this),
-          facets.tiers.length > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetGroup, {
+          facets.tiers.length > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetGroup, {
             label: "Tier",
-            children: facets.tiers.map((t) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetChip, {
+            children: facets.tiers.map((t) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetChip, {
               label: TIER_LABEL[t],
               active: filter2.tier.includes(t),
               onToggle: () => onFilter({ ...filter2, tier: toggleFacet(filter2.tier, t) })
             }, t, false, undefined, this))
           }, undefined, false, undefined, this),
-          facets.tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetGroup, {
+          facets.tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetGroup, {
             label: "Tags",
-            children: facets.tags.map((t) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetChip, {
+            children: facets.tags.map((t) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetChip, {
               label: t,
               active: filter2.tags.includes(t),
               onToggle: () => onFilter({ ...filter2, tags: toggleFacet(filter2.tags, t) })
@@ -48246,14 +49492,14 @@ function FilterControl({
   }, undefined, true, undefined, this);
 }
 function FacetGroup({ label, children: children2 }) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
     className: "mb-2 last:mb-0",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
         children: label
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "flex flex-wrap gap-1",
         children: children2
       }, undefined, false, undefined, this)
@@ -48262,7 +49508,7 @@ function FacetGroup({ label, children: children2 }) {
 }
 
 // src/mind-mapper/surface/FocusBar.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 function FocusBar({
   lens,
   title,
@@ -48275,15 +49521,15 @@ function FocusBar({
   const isDoc = lens.docId !== null;
   const depth = lens.depth ?? 1;
   const tint = lens.owner === "agent" ? "border-thread-tier/40 bg-thread-tier/15 text-thread-tier" : "border-canon/40 bg-canon/15 text-canon";
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     className: "absolute inset-x-0 top-0 z-10 flex items-center gap-2 border-b border-edge bg-surface/90 px-4 py-1.5 text-xs backdrop-blur",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Badge, {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Badge, {
         className: `gap-1.5 py-1 pl-2.5 pr-1 ${tint}`,
         children: [
-          isDoc ? /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FileText, {
+          isDoc ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(FileText, {
             className: "h-3.5 w-3.5"
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Crosshair, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Crosshair, {
             className: "h-3.5 w-3.5"
           }, undefined, false, undefined, this),
           lens.owner === "agent" ? "Agent focused" : "You focused",
@@ -48293,40 +49539,40 @@ function FocusBar({
           count,
           " node",
           count === 1 ? "" : "s",
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button, {
             variant: "ghost",
             size: "icon-xs",
             onClick: onZoomOut,
             "aria-label": "Exit focus — back to the full map",
             title: "Back to the full map",
             className: "ml-0.5 rounded-full text-inherit hover:bg-secondary",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(X, {
               className: "h-3.5 w-3.5"
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      !isDoc && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
+      !isDoc && /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
         className: "inline-flex items-center gap-1 text-ink-dim",
         children: [
           "depth",
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button, {
             size: "icon-xs",
             onClick: () => onDepth(Math.max(1, depth - 1)),
             disabled: depth <= 1,
             "aria-label": "Narrow focus",
             className: "rounded",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Minus, {
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Minus, {
               className: "h-3 w-3"
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
           depth,
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button, {
             size: "icon-xs",
             onClick: () => onDepth(depth + 1),
             "aria-label": "Widen focus",
             className: "rounded",
-            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Plus, {
+            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Plus, {
               className: "h-3 w-3"
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
@@ -48337,7 +49583,7 @@ function FocusBar({
 }
 
 // src/mind-mapper/surface/IngestionTray.tsx
-var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 function rawTitle(p2) {
   const t = p2.draft.title;
   return typeof t === "string" && t.trim() ? t : "untitled";
@@ -48347,16 +49593,16 @@ function IngestionTray({
   onDelete,
   onClose
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("aside", {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("aside", {
     className: "flex w-72 shrink-0 flex-col border-l border-edge bg-surface xl:w-80",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "flex items-center justify-between border-b border-edge px-3 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("h2", {
             className: "flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Loader, {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Loader, {
                 size: 11,
                 className: "animate-pulse text-pending",
                 "aria-hidden": true
@@ -48365,36 +49611,36 @@ function IngestionTray({
               items.length
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button, {
             variant: "ghost",
             size: "icon-xs",
             "aria-label": "Close ingestion tray",
             onClick: onClose,
-            children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(X, {
               size: 12
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2",
-        children: items.length === 0 ? /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("p", {
+        children: items.length === 0 ? /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
           className: "p-2 text-xs text-ink-faint",
           children: "nothing ingesting — raw notes you add land here while the agent curates them."
-        }, undefined, false, undefined, this) : items.map((p2) => /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+        }, undefined, false, undefined, this) : items.map((p2) => /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
           className: "flex items-start justify-between gap-1.5 rounded border border-dotted border-pending/50 bg-bg p-2",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
               className: "min-w-0",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("p", {
+                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
                   className: "truncate text-xs text-ink",
                   children: rawTitle(p2)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("p", {
+                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
                   className: "mt-0.5 flex items-center gap-1 text-[10px] italic text-pending",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Loader, {
+                    /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Loader, {
                       size: 9,
                       className: "animate-pulse",
                       "aria-hidden": true
@@ -48404,14 +49650,14 @@ function IngestionTray({
                 }, undefined, true, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Button, {
+            /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button, {
               variant: "ghost",
               size: "icon-xs",
               "aria-label": `Discard "${rawTitle(p2)}"`,
               title: "Discard this raw note",
               className: "shrink-0 text-ink-faint hover:text-attention",
               onClick: () => onDelete(p2.id),
-              children: /* @__PURE__ */ jsx_dev_runtime16.jsxDEV(Trash2, {
+              children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Trash2, {
                 size: 11
               }, undefined, false, undefined, this)
             }, undefined, false, undefined, this)
@@ -48423,62 +49669,62 @@ function IngestionTray({
 }
 
 // src/mind-mapper/surface/MapKey.tsx
-var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
 function MapKey() {
-  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
     className: "pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg border border-edge bg-surface/90 px-3 py-2 text-[11px] leading-relaxed backdrop-blur",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "mb-1 text-[10px] uppercase tracking-widest text-ink-faint",
         children: "Map key"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "grid grid-cols-2 gap-x-4",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                 className: "text-canon",
                 children: "■"
               }, undefined, false, undefined, this),
               " canon",
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                 className: "text-thread-tier",
                 children: "■"
               }, undefined, false, undefined, this),
               " thread",
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                 className: "text-story-local",
                 children: "■"
               }, undefined, false, undefined, this),
               " story-local",
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                 className: "text-background-tier opacity-60",
                 children: "■"
               }, undefined, false, undefined, this),
               " background (steeping)"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
             className: "text-ink-dim",
             children: [
               "→─ asserted",
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                 className: "tracking-tighter",
                 children: "· · ·"
               }, undefined, false, undefined, this),
               " derived",
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                 className: "text-pending",
                 children: "╌ ╌"
               }, undefined, false, undefined, this),
               " proposed",
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("br", {}, undefined, false, undefined, this),
               "─ mutual (no arrow)"
             ]
           }, undefined, true, undefined, this)
@@ -48489,33 +49735,64 @@ function MapKey() {
 }
 
 // src/mind-mapper/surface/NodeDetail.tsx
-var import_react15 = __toESM(require_react(), 1);
-var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
-var VERBS = [
-  { label: "Explain", icon: ScrollText },
-  { label: "Questions", icon: CircleQuestionMark },
-  { label: "Subtopics", icon: ListTree }
-];
+var import_react14 = __toESM(require_react(), 1);
+var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+var TONE_CLASS2 = {
+  default: "text-ink",
+  pending: "text-pending",
+  danger: "text-attention",
+  agent: "text-thread-tier",
+  faint: "text-ink-faint"
+};
+function ActionButton({ item, className = "" }) {
+  const Icon2 = item.icon;
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
+    variant: "outline",
+    size: "auto",
+    onClick: () => item.run(),
+    className: `justify-start px-2 py-1 ${TONE_CLASS2[item.tone]} ${item.suggested ? "border-pending font-semibold" : ""} ${className}`,
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Icon2, {
+        size: 12,
+        "aria-hidden": true
+      }, undefined, false, undefined, this),
+      " ",
+      item.label
+    ]
+  }, undefined, true, undefined, this);
+}
 function NodeDetail({
   node,
   docs,
   existingTags: existingTags2,
   onSetTags,
-  onVerb,
+  menu,
+  promotable,
+  onCommand,
+  onRule,
+  onAction,
   onOpenSource,
   onOpenMessageSource,
   onFocus,
   onClose
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-    className: "flex w-72 flex-col gap-3 rounded-lg border border-edge bg-surface/95 p-4 shadow-xl backdrop-blur",
+  const actions = buildNodeActions(node, menu, promotable, { onCommand, onRule, onAction }).filter((i) => i.group !== "focus");
+  const inGroup = (g) => actions.filter((i) => i.group === g);
+  const selectItem = actions.find((i) => i.key === "select");
+  const ratify = inGroup("ratify");
+  const navigate = inGroup("navigate");
+  const verbs = inGroup("verbs");
+  const slots = inGroup("slots");
+  const danger = inGroup("danger");
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+    className: "flex max-h-[calc(100vh-8rem)] w-72 flex-col gap-3 overflow-y-auto rounded-lg border border-edge bg-surface/95 p-4 shadow-xl backdrop-blur",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
             className: "flex items-start justify-between gap-2",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
                 className: "text-[10px] uppercase tracking-widest text-ink-dim",
                 children: [
                   node.kind,
@@ -48524,25 +49801,25 @@ function NodeDetail({
                   node.pending ? " · proposed" : ""
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
                 className: "flex items-center gap-1.5",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
                     variant: "ghost",
                     size: "icon-xs",
                     "aria-label": `Focus on ${node.title}`,
                     title: "Focus — narrow the map to this neighborhood",
                     onClick: () => onFocus(node),
-                    children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Crosshair, {
+                    children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Crosshair, {
                       size: 13
                     }, undefined, false, undefined, this)
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
                     variant: "ghost",
                     size: "icon-xs",
                     "aria-label": "Close node detail",
                     onClick: onClose,
-                    children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(X, {
+                    children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(X, {
                       size: 13
                     }, undefined, false, undefined, this)
                   }, undefined, false, undefined, this)
@@ -48550,24 +49827,24 @@ function NodeDetail({
               }, undefined, true, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("h2", {
             className: "mt-1 font-story text-xl text-ink",
             children: node.title
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("p", {
         className: "text-sm leading-relaxed text-ink-dim",
         children: node.synopsis
       }, undefined, false, undefined, this),
-      node.pending && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
+      node.pending && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("p", {
         className: "rounded-md border border-dashed border-pending/60 px-2 py-1.5 text-xs text-pending",
         children: "Staging: proposed, not yet ratified into canon."
       }, undefined, false, undefined, this),
-      node.sources && node.sources.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      node.sources && node.sources.length > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
         className: "flex flex-col gap-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: "Sources"
           }, undefined, false, undefined, this),
@@ -48576,25 +49853,25 @@ function NodeDetail({
               const doc = docs.find((d) => d.id === s.docId);
               if (!doc)
                 return null;
-              return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+              return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
                 variant: "card",
                 size: "auto",
                 onClick: () => onOpenSource(s),
                 className: "justify-start rounded-md bg-secondary px-2 py-1.5",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(FileText, {
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(FileText, {
                     size: 12,
                     className: "mt-0.5 shrink-0 self-start",
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                     className: "min-w-0",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                         className: "block truncate",
                         children: doc.title
                       }, undefined, false, undefined, this),
-                      s.span && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                      s.span && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                         className: "mt-0.5 block truncate text-[11px] italic text-ink-faint",
                         children: [
                           '"',
@@ -48607,25 +49884,25 @@ function NodeDetail({
                 ]
               }, `${s.docId}:${s.span ?? ""}`, true, undefined, this);
             }
-            return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+            return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
               variant: "card",
               size: "auto",
               onClick: () => onOpenMessageSource(s),
               className: "justify-start rounded-md bg-secondary px-2 py-1.5",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(MessageSquare, {
+                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(MessageSquare, {
                   size: 12,
                   className: "mt-0.5 shrink-0 self-start",
                   "aria-hidden": true
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                   className: "min-w-0",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                    /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                       className: "block truncate",
                       children: "from the conversation"
                     }, undefined, false, undefined, this),
-                    s.span && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                    s.span && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                       className: "mt-0.5 block truncate text-[11px] italic text-ink-faint",
                       children: [
                         '"',
@@ -48640,35 +49917,82 @@ function NodeDetail({
           })
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(TagsSection, {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(TagsSection, {
         node,
         existingTags: existingTags2,
         onSetTags
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      ratify.length > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Section, {
+        label: node.pending ? "Ratify" : "Ruling",
+        children: ratify.map((item) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ActionButton, {
+          item
+        }, item.key, false, undefined, this))
+      }, undefined, false, undefined, this),
+      selectItem?.submenu && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Section, {
+        label: "Select",
+        children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          className: "flex flex-wrap gap-1.5",
+          children: selectItem.submenu.map((item) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ActionButton, {
+            item,
+            className: "flex-1"
+          }, item.key, false, undefined, this))
+        }, undefined, false, undefined, this)
+      }, undefined, false, undefined, this),
+      navigate.length > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Section, {
+        label: "Navigate",
+        children: navigate.map((item) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ActionButton, {
+          item
+        }, item.key, false, undefined, this))
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
         className: "flex flex-col gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: "Ask the map"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
             className: "flex gap-1.5",
-            children: VERBS.map(({ label, icon: Icon2 }) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
-              size: "auto",
-              onClick: () => onVerb(label, node),
-              className: "flex-1 flex-col gap-1 px-2 py-2",
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Icon2, {
-                  size: 14,
-                  "aria-hidden": true
-                }, undefined, false, undefined, this),
-                label
-              ]
-            }, label, true, undefined, this))
+            children: verbs.map((item) => {
+              const Icon2 = item.icon;
+              return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
+                size: "auto",
+                onClick: () => item.run(),
+                className: "flex-1 flex-col gap-1 px-2 py-2",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Icon2, {
+                    size: 14,
+                    "aria-hidden": true
+                  }, undefined, false, undefined, this),
+                  item.label
+                ]
+              }, item.key, true, undefined, this);
+            })
           }, undefined, false, undefined, this)
         ]
-      }, undefined, true, undefined, this)
+      }, undefined, true, undefined, this),
+      slots.length > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Section, {
+        label: "Agent suggests",
+        children: slots.map((item) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ActionButton, {
+          item
+        }, item.key, false, undefined, this))
+      }, undefined, false, undefined, this),
+      danger.map((item) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ActionButton, {
+        item,
+        className: "justify-center"
+      }, item.key, false, undefined, this))
+    ]
+  }, undefined, true, undefined, this);
+}
+function Section({ label, children: children2 }) {
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+    className: "flex flex-col gap-1.5",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+        className: "text-[10px] uppercase tracking-widest text-ink-faint",
+        children: label
+      }, undefined, false, undefined, this),
+      children2
     ]
   }, undefined, true, undefined, this);
 }
@@ -48677,8 +50001,8 @@ function TagsSection({
   existingTags: existingTags2,
   onSetTags
 }) {
-  const [draft, setDraft] = import_react15.useState("");
-  const [focused, setFocused] = import_react15.useState(false);
+  const [draft, setDraft] = import_react14.useState("");
+  const [focused, setFocused] = import_react14.useState(false);
   const current = node.tags ?? [];
   const suggestions = focused ? tagSuggestions(existingTags2, current, draft).slice(0, 6) : [];
   const commit = (raw) => {
@@ -48687,41 +50011,41 @@ function TagsSection({
       onSetTags(node.id, next);
     setDraft("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
     className: "flex flex-col gap-1.5",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
         className: "flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Tag, {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Tag, {
             size: 10,
             "aria-hidden": true
           }, undefined, false, undefined, this),
           " Tags"
         ]
       }, undefined, true, undefined, this),
-      current.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      current.length > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
         className: "flex flex-wrap gap-1",
-        children: current.map((t) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+        children: current.map((t) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
           className: `flex items-center gap-0.5 rounded-sm px-1.5 py-0.5 text-[10px] ${TAG_CHIP}`,
           children: [
             t,
-            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
+            /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
               type: "button",
               "aria-label": `Remove tag ${t}`,
               onClick: () => onSetTags(node.id, removeTag(current, t)),
               className: "text-ink-faint hover:text-attention",
-              children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(X, {
+              children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(X, {
                 size: 10
               }, undefined, false, undefined, this)
             }, undefined, false, undefined, this)
           ]
         }, t, true, undefined, this))
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
         className: "relative",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("input", {
             value: draft,
             onChange: (e) => setDraft(e.target.value),
             onFocus: () => setFocused(true),
@@ -48740,21 +50064,21 @@ function TagsSection({
             "aria-label": "Add a tag",
             className: "w-full rounded-md border border-edge bg-secondary px-2 py-1 text-xs text-ink placeholder:text-ink-faint focus:border-ring focus:outline-none"
           }, undefined, false, undefined, this),
-          suggestions.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("ul", {
+          suggestions.length > 0 && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("ul", {
             className: "absolute left-0 right-0 top-full z-10 mt-1 max-h-32 overflow-y-auto rounded-md border border-edge bg-surface-raised py-1 shadow-xl",
-            children: suggestions.map((s) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("li", {
-              children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
+            children: suggestions.map((s) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("li", {
+              children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
                 type: "button",
                 onMouseDown: (e) => e.preventDefault(),
                 onClick: () => commit(s),
                 className: "flex w-full items-center gap-1 px-2 py-1 text-left text-xs text-ink-dim hover:bg-secondary hover:text-ink",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Tag, {
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Tag, {
                     size: 10,
                     className: "shrink-0 text-ink-faint",
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
                     className: "min-w-0 truncate",
                     children: s
                   }, undefined, false, undefined, this)
@@ -48769,22 +50093,22 @@ function TagsSection({
 }
 
 // src/mind-mapper/surface/ProjectPicker.tsx
-var import_react16 = __toESM(require_react(), 1);
-var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react15 = __toESM(require_react(), 1);
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
 function ProjectPicker({
   currentId,
   onSelect
 }) {
-  const [projects, setProjects] = import_react16.useState([]);
-  const [creating, setCreating] = import_react16.useState(false);
-  const [title, setTitle] = import_react16.useState("");
-  const titleInputRef = import_react16.useRef(null);
-  import_react16.useEffect(() => {
+  const [projects, setProjects] = import_react15.useState([]);
+  const [creating, setCreating] = import_react15.useState(false);
+  const [title, setTitle] = import_react15.useState("");
+  const titleInputRef = import_react15.useRef(null);
+  import_react15.useEffect(() => {
     if (creating)
       titleInputRef.current?.focus();
   }, [creating]);
-  const refresh = import_react16.useCallback(() => fetch("/projects").then((r) => r.json()).then((body) => setProjects(body.projects)).catch(() => {}), []);
-  import_react16.useEffect(() => {
+  const refresh = import_react15.useCallback(() => fetch("/projects").then((r) => r.json()).then((body) => setProjects(body.projects)).catch(() => {}), []);
+  import_react15.useEffect(() => {
     refresh();
   }, [refresh]);
   const create2 = () => {
@@ -48804,10 +50128,10 @@ function ProjectPicker({
     }).catch(() => {});
   };
   if (creating) {
-    return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+    return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
       className: "flex items-center gap-1.5",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("input", {
+        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("input", {
           ref: titleInputRef,
           value: title,
           onChange: (e) => setTitle(e.target.value),
@@ -48821,7 +50145,7 @@ function ProjectPicker({
           "aria-label": "New project title",
           className: "w-40 rounded border border-edge bg-surface px-1.5 py-0.5 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
+        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
           size: "auto",
           className: "px-2 py-0.5 text-xs",
           onClick: create2,
@@ -48831,27 +50155,27 @@ function ProjectPicker({
       ]
     }, undefined, true, undefined, this);
   }
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
     className: "flex items-center gap-1.5 text-xs",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("select", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("select", {
         "aria-label": "Project",
         value: currentId ?? "",
         onChange: (e) => onSelect(e.target.value),
         className: "rounded border border-edge bg-surface px-1.5 py-0.5 text-ink",
         children: [
-          currentId === undefined && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("option", {
+          currentId === undefined && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("option", {
             value: "",
             disabled: true,
             children: "pick a project…"
           }, undefined, false, undefined, this),
-          projects.map((p2) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("option", {
+          projects.map((p2) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("option", {
             value: p2.id,
             children: p2.title
           }, p2.id, false, undefined, this))
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: "px-1.5 py-0.5 text-ink-dim",
@@ -48863,7 +50187,7 @@ function ProjectPicker({
 }
 
 // src/mind-mapper/surface/ReviewQueue.tsx
-var import_react17 = __toESM(require_react(), 1);
+var import_react16 = __toESM(require_react(), 1);
 
 // src/mind-mapper/surface/state/reviewQueue.ts
 var UNGROUNDED = "";
@@ -48907,7 +50231,7 @@ function draftSummary(p2, nodes) {
 }
 
 // src/mind-mapper/surface/ReviewQueue.tsx
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
 var TIER_BADGE = {
   canon: "border-canon/60 text-canon",
   thread: "border-thread-tier/60 text-thread-tier",
@@ -48926,17 +50250,17 @@ function ReviewQueue({
   onRule,
   onClose
 }) {
-  const { user, agent } = import_react17.useMemo(() => partitionByAuthor(proposals), [proposals]);
-  const groups = import_react17.useMemo(() => groupProposalsByDoc(agent), [agent]);
+  const { user, agent } = import_react16.useMemo(() => partitionByAuthor(proposals), [proposals]);
+  const groups = import_react16.useMemo(() => groupProposalsByDoc(agent), [agent]);
   const bucketTitle = (docId) => docId === UNGROUNDED ? "ungrounded" : docId === FROM_CONVERSATION ? "from conversation" : docs.find((d) => d.id === docId)?.title ?? docId;
   const pendingCount = user.length + agent.length;
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("aside", {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("aside", {
     className: "flex w-80 shrink-0 flex-col border-l border-edge bg-surface xl:w-96",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
         className: "flex items-center justify-between border-b border-edge px-3 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("h2", {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: [
               "Review · ",
@@ -48944,68 +50268,68 @@ function ReviewQueue({
               " pending"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
             variant: "ghost",
             size: "icon-xs",
             "aria-label": "Close review queue",
             onClick: onClose,
-            children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(X, {
               size: 12
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
         className: "min-h-0 flex-1 space-y-3 overflow-y-auto p-2",
-        children: pendingCount === 0 ? /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+        children: pendingCount === 0 ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
           className: "p-2 text-xs text-ink-faint",
           children: "nothing pending — the board is caught up."
-        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(jsx_dev_runtime20.Fragment, {
+        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(jsx_dev_runtime21.Fragment, {
           children: [
-            user.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+            user.length > 0 && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                   className: "px-1 pb-1 text-[10px] uppercase tracking-wide text-ink-faint",
                   children: "yours — awaiting a doc home"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                   className: "space-y-1.5",
                   children: user.map((p2) => {
                     const { title, detail } = draftSummary(p2, nodes);
-                    return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                    return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                       className: "rounded border border-dashed border-pending/50 bg-bg p-2",
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                           className: "flex items-start justify-between gap-1.5",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                               className: "text-xs text-ink",
                               children: title
                             }, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Badge, {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
                               className: "shrink-0 border-pending/60 px-1.5 py-0 text-[9px] text-pending",
                               children: "sketch"
                             }, undefined, false, undefined, this)
                           ]
                         }, undefined, true, undefined, this),
-                        detail && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                        detail && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                           className: "mt-1 text-[11px] text-ink-dim",
                           children: detail
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                           className: "mt-2 flex items-center justify-between gap-1",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                               className: "text-[10px] italic text-ink-faint",
                               children: "the agent drafts its doc home before it can ratify."
                             }, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
                               variant: "ghost",
                               size: "auto",
                               className: "shrink-0 px-1.5 py-0.5 text-[10px] text-ink-faint",
                               onClick: () => onRule(p2.id, "reject"),
                               children: [
-                                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
+                                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(X, {
                                   size: 10
                                 }, undefined, false, undefined, this),
                                 "withdraw"
@@ -49019,57 +50343,57 @@ function ReviewQueue({
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            Array.from(groups.entries()).map(([docId, group]) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+            Array.from(groups.entries()).map(([docId, group]) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                   className: "px-1 pb-1 text-[10px] uppercase tracking-wide text-ink-faint",
                   children: bucketTitle(docId)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                   className: "space-y-1.5",
                   children: group.map((p2) => {
                     const { title, detail } = draftSummary(p2, nodes);
-                    return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                    return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                       className: "rounded border border-edge bg-bg p-2",
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                           className: "flex items-start justify-between gap-1.5",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                               className: "text-xs text-ink",
                               children: title
                             }, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Badge, {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
                               className: `shrink-0 px-1.5 py-0 text-[9px] ${TIER_BADGE[p2.suggestedTier]}`,
                               children: p2.suggestedTier
                             }, undefined, false, undefined, this)
                           ]
                         }, undefined, true, undefined, this),
-                        detail && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+                        detail && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
                           className: "mt-1 text-[11px] text-ink-dim",
                           children: detail
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
                           className: "mt-2 flex flex-wrap items-center gap-1",
                           children: [
-                            RULINGS.map((r) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+                            RULINGS.map((r) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
                               size: "auto",
                               className: `px-1.5 py-0.5 text-[10px] ${r.ruling === p2.suggestedTier ? TIER_BADGE[r.ruling] : ""}`,
                               onClick: () => onRule(p2.id, r.ruling),
                               children: [
-                                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Check, {
+                                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Check, {
                                   size: 10
                                 }, undefined, false, undefined, this),
                                 r.label
                               ]
                             }, r.ruling, true, undefined, this)),
-                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+                            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
                               variant: "ghost",
                               size: "auto",
                               className: "ml-auto px-1.5 py-0.5 text-[10px] text-ink-faint",
                               onClick: () => onRule(p2.id, "reject"),
                               children: [
-                                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
+                                /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(X, {
                                   size: 10
                                 }, undefined, false, undefined, this),
                                 "reject"
@@ -49091,8 +50415,8 @@ function ReviewQueue({
 }
 
 // src/mind-mapper/surface/SearchPalette.tsx
-var import_react18 = __toESM(require_react(), 1);
-var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react17 = __toESM(require_react(), 1);
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
 var TIER_BADGE2 = {
   canon: "border-canon/60 text-canon",
   thread: "border-thread-tier/60 text-thread-tier",
@@ -49121,7 +50445,7 @@ function SearchPalette({
   inputRef,
   belowBar
 }) {
-  const [active, setActive] = import_react18.useState(0);
+  const [active, setActive] = import_react17.useState(0);
   const activeIndex = Math.min(active, Math.max(0, rows.length - 1));
   const dismiss = () => {
     onQuery("");
@@ -49146,18 +50470,18 @@ function SearchPalette({
     }
   };
   const offBoardNote = offBoardLine(offBoard);
-  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
     className: `absolute left-1/2 z-20 w-80 -translate-x-1/2 rounded-lg border border-border bg-popover/95 shadow-xl backdrop-blur ${belowBar ? "top-14" : "top-4"}`,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         className: "flex items-center gap-2 border-b border-border px-3 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Search, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Search, {
             size: 13,
             className: "shrink-0 text-muted-foreground",
             "aria-hidden": true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("input", {
             ref: inputRef,
             value: query,
             onChange: (e) => {
@@ -49169,7 +50493,7 @@ function SearchPalette({
             "aria-label": "Find a node",
             className: "min-w-0 flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
             variant: "ghost",
             size: "auto",
             onClick: dismiss,
@@ -49180,47 +50504,47 @@ function SearchPalette({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      query && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+      query && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
         className: "max-h-64 overflow-y-auto p-1",
-        children: rows.length === 0 ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+        children: rows.length === 0 ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
           className: "space-y-1 px-2 py-1.5 text-xs text-muted-foreground",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
               children: [
                 "nothing on the map matches “",
                 query,
                 "”."
               ]
             }, undefined, true, undefined, this),
-            offBoardNote && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
+            offBoardNote && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
               children: offBoardNote
             }, undefined, false, undefined, this)
           ]
-        }, undefined, true, undefined, this) : rows.slice(0, 8).map((row, i) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+        }, undefined, true, undefined, this) : rows.slice(0, 8).map((row, i) => /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
           variant: "ghost",
           size: "auto",
           onClick: () => onPick(row),
           onMouseEnter: () => setActive(i),
           className: `w-full justify-between gap-2 rounded-sm px-2 py-1.5 ${i === activeIndex ? "bg-accent text-accent-foreground" : ""}`,
           children: [
-            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
               className: `min-w-0 truncate font-story text-[13px] ${row.kind === "proposal" ? "text-pending" : "text-ink"}`,
               children: row.node.title
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
               className: "flex shrink-0 items-center gap-1",
-              children: row.kind === "proposal" ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(jsx_dev_runtime21.Fragment, {
+              children: row.kind === "proposal" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(jsx_dev_runtime22.Fragment, {
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
+                  /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Badge, {
                     className: `px-1.5 py-0 text-[9px] ${PROPOSAL_BADGE}`,
                     children: "proposed"
                   }, undefined, false, undefined, this),
-                  row.zoneId && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
+                  row.zoneId && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Badge, {
                     className: `px-1.5 py-0 text-[9px] ${PROPOSAL_BADGE}`,
                     children: row.zoneId
                   }, undefined, false, undefined, this)
                 ]
-              }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
+              }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Badge, {
                 className: `px-1.5 py-0 text-[9px] ${TIER_BADGE2[row.node.tier]}`,
                 children: row.node.tier
               }, undefined, false, undefined, this)
@@ -49233,13 +50557,13 @@ function SearchPalette({
 }
 
 // src/mind-mapper/surface/SpotlightToggle.tsx
-var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
 function SpotlightToggle({
   active,
   enabled,
   onToggle
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
     variant: "outline",
     size: "auto",
     "aria-pressed": active,
@@ -49249,7 +50573,7 @@ function SpotlightToggle({
     onClick: onToggle,
     className: `px-2 py-1 text-[10px] uppercase tracking-wide ${active ? "bg-secondary text-foreground" : ""}`,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Flashlight, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Flashlight, {
         size: 11,
         "aria-hidden": true
       }, undefined, false, undefined, this),
@@ -49259,8 +50583,810 @@ function SpotlightToggle({
 }
 
 // src/mind-mapper/surface/SubmapAppendModal.tsx
-var import_react19 = __toESM(require_react(), 1);
-var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react18 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/index.parts.mjs
+var exports_index_parts4 = {};
+__export(exports_index_parts4, {
+  createHandle: () => createDialogHandle,
+  Viewport: () => DialogViewport,
+  Trigger: () => DialogTrigger,
+  Title: () => DialogTitle,
+  Root: () => DialogRoot,
+  Portal: () => DialogPortal,
+  Popup: () => DialogPopup,
+  Handle: () => DialogHandle,
+  Description: () => DialogDescription,
+  Close: () => DialogClose,
+  Backdrop: () => DialogBackdrop
+});
+
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+var React103 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
+var React102 = __toESM(require_react(), 1);
+"use client";
+var IsDrawerContext = /* @__PURE__ */ React102.createContext(false);
+if (true)
+  IsDrawerContext.displayName = "IsDrawerContext";
+var DialogRootContext = /* @__PURE__ */ React102.createContext(undefined);
+if (true)
+  DialogRootContext.displayName = "DialogRootContext";
+function useDialogRootContext(optional) {
+  const dialogRootContext = React102.useContext(DialogRootContext);
+  if (optional === false && dialogRootContext === undefined) {
+    throw new Error("Base UI: DialogRootContext is missing. Dialog parts must be placed within <Dialog.Root>.");
+  }
+  return dialogRootContext;
+}
+
+// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
+"use client";
+var stateAttributesMapping7 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var DialogBackdrop = /* @__PURE__ */ React103.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    forceRender = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const state = {
+    open,
+    transitionStatus
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    stateAttributesMapping: stateAttributesMapping7,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    enabled: forceRender || !nested
+  });
+});
+if (true)
+  DialogBackdrop.displayName = "DialogBackdrop";
+// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
+var React104 = __toESM(require_react(), 1);
+"use client";
+var DialogClose = /* @__PURE__ */ React104.forwardRef(function DialogClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  function handleClick(event) {
+    if (open) {
+      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+    }
+  }
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick: handleClick
+    }, elementProps, getButtonProps]
+  });
+});
+if (true)
+  DialogClose.displayName = "DialogClose";
+// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
+var React105 = __toESM(require_react(), 1);
+"use client";
+var DialogDescription = /* @__PURE__ */ React105.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id2 = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("descriptionElementId", id2);
+  return useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id: id2
+    }, elementProps]
+  });
+});
+if (true)
+  DialogDescription.displayName = "DialogDescription";
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var React107 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
+var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
+  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
+  return DialogPopupCssVars2;
+}({});
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
+var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogPopupDataAttributes2["nested"] = "data-nested";
+  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogPopupDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
+var React106 = __toESM(require_react(), 1);
+"use client";
+var DialogPortalContext = /* @__PURE__ */ React106.createContext(undefined);
+if (true)
+  DialogPortalContext.displayName = "DialogPortalContext";
+function useDialogPortalContext() {
+  const value = React106.useContext(DialogPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Dialog.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
+var import_jsx_runtime26 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping8 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogPopupDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogPopup = /* @__PURE__ */ React107.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    finalFocus,
+    initialFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const descriptionElementId = store.useState("descriptionElementId");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const rootPopupProps = store.useState("popupProps");
+  const modal = store.useState("modal");
+  const mounted = store.useState("mounted");
+  const nested = store.useState("nested");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const open = store.useState("open");
+  const openMethod = store.useState("openMethod");
+  const titleElementId = store.useState("titleElementId");
+  const transitionStatus = store.useState("transitionStatus");
+  const role = store.useState("role");
+  const floatingId = floatingRootContext.useState("floatingId");
+  const popupId = elementProps.id ?? floatingId;
+  useDialogPortalContext();
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const setPopupElement = store.useStateSetter("popupElement");
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const element2 = useRenderElement("div", componentProps, {
+    state,
+    props: [rootPopupProps, {
+      id: popupId,
+      "aria-labelledby": titleElementId ?? undefined,
+      "aria-describedby": descriptionElementId ?? undefined,
+      role,
+      ...FOCUSABLE_POPUP_PROPS,
+      hidden: !mounted,
+      onKeyDown(event) {
+        if (COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      },
+      style: {
+        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
+      }
+    }, elementProps],
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    stateAttributesMapping: stateAttributesMapping8
+  });
+  return /* @__PURE__ */ import_jsx_runtime26.jsx(FloatingFocusManager, {
+    context: floatingRootContext,
+    openInteractionType: openMethod,
+    disabled: !mounted,
+    closeOnFocusOut: !disablePointerDismissal,
+    initialFocus: resolvedInitialFocus,
+    returnFocus: finalFocus,
+    modal: modal !== false,
+    restoreFocus: "popup",
+    children: element2
+  });
+});
+if (true)
+  DialogPopup.displayName = "DialogPopup";
+// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
+var React108 = __toESM(require_react(), 1);
+var import_jsx_runtime27 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var DialogPortal = /* @__PURE__ */ React108.forwardRef(function DialogPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = useDialogRootContext();
+  const mounted = store.useState("mounted");
+  const modal = store.useState("modal");
+  const open = store.useState("open");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime27.jsx(DialogPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime27.jsxs(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps,
+      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime27.jsx(InternalBackdrop, {
+        ref: store.context.internalBackdropRef,
+        inert: inertValue(!open)
+      }), props.children]
+    })
+  });
+});
+if (true)
+  DialogPortal.displayName = "DialogPortal";
+// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
+var React112 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var React111 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
+var React109 = __toESM(require_react(), 1);
+"use client";
+function useDialogRoot(params) {
+  const {
+    store,
+    actionsRef
+  } = params;
+  const open = store.useState("open");
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store);
+  const handleImperativeClose = React109.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React109.useImperativeHandle(actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+}
+function DialogInteractions({
+  store,
+  parentContext,
+  isDrawer
+}) {
+  const open = store.useState("open");
+  const disablePointerDismissal = store.useState("disablePointerDismissal");
+  const modal = store.useState("modal");
+  const popupElement = store.useState("popupElement");
+  const floatingRootContext = store.useState("floatingRootContext");
+  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React109.useState(0);
+  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React109.useState(0);
+  const isTopmost = ownNestedOpenDialogs === 0;
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent() {
+      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
+        return "intentional";
+      }
+      return {
+        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+        touch: "sloppy"
+      };
+    },
+    outsidePress(event) {
+      if (!store.context.outsidePressEnabledRef.current) {
+        return false;
+      }
+      if ("button" in event && event.button !== 0) {
+        return false;
+      }
+      if ("touches" in event && event.touches.length !== 1) {
+        return false;
+      }
+      const target = getTarget(event);
+      if (isTopmost && !disablePointerDismissal) {
+        if (modal) {
+          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
+        }
+        return true;
+      }
+      return false;
+    },
+    escapeKey: isTopmost
+  });
+  useScrollLock(open && modal === true, popupElement);
+  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
+    setOwnNestedOpenDialogs(dialogCount);
+    setOwnNestedOpenDrawers(drawerCount);
+  });
+  store.useContextCallback("onNestedDialogClose", () => {
+    setOwnNestedOpenDialogs(0);
+    setOwnNestedOpenDrawers(0);
+  });
+  React109.useEffect(() => {
+    if (parentContext?.onNestedDialogOpen && open) {
+      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
+    }
+    if (parentContext?.onNestedDialogClose && !open) {
+      parentContext.onNestedDialogClose();
+    }
+    return () => {
+      if (parentContext?.onNestedDialogClose && open) {
+        parentContext.onNestedDialogClose();
+      }
+    };
+  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps,
+    nestedOpenDialogCount: ownNestedOpenDialogs,
+    nestedOpenDrawerCount: ownNestedOpenDrawers
+  });
+  return null;
+}
+
+// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
+var React110 = __toESM(require_react(), 1);
+var selectors4 = {
+  ...popupStoreSelectors,
+  modal: createSelector((state) => state.modal),
+  nested: createSelector((state) => state.nested),
+  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
+  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
+  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
+  openMethod: createSelector((state) => state.openMethod),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  titleElementId: createSelector((state) => state.titleElementId),
+  viewportElement: createSelector((state) => state.viewportElement),
+  role: createSelector((state) => state.role)
+};
+
+class DialogStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const triggerElements = new PopupTriggerMap;
+    const state = createInitialState3(initialState);
+    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(state, {
+      popupRef: /* @__PURE__ */ React110.createRef(),
+      backdropRef: /* @__PURE__ */ React110.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React110.createRef(),
+      outsidePressEnabledRef: {
+        current: true
+      },
+      triggerElements,
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined
+    }, selectors4);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    eventDetails.preventUnmountOnClose = () => {
+      this.set("preventUnmountingOnClose", true);
+    };
+    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
+      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
+    }
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const updatedState = {
+      open: nextOpen
+    };
+    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
+    this.update(updatedState);
+  };
+  static useStore(externalStore, initialState) {
+    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
+    return store;
+  }
+}
+function createInitialState3(initialState = {}) {
+  return {
+    ...createInitialPopupStoreState(),
+    modal: true,
+    disablePointerDismissal: false,
+    popupElement: null,
+    viewportElement: null,
+    descriptionElementId: undefined,
+    titleElementId: undefined,
+    openMethod: null,
+    nested: false,
+    nestedOpenDialogCount: 0,
+    nestedOpenDrawerCount: 0,
+    role: "dialog",
+    ...initialState
+  };
+}
+
+// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
+var import_jsx_runtime28 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function useRenderDialogRoot(props, mode = "dialog") {
+  const {
+    children: children2,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    disablePointerDismissal: disablePointerDismissalProp = false,
+    modal: modalProp = true,
+    actionsRef,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const isDrawer = mode === "drawer";
+  const isAlertDialog = mode === "alert-dialog";
+  const modal = isAlertDialog ? true : modalProp;
+  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
+  const role = isAlertDialog ? "alertdialog" : "dialog";
+  const parentDialogRootContext = useDialogRootContext(true);
+  const nested = Boolean(parentDialogRootContext);
+  const rootState = {
+    modal,
+    disablePointerDismissal,
+    nested,
+    role
+  };
+  const store = DialogStore.useStore(handle?.store, {
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp,
+    ...rootState
+  });
+  useOnFirstRender(() => {
+    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
+      open: true,
+      activeTriggerId: defaultTriggerIdProp
+    } : null;
+    if (isAlertDialog) {
+      store.update(nextState ? {
+        ...rootState,
+        ...nextState
+      } : rootState);
+    } else if (nextState) {
+      store.update(nextState);
+    }
+  });
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  store.useSyncedValues(rootState);
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  useDialogRoot({
+    store,
+    actionsRef
+  });
+  const shouldRenderInteractions = open || mounted;
+  const contextValue = React111.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime28.jsx(IsDrawerContext.Provider, {
+    value: false,
+    children: /* @__PURE__ */ import_jsx_runtime28.jsxs(DialogRootContext.Provider, {
+      value: contextValue,
+      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime28.jsx(DialogInteractions, {
+        store,
+        parentContext: parentDialogRootContext?.store.context,
+        isDrawer
+      }), typeof children2 === "function" ? children2({
+        payload
+      }) : children2]
+    })
+  });
+}
+
+// node_modules/@base-ui/react/dialog/root/DialogRoot.mjs
+"use client";
+function DialogRoot(props) {
+  const mode = React112.useContext(IsDrawerContext) ? "drawer" : "dialog";
+  return useRenderDialogRoot(props, mode);
+}
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+var React113 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
+var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
+  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
+  DialogViewportDataAttributes2["nested"] = "data-nested";
+  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
+  return DialogViewportDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
+"use client";
+var stateAttributesMapping9 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping,
+  nested(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nested]: ""
+    } : null;
+  },
+  nestedDialogOpen(value) {
+    return value ? {
+      [DialogViewportDataAttributes.nestedDialogOpen]: ""
+    } : null;
+  }
+};
+var DialogViewport = /* @__PURE__ */ React113.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    children: children2,
+    ...elementProps
+  } = componentProps;
+  const keepMounted = useDialogPortalContext();
+  const {
+    store
+  } = useDialogRootContext();
+  const open = store.useState("open");
+  const nested = store.useState("nested");
+  const transitionStatus = store.useState("transitionStatus");
+  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
+  const mounted = store.useState("mounted");
+  const setViewportElement = store.useStateSetter("viewportElement");
+  const nestedDialogOpen = nestedOpenDialogCount > 0;
+  const state = {
+    open,
+    nested,
+    transitionStatus,
+    nestedDialogOpen
+  };
+  const shouldRender = keepMounted || mounted;
+  return useRenderElement("div", componentProps, {
+    enabled: shouldRender,
+    state,
+    ref: [forwardedRef, setViewportElement],
+    stateAttributesMapping: stateAttributesMapping9,
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: !open ? "none" : undefined
+      },
+      children: children2
+    }, elementProps]
+  });
+});
+if (true)
+  DialogViewport.displayName = "DialogViewport";
+// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
+var React114 = __toESM(require_react(), 1);
+"use client";
+var DialogTitle = /* @__PURE__ */ React114.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = useDialogRootContext();
+  const id2 = useBaseUiId(idProp);
+  store.useSyncedValueWithCleanup("titleElementId", id2);
+  return useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id: id2
+    }, elementProps]
+  });
+});
+if (true)
+  DialogTitle.displayName = "DialogTitle";
+// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
+var React115 = __toESM(require_react(), 1);
+"use client";
+var DialogTrigger = /* @__PURE__ */ React115.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    id: idProp,
+    payload,
+    handle,
+    ...elementProps
+  } = componentProps;
+  const dialogRootContext = useDialogRootContext(true);
+  const store = handle?.store ?? dialogRootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Dialog.Trigger> must be used within <Dialog.Root> or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React115.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload
+  });
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: triggerOpenStateMapping
+  });
+});
+if (true)
+  DialogTrigger.displayName = "DialogTrigger";
+// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
+class DialogHandle {
+  constructor(store) {
+    this.store = store ?? new DialogStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
+    if (true) {
+      if (triggerId && !triggerElement) {
+        console.warn(`Base UI: DialogHandle.open: No trigger found with id "${triggerId}". The dialog will open, but the trigger will not be associated with the dialog.`);
+      }
+    }
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  openWithPayload(payload) {
+    this.store.set("payload", payload);
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createDialogHandle() {
+  return new DialogHandle;
+}
+// src/mind-mapper/surface/ui/dialog.tsx
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
+var Dialog = exports_index_parts4.Root;
+var DialogTrigger3 = exports_index_parts4.Trigger;
+function DialogContent({ className, children: children2, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(exports_index_parts4.Portal, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(exports_index_parts4.Backdrop, {
+        className: "fixed inset-0 z-40 bg-background/70 backdrop-blur-sm"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(exports_index_parts4.Popup, {
+        className: cn2("fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none", className),
+        ...props,
+        children: children2
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function DialogHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
+    className: cn2("mb-3 flex flex-col gap-1", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogTitle3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(exports_index_parts4.Title, {
+    className: cn2("text-sm font-semibold text-foreground", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function DialogDescription3({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(exports_index_parts4.Description, {
+    className: cn2("text-xs leading-relaxed text-muted-foreground", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/mind-mapper/surface/SubmapAppendModal.tsx
+var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
 var TIERS = ["canon", "thread", "story-local"];
 function SubmapAppendModal({
   proposals,
@@ -49268,96 +51394,107 @@ function SubmapAppendModal({
   onCommit,
   onCancel
 }) {
-  const [ruling, setRuling] = import_react19.useState("thread");
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-    className: "absolute left-1/2 top-1/4 z-30 w-80 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
-        className: "mb-1 flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(FolderTree, {
-            size: 11,
-            "aria-hidden": true
-          }, undefined, false, undefined, this),
-          " ratify & nest as a submap"
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
-        className: "mb-2 text-[11px] text-ink-dim",
-        children: [
-          "ratify all ",
-          proposals.length,
-          " at one tier, then pick the parent — the rest nest inside its submap."
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-        className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
-        children: "tier"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-        className: "mb-3 flex gap-1",
-        children: TIERS.map((t) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("button", {
-          type: "button",
-          onClick: () => setRuling(t),
-          "aria-pressed": ruling === t,
-          className: `flex-1 rounded-sm border px-1.5 py-1 text-[10px] ${ruling === t ? "border-ink bg-secondary text-ink" : "border-edge text-ink-dim hover:border-ink-faint hover:text-ink"}`,
-          children: TIER_LABEL[t]
-        }, t, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-        className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
-        children: "parent (from the selection)"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-        className: "flex flex-col gap-1",
-        children: proposals.map((n) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
-          variant: "outline",
-          size: "auto",
-          className: "justify-start px-2 py-1 text-left text-xs text-ink",
-          onClick: () => onCommit(n.id, ruling),
-          children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
-            className: "truncate",
-            children: n.title
+  const [ruling, setRuling] = import_react18.useState("thread");
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Dialog, {
+    open: true,
+    onOpenChange: (o) => {
+      if (!o)
+        onCancel();
+    },
+    children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DialogContent, {
+      className: "w-80 max-w-[90vw]",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DialogHeader, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DialogTitle3, {
+              className: "flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(FolderTree, {
+                  size: 11,
+                  "aria-hidden": true
+                }, undefined, false, undefined, this),
+                " ratify & nest as a submap"
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(DialogDescription3, {
+              className: "text-[11px] text-ink-dim",
+              children: [
+                "ratify all ",
+                proposals.length,
+                " at one tier, then pick the parent — the rest nest inside its submap."
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+          className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
+          children: "tier"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+          className: "mb-3 flex gap-1",
+          children: TIERS.map((t) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("button", {
+            type: "button",
+            onClick: () => setRuling(t),
+            "aria-pressed": ruling === t,
+            className: `flex-1 rounded-sm border px-1.5 py-1 text-[10px] ${ruling === t ? "border-ink bg-secondary text-ink" : "border-edge text-ink-dim hover:border-ink-faint hover:text-ink"}`,
+            children: TIER_LABEL[t]
+          }, t, false, undefined, this))
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+          className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
+          children: "parent (from the selection)"
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+          className: "flex flex-col gap-1",
+          children: proposals.map((n) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
+            variant: "outline",
+            size: "auto",
+            className: "justify-start px-2 py-1 text-left text-xs text-ink",
+            onClick: () => onCommit(n.id, ruling),
+            children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
+              className: "truncate",
+              children: n.title
+            }, undefined, false, undefined, this)
+          }, n.id, false, undefined, this))
+        }, undefined, false, undefined, this),
+        existingNodes.length > 0 && /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(jsx_dev_runtime25.Fragment, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+              className: "mb-1 mt-2 text-[9px] uppercase tracking-widest text-ink-faint",
+              children: "…or under an existing idea"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+              className: "flex max-h-28 flex-col gap-1 overflow-y-auto",
+              children: existingNodes.map((n) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
+                variant: "ghost",
+                size: "auto",
+                className: "justify-start px-2 py-1 text-left text-xs text-ink-dim hover:text-ink",
+                onClick: () => onCommit(n.id, ruling),
+                children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
+                  className: "truncate",
+                  children: n.title
+                }, undefined, false, undefined, this)
+              }, n.id, false, undefined, this))
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+          className: "mt-2 flex justify-end",
+          children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
+            variant: "ghost",
+            size: "auto",
+            className: "px-2 py-1 text-xs",
+            onClick: onCancel,
+            children: "cancel"
           }, undefined, false, undefined, this)
-        }, n.id, false, undefined, this))
-      }, undefined, false, undefined, this),
-      existingNodes.length > 0 && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(jsx_dev_runtime23.Fragment, {
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-            className: "mb-1 mt-2 text-[9px] uppercase tracking-widest text-ink-faint",
-            children: "…or under an existing idea"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-            className: "flex max-h-28 flex-col gap-1 overflow-y-auto",
-            children: existingNodes.map((n) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
-              variant: "ghost",
-              size: "auto",
-              className: "justify-start px-2 py-1 text-left text-xs text-ink-dim hover:text-ink",
-              onClick: () => onCommit(n.id, ruling),
-              children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
-                className: "truncate",
-                children: n.title
-              }, undefined, false, undefined, this)
-            }, n.id, false, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
-        className: "mt-2 flex justify-end",
-        children: /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
-          variant: "ghost",
-          size: "auto",
-          className: "px-2 py-1 text-xs",
-          onClick: onCancel,
-          children: "cancel"
         }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/SubmapBreadcrumb.tsx
-var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
 function SubmapBreadcrumb({
   trail,
   onNavigate
@@ -49365,11 +51502,11 @@ function SubmapBreadcrumb({
   if (trail.length === 0)
     return null;
   const crumbClass = (isCurrent) => `px-1.5 py-0.5 text-xs ${isCurrent ? "text-ink" : "text-ink-dim hover:text-ink"}`;
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("nav", {
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("nav", {
     "aria-label": "Submap breadcrumb",
     className: "flex items-center gap-0.5 border-b border-edge bg-surface px-4 py-0.5",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: crumbClass(false),
@@ -49378,15 +51515,15 @@ function SubmapBreadcrumb({
       }, undefined, false, undefined, this),
       trail.map((node, i) => {
         const isCurrent = i === trail.length - 1;
-        return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
+        return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
           className: "flex items-center gap-0.5",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ChevronRight, {
+            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(ChevronRight, {
               size: 11,
               "aria-hidden": true,
               className: "text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
+            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
               variant: "ghost",
               size: "auto",
               className: crumbClass(isCurrent),
@@ -49403,58 +51540,69 @@ function SubmapBreadcrumb({
 }
 
 // src/mind-mapper/surface/SubmapGroupModal.tsx
-var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
 function SubmapGroupModal({
   nodes,
   onPickParent,
   onCancel
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
-    className: "absolute left-1/2 top-1/3 z-30 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
-        className: "mb-1 flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(FolderTree, {
-            size: 11,
-            "aria-hidden": true
-          }, undefined, false, undefined, this),
-          " group under a node"
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("p", {
-        className: "mb-2 text-[11px] text-ink-dim",
-        children: [
-          "pick the parent — the other ",
-          nodes.length - 1,
-          " nest inside its submap."
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
-        className: "flex flex-col gap-1",
-        children: nodes.map((n) => /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
-          variant: "outline",
-          size: "auto",
-          className: "justify-start px-2 py-1 text-left text-xs text-ink",
-          onClick: () => onPickParent(n.id),
-          children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
-            className: "truncate",
-            children: n.title
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Dialog, {
+    open: true,
+    onOpenChange: (o) => {
+      if (!o)
+        onCancel();
+    },
+    children: /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(DialogContent, {
+      className: "w-72 max-w-[90vw]",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(DialogHeader, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(DialogTitle3, {
+              className: "flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(FolderTree, {
+                  size: 11,
+                  "aria-hidden": true
+                }, undefined, false, undefined, this),
+                " group under a node"
+              ]
+            }, undefined, true, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(DialogDescription3, {
+              className: "text-[11px] text-ink-dim",
+              children: [
+                "pick the parent — the other ",
+                nodes.length - 1,
+                " nest inside its submap."
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
+          className: "flex flex-col gap-1",
+          children: nodes.map((n) => /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button, {
+            variant: "outline",
+            size: "auto",
+            className: "justify-start px-2 py-1 text-left text-xs text-ink",
+            onClick: () => onPickParent(n.id),
+            children: /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("span", {
+              className: "truncate",
+              children: n.title
+            }, undefined, false, undefined, this)
+          }, n.id, false, undefined, this))
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
+          className: "mt-2 flex justify-end",
+          children: /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button, {
+            variant: "ghost",
+            size: "auto",
+            className: "px-2 py-1 text-xs",
+            onClick: onCancel,
+            children: "cancel"
           }, undefined, false, undefined, this)
-        }, n.id, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
-        className: "mt-2 flex justify-end",
-        children: /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
-          variant: "ghost",
-          size: "auto",
-          className: "px-2 py-1 text-xs",
-          onClick: onCancel,
-          children: "cancel"
         }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/state/activity.ts
@@ -49583,6 +51731,62 @@ async function ingestBlank(title, post) {
   if (!t)
     return;
   await post({ title: t, text: "" });
+}
+
+// src/mind-mapper/surface/state/submapAppend.ts
+function pendingNodeProposalIds(proposals, selectedIds) {
+  const eligible = new Set(proposals.filter((p2) => p2.status === "pending" && p2.zoneId === null && p2.kind === "node").map((p2) => p2.id));
+  return selectedIds.filter((id2) => eligible.has(id2));
+}
+function buildSubmapAppend(pendingIds, parentRef) {
+  const children2 = pendingIds.filter((id2) => id2 !== parentRef);
+  return {
+    ids: pendingIds,
+    anchors: children2.map((node) => ({ node, parent: parentRef }))
+  };
+}
+
+// src/mind-mapper/surface/state/submapGroup.ts
+function ratifiedSelection(nodes, proposals, selectedIds) {
+  const pending = new Set(proposals.filter((p2) => p2.status === "pending").map((p2) => p2.id));
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const out = [];
+  for (const id2 of selectedIds) {
+    if (pending.has(id2))
+      continue;
+    const node = byId.get(id2);
+    if (node && !node.pending)
+      out.push(node);
+  }
+  return out;
+}
+function submapChildTargets(selectedNodeIds, parentId) {
+  return selectedNodeIds.filter((id2) => id2 !== parentId);
+}
+
+// src/mind-mapper/surface/state/zoneGroup.ts
+function selectedPendingProposalIds(proposals, selectedIds) {
+  const eligible = new Set(proposals.filter((p2) => p2.status === "pending" && p2.zoneId === null).map((p2) => p2.id));
+  return selectedIds.filter((id2) => eligible.has(id2));
+}
+
+// src/mind-mapper/surface/state/multiSelect.ts
+function multiSelectActions(clickedId, selectedIds, nodes, proposals, activeZone) {
+  if (selectedIds.length < 2)
+    return null;
+  if (activeZone !== null)
+    return null;
+  if (!selectedIds.includes(clickedId))
+    return null;
+  const ratified = ratifiedSelection(nodes, proposals, selectedIds);
+  const pendingNodes = pendingNodeProposalIds(proposals, selectedIds);
+  const pendingAny = selectedPendingProposalIds(proposals, selectedIds);
+  const groupSubmap = ratified.length >= 2 && ratified.some((n) => n.id === clickedId);
+  const nestSubmap = pendingNodes.length >= 2 && pendingNodes.includes(clickedId);
+  const groupZone = pendingAny.length >= 1;
+  if (!groupSubmap && !nestSubmap && !groupZone)
+    return null;
+  return { groupSubmap, nestSubmap, groupZone };
 }
 
 // src/mind-mapper/surface/state/neighborhood.ts
@@ -49791,37 +51995,6 @@ function breadcrumbTrail(nodes, activeAnchor) {
   return trail.reverse();
 }
 
-// src/mind-mapper/surface/state/submapAppend.ts
-function pendingNodeProposalIds(proposals, selectedIds) {
-  const eligible = new Set(proposals.filter((p2) => p2.status === "pending" && p2.zoneId === null && p2.kind === "node").map((p2) => p2.id));
-  return selectedIds.filter((id2) => eligible.has(id2));
-}
-function buildSubmapAppend(pendingIds, parentRef) {
-  const children2 = pendingIds.filter((id2) => id2 !== parentRef);
-  return {
-    ids: pendingIds,
-    anchors: children2.map((node) => ({ node, parent: parentRef }))
-  };
-}
-
-// src/mind-mapper/surface/state/submapGroup.ts
-function ratifiedSelection(nodes, proposals, selectedIds) {
-  const pending = new Set(proposals.filter((p2) => p2.status === "pending").map((p2) => p2.id));
-  const byId = new Map(nodes.map((n) => [n.id, n]));
-  const out = [];
-  for (const id2 of selectedIds) {
-    if (pending.has(id2))
-      continue;
-    const node = byId.get(id2);
-    if (node && !node.pending)
-      out.push(node);
-  }
-  return out;
-}
-function submapChildTargets(selectedNodeIds, parentId) {
-  return selectedNodeIds.filter((id2) => id2 !== parentId);
-}
-
 // src/mind-mapper/surface/state/theme.ts
 var THEME_STORAGE_KEY = "mind-mapper:theme";
 function applyTheme(theme) {
@@ -49863,7 +52036,7 @@ function rememberProject(id2) {
 }
 
 // src/mind-mapper/surface/state/useProjectState.ts
-var import_react20 = __toESM(require_react(), 1);
+var import_react19 = __toESM(require_react(), 1);
 
 // src/mind-mapper/surface/state/reducer.ts
 function isGap(cursor, seq) {
@@ -50068,15 +52241,15 @@ function applyEvent(state, event) {
 
 // src/mind-mapper/surface/state/useProjectState.ts
 function useProjectState(projectId) {
-  const [state, setState] = import_react20.useState(null);
-  const [error2, setError] = import_react20.useState(null);
-  const [status, setStatus] = import_react20.useState("connecting");
-  const [needsProject, setNeedsProject] = import_react20.useState(null);
-  const [notFound, setNotFound] = import_react20.useState(false);
-  const [lookHere, setLookHere] = import_react20.useState(null);
-  const [agentActivity, setAgentActivity] = import_react20.useState(null);
-  const ws = import_react20.useRef(null);
-  const fetchSnapshot = import_react20.useCallback(() => {
+  const [state, setState] = import_react19.useState(null);
+  const [error2, setError] = import_react19.useState(null);
+  const [status, setStatus] = import_react19.useState("connecting");
+  const [needsProject, setNeedsProject] = import_react19.useState(null);
+  const [notFound, setNotFound] = import_react19.useState(false);
+  const [lookHere, setLookHere] = import_react19.useState(null);
+  const [agentActivity, setAgentActivity] = import_react19.useState(null);
+  const ws = import_react19.useRef(null);
+  const fetchSnapshot = import_react19.useCallback(() => {
     const qs = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
     return fetch(`/state${qs}`).then(async (r) => {
       if (r.status === 409) {
@@ -50105,7 +52278,7 @@ function useProjectState(projectId) {
       return data;
     });
   }, [projectId]);
-  import_react20.useEffect(() => {
+  import_react19.useEffect(() => {
     let stopped = false;
     setNeedsProject(null);
     setNotFound(false);
@@ -50186,12 +52359,6 @@ function parseZoneNotEmptyBody(body) {
   return { proposals: b.proposals };
 }
 
-// src/mind-mapper/surface/state/zoneGroup.ts
-function selectedPendingProposalIds(proposals, selectedIds) {
-  const eligible = new Set(proposals.filter((p2) => p2.status === "pending" && p2.zoneId === null).map((p2) => p2.id));
-  return selectedIds.filter((id2) => eligible.has(id2));
-}
-
 // src/mind-mapper/surface/state/zoneView.ts
 function mainProposals(proposals) {
   return proposals.filter((p2) => p2.zoneId === null);
@@ -50224,8 +52391,8 @@ function zoneOf(proposals, id2) {
 }
 
 // node_modules/@base-ui/react/alert-dialog/index.parts.mjs
-var exports_index_parts3 = {};
-__export(exports_index_parts3, {
+var exports_index_parts5 = {};
+__export(exports_index_parts5, {
   createHandle: () => createAlertDialogHandle,
   Viewport: () => DialogViewport,
   Trigger: () => AlertDialogTrigger,
@@ -50239,749 +52406,14 @@ __export(exports_index_parts3, {
   Backdrop: () => DialogBackdrop
 });
 
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var React89 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/root/useDialogRoot.mjs
-var React86 = __toESM(require_react(), 1);
-"use client";
-function useDialogRoot(params) {
-  const {
-    store,
-    actionsRef
-  } = params;
-  const open = store.useState("open");
-  usePopupRootSync(store, open);
-  useImplicitActiveTrigger(store);
-  const {
-    forceUnmount
-  } = useOpenStateTransitions(open, store);
-  const handleImperativeClose = React86.useCallback(() => {
-    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
-  }, [store]);
-  React86.useImperativeHandle(actionsRef, () => ({
-    unmount: forceUnmount,
-    close: handleImperativeClose
-  }), [forceUnmount, handleImperativeClose]);
-}
-function DialogInteractions({
-  store,
-  parentContext,
-  isDrawer
-}) {
-  const open = store.useState("open");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const modal = store.useState("modal");
-  const popupElement = store.useState("popupElement");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const [ownNestedOpenDialogs, setOwnNestedOpenDialogs] = React86.useState(0);
-  const [ownNestedOpenDrawers, setOwnNestedOpenDrawers] = React86.useState(0);
-  const isTopmost = ownNestedOpenDialogs === 0;
-  const dismiss = useDismiss(floatingRootContext, {
-    outsidePressEvent() {
-      if (store.context.internalBackdropRef.current || store.context.backdropRef.current) {
-        return "intentional";
-      }
-      return {
-        mouse: modal === "trap-focus" ? "sloppy" : "intentional",
-        touch: "sloppy"
-      };
-    },
-    outsidePress(event) {
-      if (!store.context.outsidePressEnabledRef.current) {
-        return false;
-      }
-      if ("button" in event && event.button !== 0) {
-        return false;
-      }
-      if ("touches" in event && event.touches.length !== 1) {
-        return false;
-      }
-      const target = getTarget(event);
-      if (isTopmost && !disablePointerDismissal) {
-        if (modal) {
-          return store.context.internalBackdropRef.current || store.context.backdropRef.current ? store.context.internalBackdropRef.current === target || store.context.backdropRef.current === target || contains(target, popupElement) && !target?.hasAttribute("data-base-ui-portal") : true;
-        }
-        return true;
-      }
-      return false;
-    },
-    escapeKey: isTopmost
-  });
-  useScrollLock(open && modal === true, popupElement);
-  store.useContextCallback("onNestedDialogOpen", (dialogCount, drawerCount) => {
-    setOwnNestedOpenDialogs(dialogCount);
-    setOwnNestedOpenDrawers(drawerCount);
-  });
-  store.useContextCallback("onNestedDialogClose", () => {
-    setOwnNestedOpenDialogs(0);
-    setOwnNestedOpenDrawers(0);
-  });
-  React86.useEffect(() => {
-    if (parentContext?.onNestedDialogOpen && open) {
-      parentContext.onNestedDialogOpen(ownNestedOpenDialogs + 1, ownNestedOpenDrawers + (isDrawer ? 1 : 0));
-    }
-    if (parentContext?.onNestedDialogClose && !open) {
-      parentContext.onNestedDialogClose();
-    }
-    return () => {
-      if (parentContext?.onNestedDialogClose && open) {
-        parentContext.onNestedDialogClose();
-      }
-    };
-  }, [isDrawer, open, ownNestedOpenDialogs, ownNestedOpenDrawers, parentContext]);
-  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
-  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
-  const popupProps = dismiss.floating ?? EMPTY_OBJECT;
-  usePopupInteractionProps(store, {
-    activeTriggerProps,
-    inactiveTriggerProps,
-    popupProps,
-    nestedOpenDialogCount: ownNestedOpenDialogs,
-    nestedOpenDrawerCount: ownNestedOpenDrawers
-  });
-  return null;
-}
-
-// node_modules/@base-ui/react/dialog/root/DialogRootContext.mjs
-var React87 = __toESM(require_react(), 1);
-"use client";
-var IsDrawerContext = /* @__PURE__ */ React87.createContext(false);
-if (true)
-  IsDrawerContext.displayName = "IsDrawerContext";
-var DialogRootContext = /* @__PURE__ */ React87.createContext(undefined);
-if (true)
-  DialogRootContext.displayName = "DialogRootContext";
-function useDialogRootContext(optional) {
-  const dialogRootContext = React87.useContext(DialogRootContext);
-  if (optional === false && dialogRootContext === undefined) {
-    throw new Error("Base UI: DialogRootContext is missing. Dialog parts must be placed within <Dialog.Root>.");
-  }
-  return dialogRootContext;
-}
-
-// node_modules/@base-ui/react/dialog/store/DialogStore.mjs
-var React88 = __toESM(require_react(), 1);
-var selectors3 = {
-  ...popupStoreSelectors,
-  modal: createSelector((state) => state.modal),
-  nested: createSelector((state) => state.nested),
-  nestedOpenDialogCount: createSelector((state) => state.nestedOpenDialogCount),
-  nestedOpenDrawerCount: createSelector((state) => state.nestedOpenDrawerCount),
-  disablePointerDismissal: createSelector((state) => state.disablePointerDismissal),
-  openMethod: createSelector((state) => state.openMethod),
-  descriptionElementId: createSelector((state) => state.descriptionElementId),
-  titleElementId: createSelector((state) => state.titleElementId),
-  viewportElement: createSelector((state) => state.viewportElement),
-  role: createSelector((state) => state.role)
-};
-
-class DialogStore extends ReactStore {
-  constructor(initialState, floatingId, nested = false) {
-    const triggerElements = new PopupTriggerMap;
-    const state = createInitialState2(initialState);
-    state.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
-    super(state, {
-      popupRef: /* @__PURE__ */ React88.createRef(),
-      backdropRef: /* @__PURE__ */ React88.createRef(),
-      internalBackdropRef: /* @__PURE__ */ React88.createRef(),
-      outsidePressEnabledRef: {
-        current: true
-      },
-      triggerElements,
-      onOpenChange: undefined,
-      onOpenChangeComplete: undefined
-    }, selectors3);
-  }
-  setOpen = (nextOpen, eventDetails) => {
-    eventDetails.preventUnmountOnClose = () => {
-      this.set("preventUnmountingOnClose", true);
-    };
-    if (!nextOpen && eventDetails.trigger == null && this.state.activeTriggerId != null) {
-      eventDetails.trigger = this.state.activeTriggerElement ?? undefined;
-    }
-    this.context.onOpenChange?.(nextOpen, eventDetails);
-    if (eventDetails.isCanceled) {
-      return;
-    }
-    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
-    const updatedState = {
-      open: nextOpen
-    };
-    setPopupOpenState(updatedState, nextOpen, eventDetails.trigger);
-    this.update(updatedState);
-  };
-  static useStore(externalStore, initialState) {
-    const store = usePopupStore(externalStore, (floatingId, nested) => new DialogStore(initialState, floatingId, nested), true).store;
-    return store;
-  }
-}
-function createInitialState2(initialState = {}) {
-  return {
-    ...createInitialPopupStoreState(),
-    modal: true,
-    disablePointerDismissal: false,
-    popupElement: null,
-    viewportElement: null,
-    descriptionElementId: undefined,
-    titleElementId: undefined,
-    openMethod: null,
-    nested: false,
-    nestedOpenDialogCount: 0,
-    nestedOpenDrawerCount: 0,
-    role: "dialog",
-    ...initialState
-  };
-}
-
-// node_modules/@base-ui/react/dialog/root/useRenderDialogRoot.mjs
-var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
-"use client";
-function useRenderDialogRoot(props, mode = "dialog") {
-  const {
-    children: children2,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    onOpenChangeComplete,
-    disablePointerDismissal: disablePointerDismissalProp = false,
-    modal: modalProp = true,
-    actionsRef,
-    handle,
-    triggerId: triggerIdProp,
-    defaultTriggerId: defaultTriggerIdProp = null
-  } = props;
-  const isDrawer = mode === "drawer";
-  const isAlertDialog = mode === "alert-dialog";
-  const modal = isAlertDialog ? true : modalProp;
-  const disablePointerDismissal = isAlertDialog || disablePointerDismissalProp;
-  const role = isAlertDialog ? "alertdialog" : "dialog";
-  const parentDialogRootContext = useDialogRootContext(true);
-  const nested = Boolean(parentDialogRootContext);
-  const rootState = {
-    modal,
-    disablePointerDismissal,
-    nested,
-    role
-  };
-  const store = DialogStore.useStore(handle?.store, {
-    open: defaultOpen,
-    openProp,
-    activeTriggerId: defaultTriggerIdProp,
-    triggerIdProp,
-    ...rootState
-  });
-  useOnFirstRender(() => {
-    const nextState = openProp === undefined && store.state.open === false && defaultOpen === true ? {
-      open: true,
-      activeTriggerId: defaultTriggerIdProp
-    } : null;
-    if (isAlertDialog) {
-      store.update(nextState ? {
-        ...rootState,
-        ...nextState
-      } : rootState);
-    } else if (nextState) {
-      store.update(nextState);
-    }
-  });
-  store.useControlledProp("openProp", openProp);
-  store.useControlledProp("triggerIdProp", triggerIdProp);
-  store.useSyncedValues(rootState);
-  store.useContextCallback("onOpenChange", onOpenChange);
-  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const payload = store.useState("payload");
-  useDialogRoot({
-    store,
-    actionsRef
-  });
-  const shouldRenderInteractions = open || mounted;
-  const contextValue = React89.useMemo(() => ({
-    store
-  }), [store]);
-  return /* @__PURE__ */ import_jsx_runtime20.jsx(IsDrawerContext.Provider, {
-    value: false,
-    children: /* @__PURE__ */ import_jsx_runtime20.jsxs(DialogRootContext.Provider, {
-      value: contextValue,
-      children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime20.jsx(DialogInteractions, {
-        store,
-        parentContext: parentDialogRootContext?.store.context,
-        isDrawer
-      }), typeof children2 === "function" ? children2({
-        payload
-      }) : children2]
-    })
-  });
-}
-
 // node_modules/@base-ui/react/alert-dialog/root/AlertDialogRoot.mjs
 "use client";
 function AlertDialogRoot(props) {
   return useRenderDialogRoot(props, "alert-dialog");
 }
-// node_modules/@base-ui/react/dialog/backdrop/DialogBackdrop.mjs
-var React90 = __toESM(require_react(), 1);
-"use client";
-var stateAttributesMapping4 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var DialogBackdrop = /* @__PURE__ */ React90.forwardRef(function DialogBackdrop2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    forceRender = false,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const mounted = store.useState("mounted");
-  const transitionStatus = store.useState("transitionStatus");
-  const state = {
-    open,
-    transitionStatus
-  };
-  return useRenderElement("div", componentProps, {
-    state,
-    ref: [store.context.backdropRef, forwardedRef],
-    stateAttributesMapping: stateAttributesMapping4,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        userSelect: "none",
-        WebkitUserSelect: "none"
-      }
-    }, elementProps],
-    enabled: forceRender || !nested
-  });
-});
-if (true)
-  DialogBackdrop.displayName = "DialogBackdrop";
-// node_modules/@base-ui/react/dialog/close/DialogClose.mjs
-var React91 = __toESM(require_react(), 1);
-"use client";
-var DialogClose = /* @__PURE__ */ React91.forwardRef(function DialogClose2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const state = {
-    disabled: disabled2
-  };
-  function handleClick(event) {
-    if (open) {
-      store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
-    }
-  }
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [forwardedRef, buttonRef],
-    props: [{
-      onClick: handleClick
-    }, elementProps, getButtonProps]
-  });
-});
-if (true)
-  DialogClose.displayName = "DialogClose";
-// node_modules/@base-ui/react/dialog/description/DialogDescription.mjs
-var React92 = __toESM(require_react(), 1);
-"use client";
-var DialogDescription = /* @__PURE__ */ React92.forwardRef(function DialogDescription2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id2 = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("descriptionElementId", id2);
-  return useRenderElement("p", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id: id2
-    }, elementProps]
-  });
-});
-if (true)
-  DialogDescription.displayName = "DialogDescription";
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var React94 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopupCssVars.mjs
-var DialogPopupCssVars = /* @__PURE__ */ function(DialogPopupCssVars2) {
-  DialogPopupCssVars2["nestedDialogs"] = "--nested-dialogs";
-  return DialogPopupCssVars2;
-}({});
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopupDataAttributes.mjs
-var DialogPopupDataAttributes = function(DialogPopupDataAttributes2) {
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
-  DialogPopupDataAttributes2[DialogPopupDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
-  DialogPopupDataAttributes2["nested"] = "data-nested";
-  DialogPopupDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
-  return DialogPopupDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/dialog/portal/DialogPortalContext.mjs
-var React93 = __toESM(require_react(), 1);
-"use client";
-var DialogPortalContext = /* @__PURE__ */ React93.createContext(undefined);
-if (true)
-  DialogPortalContext.displayName = "DialogPortalContext";
-function useDialogPortalContext() {
-  const value = React93.useContext(DialogPortalContext);
-  if (value === undefined) {
-    throw new Error("Base UI: <Dialog.Portal> is missing.");
-  }
-  return value;
-}
-
-// node_modules/@base-ui/react/dialog/popup/DialogPopup.mjs
-var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var stateAttributesMapping5 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping,
-  nestedDialogOpen(value) {
-    return value ? {
-      [DialogPopupDataAttributes.nestedDialogOpen]: ""
-    } : null;
-  }
-};
-var DialogPopup = /* @__PURE__ */ React94.forwardRef(function DialogPopup2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    finalFocus,
-    initialFocus,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const descriptionElementId = store.useState("descriptionElementId");
-  const disablePointerDismissal = store.useState("disablePointerDismissal");
-  const floatingRootContext = store.useState("floatingRootContext");
-  const rootPopupProps = store.useState("popupProps");
-  const modal = store.useState("modal");
-  const mounted = store.useState("mounted");
-  const nested = store.useState("nested");
-  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
-  const open = store.useState("open");
-  const openMethod = store.useState("openMethod");
-  const titleElementId = store.useState("titleElementId");
-  const transitionStatus = store.useState("transitionStatus");
-  const role = store.useState("role");
-  const floatingId = floatingRootContext.useState("floatingId");
-  const popupId = elementProps.id ?? floatingId;
-  useDialogPortalContext();
-  useOpenChangeComplete({
-    open,
-    ref: store.context.popupRef,
-    onComplete() {
-      if (open) {
-        store.context.onOpenChangeComplete?.(true);
-      }
-    }
-  });
-  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
-  const nestedDialogOpen = nestedOpenDialogCount > 0;
-  const setPopupElement = store.useStateSetter("popupElement");
-  const state = {
-    open,
-    nested,
-    transitionStatus,
-    nestedDialogOpen
-  };
-  const element2 = useRenderElement("div", componentProps, {
-    state,
-    props: [rootPopupProps, {
-      id: popupId,
-      "aria-labelledby": titleElementId ?? undefined,
-      "aria-describedby": descriptionElementId ?? undefined,
-      role,
-      ...FOCUSABLE_POPUP_PROPS,
-      hidden: !mounted,
-      onKeyDown(event) {
-        if (COMPOSITE_KEYS.has(event.key)) {
-          event.stopPropagation();
-        }
-      },
-      style: {
-        [DialogPopupCssVars.nestedDialogs]: nestedOpenDialogCount
-      }
-    }, elementProps],
-    ref: [forwardedRef, store.context.popupRef, setPopupElement],
-    stateAttributesMapping: stateAttributesMapping5
-  });
-  return /* @__PURE__ */ import_jsx_runtime21.jsx(FloatingFocusManager, {
-    context: floatingRootContext,
-    openInteractionType: openMethod,
-    disabled: !mounted,
-    closeOnFocusOut: !disablePointerDismissal,
-    initialFocus: resolvedInitialFocus,
-    returnFocus: finalFocus,
-    modal: modal !== false,
-    restoreFocus: "popup",
-    children: element2
-  });
-});
-if (true)
-  DialogPopup.displayName = "DialogPopup";
-// node_modules/@base-ui/react/dialog/portal/DialogPortal.mjs
-var React95 = __toESM(require_react(), 1);
-var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var DialogPortal = /* @__PURE__ */ React95.forwardRef(function DialogPortal2(props, forwardedRef) {
-  const {
-    keepMounted = false,
-    ...portalProps
-  } = props;
-  const {
-    store
-  } = useDialogRootContext();
-  const mounted = store.useState("mounted");
-  const modal = store.useState("modal");
-  const open = store.useState("open");
-  const shouldRender = mounted || keepMounted;
-  if (!shouldRender) {
-    return null;
-  }
-  return /* @__PURE__ */ import_jsx_runtime22.jsx(DialogPortalContext.Provider, {
-    value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime22.jsxs(FloatingPortal, {
-      ref: forwardedRef,
-      ...portalProps,
-      children: [mounted && modal === true && /* @__PURE__ */ import_jsx_runtime22.jsx(InternalBackdrop, {
-        ref: store.context.internalBackdropRef,
-        inert: inertValue(!open)
-      }), props.children]
-    })
-  });
-});
-if (true)
-  DialogPortal.displayName = "DialogPortal";
-// node_modules/@base-ui/react/dialog/title/DialogTitle.mjs
-var React96 = __toESM(require_react(), 1);
-"use client";
-var DialogTitle = /* @__PURE__ */ React96.forwardRef(function DialogTitle2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = useDialogRootContext();
-  const id2 = useBaseUiId(idProp);
-  store.useSyncedValueWithCleanup("titleElementId", id2);
-  return useRenderElement("h2", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id: id2
-    }, elementProps]
-  });
-});
-if (true)
-  DialogTitle.displayName = "DialogTitle";
-// node_modules/@base-ui/react/dialog/trigger/DialogTrigger.mjs
-var React97 = __toESM(require_react(), 1);
-"use client";
-var DialogTrigger = /* @__PURE__ */ React97.forwardRef(function DialogTrigger2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    id: idProp,
-    payload,
-    handle,
-    ...elementProps
-  } = componentProps;
-  const dialogRootContext = useDialogRootContext(true);
-  const store = handle?.store ?? dialogRootContext?.store;
-  if (!store) {
-    throw new Error("Base UI: <Dialog.Trigger> must be used within <Dialog.Root> or provided with a handle.");
-  }
-  const thisTriggerId = useBaseUiId(idProp);
-  const floatingContext = store.useState("floatingRootContext");
-  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
-  const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React97.useRef(null);
-  const {
-    registerTrigger,
-    isMountedByThisTrigger
-  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
-    payload
-  });
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const click = useClick(floatingContext, {
-    enabled: floatingContext != null
-  });
-  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
-    store.set("openMethod", interactionType);
-  });
-  const state = {
-    disabled: disabled2,
-    open: isOpenedByThisTrigger
-  };
-  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
-  return useRenderElement("button", componentProps, {
-    state,
-    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
-    props: [click.reference, rootTriggerProps, interactionTypeProps, {
-      [CLICK_TRIGGER_IDENTIFIER]: "",
-      id: thisTriggerId,
-      "aria-haspopup": "dialog",
-      "aria-expanded": isOpenedByThisTrigger,
-      "aria-controls": popupId
-    }, elementProps, getButtonProps],
-    stateAttributesMapping: triggerOpenStateMapping
-  });
-});
-if (true)
-  DialogTrigger.displayName = "DialogTrigger";
-
 // node_modules/@base-ui/react/alert-dialog/trigger/AlertDialogTrigger.mjs
 "use client";
 var AlertDialogTrigger = DialogTrigger;
-// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-var React98 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/dialog/viewport/DialogViewportDataAttributes.mjs
-var DialogViewportDataAttributes = function(DialogViewportDataAttributes2) {
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["open"] = CommonPopupDataAttributes.open] = "open";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["closed"] = CommonPopupDataAttributes.closed] = "closed";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["startingStyle"] = CommonPopupDataAttributes.startingStyle] = "startingStyle";
-  DialogViewportDataAttributes2[DialogViewportDataAttributes2["endingStyle"] = CommonPopupDataAttributes.endingStyle] = "endingStyle";
-  DialogViewportDataAttributes2["nested"] = "data-nested";
-  DialogViewportDataAttributes2["nestedDialogOpen"] = "data-nested-dialog-open";
-  return DialogViewportDataAttributes2;
-}({});
-
-// node_modules/@base-ui/react/dialog/viewport/DialogViewport.mjs
-"use client";
-var stateAttributesMapping6 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping,
-  nested(value) {
-    return value ? {
-      [DialogViewportDataAttributes.nested]: ""
-    } : null;
-  },
-  nestedDialogOpen(value) {
-    return value ? {
-      [DialogViewportDataAttributes.nestedDialogOpen]: ""
-    } : null;
-  }
-};
-var DialogViewport = /* @__PURE__ */ React98.forwardRef(function DialogViewport2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    children: children2,
-    ...elementProps
-  } = componentProps;
-  const keepMounted = useDialogPortalContext();
-  const {
-    store
-  } = useDialogRootContext();
-  const open = store.useState("open");
-  const nested = store.useState("nested");
-  const transitionStatus = store.useState("transitionStatus");
-  const nestedOpenDialogCount = store.useState("nestedOpenDialogCount");
-  const mounted = store.useState("mounted");
-  const setViewportElement = store.useStateSetter("viewportElement");
-  const nestedDialogOpen = nestedOpenDialogCount > 0;
-  const state = {
-    open,
-    nested,
-    transitionStatus,
-    nestedDialogOpen
-  };
-  const shouldRender = keepMounted || mounted;
-  return useRenderElement("div", componentProps, {
-    enabled: shouldRender,
-    state,
-    ref: [forwardedRef, setViewportElement],
-    stateAttributesMapping: stateAttributesMapping6,
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        pointerEvents: !open ? "none" : undefined
-      },
-      children: children2
-    }, elementProps]
-  });
-});
-if (true)
-  DialogViewport.displayName = "DialogViewport";
-// node_modules/@base-ui/react/dialog/store/DialogHandle.mjs
-class DialogHandle {
-  constructor(store) {
-    this.store = store ?? new DialogStore;
-  }
-  open(triggerId) {
-    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) : undefined;
-    if (true) {
-      if (triggerId && !triggerElement) {
-        console.warn(`Base UI: DialogHandle.open: No trigger found with id "${triggerId}". The dialog will open, but the trigger will not be associated with the dialog.`);
-      }
-    }
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
-  }
-  openWithPayload(payload) {
-    this.store.set("payload", payload);
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  close() {
-    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  get isOpen() {
-    return this.store.select("open");
-  }
-}
-
 // node_modules/@base-ui/react/alert-dialog/handle.mjs
 var alertDialogState = {
   modal: true,
@@ -51002,20 +52434,20 @@ function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
 // src/mind-mapper/surface/ui/alert-dialog.tsx
-var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
-var AlertDialog = exports_index_parts3.Root;
-var AlertDialogTrigger2 = exports_index_parts3.Trigger;
+var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
+var AlertDialog = exports_index_parts5.Root;
+var AlertDialogTrigger2 = exports_index_parts5.Trigger;
 function AlertDialogContent({
   className,
   children: children2,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(exports_index_parts3.Portal, {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(exports_index_parts5.Portal, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(exports_index_parts3.Backdrop, {
+      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(exports_index_parts5.Backdrop, {
         className: "fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(exports_index_parts3.Popup, {
+      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(exports_index_parts5.Popup, {
         className: cn2("fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-5 text-popover-foreground shadow-xl", className),
         ...props,
         children: children2
@@ -51024,19 +52456,19 @@ function AlertDialogContent({
   }, undefined, true, undefined, this);
 }
 function AlertDialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
     className: cn2("flex flex-col gap-1.5", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
     className: cn2("mt-4 flex justify-end gap-2", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(exports_index_parts3.Title, {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(exports_index_parts5.Title, {
     className: cn2("text-sm font-semibold text-foreground", className),
     ...props
   }, undefined, false, undefined, this);
@@ -51045,23 +52477,23 @@ function AlertDialogDescription({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(exports_index_parts3.Description, {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(exports_index_parts5.Description, {
     className: cn2("text-xs leading-relaxed text-muted-foreground", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/ViewToggle.tsx
-var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
 function ViewToggle({
   view,
   onView
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("fieldset", {
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("fieldset", {
     className: "m-0 flex overflow-hidden rounded-md border border-border p-0",
     "aria-label": "Board view",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         "aria-pressed": view === "map",
@@ -51070,14 +52502,14 @@ function ViewToggle({
         onClick: () => onView("map"),
         className: `rounded-none px-2 py-1 text-[10px] uppercase tracking-wide ${view === "map" ? "bg-secondary text-foreground" : ""}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Map2, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Map2, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
           " map"
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         "aria-pressed": view === "grid",
@@ -51086,7 +52518,7 @@ function ViewToggle({
         onClick: () => onView("grid"),
         className: `rounded-none border-l border-border px-2 py-1 text-[10px] uppercase tracking-wide ${view === "grid" ? "bg-secondary text-foreground" : ""}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(LayoutGrid, {
+          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(LayoutGrid, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
@@ -51098,8 +52530,8 @@ function ViewToggle({
 }
 
 // src/mind-mapper/surface/ZoneGroupModal.tsx
-var import_react21 = __toESM(require_react(), 1);
-var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react20 = __toESM(require_react(), 1);
+var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
 function ZoneGroupModal({
   count,
   zones,
@@ -51107,83 +52539,90 @@ function ZoneGroupModal({
   onCreateNew,
   onCancel
 }) {
-  const [name, setName] = import_react21.useState("");
+  const [name, setName] = import_react20.useState("");
   const submitNew = () => {
     if (name.trim())
       onCreateNew(name);
   };
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
-    className: "absolute left-1/2 top-1/3 z-30 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("p", {
-        className: "mb-2 text-[10px] uppercase tracking-widest text-ink-faint",
-        children: [
-          "group ",
-          count,
-          " proposal",
-          count === 1 ? "" : "s",
-          " into a zone"
-        ]
-      }, undefined, true, undefined, this),
-      zones.length > 0 && /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
-        className: "mb-2 flex flex-wrap gap-1.5",
-        children: zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
-          variant: "outline",
-          size: "auto",
-          className: "px-2 py-0.5 text-xs text-pending",
-          onClick: () => onPickExisting(z2.id),
-          children: z2.name
-        }, z2.id, false, undefined, this))
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
-        className: "flex items-center gap-1.5",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("input", {
-            autoFocus: true,
-            value: name,
-            onChange: (e) => setName(e.target.value),
-            onKeyDown: (e) => {
-              if (e.key === "Enter")
-                submitNew();
-              if (e.key === "Escape")
-                onCancel();
-            },
-            placeholder: "new zone name…",
-            "aria-label": "New zone name",
-            className: "w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
-            size: "auto",
-            className: "flex items-center gap-0.5 px-2 py-1 text-xs",
-            onClick: submitNew,
-            disabled: !name.trim(),
+  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Dialog, {
+    open: true,
+    onOpenChange: (o) => {
+      if (!o)
+        onCancel();
+    },
+    children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(DialogContent, {
+      className: "w-72 max-w-[90vw]",
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(DialogHeader, {
+          children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(DialogTitle3, {
+            className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Plus, {
-                size: 11,
-                "aria-hidden": true
-              }, undefined, false, undefined, this),
-              " new"
+              "group ",
+              count,
+              " proposal",
+              count === 1 ? "" : "s",
+              " into a zone"
             ]
           }, undefined, true, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
-        className: "mt-2 flex justify-end",
-        children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
-          variant: "ghost",
-          size: "auto",
-          className: "px-2 py-1 text-xs",
-          onClick: onCancel,
-          children: "cancel"
+        }, undefined, false, undefined, this),
+        zones.length > 0 && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+          className: "mb-2 flex flex-wrap gap-1.5",
+          children: zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+            variant: "outline",
+            size: "auto",
+            className: "px-2 py-0.5 text-xs text-pending",
+            onClick: () => onPickExisting(z2.id),
+            children: z2.name
+          }, z2.id, false, undefined, this))
+        }, undefined, false, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+          className: "flex items-center gap-1.5",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("input", {
+              autoFocus: true,
+              value: name,
+              onChange: (e) => setName(e.target.value),
+              onKeyDown: (e) => {
+                if (e.key === "Enter")
+                  submitNew();
+              },
+              placeholder: "new zone name…",
+              "aria-label": "New zone name",
+              className: "w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+              size: "auto",
+              className: "flex items-center gap-0.5 px-2 py-1 text-xs",
+              onClick: submitNew,
+              disabled: !name.trim(),
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Plus, {
+                  size: 11,
+                  "aria-hidden": true
+                }, undefined, false, undefined, this),
+                " new"
+              ]
+            }, undefined, true, undefined, this)
+          ]
+        }, undefined, true, undefined, this),
+        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+          className: "mt-2 flex justify-end",
+          children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+            variant: "ghost",
+            size: "auto",
+            className: "px-2 py-1 text-xs",
+            onClick: onCancel,
+            children: "cancel"
+          }, undefined, false, undefined, this)
         }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
+      ]
+    }, undefined, true, undefined, this)
+  }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/ZoneTabs.tsx
-var import_react22 = __toESM(require_react(), 1);
-var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react21 = __toESM(require_react(), 1);
+var jsx_dev_runtime31 = __toESM(require_jsx_dev_runtime(), 1);
 function ZoneTabs({
   zones,
   active,
@@ -51191,10 +52630,10 @@ function ZoneTabs({
   onCreate,
   onDelete
 }) {
-  const [creating, setCreating] = import_react22.useState(false);
-  const [name, setName] = import_react22.useState("");
-  const inputRef = import_react22.useRef(null);
-  import_react22.useEffect(() => {
+  const [creating, setCreating] = import_react21.useState(false);
+  const [name, setName] = import_react21.useState("");
+  const inputRef = import_react21.useRef(null);
+  import_react21.useEffect(() => {
     if (creating)
       inputRef.current?.focus();
   }, [creating]);
@@ -51207,20 +52646,20 @@ function ZoneTabs({
     setCreating(false);
   };
   const tabClass = (isActive) => `rounded-none border-b-2 px-2 py-1 text-xs ${isActive ? "border-ink text-ink" : "border-transparent text-ink-dim hover:text-ink"}`;
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
     className: "flex items-center gap-1 border-b border-edge bg-surface px-4",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: tabClass(active === null),
         onClick: () => onSwitch(null),
         children: "main"
       }, undefined, false, undefined, this),
-      zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextMenu, {
+      zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ContextMenu, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextMenuTrigger3, {
-            children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ContextMenuTrigger3, {
+            children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
               variant: "ghost",
               size: "auto",
               className: `${tabClass(active === z2.id)} text-pending ${active === z2.id ? "border-pending" : ""}`,
@@ -51228,12 +52667,12 @@ function ZoneTabs({
               children: z2.name
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextMenuContent, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ContextMenuContent, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextMenuLabel, {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ContextMenuLabel, {
                 children: z2.name
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ContextMenuItem, {
                 onClick: () => onDelete(z2),
                 className: "text-attention",
                 children: "Delete zone…"
@@ -51242,10 +52681,10 @@ function ZoneTabs({
           }, undefined, true, undefined, this)
         ]
       }, z2.id, true, undefined, this)),
-      creating ? /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("span", {
+      creating ? /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("span", {
         className: "ml-1 flex items-center gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("input", {
             ref: inputRef,
             value: name,
             onChange: (e) => setName(e.target.value),
@@ -51259,7 +52698,7 @@ function ZoneTabs({
             "aria-label": "New zone name",
             className: "w-32 rounded border border-edge bg-bg px-1.5 py-0.5 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
             size: "auto",
             className: "px-2 py-0.5 text-xs",
             onClick: submit,
@@ -51267,13 +52706,13 @@ function ZoneTabs({
             children: "create"
           }, undefined, false, undefined, this)
         ]
-      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: "ml-1 gap-1 px-1.5 py-1 text-xs text-ink-faint hover:text-ink",
         onClick: () => setCreating(true),
         children: [
-          /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Plus, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Plus, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
@@ -51285,7 +52724,7 @@ function ZoneTabs({
 }
 
 // src/mind-mapper/surface/App.tsx
-var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime32 = __toESM(require_jsx_dev_runtime(), 1);
 function toDisplayMessage(m2) {
   return {
     id: m2.id,
@@ -51308,48 +52747,48 @@ var DOT_TITLE = {
 };
 var THINKING_TTL_MS = 60000;
 function App() {
-  const [initialProject] = import_react23.useState(() => resolveInitialProjectWithSource(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)));
-  const [projectId, setProjectId] = import_react23.useState(initialProject.id);
-  const [projectSource, setProjectSource] = import_react23.useState(initialProject.source);
+  const [initialProject] = import_react22.useState(() => resolveInitialProjectWithSource(location.search, localStorage.getItem(PROJECT_STORAGE_KEY)));
+  const [projectId, setProjectId] = import_react22.useState(initialProject.id);
+  const [projectSource, setProjectSource] = import_react22.useState(initialProject.source);
   const { state, error: error2, status, needsProject, notFound, lookHere, agentActivity } = useProjectState(projectId);
-  const [selectedIds, setSelectedIds] = import_react23.useState([]);
-  const [notice, setNotice] = import_react23.useState(null);
-  const [reviewOpen, setReviewOpen] = import_react23.useState(false);
-  const [openDoc, setOpenDoc] = import_react23.useState(null);
-  const [detailOpen, setDetailOpen] = import_react23.useState(true);
-  const [lens, setLens] = import_react23.useState(DEFAULT_LENS);
-  const [searchQuery, setSearchQuery] = import_react23.useState("");
-  const searchInputRef = import_react23.useRef(null);
-  const [focusRequest, setFocusRequest] = import_react23.useState(null);
-  const [spotlightOn, setSpotlightOn] = import_react23.useState(false);
-  const [deleteTarget, setDeleteTarget] = import_react23.useState(null);
-  const [deleteNode, setDeleteNode] = import_react23.useState(null);
-  const [ingestOpen, setIngestOpen] = import_react23.useState(false);
-  const [submapGroup, setSubmapGroup] = import_react23.useState(null);
-  const [submapAppend, setSubmapAppend] = import_react23.useState(null);
-  const [addNode, setAddNode] = import_react23.useState(null);
-  const [agentBadge, setAgentBadge] = import_react23.useState(null);
-  const [scrollRequest, setScrollRequest] = import_react23.useState(null);
-  const [view, setView] = import_react23.useState("map");
-  const [filter2, setFilter] = import_react23.useState(EMPTY_FILTER);
-  const [activeZone, setActiveZone] = import_react23.useState(null);
-  const [activeAnchor, setActiveAnchor] = import_react23.useState(null);
-  const [pendingAnchor, setPendingAnchor] = import_react23.useState(null);
-  const [zoneGroup, setZoneGroup] = import_react23.useState(null);
-  const [zoneDelete, setZoneDelete] = import_react23.useState(null);
-  const [pendingFocus, setPendingFocus] = import_react23.useState(null);
-  const [composerSeed, setComposerSeed] = import_react23.useState(null);
+  const [selectedIds, setSelectedIds] = import_react22.useState([]);
+  const [notice, setNotice] = import_react22.useState(null);
+  const [reviewOpen, setReviewOpen] = import_react22.useState(false);
+  const [openDoc, setOpenDoc] = import_react22.useState(null);
+  const [detailOpen, setDetailOpen] = import_react22.useState(true);
+  const [lens, setLens] = import_react22.useState(DEFAULT_LENS);
+  const [searchQuery, setSearchQuery] = import_react22.useState("");
+  const searchInputRef = import_react22.useRef(null);
+  const [focusRequest, setFocusRequest] = import_react22.useState(null);
+  const [spotlightOn, setSpotlightOn] = import_react22.useState(false);
+  const [deleteTarget, setDeleteTarget] = import_react22.useState(null);
+  const [deleteNode, setDeleteNode] = import_react22.useState(null);
+  const [ingestOpen, setIngestOpen] = import_react22.useState(false);
+  const [submapGroup, setSubmapGroup] = import_react22.useState(null);
+  const [submapAppend, setSubmapAppend] = import_react22.useState(null);
+  const [addNode, setAddNode] = import_react22.useState(null);
+  const [agentBadge, setAgentBadge] = import_react22.useState(null);
+  const [scrollRequest, setScrollRequest] = import_react22.useState(null);
+  const [view, setView] = import_react22.useState("map");
+  const [filter2, setFilter] = import_react22.useState(EMPTY_FILTER);
+  const [activeZone, setActiveZone] = import_react22.useState(null);
+  const [activeAnchor, setActiveAnchor] = import_react22.useState(null);
+  const [pendingAnchor, setPendingAnchor] = import_react22.useState(null);
+  const [zoneGroup, setZoneGroup] = import_react22.useState(null);
+  const [zoneDelete, setZoneDelete] = import_react22.useState(null);
+  const [pendingFocus, setPendingFocus] = import_react22.useState(null);
+  const [composerSeed, setComposerSeed] = import_react22.useState(null);
   const seedComposer = (text3, nodeId) => {
     setSelectedIds([nodeId]);
     setComposerSeed((s) => ({ text: text3, seq: (s?.seq ?? 0) + 1 }));
   };
-  const [theme, setTheme] = import_react23.useState(() => readAppliedTheme());
+  const [theme, setTheme] = import_react22.useState(() => readAppliedTheme());
   const toggleTheme = () => {
     const next = theme === "dark" ? "light" : "dark";
     applyTheme(next);
     setTheme(next);
   };
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (!agentActivity)
       return;
     const badge = badgeFor(agentActivity.state);
@@ -51360,7 +52799,7 @@ function App() {
     return () => clearTimeout(t);
   }, [agentActivity]);
   const lastMessage = state?.conversation[state.conversation.length - 1];
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (lastMessage?.role === "agent")
       setAgentBadge(null);
   }, [lastMessage]);
@@ -51373,9 +52812,9 @@ function App() {
       setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
     }
   };
-  const followRef = import_react23.useRef(followFocus);
+  const followRef = import_react22.useRef(followFocus);
   followRef.current = followFocus;
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (!pendingFocus || pendingFocus.zone !== activeZone)
       return;
     const { nodeId } = pendingFocus;
@@ -51383,24 +52822,24 @@ function App() {
     const raf = requestAnimationFrame(() => setFocusRequest((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 })));
     return () => cancelAnimationFrame(raf);
   }, [pendingFocus, activeZone]);
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (activeZone && state && !state.zones.some((z2) => z2.id === activeZone)) {
       setActiveZone(null);
     }
   }, [state, activeZone]);
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (activeAnchor && state && !state.nodes.some((n) => n.id === activeAnchor)) {
       setActiveAnchor(null);
     }
   }, [state, activeAnchor]);
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (state && !projectId) {
       setProjectId(state.project.id);
       rememberProject(state.project.id);
     }
   }, [state, projectId]);
-  const lastServerLensRef = import_react23.useRef(null);
-  import_react23.useEffect(() => {
+  const lastServerLensRef = import_react22.useRef(null);
+  import_react22.useEffect(() => {
     if (!state?.lens || state.lens === lastServerLensRef.current)
       return;
     const incoming = state.lens;
@@ -51410,12 +52849,12 @@ function App() {
       followRef.current(incoming.nodeId);
     }
   }, [state?.lens]);
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (!lookHere)
       return;
     followRef.current(lookHere.nodeId);
   }, [lookHere]);
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     const onKey = (e) => {
       const activeTag = document.activeElement?.tagName ?? null;
       const typing = e.target instanceof HTMLElement && ["INPUT", "TEXTAREA"].includes(e.target.tagName);
@@ -51434,7 +52873,7 @@ function App() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [searchQuery]);
-  const mapWithPending = import_react23.useMemo(() => {
+  const mapWithPending = import_react22.useMemo(() => {
     if (!state)
       return state;
     const main = mainProposals(state.proposals);
@@ -51445,22 +52884,42 @@ function App() {
       edges: [...state.edges, ...pendingEdgesFrom(main, resolve)]
     };
   }, [state]);
-  const boardMap = import_react23.useMemo(() => {
+  const boardMap = import_react22.useMemo(() => {
     if (!state || !mapWithPending)
       return mapWithPending;
     if (!activeZone)
       return mapWithPending;
     return { ...state, ...zoneMapFrom(state.proposals, activeZone, mapWithPending.nodes) };
   }, [state, mapWithPending, activeZone]);
-  const submapMap = import_react23.useMemo(() => boardMap ? { ...boardMap, ...submapView(boardMap, activeAnchor) } : boardMap, [boardMap, activeAnchor]);
-  const breadcrumb = import_react23.useMemo(() => boardMap ? breadcrumbTrail(boardMap.nodes, activeAnchor) : [], [boardMap, activeAnchor]);
-  const selection2 = import_react23.useMemo(() => submapMap ? submapMap.nodes.filter((n) => selectedIds.includes(n.id)) : [], [submapMap, selectedIds]);
-  const spotlightSets = import_react23.useMemo(() => spotlightOn && submapMap ? computeSpotlight(submapMap, selectedIds) : null, [spotlightOn, submapMap, selectedIds]);
-  import_react23.useEffect(() => {
+  const submapMap = import_react22.useMemo(() => boardMap ? { ...boardMap, ...submapView(boardMap, activeAnchor) } : boardMap, [boardMap, activeAnchor]);
+  const breadcrumb = import_react22.useMemo(() => boardMap ? breadcrumbTrail(boardMap.nodes, activeAnchor) : [], [boardMap, activeAnchor]);
+  const selection2 = import_react22.useMemo(() => submapMap ? submapMap.nodes.filter((n) => selectedIds.includes(n.id)) : [], [submapMap, selectedIds]);
+  const spotlightSets = import_react22.useMemo(() => spotlightOn && submapMap ? computeSpotlight(submapMap, selectedIds) : null, [spotlightOn, submapMap, selectedIds]);
+  import_react22.useEffect(() => {
     if (spotlightOn && selectedIds.length < 2)
       setSpotlightOn(false);
   }, [spotlightOn, selectedIds]);
-  const nodeMenus = import_react23.useMemo(() => state ? menuInfoFor(state.nodes, state.proposals) : undefined, [state]);
+  const nodeMenus = import_react22.useMemo(() => state ? menuInfoFor(state.nodes, state.proposals) : undefined, [state]);
+  const ratifyAlias = import_react22.useMemo(() => {
+    const m2 = new Map;
+    if (state) {
+      for (const p2 of state.proposals)
+        if (p2.resultNodeId)
+          m2.set(p2.resultNodeId, p2.id);
+    }
+    return m2;
+  }, [state]);
+  const multiMenus = import_react22.useMemo(() => {
+    if (!state || selectedIds.length < 2)
+      return;
+    const m2 = new Map;
+    for (const id2 of selectedIds) {
+      const actions = multiSelectActions(id2, selectedIds, state.nodes, state.proposals, activeZone);
+      if (actions)
+        m2.set(id2, actions);
+    }
+    return m2.size > 0 ? m2 : undefined;
+  }, [state, selectedIds, activeZone]);
   const handleNodeCommand = (command, node) => {
     if (command === "Focus")
       setLens({ owner: "user", nodeId: node.id, depth: 1, docId: null });
@@ -51488,8 +52947,8 @@ function App() {
   };
   const handleAction = (action, node) => seedComposer(action.seed, node.id);
   const projectQs = projectId ? `?project=${encodeURIComponent(projectId)}` : "";
-  const [remoteHits, setRemoteHits] = import_react23.useState(null);
-  import_react23.useEffect(() => {
+  const [remoteHits, setRemoteHits] = import_react22.useState(null);
+  import_react22.useEffect(() => {
     const q2 = searchQuery.trim();
     if (!q2) {
       setRemoteHits(null);
@@ -51515,8 +52974,8 @@ function App() {
       clearTimeout(t);
     };
   }, [searchQuery, projectQs]);
-  const pendingAll = import_react23.useMemo(() => state ? pendingNodesFrom(state.proposals) : [], [state]);
-  const palette = import_react23.useMemo(() => {
+  const pendingAll = import_react22.useMemo(() => state ? pendingNodesFrom(state.proposals) : [], [state]);
+  const palette = import_react22.useMemo(() => {
     if (!state || !searchQuery.trim())
       return null;
     if (remoteHits)
@@ -51535,7 +52994,7 @@ function App() {
     setSelectedIds([row.node.id]);
     followFocus(row.node.id);
   };
-  const visibleMap = import_react23.useMemo(() => {
+  const visibleMap = import_react22.useMemo(() => {
     if (!submapMap || !lens.owner)
       return submapMap;
     const keep = lens.docId ? docLensNodeIds(submapMap.nodes, lens.docId) : lens.nodeId ? lensSet(submapMap, lens.nodeId, lens.depth ?? 1) : null;
@@ -51547,11 +53006,11 @@ function App() {
       edges: submapMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target))
     };
   }, [submapMap, lens]);
-  const filteredMap = import_react23.useMemo(() => visibleMap ? filterMap(visibleMap, filter2) : visibleMap, [visibleMap, filter2]);
-  const filterFacetOptions = import_react23.useMemo(() => visibleMap ? filterFacets(visibleMap) : { statuses: [], tiers: [], tags: [] }, [visibleMap]);
+  const filteredMap = import_react22.useMemo(() => visibleMap ? filterMap(visibleMap, filter2) : visibleMap, [visibleMap, filter2]);
+  const filterFacetOptions = import_react22.useMemo(() => visibleMap ? filterFacets(visibleMap) : { statuses: [], tiers: [], tags: [] }, [visibleMap]);
   const detailNode = selection2.length > 0 ? selection2[selection2.length - 1] : null;
   const detailNodeId = detailNode?.id;
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (detailNodeId)
       setDetailOpen(true);
   }, [detailNodeId]);
@@ -51707,7 +53166,7 @@ function App() {
       return;
     switchAnchor(nodeId);
   };
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (!pendingAnchor || !state)
       return;
     if (state.nodes.some((n) => n.id === pendingAnchor)) {
@@ -51807,24 +53266,37 @@ function App() {
     if (!r.ok)
       throw new Error(`anchor ${r.status}`);
   });
+  const doGroupSubmap = (nodeIds, parentId) => {
+    const children2 = submapChildTargets(nodeIds, parentId);
+    return Promise.all(children2.map((id2) => anchorNode(id2, parentId))).then(() => {
+      setSelectedIds([]);
+      switchAnchor(parentId);
+    });
+  };
   const commitSubmapGroup = (parentId) => {
     if (!submapGroup)
       return;
-    const children2 = submapChildTargets(submapGroup.nodes.map((n) => n.id), parentId);
-    Promise.all(children2.map((id2) => anchorNode(id2, parentId))).then(() => {
-      setSubmapGroup(null);
-      setSelectedIds([]);
-      switchAnchor(parentId);
-    }).catch((e) => {
+    doGroupSubmap(submapGroup.nodes.map((n) => n.id), parentId).then(() => setSubmapGroup(null)).catch((e) => {
       setSubmapGroup(null);
       setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`);
     });
   };
-  const commitSubmapAppend = (parentRef, ruling) => {
-    if (!submapAppend)
+  const groupSubmapInline = (parentId) => {
+    if (!state)
       return;
-    const { ids, anchors } = buildSubmapAppend(submapAppend.pendingIds, parentRef);
-    fetch(`/proposals/ratify-batch${projectQs}`, {
+    const nodeIds = ratifiedSelection(state.nodes, state.proposals, selectedIds).map((n) => n.id);
+    doGroupSubmap(nodeIds, parentId).catch((e) => setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`));
+  };
+  const groupZoneInline = () => {
+    if (!state)
+      return;
+    const pendingIds = selectedPendingProposalIds(state.proposals, selectedIds);
+    if (pendingIds.length > 0)
+      setZoneGroup({ pendingIds });
+  };
+  const doSubmapAppend = (pendingIds, parentRef, ruling) => {
+    const { ids, anchors } = buildSubmapAppend(pendingIds, parentRef);
+    return fetch(`/proposals/ratify-batch${projectQs}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ruling, ids, anchors })
@@ -51836,15 +53308,25 @@ function App() {
       return await r.json();
     }).then((res) => {
       const parentNodeId = res.idMap?.[parentRef] ?? parentRef;
-      setSubmapAppend(null);
       setSelectedIds([]);
       setPendingAnchor(parentNodeId);
-    }).catch((e) => {
+    });
+  };
+  const commitSubmapAppend = (parentRef, ruling) => {
+    if (!submapAppend)
+      return;
+    doSubmapAppend(submapAppend.pendingIds, parentRef, ruling).then(() => setSubmapAppend(null)).catch((e) => {
       setSubmapAppend(null);
       setNotice(`couldn't nest those (${e instanceof Error ? e.message : String(e)}).`);
     });
   };
-  import_react23.useEffect(() => {
+  const nestSubmapInline = (parentRef, ruling) => {
+    if (!state)
+      return;
+    const pendingIds = pendingNodeProposalIds(state.proposals, selectedIds);
+    doSubmapAppend(pendingIds, parentRef, ruling).catch((e) => setNotice(`couldn't nest those (${e instanceof Error ? e.message : String(e)}).`));
+  };
+  import_react22.useEffect(() => {
     if (openDoc && state && !state.docs.some((d) => d.id === openDoc.doc.id)) {
       setOpenDoc(null);
     }
@@ -51865,7 +53347,7 @@ function App() {
     setLens(DEFAULT_LENS);
     lastServerLensRef.current = null;
   };
-  import_react23.useEffect(() => {
+  import_react22.useEffect(() => {
     if (notFound && projectSource === "stored") {
       forgetStoredProject();
       setProjectSource("none");
@@ -51873,18 +53355,18 @@ function App() {
     }
   }, [notFound, projectSource]);
   if (needsProject) {
-    return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("main", {
       className: "flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("h1", {
+        /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("h1", {
           className: "font-story text-xl",
           children: "Mind Mapper"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("p", {
           className: "text-xs text-ink-dim",
           children: needsProject.length > 0 ? "no board is open — pick a project, or start a new one." : "nothing here yet — name a project to start the first board."
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ProjectPicker, {
+        /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ProjectPicker, {
           currentId: undefined,
           onSelect: switchProject
         }, undefined, false, undefined, this)
@@ -51893,15 +53375,15 @@ function App() {
   }
   if (notFound) {
     if (projectSource === "stored") {
-      return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("main", {
+      return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("main", {
         className: "flex min-h-screen items-center justify-center bg-bg text-ink-faint",
         children: "unrolling the map…"
       }, undefined, false, undefined, this);
     }
-    return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("main", {
       className: "flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("p", {
           className: "text-xs text-attention",
           children: [
             "project “",
@@ -51909,11 +53391,11 @@ function App() {
             "” doesn't exist on this daemon."
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("p", {
           className: "text-xs text-ink-dim",
           children: "pick another board, or start one:"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ProjectPicker, {
+        /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ProjectPicker, {
           currentId: undefined,
           onSelect: switchProject
         }, undefined, false, undefined, this)
@@ -51921,7 +53403,7 @@ function App() {
     }, undefined, true, undefined, this);
   }
   if (error2) {
-    return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("main", {
       className: "flex min-h-screen items-center justify-center bg-bg text-attention",
       children: [
         "something broke: ",
@@ -51931,7 +53413,7 @@ function App() {
     }, undefined, true, undefined, this);
   }
   if (!state) {
-    return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("main", {
       className: "flex min-h-screen items-center justify-center bg-bg text-ink-faint",
       children: "unrolling the map…"
     }, undefined, false, undefined, this);
@@ -51944,21 +53426,21 @@ function App() {
   const processing = processingItems(state.proposals);
   const dot = dotState(status, state.presence?.agents ?? 0);
   const allTags = existingTags(state.nodes, state.proposals);
-  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
     className: "flex h-screen flex-col bg-bg text-ink",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("header", {
         className: "flex items-baseline gap-3 border-b border-edge bg-surface px-4 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("h1", {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("h1", {
             className: "font-story text-lg text-ink",
             children: "Mind Mapper"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ProjectPicker, {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ProjectPicker, {
             currentId: projectId,
             onSelect: switchProject
           }, undefined, false, undefined, this),
-          pendingCount > 0 && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+          pendingCount > 0 && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "px-2 py-0.5 text-xs text-pending",
@@ -51968,13 +53450,13 @@ function App() {
               pendingCount
             ]
           }, undefined, true, undefined, this),
-          processing.length > 0 && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+          processing.length > 0 && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "flex items-center gap-1 px-2 py-0.5 text-xs text-pending",
             onClick: () => setIngestOpen((o) => !o),
             children: [
-              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Loader, {
+              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Loader, {
                 size: 11,
                 className: "animate-pulse",
                 "aria-hidden": true
@@ -51983,19 +53465,19 @@ function App() {
               processing.length
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("span", {
             className: "ml-auto flex items-center gap-2 text-xs text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("span", {
                 className: "flex items-center gap-1.5",
                 role: "status",
                 title: DOT_TITLE[dot],
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("span", {
                     className: `h-2 w-2 rounded-full ${DOT_CLASS[dot]}`,
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("span", {
                     className: "sr-only",
                     children: DOT_TITLE[dot]
                   }, undefined, false, undefined, this)
@@ -52007,15 +53489,15 @@ function App() {
               " ideas · ",
               state.edges.length,
               " relations",
-              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                 variant: "ghost",
                 size: "icon",
                 "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
                 title: theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
                 onClick: toggleTheme,
-                children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Sun, {
+                children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Sun, {
                   size: 13
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Moon, {
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Moon, {
                   size: 13
                 }, undefined, false, undefined, this)
               }, undefined, false, undefined, this)
@@ -52023,28 +53505,28 @@ function App() {
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ZoneTabs, {
+      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ZoneTabs, {
         zones: state.zones,
         active: activeZone,
         onSwitch: switchZone,
         onCreate: createZone,
         onDelete: (zone) => setZoneDelete({ zone, notEmpty: null })
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(SubmapBreadcrumb, {
+      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(SubmapBreadcrumb, {
         trail: breadcrumb,
         onNavigate: switchAnchor
       }, undefined, false, undefined, this),
-      status === "closed" && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+      status === "closed" && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
         className: "border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention",
         children: "disconnected — the daemon isn't answering; sends are off. retrying…"
       }, undefined, false, undefined, this),
-      notice && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+      notice && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
         className: "flex items-center justify-between border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("span", {
             children: notice
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("button", {
             type: "button",
             onClick: () => setNotice(null),
             "aria-label": "Dismiss",
@@ -52053,10 +53535,10 @@ function App() {
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
         className: "flex min-h-0 flex-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextRail, {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ContextRail, {
             docs: state.docs,
             openDocId: openDoc?.doc.id ?? null,
             onOpen: (docId) => openDocById(docId),
@@ -52073,10 +53555,10 @@ function App() {
             onDocLens: (doc) => setLens({ owner: "user", nodeId: null, depth: null, docId: doc.id }),
             onDelete: (doc) => setDeleteTarget({ doc, citedBy: null })
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
             className: "relative min-w-0 flex-1",
             children: [
-              view === "map" ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(GraphCanvas, {
+              view === "map" ? /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(GraphCanvas, {
                 map: filteredMap ?? submapMap ?? state,
                 selectedIds,
                 onSelect: setSelectedIds,
@@ -52087,14 +53569,20 @@ function App() {
                 menus: nodeMenus,
                 onRule: ruleProposal,
                 onAction: handleAction,
+                ratifyAlias,
+                multiMenus,
+                selectionCount: selectedIds.length,
+                onGroupSubmap: groupSubmapInline,
+                onNestSubmap: nestSubmapInline,
+                onGroupZone: groupZoneInline,
                 focusRequest,
                 onConnect: (source, target) => proposeAsUser("edge", { source, target }),
                 onConnectToBlank: activeZone === null ? (src) => setAddNode({ text: "", connectFrom: src }) : undefined,
                 onAddNode: () => setAddNode({ text: "", connectFrom: null }),
                 onEnterSubmap: enterSubmap,
-                panelTopRight: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(jsx_dev_runtime30.Fragment, {
+                panelTopRight: /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(jsx_dev_runtime32.Fragment, {
                   children: [
-                    selectedPending.length > 0 && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                    selectedPending.length > 0 && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                       variant: "outline",
                       size: "auto",
                       className: "px-2 py-1 text-[10px] uppercase tracking-wide text-pending",
@@ -52105,7 +53593,7 @@ function App() {
                         selectedPending.length
                       ]
                     }, undefined, true, undefined, this),
-                    ratifiedSel.length >= 2 && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                    ratifiedSel.length >= 2 && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                       variant: "outline",
                       size: "auto",
                       className: "px-2 py-1 text-[10px] uppercase tracking-wide",
@@ -52116,7 +53604,7 @@ function App() {
                         ratifiedSel.length
                       ]
                     }, undefined, true, undefined, this),
-                    selectedPendingNodes.length >= 2 && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                    selectedPendingNodes.length >= 2 && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                       variant: "outline",
                       size: "auto",
                       className: "px-2 py-1 text-[10px] uppercase tracking-wide text-pending",
@@ -52127,26 +53615,26 @@ function App() {
                         selectedPendingNodes.length
                       ]
                     }, undefined, true, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(SpotlightToggle, {
+                    /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(SpotlightToggle, {
                       active: spotlightOn,
                       enabled: selectedIds.length >= 2,
                       onToggle: () => setSpotlightOn((s) => !s)
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(FilterControl, {
+                    /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(FilterControl, {
                       filter: filter2,
                       facets: filterFacetOptions,
                       onFilter: setFilter
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ViewToggle, {
+                    /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ViewToggle, {
                       view,
                       onView: setView
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this),
                 panelBelowBar: Boolean(lens.owner)
-              }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(jsx_dev_runtime30.Fragment, {
+              }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(jsx_dev_runtime32.Fragment, {
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(CardGrid, {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(CardGrid, {
                     map: filteredMap ?? submapMap ?? state,
                     highlightIds: palette ? palette.rows.map((r) => r.node.id) : null,
                     selectedIds,
@@ -52155,17 +53643,21 @@ function App() {
                     onRule: ruleProposal,
                     onAction: handleAction,
                     promotable: activeZone !== null,
-                    onNodeCommand: handleNodeCommand
+                    onNodeCommand: handleNodeCommand,
+                    multiMenus,
+                    onGroupSubmap: groupSubmapInline,
+                    onNestSubmap: nestSubmapInline,
+                    onGroupZone: groupZoneInline
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
                     className: `absolute right-4 z-10 flex items-center gap-1.5 ${lens.owner ? "top-14" : "top-4"}`,
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(FilterControl, {
+                      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(FilterControl, {
                         filter: filter2,
                         facets: filterFacetOptions,
                         onFilter: setFilter
                       }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ViewToggle, {
+                      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ViewToggle, {
                         view,
                         onView: setView
                       }, undefined, false, undefined, this)
@@ -52173,14 +53665,14 @@ function App() {
                   }, undefined, true, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              addNode && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+              addNode && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
                 className: "absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("p", {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("p", {
                     className: "mb-2 text-[10px] uppercase tracking-widest text-ink-faint",
                     children: addNode.connectFrom ? "sketch a connected idea" : "sketch an idea"
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Textarea, {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Textarea, {
                     autoFocus: true,
                     value: addNode.text,
                     onChange: (e) => setAddNode({ ...addNode, text: e.target.value }),
@@ -52196,24 +53688,24 @@ function App() {
                     "aria-label": "New idea",
                     className: "min-h-16 p-1.5 text-xs"
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+                  /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
                     className: "mt-2 flex items-center justify-between gap-1.5",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("p", {
+                      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("p", {
                         className: "text-[10px] italic text-ink-faint",
                         children: "lands as a pending sketch."
                       }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+                      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
                         className: "flex gap-1.5",
                         children: [
-                          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                             variant: "ghost",
                             size: "auto",
                             className: "px-2 py-1",
                             onClick: () => setAddNode(null),
                             children: "cancel"
                           }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                             size: "auto",
                             className: "px-2 py-1",
                             onClick: submitAddNode,
@@ -52226,25 +53718,25 @@ function App() {
                   }, undefined, true, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              zoneGroup && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ZoneGroupModal, {
+              zoneGroup && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ZoneGroupModal, {
                 count: zoneGroup.pendingIds.length,
                 zones: state.zones,
                 onPickExisting: commitGroupInto,
                 onCreateNew: commitGroupNewZone,
                 onCancel: () => setZoneGroup(null)
               }, undefined, false, undefined, this),
-              submapGroup && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(SubmapGroupModal, {
+              submapGroup && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(SubmapGroupModal, {
                 nodes: submapGroup.nodes,
                 onPickParent: commitSubmapGroup,
                 onCancel: () => setSubmapGroup(null)
               }, undefined, false, undefined, this),
-              submapAppend && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(SubmapAppendModal, {
+              submapAppend && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(SubmapAppendModal, {
                 proposals: pendingAll.filter((n) => submapAppend.pendingIds.includes(n.id)),
                 existingNodes: state.nodes,
                 onCommit: commitSubmapAppend,
                 onCancel: () => setSubmapAppend(null)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(SearchPalette, {
+              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(SearchPalette, {
                 rows: palette?.rows ?? [],
                 offBoard: palette?.offBoard ?? { docs: 0, messages: 0 },
                 query: searchQuery,
@@ -52253,22 +53745,26 @@ function App() {
                 inputRef: searchInputRef,
                 belowBar: Boolean(lens.owner)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(FocusBar, {
+              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(FocusBar, {
                 lens,
                 title: lens.docId ? state.docs.find((d) => d.id === lens.docId)?.title ?? lens.docId : state.nodes.find((n) => n.id === lens.nodeId)?.title ?? "",
                 count: visibleMap?.nodes.length ?? 0,
                 onDepth: (depth) => setLens((l) => ({ ...l, depth })),
                 onZoomOut: () => setLens(DEFAULT_LENS)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(MapKey, {}, undefined, false, undefined, this),
-              detailNode && detailOpen && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(MapKey, {}, undefined, false, undefined, this),
+              detailNode && detailOpen && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
                 className: `absolute right-4 z-10 ${lens.owner ? "top-24" : "top-14"}`,
-                children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(NodeDetail, {
+                children: /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(NodeDetail, {
                   node: detailNode,
                   docs: state.docs,
                   existingTags: allTags,
                   onSetTags: setNodeTags,
-                  onVerb: (verb, node) => seedComposer(`${verb} — ${node.title}`, node.id),
+                  menu: nodeMenus?.get(detailNode.id),
+                  promotable: activeZone !== null,
+                  onCommand: (command) => handleNodeCommand(command, detailNode),
+                  onRule: ruleProposal,
+                  onAction: handleAction,
                   onOpenSource: (s) => openDocById(s.docId, s.span ?? undefined),
                   onOpenMessageSource: (s) => setScrollRequest((r) => ({
                     messageId: s.messageId,
@@ -52281,7 +53777,7 @@ function App() {
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          openDoc && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(DocViewer, {
+          openDoc && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(DocViewer, {
             doc: openDoc.doc,
             highlight: openDoc.highlight,
             nodes: state.nodes,
@@ -52292,19 +53788,19 @@ function App() {
             },
             onClose: () => setOpenDoc(null)
           }, `${openDoc.doc.id}:${openDoc.highlight ?? ""}`, false, undefined, this),
-          reviewOpen && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ReviewQueue, {
+          reviewOpen && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ReviewQueue, {
             proposals: mainProposals(state.proposals),
             docs: state.docs,
             nodes: state.nodes,
             onRule: ruleProposal,
             onClose: () => setReviewOpen(false)
           }, undefined, false, undefined, this),
-          ingestOpen && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(IngestionTray, {
+          ingestOpen && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(IngestionTray, {
             items: processing,
             onDelete: deleteProposal,
             onClose: () => setIngestOpen(false)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ConversationPanel, {
+          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ConversationPanel, {
             nodes: state.nodes,
             docs: state.docs,
             disabled: status === "closed",
@@ -52318,38 +53814,38 @@ function App() {
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("footer", {
+      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("footer", {
         className: `border-t border-edge bg-surface px-4 py-0.5 text-[9px] ${state.buildInfo.stale ? "text-attention" : "text-ink-faint"}`,
         children: buildFooterText(state.buildInfo)
       }, undefined, false, undefined, this),
-      deleteTarget && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialog, {
+      deleteTarget && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setDeleteTarget(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogTitle, {
                   children: deleteTarget.citedBy ? `"${deleteTarget.doc.title}" is still cited` : `delete "${deleteTarget.doc.title}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogDescription, {
                   children: deleteTarget.citedBy ? `${deleteTarget.citedBy.nodes} node${deleteTarget.citedBy.nodes === 1 ? "" : "s"} and ${deleteTarget.citedBy.proposals} pending proposal${deleteTarget.citedBy.proposals === 1 ? "" : "s"} cite it. The nodes survive (the map is a view, not the doc), but the pending proposals lose this evidence.` : "The document and its file go away. Ideas already ratified from it stay on the map."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setDeleteTarget(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => requestDelete(Boolean(deleteTarget.citedBy)),
@@ -52360,34 +53856,34 @@ function App() {
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      deleteNode && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialog, {
+      deleteNode && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setDeleteNode(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogTitle, {
                   children: deleteNode.citedBy ? `"${deleteNode.node.title}" is still cited` : `delete "${deleteNode.node.title}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogDescription, {
                   children: deleteNode.kind === "proposal" ? "This removes the proposal from the board. (Reject keeps it as history; delete is a hard remove.)" : deleteNode.citedBy ? `${deleteNode.citedBy.edges} relation${deleteNode.citedBy.edges === 1 ? "" : "s"} and ${deleteNode.citedBy.children} submap child${deleteNode.citedBy.children === 1 ? "" : "ren"} reference it. Deleting drops those relations and re-homes the children to the top level — the children survive (they're real ideas).` : "The idea is removed from the map. Relations touching it and any submap children go with the force step if it's still cited."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setDeleteNode(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => {
@@ -52403,34 +53899,34 @@ function App() {
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      zoneDelete && /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialog, {
+      zoneDelete && /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setZoneDelete(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogTitle, {
                   children: zoneDelete.notEmpty ? `"${zoneDelete.zone.name}" isn't empty` : `delete zone "${zoneDelete.zone.name}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogDescription, {
                   children: zoneDelete.notEmpty ? `${zoneDelete.notEmpty.proposals} proposal${zoneDelete.notEmpty.proposals === 1 ? "" : "s"} go${zoneDelete.notEmpty.proposals === 1 ? "es" : ""} with it — a zone is a disposable sandbox, and deleting it discards everything still inside. Promote what's worth keeping first.` : "The zone and anything still staged inside it go away. Promoted proposals already left for the main queue and stay."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setZoneDelete(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => requestZoneDelete(Boolean(zoneDelete.notEmpty)),
@@ -52446,7 +53942,7 @@ function App() {
 }
 
 // src/mind-mapper/surface/main.tsx
-var jsx_dev_runtime31 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime33 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime31.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime33.jsxDEV(App, {}, undefined, false, undefined, this));
