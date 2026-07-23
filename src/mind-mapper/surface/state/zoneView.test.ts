@@ -45,6 +45,7 @@ test("a zoned row is segregated from the main view whether it arrived by snapsho
     edges: [],
     zones: [{ id: "wild", name: "Wild" }],
     proposals: [proposal({ id: "via-snapshot", zoneId: "wild" }), proposal({ id: "main-1" })],
+    jobs: [],
     conversation: [],
     lens: null,
     cursor: 1,

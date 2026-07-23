@@ -4,7 +4,7 @@
 // gets a live verify pass instead (matches the imago fileIntake precedent).
 
 import { expect, test } from "bun:test";
-import type { ProjectState, ServerEvent } from "../types";
+import type { Job, ProjectState, ServerEvent } from "../types";
 import { applyEvent, isGap } from "./reducer";
 
 function baseState(): ProjectState {
@@ -26,6 +26,7 @@ function baseState(): ProjectState {
         zoneId: null,
       },
     ],
+    jobs: [],
     conversation: [],
     lens: { owner: null, nodeId: null, depth: 1, docId: null },
     cursor: 5,
@@ -634,4 +635,71 @@ test("doc.kind on an unknown doc advances the cursor and touches nothing", () =>
   });
   expect(next.cursor).toBe(6);
   expect(next.docs).toEqual(baseState().docs);
+});
+
+// ── Round 9 (Job Queue, SEAM B) ────────────────────────────────────────────
+
+const jobPayload = (over: Partial<Job> = {}): Job => ({
+  id: "job-1",
+  project: "p1",
+  title: "Research the archive",
+  status: "queued",
+  claimedBy: null,
+  deliverable: null,
+  subtasks: [],
+  detail: null,
+  createdAt: 100,
+  updatedAt: 100,
+  ...over,
+});
+
+test("job.added appends a new job and advances cursor", () => {
+  const next = applyEvent(baseState(), {
+    seq: 6,
+    kind: "job.added",
+    payload: jobPayload(),
+  });
+  expect(next.jobs).toEqual([jobPayload()]);
+  expect(next.cursor).toBe(6);
+});
+
+test("job.updated replaces the job by id (wholesale)", () => {
+  const state = { ...baseState(), jobs: [jobPayload({ status: "queued", updatedAt: 100 })] };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "job.updated",
+    payload: jobPayload({ status: "blocked", detail: "waiting", updatedAt: 200 }),
+  });
+  expect(next.jobs).toHaveLength(1);
+  expect(next.jobs[0]?.status).toBe("blocked");
+  expect(next.jobs[0]?.detail).toBe("waiting");
+});
+
+test("job.claimed replaces by id through the same case (full entity)", () => {
+  const state = { ...baseState(), jobs: [jobPayload()] };
+  const next = applyEvent(state, {
+    seq: 6,
+    kind: "job.claimed",
+    payload: jobPayload({ status: "running", claimedBy: "circe" }),
+  });
+  expect(next.jobs[0]?.claimedBy).toBe("circe");
+  expect(next.jobs[0]?.status).toBe("running");
+  expect(next.cursor).toBe(6);
+});
+
+test("job.deleted removes the job by id (thin)", () => {
+  const state = {
+    ...baseState(),
+    jobs: [jobPayload({ id: "job-1" }), jobPayload({ id: "job-2" })],
+  };
+  const next = applyEvent(state, { seq: 6, kind: "job.deleted", payload: { id: "job-1" } });
+  expect(next.jobs.map((j) => j.id)).toEqual(["job-2"]);
+  expect(next.cursor).toBe(6);
+});
+
+test("a malformed job payload advances the cursor and touches nothing", () => {
+  const state = { ...baseState(), jobs: [jobPayload()] };
+  const next = applyEvent(state, { seq: 6, kind: "job.added", payload: { title: "no id" } });
+  expect(next.jobs).toEqual(state.jobs);
+  expect(next.cursor).toBe(6);
 });

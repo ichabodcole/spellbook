@@ -6,7 +6,7 @@
 // Conversation stays local-only until P2 wires it to the real bus
 // (plan/circe.md P2.3) — there's no agent behind it yet either way.
 
-import { Loader, Moon, Sun } from "lucide-react";
+import { ListChecks, Loader, Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
@@ -16,6 +16,7 @@ import { FilterControl } from "./FilterControl";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
 import { IngestionTray } from "./IngestionTray";
+import { JobsSidebar } from "./JobsSidebar";
 import { MapKey } from "./MapKey";
 import type { NodeCommand } from "./NodeContextMenu";
 import { NodeDetail } from "./NodeDetail";
@@ -40,6 +41,7 @@ import { groundBundle } from "./state/groundBundle";
 import { processingItems } from "./state/ingestionQueue";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
+import type { DeliverableRef } from "./state/jobs";
 import { type MultiSelectActions, multiSelectActions } from "./state/multiSelect";
 import { directedSet, lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
@@ -66,6 +68,7 @@ import { selectedPendingProposalIds } from "./state/zoneGroup";
 import { mainProposals, zoneMapFrom, zoneOf } from "./state/zoneView";
 import type {
   ActionSlot,
+  AgentActivityState,
   Doc,
   DocMeta,
   Lens,
@@ -186,6 +189,8 @@ export function App() {
   } | null>(null);
   // R6 QUEUE — the ingestion tray toggle (ReviewQueue's idiom).
   const [ingestOpen, setIngestOpen] = useState(false);
+  // R9 — the jobs sidebar toggle (IngestionTray's off-canvas twin).
+  const [jobsOpen, setJobsOpen] = useState(false);
   // R6 SUBMAP-CREATE — the group-ratified-nodes-under-a-parent modal: the
   // selected ratified nodes gathered when the affordance is clicked.
   const [submapGroup, setSubmapGroup] = useState<{ nodes: MapNode[] } | null>(null);
@@ -1045,6 +1050,34 @@ export function App() {
         setNotice(`couldn't discard that (${e instanceof Error ? e.message : String(e)}).`),
       );
 
+  // R9 — the human's light-touch write on a job: cancel (a status flip). Watch
+  // + cancel is V1's human role (the plan); richer authoring is agent/CLI. No
+  // optimistic edit — the job.updated event round-trips through the reducer.
+  const cancelJob = (id: string) =>
+    fetch(`/jobs/${id}${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "canceled" }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`job ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't cancel that job (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
+  // R9 — the deliverable jump-link (D5, many-jobs-one-deliverable): a doc: ref
+  // opens the doc; a node: ref selects + follows it on the board (the search-
+  // pick / backlink precedent). Text deliverables aren't links (JobsSidebar
+  // renders them inert).
+  const openDeliverable = (deliverable: DeliverableRef) => {
+    if (deliverable.kind === "doc") openDocById(deliverable.id);
+    else if (deliverable.kind === "node") {
+      setSelectedIds([deliverable.id]);
+      followFocus(deliverable.id);
+    }
+  };
+
   // TAGS (R7) — wholesale-replace a target's tags (PUT /tags/:targetId; the
   // body IS the bare array, setTags parses it directly). Target = a node id OR
   // a pending proposal's synthetic id (the synthetic-node-id-IS-proposal-id
@@ -1316,6 +1349,20 @@ export function App() {
   // autocomplete (finding #4: the engine keeps no registry; this is the union
   // of every node's + proposal's tags off the snapshot we already hold).
   const allTags = existingTags(state.nodes, state.proposals);
+  // R9 (D2 / SEAM D) — the liveness join's owner→activity map. The wire carries
+  // NO per-owner activity (agent.activity is {state} only, project-scoped), so
+  // in V1's single-casting-agent-per-project reality the ONE project activity
+  // (agentBadge, already TTL-managed above) is attributed to whoever holds a
+  // claim. agentBadge "thinking" → live, "stalled" → stale, null → paused (via
+  // absence). When the wire someday keys activity by owner, only THIS map's
+  // construction changes — jobLiveness is already a per-owner lookup.
+  const activityByAgent: Record<string, AgentActivityState> = {};
+  if (agentBadge) {
+    const proxy: AgentActivityState = agentBadge === "stalled" ? "stalled" : "thinking";
+    for (const job of state.jobs) {
+      if (job.claimedBy) activityByAgent[job.claimedBy] = proxy;
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col bg-bg text-ink">
@@ -1343,6 +1390,19 @@ export function App() {
           >
             <Loader size={11} className="animate-pulse" aria-hidden />
             ingesting · {processing.length}
+          </Button>
+        )}
+        {/* R9 — the jobs sidebar toggle: agent work units. Shown only when jobs
+            exist (like review / ingesting). */}
+        {state.jobs.length > 0 && (
+          <Button
+            variant="outline"
+            size="auto"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs text-thread-tier"
+            onClick={() => setJobsOpen((o) => !o)}
+          >
+            <ListChecks size={11} aria-hidden />
+            jobs · {state.jobs.length}
           </Button>
         )}
         <span className="ml-auto flex items-center gap-2 text-xs text-ink-faint">
@@ -1699,6 +1759,15 @@ export function App() {
             items={processing}
             onDelete={deleteProposal}
             onClose={() => setIngestOpen(false)}
+          />
+        )}
+        {jobsOpen && (
+          <JobsSidebar
+            jobs={state.jobs}
+            activityByAgent={activityByAgent}
+            onOpenDeliverable={openDeliverable}
+            onCancel={cancelJob}
+            onClose={() => setJobsOpen(false)}
           />
         )}
         <ConversationPanel

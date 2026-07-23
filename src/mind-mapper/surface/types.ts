@@ -250,6 +250,33 @@ export type Proposal = {
   resultNodeId?: string;
 };
 
+// Round 9 (Job Queue) — a first-class, persisted unit of AGENT WORK: status +
+// sub-tasks + a deliverable + an OWNER (a lease). The surface's own copy of the
+// wire shape (Contract 9 R9), the WireMessage precedent — the engine's Job type
+// lives in scripts/jobs.ts; the surface never imports it. Timestamps are epoch
+// MILLISECONDS (the R9 falsification: numbers like every other ts field, NOT
+// ISO text — updated_at bumps on every mutation for sub-second ordering).
+export type JobStatus = "queued" | "running" | "blocked" | "done" | "failed" | "canceled";
+
+export type Subtask = { id: string; label: string; done: boolean };
+
+export type Job = {
+  id: string;
+  // scope — self-describing on the wire; reads are unfiltered per-project store.
+  project: string;
+  title: string;
+  status: JobStatus;
+  // the lease (D6): the owning agent/session, or null (unclaimed).
+  claimedBy: string | null;
+  // D5: one freeform ref (doc:id / node:id / free text), or null.
+  deliverable: string | null;
+  // D4: the checklist, owned wholly by this job.
+  subtasks: Subtask[];
+  detail: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type ProjectState = {
   project: ProjectMeta;
   docs: DocMeta[];
@@ -258,6 +285,9 @@ export type ProjectState = {
   // Round 3 (Claim Z1): the store's zones, in creation order.
   zones: Zone[];
   proposals: Proposal[];
+  // Round 9 (Job Queue): the persisted agent-work units (D3 — full-entity
+  // events, wholesale replace-by-id). Unfiltered per-project read, newest last.
+  jobs: Job[];
   conversation: WireMessage[];
   // null until a lens has ever been set for this project (no row yet) —
   // daedalus's readState (state.ts) returns null, not a default object; the
@@ -331,6 +361,16 @@ export type ServerEventKind =
   // replace, the actions.set precedent — freeform tags ride a node/pending
   // proposal, not an entity of their own). Empty array clears to wire absence.
   | "tags.set"
+  // Round 9 (Job Queue, SEAM B) — job.added/updated/claimed carry the FULL Job
+  // entity (D3 — wholesale replace-by-id, the tags.set/actions.set idiom); the
+  // reducer replaces by id. job.claimed is kept DISTINCT from job.updated (a
+  // claim is a compare-and-set lease acquisition that can fail on contention —
+  // the multi-agent headline signal), but the surface MAY collapse both through
+  // one replace-by-id case (both carry the full entity). job.deleted is thin {id}.
+  | "job.added"
+  | "job.updated"
+  | "job.claimed"
+  | "job.deleted"
   // Ephemeral kinds (Contract 9 amendment): fire-once signals, no state
   // row — but every emit consumed a seq, so they still route THROUGH
   // applyEvent (default case advances the cursor) and useProjectState
