@@ -40,6 +40,7 @@ import { groundBundle } from "./state/groundBundle";
 import { processingItems } from "./state/ingestionQueue";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
+import { type MultiSelectActions, multiSelectActions } from "./state/multiSelect";
 import { directedSet, lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
 import { pendingEdgesFrom, pendingNodesFrom, resultNodeIdMap } from "./state/pendingOverlay";
@@ -492,6 +493,34 @@ export function App() {
     () => (state ? menuInfoFor(state.nodes, state.proposals) : undefined),
     [state],
   );
+
+  // drive7 #5A — position-carry-across-ratify: the mintedNodeId → proposalId
+  // alias (the inverse of pendingOverlay's resultNodeIdMap) so GraphCanvas can
+  // carry a ratified node's on-screen spot from its proposal instead of
+  // dropping it into a fresh dagre slot. resultNodeId already rides
+  // /state.proposals[] (R5/R6 wire) — no engine change.
+  const ratifyAlias = useMemo(() => {
+    const m = new Map<string, string>();
+    if (state) {
+      for (const p of state.proposals) if (p.resultNodeId) m.set(p.resultNodeId, p.id);
+    }
+    return m;
+  }, [state]);
+
+  // drive7 #6A — the selection-aware menu: for each SELECTED node, which
+  // multi-node gestures it can host (as the submap parent/anchor) over the
+  // current selection. Keyed by node id; a right-click on an entry shows the
+  // multi section. Recomputes on selection/zone change (multiSelectActions is
+  // pure + tested).
+  const multiMenus = useMemo(() => {
+    if (!state || selectedIds.length < 2) return undefined;
+    const m = new Map<string, MultiSelectActions>();
+    for (const id of selectedIds) {
+      const actions = multiSelectActions(id, selectedIds, state.nodes, state.proposals, activeZone);
+      if (actions) m.set(id, actions);
+    }
+    return m.size > 0 ? m : undefined;
+  }, [state, selectedIds, activeZone]);
 
   // One command handler for both views (map + grid share the chassis).
   const handleNodeCommand = (command: NodeCommand, node: MapNode) => {
@@ -1054,22 +1083,48 @@ export function App() {
   // enterSubmap — the local anchorNodeId flips populate the view immediately;
   // the parent's submapChildCount badge backfills on the next snapshot, the
   // known thin-node.anchored count tolerance).
+  // The core anchor fan-out, shared by the top-bar modal (commitSubmapGroup)
+  // and the drive7 #6A inline right-click path (groupSubmapInline): anchor every
+  // node EXCEPT the parent under it, then drill into the new submap.
+  const doGroupSubmap = (nodeIds: string[], parentId: string) => {
+    const children = submapChildTargets(nodeIds, parentId);
+    return Promise.all(children.map((id) => anchorNode(id, parentId))).then(() => {
+      setSelectedIds([]);
+      switchAnchor(parentId);
+    });
+  };
+
   const commitSubmapGroup = (parentId: string) => {
     if (!submapGroup) return;
-    const children = submapChildTargets(
+    doGroupSubmap(
       submapGroup.nodes.map((n) => n.id),
       parentId,
-    );
-    Promise.all(children.map((id) => anchorNode(id, parentId)))
-      .then(() => {
-        setSubmapGroup(null);
-        setSelectedIds([]);
-        switchAnchor(parentId);
-      })
+    )
+      .then(() => setSubmapGroup(null))
       .catch((e) => {
         setSubmapGroup(null);
         setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`);
       });
+  };
+
+  // drive7 #6A — inline group-under-this-as-submap from the right-click menu:
+  // the clicked node IS the anchor, the rest of the selected ratified nodes nest
+  // under it (no parent-pick modal). Snapshots the selection at click.
+  const groupSubmapInline = (parentId: string) => {
+    if (!state) return;
+    const nodeIds = ratifiedSelection(state.nodes, state.proposals, selectedIds).map((n) => n.id);
+    doGroupSubmap(nodeIds, parentId).catch((e) =>
+      setNotice(`couldn't group those (${e instanceof Error ? e.message : String(e)}).`),
+    );
+  };
+
+  // drive7 #6A — inline group-selected-into-a-zone: opens the zone dialog with
+  // the pending main-queue selection snapshotted (the zone needs a name/pick,
+  // so this can't fully resolve in the menu — it hands off to the dialog).
+  const groupZoneInline = () => {
+    if (!state) return;
+    const pendingIds = selectedPendingProposalIds(state.proposals, selectedIds);
+    if (pendingIds.length > 0) setZoneGroup({ pendingIds });
   };
 
   // R7 SUBMAPPEND — commit the pending-group modal: the surface's FIRST
@@ -1078,10 +1133,11 @@ export function App() {
   // an existing real node — the batch's idMap resolves either). Then drill into
   // the parent's new submap (its minted node id from idMap, or its own id when
   // the parent was already a real node). One round-trip, no per-proposal tier.
-  const commitSubmapAppend = (parentRef: string, ruling: BatchRuling) => {
-    if (!submapAppend) return;
-    const { ids, anchors } = buildSubmapAppend(submapAppend.pendingIds, parentRef);
-    fetch(`/proposals/ratify-batch${projectQs}`, {
+  // The core ratify-batch-into-submap, shared by the top-bar modal
+  // (commitSubmapAppend) and the drive7 #6A inline nest flyout (nestSubmapInline).
+  const doSubmapAppend = (pendingIds: string[], parentRef: string, ruling: BatchRuling) => {
+    const { ids, anchors } = buildSubmapAppend(pendingIds, parentRef);
+    return fetch(`/proposals/ratify-batch${projectQs}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ruling, ids, anchors }),
@@ -1100,14 +1156,31 @@ export function App() {
         // just-minted parent isn't in local state until the refetch, so an
         // immediate drill would bounce off the SG2 re-home guard).
         const parentNodeId = res.idMap?.[parentRef] ?? parentRef;
-        setSubmapAppend(null);
         setSelectedIds([]);
         setPendingAnchor(parentNodeId);
-      })
+      });
+  };
+
+  const commitSubmapAppend = (parentRef: string, ruling: BatchRuling) => {
+    if (!submapAppend) return;
+    doSubmapAppend(submapAppend.pendingIds, parentRef, ruling)
+      .then(() => setSubmapAppend(null))
       .catch((e) => {
         setSubmapAppend(null);
         setNotice(`couldn't nest those (${e instanceof Error ? e.message : String(e)}).`);
       });
+  };
+
+  // drive7 #6A — inline nest-under-this-as-submap from the right-click flyout:
+  // the clicked pending proposal is the parent, the rest of the selected pending
+  // proposals ratify+nest under it at the chosen tier (no modal). Snapshots the
+  // selection at click.
+  const nestSubmapInline = (parentRef: string, ruling: BatchRuling) => {
+    if (!state) return;
+    const pendingIds = pendingNodeProposalIds(state.proposals, selectedIds);
+    doSubmapAppend(pendingIds, parentRef, ruling).catch((e) =>
+      setNotice(`couldn't nest those (${e instanceof Error ? e.message : String(e)}).`),
+    );
   };
 
   // An open viewer for a doc that no longer exists closes — whoever deleted
@@ -1361,6 +1434,12 @@ export function App() {
               menus={nodeMenus}
               onRule={ruleProposal}
               onAction={handleAction}
+              ratifyAlias={ratifyAlias}
+              multiMenus={multiMenus}
+              selectionCount={selectedIds.length}
+              onGroupSubmap={groupSubmapInline}
+              onNestSubmap={nestSubmapInline}
+              onGroupZone={groupZoneInline}
               focusRequest={focusRequest}
               onConnect={(source, target) => proposeAsUser("edge", { source, target })}
               // IC-b — the dead-drag path (drop on empty pane). Off inside a
@@ -1441,6 +1520,10 @@ export function App() {
                 onAction={handleAction}
                 promotable={activeZone !== null}
                 onNodeCommand={handleNodeCommand}
+                multiMenus={multiMenus}
+                onGroupSubmap={groupSubmapInline}
+                onNestSubmap={nestSubmapInline}
+                onGroupZone={groupZoneInline}
               />
               {/* The toggle keeps its canvas-Panel perch in grid view too —
                   switching never moves the control out from under the
@@ -1562,7 +1645,13 @@ export function App() {
                 docs={state.docs}
                 existingTags={allTags}
                 onSetTags={setNodeTags}
-                onVerb={(verb, node) => seedComposer(`${verb} — ${node.title}`, node.id)}
+                // drive7 #2a — the SAME inputs the context menu gets, so the
+                // detail panel renders the one shared action model (parity).
+                menu={nodeMenus?.get(detailNode.id)}
+                promotable={activeZone !== null}
+                onCommand={(command) => handleNodeCommand(command, detailNode)}
+                onRule={ruleProposal}
+                onAction={handleAction}
                 onOpenSource={(s) => openDocById(s.docId, s.span ?? undefined)}
                 onOpenMessageSource={(s: MessageSourceRef) =>
                   setScrollRequest((r) => ({

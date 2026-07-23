@@ -1,28 +1,19 @@
-// R4 R1 — the shared node context-menu chassis, extracted from IdeaNode so
-// the canvas and the card grid wrap the SAME menu (built once; A1's action
-// slots land here too). The standard verbs are unchanged; pending proposals
-// additionally get the queue's ruling verbs (menuInfoFor decides which,
-// state/nodeMenu.ts) — ratify-from-menu accepts at suggestedTier, one
-// keystroke, and the Claim-D asymmetry holds: user sketches offer withdraw
-// only, never a ratify the daemon refuses.
+// R4 R1 → drive7 #2a — the shared node context-menu chassis. The action SET is
+// now derived ONCE (state/nodeActions.ts, buildNodeActions) and rendered here
+// AND in NodeDetail, so the two can't drift (the mirror-drift class the R7 gate
+// caught). This file only maps an ActionItem to the compact context-menu
+// vocabulary (items, a "Select ▸" flyout, group separators). drive7 #6A adds
+// the selection-aware section: with ≥2 nodes selected, the right-clicked node
+// is the designated submap parent/anchor and the multi-node gestures resolve
+// inline (no parent-pick modal).
 
-import {
-  ArrowUpFromLine,
-  Check,
-  ChevronsDown,
-  ChevronsUp,
-  Crosshair,
-  FolderTree,
-  HelpCircle,
-  ListTree,
-  ScrollText,
-  Sparkles,
-  Trash2,
-  Waypoints,
-  X,
-} from "lucide-react";
+import { FolderTree, Layers } from "lucide-react";
 import type { ReactNode } from "react";
+import type { MultiSelectActions } from "./state/multiSelect";
+import type { ActionItem, ActionTone } from "./state/nodeActions";
+import { buildNodeActions } from "./state/nodeActions";
 import type { NodeMenuInfo } from "./state/nodeMenu";
+import type { BatchRuling } from "./state/submapAppend";
 import type { ActionSlot, MapNode, Ruling } from "./types";
 import {
   ContextMenu,
@@ -30,27 +21,13 @@ import {
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./ui/context-menu";
 
-// RATIFYFIX (finding #7) — the human's tier picker when the agent's
-// suggestedTier isn't a valid ruling (a casting-draft "cast"/"background"
-// slip). Flat items, not a submenu (the vendored context-menu has no Submenu
-// primitive). Every entry is a valid Ruling App.ruleProposal dispatches.
-const RATIFY_TIERS: Exclude<Ruling, "reject">[] = ["canon", "thread", "story-local"];
-
-// The node command vocabulary (born plural per t-609741be — future commands
-// include agent actions). Promote appears in zone context only (Claim Z3).
-// R5 SC: "Select connected" unions the node's depth-1 neighbors into the
-// selection (a selection op, not a conversational verb — App handles it
-// directly rather than seeding the composer).
-// R5 SG2: "Enter submap" navigates the canvas into this node's submap (its
-// anchored children), the clickable twin of a node double-click. A navigation
-// verb (App handles it directly), grouped with Focus / Select connected.
-// R6 DEL: "Delete" is the human's retract — the equal-capability twin of the
-// agent's CLI `node delete` / `proposal delete`. App decides node-vs-proposal
-// by the target id (a pending/rejected proposal id vs a real node id) and owns
-// the confirm dialog + the node cited-guard escalation.
+// R6 DEL etc. — the node command vocabulary (born plural per t-609741be).
 export type NodeCommand =
   | "Focus"
   | "Select connected"
@@ -63,6 +40,33 @@ export type NodeCommand =
   | "Promote"
   | "Delete";
 
+const NEST_TIERS: BatchRuling[] = ["canon", "thread", "story-local"];
+
+// tone → the compact menu's class vocabulary (semantic tokens only).
+const TONE_CLASS: Record<ActionTone, string> = {
+  default: "",
+  pending: "text-pending",
+  danger: "text-attention",
+  agent: "text-thread-tier",
+  faint: "text-ink-faint",
+};
+
+// The groups that open a new section (a separator before their first item),
+// matching the pre-extraction menu's rhythm.
+const SECTION_BREAK = new Set(["verbs", "slots", "danger"]);
+
+function ItemRow({ item }: { item: ActionItem }) {
+  const Icon = item.icon;
+  return (
+    <ContextMenuItem
+      className={`${TONE_CLASS[item.tone]} ${item.suggested ? "font-semibold" : ""}`}
+      onClick={() => item.run()}
+    >
+      <Icon /> {item.label}
+    </ContextMenuItem>
+  );
+}
+
 export function NodeContextMenu({
   node,
   menu,
@@ -70,144 +74,115 @@ export function NodeContextMenu({
   onCommand,
   onRule,
   onAction,
+  multi,
+  selectionCount,
+  onGroupSubmap,
+  onNestSubmap,
+  onGroupZone,
   children,
 }: {
   node: MapNode;
   menu?: NodeMenuInfo;
-  // Zone context only: every node there is a zoned proposal, so the menu
-  // gains Promote (a MOVE to the main review queue).
   promotable?: boolean;
   onCommand: (command: NodeCommand) => void;
   onRule?: (proposalId: string, ruling: Ruling) => void;
-  // A1 — a slot click SEEDS the composer (seed text + this node as ground),
-  // never auto-sends; the caller owns that grammar.
   onAction?: (action: ActionSlot, node: MapNode) => void;
+  // drive7 #6A — the multi-actions valid with THIS node as parent/anchor over
+  // the current selection (null = none; single-select keeps today's menu).
+  multi?: MultiSelectActions | null;
+  selectionCount?: number;
+  onGroupSubmap?: (parentId: string) => void;
+  onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
+  onGroupZone?: () => void;
   children: ReactNode;
 }) {
-  const ruling = menu?.ruling;
-  // Captured so the click closure keeps the non-null narrowing.
-  const ratifyAs = ruling?.ratifyAs ?? null;
+  const items = buildNodeActions(node, menu, promotable, { onCommand, onRule, onAction });
+  const showMulti = multi && (selectionCount ?? 0) >= 2;
+
+  let prevGroup = "";
   return (
     <ContextMenu>
       <ContextMenuTrigger>{children}</ContextMenuTrigger>
       <ContextMenuContent>
-        {/* MENU(b) — truncate a long title to one ellipsised line (the Popup
-            max-w bounds it); the vendored default stays un-truncated so the
-            flex "agent suggests" label below is unaffected. */}
         <ContextMenuLabel className="truncate">{node.title}</ContextMenuLabel>
-        <ContextMenuItem onClick={() => onCommand("Focus")}>
-          <Crosshair /> Focus
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onCommand("Select connected")}>
-          <Waypoints /> Select connected
-        </ContextMenuItem>
-        {/* DIRSELECT — directed depth-1 siblings alongside the undirected
-            "Select connected": children = OUTGOING edges, parents = INCOMING
-            (a direction:"both" edge counts for both). */}
-        <ContextMenuItem onClick={() => onCommand("Select children")}>
-          <ChevronsDown /> Select children
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onCommand("Select parents")}>
-          <ChevronsUp /> Select parents
-        </ContextMenuItem>
-        {/* SG2 — only nodes that actually HAVE a submap offer the drill-in
-            (the badge says so); a proposal can't (it stays top-level until
-            ratified) so submapChildCount is 0 there by construction. */}
-        {(node.submapChildCount ?? 0) > 0 && (
-          <ContextMenuItem onClick={() => onCommand("Enter submap")}>
-            <FolderTree /> Enter submap
-          </ContextMenuItem>
-        )}
-        {promotable && (
-          <ContextMenuItem onClick={() => onCommand("Promote")}>
-            <ArrowUpFromLine /> Promote to main
-          </ContextMenuItem>
-        )}
-        {ruling &&
-          onRule &&
-          (ruling.author === "agent" ? (
-            <>
-              {ratifyAs ? (
-                <ContextMenuItem
-                  className="text-pending"
-                  onClick={() => onRule(ruling.proposalId, ratifyAs)}
-                >
-                  <Check /> Ratify as {ratifyAs}
-                </ContextMenuItem>
-              ) : (
-                // RATIFYFIX — no one-keystroke ratify (unrecognized suggested
-                // tier); offer the three valid rulings flat so the human picks,
-                // instead of leaving a Reject-only dead end.
-                RATIFY_TIERS.map((tier) => (
-                  <ContextMenuItem
-                    key={tier}
-                    className="text-pending"
-                    onClick={() => onRule(ruling.proposalId, tier)}
-                  >
-                    <Check /> Ratify as {tier}
-                  </ContextMenuItem>
-                ))
-              )}
-              <ContextMenuItem
-                className="text-ink-faint"
-                onClick={() => onRule(ruling.proposalId, "reject")}
-              >
-                <X /> Reject
-              </ContextMenuItem>
-            </>
-          ) : (
-            // A user sketch awaits its doc home (Claim D) — the agent drafts
-            // that before it can ratify, so the only ruling on offer here is
-            // taking the sketch back.
-            <ContextMenuItem
-              className="text-ink-faint"
-              onClick={() => onRule(ruling.proposalId, "reject")}
-            >
-              <X /> Withdraw sketch
-            </ContextMenuItem>
-          ))}
-        <ContextMenuSeparator />
-        <ContextMenuItem onClick={() => onCommand("Explain")}>
-          <ScrollText /> Explain
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onCommand("Questions")}>
-          <HelpCircle /> Questions
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onCommand("Subtopics")}>
-          <ListTree /> Subtopics
-        </ContextMenuItem>
-        {menu?.actions && onAction && (
+
+        {/* #6A — the selection-aware section: multi-node gestures, the clicked
+            node designating the submap parent/anchor. Resolves inline. */}
+        {showMulti && (
           <>
-            <ContextMenuSeparator />
-            {/* Visibly agent-suggested: the agent's color on this surface is
-                thread-tier (FocusBar / ActivityIndicator vocabulary). */}
-            <ContextMenuLabel className="flex items-center gap-1.5 normal-case tracking-normal text-thread-tier">
-              <Sparkles size={10} aria-hidden /> agent suggests
+            <ContextMenuLabel className="flex items-center gap-1.5 normal-case tracking-normal text-ink-dim">
+              <Layers size={10} aria-hidden /> {selectionCount} selected
             </ContextMenuLabel>
-            {/* Soft cap, rendered: ~4 items visible, the rest scroll inside
-                the menu (cap the visible, never the list — the daemon stores
-                the full array). */}
-            <div className="max-h-32 overflow-y-auto">
-              {menu.actions.map((action) => (
-                <ContextMenuItem
-                  key={action.id}
-                  className="text-thread-tier"
-                  onClick={() => onAction(action, node)}
-                >
-                  <Sparkles /> {action.label}
-                </ContextMenuItem>
-              ))}
-            </div>
+            {multi.groupSubmap && onGroupSubmap && (
+              <ContextMenuItem onClick={() => onGroupSubmap(node.id)}>
+                <FolderTree /> Group under this as submap
+              </ContextMenuItem>
+            )}
+            {multi.nestSubmap && onNestSubmap && (
+              <ContextMenuSub>
+                <ContextMenuSubTrigger className="text-pending">
+                  <FolderTree /> Nest under this as submap
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  {NEST_TIERS.map((tier) => (
+                    <ContextMenuItem
+                      key={tier}
+                      className="text-pending"
+                      onClick={() => onNestSubmap(node.id, tier)}
+                    >
+                      Ratify all as {tier}
+                    </ContextMenuItem>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+            )}
+            {multi.groupZone && onGroupZone && (
+              <ContextMenuItem className="text-pending" onClick={() => onGroupZone()}>
+                <Layers /> Group selected into a zone…
+              </ContextMenuItem>
+            )}
+            <ContextMenuSeparator />
           </>
         )}
-        {/* R6 DEL — the human's retract, always offered (equal-capability with
-            the agent's CLI delete). Distinct from Reject/Withdraw above: reject
-            declines a proposal WITH history; delete is a hard remove (and on a
-            ratified node, the cited-guard + force cascade run in App). */}
-        <ContextMenuSeparator />
-        <ContextMenuItem className="text-attention" onClick={() => onCommand("Delete")}>
-          <Trash2 /> Delete
-        </ContextMenuItem>
+
+        {/* Flatten to keyed siblings (no wrapper element) — Base UI's menu
+            registers items via context, but arrow-key nav + ARIA want the
+            items as direct Popup children, not nested in spans. */}
+        {items.flatMap((item) => {
+          const rows: ReactNode[] = [];
+          if (SECTION_BREAK.has(item.group) && item.group !== prevGroup) {
+            rows.push(<ContextMenuSeparator key={`${item.key}-sep`} />);
+          }
+          if (item.group === "slots" && prevGroup !== "slots") {
+            rows.push(
+              <ContextMenuLabel
+                key={`${item.key}-label`}
+                className="flex items-center gap-1.5 normal-case tracking-normal text-thread-tier"
+              >
+                agent suggests
+              </ContextMenuLabel>,
+            );
+          }
+          prevGroup = item.group;
+          if (item.submenu) {
+            const Icon = item.icon;
+            rows.push(
+              <ContextMenuSub key={item.key}>
+                <ContextMenuSubTrigger>
+                  <Icon /> {item.label}
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  {item.submenu.map((sub) => (
+                    <ItemRow key={sub.key} item={sub} />
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>,
+            );
+          } else {
+            rows.push(<ItemRow key={item.key} item={item} />);
+          }
+          return rows;
+        })}
       </ContextMenuContent>
     </ContextMenu>
   );

@@ -16,7 +16,9 @@ import { FolderTree, Loader } from "lucide-react";
 import { KIND_ICON, TIER_CARD, TIER_LABEL } from "./GraphCanvas";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import { groupByTierKind } from "./state/cardGrid";
+import type { MultiSelectActions } from "./state/multiSelect";
 import type { NodeMenuInfo } from "./state/nodeMenu";
+import type { BatchRuling } from "./state/submapAppend";
 import type { ActionSlot, MapNode, Ruling, StubMap } from "./types";
 
 export function CardGrid({
@@ -29,6 +31,10 @@ export function CardGrid({
   onRule,
   onAction,
   promotable,
+  multiMenus,
+  onGroupSubmap,
+  onNestSubmap,
+  onGroupZone,
 }: {
   map: StubMap;
   // Same contract as GraphCanvas: null = no search active; otherwise the ids
@@ -42,6 +48,11 @@ export function CardGrid({
   onRule?: (proposalId: string, ruling: Ruling) => void;
   onAction?: (action: ActionSlot, node: MapNode) => void;
   promotable?: boolean;
+  // drive7 #6A — the selection-aware menu, identical in both views (one chassis).
+  multiMenus?: Map<string, MultiSelectActions>;
+  onGroupSubmap?: (parentId: string) => void;
+  onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
+  onGroupZone?: () => void;
 }) {
   const groups = groupByTierKind(map.nodes);
   const keep = highlightIds ? new Set(highlightIds) : null;
@@ -79,6 +90,11 @@ export function CardGrid({
                       onCommand={(command) => onNodeCommand(command, n)}
                       onRule={onRule}
                       onAction={onAction}
+                      multi={multiMenus?.get(n.id) ?? null}
+                      selectionCount={selectedIds.length}
+                      onGroupSubmap={onGroupSubmap}
+                      onNestSubmap={onNestSubmap}
+                      onGroupZone={onGroupZone}
                     >
                       <button
                         type="button"

@@ -19,10 +19,12 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
-import { CircleDashed, FolderTree, Lightbulb, Loader, MapPin, User } from "lucide-react";
+import { CircleDashed, FolderTree, Lightbulb, Loader, MapPin, User, Wand2 } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
+import type { MultiSelectActions } from "./state/multiSelect";
 import type { NodeMenuInfo } from "./state/nodeMenu";
+import type { BatchRuling } from "./state/submapAppend";
 import { TAG_CHIP } from "./state/tags";
 import type { ActionSlot, MapNode, NodeKind, Ruling, StubMap, Tier } from "./types";
 import { Button } from "./ui/button";
@@ -80,6 +82,20 @@ export type GraphCanvasProps = {
   onRule?: (proposalId: string, ruling: Ruling) => void;
   // R4 A1 — action-slot click (seeds the composer; the caller owns that).
   onAction?: (action: ActionSlot, node: MapNode) => void;
+  // drive7 #5A — position-carry-across-ratify: mintedNodeId → proposalId (built
+  // from state.proposals[].resultNodeId). A ratified node inherits its
+  // proposal's on-screen spot instead of taking a fresh dagre slot that
+  // collides. A render-time hint, not node state.
+  ratifyAlias?: Map<string, string>;
+  // drive7 #6A — the selection-aware menu: per-node multi-actions (valid with
+  // that node as the submap parent/anchor over the current selection), the live
+  // selection count, and the inline commit handlers. A render-time overlay like
+  // `menus`, keyed by node id.
+  multiMenus?: Map<string, MultiSelectActions>;
+  selectionCount?: number;
+  onGroupSubmap?: (parentId: string) => void;
+  onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
+  onGroupZone?: () => void;
 };
 
 const NODE_W = 190;
@@ -121,6 +137,12 @@ export type IdeaNodeData = {
   menu?: NodeMenuInfo;
   onRule?: (proposalId: string, ruling: Ruling) => void;
   onAction?: (action: ActionSlot, node: MapNode) => void;
+  // drive7 #6A — the selection-aware menu overlay (render-time, like `menu`).
+  multi?: MultiSelectActions | null;
+  selectionCount?: number;
+  onGroupSubmap?: (parentId: string) => void;
+  onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
+  onGroupZone?: () => void;
 };
 
 function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
@@ -135,6 +157,11 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
       onCommand={data.onCommand}
       onRule={data.onRule}
       onAction={data.onAction}
+      multi={data.multi}
+      selectionCount={data.selectionCount}
+      onGroupSubmap={data.onGroupSubmap}
+      onNestSubmap={data.onNestSubmap}
+      onGroupZone={data.onGroupZone}
     >
       <div
         className={`w-[190px] rounded-lg border bg-surface px-3 py-2 shadow-lg transition-all ${TIER_CARD[n.tier]} ${
@@ -308,15 +335,44 @@ function layout(
 // dropped (simply absent from `fresh`). Data is always the fresh copy
 // (pending→ratified, title, submapChildCount, the identity-stable command
 // closure). Bonus: a re-layout no longer clobbers a manual drag position.
+//
+// position-carry-across-ratify (drive7 #5A — DISTINCT from the RENDER race
+// above that this same function already fixes): ratify mints a NEW node id
+// (proposalId → nodeId), so the ratified node reads to mergeLayout as brand-new
+// and takes a fresh dagre slot that collides with whatever's already there
+// ("lands under another node"). The lead's diagnosis (alias the proposal's spot
+// on the node.ratified event) is CORRECT in cause but INCOMPLETE in mechanism:
+// node.ratified only flips the proposal out of "pending" (its synthetic drops
+// from the board a render BEFORE the minted node arrives via the async snapshot
+// refetch — useProjectState), and `resultNodeId` (the alias) isn't set until
+// that refetch either. So the proposal's on-screen position is gone from `prev`
+// by the time the minted node first renders — an alias-from-prev alone can't
+// find it. The fix carries a `posMemory` (last-known position by id, retained
+// even after a node transiently leaves the board) so the vanished synthetic's
+// spot survives the two-render gap, plus the `alias` (mintedNodeId → proposalId,
+// built from resultNodeId) to recover it. Surface-only: resultNodeId already
+// rides /state.proposals[] (R5/R6 wire) — no engine change. Pinned by the
+// two-render-sequence test in GraphCanvas.test.ts.
+export type XY = { x: number; y: number };
+
 export function mergeLayout(
   prev: Node<IdeaNodeData>[],
   fresh: Node<IdeaNodeData>[],
+  carry?: { alias?: Map<string, string>; posMemory?: Map<string, XY> },
 ): Node<IdeaNodeData>[] {
   const prevById = new Map(prev.map((n) => [n.id, n]));
   return fresh.map((f) => {
     const existing = prevById.get(f.id);
-    if (!existing) return f;
-    return { ...f, position: existing.position, selected: existing.selected };
+    if (existing) return { ...f, position: existing.position, selected: existing.selected };
+    // position-carry-across-ratify: a minted node inherits its proposal's
+    // last-known spot (prev if the synthetic is still there, else posMemory,
+    // which outlives the transient disappearance).
+    const proposalId = carry?.alias?.get(f.id);
+    if (proposalId) {
+      const pos = prevById.get(proposalId)?.position ?? carry?.posMemory?.get(proposalId);
+      if (pos) return { ...f, position: pos };
+    }
+    return f;
   });
 }
 
@@ -399,6 +455,12 @@ export function GraphCanvas({
   menus,
   onRule,
   onAction,
+  ratifyAlias,
+  multiMenus,
+  selectionCount,
+  onGroupSubmap,
+  onNestSubmap,
+  onGroupZone,
 }: GraphCanvasProps) {
   // React Flow is used semi-controlled: this component owns node state (so
   // drag + click-select work), reports selection upward (deduped — an
@@ -423,6 +485,14 @@ export function GraphCanvas({
   // dead-drag path only when the drag ended UNCOMPLETED on the empty pane.
   const connectSource = useRef<string | null>(null);
   const connectCompleted = useRef(false);
+  // drive7 #5A — position memory: last-known position by id, retained even
+  // after a node transiently leaves the board (the ratify two-render gap: the
+  // pending synthetic drops a render before the minted node arrives). Read via
+  // the alias in mergeLayout so a ratified node keeps its spot. Read latest
+  // alias through a ref so the layout effect needn't dep on it.
+  const posMemory = useRef(new Map<string, XY>());
+  const aliasRef = useRef(ratifyAlias);
+  aliasRef.current = ratifyAlias;
 
   // Commands dispatch through a ref so a new callback identity never forces
   // a node-state rebuild (layout depends on the map + mode alone). Rulings
@@ -441,6 +511,23 @@ export function GraphCanvas({
     (action: ActionSlot, node: MapNode) => actionRef.current?.(action, node),
     [],
   );
+  // #6A multi-select commit dispatchers — same ref-stable idiom so a fresh
+  // callback identity never rebuilds node state.
+  const groupSubmapRef = useRef(onGroupSubmap);
+  groupSubmapRef.current = onGroupSubmap;
+  const dispatchGroupSubmap = useCallback(
+    (parentId: string) => groupSubmapRef.current?.(parentId),
+    [],
+  );
+  const nestSubmapRef = useRef(onNestSubmap);
+  nestSubmapRef.current = onNestSubmap;
+  const dispatchNestSubmap = useCallback(
+    (parentId: string, tier: BatchRuling) => nestSubmapRef.current?.(parentId, tier),
+    [],
+  );
+  const groupZoneRef = useRef(onGroupZone);
+  groupZoneRef.current = onGroupZone;
+  const dispatchGroupZone = useCallback(() => groupZoneRef.current?.(), []);
 
   // RENDER (finding #5): a MAP change merges by id (mergeLayout — an in-flight
   // proposal.added burst can't drop settled nodes, and drags survive); a
@@ -451,8 +538,23 @@ export function GraphCanvas({
     const fresh = layout(layoutMode, map, (command, node) => commandRef.current(command, node));
     const modeChanged = prevLayoutMode.current !== layoutMode;
     prevLayoutMode.current = layoutMode;
-    setNodes((prev) => (modeChanged ? fresh : mergeLayout(prev, fresh)));
+    setNodes((prev) => {
+      // Remember every prior on-screen position (incl. drags) BEFORE merging,
+      // so a synthetic node's spot survives the ratify two-render gap
+      // (position-carry-across-ratify).
+      for (const n of prev) posMemory.current.set(n.id, n.position);
+      if (modeChanged) return fresh;
+      return mergeLayout(prev, fresh, { alias: aliasRef.current, posMemory: posMemory.current });
+    });
   }, [map, layoutMode]);
+
+  // drive7 #5B — Tidy: re-run the active layout and RESET every position (a
+  // full replace, the escape hatch after a bulk ratify / import / manual mess
+  // piles nodes up). Distinct from a map-change merge, which preserves spots.
+  const retidy = useCallback(() => {
+    posMemory.current.clear();
+    setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
+  }, [layoutMode, map]);
 
   useEffect(() => {
     const want = [...selectedIds].sort().join(",");
@@ -496,7 +598,7 @@ export function GraphCanvas({
   const renderNodes = useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
     const lit = spotlight?.nodes ?? null;
-    if (!keep && !lit && !promotable && !menus) return nodes;
+    if (!keep && !lit && !promotable && !menus && !multiMenus) return nodes;
     return nodes.map((n) => {
       const searchDim = keep ? !keep.has(n.id) : false;
       const spotDim = lit ? !lit.has(n.id) : false;
@@ -509,10 +611,28 @@ export function GraphCanvas({
           menu: menus?.get(n.id),
           onRule: dispatchRule,
           onAction: dispatchAction,
+          multi: multiMenus?.get(n.id) ?? null,
+          selectionCount,
+          onGroupSubmap: dispatchGroupSubmap,
+          onNestSubmap: dispatchNestSubmap,
+          onGroupZone: dispatchGroupZone,
         },
       };
     });
-  }, [nodes, highlightIds, spotlight, promotable, menus, dispatchRule, dispatchAction]);
+  }, [
+    nodes,
+    highlightIds,
+    spotlight,
+    promotable,
+    menus,
+    dispatchRule,
+    dispatchAction,
+    multiMenus,
+    selectionCount,
+    dispatchGroupSubmap,
+    dispatchNestSubmap,
+    dispatchGroupZone,
+  ]);
 
   // R5 SL edge-dim — the NEW plumbing the lens never needed. toFlowEdges bakes
   // opacity by provenance/pending only; this overlay drops every non-lit edge
@@ -638,6 +758,18 @@ export function GraphCanvas({
         style={panelBelowBar ? { top: 40 } : undefined}
       >
         {panelTopRight}
+        {/* drive7 #5B — Tidy: re-layout everything (resets positions) when the
+            board piles up. Icon-only to keep the crowded Panel row short. */}
+        <Button
+          variant="outline"
+          size="auto"
+          className="flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide"
+          title="Tidy — re-run the layout and reset positions"
+          onClick={retidy}
+        >
+          <Wand2 size={11} aria-hidden />
+          tidy
+        </Button>
         <Button
           variant="outline"
           size="auto"

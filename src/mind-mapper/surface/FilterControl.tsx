@@ -1,12 +1,17 @@
 // Round 7 (FILTER) — the faceted filter control: a Panel-perch button that
-// opens an app-owned popover of Status / Tier / Tags facet chips. Multi-select,
-// AND-across / OR-within (the pure rule lives in state/filter.ts). App owns the
-// filter state (so map + grid share one control) and derives filteredMap
-// terminal to the board chain; this is just the chrome. Semantic tokens only,
-// both themes.
+// opens a popover of Status / Tier / Tags facet chips. Multi-select, AND-across
+// / OR-within (the pure rule lives in state/filter.ts). App owns the filter
+// state (so map + grid share one control) and derives filteredMap terminal to
+// the board chain; this is just the chrome. Semantic tokens only, both themes.
+//
+// drive7 #3 — ported from a hand-rolled `open` div to the vendored Popover
+// (Base UI): outside-click + Escape dismiss for free (the exact bug Cole hit).
+// A Popover, not a DropdownMenu, because the facet chips are STAY-OPEN toggles
+// — a Menu.Item closes on click, the wrong grammar for a multi-select facet
+// list.
 
 import { Filter as FilterIcon, X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { TIER_LABEL } from "./GraphCanvas";
 import {
   activeFilterCount,
@@ -17,6 +22,7 @@ import {
 } from "./state/filter";
 import type { Tier } from "./types";
 import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 const STATUS_LABEL: Record<NodeStatus, string> = {
   ratified: "ratified",
@@ -58,7 +64,6 @@ export function FilterControl({
   facets: FilterFacets;
   onFilter: (next: MapFilter) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const count = activeFilterCount(filter);
   // Nothing to filter (a single-node board with no tiers/tags variety) — hide
   // the control entirely rather than open an empty popover.
@@ -66,73 +71,73 @@ export function FilterControl({
   if (!hasFacets) return null;
 
   return (
-    <div className="relative">
-      <Button
-        variant="outline"
-        size="auto"
-        className={`flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide ${
-          count > 0 ? "text-ink" : "text-ink-dim"
-        }`}
-        title="Filter the board by status, tier, or tag"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        <FilterIcon size={11} aria-hidden />
-        filter{count > 0 ? ` · ${count}` : ""}
-      </Button>
-      {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-56 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-widest text-ink-faint">filter</span>
-            {count > 0 && (
-              <button
-                type="button"
-                onClick={() => onFilter({ status: [], tier: [], tags: [] })}
-                className="flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention"
-              >
-                <X size={10} /> clear
-              </button>
-            )}
-          </div>
-          {facets.statuses.length > 0 && (
-            <FacetGroup label="Status">
-              {facets.statuses.map((s) => (
-                <FacetChip
-                  key={s}
-                  label={STATUS_LABEL[s]}
-                  active={filter.status.includes(s)}
-                  onToggle={() => onFilter({ ...filter, status: toggleFacet(filter.status, s) })}
-                />
-              ))}
-            </FacetGroup>
-          )}
-          {facets.tiers.length > 0 && (
-            <FacetGroup label="Tier">
-              {facets.tiers.map((t: Tier) => (
-                <FacetChip
-                  key={t}
-                  label={TIER_LABEL[t]}
-                  active={filter.tier.includes(t)}
-                  onToggle={() => onFilter({ ...filter, tier: toggleFacet(filter.tier, t) })}
-                />
-              ))}
-            </FacetGroup>
-          )}
-          {facets.tags.length > 0 && (
-            <FacetGroup label="Tags">
-              {facets.tags.map((t) => (
-                <FacetChip
-                  key={t}
-                  label={t}
-                  active={filter.tags.includes(t)}
-                  onToggle={() => onFilter({ ...filter, tags: toggleFacet(filter.tags, t) })}
-                />
-              ))}
-            </FacetGroup>
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            size="auto"
+            className={`flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide ${
+              count > 0 ? "text-ink" : "text-ink-dim"
+            }`}
+            title="Filter the board by status, tier, or tag"
+          >
+            <FilterIcon size={11} aria-hidden />
+            filter{count > 0 ? ` · ${count}` : ""}
+          </Button>
+        }
+      />
+      <PopoverContent className="w-56">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[10px] uppercase tracking-widest text-ink-faint">filter</span>
+          {count > 0 && (
+            <button
+              type="button"
+              onClick={() => onFilter({ status: [], tier: [], tags: [] })}
+              className="flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention"
+            >
+              <X size={10} /> clear
+            </button>
           )}
         </div>
-      )}
-    </div>
+        {facets.statuses.length > 0 && (
+          <FacetGroup label="Status">
+            {facets.statuses.map((s) => (
+              <FacetChip
+                key={s}
+                label={STATUS_LABEL[s]}
+                active={filter.status.includes(s)}
+                onToggle={() => onFilter({ ...filter, status: toggleFacet(filter.status, s) })}
+              />
+            ))}
+          </FacetGroup>
+        )}
+        {facets.tiers.length > 0 && (
+          <FacetGroup label="Tier">
+            {facets.tiers.map((t: Tier) => (
+              <FacetChip
+                key={t}
+                label={TIER_LABEL[t]}
+                active={filter.tier.includes(t)}
+                onToggle={() => onFilter({ ...filter, tier: toggleFacet(filter.tier, t) })}
+              />
+            ))}
+          </FacetGroup>
+        )}
+        {facets.tags.length > 0 && (
+          <FacetGroup label="Tags">
+            {facets.tags.map((t) => (
+              <FacetChip
+                key={t}
+                label={t}
+                active={filter.tags.includes(t)}
+                onToggle={() => onFilter({ ...filter, tags: toggleFacet(filter.tags, t) })}
+              />
+            ))}
+          </FacetGroup>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
 

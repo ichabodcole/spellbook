@@ -3,34 +3,54 @@
 // candidate node-action vocabulary (Sensecape's Explain / Questions /
 // Subtopics) as stubs — no agent behind them in the spike.
 
-import {
-  Crosshair,
-  FileText,
-  HelpCircle,
-  ListTree,
-  MessageSquare,
-  ScrollText,
-  Tag,
-  X,
-} from "lucide-react";
-import { useState } from "react";
+import { Crosshair, FileText, MessageSquare, Tag, X } from "lucide-react";
+import { type ReactNode, useState } from "react";
+import type { NodeCommand } from "./NodeContextMenu";
+import { type ActionItem, type ActionTone, buildNodeActions } from "./state/nodeActions";
+import type { NodeMenuInfo } from "./state/nodeMenu";
 import { addTag, removeTag, TAG_CHIP, tagSuggestions } from "./state/tags";
-import type { DocMeta, DocSourceRef, MapNode, MessageSourceRef } from "./types";
+import type { ActionSlot, DocMeta, DocSourceRef, MapNode, MessageSourceRef, Ruling } from "./types";
 import { isDocSource } from "./types";
 import { Button } from "./ui/button";
 
-const VERBS = [
-  { label: "Explain", icon: ScrollText },
-  { label: "Questions", icon: HelpCircle },
-  { label: "Subtopics", icon: ListTree },
-] as const;
+// tone → the detail panel's class vocabulary (roomier than the menu's, same
+// semantic tokens).
+const TONE_CLASS: Record<ActionTone, string> = {
+  default: "text-ink",
+  pending: "text-pending",
+  danger: "text-attention",
+  agent: "text-thread-tier",
+  faint: "text-ink-faint",
+};
+
+// One action rendered as a detail-panel button (the roomy twin of the menu's
+// ContextMenuItem — SAME ActionItem, different chrome).
+function ActionButton({ item, className = "" }: { item: ActionItem; className?: string }) {
+  const Icon = item.icon;
+  return (
+    <Button
+      variant="outline"
+      size="auto"
+      onClick={() => item.run()}
+      className={`justify-start px-2 py-1 ${TONE_CLASS[item.tone]} ${
+        item.suggested ? "border-pending font-semibold" : ""
+      } ${className}`}
+    >
+      <Icon size={12} aria-hidden /> {item.label}
+    </Button>
+  );
+}
 
 export function NodeDetail({
   node,
   docs,
   existingTags,
   onSetTags,
-  onVerb,
+  menu,
+  promotable,
+  onCommand,
+  onRule,
+  onAction,
   onOpenSource,
   onOpenMessageSource,
   onFocus,
@@ -45,7 +65,14 @@ export function NodeDetail({
   // proposal id (the synthetic-node-id-IS-proposal-id convention makes one
   // target key serve both). A wholesale PUT of the WHOLE new list.
   onSetTags: (targetId: string, tags: string[]) => void;
-  onVerb: (verb: string, node: MapNode) => void;
+  // drive7 #2a — the SAME inputs the context menu gets, so the detail panel
+  // renders the ONE shared action model (buildNodeActions) — full parity, no
+  // mirror drift.
+  menu?: NodeMenuInfo;
+  promotable?: boolean;
+  onCommand: (command: NodeCommand) => void;
+  onRule?: (proposalId: string, ruling: Ruling) => void;
+  onAction?: (action: ActionSlot, node: MapNode) => void;
   onOpenSource: (source: DocSourceRef) => void;
   // T11 — message-grounded evidence (Claim E): click navigates the
   // conversation panel to the anchored message instead of opening a doc.
@@ -53,8 +80,21 @@ export function NodeDetail({
   onFocus: (node: MapNode) => void;
   onClose: () => void;
 }) {
+  // The one shared model, minus the Focus item (the header already has the
+  // crosshair) — the detail panel splays the rest into roomy sections.
+  const actions = buildNodeActions(node, menu, promotable, { onCommand, onRule, onAction }).filter(
+    (i) => i.group !== "focus",
+  );
+  const inGroup = (g: ActionItem["group"]) => actions.filter((i) => i.group === g);
+  const selectItem = actions.find((i) => i.key === "select");
+  const ratify = inGroup("ratify");
+  const navigate = inGroup("navigate");
+  const verbs = inGroup("verbs");
+  const slots = inGroup("slots");
+  const danger = inGroup("danger");
+
   return (
-    <div className="flex w-72 flex-col gap-3 rounded-lg border border-edge bg-surface/95 p-4 shadow-xl backdrop-blur">
+    <div className="flex max-h-[calc(100vh-8rem)] w-72 flex-col gap-3 overflow-y-auto rounded-lg border border-edge bg-surface/95 p-4 shadow-xl backdrop-blur">
       <div>
         <div className="flex items-start justify-between gap-2">
           <div className="text-[10px] uppercase tracking-widest text-ink-dim">
@@ -137,22 +177,76 @@ export function NodeDetail({
         </div>
       )}
       <TagsSection node={node} existingTags={existingTags} onSetTags={onSetTags} />
+
+      {/* drive7 #2a — the shared action model, splayed into roomy sections. The
+          "Select ▸" flyout becomes an inline trio (the panel has the room the
+          compact menu doesn't). Ratify offers the uniform tier picker (#1). */}
+      {ratify.length > 0 && (
+        <Section label={node.pending ? "Ratify" : "Ruling"}>
+          {ratify.map((item) => (
+            <ActionButton key={item.key} item={item} />
+          ))}
+        </Section>
+      )}
+
+      {selectItem?.submenu && (
+        <Section label="Select">
+          <div className="flex flex-wrap gap-1.5">
+            {selectItem.submenu.map((item) => (
+              <ActionButton key={item.key} item={item} className="flex-1" />
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {navigate.length > 0 && (
+        <Section label="Navigate">
+          {navigate.map((item) => (
+            <ActionButton key={item.key} item={item} />
+          ))}
+        </Section>
+      )}
+
       <div className="flex flex-col gap-1.5">
         <div className="text-[10px] uppercase tracking-widest text-ink-faint">Ask the map</div>
         <div className="flex gap-1.5">
-          {VERBS.map(({ label, icon: Icon }) => (
-            <Button
-              key={label}
-              size="auto"
-              onClick={() => onVerb(label, node)}
-              className="flex-1 flex-col gap-1 px-2 py-2"
-            >
-              <Icon size={14} aria-hidden />
-              {label}
-            </Button>
-          ))}
+          {verbs.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.key}
+                size="auto"
+                onClick={() => item.run()}
+                className="flex-1 flex-col gap-1 px-2 py-2"
+              >
+                <Icon size={14} aria-hidden />
+                {item.label}
+              </Button>
+            );
+          })}
         </div>
       </div>
+
+      {slots.length > 0 && (
+        <Section label="Agent suggests">
+          {slots.map((item) => (
+            <ActionButton key={item.key} item={item} />
+          ))}
+        </Section>
+      )}
+
+      {danger.map((item) => (
+        <ActionButton key={item.key} item={item} className="justify-center" />
+      ))}
+    </div>
+  );
+}
+
+function Section({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="text-[10px] uppercase tracking-widest text-ink-faint">{label}</div>
+      {children}
     </div>
   );
 }

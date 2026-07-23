@@ -136,3 +136,57 @@ test("a burst (fresh superset) preserves every earlier node's position — the d
   expect(merged.find((n) => n.id === "n1")?.position).toEqual({ x: 1, y: 1 });
   expect(merged.find((n) => n.id === "n4")?.position).toEqual({ x: 40, y: 40 });
 });
+
+// position-carry-across-ratify (drive7 #5A) — a ratified node mints a NEW id;
+// without carry it takes a fresh dagre slot ("lands under another node"). The
+// alias (mintedId → proposalId) + posMemory (last-known position, retained
+// across the transient disappearance) carry the proposal's spot onto the node.
+
+test("#5A: a minted node inherits its proposal's remembered position via the alias", () => {
+  const posMemory = new Map([["prop-1", { x: 100, y: 200 }]]);
+  const alias = new Map([["node-9", "prop-1"]]); // node-9 was ratified from prop-1
+  // The synthetic proposal node is already gone from prev (dropped a render
+  // earlier when its status flipped to ratified).
+  const fresh = [flowNode("node-9", 777, 777)];
+  const [merged] = mergeLayout([], fresh, { alias, posMemory });
+  expect(merged?.position).toEqual({ x: 100, y: 200 }); // carried, not the dagre slot
+});
+
+test("#5A: without an alias entry a minted node still takes the fresh slot (no false carry)", () => {
+  const posMemory = new Map([["prop-1", { x: 100, y: 200 }]]);
+  const fresh = [flowNode("node-9", 777, 777)];
+  const [merged] = mergeLayout([], fresh, { alias: new Map(), posMemory });
+  expect(merged?.position).toEqual({ x: 777, y: 777 });
+});
+
+// SEAM 3 REPRO — the authoritative proof (the live timing race isn't reliably
+// reproducible headless; this pure sequence models the two GraphCanvas renders
+// the ratify actually produces: (1) node.ratified flips the proposal → its
+// synthetic drops before (2) the async snapshot refetch backfills the minted
+// node + sets resultNodeId). The lead's "alias-on-the-event" alone can't see
+// the position by render 2 — posMemory is what bridges the gap.
+test("#5A: position-carry survives the two-render ratify gap (flip, then backfill)", () => {
+  const posMemory = new Map<string, { x: number; y: number }>();
+  const record = (nodes: ReturnType<typeof flowNode>[]) => {
+    for (const n of nodes) posMemory.set(n.id, n.position);
+  };
+
+  // Render 1: the pending synthetic (id === proposal id) is on-screen at (100,200).
+  let cur = [flowNode("prop-1", 100, 200)];
+
+  // Render 2: node.ratified flipped prop-1 out of "pending" → the synthetic is
+  // gone, the minted node isn't in the snapshot yet, resultNodeId not set.
+  record(cur); // GraphCanvas records prev positions before every merge
+  cur = mergeLayout(cur, [], { alias: new Map(), posMemory });
+  expect(cur).toEqual([]); // the node is momentarily absent — the two-render gap
+
+  // Render 3: the snapshot refetch lands → minted node-9 appears with a fresh
+  // dagre slot, and resultNodeId now yields the alias. posMemory still holds
+  // prop-1's spot from render 1, so the node lands there — no jump.
+  record(cur);
+  cur = mergeLayout(cur, [flowNode("node-9", 777, 777)], {
+    alias: new Map([["node-9", "prop-1"]]),
+    posMemory,
+  });
+  expect(cur[0]?.position).toEqual({ x: 100, y: 200 });
+});
