@@ -6103,6 +6103,10 @@
     border-color: var(--color-ring);
   }
 
+  .focus\:border-thread-tier:focus {
+    border-color: var(--color-thread-tier);
+  }
+
   .focus\:border-violet-500:focus {
     border-color: var(--color-violet-500);
   }

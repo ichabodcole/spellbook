@@ -29937,7 +29937,7 @@ function buildNodeActions(node, menu, promotable, dispatch2) {
     submenu: [
       {
         key: "select-connected",
-        label: "Select connected",
+        label: "Connected",
         icon: Waypoints,
         tone: "default",
         group: "select",
@@ -29945,7 +29945,7 @@ function buildNodeActions(node, menu, promotable, dispatch2) {
       },
       {
         key: "select-children",
-        label: "Select children",
+        label: "Children",
         icon: ChevronsDown,
         tone: "default",
         group: "select",
@@ -29953,7 +29953,7 @@ function buildNodeActions(node, menu, promotable, dispatch2) {
       },
       {
         key: "select-parents",
-        label: "Select parents",
+        label: "Parents",
         icon: ChevronsUp,
         tone: "default",
         group: "select",
@@ -49753,6 +49753,10 @@ function parseDeliverable(deliverable) {
   }
   return { kind: "text", raw };
 }
+function normalizeJobTitle(raw) {
+  const title = raw.trim();
+  return title.length > 0 ? title : null;
+}
 function jobLiveness(job, activityByAgent) {
   if (job.status === "done" || job.status === "failed" || job.status === "canceled") {
     return "inactive";
@@ -49944,11 +49948,90 @@ function JobRow({
     ]
   }, undefined, true, undefined, this);
 }
+function NewJobForm({ onCreate }) {
+  const [open, setOpen] = import_react14.useState(false);
+  const [title, setTitle] = import_react14.useState("");
+  const inputRef = import_react14.useRef(null);
+  const normalized = normalizeJobTitle(title);
+  import_react14.useEffect(() => {
+    if (open)
+      inputRef.current?.focus();
+  }, [open]);
+  const close = () => {
+    setTitle("");
+    setOpen(false);
+  };
+  if (!open) {
+    return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+      variant: "outline",
+      size: "auto",
+      className: "flex w-full items-center justify-center gap-1 px-2 py-1 text-xs text-thread-tier",
+      onClick: () => setOpen(true),
+      children: [
+        /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Plus, {
+          size: 12,
+          "aria-hidden": true
+        }, undefined, false, undefined, this),
+        "New job"
+      ]
+    }, undefined, true, undefined, this);
+  }
+  const submit = () => {
+    if (!normalized)
+      return;
+    onCreate(normalized);
+    close();
+  };
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("form", {
+    className: "space-y-1.5",
+    onSubmit: (e) => {
+      e.preventDefault();
+      submit();
+    },
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("input", {
+        ref: inputRef,
+        type: "text",
+        value: title,
+        onChange: (e) => setTitle(e.target.value),
+        onKeyDown: (e) => {
+          if (e.key === "Escape")
+            close();
+        },
+        placeholder: "what should the agent do?",
+        "aria-label": "New job title",
+        className: "w-full rounded border border-edge bg-bg px-2 py-1 text-xs text-ink placeholder:text-ink-faint focus:border-thread-tier focus:outline-none"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+        className: "flex items-center justify-end gap-1.5",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+            type: "button",
+            variant: "ghost",
+            size: "auto",
+            className: "px-2 py-0.5 text-[10px] text-ink-faint",
+            onClick: close,
+            children: "Cancel"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
+            type: "submit",
+            variant: "outline",
+            size: "auto",
+            disabled: !normalized,
+            className: "px-2 py-0.5 text-[10px] text-thread-tier",
+            children: "Add job"
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
 function JobsSidebar({
   jobs,
   activityByAgent,
   onOpenDeliverable,
   onCancel,
+  onCreate,
   onClose
 }) {
   const groups = groupJobsByStatus(jobs);
@@ -49982,35 +50065,51 @@ function JobsSidebar({
         ]
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "min-h-0 flex-1 overflow-y-auto p-2",
-        children: jobs.length === 0 ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-          className: "p-2 text-xs text-ink-faint",
-          children: "no jobs yet — agent work units appear here with status, subtasks and a live pulse."
-        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-          className: "space-y-3",
-          children: groups.map((group) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("section", {
+        className: "min-h-0 flex-1 space-y-3 overflow-y-auto p-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(NewJobForm, {
+            onCreate
+          }, undefined, false, undefined, this),
+          jobs.length === 0 ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+            className: "space-y-2 p-2 text-xs text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("h3", {
-                className: `mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-widest ${STATUS_META[group.status]?.tint ?? "text-ink-faint"}`,
-                children: [
-                  STATUS_META[group.status]?.label ?? group.status,
-                  " · ",
-                  group.jobs.length
-                ]
-              }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-                className: "space-y-1.5",
-                children: group.jobs.map((job) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(JobRow, {
-                  job,
-                  activityByAgent,
-                  onOpenDeliverable,
-                  onCancel
-                }, job.id, false, undefined, this))
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
+                className: "text-ink-dim",
+                children: "No jobs yet."
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
+                children: "A job is a unit of agent work — it carries a status, a checklist of subtasks, a deliverable it produces, and an ownership lease so you can see who's on it and whether they're live."
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
+                children: "Start one with “＋ New job” above, or let an agent open one from the CLI."
               }, undefined, false, undefined, this)
             ]
-          }, group.status, true, undefined, this))
-        }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this)
+          }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+            className: "space-y-3",
+            children: groups.map((group) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("section", {
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("h3", {
+                  className: `mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-widest ${STATUS_META[group.status]?.tint ?? "text-ink-faint"}`,
+                  children: [
+                    STATUS_META[group.status]?.label ?? group.status,
+                    " · ",
+                    group.jobs.length
+                  ]
+                }, undefined, true, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
+                  className: "space-y-1.5",
+                  children: group.jobs.map((job) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(JobRow, {
+                    job,
+                    activityByAgent,
+                    onOpenDeliverable,
+                    onCancel
+                  }, job.id, false, undefined, this))
+                }, undefined, false, undefined, this)
+              ]
+            }, group.status, true, undefined, this))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
@@ -53620,6 +53719,14 @@ function App() {
     if (!r.ok)
       throw new Error(`job ${r.status}`);
   }).catch((e) => setNotice(`couldn't cancel that job (${e instanceof Error ? e.message : String(e)}).`));
+  const createJob = (title) => fetch(`/jobs${projectQs}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title })
+  }).then((r) => {
+    if (!r.ok)
+      throw new Error(`job ${r.status}`);
+  }).catch((e) => setNotice(`couldn't create that job (${e instanceof Error ? e.message : String(e)}).`));
   const openDeliverable = (deliverable) => {
     if (deliverable.kind === "doc")
       openDocById(deliverable.id);
@@ -53851,10 +53958,10 @@ function App() {
               processing.length
             ]
           }, undefined, true, undefined, this),
-          state.jobs.length > 0 && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
-            className: "flex items-center gap-1 px-2 py-0.5 text-xs text-thread-tier",
+            className: `flex items-center gap-1 px-2 py-0.5 text-xs ${state.jobs.length > 0 ? "text-thread-tier" : "text-ink-faint"}`,
             onClick: () => setJobsOpen((o) => !o),
             children: [
               /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ListChecks, {
@@ -54205,6 +54312,7 @@ function App() {
             activityByAgent,
             onOpenDeliverable: openDeliverable,
             onCancel: cancelJob,
+            onCreate: createJob,
             onClose: () => setJobsOpen(false)
           }, undefined, false, undefined, this),
           /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ConversationPanel, {
