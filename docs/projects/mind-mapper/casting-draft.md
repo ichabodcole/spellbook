@@ -36,12 +36,35 @@ All verbs: `bun plugins/spellbook/skills/mind-mapper/scripts/cli.ts <verb>`.
    AFTER the verb (`cli.ts --project X zone create` is a usage error). Pull full
    `state` or `neighbors <id>` only for the region you're working (context
    budgeting — never hold the whole graph).
-4. Wrap `tail` with Monitor (it is Monitor-shaped and resumable). **It is NOT
-   self-echo suppressed in V1** — you will see your own actions come back as
-   events; skip `message.posted` events whose `role` is `agent` (that's your own
-   send) and expect your proposes/ratifies to echo. Events you react to:
-   `message.posted` (the human spoke), `doc.added` (new source material),
-   lens/selection changes (attention signal, not a command).
+4. **Wrap `tail --inbound` with Monitor — step 0 of co-presence, do it before
+   anything else.** `--inbound` (Contract 10, R10) is the single correct
+   human-intent stream: a server-side filter that delivers exactly the events a
+   HUMAN originates — `message.posted` where `role=user` (the human spoke) and
+   `proposal.added` where `author=user` (the human dropped a node on the canvas,
+   or connected two nodes — both land in "ingesting" as `proposal.added`). One
+   monitor, and you **cannot under-subscribe** — correctness is owned by the
+   surface, not your grep.
+
+   **Why this is the default (the F4 scar — drive #8):** the human talks to you
+   TWO ways — by **chat** AND by **acting on the board** (right-click → a new
+   thread idea lands in the ingest tray as `proposal.added`). An agent that
+   tails only `message.posted` receives the human's words but goes **DEAF to the
+   board** — which inverts the entire co-presence premise (the board is the
+   ambient intent surface you PULL from). Do NOT hand-roll a kind filter and
+   hope you enumerated it right (that's exactly how the bug happened); subscribe
+   to `--inbound`. It is already self-echo suppressed — your own agent events
+   (`role`/`author` = `agent`) never come back, so no manual skip.
+
+   **Read the grounding line.** On first connect `--inbound` emits one
+   `{kind:"grounding", inbound:true, watching:[…], notWatching:[…], note:…}`
+   frame naming what it watches and — crucially — what it does NOT. In V1 the
+   human's **board-curation acts on shared routes** (ratify / promote / tag /
+   zone-move / delete / anchor / doc) are **not attributable** (the browser and
+   CLI POST identical routes; only `role`/`author` in the body discriminate), so
+   they do NOT push to you. Those are your blind spot until actor-tagging lands
+   — so **refetch `state` periodically to reconcile the board** (e.g. after you
+   propose, to see whether the human ratified). The grounding line tells you
+   your blind spots explicitly; don't ignore it.
 
    **Tail is self-healing** — it reconnects on its own after silence or a
    dropped connection; don't restart it. It survives a daemon restart even when

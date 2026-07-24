@@ -312,3 +312,78 @@ _The wire circe consumes for the JobsSidebar. Written BEFORE her consuming slice
   - **CLI body-mirror discipline (the R7 scar):** every `job` subcommand threads its fields into the POST body explicitly (create/update forward each provided scalar; subtask forwards `op` + `label|subtaskId`; claim forwards `owner`); `cli.test.ts` asserts the round-trip body shape per verb so a future field-add can't silently drop like `propose-node --stdin tags` did.
 
 **Proof (R9):** jobs.test.ts (8 tests — createJob+snapshot, buildJob purity+validation, updateJob partial/validate/404, **claim-atomicity** [running+owner / idempotent-self-reclaim / foreign-owner-409 / unknown-null], release, subtask add/check/uncheck+unknown-throw, thin-delete, many-jobs-one-deliverable); state.test.ts (empty-shape gains `jobs:[]`); server.test.ts (/jobs* full wire — create-rides-/state, list, update, claim-409, release, subtasks, delete, 404/400); cli.test.ts (`job` verb round-trips every subcommand's body shape + guards). Full mind-mapper suite **265 tests** (was 254 pre-R9), all green; mind-mapper tsc-clean. Live end-to-end drive (isolated store, port 60733): CLI→daemon→event→/state confirmed — event stream `job.added → job.claimed → job.updated×3 → job.deleted`, claim-conflict 409+exit2, `/state.jobs[0]` reflects the full lifecycle.
+
+
+---
+
+## Contract 10 — The `--inbound` human-intent stream (SEAM 1, R10)
+
+**Owner:** daedalus (server.ts filter + events.ts predicate) · **Pointed at from:** circe, prospero, cassandra · _(ratified R10, built 2026-07-24)_
+
+**The contract, stated once.** `tail --inbound` is a server-side-filtered SSE
+stream of events a HUMAN originated, so a joining agent runs ONE monitor and
+cannot under-subscribe (fixes drive-8 F4/F5: an agent tailing only chat went
+DEAF to the board). Correctness is owned by the surface (the daemon), not the
+agent's grep.
+
+- **Ruling: Option A (payload-field attribution).** The daemon serves ONE HTTP
+  surface for TWO clients — the browser AND the CLI POST the SAME routes — so
+  there is NO route-origin signal (Option B "origin-by-route" is FALSIFIED: the
+  premise that surface and CLI use distinct routes is false). The only clean
+  human/agent discriminator is the request BODY: `/send` `role` and
+  `/proposals`(+`/proposals/batch`) `author` (browser writes "user"; CLI
+  defaults "agent"). Every other board-act route (`/proposals/:id/ruling`,
+  `/promote`, `/zone`, DELETE, `/tags`, `/actions`, `/nodes/:id/anchor`,
+  `/doc/*`) carries NO actor and is emitted identically for both clients.
+- **Admitted event set (`isInboundEvent`, events.ts):** `message.posted` where
+  `payload.role === "user"` OR `proposal.added` where `payload.author === "user"`.
+  Nothing else. (Covers human chat + human-dropped nodes + human two-node
+  connect — the batch fans out `proposal.added[author=user]` per node.)
+- **Transport: a server query param `GET /events?inbound=1`** (SSE / agent tail
+  ONLY — the browser WS stream is unchanged; presence still agents-only). CLI:
+  `tail --inbound`.
+- **Grounding line (F5 belt-and-suspenders).** An inbound SSE opens with a first
+  `data:` frame `{ kind:"grounding", inbound:true, watching:string[],
+  notWatching:EventKind[], note:string }` — `watching` = the two admitted
+  channels as `kind[field=value]` strings; `notWatching` = the WHOLE bus
+  vocabulary minus watched (TOTAL by construction — a new EventKind is
+  grounding-visible by default). It carries NO seq/epoch (informational, never a
+  bus event, like CLI-synthesized `epoch.changed`) so it never advances the
+  tail's cursor. The server re-emits it every inbound connect; the CLI forwards
+  only the FIRST (a `grounded` flag outside the reconnect loop → exactly one per
+  process).
+- **No `origin` field was added.** `EventKind` is now derived from a runtime
+  `ALL_EVENT_KINDS as const` array (`typeof [number]`) so the union and the
+  inbound triage stay total.
+- **NAMED deferral (not silent — it's in `notWatching`):** human board-acts on
+  the shared actor-less routes (ratify / promote / zone-move / delete / tags /
+  actions / anchor / doc) are NOT attributable in V1. Attributing them needs an
+  actor field threaded onto those routes (both the surface AND the CLI must
+  stamp it) — a follow-on, not quick, and it touches the surface (R10 forbade a
+  surface change). Until then, `--inbound` is chat + human-dropped-nodes only;
+  the agent refetches `/state` to reconcile the board.
+- **Known minor edge (documented, accepted):** the IC-c zone-move re-emit runs a
+  proposal's FULL wire object through `readProposalById`, so moving a
+  user-authored proposal into a zone re-emits `proposal.added[author=user]` —
+  which `--inbound` admits, even though the current ACTOR of the move was the
+  agent. Redundant-but-not-wrong (the proposal genuinely is user-authored); the
+  agent refetches state anyway.
+
+**Proof:** events.test.ts (isInboundEvent admits human-only; triage TOTAL over
+ALL_EVENT_KINDS; grounding names watched+notWatching); sse-keepalive.test.ts
+(inbound SSE grounds-then-filters; non-inbound unchanged, no grounding);
+tail.test.ts (`tail --inbound` forwards inbound=1 + grounding exactly once across
+a reconnect); server.test.ts (`GET /events?inbound=1` end-to-end: grounds, human
+send passes, agent send + agent proposal excluded). mind-mapper suite 272 tests,
+all green; mind-mapper tsc-clean.
+
+### Surface convention (SEAM 2, R10) — always-show vs hide-when-empty toggle
+
+**Owner:** circe · _(ratified R10)_ — A surface **panel toggle** follows one of two
+lifecycles: **hide-when-empty** for transient, agent-fed trays (review, ingest)
+where an empty toggle is noise; **always-show (dimmed at zero)** for any
+first-class panel the human is expected to author into or must be able to
+discover (**jobs**). A missing toggle on a fresh session reads as a missing
+feature — the F1 root cause (the jobs toggle copied the tray's hide-when-empty
+gate and vanished on an empty session). Not a wire change; a surface-convention
+truth.
