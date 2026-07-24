@@ -159,6 +159,63 @@ test("GET /events (SSE) responds with the event-stream content type", async () =
   await res.body?.cancel();
 });
 
+// Round 10 · SEAM 1 — GET /events?inbound=1 end-to-end: the daemon filters to
+// human-originated events (Option A) and opens with a grounding frame. Scoped
+// to its OWN project (the shared-daemon order-coupling discipline).
+test("GET /events?inbound=1 grounds, then streams human events only", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "inbound-test", title: "Inbound Test" }),
+  });
+  const p = "inbound-test";
+  const { cursor } = (await (await fetch(`${url}/state?project=${p}`)).json()) as {
+    cursor: number;
+  };
+  const res = await fetch(`${url}/events?inbound=1&project=${p}&since=${cursor}`);
+  const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+  const decoder = new TextDecoder();
+
+  // Drive a mix once the stream is open: a human chat, an agent chat, and an
+  // agent-authored proposal (author defaults to agent when omitted).
+  await fetch(`${url}/send?project=${p}`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", text: "hello-inbound-human" }),
+  });
+  await fetch(`${url}/send?project=${p}`, {
+    method: "POST",
+    body: JSON.stringify({ role: "agent", text: "agent-reply-excluded" }),
+  });
+  await fetch(`${url}/proposals?project=${p}`, {
+    method: "POST",
+    body: JSON.stringify({ kind: "node", draft: { title: "AgentDropExcluded" } }),
+  });
+
+  let out = "";
+  const deadline = Date.now() + 1500;
+  while (Date.now() < deadline) {
+    const chunk = await Promise.race([
+      reader.read(),
+      new Promise<null>((r) => setTimeout(() => r(null), deadline - Date.now())),
+    ]);
+    if (chunk === null || chunk.done) break;
+    out += decoder.decode(chunk.value, { stream: true });
+    if (out.includes("hello-inbound-human")) break;
+  }
+  await reader.cancel();
+
+  const frames = out
+    .split("\n\n")
+    .filter((f) => f.startsWith("data: "))
+    .map((f) => JSON.parse(f.slice("data: ".length)) as Record<string, unknown>);
+
+  expect(frames[0]).toMatchObject({ kind: "grounding", inbound: true });
+  const texts = frames.map((f) => (f.payload as { text?: string } | undefined)?.text);
+  expect(texts).toContain("hello-inbound-human");
+  expect(texts).not.toContain("agent-reply-excluded");
+  // No agent-authored proposal.added slipped through.
+  expect(frames.some((f) => f.kind === "proposal.added")).toBe(false);
+});
+
 test("POST /ingest (JSON) stores the doc, GET /state reflects it, bumps cursor", async () => {
   const before = (await (await fetch(`${url}/state`)).json()) as { cursor: number };
   const res = await fetch(`${url}/ingest`, {

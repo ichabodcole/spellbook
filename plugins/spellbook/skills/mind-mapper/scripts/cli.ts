@@ -15,6 +15,8 @@
 //                 fresh store with no project → the needs-project 409, exit 2
 //   tail          Monitor-shaped: GET /events?since=<cursor> SSE → one JSON
 //                 line per event on stdout
+//                 --inbound filters server-side to human-originated events
+//                 (chat + dropped nodes) + opens with a kind:"grounding" line
 //   projects      list saved projects; --create <title> makes a new one
 //   ingest        --title T (--file P | --stdin) → POST /ingest
 //   propose-node  --stdin JSON {draft, evidence, suggestedTier?} → POST /proposals
@@ -270,10 +272,21 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "tail") {
     const parsed = parseArgs({
       args: rest,
-      options: { since: { type: "string", default: "0" }, project: { type: "string" } },
+      options: {
+        since: { type: "string", default: "0" },
+        project: { type: "string" },
+        // Round 10 · SEAM 1: server-side filter to human-originated events
+        // (message.posted[role=user] + proposal.added[author=user]) so a
+        // joining agent runs ONE monitor and cannot under-subscribe. The stream
+        // opens with a kind:"grounding" line naming watched/not-watched
+        // channels. Named --inbound (not --human) to avoid grapevine's
+        // presence-marker flag collision.
+        inbound: { type: "boolean", default: false },
+      },
       strict: true,
       allowPositionals: false,
     });
+    const inbound = parsed.values.inbound === true;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
     // Watchdog ≈ 3 missed server keepalives (15s tick, Claim F); env
     // overrides are for the scripted-fake-server tests only.
@@ -282,6 +295,10 @@ async function dispatch(argv: string[]): Promise<number> {
     const since = Number.parseInt(parsed.values.since as string, 10);
     let cursor = Number.isFinite(since) ? since : 0;
     let epoch: string | null = null;
+    // The server (re-)emits a grounding frame at the top of EVERY inbound SSE
+    // connect; forward only the FIRST so the agent's Monitor sees exactly one
+    // grounding line, not one per reconnect (F5: first-connect line).
+    let grounded = false;
 
     // Standing, self-healing loop (Monitor-shaped): each connection attempt
     // gets its own AbortController plus a rolling idle watchdog reset on
@@ -300,6 +317,7 @@ async function dispatch(argv: string[]): Promise<number> {
       }
       const params = new URLSearchParams({ since: String(cursor) });
       if (parsed.values.project) params.set("project", parsed.values.project);
+      if (inbound) params.set("inbound", "1");
       const controller = new AbortController();
       let watchdog: ReturnType<typeof setTimeout> | null = null;
       const resetWatchdog = () => {
@@ -335,7 +353,18 @@ async function dispatch(argv: string[]): Promise<number> {
             if (!dataLine) continue;
             const line = dataLine.slice("data: ".length);
             try {
-              const event = JSON.parse(line) as { seq?: unknown; epoch?: unknown };
+              const event = JSON.parse(line) as { seq?: unknown; epoch?: unknown; kind?: unknown };
+              // Grounding is a synthetic, seq-less first-connect frame — forward
+              // the first, suppress re-groundings on reconnect (exactly one per
+              // process). It never carries seq/epoch, so cursor/epoch are
+              // untouched either way.
+              if (event.kind === "grounding") {
+                if (!grounded) {
+                  grounded = true;
+                  process.stdout.write(`${line}\n`);
+                }
+                continue;
+              }
               if (typeof event.epoch === "string") {
                 if (epoch !== null && event.epoch !== epoch) {
                   cursor = 0;

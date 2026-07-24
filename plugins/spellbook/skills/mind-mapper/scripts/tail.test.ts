@@ -13,7 +13,12 @@ import { join } from "node:path";
 const SCRIPT_DIR = import.meta.dir;
 const CLI_SCRIPT = join(SCRIPT_DIR, "cli.ts");
 
-type Conn = { since: number; push: (chunk: string) => void; end: () => void };
+type Conn = {
+  since: number;
+  inbound: string | null;
+  push: (chunk: string) => void;
+  end: () => void;
+};
 
 let cleanup: Array<() => void> = [];
 
@@ -39,6 +44,7 @@ function fakeSseServer(onConnection: (conn: Conn, index: number) => void) {
           const encoder = new TextEncoder();
           const conn: Conn = {
             since: Number.isFinite(since) ? since : 0,
+            inbound: url.searchParams.get("inbound"),
             push: (chunk) => {
               try {
                 controller.enqueue(encoder.encode(chunk));
@@ -93,6 +99,10 @@ function spawnTail(home: string, ...args: string[]) {
 
 function event(seq: number, epoch: string): string {
   return `data: ${JSON.stringify({ seq, epoch, kind: "doc.added", payload: { id: `d${seq}` } })}\n\n`;
+}
+
+function grounding(): string {
+  return `data: ${JSON.stringify({ kind: "grounding", inbound: true, watching: [], notWatching: [] })}\n\n`;
 }
 
 async function readLines(proc: ReturnType<typeof spawnTail>, n: number, ms: number) {
@@ -151,6 +161,38 @@ test("keepalive comments feed the watchdog: a quiet-but-kept-alive stream is NOT
 
   await new Promise((r) => setTimeout(r, 800));
   expect(connections).toBe(1);
+});
+
+test("tail --inbound requests inbound=1 and forwards the grounding line exactly once", async () => {
+  const inbounds: Array<string | null> = [];
+  const server = fakeSseServer((conn, index) => {
+    inbounds.push(conn.inbound);
+    if (index === 0) {
+      // First connect: grounding + one event, then close to force a reconnect.
+      conn.push(grounding());
+      conn.push(event(1, "epoch-a"));
+      conn.end();
+    } else {
+      // Reconnect: the server re-grounds — the CLI must SUPPRESS this second
+      // grounding (exactly one per process).
+      conn.push(grounding());
+      conn.push(event(2, "epoch-a"));
+      const timer = setInterval(() => conn.push(": keepalive\n\n"), 80);
+      cleanup.push(() => clearInterval(timer));
+    }
+  });
+  const home = mintHome(server.port);
+  const proc = spawnTail(home, "--inbound");
+
+  const lines = await readLines(proc, 3, 5000);
+  const parsed = lines.map((l) => JSON.parse(l) as Record<string, unknown>);
+  // The CLI forwarded inbound=1 on every attempt.
+  expect(inbounds[0]).toBe("1");
+  // Exactly one grounding line reached stdout despite two server groundings.
+  expect(parsed.filter((p) => p.kind === "grounding").length).toBe(1);
+  // Both real events still passed through (grounding has no seq → cursor kept).
+  expect(parsed.some((p) => p.seq === 1)).toBe(true);
+  expect(parsed.some((p) => p.seq === 2)).toBe(true);
 });
 
 test("an epoch change on reconnect resets the cursor and synthesizes epoch.changed on stdout", async () => {

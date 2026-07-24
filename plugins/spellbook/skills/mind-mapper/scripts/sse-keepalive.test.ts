@@ -48,6 +48,54 @@ test("events interleave with keepalives, and keepalives keep flowing after", asy
   expect(out.split(": keepalive\n\n").length - 1).toBeGreaterThanOrEqual(2);
 });
 
+// ── Round 10 · SEAM 1 — the inbound=1 server-side filter + grounding frame ──
+
+function dataFrames(out: string): Array<Record<string, unknown>> {
+  return out
+    .split("\n\n")
+    .filter((f) => f.startsWith("data: "))
+    .map((f) => JSON.parse(f.slice("data: ".length)) as Record<string, unknown>);
+}
+
+test("an inbound SSE opens with a grounding frame, then only human-origin events", async () => {
+  const bus = createEventBus();
+  const res = sseResponse(bus, 0, {}, undefined, true);
+  setTimeout(() => {
+    bus.emit("message.posted", { id: "m1", role: "user", text: "hi" });
+    bus.emit("message.posted", { id: "m2", role: "agent", text: "reply" });
+    bus.emit("proposal.added", { id: "p1", author: "user" });
+    bus.emit("proposal.added", { id: "p2", author: "agent" });
+    bus.emit("node.ratified", { id: "n1", proposalId: "p1" });
+  }, 30);
+  const frames = dataFrames(await readFor(res, 200));
+
+  // The grounding frame is FIRST (before any event).
+  expect(frames[0]).toMatchObject({ kind: "grounding", inbound: true });
+
+  const events = frames.slice(1);
+  const ids = events.map((e) => (e.payload as { id?: string }).id);
+  // Human chat + human-dropped proposal pass; agent chat, agent proposal, and
+  // the actor-less node.ratified are all excluded.
+  expect(ids).toContain("m1");
+  expect(ids).toContain("p1");
+  expect(ids).not.toContain("m2");
+  expect(ids).not.toContain("p2");
+  expect(events.some((e) => e.kind === "node.ratified")).toBe(false);
+});
+
+test("a NON-inbound SSE emits every event and no grounding frame (unchanged)", async () => {
+  const bus = createEventBus();
+  const res = sseResponse(bus, 0);
+  setTimeout(() => {
+    bus.emit("message.posted", { id: "m2", role: "agent", text: "reply" });
+    bus.emit("node.ratified", { id: "n1", proposalId: "p1" });
+  }, 30);
+  const frames = dataFrames(await readFor(res, 200));
+  expect(frames.some((f) => f.kind === "grounding")).toBe(false);
+  expect(frames.some((f) => (f.payload as { id?: string }).id === "m2")).toBe(true);
+  expect(frames.some((f) => f.kind === "node.ratified")).toBe(true);
+});
+
 test("cancel funnels through teardown exactly once: unsubscribe + onClose + timer stop", async () => {
   let unsubscribed = 0;
   let opened = 0;

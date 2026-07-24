@@ -28,7 +28,7 @@ import { anchorNode } from "./anchor.ts";
 import { openStore } from "./db.ts";
 import { deleteNode, deleteProposal, NodeCitedError } from "./del.ts";
 import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
-import { createEventBus, type EventBus } from "./events.ts";
+import { createEventBus, type EventBus, inboundGrounding, isInboundEvent } from "./events.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
 import {
   addSubtask,
@@ -390,6 +390,11 @@ function sseResponse(
   since: number,
   hooks: { onOpen?: () => void; onClose?: () => void } = {},
   signal?: AbortSignal,
+  // Round 10 · SEAM 1: when true, this is a `tail --inbound` stream — the
+  // server filters to events a HUMAN originated (isInboundEvent, Option A) and
+  // opens with a grounding frame naming watched/not-watched channels. The
+  // browser WS never sets this (the surface uses the full WS stream unchanged).
+  inbound = false,
 ): Response {
   let unsubscribe: (() => void) | null = null;
   let keepalive: ReturnType<typeof setInterval> | null = null;
@@ -420,7 +425,14 @@ function sseResponse(
       // first byte of body arrives, so an SSE stream that's genuinely quiet
       // between events would leave the caller's fetch() unresolved.
       safeEnqueue(": connected\n\n");
+      // F5 belt-and-suspenders: an inbound stream opens by NAMING the channels
+      // it watches + does not watch, so a missing channel is visible. Emitted
+      // server-side (not CLI-synthesized) so the list is derived from the same
+      // predicate that filters — it cannot drift. No seq/epoch: it never
+      // advances the tail's cursor (the epoch.changed separation).
+      if (inbound) safeEnqueue(`data: ${JSON.stringify(inboundGrounding())}\n\n`);
       unsubscribe = bus.subscribe(since, (event) => {
+        if (inbound && !isInboundEvent(event)) return;
         safeEnqueue(`data: ${JSON.stringify(event)}\n\n`);
       });
       keepalive = setInterval(() => safeEnqueue(": keepalive\n\n"), keepaliveMs());
@@ -529,6 +541,10 @@ async function main(argv: string[]): Promise<number> {
               return new Response("upgrade failed", { status: 500 });
             }
             const since = Number.parseInt(url.searchParams.get("since") ?? "0", 10);
+            // Round 10 · SEAM 1: ?inbound=1 filters the SSE to human-originated
+            // events server-side (Option A) — correctness owned by the surface,
+            // not the agent's grep.
+            const inbound = url.searchParams.get("inbound") === "1";
             // SSE = an agent tail (the browser rides the WS above; presence is
             // agents-only, ruled). The subscription site is the ONE place that
             // knows this, so the presence counter adjusts here.
@@ -540,6 +556,7 @@ async function main(argv: string[]): Promise<number> {
                 onClose: () => adjustAgents(entry, -1),
               },
               req.signal,
+              inbound,
             );
           }
 
