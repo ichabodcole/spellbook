@@ -4,6 +4,7 @@ import {
   groupJobsByStatus,
   JOB_STATUS_ORDER,
   jobLiveness,
+  normalizeJobTitle,
   parseDeliverable,
   subtaskProgress,
 } from "./jobs";
@@ -143,4 +144,17 @@ test("jobLiveness — terminal jobs are inactive regardless of activity", () => 
   expect(jobLiveness(job({ status: "done", claimedBy: "circe" }), active)).toBe("inactive");
   expect(jobLiveness(job({ status: "failed", claimedBy: "circe" }), active)).toBe("inactive");
   expect(jobLiveness(job({ status: "canceled", claimedBy: "circe" }), active)).toBe("inactive");
+});
+
+// R10 F1 — the create-form title guard.
+
+test("normalizeJobTitle trims and returns the title when non-empty", () => {
+  expect(normalizeJobTitle("  draft the villain arc  ")).toBe("draft the villain arc");
+  expect(normalizeJobTitle("x")).toBe("x");
+});
+
+test("normalizeJobTitle returns null for a blank or whitespace-only title (never POSTs an empty)", () => {
+  expect(normalizeJobTitle("")).toBeNull();
+  expect(normalizeJobTitle("   ")).toBeNull();
+  expect(normalizeJobTitle("\t\n")).toBeNull();
 });

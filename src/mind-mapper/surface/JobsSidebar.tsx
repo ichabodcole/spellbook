@@ -23,15 +23,17 @@ import {
   ChevronRight,
   FileText,
   ListChecks,
+  Plus,
   Square,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   type DeliverableRef,
   groupJobsByStatus,
   type JobLiveness,
   jobLiveness,
+  normalizeJobTitle,
   parseDeliverable,
   subtaskProgress,
 } from "./state/jobs";
@@ -186,11 +188,100 @@ function JobRow({
   );
 }
 
+// R10 F1 — the human's create-job affordance. Collapsed, it's a full-width
+// "＋ New job" button; expanded, a title-only form (V1 — status defaults
+// `queued` server-side, everything else editable later via the CLI/agent). The
+// submit is gated on normalizeJobTitle (no blank/whitespace title reaches the
+// wire), and it sends the TRIMMED title. No optimistic insert: App POSTs and
+// the job.added event round-trips through the reducer to populate the row.
+function NewJobForm({ onCreate }: { onCreate: (title: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const normalized = normalizeJobTitle(title);
+
+  // Focus the title input when the form opens (a ref+effect, NOT autoFocus:
+  // biome bans the attribute and it can't distinguish a click-opened form from
+  // an input that steals focus at app boot — the R4 permanent-search lesson).
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  const close = () => {
+    setTitle("");
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <Button
+        variant="outline"
+        size="auto"
+        className="flex w-full items-center justify-center gap-1 px-2 py-1 text-xs text-thread-tier"
+        onClick={() => setOpen(true)}
+      >
+        <Plus size={12} aria-hidden />
+        New job
+      </Button>
+    );
+  }
+
+  const submit = () => {
+    if (!normalized) return;
+    onCreate(normalized);
+    close();
+  };
+
+  return (
+    <form
+      className="space-y-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
+      <input
+        ref={inputRef}
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") close();
+        }}
+        placeholder="what should the agent do?"
+        aria-label="New job title"
+        className="w-full rounded border border-edge bg-bg px-2 py-1 text-xs text-ink placeholder:text-ink-faint focus:border-thread-tier focus:outline-none"
+      />
+      <div className="flex items-center justify-end gap-1.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="auto"
+          className="px-2 py-0.5 text-[10px] text-ink-faint"
+          onClick={close}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          variant="outline"
+          size="auto"
+          disabled={!normalized}
+          className="px-2 py-0.5 text-[10px] text-thread-tier"
+        >
+          Add job
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export function JobsSidebar({
   jobs,
   activityByAgent,
   onOpenDeliverable,
   onCancel,
+  onCreate,
   onClose,
 }: {
   jobs: Job[];
@@ -200,6 +291,7 @@ export function JobsSidebar({
   activityByAgent: Record<string, AgentActivityState>;
   onOpenDeliverable: (ref: DeliverableRef) => void;
   onCancel: (jobId: string) => void;
+  onCreate: (title: string) => void;
   onClose: () => void;
 }) {
   const groups = groupJobsByStatus(jobs);
@@ -215,11 +307,21 @@ export function JobsSidebar({
           <X size={12} />
         </Button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-2">
+        {/* R10 F1 — the create affordance is persistent (whether or not jobs
+            exist) so the human can always add one; the empty state below
+            explains what the queue IS. */}
+        <NewJobForm onCreate={onCreate} />
         {jobs.length === 0 ? (
-          <p className="p-2 text-xs text-ink-faint">
-            no jobs yet — agent work units appear here with status, subtasks and a live pulse.
-          </p>
+          <div className="space-y-2 p-2 text-xs text-ink-faint">
+            <p className="text-ink-dim">No jobs yet.</p>
+            <p>
+              A job is a unit of agent work — it carries a status, a checklist of subtasks, a
+              deliverable it produces, and an ownership lease so you can see who's on it and whether
+              they're live.
+            </p>
+            <p>Start one with “＋ New job” above, or let an agent open one from the CLI.</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {groups.map((group) => (

@@ -102,6 +102,17 @@ export function parseDeliverable(deliverable: string | null | undefined): Delive
   return { kind: "text", raw };
 }
 
+// R10 F1 — the human create-job affordance's title guard. The V1 create form
+// is title-only (status defaults `queued` server-side); the surface never POSTs
+// an empty/whitespace title (the daemon requires one — POST /jobs 400s on a
+// blank). Returns the trimmed title, or null when there's nothing to submit —
+// the form gates its submit button on a non-null result and sends the trimmed
+// value (never the raw input).
+export function normalizeJobTitle(raw: string): string | null {
+  const title = raw.trim();
+  return title.length > 0 ? title : null;
+}
+
 // THE LIVENESS JOIN (D2 / SEAM D). Pure over (job, activityByAgent).
 //   - inactive : terminal job (done/failed/canceled) — no liveness question.
 //   - unclaimed: no owner (claimedBy null) — nothing to be live.

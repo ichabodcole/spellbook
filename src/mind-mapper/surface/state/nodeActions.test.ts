@@ -83,13 +83,11 @@ test("#2b: the directional-select trio is one 'Select' flyout, not three top-lev
   const { dispatch } = spyDispatch();
   const model = buildNodeActions(node(), undefined, false, dispatch);
   const select = model.find((i) => i.key === "select");
-  expect(select?.submenu?.map((s) => s.label)).toEqual([
-    "Select connected",
-    "Select children",
-    "Select parents",
-  ]);
-  // The trio must NOT also appear at the top level.
-  expect(labels(model).filter((l) => l.startsWith("Select "))).toEqual([]);
+  // F3 — items drop the redundant verb; the flyout title carries "Select".
+  expect(select?.label).toBe("Select");
+  expect(select?.submenu?.map((s) => s.label)).toEqual(["Connected", "Children", "Parents"]);
+  // The trio must NOT also appear as top-level items (only the flyout parent).
+  expect(labels(model).filter((l) => ["Connected", "Children", "Parents"].includes(l))).toEqual([]);
 });
 
 // Conditional items.

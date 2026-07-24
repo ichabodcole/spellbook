@@ -107,7 +107,7 @@ export function buildNodeActions(
     submenu: [
       {
         key: "select-connected",
-        label: "Select connected",
+        label: "Connected",
         icon: Waypoints,
         tone: "default",
         group: "select",
@@ -115,7 +115,7 @@ export function buildNodeActions(
       },
       {
         key: "select-children",
-        label: "Select children",
+        label: "Children",
         icon: ChevronsDown,
         tone: "default",
         group: "select",
@@ -123,7 +123,7 @@ export function buildNodeActions(
       },
       {
         key: "select-parents",
-        label: "Select parents",
+        label: "Parents",
         icon: ChevronsUp,
         tone: "default",
         group: "select",

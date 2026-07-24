@@ -1066,6 +1066,26 @@ export function App() {
         setNotice(`couldn't cancel that job (${e instanceof Error ? e.message : String(e)}).`),
       );
 
+  // R10 F1 — the human's create-job affordance (answers plan-round9's open-Q
+  // "does the sidebar want a human create-job affordance?" → yes). POST /jobs
+  // {title}; status defaults to `queued` server-side. V1 is title-only —
+  // everything else is editable later via the CLI/agent. No optimistic insert:
+  // the job.added event round-trips through the reducer (the cancelJob /
+  // deleteProposal one-source-of-truth pattern). The title is pre-trimmed by
+  // the form's normalizeJobTitle guard, so a blank never reaches the wire.
+  const createJob = (title: string) =>
+    fetch(`/jobs${projectQs}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`job ${r.status}`);
+      })
+      .catch((e) =>
+        setNotice(`couldn't create that job (${e instanceof Error ? e.message : String(e)}).`),
+      );
+
   // R9 — the deliverable jump-link (D5, many-jobs-one-deliverable): a doc: ref
   // opens the doc; a node: ref selects + follows it on the board (the search-
   // pick / backlink precedent). Text deliverables aren't links (JobsSidebar
@@ -1392,19 +1412,24 @@ export function App() {
             ingesting · {processing.length}
           </Button>
         )}
-        {/* R9 — the jobs sidebar toggle: agent work units. Shown only when jobs
-            exist (like review / ingesting). */}
-        {state.jobs.length > 0 && (
-          <Button
-            variant="outline"
-            size="auto"
-            className="flex items-center gap-1 px-2 py-0.5 text-xs text-thread-tier"
-            onClick={() => setJobsOpen((o) => !o)}
-          >
-            <ListChecks size={11} aria-hidden />
-            jobs · {state.jobs.length}
-          </Button>
-        )}
+        {/* R10 F1 — the jobs toggle: agent work units. ALWAYS rendered (unlike
+            the review/ingest trays' show-when-nonempty pattern) — the jobs
+            panel is a first-class surface the human must be able to find on a
+            fresh session, so a zero-job store still shows `jobs · 0` (dimmed to
+            an idle tint) opening onto the empty-state explainer + create form.
+            The hide-when-empty reflex is right for the transient agent-fed
+            ingest tray; it's wrong here (F1). */}
+        <Button
+          variant="outline"
+          size="auto"
+          className={`flex items-center gap-1 px-2 py-0.5 text-xs ${
+            state.jobs.length > 0 ? "text-thread-tier" : "text-ink-faint"
+          }`}
+          onClick={() => setJobsOpen((o) => !o)}
+        >
+          <ListChecks size={11} aria-hidden />
+          jobs · {state.jobs.length}
+        </Button>
         <span className="ml-auto flex items-center gap-2 text-xs text-ink-faint">
           <span className="flex items-center gap-1.5" role="status" title={DOT_TITLE[dot]}>
             <span className={`h-2 w-2 rounded-full ${DOT_CLASS[dot]}`} aria-hidden />
@@ -1767,6 +1792,7 @@ export function App() {
             activityByAgent={activityByAgent}
             onOpenDeliverable={openDeliverable}
             onCancel={cancelJob}
+            onCreate={createJob}
             onClose={() => setJobsOpen(false)}
           />
         )}
