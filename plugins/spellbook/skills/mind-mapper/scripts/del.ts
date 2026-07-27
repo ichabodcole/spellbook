@@ -88,4 +88,55 @@ function deleteProposal(db: Database, bus: EventBus, id: string): { id: string }
   return { id };
 }
 
-export { deleteNode, deleteProposal, NodeCitedError };
+// Round 12 (SEAM 5) — the inverse of ratify-batch. Clearing 44 stale proposals
+// in drive #10 was 44 individual HTTP deletes in a loop.
+//
+// DELETE, not reject (ruled): reject is a RULING and leaves a tombstone, and R6
+// already ruled that a reject is not a batch act ("a reject excludes a proposal
+// from the batch — reject it singly"); that ruling stands, so a reject-batch
+// would contradict it. Delete is litter-clearing, which is exactly what a batch
+// is for.
+//
+// TRANSACTIONAL all-or-nothing, mirroring ratifyBatch: validate everything
+// first, one txn, emits AFTER commit. Best-effort-with-a-report was considered
+// and rejected — the agent's model after the call should be binary (all gone /
+// nothing gone), because "I assumed the sweep worked" is the failure mode this
+// whole round exists to prevent. An unknown id names EVERY unknown id, not just
+// the first: a 44-id cleanup must never become a 44-round-trip bisect.
+//
+// NOT BUILT, deliberately: a `{batch: "<batchId>"}` shorthand. Drive #10's bug
+// WAS an over-broad cleanup — the agent cleared its pending proposals and took
+// the edges holding its ratified nodes together with them. The batch id exists
+// so the agent LOOKS before it sweeps (`state --batch <id>` shows what ratified
+// and what is still pending); making the sweep one keystroke would arm the
+// exact bug this round is fixing. Explicit ids only.
+function deleteProposalBatch(db: Database, bus: EventBus, ids: string[]): { deleted: string[] } {
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new Error('delete-batch requires a non-empty ids array — {"ids": ["<proposalId>", ...]}');
+  }
+  const bad = ids.filter((id) => typeof id !== "string" || id === "");
+  if (bad.length > 0) {
+    throw new Error(`delete-batch ids must be non-empty strings — got ${JSON.stringify(bad)}`);
+  }
+  // Validate ALL before the txn (pure reads + throw), so nothing is deleted
+  // when any id is wrong — and name every offender at once.
+  const unknown = ids.filter((id) => !db.query("SELECT 1 FROM proposals WHERE id = ?").get(id));
+  if (unknown.length > 0) {
+    throw new Error(
+      `delete-batch is all-or-nothing and ${unknown.length} id(s) do not exist — nothing was deleted: ${unknown.join(", ")}`,
+    );
+  }
+  const unique = [...new Set(ids)];
+  db.transaction(() => {
+    for (const id of unique) {
+      db.run("DELETE FROM node_actions WHERE target_id = ?", [id]);
+      db.run("DELETE FROM node_tags WHERE target_id = ?", [id]);
+      db.run("DELETE FROM proposals WHERE id = ?", [id]);
+    }
+  })();
+  // AFTER commit only — a rollback must never leak a proposal.deleted.
+  for (const id of unique) bus.emit("proposal.deleted", { id });
+  return { deleted: unique };
+}
+
+export { deleteNode, deleteProposal, deleteProposalBatch, NodeCitedError };

@@ -791,3 +791,125 @@ test("activity --message forwards the messageId, and /state reports the tie", as
   const cleared = JSON.parse((await runCli("state")).stdout) as { activity: unknown };
   expect(cleared.activity).toBeNull();
 });
+
+// ── Round 12 — the new verbs at the CLI wire ────────────────────────────────
+// The body-mirror discipline again: a hand-written body-builder is a MIRROR of
+// the route's field set, and mirrors drift silently — so every new field gets a
+// per-verb round-trip row here, not just a route test.
+
+async function runCliBody(
+  body: unknown,
+  ...args: string[]
+): Promise<{ code: number; stdout: string; stderr: string }> {
+  const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, ...args], {
+    env: { ...process.env, MIND_MAPPER_HOME: home },
+    // Always hand a spawned CLI an explicit stdin — the piped-stdin default
+    // otherwise inherits the runner's never-EOF stdin and blocks forever.
+    stdin: new Response(typeof body === "string" ? body : JSON.stringify(body)).body,
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+  return { code, stdout, stderr };
+}
+
+test("propose-batch returns a batchId and `state --batch` narrows to that act", async () => {
+  const batched = await runCliBody(
+    { nodes: [{ ref: "n1", draft: { title: "R12 Alpha" } }] },
+    "propose-batch",
+    "--stdin",
+  );
+  expect(batched.code).toBe(0);
+  const { batchId } = JSON.parse(batched.stdout) as { batchId: string };
+  expect(typeof batchId).toBe("string");
+
+  // A single propose JOINS the act when the stdin body names it (the body
+  // mirror: batchId must be threaded into propose-node's explicit field list).
+  const joined = await runCliBody(
+    { draft: { source: "a", target: "b", label: "late" }, evidence: {}, batchId },
+    "propose-edge",
+    "--stdin",
+  );
+  expect(joined.code).toBe(0);
+  expect(JSON.parse(joined.stdout)).toMatchObject({ batchId });
+
+  const narrowed = await runCli("state", "--batch", batchId);
+  expect(narrowed.code).toBe(0);
+  const state = JSON.parse(narrowed.stdout) as { proposals: Array<{ batchId: string }> };
+  expect(state.proposals).toHaveLength(2);
+  expect(state.proposals.every((p) => p.batchId === batchId)).toBe(true);
+
+  const unknown = await runCli("state", "--batch", "no-such-batch");
+  expect(unknown.code).toBe(2);
+  expect(JSON.parse(unknown.stdout).error).toContain("DELETED");
+});
+
+test("node edit sets a synopsis on a live node — by flag and by --stdin", async () => {
+  const proposed = await runCliBody(
+    { draft: { title: "R12 Editable" }, evidence: {} },
+    "propose-node",
+    "--stdin",
+  );
+  const { id } = JSON.parse(proposed.stdout) as { id: string };
+  const ruled = await runCli("ratify", id, "--ruling", "canon");
+  expect(ruled.code).toBe(0);
+  const nodeId = (JSON.parse(ruled.stdout) as { nodeId: string }).nodeId;
+
+  const byFlag = await runCli("node", "edit", nodeId, "--synopsis", "set by flag");
+  expect(byFlag.code).toBe(0);
+  expect(JSON.parse(byFlag.stdout)).toMatchObject({ id: nodeId, synopsis: "set by flag" });
+
+  // Prose belongs on stdin — and the patch must not blank the other field.
+  const byStdin = await runCliBody({ synopsis: "set by stdin" }, "node", "edit", nodeId, "--stdin");
+  expect(byStdin.code).toBe(0);
+  expect(JSON.parse(byStdin.stdout)).toMatchObject({
+    title: "R12 Editable",
+    synopsis: "set by stdin",
+  });
+
+  const noFields = await runCli("node", "edit", nodeId);
+  expect(noFields.code).toBe(2);
+  expect(noFields.stderr).toContain("tier is the human's ruling");
+});
+
+test("delete-batch clears a set in one call and is all-or-nothing", async () => {
+  const batched = await runCliBody(
+    {
+      nodes: [
+        { ref: "a", draft: { title: "R12 Doomed A" } },
+        { ref: "b", draft: { title: "R12 Doomed B" } },
+      ],
+    },
+    "propose-batch",
+    "--stdin",
+  );
+  const { proposals } = JSON.parse(batched.stdout) as { proposals: Array<{ id: string }> };
+  const ids = proposals.map((p) => p.id);
+
+  const bad = await runCliBody({ ids: [...ids, "ghost"] }, "delete-batch", "--stdin");
+  expect(bad.code).toBe(2);
+  expect(JSON.parse(bad.stdout).error).toContain("ghost");
+
+  const ok = await runCliBody({ ids }, "delete-batch", "--stdin");
+  expect(ok.code).toBe(0);
+  expect(JSON.parse(ok.stdout)).toEqual({ deleted: ids });
+
+  const usage = await runCli("delete-batch");
+  expect(usage.code).toBe(2);
+  expect(usage.stderr).toContain("look before you sweep");
+});
+
+test("changes --since returns a delta that names what it cannot see", async () => {
+  const first = await runCli("changes", "--since", "0");
+  expect(first.code).toBe(0);
+  const delta = JSON.parse(first.stdout) as { now: number; notCovered: string[] };
+  expect(delta.notCovered.join(" ")).toContain("DELETIONS");
+
+  const missing = await runCli("changes");
+  expect(missing.code).toBe(2);
+  expect(missing.stderr).toContain("notCovered");
+});

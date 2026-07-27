@@ -258,12 +258,22 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "state") {
     const parsed = parseArgs({
       args: rest,
-      options: { skeleton: { type: "boolean", default: false }, project: { type: "string" } },
+      options: {
+        skeleton: { type: "boolean", default: false },
+        project: { type: "string" },
+        // Round 12 (SEAM 1): narrow proposals[] to ONE staging act — "what else
+        // came from that call?" after a partial ratification. Unknown id 404s
+        // (an empty list would read as "already cleared").
+        batch: { type: "string" },
+      },
       strict: true,
       allowPositionals: false,
     });
     const port = requireDaemon();
-    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const params = new URLSearchParams();
+    if (parsed.values.project) params.set("project", parsed.values.project);
+    if (parsed.values.batch) params.set("batch", parsed.values.batch);
+    const qs = params.size > 0 ? `?${params}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/state${qs}`);
     // A non-ok /state (409 needs-project on a fresh store, 404 unknown
     // project) passes its JSON body through and exits 2 — the skeleton
@@ -274,6 +284,34 @@ async function dispatch(argv: string[]): Promise<number> {
     } else {
       process.stdout.write(`${await res.text()}\n`);
     }
+    return res.ok ? 0 : 2;
+  }
+
+  // Round 12 (SEAM 3): `changes --since <epochSeconds>` — the bounded delta.
+  // Read the response's notCovered before trusting an empty one: "nothing
+  // added" is NOT "nothing changed" (deletions, rejections and in-place edits
+  // are invisible here by construction).
+  if (verb === "changes") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { since: { type: "string" }, project: { type: "string" } },
+      strict: true,
+      allowPositionals: false,
+    });
+    if (parsed.values.since === undefined) {
+      process.stderr.write(
+        "mind-mapper: changes requires --since <epochSeconds> (use 0 for everything, then pass\n" +
+          "  back the `now` from the previous response). ADDITIONS ONLY — the response's\n" +
+          "  notCovered names what it cannot see; a full `state` read is still the only\n" +
+          "  way to reconcile deletions, rejections and in-place edits.\n",
+      );
+      return 2;
+    }
+    const port = requireDaemon();
+    const params = new URLSearchParams({ since: parsed.values.since });
+    if (parsed.values.project) params.set("project", parsed.values.project);
+    const res = await fetch(`http://127.0.0.1:${port}/changes?${params}`);
+    process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
   }
 
@@ -471,7 +509,12 @@ async function dispatch(argv: string[]): Promise<number> {
       allowPositionals: false,
     });
     if (!parsed.values.stdin) {
-      process.stderr.write(`mind-mapper: ${verb} requires --stdin JSON {draft, evidence}\n`);
+      process.stderr.write(
+        `mind-mapper: ${verb} requires --stdin JSON {draft, evidence[, suggestedTier, author, tags, batchId]}\n` +
+          '  propose-edge endpoints: a node id, a pending node-proposal id, or "title:<exact node title>"\n' +
+          "  (title refs resolve at INTAKE against ratified nodes only, exact + case-sensitive;\n" +
+          "   an ambiguous title errors and names every candidate id)\n",
+      );
       return 2;
     }
     const input = JSON.parse(await Bun.stdin.text()) as {
@@ -483,6 +526,8 @@ async function dispatch(argv: string[]): Promise<number> {
       // forwarded into the POST body, or the /proposals route never sees them
       // (the batch path forwards its node tags; the single verb must too).
       tags?: string[];
+      // Round 12 (SEAM 1): join an existing staging act (from propose-batch).
+      batchId?: string;
     };
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -499,6 +544,10 @@ async function dispatch(argv: string[]): Promise<number> {
         zone: parsed.values.zone,
         // TAGS: forward the stdin tags (the route validates the shape).
         tags: input.tags,
+        // SEAM 1: forward the stdin batchId (the body-mirror discipline — a
+        // field added to the shared /proposals body must be threaded into EVERY
+        // CLI verb that posts to it; the propose-node-tags scar).
+        batchId: input.batchId,
       }),
     });
     const responseText = await res.text();
@@ -528,19 +577,32 @@ async function dispatch(argv: string[]): Promise<number> {
         "mind-mapper: propose-batch requires --stdin JSON " +
           "{nodes:[{ref, draft, suggestedTier?, evidence?}], edges:[{draft:{source, target, label?}}]}\n" +
           "  an edge endpoint may be a node LOCAL REF (matches a node's ref in this batch),\n" +
-          "  a real node id, or a pending proposal id — local refs resolve to minted ids server-side\n",
+          '  a real node id, a pending proposal id, or "title:<exact node title>" — local refs\n' +
+          "  resolve to minted ids and title refs to ratified node ids, both server-side\n" +
+          "  optional batchId: omit and one is MINTED + returned; supply one to extend that act\n",
       );
       return 2;
     }
-    const input = JSON.parse(await Bun.stdin.text()) as { nodes?: unknown; edges?: unknown };
+    const input = JSON.parse(await Bun.stdin.text()) as {
+      nodes?: unknown;
+      edges?: unknown;
+      batchId?: unknown;
+    };
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/proposals/batch${qs}`, {
       method: "POST",
-      body: JSON.stringify({ nodes: input.nodes ?? [], edges: input.edges ?? [] }),
+      body: JSON.stringify({
+        nodes: input.nodes ?? [],
+        edges: input.edges ?? [],
+        // SEAM 1: omitted → the daemon mints a batchId and returns it; supplied
+        // → this call joins that act (the "I forgot the edges" repair).
+        batchId: input.batchId,
+      }),
     });
-    // Response carries {refToId: {<ref>: <mintedId>}, proposals: [...]} — the
-    // ref→id map is the point (an edge in the same batch names a node by ref).
+    // Response carries {batchId, refToId: {<ref>: <mintedId>}, proposals: [...]}
+    // — the ref→id map is the point for THIS call, and batchId is the point for
+    // every later one (`state --batch <id>` reconciles a partial ratification).
     process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
   }
@@ -583,6 +645,36 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
+  // Round 12 (SEAM 5) — the inverse of ratify-batch: clear a set of proposals
+  // in ONE transactional call instead of N HTTP deletes in a loop.
+  if (verb === "delete-batch") {
+    const parsed = parseArgs({
+      args: rest,
+      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
+      strict: true,
+      allowPositionals: false,
+    });
+    if (!parsed.values.stdin) {
+      process.stderr.write(
+        'mind-mapper: delete-batch requires --stdin JSON {ids: ["<proposalId>", ...]}\n' +
+          "  deletes the set in ONE txn — all-or-nothing: if any id is unknown, NOTHING is\n" +
+          "  deleted and the error names every unknown id. There is deliberately no\n" +
+          "  {batch: <id>} shorthand — run `state --batch <id>` and look before you sweep\n" +
+          "  (drive #10's bug was an over-broad cleanup that took the edges with it).\n",
+      );
+      return 2;
+    }
+    const input = JSON.parse(await Bun.stdin.text()) as { ids?: unknown };
+    const port = requireDaemon();
+    const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
+    const res = await fetch(`http://127.0.0.1:${port}/proposals/delete-batch${qs}`, {
+      method: "POST",
+      body: JSON.stringify({ ids: input.ids ?? [] }),
+    });
+    process.stdout.write(`${await res.text()}\n`);
+    return res.ok ? 0 : 2;
+  }
+
   if (verb === "node") {
     const sub = rest[0];
     const parsed = parseArgs({
@@ -592,6 +684,10 @@ async function dispatch(argv: string[]): Promise<number> {
         clear: { type: "boolean", default: false },
         force: { type: "boolean", default: false },
         project: { type: "string" },
+        // Round 12 (SEAM 4): `node edit` fields.
+        title: { type: "string" },
+        synopsis: { type: "string" },
+        stdin: { type: "boolean", default: false },
       },
       strict: true,
       allowPositionals: true,
@@ -615,9 +711,46 @@ async function dispatch(argv: string[]): Promise<number> {
       process.stdout.write(`${await res.text()}\n`);
       return res.ok ? 0 : 2;
     }
+    // Round 12 (SEAM 4): `node edit <id> [--title T] [--synopsis S] | --stdin`
+    // — a ratified node can finally gain a synopsis (F2). Writes exactly what
+    // it is given; tier and kind are NOT editable (see edit.ts for why).
+    if (sub === "edit") {
+      const id = parsed.positionals[0];
+      const patch: { title?: string; synopsis?: string } = {};
+      if (parsed.values.stdin) {
+        // Prose belongs on stdin — a synopsis is a paragraph, not a flag value.
+        Object.assign(
+          patch,
+          JSON.parse(await Bun.stdin.text()) as { title?: string; synopsis?: string },
+        );
+      }
+      if (parsed.values.title !== undefined) patch.title = parsed.values.title;
+      if (parsed.values.synopsis !== undefined) patch.synopsis = parsed.values.synopsis;
+      if (!id || (patch.title === undefined && patch.synopsis === undefined)) {
+        process.stderr.write(
+          'usage: cli.ts node edit <nodeId> (--title <t> | --synopsis <s> | --stdin \'{"synopsis": "..."}\')\n' +
+            "  writes exactly what it is given (no inference); only title/synopsis are editable —\n" +
+            "  tier is the human's ruling and kind is a ratification-time classification\n",
+        );
+        return 2;
+      }
+      const port = requireDaemon();
+      const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}${qs}`, {
+        method: "POST",
+        // Body-mirror discipline: thread every field explicitly (the
+        // propose-node-tags scar) — an omitted key must stay omitted so the
+        // route patches instead of blanking.
+        body: JSON.stringify({
+          ...(patch.title !== undefined ? { title: patch.title } : {}),
+          ...(patch.synopsis !== undefined ? { synopsis: patch.synopsis } : {}),
+        }),
+      });
+      process.stdout.write(`${await res.text()}\n`);
+      return res.ok ? 0 : 2;
+    }
     if (sub !== "anchor") {
       process.stderr.write(
-        "usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear) | node delete <nodeId> [--force]\n",
+        "usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear) | node edit <nodeId> (--title <t> | --synopsis <s> | --stdin) | node delete <nodeId> [--force]\n",
       );
       return 2;
     }

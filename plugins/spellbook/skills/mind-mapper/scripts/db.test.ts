@@ -504,3 +504,67 @@ test("docs_fts is queryable over doc content", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// Round 12 (SEAM 1) — batch_id. The load-bearing part of this test is that the
+// store is minted under the R11-as-shipped proposals shape (zone_id present,
+// batch_id absent) and POPULATED: `CREATE TABLE IF NOT EXISTS` is a no-op
+// against an existing table, so only a genuinely-older store re-opened by
+// current code can catch a missing backfill (the doctrine's own scar).
+test("openStore backfills batch_id onto a previous-shape (R11) proposals table (fresh equals migrated)", () => {
+  const dir = tempDir();
+  try {
+    const path = join(dir, "store.sqlite");
+    const oldSchemaDb = new Database(path, { create: true });
+    oldSchemaDb.exec(`
+      CREATE TABLE proposals (
+        id TEXT PRIMARY KEY,
+        kind TEXT NOT NULL,
+        draft_json TEXT NOT NULL,
+        evidence_doc_id TEXT,
+        evidence_span TEXT,
+        suggested_tier TEXT,
+        status TEXT NOT NULL DEFAULT 'pending',
+        created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+        result_node_id TEXT,
+        author TEXT,
+        evidence_message_id TEXT,
+        zone_id TEXT
+      );
+    `);
+    oldSchemaDb.run(
+      "INSERT INTO proposals (id, kind, draft_json, author, status) VALUES (?, ?, ?, ?, 'pending')",
+      ["p1", "node", '{"title":"Edda"}', "agent"],
+    );
+    oldSchemaDb.close();
+
+    const db = openStore(path);
+    const columns = (db.query("PRAGMA table_info(proposals)").all() as Array<{ name: string }>).map(
+      (c) => c.name,
+    );
+    expect(columns).toContain("batch_id");
+
+    // The pre-existing row survives, honestly unbatched (null = no staging act).
+    const row = db.query("SELECT id, batch_id FROM proposals WHERE id = 'p1'").get() as {
+      id: string;
+      batch_id: string | null;
+    };
+    expect(row).toEqual({ id: "p1", batch_id: null });
+
+    // Fresh-equals-migrated: a brand-new store's column list must be identical
+    // to what the backfill produced (the migration doctrine's invariant).
+    const freshDir = tempDir();
+    try {
+      const fresh = openStore(join(freshDir, "fresh.sqlite"));
+      const freshColumns = (
+        fresh.query("PRAGMA table_info(proposals)").all() as Array<{ name: string }>
+      ).map((c) => c.name);
+      expect(freshColumns).toEqual(columns);
+      fresh.close();
+    } finally {
+      rmSync(freshDir, { recursive: true, force: true });
+    }
+    db.close();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

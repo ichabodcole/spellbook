@@ -25,9 +25,11 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { clearActions, setActions } from "./actions.ts";
 import { anchorNode } from "./anchor.ts";
+import { readChanges } from "./changes.ts";
 import { openStore } from "./db.ts";
-import { deleteNode, deleteProposal, NodeCitedError } from "./del.ts";
+import { deleteNode, deleteProposal, deleteProposalBatch, NodeCitedError } from "./del.ts";
 import { CitedError, deleteDoc, setDocKind } from "./docs.ts";
+import { editNode } from "./edit.ts";
 import { createEventBus, type EventBus, inboundGrounding, isInboundEvent } from "./events.ts";
 import { ingestFile, ingestText } from "./ingest.ts";
 import {
@@ -249,6 +251,28 @@ function projectFailure(e: unknown): Response {
     });
   }
   throw e;
+}
+
+// ── Round 12 · SEAM 7 — every agent-facing 400 NAMES the shape it wanted ────
+//
+// Drive #10 ranked this: the edge-endpoint error ("ratify node proposal <id>
+// first") is the best error in the system and is the model; `PUT /tags/:id`
+// 400'd with nothing about the expected body (it wants a BARE array, not
+// {tags:[...]}) and cost a probe to discover.
+//
+// The standard is a FUNNEL, not a prose sweep — every route's 400 goes through
+// here with the body shape it expects, so the shape is (a) attached even when
+// the throw came from Bun's JSON parser rather than our own validator (a
+// malformed or empty body used to 400 with "Unexpected end of JSON input" and
+// no route context at all), and (b) machine-readable in an additive `expected`
+// field beside the human-readable `error`. A route added later inherits the
+// standard by using the funnel; it cannot inherit a prose convention.
+function badRequest(e: unknown, expected?: string): Response {
+  const error = e instanceof Error ? e.message : String(e);
+  return new Response(JSON.stringify(expected ? { error, expected } : { error }), {
+    status: 400,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 // Presence = who is receiving (the grapevine `who` model): agents-only,
@@ -600,6 +624,32 @@ async function main(argv: string[]): Promise<number> {
               }
               state.proposals = state.proposals.filter((p) => p.zoneId === zoneId);
             }
+            // Round 12 (SEAM 1): ?batch=<id> narrows proposals[] to ONE staging
+            // act — the read side is the whole payoff (F5.1: after a PARTIAL
+            // ratification, "what else came from that call?" becomes a query
+            // instead of agent memory). Deliberately INCLUSIVE of every status:
+            // the ratified members (with their resultNodeId) are exactly what
+            // makes the reconciliation possible.
+            //
+            // An unknown batch id is a 404, NOT an empty list. An empty list
+            // would read as "that act is fully cleared" — the single most
+            // dangerous answer to give an agent mid-cleanup, and a typo would
+            // produce it. Existence = "some proposal still carries this id", so
+            // the message names BOTH readings (a batch fades as its members are
+            // deleted; delete is a row-drop, not a tombstone).
+            const batchId = url.searchParams.get("batch");
+            if (batchId !== null) {
+              const members = state.proposals.filter((p) => p.batchId === batchId);
+              if (members.length === 0) {
+                return new Response(
+                  JSON.stringify({
+                    error: `no proposal carries batch ${batchId} — either the id is wrong, or every member of that act has been DELETED (delete drops the row, so a batch fades as it is cleared; ratified/rejected members would still be listed)`,
+                  }),
+                  { status: 404, headers: { "Content-Type": "application/json" } },
+                );
+              }
+              state.proposals = members;
+            }
             // Round 5 (SG1): ?anchor=<id> is a server-side CLI/agent narrow to
             // one node's submap — the anchor node itself plus its direct
             // children, and the edges among that set. The SURFACE does NOT use
@@ -646,6 +696,25 @@ async function main(argv: string[]): Promise<number> {
             });
           }
 
+          // Round 12 (SEAM 3): the bounded, self-declaring delta. Additions
+          // only, derived from created_at, with notCovered on every response —
+          // see changes.ts for the ruling (option B, an append-only changes
+          // table, IS Contract 8's no-durable-event-log clause, not orthogonal
+          // to it).
+          if (req.method === "GET" && path === "/changes") {
+            const { db, meta } = loadProject(projectId);
+            const raw = url.searchParams.get("since");
+            try {
+              if (raw === null) throw new Error("missing ?since=<epochSeconds>");
+              return Response.json(readChanges(db, meta, Number(raw), projectDir(HOME, meta.id)));
+            } catch (e) {
+              return badRequest(
+                e,
+                "GET /changes?since=<epochSeconds> — use 0 for everything, then pass back the `now` from the previous response",
+              );
+            }
+          }
+
           if (path === "/zones" && req.method === "GET") {
             const { db } = loadProject(projectId);
             return Response.json({ zones: listZones(db) });
@@ -659,13 +728,7 @@ async function main(argv: string[]): Promise<number> {
                 if (typeof name !== "string") throw new Error("name required");
                 return Response.json(createZone(db, bus, name));
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
-              );
+              .catch((e) => badRequest(e, '{"name": "<zone name>"}'));
           }
           if (req.method === "DELETE" && path.startsWith("/zones/")) {
             const { db, bus } = loadProject(projectId);
@@ -687,9 +750,9 @@ async function main(argv: string[]): Promise<number> {
                   { status: 409, headers: { "Content-Type": "application/json" } },
                 );
               }
-              return new Response(
-                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                { status: 400, headers: { "Content-Type": "application/json" } },
+              return badRequest(
+                e,
+                "DELETE /zones/<id>[?yes=1] — a populated zone needs ?yes=1 (delete cascades its proposals)",
               );
             }
           }
@@ -714,12 +777,11 @@ async function main(argv: string[]): Promise<number> {
                 }
                 return Response.json(result);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"actions": [...]} is WRONG — PUT the BARE JSON array: [{"id","label","seed"}] (empty array clears)',
+                ),
               );
           }
 
@@ -743,12 +805,11 @@ async function main(argv: string[]): Promise<number> {
                 }
                 return Response.json(result);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"tags": [...]} is WRONG — PUT the BARE JSON array of strings: ["tag", ...] (empty array clears)',
+                ),
               );
           }
 
@@ -781,12 +842,8 @@ async function main(argv: string[]): Promise<number> {
                 });
                 return Response.json(job);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(e, '{"title": string, "status"?, "deliverable"?, "detail"?}'),
               );
           }
           if (req.method === "POST" && path.startsWith("/jobs/") && path.endsWith("/claim")) {
@@ -812,10 +869,7 @@ async function main(argv: string[]): Promise<number> {
                     { status: 409, headers: { "Content-Type": "application/json" } },
                   );
                 }
-                return new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                );
+                return badRequest(e, '{"owner": string}');
               });
           }
           if (req.method === "POST" && path.startsWith("/jobs/") && path.endsWith("/release")) {
@@ -857,12 +911,11 @@ async function main(argv: string[]): Promise<number> {
                 }
                 return Response.json(job);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"op":"add","label":string} | {"op":"check"|"uncheck","subtaskId":string}',
+                ),
               );
           }
           if (req.method === "DELETE" && path.startsWith("/jobs/")) {
@@ -909,12 +962,8 @@ async function main(argv: string[]): Promise<number> {
                 }
                 return Response.json(job);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(e, '{"title"?, "status"?, "deliverable"?, "detail"?} (at least one)'),
               );
           }
 
@@ -958,12 +1007,11 @@ async function main(argv: string[]): Promise<number> {
                   ...(entry.activityMessageId ? { messageId: entry.activityMessageId } : {}),
                 });
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"state":"received"|"thinking"|"idle", "messageId"?: "<message id>"}',
+                ),
               );
           }
           if (req.method === "GET" && path === "/projects") {
@@ -1014,12 +1062,11 @@ async function main(argv: string[]): Promise<number> {
                 });
             return handle
               .then((doc) => Response.json(doc))
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"title": string, "text": string, "kind"?: string} (the body key is `text`, not `content`)',
+                ),
               );
           }
 
@@ -1034,10 +1081,17 @@ async function main(argv: string[]): Promise<number> {
             return req
               .json()
               .then((body) => {
-                const { nodes, edges } = body as { nodes?: unknown; edges?: unknown };
+                const { nodes, edges, batchId } = body as {
+                  nodes?: unknown;
+                  edges?: unknown;
+                  batchId?: unknown;
+                };
                 const result = batchPropose(db, bus, {
                   nodes: Array.isArray(nodes) ? (nodes as BatchInput["nodes"]) : [],
                   edges: Array.isArray(edges) ? (edges as BatchInput["edges"]) : [],
+                  // SEAM 1: omitted → the daemon mints one and returns it as
+                  // `batchId`; supplied → this call JOINS that act.
+                  batchId: batchId as string | undefined,
                 });
                 // A batch is the casting agent's bulk write — an agent-authored
                 // proposal in it is evidence of activity (resolves auto states,
@@ -1046,12 +1100,11 @@ async function main(argv: string[]): Promise<number> {
                 if (result.proposals.some((p) => p.author === "agent")) resolveActivity(entry);
                 return Response.json(result);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"nodes":[{"ref","draft","evidence"?,"tags"?}], "edges":[{"draft":{"source","target","label"?}}], "batchId"?} — an edge endpoint may be a local ref, a node/proposal id, or "title:<exact node title>"',
+                ),
               );
           }
 
@@ -1099,9 +1152,9 @@ async function main(argv: string[]): Promise<number> {
                     headers: { "Content-Type": "application/json" },
                   });
                 }
-                return new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
+                return badRequest(
+                  e,
+                  '{"ruling":"canon"|"thread"|"story-local", "ids":["<proposalId>"], "anchors"?:[{"node","parent"}]} — reject is NOT a batch act',
                 );
               });
           }
@@ -1112,15 +1165,17 @@ async function main(argv: string[]): Promise<number> {
             return req
               .json()
               .then((body) => {
-                const { kind, draft, evidence, suggestedTier, author, zone, tags } = body as {
-                  kind?: unknown;
-                  draft?: unknown;
-                  evidence?: unknown;
-                  suggestedTier?: unknown;
-                  author?: unknown;
-                  zone?: unknown;
-                  tags?: unknown;
-                };
+                const { kind, draft, evidence, suggestedTier, author, zone, tags, batchId } =
+                  body as {
+                    kind?: unknown;
+                    draft?: unknown;
+                    evidence?: unknown;
+                    suggestedTier?: unknown;
+                    author?: unknown;
+                    zone?: unknown;
+                    tags?: unknown;
+                    batchId?: unknown;
+                  };
                 if (kind !== "node" && kind !== "edge")
                   throw new Error("kind must be node or edge");
                 if (author !== undefined && author !== "user" && author !== "agent") {
@@ -1138,6 +1193,9 @@ async function main(argv: string[]): Promise<number> {
                   // TAGS: propose-time tags ride through; buildProposal's parse
                   // guard validates the shape (400 on a non-string[]).
                   tags: Array.isArray(tags) ? (tags as string[]) : undefined,
+                  // SEAM 1: a single propose is unbatched unless the caller
+                  // names the act it belongs to (no auto-mint — see propose.ts).
+                  batchId: batchId as string | undefined,
                 };
                 const proposal =
                   kind === "node" ? proposeNode(db, bus, input) : proposeEdge(db, bus, input);
@@ -1153,12 +1211,11 @@ async function main(argv: string[]): Promise<number> {
                 if (proposal.author === "agent") resolveActivity(entry);
                 return Response.json(warning ? { ...proposal, warning } : proposal);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"kind":"node"|"edge", "draft":{...}, "evidence"?:{docId|messageId,span}, "suggestedTier"?, "author"?, "zone"?, "tags"?:[string], "batchId"?} — an edge draft\'s source/target may be a node id, a pending node-proposal id, or "title:<exact node title>"',
+                ),
               );
           }
 
@@ -1203,12 +1260,11 @@ async function main(argv: string[]): Promise<number> {
                 const warning = channelWarning(message.kind);
                 return Response.json(warning ? { ...message, warning } : message);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"text": string, "role"?: "user"|"agent", "kind"?: "<channel>", "ground"?: [string]}',
+                ),
               );
           }
 
@@ -1294,10 +1350,7 @@ async function main(argv: string[]): Promise<number> {
                     headers: { "Content-Type": "application/json" },
                   });
                 }
-                return new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
-                );
+                return badRequest(e, '{"zoneId": "<zone id>" | null}');
               });
           }
 
@@ -1335,12 +1388,35 @@ async function main(argv: string[]): Promise<number> {
                 }
                 return Response.json(anchorNode(db, bus, nodeId, parentId));
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) => badRequest(e, '{"parentId": "<node id>" | null}'));
+          }
+
+          // Round 12 (SEAM 4): edit a ratified node's title/synopsis. Ordered
+          // AFTER /nodes/:id/anchor (a suffix route mis-ordered behind a bare
+          // :id route is shadowed — the /jobs precedent) and BEFORE the DELETE
+          // (different method, but keep the family together). 404 unknown node,
+          // 400 empty/ill-shaped patch. Emits node.edited (FULL entity).
+          if (req.method === "POST" && path.startsWith("/nodes/")) {
+            const { db, bus } = loadProject(projectId);
+            const nodeId = path.slice("/nodes/".length);
+            return req
+              .json()
+              .then((body) => {
+                const { title, synopsis } = body as { title?: unknown; synopsis?: unknown };
+                const node = editNode(db, bus, nodeId, {
+                  title: title as string | undefined,
+                  synopsis: synopsis as string | undefined,
+                });
+                if (!node) {
+                  return new Response('{"error":"unknown node"}', {
+                    status: 404,
+                    headers: { "Content-Type": "application/json" },
+                  });
+                }
+                return Response.json(node);
+              })
+              .catch((e) =>
+                badRequest(e, '{"title"?: string, "synopsis"?: string} (at least one)'),
               );
           }
 
@@ -1368,11 +1444,28 @@ async function main(argv: string[]): Promise<number> {
                   headers: { "Content-Type": "application/json" },
                 });
               }
-              return new Response(
-                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                { status: 400, headers: { "Content-Type": "application/json" } },
-              );
+              return badRequest(e, "DELETE /nodes/<id>[?force=1] — a cited node needs ?force=1");
             }
+          }
+
+          // Round 12 (SEAM 5): the inverse of ratify-batch — one transactional
+          // clear of a set of proposals. MUST be matched before the bare
+          // DELETE /proposals/:id (different method, but keep it above the
+          // /proposals/:id/ruling family too — the /jobs route-order precedent).
+          if (req.method === "POST" && path === "/proposals/delete-batch") {
+            const { db, bus } = loadProject(projectId);
+            return req
+              .json()
+              .then((body) => {
+                const { ids } = body as { ids?: unknown };
+                return Response.json(deleteProposalBatch(db, bus, ids as string[]));
+              })
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"ids": ["<proposalId>", ...]} — all-or-nothing; there is deliberately no {"batch": id} shorthand (look with `state --batch <id>` before you sweep)',
+                ),
+              );
           }
 
           // Round 6 (DEL): thin proposal delete — NO guard (a dependent pending
@@ -1455,9 +1548,9 @@ async function main(argv: string[]): Promise<number> {
                     headers: { "Content-Type": "application/json" },
                   });
                 }
-                return new Response(
-                  JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                  { status: 400, headers: { "Content-Type": "application/json" } },
+                return badRequest(
+                  e,
+                  '{"ruling":"canon"|"thread"|"story-local"|"reject", "docEdit"?, "docId"?, "span"?, "anchor"?}',
                 );
               });
           }
@@ -1501,12 +1594,11 @@ async function main(argv: string[]): Promise<number> {
                 });
                 return Response.json(lens);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
+              .catch((e) =>
+                badRequest(
+                  e,
+                  '{"owner": string, "nodeId": string} | {"owner": string, "docId": string} (node XOR doc), "depth"? number',
+                ),
               );
           }
           if (req.method === "DELETE" && path === "/lens") {
@@ -1541,10 +1633,7 @@ async function main(argv: string[]): Promise<number> {
                   headers: { "Content-Type": "application/json" },
                 });
               }
-              return new Response(
-                JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                { status: 400, headers: { "Content-Type": "application/json" } },
-              );
+              return badRequest(e, "DELETE /doc/<slug>[?force=1] — a cited doc needs ?force=1");
             }
           }
 
@@ -1573,13 +1662,7 @@ async function main(argv: string[]): Promise<number> {
                 }
                 return Response.json(result);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
-              );
+              .catch((e) => badRequest(e, '{"kind": string, "author"?: "user"|"agent"}'));
           }
 
           if (req.method === "POST" && path.startsWith("/doc/") && path.endsWith("/mark")) {
@@ -1606,13 +1689,7 @@ async function main(argv: string[]): Promise<number> {
                 if (resolvedAuthor === "agent") resolveActivity(entry);
                 return Response.json({ docId: id, mark });
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    { status: 400, headers: { "Content-Type": "application/json" } },
-                  ),
-              );
+              .catch((e) => badRequest(e, '{"status": string, "author": string, "note"?: string}'));
           }
 
           if (req.method === "GET" && path.startsWith("/doc/")) {

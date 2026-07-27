@@ -36,7 +36,7 @@ interface SetActionsResult {
 function parseActions(raw: unknown): ActionSlot[] {
   if (!Array.isArray(raw)) {
     throw new Error(
-      'actions must be an array of {"id", "label", "seed"} string triples (empty array clears)',
+      `the request body IS the action array — send a BARE JSON array of {"id","label","seed"} string triples (empty array clears), NOT {"actions":[...]}; got ${typeof raw === "object" && raw !== null ? `an object with keys: ${Object.keys(raw as object).join(", ")}` : typeof raw}`,
     );
   }
   return raw.map((entry, i) => {

@@ -26,7 +26,9 @@ const ADDITIVE_COLUMNS: Record<string, string[]> = {
   // proposals are never anchored (they ratify into a node, THEN can be
   // anchored). kind_author precedent (additive after the shape shipped).
   nodes: ["anchor_node_id"],
-  proposals: ["result_node_id", "author", "evidence_message_id", "zone_id"],
+  // Round 12 (SEAM 1): the staging ACT a proposal came from. Nullable — every
+  // pre-R12 row (and every unbatched single propose) is honestly unbatched.
+  proposals: ["result_node_id", "author", "evidence_message_id", "zone_id", "batch_id"],
   // Round 3 (Claim V2): doc-lens — lens rows written before the doc mode
   // shipped simply carry a null doc_id (a node lens, unchanged).
   lens: ["doc_id"],
@@ -115,6 +117,13 @@ CREATE TABLE IF NOT EXISTS sources (
 -- so every pre-zones row is a main-queue proposal by construction. Zone
 -- contents are PROPOSALS ONLY (nodes/edges never carry zone_id): a zone is
 -- staging, and promotion (zone_id -> NULL) is the only exit.
+-- batch_id (Round 12, SEAM 1): the staging ACT this proposal came from — minted
+-- per POST /proposals/batch call (or supplied by the caller to JOIN an
+-- existing act). Nullable-TEXT-only because it arrived via ADDITIVE_COLUMNS
+-- after the shape shipped; null = unbatched, the honest reading of a single
+-- propose and of every pre-R12 row. It survives ratification because the
+-- PROPOSAL ROW survives ratification — that IS the point: after a PARTIAL
+-- ratification the agent can ask "what else came from that call".
 CREATE TABLE IF NOT EXISTS proposals (
   id TEXT PRIMARY KEY,
   kind TEXT NOT NULL,
@@ -127,7 +136,8 @@ CREATE TABLE IF NOT EXISTS proposals (
   result_node_id TEXT,
   author TEXT,
   evidence_message_id TEXT,
-  zone_id TEXT
+  zone_id TEXT,
+  batch_id TEXT
 );
 
 -- Round 3 (Claim Z1): a zone is a named staging pen for proposals — nothing

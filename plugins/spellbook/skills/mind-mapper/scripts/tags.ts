@@ -29,7 +29,12 @@ interface SetTagsResult {
 // ride verbatim: no trim/dedup/lowercase here (that's surface curation).
 function parseTags(raw: unknown): string[] {
   if (!Array.isArray(raw)) {
-    throw new Error("tags must be an array of strings (empty array clears)");
+    // SEAM 7 (drive #10 named this exact 400 as the counterexample to the
+    // house standard): the body IS the array — name the wrong shape the caller
+    // most likely sent, not just the right one.
+    throw new Error(
+      `the request body IS the tag array — send a BARE JSON array of strings like ["ambient","fourth world"] (empty array clears), NOT {"tags":[...]}; got ${Array.isArray(raw) ? "an array" : typeof raw === "object" && raw !== null ? `an object with keys: ${Object.keys(raw as object).join(", ")}` : typeof raw}`,
+    );
   }
   return raw.map((entry, i) => {
     if (typeof entry !== "string") {

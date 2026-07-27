@@ -343,3 +343,271 @@ test("batchPropose rejects a missing or duplicate node ref", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ── Round 12 · SEAM 1 — batch identity ──────────────────────────────────────
+
+test("batchPropose MINTS a batchId and stamps every member — node and edge alike", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const result = batchPropose(db, bus, {
+      nodes: [
+        { ref: "n1", draft: { title: "Rich Ruth" } },
+        { ref: "n2", draft: { title: "Fourth world" } },
+      ],
+      edges: [{ draft: { source: "n1", target: "n2", label: "adjacent to" } }],
+    });
+    expect(typeof result.batchId).toBe("string");
+    expect(result.batchId.length).toBeGreaterThan(0);
+    for (const p of result.proposals) expect(p.batchId).toBe(result.batchId);
+
+    // And it rides the snapshot — the read side is the payoff.
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.proposals.every((p) => p.batchId === result.batchId)).toBe(true);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a batchId SURVIVES ratification, so a partial ratification is still queryable", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const { batchId, proposals } = batchPropose(db, bus, {
+      nodes: [{ ref: "n1", draft: { title: "Rich Ruth" } }],
+      edges: [{ draft: { source: "n1", target: "n1", label: "self" } }],
+    });
+    // Ratify only the NODE (the drive-10 shape: the human rules on nodes, the
+    // edges stay pending).
+    const nodeProposal = proposals.find((p) => p.kind === "node") as { id: string };
+    db.run("UPDATE proposals SET status = 'ratified', result_node_id = 'n-real' WHERE id = ?", [
+      nodeProposal.id,
+    ]);
+
+    const state = readState(db, { id: "default", title: "Default" });
+    const members = state.proposals.filter((p) => p.batchId === batchId);
+    expect(members).toHaveLength(2);
+    // THE reconciliation the drive needed: what else came from that call, and
+    // what is still pending?
+    expect(members.filter((p) => p.status === "pending").map((p) => p.kind)).toEqual(["edge"]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a single propose is UNBATCHED unless the caller names an act (no auto-mint)", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const lone = proposeNode(db, bus, { draft: { title: "Edda" }, evidence: {} });
+    expect(lone.batchId).toBeNull();
+
+    const joined = proposeNode(db, bus, {
+      draft: { title: "Tam" },
+      evidence: {},
+      batchId: "batch-abc",
+    });
+    expect(joined.batchId).toBe("batch-abc");
+
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.proposals.map((p) => p.batchId)).toEqual([null, "batch-abc"]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a caller-supplied batchId EXTENDS an existing act (the 'I forgot the edges' repair)", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const first = batchPropose(db, bus, { nodes: [{ ref: "n1", draft: { title: "Rich Ruth" } }] });
+    const second = batchPropose(db, bus, {
+      batchId: first.batchId,
+      edges: [{ draft: { source: "x", target: "y", label: "late" } }],
+    });
+    expect(second.batchId).toBe(first.batchId);
+
+    const state = readState(db, { id: "default", title: "Default" });
+    expect(state.proposals.filter((p) => p.batchId === first.batchId)).toHaveLength(2);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a non-string batchId is a named intake error, not a silent drop", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    expect(() =>
+      proposeNode(db, bus, {
+        draft: { title: "Edda" },
+        evidence: {},
+        batchId: 7 as unknown as string,
+      }),
+    ).toThrow(/batchId must be a non-empty string/);
+    expect(() => batchPropose(db, bus, { batchId: "", nodes: [] })).toThrow(
+      /batchId must be a non-empty string/,
+    );
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// ── Round 12 · SEAM 2 — edge endpoints by title ─────────────────────────────
+
+function seedNode(db: import("bun:sqlite").Database, id: string, title: string): void {
+  db.run(
+    "INSERT INTO nodes (id, kind, tier, title, synopsis) VALUES (?, 'concept', 'canon', ?, '')",
+    [id, title],
+  );
+}
+
+test("an edge endpoint may name a ratified node by title, resolved AT INTAKE to its id", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    seedNode(db, "node-rich", "Rich Ruth");
+    seedNode(db, "node-fw", "Fourth world");
+    const proposal = proposeEdge(db, bus, {
+      draft: { source: "title:Rich Ruth", target: "title:Fourth world", label: "adjacent to" },
+      evidence: {},
+    });
+    // The STORED draft carries real ids — a later retitle cannot re-point it,
+    // and the caller sees the resolution in the response it already reads.
+    expect(proposal.draft).toEqual({
+      source: "node-rich",
+      target: "node-fw",
+      label: "adjacent to",
+    });
+    const state = readState(db, { id: "default", title: "Default" });
+    expect((state.proposals[0] as { draft: { source: string } }).draft.source).toBe("node-rich");
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an AMBIGUOUS title is an error that NAMES every candidate id", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    seedNode(db, "node-a", "Fourth world");
+    seedNode(db, "node-b", "Fourth world");
+    seedNode(db, "node-c", "Fourth world");
+    let message = "";
+    try {
+      proposeEdge(db, bus, {
+        draft: { source: "title:Fourth world", target: "node-a", label: "x" },
+        evidence: {},
+      });
+    } catch (e) {
+      message = e instanceof Error ? e.message : String(e);
+    }
+    expect(message).toContain("matches 3 nodes");
+    for (const id of ["node-a", "node-b", "node-c"]) expect(message).toContain(id);
+    expect(message).toContain("pass one of those ids");
+    // Nothing was written — resolution is a pure read + throw before insert.
+    expect(readState(db, { id: "default", title: "Default" }).proposals).toHaveLength(0);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an unmatched title errors, names the exact-match contract, and points at search", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    seedNode(db, "node-rich", "Rich Ruth");
+    let message = "";
+    try {
+      // Case differs — title refs are EXACT and case-sensitive by ruling.
+      proposeEdge(db, bus, {
+        draft: { source: "title:rich ruth", target: "node-rich", label: "x" },
+        evidence: {},
+      });
+    } catch (e) {
+      message = e instanceof Error ? e.message : String(e);
+    }
+    expect(message).toContain('no ratified node is titled "rich ruth"');
+    expect(message).toContain("case-sensitive");
+    expect(message).toContain("search");
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("title refs resolve against ratified NODES ONLY — never a pending proposal's draft title", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    proposeNode(db, bus, { draft: { title: "Rich Ruth" }, evidence: {} });
+    expect(() =>
+      proposeEdge(db, bus, {
+        draft: { source: "title:Rich Ruth", target: "x", label: "y" },
+        evidence: {},
+      }),
+    ).toThrow(/never pending proposals/);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a draft with NO title ref is stored byte-identically (opacity unchanged)", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const draft = { source: "a", target: "b", label: "l", weirdKey: { deep: [1, 2] } };
+    const proposal = proposeEdge(db, bus, { draft, evidence: {} });
+    expect(proposal.draft).toEqual(draft);
+    const stored = db.query("SELECT draft_json FROM proposals").get() as { draft_json: string };
+    expect(stored.draft_json).toBe(JSON.stringify(draft));
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a batch resolves LOCAL refs and title refs side by side, in one call", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    seedNode(db, "node-rich", "Rich Ruth");
+    const { refToId, proposals } = batchPropose(db, bus, {
+      nodes: [{ ref: "n1", draft: { title: "Fourth world" } }],
+      edges: [{ draft: { source: "n1", target: "title:Rich Ruth", label: "adjacent to" } }],
+    });
+    const edge = proposals.find((p) => p.kind === "edge") as { draft: Record<string, unknown> };
+    expect(edge.draft).toMatchObject({ source: refToId.n1, target: "node-rich" });
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("an unresolvable title ref inside a batch leaves ZERO rows (validate before the txn)", () => {
+  const { dir, db } = tempDb();
+  try {
+    const bus = createEventBus();
+    const seen: string[] = [];
+    bus.subscribe(0, (e) => seen.push(e.kind));
+    expect(() =>
+      batchPropose(db, bus, {
+        nodes: [{ ref: "n1", draft: { title: "Fourth world" } }],
+        edges: [{ draft: { source: "n1", target: "title:Nobody", label: "x" } }],
+      }),
+    ).toThrow(/no ratified node is titled/);
+    expect(readState(db, { id: "default", title: "Default" }).proposals).toHaveLength(0);
+    expect(seen).toEqual([]);
+  } finally {
+    db.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

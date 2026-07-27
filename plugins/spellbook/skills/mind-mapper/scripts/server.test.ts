@@ -1219,3 +1219,237 @@ test("DELETE /proposals/:id — thin delete, unknown 404", async () => {
   const unknown = await fetch(`${url}/proposals/ghost?project=del-prop`, { method: "DELETE" });
   expect(unknown.status).toBe(404);
 });
+
+// ── Round 12 ────────────────────────────────────────────────────────────────
+// Appended at the END on purpose: this rig shares ONE daemon, so a new test
+// either appends after the state-sensitive ones or scopes to its own project.
+// Every test below mints its own project.
+
+test("SEAM 1 — POST /proposals/batch mints a batchId; GET /state?batch= narrows to that act", async () => {
+  await freshProject("r12-batch");
+  const res = await fetch(`${url}/proposals/batch?project=r12-batch`, {
+    method: "POST",
+    body: JSON.stringify({
+      nodes: [{ ref: "n1", draft: { title: "Rich Ruth" } }],
+      edges: [{ draft: { source: "n1", target: "n1", label: "self" } }],
+    }),
+  });
+  const batch = (await res.json()) as {
+    batchId: string;
+    proposals: Array<{ id: string; kind: string; batchId: string }>;
+  };
+  expect(typeof batch.batchId).toBe("string");
+  for (const p of batch.proposals) expect(p.batchId).toBe(batch.batchId);
+
+  // A proposal outside the act must NOT come back in the narrow.
+  await proposeNodeWire("r12-batch", "Unrelated");
+  const narrowed = (await (
+    await fetch(`${url}/state?project=r12-batch&batch=${batch.batchId}`)
+  ).json()) as { proposals: Array<{ id: string }> };
+  expect(narrowed.proposals).toHaveLength(2);
+
+  // Partial ratification: the node ratifies, the edge stays pending — and the
+  // batch STILL answers "what else came from that call?" (the drive-10 fix).
+  const nodeProposal = batch.proposals.find((p) => p.kind === "node") as { id: string };
+  await fetch(`${url}/proposals/${nodeProposal.id}/ruling?project=r12-batch`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  const after = (await (
+    await fetch(`${url}/state?project=r12-batch&batch=${batch.batchId}`)
+  ).json()) as { proposals: Array<{ kind: string; status: string; resultNodeId: string | null }> };
+  expect(after.proposals).toHaveLength(2);
+  expect(after.proposals.filter((p) => p.status === "pending").map((p) => p.kind)).toEqual([
+    "edge",
+  ]);
+  expect(after.proposals.find((p) => p.status === "ratified")?.resultNodeId).toBeTruthy();
+});
+
+test("SEAM 1 — an unknown batch is a 404 that names BOTH readings, never an empty list", async () => {
+  await freshProject("r12-batch404");
+  const res = await fetch(`${url}/state?project=r12-batch404&batch=nope`);
+  expect(res.status).toBe(404);
+  const body = (await res.json()) as { error: string };
+  // An empty list would read as "that act is fully cleared" — the single most
+  // dangerous answer to give an agent mid-cleanup.
+  expect(body.error).toContain("DELETED");
+  expect(body.error).toContain("the id is wrong");
+});
+
+test("SEAM 2 — an edge endpoint may name a ratified node by title, through the wire", async () => {
+  await freshProject("r12-title");
+  const p = await proposeNodeWire("r12-title", "Fourth world");
+  await fetch(`${url}/proposals/${p}/ruling?project=r12-title`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  const state = (await (await fetch(`${url}/state?project=r12-title`)).json()) as {
+    nodes: Array<{ id: string }>;
+  };
+  const nodeId = state.nodes[0]?.id as string;
+
+  const res = await fetch(`${url}/proposals?project=r12-title`, {
+    method: "POST",
+    body: JSON.stringify({
+      kind: "edge",
+      draft: { source: "title:Fourth world", target: "title:Fourth world", label: "loops" },
+      evidence: {},
+    }),
+  });
+  expect(res.status).toBe(200);
+  const proposal = (await res.json()) as { draft: { source: string; target: string } };
+  expect(proposal.draft).toEqual({ source: nodeId, target: nodeId, label: "loops" } as never);
+  // No edge-draft warning: the endpoints resolved to real string ids.
+  expect(proposal).not.toHaveProperty("warning");
+});
+
+test("SEAM 2 — an ambiguous title 400s, names every candidate, and writes nothing", async () => {
+  await freshProject("r12-ambig");
+  for (const _ of [1, 2]) {
+    const p = await proposeNodeWire("r12-ambig", "Fourth world");
+    await fetch(`${url}/proposals/${p}/ruling?project=r12-ambig`, {
+      method: "POST",
+      body: JSON.stringify({ ruling: "canon" }),
+    });
+  }
+  const res = await fetch(`${url}/proposals?project=r12-ambig`, {
+    method: "POST",
+    body: JSON.stringify({
+      kind: "edge",
+      draft: { source: "title:Fourth world", target: "x", label: "l" },
+      evidence: {},
+    }),
+  });
+  expect(res.status).toBe(400);
+  const body = (await res.json()) as { error: string; expected: string };
+  expect(body.error).toContain("matches 2 nodes");
+  expect(body.error).toContain("pass one of those ids");
+  // SEAM 7: the 400 also names the body shape it wanted.
+  expect(body.expected).toContain("title:<exact node title>");
+  const state = (await (await fetch(`${url}/state?project=r12-ambig`)).json()) as {
+    proposals: Array<{ status: string }>;
+  };
+  expect(state.proposals.filter((p) => p.status === "pending")).toHaveLength(0);
+});
+
+test("SEAM 4 — POST /nodes/:id edits title/synopsis; unknown 404; empty patch 400 with expected", async () => {
+  await freshProject("r12-edit");
+  const p = await proposeNodeWire("r12-edit", "Rich Ruth");
+  await fetch(`${url}/proposals/${p}/ruling?project=r12-edit`, {
+    method: "POST",
+    body: JSON.stringify({ ruling: "canon" }),
+  });
+  const state = (await (await fetch(`${url}/state?project=r12-edit`)).json()) as {
+    nodes: Array<{ id: string; synopsis: string }>;
+  };
+  const nodeId = state.nodes[0]?.id as string;
+  expect(state.nodes[0]?.synopsis).toBe(""); // the F2 shape: a bare canon node
+
+  const res = await fetch(`${url}/nodes/${nodeId}?project=r12-edit`, {
+    method: "POST",
+    body: JSON.stringify({ synopsis: "Nashville ambient guitarist." }),
+  });
+  expect(res.status).toBe(200);
+  const edited = (await res.json()) as { id: string; synopsis: string; tier: string };
+  expect(edited).toMatchObject({ id: nodeId, synopsis: "Nashville ambient guitarist." });
+  expect(edited.tier).toBe("canon"); // the ratification act survives
+
+  // Searchable immediately (nodes are not FTS-indexed — no re-index needed).
+  const hits = (await (await fetch(`${url}/search?q=ambient&project=r12-edit`)).json()) as {
+    hits: Array<{ id: string }>;
+  };
+  expect(hits.hits.map((h) => h.id)).toContain(nodeId);
+
+  // The route ordering holds: /nodes/:id/anchor is still matched first.
+  const anchorRes = await fetch(`${url}/nodes/${nodeId}/anchor?project=r12-edit`, {
+    method: "POST",
+    body: JSON.stringify({ parentId: null }),
+  });
+  expect(anchorRes.status).toBe(200);
+
+  expect(
+    (
+      await fetch(`${url}/nodes/ghost?project=r12-edit`, {
+        method: "POST",
+        body: JSON.stringify({ synopsis: "x" }),
+      })
+    ).status,
+  ).toBe(404);
+  const empty = await fetch(`${url}/nodes/${nodeId}?project=r12-edit`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+  expect(empty.status).toBe(400);
+  const emptyBody = (await empty.json()) as { error: string; expected: string };
+  expect(emptyBody.expected).toContain('"synopsis"?: string');
+  expect(emptyBody.error).toContain("tier is the human's ruling");
+});
+
+test("SEAM 5 — POST /proposals/delete-batch is all-or-nothing", async () => {
+  await freshProject("r12-delbatch");
+  const a = await proposeNodeWire("r12-delbatch", "A");
+  const b = await proposeNodeWire("r12-delbatch", "B");
+
+  const bad = await fetch(`${url}/proposals/delete-batch?project=r12-delbatch`, {
+    method: "POST",
+    body: JSON.stringify({ ids: [a, "ghost"] }),
+  });
+  expect(bad.status).toBe(400);
+  expect(((await bad.json()) as { error: string }).error).toContain("ghost");
+  let state = (await (await fetch(`${url}/state?project=r12-delbatch`)).json()) as {
+    proposals: unknown[];
+  };
+  expect(state.proposals).toHaveLength(2); // nothing deleted
+
+  const ok = await fetch(`${url}/proposals/delete-batch?project=r12-delbatch`, {
+    method: "POST",
+    body: JSON.stringify({ ids: [a, b] }),
+  });
+  expect(ok.status).toBe(200);
+  expect((await ok.json()) as { deleted: string[] }).toEqual({ deleted: [a, b] });
+  state = (await (await fetch(`${url}/state?project=r12-delbatch`)).json()) as {
+    proposals: unknown[];
+  };
+  expect(state.proposals).toHaveLength(0);
+});
+
+test("SEAM 3 — GET /changes returns additions and DECLARES its blind spots", async () => {
+  await freshProject("r12-changes");
+  const first = (await (await fetch(`${url}/changes?since=0&project=r12-changes`)).json()) as {
+    now: number;
+    counts: Record<string, number>;
+    notCovered: string[];
+  };
+  expect(first.counts.proposals).toBe(0);
+  expect(first.notCovered.join(" ")).toContain("DELETIONS");
+
+  await proposeNodeWire("r12-changes", "Later");
+  const second = (await (
+    await fetch(`${url}/changes?since=${first.now}&project=r12-changes`)
+  ).json()) as { counts: Record<string, number>; additions: { proposals: Array<{ id: string }> } };
+  expect(second.counts.proposals).toBe(1);
+
+  const bad = await fetch(`${url}/changes?project=r12-changes`);
+  expect(bad.status).toBe(400);
+  expect(((await bad.json()) as { expected: string }).expected).toContain("since=<epochSeconds>");
+});
+
+test("SEAM 7 — PUT /tags/:id 400 names the BARE-array shape it wanted (drive #10's counterexample)", async () => {
+  await freshProject("r12-err");
+  const p = await proposeNodeWire("r12-err", "T");
+  const res = await fetch(`${url}/tags/${p}?project=r12-err`, {
+    method: "PUT",
+    body: JSON.stringify({ tags: ["a"] }),
+  });
+  expect(res.status).toBe(400);
+  const body = (await res.json()) as { error: string; expected: string };
+  expect(body.error).toContain("BARE JSON array");
+  expect(body.error).toContain("an object with keys: tags");
+  expect(body.expected).toContain("is WRONG");
+
+  // And a malformed body — which used to 400 as a bare JSON-parser message with
+  // no route context at all — now still names the shape.
+  const malformed = await fetch(`${url}/tags/${p}?project=r12-err`, { method: "PUT", body: "{" });
+  expect(malformed.status).toBe(400);
+  expect(((await malformed.json()) as { expected: string }).expected).toContain("BARE JSON array");
+});

@@ -26,6 +26,79 @@ interface ProposeInput {
   // target-keyed node_tags row keyed by this proposal's id (so they carry
   // pre-ratify and re-home on ratify). Omitted → no tags.
   tags?: string[];
+  // Round 12 (SEAM 1): the staging ACT this proposal belongs to. `/proposals/
+  // batch` MINTS one per call; a single propose takes one only when the caller
+  // supplies it (joining a batch it is repairing). Omitted → null = unbatched,
+  // which is the honest answer for a lone proposal.
+  batchId?: string;
+}
+
+// ── Round 12 · SEAM 2 — edge endpoints by TITLE ─────────────────────────────
+//
+// F5.2: an edge to an ALREADY-RATIFIED node needs its uuid, so the agent
+// fetched /state, built a title→id map, and generated the batch through a
+// bespoke script — four times in one drive, and the second time is where the
+// edges got dropped. A `title:<exact title>` endpoint deletes that whole
+// category of scripting.
+//
+// The prefix can NEVER collide with a real endpoint: node ids and proposal ids
+// are UUIDs, which contain no ":" — and the prefixed-ref grammar is already the
+// house idiom (message.ground's `doc:<id>`).
+//
+// Resolution happens at INTAKE (here, in the shared build step, so the single
+// `/proposals` edge path and `/proposals/batch` get it from ONE site) and the
+// RESOLVED id is what gets stored. Two reasons: (a) the error lands in the same
+// turn as the mistake instead of at the human's ruling act — the edgeDraftWarning
+// lesson, which named "three verbs from the mistake" as the worst outcome; and
+// (b) the stored draft then holds a real id, so a later retitle can't silently
+// re-point a pending edge. Ratify keeps exactly ONE resolution vocabulary
+// (ids/proposal ids) — a second `title:` site there would be two vocabularies
+// free to drift.
+const TITLE_REF_PREFIX = "title:";
+
+function isTitleRef(ref: unknown): ref is string {
+  return typeof ref === "string" && ref.startsWith(TITLE_REF_PREFIX);
+}
+
+// EXACT, case-sensitive, RATIFIED NODES ONLY. Ambiguity is an error that NAMES
+// the candidates (the "ratify node proposal <id> first" model — the best error
+// in the system per drive #10), never a silent first-match. Fuzzy lookup is
+// `search`'s job and always was; this is a reference syntax, not a search.
+function resolveTitleRef(db: Database, ref: string): string {
+  const title = ref.slice(TITLE_REF_PREFIX.length);
+  if (title === "") {
+    throw new Error(
+      'empty title reference — expected "title:<exact node title>" (exact, case-sensitive, ratified nodes only)',
+    );
+  }
+  const rows = db.query("SELECT id FROM nodes WHERE title = ?").all(title) as Array<{ id: string }>;
+  if (rows.length === 0) {
+    throw new Error(
+      `no ratified node is titled "${title}" — title refs match EXACTLY (case-sensitive) and resolve against ratified nodes ONLY, never pending proposals (name those by local ref or proposal id); use \`search\` to find the node, or pass its id`,
+    );
+  }
+  if (rows.length > 1) {
+    throw new Error(
+      `title "${title}" matches ${rows.length} nodes: ${rows.map((r) => r.id).join(", ")} — titles are not unique; pass one of those ids instead`,
+    );
+  }
+  return (rows[0] as { id: string }).id;
+}
+
+// Rewrite an edge draft's source/target when (and only when) they are title
+// refs. Returns the draft UNTOUCHED otherwise, so a draft with no title ref is
+// stored byte-identically to pre-R12 (opacity is unchanged for every key the
+// daemon doesn't already read — ratify has always read source/target, which is
+// exactly what edgeDraftWarning advises about).
+function resolveEdgeTitleRefs(db: Database, draft: unknown): unknown {
+  if (draft === null || typeof draft !== "object") return draft;
+  const d = draft as Record<string, unknown>;
+  if (!isTitleRef(d.source) && !isTitleRef(d.target)) return draft;
+  return {
+    ...d,
+    ...(isTitleRef(d.source) ? { source: resolveTitleRef(db, d.source) } : {}),
+    ...(isTitleRef(d.target) ? { target: resolveTitleRef(db, d.target) } : {}),
+  };
 }
 
 // Round 5 (CLI1): validate + compute the row and the wire object, but do NOT
@@ -48,7 +121,11 @@ function buildProposal(
       'propose requires a draft — expected {"draft": {title, synopsis, ...}, "evidence": {docId|messageId, span}, "suggestedTier"?}',
     );
   }
-  const draftJson = JSON.stringify(input.draft);
+  // SEAM 2: resolve `title:<...>` endpoints NOW (pure read + throw, before any
+  // write) so the stored draft carries real ids and the caller sees them in the
+  // response it already reads.
+  const draft = kind === "edge" ? resolveEdgeTitleRefs(db, input.draft) : input.draft;
+  const draftJson = JSON.stringify(draft);
   // The draft stays opaque (Claim A), but evidence.docId becomes a filesystem
   // path component at ratify time — reject non-slug ids at intake so a bad
   // one fails loud here, not as a file write later. SLUG_RE guards docId
@@ -96,6 +173,15 @@ function buildProposal(
   // never carries null (readState normalizes pre-column rows).
   const author = input.author ?? "agent";
   const zoneId = input.zone ?? null;
+  // SEAM 1: the daemon does NOT mint one here — minting is the BATCH route's
+  // act (a batch is a call, and only the call knows its own extent). A single
+  // propose is unbatched unless the caller names the act it belongs to.
+  if (input.batchId !== undefined && (typeof input.batchId !== "string" || input.batchId === "")) {
+    throw new Error(
+      `batchId must be a non-empty string (the id returned by \`propose-batch\`), got: ${JSON.stringify(input.batchId)}`,
+    );
+  }
+  const batchId = input.batchId ?? null;
 
   // propose emits the FULL proposal object, so proposal.added carries zoneId
   // for free — payload-tagging is the mechanism (events are project-scoped
@@ -103,18 +189,19 @@ function buildProposal(
   const proposal: Proposal = {
     id,
     kind,
-    draft: input.draft,
+    draft,
     evidence: { docId: evidenceDocId, messageId: evidenceMessageId, span: evidenceSpan },
     suggestedTier,
     status: "pending",
     resultNodeId: null,
     author,
     zoneId,
+    batchId,
     ...(tags.length > 0 ? { tags } : {}),
   };
   const insert = () => {
     db.run(
-      "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author, zone_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+      "INSERT INTO proposals (id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, author, zone_id, batch_id) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?, ?)",
       [
         id,
         kind,
@@ -125,6 +212,7 @@ function buildProposal(
         suggestedTier,
         author,
         zoneId,
+        batchId,
       ],
     );
     // TAGS: the target-keyed row rides the SAME insert closure (so a batch
@@ -179,13 +267,28 @@ interface BatchEdgeInput {
 interface BatchInput {
   nodes?: BatchNodeInput[];
   edges?: BatchEdgeInput[];
+  // Round 12 (SEAM 1): omit and the daemon MINTS one (the normal path — the
+  // agent gets a queryable act for free, with zero bookkeeping, which is the
+  // whole F5.1 ask). Supply one to EXTEND an existing act — the repair case
+  // drive #10 needed: "I forgot the edges; add them to that batch."
+  batchId?: string;
 }
 
 function batchPropose(
   db: Database,
   bus: EventBus,
   input: BatchInput,
-): { refToId: Record<string, string>; proposals: Proposal[] } {
+): { batchId: string; refToId: Record<string, string>; proposals: Proposal[] } {
+  // Minted BEFORE any build so every member of the call carries the same act,
+  // including a batch of only edges. Reuse is NOT rejected: a caller that names
+  // an existing id means "same act", and the engine does not own the agent's
+  // grouping semantics (the dumb-daemon clause).
+  if (input.batchId !== undefined && (typeof input.batchId !== "string" || input.batchId === "")) {
+    throw new Error(
+      `batchId must be a non-empty string (omit it to have one minted), got: ${JSON.stringify(input.batchId)}`,
+    );
+  }
+  const batchId = input.batchId ?? crypto.randomUUID();
   const refToId = new Map<string, string>();
   const built: Array<{ proposal: Proposal; insert: () => void }> = [];
 
@@ -200,6 +303,7 @@ function batchPropose(
       suggestedTier: n.suggestedTier,
       author: n.author,
       tags: n.tags,
+      batchId,
     });
     refToId.set(n.ref, b.proposal.id);
     built.push(b);
@@ -223,6 +327,7 @@ function batchPropose(
         evidence: e.evidence ?? {},
         suggestedTier: e.suggestedTier,
         author: e.author,
+        batchId,
       }),
     );
   }
@@ -235,7 +340,7 @@ function batchPropose(
   for (const b of built) {
     bus.emit("proposal.added", b.proposal as unknown as Record<string, unknown>);
   }
-  return { refToId: Object.fromEntries(refToId), proposals: built.map((b) => b.proposal) };
+  return { batchId, refToId: Object.fromEntries(refToId), proposals: built.map((b) => b.proposal) };
 }
 
 // R3 gate rework (cassandra's cold drive): an edge draft with the WRONG
@@ -264,4 +369,12 @@ function proposeEdge(db: Database, bus: EventBus, input: ProposeInput): Proposal
 }
 
 export type { BatchEdgeInput, BatchInput, BatchNodeInput, ProposeInput };
-export { batchPropose, edgeDraftWarning, proposeEdge, proposeNode };
+export {
+  batchPropose,
+  edgeDraftWarning,
+  isTitleRef,
+  proposeEdge,
+  proposeNode,
+  resolveTitleRef,
+  TITLE_REF_PREFIX,
+};

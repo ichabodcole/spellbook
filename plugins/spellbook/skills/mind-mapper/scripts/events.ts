@@ -29,6 +29,13 @@ const ALL_EVENT_KINDS = [
   "doc.kind",
   "doc.marked",
   "node.ratified",
+  // Round 12 (SEAM 4): carries the FULL Node entity (wholesale replace-by-id,
+  // the tags.set/job.* idiom, re-read through readNodeById). Kept DISTINCT from
+  // node.ratified — a ratify is an arrival (animate it in), an edit is a patch
+  // of a node the consumer already holds; and per the R9 rule, a consumer can
+  // always COLLAPSE two kinds into one reducer case but can never re-derive a
+  // kind that was folded away.
+  "node.edited",
   "node.deleted",
   "edge.ratified",
   "node.anchored",

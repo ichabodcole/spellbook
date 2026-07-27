@@ -84,6 +84,11 @@ interface Proposal {
   // default exclusion) so snapshot merge and event ingestion obey ONE rule;
   // the main view is `zoneId == null` at render, and ?zone=<id> narrows.
   zoneId: string | null;
+  // Round 12 (SEAM 1): the staging ACT this proposal came from — ALWAYS carried
+  // (null = unbatched, the zoneId precedent). It SURVIVES ratification because
+  // the proposal row does: that is what turns "what else came from that call?"
+  // into a query instead of agent memory (F5.1, the drive-10 root enabler).
+  batchId: string | null;
   // Round 4 (A1): actions attach to PENDING proposals too (Cole's constraint,
   // met via the target-keyed table) — absent = none.
   actions?: ActionSlot[];
@@ -242,7 +247,7 @@ function readState(
 
   const proposalRows = db
     .query(
-      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author, zone_id FROM proposals ORDER BY created_at",
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author, zone_id, batch_id FROM proposals ORDER BY created_at",
     )
     .all() as Array<{
     id: string;
@@ -256,6 +261,7 @@ function readState(
     result_node_id: string | null;
     author: string | null;
     zone_id: string | null;
+    batch_id: string | null;
   }>;
   const proposals: Proposal[] = proposalRows.map((row) => {
     const actions = actionsByTarget.get(row.id);
@@ -274,6 +280,7 @@ function readState(
       resultNodeId: row.result_node_id,
       author: row.author === "user" ? "user" : "agent",
       zoneId: row.zone_id,
+      batchId: row.batch_id,
       ...(actions ? { actions } : {}),
       ...(tags ? { tags } : {}),
     };
@@ -331,6 +338,56 @@ function readState(
   };
 }
 
+// Round 12 (SEAM 4): read ONE node in the exact wire shape readState produces
+// (sources union, anchorNodeId, submapChildCount, actions, tags). `node.edited`
+// carries the FULL node, and the re-emit-through-the-single-source-reader rule
+// says a payload a replace-by-id consumer holds must NEVER be hand-assembled —
+// the readProposalById twin, for the same reason. Returns null for an unknown id.
+function readNodeById(db: Database, id: string): Node | null {
+  const row = db
+    .query("SELECT id, kind, tier, title, synopsis, anchor_node_id FROM nodes WHERE id = ?")
+    .get(id) as {
+    id: string;
+    kind: string;
+    tier: string;
+    title: string;
+    synopsis: string;
+    anchor_node_id: string | null;
+  } | null;
+  if (!row) return null;
+  const sources: NodeSource[] = [
+    ...(
+      db.query("SELECT doc_id, span FROM sources WHERE node_id = ?").all(id) as Array<{
+        doc_id: string;
+        span: string | null;
+      }>
+    ).map((s) => ({ docId: s.doc_id, span: s.span })),
+    ...(
+      db.query("SELECT message_id, span FROM message_sources WHERE node_id = ?").all(id) as Array<{
+        message_id: string;
+        span: string | null;
+      }>
+    ).map((s) => ({ messageId: s.message_id, span: s.span })),
+  ];
+  const childCount = (
+    db.query("SELECT COUNT(*) AS n FROM nodes WHERE anchor_node_id = ?").get(id) as { n: number }
+  ).n;
+  const actions = readActions(db).get(id);
+  const tags = readTags(db).get(id);
+  return {
+    id: row.id,
+    kind: row.kind,
+    tier: row.tier,
+    title: row.title,
+    synopsis: row.synopsis,
+    anchorNodeId: row.anchor_node_id,
+    submapChildCount: childCount,
+    sources,
+    ...(actions ? { actions } : {}),
+    ...(tags ? { tags } : {}),
+  };
+}
+
 // Round 5 (IC-c): read ONE proposal in the exact wire shape readState
 // produces (evidence union, author normalized, zoneId, actions attached). The
 // zone-move endpoint re-emits `proposal.added` with this so an inclusive
@@ -339,7 +396,7 @@ function readState(
 function readProposalById(db: Database, id: string): Proposal | null {
   const row = db
     .query(
-      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author, zone_id FROM proposals WHERE id = ?",
+      "SELECT id, kind, draft_json, evidence_doc_id, evidence_message_id, evidence_span, suggested_tier, status, result_node_id, author, zone_id, batch_id FROM proposals WHERE id = ?",
     )
     .get(id) as {
     id: string;
@@ -353,6 +410,7 @@ function readProposalById(db: Database, id: string): Proposal | null {
     result_node_id: string | null;
     author: string | null;
     zone_id: string | null;
+    batch_id: string | null;
   } | null;
   if (!row) return null;
   const actions = readActions(db).get(row.id);
@@ -375,10 +433,14 @@ function readProposalById(db: Database, id: string): Proposal | null {
     resultNodeId: row.result_node_id,
     author: row.author === "user" ? "user" : "agent",
     zoneId: row.zone_id,
+    // SEAM 1 rides the re-emit reader too — the standing checklist item: any
+    // NEW field on the Proposal wire must land HERE as well as in readState, or
+    // a zone-move re-emit silently drops it on a replace-by-id consumer.
+    batchId: row.batch_id,
     ...(actions ? { actions } : {}),
     ...(tags ? { tags } : {}),
   };
 }
 
 export type { Doc, Edge, Lens, Message, Node, NodeSource, ProjectState, Proposal, Zone };
-export { readProposalById, readState };
+export { readNodeById, readProposalById, readState };
