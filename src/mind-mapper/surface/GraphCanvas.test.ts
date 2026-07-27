@@ -5,7 +5,12 @@
 
 import { expect, test } from "bun:test";
 import type { Node } from "@xyflow/react";
-import { computeForcePositions, type IdeaNodeData, mergeLayout } from "./GraphCanvas";
+import {
+  carryMeasured,
+  computeForcePositions,
+  type IdeaNodeData,
+  mergeLayout,
+} from "./GraphCanvas";
 import type { MapNode, StubMap } from "./types";
 
 function node(id: string): StubMap["nodes"][number] {
@@ -189,4 +194,67 @@ test("#5A: position-carry survives the two-render ratify gap (flip, then backfil
     posMemory,
   });
   expect(cur[0]?.position).toEqual({ x: 100, y: 200 });
+});
+
+// R12 EDGEPAINT — the vanishing edge (and the node it hangs off).
+//
+// React Flow writes its ResizeObserver measurement back into OUR node objects
+// (`measured`, via onNodesChange → applyNodeChanges). Every rebuild here starts
+// from a freshly-derived node that has no such field, so a rebuild that doesn't
+// carry it WIPES the measurement. An unmeasured node is rendered
+// visibility:hidden and getEdgePosition returns null for every edge touching
+// it — the edge is absent from the DOM while present and correct in the `edges`
+// prop, and it does NOT self-heal (the re-measure waits on a box change that
+// never comes). Measured live at 8/24 trials before this carry, 0/24 after.
+//
+// These are the authoritative proof: the live symptom is a third-party render
+// consequence, but the CAUSE is exactly the dropped field asserted below.
+
+const MEASURED = { width: 190, height: 76 };
+
+test("EDGEPAINT: a known id keeps the measurement React Flow gave it", () => {
+  const prev = [flowNode("a", 100, 200, { measured: MEASURED })];
+  const fresh = [flowNode("a", 999, 999)]; // a fresh derive never carries `measured`
+  const [merged] = mergeLayout(prev, fresh);
+  expect(merged?.measured).toEqual(MEASURED);
+});
+
+test("EDGEPAINT: a burst preserves every earlier node's measurement, not just its position", () => {
+  const prev = [
+    flowNode("n1", 1, 1, { measured: MEASURED }),
+    flowNode("n2", 2, 2, { measured: MEASURED }),
+  ];
+  const fresh = [flowNode("n1", 9, 9), flowNode("n2", 9, 9), flowNode("n3", 40, 40)];
+  const merged = mergeLayout(prev, fresh);
+  expect(merged.find((n) => n.id === "n1")?.measured).toEqual(MEASURED);
+  expect(merged.find((n) => n.id === "n2")?.measured).toEqual(MEASURED);
+  // A genuinely new node has never been on screen — no false measurement.
+  expect(merged.find((n) => n.id === "n3")?.measured).toBeUndefined();
+});
+
+test("EDGEPAINT: the position-RESETTING paths (mode flip, Tidy) carry measurement too", () => {
+  // These were full replaces — the strongest way to break the whole board at
+  // once, which is exactly why toggling the layout or hitting Tidy never
+  // repaired a missing edge.
+  const prev = [
+    flowNode("a", 100, 200, { measured: MEASURED, selected: true }),
+    flowNode("b", 300, 400, { measured: MEASURED }),
+  ];
+  const fresh = [flowNode("a", 1, 1), flowNode("b", 2, 2)];
+  const replaced = carryMeasured(prev, fresh);
+  expect(replaced.map((n) => n.position)).toEqual([
+    { x: 1, y: 1 },
+    { x: 2, y: 2 },
+  ]); // positions genuinely reset
+  expect(replaced.every((n) => n.measured === MEASURED)).toBe(true); // measurement kept
+});
+
+test("EDGEPAINT: width/height ride along when React Flow set them, and stay absent when it didn't", () => {
+  const withAttrs = [flowNode("a", 0, 0, { measured: MEASURED, width: 190, height: 76 })];
+  const [a] = mergeLayout(withAttrs, [flowNode("a", 9, 9)]);
+  expect([a?.width, a?.height]).toEqual([190, 76]);
+
+  const withoutAttrs = [flowNode("b", 0, 0, { measured: MEASURED })];
+  const [b] = mergeLayout(withoutAttrs, [flowNode("b", 9, 9)]);
+  expect("width" in (b ?? {})).toBe(false);
 });

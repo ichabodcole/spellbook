@@ -387,6 +387,59 @@ function layout(
 // two-render-sequence test in GraphCanvas.test.ts.
 export type XY = { x: number; y: number };
 
+// R12 EDGEPAINT — the vanishing-edge-and-node class, and the reason EVERY
+// rebuild of the node array below goes through `carryMeasured`.
+//
+// React Flow MEASURES each node with a ResizeObserver and writes the result
+// back into OUR node objects through `onNodesChange` (a `dimensions` change →
+// `applyNodeChanges` sets `node.measured`). Every array we hand back is built
+// from freshly-derived objects (`dagreLayout`/`forceLayout` mint `{id, type,
+// position, data}` and nothing else) — so handing that array to React Flow
+// WIPES the measurement it just gave us. `adoptUserNodes` then resets the
+// node's `handleBounds` as well (its own comment: "if the user ... removes
+// `measured` for whatever reason, we reset the handleBounds so that the node
+// gets re-measured"), leaving the node UNINITIALIZED. An uninitialized node is
+// rendered `visibility: hidden`, and `getEdgePosition` returns null for every
+// edge touching it — so the edge is dropped from the DOM entirely even though
+// it is present, correct, in the `edges` prop.
+//
+// It never self-heals because the re-measure React Flow is waiting for arrives
+// only when the element's BOX changes, and the box never changed — the node is
+// the same size it always was. Drag, tidy, resize and the layout-mode toggle
+// all fail for the same reason (two of them made it WORSE: they were full
+// replaces, so they wiped the whole board's measurements at once). Only a
+// remount fixed it.
+//
+// So: retain the React-Flow-owned measurement fields whenever a known id is
+// rebuilt. This is a fix, not a nudge — the node never becomes uninitialized in
+// the first place, so there is no race left to lose.
+function retainMeasurement(
+  fresh: Node<IdeaNodeData>,
+  existing: Node<IdeaNodeData>,
+): Node<IdeaNodeData> {
+  return {
+    ...fresh,
+    measured: existing.measured,
+    ...(existing.width !== undefined && { width: existing.width }),
+    ...(existing.height !== undefined && { height: existing.height }),
+  };
+}
+
+// Carry measurements from the prior node array onto a freshly-laid-out one,
+// leaving positions alone. This is what the POSITION-RESETTING paths (the
+// layout-mode flip and Tidy) need: they deliberately want fresh positions, but
+// they must never want fresh (i.e. absent) measurements.
+export function carryMeasured(
+  prev: Node<IdeaNodeData>[],
+  fresh: Node<IdeaNodeData>[],
+): Node<IdeaNodeData>[] {
+  const prevById = new Map(prev.map((n) => [n.id, n]));
+  return fresh.map((f) => {
+    const existing = prevById.get(f.id);
+    return existing ? retainMeasurement(f, existing) : f;
+  });
+}
+
 export function mergeLayout(
   prev: Node<IdeaNodeData>[],
   fresh: Node<IdeaNodeData>[],
@@ -395,7 +448,15 @@ export function mergeLayout(
   const prevById = new Map(prev.map((n) => [n.id, n]));
   return fresh.map((f) => {
     const existing = prevById.get(f.id);
-    if (existing) return { ...f, position: existing.position, selected: existing.selected };
+    if (existing)
+      return {
+        ...retainMeasurement(f, existing),
+        position: existing.position,
+        selected: existing.selected,
+      };
+    // A genuinely NEW id (incl. a just-minted ratified node) carries no
+    // measurement — it has never been on screen, so React Flow measures its
+    // real element on mount. Only its POSITION is inherited, below.
     // position-carry-across-ratify: a minted node inherits its proposal's
     // last-known spot (prev if the synthetic is still there, else posMemory,
     // which outlives the transient disappearance).
@@ -576,7 +637,10 @@ export function GraphCanvas({
       // so a synthetic node's spot survives the ratify two-render gap
       // (position-carry-across-ratify).
       for (const n of prev) posMemory.current.set(n.id, n.position);
-      if (modeChanged) return fresh;
+      // A mode flip wants every position recomputed — but NOT the measurements
+      // discarded (R12 EDGEPAINT: a wiped `measured` hides the node and drops
+      // its edges, permanently).
+      if (modeChanged) return carryMeasured(prev, fresh);
       return mergeLayout(prev, fresh, { alias: aliasRef.current, posMemory: posMemory.current });
     });
   }, [map, layoutMode]);
@@ -586,7 +650,11 @@ export function GraphCanvas({
   // piles nodes up). Distinct from a map-change merge, which preserves spots.
   const retidy = useCallback(() => {
     posMemory.current.clear();
-    setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
+    const fresh = layout(layoutMode, map, (command, node) => commandRef.current(command, node));
+    // Positions reset; measurements carried (R12 EDGEPAINT). Tidy used to be
+    // the strongest way to BREAK the board — it wiped every node's measurement
+    // at once, which is why it never repaired a missing edge.
+    setNodes((prev) => carryMeasured(prev, fresh));
   }, [layoutMode, map]);
 
   useEffect(() => {
