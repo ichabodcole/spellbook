@@ -49262,6 +49262,7 @@ function MessageBubble({
   const isUser = message.who === "user";
   const sideChannel = isSideChannel(message.channel);
   const [expanded, setExpanded] = import_react12.useState(() => !collapsesByDefault(message));
+  const collapsible = collapsesByDefault(message);
   const refs = message.ground.map((ref) => resolveGroundRef(ref, nodes, docs, zones)).filter((r) => r !== null);
   const nodeTitles = refs.filter((r) => r.type === "node").map((r) => r.node.title);
   const docRefs = refs.filter((r) => r.type === "doc");
@@ -49308,7 +49309,7 @@ function MessageBubble({
           sideChannel && isUser && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
             type: "button",
             onClick: () => setExpanded((e) => !e),
-            "aria-expanded": expanded,
+            "aria-expanded": collapsible ? expanded : undefined,
             title: channelTitle(message.channel),
             className: `-mx-1 mb-1 flex w-[calc(100%+0.5rem)] items-center gap-1 rounded px-1 py-0.5 text-[10px] uppercase tracking-wide ${channelChipClass(message.channel)}`,
             children: [
@@ -52964,6 +52965,7 @@ function App() {
       setActiveZone(null);
     }
   }, [state, activeZone]);
+  const activeZoneName = activeZone && state?.zones.find((z2) => z2.id === activeZone)?.name || null;
   import_react23.useEffect(() => {
     if (activeAnchor && state && !state.nodes.some((n) => n.id === activeAnchor)) {
       setActiveAnchor(null);
@@ -53815,7 +53817,7 @@ function App() {
                     children: [
                       /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("p", {
                         className: "text-[10px] italic text-ink-faint",
-                        children: canvasInput.connectFrom ? "lands as a pending sketch." : "goes to the agent as a message — no node is created."
+                        children: canvasInput.connectFrom ? "lands as a pending sketch." : activeZoneName ? `goes to the agent as a message, tagged “${activeZoneName}” — no node is created.` : "goes to the agent as a message — no node is created."
                       }, undefined, false, undefined, this),
                       /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                         className: "flex gap-1.5",
