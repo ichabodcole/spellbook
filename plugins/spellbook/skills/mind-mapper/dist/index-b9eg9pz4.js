@@ -18401,21 +18401,43 @@ var __iconNode37 = [
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
 var Trash2 = createLucideIcon("trash-2", __iconNode37);
-// node_modules/lucide-react/dist/esm/icons/upload.mjs
+// node_modules/lucide-react/dist/esm/icons/unlink.mjs
 var __iconNode38 = [
+  [
+    "path",
+    {
+      d: "m18.84 12.25 1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71",
+      key: "yqzxt4"
+    }
+  ],
+  [
+    "path",
+    {
+      d: "m5.17 11.75-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71",
+      key: "4qinb0"
+    }
+  ],
+  ["line", { x1: "8", x2: "8", y1: "2", y2: "5", key: "1041cp" }],
+  ["line", { x1: "2", x2: "5", y1: "8", y2: "8", key: "14m1p5" }],
+  ["line", { x1: "16", x2: "16", y1: "19", y2: "22", key: "rzdirn" }],
+  ["line", { x1: "19", x2: "22", y1: "16", y2: "16", key: "ox905f" }]
+];
+var Unlink = createLucideIcon("unlink", __iconNode38);
+// node_modules/lucide-react/dist/esm/icons/upload.mjs
+var __iconNode39 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode38);
+var Upload = createLucideIcon("upload", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode39 = [
+var __iconNode40 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode39);
+var User = createLucideIcon("user", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/waypoints.mjs
-var __iconNode40 = [
+var __iconNode41 = [
   ["path", { d: "m10.586 5.414-5.172 5.172", key: "4mc350" }],
   ["path", { d: "m18.586 13.414-5.172 5.172", key: "8c96vv" }],
   ["path", { d: "M6 12h12", key: "8npq4p" }],
@@ -18424,13 +18446,13 @@ var __iconNode40 = [
   ["circle", { cx: "20", cy: "12", r: "2", key: "1xzzfp" }],
   ["circle", { cx: "4", cy: "12", r: "2", key: "1hvhnz" }]
 ];
-var Waypoints = createLucideIcon("waypoints", __iconNode40);
+var Waypoints = createLucideIcon("waypoints", __iconNode41);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode41 = [
+var __iconNode42 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode41);
+var X = createLucideIcon("x", __iconNode42);
 // src/mind-mapper/surface/App.tsx
 var import_react23 = __toESM(require_react(), 1);
 
@@ -42189,6 +42211,20 @@ function IdeaNode({ data, selected: selected2 }) {
                 }, undefined, false, undefined, this),
                 n.submapChildCount
               ]
+            }, undefined, true, undefined, this),
+            data.orphan && /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+              className: "ml-auto flex items-center text-ink-faint",
+              title: "unconnected — no edges, and no pending edge proposes one",
+              children: [
+                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Unlink, {
+                  size: 9,
+                  "aria-hidden": true
+                }, undefined, false, undefined, this),
+                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+                  className: "sr-only",
+                  children: "unconnected"
+                }, undefined, false, undefined, this)
+              ]
             }, undefined, true, undefined, this)
           ]
         }, undefined, true, undefined, this),
@@ -42355,7 +42391,8 @@ function GraphCanvas({
   selectionCount,
   onGroupSubmap,
   onNestSubmap,
-  onGroupZone
+  onGroupZone,
+  orphanIds
 }) {
   const [nodes, setNodes] = import_react9.useState([]);
   const [layoutMode, setLayoutMode] = import_react9.useState("tree");
@@ -42427,7 +42464,7 @@ function GraphCanvas({
   const renderNodes = import_react9.useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
     const lit = spotlight?.nodes ?? null;
-    if (!keep && !lit && !promotable && !menus && !multiMenus)
+    if (!keep && !lit && !promotable && !menus && !multiMenus && !orphanIds)
       return nodes;
     return nodes.map((n) => {
       const searchDim = keep ? !keep.has(n.id) : false;
@@ -42437,6 +42474,7 @@ function GraphCanvas({
         data: {
           ...n.data,
           ...(keep || lit) && { dimmed: searchDim || spotDim },
+          orphan: orphanIds?.has(n.id) ?? false,
           ...promotable && { promotable: true },
           menu: menus?.get(n.id),
           onRule: dispatchRule,
@@ -42461,7 +42499,8 @@ function GraphCanvas({
     selectionCount,
     dispatchGroupSubmap,
     dispatchNestSubmap,
-    dispatchGroupZone
+    dispatchGroupZone,
+    orphanIds
   ]);
   const renderEdges = import_react9.useMemo(() => {
     const lit = spotlight?.edges ?? null;
@@ -42630,7 +42669,8 @@ function CardGrid({
   multiMenus,
   onGroupSubmap,
   onNestSubmap,
-  onGroupZone
+  onGroupZone,
+  orphanIds
 }) {
   const groups = groupByTierKind(map.nodes);
   const keep = highlightIds ? new Set(highlightIds) : null;
@@ -42711,6 +42751,20 @@ function CardGrid({
                                 "aria-hidden": true
                               }, undefined, false, undefined, this),
                               n.submapChildCount
+                            ]
+                          }, undefined, true, undefined, this),
+                          orphanIds?.has(n.id) && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+                            className: "ml-auto flex items-center text-ink-faint",
+                            title: "unconnected — no edges, and no pending edge proposes one",
+                            children: [
+                              /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Unlink, {
+                                size: 9,
+                                "aria-hidden": true
+                              }, undefined, false, undefined, this),
+                              /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+                                className: "sr-only",
+                                children: "unconnected"
+                              }, undefined, false, undefined, this)
                             ]
                           }, undefined, true, undefined, this)
                         ]
@@ -43021,28 +43075,31 @@ function ActivityIndicator({ label }) {
 }
 
 // src/mind-mapper/surface/state/filter.ts
-var EMPTY_FILTER = { status: [], tier: [], tags: [] };
+var EMPTY_FILTER = { status: [], tier: [], tags: [], connection: [] };
 function isEmptyFilter(f) {
-  return f.status.length === 0 && f.tier.length === 0 && f.tags.length === 0;
+  return f.status.length === 0 && f.tier.length === 0 && f.tags.length === 0 && f.connection.length === 0;
 }
 function activeFilterCount(f) {
-  return f.status.length + f.tier.length + f.tags.length;
+  return f.status.length + f.tier.length + f.tags.length + f.connection.length;
 }
 function statusOf(node) {
   return node.pending ? "pending" : "ratified";
 }
-function filterMap(map, f) {
+function filterMap(map, f, orphanIds) {
   if (isEmptyFilter(f))
     return map;
   const statusSet = new Set(f.status);
   const tierSet = new Set(f.tier);
   const tagSet = new Set(f.tags);
+  const orphansOnly = f.connection.includes("unconnected");
   const nodes = map.nodes.filter((n) => {
     if (statusSet.size > 0 && !statusSet.has(statusOf(n)))
       return false;
     if (tierSet.size > 0 && !tierSet.has(n.tier))
       return false;
     if (tagSet.size > 0 && !(n.tags ?? []).some((t) => tagSet.has(t)))
+      return false;
+    if (orphansOnly && !orphanIds?.has(n.id))
       return false;
     return true;
   });
@@ -43052,7 +43109,7 @@ function filterMap(map, f) {
 }
 var STATUS_ORDER = ["ratified", "pending"];
 var TIER_ORDER3 = ["canon", "thread", "story-local", "background"];
-function filterFacets(map) {
+function filterFacets(map, orphanIds) {
   const statusesPresent = new Set(map.nodes.map(statusOf));
   const tiersPresent = new Set(map.nodes.map((n) => n.tier));
   const tags = new Set;
@@ -43062,7 +43119,8 @@ function filterFacets(map) {
   return {
     statuses: STATUS_ORDER.filter((s) => statusesPresent.has(s)),
     tiers: TIER_ORDER3.filter((t) => tiersPresent.has(t)),
-    tags: [...tags].sort((a2, b) => a2.localeCompare(b))
+    tags: [...tags].sort((a2, b) => a2.localeCompare(b)),
+    unconnected: orphanIds ? map.nodes.filter((n) => orphanIds.has(n.id)).length : 0
   };
 }
 function toggleFacet(values, value) {
@@ -44063,7 +44121,7 @@ function FilterControl({
   onFilter
 }) {
   const count = activeFilterCount(filter2);
-  const hasFacets = facets.statuses.length > 0 || facets.tiers.length > 0 || facets.tags.length > 0;
+  const hasFacets = facets.statuses.length > 0 || facets.tiers.length > 0 || facets.tags.length > 0 || facets.unconnected > 0;
   if (!hasFacets)
     return null;
   return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Popover, {
@@ -44096,7 +44154,7 @@ function FilterControl({
               }, undefined, false, undefined, this),
               count > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
                 type: "button",
-                onClick: () => onFilter({ status: [], tier: [], tags: [] }),
+                onClick: () => onFilter(EMPTY_FILTER),
                 className: "flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention",
                 children: [
                   /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {
@@ -44107,6 +44165,14 @@ function FilterControl({
               }, undefined, true, undefined, this)
             ]
           }, undefined, true, undefined, this),
+          facets.unconnected > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetGroup, {
+            label: "Connection",
+            children: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetChip, {
+              label: `unconnected · ${facets.unconnected}`,
+              active: filter2.connection.includes("unconnected"),
+              onToggle: () => onFilter({ ...filter2, connection: toggleFacet(filter2.connection, "unconnected") })
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this),
           facets.statuses.length > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetGroup, {
             label: "Status",
             children: facets.statuses.map((s) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetChip, {
@@ -52043,6 +52109,33 @@ function pendingEdgesFrom(proposals, resolve) {
   }).filter((e) => e.source && e.target);
 }
 
+// src/mind-mapper/surface/state/orphans.ts
+function orphanNodeIds(nodes, edges, proposals) {
+  const ratified = nodes.filter((n) => !n.pending);
+  if (ratified.length < 2)
+    return new Set;
+  const connected = new Set;
+  for (const e of edges) {
+    connected.add(e.source);
+    connected.add(e.target);
+  }
+  for (const e of pendingEdgesFrom(proposals, resultNodeIdMap(proposals))) {
+    connected.add(e.source);
+    connected.add(e.target);
+  }
+  const orphans = new Set;
+  for (const n of ratified) {
+    if (connected.has(n.id))
+      continue;
+    if (n.anchorNodeId)
+      continue;
+    if ((n.submapChildCount ?? 0) > 0)
+      continue;
+    orphans.add(n.id);
+  }
+  return orphans;
+}
+
 // src/mind-mapper/surface/state/presence.ts
 function dotState(status, agents) {
   if (status !== "open")
@@ -53145,8 +53238,9 @@ function App() {
       edges: submapMap.edges.filter((e) => keep.has(e.source) && keep.has(e.target))
     };
   }, [submapMap, lens]);
-  const filteredMap = import_react23.useMemo(() => visibleMap ? filterMap(visibleMap, filter2) : visibleMap, [visibleMap, filter2]);
-  const filterFacetOptions = import_react23.useMemo(() => visibleMap ? filterFacets(visibleMap) : { statuses: [], tiers: [], tags: [] }, [visibleMap]);
+  const orphanIds = import_react23.useMemo(() => state ? orphanNodeIds(state.nodes, state.edges, state.proposals) : new Set, [state]);
+  const filteredMap = import_react23.useMemo(() => visibleMap ? filterMap(visibleMap, filter2, orphanIds) : visibleMap, [visibleMap, filter2, orphanIds]);
+  const filterFacetOptions = import_react23.useMemo(() => visibleMap ? filterFacets(visibleMap, orphanIds) : { statuses: [], tiers: [], tags: [], unconnected: 0 }, [visibleMap, orphanIds]);
   const detailNode = selection2.length > 0 ? selection2[selection2.length - 1] : null;
   const detailNodeId = detailNode?.id;
   import_react23.useEffect(() => {
@@ -53755,6 +53849,7 @@ function App() {
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this),
+                orphanIds,
                 panelBelowBar: Boolean(lens.owner)
               }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(jsx_dev_runtime31.Fragment, {
                 children: [
@@ -53771,7 +53866,8 @@ function App() {
                     multiMenus,
                     onGroupSubmap: groupSubmapInline,
                     onNestSubmap: nestSubmapInline,
-                    onGroupZone: groupZoneInline
+                    onGroupZone: groupZoneInline,
+                    orphanIds
                   }, undefined, false, undefined, this),
                   /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                     className: `absolute right-4 z-10 flex items-center gap-1.5 ${lens.owner ? "top-14" : "top-4"}`,
