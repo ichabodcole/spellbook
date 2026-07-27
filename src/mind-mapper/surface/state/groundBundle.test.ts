@@ -28,3 +28,22 @@ test("repeated selection ids dedupe, first occurrence wins", () => {
 test("null openDocId mints no doc ref", () => {
   expect(groundBundle(["a"], null)).toEqual(["a"]);
 });
+
+// R11 SEAM 4 — the zone carry (a canvas ramble made on a zone board).
+
+test("a zone rides last, after the doc ref", () => {
+  expect(groundBundle(["a"], "field-notes", "sandbox")).toEqual([
+    "a",
+    "doc:field-notes",
+    "zone:sandbox",
+  ]);
+});
+
+test("the main board (null zone) mints no zone ref — today's shape, unchanged", () => {
+  expect(groundBundle(["a"], null, null)).toEqual(["a"]);
+  expect(groundBundle(["a"], null)).toEqual(["a"]);
+});
+
+test("a zone alone grounds the message", () => {
+  expect(groundBundle([], null, "sandbox")).toEqual(["zone:sandbox"]);
+});

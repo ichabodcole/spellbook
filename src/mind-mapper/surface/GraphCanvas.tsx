@@ -54,12 +54,14 @@ export type GraphCanvasProps = {
   // fans a node+edge proposal in one batch). Fixes the dead drag. Absent =
   // the affordance is off (e.g. inside a zone, where a batch can't tag it).
   onConnectToBlank?: (sourceNodeId: string) => void;
-  // R5 IC-a — right-click the empty pane to add a node (free-text modal). The
-  // caller opens it; placement honesty holds (no click point carried — layout
-  // decides where the sketch lands). Replaces the retired pane double-click.
-  onAddNode?: () => void;
+  // R5 IC-a / R11 SEAM 4 — right-click the empty pane to open the freeform
+  // box. It no longer mints a node: the ramble goes to the agent as a message
+  // on the canvas channel (drive-9 F1 — intent, not a node). The caller opens
+  // the box; no click point is carried either way.
+  onCanvasSend?: () => void;
   // R5 SG2 — double-click a node to enter its submap (the caller drills the
-  // view in; the double-click's old job — sketch a node — moved to onAddNode).
+  // view in; the double-click's old job — sketch a node — moved to the
+  // pane right-click).
   onEnterSubmap?: (nodeId: string) => void;
   // V1 — App's view control (map|grid) rides the canvas Panel top-right,
   // next to the layout toggle. A slot, not view state: the canvas stays
@@ -447,7 +449,7 @@ export function GraphCanvas({
   focusRequest,
   onConnect,
   onConnectToBlank,
-  onAddNode,
+  onCanvasSend,
   onEnterSubmap,
   panelTopRight,
   promotable,
@@ -728,12 +730,13 @@ export function GraphCanvas({
         }
       }}
       // SG2: double-click a node → enter its submap (the old pane-double-click
-      // sketch job moved to onAddNode / right-click).
+      // sketch job moved to the pane right-click).
       onNodeDoubleClick={(_, node) => onEnterSubmap?.(node.id)}
-      // IC-a: right-click the empty pane → add a node (free-text modal).
+      // IC-a / R11 SEAM 4: right-click the empty pane → the freeform box,
+      // which sends a message (no node is minted).
       onPaneContextMenu={(event) => {
         event.preventDefault();
-        onAddNode?.();
+        onCanvasSend?.();
       }}
       zoomOnDoubleClick={false}
       fitView

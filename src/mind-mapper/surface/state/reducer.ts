@@ -10,7 +10,6 @@ import type {
   ActionSlot,
   DocMark,
   DocMeta,
-  Job,
   Lens,
   ProjectState,
   Proposal,
@@ -283,27 +282,6 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
         cursor: event.seq,
       };
     }
-    // Round 9 (Job Queue, SEAM B) — job.added/updated/claimed carry the FULL
-    // Job entity (D3), so the reducer does a wholesale replace-by-id (the
-    // tags.set/actions.set idiom, but jobs ARE their own entity so it's a
-    // straight upsert into jobs[], not a metadata copy onto another row).
-    // job.claimed is the acquisition signal kept distinct on the wire; the
-    // surface collapses it through the SAME replace-by-id case (both carry the
-    // full entity) — a distinct surface animation could split it later, but the
-    // reducer's job is identical either way.
-    case "job.added":
-    case "job.updated":
-    case "job.claimed": {
-      const jobPayload = event.payload as Job;
-      if (typeof jobPayload?.id !== "string") return { ...state, cursor: event.seq };
-      return { ...state, jobs: upsertById(state.jobs, jobPayload), cursor: event.seq };
-    }
-    case "job.deleted": {
-      // Thin {id} (D3) — mirror the doc.deleted / proposal.deleted filter.
-      const { id } = event.payload as { id?: unknown };
-      if (typeof id !== "string") return { ...state, cursor: event.seq };
-      return { ...state, jobs: state.jobs.filter((j) => j.id !== id), cursor: event.seq };
-    }
     case "message.posted":
       return {
         ...state,
@@ -325,6 +303,11 @@ export function applyEvent(state: ProjectState, event: ServerEvent): ProjectStat
     // around the reducer is the bug this clause exists to kill (a
     // permanently-stale cursor reads every later event as a gap → a
     // wholesale refetch per agent.activity signal).
+    //
+    // R11 SEAM 5 — `job.*` joins them here: the surface's jobs view is gone
+    // (jobs stay an engine/agent primitive), and this same clause is what
+    // makes dropping the cases free — an unhandled kind costs a seq, not a
+    // wholesale refetch.
     default:
       return { ...state, cursor: event.seq };
   }

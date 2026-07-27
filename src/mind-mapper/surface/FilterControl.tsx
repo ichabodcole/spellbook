@@ -30,7 +30,10 @@ const STATUS_LABEL: Record<NodeStatus, string> = {
 };
 
 // A facet chip: filled at its own token when active, an outline plate when not.
-function FacetChip({
+// EXPORTED (R11): the conversation's channel filter mirrors this control rather
+// than inventing a second filter language — sharing the chip + group primitives
+// is what makes "mirror" structural instead of aspirational.
+export function FacetChip({
   label,
   active,
   onToggle,
@@ -141,7 +144,7 @@ export function FilterControl({
   );
 }
 
-function FacetGroup({ label, children }: { label: string; children: ReactNode }) {
+export function FacetGroup({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="mb-2 last:mb-0">
       <div className="mb-1 text-[9px] uppercase tracking-widest text-ink-faint">{label}</div>

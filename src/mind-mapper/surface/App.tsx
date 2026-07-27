@@ -6,7 +6,7 @@
 // Conversation stays local-only until P2 wires it to the real bus
 // (plan/circe.md P2.3) — there's no agent behind it yet either way.
 
-import { ListChecks, Loader, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
@@ -15,8 +15,6 @@ import { DocViewer } from "./DocViewer";
 import { FilterControl } from "./FilterControl";
 import { FocusBar } from "./FocusBar";
 import { GraphCanvas } from "./GraphCanvas";
-import { IngestionTray } from "./IngestionTray";
-import { JobsSidebar } from "./JobsSidebar";
 import { MapKey } from "./MapKey";
 import type { NodeCommand } from "./NodeContextMenu";
 import { NodeDetail } from "./NodeDetail";
@@ -38,10 +36,10 @@ import {
 import { docLensNodeIds } from "./state/docLens";
 import { EMPTY_FILTER, filterFacets, filterMap, type MapFilter } from "./state/filter";
 import { groundBundle } from "./state/groundBundle";
-import { processingItems } from "./state/ingestionQueue";
 import type { IngestFilePost, IngestJsonPost } from "./state/intake";
 import { ingestBlank, ingestFiles, ingestText } from "./state/intake";
-import type { DeliverableRef } from "./state/jobs";
+import { activityOwnerId, clearsActivity } from "./state/messageActivity";
+import { CANVAS_CHANNEL } from "./state/messageChannel";
 import { type MultiSelectActions, multiSelectActions } from "./state/multiSelect";
 import { directedSet, lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
@@ -68,7 +66,6 @@ import { selectedPendingProposalIds } from "./state/zoneGroup";
 import { mainProposals, zoneMapFrom, zoneOf } from "./state/zoneView";
 import type {
   ActionSlot,
-  AgentActivityState,
   Doc,
   DocMeta,
   Lens,
@@ -102,6 +99,11 @@ function toDisplayMessage(m: WireMessage): Message {
     id: m.id,
     who: m.role,
     kind: m.kind === "info" ? "info" : "result",
+    // R11 SEAM 3 — the wire's `kind` IS the channel (the lead's ruling). It
+    // rides through verbatim; every literal + fallback lives in
+    // state/messageChannel.ts, so if the wire ever moves the channel onto its
+    // own field, this line is the only adapter that changes.
+    channel: m.kind,
     text: m.text,
     ground: m.ground ?? [],
   };
@@ -187,10 +189,6 @@ export function App() {
     kind: "node" | "proposal";
     citedBy: NodeCitedBy | null;
   } | null>(null);
-  // R6 QUEUE — the ingestion tray toggle (ReviewQueue's idiom).
-  const [ingestOpen, setIngestOpen] = useState(false);
-  // R9 — the jobs sidebar toggle (IngestionTray's off-canvas twin).
-  const [jobsOpen, setJobsOpen] = useState(false);
   // R6 SUBMAP-CREATE — the group-ratified-nodes-under-a-parent modal: the
   // selected ratified nodes gathered when the affordance is clicked.
   const [submapGroup, setSubmapGroup] = useState<{ nodes: MapNode[] } | null>(null);
@@ -201,7 +199,10 @@ export function App() {
   // null = a plain add (pane right-click → one node proposal); a node id = a
   // drag-connect-to-blank (onConnectEnd) → a node+edge batch anchored to that
   // source. Replaces the retired T9 structured title/synopsis form.
-  const [addNode, setAddNode] = useState<{ text: string; connectFrom: string | null } | null>(null);
+  const [canvasInput, setCanvasInput] = useState<{
+    text: string;
+    connectFrom: string | null;
+  } | null>(null);
   // T8 — agent activity → the conversation panel's badge. R4 ACT1 makes it
   // tri-state: the thinking pulse, or the STATIC stalled branch (a
   // daemon-synthesized "agent may be stuck" that must never look alive).
@@ -294,7 +295,9 @@ export function App() {
   // server-side; this is the local mirror of that ruling).
   const lastMessage = state?.conversation[state.conversation.length - 1];
   useEffect(() => {
-    if (lastMessage?.role === "agent") setAgentBadge(null);
+    // R11 SEAM 2 (ratified): the reply IS completion — there is no `done`
+    // state. clearsActivity is that rule, pure and pinned.
+    if (clearsActivity(lastMessage && toDisplayMessage(lastMessage))) setAgentBadge(null);
   }, [lastMessage]);
 
   // Z3 agent-follow (ratified): a focus target that lives in a zone switches
@@ -963,18 +966,35 @@ export function App() {
         setNotice(`couldn't sketch that (${e instanceof Error ? e.message : String(e)}).`),
       );
 
-  // IC-a/IC-b — the free-text add-node modal's submit. A drag-connect (connectFrom
-  // set) fans a node+edge batch; a plain add sketches one node. The free text
-  // becomes the node's title (the agent's proposal.added is its refine signal —
-  // no separate message). No optimistic append — the pending overlay renders it
-  // when proposal.added round-trips (one source of truth, same as messages).
-  const submitAddNode = () => {
-    if (!addNode) return;
-    const text = addNode.text.trim();
+  // R11 SEAM 4 — the freeform box's submit, now TWO different acts behind one
+  // box, keyed on `connectFrom`:
+  //
+  //  • connectFrom === null (pane right-click): the ramble is INTENT, not a
+  //    node (drive-9 F1 — "my intent here isn't to create the node directly,
+  //    it's to give you what I want to create"). It POSTs /send on the CANVAS
+  //    channel and mints NOTHING on the board. Ground carries the same bundle
+  //    the composer sends (selection ∪ open doc) plus the zone board you were
+  //    looking at — the Z3 placement meaning, kept as context rather than
+  //    dropped, since a message has no zone.
+  //  • connectFrom set (drag-to-blank): STRUCTURED — the human named a
+  //    relation to an existing node, and a message cannot hold an edge. It
+  //    stays a user-authored node+edge proposal (lead ruling L1).
+  const submitCanvasInput = () => {
+    if (!canvasInput) return;
+    const text = canvasInput.text.trim();
     if (!text) return;
-    if (addNode.connectFrom) proposeBatchConnect(addNode.connectFrom, text);
-    else proposeAsUser("node", { title: text });
-    setAddNode(null);
+    if (canvasInput.connectFrom) proposeBatchConnect(canvasInput.connectFrom, text);
+    else
+      sendMessage(
+        text,
+        groundBundle(
+          selection.map((n) => n.id),
+          openDoc?.doc.id ?? null,
+          activeZone,
+        ),
+        CANVAS_CHANNEL,
+      );
+    setCanvasInput(null);
   };
 
   // T5 — the delete flow's fetch half (the 409-body parse is pure,
@@ -1037,9 +1057,9 @@ export function App() {
       });
   };
 
-  // R6 DEL — the PROPOSAL delete (thin, no guard): the litter-clearing path
-  // shared by the dialog's proposal branch AND the ingestion tray's per-item
-  // discard. Emits proposal.deleted; the reducer drops the row.
+  // R6 DEL — the PROPOSAL delete (thin, no guard): the board's litter-clearing
+  // path, reached from the delete dialog's proposal branch. Emits
+  // proposal.deleted; the reducer drops the row.
   const deleteProposal = (id: string) =>
     fetch(`/proposals/${id}${projectQs}`, { method: "DELETE" })
       .then((r) => {
@@ -1049,54 +1069,6 @@ export function App() {
       .catch((e) =>
         setNotice(`couldn't discard that (${e instanceof Error ? e.message : String(e)}).`),
       );
-
-  // R9 — the human's light-touch write on a job: cancel (a status flip). Watch
-  // + cancel is V1's human role (the plan); richer authoring is agent/CLI. No
-  // optimistic edit — the job.updated event round-trips through the reducer.
-  const cancelJob = (id: string) =>
-    fetch(`/jobs/${id}${projectQs}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "canceled" }),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`job ${r.status}`);
-      })
-      .catch((e) =>
-        setNotice(`couldn't cancel that job (${e instanceof Error ? e.message : String(e)}).`),
-      );
-
-  // R10 F1 — the human's create-job affordance (answers plan-round9's open-Q
-  // "does the sidebar want a human create-job affordance?" → yes). POST /jobs
-  // {title}; status defaults to `queued` server-side. V1 is title-only —
-  // everything else is editable later via the CLI/agent. No optimistic insert:
-  // the job.added event round-trips through the reducer (the cancelJob /
-  // deleteProposal one-source-of-truth pattern). The title is pre-trimmed by
-  // the form's normalizeJobTitle guard, so a blank never reaches the wire.
-  const createJob = (title: string) =>
-    fetch(`/jobs${projectQs}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
-    })
-      .then((r) => {
-        if (!r.ok) throw new Error(`job ${r.status}`);
-      })
-      .catch((e) =>
-        setNotice(`couldn't create that job (${e instanceof Error ? e.message : String(e)}).`),
-      );
-
-  // R9 — the deliverable jump-link (D5, many-jobs-one-deliverable): a doc: ref
-  // opens the doc; a node: ref selects + follows it on the board (the search-
-  // pick / backlink precedent). Text deliverables aren't links (JobsSidebar
-  // renders them inert).
-  const openDeliverable = (deliverable: DeliverableRef) => {
-    if (deliverable.kind === "doc") openDocById(deliverable.id);
-    else if (deliverable.kind === "node") {
-      setSelectedIds([deliverable.id]);
-      followFocus(deliverable.id);
-    }
-  };
 
   // TAGS (R7) — wholesale-replace a target's tags (PUT /tags/:targetId; the
   // body IS the bare array, setTags parses it directly). Target = a node id OR
@@ -1358,9 +1330,6 @@ export function App() {
   // main board only (a zoned proposal can't ratify while zoned).
   const selectedPendingNodes =
     activeZone === null ? pendingNodeProposalIds(state.proposals, selectedIds) : [];
-  // R6 QUEUE — the raw items being curated (pure derive over the inclusive
-  // store; decoupled from the active board view).
-  const processing = processingItems(state.proposals);
   // T8 — layer 1 (my socket) and layer 2 (agent tails) stay separate;
   // dotState is the pure rule. `presence` is defensive-read: a pre-V1.x
   // daemon simply reads as no-agent, never crashes.
@@ -1369,21 +1338,10 @@ export function App() {
   // autocomplete (finding #4: the engine keeps no registry; this is the union
   // of every node's + proposal's tags off the snapshot we already hold).
   const allTags = existingTags(state.nodes, state.proposals);
-  // R9 (D2 / SEAM D) — the liveness join's owner→activity map. The wire carries
-  // NO per-owner activity (agent.activity is {state} only, project-scoped), so
-  // in V1's single-casting-agent-per-project reality the ONE project activity
-  // (agentBadge, already TTL-managed above) is attributed to whoever holds a
-  // claim. agentBadge "thinking" → live, "stalled" → stale, null → paused (via
-  // absence). When the wire someday keys activity by owner, only THIS map's
-  // construction changes — jobLiveness is already a per-owner lookup.
-  const activityByAgent: Record<string, AgentActivityState> = {};
-  if (agentBadge) {
-    const proxy: AgentActivityState = agentBadge === "stalled" ? "stalled" : "thinking";
-    for (const job of state.jobs) {
-      if (job.claimedBy) activityByAgent[job.claimedBy] = proxy;
-    }
-  }
-
+  // R11 SEAM 2 — which message the live badge belongs to. Uses the wire's
+  // additive `messageId` when the daemon sends one, else the latest human
+  // message (the honest degrade; pure + tested in state/messageActivity.ts).
+  const activityOwner = activityOwnerId(agentActivity, agentBadge, messages);
   return (
     <div className="flex h-screen flex-col bg-bg text-ink">
       <header className="flex items-baseline gap-3 border-b border-edge bg-surface px-4 py-2">
@@ -1399,37 +1357,6 @@ export function App() {
             review · {pendingCount}
           </Button>
         )}
-        {/* R6 QUEUE — the ingestion tray toggle: raw human input awaiting
-            curation. Shown only when something's ingesting (like review). */}
-        {processing.length > 0 && (
-          <Button
-            variant="outline"
-            size="auto"
-            className="flex items-center gap-1 px-2 py-0.5 text-xs text-pending"
-            onClick={() => setIngestOpen((o) => !o)}
-          >
-            <Loader size={11} className="animate-pulse" aria-hidden />
-            ingesting · {processing.length}
-          </Button>
-        )}
-        {/* R10 F1 — the jobs toggle: agent work units. ALWAYS rendered (unlike
-            the review/ingest trays' show-when-nonempty pattern) — the jobs
-            panel is a first-class surface the human must be able to find on a
-            fresh session, so a zero-job store still shows `jobs · 0` (dimmed to
-            an idle tint) opening onto the empty-state explainer + create form.
-            The hide-when-empty reflex is right for the transient agent-fed
-            ingest tray; it's wrong here (F1). */}
-        <Button
-          variant="outline"
-          size="auto"
-          className={`flex items-center gap-1 px-2 py-0.5 text-xs ${
-            state.jobs.length > 0 ? "text-thread-tier" : "text-ink-faint"
-          }`}
-          onClick={() => setJobsOpen((o) => !o)}
-        >
-          <ListChecks size={11} aria-hidden />
-          jobs · {state.jobs.length}
-        </Button>
         <span className="ml-auto flex items-center gap-2 text-xs text-ink-faint">
           <span className="flex items-center gap-1.5" role="status" title={DOT_TITLE[dot]}>
             <span className={`h-2 w-2 rounded-full ${DOT_CLASS[dot]}`} aria-hidden />
@@ -1532,11 +1459,13 @@ export function App() {
               // escape to main (placement dishonesty) — undefined disables it.
               onConnectToBlank={
                 activeZone === null
-                  ? (src) => setAddNode({ text: "", connectFrom: src })
+                  ? (src) => setCanvasInput({ text: "", connectFrom: src })
                   : undefined
               }
-              // IC-a — right-click the pane to add a node (free-text modal).
-              onAddNode={() => setAddNode({ text: "", connectFrom: null })}
+              // IC-a / R11 SEAM 4 — right-click the pane to open the freeform
+              // box: the ramble becomes a MESSAGE on the canvas channel, not a
+              // node (drive-9 F1).
+              onCanvasSend={() => setCanvasInput({ text: "", connectFrom: null })}
               // SG2 — double-click a node to enter its submap.
               onEnterSubmap={enterSubmap}
               panelTopRight={
@@ -1622,50 +1551,62 @@ export function App() {
               </div>
             </>
           )}
-          {addNode && (
+          {canvasInput && (
             <div className="absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur">
               <p className="mb-2 text-[10px] uppercase tracking-widest text-ink-faint">
-                {addNode.connectFrom ? "sketch a connected idea" : "sketch an idea"}
+                {canvasInput.connectFrom ? "sketch a connected idea" : "say it from the canvas"}
               </p>
               {/* IC-a: a single free-text field (dictation-first) — say it in
-                  your own words; the agent's refine (its proposal.added) is the
-                  next move, no structured title/synopsis form. Cmd/Ctrl+Enter
-                  sketches, Escape cancels. */}
+                  your own words. Cmd/Ctrl+Enter sends, Escape cancels. R11
+                  SEAM 4: the plain (unconnected) case is a MESSAGE, so the copy
+                  says so BEFORE you commit — feedback ex ante beats a toast
+                  after the fact, and the message landing in chat (the one place
+                  things go now) is the receipt. */}
               <Textarea
                 autoFocus
-                value={addNode.text}
-                onChange={(e) => setAddNode({ ...addNode, text: e.target.value })}
+                value={canvasInput.text}
+                onChange={(e) => setCanvasInput({ ...canvasInput, text: e.target.value })}
                 onKeyDown={(e) => {
-                  if (e.key === "Escape") setAddNode(null);
+                  if (e.key === "Escape") setCanvasInput(null);
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                     e.preventDefault();
-                    submitAddNode();
+                    submitCanvasInput();
                   }
                 }}
-                placeholder="what's the idea?…"
-                aria-label="New idea"
+                placeholder={
+                  canvasInput.connectFrom ? "what's the idea?…" : "what are you thinking?…"
+                }
+                aria-label={
+                  canvasInput.connectFrom ? "New connected idea" : "Message from the canvas"
+                }
                 className="min-h-16 p-1.5 text-xs"
               />
-              {/* Placement honesty (ratified): the sketch lands where layout
-                  puts it, not where you clicked — no position rides the schema. */}
+              {/* Honesty line, per branch. Connected: placement honesty
+                  (ratified) — the sketch lands where layout puts it, not where
+                  you clicked. Plain: it goes to the agent as a message; no node
+                  appears, nothing to clean up later. */}
               <div className="mt-2 flex items-center justify-between gap-1.5">
-                <p className="text-[10px] italic text-ink-faint">lands as a pending sketch.</p>
+                <p className="text-[10px] italic text-ink-faint">
+                  {canvasInput.connectFrom
+                    ? "lands as a pending sketch."
+                    : "goes to the agent as a message — no node is created."}
+                </p>
                 <div className="flex gap-1.5">
                   <Button
                     variant="ghost"
                     size="auto"
                     className="px-2 py-1"
-                    onClick={() => setAddNode(null)}
+                    onClick={() => setCanvasInput(null)}
                   >
                     cancel
                   </Button>
                   <Button
                     size="auto"
                     className="px-2 py-1"
-                    onClick={submitAddNode}
-                    disabled={!addNode.text.trim()}
+                    onClick={submitCanvasInput}
+                    disabled={!canvasInput.text.trim()}
                   >
-                    sketch
+                    {canvasInput.connectFrom ? "sketch" : "send"}
                   </Button>
                 </div>
               </div>
@@ -1779,28 +1720,13 @@ export function App() {
             onClose={() => setReviewOpen(false)}
           />
         )}
-        {ingestOpen && (
-          <IngestionTray
-            items={processing}
-            onDelete={deleteProposal}
-            onClose={() => setIngestOpen(false)}
-          />
-        )}
-        {jobsOpen && (
-          <JobsSidebar
-            jobs={state.jobs}
-            activityByAgent={activityByAgent}
-            onOpenDeliverable={openDeliverable}
-            onCancel={cancelJob}
-            onCreate={createJob}
-            onClose={() => setJobsOpen(false)}
-          />
-        )}
         <ConversationPanel
           nodes={state.nodes}
           docs={state.docs}
+          zones={state.zones}
           disabled={status === "closed"}
           agentBadge={agentBadge}
+          activityMessageId={activityOwner}
           scrollRequest={scrollRequest}
           composerSeed={composerSeed}
           selection={selection}
@@ -1816,6 +1742,7 @@ export function App() {
               groundBundle(
                 selection.map((n) => n.id),
                 openDoc?.doc.id ?? null,
+                activeZone,
               ),
             )
           }

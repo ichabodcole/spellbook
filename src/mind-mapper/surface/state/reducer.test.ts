@@ -4,7 +4,7 @@
 // gets a live verify pass instead (matches the imago fileIntake precedent).
 
 import { expect, test } from "bun:test";
-import type { Job, ProjectState, ServerEvent } from "../types";
+import type { ProjectState, ServerEvent } from "../types";
 import { applyEvent, isGap } from "./reducer";
 
 function baseState(): ProjectState {
@@ -26,7 +26,6 @@ function baseState(): ProjectState {
         zoneId: null,
       },
     ],
-    jobs: [],
     conversation: [],
     lens: { owner: null, nodeId: null, depth: 1, docId: null },
     cursor: 5,
@@ -637,69 +636,28 @@ test("doc.kind on an unknown doc advances the cursor and touches nothing", () =>
   expect(next.docs).toEqual(baseState().docs);
 });
 
-// ── Round 9 (Job Queue, SEAM B) ────────────────────────────────────────────
+// ── R11 SEAM 5 — the surface's jobs view is GONE ───────────────────────────
+//
+// Jobs survive as an engine/agent primitive (table + routes + `job` CLI verb
+// untouched), so `job.*` still rides the bus — the surface just holds no jobs
+// state and no reducer case. What must stay true is that those events are
+// HARMLESS: they fall to the default branch, advance the cursor (the
+// ephemeral-event cursor clause) and change nothing. Without the advance,
+// every later event would read as a gap and cost a wholesale refetch.
 
-const jobPayload = (over: Partial<Job> = {}): Job => ({
-  id: "job-1",
-  project: "p1",
-  title: "Research the archive",
-  status: "queued",
-  claimedBy: null,
-  deliverable: null,
-  subtasks: [],
-  detail: null,
-  createdAt: 100,
-  updatedAt: 100,
-  ...over,
-});
-
-test("job.added appends a new job and advances cursor", () => {
-  const next = applyEvent(baseState(), {
+test.each([
+  "job.added",
+  "job.updated",
+  "job.claimed",
+  "job.deleted",
+] as const)("%s advances the cursor and leaves the board untouched (no surface jobs state)", (kind) => {
+  const before = baseState();
+  const next = applyEvent(before, {
     seq: 6,
-    kind: "job.added",
-    payload: jobPayload(),
+    kind,
+    payload: { id: "job-1", title: "Research the archive", status: "queued" },
   });
-  expect(next.jobs).toEqual([jobPayload()]);
   expect(next.cursor).toBe(6);
-});
-
-test("job.updated replaces the job by id (wholesale)", () => {
-  const state = { ...baseState(), jobs: [jobPayload({ status: "queued", updatedAt: 100 })] };
-  const next = applyEvent(state, {
-    seq: 6,
-    kind: "job.updated",
-    payload: jobPayload({ status: "blocked", detail: "waiting", updatedAt: 200 }),
-  });
-  expect(next.jobs).toHaveLength(1);
-  expect(next.jobs[0]?.status).toBe("blocked");
-  expect(next.jobs[0]?.detail).toBe("waiting");
-});
-
-test("job.claimed replaces by id through the same case (full entity)", () => {
-  const state = { ...baseState(), jobs: [jobPayload()] };
-  const next = applyEvent(state, {
-    seq: 6,
-    kind: "job.claimed",
-    payload: jobPayload({ status: "running", claimedBy: "circe" }),
-  });
-  expect(next.jobs[0]?.claimedBy).toBe("circe");
-  expect(next.jobs[0]?.status).toBe("running");
-  expect(next.cursor).toBe(6);
-});
-
-test("job.deleted removes the job by id (thin)", () => {
-  const state = {
-    ...baseState(),
-    jobs: [jobPayload({ id: "job-1" }), jobPayload({ id: "job-2" })],
-  };
-  const next = applyEvent(state, { seq: 6, kind: "job.deleted", payload: { id: "job-1" } });
-  expect(next.jobs.map((j) => j.id)).toEqual(["job-2"]);
-  expect(next.cursor).toBe(6);
-});
-
-test("a malformed job payload advances the cursor and touches nothing", () => {
-  const state = { ...baseState(), jobs: [jobPayload()] };
-  const next = applyEvent(state, { seq: 6, kind: "job.added", payload: { title: "no id" } });
-  expect(next.jobs).toEqual(state.jobs);
-  expect(next.cursor).toBe(6);
+  expect({ ...next, cursor: 0 }).toEqual({ ...before, cursor: 0 });
+  expect("jobs" in next).toBe(false);
 });

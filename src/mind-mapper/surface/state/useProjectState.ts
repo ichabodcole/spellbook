@@ -40,8 +40,13 @@ export function useProjectState(projectId?: string) {
   // Same {payload, seq} idiom for the agent's active-attention signal
   // (agent.activity, Claim C) — repeats of the same state must re-fire the
   // consumer's TTL reset.
+  // R11 SEAM 2 — `messageId` is daedalus's additive-optional field (which
+  // message the state is ABOUT). Read defensively so this hook is correct
+  // whether the daemon ships it or not: absent → null → the consumer's
+  // latest-human-message fallback (state/messageActivity.ts).
   const [agentActivity, setAgentActivity] = useState<{
     state: AgentActivityState;
+    messageId: string | null;
     seq: number;
   } | null>(null);
   const ws = useRef<WebSocket | null>(null);
@@ -129,9 +134,11 @@ export function useProjectState(projectId?: string) {
             // parseActivityState (state/activity.ts) knows the full R4
             // vocabulary incl. the daemon-synthesized `stalled`; unknown
             // future states drop silently rather than crashing the board.
-            const s = parseActivityState((event.payload as { state?: string })?.state);
+            const payload = event.payload as { state?: string; messageId?: unknown };
+            const s = parseActivityState(payload?.state);
             if (s) {
-              setAgentActivity((r) => ({ state: s, seq: (r?.seq ?? 0) + 1 }));
+              const messageId = typeof payload?.messageId === "string" ? payload.messageId : null;
+              setAgentActivity((r) => ({ state: s, messageId, seq: (r?.seq ?? 0) + 1 }));
             }
           }
           setState((prev) => {

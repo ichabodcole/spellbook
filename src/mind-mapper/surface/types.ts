@@ -138,6 +138,12 @@ export type Message = {
   id: string;
   who: "user" | "agent";
   kind: "info" | "result";
+  // R11 SEAM 3 — the CHANNEL this message arrived through, carried verbatim
+  // from the wire's `kind` (the lead's pre-ruling: the channel rides on kind).
+  // Distinct from `kind` above, which is the display axis (an italic agent
+  // aside vs a normal reply). Open vocabulary — state/messageChannel.ts owns
+  // the literals and every fallback.
+  channel: string;
   text: string;
   ground: string[];
 };
@@ -250,32 +256,12 @@ export type Proposal = {
   resultNodeId?: string;
 };
 
-// Round 9 (Job Queue) — a first-class, persisted unit of AGENT WORK: status +
-// sub-tasks + a deliverable + an OWNER (a lease). The surface's own copy of the
-// wire shape (Contract 9 R9), the WireMessage precedent — the engine's Job type
-// lives in scripts/jobs.ts; the surface never imports it. Timestamps are epoch
-// MILLISECONDS (the R9 falsification: numbers like every other ts field, NOT
-// ISO text — updated_at bumps on every mutation for sub-second ordering).
-export type JobStatus = "queued" | "running" | "blocked" | "done" | "failed" | "canceled";
-
-export type Subtask = { id: string; label: string; done: boolean };
-
-export type Job = {
-  id: string;
-  // scope — self-describing on the wire; reads are unfiltered per-project store.
-  project: string;
-  title: string;
-  status: JobStatus;
-  // the lease (D6): the owning agent/session, or null (unclaimed).
-  claimedBy: string | null;
-  // D5: one freeform ref (doc:id / node:id / free text), or null.
-  deliverable: string | null;
-  // D4: the checklist, owned wholly by this job.
-  subtasks: Subtask[];
-  detail: string | null;
-  createdAt: number;
-  updatedAt: number;
-};
+// R11 SEAM 5 — the `Job` wire type is GONE from the surface. Jobs survive as an
+// ENGINE/agent primitive (the jobs table + /jobs routes + `job` CLI verb are
+// untouched, and are the seed of multi-agent work distribution) — but the human
+// never opens a jobs panel, so the surface mirrors none of that state. Reviving
+// a surface view means re-adding this type from Contract 9 R9, not un-deleting a
+// dead mirror. Same for `/ingest`: still a route + CLI verb, no longer a tray.
 
 export type ProjectState = {
   project: ProjectMeta;
@@ -285,9 +271,6 @@ export type ProjectState = {
   // Round 3 (Claim Z1): the store's zones, in creation order.
   zones: Zone[];
   proposals: Proposal[];
-  // Round 9 (Job Queue): the persisted agent-work units (D3 — full-entity
-  // events, wholesale replace-by-id). Unfiltered per-project read, newest last.
-  jobs: Job[];
   conversation: WireMessage[];
   // null until a lens has ever been set for this project (no row yet) —
   // daedalus's readState (state.ts) returns null, not a default object; the
@@ -361,12 +344,10 @@ export type ServerEventKind =
   // replace, the actions.set precedent — freeform tags ride a node/pending
   // proposal, not an entity of their own). Empty array clears to wire absence.
   | "tags.set"
-  // Round 9 (Job Queue, SEAM B) — job.added/updated/claimed carry the FULL Job
-  // entity (D3 — wholesale replace-by-id, the tags.set/actions.set idiom); the
-  // reducer replaces by id. job.claimed is kept DISTINCT from job.updated (a
-  // claim is a compare-and-set lease acquisition that can fail on contention —
-  // the multi-agent headline signal), but the surface MAY collapse both through
-  // one replace-by-id case (both carry the full entity). job.deleted is thin {id}.
+  // Round 9 (Job Queue, SEAM B) — still on the bus (jobs are an agent
+  // primitive), but R11 removed the surface's jobs view, so no reducer case
+  // handles them: they fall to the default branch, which advances the cursor
+  // (the ephemeral-event cursor clause) and changes nothing.
   | "job.added"
   | "job.updated"
   | "job.claimed"

@@ -1,7 +1,7 @@
 // Pure-logic test for the ground-ref prefix grammar (Claim G).
 
 import { expect, test } from "bun:test";
-import type { DocMeta, MapNode } from "../types";
+import type { DocMeta, MapNode, Zone } from "../types";
 import { resolveGroundRef } from "./groundRefs";
 
 const nodes: MapNode[] = [
@@ -37,4 +37,25 @@ test("unresolvable refs drop silently (null), including unknown prefixes", () =>
   expect(resolveGroundRef("no-such-node", nodes, docs)).toBeNull();
   expect(resolveGroundRef("doc:no-such-doc", nodes, docs)).toBeNull();
   expect(resolveGroundRef("msg:whatever", nodes, docs)).toBeNull();
+});
+
+// R11 SEAM 4 — the third prefix: zone:<id> (the board the human was on).
+
+const zones: Zone[] = [{ id: "sandbox", name: "Sandbox" }];
+
+test("a zone:-prefixed id resolves as a zone ref", () => {
+  expect(resolveGroundRef("zone:sandbox", nodes, docs, zones)).toEqual({
+    type: "zone",
+    zone: zones[0] as Zone,
+  });
+});
+
+test("a zone ref drops silently when the zone is gone or unpassed", () => {
+  expect(resolveGroundRef("zone:deleted", nodes, docs, zones)).toBeNull();
+  // Every pre-R11 call site passes no zones — the ref must degrade, not throw.
+  expect(resolveGroundRef("zone:sandbox", nodes, docs)).toBeNull();
+});
+
+test("a bare id never resolves against zones (the prefix is load-bearing)", () => {
+  expect(resolveGroundRef("sandbox", nodes, docs, zones)).toBeNull();
 });

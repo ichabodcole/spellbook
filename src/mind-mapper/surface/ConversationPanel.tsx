@@ -13,14 +13,18 @@
 // autoscroll-to-bottom YIELDS while a request is being serviced — otherwise
 // any concurrent message would yank the viewport off the evidence.
 
-import { AlertTriangle, SendHorizontal, X } from "lucide-react";
+import { AlertTriangle, Filter as FilterIcon, SendHorizontal, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator } from "./ActivityIndicator";
+import { FacetChip, FacetGroup } from "./FilterControl";
 import { MessageBubble } from "./MessageBubble";
 import type { AgentBadge } from "./state/activity";
-import type { DocMeta, MapNode, Message, Tier } from "./types";
+import { toggleFacet } from "./state/filter";
+import { channelFacets, channelLabel, filterByChannel } from "./state/messageChannel";
+import type { DocMeta, MapNode, Message, Tier, Zone } from "./types";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Textarea } from "./ui/textarea";
 
 const TIER_CHIP: Record<Tier, string> = {
@@ -44,17 +48,20 @@ export type ComposerSeed = { text: string; seq: number };
 export function ConversationPanel({
   nodes,
   docs,
+  zones = [],
   selection,
   onDeselect,
   messages,
   onSend,
   disabled = false,
   agentBadge = null,
+  activityMessageId = null,
   scrollRequest,
   composerSeed,
 }: {
   nodes: MapNode[];
   docs: DocMeta[];
+  zones?: Zone[];
   selection: MapNode[];
   onDeselect: (id: string) => void;
   messages: Message[];
@@ -66,10 +73,17 @@ export function ConversationPanel({
   // "thinking" pulses; "stalled" renders its own STATIC attention branch
   // (never the pulse — false-liveness would vouch for a stuck agent).
   agentBadge?: AgentBadge;
+  // R11 SEAM 2 — which message the badge belongs to (state/messageActivity.ts).
+  // Null = unattributable, and the badge falls back to the bottom of the log
+  // (today's behavior). One pulse either way — never two saying one thing.
+  activityMessageId?: string | null;
   scrollRequest?: ScrollRequest | null;
   composerSeed?: ComposerSeed | null;
 }) {
   const [draft, setDraft] = useState("");
+  // R11 SEAM 3 — the channel filter. View-local like the board's MapFilter (a
+  // filter is a rendering, not board state); OR-within, empty = show all.
+  const [channels, setChannels] = useState<string[]>([]);
   const historyRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // The flash is render state; the yield is a ref (the autoscroll effect
@@ -80,6 +94,16 @@ export function ConversationPanel({
   // request (the focusRequest idiom).
   const lastSeq = useRef(scrollRequest?.seq ?? 0);
   const lastSeedSeq = useRef(composerSeed?.seq ?? 0);
+
+  // Facet options derive from the whole log, present-only; the control hides
+  // entirely while everything arrived through the composer (no chrome for a
+  // filter with one option — the FilterControl hasFacets rule).
+  const facets = channelFacets(messages);
+  const visible = filterByChannel(messages, channels);
+  // If the owning message is filtered out of view, the badge falls back to the
+  // bottom of the log rather than rendering nowhere.
+  const ownerVisible = visible.some((m) => m.id === activityMessageId);
+  const unattributed: AgentBadge = ownerVisible ? null : agentBadge;
 
   // C3 — service a composer seed: overwrite the draft (a seed IS the new
   // intent; merging with a stale half-typed draft would garble both) and put
@@ -117,12 +141,17 @@ export function ConversationPanel({
     return () => clearTimeout(t);
   }, [scrollRequest]);
 
+  // Autoscroll keys off what is actually RENDERED, not the whole log: a
+  // channel-filter change re-lengthens the view, and the honest resting place
+  // is still the bottom. (Reading visibleCount here is also what makes the
+  // dependency real rather than decorative.)
+  const visibleCount = visible.length;
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (visibleCount === 0) return;
     // Yield to an in-flight evidence scroll — the bottom can wait.
     if (servicingRef.current) return;
     historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight });
-  }, [messages]);
+  }, [visibleCount]);
 
   const submit = () => {
     if (disabled) return;
@@ -134,13 +163,65 @@ export function ConversationPanel({
 
   return (
     <aside className="flex min-h-0 w-80 shrink-0 flex-col border-l border-edge bg-surface xl:w-96">
+      {facets.length > 1 && (
+        <div className="flex items-center justify-between gap-2 border-b border-edge px-3 py-1.5">
+          <span className="text-[10px] uppercase tracking-widest text-ink-faint">
+            {channels.length > 0 ? `${visible.length} of ${messages.length}` : "conversation"}
+          </span>
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="outline"
+                  size="auto"
+                  className={`flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-wide ${
+                    channels.length > 0 ? "text-ink" : "text-ink-dim"
+                  }`}
+                  title="Show only messages from certain channels"
+                >
+                  <FilterIcon size={10} aria-hidden />
+                  channel{channels.length > 0 ? ` · ${channels.length}` : ""}
+                </Button>
+              }
+            />
+            <PopoverContent className="w-48">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-widest text-ink-faint">
+                  channel
+                </span>
+                {channels.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setChannels([])}
+                    className="flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention"
+                  >
+                    <X size={10} /> clear
+                  </button>
+                )}
+              </div>
+              <FacetGroup label="Came from">
+                {facets.map((c) => (
+                  <FacetChip
+                    key={c}
+                    label={channelLabel(c) === "turn" ? "chat" : channelLabel(c)}
+                    active={channels.includes(c)}
+                    onToggle={() => setChannels((cs) => toggleFacet(cs, c))}
+                  />
+                ))}
+              </FacetGroup>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
       <div ref={historyRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 ? (
           <p className="text-xs text-ink-faint">
             think out loud — pull nodes into context and work through where it goes.
           </p>
+        ) : visible.length === 0 ? (
+          <p className="text-xs text-ink-faint">nothing on that channel yet.</p>
         ) : (
-          messages.map((m) => (
+          visible.map((m) => (
             <div
               key={m.id}
               data-message-id={m.id}
@@ -150,13 +231,15 @@ export function ConversationPanel({
                 message={m}
                 nodes={nodes}
                 docs={docs}
+                zones={zones}
                 highlightSpan={flash?.messageId === m.id ? flash.span : undefined}
+                activity={m.id === activityMessageId ? agentBadge : null}
               />
             </div>
           ))
         )}
-        {agentBadge === "thinking" && <ActivityIndicator />}
-        {agentBadge === "stalled" && (
+        {unattributed === "thinking" && <ActivityIndicator />}
+        {unattributed === "stalled" && (
           // STATIC on purpose — no animation, no pulse: the honest signal
           // for "received your message, then went quiet past the TTL".
           <div className="flex items-center gap-2 text-[11px] text-attention" role="status">
