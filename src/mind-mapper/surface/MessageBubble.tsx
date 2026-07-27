@@ -80,6 +80,10 @@ export function MessageBubble({
   const isUser = message.who === "user";
   const sideChannel = isSideChannel(message.channel);
   const [expanded, setExpanded] = useState(() => !collapsesByDefault(message));
+  // R11 gate finding 2: only claim a toggle when there IS one. A short
+  // side-channel message has nothing folded away, so advertising
+  // aria-expanded there promises a control that does nothing.
+  const collapsible = collapsesByDefault(message);
   const refs = message.ground
     .map((ref) => resolveGroundRef(ref, nodes, docs, zones))
     .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -136,7 +140,7 @@ export function MessageBubble({
           <button
             type="button"
             onClick={() => setExpanded((e) => !e)}
-            aria-expanded={expanded}
+            aria-expanded={collapsible ? expanded : undefined}
             title={channelTitle(message.channel)}
             className={`-mx-1 mb-1 flex w-[calc(100%+0.5rem)] items-center gap-1 rounded px-1 py-0.5 text-[10px] uppercase tracking-wide ${channelChipClass(message.channel)}`}
           >

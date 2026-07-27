@@ -136,9 +136,9 @@ message. **Override it when you're working an OLDER message than the newest
 one** (`activity thinking --message <id>`) — that's the case the human can't
 infer, and getting it wrong puts the "working on it" pulse on the wrong bubble.
 An unknown id is a 400, not a silent no-op. There is **no `done` state**: your
-reply IS completion — a `send` resolves the ladder and clears the badge. With
-the jobs and ingest panels gone (R11), this signal is the human's ONLY view into
-whether you're working — treat it as load-bearing, not decoration.
+reply IS completion — a `send` resolves the ladder and clears the badge. **This
+signal is the human's ONLY view into whether you're working** — the board has no
+status panel to check — so treat it as load-bearing, not decoration.
 
 **When a doc arrives (`doc.added`):** this is AMBIENT staging, not an intent —
 the human may be setting the table for a conversation. Acknowledge it; extract

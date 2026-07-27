@@ -342,6 +342,12 @@ export function App() {
     }
   }, [state, activeZone]);
 
+  // R11 — the active zone's display name, for the canvas-input honesty line
+  // (a ramble from a zone board rides a `zone:<id>` ground ref, so the modal
+  // names where it's going). Null on the main board or an unresolvable id.
+  const activeZoneName =
+    (activeZone && state?.zones.find((z) => z.id === activeZone)?.name) || null;
+
   // SG2 — the anchor node gone (deleted, or un-anchored so it's no longer a
   // submap root under us — an agent's `node anchor --clear`) re-homes the view
   // to the top level rather than stranding it on a submap that no longer
@@ -1584,12 +1590,17 @@ export function App() {
               {/* Honesty line, per branch. Connected: placement honesty
                   (ratified) — the sketch lands where layout puts it, not where
                   you clicked. Plain: it goes to the agent as a message; no node
-                  appears, nothing to clean up later. */}
+                  appears, nothing to clean up later. R11 gate finding 1: when a
+                  zone is active a `zone:<id>` ref rides along, so NAME the zone
+                  here — the one place the provenance is non-obvious was the one
+                  place the copy stayed silent about it. */}
               <div className="mt-2 flex items-center justify-between gap-1.5">
                 <p className="text-[10px] italic text-ink-faint">
                   {canvasInput.connectFrom
                     ? "lands as a pending sketch."
-                    : "goes to the agent as a message — no node is created."}
+                    : activeZoneName
+                      ? `goes to the agent as a message, tagged “${activeZoneName}” — no node is created.`
+                      : "goes to the agent as a message — no node is created."}
                 </p>
                 <div className="flex gap-1.5">
                   <Button

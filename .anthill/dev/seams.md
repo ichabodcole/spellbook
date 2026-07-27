@@ -420,7 +420,12 @@ the activity signal names the message it is about. No new table, no new column.
   as `canvas:<x>,<y>` under the tolerated-prefix grammar — zero schema change,
   test-pinned as round-tripping verbatim. The same clause covers circe's Z3
   carry-over `zone:<id>` ground ref: engine stores it verbatim, unknown prefixes are
-  the consumer's to drop. **Contract 9 footnote (ratified here):**
+  the consumer's to drop. **Named consequence of "degrades to invisible" (R11 gate):**
+  the `from: <Zone>` chip resolves its name from LIVE state, so **deleting a zone
+  silently strips that provenance from historical messages** — the ref survives on
+  the wire, its label does not. Ratified-correct (the alternative is denormalizing a
+  name into every message), but pinned here so a future gate reads it as designed,
+  not as a regression. **Contract 9 footnote (ratified here):**
   `message.ground[]`'s tolerated-unknown-prefix clause is an **extension point, not
   slack** — `send.ts` stores ground unvalidated, which is why `zone:<id>` shipped
   with zero engine change.
