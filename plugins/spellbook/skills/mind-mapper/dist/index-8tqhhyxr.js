@@ -42311,12 +42311,31 @@ function forceLayout(map, onCommand) {
 function layout(mode, map, onCommand) {
   return mode === "physics" ? forceLayout(map, onCommand) : dagreLayout(map, onCommand);
 }
+function retainMeasurement(fresh, existing) {
+  return {
+    ...fresh,
+    measured: existing.measured,
+    ...existing.width !== undefined && { width: existing.width },
+    ...existing.height !== undefined && { height: existing.height }
+  };
+}
+function carryMeasured(prev, fresh) {
+  const prevById = new Map(prev.map((n) => [n.id, n]));
+  return fresh.map((f) => {
+    const existing = prevById.get(f.id);
+    return existing ? retainMeasurement(f, existing) : f;
+  });
+}
 function mergeLayout(prev, fresh, carry) {
   const prevById = new Map(prev.map((n) => [n.id, n]));
   return fresh.map((f) => {
     const existing = prevById.get(f.id);
     if (existing)
-      return { ...f, position: existing.position, selected: existing.selected };
+      return {
+        ...retainMeasurement(f, existing),
+        position: existing.position,
+        selected: existing.selected
+      };
     const proposalId = carry?.alias?.get(f.id);
     if (proposalId) {
       const pos = prevById.get(proposalId)?.position ?? carry?.posMemory?.get(proposalId);
@@ -42431,13 +42450,14 @@ function GraphCanvas({
       for (const n of prev)
         posMemory.current.set(n.id, n.position);
       if (modeChanged)
-        return fresh;
+        return carryMeasured(prev, fresh);
       return mergeLayout(prev, fresh, { alias: aliasRef.current, posMemory: posMemory.current });
     });
   }, [map, layoutMode]);
   const retidy = import_react9.useCallback(() => {
     posMemory.current.clear();
-    setNodes(layout(layoutMode, map, (command, node) => commandRef.current(command, node)));
+    const fresh = layout(layoutMode, map, (command, node) => commandRef.current(command, node));
+    setNodes((prev) => carryMeasured(prev, fresh));
   }, [layoutMode, map]);
   import_react9.useEffect(() => {
     const want = [...selectedIds].sort().join(",");

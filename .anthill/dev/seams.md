@@ -639,3 +639,34 @@ over the **raw wire snapshot** and injected into the view chain as a render-time
 overlay — never recomputed inside a stage that has already narrowed the graph (every
 stage of `mapWithPending → zone → submap → lens → filter` hides edges, so degree
 measured inside a slice invents orphans).
+
+### Surface convention (R12b) — a controlled third-party component is a CO-AUTHOR of the array you hand it
+
+**Owner:** circe · _(ratified R12, from the measurement-loss bug)_ — When a
+controlled component **writes state back through your change handler**, it owns
+fields in your array that your derive knows nothing about. Any `{...fresh}`
+rebuild silently deletes the library's half — and the failure surfaces somewhere
+else entirely.
+
+**The instance:** React Flow stamps `measured` onto our nodes via
+`onNodesChange`/`applyNodeChanges`. `dagreLayout`/`forceLayout` mint
+`{id, type, position, data}` and nothing else, so every rebuild wiped it;
+`adoptUserNodes` then reset `handleBounds` as well. The node became
+**uninitialized** → rendered `visibility:hidden` **and** `getEdgePosition`
+returned null for every edge touching it. It never healed because the re-measure
+rides a **ResizeObserver that only fires when the element's box changes** — and
+the box never changed. Measured 33% permanent failure (8/24) → 0% (0/16).
+
+**Why it hid for so long:** the symptom (a missing **edge**) is one entity away
+from the cause (a missing field on a **node**), and the two loudest "repair"
+gestures — `tidy` and the layout-mode toggle — were **full replaces**, i.e. the
+strongest possible way to wipe the whole board at once. They made it worse, which
+reads as "nothing fixes it," which reads as a third-party bug.
+
+**The rule:** before merging by id, ask **what fields the library puts there that
+your derive doesn't produce**, and carry them. `mergeLayout` was written twice
+(R6 race, R8 position-carry) carrying `position` + `selected` and dropping
+`measured` both times — a merge that is *almost* right is the durable shape of
+this bug. Corollary for verification: a fix here is only provable by **matched
+arms with enough trials** (before-arm rates ranged 2/8–4/8; a single 8-trial arm
+could not have called it).
