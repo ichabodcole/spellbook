@@ -50,7 +50,7 @@ test("AND across facets — status AND tier must both hold", () => {
     node("b", { tier: "thread" }),
     node("c", { tier: "canon", pending: true }),
   ]);
-  const out = filterMap(m, { status: ["ratified"], tier: ["canon"], tags: [] });
+  const out = filterMap(m, { ...EMPTY_FILTER, status: ["ratified"], tier: ["canon"] });
   expect(out.nodes.map((n) => n.id)).toEqual(["a"]);
 });
 
@@ -89,6 +89,7 @@ test("filterFacets offers only present values (no empty bucket)", () => {
     statuses: ["ratified", "pending"],
     tiers: ["canon", "thread"],
     tags: ["alpha", "zeta"],
+    unconnected: 0,
   });
 });
 
@@ -98,7 +99,41 @@ test("toggleFacet adds an absent value and removes a present one", () => {
 });
 
 test("activeFilterCount sums the facet selections", () => {
-  expect(activeFilterCount({ status: ["ratified"], tier: ["canon", "thread"], tags: ["x"] })).toBe(
-    4,
+  expect(
+    activeFilterCount({
+      status: ["ratified"],
+      tier: ["canon", "thread"],
+      tags: ["x"],
+      connection: ["unconnected"],
+    }),
+  ).toBe(5);
+});
+
+// R12 SEAM 6 — the orphan facet. The set is passed IN (whole-graph truth), so
+// the filter never re-derives degree from the already-narrowed view slice.
+test("the unconnected facet keeps only nodes in the orphan set", () => {
+  const m = map([node("a"), node("b"), node("c")]);
+  const out = filterMap(m, { ...EMPTY_FILTER, connection: ["unconnected"] }, new Set(["a", "c"]));
+  expect(out.nodes.map((n) => n.id)).toEqual(["a", "c"]);
+});
+
+test("the unconnected facet ANDs with the other axes", () => {
+  const m = map([node("a", { tier: "canon" }), node("b", { tier: "thread" })]);
+  const out = filterMap(
+    m,
+    { ...EMPTY_FILTER, connection: ["unconnected"], tier: ["canon"] },
+    new Set(["a", "b"]),
   );
+  expect(out.nodes.map((n) => n.id)).toEqual(["a"]);
+});
+
+test("without an orphan set the unconnected facet matches nothing (never everything)", () => {
+  const m = map([node("a"), node("b")]);
+  expect(filterMap(m, { ...EMPTY_FILTER, connection: ["unconnected"] }).nodes).toEqual([]);
+});
+
+test("filterFacets counts orphans among THESE nodes only (present-only, 0 hides it)", () => {
+  const m = map([node("a"), node("b")]);
+  expect(filterFacets(m, new Set(["a", "elsewhere"])).unconnected).toBe(1);
+  expect(filterFacets(m, new Set()).unconnected).toBe(0);
 });

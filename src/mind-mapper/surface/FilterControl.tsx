@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import { TIER_LABEL } from "./GraphCanvas";
 import {
   activeFilterCount,
+  EMPTY_FILTER,
   type FilterFacets,
   type MapFilter,
   type NodeStatus,
@@ -70,7 +71,11 @@ export function FilterControl({
   const count = activeFilterCount(filter);
   // Nothing to filter (a single-node board with no tiers/tags variety) — hide
   // the control entirely rather than open an empty popover.
-  const hasFacets = facets.statuses.length > 0 || facets.tiers.length > 0 || facets.tags.length > 0;
+  const hasFacets =
+    facets.statuses.length > 0 ||
+    facets.tiers.length > 0 ||
+    facets.tags.length > 0 ||
+    facets.unconnected > 0;
   if (!hasFacets) return null;
 
   return (
@@ -96,13 +101,28 @@ export function FilterControl({
           {count > 0 && (
             <button
               type="button"
-              onClick={() => onFilter({ status: [], tier: [], tags: [] })}
+              onClick={() => onFilter(EMPTY_FILTER)}
               className="flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention"
             >
               <X size={10} /> clear
             </button>
           )}
         </div>
+        {/* R12 SEAM 6 — present-only by construction: no unconnected node, no
+            group. The chip carries the count, so "how many are floating?" is
+            answered by opening the control the human already has, rather than
+            by a new panel (R11 convention). */}
+        {facets.unconnected > 0 && (
+          <FacetGroup label="Connection">
+            <FacetChip
+              label={`unconnected · ${facets.unconnected}`}
+              active={filter.connection.includes("unconnected")}
+              onToggle={() =>
+                onFilter({ ...filter, connection: toggleFacet(filter.connection, "unconnected") })
+              }
+            />
+          </FacetGroup>
+        )}
         {facets.statuses.length > 0 && (
           <FacetGroup label="Status">
             {facets.statuses.map((s) => (

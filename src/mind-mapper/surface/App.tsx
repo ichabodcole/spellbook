@@ -43,6 +43,7 @@ import { CANVAS_CHANNEL } from "./state/messageChannel";
 import { type MultiSelectActions, multiSelectActions } from "./state/multiSelect";
 import { directedSet, lensSet } from "./state/neighborhood";
 import { menuInfoFor, rulingErrorMessage } from "./state/nodeMenu";
+import { orphanNodeIds } from "./state/orphans";
 import { pendingEdgesFrom, pendingNodesFrom, resultNodeIdMap } from "./state/pendingOverlay";
 import { dotState, type PresenceDot } from "./state/presence";
 import { shouldDismissSearch } from "./state/searchDismiss";
@@ -676,13 +677,26 @@ export function App() {
   // it. A filter change is a map change, so it rides R6 mergeLayout (positions +
   // selection preserved). The facet OPTIONS derive from the PRE-filter map so an
   // option never vanishes as you select it.
+  // R12 SEAM 6 (drive #10 F4) — the unconnected set, derived over the WHOLE
+  // graph off the RAW wire (state.nodes/edges/proposals), NOT off the board
+  // chain: a zone/submap/lens/filter slice hides edges, and degree measured
+  // inside a slice would invent orphans that aren't. Client-side, no wire
+  // change — /state already carries everything the join needs.
+  const orphanIds = useMemo(
+    () => (state ? orphanNodeIds(state.nodes, state.edges, state.proposals) : new Set<string>()),
+    [state],
+  );
+
   const filteredMap = useMemo(
-    () => (visibleMap ? filterMap(visibleMap, filter) : visibleMap),
-    [visibleMap, filter],
+    () => (visibleMap ? filterMap(visibleMap, filter, orphanIds) : visibleMap),
+    [visibleMap, filter, orphanIds],
   );
   const filterFacetOptions = useMemo(
-    () => (visibleMap ? filterFacets(visibleMap) : { statuses: [], tiers: [], tags: [] }),
-    [visibleMap],
+    () =>
+      visibleMap
+        ? filterFacets(visibleMap, orphanIds)
+        : { statuses: [], tiers: [], tags: [], unconnected: 0 },
+    [visibleMap, orphanIds],
   );
 
   const detailNode = selection.length > 0 ? selection[selection.length - 1] : null;
@@ -1524,6 +1538,7 @@ export function App() {
                   <ViewToggle view={view} onView={setView} />
                 </>
               }
+              orphanIds={orphanIds}
               panelBelowBar={Boolean(lens.owner)}
             />
           ) : (
@@ -1544,6 +1559,7 @@ export function App() {
                 onGroupSubmap={groupSubmapInline}
                 onNestSubmap={nestSubmapInline}
                 onGroupZone={groupZoneInline}
+                orphanIds={orphanIds}
               />
               {/* The toggle keeps its canvas-Panel perch in grid view too —
                   switching never moves the control out from under the

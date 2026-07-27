@@ -12,7 +12,7 @@
 // uses: the standard verbs, ruling verbs on pending proposals (ratify
 // anywhere), and A1's action slots, identical in both views by construction.
 
-import { FolderTree, Loader } from "lucide-react";
+import { FolderTree, Loader, Unlink } from "lucide-react";
 import { KIND_ICON, TIER_CARD, TIER_LABEL } from "./GraphCanvas";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import { groupByTierKind } from "./state/cardGrid";
@@ -35,6 +35,7 @@ export function CardGrid({
   onGroupSubmap,
   onNestSubmap,
   onGroupZone,
+  orphanIds,
 }: {
   map: StubMap;
   // Same contract as GraphCanvas: null = no search active; otherwise the ids
@@ -53,6 +54,8 @@ export function CardGrid({
   onGroupSubmap?: (parentId: string) => void;
   onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
   onGroupZone?: () => void;
+  // R12 SEAM 6 — same overlay the canvas gets (one vocabulary, two views).
+  orphanIds?: ReadonlySet<string>;
 }) {
   const groups = groupByTierKind(map.nodes);
   const keep = highlightIds ? new Set(highlightIds) : null;
@@ -127,6 +130,17 @@ export function CardGrid({
                             >
                               <FolderTree size={9} aria-hidden />
                               {n.submapChildCount}
+                            </span>
+                          )}
+                          {/* R12 SEAM 6 — the unconnected marker, identical to
+                              the canvas (one house vocabulary, two views). */}
+                          {orphanIds?.has(n.id) && (
+                            <span
+                              className="ml-auto flex items-center text-ink-faint"
+                              title="unconnected — no edges, and no pending edge proposes one"
+                            >
+                              <Unlink size={9} aria-hidden />
+                              <span className="sr-only">unconnected</span>
                             </span>
                           )}
                         </div>

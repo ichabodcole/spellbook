@@ -19,7 +19,16 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { forceCenter, forceLink, forceManyBody, forceSimulation } from "d3-force";
-import { CircleDashed, FolderTree, Lightbulb, Loader, MapPin, User, Wand2 } from "lucide-react";
+import {
+  CircleDashed,
+  FolderTree,
+  Lightbulb,
+  Loader,
+  MapPin,
+  Unlink,
+  User,
+  Wand2,
+} from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type NodeCommand, NodeContextMenu } from "./NodeContextMenu";
 import type { MultiSelectActions } from "./state/multiSelect";
@@ -98,6 +107,10 @@ export type GraphCanvasProps = {
   onGroupSubmap?: (parentId: string) => void;
   onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
   onGroupZone?: () => void;
+  // R12 SEAM 6 — the ids of ratified nodes nothing connects to (state/orphans.ts,
+  // computed over the WHOLE graph upstream). A render-time overlay like
+  // `dimmed`/`menus`, never node state.
+  orphanIds?: ReadonlySet<string>;
 };
 
 const NODE_W = 190;
@@ -145,6 +158,8 @@ export type IdeaNodeData = {
   onGroupSubmap?: (parentId: string) => void;
   onNestSubmap?: (parentId: string, tier: BatchRuling) => void;
   onGroupZone?: () => void;
+  // R12 SEAM 6 — this node is ratified and nothing connects to it.
+  orphan?: boolean;
 };
 
 function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
@@ -202,6 +217,21 @@ function IdeaNode({ data, selected }: NodeProps<Node<IdeaNodeData>>) {
             >
               <FolderTree size={9} aria-hidden />
               {n.submapChildCount}
+            </span>
+          )}
+          {/* R12 SEAM 6 (drive #10 F4) — a ratified node nothing connects to.
+              Deliberately the QUIETEST thing on the card (ink-faint, no border,
+              no plate, no pulse): an orphan is a nudge, not an alarm. It shares
+              the ml-auto slot safely — a node wearing this can carry neither the
+              proposed/curating badge (pending nodes are never flagged) nor the
+              submap badge (containment counts as connection). */}
+          {data.orphan && (
+            <span
+              className="ml-auto flex items-center text-ink-faint"
+              title="unconnected — no edges, and no pending edge proposes one"
+            >
+              <Unlink size={9} aria-hidden />
+              <span className="sr-only">unconnected</span>
             </span>
           )}
         </div>
@@ -463,6 +493,7 @@ export function GraphCanvas({
   onGroupSubmap,
   onNestSubmap,
   onGroupZone,
+  orphanIds,
 }: GraphCanvasProps) {
   // React Flow is used semi-controlled: this component owns node state (so
   // drag + click-select work), reports selection upward (deduped — an
@@ -600,7 +631,7 @@ export function GraphCanvas({
   const renderNodes = useMemo(() => {
     const keep = highlightIds ? new Set(highlightIds) : null;
     const lit = spotlight?.nodes ?? null;
-    if (!keep && !lit && !promotable && !menus && !multiMenus) return nodes;
+    if (!keep && !lit && !promotable && !menus && !multiMenus && !orphanIds) return nodes;
     return nodes.map((n) => {
       const searchDim = keep ? !keep.has(n.id) : false;
       const spotDim = lit ? !lit.has(n.id) : false;
@@ -609,6 +640,7 @@ export function GraphCanvas({
         data: {
           ...n.data,
           ...((keep || lit) && { dimmed: searchDim || spotDim }),
+          orphan: orphanIds?.has(n.id) ?? false,
           ...(promotable && { promotable: true }),
           menu: menus?.get(n.id),
           onRule: dispatchRule,
@@ -634,6 +666,7 @@ export function GraphCanvas({
     dispatchGroupSubmap,
     dispatchNestSubmap,
     dispatchGroupZone,
+    orphanIds,
   ]);
 
   // R5 SL edge-dim — the NEW plumbing the lens never needed. toFlowEdges bakes
