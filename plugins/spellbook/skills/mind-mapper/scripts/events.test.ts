@@ -10,6 +10,7 @@ import {
   INBOUND_WATCHED,
   inboundGrounding,
   isInboundEvent,
+  MESSAGE_CHANNELS,
 } from "./events.ts";
 
 test("emit assigns monotonically increasing seq", () => {
@@ -97,4 +98,42 @@ test("the grounding line names watched + not-watched channels (F5)", () => {
   expect(g.notWatching).toContain("proposal.promoted");
   expect(g.notWatching).toContain("tags.set");
   expect(g.note).toContain("actor tagging");
+});
+
+// ── Round 11 · SEAM 1 — the message CHANNEL rides `kind` ────────────────────
+
+test("MESSAGE_CHANNELS names the known channels — including the already-shipped analyze", () => {
+  // `turn` = the chat bar, `analyze` = the docs-rail Analyze affordance (shipped
+  // pre-R11, App.tsx), `canvas` = the right-click ramble (R11).
+  expect([...MESSAGE_CHANNELS]).toEqual(["turn", "analyze", "canvas"]);
+});
+
+test("--inbound admits a channel-tagged human message for free (R10 was the seed, not waste)", () => {
+  const bus = createEventBus();
+  // The predicate keys on `role`, never on `kind` — so every present AND future
+  // channel is admitted the moment it exists, with no widening of the filter.
+  for (const channel of MESSAGE_CHANNELS) {
+    expect(isInboundEvent(bus.emit("message.posted", { role: "user", kind: channel }))).toBe(true);
+    expect(isInboundEvent(bus.emit("message.posted", { role: "agent", kind: channel }))).toBe(
+      false,
+    );
+  }
+  // Even an UNKNOWN channel (tolerated at intake) is admitted — role is the
+  // only discriminator, so a new channel can never go silently unheard.
+  expect(isInboundEvent(bus.emit("message.posted", { role: "user", kind: "pin" }))).toBe(true);
+});
+
+test("R11 does not widen the inbound filter: the watched set is still the two R10 channels", () => {
+  expect(INBOUND_WATCHED.map((w) => `${w.kind}[${w.field}=${w.value}]`)).toEqual([
+    "message.posted[role=user]",
+    "proposal.added[author=user]",
+  ]);
+});
+
+test("the grounding line also names the message-channel vocabulary (F5, R11)", () => {
+  const g = inboundGrounding();
+  expect(g.messageChannels).toEqual([...MESSAGE_CHANNELS]);
+  // Tolerance stated on the wire, not just in a doc: an unknown channel stores
+  // and streams, it does not 400.
+  expect(g.note).toContain("channel");
 });

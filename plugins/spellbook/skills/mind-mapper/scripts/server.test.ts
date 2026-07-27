@@ -216,6 +216,69 @@ test("GET /events?inbound=1 grounds, then streams human events only", async () =
   expect(frames.some((f) => f.kind === "proposal.added")).toBe(false);
 });
 
+// Round 11 · SEAM 1 — the CHANNEL rides `kind`, tolerantly. The R10 inbound
+// stream must admit a channel-tagged human message with NO filter change (the
+// "R10 was the seed, not waste" claim, made concrete end-to-end).
+test("an inbound stream admits a kind:canvas human message, and grounding names the channels", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "channel-test", title: "Channel Test" }),
+  });
+  const p = "channel-test";
+  const { cursor } = (await (await fetch(`${url}/state?project=${p}`)).json()) as {
+    cursor: number;
+  };
+  const res = await fetch(`${url}/events?inbound=1&project=${p}&since=${cursor}`);
+  const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+  const decoder = new TextDecoder();
+
+  const sent = await fetch(`${url}/send?project=${p}`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", kind: "canvas", text: "canvas-ramble-admitted" }),
+  });
+  const message = (await sent.json()) as { kind: string; warning?: string };
+  expect(message.kind).toBe("canvas");
+  expect(message.warning).toBeUndefined(); // a KNOWN channel draws no advisory
+
+  let out = "";
+  const deadline = Date.now() + 1500;
+  while (Date.now() < deadline) {
+    const chunk = await Promise.race([
+      reader.read(),
+      new Promise<null>((r) => setTimeout(() => r(null), deadline - Date.now())),
+    ]);
+    if (chunk === null || chunk.done) break;
+    out += decoder.decode(chunk.value, { stream: true });
+    if (out.includes("canvas-ramble-admitted")) break;
+  }
+  await reader.cancel();
+
+  const frames = out
+    .split("\n\n")
+    .filter((f) => f.startsWith("data: "))
+    .map((f) => JSON.parse(f.slice("data: ".length)) as Record<string, unknown>);
+  expect(frames[0]).toMatchObject({
+    kind: "grounding",
+    inbound: true,
+    messageChannels: ["turn", "analyze", "canvas"],
+  });
+  const canvasFrame = frames.find(
+    (f) => (f.payload as { text?: string } | undefined)?.text === "canvas-ramble-admitted",
+  );
+  expect((canvasFrame?.payload as { kind: string }).kind).toBe("canvas");
+});
+
+test("POST /send with an UNKNOWN channel stores it and returns an additive warning (not a 400)", async () => {
+  const res = await fetch(`${url}/send`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", kind: "cavnas", text: "typo'd channel" }),
+  });
+  expect(res.status).toBe(200);
+  const message = (await res.json()) as { kind: string; warning?: string };
+  expect(message.kind).toBe("cavnas"); // stored verbatim — tolerant intake
+  expect(message.warning).toContain("canvas");
+});
+
 test("POST /ingest (JSON) stores the doc, GET /state reflects it, bumps cursor", async () => {
   const before = (await (await fetch(`${url}/state`)).json()) as { cursor: number };
   const res = await fetch(`${url}/ingest`, {

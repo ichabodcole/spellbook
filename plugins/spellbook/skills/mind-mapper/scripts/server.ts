@@ -63,7 +63,7 @@ import {
 } from "./propose.ts";
 import { ratify, ratifyBatch, ZonedError } from "./ratify.ts";
 import { search } from "./search.ts";
-import { sendMessage } from "./send.ts";
+import { channelWarning, sendMessage } from "./send.ts";
 import { readState } from "./state.ts";
 import { clearTags, setTags } from "./tags.ts";
 import {
@@ -189,6 +189,12 @@ interface ProjectEntry {
   activityTimer: ReturnType<typeof setTimeout> | null;
   activityState: string | null;
   activitySource: "auto" | "explicit" | null;
+  // Round 11 (SEAM 2, ruling B): WHICH message the current activity is about.
+  // A property of the OPEN ladder, not of a single emit — stamped when the
+  // ladder opens (the /send auto-flip has the message in hand), inherited by
+  // later states while it stays open, carried on the resolving idle, then
+  // cleared. In-memory like the rest: a restart honestly clears to no-signal.
+  activityMessageId: string | null;
 }
 
 const projects = new Map<string, ProjectEntry>();
@@ -219,6 +225,7 @@ function loadProject(id?: string): ProjectEntry {
     activityTimer: null,
     activityState: null,
     activitySource: null,
+    activityMessageId: null,
   };
   projects.set(meta.id, entry);
   return entry;
@@ -280,31 +287,47 @@ function stallTtlMs(): number {
 // daemon-only vocabulary — POST /activity rejects it (the epoch.changed
 // asymmetry precedent). Every emit rides the normal bus path (seq-consuming
 // — the ephemeral-cursor clause holds).
+// Round 11 (SEAM 2, ruling B): every emit carries an additive-optional
+// `messageId` — the message this activity is ABOUT, so the surface can badge
+// THAT bubble instead of guessing "the latest user message" (the guess breaks
+// exactly when two messages are in flight or the agent works an older one —
+// which IS the "I can't tell what's happening" bug F3 names). An OMITTED
+// messageId INHERITS the open ladder's: the casting agent's ordinary
+// `activity thinking` after a human send carries no id, and dropping the tie
+// there would half-fix F3 for every already-shipped agent. `idle` closes the
+// ladder — it carries the id it is resolving, THEN clears (a consumer needs to
+// know which badge to clear).
 function postActivity(
   entry: ProjectEntry,
   state: "received" | "thinking" | "idle",
   source: "auto" | "explicit",
+  messageId?: string,
 ): void {
   if (entry.activityTimer !== null) {
     clearTimeout(entry.activityTimer);
     entry.activityTimer = null;
   }
+  const tiedTo = messageId ?? entry.activityMessageId ?? null;
   entry.activityState = state === "idle" ? null : state;
   entry.activitySource = state === "idle" ? null : source;
-  entry.bus.emit("agent.activity", { state });
+  entry.activityMessageId = state === "idle" ? null : tiedTo;
+  const tie = tiedTo ? { messageId: tiedTo } : {};
+  entry.bus.emit("agent.activity", { state, ...tie });
   if (state === "received") {
     entry.activityTimer = setTimeout(() => {
       entry.activityTimer = null;
       entry.activityState = "stalled";
       entry.activitySource = "auto"; // resolvable by any agent write, whoever set the received
-      entry.bus.emit("agent.activity", { state: "stalled" });
+      // The stall is about the SAME message — it is that message that's stuck.
+      entry.bus.emit("agent.activity", { state: "stalled", ...tie });
     }, stallTtlMs());
   } else if (state === "thinking") {
     entry.activityTimer = setTimeout(() => {
       entry.activityTimer = null;
       entry.activityState = null;
       entry.activitySource = null;
-      entry.bus.emit("agent.activity", { state: "idle" });
+      entry.activityMessageId = null;
+      entry.bus.emit("agent.activity", { state: "idle", ...tie });
     }, activityTtlMs());
   }
 }
@@ -604,9 +627,21 @@ async function main(argv: string[]): Promise<number> {
             // daemon-level fact like presence (the exported ProjectState
             // type under-reports the wire here too; Contract 9 as-built
             // note). Release mode only; absent otherwise.
+            // Round 11 (SEAM 2): the LIVE activity rides /state beside presence
+            // — same daemon-level-fact reason, and without it a browser reload
+            // mid-think loses the "working on this" badge entirely (F3 wants it
+            // unmissable, and a signal that only exists as an event is missable
+            // by exactly one refresh). null = no live signal.
+            const activity = entry.activityState
+              ? {
+                  state: entry.activityState,
+                  ...(entry.activityMessageId ? { messageId: entry.activityMessageId } : {}),
+                }
+              : null;
             return Response.json({
               ...state,
               presence: { agents: entry.agents },
+              activity,
               ...(buildInfo ? { buildInfo } : {}),
             });
           }
@@ -888,7 +923,7 @@ async function main(argv: string[]): Promise<number> {
             return req
               .json()
               .then((body) => {
-                const { state } = body as { state?: unknown };
+                const { state, messageId } = body as { state?: unknown; messageId?: unknown };
                 // ACT1: `stalled` is daemon-synthesized vocabulary ONLY —
                 // rejecting it here is the epoch.changed asymmetry again (a
                 // client may hear it, never say it).
@@ -900,8 +935,28 @@ async function main(argv: string[]): Promise<number> {
                 if (state !== "received" && state !== "thinking" && state !== "idle") {
                   throw new Error("state must be received|thinking|idle");
                 }
-                postActivity(entry, state, "explicit");
-                return Response.json({ ok: true, state });
+                // Round 11 (SEAM 2): an explicit post MAY name the message it's
+                // about (working an older one, or re-opening a ladder). It must
+                // EXIST — the intake-guard reflex: a mistyped id would otherwise
+                // be a silent surface no-op (the badge simply never appears),
+                // three steps from the mistake.
+                let tie: string | undefined;
+                if (messageId !== undefined && messageId !== null) {
+                  if (typeof messageId !== "string") {
+                    throw new Error("messageId must be a message id string");
+                  }
+                  const known = entry.db
+                    .query("SELECT id FROM messages WHERE id = ? AND project_id = ?")
+                    .get(messageId, entry.meta.id);
+                  if (!known) throw new Error(`unknown messageId: ${messageId}`);
+                  tie = messageId;
+                }
+                postActivity(entry, state, "explicit", tie);
+                return Response.json({
+                  ok: true,
+                  state,
+                  ...(entry.activityMessageId ? { messageId: entry.activityMessageId } : {}),
+                });
               })
               .catch(
                 (e) =>
@@ -1134,12 +1189,19 @@ async function main(argv: string[]): Promise<number> {
                 // connected → no flip (the presence dot already says nobody's
                 // home). An agent send is the turn's terminal act: it
                 // resolves auto states AND explicit thinking to idle.
+                //
+                // Round 11 (SEAM 2): the auto-flip STAMPS the message that
+                // triggered it — this site already had it in hand, which is why
+                // ruling B costs nothing here.
                 if (role === "user" && entry.agents >= 1) {
-                  postActivity(entry, "received", "auto");
+                  postActivity(entry, "received", "auto", message.id);
                 } else if (role === "agent") {
                   resolveActivity(entry, { terminalAct: true });
                 }
-                return Response.json(message);
+                // Round 11 (SEAM 1): `kind` is the CHANNEL; an unknown one is
+                // stored verbatim with an additive advisory (never a 400).
+                const warning = channelWarning(message.kind);
+                return Response.json(warning ? { ...message, warning } : message);
               })
               .catch(
                 (e) =>

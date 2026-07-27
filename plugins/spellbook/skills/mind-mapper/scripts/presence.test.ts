@@ -380,3 +380,162 @@ test("an explicit idle clears the TTL timer: no duplicate synthetic idle later",
   expect(idles).toHaveLength(1); // the explicit one only — no synthetic follow-up
   watcher.close();
 });
+
+// ── Round 11 · SEAM 2 — activity tied to a SPECIFIC message (F3) ────────────
+//
+// Ruling (B): `agent.activity` gains an additive-optional `messageId`. The id is
+// a property of the OPEN activity ladder — stamped when it opens (the /send
+// auto-flip has the message in hand), inherited by later states while the
+// ladder stays open, carried on the resolving idle, then cleared. There is NO
+// `done` state: the agent's reply IS completion.
+
+// Helper: the ids + payloads a surface would see, scoped to one project.
+function activityEvents(watcher: { events: Array<Record<string, unknown>> }) {
+  return watcher.events
+    .filter((e) => e.kind === "agent.activity")
+    .map((e) => e.payload as { state: string; messageId?: string });
+}
+
+async function liveActivity(
+  project: string,
+): Promise<{ state: string; messageId?: string } | null> {
+  const state = (await (await fetch(`${url}/state?project=${project}`)).json()) as {
+    activity: { state: string; messageId?: string } | null;
+  };
+  return state.activity;
+}
+
+test("the auto-flip stamps the triggering messageId, and /state carries the live activity", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "r11-tie", title: "Tie" }),
+  });
+  expect(await liveActivity("r11-tie")).toBeNull(); // no signal on a fresh project
+
+  const watcher = await collectWs("r11-tie");
+  const ac = new AbortController();
+  const tail = await fetch(`${url}/events?project=r11-tie`, { signal: ac.signal });
+  await (tail.body as ReadableStream<Uint8Array>).getReader().read();
+  expect(await until(async () => (await agents("r11-tie")) === 1, 2000)).toBe(true);
+
+  const sent = await fetch(`${url}/send?project=r11-tie`, {
+    method: "POST",
+    body: JSON.stringify({ role: "user", kind: "canvas", text: "work on THIS one" }),
+  });
+  const message = (await sent.json()) as { id: string };
+
+  expect(
+    await until(async () => activityEvents(watcher).some((a) => a.state === "received"), 2000),
+  ).toBe(true);
+  const received = activityEvents(watcher).find((a) => a.state === "received");
+  expect(received?.messageId).toBe(message.id);
+  // A reload must not lose the badge — /state carries it, spread at the handler
+  // like presence.
+  expect(await liveActivity("r11-tie")).toEqual({ state: "received", messageId: message.id });
+
+  // The stall escalation keeps the SAME message (it is that message that is stuck).
+  expect(
+    await until(async () => activityEvents(watcher).some((a) => a.state === "stalled"), 2000),
+  ).toBe(true);
+  expect(activityEvents(watcher).find((a) => a.state === "stalled")?.messageId).toBe(message.id);
+
+  ac.abort();
+  watcher.close();
+});
+
+test("an explicit activity post inherits the OPEN ladder's message, or names its own", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "r11-inherit", title: "Inherit" }),
+  });
+  const watcher = await collectWs("r11-inherit");
+  const ac = new AbortController();
+  const tail = await fetch(`${url}/events?project=r11-inherit`, { signal: ac.signal });
+  await (tail.body as ReadableStream<Uint8Array>).getReader().read();
+  expect(await until(async () => (await agents("r11-inherit")) === 1, 2000)).toBe(true);
+
+  const first = (await (
+    await fetch(`${url}/send?project=r11-inherit`, {
+      method: "POST",
+      body: JSON.stringify({ role: "user", text: "one" }),
+    })
+  ).json()) as { id: string };
+  expect(
+    await until(async () => activityEvents(watcher).some((a) => a.state === "received"), 2000),
+  ).toBe(true);
+
+  // The casting agent's ordinary next act carries no messageId — the tie must
+  // survive it, or F3 is only half-fixed for every already-shipped agent.
+  await fetch(`${url}/activity?project=r11-inherit`, {
+    method: "POST",
+    body: JSON.stringify({ state: "thinking" }),
+  });
+  expect(
+    await until(async () => activityEvents(watcher).some((a) => a.state === "thinking"), 2000),
+  ).toBe(true);
+  expect(activityEvents(watcher).find((a) => a.state === "thinking")?.messageId).toBe(first.id);
+
+  // An explicit post MAY name a different message (working an older one).
+  const second = (await (
+    await fetch(`${url}/send?project=r11-inherit`, {
+      method: "POST",
+      body: JSON.stringify({ role: "agent", text: "noting" }),
+    })
+  ).json()) as { id: string };
+  await fetch(`${url}/activity?project=r11-inherit`, {
+    method: "POST",
+    body: JSON.stringify({ state: "thinking", messageId: second.id }),
+  });
+  expect(
+    await until(async () => (await liveActivity("r11-inherit"))?.messageId === second.id, 2000),
+  ).toBe(true);
+
+  ac.abort();
+  watcher.close();
+});
+
+test("the agent's reply IS completion: the resolving idle carries the messageId, then activity clears", async () => {
+  await fetch(`${url}/projects`, {
+    method: "POST",
+    body: JSON.stringify({ id: "r11-done", title: "Done" }),
+  });
+  const watcher = await collectWs("r11-done");
+  const ac = new AbortController();
+  const tail = await fetch(`${url}/events?project=r11-done`, { signal: ac.signal });
+  await (tail.body as ReadableStream<Uint8Array>).getReader().read();
+  expect(await until(async () => (await agents("r11-done")) === 1, 2000)).toBe(true);
+
+  const asked = (await (
+    await fetch(`${url}/send?project=r11-done`, {
+      method: "POST",
+      body: JSON.stringify({ role: "user", text: "who is Maren?" }),
+    })
+  ).json()) as { id: string };
+  expect(
+    await until(async () => activityEvents(watcher).some((a) => a.state === "received"), 2000),
+  ).toBe(true);
+
+  // No `done` state exists — the reply resolves the ladder to idle, naming the
+  // message it finished, so the surface clears THAT bubble's badge.
+  await fetch(`${url}/send?project=r11-done`, {
+    method: "POST",
+    body: JSON.stringify({ role: "agent", text: "the baker" }),
+  });
+  expect(
+    await until(async () => activityEvents(watcher).some((a) => a.state === "idle"), 2000),
+  ).toBe(true);
+  expect(activityEvents(watcher).find((a) => a.state === "idle")?.messageId).toBe(asked.id);
+  expect(await liveActivity("r11-done")).toBeNull(); // closed ladder → no live signal
+
+  ac.abort();
+  watcher.close();
+});
+
+test("POST /activity 400s an unknown messageId — a mistyped tie is not a silent no-op", async () => {
+  const res = await fetch(`${url}/activity`, {
+    method: "POST",
+    body: JSON.stringify({ state: "thinking", messageId: "no-such-message" }),
+  });
+  expect(res.status).toBe(400);
+  expect(((await res.json()) as { error: string }).error).toContain("messageId");
+});

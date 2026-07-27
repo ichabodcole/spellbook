@@ -758,3 +758,36 @@ test("open --port N binds the daemon to N (forwarded through ensureDaemon)", asy
     rmSync(portHome, { recursive: true, force: true });
   }
 });
+
+// ── Round 11 — the channel + the activity-message tie, at the CLI wire ───────
+// (the body-mirror scar: a field added to a shared route must be threaded into
+// EVERY verb that posts to it, with a per-verb round-trip row.)
+
+test("send --kind mirrors the daemon's unknown-channel advisory to stderr", async () => {
+  const known = await runCli("send", "a canvas ramble", "--kind", "canvas", "--role", "user");
+  expect(known.code).toBe(0);
+  expect(JSON.parse(known.stdout)).toMatchObject({ kind: "canvas", role: "user" });
+  expect(known.stderr).not.toContain("warning");
+
+  const typo = await runCli("send", "typo channel", "--kind", "cavnas", "--role", "user");
+  expect(typo.code).toBe(0);
+  expect(typo.stderr).toContain("warning");
+  expect(typo.stderr).toContain("canvas");
+});
+
+test("activity --message forwards the messageId, and /state reports the tie", async () => {
+  const sent = await runCli("send", "tie me", "--role", "user");
+  const message = JSON.parse(sent.stdout) as { id: string };
+
+  const posted = await runCli("activity", "thinking", "--message", message.id);
+  expect(posted.code).toBe(0);
+  const state = JSON.parse((await runCli("state")).stdout) as {
+    activity: { state: string; messageId?: string } | null;
+  };
+  expect(state.activity).toMatchObject({ state: "thinking", messageId: message.id });
+
+  // Closing the ladder clears it (no `done` state — idle is the terminal).
+  await runCli("activity", "idle");
+  const cleared = JSON.parse((await runCli("state")).stdout) as { activity: unknown };
+  expect(cleared.activity).toBeNull();
+});

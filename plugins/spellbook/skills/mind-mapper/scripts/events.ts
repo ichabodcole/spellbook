@@ -146,11 +146,34 @@ function isInboundEvent(event: BusEvent): boolean {
   return false;
 }
 
+// ── Round 11 · SEAM 1 — the message CHANNEL vocabulary ──────────────────────
+//
+// A message's `kind` IS its channel — the affordance it arrived through, which
+// is what carries the human's provenance ("that came from the canvas, not the
+// chat bar"). This is a naming of as-built, not a new axis: the surface already
+// shipped `kind:"analyze"` for the docs-rail Analyze affordance, so `kind` was
+// already the arrival discriminator before R11 named it.
+//
+// The set is KNOWN but NOT CLOSED — intake stores an unknown channel verbatim
+// and ADVISES (send.ts channelWarning; the edgeDraftWarning precedent: "opaque"
+// bounds what you REJECT, not what you SAY). Validating a closed set would 400
+// the already-shipped `analyze`, and it would make every future channel a
+// daemon change before a surface could use it. Visibility, not rejection, is
+// the F5 lesson — hence this list rides the inbound grounding line.
+const MESSAGE_CHANNELS = [
+  "turn", // the chat bar (the default)
+  "analyze", // the docs-rail Analyze affordance (shipped pre-R11)
+  "canvas", // the right-click freeform ramble (R11 — a message, NOT a node)
+] as const;
+
+type MessageChannel = (typeof MESSAGE_CHANNELS)[number];
+
 interface GroundingLine {
   kind: "grounding";
   inbound: true;
   watching: string[];
   notWatching: EventKind[];
+  messageChannels: string[];
   note: string;
 }
 
@@ -166,11 +189,12 @@ function inboundGrounding(): GroundingLine {
     inbound: true,
     watching: INBOUND_WATCHED.map((w) => `${w.kind}[${w.field}=${w.value}]`),
     notWatching: INBOUND_NOT_WATCHED,
-    note: "Human board-acts on shared routes (ratify/promote/zone-move/delete/tags/actions/anchor/doc) carry no actor and are NOT attributable in V1 — a named follow-on (actor tagging on those routes). Refetch /state to reconcile the board.",
+    messageChannels: [...MESSAGE_CHANNELS],
+    note: "Human board-acts on shared routes (ratify/promote/zone-move/delete/tags/actions/anchor/doc) carry no actor and are NOT attributable in V1 — a named follow-on (actor tagging on those routes). Refetch /state to reconcile the board. A human message's `kind` is its channel (messageChannels above); the set is known but NOT closed — an unknown channel is stored and streamed, never rejected, so read `kind` tolerantly.",
   };
 }
 
-export type { BusEvent, EventBus, EventKind, GroundingLine };
+export type { BusEvent, EventBus, EventKind, GroundingLine, MessageChannel };
 export {
   ALL_EVENT_KINDS,
   createEventBus,
@@ -178,4 +202,5 @@ export {
   INBOUND_WATCHED,
   inboundGrounding,
   isInboundEvent,
+  MESSAGE_CHANNELS,
 };

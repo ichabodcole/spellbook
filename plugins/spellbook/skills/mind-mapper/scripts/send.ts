@@ -4,7 +4,7 @@
 // doesn't interpret — replying is the casting agent's job via a later send.
 
 import type { Database } from "bun:sqlite";
-import type { EventBus } from "./events.ts";
+import { type EventBus, MESSAGE_CHANNELS } from "./events.ts";
 import type { Message } from "./state.ts";
 
 interface SendInput {
@@ -12,6 +12,18 @@ interface SendInput {
   kind: string;
   text: string;
   ground?: string[];
+}
+
+// Round 11 (SEAM 1): a message's `kind` is its CHANNEL — the affordance it
+// arrived through. The vocabulary is known but NOT closed: an unknown channel
+// stores verbatim and draws an ADVISORY instead of a 400 (propose.ts's
+// edgeDraftWarning precedent — a consumer reads specific values, so intake says
+// so in the same turn; "tolerant" bounds what we reject, not what we say). This
+// is what turns a typo'd channel from "silently rendered as a plain turn" into
+// an immediate, self-documenting signal at the moment of sending.
+function channelWarning(kind: string): string | undefined {
+  if ((MESSAGE_CHANNELS as readonly string[]).includes(kind)) return undefined;
+  return `kind "${kind}" is not a known message channel (${MESSAGE_CHANNELS.join(", ")}) — it was stored verbatim, but the surface renders unknown channels generically. Channels are open by design; add it to MESSAGE_CHANNELS if it's real.`;
 }
 
 function nextSeq(db: Database, projectId: string): number {
@@ -59,4 +71,4 @@ function sendMessage(db: Database, bus: EventBus, projectId: string, input: Send
 }
 
 export type { SendInput };
-export { sendMessage };
+export { channelWarning, sendMessage };

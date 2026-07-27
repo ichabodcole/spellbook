@@ -81,6 +81,14 @@
 //                 [--force] → POST /send. Empty resolved body = exit 2. The
 //                 piped default HANGS with no pipe under agent shells — always
 //                 pass a body (--body-file preferred for prose).
+//                 R11: --kind is the CHANNEL the message arrived through
+//                 (turn|analyze|canvas; open set — an unknown one is stored
+//                 with a stderr advisory, never rejected).
+//   activity <received|thinking|idle> [--message <id>]  → POST /activity. The
+//                 messageId ties the signal to ONE message so the human sees
+//                 which one is being worked; omitted, it inherits the open
+//                 ladder's message. idle closes the ladder (there is no `done`
+//                 — an agent `send` IS the completion signal).
 //
 // --project <id> is accepted by every verb above except open (scopes to a
 // non-default project; omit for the default project).
@@ -1276,20 +1284,24 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "activity") {
     const parsed = parseArgs({
       args: rest,
-      options: { project: { type: "string" } },
+      // Round 11 (SEAM 2): --message ties the activity to a specific message so
+      // the human sees "THIS one is being worked". Omitted, the daemon inherits
+      // the open ladder's message — so the ordinary `activity thinking` after a
+      // human send still lands on the right bubble.
+      options: { project: { type: "string" }, message: { type: "string" } },
       strict: true,
       allowPositionals: true,
     });
     const state = parsed.positionals[0];
     if (state !== "received" && state !== "thinking" && state !== "idle") {
-      process.stderr.write("usage: cli.ts activity <received|thinking|idle>\n");
+      process.stderr.write("usage: cli.ts activity <received|thinking|idle> [--message <id>]\n");
       return 2;
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/activity${qs}`, {
       method: "POST",
-      body: JSON.stringify({ state }),
+      body: JSON.stringify({ state, messageId: parsed.values.message }),
     });
     process.stdout.write(`${await res.text()}\n`);
     return res.ok ? 0 : 2;
@@ -1384,7 +1396,19 @@ async function dispatch(argv: string[]): Promise<number> {
         })(),
       }),
     });
-    process.stdout.write(`${await res.text()}\n`);
+    const responseText = await res.text();
+    process.stdout.write(`${responseText}\n`);
+    // Round 11 (SEAM 1): mirror the daemon's unknown-channel advisory to stderr,
+    // same as propose-edge's draft warning — a typo'd `--kind` is otherwise a
+    // message that silently renders as a plain chat turn.
+    if (res.ok) {
+      try {
+        const { warning } = JSON.parse(responseText) as { warning?: string };
+        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+      } catch {
+        /* body is what it is */
+      }
+    }
     return res.ok ? 0 : 2;
   }
 
