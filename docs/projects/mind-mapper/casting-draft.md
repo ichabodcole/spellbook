@@ -551,6 +551,19 @@ write.
   checking what it holds together.** This is the scar. The question the agent
   didn't ask was _"I removed these nodes from my batch — so what happened to
   their edges?"_ Ask it. `state --batch <id>` is the answer.
+  - **Reading that answer has one sharp edge.** An edge drafted against a
+    **local ref** stores the endpoint as the **original proposal id**, so after
+    the human ratifies a node, grepping `state --batch` for that node's real
+    uuid finds nothing — you must join through the node proposal's
+    `resultNodeId`. (An edge drafted with `title:` stores the real node id, so
+    the two look different in the same batch.) This asymmetry sits exactly on
+    the reconciliation step the drive-#10 agent skipped, so know it before you
+    conclude "no edges reference this node."
+  - **If you delete anyway and it strands something, the daemon tells you.**
+    `delete-batch` returns an advisory `warning` (also on stderr as
+    `# warning:`) naming every ratified node whose last connection intent you
+    just removed. Exit code is unchanged — it is advice, not a refusal. Act on
+    it in the same turn; that message is the drive-#10 bug caught in the act.
 - **There is deliberately NO "delete the whole batch" shortcut.** `delete-batch`
   takes explicit ids, all-or-nothing, and names every id it doesn't recognize.
   The batch id exists so you **look before you sweep** — a one-keystroke sweep

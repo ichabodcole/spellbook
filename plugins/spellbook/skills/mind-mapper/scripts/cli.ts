@@ -671,7 +671,20 @@ async function dispatch(argv: string[]): Promise<number> {
       method: "POST",
       body: JSON.stringify({ ids: input.ids ?? [] }),
     });
-    process.stdout.write(`${await res.text()}\n`);
+    const deleteBatchBody = await res.text();
+    process.stdout.write(`${deleteBatchBody}\n`);
+    // R12 gate finding 1: mirror the stranded-node advisory to stderr, the same
+    // way propose-edge mirrors edgeDraftWarning — a cold agent scanning for
+    // problems sees it even if it never parses stdout. Advisory, not a failure:
+    // the exit code is unchanged.
+    if (res.ok) {
+      try {
+        const { warning } = JSON.parse(deleteBatchBody) as { warning?: string };
+        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+      } catch {
+        /* body is what it is */
+      }
+    }
     return res.ok ? 0 : 2;
   }
 

@@ -706,6 +706,16 @@ async function main(argv: string[]): Promise<number> {
             const raw = url.searchParams.get("since");
             try {
               if (raw === null) throw new Error("missing ?since=<epochSeconds>");
+              // R12 gate finding 5: echo what the caller ACTUALLY sent. Number("abc")
+              // is NaN and JSON.stringify(NaN) is "null", so readChanges' own guard
+              // could only ever report `got: null` — the one thing that isn't useful.
+              // The raw string only exists here, so the echo has to happen here.
+              if (!/^\d+$/.test(raw.trim())) {
+                throw new Error(
+                  `since must be a non-negative integer in epoch SECONDS (use 0 for everything, ` +
+                    `then pass back the \`now\` from a previous response), got: ${JSON.stringify(raw)}`,
+                );
+              }
               return Response.json(readChanges(db, meta, Number(raw), projectDir(HOME, meta.id)));
             } catch (e) {
               return badRequest(
@@ -1018,29 +1028,25 @@ async function main(argv: string[]): Promise<number> {
             return Response.json({ projects: listProjects(HOME) });
           }
           if (req.method === "POST" && path === "/projects") {
+            // R12 gate finding 3: this route bypassed the SEAM 7 funnel on BOTH
+            // paths (its validator and its JSON-parse catch), so a caller who
+            // sent {title} — the shape circe actually reached for — got a bare
+            // error with no `expected`. A funnel only buys a wire-wide guarantee
+            // if every route is actually in it.
+            const projectsExpected =
+              '{"id": "<slug>", "title": "<Title>"} — BOTH required; the id is the ' +
+              "slug used by ?project= and is NOT derived from the title";
             return req
               .json()
               .then((body) => {
                 const { id, title } = body as { id?: unknown; title?: unknown };
                 if (typeof id !== "string" || typeof title !== "string") {
-                  return new Response('{"error":"id and title required"}', {
-                    status: 400,
-                    headers: { "Content-Type": "application/json" },
-                  });
+                  return badRequest(new Error("id and title required"), projectsExpected);
                 }
                 const meta = createProject(HOME, id, title);
                 return Response.json(meta);
               })
-              .catch(
-                (e) =>
-                  new Response(
-                    JSON.stringify({ error: e instanceof Error ? e.message : String(e) }),
-                    {
-                      status: 400,
-                      headers: { "Content-Type": "application/json" },
-                    },
-                  ),
-              );
+              .catch((e) => badRequest(e, projectsExpected));
           }
           if (req.method === "POST" && path === "/ingest") {
             const { db, bus, meta } = loadProject(projectId);
