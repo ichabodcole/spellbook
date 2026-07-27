@@ -379,11 +379,110 @@ all green; mind-mapper tsc-clean.
 
 ### Surface convention (SEAM 2, R10) — always-show vs hide-when-empty toggle
 
-**Owner:** circe · _(ratified R10)_ — A surface **panel toggle** follows one of two
-lifecycles: **hide-when-empty** for transient, agent-fed trays (review, ingest)
-where an empty toggle is noise; **always-show (dimmed at zero)** for any
+**Owner:** circe · _(ratified R10; **largely SUPERSEDED at R11** — see the R11
+surface convention under Contract 11)_ — A surface **panel toggle** follows one of
+two lifecycles: **hide-when-empty** for transient, agent-fed trays (review,
+ingest) where an empty toggle is noise; **always-show (dimmed at zero)** for any
 first-class panel the human is expected to author into or must be able to
 discover (**jobs**). A missing toggle on a fresh session reads as a missing
 feature — the F1 root cause (the jobs toggle copied the tray's hide-when-empty
 gate and vanished on an empty session). Not a wire change; a surface-convention
-truth.
+truth. **R11 note:** this rule was the right answer to the wrong question — both
+panels it governed are now deleted. It survives only for panels that genuinely
+remain.
+
+## Contract 11 — The message surface: channel-on-`kind` + activity-tied-to-a-message (SEAMs 1/2, R11)
+
+**Owner:** daedalus (wire) · **Co-owner:** circe (consumption) · **Pointed at from:** prospero, cassandra · _(ratified R11, built 2026-07-26)_
+
+**The contract, stated once.** Every human→agent input is ONE primitive — a message
+with provenance. The channel it arrived through rides the EXISTING `messages.kind`;
+the activity signal names the message it is about. No new table, no new column.
+
+- **Ruling: the channel IS `kind`.** Not a new field. This NAMES as-built rather
+  than designing: the surface already shipped `kind:"analyze"` (docs-rail Analyze,
+  Claim G) before R11, so `kind` was already the arrival-affordance discriminator.
+  `ground` (Contract 9's prefixed grammar) already carries the attachments. Zero
+  migration.
+- **Vocabulary — known, NOT closed:** `MESSAGE_CHANNELS = ["turn" (chat bar, the
+  default) | "analyze" (docs-rail) | "canvas" (right-click ramble, R11)]`, exported
+  from `events.ts` beside `ALL_EVENT_KINDS`. **Server-side validation is
+  FALSIFIED:** a closed set would 400 the already-shipped `analyze` and would make
+  every future channel a daemon change before a surface could use it. Intake stores
+  an unknown channel **verbatim** and returns an additive `warning` on the `/send`
+  response (the `edgeDraftWarning` precedent), mirrored to stderr by `cli send`.
+  **Reject when a wrong value corrupts state; advise when it only degrades
+  rendering.**
+- **The vocabulary is VISIBLE on the wire:** `inboundGrounding()` gains
+  `messageChannels: string[]`, derived from the same constant. F5's lesson applied
+  to a vocabulary instead of a triage.
+- **Canvas position is NOT carried** (no consumer). Named extension point: `ground`
+  as `canvas:<x>,<y>` under the tolerated-prefix grammar — zero schema change,
+  test-pinned as round-tripping verbatim. The same clause covers circe's Z3
+  carry-over `zone:<id>` ground ref: engine stores it verbatim, unknown prefixes are
+  the consumer's to drop. **Contract 9 footnote (ratified here):**
+  `message.ground[]`'s tolerated-unknown-prefix clause is an **extension point, not
+  slack** — `send.ts` stores ground unvalidated, which is why `zone:<id>` shipped
+  with zero engine change.
+- **Contract 10 is UNCHANGED and unwidened.** `isInboundEvent` keys on
+  `role`/`author`, never on `kind` — so every channel, including unknown/future
+  ones, is admitted for free. `INBOUND_WATCHED` is byte-identical to R10.
+  Vocabulary note: from R11 "channel" means the MESSAGE arrival channel; Contract
+  10's `watching`/`notWatching` entries are EVENT PREDICATES (wire field names
+  unchanged).
+- **Activity ties to a message (SEAM 2, ruling B):** `agent.activity` gains an
+  **additive-optional `messageId`**. It is a property of the **OPEN ladder**, not of
+  an emit: the `/send` auto-flip stamps the triggering message; subsequent states
+  **inherit** it when omitted (so an already-shipped `cli activity thinking` keeps
+  the tie — per-emit stamping would half-fix F3 for every agent in the field); an
+  explicit `POST /activity {state, messageId}` / `cli activity <state> --message
+  <id>` **overrides**; the `stalled` escalation keeps it; **`idle` carries it out
+  and then clears** (the consumer needs to know which badge to clear). An unknown
+  `messageId` is a **400** — a mistyped tie would otherwise be a silent surface
+  no-op.
+- **There is NO `done` state.** The agent's reply IS completion: `/send role:agent`
+  resolves the ladder, emitting `agent.activity{state:"idle", messageId}` alongside
+  the reply. One fewer primitive, and it's what actually happened.
+- **`/state` gains `activity: {state, messageId?} | null`** — spread AT THE HANDLER
+  beside `presence` (same daemon-level-fact reason; the exported `ProjectState` type
+  still under-reports the wire). In-memory, no table: a restart honestly clears.
+  Without it, F3's "unmissable" signal is missable by exactly one browser refresh.
+- **L2 holds (Contract 8's dumb-daemon clause):** a `canvas`-channel message does
+  NOT auto-become a doc, auto-mint a node, or auto-create a job. The daemon stores
+  and stamps; the agent decides.
+- **NOT built (named, not silent):** channel-based multi-agent ROUTING.
+  `isInboundEvent` is still a hardcoded predicate; routing wants a per-subscriber
+  predicate (`--inbound --channel <c>` / `--for <agent>`) over the same filter site.
+  R11 leaves the door open — it builds no router.
+
+**Proof:** events.test.ts (MESSAGE_CHANNELS incl. the shipped `analyze`; inbound
+admits every channel incl. unknown; the watched set is unwidened; grounding names
+the channels) · send.test.ts (advisory silent-on-known/names-the-set; unknown
+channel stores verbatim; unknown ground prefix round-trips) · server.test.ts
+(`inbound=1` admits a `kind:canvas` human message + grounding carries
+`messageChannels`; unknown channel → 200 + `warning`, never 400) · presence.test.ts
+(auto-flip stamps the triggering id + `/state.activity`; stalled keeps it; explicit
+inherit-or-override; the reply's idle carries-then-clears; unknown messageId 400s) ·
+cli.test.ts (`send --kind` mirrors the advisory; `activity --message` round-trips
+through /state). mind-mapper engine suite 287 tests, surface 320, all green;
+mind-mapper tsc-clean.
+
+### Surface convention (R11) — a channel in the one stream beats a second surface
+
+**Owner:** circe · _(ratified R11)_ — **Supersedes/absorbs the R10
+always-show-vs-hide-when-empty toggle rule: that rule was the right answer to the
+wrong question.** A new human→agent input mode is a **channel on the message bus**,
+never a new panel — it rides the wire's `kind`, stamps provenance in `ground`, and
+renders in the conversation as a **visually distinct, collapsed-by-default,
+filterable** bubble. Corollaries:
+
+- **(a)** collapse-by-default applies to **human side-channel** messages only —
+  collapsing agent output breaks the log's readability, the one thing the collapse
+  must not do (the human has NOT read the agent's half; "I already know the content"
+  is true only of their own input);
+- **(b)** agent *state* about a message renders **on that message**, never in its own
+  surface — and outside the collapsible body, so a folded ramble still shouts;
+- **(c)** facet controls (board filter, channel filter) render **only when the facets
+  exist** (present-only) — which is what the R10 always-show rule was reaching for.
+
+The R10 rule survives only for panels that genuinely remain.

@@ -39,11 +39,29 @@ All verbs: `bun plugins/spellbook/skills/mind-mapper/scripts/cli.ts <verb>`.
 4. **Wrap `tail --inbound` with Monitor — step 0 of co-presence, do it before
    anything else.** `--inbound` (Contract 10, R10) is the single correct
    human-intent stream: a server-side filter that delivers exactly the events a
-   HUMAN originates — `message.posted` where `role=user` (the human spoke) and
-   `proposal.added` where `author=user` (the human dropped a node on the canvas,
-   or connected two nodes — both land in "ingesting" as `proposal.added`). One
-   monitor, and you **cannot under-subscribe** — correctness is owned by the
-   surface, not your grep.
+   HUMAN originates — `message.posted` where `role=user` (the human spoke,
+   **through any channel** — see below) and `proposal.added` where `author=user`
+   (the human connected two nodes on the canvas). One monitor, and you **cannot
+   under-subscribe** — correctness is owned by the surface, not your grep.
+
+   **Messages arrive through CHANNELS (Contract 11, R11) — read `kind`.** Every
+   human→agent input is ONE primitive, a message; what differs is the
+   **channel** it arrived through (the wire's `kind`) and the **provenance**
+   attached (the wire's `ground`). Known channels: **`turn`** (typed in the chat
+   bar — the default), **`analyze`** (the docs rail), **`canvas`** (the human
+   right-clicked the board and rambled an idea at you). The set is **open, not
+   closed** — treat an unknown `kind` as a valid channel you don't have a
+   special case for, never as an error. `ground` carries what was attached: bare
+   id = node, `doc:<id>` = doc, `zone:<id>` = "I was working in this sandbox."
+   Unknown prefixes are yours to ignore.
+
+   **A `canvas` message is INTENT, not an instruction to mint that node.** The
+   human is handing you what they want to explore — _"my intent here isn't to
+   create the node directly, it's to give you what I want to create"_ (drive
+   #9). Read it, decide whether it's source material (then `ingest` it as a doc)
+   or a prompt to propose structure, and **propose** — don't transcribe the
+   ramble into a node. The daemon deliberately does none of this for you
+   (Contract 8: dumb daemon); the judgment is the job.
 
    **Why this is the default (the F4 scar — drive #8):** the human talks to you
    TWO ways — by **chat** AND by **acting on the board** (right-click → a new
@@ -107,6 +125,20 @@ synthetic `idle` after ~60s (`MIND_MAPPER_ACTIVITY_TTL_MS`), so a crash never
 leaves the indicator stuck. Practical upshot: you have real room before the
 board calls you stuck, but posting `thinking` as your first act on a message
 you'll work on is still the honest signal.
+
+**Your activity now names the MESSAGE it's about (Contract 11, R11) — this is
+how the human sees you working.** `agent.activity` carries an optional
+`messageId`, and it belongs to the **open ladder**, not to one emit: the
+daemon's auto-`received` stamps the message that triggered it, and your
+subsequent states **inherit** it when you omit it — so a plain
+`activity thinking` keeps the tie and the human's badge stays on the right
+message. **Override it when you're working an OLDER message than the newest
+one** (`activity thinking --message <id>`) — that's the case the human can't
+infer, and getting it wrong puts the "working on it" pulse on the wrong bubble.
+An unknown id is a 400, not a silent no-op. There is **no `done` state**: your
+reply IS completion — a `send` resolves the ladder and clears the badge. With
+the jobs and ingest panels gone (R11), this signal is the human's ONLY view into
+whether you're working — treat it as load-bearing, not decoration.
 
 **When a doc arrives (`doc.added`):** this is AMBIENT staging, not an intent —
 the human may be setting the table for a conversation. Acknowledge it; extract
