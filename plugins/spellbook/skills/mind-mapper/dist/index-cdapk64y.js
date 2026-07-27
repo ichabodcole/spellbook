@@ -18134,20 +18134,8 @@ var __iconNode9 = [
   ["path", { d: "M5 21h14", key: "11awu3" }]
 ];
 var ArrowUpFromLine = createLucideIcon("arrow-up-from-line", __iconNode9);
-// node_modules/lucide-react/dist/esm/icons/arrow-up-right.mjs
-var __iconNode10 = [
-  ["path", { d: "M7 7h10v10", key: "1tivn9" }],
-  ["path", { d: "M7 17 17 7", key: "1vkiza" }]
-];
-var ArrowUpRight = createLucideIcon("arrow-up-right", __iconNode10);
-// node_modules/lucide-react/dist/esm/icons/ban.mjs
-var __iconNode11 = [
-  ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
-  ["path", { d: "M4.929 4.929 19.07 19.071", key: "196cmz" }]
-];
-var Ban = createLucideIcon("ban", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/book-open.mjs
-var __iconNode12 = [
+var __iconNode10 = [
   ["path", { d: "M12 7v14", key: "1akyts" }],
   [
     "path",
@@ -18157,30 +18145,30 @@ var __iconNode12 = [
     }
   ]
 ];
-var BookOpen = createLucideIcon("book-open", __iconNode12);
+var BookOpen = createLucideIcon("book-open", __iconNode10);
 // node_modules/lucide-react/dist/esm/icons/check.mjs
-var __iconNode13 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
-var Check = createLucideIcon("check", __iconNode13);
+var __iconNode11 = [["path", { d: "M20 6 9 17l-5-5", key: "1gmf2c" }]];
+var Check = createLucideIcon("check", __iconNode11);
 // node_modules/lucide-react/dist/esm/icons/chevron-down.mjs
-var __iconNode14 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
-var ChevronDown = createLucideIcon("chevron-down", __iconNode14);
+var __iconNode12 = [["path", { d: "m6 9 6 6 6-6", key: "qrunsl" }]];
+var ChevronDown = createLucideIcon("chevron-down", __iconNode12);
 // node_modules/lucide-react/dist/esm/icons/chevron-right.mjs
-var __iconNode15 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
-var ChevronRight = createLucideIcon("chevron-right", __iconNode15);
+var __iconNode13 = [["path", { d: "m9 18 6-6-6-6", key: "mthhwq" }]];
+var ChevronRight = createLucideIcon("chevron-right", __iconNode13);
 // node_modules/lucide-react/dist/esm/icons/chevrons-down.mjs
-var __iconNode16 = [
+var __iconNode14 = [
   ["path", { d: "m7 6 5 5 5-5", key: "1lc07p" }],
   ["path", { d: "m7 13 5 5 5-5", key: "1d48rs" }]
 ];
-var ChevronsDown = createLucideIcon("chevrons-down", __iconNode16);
+var ChevronsDown = createLucideIcon("chevrons-down", __iconNode14);
 // node_modules/lucide-react/dist/esm/icons/chevrons-up.mjs
-var __iconNode17 = [
+var __iconNode15 = [
   ["path", { d: "m17 11-5-5-5 5", key: "e8nh98" }],
   ["path", { d: "m17 18-5-5-5 5", key: "2avn1x" }]
 ];
-var ChevronsUp = createLucideIcon("chevrons-up", __iconNode17);
+var ChevronsUp = createLucideIcon("chevrons-up", __iconNode15);
 // node_modules/lucide-react/dist/esm/icons/circle-dashed.mjs
-var __iconNode18 = [
+var __iconNode16 = [
   ["path", { d: "M10.1 2.182a10 10 0 0 1 3.8 0", key: "5ilxe3" }],
   ["path", { d: "M13.9 21.818a10 10 0 0 1-3.8 0", key: "11zvb9" }],
   ["path", { d: "M17.609 3.721a10 10 0 0 1 2.69 2.7", key: "1iw5b2" }],
@@ -18190,24 +18178,24 @@ var __iconNode18 = [
   ["path", { d: "M3.721 6.391a10 10 0 0 1 2.7-2.69", key: "1mcia2" }],
   ["path", { d: "M6.391 20.279a10 10 0 0 1-2.69-2.7", key: "1fvljs" }]
 ];
-var CircleDashed = createLucideIcon("circle-dashed", __iconNode18);
+var CircleDashed = createLucideIcon("circle-dashed", __iconNode16);
 // node_modules/lucide-react/dist/esm/icons/corner-down-right.mjs
-var __iconNode19 = [
+var __iconNode17 = [
   ["path", { d: "m15 10 5 5-5 5", key: "qqa56n" }],
   ["path", { d: "M4 4v7a4 4 0 0 0 4 4h12", key: "z08zvw" }]
 ];
-var CornerDownRight = createLucideIcon("corner-down-right", __iconNode19);
+var CornerDownRight = createLucideIcon("corner-down-right", __iconNode17);
 // node_modules/lucide-react/dist/esm/icons/crosshair.mjs
-var __iconNode20 = [
+var __iconNode18 = [
   ["circle", { cx: "12", cy: "12", r: "10", key: "1mglay" }],
   ["line", { x1: "22", x2: "18", y1: "12", y2: "12", key: "l9bcsi" }],
   ["line", { x1: "6", x2: "2", y1: "12", y2: "12", key: "13hhkx" }],
   ["line", { x1: "12", x2: "12", y1: "6", y2: "2", key: "10w3f3" }],
   ["line", { x1: "12", x2: "12", y1: "22", y2: "18", key: "15g9kq" }]
 ];
-var Crosshair = createLucideIcon("crosshair", __iconNode20);
+var Crosshair = createLucideIcon("crosshair", __iconNode18);
 // node_modules/lucide-react/dist/esm/icons/file-text.mjs
-var __iconNode21 = [
+var __iconNode19 = [
   [
     "path",
     {
@@ -18220,9 +18208,9 @@ var __iconNode21 = [
   ["path", { d: "M16 13H8", key: "t4e002" }],
   ["path", { d: "M16 17H8", key: "z1uh3a" }]
 ];
-var FileText = createLucideIcon("file-text", __iconNode21);
+var FileText = createLucideIcon("file-text", __iconNode19);
 // node_modules/lucide-react/dist/esm/icons/flashlight.mjs
-var __iconNode22 = [
+var __iconNode20 = [
   ["path", { d: "M12 13v1", key: "176q98" }],
   [
     "path",
@@ -18233,9 +18221,9 @@ var __iconNode22 = [
   ],
   ["path", { d: "M6 6h12", key: "n6hhss" }]
 ];
-var Flashlight = createLucideIcon("flashlight", __iconNode22);
+var Flashlight = createLucideIcon("flashlight", __iconNode20);
 // node_modules/lucide-react/dist/esm/icons/folder-tree.mjs
-var __iconNode23 = [
+var __iconNode21 = [
   [
     "path",
     {
@@ -18253,17 +18241,17 @@ var __iconNode23 = [
   ["path", { d: "M3 5a2 2 0 0 0 2 2h3", key: "f2jnh7" }],
   ["path", { d: "M3 3v13a2 2 0 0 0 2 2h3", key: "k8epm1" }]
 ];
-var FolderTree = createLucideIcon("folder-tree", __iconNode23);
+var FolderTree = createLucideIcon("folder-tree", __iconNode21);
 // node_modules/lucide-react/dist/esm/icons/layout-grid.mjs
-var __iconNode24 = [
+var __iconNode22 = [
   ["rect", { width: "7", height: "7", x: "3", y: "3", rx: "1", key: "1g98yp" }],
   ["rect", { width: "7", height: "7", x: "14", y: "3", rx: "1", key: "6d4xhi" }],
   ["rect", { width: "7", height: "7", x: "14", y: "14", rx: "1", key: "nxv5o0" }],
   ["rect", { width: "7", height: "7", x: "3", y: "14", rx: "1", key: "1bb6yr" }]
 ];
-var LayoutGrid = createLucideIcon("layout-grid", __iconNode24);
+var LayoutGrid = createLucideIcon("layout-grid", __iconNode22);
 // node_modules/lucide-react/dist/esm/icons/lightbulb.mjs
-var __iconNode25 = [
+var __iconNode23 = [
   [
     "path",
     {
@@ -18274,27 +18262,18 @@ var __iconNode25 = [
   ["path", { d: "M9 18h6", key: "x1upvd" }],
   ["path", { d: "M10 22h4", key: "ceow96" }]
 ];
-var Lightbulb = createLucideIcon("lightbulb", __iconNode25);
-// node_modules/lucide-react/dist/esm/icons/list-checks.mjs
-var __iconNode26 = [
-  ["path", { d: "M13 5h8", key: "a7qcls" }],
-  ["path", { d: "M13 12h8", key: "h98zly" }],
-  ["path", { d: "M13 19h8", key: "c3s6r1" }],
-  ["path", { d: "m3 17 2 2 4-4", key: "1jhpwq" }],
-  ["path", { d: "m3 7 2 2 4-4", key: "1obspn" }]
-];
-var ListChecks = createLucideIcon("list-checks", __iconNode26);
+var Lightbulb = createLucideIcon("lightbulb", __iconNode23);
 // node_modules/lucide-react/dist/esm/icons/list-tree.mjs
-var __iconNode27 = [
+var __iconNode24 = [
   ["path", { d: "M8 5h13", key: "1pao27" }],
   ["path", { d: "M13 12h8", key: "h98zly" }],
   ["path", { d: "M13 19h8", key: "c3s6r1" }],
   ["path", { d: "M3 10a2 2 0 0 0 2 2h3", key: "1npucw" }],
   ["path", { d: "M3 5v12a2 2 0 0 0 2 2h3", key: "x1gjn2" }]
 ];
-var ListTree = createLucideIcon("list-tree", __iconNode27);
+var ListTree = createLucideIcon("list-tree", __iconNode24);
 // node_modules/lucide-react/dist/esm/icons/loader.mjs
-var __iconNode28 = [
+var __iconNode25 = [
   ["path", { d: "M12 2v4", key: "3427ic" }],
   ["path", { d: "m16.2 7.8 2.9-2.9", key: "r700ao" }],
   ["path", { d: "M18 12h4", key: "wj9ykh" }],
@@ -18304,9 +18283,9 @@ var __iconNode28 = [
   ["path", { d: "M2 12h4", key: "j09sii" }],
   ["path", { d: "m4.9 4.9 2.9 2.9", key: "giyufr" }]
 ];
-var Loader = createLucideIcon("loader", __iconNode28);
+var Loader = createLucideIcon("loader", __iconNode25);
 // node_modules/lucide-react/dist/esm/icons/map-pin.mjs
-var __iconNode29 = [
+var __iconNode26 = [
   [
     "path",
     {
@@ -18316,9 +18295,9 @@ var __iconNode29 = [
   ],
   ["circle", { cx: "12", cy: "10", r: "3", key: "ilqhr7" }]
 ];
-var MapPin = createLucideIcon("map-pin", __iconNode29);
+var MapPin = createLucideIcon("map-pin", __iconNode26);
 // node_modules/lucide-react/dist/esm/icons/map.mjs
-var __iconNode30 = [
+var __iconNode27 = [
   [
     "path",
     {
@@ -18329,9 +18308,9 @@ var __iconNode30 = [
   ["path", { d: "M15 5.764v15", key: "1pn4in" }],
   ["path", { d: "M9 3.236v15", key: "1uimfh" }]
 ];
-var Map2 = createLucideIcon("map", __iconNode30);
+var Map2 = createLucideIcon("map", __iconNode27);
 // node_modules/lucide-react/dist/esm/icons/message-square.mjs
-var __iconNode31 = [
+var __iconNode28 = [
   [
     "path",
     {
@@ -18340,19 +18319,19 @@ var __iconNode31 = [
     }
   ]
 ];
-var MessageSquare = createLucideIcon("message-square", __iconNode31);
+var MessageSquare = createLucideIcon("message-square", __iconNode28);
 // node_modules/lucide-react/dist/esm/icons/mic.mjs
-var __iconNode32 = [
+var __iconNode29 = [
   ["path", { d: "M12 19v3", key: "npa21l" }],
   ["path", { d: "M19 10v2a7 7 0 0 1-14 0v-2", key: "1vc78b" }],
   ["rect", { x: "9", y: "2", width: "6", height: "13", rx: "3", key: "s6n7sd" }]
 ];
-var Mic = createLucideIcon("mic", __iconNode32);
+var Mic = createLucideIcon("mic", __iconNode29);
 // node_modules/lucide-react/dist/esm/icons/minus.mjs
-var __iconNode33 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
-var Minus = createLucideIcon("minus", __iconNode33);
+var __iconNode30 = [["path", { d: "M5 12h14", key: "1ays0h" }]];
+var Minus = createLucideIcon("minus", __iconNode30);
 // node_modules/lucide-react/dist/esm/icons/moon.mjs
-var __iconNode34 = [
+var __iconNode31 = [
   [
     "path",
     {
@@ -18361,15 +18340,15 @@ var __iconNode34 = [
     }
   ]
 ];
-var Moon = createLucideIcon("moon", __iconNode34);
+var Moon = createLucideIcon("moon", __iconNode31);
 // node_modules/lucide-react/dist/esm/icons/plus.mjs
-var __iconNode35 = [
+var __iconNode32 = [
   ["path", { d: "M5 12h14", key: "1ays0h" }],
   ["path", { d: "M12 5v14", key: "s699le" }]
 ];
-var Plus = createLucideIcon("plus", __iconNode35);
+var Plus = createLucideIcon("plus", __iconNode32);
 // node_modules/lucide-react/dist/esm/icons/scroll-text.mjs
-var __iconNode36 = [
+var __iconNode33 = [
   ["path", { d: "M15 12h-5", key: "r7krc0" }],
   ["path", { d: "M15 8h-5", key: "1khuty" }],
   ["path", { d: "M19 17V5a2 2 0 0 0-2-2H4", key: "zz82l3" }],
@@ -18381,20 +18360,15 @@ var __iconNode36 = [
     }
   ]
 ];
-var ScrollText = createLucideIcon("scroll-text", __iconNode36);
+var ScrollText = createLucideIcon("scroll-text", __iconNode33);
 // node_modules/lucide-react/dist/esm/icons/search.mjs
-var __iconNode37 = [
+var __iconNode34 = [
   ["path", { d: "m21 21-4.34-4.34", key: "14j7rj" }],
   ["circle", { cx: "11", cy: "11", r: "8", key: "4ej97u" }]
 ];
-var Search = createLucideIcon("search", __iconNode37);
-// node_modules/lucide-react/dist/esm/icons/square.mjs
-var __iconNode38 = [
-  ["rect", { width: "18", height: "18", x: "3", y: "3", rx: "2", key: "afitv7" }]
-];
-var Square = createLucideIcon("square", __iconNode38);
+var Search = createLucideIcon("search", __iconNode34);
 // node_modules/lucide-react/dist/esm/icons/sun.mjs
-var __iconNode39 = [
+var __iconNode35 = [
   ["circle", { cx: "12", cy: "12", r: "4", key: "4exip2" }],
   ["path", { d: "M12 2v2", key: "tus03m" }],
   ["path", { d: "M12 20v2", key: "1lh1kg" }],
@@ -18405,9 +18379,9 @@ var __iconNode39 = [
   ["path", { d: "m6.34 17.66-1.41 1.41", key: "1m8zz5" }],
   ["path", { d: "m19.07 4.93-1.41 1.41", key: "1shlcs" }]
 ];
-var Sun = createLucideIcon("sun", __iconNode39);
+var Sun = createLucideIcon("sun", __iconNode35);
 // node_modules/lucide-react/dist/esm/icons/tag.mjs
-var __iconNode40 = [
+var __iconNode36 = [
   [
     "path",
     {
@@ -18417,31 +18391,31 @@ var __iconNode40 = [
   ],
   ["circle", { cx: "7.5", cy: "7.5", r: ".5", fill: "currentColor", key: "kqv944" }]
 ];
-var Tag = createLucideIcon("tag", __iconNode40);
+var Tag = createLucideIcon("tag", __iconNode36);
 // node_modules/lucide-react/dist/esm/icons/trash-2.mjs
-var __iconNode41 = [
+var __iconNode37 = [
   ["path", { d: "M10 11v6", key: "nco0om" }],
   ["path", { d: "M14 11v6", key: "outv1u" }],
   ["path", { d: "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", key: "miytrc" }],
   ["path", { d: "M3 6h18", key: "d0wm0j" }],
   ["path", { d: "M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2", key: "e791ji" }]
 ];
-var Trash2 = createLucideIcon("trash-2", __iconNode41);
+var Trash2 = createLucideIcon("trash-2", __iconNode37);
 // node_modules/lucide-react/dist/esm/icons/upload.mjs
-var __iconNode42 = [
+var __iconNode38 = [
   ["path", { d: "M12 3v12", key: "1x0j5s" }],
   ["path", { d: "m17 8-5-5-5 5", key: "7q97r8" }],
   ["path", { d: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4", key: "ih7n3h" }]
 ];
-var Upload = createLucideIcon("upload", __iconNode42);
+var Upload = createLucideIcon("upload", __iconNode38);
 // node_modules/lucide-react/dist/esm/icons/user.mjs
-var __iconNode43 = [
+var __iconNode39 = [
   ["path", { d: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2", key: "975kel" }],
   ["circle", { cx: "12", cy: "7", r: "4", key: "17ys0d" }]
 ];
-var User = createLucideIcon("user", __iconNode43);
+var User = createLucideIcon("user", __iconNode39);
 // node_modules/lucide-react/dist/esm/icons/waypoints.mjs
-var __iconNode44 = [
+var __iconNode40 = [
   ["path", { d: "m10.586 5.414-5.172 5.172", key: "4mc350" }],
   ["path", { d: "m18.586 13.414-5.172 5.172", key: "8c96vv" }],
   ["path", { d: "M6 12h12", key: "8npq4p" }],
@@ -18450,13 +18424,13 @@ var __iconNode44 = [
   ["circle", { cx: "20", cy: "12", r: "2", key: "1xzzfp" }],
   ["circle", { cx: "4", cy: "12", r: "2", key: "1hvhnz" }]
 ];
-var Waypoints = createLucideIcon("waypoints", __iconNode44);
+var Waypoints = createLucideIcon("waypoints", __iconNode40);
 // node_modules/lucide-react/dist/esm/icons/x.mjs
-var __iconNode45 = [
+var __iconNode41 = [
   ["path", { d: "M18 6 6 18", key: "1bl5f8" }],
   ["path", { d: "m6 6 12 12", key: "d8bk6v" }]
 ];
-var X = createLucideIcon("x", __iconNode45);
+var X = createLucideIcon("x", __iconNode41);
 // src/mind-mapper/surface/App.tsx
 var import_react23 = __toESM(require_react(), 1);
 
@@ -42368,7 +42342,7 @@ function GraphCanvas({
   focusRequest,
   onConnect,
   onConnectToBlank,
-  onAddNode,
+  onCanvasSend,
   onEnterSubmap,
   panelTopRight,
   promotable,
@@ -42565,7 +42539,7 @@ function GraphCanvas({
     onNodeDoubleClick: (_2, node) => onEnterSubmap?.(node.id),
     onPaneContextMenu: (event) => {
       event.preventDefault();
-      onAddNode?.();
+      onCanvasSend?.();
     },
     zoomOnDoubleClick: false,
     fitView: true,
@@ -43020,7 +42994,7 @@ function ContextRail({
 }
 
 // src/mind-mapper/surface/ConversationPanel.tsx
-var import_react12 = __toESM(require_react(), 1);
+var import_react13 = __toESM(require_react(), 1);
 
 // src/mind-mapper/surface/ActivityIndicator.tsx
 var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
@@ -43045,6 +43019,1141 @@ function ActivityIndicator({ label }) {
     ]
   }, undefined, true, undefined, this);
 }
+
+// src/mind-mapper/surface/state/filter.ts
+var EMPTY_FILTER = { status: [], tier: [], tags: [] };
+function isEmptyFilter(f) {
+  return f.status.length === 0 && f.tier.length === 0 && f.tags.length === 0;
+}
+function activeFilterCount(f) {
+  return f.status.length + f.tier.length + f.tags.length;
+}
+function statusOf(node) {
+  return node.pending ? "pending" : "ratified";
+}
+function filterMap(map, f) {
+  if (isEmptyFilter(f))
+    return map;
+  const statusSet = new Set(f.status);
+  const tierSet = new Set(f.tier);
+  const tagSet = new Set(f.tags);
+  const nodes = map.nodes.filter((n) => {
+    if (statusSet.size > 0 && !statusSet.has(statusOf(n)))
+      return false;
+    if (tierSet.size > 0 && !tierSet.has(n.tier))
+      return false;
+    if (tagSet.size > 0 && !(n.tags ?? []).some((t) => tagSet.has(t)))
+      return false;
+    return true;
+  });
+  const keep = new Set(nodes.map((n) => n.id));
+  const edges = map.edges.filter((e) => keep.has(e.source) && keep.has(e.target));
+  return { ...map, nodes, edges };
+}
+var STATUS_ORDER = ["ratified", "pending"];
+var TIER_ORDER3 = ["canon", "thread", "story-local", "background"];
+function filterFacets(map) {
+  const statusesPresent = new Set(map.nodes.map(statusOf));
+  const tiersPresent = new Set(map.nodes.map((n) => n.tier));
+  const tags = new Set;
+  for (const n of map.nodes)
+    for (const t of n.tags ?? [])
+      tags.add(t);
+  return {
+    statuses: STATUS_ORDER.filter((s) => statusesPresent.has(s)),
+    tiers: TIER_ORDER3.filter((t) => tiersPresent.has(t)),
+    tags: [...tags].sort((a2, b) => a2.localeCompare(b))
+  };
+}
+function toggleFacet(values, value) {
+  return values.includes(value) ? values.filter((v2) => v2 !== value) : [...values, value];
+}
+
+// node_modules/@base-ui/react/popover/index.parts.mjs
+var exports_index_parts3 = {};
+__export(exports_index_parts3, {
+  createHandle: () => createPopoverHandle,
+  Viewport: () => PopoverViewport,
+  Trigger: () => PopoverTrigger,
+  Title: () => PopoverTitle,
+  Root: () => PopoverRoot,
+  Positioner: () => PopoverPositioner,
+  Portal: () => PopoverPortal,
+  Popup: () => PopoverPopup,
+  Handle: () => PopoverHandle,
+  Description: () => PopoverDescription,
+  Close: () => PopoverClose,
+  Backdrop: () => PopoverBackdrop,
+  Arrow: () => PopoverArrow
+});
+
+// node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
+var React88 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/root/PopoverRootContext.mjs
+var React86 = __toESM(require_react(), 1);
+"use client";
+var PopoverRootContext = /* @__PURE__ */ React86.createContext(undefined);
+if (true)
+  PopoverRootContext.displayName = "PopoverRootContext";
+function usePopoverRootContext(optional) {
+  const context = React86.useContext(PopoverRootContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: PopoverRootContext is missing. Popover parts must be placed within <Popover.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/popover/store/PopoverStore.mjs
+var React87 = __toESM(require_react(), 1);
+var ReactDOM8 = __toESM(require_react_dom(), 1);
+"use client";
+function createInitialState2() {
+  return {
+    ...createInitialPopupStoreState(),
+    disabled: false,
+    modal: false,
+    focusManagerModal: false,
+    instantType: undefined,
+    openMethod: null,
+    openChangeReason: null,
+    titleElementId: undefined,
+    descriptionElementId: undefined,
+    stickIfOpen: true,
+    nested: false,
+    openOnHover: false,
+    closeDelay: 0,
+    hasViewport: false
+  };
+}
+var selectors3 = {
+  ...popupStoreSelectors,
+  disabled: createSelector((state) => state.disabled),
+  instantType: createSelector((state) => state.instantType),
+  openMethod: createSelector((state) => state.openMethod),
+  openChangeReason: createSelector((state) => state.openChangeReason),
+  modal: createSelector((state) => state.modal),
+  focusManagerModal: createSelector((state) => state.focusManagerModal),
+  stickIfOpen: createSelector((state) => state.stickIfOpen),
+  titleElementId: createSelector((state) => state.titleElementId),
+  descriptionElementId: createSelector((state) => state.descriptionElementId),
+  openOnHover: createSelector((state) => state.openOnHover),
+  closeDelay: createSelector((state) => state.closeDelay),
+  hasViewport: createSelector((state) => state.hasViewport)
+};
+
+class PopoverStore extends ReactStore {
+  constructor(initialState, floatingId, nested = false) {
+    const initial2 = {
+      ...createInitialState2(),
+      ...initialState
+    };
+    const triggerElements = new PopupTriggerMap;
+    if (initial2.open && initialState?.mounted === undefined) {
+      initial2.mounted = true;
+    }
+    initial2.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
+    super(initial2, {
+      popupRef: /* @__PURE__ */ React87.createRef(),
+      backdropRef: /* @__PURE__ */ React87.createRef(),
+      internalBackdropRef: /* @__PURE__ */ React87.createRef(),
+      onOpenChange: undefined,
+      onOpenChangeComplete: undefined,
+      triggerFocusTargetRef: /* @__PURE__ */ React87.createRef(),
+      beforeContentFocusGuardRef: /* @__PURE__ */ React87.createRef(),
+      stickIfOpenTimeout: new Timeout,
+      triggerElements
+    }, selectors3);
+  }
+  setOpen = (nextOpen, eventDetails) => {
+    const isHover = eventDetails.reason === exports_reason_parts.triggerHover;
+    const isKeyboardClick = eventDetails.reason === exports_reason_parts.triggerPress && eventDetails.event.detail === 0;
+    const isDismissClose = !nextOpen && (eventDetails.reason === exports_reason_parts.escapeKey || eventDetails.reason == null);
+    const shouldPreventUnmountOnClose = attachPreventUnmountOnClose(eventDetails);
+    const activeTriggerId = this.select("activeTriggerId");
+    if (!nextOpen && eventDetails.reason === exports_reason_parts.closePress && eventDetails.trigger == null && activeTriggerId != null) {
+      eventDetails.trigger = this.context.triggerElements.getById(activeTriggerId) ?? this.select("activeTriggerElement") ?? undefined;
+    }
+    this.context.onOpenChange?.(nextOpen, eventDetails);
+    if (eventDetails.isCanceled) {
+      return;
+    }
+    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
+    const changeState = () => {
+      const updatedState = {
+        open: nextOpen,
+        openChangeReason: eventDetails.reason
+      };
+      setPopupOpenState(updatedState, nextOpen, eventDetails.trigger, shouldPreventUnmountOnClose());
+      this.update(updatedState);
+    };
+    if (isHover) {
+      this.set("stickIfOpen", true);
+      this.context.stickIfOpenTimeout.start(PATIENT_CLICK_THRESHOLD, () => {
+        this.set("stickIfOpen", false);
+      });
+      ReactDOM8.flushSync(changeState);
+    } else {
+      changeState();
+    }
+    if (isKeyboardClick || isDismissClose) {
+      this.set("instantType", isKeyboardClick ? "click" : "dismiss");
+    } else if (eventDetails.reason === exports_reason_parts.focusOut) {
+      this.set("instantType", "focus");
+    } else {
+      this.set("instantType", undefined);
+    }
+  };
+  static useStore(externalStore, initialState) {
+    const {
+      store,
+      internalStore
+    } = usePopupStore(externalStore, (floatingId, nested) => new PopoverStore(initialState, floatingId, nested));
+    React87.useEffect(() => internalStore?.disposeEffect(), [internalStore]);
+    return store;
+  }
+  disposeEffect = () => {
+    return this.context.stickIfOpenTimeout.disposeEffect();
+  };
+}
+
+// node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
+var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
+"use client";
+function PopoverRootComponent({
+  props
+}) {
+  const {
+    children: children2,
+    open: openProp,
+    defaultOpen = false,
+    onOpenChange,
+    onOpenChangeComplete,
+    modal = false,
+    handle,
+    triggerId: triggerIdProp,
+    defaultTriggerId: defaultTriggerIdProp = null
+  } = props;
+  const store = PopoverStore.useStore(handle?.store, {
+    modal,
+    open: defaultOpen,
+    openProp,
+    activeTriggerId: defaultTriggerIdProp,
+    triggerIdProp
+  });
+  useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerIdProp);
+  store.useControlledProp("openProp", openProp);
+  store.useControlledProp("triggerIdProp", triggerIdProp);
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const payload = store.useState("payload");
+  const nested = useFloatingParentNodeId() != null;
+  store.useContextCallback("onOpenChange", onOpenChange);
+  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
+  usePopupRootSync(store, open);
+  useImplicitActiveTrigger(store);
+  const {
+    forceUnmount
+  } = useOpenStateTransitions(open, store, () => {
+    store.update({
+      stickIfOpen: true,
+      openChangeReason: null
+    });
+  });
+  store.useSyncedValues({
+    modal,
+    nested
+  });
+  React88.useEffect(() => {
+    if (!open) {
+      store.context.stickIfOpenTimeout.clear();
+    }
+  }, [store, open]);
+  const handleImperativeClose = React88.useCallback(() => {
+    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
+  }, [store]);
+  React88.useImperativeHandle(props.actionsRef, () => ({
+    unmount: forceUnmount,
+    close: handleImperativeClose
+  }), [forceUnmount, handleImperativeClose]);
+  const shouldRenderInteractions = open || mounted;
+  const popoverContext = React88.useMemo(() => ({
+    store
+  }), [store]);
+  return /* @__PURE__ */ import_jsx_runtime20.jsxs(PopoverRootContext.Provider, {
+    value: popoverContext,
+    children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverInteractions, {
+      store,
+      modal
+    }), typeof children2 === "function" ? children2({
+      payload
+    }) : children2]
+  });
+}
+function PopoverRoot(props) {
+  if (usePopoverRootContext(true)) {
+    return /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverRootComponent, {
+      props
+    });
+  }
+  return /* @__PURE__ */ import_jsx_runtime20.jsx(FloatingTree, {
+    children: /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverRootComponent, {
+      props
+    })
+  });
+}
+function PopoverInteractions({
+  store,
+  modal
+}) {
+  const floatingRootContext = store.useState("floatingRootContext");
+  const dismiss = useDismiss(floatingRootContext, {
+    outsidePressEvent: {
+      mouse: modal === "trap-focus" ? "sloppy" : "intentional",
+      touch: "sloppy"
+    }
+  });
+  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
+  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
+  const popupProps = React88.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, dismiss.floating), [dismiss.floating]);
+  usePopupInteractionProps(store, {
+    activeTriggerProps,
+    inactiveTriggerProps,
+    popupProps
+  });
+  return null;
+}
+// node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
+var React89 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/utils/constants.mjs
+var OPEN_DELAY = 300;
+
+// node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
+var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PopoverTrigger = /* @__PURE__ */ React89.forwardRef(function PopoverTrigger2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    handle,
+    payload,
+    openOnHover = false,
+    delay = OPEN_DELAY,
+    closeDelay = 0,
+    id: idProp,
+    ...elementProps
+  } = componentProps;
+  const rootContext = usePopoverRootContext(true);
+  const store = handle?.store ?? rootContext?.store;
+  if (!store) {
+    throw new Error("Base UI: <Popover.Trigger> must be either used within a <Popover.Root> component or provided with a handle.");
+  }
+  const thisTriggerId = useBaseUiId(idProp);
+  const isTriggerActive = store.useState("isTriggerActive", thisTriggerId);
+  const floatingContext = store.useState("floatingRootContext");
+  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
+  const popupId = store.useState("triggerPopupId", thisTriggerId);
+  const triggerElementRef = React89.useRef(null);
+  const {
+    registerTrigger,
+    isMountedByThisTrigger
+  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
+    payload,
+    disabled: disabled2,
+    openOnHover,
+    closeDelay
+  });
+  const openReason = store.useState("openChangeReason");
+  const stickIfOpen = store.useState("stickIfOpen");
+  const openMethod = store.useState("openMethod");
+  const focusManagerModal = store.useState("focusManagerModal");
+  const hoverProps = useHoverReferenceInteraction(floatingContext, {
+    enabled: !disabled2 && floatingContext != null && openOnHover && (openMethod !== "touch" || openReason !== exports_reason_parts.triggerPress),
+    mouseOnly: true,
+    move: false,
+    handleClose: safePolygon(),
+    restMs: delay,
+    delay: {
+      close: closeDelay
+    },
+    triggerElementRef,
+    isActiveTrigger: isTriggerActive,
+    isClosing: () => store.select("transitionStatus") === "ending"
+  });
+  const click = useClick(floatingContext, {
+    enabled: floatingContext != null,
+    stickIfOpen
+  });
+  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
+    store.set("openMethod", interactionType);
+  });
+  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    native: nativeButton
+  });
+  const stateAttributesMapping4 = {
+    open(value) {
+      if (value && openReason === exports_reason_parts.triggerPress) {
+        return pressableTriggerOpenStateMapping.open(value);
+      }
+      return triggerOpenStateMapping.open(value);
+    }
+  };
+  const {
+    preFocusGuardRef,
+    handlePreFocusGuardFocus,
+    handleFocusTargetFocus
+  } = useTriggerFocusGuards(store, triggerElementRef);
+  const state = {
+    disabled: disabled2,
+    open: isOpenedByThisTrigger
+  };
+  const element = useRenderElement("button", componentProps, {
+    state,
+    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
+    props: [click.reference, hoverProps, rootTriggerProps, interactionTypeProps, {
+      [CLICK_TRIGGER_IDENTIFIER]: "",
+      id: thisTriggerId,
+      "aria-haspopup": "dialog",
+      "aria-expanded": isOpenedByThisTrigger,
+      "aria-controls": popupId
+    }, elementProps, getButtonProps],
+    stateAttributesMapping: stateAttributesMapping4
+  });
+  if (isMountedByThisTrigger && !focusManagerModal) {
+    return /* @__PURE__ */ import_jsx_runtime21.jsxs(React89.Fragment, {
+      children: [/* @__PURE__ */ import_jsx_runtime21.jsx(FocusGuard, {
+        ref: preFocusGuardRef,
+        onFocus: handlePreFocusGuardFocus
+      }), /* @__PURE__ */ import_jsx_runtime21.jsx(React89.Fragment, {
+        children: element
+      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime21.jsx(FocusGuard, {
+        ref: store.context.triggerFocusTargetRef,
+        onFocus: handleFocusTargetFocus
+      })]
+    });
+  }
+  return /* @__PURE__ */ import_jsx_runtime21.jsx(React89.Fragment, {
+    children: element
+  }, thisTriggerId);
+});
+if (true)
+  PopoverTrigger.displayName = "PopoverTrigger";
+// node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
+var React91 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/portal/PopoverPortalContext.mjs
+var React90 = __toESM(require_react(), 1);
+"use client";
+var PopoverPortalContext = /* @__PURE__ */ React90.createContext(undefined);
+if (true)
+  PopoverPortalContext.displayName = "PopoverPortalContext";
+function usePopoverPortalContext() {
+  const value = React90.useContext(PopoverPortalContext);
+  if (value === undefined) {
+    throw new Error("Base UI: <Popover.Portal> is missing.");
+  }
+  return value;
+}
+
+// node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
+var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PopoverPortal = /* @__PURE__ */ React91.forwardRef(function PopoverPortal2(props, forwardedRef) {
+  const {
+    keepMounted = false,
+    ...portalProps
+  } = props;
+  const {
+    store
+  } = usePopoverRootContext();
+  const mounted = store.useState("mounted");
+  const shouldRender = mounted || keepMounted;
+  if (!shouldRender) {
+    return null;
+  }
+  return /* @__PURE__ */ import_jsx_runtime22.jsx(PopoverPortalContext.Provider, {
+    value: keepMounted,
+    children: /* @__PURE__ */ import_jsx_runtime22.jsx(FloatingPortal, {
+      ref: forwardedRef,
+      ...portalProps
+    })
+  });
+});
+if (true)
+  PopoverPortal.displayName = "PopoverPortal";
+// node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
+var React93 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/positioner/PopoverPositionerContext.mjs
+var React92 = __toESM(require_react(), 1);
+"use client";
+var PopoverPositionerContext = /* @__PURE__ */ React92.createContext(undefined);
+if (true)
+  PopoverPositionerContext.displayName = "PopoverPositionerContext";
+function usePopoverPositionerContext() {
+  const context = React92.useContext(PopoverPositionerContext);
+  if (!context) {
+    throw new Error("Base UI: PopoverPositionerContext is missing. PopoverPositioner parts must be placed within <Popover.Positioner>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
+var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var PopoverPositioner = /* @__PURE__ */ React93.forwardRef(function PopoverPositioner2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    anchor,
+    positionMethod = "absolute",
+    side = "bottom",
+    align = "center",
+    sideOffset = 0,
+    alignOffset = 0,
+    collisionBoundary = "clipping-ancestors",
+    collisionPadding = 5,
+    arrowPadding = 5,
+    sticky = false,
+    disableAnchorTracking = false,
+    collisionAvoidance = POPUP_COLLISION_AVOIDANCE,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const keepMounted = usePopoverPortalContext();
+  const nodeId = useFloatingNodeId();
+  const floatingRootContext = store.useState("floatingRootContext");
+  const mounted = store.useState("mounted");
+  const open = store.useState("open");
+  const openReason = store.useState("openChangeReason");
+  const triggerElement = store.useState("activeTriggerElement");
+  const modal = store.useState("modal");
+  const openMethod = store.useState("openMethod");
+  const positionerElement = store.useState("positionerElement");
+  const instantType = store.useState("instantType");
+  const transitionStatus = store.useState("transitionStatus");
+  const hasViewport = store.useState("hasViewport");
+  const prevTriggerElementRef = React93.useRef(null);
+  const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
+  const positioning = useAnchorPositioning({
+    anchor,
+    floatingRootContext,
+    positionMethod,
+    mounted,
+    side,
+    sideOffset,
+    align,
+    alignOffset,
+    arrowPadding,
+    collisionBoundary,
+    collisionPadding,
+    sticky,
+    disableAnchorTracking,
+    keepMounted,
+    nodeId,
+    collisionAvoidance,
+    adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
+  });
+  const domReference = floatingRootContext.useState("domReferenceElement");
+  useIsoLayoutEffect(() => {
+    const currentTriggerElement = domReference;
+    const prevTriggerElement = prevTriggerElementRef.current;
+    if (currentTriggerElement) {
+      prevTriggerElementRef.current = currentTriggerElement;
+    }
+    if (prevTriggerElement && currentTriggerElement && currentTriggerElement !== prevTriggerElement) {
+      store.set("instantType", undefined);
+      const ac = new AbortController;
+      runOnceAnimationsFinish(() => {
+        store.set("instantType", "trigger-change");
+      }, ac.signal);
+      return () => {
+        ac.abort();
+      };
+    }
+    return;
+  }, [domReference, runOnceAnimationsFinish, store]);
+  useAnchoredPopupScrollLock(open && modal === true && openReason !== exports_reason_parts.triggerHover, openMethod === "touch", positionerElement, triggerElement);
+  const setPositionerElement = React93.useCallback((element2) => {
+    store.set("positionerElement", element2);
+  }, [store]);
+  const state = {
+    open,
+    side: positioning.side,
+    align: positioning.align,
+    anchorHidden: positioning.anchorHidden,
+    instant: instantType
+  };
+  const element = usePositioner(componentProps, state, {
+    styles: positioning.positionerStyles,
+    transitionStatus,
+    props: elementProps,
+    refs: [forwardedRef, setPositionerElement],
+    hidden: !mounted,
+    inert: !open
+  });
+  return /* @__PURE__ */ import_jsx_runtime23.jsxs(PopoverPositionerContext.Provider, {
+    value: positioning,
+    children: [mounted && modal === true && openReason !== exports_reason_parts.triggerHover && /* @__PURE__ */ import_jsx_runtime23.jsx(InternalBackdrop, {
+      ref: store.context.internalBackdropRef,
+      inert: inertValue(!open),
+      cutout: triggerElement
+    }), /* @__PURE__ */ import_jsx_runtime23.jsx(FloatingNode, {
+      id: nodeId,
+      children: element
+    })]
+  });
+});
+if (true)
+  PopoverPositioner.displayName = "PopoverPositioner";
+// node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
+var React95 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/closePart.mjs
+var React94 = __toESM(require_react(), 1);
+var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var ClosePartContext = /* @__PURE__ */ React94.createContext(undefined);
+if (true)
+  ClosePartContext.displayName = "ClosePartContext";
+function useClosePartCount() {
+  const [closePartCount, setClosePartCount] = React94.useState(0);
+  const register2 = useStableCallback(() => {
+    setClosePartCount((count) => count + 1);
+    return () => {
+      setClosePartCount((count) => Math.max(0, count - 1));
+    };
+  });
+  const context = React94.useMemo(() => ({
+    register: register2
+  }), [register2]);
+  return {
+    context,
+    hasClosePart: closePartCount > 0
+  };
+}
+function ClosePartProvider(props) {
+  const {
+    value,
+    children: children2
+  } = props;
+  return /* @__PURE__ */ import_jsx_runtime24.jsx(ClosePartContext.Provider, {
+    value,
+    children: children2
+  });
+}
+function useClosePartRegistration() {
+  const context = React94.useContext(ClosePartContext);
+  useIsoLayoutEffect(() => {
+    return context?.register();
+  }, [context]);
+}
+
+// node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
+var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var PopoverPopup = /* @__PURE__ */ React95.forwardRef(function PopoverPopup2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    initialFocus,
+    finalFocus,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const positioner = usePopoverPositionerContext();
+  const insideToolbar = useToolbarRootContext(true) != null;
+  const {
+    context: closePartContext,
+    hasClosePart
+  } = useClosePartCount();
+  const open = store.useState("open");
+  const openMethod = store.useState("openMethod");
+  const instantType = store.useState("instantType");
+  const transitionStatus = store.useState("transitionStatus");
+  const popupProps = store.useState("popupProps");
+  const titleId = store.useState("titleElementId");
+  const descriptionId = store.useState("descriptionElementId");
+  const modal = store.useState("modal");
+  const mounted = store.useState("mounted");
+  const openReason = store.useState("openChangeReason");
+  const activeTriggerElement = store.useState("activeTriggerElement");
+  const floatingContext = store.useState("floatingRootContext");
+  const floatingId = floatingContext.useState("floatingId");
+  const disabled2 = store.useState("disabled");
+  const openOnHover = store.useState("openOnHover");
+  const closeDelay = store.useState("closeDelay");
+  const popupId = elementProps.id ?? floatingId;
+  useOpenChangeComplete({
+    open,
+    ref: store.context.popupRef,
+    onComplete() {
+      if (open) {
+        store.context.onOpenChangeComplete?.(true);
+      }
+    }
+  });
+  useHoverFloatingInteraction(floatingContext, {
+    enabled: openOnHover && !disabled2,
+    closeDelay
+  });
+  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
+  const focusManagerModal = modal !== false && hasClosePart;
+  store.useSyncedValue("focusManagerModal", focusManagerModal);
+  const setPopupElement = React95.useCallback((element2) => {
+    store.set("popupElement", element2);
+  }, [store]);
+  const state = {
+    open,
+    side: positioner.side,
+    align: positioner.align,
+    instant: instantType,
+    transitionStatus
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, store.context.popupRef, setPopupElement],
+    props: [popupProps, {
+      id: popupId,
+      role: "dialog",
+      ...FOCUSABLE_POPUP_PROPS,
+      "aria-labelledby": titleId,
+      "aria-describedby": descriptionId,
+      onKeyDown(event) {
+        if (insideToolbar && COMPOSITE_KEYS.has(event.key)) {
+          event.stopPropagation();
+        }
+      }
+    }, getDisabledMountTransitionStyles(transitionStatus), elementProps],
+    stateAttributesMapping: stateAttributesMapping4
+  });
+  return /* @__PURE__ */ import_jsx_runtime25.jsx(FloatingFocusManager, {
+    context: floatingContext,
+    openInteractionType: openMethod,
+    modal: focusManagerModal,
+    disabled: !mounted || openReason === exports_reason_parts.triggerHover,
+    initialFocus: resolvedInitialFocus,
+    returnFocus: finalFocus,
+    restoreFocus: "popup",
+    previousFocusableElement: isHTMLElement(activeTriggerElement) ? activeTriggerElement : undefined,
+    nextFocusableElement: store.context.triggerFocusTargetRef,
+    beforeContentFocusGuardRef: store.context.beforeContentFocusGuardRef,
+    children: /* @__PURE__ */ import_jsx_runtime25.jsx(ClosePartProvider, {
+      value: closePartContext,
+      children: element
+    })
+  });
+});
+if (true)
+  PopoverPopup.displayName = "PopoverPopup";
+// node_modules/@base-ui/react/popover/arrow/PopoverArrow.mjs
+var React96 = __toESM(require_react(), 1);
+"use client";
+var PopoverArrow = /* @__PURE__ */ React96.forwardRef(function PopoverArrow2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const open = store.useState("open");
+  const {
+    arrowRef,
+    side,
+    align,
+    arrowUncentered,
+    arrowStyles
+  } = usePopoverPositionerContext();
+  const state = {
+    open,
+    side,
+    align,
+    uncentered: arrowUncentered
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: [forwardedRef, arrowRef],
+    props: [{
+      style: arrowStyles,
+      "aria-hidden": true
+    }, elementProps],
+    stateAttributesMapping: popupStateMapping
+  });
+  return element;
+});
+if (true)
+  PopoverArrow.displayName = "PopoverArrow";
+// node_modules/@base-ui/react/popover/backdrop/PopoverBackdrop.mjs
+var React97 = __toESM(require_react(), 1);
+"use client";
+var stateAttributesMapping5 = {
+  ...popupStateMapping,
+  ...transitionStatusMapping
+};
+var PopoverBackdrop = /* @__PURE__ */ React97.forwardRef(function PopoverBackdrop2(props, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = props;
+  const {
+    store
+  } = usePopoverRootContext();
+  const open = store.useState("open");
+  const mounted = store.useState("mounted");
+  const transitionStatus = store.useState("transitionStatus");
+  const openReason = store.useState("openChangeReason");
+  const state = {
+    open,
+    transitionStatus
+  };
+  const element = useRenderElement("div", props, {
+    state,
+    ref: [store.context.backdropRef, forwardedRef],
+    props: [{
+      role: "presentation",
+      hidden: !mounted,
+      style: {
+        pointerEvents: openReason === exports_reason_parts.triggerHover ? "none" : undefined,
+        userSelect: "none",
+        WebkitUserSelect: "none"
+      }
+    }, elementProps],
+    stateAttributesMapping: stateAttributesMapping5
+  });
+  return element;
+});
+if (true)
+  PopoverBackdrop.displayName = "PopoverBackdrop";
+// node_modules/@base-ui/react/popover/title/PopoverTitle.mjs
+var React98 = __toESM(require_react(), 1);
+"use client";
+var PopoverTitle = /* @__PURE__ */ React98.forwardRef(function PopoverTitle2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const id2 = useBaseUiId(elementProps.id);
+  store.useSyncedValueWithCleanup("titleElementId", id2);
+  const element = useRenderElement("h2", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id: id2
+    }, elementProps]
+  });
+  return element;
+});
+if (true)
+  PopoverTitle.displayName = "PopoverTitle";
+// node_modules/@base-ui/react/popover/description/PopoverDescription.mjs
+var React99 = __toESM(require_react(), 1);
+"use client";
+var PopoverDescription = /* @__PURE__ */ React99.forwardRef(function PopoverDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const id2 = useBaseUiId(elementProps.id);
+  store.useSyncedValueWithCleanup("descriptionElementId", id2);
+  const element = useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    props: [{
+      id: id2
+    }, elementProps]
+  });
+  return element;
+});
+if (true)
+  PopoverDescription.displayName = "PopoverDescription";
+// node_modules/@base-ui/react/popover/close/PopoverClose.mjs
+var React100 = __toESM(require_react(), 1);
+"use client";
+var PopoverClose = /* @__PURE__ */ React100.forwardRef(function PopoverClose2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    disabled: disabled2 = false,
+    nativeButton = true,
+    ...elementProps
+  } = componentProps;
+  const {
+    buttonRef,
+    getButtonProps
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled: false,
+    native: nativeButton
+  });
+  const {
+    store
+  } = usePopoverRootContext();
+  useClosePartRegistration();
+  const element = useRenderElement("button", componentProps, {
+    ref: [forwardedRef, buttonRef],
+    props: [{
+      onClick(event) {
+        store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
+      }
+    }, elementProps, getButtonProps]
+  });
+  return element;
+});
+if (true)
+  PopoverClose.displayName = "PopoverClose";
+// node_modules/@base-ui/react/popover/viewport/PopoverViewport.mjs
+var React101 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/popover/viewport/PopoverViewportCssVars.mjs
+var PopoverViewportCssVars = /* @__PURE__ */ function(PopoverViewportCssVars2) {
+  PopoverViewportCssVars2["popupWidth"] = "--popup-width";
+  PopoverViewportCssVars2["popupHeight"] = "--popup-height";
+  return PopoverViewportCssVars2;
+}({});
+
+// node_modules/@base-ui/react/popover/viewport/PopoverViewport.mjs
+"use client";
+var stateAttributesMapping6 = {
+  activationDirection: (value) => value ? {
+    "data-activation-direction": value
+  } : null
+};
+var PopoverViewport = /* @__PURE__ */ React101.forwardRef(function PopoverViewport2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style: style2,
+    children: children2,
+    ...elementProps
+  } = componentProps;
+  const {
+    store
+  } = usePopoverRootContext();
+  const {
+    side
+  } = usePopoverPositionerContext();
+  const instantType = store.useState("instantType");
+  const {
+    children: childrenToRender,
+    state: viewportState
+  } = usePopupViewport({
+    store,
+    side,
+    cssVars: PopoverViewportCssVars,
+    children: children2
+  });
+  const state = {
+    activationDirection: viewportState.activationDirection,
+    transitioning: viewportState.transitioning,
+    instant: instantType
+  };
+  return useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [elementProps, {
+      children: childrenToRender
+    }],
+    stateAttributesMapping: stateAttributesMapping6
+  });
+});
+if (true)
+  PopoverViewport.displayName = "PopoverViewport";
+// node_modules/@base-ui/react/popover/store/PopoverHandle.mjs
+class PopoverHandle {
+  constructor() {
+    this.store = new PopoverStore;
+  }
+  open(triggerId) {
+    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) ?? undefined : undefined;
+    if (triggerId && !triggerElement) {
+      throw new Error(`Base UI: PopoverHandle.open: No trigger found with id "${triggerId}".`);
+    }
+    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
+  }
+  close() {
+    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
+  }
+  get isOpen() {
+    return this.store.select("open");
+  }
+}
+function createPopoverHandle() {
+  return new PopoverHandle;
+}
+// src/mind-mapper/surface/ui/popover.tsx
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var Popover = exports_index_parts3.Root;
+var PopoverTrigger3 = exports_index_parts3.Trigger;
+function PopoverContent({
+  className,
+  children: children2,
+  sideOffset = 6,
+  align = "end",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts3.Portal, {
+    children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts3.Positioner, {
+      sideOffset,
+      align,
+      className: "outline-none",
+      children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(exports_index_parts3.Popup, {
+        className: cn2("z-50 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl outline-none", className),
+        ...props,
+        children: children2
+      }, undefined, false, undefined, this)
+    }, undefined, false, undefined, this)
+  }, undefined, false, undefined, this);
+}
+
+// src/mind-mapper/surface/FilterControl.tsx
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var STATUS_LABEL = {
+  ratified: "ratified",
+  pending: "pending"
+};
+function FacetChip({
+  label,
+  active,
+  onToggle
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
+    type: "button",
+    onClick: onToggle,
+    "aria-pressed": active,
+    className: `rounded-sm border px-1.5 py-0.5 text-[10px] ${active ? "border-ink bg-secondary text-ink" : "border-edge text-ink-dim hover:border-ink-faint hover:text-ink"}`,
+    children: label
+  }, undefined, false, undefined, this);
+}
+function FilterControl({
+  filter: filter2,
+  facets,
+  onFilter
+}) {
+  const count = activeFilterCount(filter2);
+  const hasFacets = facets.statuses.length > 0 || facets.tiers.length > 0 || facets.tags.length > 0;
+  if (!hasFacets)
+    return null;
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Popover, {
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(PopoverTrigger3, {
+        render: /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+          variant: "outline",
+          size: "auto",
+          className: `flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide ${count > 0 ? "text-ink" : "text-ink-dim"}`,
+          title: "Filter the board by status, tier, or tag",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Funnel, {
+              size: 11,
+              "aria-hidden": true
+            }, undefined, false, undefined, this),
+            "filter",
+            count > 0 ? ` · ${count}` : ""
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(PopoverContent, {
+        className: "w-56",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+            className: "mb-2 flex items-center justify-between",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+                className: "text-[10px] uppercase tracking-widest text-ink-faint",
+                children: "filter"
+              }, undefined, false, undefined, this),
+              count > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
+                type: "button",
+                onClick: () => onFilter({ status: [], tier: [], tags: [] }),
+                className: "flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(X, {
+                    size: 10
+                  }, undefined, false, undefined, this),
+                  " clear"
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          facets.statuses.length > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetGroup, {
+            label: "Status",
+            children: facets.statuses.map((s) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetChip, {
+              label: STATUS_LABEL[s],
+              active: filter2.status.includes(s),
+              onToggle: () => onFilter({ ...filter2, status: toggleFacet(filter2.status, s) })
+            }, s, false, undefined, this))
+          }, undefined, false, undefined, this),
+          facets.tiers.length > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetGroup, {
+            label: "Tier",
+            children: facets.tiers.map((t) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetChip, {
+              label: TIER_LABEL[t],
+              active: filter2.tier.includes(t),
+              onToggle: () => onFilter({ ...filter2, tier: toggleFacet(filter2.tier, t) })
+            }, t, false, undefined, this))
+          }, undefined, false, undefined, this),
+          facets.tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetGroup, {
+            label: "Tags",
+            children: facets.tags.map((t) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FacetChip, {
+              label: t,
+              active: filter2.tags.includes(t),
+              onToggle: () => onFilter({ ...filter2, tags: toggleFacet(filter2.tags, t) })
+            }, t, false, undefined, this))
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+function FacetGroup({ label, children: children2 }) {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+    className: "mb-2 last:mb-0",
+    children: [
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+        className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
+        children: label
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+        className: "flex flex-wrap gap-1",
+        children: children2
+      }, undefined, false, undefined, this)
+    ]
+  }, undefined, true, undefined, this);
+}
+
+// src/mind-mapper/surface/MessageBubble.tsx
+var import_react12 = __toESM(require_react(), 1);
 
 // src/mind-mapper/surface/Markdown.tsx
 var import_react11 = __toESM(require_react(), 1);
@@ -47980,7 +49089,7 @@ function spanSegments(content3, span) {
 }
 
 // src/mind-mapper/surface/Markdown.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function wrapInstructions(root2, span) {
   const range = spanRange(root2.textContent ?? "", span);
   if (!range)
@@ -48034,91 +49143,234 @@ function Markdown({
       marks[0].scrollIntoView({ block: "center" });
     return () => unwrapMarks(marks);
   }, [highlightSpan, html, scrollToHighlight]);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
     ref: bodyRef,
     className: className ? `mm-markdown ${className}` : "mm-markdown",
     dangerouslySetInnerHTML: { __html: html }
   }, undefined, false, undefined, this);
 }
 
+// src/mind-mapper/surface/state/messageChannel.ts
+var CHAT_CHANNEL = "turn";
+var CANVAS_CHANNEL = "canvas";
+var ZONE_GROUND_PREFIX = "zone:";
+function isSideChannel(channel) {
+  return channel !== CHAT_CHANNEL;
+}
+var CHANNEL_LABEL = {
+  canvas: "canvas",
+  analyze: "analyze"
+};
+function channelLabel(channel) {
+  return CHANNEL_LABEL[channel] ?? channel;
+}
+var CHANNEL_TITLE = {
+  canvas: "sent from the canvas — a freeform ramble, not a node",
+  analyze: "sent from a document",
+  turn: "typed in the chat"
+};
+function channelTitle(channel) {
+  return CHANNEL_TITLE[channel] ?? `sent via ${channel}`;
+}
+var CHANNEL_CHIP = {
+  canvas: "border-canon/50 text-canon",
+  analyze: "border-story-local/50 text-story-local",
+  turn: "border-edge text-ink-dim"
+};
+var CHANNEL_CHIP_FALLBACK = "border-edge text-ink-dim";
+function channelChipClass(channel) {
+  return CHANNEL_CHIP[channel] ?? CHANNEL_CHIP_FALLBACK;
+}
+var COLLAPSE_MIN_CHARS = 90;
+function collapsesByDefault(message) {
+  if (message.who !== "user")
+    return false;
+  if (!isSideChannel(message.channel))
+    return false;
+  return message.text.length >= COLLAPSE_MIN_CHARS;
+}
+function messageSummary(text3, max2 = 72) {
+  const line = text3.replace(/\s+/g, " ").trim();
+  if (line.length <= max2)
+    return line;
+  const cut = line.slice(0, max2 - 1);
+  const space = cut.lastIndexOf(" ");
+  const body = space > max2 / 3 ? cut.slice(0, space) : cut;
+  return `${body}…`;
+}
+function channelFacets(messages) {
+  const present = new Set(messages.map((m2) => m2.channel));
+  const rest = [...present].filter(isSideChannel).sort();
+  return present.has(CHAT_CHANNEL) ? [CHAT_CHANNEL, ...rest] : rest;
+}
+function filterByChannel(messages, channels) {
+  if (channels.length === 0)
+    return messages;
+  return messages.filter((m2) => channels.includes(m2.channel));
+}
+
 // src/mind-mapper/surface/state/groundRefs.ts
-function resolveGroundRef(ref, nodes, docs) {
+function resolveGroundRef(ref, nodes, docs, zones = []) {
   if (ref.startsWith("doc:")) {
     const doc = docs.find((d) => d.id === ref.slice("doc:".length));
     return doc ? { type: "doc", doc } : null;
+  }
+  if (ref.startsWith(ZONE_GROUND_PREFIX)) {
+    const zone = zones.find((z2) => z2.id === ref.slice(ZONE_GROUND_PREFIX.length));
+    return zone ? { type: "zone", zone } : null;
   }
   const node = nodes.find((n) => n.id === ref);
   return node ? { type: "node", node } : null;
 }
 
+// src/mind-mapper/surface/state/messageActivity.ts
+function activityOwnerId(activity, badge, messages) {
+  if (!badge)
+    return null;
+  const named2 = activity?.messageId;
+  if (named2 && messages.some((m2) => m2.id === named2))
+    return named2;
+  for (let i = messages.length - 1;i >= 0; i--) {
+    const m2 = messages[i];
+    if (m2 && m2.who === "user")
+      return m2.id;
+  }
+  return null;
+}
+var ACTIVITY_ROW_LABEL = {
+  thinking: "working on this…",
+  stalled: "took this in, then went quiet — may be stuck"
+};
+function clearsActivity(message) {
+  return message?.who === "agent";
+}
+
 // src/mind-mapper/surface/MessageBubble.tsx
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var ACTIVITY_RING = {
+  thinking: "ring-1 ring-thread-tier/60",
+  stalled: "ring-1 ring-attention/60"
+};
 function MessageBubble({
   message,
   nodes,
   docs,
-  highlightSpan
+  zones = [],
+  highlightSpan,
+  activity = null
 }) {
   const isUser = message.who === "user";
-  const refs = message.ground.map((ref) => resolveGroundRef(ref, nodes, docs)).filter((r) => r !== null);
+  const sideChannel = isSideChannel(message.channel);
+  const [expanded, setExpanded] = import_react12.useState(() => !collapsesByDefault(message));
+  const refs = message.ground.map((ref) => resolveGroundRef(ref, nodes, docs, zones)).filter((r) => r !== null);
   const nodeTitles = refs.filter((r) => r.type === "node").map((r) => r.node.title);
   const docRefs = refs.filter((r) => r.type === "doc");
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  const zoneRefs = refs.filter((r) => r.type === "zone");
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
     className: `flex flex-col ${isUser ? "items-end" : "items-start"}`,
     children: [
-      refs.length > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+      refs.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
         className: "mb-1 flex flex-wrap items-center gap-1 text-[10px] text-canon/90",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SquareCheckBig, {
+          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(SquareCheckBig, {
             className: "h-3 w-3"
           }, undefined, false, undefined, this),
-          "about:",
-          nodeTitles.length > 0 && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          nodeTitles.length > 0 || docRefs.length > 0 ? "about:" : "from:",
+          nodeTitles.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
             children: nodeTitles.join(", ")
           }, undefined, false, undefined, this),
-          docRefs.map((r) => /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          docRefs.map((r) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
             className: `flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${kindBadgeClass(r.doc.kind) ?? NEUTRAL_BADGE}`,
             children: [
-              /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(FileText, {
+              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(FileText, {
                 className: "h-2.5 w-2.5",
                 "aria-hidden": true
               }, undefined, false, undefined, this),
               r.doc.title
             ]
-          }, r.doc.id, true, undefined, this))
+          }, r.doc.id, true, undefined, this)),
+          zoneRefs.map((r) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            className: "flex items-center gap-0.5 rounded-full border border-edge px-1.5 py-0.5 text-ink-dim",
+            title: `sent from the ${r.zone.name} zone`,
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Layers, {
+                className: "h-2.5 w-2.5",
+                "aria-hidden": true
+              }, undefined, false, undefined, this),
+              r.zone.name
+            ]
+          }, r.zone.id, true, undefined, this))
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
-        className: `max-w-[85%] rounded-lg px-3 py-2 text-xs ${isUser ? "whitespace-pre-wrap bg-canon/15 text-ink" : "bg-surface-raised"} ${!isUser && message.kind === "info" ? "italic text-ink-faint" : "text-ink"}`,
-        children: isUser ? highlightSpan ? spanSegments(message.text, highlightSpan).map((seg, i) => seg.mark ? /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("mark", {
-          className: "mm-span-mark",
-          children: seg.text
-        }, i, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-          children: seg.text
-        }, i, false, undefined, this)) : message.text : /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Markdown, {
-          text: message.text,
-          highlightSpan
-        }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
-        className: "mt-0.5 text-[10px] text-ink-faint",
-        children: isUser ? "you" : "agent"
-      }, undefined, false, undefined, this)
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+        className: `max-w-[85%] rounded-lg px-3 py-2 text-xs ${isUser ? "whitespace-pre-wrap bg-canon/15 text-ink" : "bg-surface-raised"} ${sideChannel && isUser ? "border border-dashed border-canon/40 bg-canon/10" : ""} ${!isUser && message.kind === "info" ? "italic text-ink-faint" : "text-ink"} ${activity ? ACTIVITY_RING[activity] : ""}`,
+        children: [
+          sideChannel && isUser && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
+            type: "button",
+            onClick: () => setExpanded((e) => !e),
+            "aria-expanded": expanded,
+            title: channelTitle(message.channel),
+            className: `-mx-1 mb-1 flex w-[calc(100%+0.5rem)] items-center gap-1 rounded px-1 py-0.5 text-[10px] uppercase tracking-wide ${channelChipClass(message.channel)}`,
+            children: [
+              expanded ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ChevronDown, {
+                size: 10,
+                "aria-hidden": true
+              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ChevronRight, {
+                size: 10,
+                "aria-hidden": true
+              }, undefined, false, undefined, this),
+              channelLabel(message.channel)
+            ]
+          }, undefined, true, undefined, this),
+          !expanded ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+            className: "italic text-ink-dim",
+            children: messageSummary(message.text)
+          }, undefined, false, undefined, this) : isUser ? highlightSpan ? spanSegments(message.text, highlightSpan).map((seg, i) => seg.mark ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("mark", {
+            className: "mm-span-mark",
+            children: seg.text
+          }, i, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            children: seg.text
+          }, i, false, undefined, this)) : message.text : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Markdown, {
+            text: message.text,
+            highlightSpan
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+        className: "mt-0.5 flex items-center gap-1.5 text-[10px] text-ink-faint",
+        children: [
+          isUser ? "you" : "agent",
+          activity === "thinking" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ActivityIndicator, {
+            label: ACTIVITY_ROW_LABEL.thinking
+          }, undefined, false, undefined, this),
+          activity === "stalled" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+            className: "flex items-center gap-1 text-attention",
+            role: "status",
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TriangleAlert, {
+                size: 10,
+                "aria-hidden": true
+              }, undefined, false, undefined, this),
+              ACTIVITY_ROW_LABEL.stalled
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
 // src/mind-mapper/surface/ui/badge.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 function Badge({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
     className: cn2("inline-flex items-center gap-1 rounded-full border border-border bg-secondary px-2 py-0.5 text-xs", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/ConversationPanel.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 var TIER_CHIP = {
   canon: "border-canon/60 text-canon",
   thread: "border-thread-tier/60 text-thread-tier",
@@ -48129,23 +49381,30 @@ var FLASH_MS = 2000;
 function ConversationPanel({
   nodes,
   docs,
+  zones = [],
   selection: selection2,
   onDeselect,
   messages,
   onSend,
   disabled: disabled2 = false,
   agentBadge = null,
+  activityMessageId = null,
   scrollRequest,
   composerSeed
 }) {
-  const [draft, setDraft] = import_react12.useState("");
-  const historyRef = import_react12.useRef(null);
-  const inputRef = import_react12.useRef(null);
-  const [flash, setFlash] = import_react12.useState(null);
-  const servicingRef = import_react12.useRef(false);
-  const lastSeq = import_react12.useRef(scrollRequest?.seq ?? 0);
-  const lastSeedSeq = import_react12.useRef(composerSeed?.seq ?? 0);
-  import_react12.useEffect(() => {
+  const [draft, setDraft] = import_react13.useState("");
+  const [channels, setChannels] = import_react13.useState([]);
+  const historyRef = import_react13.useRef(null);
+  const inputRef = import_react13.useRef(null);
+  const [flash, setFlash] = import_react13.useState(null);
+  const servicingRef = import_react13.useRef(false);
+  const lastSeq = import_react13.useRef(scrollRequest?.seq ?? 0);
+  const lastSeedSeq = import_react13.useRef(composerSeed?.seq ?? 0);
+  const facets = channelFacets(messages);
+  const visible = filterByChannel(messages, channels);
+  const ownerVisible = visible.some((m2) => m2.id === activityMessageId);
+  const unattributed = ownerVisible ? null : agentBadge;
+  import_react13.useEffect(() => {
     if (!composerSeed || composerSeed.seq === lastSeedSeq.current)
       return;
     lastSeedSeq.current = composerSeed.seq;
@@ -48159,7 +49418,7 @@ function ConversationPanel({
       el.setSelectionRange(len, len);
     });
   }, [composerSeed]);
-  import_react12.useEffect(() => {
+  import_react13.useEffect(() => {
     if (!scrollRequest || scrollRequest.seq === lastSeq.current)
       return;
     lastSeq.current = scrollRequest.seq;
@@ -48175,13 +49434,14 @@ function ConversationPanel({
     }, FLASH_MS);
     return () => clearTimeout(t);
   }, [scrollRequest]);
-  import_react12.useEffect(() => {
-    if (messages.length === 0)
+  const visibleCount = visible.length;
+  import_react13.useEffect(() => {
+    if (visibleCount === 0)
       return;
     if (servicingRef.current)
       return;
     historyRef.current?.scrollTo({ top: historyRef.current.scrollHeight });
-  }, [messages]);
+  }, [visibleCount]);
   const submit = () => {
     if (disabled2)
       return;
@@ -48191,65 +49451,132 @@ function ConversationPanel({
     onSend(text3);
     setDraft("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("aside", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("aside", {
     className: "flex min-h-0 w-80 shrink-0 flex-col border-l border-edge bg-surface xl:w-96",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      facets.length > 1 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+        className: "flex items-center justify-between gap-2 border-b border-edge px-3 py-1.5",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+            className: "text-[10px] uppercase tracking-widest text-ink-faint",
+            children: channels.length > 0 ? `${visible.length} of ${messages.length}` : "conversation"
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Popover, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(PopoverTrigger3, {
+                render: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
+                  variant: "outline",
+                  size: "auto",
+                  className: `flex items-center gap-1 px-2 py-0.5 text-[10px] uppercase tracking-wide ${channels.length > 0 ? "text-ink" : "text-ink-dim"}`,
+                  title: "Show only messages from certain channels",
+                  children: [
+                    /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Funnel, {
+                      size: 10,
+                      "aria-hidden": true
+                    }, undefined, false, undefined, this),
+                    "channel",
+                    channels.length > 0 ? ` · ${channels.length}` : ""
+                  ]
+                }, undefined, true, undefined, this)
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(PopoverContent, {
+                className: "w-48",
+                children: [
+                  /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+                    className: "mb-2 flex items-center justify-between",
+                    children: [
+                      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+                        className: "text-[10px] uppercase tracking-widest text-ink-faint",
+                        children: "channel"
+                      }, undefined, false, undefined, this),
+                      channels.length > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("button", {
+                        type: "button",
+                        onClick: () => setChannels([]),
+                        className: "flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention",
+                        children: [
+                          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(X, {
+                            size: 10
+                          }, undefined, false, undefined, this),
+                          " clear"
+                        ]
+                      }, undefined, true, undefined, this)
+                    ]
+                  }, undefined, true, undefined, this),
+                  /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetGroup, {
+                    label: "Came from",
+                    children: facets.map((c2) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(FacetChip, {
+                      label: channelLabel(c2) === "turn" ? "chat" : channelLabel(c2),
+                      active: channels.includes(c2),
+                      onToggle: () => setChannels((cs) => toggleFacet(cs, c2))
+                    }, c2, false, undefined, this))
+                  }, undefined, false, undefined, this)
+                ]
+              }, undefined, true, undefined, this)
+            ]
+          }, undefined, true, undefined, this)
+        ]
+      }, undefined, true, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
         ref: historyRef,
         className: "flex-1 space-y-3 overflow-y-auto p-4",
         children: [
-          messages.length === 0 ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("p", {
+          messages.length === 0 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
             className: "text-xs text-ink-faint",
             children: "think out loud — pull nodes into context and work through where it goes."
-          }, undefined, false, undefined, this) : messages.map((m2) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          }, undefined, false, undefined, this) : visible.length === 0 ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
+            className: "text-xs text-ink-faint",
+            children: "nothing on that channel yet."
+          }, undefined, false, undefined, this) : visible.map((m2) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
             "data-message-id": m2.id,
             className: flash?.messageId === m2.id ? "mm-message-flash" : undefined,
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(MessageBubble, {
+            children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(MessageBubble, {
               message: m2,
               nodes,
               docs,
-              highlightSpan: flash?.messageId === m2.id ? flash.span : undefined
+              zones,
+              highlightSpan: flash?.messageId === m2.id ? flash.span : undefined,
+              activity: m2.id === activityMessageId ? agentBadge : null
             }, undefined, false, undefined, this)
           }, m2.id, false, undefined, this)),
-          agentBadge === "thinking" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ActivityIndicator, {}, undefined, false, undefined, this),
-          agentBadge === "stalled" && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          unattributed === "thinking" && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ActivityIndicator, {}, undefined, false, undefined, this),
+          unattributed === "stalled" && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
             className: "flex items-center gap-2 text-[11px] text-attention",
             role: "status",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TriangleAlert, {
+              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(TriangleAlert, {
                 size: 12,
                 "aria-hidden": true
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
                 children: "agent may be stuck — it took this in, then went quiet."
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
         className: "border-t border-edge p-3",
         children: [
-          selection2.length > 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          selection2.length > 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
             className: "mb-2 flex flex-wrap items-center gap-1.5",
-            children: selection2.map((n) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+            children: selection2.map((n) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Badge, {
               className: TIER_CHIP[n.tier],
               children: [
                 n.title,
-                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
                   variant: "ghost",
                   size: "icon-xs",
                   "aria-label": `Remove ${n.title} from context`,
                   onClick: () => onDeselect(n.id),
                   className: "h-3 w-3",
-                  children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(X, {
+                  children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(X, {
                     size: 11
                   }, undefined, false, undefined, this)
                 }, undefined, false, undefined, this)
               ]
             }, n.id, true, undefined, this))
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Textarea, {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Textarea, {
             ref: inputRef,
             disabled: disabled2,
             value: draft,
@@ -48263,13 +49590,13 @@ function ConversationPanel({
             placeholder: selection2.length > 0 ? `working with ${selection2.map((n) => n.title).join(", ")}…` : "work it through…",
             className: "min-h-16 max-h-64 resize-y p-2 text-xs"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
             className: "mt-2 flex justify-end",
-            children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button, {
+            children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Button, {
               onClick: submit,
               disabled: disabled2 || !draft.trim(),
               children: [
-                /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(SendHorizontal, {
+                /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(SendHorizontal, {
                   size: 12
                 }, undefined, false, undefined, this),
                 "Send"
@@ -48283,7 +49610,7 @@ function ConversationPanel({
 }
 
 // src/mind-mapper/surface/DocViewer.tsx
-var import_react13 = __toESM(require_react(), 1);
+var import_react14 = __toESM(require_react(), 1);
 
 // src/mind-mapper/surface/types.ts
 function isDocSource(s) {
@@ -48301,7 +49628,7 @@ function backlinksFor(docId, nodes, proposals) {
 }
 
 // src/mind-mapper/surface/DocViewer.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 function DocViewer({
   doc,
   highlight,
@@ -48310,60 +49637,60 @@ function DocViewer({
   onNavigate,
   onClose
 }) {
-  const backlinks = import_react13.useMemo(() => backlinksFor(doc.id, nodes, proposals), [doc.id, nodes, proposals]);
+  const backlinks = import_react14.useMemo(() => backlinksFor(doc.id, nodes, proposals), [doc.id, nodes, proposals]);
   const hasBacklinks = backlinks.ratified.length + backlinks.pending.length > 0;
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("section", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("section", {
     className: "flex min-w-0 flex-1 flex-col border-l border-edge bg-surface",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "flex items-center gap-2 border-b border-edge px-4 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("h2", {
             className: "min-w-0 truncate font-story text-sm text-ink",
             children: doc.title
           }, undefined, false, undefined, this),
-          doc.kind && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+          doc.kind && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
             className: "rounded bg-surface-raised px-2 py-0.5 text-[10px] uppercase tracking-wide text-ink-dim",
             children: doc.kind
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button, {
             variant: "ghost",
             size: "icon-xs",
             onClick: onClose,
             "aria-label": "Close document",
             title: "Close document",
             className: "ml-auto shrink-0",
-            children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(X, {
               size: 15
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "min-h-0 flex-1 overflow-y-auto px-5 py-4",
-        children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Markdown, {
+        children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Markdown, {
           text: doc.content,
           highlightSpan: highlight ?? null,
           scrollToHighlight: true,
           className: "font-story text-sm leading-relaxed text-ink-dim"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      hasBacklinks && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+      hasBacklinks && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
         className: "border-t border-edge px-5 py-3",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h3", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("h3", {
             className: "mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint",
             children: "Referenced by"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("ul", {
+          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("ul", {
             className: "flex flex-col gap-1",
             children: [
-              backlinks.ratified.map((b) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(BacklinkRow, {
+              backlinks.ratified.map((b) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(BacklinkRow, {
                 link: b,
                 pending: false,
                 onNavigate
               }, b.id, false, undefined, this)),
-              backlinks.pending.map((b) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(BacklinkRow, {
+              backlinks.pending.map((b) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(BacklinkRow, {
                 link: b,
                 pending: true,
                 onNavigate
@@ -48380,1160 +49707,28 @@ function BacklinkRow({
   pending,
   onNavigate
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("li", {
-    children: /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("button", {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("li", {
+    children: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
       type: "button",
       onClick: () => onNavigate(link2.id),
       className: "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-xs text-ink-dim hover:bg-surface-raised hover:text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(CornerDownRight, {
+        /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(CornerDownRight, {
           size: 12,
           className: "shrink-0 text-ink-faint",
           "aria-hidden": true
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+        /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
           className: "min-w-0 truncate",
           children: link2.title
         }, undefined, false, undefined, this),
-        pending && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+        pending && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
           className: "ml-auto shrink-0 rounded-full bg-pending/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-pending",
           children: "pending"
         }, undefined, false, undefined, this)
       ]
     }, undefined, true, undefined, this)
   }, undefined, false, undefined, this);
-}
-
-// src/mind-mapper/surface/state/filter.ts
-var EMPTY_FILTER = { status: [], tier: [], tags: [] };
-function isEmptyFilter(f) {
-  return f.status.length === 0 && f.tier.length === 0 && f.tags.length === 0;
-}
-function activeFilterCount(f) {
-  return f.status.length + f.tier.length + f.tags.length;
-}
-function statusOf(node) {
-  return node.pending ? "pending" : "ratified";
-}
-function filterMap(map, f) {
-  if (isEmptyFilter(f))
-    return map;
-  const statusSet = new Set(f.status);
-  const tierSet = new Set(f.tier);
-  const tagSet = new Set(f.tags);
-  const nodes = map.nodes.filter((n) => {
-    if (statusSet.size > 0 && !statusSet.has(statusOf(n)))
-      return false;
-    if (tierSet.size > 0 && !tierSet.has(n.tier))
-      return false;
-    if (tagSet.size > 0 && !(n.tags ?? []).some((t) => tagSet.has(t)))
-      return false;
-    return true;
-  });
-  const keep = new Set(nodes.map((n) => n.id));
-  const edges = map.edges.filter((e) => keep.has(e.source) && keep.has(e.target));
-  return { ...map, nodes, edges };
-}
-var STATUS_ORDER = ["ratified", "pending"];
-var TIER_ORDER3 = ["canon", "thread", "story-local", "background"];
-function filterFacets(map) {
-  const statusesPresent = new Set(map.nodes.map(statusOf));
-  const tiersPresent = new Set(map.nodes.map((n) => n.tier));
-  const tags = new Set;
-  for (const n of map.nodes)
-    for (const t of n.tags ?? [])
-      tags.add(t);
-  return {
-    statuses: STATUS_ORDER.filter((s) => statusesPresent.has(s)),
-    tiers: TIER_ORDER3.filter((t) => tiersPresent.has(t)),
-    tags: [...tags].sort((a2, b) => a2.localeCompare(b))
-  };
-}
-function toggleFacet(values2, value) {
-  return values2.includes(value) ? values2.filter((v2) => v2 !== value) : [...values2, value];
-}
-
-// node_modules/@base-ui/react/popover/index.parts.mjs
-var exports_index_parts3 = {};
-__export(exports_index_parts3, {
-  createHandle: () => createPopoverHandle,
-  Viewport: () => PopoverViewport,
-  Trigger: () => PopoverTrigger,
-  Title: () => PopoverTitle,
-  Root: () => PopoverRoot,
-  Positioner: () => PopoverPositioner,
-  Portal: () => PopoverPortal,
-  Popup: () => PopoverPopup,
-  Handle: () => PopoverHandle,
-  Description: () => PopoverDescription,
-  Close: () => PopoverClose,
-  Backdrop: () => PopoverBackdrop,
-  Arrow: () => PopoverArrow
-});
-
-// node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
-var React88 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/popover/root/PopoverRootContext.mjs
-var React86 = __toESM(require_react(), 1);
-"use client";
-var PopoverRootContext = /* @__PURE__ */ React86.createContext(undefined);
-if (true)
-  PopoverRootContext.displayName = "PopoverRootContext";
-function usePopoverRootContext(optional) {
-  const context = React86.useContext(PopoverRootContext);
-  if (context === undefined && !optional) {
-    throw new Error("Base UI: PopoverRootContext is missing. Popover parts must be placed within <Popover.Root>.");
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/popover/store/PopoverStore.mjs
-var React87 = __toESM(require_react(), 1);
-var ReactDOM8 = __toESM(require_react_dom(), 1);
-"use client";
-function createInitialState2() {
-  return {
-    ...createInitialPopupStoreState(),
-    disabled: false,
-    modal: false,
-    focusManagerModal: false,
-    instantType: undefined,
-    openMethod: null,
-    openChangeReason: null,
-    titleElementId: undefined,
-    descriptionElementId: undefined,
-    stickIfOpen: true,
-    nested: false,
-    openOnHover: false,
-    closeDelay: 0,
-    hasViewport: false
-  };
-}
-var selectors3 = {
-  ...popupStoreSelectors,
-  disabled: createSelector((state) => state.disabled),
-  instantType: createSelector((state) => state.instantType),
-  openMethod: createSelector((state) => state.openMethod),
-  openChangeReason: createSelector((state) => state.openChangeReason),
-  modal: createSelector((state) => state.modal),
-  focusManagerModal: createSelector((state) => state.focusManagerModal),
-  stickIfOpen: createSelector((state) => state.stickIfOpen),
-  titleElementId: createSelector((state) => state.titleElementId),
-  descriptionElementId: createSelector((state) => state.descriptionElementId),
-  openOnHover: createSelector((state) => state.openOnHover),
-  closeDelay: createSelector((state) => state.closeDelay),
-  hasViewport: createSelector((state) => state.hasViewport)
-};
-
-class PopoverStore extends ReactStore {
-  constructor(initialState, floatingId, nested = false) {
-    const initial2 = {
-      ...createInitialState2(),
-      ...initialState
-    };
-    const triggerElements = new PopupTriggerMap;
-    if (initial2.open && initialState?.mounted === undefined) {
-      initial2.mounted = true;
-    }
-    initial2.floatingRootContext = createPopupFloatingRootContext(triggerElements, floatingId, nested);
-    super(initial2, {
-      popupRef: /* @__PURE__ */ React87.createRef(),
-      backdropRef: /* @__PURE__ */ React87.createRef(),
-      internalBackdropRef: /* @__PURE__ */ React87.createRef(),
-      onOpenChange: undefined,
-      onOpenChangeComplete: undefined,
-      triggerFocusTargetRef: /* @__PURE__ */ React87.createRef(),
-      beforeContentFocusGuardRef: /* @__PURE__ */ React87.createRef(),
-      stickIfOpenTimeout: new Timeout,
-      triggerElements
-    }, selectors3);
-  }
-  setOpen = (nextOpen, eventDetails) => {
-    const isHover = eventDetails.reason === exports_reason_parts.triggerHover;
-    const isKeyboardClick = eventDetails.reason === exports_reason_parts.triggerPress && eventDetails.event.detail === 0;
-    const isDismissClose = !nextOpen && (eventDetails.reason === exports_reason_parts.escapeKey || eventDetails.reason == null);
-    const shouldPreventUnmountOnClose = attachPreventUnmountOnClose(eventDetails);
-    const activeTriggerId = this.select("activeTriggerId");
-    if (!nextOpen && eventDetails.reason === exports_reason_parts.closePress && eventDetails.trigger == null && activeTriggerId != null) {
-      eventDetails.trigger = this.context.triggerElements.getById(activeTriggerId) ?? this.select("activeTriggerElement") ?? undefined;
-    }
-    this.context.onOpenChange?.(nextOpen, eventDetails);
-    if (eventDetails.isCanceled) {
-      return;
-    }
-    this.state.floatingRootContext.dispatchOpenChange(nextOpen, eventDetails);
-    const changeState = () => {
-      const updatedState = {
-        open: nextOpen,
-        openChangeReason: eventDetails.reason
-      };
-      setPopupOpenState(updatedState, nextOpen, eventDetails.trigger, shouldPreventUnmountOnClose());
-      this.update(updatedState);
-    };
-    if (isHover) {
-      this.set("stickIfOpen", true);
-      this.context.stickIfOpenTimeout.start(PATIENT_CLICK_THRESHOLD, () => {
-        this.set("stickIfOpen", false);
-      });
-      ReactDOM8.flushSync(changeState);
-    } else {
-      changeState();
-    }
-    if (isKeyboardClick || isDismissClose) {
-      this.set("instantType", isKeyboardClick ? "click" : "dismiss");
-    } else if (eventDetails.reason === exports_reason_parts.focusOut) {
-      this.set("instantType", "focus");
-    } else {
-      this.set("instantType", undefined);
-    }
-  };
-  static useStore(externalStore, initialState) {
-    const {
-      store,
-      internalStore
-    } = usePopupStore(externalStore, (floatingId, nested) => new PopoverStore(initialState, floatingId, nested));
-    React87.useEffect(() => internalStore?.disposeEffect(), [internalStore]);
-    return store;
-  }
-  disposeEffect = () => {
-    return this.context.stickIfOpenTimeout.disposeEffect();
-  };
-}
-
-// node_modules/@base-ui/react/popover/root/PopoverRoot.mjs
-var import_jsx_runtime20 = __toESM(require_jsx_runtime(), 1);
-"use client";
-function PopoverRootComponent({
-  props
-}) {
-  const {
-    children: children2,
-    open: openProp,
-    defaultOpen = false,
-    onOpenChange,
-    onOpenChangeComplete,
-    modal = false,
-    handle,
-    triggerId: triggerIdProp,
-    defaultTriggerId: defaultTriggerIdProp = null
-  } = props;
-  const store = PopoverStore.useStore(handle?.store, {
-    modal,
-    open: defaultOpen,
-    openProp,
-    activeTriggerId: defaultTriggerIdProp,
-    triggerIdProp
-  });
-  useInitialOpenSync(store, openProp, defaultOpen, defaultTriggerIdProp);
-  store.useControlledProp("openProp", openProp);
-  store.useControlledProp("triggerIdProp", triggerIdProp);
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const payload = store.useState("payload");
-  const nested = useFloatingParentNodeId() != null;
-  store.useContextCallback("onOpenChange", onOpenChange);
-  store.useContextCallback("onOpenChangeComplete", onOpenChangeComplete);
-  usePopupRootSync(store, open);
-  useImplicitActiveTrigger(store);
-  const {
-    forceUnmount
-  } = useOpenStateTransitions(open, store, () => {
-    store.update({
-      stickIfOpen: true,
-      openChangeReason: null
-    });
-  });
-  store.useSyncedValues({
-    modal,
-    nested
-  });
-  React88.useEffect(() => {
-    if (!open) {
-      store.context.stickIfOpenTimeout.clear();
-    }
-  }, [store, open]);
-  const handleImperativeClose = React88.useCallback(() => {
-    store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction));
-  }, [store]);
-  React88.useImperativeHandle(props.actionsRef, () => ({
-    unmount: forceUnmount,
-    close: handleImperativeClose
-  }), [forceUnmount, handleImperativeClose]);
-  const shouldRenderInteractions = open || mounted;
-  const popoverContext = React88.useMemo(() => ({
-    store
-  }), [store]);
-  return /* @__PURE__ */ import_jsx_runtime20.jsxs(PopoverRootContext.Provider, {
-    value: popoverContext,
-    children: [shouldRenderInteractions && /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverInteractions, {
-      store,
-      modal
-    }), typeof children2 === "function" ? children2({
-      payload
-    }) : children2]
-  });
-}
-function PopoverRoot(props) {
-  if (usePopoverRootContext(true)) {
-    return /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverRootComponent, {
-      props
-    });
-  }
-  return /* @__PURE__ */ import_jsx_runtime20.jsx(FloatingTree, {
-    children: /* @__PURE__ */ import_jsx_runtime20.jsx(PopoverRootComponent, {
-      props
-    })
-  });
-}
-function PopoverInteractions({
-  store,
-  modal
-}) {
-  const floatingRootContext = store.useState("floatingRootContext");
-  const dismiss = useDismiss(floatingRootContext, {
-    outsidePressEvent: {
-      mouse: modal === "trap-focus" ? "sloppy" : "intentional",
-      touch: "sloppy"
-    }
-  });
-  const activeTriggerProps = dismiss.reference ?? EMPTY_OBJECT;
-  const inactiveTriggerProps = dismiss.trigger ?? EMPTY_OBJECT;
-  const popupProps = React88.useMemo(() => mergeProps(FOCUSABLE_POPUP_PROPS, dismiss.floating), [dismiss.floating]);
-  usePopupInteractionProps(store, {
-    activeTriggerProps,
-    inactiveTriggerProps,
-    popupProps
-  });
-  return null;
-}
-// node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
-var React89 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/popover/utils/constants.mjs
-var OPEN_DELAY = 300;
-
-// node_modules/@base-ui/react/popover/trigger/PopoverTrigger.mjs
-var import_jsx_runtime21 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var PopoverTrigger = /* @__PURE__ */ React89.forwardRef(function PopoverTrigger2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    handle,
-    payload,
-    openOnHover = false,
-    delay = OPEN_DELAY,
-    closeDelay = 0,
-    id: idProp,
-    ...elementProps
-  } = componentProps;
-  const rootContext = usePopoverRootContext(true);
-  const store = handle?.store ?? rootContext?.store;
-  if (!store) {
-    throw new Error("Base UI: <Popover.Trigger> must be either used within a <Popover.Root> component or provided with a handle.");
-  }
-  const thisTriggerId = useBaseUiId(idProp);
-  const isTriggerActive = store.useState("isTriggerActive", thisTriggerId);
-  const floatingContext = store.useState("floatingRootContext");
-  const isOpenedByThisTrigger = store.useState("isOpenedByTrigger", thisTriggerId);
-  const popupId = store.useState("triggerPopupId", thisTriggerId);
-  const triggerElementRef = React89.useRef(null);
-  const {
-    registerTrigger,
-    isMountedByThisTrigger
-  } = useTriggerDataForwarding(thisTriggerId, triggerElementRef, store, {
-    payload,
-    disabled: disabled2,
-    openOnHover,
-    closeDelay
-  });
-  const openReason = store.useState("openChangeReason");
-  const stickIfOpen = store.useState("stickIfOpen");
-  const openMethod = store.useState("openMethod");
-  const focusManagerModal = store.useState("focusManagerModal");
-  const hoverProps = useHoverReferenceInteraction(floatingContext, {
-    enabled: !disabled2 && floatingContext != null && openOnHover && (openMethod !== "touch" || openReason !== exports_reason_parts.triggerPress),
-    mouseOnly: true,
-    move: false,
-    handleClose: safePolygon(),
-    restMs: delay,
-    delay: {
-      close: closeDelay
-    },
-    triggerElementRef,
-    isActiveTrigger: isTriggerActive,
-    isClosing: () => store.select("transitionStatus") === "ending"
-  });
-  const click = useClick(floatingContext, {
-    enabled: floatingContext != null,
-    stickIfOpen
-  });
-  const interactionTypeProps = useOpenMethodTriggerProps(() => store.select("open"), (interactionType) => {
-    store.set("openMethod", interactionType);
-  });
-  const rootTriggerProps = store.useState("triggerProps", isMountedByThisTrigger);
-  const {
-    getButtonProps,
-    buttonRef
-  } = useButton({
-    disabled: disabled2,
-    native: nativeButton
-  });
-  const stateAttributesMapping4 = {
-    open(value) {
-      if (value && openReason === exports_reason_parts.triggerPress) {
-        return pressableTriggerOpenStateMapping.open(value);
-      }
-      return triggerOpenStateMapping.open(value);
-    }
-  };
-  const {
-    preFocusGuardRef,
-    handlePreFocusGuardFocus,
-    handleFocusTargetFocus
-  } = useTriggerFocusGuards(store, triggerElementRef);
-  const state = {
-    disabled: disabled2,
-    open: isOpenedByThisTrigger
-  };
-  const element2 = useRenderElement("button", componentProps, {
-    state,
-    ref: [buttonRef, forwardedRef, registerTrigger, triggerElementRef],
-    props: [click.reference, hoverProps, rootTriggerProps, interactionTypeProps, {
-      [CLICK_TRIGGER_IDENTIFIER]: "",
-      id: thisTriggerId,
-      "aria-haspopup": "dialog",
-      "aria-expanded": isOpenedByThisTrigger,
-      "aria-controls": popupId
-    }, elementProps, getButtonProps],
-    stateAttributesMapping: stateAttributesMapping4
-  });
-  if (isMountedByThisTrigger && !focusManagerModal) {
-    return /* @__PURE__ */ import_jsx_runtime21.jsxs(React89.Fragment, {
-      children: [/* @__PURE__ */ import_jsx_runtime21.jsx(FocusGuard, {
-        ref: preFocusGuardRef,
-        onFocus: handlePreFocusGuardFocus
-      }), /* @__PURE__ */ import_jsx_runtime21.jsx(React89.Fragment, {
-        children: element2
-      }, thisTriggerId), /* @__PURE__ */ import_jsx_runtime21.jsx(FocusGuard, {
-        ref: store.context.triggerFocusTargetRef,
-        onFocus: handleFocusTargetFocus
-      })]
-    });
-  }
-  return /* @__PURE__ */ import_jsx_runtime21.jsx(React89.Fragment, {
-    children: element2
-  }, thisTriggerId);
-});
-if (true)
-  PopoverTrigger.displayName = "PopoverTrigger";
-// node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
-var React91 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/popover/portal/PopoverPortalContext.mjs
-var React90 = __toESM(require_react(), 1);
-"use client";
-var PopoverPortalContext = /* @__PURE__ */ React90.createContext(undefined);
-if (true)
-  PopoverPortalContext.displayName = "PopoverPortalContext";
-function usePopoverPortalContext() {
-  const value = React90.useContext(PopoverPortalContext);
-  if (value === undefined) {
-    throw new Error("Base UI: <Popover.Portal> is missing.");
-  }
-  return value;
-}
-
-// node_modules/@base-ui/react/popover/portal/PopoverPortal.mjs
-var import_jsx_runtime22 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var PopoverPortal = /* @__PURE__ */ React91.forwardRef(function PopoverPortal2(props, forwardedRef) {
-  const {
-    keepMounted = false,
-    ...portalProps
-  } = props;
-  const {
-    store
-  } = usePopoverRootContext();
-  const mounted = store.useState("mounted");
-  const shouldRender = mounted || keepMounted;
-  if (!shouldRender) {
-    return null;
-  }
-  return /* @__PURE__ */ import_jsx_runtime22.jsx(PopoverPortalContext.Provider, {
-    value: keepMounted,
-    children: /* @__PURE__ */ import_jsx_runtime22.jsx(FloatingPortal, {
-      ref: forwardedRef,
-      ...portalProps
-    })
-  });
-});
-if (true)
-  PopoverPortal.displayName = "PopoverPortal";
-// node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
-var React93 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/popover/positioner/PopoverPositionerContext.mjs
-var React92 = __toESM(require_react(), 1);
-"use client";
-var PopoverPositionerContext = /* @__PURE__ */ React92.createContext(undefined);
-if (true)
-  PopoverPositionerContext.displayName = "PopoverPositionerContext";
-function usePopoverPositionerContext() {
-  const context = React92.useContext(PopoverPositionerContext);
-  if (!context) {
-    throw new Error("Base UI: PopoverPositionerContext is missing. PopoverPositioner parts must be placed within <Popover.Positioner>.");
-  }
-  return context;
-}
-
-// node_modules/@base-ui/react/popover/positioner/PopoverPositioner.mjs
-var import_jsx_runtime23 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var PopoverPositioner = /* @__PURE__ */ React93.forwardRef(function PopoverPositioner2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    anchor,
-    positionMethod = "absolute",
-    side = "bottom",
-    align = "center",
-    sideOffset = 0,
-    alignOffset = 0,
-    collisionBoundary = "clipping-ancestors",
-    collisionPadding = 5,
-    arrowPadding = 5,
-    sticky = false,
-    disableAnchorTracking = false,
-    collisionAvoidance = POPUP_COLLISION_AVOIDANCE,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = usePopoverRootContext();
-  const keepMounted = usePopoverPortalContext();
-  const nodeId = useFloatingNodeId();
-  const floatingRootContext = store.useState("floatingRootContext");
-  const mounted = store.useState("mounted");
-  const open = store.useState("open");
-  const openReason = store.useState("openChangeReason");
-  const triggerElement = store.useState("activeTriggerElement");
-  const modal = store.useState("modal");
-  const openMethod = store.useState("openMethod");
-  const positionerElement = store.useState("positionerElement");
-  const instantType = store.useState("instantType");
-  const transitionStatus = store.useState("transitionStatus");
-  const hasViewport = store.useState("hasViewport");
-  const prevTriggerElementRef = React93.useRef(null);
-  const runOnceAnimationsFinish = useAnimationsFinished(positionerElement, false, false);
-  const positioning = useAnchorPositioning({
-    anchor,
-    floatingRootContext,
-    positionMethod,
-    mounted,
-    side,
-    sideOffset,
-    align,
-    alignOffset,
-    arrowPadding,
-    collisionBoundary,
-    collisionPadding,
-    sticky,
-    disableAnchorTracking,
-    keepMounted,
-    nodeId,
-    collisionAvoidance,
-    adaptiveOrigin: hasViewport ? adaptiveOrigin : undefined
-  });
-  const domReference = floatingRootContext.useState("domReferenceElement");
-  useIsoLayoutEffect(() => {
-    const currentTriggerElement = domReference;
-    const prevTriggerElement = prevTriggerElementRef.current;
-    if (currentTriggerElement) {
-      prevTriggerElementRef.current = currentTriggerElement;
-    }
-    if (prevTriggerElement && currentTriggerElement && currentTriggerElement !== prevTriggerElement) {
-      store.set("instantType", undefined);
-      const ac = new AbortController;
-      runOnceAnimationsFinish(() => {
-        store.set("instantType", "trigger-change");
-      }, ac.signal);
-      return () => {
-        ac.abort();
-      };
-    }
-    return;
-  }, [domReference, runOnceAnimationsFinish, store]);
-  useAnchoredPopupScrollLock(open && modal === true && openReason !== exports_reason_parts.triggerHover, openMethod === "touch", positionerElement, triggerElement);
-  const setPositionerElement = React93.useCallback((element3) => {
-    store.set("positionerElement", element3);
-  }, [store]);
-  const state = {
-    open,
-    side: positioning.side,
-    align: positioning.align,
-    anchorHidden: positioning.anchorHidden,
-    instant: instantType
-  };
-  const element2 = usePositioner(componentProps, state, {
-    styles: positioning.positionerStyles,
-    transitionStatus,
-    props: elementProps,
-    refs: [forwardedRef, setPositionerElement],
-    hidden: !mounted,
-    inert: !open
-  });
-  return /* @__PURE__ */ import_jsx_runtime23.jsxs(PopoverPositionerContext.Provider, {
-    value: positioning,
-    children: [mounted && modal === true && openReason !== exports_reason_parts.triggerHover && /* @__PURE__ */ import_jsx_runtime23.jsx(InternalBackdrop, {
-      ref: store.context.internalBackdropRef,
-      inert: inertValue(!open),
-      cutout: triggerElement
-    }), /* @__PURE__ */ import_jsx_runtime23.jsx(FloatingNode, {
-      id: nodeId,
-      children: element2
-    })]
-  });
-});
-if (true)
-  PopoverPositioner.displayName = "PopoverPositioner";
-// node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
-var React95 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/utils/closePart.mjs
-var React94 = __toESM(require_react(), 1);
-var import_jsx_runtime24 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var ClosePartContext = /* @__PURE__ */ React94.createContext(undefined);
-if (true)
-  ClosePartContext.displayName = "ClosePartContext";
-function useClosePartCount() {
-  const [closePartCount, setClosePartCount] = React94.useState(0);
-  const register2 = useStableCallback(() => {
-    setClosePartCount((count) => count + 1);
-    return () => {
-      setClosePartCount((count) => Math.max(0, count - 1));
-    };
-  });
-  const context = React94.useMemo(() => ({
-    register: register2
-  }), [register2]);
-  return {
-    context,
-    hasClosePart: closePartCount > 0
-  };
-}
-function ClosePartProvider(props) {
-  const {
-    value,
-    children: children2
-  } = props;
-  return /* @__PURE__ */ import_jsx_runtime24.jsx(ClosePartContext.Provider, {
-    value,
-    children: children2
-  });
-}
-function useClosePartRegistration() {
-  const context = React94.useContext(ClosePartContext);
-  useIsoLayoutEffect(() => {
-    return context?.register();
-  }, [context]);
-}
-
-// node_modules/@base-ui/react/popover/popup/PopoverPopup.mjs
-var import_jsx_runtime25 = __toESM(require_jsx_runtime(), 1);
-"use client";
-var stateAttributesMapping4 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var PopoverPopup = /* @__PURE__ */ React95.forwardRef(function PopoverPopup2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    initialFocus,
-    finalFocus,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = usePopoverRootContext();
-  const positioner = usePopoverPositionerContext();
-  const insideToolbar = useToolbarRootContext(true) != null;
-  const {
-    context: closePartContext,
-    hasClosePart
-  } = useClosePartCount();
-  const open = store.useState("open");
-  const openMethod = store.useState("openMethod");
-  const instantType = store.useState("instantType");
-  const transitionStatus = store.useState("transitionStatus");
-  const popupProps = store.useState("popupProps");
-  const titleId = store.useState("titleElementId");
-  const descriptionId = store.useState("descriptionElementId");
-  const modal = store.useState("modal");
-  const mounted = store.useState("mounted");
-  const openReason = store.useState("openChangeReason");
-  const activeTriggerElement = store.useState("activeTriggerElement");
-  const floatingContext = store.useState("floatingRootContext");
-  const floatingId = floatingContext.useState("floatingId");
-  const disabled2 = store.useState("disabled");
-  const openOnHover = store.useState("openOnHover");
-  const closeDelay = store.useState("closeDelay");
-  const popupId = elementProps.id ?? floatingId;
-  useOpenChangeComplete({
-    open,
-    ref: store.context.popupRef,
-    onComplete() {
-      if (open) {
-        store.context.onOpenChangeComplete?.(true);
-      }
-    }
-  });
-  useHoverFloatingInteraction(floatingContext, {
-    enabled: openOnHover && !disabled2,
-    closeDelay
-  });
-  const resolvedInitialFocus = initialFocus === undefined ? createDefaultInitialFocus(store.context.popupRef) : initialFocus;
-  const focusManagerModal = modal !== false && hasClosePart;
-  store.useSyncedValue("focusManagerModal", focusManagerModal);
-  const setPopupElement = React95.useCallback((element3) => {
-    store.set("popupElement", element3);
-  }, [store]);
-  const state = {
-    open,
-    side: positioner.side,
-    align: positioner.align,
-    instant: instantType,
-    transitionStatus
-  };
-  const element2 = useRenderElement("div", componentProps, {
-    state,
-    ref: [forwardedRef, store.context.popupRef, setPopupElement],
-    props: [popupProps, {
-      id: popupId,
-      role: "dialog",
-      ...FOCUSABLE_POPUP_PROPS,
-      "aria-labelledby": titleId,
-      "aria-describedby": descriptionId,
-      onKeyDown(event) {
-        if (insideToolbar && COMPOSITE_KEYS.has(event.key)) {
-          event.stopPropagation();
-        }
-      }
-    }, getDisabledMountTransitionStyles(transitionStatus), elementProps],
-    stateAttributesMapping: stateAttributesMapping4
-  });
-  return /* @__PURE__ */ import_jsx_runtime25.jsx(FloatingFocusManager, {
-    context: floatingContext,
-    openInteractionType: openMethod,
-    modal: focusManagerModal,
-    disabled: !mounted || openReason === exports_reason_parts.triggerHover,
-    initialFocus: resolvedInitialFocus,
-    returnFocus: finalFocus,
-    restoreFocus: "popup",
-    previousFocusableElement: isHTMLElement(activeTriggerElement) ? activeTriggerElement : undefined,
-    nextFocusableElement: store.context.triggerFocusTargetRef,
-    beforeContentFocusGuardRef: store.context.beforeContentFocusGuardRef,
-    children: /* @__PURE__ */ import_jsx_runtime25.jsx(ClosePartProvider, {
-      value: closePartContext,
-      children: element2
-    })
-  });
-});
-if (true)
-  PopoverPopup.displayName = "PopoverPopup";
-// node_modules/@base-ui/react/popover/arrow/PopoverArrow.mjs
-var React96 = __toESM(require_react(), 1);
-"use client";
-var PopoverArrow = /* @__PURE__ */ React96.forwardRef(function PopoverArrow2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = usePopoverRootContext();
-  const open = store.useState("open");
-  const {
-    arrowRef,
-    side,
-    align,
-    arrowUncentered,
-    arrowStyles
-  } = usePopoverPositionerContext();
-  const state = {
-    open,
-    side,
-    align,
-    uncentered: arrowUncentered
-  };
-  const element2 = useRenderElement("div", componentProps, {
-    state,
-    ref: [forwardedRef, arrowRef],
-    props: [{
-      style: arrowStyles,
-      "aria-hidden": true
-    }, elementProps],
-    stateAttributesMapping: popupStateMapping
-  });
-  return element2;
-});
-if (true)
-  PopoverArrow.displayName = "PopoverArrow";
-// node_modules/@base-ui/react/popover/backdrop/PopoverBackdrop.mjs
-var React97 = __toESM(require_react(), 1);
-"use client";
-var stateAttributesMapping5 = {
-  ...popupStateMapping,
-  ...transitionStatusMapping
-};
-var PopoverBackdrop = /* @__PURE__ */ React97.forwardRef(function PopoverBackdrop2(props, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = props;
-  const {
-    store
-  } = usePopoverRootContext();
-  const open = store.useState("open");
-  const mounted = store.useState("mounted");
-  const transitionStatus = store.useState("transitionStatus");
-  const openReason = store.useState("openChangeReason");
-  const state = {
-    open,
-    transitionStatus
-  };
-  const element2 = useRenderElement("div", props, {
-    state,
-    ref: [store.context.backdropRef, forwardedRef],
-    props: [{
-      role: "presentation",
-      hidden: !mounted,
-      style: {
-        pointerEvents: openReason === exports_reason_parts.triggerHover ? "none" : undefined,
-        userSelect: "none",
-        WebkitUserSelect: "none"
-      }
-    }, elementProps],
-    stateAttributesMapping: stateAttributesMapping5
-  });
-  return element2;
-});
-if (true)
-  PopoverBackdrop.displayName = "PopoverBackdrop";
-// node_modules/@base-ui/react/popover/title/PopoverTitle.mjs
-var React98 = __toESM(require_react(), 1);
-"use client";
-var PopoverTitle = /* @__PURE__ */ React98.forwardRef(function PopoverTitle2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = usePopoverRootContext();
-  const id2 = useBaseUiId(elementProps.id);
-  store.useSyncedValueWithCleanup("titleElementId", id2);
-  const element2 = useRenderElement("h2", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id: id2
-    }, elementProps]
-  });
-  return element2;
-});
-if (true)
-  PopoverTitle.displayName = "PopoverTitle";
-// node_modules/@base-ui/react/popover/description/PopoverDescription.mjs
-var React99 = __toESM(require_react(), 1);
-"use client";
-var PopoverDescription = /* @__PURE__ */ React99.forwardRef(function PopoverDescription2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = usePopoverRootContext();
-  const id2 = useBaseUiId(elementProps.id);
-  store.useSyncedValueWithCleanup("descriptionElementId", id2);
-  const element2 = useRenderElement("p", componentProps, {
-    ref: forwardedRef,
-    props: [{
-      id: id2
-    }, elementProps]
-  });
-  return element2;
-});
-if (true)
-  PopoverDescription.displayName = "PopoverDescription";
-// node_modules/@base-ui/react/popover/close/PopoverClose.mjs
-var React100 = __toESM(require_react(), 1);
-"use client";
-var PopoverClose = /* @__PURE__ */ React100.forwardRef(function PopoverClose2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    disabled: disabled2 = false,
-    nativeButton = true,
-    ...elementProps
-  } = componentProps;
-  const {
-    buttonRef,
-    getButtonProps
-  } = useButton({
-    disabled: disabled2,
-    focusableWhenDisabled: false,
-    native: nativeButton
-  });
-  const {
-    store
-  } = usePopoverRootContext();
-  useClosePartRegistration();
-  const element2 = useRenderElement("button", componentProps, {
-    ref: [forwardedRef, buttonRef],
-    props: [{
-      onClick(event) {
-        store.setOpen(false, createChangeEventDetails(exports_reason_parts.closePress, event.nativeEvent));
-      }
-    }, elementProps, getButtonProps]
-  });
-  return element2;
-});
-if (true)
-  PopoverClose.displayName = "PopoverClose";
-// node_modules/@base-ui/react/popover/viewport/PopoverViewport.mjs
-var React101 = __toESM(require_react(), 1);
-
-// node_modules/@base-ui/react/popover/viewport/PopoverViewportCssVars.mjs
-var PopoverViewportCssVars = /* @__PURE__ */ function(PopoverViewportCssVars2) {
-  PopoverViewportCssVars2["popupWidth"] = "--popup-width";
-  PopoverViewportCssVars2["popupHeight"] = "--popup-height";
-  return PopoverViewportCssVars2;
-}({});
-
-// node_modules/@base-ui/react/popover/viewport/PopoverViewport.mjs
-"use client";
-var stateAttributesMapping6 = {
-  activationDirection: (value) => value ? {
-    "data-activation-direction": value
-  } : null
-};
-var PopoverViewport = /* @__PURE__ */ React101.forwardRef(function PopoverViewport2(componentProps, forwardedRef) {
-  const {
-    render,
-    className,
-    style: style2,
-    children: children2,
-    ...elementProps
-  } = componentProps;
-  const {
-    store
-  } = usePopoverRootContext();
-  const {
-    side
-  } = usePopoverPositionerContext();
-  const instantType = store.useState("instantType");
-  const {
-    children: childrenToRender,
-    state: viewportState
-  } = usePopupViewport({
-    store,
-    side,
-    cssVars: PopoverViewportCssVars,
-    children: children2
-  });
-  const state = {
-    activationDirection: viewportState.activationDirection,
-    transitioning: viewportState.transitioning,
-    instant: instantType
-  };
-  return useRenderElement("div", componentProps, {
-    state,
-    ref: forwardedRef,
-    props: [elementProps, {
-      children: childrenToRender
-    }],
-    stateAttributesMapping: stateAttributesMapping6
-  });
-});
-if (true)
-  PopoverViewport.displayName = "PopoverViewport";
-// node_modules/@base-ui/react/popover/store/PopoverHandle.mjs
-class PopoverHandle {
-  constructor() {
-    this.store = new PopoverStore;
-  }
-  open(triggerId) {
-    const triggerElement = triggerId ? this.store.context.triggerElements.getById(triggerId) ?? undefined : undefined;
-    if (triggerId && !triggerElement) {
-      throw new Error(`Base UI: PopoverHandle.open: No trigger found with id "${triggerId}".`);
-    }
-    this.store.setOpen(true, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, triggerElement));
-  }
-  close() {
-    this.store.setOpen(false, createChangeEventDetails(exports_reason_parts.imperativeAction, undefined, undefined));
-  }
-  get isOpen() {
-    return this.store.select("open");
-  }
-}
-function createPopoverHandle() {
-  return new PopoverHandle;
-}
-// src/mind-mapper/surface/ui/popover.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
-var Popover = exports_index_parts3.Root;
-var PopoverTrigger3 = exports_index_parts3.Trigger;
-function PopoverContent({
-  className,
-  children: children2,
-  sideOffset = 6,
-  align = "end",
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(exports_index_parts3.Portal, {
-    children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(exports_index_parts3.Positioner, {
-      sideOffset,
-      align,
-      className: "outline-none",
-      children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(exports_index_parts3.Popup, {
-        className: cn2("z-50 rounded-lg border border-border bg-popover p-3 text-popover-foreground shadow-xl outline-none", className),
-        ...props,
-        children: children2
-      }, undefined, false, undefined, this)
-    }, undefined, false, undefined, this)
-  }, undefined, false, undefined, this);
-}
-
-// src/mind-mapper/surface/FilterControl.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
-var STATUS_LABEL = {
-  ratified: "ratified",
-  pending: "pending"
-};
-function FacetChip({
-  label,
-  active,
-  onToggle
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-    type: "button",
-    onClick: onToggle,
-    "aria-pressed": active,
-    className: `rounded-sm border px-1.5 py-0.5 text-[10px] ${active ? "border-ink bg-secondary text-ink" : "border-edge text-ink-dim hover:border-ink-faint hover:text-ink"}`,
-    children: label
-  }, undefined, false, undefined, this);
-}
-function FilterControl({
-  filter: filter2,
-  facets,
-  onFilter
-}) {
-  const count = activeFilterCount(filter2);
-  const hasFacets = facets.statuses.length > 0 || facets.tiers.length > 0 || facets.tags.length > 0;
-  if (!hasFacets)
-    return null;
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Popover, {
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PopoverTrigger3, {
-        render: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Button, {
-          variant: "outline",
-          size: "auto",
-          className: `flex items-center gap-1 px-2 py-1 text-[10px] uppercase tracking-wide ${count > 0 ? "text-ink" : "text-ink-dim"}`,
-          title: "Filter the board by status, tier, or tag",
-          children: [
-            /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Funnel, {
-              size: 11,
-              "aria-hidden": true
-            }, undefined, false, undefined, this),
-            "filter",
-            count > 0 ? ` · ${count}` : ""
-          ]
-        }, undefined, true, undefined, this)
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(PopoverContent, {
-        className: "w-56",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-            className: "mb-2 flex items-center justify-between",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
-                className: "text-[10px] uppercase tracking-widest text-ink-faint",
-                children: "filter"
-              }, undefined, false, undefined, this),
-              count > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
-                type: "button",
-                onClick: () => onFilter({ status: [], tier: [], tags: [] }),
-                className: "flex items-center gap-0.5 text-[10px] text-ink-dim hover:text-attention",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(X, {
-                    size: 10
-                  }, undefined, false, undefined, this),
-                  " clear"
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          facets.statuses.length > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetGroup, {
-            label: "Status",
-            children: facets.statuses.map((s) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetChip, {
-              label: STATUS_LABEL[s],
-              active: filter2.status.includes(s),
-              onToggle: () => onFilter({ ...filter2, status: toggleFacet(filter2.status, s) })
-            }, s, false, undefined, this))
-          }, undefined, false, undefined, this),
-          facets.tiers.length > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetGroup, {
-            label: "Tier",
-            children: facets.tiers.map((t) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetChip, {
-              label: TIER_LABEL[t],
-              active: filter2.tier.includes(t),
-              onToggle: () => onFilter({ ...filter2, tier: toggleFacet(filter2.tier, t) })
-            }, t, false, undefined, this))
-          }, undefined, false, undefined, this),
-          facets.tags.length > 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetGroup, {
-            label: "Tags",
-            children: facets.tags.map((t) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(FacetChip, {
-              label: t,
-              active: filter2.tags.includes(t),
-              onToggle: () => onFilter({ ...filter2, tags: toggleFacet(filter2.tags, t) })
-            }, t, false, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function FacetGroup({ label, children: children2 }) {
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-    className: "mb-2 last:mb-0",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
-        children: label
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
-        className: "flex flex-wrap gap-1",
-        children: children2
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
 }
 
 // src/mind-mapper/surface/FocusBar.tsx
@@ -49611,566 +49806,63 @@ function FocusBar({
   }, undefined, true, undefined, this);
 }
 
-// src/mind-mapper/surface/IngestionTray.tsx
-var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
-function rawTitle(p2) {
-  const t = p2.draft.title;
-  return typeof t === "string" && t.trim() ? t : "untitled";
-}
-function IngestionTray({
-  items,
-  onDelete,
-  onClose
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("aside", {
-    className: "flex w-72 shrink-0 flex-col border-l border-edge bg-surface xl:w-80",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-        className: "flex items-center justify-between border-b border-edge px-3 py-2",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("h2", {
-            className: "flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-ink-faint",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Loader, {
-                size: 11,
-                className: "animate-pulse text-pending",
-                "aria-hidden": true
-              }, undefined, false, undefined, this),
-              "Ingesting · ",
-              items.length
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button, {
-            variant: "ghost",
-            size: "icon-xs",
-            "aria-label": "Close ingestion tray",
-            onClick: onClose,
-            children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(X, {
-              size: 12
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-        className: "min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2",
-        children: items.length === 0 ? /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
-          className: "p-2 text-xs text-ink-faint",
-          children: "nothing ingesting — raw notes you add land here while the agent curates them."
-        }, undefined, false, undefined, this) : items.map((p2) => /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-          className: "flex items-start justify-between gap-1.5 rounded border border-dotted border-pending/50 bg-bg p-2",
-          children: [
-            /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-              className: "min-w-0",
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
-                  className: "truncate text-xs text-ink",
-                  children: rawTitle(p2)
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("p", {
-                  className: "mt-0.5 flex items-center gap-1 text-[10px] italic text-pending",
-                  children: [
-                    /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Loader, {
-                      size: 9,
-                      className: "animate-pulse",
-                      "aria-hidden": true
-                    }, undefined, false, undefined, this),
-                    " curating…"
-                  ]
-                }, undefined, true, undefined, this)
-              ]
-            }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Button, {
-              variant: "ghost",
-              size: "icon-xs",
-              "aria-label": `Discard "${rawTitle(p2)}"`,
-              title: "Discard this raw note",
-              className: "shrink-0 text-ink-faint hover:text-attention",
-              onClick: () => onDelete(p2.id),
-              children: /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Trash2, {
-                size: 11
-              }, undefined, false, undefined, this)
-            }, undefined, false, undefined, this)
-          ]
-        }, p2.id, true, undefined, this))
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
-// src/mind-mapper/surface/JobsSidebar.tsx
-var import_react14 = __toESM(require_react(), 1);
-
-// src/mind-mapper/surface/state/jobs.ts
-var JOB_STATUS_ORDER = [
-  "running",
-  "queued",
-  "blocked",
-  "done",
-  "failed",
-  "canceled"
-];
-function groupJobsByStatus(jobs) {
-  const byStatus = new Map;
-  for (const job of jobs) {
-    const bucket = byStatus.get(job.status);
-    if (bucket)
-      bucket.push(job);
-    else
-      byStatus.set(job.status, [job]);
-  }
-  const groups = [];
-  for (const status of JOB_STATUS_ORDER) {
-    const bucket = byStatus.get(status);
-    if (bucket && bucket.length > 0) {
-      groups.push({ status, jobs: bucket });
-      byStatus.delete(status);
-    }
-  }
-  for (const [status, bucket] of byStatus) {
-    if (bucket.length > 0)
-      groups.push({ status, jobs: bucket });
-  }
-  return groups;
-}
-function subtaskProgress(job) {
-  const total = job.subtasks.length;
-  const done = job.subtasks.reduce((n, s) => n + (s.done ? 1 : 0), 0);
-  return { done, total };
-}
-function parseDeliverable(deliverable) {
-  if (typeof deliverable !== "string")
-    return null;
-  const raw = deliverable.trim();
-  if (!raw)
-    return null;
-  const colon = raw.indexOf(":");
-  if (colon > 0) {
-    const scheme = raw.slice(0, colon).toLowerCase();
-    const id2 = raw.slice(colon + 1).trim();
-    if (id2 && (scheme === "doc" || scheme === "node")) {
-      return { kind: scheme, id: id2, raw };
-    }
-  }
-  return { kind: "text", raw };
-}
-function normalizeJobTitle(raw) {
-  const title = raw.trim();
-  return title.length > 0 ? title : null;
-}
-function jobLiveness(job, activityByAgent) {
-  if (job.status === "done" || job.status === "failed" || job.status === "canceled") {
-    return "inactive";
-  }
-  if (!job.claimedBy)
-    return "unclaimed";
-  const activity = activityByAgent[job.claimedBy] ?? null;
-  if (activity === "received" || activity === "thinking")
-    return "live";
-  if (activity === "stalled")
-    return "stale";
-  return "paused";
-}
-
-// src/mind-mapper/surface/JobsSidebar.tsx
-var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
-var STATUS_META = {
-  running: { label: "running", tint: "text-thread-tier" },
-  queued: { label: "queued", tint: "text-ink-faint" },
-  blocked: { label: "blocked", tint: "text-attention" },
-  done: { label: "done", tint: "text-story-local" },
-  failed: { label: "failed", tint: "text-attention" },
-  canceled: { label: "canceled", tint: "text-ink-faint" }
-};
-var LIVENESS_DOT = {
-  live: "bg-thread-tier animate-pulse",
-  stale: "bg-attention",
-  paused: "bg-ink-faint",
-  unclaimed: null,
-  inactive: null
-};
-var LIVENESS_LABEL = {
-  live: "owner active",
-  stale: "owner stalled",
-  paused: "owner idle",
-  unclaimed: "unclaimed",
-  inactive: "inactive"
-};
-function DeliverableLink({
-  ref,
-  onOpen
-}) {
-  if (ref.kind === "text") {
-    return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-      className: "italic text-ink-faint",
-      children: [
-        "→ ",
-        ref.raw
-      ]
-    }, undefined, true, undefined, this);
-  }
-  const Icon2 = ref.kind === "doc" ? FileText : ArrowUpRight;
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-    type: "button",
-    onClick: () => onOpen(ref),
-    className: "inline-flex items-center gap-1 text-story-local hover:underline",
-    title: `Open ${ref.kind} ${ref.id}`,
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Icon2, {
-        size: 10,
-        "aria-hidden": true
-      }, undefined, false, undefined, this),
-      ref.id
-    ]
-  }, undefined, true, undefined, this);
-}
-function JobRow({
-  job,
-  activityByAgent,
-  onOpenDeliverable,
-  onCancel
-}) {
-  const [expanded, setExpanded] = import_react14.useState(false);
-  const liveness = jobLiveness(job, activityByAgent);
-  const dot = LIVENESS_DOT[liveness];
-  const progress = subtaskProgress(job);
-  const deliverable = parseDeliverable(job.deliverable);
-  const cancelable = liveness !== "inactive";
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-    className: "rounded border border-edge bg-bg p-2",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "flex items-start justify-between gap-1.5",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-            className: "min-w-0",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-                className: "flex items-center gap-1.5 text-xs text-ink",
-                children: [
-                  dot && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                    className: `h-1.5 w-1.5 shrink-0 rounded-full ${dot}`,
-                    title: LIVENESS_LABEL[liveness],
-                    "aria-hidden": true
-                  }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                    className: "truncate",
-                    children: job.title
-                  }, undefined, false, undefined, this)
-                ]
-              }, undefined, true, undefined, this),
-              job.claimedBy && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-                className: "mt-0.5 truncate text-[10px] text-ink-faint",
-                children: [
-                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                    className: "sr-only",
-                    children: [
-                      LIVENESS_LABEL[liveness],
-                      " · "
-                    ]
-                  }, undefined, true, undefined, this),
-                  "owner: ",
-                  job.claimedBy
-                ]
-              }, undefined, true, undefined, this)
-            ]
-          }, undefined, true, undefined, this),
-          cancelable && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
-            variant: "ghost",
-            size: "icon-xs",
-            "aria-label": `Cancel "${job.title}"`,
-            title: "Cancel this job",
-            className: "shrink-0 text-ink-faint hover:text-attention",
-            onClick: () => onCancel(job.id),
-            children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Ban, {
-              size: 11
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      job.detail && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-        className: "mt-1 text-[10px] text-ink-dim",
-        children: job.detail
-      }, undefined, false, undefined, this),
-      progress.total > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "mt-1",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
-            type: "button",
-            onClick: () => setExpanded((e) => !e),
-            className: "flex items-center gap-1 text-[10px] text-ink-faint hover:text-ink",
-            "aria-expanded": expanded,
-            children: [
-              expanded ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ChevronDown, {
-                size: 10
-              }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ChevronRight, {
-                size: 10
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ListChecks, {
-                size: 10,
-                "aria-hidden": true
-              }, undefined, false, undefined, this),
-              progress.done,
-              "/",
-              progress.total,
-              " subtasks"
-            ]
-          }, undefined, true, undefined, this),
-          expanded && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("ul", {
-            className: "mt-1 space-y-0.5 pl-3",
-            children: job.subtasks.map((s) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("li", {
-              className: "flex items-center gap-1 text-[10px] text-ink-dim",
-              children: [
-                s.done ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Check, {
-                  size: 10,
-                  className: "text-story-local",
-                  "aria-hidden": true
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Square, {
-                  size: 10,
-                  className: "text-ink-faint",
-                  "aria-hidden": true
-                }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-                  className: s.done ? "line-through text-ink-faint" : "",
-                  children: s.label
-                }, undefined, false, undefined, this)
-              ]
-            }, s.id, true, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      deliverable && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-        className: "mt-1 text-[10px]",
-        children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(DeliverableLink, {
-          ref: deliverable,
-          onOpen: onOpenDeliverable
-        }, undefined, false, undefined, this)
-      }, undefined, false, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function NewJobForm({ onCreate }) {
-  const [open, setOpen] = import_react14.useState(false);
-  const [title, setTitle] = import_react14.useState("");
-  const inputRef = import_react14.useRef(null);
-  const normalized = normalizeJobTitle(title);
-  import_react14.useEffect(() => {
-    if (open)
-      inputRef.current?.focus();
-  }, [open]);
-  const close = () => {
-    setTitle("");
-    setOpen(false);
-  };
-  if (!open) {
-    return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
-      variant: "outline",
-      size: "auto",
-      className: "flex w-full items-center justify-center gap-1 px-2 py-1 text-xs text-thread-tier",
-      onClick: () => setOpen(true),
-      children: [
-        /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Plus, {
-          size: 12,
-          "aria-hidden": true
-        }, undefined, false, undefined, this),
-        "New job"
-      ]
-    }, undefined, true, undefined, this);
-  }
-  const submit = () => {
-    if (!normalized)
-      return;
-    onCreate(normalized);
-    close();
-  };
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("form", {
-    className: "space-y-1.5",
-    onSubmit: (e) => {
-      e.preventDefault();
-      submit();
-    },
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("input", {
-        ref: inputRef,
-        type: "text",
-        value: title,
-        onChange: (e) => setTitle(e.target.value),
-        onKeyDown: (e) => {
-          if (e.key === "Escape")
-            close();
-        },
-        placeholder: "what should the agent do?",
-        "aria-label": "New job title",
-        className: "w-full rounded border border-edge bg-bg px-2 py-1 text-xs text-ink placeholder:text-ink-faint focus:border-thread-tier focus:outline-none"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "flex items-center justify-end gap-1.5",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
-            type: "button",
-            variant: "ghost",
-            size: "auto",
-            className: "px-2 py-0.5 text-[10px] text-ink-faint",
-            onClick: close,
-            children: "Cancel"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
-            type: "submit",
-            variant: "outline",
-            size: "auto",
-            disabled: !normalized,
-            className: "px-2 py-0.5 text-[10px] text-thread-tier",
-            children: "Add job"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-function JobsSidebar({
-  jobs,
-  activityByAgent,
-  onOpenDeliverable,
-  onCancel,
-  onCreate,
-  onClose
-}) {
-  const groups = groupJobsByStatus(jobs);
-  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("aside", {
-    className: "flex w-72 shrink-0 flex-col border-l border-edge bg-surface xl:w-80",
-    children: [
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "flex items-center justify-between border-b border-edge px-3 py-2",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("h2", {
-            className: "flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-ink-faint",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ListChecks, {
-                size: 11,
-                className: "text-thread-tier",
-                "aria-hidden": true
-              }, undefined, false, undefined, this),
-              "Jobs · ",
-              jobs.length
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
-            variant: "ghost",
-            size: "icon-xs",
-            "aria-label": "Close jobs sidebar",
-            onClick: onClose,
-            children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(X, {
-              size: 12
-            }, undefined, false, undefined, this)
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: "min-h-0 flex-1 space-y-3 overflow-y-auto p-2",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(NewJobForm, {
-            onCreate
-          }, undefined, false, undefined, this),
-          jobs.length === 0 ? /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-            className: "space-y-2 p-2 text-xs text-ink-faint",
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-                className: "text-ink-dim",
-                children: "No jobs yet."
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-                children: "A job is a unit of agent work — it carries a status, a checklist of subtasks, a deliverable it produces, and an ownership lease so you can see who's on it and whether they're live."
-              }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
-                children: "Start one with “＋ New job” above, or let an agent open one from the CLI."
-              }, undefined, false, undefined, this)
-            ]
-          }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-            className: "space-y-3",
-            children: groups.map((group) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("section", {
-              children: [
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("h3", {
-                  className: `mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-widest ${STATUS_META[group.status]?.tint ?? "text-ink-faint"}`,
-                  children: [
-                    STATUS_META[group.status]?.label ?? group.status,
-                    " · ",
-                    group.jobs.length
-                  ]
-                }, undefined, true, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-                  className: "space-y-1.5",
-                  children: group.jobs.map((job) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(JobRow, {
-                    job,
-                    activityByAgent,
-                    onOpenDeliverable,
-                    onCancel
-                  }, job.id, false, undefined, this))
-                }, undefined, false, undefined, this)
-              ]
-            }, group.status, true, undefined, this))
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
-    ]
-  }, undefined, true, undefined, this);
-}
-
 // src/mind-mapper/surface/MapKey.tsx
-var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 function MapKey() {
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
     className: "pointer-events-none absolute bottom-4 left-4 z-10 rounded-lg border border-edge bg-surface/90 px-3 py-2 text-[11px] leading-relaxed backdrop-blur",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "mb-1 text-[10px] uppercase tracking-widest text-ink-faint",
         children: "Map key"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "grid grid-cols-2 gap-x-4",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
                 className: "text-canon",
                 children: "■"
               }, undefined, false, undefined, this),
               " canon",
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
                 className: "text-thread-tier",
                 children: "■"
               }, undefined, false, undefined, this),
               " thread",
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
                 className: "text-story-local",
                 children: "■"
               }, undefined, false, undefined, this),
               " story-local",
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
                 className: "text-background-tier opacity-60",
                 children: "■"
               }, undefined, false, undefined, this),
               " background (steeping)"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
             className: "text-ink-dim",
             children: [
               "→─ asserted",
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
                 className: "tracking-tighter",
                 children: "· · ·"
               }, undefined, false, undefined, this),
               " derived",
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("br", {}, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("span", {
                 className: "text-pending",
                 children: "╌ ╌"
               }, undefined, false, undefined, this),
               " proposed",
-              /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("br", {}, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("br", {}, undefined, false, undefined, this),
               "─ mutual (no arrow)"
             ]
           }, undefined, true, undefined, this)
@@ -50182,7 +49874,7 @@ function MapKey() {
 
 // src/mind-mapper/surface/NodeDetail.tsx
 var import_react15 = __toESM(require_react(), 1);
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
 var TONE_CLASS2 = {
   default: "text-ink",
   pending: "text-pending",
@@ -50192,13 +49884,13 @@ var TONE_CLASS2 = {
 };
 function ActionButton({ item, className = "" }) {
   const Icon2 = item.icon;
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
     variant: "outline",
     size: "auto",
     onClick: () => item.run(),
     className: `justify-start px-2 py-1 ${TONE_CLASS2[item.tone]} ${item.suggested ? "border-pending font-semibold" : ""} ${className}`,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Icon2, {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Icon2, {
         size: 12,
         "aria-hidden": true
       }, undefined, false, undefined, this),
@@ -50230,15 +49922,15 @@ function NodeDetail({
   const verbs = inGroup("verbs");
   const slots = inGroup("slots");
   const danger = inGroup("danger");
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
     className: "flex max-h-[calc(100vh-8rem)] w-72 flex-col gap-3 overflow-y-auto rounded-lg border border-edge bg-surface/95 p-4 shadow-xl backdrop-blur",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
             className: "flex items-start justify-between gap-2",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
                 className: "text-[10px] uppercase tracking-widest text-ink-dim",
                 children: [
                   node.kind,
@@ -50247,25 +49939,25 @@ function NodeDetail({
                   node.pending ? " · proposed" : ""
                 ]
               }, undefined, true, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
                 className: "flex items-center gap-1.5",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
                     variant: "ghost",
                     size: "icon-xs",
                     "aria-label": `Focus on ${node.title}`,
                     title: "Focus — narrow the map to this neighborhood",
                     onClick: () => onFocus(node),
-                    children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Crosshair, {
+                    children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Crosshair, {
                       size: 13
                     }, undefined, false, undefined, this)
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
                     variant: "ghost",
                     size: "icon-xs",
                     "aria-label": "Close node detail",
                     onClick: onClose,
-                    children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
+                    children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(X, {
                       size: 13
                     }, undefined, false, undefined, this)
                   }, undefined, false, undefined, this)
@@ -50273,24 +49965,24 @@ function NodeDetail({
               }, undefined, true, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("h2", {
             className: "mt-1 font-story text-xl text-ink",
             children: node.title
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
         className: "text-sm leading-relaxed text-ink-dim",
         children: node.synopsis
       }, undefined, false, undefined, this),
-      node.pending && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
+      node.pending && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("p", {
         className: "rounded-md border border-dashed border-pending/60 px-2 py-1.5 text-xs text-pending",
         children: "Staging: proposed, not yet ratified into canon."
       }, undefined, false, undefined, this),
-      node.sources && node.sources.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      node.sources && node.sources.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "flex flex-col gap-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: "Sources"
           }, undefined, false, undefined, this),
@@ -50299,25 +49991,25 @@ function NodeDetail({
               const doc = docs.find((d) => d.id === s.docId);
               if (!doc)
                 return null;
-              return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+              return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
                 variant: "card",
                 size: "auto",
                 onClick: () => onOpenSource(s),
                 className: "justify-start rounded-md bg-secondary px-2 py-1.5",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(FileText, {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(FileText, {
                     size: 12,
                     className: "mt-0.5 shrink-0 self-start",
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                     className: "min-w-0",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                         className: "block truncate",
                         children: doc.title
                       }, undefined, false, undefined, this),
-                      s.span && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                      s.span && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                         className: "mt-0.5 block truncate text-[11px] italic text-ink-faint",
                         children: [
                           '"',
@@ -50330,25 +50022,25 @@ function NodeDetail({
                 ]
               }, `${s.docId}:${s.span ?? ""}`, true, undefined, this);
             }
-            return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+            return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
               variant: "card",
               size: "auto",
               onClick: () => onOpenMessageSource(s),
               className: "justify-start rounded-md bg-secondary px-2 py-1.5",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(MessageSquare, {
+                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(MessageSquare, {
                   size: 12,
                   className: "mt-0.5 shrink-0 self-start",
                   "aria-hidden": true
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                   className: "min-w-0",
                   children: [
-                    /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                    /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                       className: "block truncate",
                       children: "from the conversation"
                     }, undefined, false, undefined, this),
-                    s.span && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                    s.span && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                       className: "mt-0.5 block truncate text-[11px] italic text-ink-faint",
                       children: [
                         '"',
@@ -50363,50 +50055,50 @@ function NodeDetail({
           })
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(TagsSection, {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(TagsSection, {
         node,
         existingTags: existingTags2,
         onSetTags
       }, undefined, false, undefined, this),
-      ratify.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Section, {
+      ratify.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Section, {
         label: node.pending ? "Ratify" : "Ruling",
-        children: ratify.map((item) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ActionButton, {
+        children: ratify.map((item) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ActionButton, {
           item
         }, item.key, false, undefined, this))
       }, undefined, false, undefined, this),
-      selectItem?.submenu && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Section, {
+      selectItem?.submenu && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Section, {
         label: "Select",
-        children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+        children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
           className: "flex flex-wrap gap-1.5",
-          children: selectItem.submenu.map((item) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ActionButton, {
+          children: selectItem.submenu.map((item) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ActionButton, {
             item,
             className: "flex-1"
           }, item.key, false, undefined, this))
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      navigate.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Section, {
+      navigate.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Section, {
         label: "Navigate",
-        children: navigate.map((item) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ActionButton, {
+        children: navigate.map((item) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ActionButton, {
           item
         }, item.key, false, undefined, this))
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "flex flex-col gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: "Ask the map"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
             className: "flex gap-1.5",
             children: verbs.map((item) => {
               const Icon2 = item.icon;
-              return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
+              return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button, {
                 size: "auto",
                 onClick: () => item.run(),
                 className: "flex-1 flex-col gap-1 px-2 py-2",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Icon2, {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Icon2, {
                     size: 14,
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
@@ -50417,13 +50109,13 @@ function NodeDetail({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      slots.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Section, {
+      slots.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Section, {
         label: "Agent suggests",
-        children: slots.map((item) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ActionButton, {
+        children: slots.map((item) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ActionButton, {
           item
         }, item.key, false, undefined, this))
       }, undefined, false, undefined, this),
-      danger.map((item) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ActionButton, {
+      danger.map((item) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(ActionButton, {
         item,
         className: "justify-center"
       }, item.key, false, undefined, this))
@@ -50431,10 +50123,10 @@ function NodeDetail({
   }, undefined, true, undefined, this);
 }
 function Section({ label, children: children2 }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
     className: "flex flex-col gap-1.5",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "text-[10px] uppercase tracking-widest text-ink-faint",
         children: label
       }, undefined, false, undefined, this),
@@ -50457,41 +50149,41 @@ function TagsSection({
       onSetTags(node.id, next);
     setDraft("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
     className: "flex flex-col gap-1.5",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Tag, {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Tag, {
             size: 10,
             "aria-hidden": true
           }, undefined, false, undefined, this),
           " Tags"
         ]
       }, undefined, true, undefined, this),
-      current.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      current.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "flex flex-wrap gap-1",
-        children: current.map((t) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+        children: current.map((t) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
           className: `flex items-center gap-0.5 rounded-sm px-1.5 py-0.5 text-[10px] ${TAG_CHIP}`,
           children: [
             t,
-            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
+            /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
               type: "button",
               "aria-label": `Remove tag ${t}`,
               onClick: () => onSetTags(node.id, removeTag(current, t)),
               className: "text-ink-faint hover:text-attention",
-              children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
+              children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(X, {
                 size: 10
               }, undefined, false, undefined, this)
             }, undefined, false, undefined, this)
           ]
         }, t, true, undefined, this))
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
         className: "relative",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("input", {
             value: draft,
             onChange: (e) => setDraft(e.target.value),
             onFocus: () => setFocused(true),
@@ -50510,21 +50202,21 @@ function TagsSection({
             "aria-label": "Add a tag",
             className: "w-full rounded-md border border-edge bg-secondary px-2 py-1 text-xs text-ink placeholder:text-ink-faint focus:border-ring focus:outline-none"
           }, undefined, false, undefined, this),
-          suggestions.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("ul", {
+          suggestions.length > 0 && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("ul", {
             className: "absolute left-0 right-0 top-full z-10 mt-1 max-h-32 overflow-y-auto rounded-md border border-edge bg-surface-raised py-1 shadow-xl",
-            children: suggestions.map((s) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("li", {
-              children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
+            children: suggestions.map((s) => /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("li", {
+              children: /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("button", {
                 type: "button",
                 onMouseDown: (e) => e.preventDefault(),
                 onClick: () => commit(s),
                 className: "flex w-full items-center gap-1 px-2 py-1 text-left text-xs text-ink-dim hover:bg-secondary hover:text-ink",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Tag, {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Tag, {
                     size: 10,
                     className: "shrink-0 text-ink-faint",
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
                     className: "min-w-0 truncate",
                     children: s
                   }, undefined, false, undefined, this)
@@ -50540,7 +50232,7 @@ function TagsSection({
 
 // src/mind-mapper/surface/ProjectPicker.tsx
 var import_react16 = __toESM(require_react(), 1);
-var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
 function ProjectPicker({
   currentId,
   onSelect
@@ -50574,10 +50266,10 @@ function ProjectPicker({
     }).catch(() => {});
   };
   if (creating) {
-    return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+    return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
       className: "flex items-center gap-1.5",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("input", {
+        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("input", {
           ref: titleInputRef,
           value: title,
           onChange: (e) => setTitle(e.target.value),
@@ -50591,7 +50283,7 @@ function ProjectPicker({
           "aria-label": "New project title",
           className: "w-40 rounded border border-edge bg-surface px-1.5 py-0.5 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+        /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
           size: "auto",
           className: "px-2 py-0.5 text-xs",
           onClick: create2,
@@ -50601,27 +50293,27 @@ function ProjectPicker({
       ]
     }, undefined, true, undefined, this);
   }
-  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
     className: "flex items-center gap-1.5 text-xs",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("select", {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("select", {
         "aria-label": "Project",
         value: currentId ?? "",
         onChange: (e) => onSelect(e.target.value),
         className: "rounded border border-edge bg-surface px-1.5 py-0.5 text-ink",
         children: [
-          currentId === undefined && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("option", {
+          currentId === undefined && /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("option", {
             value: "",
             disabled: true,
             children: "pick a project…"
           }, undefined, false, undefined, this),
-          projects.map((p2) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("option", {
+          projects.map((p2) => /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("option", {
             value: p2.id,
             children: p2.title
           }, p2.id, false, undefined, this))
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: "px-1.5 py-0.5 text-ink-dim",
@@ -50677,7 +50369,7 @@ function draftSummary(p2, nodes) {
 }
 
 // src/mind-mapper/surface/ReviewQueue.tsx
-var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
 var TIER_BADGE = {
   canon: "border-canon/60 text-canon",
   thread: "border-thread-tier/60 text-thread-tier",
@@ -50700,13 +50392,13 @@ function ReviewQueue({
   const groups = import_react17.useMemo(() => groupProposalsByDoc(agent), [agent]);
   const bucketTitle = (docId) => docId === UNGROUNDED ? "ungrounded" : docId === FROM_CONVERSATION ? "from conversation" : docs.find((d) => d.id === docId)?.title ?? docId;
   const pendingCount = user.length + agent.length;
-  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("aside", {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("aside", {
     className: "flex w-80 shrink-0 flex-col border-l border-edge bg-surface xl:w-96",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
         className: "flex items-center justify-between border-b border-edge px-3 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("h2", {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: [
               "Review · ",
@@ -50714,68 +50406,68 @@ function ReviewQueue({
               " pending"
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
             variant: "ghost",
             size: "icon-xs",
             "aria-label": "Close review queue",
             onClick: onClose,
-            children: /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(X, {
+            children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
               size: 12
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
         className: "min-h-0 flex-1 space-y-3 overflow-y-auto p-2",
-        children: pendingCount === 0 ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+        children: pendingCount === 0 ? /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
           className: "p-2 text-xs text-ink-faint",
           children: "nothing pending — the board is caught up."
-        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(jsx_dev_runtime22.Fragment, {
+        }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(jsx_dev_runtime20.Fragment, {
           children: [
-            user.length > 0 && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+            user.length > 0 && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                   className: "px-1 pb-1 text-[10px] uppercase tracking-wide text-ink-faint",
                   children: "yours — awaiting a doc home"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                   className: "space-y-1.5",
                   children: user.map((p2) => {
                     const { title, detail } = draftSummary(p2, nodes);
-                    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                    return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                       className: "rounded border border-dashed border-pending/50 bg-bg p-2",
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                           className: "flex items-start justify-between gap-1.5",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                               className: "text-xs text-ink",
                               children: title
                             }, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Badge, {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Badge, {
                               className: "shrink-0 border-pending/60 px-1.5 py-0 text-[9px] text-pending",
                               children: "sketch"
                             }, undefined, false, undefined, this)
                           ]
                         }, undefined, true, undefined, this),
-                        detail && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                        detail && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                           className: "mt-1 text-[11px] text-ink-dim",
                           children: detail
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                           className: "mt-2 flex items-center justify-between gap-1",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                               className: "text-[10px] italic text-ink-faint",
                               children: "the agent drafts its doc home before it can ratify."
                             }, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
                               variant: "ghost",
                               size: "auto",
                               className: "shrink-0 px-1.5 py-0.5 text-[10px] text-ink-faint",
                               onClick: () => onRule(p2.id, "reject"),
                               children: [
-                                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(X, {
+                                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
                                   size: 10
                                 }, undefined, false, undefined, this),
                                 "withdraw"
@@ -50789,57 +50481,57 @@ function ReviewQueue({
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            Array.from(groups.entries()).map(([docId, group]) => /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+            Array.from(groups.entries()).map(([docId, group]) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                   className: "px-1 pb-1 text-[10px] uppercase tracking-wide text-ink-faint",
                   children: bucketTitle(docId)
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                   className: "space-y-1.5",
                   children: group.map((p2) => {
                     const { title, detail } = draftSummary(p2, nodes);
-                    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                    return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                       className: "rounded border border-edge bg-bg p-2",
                       children: [
-                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                           className: "flex items-start justify-between gap-1.5",
                           children: [
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                               className: "text-xs text-ink",
                               children: title
                             }, undefined, false, undefined, this),
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Badge, {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Badge, {
                               className: `shrink-0 px-1.5 py-0 text-[9px] ${TIER_BADGE[p2.suggestedTier]}`,
                               children: p2.suggestedTier
                             }, undefined, false, undefined, this)
                           ]
                         }, undefined, true, undefined, this),
-                        detail && /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("p", {
+                        detail && /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("p", {
                           className: "mt-1 text-[11px] text-ink-dim",
                           children: detail
                         }, undefined, false, undefined, this),
-                        /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+                        /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
                           className: "mt-2 flex flex-wrap items-center gap-1",
                           children: [
-                            RULINGS.map((r) => /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                            RULINGS.map((r) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
                               size: "auto",
                               className: `px-1.5 py-0.5 text-[10px] ${r.ruling === p2.suggestedTier ? TIER_BADGE[r.ruling] : ""}`,
                               onClick: () => onRule(p2.id, r.ruling),
                               children: [
-                                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Check, {
+                                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Check, {
                                   size: 10
                                 }, undefined, false, undefined, this),
                                 r.label
                               ]
                             }, r.ruling, true, undefined, this)),
-                            /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
+                            /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Button, {
                               variant: "ghost",
                               size: "auto",
                               className: "ml-auto px-1.5 py-0.5 text-[10px] text-ink-faint",
                               onClick: () => onRule(p2.id, "reject"),
                               children: [
-                                /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(X, {
+                                /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(X, {
                                   size: 10
                                 }, undefined, false, undefined, this),
                                 "reject"
@@ -50862,7 +50554,7 @@ function ReviewQueue({
 
 // src/mind-mapper/surface/SearchPalette.tsx
 var import_react18 = __toESM(require_react(), 1);
-var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
 var TIER_BADGE2 = {
   canon: "border-canon/60 text-canon",
   thread: "border-thread-tier/60 text-thread-tier",
@@ -50916,18 +50608,18 @@ function SearchPalette({
     }
   };
   const offBoardNote = offBoardLine(offBoard);
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
     className: `absolute left-1/2 z-20 w-80 -translate-x-1/2 rounded-lg border border-border bg-popover/95 shadow-xl backdrop-blur ${belowBar ? "top-14" : "top-4"}`,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
         className: "flex items-center gap-2 border-b border-border px-3 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Search, {
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Search, {
             size: 13,
             className: "shrink-0 text-muted-foreground",
             "aria-hidden": true
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("input", {
             ref: inputRef,
             value: query,
             onChange: (e) => {
@@ -50939,7 +50631,7 @@ function SearchPalette({
             "aria-label": "Find a node",
             className: "min-w-0 flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
             variant: "ghost",
             size: "auto",
             onClick: dismiss,
@@ -50950,47 +50642,47 @@ function SearchPalette({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      query && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+      query && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
         className: "max-h-64 overflow-y-auto p-1",
-        children: rows.length === 0 ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+        children: rows.length === 0 ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
           className: "space-y-1 px-2 py-1.5 text-xs text-muted-foreground",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
               children: [
                 "nothing on the map matches “",
                 query,
                 "”."
               ]
             }, undefined, true, undefined, this),
-            offBoardNote && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("p", {
+            offBoardNote && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("p", {
               children: offBoardNote
             }, undefined, false, undefined, this)
           ]
-        }, undefined, true, undefined, this) : rows.slice(0, 8).map((row, i) => /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Button, {
+        }, undefined, true, undefined, this) : rows.slice(0, 8).map((row, i) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Button, {
           variant: "ghost",
           size: "auto",
           onClick: () => onPick(row),
           onMouseEnter: () => setActive(i),
           className: `w-full justify-between gap-2 rounded-sm px-2 py-1.5 ${i === activeIndex ? "bg-accent text-accent-foreground" : ""}`,
           children: [
-            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
               className: `min-w-0 truncate font-story text-[13px] ${row.kind === "proposal" ? "text-pending" : "text-ink"}`,
               children: row.node.title
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("span", {
+            /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
               className: "flex shrink-0 items-center gap-1",
-              children: row.kind === "proposal" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(jsx_dev_runtime23.Fragment, {
+              children: row.kind === "proposal" ? /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(jsx_dev_runtime21.Fragment, {
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Badge, {
+                  /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
                     className: `px-1.5 py-0 text-[9px] ${PROPOSAL_BADGE}`,
                     children: "proposed"
                   }, undefined, false, undefined, this),
-                  row.zoneId && /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Badge, {
+                  row.zoneId && /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
                     className: `px-1.5 py-0 text-[9px] ${PROPOSAL_BADGE}`,
                     children: row.zoneId
                   }, undefined, false, undefined, this)
                 ]
-              }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Badge, {
+              }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(Badge, {
                 className: `px-1.5 py-0 text-[9px] ${TIER_BADGE2[row.node.tier]}`,
                 children: row.node.tier
               }, undefined, false, undefined, this)
@@ -51003,13 +50695,13 @@ function SearchPalette({
 }
 
 // src/mind-mapper/surface/SpotlightToggle.tsx
-var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
 function SpotlightToggle({
   active,
   enabled,
   onToggle
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Button, {
     variant: "outline",
     size: "auto",
     "aria-pressed": active,
@@ -51019,7 +50711,7 @@ function SpotlightToggle({
     onClick: onToggle,
     className: `px-2 py-1 text-[10px] uppercase tracking-wide ${active ? "bg-secondary text-foreground" : ""}`,
     children: [
-      /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Flashlight, {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Flashlight, {
         size: 11,
         "aria-hidden": true
       }, undefined, false, undefined, this),
@@ -51795,16 +51487,16 @@ function createDialogHandle() {
   return new DialogHandle;
 }
 // src/mind-mapper/surface/ui/dialog.tsx
-var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
 var Dialog = exports_index_parts4.Root;
 var DialogTrigger3 = exports_index_parts4.Trigger;
 function DialogContent({ className, children: children2, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(exports_index_parts4.Portal, {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(exports_index_parts4.Portal, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(exports_index_parts4.Backdrop, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(exports_index_parts4.Backdrop, {
         className: "fixed inset-0 z-40 bg-background/70 backdrop-blur-sm"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(exports_index_parts4.Popup, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(exports_index_parts4.Popup, {
         className: cn2("fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-xl outline-none", className),
         ...props,
         children: children2
@@ -51813,26 +51505,26 @@ function DialogContent({ className, children: children2, ...props }) {
   }, undefined, true, undefined, this);
 }
 function DialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
     className: cn2("mb-3 flex flex-col gap-1", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function DialogTitle3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(exports_index_parts4.Title, {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(exports_index_parts4.Title, {
     className: cn2("text-sm font-semibold text-foreground", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function DialogDescription3({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(exports_index_parts4.Description, {
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(exports_index_parts4.Description, {
     className: cn2("text-xs leading-relaxed text-muted-foreground", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/SubmapAppendModal.tsx
-var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
 var TIERS = ["canon", "thread", "story-local"];
 function SubmapAppendModal({
   proposals,
@@ -51841,28 +51533,28 @@ function SubmapAppendModal({
   onCancel
 }) {
   const [ruling, setRuling] = import_react19.useState("thread");
-  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Dialog, {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Dialog, {
     open: true,
     onOpenChange: (o) => {
       if (!o)
         onCancel();
     },
-    children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogContent, {
+    children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(DialogContent, {
       className: "w-80 max-w-[90vw]",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogHeader, {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(DialogHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogTitle3, {
+            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(DialogTitle3, {
               className: "flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(FolderTree, {
+                /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(FolderTree, {
                   size: 11,
                   "aria-hidden": true
                 }, undefined, false, undefined, this),
                 " ratify & nest as a submap"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogDescription3, {
+            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(DialogDescription3, {
               className: "text-[11px] text-ink-dim",
               children: [
                 "ratify all ",
@@ -51872,13 +51564,13 @@ function SubmapAppendModal({
             }, undefined, true, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
           className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
           children: "tier"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
           className: "mb-3 flex gap-1",
-          children: TIERS.map((t) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("button", {
+          children: TIERS.map((t) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("button", {
             type: "button",
             onClick: () => setRuling(t),
             "aria-pressed": ruling === t,
@@ -51886,37 +51578,37 @@ function SubmapAppendModal({
             children: TIER_LABEL[t]
           }, t, false, undefined, this))
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
           className: "mb-1 text-[9px] uppercase tracking-widest text-ink-faint",
           children: "parent (from the selection)"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
           className: "flex flex-col gap-1",
-          children: proposals.map((n) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
+          children: proposals.map((n) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "justify-start px-2 py-1 text-left text-xs text-ink",
             onClick: () => onCommit(n.id, ruling),
-            children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+            children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
               className: "truncate",
               children: n.title
             }, undefined, false, undefined, this)
           }, n.id, false, undefined, this))
         }, undefined, false, undefined, this),
-        existingNodes.length > 0 && /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(jsx_dev_runtime26.Fragment, {
+        existingNodes.length > 0 && /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(jsx_dev_runtime24.Fragment, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
               className: "mb-1 mt-2 text-[9px] uppercase tracking-widest text-ink-faint",
               children: "…or under an existing idea"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+            /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
               className: "flex max-h-28 flex-col gap-1 overflow-y-auto",
-              children: existingNodes.map((n) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
+              children: existingNodes.map((n) => /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
                 variant: "ghost",
                 size: "auto",
                 className: "justify-start px-2 py-1 text-left text-xs text-ink-dim hover:text-ink",
                 onClick: () => onCommit(n.id, ruling),
-                children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
+                children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("span", {
                   className: "truncate",
                   children: n.title
                 }, undefined, false, undefined, this)
@@ -51924,9 +51616,9 @@ function SubmapAppendModal({
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
           className: "mt-2 flex justify-end",
-          children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
+          children: /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(Button, {
             variant: "ghost",
             size: "auto",
             className: "px-2 py-1 text-xs",
@@ -51940,7 +51632,7 @@ function SubmapAppendModal({
 }
 
 // src/mind-mapper/surface/SubmapBreadcrumb.tsx
-var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime25 = __toESM(require_jsx_dev_runtime(), 1);
 function SubmapBreadcrumb({
   trail,
   onNavigate
@@ -51948,11 +51640,11 @@ function SubmapBreadcrumb({
   if (trail.length === 0)
     return null;
   const crumbClass = (isCurrent) => `px-1.5 py-0.5 text-xs ${isCurrent ? "text-ink" : "text-ink-dim hover:text-ink"}`;
-  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("nav", {
+  return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("nav", {
     "aria-label": "Submap breadcrumb",
     className: "flex items-center gap-0.5 border-b border-edge bg-surface px-4 py-0.5",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: crumbClass(false),
@@ -51961,15 +51653,15 @@ function SubmapBreadcrumb({
       }, undefined, false, undefined, this),
       trail.map((node, i) => {
         const isCurrent = i === trail.length - 1;
-        return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("span", {
+        return /* @__PURE__ */ jsx_dev_runtime25.jsxDEV("span", {
           className: "flex items-center gap-0.5",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(ChevronRight, {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(ChevronRight, {
               size: 11,
               "aria-hidden": true,
               className: "text-ink-faint"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(Button, {
+            /* @__PURE__ */ jsx_dev_runtime25.jsxDEV(Button, {
               variant: "ghost",
               size: "auto",
               className: crumbClass(isCurrent),
@@ -51986,34 +51678,34 @@ function SubmapBreadcrumb({
 }
 
 // src/mind-mapper/surface/SubmapGroupModal.tsx
-var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime26 = __toESM(require_jsx_dev_runtime(), 1);
 function SubmapGroupModal({
   nodes,
   onPickParent,
   onCancel
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Dialog, {
+  return /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Dialog, {
     open: true,
     onOpenChange: (o) => {
       if (!o)
         onCancel();
     },
-    children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(DialogContent, {
+    children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogContent, {
       className: "w-72 max-w-[90vw]",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(DialogHeader, {
+        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(DialogTitle3, {
+            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogTitle3, {
               className: "flex items-center gap-1 text-[10px] uppercase tracking-widest text-ink-faint",
               children: [
-                /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(FolderTree, {
+                /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(FolderTree, {
                   size: 11,
                   "aria-hidden": true
                 }, undefined, false, undefined, this),
                 " group under a node"
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(DialogDescription3, {
+            /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(DialogDescription3, {
               className: "text-[11px] text-ink-dim",
               children: [
                 "pick the parent — the other ",
@@ -52023,22 +51715,22 @@ function SubmapGroupModal({
             }, undefined, true, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
           className: "flex flex-col gap-1",
-          children: nodes.map((n) => /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
+          children: nodes.map((n) => /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "justify-start px-2 py-1 text-left text-xs text-ink",
             onClick: () => onPickParent(n.id),
-            children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("span", {
+            children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("span", {
               className: "truncate",
               children: n.title
             }, undefined, false, undefined, this)
           }, n.id, false, undefined, this))
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime26.jsxDEV("div", {
           className: "mt-2 flex justify-end",
-          children: /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
+          children: /* @__PURE__ */ jsx_dev_runtime26.jsxDEV(Button, {
             variant: "ghost",
             size: "auto",
             className: "px-2 py-1 text-xs",
@@ -52127,7 +51819,7 @@ function docLensNodeIds(nodes, docId) {
 }
 
 // src/mind-mapper/surface/state/groundBundle.ts
-function groundBundle(selectedIds, openDocId) {
+function groundBundle(selectedIds, openDocId, zoneId = null) {
   const refs = [];
   const seen = new Set;
   for (const id2 of selectedIds) {
@@ -52138,12 +51830,9 @@ function groundBundle(selectedIds, openDocId) {
   }
   if (openDocId)
     refs.push(`doc:${openDocId}`);
+  if (zoneId)
+    refs.push(`${ZONE_GROUND_PREFIX}${zoneId}`);
   return refs;
-}
-
-// src/mind-mapper/surface/state/ingestionQueue.ts
-function processingItems(proposals) {
-  return proposals.filter((p2) => p2.status === "pending" && p2.author === "user");
 }
 
 // src/mind-mapper/surface/state/intake.ts
@@ -52666,20 +52355,6 @@ function applyEvent(state, event) {
         cursor: event.seq
       };
     }
-    case "job.added":
-    case "job.updated":
-    case "job.claimed": {
-      const jobPayload = event.payload;
-      if (typeof jobPayload?.id !== "string")
-        return { ...state, cursor: event.seq };
-      return { ...state, jobs: upsertById(state.jobs, jobPayload), cursor: event.seq };
-    }
-    case "job.deleted": {
-      const { id: id2 } = event.payload;
-      if (typeof id2 !== "string")
-        return { ...state, cursor: event.seq };
-      return { ...state, jobs: state.jobs.filter((j2) => j2.id !== id2), cursor: event.seq };
-    }
     case "message.posted":
       return {
         ...state,
@@ -52767,9 +52442,11 @@ function useProjectState(projectId) {
             if (nodeId)
               setLookHere((r) => ({ nodeId, seq: (r?.seq ?? 0) + 1 }));
           } else if (event.kind === "agent.activity") {
-            const s = parseActivityState(event.payload?.state);
+            const payload = event.payload;
+            const s = parseActivityState(payload?.state);
             if (s) {
-              setAgentActivity((r) => ({ state: s, seq: (r?.seq ?? 0) + 1 }));
+              const messageId = typeof payload?.messageId === "string" ? payload.messageId : null;
+              setAgentActivity((r) => ({ state: s, messageId, seq: (r?.seq ?? 0) + 1 }));
             }
           }
           setState((prev) => {
@@ -52894,7 +52571,7 @@ function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
 // src/mind-mapper/surface/ui/alert-dialog.tsx
-var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime27 = __toESM(require_jsx_dev_runtime(), 1);
 var AlertDialog = exports_index_parts5.Root;
 var AlertDialogTrigger2 = exports_index_parts5.Trigger;
 function AlertDialogContent({
@@ -52902,12 +52579,12 @@ function AlertDialogContent({
   children: children2,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(exports_index_parts5.Portal, {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(exports_index_parts5.Portal, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(exports_index_parts5.Backdrop, {
+      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(exports_index_parts5.Backdrop, {
         className: "fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(exports_index_parts5.Popup, {
+      /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(exports_index_parts5.Popup, {
         className: cn2("fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-5 text-popover-foreground shadow-xl", className),
         ...props,
         children: children2
@@ -52916,19 +52593,19 @@ function AlertDialogContent({
   }, undefined, true, undefined, this);
 }
 function AlertDialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
     className: cn2("flex flex-col gap-1.5", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV("div", {
     className: cn2("mt-4 flex justify-end gap-2", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(exports_index_parts5.Title, {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(exports_index_parts5.Title, {
     className: cn2("text-sm font-semibold text-foreground", className),
     ...props
   }, undefined, false, undefined, this);
@@ -52937,23 +52614,23 @@ function AlertDialogDescription({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(exports_index_parts5.Description, {
+  return /* @__PURE__ */ jsx_dev_runtime27.jsxDEV(exports_index_parts5.Description, {
     className: cn2("text-xs leading-relaxed text-muted-foreground", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
 // src/mind-mapper/surface/ViewToggle.tsx
-var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime28 = __toESM(require_jsx_dev_runtime(), 1);
 function ViewToggle({
   view,
   onView
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("fieldset", {
+  return /* @__PURE__ */ jsx_dev_runtime28.jsxDEV("fieldset", {
     className: "m-0 flex overflow-hidden rounded-md border border-border p-0",
     "aria-label": "Board view",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         "aria-pressed": view === "map",
@@ -52962,14 +52639,14 @@ function ViewToggle({
         onClick: () => onView("map"),
         className: `rounded-none px-2 py-1 text-[10px] uppercase tracking-wide ${view === "map" ? "bg-secondary text-foreground" : ""}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Map2, {
+          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Map2, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
           " map"
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         "aria-pressed": view === "grid",
@@ -52978,7 +52655,7 @@ function ViewToggle({
         onClick: () => onView("grid"),
         className: `rounded-none border-l border-border px-2 py-1 text-[10px] uppercase tracking-wide ${view === "grid" ? "bg-secondary text-foreground" : ""}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(LayoutGrid, {
+          /* @__PURE__ */ jsx_dev_runtime28.jsxDEV(LayoutGrid, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
@@ -52991,7 +52668,7 @@ function ViewToggle({
 
 // src/mind-mapper/surface/ZoneGroupModal.tsx
 var import_react21 = __toESM(require_react(), 1);
-var jsx_dev_runtime31 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime29 = __toESM(require_jsx_dev_runtime(), 1);
 function ZoneGroupModal({
   count,
   zones,
@@ -53004,17 +52681,17 @@ function ZoneGroupModal({
     if (name.trim())
       onCreateNew(name);
   };
-  return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Dialog, {
+  return /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Dialog, {
     open: true,
     onOpenChange: (o) => {
       if (!o)
         onCancel();
     },
-    children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(DialogContent, {
+    children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(DialogContent, {
       className: "w-72 max-w-[90vw]",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(DialogHeader, {
-          children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(DialogTitle3, {
+        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(DialogHeader, {
+          children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(DialogTitle3, {
             className: "text-[10px] uppercase tracking-widest text-ink-faint",
             children: [
               "group ",
@@ -53025,9 +52702,9 @@ function ZoneGroupModal({
             ]
           }, undefined, true, undefined, this)
         }, undefined, false, undefined, this),
-        zones.length > 0 && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
+        zones.length > 0 && /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
           className: "mb-2 flex flex-wrap gap-1.5",
-          children: zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
+          children: zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "px-2 py-0.5 text-xs text-pending",
@@ -53035,10 +52712,10 @@ function ZoneGroupModal({
             children: z2.name
           }, z2.id, false, undefined, this))
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
           className: "flex items-center gap-1.5",
           children: [
-            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("input", {
+            /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("input", {
               autoFocus: true,
               value: name,
               onChange: (e) => setName(e.target.value),
@@ -53050,13 +52727,13 @@ function ZoneGroupModal({
               "aria-label": "New zone name",
               className: "w-full rounded border border-edge bg-bg px-1.5 py-1 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
+            /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
               size: "auto",
               className: "flex items-center gap-0.5 px-2 py-1 text-xs",
               onClick: submitNew,
               disabled: !name.trim(),
               children: [
-                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Plus, {
+                /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Plus, {
                   size: 11,
                   "aria-hidden": true
                 }, undefined, false, undefined, this),
@@ -53065,9 +52742,9 @@ function ZoneGroupModal({
             }, undefined, true, undefined, this)
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
+        /* @__PURE__ */ jsx_dev_runtime29.jsxDEV("div", {
           className: "mt-2 flex justify-end",
-          children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
+          children: /* @__PURE__ */ jsx_dev_runtime29.jsxDEV(Button, {
             variant: "ghost",
             size: "auto",
             className: "px-2 py-1 text-xs",
@@ -53082,7 +52759,7 @@ function ZoneGroupModal({
 
 // src/mind-mapper/surface/ZoneTabs.tsx
 var import_react22 = __toESM(require_react(), 1);
-var jsx_dev_runtime32 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime30 = __toESM(require_jsx_dev_runtime(), 1);
 function ZoneTabs({
   zones,
   active,
@@ -53106,20 +52783,20 @@ function ZoneTabs({
     setCreating(false);
   };
   const tabClass = (isActive) => `rounded-none border-b-2 px-2 py-1 text-xs ${isActive ? "border-ink text-ink" : "border-transparent text-ink-dim hover:text-ink"}`;
-  return /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("div", {
     className: "flex items-center gap-1 border-b border-edge bg-surface px-4",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
+      /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: tabClass(active === null),
         onClick: () => onSwitch(null),
         children: "main"
       }, undefined, false, undefined, this),
-      zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ContextMenu, {
+      zones.map((z2) => /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextMenu, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ContextMenuTrigger3, {
-            children: /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextMenuTrigger3, {
+            children: /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
               variant: "ghost",
               size: "auto",
               className: `${tabClass(active === z2.id)} text-pending ${active === z2.id ? "border-pending" : ""}`,
@@ -53127,12 +52804,12 @@ function ZoneTabs({
               children: z2.name
             }, undefined, false, undefined, this)
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ContextMenuContent, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextMenuContent, {
             children: [
-              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ContextMenuLabel, {
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextMenuLabel, {
                 children: z2.name
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(ContextMenuItem, {
+              /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(ContextMenuItem, {
                 onClick: () => onDelete(z2),
                 className: "text-attention",
                 children: "Delete zone…"
@@ -53141,10 +52818,10 @@ function ZoneTabs({
           }, undefined, true, undefined, this)
         ]
       }, z2.id, true, undefined, this)),
-      creating ? /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("span", {
+      creating ? /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("span", {
         className: "ml-1 flex items-center gap-1.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV("input", {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV("input", {
             ref: inputRef,
             value: name,
             onChange: (e) => setName(e.target.value),
@@ -53158,7 +52835,7 @@ function ZoneTabs({
             "aria-label": "New zone name",
             className: "w-32 rounded border border-edge bg-bg px-1.5 py-0.5 text-xs text-ink placeholder:text-ink-faint focus:outline-none"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
             size: "auto",
             className: "px-2 py-0.5 text-xs",
             onClick: submit,
@@ -53166,13 +52843,13 @@ function ZoneTabs({
             children: "create"
           }, undefined, false, undefined, this)
         ]
-      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Button, {
+      }, undefined, true, undefined, this) : /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Button, {
         variant: "ghost",
         size: "auto",
         className: "ml-1 gap-1 px-1.5 py-1 text-xs text-ink-faint hover:text-ink",
         onClick: () => setCreating(true),
         children: [
-          /* @__PURE__ */ jsx_dev_runtime32.jsxDEV(Plus, {
+          /* @__PURE__ */ jsx_dev_runtime30.jsxDEV(Plus, {
             size: 11,
             "aria-hidden": true
           }, undefined, false, undefined, this),
@@ -53184,12 +52861,13 @@ function ZoneTabs({
 }
 
 // src/mind-mapper/surface/App.tsx
-var jsx_dev_runtime33 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime31 = __toESM(require_jsx_dev_runtime(), 1);
 function toDisplayMessage(m2) {
   return {
     id: m2.id,
     who: m2.role,
     kind: m2.kind === "info" ? "info" : "result",
+    channel: m2.kind,
     text: m2.text,
     ground: m2.ground ?? []
   };
@@ -53223,11 +52901,9 @@ function App() {
   const [spotlightOn, setSpotlightOn] = import_react23.useState(false);
   const [deleteTarget, setDeleteTarget] = import_react23.useState(null);
   const [deleteNode, setDeleteNode] = import_react23.useState(null);
-  const [ingestOpen, setIngestOpen] = import_react23.useState(false);
-  const [jobsOpen, setJobsOpen] = import_react23.useState(false);
   const [submapGroup, setSubmapGroup] = import_react23.useState(null);
   const [submapAppend, setSubmapAppend] = import_react23.useState(null);
-  const [addNode, setAddNode] = import_react23.useState(null);
+  const [canvasInput, setCanvasInput] = import_react23.useState(null);
   const [agentBadge, setAgentBadge] = import_react23.useState(null);
   const [scrollRequest, setScrollRequest] = import_react23.useState(null);
   const [view, setView] = import_react23.useState("map");
@@ -53261,7 +52937,7 @@ function App() {
   }, [agentActivity]);
   const lastMessage = state?.conversation[state.conversation.length - 1];
   import_react23.useEffect(() => {
-    if (lastMessage?.role === "agent")
+    if (clearsActivity(lastMessage && toDisplayMessage(lastMessage)))
       setAgentBadge(null);
   }, [lastMessage]);
   const followFocus = (nodeId) => {
@@ -53648,17 +53324,17 @@ function App() {
     if (!r.ok)
       throw new Error(`propose ${r.status}`);
   }).catch((e) => setNotice(`couldn't sketch that (${e instanceof Error ? e.message : String(e)}).`));
-  const submitAddNode = () => {
-    if (!addNode)
+  const submitCanvasInput = () => {
+    if (!canvasInput)
       return;
-    const text3 = addNode.text.trim();
+    const text3 = canvasInput.text.trim();
     if (!text3)
       return;
-    if (addNode.connectFrom)
-      proposeBatchConnect(addNode.connectFrom, text3);
+    if (canvasInput.connectFrom)
+      proposeBatchConnect(canvasInput.connectFrom, text3);
     else
-      proposeAsUser("node", { title: text3 });
-    setAddNode(null);
+      sendMessage(text3, groundBundle(selection2.map((n) => n.id), openDoc?.doc.id ?? null, activeZone), CANVAS_CHANNEL);
+    setCanvasInput(null);
   };
   const requestDelete = (force) => {
     if (!deleteTarget)
@@ -53711,30 +53387,6 @@ function App() {
       throw new Error(`delete ${r.status}`);
     setDeleteNode((t) => t?.node.id === id2 ? null : t);
   }).catch((e) => setNotice(`couldn't discard that (${e instanceof Error ? e.message : String(e)}).`));
-  const cancelJob = (id2) => fetch(`/jobs/${id2}${projectQs}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status: "canceled" })
-  }).then((r) => {
-    if (!r.ok)
-      throw new Error(`job ${r.status}`);
-  }).catch((e) => setNotice(`couldn't cancel that job (${e instanceof Error ? e.message : String(e)}).`));
-  const createJob = (title) => fetch(`/jobs${projectQs}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title })
-  }).then((r) => {
-    if (!r.ok)
-      throw new Error(`job ${r.status}`);
-  }).catch((e) => setNotice(`couldn't create that job (${e instanceof Error ? e.message : String(e)}).`));
-  const openDeliverable = (deliverable) => {
-    if (deliverable.kind === "doc")
-      openDocById(deliverable.id);
-    else if (deliverable.kind === "node") {
-      setSelectedIds([deliverable.id]);
-      followFocus(deliverable.id);
-    }
-  };
   const setNodeTags = (targetId, tags) => fetch(`/tags/${targetId}${projectQs}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -53840,18 +53492,18 @@ function App() {
     }
   }, [notFound, projectSource]);
   if (needsProject) {
-    return /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("main", {
       className: "flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("h1", {
+        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("h1", {
           className: "font-story text-xl",
           children: "Mind Mapper"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("p", {
           className: "text-xs text-ink-dim",
           children: needsProject.length > 0 ? "no board is open — pick a project, or start a new one." : "nothing here yet — name a project to start the first board."
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ProjectPicker, {
+        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ProjectPicker, {
           currentId: undefined,
           onSelect: switchProject
         }, undefined, false, undefined, this)
@@ -53860,15 +53512,15 @@ function App() {
   }
   if (notFound) {
     if (projectSource === "stored") {
-      return /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("main", {
+      return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("main", {
         className: "flex min-h-screen items-center justify-center bg-bg text-ink-faint",
         children: "unrolling the map…"
       }, undefined, false, undefined, this);
     }
-    return /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("main", {
       className: "flex min-h-screen flex-col items-center justify-center gap-3 bg-bg text-ink",
       children: [
-        /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("p", {
           className: "text-xs text-attention",
           children: [
             "project “",
@@ -53876,11 +53528,11 @@ function App() {
             "” doesn't exist on this daemon."
           ]
         }, undefined, true, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("p", {
+        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("p", {
           className: "text-xs text-ink-dim",
           children: "pick another board, or start one:"
         }, undefined, false, undefined, this),
-        /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ProjectPicker, {
+        /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ProjectPicker, {
           currentId: undefined,
           onSelect: switchProject
         }, undefined, false, undefined, this)
@@ -53888,7 +53540,7 @@ function App() {
     }, undefined, true, undefined, this);
   }
   if (error2) {
-    return /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("main", {
       className: "flex min-h-screen items-center justify-center bg-bg text-attention",
       children: [
         "something broke: ",
@@ -53898,7 +53550,7 @@ function App() {
     }, undefined, true, undefined, this);
   }
   if (!state) {
-    return /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("main", {
+    return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("main", {
       className: "flex min-h-screen items-center justify-center bg-bg text-ink-faint",
       children: "unrolling the map…"
     }, undefined, false, undefined, this);
@@ -53908,32 +53560,24 @@ function App() {
   const selectedPending = activeZone === null ? selectedPendingProposalIds(state.proposals, selectedIds) : [];
   const ratifiedSel = activeZone === null ? ratifiedSelection(state.nodes, state.proposals, selectedIds) : [];
   const selectedPendingNodes = activeZone === null ? pendingNodeProposalIds(state.proposals, selectedIds) : [];
-  const processing = processingItems(state.proposals);
   const dot = dotState(status, state.presence?.agents ?? 0);
   const allTags = existingTags(state.nodes, state.proposals);
-  const activityByAgent = {};
-  if (agentBadge) {
-    const proxy = agentBadge === "stalled" ? "stalled" : "thinking";
-    for (const job of state.jobs) {
-      if (job.claimedBy)
-        activityByAgent[job.claimedBy] = proxy;
-    }
-  }
-  return /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+  const activityOwner = activityOwnerId(agentActivity, agentBadge, messages);
+  return /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
     className: "flex h-screen flex-col bg-bg text-ink",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("header", {
+      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("header", {
         className: "flex items-baseline gap-3 border-b border-edge bg-surface px-4 py-2",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("h1", {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("h1", {
             className: "font-story text-lg text-ink",
             children: "Mind Mapper"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ProjectPicker, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ProjectPicker, {
             currentId: projectId,
             onSelect: switchProject
           }, undefined, false, undefined, this),
-          pendingCount > 0 && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+          pendingCount > 0 && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
             variant: "outline",
             size: "auto",
             className: "px-2 py-0.5 text-xs text-pending",
@@ -53943,48 +53587,19 @@ function App() {
               pendingCount
             ]
           }, undefined, true, undefined, this),
-          processing.length > 0 && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
-            variant: "outline",
-            size: "auto",
-            className: "flex items-center gap-1 px-2 py-0.5 text-xs text-pending",
-            onClick: () => setIngestOpen((o) => !o),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Loader, {
-                size: 11,
-                className: "animate-pulse",
-                "aria-hidden": true
-              }, undefined, false, undefined, this),
-              "ingesting · ",
-              processing.length
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
-            variant: "outline",
-            size: "auto",
-            className: `flex items-center gap-1 px-2 py-0.5 text-xs ${state.jobs.length > 0 ? "text-thread-tier" : "text-ink-faint"}`,
-            onClick: () => setJobsOpen((o) => !o),
-            children: [
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ListChecks, {
-                size: 11,
-                "aria-hidden": true
-              }, undefined, false, undefined, this),
-              "jobs · ",
-              state.jobs.length
-            ]
-          }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("span", {
             className: "ml-auto flex items-center gap-2 text-xs text-ink-faint",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("span", {
                 className: "flex items-center gap-1.5",
                 role: "status",
                 title: DOT_TITLE[dot],
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("span", {
                     className: `h-2 w-2 rounded-full ${DOT_CLASS[dot]}`,
                     "aria-hidden": true
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("span", {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("span", {
                     className: "sr-only",
                     children: DOT_TITLE[dot]
                   }, undefined, false, undefined, this)
@@ -53996,15 +53611,15 @@ function App() {
               " ideas · ",
               state.edges.length,
               " relations",
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                 variant: "ghost",
                 size: "icon",
                 "aria-label": theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
                 title: theme === "dark" ? "Switch to light theme" : "Switch to dark theme",
                 onClick: toggleTheme,
-                children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Sun, {
+                children: theme === "dark" ? /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Sun, {
                   size: 13
-                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Moon, {
+                }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Moon, {
                   size: 13
                 }, undefined, false, undefined, this)
               }, undefined, false, undefined, this)
@@ -54012,28 +53627,28 @@ function App() {
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ZoneTabs, {
+      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ZoneTabs, {
         zones: state.zones,
         active: activeZone,
         onSwitch: switchZone,
         onCreate: createZone,
         onDelete: (zone) => setZoneDelete({ zone, notEmpty: null })
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(SubmapBreadcrumb, {
+      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(SubmapBreadcrumb, {
         trail: breadcrumb,
         onNavigate: switchAnchor
       }, undefined, false, undefined, this),
-      status === "closed" && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+      status === "closed" && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
         className: "border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention",
         children: "disconnected — the daemon isn't answering; sends are off. retrying…"
       }, undefined, false, undefined, this),
-      notice && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+      notice && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
         className: "flex items-center justify-between border-b border-edge bg-attention/10 px-4 py-1.5 text-xs text-attention",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("span", {
             children: notice
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("button", {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("button", {
             type: "button",
             onClick: () => setNotice(null),
             "aria-label": "Dismiss",
@@ -54042,10 +53657,10 @@ function App() {
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
         className: "flex min-h-0 flex-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ContextRail, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ContextRail, {
             docs: state.docs,
             openDocId: openDoc?.doc.id ?? null,
             onOpen: (docId) => openDocById(docId),
@@ -54062,10 +53677,10 @@ function App() {
             onDocLens: (doc) => setLens({ owner: "user", nodeId: null, depth: null, docId: doc.id }),
             onDelete: (doc) => setDeleteTarget({ doc, citedBy: null })
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
             className: "relative min-w-0 flex-1",
             children: [
-              view === "map" ? /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(GraphCanvas, {
+              view === "map" ? /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(GraphCanvas, {
                 map: filteredMap ?? submapMap ?? state,
                 selectedIds,
                 onSelect: setSelectedIds,
@@ -54084,12 +53699,12 @@ function App() {
                 onGroupZone: groupZoneInline,
                 focusRequest,
                 onConnect: (source, target) => proposeAsUser("edge", { source, target }),
-                onConnectToBlank: activeZone === null ? (src) => setAddNode({ text: "", connectFrom: src }) : undefined,
-                onAddNode: () => setAddNode({ text: "", connectFrom: null }),
+                onConnectToBlank: activeZone === null ? (src) => setCanvasInput({ text: "", connectFrom: src }) : undefined,
+                onCanvasSend: () => setCanvasInput({ text: "", connectFrom: null }),
                 onEnterSubmap: enterSubmap,
-                panelTopRight: /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(jsx_dev_runtime33.Fragment, {
+                panelTopRight: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(jsx_dev_runtime31.Fragment, {
                   children: [
-                    selectedPending.length > 0 && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                    selectedPending.length > 0 && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                       variant: "outline",
                       size: "auto",
                       className: "px-2 py-1 text-[10px] uppercase tracking-wide text-pending",
@@ -54100,7 +53715,7 @@ function App() {
                         selectedPending.length
                       ]
                     }, undefined, true, undefined, this),
-                    ratifiedSel.length >= 2 && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                    ratifiedSel.length >= 2 && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                       variant: "outline",
                       size: "auto",
                       className: "px-2 py-1 text-[10px] uppercase tracking-wide",
@@ -54111,7 +53726,7 @@ function App() {
                         ratifiedSel.length
                       ]
                     }, undefined, true, undefined, this),
-                    selectedPendingNodes.length >= 2 && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                    selectedPendingNodes.length >= 2 && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                       variant: "outline",
                       size: "auto",
                       className: "px-2 py-1 text-[10px] uppercase tracking-wide text-pending",
@@ -54122,26 +53737,26 @@ function App() {
                         selectedPendingNodes.length
                       ]
                     }, undefined, true, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(SpotlightToggle, {
+                    /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(SpotlightToggle, {
                       active: spotlightOn,
                       enabled: selectedIds.length >= 2,
                       onToggle: () => setSpotlightOn((s) => !s)
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(FilterControl, {
+                    /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(FilterControl, {
                       filter: filter2,
                       facets: filterFacetOptions,
                       onFilter: setFilter
                     }, undefined, false, undefined, this),
-                    /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ViewToggle, {
+                    /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ViewToggle, {
                       view,
                       onView: setView
                     }, undefined, false, undefined, this)
                   ]
                 }, undefined, true, undefined, this),
                 panelBelowBar: Boolean(lens.owner)
-              }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(jsx_dev_runtime33.Fragment, {
+              }, `${lens.owner ?? "all"}:${lens.nodeId ?? ""}:${lens.docId ?? ""}:${lens.depth}`, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(jsx_dev_runtime31.Fragment, {
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(CardGrid, {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(CardGrid, {
                     map: filteredMap ?? submapMap ?? state,
                     highlightIds: palette ? palette.rows.map((r) => r.node.id) : null,
                     selectedIds,
@@ -54156,15 +53771,15 @@ function App() {
                     onNestSubmap: nestSubmapInline,
                     onGroupZone: groupZoneInline
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                     className: `absolute right-4 z-10 flex items-center gap-1.5 ${lens.owner ? "top-14" : "top-4"}`,
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(FilterControl, {
+                      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(FilterControl, {
                         filter: filter2,
                         facets: filterFacetOptions,
                         onFilter: setFilter
                       }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ViewToggle, {
+                      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ViewToggle, {
                         view,
                         onView: setView
                       }, undefined, false, undefined, this)
@@ -54172,52 +53787,52 @@ function App() {
                   }, undefined, true, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              addNode && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+              canvasInput && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                 className: "absolute left-1/2 top-1/3 z-20 w-72 -translate-x-1/2 rounded-lg border border-edge bg-surface/95 p-3 shadow-xl backdrop-blur",
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("p", {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("p", {
                     className: "mb-2 text-[10px] uppercase tracking-widest text-ink-faint",
-                    children: addNode.connectFrom ? "sketch a connected idea" : "sketch an idea"
+                    children: canvasInput.connectFrom ? "sketch a connected idea" : "say it from the canvas"
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Textarea, {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Textarea, {
                     autoFocus: true,
-                    value: addNode.text,
-                    onChange: (e) => setAddNode({ ...addNode, text: e.target.value }),
+                    value: canvasInput.text,
+                    onChange: (e) => setCanvasInput({ ...canvasInput, text: e.target.value }),
                     onKeyDown: (e) => {
                       if (e.key === "Escape")
-                        setAddNode(null);
+                        setCanvasInput(null);
                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
                         e.preventDefault();
-                        submitAddNode();
+                        submitCanvasInput();
                       }
                     },
-                    placeholder: "what's the idea?…",
-                    "aria-label": "New idea",
+                    placeholder: canvasInput.connectFrom ? "what's the idea?…" : "what are you thinking?…",
+                    "aria-label": canvasInput.connectFrom ? "New connected idea" : "Message from the canvas",
                     className: "min-h-16 p-1.5 text-xs"
                   }, undefined, false, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+                  /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                     className: "mt-2 flex items-center justify-between gap-1.5",
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("p", {
+                      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("p", {
                         className: "text-[10px] italic text-ink-faint",
-                        children: "lands as a pending sketch."
+                        children: canvasInput.connectFrom ? "lands as a pending sketch." : "goes to the agent as a message — no node is created."
                       }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+                      /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                         className: "flex gap-1.5",
                         children: [
-                          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                             variant: "ghost",
                             size: "auto",
                             className: "px-2 py-1",
-                            onClick: () => setAddNode(null),
+                            onClick: () => setCanvasInput(null),
                             children: "cancel"
                           }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                             size: "auto",
                             className: "px-2 py-1",
-                            onClick: submitAddNode,
-                            disabled: !addNode.text.trim(),
-                            children: "sketch"
+                            onClick: submitCanvasInput,
+                            disabled: !canvasInput.text.trim(),
+                            children: canvasInput.connectFrom ? "sketch" : "send"
                           }, undefined, false, undefined, this)
                         ]
                       }, undefined, true, undefined, this)
@@ -54225,25 +53840,25 @@ function App() {
                   }, undefined, true, undefined, this)
                 ]
               }, undefined, true, undefined, this),
-              zoneGroup && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ZoneGroupModal, {
+              zoneGroup && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ZoneGroupModal, {
                 count: zoneGroup.pendingIds.length,
                 zones: state.zones,
                 onPickExisting: commitGroupInto,
                 onCreateNew: commitGroupNewZone,
                 onCancel: () => setZoneGroup(null)
               }, undefined, false, undefined, this),
-              submapGroup && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(SubmapGroupModal, {
+              submapGroup && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(SubmapGroupModal, {
                 nodes: submapGroup.nodes,
                 onPickParent: commitSubmapGroup,
                 onCancel: () => setSubmapGroup(null)
               }, undefined, false, undefined, this),
-              submapAppend && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(SubmapAppendModal, {
+              submapAppend && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(SubmapAppendModal, {
                 proposals: pendingAll.filter((n) => submapAppend.pendingIds.includes(n.id)),
                 existingNodes: state.nodes,
                 onCommit: commitSubmapAppend,
                 onCancel: () => setSubmapAppend(null)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(SearchPalette, {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(SearchPalette, {
                 rows: palette?.rows ?? [],
                 offBoard: palette?.offBoard ?? { docs: 0, messages: 0 },
                 query: searchQuery,
@@ -54252,17 +53867,17 @@ function App() {
                 inputRef: searchInputRef,
                 belowBar: Boolean(lens.owner)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(FocusBar, {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(FocusBar, {
                 lens,
                 title: lens.docId ? state.docs.find((d) => d.id === lens.docId)?.title ?? lens.docId : state.nodes.find((n) => n.id === lens.nodeId)?.title ?? "",
                 count: visibleMap?.nodes.length ?? 0,
                 onDepth: (depth) => setLens((l) => ({ ...l, depth })),
                 onZoomOut: () => setLens(DEFAULT_LENS)
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(MapKey, {}, undefined, false, undefined, this),
-              detailNode && detailOpen && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("div", {
+              /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(MapKey, {}, undefined, false, undefined, this),
+              detailNode && detailOpen && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("div", {
                 className: `absolute right-4 z-10 ${lens.owner ? "top-24" : "top-14"}`,
-                children: /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(NodeDetail, {
+                children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(NodeDetail, {
                   node: detailNode,
                   docs: state.docs,
                   existingTags: allTags,
@@ -54284,7 +53899,7 @@ function App() {
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          openDoc && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(DocViewer, {
+          openDoc && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(DocViewer, {
             doc: openDoc.doc,
             highlight: openDoc.highlight,
             nodes: state.nodes,
@@ -54295,72 +53910,61 @@ function App() {
             },
             onClose: () => setOpenDoc(null)
           }, `${openDoc.doc.id}:${openDoc.highlight ?? ""}`, false, undefined, this),
-          reviewOpen && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ReviewQueue, {
+          reviewOpen && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ReviewQueue, {
             proposals: mainProposals(state.proposals),
             docs: state.docs,
             nodes: state.nodes,
             onRule: ruleProposal,
             onClose: () => setReviewOpen(false)
           }, undefined, false, undefined, this),
-          ingestOpen && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(IngestionTray, {
-            items: processing,
-            onDelete: deleteProposal,
-            onClose: () => setIngestOpen(false)
-          }, undefined, false, undefined, this),
-          jobsOpen && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(JobsSidebar, {
-            jobs: state.jobs,
-            activityByAgent,
-            onOpenDeliverable: openDeliverable,
-            onCancel: cancelJob,
-            onCreate: createJob,
-            onClose: () => setJobsOpen(false)
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(ConversationPanel, {
+          /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(ConversationPanel, {
             nodes: state.nodes,
             docs: state.docs,
+            zones: state.zones,
             disabled: status === "closed",
             agentBadge,
+            activityMessageId: activityOwner,
             scrollRequest,
             composerSeed,
             selection: selection2,
             onDeselect: (id2) => setSelectedIds((ids) => ids.filter((x3) => x3 !== id2)),
             messages,
-            onSend: (text3) => sendMessage(text3, groundBundle(selection2.map((n) => n.id), openDoc?.doc.id ?? null))
+            onSend: (text3) => sendMessage(text3, groundBundle(selection2.map((n) => n.id), openDoc?.doc.id ?? null, activeZone))
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV("footer", {
+      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("footer", {
         className: `border-t border-edge bg-surface px-4 py-0.5 text-[9px] ${state.buildInfo.stale ? "text-attention" : "text-ink-faint"}`,
         children: buildFooterText(state.buildInfo)
       }, undefined, false, undefined, this),
-      deleteTarget && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialog, {
+      deleteTarget && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setDeleteTarget(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogTitle, {
                   children: deleteTarget.citedBy ? `"${deleteTarget.doc.title}" is still cited` : `delete "${deleteTarget.doc.title}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogDescription, {
                   children: deleteTarget.citedBy ? `${deleteTarget.citedBy.nodes} node${deleteTarget.citedBy.nodes === 1 ? "" : "s"} and ${deleteTarget.citedBy.proposals} pending proposal${deleteTarget.citedBy.proposals === 1 ? "" : "s"} cite it. The nodes survive (the map is a view, not the doc), but the pending proposals lose this evidence.` : "The document and its file go away. Ideas already ratified from it stay on the map."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setDeleteTarget(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => requestDelete(Boolean(deleteTarget.citedBy)),
@@ -54371,34 +53975,34 @@ function App() {
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      deleteNode && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialog, {
+      deleteNode && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setDeleteNode(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogTitle, {
                   children: deleteNode.citedBy ? `"${deleteNode.node.title}" is still cited` : `delete "${deleteNode.node.title}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogDescription, {
                   children: deleteNode.kind === "proposal" ? "This removes the proposal from the board. (Reject keeps it as history; delete is a hard remove.)" : deleteNode.citedBy ? `${deleteNode.citedBy.edges} relation${deleteNode.citedBy.edges === 1 ? "" : "s"} and ${deleteNode.citedBy.children} submap child${deleteNode.citedBy.children === 1 ? "" : "ren"} reference it. Deleting drops those relations and re-homes the children to the top level — the children survive (they're real ideas).` : "The idea is removed from the map. Relations touching it and any submap children go with the force step if it's still cited."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setDeleteNode(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => {
@@ -54414,34 +54018,34 @@ function App() {
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      zoneDelete && /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialog, {
+      zoneDelete && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
           if (!open)
             setZoneDelete(null);
         },
-        children: /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogTitle, {
                   children: zoneDelete.notEmpty ? `"${zoneDelete.zone.name}" isn't empty` : `delete zone "${zoneDelete.zone.name}"?`
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogDescription, {
                   children: zoneDelete.notEmpty ? `${zoneDelete.notEmpty.proposals} proposal${zoneDelete.notEmpty.proposals === 1 ? "" : "s"} go${zoneDelete.notEmpty.proposals === 1 ? "es" : ""} with it — a zone is a disposable sandbox, and deleting it discards everything still inside. Promote what's worth keeping first.` : "The zone and anything still staged inside it go away. Promoted proposals already left for the main queue and stay."
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                   variant: "ghost",
                   size: "auto",
                   className: "px-2.5 py-1",
                   onClick: () => setZoneDelete(null),
                   children: "cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime33.jsxDEV(Button, {
+                /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(Button, {
                   size: "auto",
                   className: "px-2.5 py-1 text-attention",
                   onClick: () => requestZoneDelete(Boolean(zoneDelete.notEmpty)),
@@ -54457,7 +54061,7 @@ function App() {
 }
 
 // src/mind-mapper/surface/main.tsx
-var jsx_dev_runtime34 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime32 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime34.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime32.jsxDEV(App, {}, undefined, false, undefined, this));
