@@ -524,3 +524,54 @@ declining, delete on something that should leave no trace.
   graph into your window (the documented failure mode).
 - The daemon never composes prose — every doc edit you hand `ratify` is yours,
   written as if for the doc's own voice.
+
+## Working the board (Round 12 — the affordances that keep you honest)
+
+These exist because a previous casting agent broke the human's map: it proposed
+nodes and edges, the human ratified only the **nodes**, and the agent then swept
+its stale proposals — deleting the edges that held them together — and
+re-proposed without them. Five canon nodes sat orphaned until the human noticed
+by eye. Every verb below is the affordance whose absence made that easy to
+write.
+
+- **Tag AND describe every node you propose.** A node draft takes a `synopsis`,
+  and `tags` ride the same propose call. Use both, every time. A bare label like
+  "Fourth world" makes the human's first question "what even is this?" — which
+  the map should have pre-empted. Tag the TYPE (`artist` / `style` / `label` /
+  `thread`) so the board is legible at a glance. This is a discipline, not an
+  option: the schema affords richness and title-only nodes waste it.
+- **A batch is an ACT you can look back at.** `propose-batch` mints a `batchId`
+  and returns it — **keep it**. `state --batch <id>` shows every member at any
+  status, so after the human ratifies _part_ of your batch you can see exactly
+  what's ratified, what's still pending, and what pointed at what. You may also
+  **supply** a batchId to EXTEND an act (the "I forgot the edges" repair). An
+  unknown batch is a **404, not an empty list** — because `[]` would read as
+  "that act is fully cleared", the most dangerous thing to believe mid-cleanup.
+- **RECONCILE after a partial ratification. Never delete pending work without
+  checking what it holds together.** This is the scar. The question the agent
+  didn't ask was _"I removed these nodes from my batch — so what happened to
+  their edges?"_ Ask it. `state --batch <id>` is the answer.
+- **There is deliberately NO "delete the whole batch" shortcut.** `delete-batch`
+  takes explicit ids, all-or-nothing, and names every id it doesn't recognize.
+  The batch id exists so you **look before you sweep** — a one-keystroke sweep
+  would just re-arm the original bug.
+- **Connect to existing nodes by title:** an edge endpoint may be
+  `title:<exact title>` — exact, case-sensitive, **ratified nodes only**.
+  Ambiguity is an error that names every candidate id. This replaces the
+  fetch-state-and- build-a-title→id-map dance; that dance is where the edges got
+  dropped.
+- **You can amend a node now:** `node edit <id> (--title | --synopsis)`. An edit
+  changes what a node **says**, never what it **is** or how it was **ruled** —
+  `tier` is the human's ratification act and is not yours to rewrite. Use this
+  when you learn more about something you already ratified.
+- **`changes --since <epochSeconds>` is an ADDITIONS-only delta** — and it tells
+  you so. Read its `notCovered` field every time: deletions, status flips,
+  in-place edits and _who acted_ are NOT in it. **"Nothing added" is not
+  "nothing changed."** When you need the truth, refetch `state`. (It is,
+  however, the only read that survives a daemon restart — `created_at` is
+  durable where cursors and epochs are not.)
+- **Announce long background work.** If you're about to do several things that
+  take minutes — research, then docs, then a batch of nodes — say so first, in
+  one line. The human's only view into whether you're working is the activity
+  pulse; it says _that_ you're busy, not _what_ you're doing. Costs one line and
+  no state.

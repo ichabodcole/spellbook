@@ -491,3 +491,151 @@ filterable** bubble. Corollaries:
   exist** (present-only) — which is what the R10 always-show rule was reaching for.
 
 The R10 rule survives only for panels that genuinely remain.
+
+## Contract 12 — Agent ergonomics: the staging act, title refs, node edit, and the bounded delta (SEAMs 1–5/7, R12)
+
+**Owner:** daedalus · **Pointed at from:** circe, prospero, cassandra · _(ratified R12, built 2026-07-26)_
+
+**The contract, stated once.** Drive #10's agent broke the human's map — it ratified
+nodes, then swept its pending proposals and took the edges holding them together.
+Every clause below is an affordance whose absence made that easy to write, and the
+round's standard is that **an interface which states what it does NOT cover beats
+one with more capability** (F5.6, the `--inbound` `notWatching` precedent).
+
+- **The staging act (SEAM 1).** `proposals.batch_id`, nullable-TEXT via
+  `ADDITIVE_COLUMNS`; `Proposal.batchId: string | null` ALWAYS on the wire (the
+  `zoneId` precedent), and on `readProposalById` (the standing re-emit stop).
+  `POST /proposals/batch` **MINTS** one and returns it as `batchId`; a caller MAY
+  supply one to **EXTEND** an act (the "I forgot the edges" repair). Single
+  `POST /proposals` accepts one but **never auto-mints** — null is the honest
+  answer for a lone proposal. Reuse is not rejected: a reused id means "same act",
+  and the engine does not own the agent's grouping semantics (dumb-daemon clause).
+  It **survives ratification because the proposal row does** — that is the payoff:
+  after a PARTIAL ratification, ratified members carry their `resultNodeId`
+  alongside the still-pending ones. Read side: `GET /state?batch=<id>` /
+  `state --batch <id>`, inclusive of every status. **An unknown batch is a 404, not
+  an empty list** — `[]` would read as "that act is fully cleared", which is the
+  most dangerous thing to tell an agent mid-cleanup and is what a typo produces;
+  because existence is derived (some row still carries the id), the error names
+  BOTH readings. **Ratify-batch takes explicit ids only, unchanged** — R6's
+  no-auto-include ruling stands.
+- **Endpoint refs by title (SEAM 2).** An edge draft's `source`/`target` may be
+  `title:<exact title>`. Collision-proof because ids are UUIDs and contain no ":"
+  (the same fact that makes `ground`'s `doc:<id>` safe — **if ids ever become
+  caller-supplied slugs, both grammars become ambiguous at once**). **EXACT,
+  case-sensitive, RATIFIED NODES ONLY**; fuzzy lookup is `search`'s job, and
+  pending proposals are named by local ref or proposal id. **Ambiguity is an error
+  that NAMES every candidate id** (the "ratify node proposal <id> first" model).
+  Resolved **AT INTAKE**, in the shared `buildProposal` — so the single and batch
+  paths resolve from ONE site, the error lands in the same turn as the mistake
+  rather than at the human's ruling act, and the **stored draft holds real ids** so
+  a later retitle cannot re-point a pending edge. **Ratify keeps exactly one
+  resolution vocabulary** (ids / proposal ids); a second `title:` site there would
+  be two vocabularies free to drift. A draft with no title ref is stored
+  byte-identically — opacity is unchanged for every key the daemon didn't already
+  read. NOT built (named): title refs in `ratify-batch`'s `anchors[]`.
+- **`node edit` (SEAM 4).** `POST /nodes/:id {title?, synopsis?}` (ordered AFTER
+  `/nodes/:id/anchor`) · `node edit <id> (--title | --synopsis | --stdin)`.
+  **Title and synopsis ONLY: an edit changes what a node SAYS, never what it IS or
+  how it was RULED.** `tier` is the human's ruling — an agent write that re-tiers
+  would overwrite a ratification act, the exact thing F2 exists to protect; `kind`
+  is the same classification axis, deliberately out. **The empty-patch 400 says
+  so**, so an agent reaching for tier stops at the first attempt (a deliberate
+  omission that isn't in the error reads as a bug). A patch, never a wholesale
+  replace; `""` clears a synopsis; an empty title is refused (it is the search key
+  AND the SEAM 2 resolution key). New event **`node.edited` carrying the FULL Node**
+  (replace-by-id, the `tags.set`/`job.*` idiom), re-read through a new
+  **`readNodeById`** — the `readProposalById` rule arriving at a second entity, and
+  now a house rule: **the moment an entity gets a full-entity event it needs a
+  by-id reader**. Kept DISTINCT from `node.ratified` (arrival vs. patch; a consumer
+  can collapse a kind, never re-derive a folded one). `EventKind` stays total and
+  `INBOUND_NOT_WATCHED` picks it up by construction. **FALSIFIED — there is no FTS
+  re-index to do:** nodes are matched by a live `LIKE` over the `nodes` table
+  (`docs_fts`/`messages_fts` index docs and messages only), so an edit is
+  searchable the instant it commits; test-pinned so the day node search moves to
+  FTS goes red.
+- **`delete-batch` (SEAM 5).** `POST /proposals/delete-batch {ids}` ·
+  `delete-batch --stdin`. **Delete, not reject** — reject is a RULING with a
+  tombstone and R6 already ruled it is not a batch act; delete is litter-clearing.
+  **Transactional all-or-nothing**, mirroring `ratifyBatch` (validate all → one txn
+  → emits after commit); an unknown id **names EVERY unknown id**, because a 44-id
+  cleanup must not become a 44-round-trip bisect. Best-effort-with-a-report was
+  considered and rejected: the agent's model after the call must be binary, since
+  "I assumed the sweep worked" is the failure this round exists to prevent.
+  **DELIBERATELY NOT BUILT: a `{batch: <id>}` shorthand.** Drive-10's bug WAS an
+  over-broad cleanup; a one-keystroke batch sweep re-arms it. **The batch id is for
+  LOOKING before a sweep, which is the opposite of a sweep primitive.**
+- **The bounded delta (SEAM 3).** `GET /changes?since=<epochSeconds>` ·
+  `changes --since`. **The plan's blocker (b) is FALSIFIED:** `nodes`, `edges`,
+  `proposals` and `docs` have all carried `created_at INTEGER DEFAULT (unixepoch())`
+  since P1 — an additions delta needs **zero migration**. **Option B (an append-only
+  `changes` table) IS Contract 8's no-durable-event-log clause, not orthogonal to
+  it:** the clause protects "events are derived-from-state, snapshot is the sole gap
+  recovery", and a table whose purpose is to let an agent resume `--since` is a
+  durable event log under another name; independently it would need a second write
+  at ~25 mutation sites no test keeps in sync (the mirror-drift trap, twice bitten)
+  with unowned retention. So: **ADDITIONS ONLY, purely derived, and self-declaring.**
+  Entities are read through `readState` and narrowed by id, so each is byte-identical
+  to its `/state` entry. `since` is INCLUSIVE at whole-second granularity
+  (over-report, never under-report); `now` is the next watermark. **`notCovered` is
+  a first-class field on EVERY response including empty ones** — deletions,
+  rejections/status flips, in-place edits (`node.edited`, doc kind/marks, tags,
+  actions, anchors, zone moves, lens), jobs (epoch-MS, a different unit), and WHO
+  acted (Contract 10's deferral, unchanged). The note states "'nothing added' is not
+  'nothing changed'." **A silent partial delta is the failure mode; this one never
+  omits silently.** Named property: `created_at` is durable, so this is the ONLY
+  resumable-across-restart read in the system (cursors and epochs reset on boot).
+- **The error standard (SEAM 7) — a FUNNEL, not a prose convention.** Every
+  agent-facing 400 goes through `badRequest(e, expected)`, which attaches an
+  additive machine-readable **`expected`** field beside `error`. A funnel rather
+  than 20 edited strings for two reasons: a prose convention **cannot be inherited**
+  by route 21, and the biggest gap was never our validators — a malformed or empty
+  body throws from Bun's JSON parser and used to 400 as "Unexpected end of JSON
+  input" with **no route context at all**. (Same shape as the `projectFailure`
+  funnel: one helper buys a wire-wide guarantee that N edits cannot.) Second clause:
+  **an error names the WRONG shape the caller most likely sent, not only the right
+  one** — `PUT /tags/:id` now says "the body IS the array … NOT `{"tags":[...]}`;
+  got an object with keys: tags". Naming the correct shape is necessary; naming the
+  near-miss is what closes the loop.
+- **Contract 8 holds throughout.** No verb here infers, auto-relates, or cleans up:
+  `node edit` writes exactly what it is given (no trim, no title-case, no
+  re-derivation); title resolution is a lookup, never a fuzzy guess; `/changes`
+  reports and never reconciles; `delete-batch` deletes exactly the ids named.
+
+**Proof:** propose.test.ts (batch mint / survives ratification / no auto-mint on
+single / extend an act / non-string errors; title exact + ambiguity-names-candidates
++ nodes-only + byte-identical-without-a-ref + local-and-title side by side + zero
+rows on an unresolvable ref) · edit.test.ts (F2 recovery keeps tier; searchable
+immediately; patch-not-replace; `node.edited` payload deep-equals `/state.nodes[]`;
+named 400s; failed edit writes and emits nothing) · del-batch.test.ts (one call +
+one event per id; one unknown id deletes nothing and names them all; duplicates
+collapse) · changes.test.ts (created_at already exists; delta equals /state entries;
+**disclosure present on an EMPTY delta**; a deletion is genuinely invisible;
+inclusive boundary second; bad watermark named) · db.test.ts (batch_id backfilled
+onto a hand-minted POPULATED R11 proposals table, fresh==migrated) · server.test.ts
++ cli.test.ts (every route and every CLI verb round-trips its body shape).
+mind-mapper engine **328 tests**, repo **1281**, all green; mind-mapper tsc-clean.
+Live drive on an isolated store (port 60741) reproduced drive-10's exact shape and
+showed the orphaning is now either impossible or immediately visible.
+
+### Surface convention (R12) — a derived warning earns its place by naming the state that makes it wrong
+
+**Owner:** circe · _(ratified R12)_ — Before shipping a signal that fires on a
+**derived** condition, find the routine workflow that transiently satisfies it
+(here: ratify-node-then-edge — and an edge proposal CANNOT ratify before its
+endpoints, so "node with no edges" is the *normal* mid-queue state, not a rare one).
+If such a workflow exists, the fix is an additional **predicate** drawn from state
+already on the wire — **never a debounce, a timer, or a threshold**. A signal that
+needs a timer to stay honest is **under-specified, not noisy**. Here the second
+predicate is connection *intent*: a node is unconnected only if it has no real edge
+**and no still-PENDING edge proposal names it** (endpoints re-pointed
+proposalId→nodeId via the same `resultNodeIdMap`/`pendingEdgesFrom` pair as the R6
+EF re-point). The marker then appears only when the intent is GONE — exactly and
+only drive-#10's failure shape. Quieting corollaries: submap containment counts as
+connection (an anchored child or a parent holding children is placed, not floating),
+and a board with fewer than two ratified nodes has no orphans (the first node on a
+fresh map is not a mistake). **Second clause:** a whole-graph property is derived
+over the **raw wire snapshot** and injected into the view chain as a render-time
+overlay — never recomputed inside a stage that has already narrowed the graph (every
+stage of `mapWithPending → zone → submap → lens → filter` hides edges, so degree
+measured inside a slice invents orphans).
