@@ -157,11 +157,30 @@ Probed live against the Spellbook workspace today:
   investigation is about, one level down.
 - `extract_links` names **"the mind-mapper's use case"** in its own description.
 
-> ⚠ **UNVERIFIED — usage, as opposed to capability.** The Spellbook Operator
-> workspace has **13 documents and zero links** (`inUse: []`,
-> `untypedCount: 0`). So the model is confirmed; **which relations Cole actually
-> uses in practice is not measured.** The Hollowbrook bible (HiveMind / another
-> workspace) is the corpus that would answer it, and was not probed.
+> **Usage — measured (2026-08-05, updated).** Initially recorded as UNVERIFIED:
+> the Spellbook workspace has 13 documents and **zero** links (`inUse: []`), so
+> it could confirm capability but not practice. **HiveMind was then probed and
+> answers it**: 39 typed edges, and **`untypedCount: 0`.**
+>
+> | rel            | uses |
+> | -------------- | ---- |
+> | `sourced-from` | 14   |
+> | `references`   | 10   |
+> | `see-also`     | 6    |
+> | `sister-of`    | 3    |
+> | `applies`      | 2    |
+> | `extends`      | 2    |
+> | `grounded-in`  | 2    |
+>
+> Two things this establishes. **The vocabulary is used, not aspirational** — 7
+> of 11 canonical relations are exercised, and zero edges are untyped, so the
+> typing discipline holds in practice rather than only in the tool. And the
+> **unused four are informative**: `governs`, `summarizes`, `supersedes`, and
+> `contrasts-with` have no uses — `supersedes` being the one a versioned
+> standard would need (see the Amendment below).
+>
+> Still not probed: the Hollowbrook bible itself, which lives in a workspace not
+> reached in this pass and is the densest link corpus.
 
 ### Finding 4 — the primitive is already designed, and is being built in StoryLoom
 
@@ -241,20 +260,124 @@ Two things must be resolved before committing: **OKF's status** (Finding 5), and
 **what StoryLoom's Phases 2–3 actually land**, since links and `rel` are the
 part Spellbook most needs and the part not yet built.
 
+### Amendment (Cole, 2026-08-05) — "adopt StoryLoom's" is too strong
+
+Cole's correction, recorded because it changes the shape of the recommendation
+rather than merely softening it:
+
+> "I don't necessarily think that one app is going to be the thing that drives
+> the full spec and says _this is the standard_... I do think this is something
+> that probably isn't going to be fully realized in any single project. Working
+> across projects is where I find the rough edges and the use cases. What I'd
+> expect is a bit of **push-pull** — pulling from one project the things that
+> are emerging there, refining them, and pushing that back."
+
+So the model is **not** _one project owns the spec and the others consume it_.
+It is a standard that lives **above** any project and is refined by circulation.
+StoryLoom is the most advanced contributor **right now** because it has had
+Cole's attention — not because it is the owner. Attention moves; ownership
+shouldn't have to move with it.
+
+Two consequences:
+
+- **Which project is "ahead" is a function of attention, not correctness.** A
+  spec pinned to whichever repo is currently hot would be re-pinned every few
+  months. That is an argument for a home that is not a project.
+- **`supersedes` is the missing mechanism.** A standard refined over time needs
+  versioned replacement, not edits in place. Operator ships `supersedes` in its
+  canonical vocabulary and it currently has **zero uses** (measured below) — the
+  affordance exists and is unexercised.
+
+### The stewardship question — where does the standard live?
+
+Cole raised this as genuinely open, including the honest objection against his
+own idea ("I don't know if that just adds another place to put things").
+
+| Option                          | For                                                                              | Against                                                                       |
+| ------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Stays in StoryLoom**          | Where the work is; no new home                                                   | Pins the spec to one project's attention; other repos consume a moving target |
+| **A dedicated primitives repo** | Neutral ground, versionable                                                      | A third place to look; risks becoming a spec nobody reads                     |
+| **HiveMind**                    | Already the cross-project knowledge base, **and already has the pull mechanism** | Currently shaped for methodology, not normative specs (see below)             |
+| **Distributed + cross-links**   | No new home; each project keeps its own                                          | This is the status quo, and it produced the drift in Finding 1                |
+
+**HiveMind was probed today, and it is closer to fit than expected.** Structure:
+`Playbooks/` (8), `Feedback/` (21), `Lessons Learned/` (4), `Scenarios/` (8),
+plus a field guide. Its playbooks are **already technical, not just procedural**
+— _Cloud MCP Server implementation_, _Real-Postgres integration-test harness_,
+_Tenant API-key lifecycle_ — so a technical standard is not foreign to it.
+
+More importantly, **the push-pull loop Cole describes already exists as
+tooling**: `hivemind-consult` can _"materialize a playbook or principle into the
+project's local docs/ with provenance"_ (the pull), and `hivemind-capture` /
+`hivemind-feedback` → `hivemind-digest` promote findings back up (the push).
+That is the circulation mechanism, built.
+
+**The gap is genre, not capability.** HiveMind holds _playbooks_ ("how to do X",
+procedural) and _lessons_ ("what we learned"). A **standard** is a third genre:
+normative, versioned, and cited rather than followed. There is no `Standards/`
+folder and no convention for one. Adding that genre is a smaller change than
+standing up a new repo.
+
+### The linchpin risk — worth naming explicitly
+
+> "I am probably the linchpin in this right now, the cross-pollinator, because I
+> see these."
+
+**This is a mechanism with a bus factor of one, and it is the kind that fails
+silently.** Cross-pollination currently depends on Cole personally recognizing
+that a thing emerging in one repo is relevant to another. Per anthill's own
+field notes, a **dispositional** instruction holds while a **situational** one
+fails at the recognition step — and "notice when this pattern recurs elsewhere"
+is purely situational. Today's finding is the evidence: glamour copied imago's
+context shape by hand and drifted, and nothing surfaced it for two months.
+
+Cole notes his overview projects (astrolabe, HiveMind) "tend to be focused on
+read and analysis versus actually doing the work of pushing across projects."
+**That asymmetry is the actual gap** — the observation capability exists; the
+circulation capability is manual. Whatever home is chosen should be judged
+primarily on whether it removes this dependency, not on where the files sit.
+
+### A requirement not yet in this document — the agent's read path
+
+Cole named an acceptance criterion for the standard that the findings above do
+not cover:
+
+> "A really good agent experience in terms of navigating it — getting a **map**,
+> not having to read everything in, but being able to get a **meta
+> understanding** of context."
+
+**This is a first-class requirement, not a nice-to-have**, and it constrains the
+data model: the structure must support a cheap, faithful **summary projection**
+so an agent can orient without ingesting the corpus. Precedents already in hand
+— StoryLoom's proposal ships a **rendered index**; Operator's `browse` returns
+`charCount`/`wordCount` and a `headings` search mode explicitly for fast
+orientation; imago and glamour both strip blobs in a **lean agent projection**.
+Three independent versions of "give the agent a cheap map." Any candidate
+standard should be tested against this, not just against what it can represent.
+
 ## Next Steps
 
 1. **Verify OKF** — is it a real external standard, and is it stable enough to
    build on? If not, Operator's shipped `rel` vocabulary (Finding 3) is the
    in-house candidate, and it has the advantage of already existing.
 2. **Read StoryLoom's `structured-context-documents` proposal in full**, plus
-   `naming.md` and `gap-analysis.md`. Decide adopt vs. extract vs. diverge — as
-   a deliberate ruling, recorded.
-3. **Probe a corpus that actually uses links** (the Hollowbrook bible) to turn
-   Finding 3's capability list into usage evidence.
-4. **Decide the boundary with mind-mapper**, which already ingests markdown,
+   `naming.md` and `gap-analysis.md` — as the most advanced **contribution** to
+   the standard, not as the standard itself (see the Amendment). What to pull
+   forward, and what is StoryLoom-specific, is the ruling to record.
+3. ~~Probe a corpus that actually uses links to turn Finding 3's capability list
+   into usage evidence.~~ **Done** — HiveMind, 39 typed edges, 0 untyped (see
+   Finding 3). The Hollowbrook bible remains the densest corpus if a larger
+   sample is wanted.
+4. **Decide the stewardship question** — where the standard lives. Leading
+   candidate is HiveMind **with a new `Standards/` genre**, on the grounds that
+   the circulation tooling already exists there and a new repo would not have
+   it. Judge any option primarily on whether it removes the linchpin dependency.
+5. **Test candidates against the agent read-path requirement** (cheap map /
+   meta-understanding without full ingestion), not only against expressiveness.
+6. **Decide the boundary with mind-mapper**, which already ingests markdown,
    already has a graph canvas, and already has the OKF adapter in its queue. It
    may be the natural host for the primitive rather than a consumer of it.
-5. **Feed the result back** to the two 2026-08-05 fragments, whose
+7. **Feed the result back** to the two 2026-08-05 fragments, whose
    one-spell-or-two question is downstream of this one.
 
 ## Open Questions

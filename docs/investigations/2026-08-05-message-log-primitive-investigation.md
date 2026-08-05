@@ -157,6 +157,23 @@ The naming conflicts (Finding 2) should be settled **before** extraction, not
 after; `kind` meaning two different things is the kind of ambiguity that gets
 baked into a shared module and then cannot be removed.
 
+## Amendment (Cole, 2026-08-05) — the stewardship question governs this too
+
+The context investigation carries
+[an amendment](./2026-08-05-context-primitive-investigation.md#amendment-cole-2026-08-05--adopt-storylooms-is-too-strong)
+recording that no single project should own the standard — it lives above the
+projects and is refined by **push-pull** circulation, with HiveMind as the
+leading candidate home.
+
+**That applies here with one difference worth stating.** For context, the most
+advanced contributor is StoryLoom, in another repo. For the communication log,
+**the most advanced contributor is mind-mapper, in this one** — so Spellbook is
+the project that would be _pushing_ rather than _pulling_ on this half.
+
+That makes this the cheaper test case for the whole circulation idea: extracting
+the message primitive and publishing it as a standard exercises the push
+direction, on code we own, without waiting on another repo's phasing.
+
 ## Next Steps
 
 1. **Settle the vocabulary** — `who` vs `role`; what `kind` denotes; whether
