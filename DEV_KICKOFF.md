@@ -24,8 +24,8 @@ route it to Cole through the lead.
 **Project:** `spell-hardening`
 
 - [Proposal](docs/projects/spell-hardening/proposal.md) — scope, the harm
-  ordering, and the **two decisions that need a ruling** (D1 snapshot semantics,
-  D2 heartbeat card model)
+  ordering, and the **two rulings** you build to (D1 snapshot semantics, D2
+  heartbeat card model), each with the reasoning that produced it
 - [Plan](docs/projects/spell-hardening/plan.md) — four phases with owners,
   verified file refs, and a cold gate per phase
 
@@ -106,10 +106,15 @@ hypothesis until the owning seat confirms it. Falsify and say so.
 derivation has a hand-written Alpine twin in `template.html`. P3 touches these.
 Change both in the same commit and name both paths in the land.
 
-**⚠ `#40`'s load-bearing part is the `SKILL.md` nudge, not the code.**
-Blocked-skip only bites if waits are modeled as block edges, and the team that
-reported it never ran `bounty block`. Without the nudge it passes its tests and
-changes nothing in a real session.
+**⚠ The `#40` nudge changed job under the D2 ruling — don't copy the old
+wording.** The original blocked-skip design was only load-bearing via its
+`SKILL.md` line: it did nothing unless waits were modeled as block edges, and
+the team that reported it never ran `bounty block`. **Evidence-based poking
+removes that dependency** — the poke consults movement, not just block edges. So
+the line survives as a **hint** ("modeling a wait as a block edge helps the
+signal"), not as a prerequisite. Carrying the old wording forward would
+overstate what the human has to do, and that overstatement is what made the
+narrow fix fragile.
 
 ## Done when
 
