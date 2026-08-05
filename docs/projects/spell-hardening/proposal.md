@@ -99,34 +99,109 @@ separately:
 - Feature-shaped backlog items: leaderboard, task metrics, sessions filter,
   grapevine rename/edit/presence/facilitation-timer, imago items.
 
-## The two decisions that need a ruling before building
+## The two decisions — RULED (2026-08-05)
 
-Everything else here has a known fix. These two do not, and they are why this is
-a project rather than ten branches.
+Everything else here has a known fix. These two did not, and they are why this
+is a project rather than ten branches. **Both are now ruled. Do not relitigate;
+falsify with evidence if you think one is wrong.**
 
-### D1 — Snapshot safety semantics (P1)
+### D1 — Snapshot safety semantics (P1) — RULED
 
-`close` currently overwrites the snapshot unconditionally. Options, not mutually
-exclusive: **refuse** to write a materially smaller/empty state over a non-empty
-snapshot; **rotate** (`<session>-<ts>.json`, keep N); **restore-on-respawn** by
-default when a session key's snapshot is non-empty.
+**The governing fact: the audience is agents, not humans.** Every affordance
+below is decided on that basis, and it is the reason to reject the options that
+read as safer to a human operator.
 
-The ruling needs to answer: is the guard a **refusal** (safe, can block a
-legitimate emptying) or a **backup-then-write** (never blocks, costs disk)? And
-does `open --session-key` hydrate silently, or prompt? A silent hydrate changes
-behaviour teams currently rely on for a clean board.
+**D1.1 — Backup-then-write. Not refusal.**
 
-### D2 — The heartbeat card model (P3)
+- The clobber happens **during recovery** — an already-degraded path where the
+  caller is confused because the daemon just died. A refusal adds a second
+  failure on top of a first.
+- **Refusals breed `--force`.** Once an agent learns `close` sometimes refuses,
+  `--force` enters the runbook and the guard is permanently gone. A guard that
+  trains its own bypass is worse than none, because it reads as protection.
+- Backup never blocks and is always correct. Snapshots are small JSON; rotation
+  (`<session>-<ts>.json`, keep N) makes it cheap.
 
-#76 (session-length cards) and `heartbeat-skip-blocked` (#40) are the same
-defect class from two directions. Options: a per-card opt-out (`--size none` /
-poke-mute), the approved blocked-skip, or **alert on evidence** — no commits by
-this owner while holding an in-progress card — instead of elapsed time.
+**D1.2 — It must not succeed quietly, and the announcement is a FIELD IN THE
+ENVELOPE, not prose on stderr.** A human reads stderr; an agent reads the parsed
+result. Shape:
 
-The evidence-based version subsumes both and removes the need for the human to
-classify cards correctly up front, but it is the largest change. The ruling
-should decide whether P3 ships the approved narrow fix now and leaves evidence-
-based poking to a later round, or takes the bigger swing.
+```jsonc
+{
+  "ok": true,
+  "saved": 0,
+  "snapshotBackedUp": {
+    "path": "…",
+    "taskCount": 9,
+    "reason": "wrote 0 over 9",
+  },
+}
+```
+
+**`null` when nothing happened — never absent.** A readable blank distinguishes
+"no backup was needed" from "this build doesn't report it"; a missing key
+cannot.
+
+_Scar this is built on:_ `anthill commit` has printed `uncheckedAgainst` on
+every land, and a team still reconstructed its own race window three separate
+ways across three seats. **"The affordance was not missing; it was unnamed, and
+nothing pointed at it."** Printing is not enough — see D1.4.
+
+**D1.3 — `open --session-key` hydrates BY DEFAULT and announces it the same
+way.** `hydrated: {from, taskCount} | null`, with `--fresh` to opt out.
+
+- The empty-board-under-the-same-id shape is **what made the clobber look
+  safe**. Hydrating removes the root confusion rather than guarding its
+  consequence.
+- **Do not prompt.** A prompt is a human affordance; in an agent path it is a
+  hang, not a question.
+
+**D1.4 — The tool is authoritative; `SKILL.md` points at it and stops.**
+
+This follows the house rule already in force — the SOP says of the CLI's
+checklist _"that checklist is the single source; don't restate it,"_ and
+`seams.md` opens with _"defer to one source — don't restate shared truth."_
+Three reasons it matters here specifically:
+
+- **The doc drifts; the runtime message can't.** The 2026-06-18 fresh-agent
+  finding caught `mediaforge.md` describing the pre-context-library API and
+  contradicting `SKILL.md` _"at exactly the read/write points the task needed."_
+  `2026-07-09-bounty-grapevine-skill-review` exists because these docs drift as
+  the CLIs evolve.
+- **Timing.** A skill doc is read at join, possibly hours before the act. The
+  envelope field arrives **at the moment of the act, to the agent performing
+  it.**
+- **Dispositional beats situational.** "Watch out for snapshot clobbering," read
+  at join, requires recognising that _this_ is that situation — the step where
+  prose guards fail. A field in the response is mechanical.
+
+**So `SKILL.md` carries the disposition and the field names only** — roughly two
+lines: _"snapshot writes are guarded and self-announcing; read
+`snapshotBackedUp` and `hydrated` in the envelope."_ **Its job is to make the
+agent look at the field, then stop.** Naming the field is the part D1.2's scar
+says is missing; restating the semantics is the part that drifts.
+
+### D2 — The heartbeat card model (P3) — RULED: take the big swing
+
+**Alert on evidence, not elapsed time.** #76 (session-length cards) and #40
+(blocked cards) are one defect class seen from two directions; ship one model,
+not two overlapping fixes.
+
+- **Blocked-ness becomes one evidence input, not a separate skip.** That unifies
+  #40 and #76 instead of layering a skip on top of a timer.
+- **This makes the nudge problem better, not worse — which is the argument for
+  the big swing.** Under blocked-skip the load-bearing requirement was "model
+  your waits as block edges or this does nothing," and the team that reported it
+  never ran `bounty block`. Evidence-based poking **removes the dependency on
+  humans modeling their waits correctly.** The `SKILL.md` nudge shrinks from a
+  prerequisite to a hint.
+- **Cole: "I'd rather just get it all done and dusted."** Do not split P3 into
+  sub-phases. One sequencing constraint only: **the evidence source must exist
+  before the poke can consult it** — decide what counts as evidence (commits by
+  this owner while holding the card, board mutations, vine activity) first.
+
+**What "evidence" means is the one open sub-question**, and it is the owning
+seat's to answer with a proposal to the lead — not a licence to expand scope.
 
 ## Technical Approach
 
