@@ -54,7 +54,8 @@ reproduction and the measured evidence, and are more detailed than the plan):
    P3), `cassandra` (cold gate, every phase).
 2. **Run `/anthill:plan`** before building. This spans seats, so the lead
    scaffolds the skeleton and the owning seats **ratify or falsify** the seams
-   they touch. The plan's file refs are claims, not facts — see Constraints.
+   they touch. Which of the plan's refs are verified and which are claims is
+   spelled out under Constraints — check before you build on one.
 3. **Get D1 and D2 ruled** (proposal). Both change behaviour teams have habits
    around, both are Cole's call, and both block their phase. Route through the
    lead.
