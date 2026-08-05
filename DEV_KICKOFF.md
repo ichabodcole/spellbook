@@ -69,8 +69,11 @@ reproduction and the measured evidence, and are more detailed than the plan):
   Shipping P2 first would deliver a new way to silently lose history.
 - **P0's fix is a drained exit.** Not pagination, not a `--complete` flag. The
   payloads are already complete; only the write is lost.
-- **Fix the shape, not the two call sites.** Audit every spell CLI for
-  `main → process.exit(code)`.
+- **Fix the shape, not the two call sites.** The prep grep already found the
+  same `main → process.exit(code)` in **seven** files — the two reported plus
+  `astrolabe`, `glamour`, `imago`, `magpie`, and grapevine's `daemon.ts`.
+  Confirm per site (not all can emit an over-buffer payload) and **record the
+  ones you rule out** — a silent skip is indistinguishable from a miss.
 - **Regression tests must read through a pipe.** These bugs are invisible at a
   TTY; a test that doesn't pipe cannot catch them.
 - **Scope is closed.** The ten issues plus exactly three named fold-ins
@@ -82,9 +85,11 @@ reproduction and the measured evidence, and are more detailed than the plan):
   version.
 - **Cole pushes and releases.** The team merges to `develop` locally and stops.
 
-**The plan's file refs are hypotheses.** They were verified during triage, but
-R12's lesson stands: a claim in a skeleton is a hypothesis until the owning seat
-confirms it. Falsify and say so.
+**Know which plan refs are checked and which aren't.** P0's three line refs were
+re-verified against the source on 2026-08-05 and are marked as facts. Everything
+else — the P1/P3 line numbers carried over from backlog items, the seven-file
+audit list — is a **claim**, and R12's lesson stands: a claim in a skeleton is a
+hypothesis until the owning seat confirms it. Falsify and say so.
 
 **⚠ The bounty surface mirror has no test guarding it.** Every `server.ts`
 derivation has a hand-written Alpine twin in `template.html`. P3 touches these.
