@@ -10,8 +10,22 @@
 > invariant two seats both rely on, a protocol between slices. Not a seat's private taste (that's the
 > seat doc), not a one-off (that's a commit message), not product docs.
 >
-> **This is a seed.** No contracts yet — they **accrete as they're discovered**. Start empty; add the
-> first one the first time two seats have to agree on something.
+> **How contracts land here — two ways, both/and.** The **load-bearing** cross-seam contracts are
+> **asserted up front and ratified** during the **plan phase** (the lead's skeleton → owners ratify
+> the seams they touch — see `anthill:plan`); the rest **accrete as they're discovered**. Assert the
+> load-bearing ones up front, let the long tail accrete.
+>
+> **Two things that make a contract here trustworthy.**
+>
+> **Say what it's true ABOUT, not how it's built.** A contract states the guarantee the other side may
+> rely on. Implementation belongs to the owning seat; writing it here freezes a choice that wasn't
+> yours and invites drift the moment the owner improves it.
+>
+> **Say where it ENDS — record the grain it was ratified at.** A contract confers confidence, and a
+> consumer that builds **past** the agreed grain has silently manufactured a new, unratified seam. One
+> team agreed a response _envelope_; a seat built at the _field_ level and got three shapes wrong —
+> the contract _felt_ like it covered them. If you need a finer grain than what's recorded, you've
+> found a **new seam**: say so rather than assuming.
 
 ## Ownership & the maintenance trigger
 
