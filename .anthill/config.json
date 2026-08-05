@@ -2,6 +2,7 @@
   "version": 2,
   "channel": "spellbook",
   "lead": "prospero",
+  "gate": "bun run check && bun test",
   "seats": [
     {
       "handle": "prospero",

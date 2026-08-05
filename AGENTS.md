@@ -18,9 +18,13 @@ place.
 ## Team-based development (anthill)
 
 This repo runs an **anthill** agent team — a lead plus specialist seats that
-coordinate over grapevine + bounty. The team's living docs and config live in
-[`.anthill/`](./.anthill/) (`.anthill/config.json` is the keystone; each seat
-has a doc under `.anthill/dev/`).
+coordinate over **two message wires and a board**: `anthill comms` (the
+seat-aware log, durable across sessions), the `spellbook` grapevine channel (the
+back-channel, cleared each session), and the bounty board (task state). The
+team's living docs and config live in [`.anthill/`](./.anthill/)
+(`.anthill/config.json` is the keystone — including the `gate` every seat's land
+runs; each seat has a doc under `.anthill/dev/`, and the team's earned
+principles in `.anthill/principles.md`).
 
 The seats:
 
@@ -34,7 +38,9 @@ The seats:
 
 **To engage the team:** run `/anthill:convene` to start a working session (the
 invoking agent becomes the lead, stands up coordination, and briefs the seats).
-A seat agent joins with `/anthill:join <handle>`. Wrap a session with
+A seat agent joins with `/anthill:join <handle>`. For a feature spanning several
+seats, the lead scaffolds the plan with `/anthill:plan` (skeleton → the owning
+seats ratify the seams they touch) before building. Wrap a session with
 `/anthill:finalize-session`.
 
 ## Project conventions (Bun-first)

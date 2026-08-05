@@ -2,8 +2,8 @@
 
 The team that builds this project. Each seat keeps its own living doc (`<handle>.md`); shared
 inter-seat truth lives once in [`seams.md`](./seams.md). How the whole system works: the SOP,
-[`../README.md`](../README.md). Task state on the bounty board; back-channel on the `spellbook`
-grapevine.
+[`../README.md`](../README.md). Task state on the bounty board; the team's two message wires are
+`anthill comms` (the seat-aware log) and the `spellbook` grapevine (the back-channel).
 
 ## Roster
 
