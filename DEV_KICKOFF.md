@@ -56,9 +56,10 @@ reproduction and the measured evidence, and are more detailed than the plan):
    scaffolds the skeleton and the owning seats **ratify or falsify** the seams
    they touch. Which of the plan's refs are verified and which are claims is
    spelled out under Constraints — check before you build on one.
-3. **Get D1 and D2 ruled** (proposal). Both change behaviour teams have habits
-   around, both are Cole's call, and both block their phase. Route through the
-   lead.
+3. **Read the D1 and D2 rulings** (proposal). Both are **already ruled** as of
+   2026-08-05 — they are binding constraints, not open questions. One
+   sub-question remains open inside D2 (what counts as "evidence"); that one is
+   the owning seat's to propose to the lead.
 4. Work P0 → P1 → P2 → P3, cold-gating each.
 
 ## Constraints
@@ -77,6 +78,15 @@ reproduction and the measured evidence, and are more detailed than the plan):
   ones you rule out** — a silent skip is indistinguishable from a miss.
 - **Regression tests must read through a pipe.** These bugs are invisible at a
   TTY; a test that doesn't pipe cannot catch them.
+- **The audience for every message you add is an AGENT.** That is the reasoning
+  behind both rulings, and it should decide the small calls too: signals go in
+  the **JSON envelope** (`null` when nothing happened, never absent), not as
+  prose on stderr; **never prompt** — a prompt in an agent path is a hang, not a
+  question.
+- **The tool is authoritative; `SKILL.md` points at it.** When you add an
+  envelope field, give the skill the **disposition and the field name** — two
+  lines — and stop. Restating semantics in a doc is what drifts; naming the
+  field is what makes an agent look at it.
 - **Scope is closed.** The ten issues plus exactly three named fold-ins
   (`bounty-tail-drain`, `daemon-robustness-nits`, `heartbeat-skip-blocked`).
   Anything else is a new decision.
