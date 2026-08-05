@@ -44,3 +44,9 @@ incomplete. Enumerate before cutting:
 
 - `2026-06-15-bounty-daemon-robustness-nits.md` — the tail-retry-forever nit is
   the "fails silently" half of this bug's UX; consider fixing in the same pass.
+- `2026-08-05-bounty-snapshot-clobber-data-loss.md` (#73, #74) — **this bug is
+  the trigger for that one.** The daemon dies here; the recovery attempt
+  (respawn-empty + `close`) then destroys the snapshot. Two halves of daemon
+  lifecycle robustness that want one pass — though each is independently worth
+  fixing, since an unguarded clobbering `close` is a footgun even on a daemon
+  that never dies.
