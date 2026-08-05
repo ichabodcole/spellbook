@@ -1,128 +1,106 @@
-# Dev Kickoff: Bounty — modernize to the house agent-interface pattern
+# Dev Kickoff: Spell Hardening — fix the shipped spells, then release
 
-**Branch:** `feature/bounty-agent-usable`\
-**Created:** 2026-06-15\
-**Strategy:** Worktree
+**Branch:** cut `feature/spell-hardening` off `develop` **Created:** 2026-08-05
+**Strategy:** in-repo branch, anthill team (not a worktree)
 
 ---
 
 ## Mission
 
-Bounty is the last Spellbook spell still on the old agent-interface substrate
-(the agent drives the board through `bg.ts`'s file-pump + a `tail -F | grep`
-Monitor; state is in-memory only; no readback, no persistence; the documented
-`bun -e` snippet breaks on apostrophes). Migrate it onto the **house pattern**
-that Grapevine and Imago converged on: a **persistent daemon** holding canonical
-state, a **thin stateless `cli.ts`** verb wrapper, `POST /cmd` (write) +
-`GET /state[?lean=1]` (readback) + `GET /events?since=<id>` (SSE tail wrapped by
-Monitor), plus debounced snapshot/`--restore`. The five filed issues (#6–#10)
-are **not patched individually — they fall out of the migration.** Surface ports
-to Alpine-over-CDN (the Grapevine tier, not React) before the ownership/blocked
-views land.
+`bounty` and `grapevine` are the most-used spells, and ten open issues say they
+are getting things wrong — five filed on 2026-08-05 alone. **Three of them
+actively mislead rather than merely annoy**: they return plausible, well-formed,
+wrong results and exit 0.
+
+Fix them in harm order and cut a release, so the teams already depending on
+these spells get the benefit now instead of waiting on a feature round.
+
+**This is not a feature project.** Everything traces to a filed issue or an
+existing backlog item. If you find yourself designing something new, stop and
+route it to Cole through the lead.
 
 ## Source Documents
 
-**Project:** `bounty-agent-usable`
+**Project:** `spell-hardening`
 
-- [Proposal](docs/projects/bounty-agent-usable/proposal.md) — decision-complete;
-  see **Resolved Decisions**
-- [Plan](docs/projects/bounty-agent-usable/plan.md) — phased (A→D + Alpine
-  port), grounded with file:line refs to the code to change and the siblings to
-  mirror
-- [Test Plan](docs/projects/bounty-agent-usable/test-plan.md) — 3 smoke + 11
-  critical-path (one per success criterion) + 5 deferred
+- [Proposal](docs/projects/spell-hardening/proposal.md) — scope, the harm
+  ordering, and the **two decisions that need a ruling** (D1 snapshot semantics,
+  D2 heartbeat card model)
+- [Plan](docs/projects/spell-hardening/plan.md) — four phases with owners,
+  verified file refs, and a cold gate per phase
 
-**Reference implementations to mirror (read while implementing):**
+**The triage these came from** (read the ones for your phase — they carry the
+reproduction and the measured evidence, and are more detailed than the plan):
 
-- `plugins/spellbook/skills/imago/scripts/{server.ts,cli.ts}` — the target
-  daemon + thin-CLI architecture (`/cmd`, `/state` lean, `/events?since=`,
-  snapshot, `--restore` merge-over-defaults, detached `node:child_process`
-  spawn)
-- `plugins/spellbook/skills/grapevine/scripts/cli.ts` — the refined agent CLI
-  (`--stdin`, stdout/stderr discipline, self-echo suppression, scoped reads,
-  `--as` identity, exit codes)
-- `plugins/spellbook/skills/grapevine/scripts/watch.html` — the Alpine-over-CDN
-  no-build surface pattern (target for the surface port)
+- `docs/backlog/2026-08-05-cli-stdout-truncation-on-pipe.md` — **P0**
+- `docs/backlog/2026-08-05-bounty-snapshot-clobber-data-loss.md` +
+  `docs/backlog/2026-07-16-bounty-daemon-idle-death.md` +
+  `docs/backlog/2026-06-15-bounty-daemon-robustness-nits.md` — **P1**
+- `docs/backlog/2026-08-05-grapevine-bounded-tail.md` +
+  `docs/backlog/2026-06-15-bounty-tail-drain.md` — **P2**
+- `docs/backlog/2026-08-05-bounty-list-lists-boards-not-tasks.md` +
+  `docs/backlog/2026-08-05-bounty-heartbeat-session-length-cards.md` +
+  `docs/backlog/2026-06-22-bounty-heartbeat-skip-blocked.md` +
+  `docs/backlog/2026-07-16-bounty-board-ui-polish.md` — **P3**
 
-**Background context:**
+**Background:** `AGENTS.md`, `grimoire/house-style.md`,
+`docs/PROJECT_MANIFESTO.md`, `.anthill/README.md` (the SOP),
+`.anthill/dev/seams.md`
 
-- [Project Manifesto](docs/PROJECT_MANIFESTO.md) — design principles
-- `grimoire/house-style.md` — see the new rule **"Drive a conjuration through a
-  daemon + thin CLI"** (this project is its first adopter)
+## How to start
+
+1. **Convene the team** — `/anthill:convene`. The invoking agent becomes the
+   lead. Seats: `daedalus` (CLI/daemon — most of this), `circe` (board surface,
+   P3), `cassandra` (cold gate, every phase).
+2. **Run `/anthill:plan`** before building. This spans seats, so the lead
+   scaffolds the skeleton and the owning seats **ratify or falsify** the seams
+   they touch. The plan's file refs are claims, not facts — see Constraints.
+3. **Get D1 and D2 ruled** (proposal). Both change behaviour teams have habits
+   around, both are Cole's call, and both block their phase. Route through the
+   lead.
+4. Work P0 → P1 → P2 → P3, cold-gating each.
 
 ## Constraints
 
-The proposal's **Resolved Decisions** are binding — do not relitigate:
+**Binding — do not relitigate:**
 
-- **Transport:** full daemon + SSE `/events?since=`, **retire `bg.ts` +
-  `watch-events.sh`**. The Monitor workflow is preserved by wrapping
-  `cli.ts tail` (not `tail -F | grep`).
-- **CLI:** **copy-and-adapt** grapevine + imago; do **not** factor a shared lib
-  yet (premature abstraction across differing domains).
-- **#6:** agent-activity idle-touch (free with the daemon) + snapshot/restore;
-  **defer** the `closing_soon` warning.
-- **#9 ownership:** assignment-first (lead sets `owner`), `--mine` +
-  `--owner <name>`, light self-claim secondary; **`review` is the human-facing
-  handoff cue**.
-- **Surface:** Alpine tier, **not** React; no bundler — single static file the
-  daemon serves.
-- **Migration safety net (every phase):**
-  `bun test plugins/spellbook/skills/bounty` stays green; `join.ts` keeps
-  working (preserve the WS `init`-on-open frame at `server.ts:377` —
-  `join.ts:221` keys its handshake off it); do **not** delete file mode until
-  the `cli.ts`+`/cmd`+`/events` path is proven at parity (end of Phase A).
-- House conventions: Bun only (`bun test`, `Bun.serve`, no Vite/webpack);
-  detached daemon via `node:child_process` (not `Bun.spawn`); honor the
-  exit-code contract (0 submit/close, 2 bad args, 124 idle, 130 cancel); format
-  changed `.ts`/`.tsx` with `bunx biome check --write` (biome, not prettier).
+- **P0 goes first, and P2 waits on it.** A bounded `tail --no-follow` is a
+  print-then-exit command — the exact shape that loses its tail to P0's bug.
+  Shipping P2 first would deliver a new way to silently lose history.
+- **P0's fix is a drained exit.** Not pagination, not a `--complete` flag. The
+  payloads are already complete; only the write is lost.
+- **Fix the shape, not the two call sites.** Audit every spell CLI for
+  `main → process.exit(code)`.
+- **Regression tests must read through a pipe.** These bugs are invisible at a
+  TTY; a test that doesn't pipe cannot catch them.
+- **Scope is closed.** The ten issues plus exactly three named fold-ins
+  (`bounty-tail-drain`, `daemon-robustness-nits`, `heartbeat-skip-blocked`).
+  Anything else is a new decision.
+- **Additive only.** No snapshot format break; a new layout must still read an
+  old snapshot.
+- **release-please owns versions.** Conventional commits; never hand-edit a
+  version.
+- **Cole pushes and releases.** The team merges to `develop` locally and stops.
 
-## Your Workflow
+**The plan's file refs are hypotheses.** They were verified during triage, but
+R12's lesson stands: a claim in a skeleton is a hypothesis until the owning seat
+confirms it. Falsify and say so.
 
-Discovery, plan, and test plan are **already done** — start at implementation.
+**⚠ The bounty surface mirror has no test guarding it.** Every `server.ts`
+derivation has a hand-written Alpine twin in `template.html`. P3 touches these.
+Change both in the same commit and name both paths in the land.
 
-1. `bun install` in this worktree.
-2. Read the Proposal, Plan, and Test Plan above, plus the three reference
-   implementations.
-3. **Implement Phase A first** (the riskiest, most concrete — daemon + `cli.ts`,
-   retire `bg.ts`). Follow the plan's per-phase Key Changes + Validation, TDD
-   against `scripts/server.test.ts`. Then B → Alpine port → C → D, per the plan.
-4. Verify each phase against the Test Plan scenarios (record results in the test
-   plan's Results Addendum; screenshots to `artifacts/screenshots/`).
-5. Commit per phase with clear messages; keep `bun test` green at every
-   boundary.
-6. Update the Completion Status checklist below.
+**⚠ `#40`'s load-bearing part is the `SKILL.md` nudge, not the code.**
+Blocked-skip only bites if waits are modeled as block edges, and the team that
+reported it never ran `bounty block`. Without the nudge it passes its tests and
+changes nothing in a real session.
 
-## Completion Status
+## Done when
 
-- [x] Discovery complete (plan is code-grounded; formal discovery skipped)
-- [x] Plan created and user-reviewed
-- [x] Test plan created
-- [x] Phase A — substrate core (daemon + cli.ts; retire bg.ts) — closes #7, #8
-- [x] Phase B — durability (snapshot + restore) — closes #6
-- [x] Surface — Alpine port
-- [x] Phase C — ownership + scoping — closes #9
-- [x] Phase D — dependencies — closes #10
-- [x] Tests passing (full test plan executed)
-- [ ] Ready for merge
+All ten issues closed or deferred-with-reason; no spell CLI retains the
+undrained exit; a `close` cannot silently destroy a non-empty snapshot; blocked
+and session-length cards produce no false pokes while genuinely stalled ones
+still do; `bun run check && bun test` green; cold gate passed; both `SKILL.md`
+files true; closed backlog items moved to `docs/backlog/_archive/`.
 
-## Completion
-
-**Worktree strategy:** When implementation is complete and all tests pass:
-
-1. Run `/project-docs:finalize-branch` to perform code review, create a session
-   document, and prepare the branch for merge.
-2. Do NOT merge or remove the worktree — the orchestrator handles integration
-   back into `develop`.
-
-## Notes
-
-- The base branch is `develop` (this worktree branched from it at `ba5e389`,
-  which already carries the proposal/plan/test-plan commits).
-- The five GitHub issues (#6–#10) are labeled `area: bounty` with
-  bug/enhancement
-  - priority; each plan phase notes which it closes — reference them in commits.
-- Phase A is the **parity gate**: new subprocess E2E must prove `/cmd` (incl.
-  `--stdin` quoting), `/state` ack, and `/events` tail-with-resume **before**
-  `bg.ts`/`watch-events.sh` and their tests are deleted in the same commit.
-- The stray `e2e-1-baseline.png` in the main checkout is unrelated (imago) — not
-  part of this work.
+Then hand back to Cole for the release.
