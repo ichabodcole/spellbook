@@ -3,6 +3,13 @@
 **Date Started:** 2026-08-05 **Investigator:** Claude Code (with Cole)
 **Status:** Active **Outcome:** In Progress
 
+> **Companion to
+> [the communication-log primitive investigation](./2026-08-05-message-log-primitive-investigation.md).**
+> Cole frames these as two halves of one thing: **ingestion** (this doc — bring
+> context in, navigate it) and **communication** (the log of what was said about
+> it). They meet at `ground` — the message field holding ids into the context
+> library — so this investigation's shape constrains that one.
+
 ---
 
 ## Question / Motivation
@@ -262,8 +269,8 @@ part Spellbook most needs and the part not yet built.
   filesystem move.
 - Should the import adapter target Operator's **MCP API** (live) or its
   **markdown export** (files)? The two give very different coupling.
-- Cole named this as **one of two** related concerns; the second has not yet
-  been captured.
+- Cole named this as **one of two** related concerns; the second is now captured
+  in the companion investigation above. `ground` is the seam between them.
 
 ## Related Documentation
 
