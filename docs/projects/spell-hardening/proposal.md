@@ -686,7 +686,31 @@ get.
 
 - [ ] **The nine candidate issues are handed to Cole, not lost.** See below.
 
-## Candidate issues found during sprint 01 — for Cole to file
+## Candidate issues found during sprint 01 — DISPOSITIONS (all nine, 2026-08-06)
+
+> **⚠ These were carried as "for Cole to file" and three of them had already
+> been captured, while four had no home at all.** A grounding agent read this
+> section and reported all nine as unfiled; that was wrong in the specifics and
+> right about the gap. **Every candidate now has a stated fate**, so the answer
+> to "was anything dropped?" is readable rather than reconstructable.
+>
+> | #     | disposition                                                                                                                                                                                                                                                                                          |
+> | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | 1 · 2 | **FILED** — `docs/backlog/2026-08-06-bounty-session-key-hijack-and-identity.md` (both halves, one file)                                                                                                                                                                                              |
+> | 3     | **ALREADY OWNED** — it is R#4 inside `docs/backlog/2026-06-15-bounty-daemon-robustness-nits.md`, which P1 already folds in. A June item and an August candidate are the same defect.                                                                                                                 |
+> | 4     | **FILED 2026-08-06** — `2026-08-06-a-performed-restore-is-as-silent-as-a-skipped-one.md`. It was routed to the contract investigation and **was never actually recorded there**; the file closes that gap.                                                                                           |
+> | 5     | **FIXED BY CONSTRUCTION** in sprint 02 (P0c step 2 rejects unknown flags). **The harm statement still owes a comment on #81** — a caller's flag is not ignored, the verb executes anyway. Not filed as backlog; it is a comment on an open issue.                                                    |
+> | 6     | **FILED 2026-08-06** — `2026-08-06-discovery-pointer-is-machine-global.md`. **Cole ruled "file, don't fix" and the filing was never done**; this is that ruling carried out, six commits late.                                                                                                       |
+> | 7     | **FILED 2026-08-06** — `2026-08-06-bounty-message-leaves-no-durable-trace.md`                                                                                                                                                                                                                        |
+> | 8     | **FILED 2026-08-06** — `2026-08-06-bounty-tail-replays-full-history.md`. Its grapevine twin was already filed in `2026-06-30-grapevine-monitor-friction.md` §2; the two should be decided together.                                                                                                  |
+> | 9     | **RESOLVED, not a defect.** Cole 2026-08-06: mind-mapper is **still in development and deliberately unreleased**, so the absent `SKILL.md` and registry entry are expected — it presents no trigger surface by design. **No action.** Recorded here because the answer existed only in conversation. |
+>
+> **The stale count in row 6 below is left as written** (`2206 stale files`).
+> That number was true when measured and does not reproduce now — `d650c97`
+> closed the test-side channel, so new pointers land in disposable dirs. **The
+> backlog file carries the live, and unverified, figure.**
+
+### The candidates as originally recorded
 
 **None of these are in the fourteen; none are fixed by this project.** They are
 carried here because **filing is Cole's call** and sprint 01's plan is now
