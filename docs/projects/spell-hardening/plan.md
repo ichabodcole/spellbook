@@ -5,9 +5,61 @@
 engine, `cassandra` verify, `thoth` grimoire; `prospero` leading). P1–P3 are
 **still unratified** and keep the caveat below.
 
-Read [HANDOFF.md](./HANDOFF.md) for how the plan reached this state: P0b, P0c
-and P0d did not exist in the version reviewed on 2026-08-05, and P0, P1 and both
-gate constructions were rewritten on 2026-08-06.
+[HANDOFF.md](./HANDOFF.md) is **historical** — it called for the ratify round
+that has since happened. Read it for the reasoning behind D1–D4, not for what to
+do next.
+
+---
+
+## ▶ START HERE — the next session
+
+**You are picking up a project whose P0 family is RATIFIED and UNBUILT.** As of
+2026-08-06, **zero of the fourteen issues are fixed.** Measured, not recalled:
+
+```
+process.exit(code)   still at bounty/cli.ts:943, grapevine/cli.ts:262 and :1807   <- P0 live
+parseArgs()          still whitespace-only, no `=`, no unknown-flag rejection     <- P0c live
+bounty add           still `await postCmd(...)` with no `const res =`             <- P0d live (#83)
+```
+
+**The one thing that HAS shipped is `Phase 0e`** — a test-hermeticity fix,
+admitted as a prerequisite because the project's own gate was destroying the
+team board. **It is test-only and changes nothing a user sees.**
+
+### Build order, and why it is not negotiable
+
+1. **P0** (drained exit) — highest harm, and **blocks P2**.
+2. **P0b · P0c · P0d** — independent of each other; any order.
+3. **P1 → P2 → P3** — **NOT YET RATIFIED.** Run a ratify round on each before
+   building it. **P0's round falsified six things; assume these will too.**
+
+### What is already true and does NOT need re-deriving
+
+Every gate below is rewritten and audited; **G1–G4 bind all of them.** The entry
+point sets, the site audits and the mechanism claims were measured on 2026-08-06
+and carry their evidence inline. **Falsify them if you can — but do not
+re-derive them from scratch as if they were unexamined.**
+
+### What to distrust, stated by the people who wrote it
+
+- **The `~14 return sites` figure for `ApplyResult`** is advisory (actually 16).
+- **`proposal.md` was NOT audited** in the review — a stated gap, not a clean
+  bill.
+- **P1's `#64` root cause is unresolved** and may need its own investigation.
+
+### Read these before you start
+
+[`.anthill/retro.md`](../../../.anthill/retro.md) — **nine hypotheses this round
+left for you to test**, each with its falsifier named.
+[`.anthill/principles.md`](../../../.anthill/principles.md) — the one principle
+the round earned.
+
+**And the standing instruction that produced this plan's corrections, which the
+author of this line is now subject to:** the person who wrote a claim is the
+worst-placed reader of it. **This plan now has a new author. Treat it
+accordingly.**
+
+---
 
 > ### What the ratify round changed — read this before trusting a remembered version
 >

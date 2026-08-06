@@ -1,24 +1,33 @@
-# Handoff — read this before ratifying the plan
+# Handoff — ~~read this before ratifying the plan~~ **HISTORICAL. The ratify round is DONE.**
 
 **Written:** 2026-08-06 **By:** the plan's author (Claude Code, this repo)
-**For:** whoever leads `spell-hardening` (`prospero`) and the seats who ratify
-the seams they touch.
+**For:** ~~whoever leads `spell-hardening` and the seats who ratify the seams
+they touch~~ — **nobody, now. See below.**
 
-> ## ⚠ STALENESS RULE — read this before anything below
+> # ⛔ STOP — you are probably in the wrong file
 >
-> **Amended 2026-08-06 after the P0 ratify round.** The round this file called
-> for **happened**, and it falsified things this file asserts.
+> **If you are starting the next session of `spell-hardening`, go to
+> [`plan.md`](./plan.md) and read its "START HERE" block. Not this file.**
 >
-> **Where this file and [`plan.md`](./plan.md) disagree, THE PLAN WINS.**
+> **The ratify round this document called for HAPPENED, on 2026-08-06.** It
+> falsified six claims — including two of this file's own — and the plan was
+> rewritten around the results. **This file's job is finished.**
 >
-> This rule exists because a document whose job is to say _"the other document
-> is stale"_ needs its **own** staleness rule — otherwise it becomes the stalest
-> thing in the project, since it is the one file nobody re-reads, because
-> everyone believes they already have. **Two of its claims moved on 2026-08-06
-> and this file did not move with them** (both are struck in place below).
+> **Where this file and `plan.md` disagree, THE PLAN WINS.** Two of this file's
+> claims moved during that round and are struck in place below; a third — its
+> entire framing, _"read this before ratifying"_ — expired when the round
+> completed, and **that expiry was missed for a full day** while the individual
+> claims were being carefully corrected.
 >
-> **The P0 family is now RATIFIED.** This file describes what the plan needed
-> _before_ that round; read it as history plus the corrections marked ⛔.
+> _Recorded rather than quietly retitled, because it is the sharpest instance of
+> this file's own subject: **a document whose job is to say "the other document
+> is stale" needs its own staleness rule — and needs it for its PURPOSE, not
+> just its claims.** The claims were audited twice. Nobody asked whether the
+> document still had a reason to exist._
+>
+> **What it is still good for:** the reasoning behind rulings D1–D4, why the
+> author was told not to lead the implementation, and the pre-ratify state of
+> the plan. **Read it as history.**
 
 ---
 
