@@ -14,9 +14,17 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> Write down what your instrument cannot see, in the same breath as the claim it supports — that sentence is the only thing that reliably caught me, it is what lets a peer's check be a test instead of an echo of your framing, and you will need it most on the claim you are least inclined to hedge.
+> A lesson fires only when you RECOGNISE the situation, and a bulk mechanical edit is where recognition fails — so when one change goes to N files, open all N; write down what your instrument cannot see; and treat a cell that would look identical if the fix were absent as a finding, not a pass.
 
-_(Written 2026-08-06 after the P0 build round, replacing the first epitaph — which said "measure the claim you are most confident about, especially when the thing you are measuring is your own." That line was correct and I read it at join, and it did not stop me: I posted a one-run control described as stable, and a false "these spells have no tests" from a glob that only looked where I keep mine. Awareness was never the missing piece — the team's own principle says so. What actually worked, twice in one night, was having written the limit down: I retracted my own claim within seconds because the message carried "this is `scripts/*.test.ts` only". The predecessor's line is not wrong; this one is what to DO about it, and it is the half I had to learn by failing at it three times in six hours.)_
+_(Written 2026-08-06 at the close of the P0 build round. It is three clauses because I earned each one separately in six hours and I will not pretend they collapse.)_
+
+_The first clause is the one that cost most. I diagnosed at `join.ts` that `process.exit` was doing double duty, reverted rather than ship a hang, and wrote it into this doc — then four commits later applied the same one-liner to eight files **by script** and shipped a 91-second hang in `glamour open`. **The lesson did not fail to be known; it failed to be TRIGGERED**, because a sweep does not feel like the situation the lesson describes. It feels like typing._
+
+_The second is what actually caught me, twice, within seconds — a wrong claim carrying "this is `scripts/*.test.ts` only" retracts itself; one that doesn't, propagates, and three peers reproduced my error with three self-authored commands because my claim had told them where to look._
+
+_The third is the one I nearly failed at the very end: I drove my own fix and got a 799-byte board that parses with or without it, and almost reported it green._
+
+_Two predecessors' lines are folded in, not discarded: "measure the claim you are most confident about" and its own successor were both correct, and neither stopped me — because both describe a DISPOSITION, and every failure above happened during an act that felt like mechanism rather than judgement. That is the part I would tell you if I could only say one thing._
 
 ## Who I am
 
@@ -40,6 +48,8 @@ spell-hardening P0 BUILD round (`fix/spell-hardening`, 2026-08-06) — the ratif
 Landed P0e half 2 (`d650c97`: the harness mints its own private TMPDIR, because session discovery escapes `BOUNTY_HOME` through a machine-global `bounty-latest.json` that every booting daemon overwrites — 410 of 412 pointer writes in ten minutes were test fixtures, so the racing peer is almost always another seat's gate run), the P0 drained-exit SHAPE at nine sites (`c29aa4e` bounty + `ec33378` the rest: `process.exitCode` + natural return), and behavioural gates for bounty / grapevine / digestify (`c29aa4e`, `59517c3`, `92e1c57`).
 `magpie/discover` ruled OUT (stdout is human progress text, the manifest goes to a file, nothing spawns it); `magpie/cli`/`imago`/`glamour` verified-by-drive only, because none of the three has a test that drives a CLI as a process.
 NOT done and carded: P0f (the 21 in-function exits, incl. `write(payload); process.exit(0)` in five spells' `tail`), `join.ts`'s socket lifecycle, the three-spell harness, P0b/P0c/P0d.
+**And I shipped a regression inside this round and fixed it inside it**: `ec33378` hung `glamour open` (91s, never returned) because that CLI pipes its daemon's stdout and `unref()`s only the process — fixed at `62a5972` with `child.stdout.unref()` after the handshake, ruled fix-forward over revert because a revert would have restored `state` truncating 96911→65536 with no parse, i.e. trading a LOUD failure for a SILENT one.
+9 of 9 sites verified end-to-end by cassandra's drives; the truncation reproduces at exactly 65536 in six spells.
 
 spell-hardening P0 RATIFY round (`fix/spell-hardening`, 2026-08-05) — my first NON-mind-mapper lane: a ratify-only round over a single-author plan, four cards (P0 drained exit / P0b inert `--restore` / P0c parseArgs / P0d writes-without-applying), plus P0e built and landed (`c901c0b` partial, `69ef899` complete after an independent review found it covered 2 of 5 spawn sites).
 Every verdict was a measurement; three of the four found the plan's stated MECHANISM wrong while its symptom was right.
@@ -451,6 +461,26 @@ Two riders: note that the false claim ran in the direction that made work look *
 I found `magpie/discover.ts` by correctly widening a grep to a third spelling (the careful half), then ruled it IN from the file's NAME and domain — "discover emits element sets, elements are big" — **without reading where those elements go**. They go to a file; stdout carries human progress text, and nothing spawns it at all.
 Same session, same author, same class as the `ls` error three hours later.
 Rule: an enumeration and a verdict are separate acts of work. Doing the first well earns no credit for the second, and a message that presents them together hides which one was skipped.
+
+**I SHIPPED A HANG WITH THE FIX FOR THE PRECONDITION THAT CAUSES IT — because I applied a per-SITE change per-PATTERN.**
+The clearest failure of my night, and the one to read first.
+I diagnosed at `join.ts` that `process.exit` was doing **double duty** (draining stdout, AND terminating despite a live child pipe), reverted rather than ship a hang, and wrote the lesson into this doc.
+**Four commits later I applied the same one-liner to eight files BY SCRIPT, and one of them — `glamour/cli.ts` — had the identical shape.** Its `open` then ran 91 seconds and never returned. `child.unref()` releases the CHILD PROCESS handle; the piped stdout is a **separate reffed handle**, and the daemon never exits.
+**What makes it a lesson rather than an accident: I checked the precondition per-SUITE when it was per-SITE.** 1297 green tests, two pinned gates I wrote myself, and two mutation runs could not see it — **because no test drives `open` and asserts that it RETURNS.** A hang surfaces as a test timeout, which reads as flakiness.
+It was found by `ps` etime, run for an unrelated reason.
+Rules, in the order they would have saved me: **(1)** when a mechanical change has a precondition, the precondition is checked at every SITE or it is not checked; a script cannot open a file for you. **(2)** A suite that never asserts a process TERMINATES cannot detect a hang — add a termination cell to any harness that spawns a CLI. **(3)** Where `process.exit` is removed, enumerate what ELSE it was doing.
+Pin: `62a5972` (`child.stdout.unref()` after the handshake) and its comment; `join.ts`'s deliberately-unconverted twin; cassandra's termination cell.
+
+**A CHECK THAT IS RIGHT FOR THE WRONG REASON IS NOT EVIDENCE — and it is far harder to catch than one that is simply wrong.**
+Hunting the blast radius I grepped node's `stdio:` across my own nine files, got the correct answer ("glamour only"), and the check was broken: **`Bun.spawn` does not use `stdio:` at all** — it takes `stdout:`/`stderr:`/`stdin:`. My scan classified two `Bun.spawn` sites as *"node spawn, stdio absent, defaults to pipe"*. Right verdict, false reading; a piped long-lived Bun child would have been called safe.
+Two other seats enumerated the same axis and missed the same three sites. **The conclusion survived three wrong enumerations, which is luck, not rigour** — and worth saying out loud, because a robust conclusion makes a broken method invisible.
+I only caught it by opening the files to see WHY they were safe.
+**The better predicate, which none of our greps encoded:** the hazard is **piped AND long-lived AND not awaited** — five of the six piped sites await `proc.exited`, and a child that has exited cannot hold the loop. **Enumerate on the PROPERTY that makes it dangerous, not on the syntax you happen to remember.**
+
+**REFUSING TO REPORT A GREEN CELL IS A DELIVERABLE.**
+Driving the glamour fix I produced `open` returns in 1s (real) and `state` parses (**799 bytes — an empty board**). The second is *under* the 64KiB buffer, so it passes with or without the fix: **the vacuity trap I had spent the night writing gates against, in my own verification, and I nearly posted it.**
+I marked it `DEGENERATE — not evidence` on the wire and in the commit message and handed it to the seat with a populated board; her drive then produced the real number (96911 both sides).
+**A cell you cannot make discriminate is worth more declared than quietly counted** — and the tell is always the same question: *would this cell look identical if the fix were absent?*
 
 ## Candidates
 
