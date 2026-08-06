@@ -1953,6 +1953,37 @@ _That is the same instrument gap that let the 23-minute hang ship._
    > again and reads as a passing gate. _(Narrowing supplied by `thoth`, who
    > noted the phrase was in the prose and not in the rule line.)_
    >
+   > **⛔ THAT PREDICTION CAME TRUE WITHIN THE HOUR, ON A DIFFERENT SEAT.**
+   > `cassandra` ran the amended construction on bounty to confirm the law
+   > independently, blocked her consumer **2s** and closed the board at **4s** —
+   > so **the consumer had resumed draining before the exit fired:**
+   >
+   > ```
+   > [PRE]  200285      [POST] 200286     <- no truncation in EITHER world
+   > ```
+   >
+   > **On its face that reads as _"the amended fixture does not discriminate
+   > either"_ — a finding AGAINST a rule landed twenty minutes earlier.** It was
+   > her cell. Corrected to block **8s** and close at **1s**:
+   >
+   > ```
+   > [PRE]  65536       [POST] 200286     <- exactly the buffer, then complete
+   > ```
+   >
+   > > **"Non-draining at the instant of exit" is a property of the SCHEDULE,
+   > > not of the consumer's SHAPE.** Her cell had the right shape and the wrong
+   > > schedule.
+   >
+   > **The direction of the failure is what earns this the space: a fixture can
+   > implement the LETTER of a spec and not its CONTENT, and it then presents as
+   > _"the spec is wrong"_ rather than _"my cell is wrong"_ — pointing OUTWARD,
+   > at a peer's ruling.** That is the most dangerous direction available.
+   >
+   > **What caught it: the result CONTRADICTED A MEASUREMENT ALREADY ON THE
+   > RECORD** — the same tripwire that caught `daedalus`'s confident zero. **A
+   > ratified fact auditing an instrument nobody aimed at it, third instance
+   > this session.**
+   >
    > **`expect(bytes) > 65_536` before the parse remains correct and remains
    > INSUFFICIENT.**
    >
