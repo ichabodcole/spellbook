@@ -29,11 +29,13 @@ team board. It is test-only and changes nothing a user sees — **but it had two
 halves and only one landed, and its gate could not see the difference.** See
 Phase 0e.
 
-> **⚠ BEFORE YOU MEASURE ANYTHING, read G5.** Until P0e half 2 lands, every gate
-> must be run with `TMPDIR=$(mktemp -d)`. **A green from a shared-pointer run is
-> not weak evidence — it is no evidence**, and that voids every baseline in this
-> repo recorded before 2026-08-06, including two independently-agreeing 1291/0
-> runs that were read as corroborating each other.
+> **⚠ BEFORE YOU MEASURE ANYTHING, read G5 — it is ACTIVE, and `d650c97` did NOT
+> repeal it** (it fixed **bounty's** suite; glamour still writes the global
+> pointer in-process, imago and magpie are unverified). Every gate must be run
+> with `TMPDIR=$(mktemp -d)`. **A green from a shared-pointer run is not weak
+> evidence — it is no evidence**, and that voids every baseline in this repo
+> recorded before 2026-08-06, including two independently-agreeing 1291/0 runs
+> that were read as corroborating each other.
 
 ### Build order, and why it is not negotiable
 
@@ -210,8 +212,37 @@ own `/state`.
 **⚠ G5 does NOT belong in `.anthill/config.json`'s gate.** That is the shape
 Phase 0e step 2 already deleted — _a workaround left in place after its fix
 lands is a second, quieter source of truth._ **The tmpdir belongs in the
-harness** (Phase 0e half 2). Until that lands, G5 is hand-applied, and it is
-**repealed the moment the harness does it for you**.
+harness** (Phase 0e half 2).
+
+> ### ⛔ THE REPEAL CRITERION WAS WRONG AND WOULD HAVE SELF-FIRED. Rewritten 2026-08-06.
+>
+> **It read: _"repealed the moment the harness does it for you."_ `d650c97` made
+> that true — for BOUNTY's harness — so by its own words G5 self-repealed on
+> landing, while three other suites still write the machine-global pointer.**
+>
+> **"The harness" is singular in the sentence and plural in the world.** Same
+> unit-of-analysis error as P0's file-vs-site — **placed in a repeal criterion,
+> which is the worst possible home for it, because a repeal fires silently and
+> removes a protection nobody re-checks.**
+>
+> **Rewritten, per-spell and measurable:**
+>
+> **G5 is repealed FOR A GIVEN SPELL when that spell's own suite is proven not
+> to write `<spell>-latest.json` to the ambient `TMPDIR`** — proven by the
+> structural gate (no pointer at top level **and** the pointer present in the
+> per-suite dir), **never by a sibling spell's fix landing.**
+>
+> | spell          | status                                                                                                                |
+> | -------------- | --------------------------------------------------------------------------------------------------------------------- |
+> | bounty         | ✅ `d650c97`                                                                                                          |
+> | glamour        | ❌ `tests/daemon.integration.test.ts` imports `startDaemon` and `server.ts:405-415` writes the pointer **in-process** |
+> | imago · magpie | ❓ **UNVERIFIED** — both have a TMPDIR-handling test file, which is not proof                                         |
+>
+> **One of four. G5 stays for everyone until all four are green.**
+>
+> _The glamour case is worth keeping: it writes the pointer **in-process**, so a
+> `Bun.spawn` grep sees nothing. **"Does this suite spawn?" is not the question.
+> "Does this suite reach the code that writes the pointer?" is.**_
 
 ### G1 — amended 2026-08-06: the explicit `--session-key` IS the isolation
 
