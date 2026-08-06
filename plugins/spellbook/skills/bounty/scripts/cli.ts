@@ -372,7 +372,36 @@ function writePin(sessionId: string) {
   }
 }
 
-async function cmdOpen(flags: Record<string, string | boolean>) {
+// #80.1 — flags whose EFFECT IS LOST on the idempotent-attach path.
+//
+// The attach branch below RETURNS before the daemon argument list is built, so
+// every flag that only ever takes effect as a daemon arg is silently discarded:
+// the caller asks for a four-hour timeout, gets thirty seconds, and is told
+// nothing. `--restore` was only ever one of three symptoms of that one return.
+//
+// ⚠ DERIVE THIS SET BY LOST EFFECT, NEVER BY POSITION. "Appended past the
+// return" and "not honoured on attach" look like two spellings of one set and
+// they are not — the positional reading is wrong in BOTH directions at once:
+//
+//   --title    lost      MISSED by a positional cutoff (appended before --restore)
+//   --timeout  lost      MISSED by a positional cutoff (likewise)
+//   --restore  lost      caught either way
+//   --no-open  honoured  WRONGLY INCLUDED by a positional cutoff — on the attach
+//                        path there is nothing to open, so it is VACUOUSLY
+//                        honoured; the caller asked for a thing already true
+//   --pin      honoured  never reached by a positional cutoff at all — it runs
+//                        INSIDE the attach branch, above the return
+//
+// Refusing on --no-open or --pin would make every caller that rejoins a live
+// board start failing (`open --session-key K --pin --no-open` is a real, live
+// invocation) — this lane's own cure inflicting this lane's own disease.
+//
+// The membership test is `Boolean(flags[f])`, deliberately the SAME truthiness
+// the daemon-arg construction uses, so "we refuse it" and "it would have had an
+// effect" cannot drift apart.
+const ATTACH_LOST_FLAGS = ["title", "timeout", "restore"] as const;
+
+async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
   // to (nothing spawned), a dead/absent one is (re)spawned under the same id. So
@@ -390,10 +419,50 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     if (live && !flags.fresh) {
       // Idempotent attach — the board for this key is already up. Emit the same
       // discovery JSON a spawn would, so the caller gets port/url either way.
-      printJson(live);
+      const requested = ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f]));
+      const named = requested.map((f) => `--${f}`).join(", ");
+      if (requested.length) {
+        // #80.1 — REFUSE rather than attach-and-discard. The exit code is what a
+        // `set -e` wrapper or a Monitor catches; `restoreSkipped` is what an
+        // agent parses. 2 = bad input, matching `die()` and the house exit-code
+        // contract — but NOT via `die()`, which is process.exit(2) and would
+        // discard this envelope on a pipe (the drained-exit defect, re-committed
+        // in the act of printing the field that fixes this one).
+        //
+        // ⛔ The refusal NAMES NO CORRECTIVE VERB. Ruled by Cole 2026-08-06 and
+        // not reopenable here. The obvious helpful suggestion — "--fresh
+        // --restore" — is MEASURED to destroy the user's only copy of their
+        // data: --fresh tears the board down by POSTing {type:"close"}, close
+        // unconditionally writes the snapshot (server.ts:1286), so an EMPTY live
+        // board flushes empty over a populated snapshot, and --restore then
+        // faithfully restores from the corpse the teardown just made. A user in
+        // exactly the situation this message is written for would follow the
+        // advice and lose everything. Say what is true; offer no fix.
+        printJson({
+          ...live,
+          restoreSkipped: {
+            requested,
+            reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} configure a daemon at spawn time and the running board was left unchanged`,
+          },
+        });
+        process.stderr.write(
+          `bounty: refusing to attach — ${named} cannot take effect on a board that is already running (key "${key}", board ${forcedId})\n`,
+        );
+        // HONOUR-WHAT-YOU-CAN, ruled by prospero 2026-08-06 and written here
+        // because the two readings are indistinguishable from the diff: --pin is
+        // performed even on the refusal, because it is NOT in the lost-effect
+        // set — the attach path really does what --pin asked. Withholding it
+        // would make one flag's behaviour depend on an unrelated flag, which is
+        // the same over-inclusive error as refusing on --no-open, just spelled
+        // as a side effect instead of an exit code. The refusal is about the
+        // flags whose effect is lost, and only those.
+        if (flags.pin) writePin(forcedId);
+        return 2;
+      }
+      printJson({ ...live, restoreSkipped: null });
       process.stderr.write(`# attached to existing board ${forcedId} (key "${key}")\n`);
       if (flags.pin) writePin(forcedId);
-      return;
+      return 0;
     }
     if (live && flags.fresh) {
       // Replace it: close the live board over its own protocol, then wait for it
@@ -454,16 +523,21 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
       try {
         const r = await fetch(`http://127.0.0.1:${s.port}/state`);
         if (r.ok) {
-          printJson(s);
+          // `restoreSkipped` is PRESENT AND NULL on every success path, never
+          // absent (#80.1 / D1.2). A field that appears only when it has
+          // something to say cannot be told apart from a build that does not
+          // emit it at all, so `"restoreSkipped" in envelope` is the assertion
+          // that has teeth and `=== null` alone is the one that passes vacuously.
+          printJson({ ...s, restoreSkipped: null });
           if (flags.pin) writePin(s.session_id);
-          return;
+          return 0;
         }
       } catch {
         /* not up yet */
       }
     }
   }
-  die("bounty daemon failed to start within 5s");
+  return die("bounty daemon failed to start within 5s");
 }
 
 async function cmdState(
@@ -749,8 +823,9 @@ async function main(argv: string[]): Promise<number> {
 
   switch (verb) {
     case "open":
-      await cmdOpen(flags);
-      break;
+      // Propagates cmdOpen's code so the #80.1 refusal actually reaches the
+      // shell — `break` here would swallow it into main's trailing `return 0`.
+      return await cmdOpen(flags);
     case "tail": {
       const mine = flags.mine === true;
       if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");

@@ -176,6 +176,11 @@ session by default; pass `--session <id>` to target a specific one.
 > - Every verb accepts `--session-key K` (or read it from
 >   `$BOUNTY_SESSION_KEY`), re-deriving the same id each time.
 >   `open --pin --session-key K` persists the derived id to `.bounty-session`.
+> - `--title`, `--timeout` and `--restore` configure a daemon **at spawn time**,
+>   so on the attach path they cannot take effect. `open` **refuses** (exit `2`)
+>   rather than attaching and discarding them, and every `open` envelope carries
+>   `restoreSkipped` — `null` when nothing was skipped, `{requested, reason}`
+>   when the refusal fired.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass

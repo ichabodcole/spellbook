@@ -2912,3 +2912,346 @@ test("P0e — EVERY Bun.spawn in this file passes an explicit env", async () => 
   }
   expect(bare).toEqual([]);
 });
+
+// ── P0b (#80.1) — the early return that discards a flag set ───────────────
+//
+// `open --session-key K` against a LIVE board takes the idempotent-attach branch
+// and returns before the daemon argument list is built, so --title, --timeout
+// and --restore are silently discarded: the caller asks for four hours and gets
+// thirty seconds, at exit 0, with nothing said. The fix REFUSES (exit 2) and
+// carries `restoreSkipped`.
+//
+// GATE LAW, as it applies here — stated rather than assumed:
+//  · G1  every cell passes an explicit --session-key under a unique BOUNTY_HOME;
+//        hermeticEnv() scrubs the two env routes. The explicit key is the
+//        isolation — the scrub alone is NOT (a .bounty-session walk-up resolves
+//        to the same team board the env var would have named).
+//  · G5  every spawn inherits TEST_TMPDIR via hermeticEnv().
+//  · G6  does NOT bind this lane. G6 is the DRAIN defect, where Bun.spawn's pipe
+//        cannot reproduce a truncation. These cells assert an EXIT CODE and a
+//        small envelope, neither of which the reader can mask. Named explicitly
+//        so nobody reads its absence as an oversight.
+//  · G7  binds: `runOpen` fails the cell if the process does not RETURN. A
+//        drained-exit fix trades truncation for a hang wherever process.exit was
+//        load-bearing, and a hang is invisible to a suite that only awaits.
+//  · G8  the precondition prints VALID-CONTROL / DEGENERATE and is asserted, so
+//        a setup that silently no-ops cannot pass as evidence.
+
+// Spawn `open` with an explicit cwd and a HARD deadline.
+//
+// cwd matters twice: --pin writes `<cwd>/.bounty-session` (a cell running in the
+// repo would rebind the team's own board), and sessionKeyToId hashes the project
+// root, so every cell must derive its id from one stable directory.
+//
+// The deadline is G7: `await proc.exited` alone turns a hang into a suite
+// timeout, which reads as flakiness rather than as the regression it is.
+async function runOpen(
+  args: string[],
+  opts: { home: string; cwd: string; timeoutMs?: number },
+): Promise<{ stdout: string; stderr: string; code: number; ms: number }> {
+  const started = performance.now();
+  const proc = Bun.spawn({
+    cmd: ["bun", "run", CLI, "open", ...args],
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+    cwd: opts.cwd,
+    env: { ...hermeticEnv(), BOUNTY_HOME: opts.home },
+  });
+  const budget = opts.timeoutMs ?? 15000;
+  const timer = setTimeout(() => proc.kill("SIGKILL"), budget);
+  const [stdout, stderr] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+  ]);
+  const code = await proc.exited;
+  clearTimeout(timer);
+  const ms = performance.now() - started;
+  // G7: a process we had to kill did not terminate on its own.
+  expect({ verb: `open ${args.join(" ")}`, returnedOnItsOwn: ms < budget }).toEqual({
+    verb: `open ${args.join(" ")}`,
+    returnedOnItsOwn: true,
+  });
+  return { stdout, stderr, code, ms };
+}
+
+function snapshotTaskCount(home: string, id: string): number | null {
+  try {
+    const raw = readFileSync(join(home, "snapshots", `${id}.json`), "utf8");
+    return (JSON.parse(raw) as { tasks?: unknown[] }).tasks?.length ?? 0;
+  } catch {
+    return null; // no snapshot on disk yet
+  }
+}
+
+async function liveTaskCount(port: number): Promise<number> {
+  const r = await fetch(`http://127.0.0.1:${port}/state?lean=1`);
+  const d = (await r.json()) as { state: { tasks: unknown[] } };
+  return d.state.tasks.length;
+}
+
+describe("P0b — open refuses rather than discarding flags on the attach path", () => {
+  test("PRECONDITION + RED PRE-FIX — live 0 over snapshot 2, then --restore is REFUSED", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-"));
+    const key = `p0b-${crypto.randomUUID().slice(0, 8)}`;
+
+    // Step 1 — a board with two tasks.
+    const first = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const board = JSON.parse(first.stdout) as { session_id: string; port: number };
+    const id = board.session_id;
+    await runCli(["add", "alpha", "--id", "a1", "--session", id], { env: { BOUNTY_HOME: home } });
+    await runCli(["add", "beta", "--id", "b1", "--session", id], { env: { BOUNTY_HOME: home } });
+
+    // Step 2 — POLL the snapshot to 2. Never a fixed sleep: the flush is a ~1s
+    // debounce (server.ts:708 marks dirty, :1238 drains), so a sleep either
+    // races or is pure padding.
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline && snapshotTaskCount(home, id) !== 2) await Bun.sleep(100);
+    expect(snapshotTaskCount(home, id)).toBe(2);
+
+    // Step 3 — kill -9. NOT close: close writes the snapshot (server.ts:1286),
+    // which would flush the board we are about to empty OVER the fixture. And
+    // the PID does not come from the discovery file, which carries url/port/
+    // session_id/title and NO pid — a kill built on it silently no-ops, step 4
+    // "respawns" onto the still-live board, and the precondition degenerates to
+    // live=2/snapshot=2 while looking clean. The --id is unique, unlike the
+    // shared `scripts/server.ts` argv that once cost this repo a live daemon.
+    const pgrep = Bun.spawn({
+      cmd: ["pgrep", "-f", "--", `--id ${id}`],
+      stdout: "pipe",
+      stderr: "ignore",
+      env: { ...hermeticEnv() },
+    });
+    const pids = (await new Response(pgrep.stdout).text()).trim().split("\n").filter(Boolean);
+    await pgrep.exited;
+    expect(pids.length).toBeGreaterThan(0); // the kill has a target
+    for (const pid of pids) process.kill(Number(pid), "SIGKILL");
+    const gone = Date.now() + 5000;
+    while (Date.now() < gone) {
+      try {
+        await fetch(`http://127.0.0.1:${board.port}/state?lean=1`);
+        await Bun.sleep(100);
+      } catch {
+        break; // refused — it is down
+      }
+    }
+
+    // Step 4 — respawn EMPTY under the same key, without mutating anything.
+    const second = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const revived = JSON.parse(second.stdout) as { session_id: string; port: number };
+    expect(revived.session_id).toBe(id); // same key ⇒ same board id
+
+    // Step 5 — THE PRECONDITION AS ITS OWN ASSERTED CELL. Printed as
+    // VALID-CONTROL / DEGENERATE, because a probe that cannot announce its own
+    // control is invalid is a probe that will eventually lie — and this exact
+    // control has been degenerate three separate times in this project.
+    const liveNow = await liveTaskCount(revived.port);
+    const snapNow = snapshotTaskCount(home, id);
+    const control = liveNow === 0 && snapNow === 2 ? "VALID-CONTROL" : "DEGENERATE";
+    expect({ control, live: liveNow, snapshot: snapNow }).toEqual({
+      control: "VALID-CONTROL",
+      live: 0,
+      snapshot: 2,
+    });
+
+    try {
+      // Step 6 — THE MEASUREMENT. This is the reported user situation exactly:
+      // board live and empty, the only real data in the snapshot, --restore the
+      // only lever. Today it exits 0 and says nothing.
+      const measured = await runOpen(["--session-key", key, "--restore", id, "--no-open"], {
+        home,
+        cwd,
+      });
+      expect(measured.code).not.toBe(0);
+      const env = JSON.parse(measured.stdout) as {
+        restoreSkipped: { requested: string[]; reason: string } | null;
+      };
+      expect(env.restoreSkipped).not.toBeNull();
+      expect(env.restoreSkipped?.requested).toContain("restore");
+
+      // The refusal names NO corrective verb (Cole, 2026-08-06). --fresh
+      // --restore is MEASURED to destroy the snapshot it restores from, so a
+      // user in exactly this situation would follow the advice and lose the
+      // only copy of their data. This cell is what keeps a later "helpful"
+      // edit from putting it back.
+      const spoken = `${measured.stdout}\n${measured.stderr}`;
+      expect(spoken).not.toContain("--fresh");
+      expect(spoken).not.toContain("kill");
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 60000);
+
+  test("RED PRE-FIX — restoreSkipped is PRESENT and null when nothing was skipped", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-null-"));
+    const key = `p0b-null-${crypto.randomUUID().slice(0, 8)}`;
+    const spawned = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(spawned.stdout) as { session_id: string }).session_id;
+    try {
+      // Both success paths carry it: the SPAWN path here, the ATTACH path below.
+      // `in` is the assertion with teeth — `=== null` alone passes when the key
+      // is absent entirely, so a fix that emits the field only when it skips
+      // would sail through the weaker check while violating the ruling.
+      for (const [path, out] of [
+        ["spawn", spawned.stdout],
+        ["attach", (await runOpen(["--session-key", key, "--no-open"], { home, cwd })).stdout],
+      ] as const) {
+        const env = JSON.parse(out) as Record<string, unknown>;
+        expect({ path, present: "restoreSkipped" in env }).toEqual({ path, present: true });
+        expect({ path, value: env.restoreSkipped }).toEqual({ path, value: null });
+      }
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 40000);
+
+  test("RED PRE-FIX — EACH discarded flag refuses (the lane is the SET, not --restore)", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-set-"));
+    const key = `p0b-set-${crypto.randomUUID().slice(0, 8)}`;
+    const first = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(first.stdout) as { session_id: string }).session_id;
+    try {
+      // G4: the invocations are named, not "for each discarded flag". A fix that
+      // refuses on --restore alone — which is how this lane was described for a
+      // whole sprint — must FAIL this cell. --title and --timeout are appended
+      // BEFORE --restore, so a positional reading of the bug misses both.
+      for (const [flag, args] of [
+        ["restore", ["--restore", id]],
+        ["timeout", ["--timeout", "14400"]],
+        ["title", ["--title", "a new title"]],
+      ] as const) {
+        const r = await runOpen(["--session-key", key, "--no-open", ...args], { home, cwd });
+        const env = JSON.parse(r.stdout) as { restoreSkipped: { requested: string[] } | null };
+        expect({ flag, code: r.code === 0 }).toEqual({ flag, code: false });
+        expect({ flag, requested: env.restoreSkipped?.requested }).toEqual({
+          flag,
+          requested: [flag],
+        });
+      }
+      // And the SET together, in one invocation: all three named at once.
+      const all = await runOpen(
+        ["--session-key", key, "--no-open", "--title", "t", "--timeout", "99", "--restore", id],
+        { home, cwd },
+      );
+      const allEnv = JSON.parse(all.stdout) as { restoreSkipped: { requested: string[] } | null };
+      expect(allEnv.restoreSkipped?.requested.sort()).toEqual(["restore", "timeout", "title"]);
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 60000);
+
+  test("BLAST-RADIUS GUARD — --pin and --no-open are HONOURED on attach and still exit 0", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-guard-"));
+    const key = `p0b-guard-${crypto.randomUUID().slice(0, 8)}`;
+    const first = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(first.stdout) as { session_id: string }).session_id;
+    try {
+      // ⛔ THIS PASSES TODAY AND MUST KEEP PASSING. It is not a red cell and
+      // demanding it fail would send someone to manufacture a break.
+      //
+      // The literal invocation is how EVERY anthill seat rejoins a live team
+      // board. An implementation that refuses on "any flag appended past the
+      // return" makes every seat's rejoin exit non-zero — this lane inflicting
+      // an instance of the very thesis it was written to cure. --no-open is
+      // VACUOUSLY honoured (nothing to open on an attach) and --pin is REALLY
+      // honoured (it runs inside the attach branch), so neither is in the set.
+      // ⚠ THIS CELL ASSERTS ONLY WHAT IS TRUE IN BOTH WORLDS — exit 0, and the
+      // pin written. Nothing about `restoreSkipped` belongs here: that field
+      // does not exist pre-fix, so asserting it would make this cell FAIL under
+      // the mutation and it would no longer be a blast-radius guard at all. It
+      // would be a red cell wearing a guard's label, and a report counting it as
+      // a guard would overstate the guard population by one — the exact
+      // success-shaped arithmetic this sprint is named after.
+      //
+      // MEASURED: the first version of this cell did exactly that. It carried
+      // the `restoreSkipped` assertions and failed under the mutation, which is
+      // how the mislabelling was found. The null-arm cell above owns that
+      // property, on both the spawn and attach paths.
+      const rejoin = await runOpen(["--session-key", key, "--pin", "--no-open"], { home, cwd });
+      expect(rejoin.code).toBe(0);
+      expect(readFileSync(join(cwd, ".bounty-session"), "utf8").trim()).toBe(id);
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 60000);
+
+  test("RED PRE-FIX — a REFUSED invocation still honours --pin (honour-what-you-can)", async () => {
+    // Ruled by prospero 2026-08-06, and pinned separately from the guard above
+    // because it is a DIFFERENT label: pre-fix this invocation exits 0 and never
+    // refuses at all, so this cell is red today. The behaviour it fixes: --pin
+    // is not in the lost-effect set, so withholding it on a refusal would make
+    // one flag's outcome depend on an unrelated flag — the over-inclusive error
+    // spelled as a side effect instead of an exit code.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-hwyc-"));
+    const key = `p0b-hwyc-${crypto.randomUUID().slice(0, 8)}`;
+    const first = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(first.stdout) as { session_id: string }).session_id;
+    try {
+      const both = await runOpen(["--session-key", key, "--pin", "--restore", id, "--no-open"], {
+        home,
+        cwd,
+      });
+      expect(both.code).not.toBe(0); // refused, for --restore
+      expect(readFileSync(join(cwd, ".bounty-session"), "utf8").trim()).toBe(id); // pinned anyway
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 40000);
+});
+
+// ── P0b's two load-bearing snapshot facts ────────────────────────────────
+// Both cells below are PRECONDITION, never counted as evidence about the fix:
+// they pin facts about server.ts that are TRUE IN BOTH WORLDS and that the
+// construction above depends on. They pass under the mutation, by design.
+// Both were measured on 2026-08-06 and NEITHER was guarded by a test. They are
+// the facts the construction above depends on, and a doc claim drifts under its
+// own code while failing no gate — so they are pinned here, in this lane, not as
+// a follow-up.
+describe("P0b — the snapshot facts the construction rests on", () => {
+  test("FACT 1 — `close` WRITES the snapshot, so closing an empty board clobbers a full one", async () => {
+    // This is #73, and it is why the construction kills -9 instead of closing.
+    // It is also why the refusal names no corrective verb: `--fresh` tears down
+    // by POSTing {type:"close"}, so advising `--fresh --restore` tells a user
+    // whose only data is in the snapshot to destroy it first.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-f1-"));
+    const key = `p0b-f1-${crypto.randomUUID().slice(0, 8)}`;
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "keep me", "--id", "k1", "--session", id], { env: { BOUNTY_HOME: home } });
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline && snapshotTaskCount(home, id) !== 1) await Bun.sleep(100);
+    expect(snapshotTaskCount(home, id)).toBe(1); // PRECONDITION: a full snapshot exists
+
+    await runCli(["remove", "k1", "--session", id], { env: { BOUNTY_HOME: home } });
+    await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    await Bun.sleep(500);
+    // close flushed the NOW-EMPTY board over the snapshot that held the task.
+    expect(snapshotTaskCount(home, id)).toBe(0);
+  }, 40000);
+
+  test("FACT 2 — snapshots are NOT close-only: a mutation flushes on the ~1s debounce", async () => {
+    // Why the construction POLLS the snapshot instead of sleeping, and why
+    // "empty the live board, then read the snapshot" destroys its own fixture:
+    // the emptying is itself a mutation and it flushes.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p0b-f2-"));
+    const key = `p0b-f2-${crypto.randomUUID().slice(0, 8)}`;
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "solo", "--id", "s1", "--session", id], { env: { BOUNTY_HOME: home } });
+      // No close anywhere in this cell — the flush must happen on its own.
+      const deadline = Date.now() + 10000;
+      while (Date.now() < deadline && snapshotTaskCount(home, id) !== 1) await Bun.sleep(100);
+      expect(snapshotTaskCount(home, id)).toBe(1);
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 40000);
+});
