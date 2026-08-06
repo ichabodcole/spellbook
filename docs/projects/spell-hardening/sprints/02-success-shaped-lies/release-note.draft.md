@@ -1,12 +1,22 @@
 # Release note — DRAFT
 
-**Status: DRAFT, and every figure below is `UNVERIFIED` until re-checked against
-what actually shipped.** Drafted by `prospero` while the ward and P0c's cold
-gate were still running, so that **the counts are not improvised at release
-time** — which is where this project's own defect class recurs.
+**Status: DRAFT — every figure below is `UNVERIFIED` until re-checked against
+what actually shipped.** Drafted by `prospero` **before** the last beats
+finished, so that **the counts were not improvised at release time** — which is
+where this project's own defect class recurs.
 
-**Two beats are NOT yet discharged and their results may change lines here:**
-thoth's ward (16/16) and cassandra's cold gate of P0c at `e7504cf`.
+**✅ BOTH BEATS NOW DISCHARGED** _(this paragraph previously said they were
+still running — corrected at finalize, in the assume-drift pass, by the doc's
+own owner):_
+
+- **thoth's ward — LANDED `bbc61c2`**, 16 entry points, plus 6 `SKILL.md` doc
+  lines. **Findings: 2, and BOTH are the milder class** (documented in the
+  tool's own `--help`, absent from `SKILL.md`). **Zero dark flags.**
+- **cassandra's cold gate of P0c — PASSED at `e7504cf`**, 7 red cells, all red
+  pre-fix and green post-fix.
+- **FINAL GATE, the assembled branch: `1336 pass · 0 fail · 102 files`**, biome
+  338 clean, exit 0. **The total reconciles: 1327 + 9 (the ward, now tracked) =
+  1336; 101 + 1 = 102 files.**
 
 > **The honesty rules this note is written against live in
 > [`plan.md`](./plan.md)'s Release section (rules 0, 0a, 0b, 1–4).** Read them

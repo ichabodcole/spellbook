@@ -22,8 +22,18 @@ project closes them.
 Sprint 03 is listed because sprint 01 deferred work with names — see sprint 02's
 plan for what it inherits and what it explicitly does not.
 
-**Release:** none cut yet. Sprint 01 closed no issues; sprint 02 is scoped to be
-the first releasable arc.
+**Release:** **none cut yet — and the cut is Cole's.** Sprint 01 closed no
+issues. **Sprint 02's CODE IS COMPLETE** (final gate
+`1336 pass · 0 fail · 102 files` at `bbc61c2`, all four lanes landed and
+cold-gated), **and 6 of the 14 issues become closable when the release is cut**
+— `#77` `#78` `#80` `#81` `#83` `#84`.
+
+> **⚠ Sprint 02 stays `Active` deliberately.** A sprint closes when its
+> **outcome** is written, and **that cannot be honest until the release
+> exists**: two of its four release beats — archiving closed backlog items, and
+> commenting the issues — are **downstream of the cut**, not upstream.
+> **`outcome.md` is OWED at close** and is the carry-forward artifact for
+> sprint 03.
 
 ## Other Documents
 
