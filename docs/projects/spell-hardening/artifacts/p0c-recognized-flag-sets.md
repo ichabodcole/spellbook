@@ -128,11 +128,44 @@ off the **code that consumes the flag** — `typeof flags.x === "string"`,
 `String(flags.x)`, a helper whose first line is `typeof v !== "string"`, a
 comparison to `true`. **Never off `SKILL.md`, never off the flag's name.**
 
+## ✅ CONSUMED AND VERIFIED — 6 of 6 entry points, 119 of 119 flags, zero divergence
+
+**Re-run at `e7504cf` (P0c 6/6 landed), against the `parseArgs` registries the
+lane actually declared** — not against this table's own reasoning:
+
+```
+bounty/scripts/cli.ts        15 string +  7 boolean = 22
+glamour/scripts/cli.ts       23 string +  3 boolean = 26
+glamour/scripts/server.ts     6 string +  0 boolean =  6
+grapevine/scripts/cli.ts     13 string + 13 boolean = 26
+imago/scripts/cli.ts         17 string +  3 boolean = 20
+magpie/scripts/cli.ts        15 string +  4 boolean = 19
+
+6 of 6 entry points read · 119 flags in code · 0 mismatched sets
+```
+
+**Every set compared as a SET (sorted, both directions), so an extra flag in
+code and a missing one both fail.** The comparator asserts it read six files
+before reporting — a partial read is an instrument failure, not a pass.
+
+**The `glamour --restore` conflict resolved by SPLIT, which is why 118 → 119:**
+`restore` (string, daemon spawn) and `unarchive` (boolean, `style-archive`). A
+flag with two incompatible semantics cannot be typed; it can be **split**.
+`glamour/SKILL.md:180` moved in the same commit (`a1e97a2`).
+
+**The strongest single row: `grapevine`, 26 of 26** — 24 of those required
+hand-reading, because grapevine **casts** (`flags.topic as string`) where its
+siblings use a `typeof` guard. The mechanically-derived files could have been
+right by luck; that one could not.
+
+---
+
 ## Read this before you use the table
 
-1. **The denominator is 118 across SIX entry points, not 112.** 112 counts the
-   **five accumulators only**; `glamour/server.ts` contributes the other **6**.
-   The two numbers were glued together in the plan and the card.
+1. **The denominator is 119 across SIX entry points** (was 118 at derivation;
+   `glamour --unarchive` was minted by Cole's split ruling at `a1e97a2`). **112
+   is a THIRD number** — the five accumulators only, which the plan and the card
+   had glued to "6 entry points."
 2. **"169 consumption sites" above is LINES. There are 249 read EXPRESSIONS.**
    Both are right and they answer different questions. **A type derivation done
    per-line misses 80 reads**, and several flags are read more than once on one
