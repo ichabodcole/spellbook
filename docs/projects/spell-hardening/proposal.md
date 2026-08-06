@@ -158,7 +158,7 @@ unchanged in scope and still unratified.**
 | **P0f** | The **in-function** exits            | (born mid-sprint; **45**-site denominator at `7a32677`) | `tail` slice → sprint 02; **rest deferred** |
 | **P1**  | Daemon lifecycle + data              | #64, #73, #74, `bounty-daemon-robustness-nits`          | **UNRATIFIED**                              |
 | **P2**  | Bounded reads                        | #75 + `bounty-tail-drain` (one flag, both spells)       | **UNRATIFIED**                              |
-| **P3**  | Legibility + honest signals          | #79, #72, #11, #76, `bounty-heartbeat-skip-blocked`     | **UNRATIFIED**                              |
+| **P3**  | Legibility + honest signals          | #79, #72, #11, #76                                      | **UNRATIFIED**                              |
 
 **P0f is the lane this proposal missed entirely.** P0's audit enumerated **one
 exit per FILE** — the `main()` wrapper — but **the defect's unit is the SITE.**
@@ -216,9 +216,23 @@ in the same pass than to schedule separately:
 - `2026-06-15-bounty-daemon-robustness-nits` — R1/R2/#3/#4. **#4 in particular**
   (`tail` retries forever on abnormal daemon death) is the "fails silently" half
   of #64's UX and belongs in the same phase.
-- `2026-06-22-bounty-heartbeat-skip-blocked` — **already fully designed and
+- ~~`2026-06-22-bounty-heartbeat-skip-blocked` — **already fully designed and
   approved** (with the dream-flute lead, on the `bounty-heartbeat-design`
-  channel). Same family as #76: both are heartbeat false-positives.
+  channel). Same family as #76: both are heartbeat false-positives.~~
+
+  > **⚠ ALREADY SHIPPED — removed from scope 2026-08-06.** This landed in
+  > **`e25a28d` on 2026-06-22**, the same day it was filed, and **GitHub #40 was
+  > closed then too.** The predicate is `isBlocked` at
+  > `bounty/scripts/server.ts:124`, applied at `:151` (`computeDuePokes`) and
+  > `:182` (`cardOverdue`), mirrored in `template.html:719-721`, and documented
+  > at `SKILL.md:494-498`. **P3 was over-counted by one whole item**, in both
+  > the phase table and this list.
+  >
+  > **Nothing swept the backlog file, so nothing ever contradicted this
+  > paragraph.** The item was fixed deliberately and closed upstream; only the
+  > local record stayed open. That is the failure this project is about, run on
+  > this project's own scope — **a document asserting work remains, with no
+  > mechanism that would ever tell it otherwise.**
 
 **Out of scope.**
 
@@ -710,8 +724,9 @@ agent does not push or release.**
   `2026-07-16-bounty-daemon-idle-death.md`,
   `2026-07-16-bounty-board-ui-polish.md`
 - Fold-ins: `2026-06-15-bounty-tail-drain.md`,
-  `2026-06-15-bounty-daemon-robustness-nits.md`,
-  `2026-06-22-bounty-heartbeat-skip-blocked.md`
+  `2026-06-15-bounty-daemon-robustness-nits.md`
+  (~~`2026-06-22-bounty-heartbeat-skip-blocked.md` — **shipped `e25a28d`, #40
+  closed 2026-06-22; out of scope**~~)
 - Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79, #80, #81, #83, #84 —
   and, deferred to the contract investigation, #82, #85, #86, #87, #88
 - Code: `plugins/spellbook/skills/{grapevine,bounty}/scripts/`
