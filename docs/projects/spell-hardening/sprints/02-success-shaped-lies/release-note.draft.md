@@ -90,13 +90,27 @@ one day** and **does not travel to CI.**
 | **106** rest on a **single derivation**                           | careful and **unfalsified — which is not cross-checked**                         |
 | **100 of 119** exercised by at least one test invocation          | **confirmed by execution rather than reading**; **19 are not, 9 of them magpie** |
 
-**⚠ INTERSECT THE TWO GAP MEASURES — `imago --models` has NO EVIDENCE ON EITHER
-AXIS.** The ward's findings (**undocumented**) and the coverage count
-(**unexercised**) are independent instruments, and **crossing them names the
-single weakest flag in the set — which neither instrument alone reports as
-special.** `grapevine --last` is undocumented but **exercised**;
-`imago --models` is **neither.** _The strongest coverage instrument this sprint
-produced, and it cost one join._
+**⚠ THERE IS A THIRD AXIS AND BOTH GAP INSTRUMENTS ARE BLIND TO IT.** Crossing
+_undocumented_ × _unexercised_ looked like it named the weakest flag in the set.
+**`thoth` FALSIFIED that: `--last` and `--models` are BOTH documented — in the
+tools' own usage strings** (`grapevine/cli.ts:632`, `:1827`;
+`imago/cli.ts:478-479`, which even explains the semantics).
+
+| axis                       | `grapevine --last` | `imago --models`             |
+| -------------------------- | ------------------ | ---------------------------- |
+| in `SKILL.md`              | **NO**             | **NO**                       |
+| in the tool's own `--help` | **YES, twice**     | **YES, with an explanation** |
+| exercised by a test        | no                 | no                           |
+| functional                 | yes                | yes                          |
+
+> **"Undocumented" is not ONE state.** _Documented nowhere_ is a genuinely dark
+> flag. _Documented in the tool only_ is reachable by a caller who runs
+> `--help`, and **invisible to an agent reading `SKILL.md` to decide whether to
+> reach for it at all.** **Both report identically today** — a count without its
+> denominator, inside a ward.
+
+**So "2 real findings" OVERSTATES: both are the MILDER class, and ZERO dark
+flags were found.**
 
 **⛔ Do NOT write "119 flags verified."** The lane **consumed** the artifact, so
 the comparison **cannot disagree with itself**, and `strict: true` guards the
@@ -144,9 +158,26 @@ name in two parsers.
   command runs **against whatever board ambient resolution finds** — `cassandra`
   hit exactly this building P0c's cell 5, which then failed against a
   **correct** fix. **Three seats found this edge from three directions in one
-  session.** **So it is discoverable at FAILURE time and not at COMPOSITION
-  time** — which is the gap that matters for an agent, because `SKILL.md` is
-  what it reads _before_ acting. **One line per affected spell closes it.**
+  session.**
+
+  **⚠ BOUNDED BY ITS OWN FINDER — the SEVERE half is BOUNTY-ONLY.** Measured by
+  env-var **name**, not access pattern: **bounty is the only spell with an
+  ambient env binding** (`BOUNTY_SESSION` / `BOUNTY_SESSION_KEY`); glamour ·
+  grapevine · imago · magpie · astrolabe have **none.** So _"the eaten flag
+  redirects your write to the LIVE TEAM BOARD"_ **does not generalise.** **The
+  weaker form is still real:** four spells fall back to a `<spell>-latest.json`
+  **machine-global pointer**, so an eaten `--session` hits **the most recently
+  opened board of that spell on this machine — possibly a stranger's.** Same
+  _shape_ as the discovery-pointer hazard, **not the same severity. `astrolabe`
+  has neither and is least exposed.** **⚠ UNMEASURED, flagged not tested:
+  `grapevine send <channel> <body>` takes its channel as a POSITIONAL**, so a
+  `--` before it could make the channel part of the body or shift positional
+  order. **A wrong-channel post is its own kind of bad.** Not driven mid-release
+  — **grapevine is the wire the team is coordinating on.** Check before or after
+  the cut, never during. **So it is discoverable at FAILURE time and not at
+  COMPOSITION time** — which is the gap that matters for an agent, because
+  `SKILL.md` is what it reads _before_ acting. **One line per affected spell
+  closes it.**
 
 - **glamour · imago · magpie document no `/cmd` envelope at all**, so `applied`
   has nowhere to land in three of the four spells P0d changed. **Absent, not
