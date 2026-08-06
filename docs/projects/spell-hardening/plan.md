@@ -22,9 +22,18 @@ parseArgs()          still whitespace-only, no `=`, no unknown-flag rejection   
 bounty add           still `await postCmd(...)` with no `const res =`             <- P0d live (#83)
 ```
 
-**The one thing that HAS shipped is `Phase 0e`** — a test-hermeticity fix,
+**~~The one thing that HAS shipped is `Phase 0e`~~ — CORRECTED 2026-08-06:
+`Phase 0e` is HALF shipped and was REOPENED.** It is a test-hermeticity fix,
 admitted as a prerequisite because the project's own gate was destroying the
-team board. **It is test-only and changes nothing a user sees.**
+team board. It is test-only and changes nothing a user sees — **but it had two
+halves and only one landed, and its gate could not see the difference.** See
+Phase 0e.
+
+> **⚠ BEFORE YOU MEASURE ANYTHING, read G5.** Until P0e half 2 lands, every gate
+> must be run with `TMPDIR=$(mktemp -d)`. **A green from a shared-pointer run is
+> not weak evidence — it is no evidence**, and that voids every baseline in this
+> repo recorded before 2026-08-06, including two independently-agreeing 1291/0
+> runs that were read as corroborating each other.
 
 ### Build order, and why it is not negotiable
 
@@ -166,6 +175,67 @@ let a seat's write land on a stranger board during this session.)_
 An unenumerated target set lets the implementer pick the fixture, and **a
 fixture the code already satisfies makes the gate pass trivially.** Every gate
 below names its sites, its literal invocations, and its byte thresholds.
+
+### G5 — Every gate POSITIVELY ASSIGNS a private `TMPDIR` (added 2026-08-06)
+
+**`TMPDIR=$(mktemp -d)`, not `env -u TMPDIR`.** A scrub is insufficient: an
+unset `TMPDIR` still resolves to the shared machine default.
+
+**Why, established causally 2026-08-06 and not by correlation.** Session
+discovery does **not** go through `BOUNTY_HOME` — it goes to a machine-global
+singleton at a fixed path (`cli.ts:85-86`, `join.ts:84-85`,
+`server.ts:1186-1187`, all `join(tmpdir(), "bounty-latest.json")`). If a second
+bounty daemon boots inside the test's ~200ms write→read window, the joiner
+resolves **someone else's board**. The verify seat proved it with a labelled
+tracer: injecting daemons named `inj-<pid>-<run>-<iter>` produced a suite
+failure whose **own expectation contained the injected id**.
+
+**The second daemon is us.** 410 of 412 recent pointer writes were `e2e-*` test
+fixtures — roughly 40 daemon boots per minute while a gate runs. Cleanup exists
+but is **graceful-exit-only**, and test daemons die by kill, so nothing has ever
+swept: 2206 stale pointer files, oldest 11 days.
+
+**The magnitude, which a coin-flip race cannot produce:** the same 1291-test
+suite ran **1125s shared** and **107s private** — and the shared run's slowest
+test consumed 1,020s before timing out and dying on `ConnectionRefused` to its
+own `/state`.
+
+> **⚠ A green from a shared-pointer run is not weak evidence. It is NO
+> evidence.** The race fires roughly once per run and a saturating injector
+> reproduced it only 2 times in 3. **Every green measured under a shared pointer
+> before 2026-08-06 is void**, including two independently-agreeing 1291/0
+> baselines that were read as corroboration and were two draws from one
+> distribution.
+
+**⚠ G5 does NOT belong in `.anthill/config.json`'s gate.** That is the shape
+Phase 0e step 2 already deleted — _a workaround left in place after its fix
+lands is a second, quieter source of truth._ **The tmpdir belongs in the
+harness** (Phase 0e half 2). Until that lands, G5 is hand-applied, and it is
+**repealed the moment the harness does it for you**.
+
+### G1 — amended 2026-08-06: the explicit `--session-key` IS the isolation
+
+`resolveSession` (`cli.ts`) has **six** precedence levels, and only the top four
+are environment:
+
+```
+1. --session-key   2. --session   3. $BOUNTY_SESSION_KEY
+4. $BOUNTY_SESSION 5. .bounty-session (walking UP from cwd)   6. the latest pointer
+```
+
+**Level 5 is a tracked file in this repo** containing the team board's id —
+**byte-identical to what level 3 derives.** So `env -u BOUNTY_SESSION_KEY` does
+not isolate a process whose cwd is under this repo; **it demotes one route to
+another route with the same destination.**
+
+**G1 already required an explicit throwaway `--session-key`, and that clause is
+what actually protects you.** What was wrong was the rationale: the scrub reads
+as the isolation and the explicit key as belt-and-braces. **It is the reverse. A
+gate that scrubs and omits the explicit key is not partially isolated — it is
+not isolated at all, and it looks more careful than one that does neither.**
+
+_Three people mis-ran this in the same direction on 2026-08-06. That is not
+three mistakes; it is one rule whose stated reason was wrong._
 
 ---
 
@@ -354,10 +424,33 @@ path, and nothing reports the skip.
 respawn. The reported board was **live and empty**, so hydration never fires —
 `--restore` was the only lever, and it was inert.
 
+> ### ⚠ SCOPE CHANGED 2026-08-06 — this lane is the FLAG SET, not `--restore` alone.
+>
+> **The early return at `cli.ts:388-397` silently discards `--timeout`,
+> `--restore` AND `--title`** — every flag appended after it. Verified against
+> the live process, not the CLI's own echo:
+>
+> ```
+> open --session-key K --timeout 14400   ->  "# attached to existing board"   exit 0
+> ps -o args= of the daemon:  server.ts --timeout 30 --no-open --id k-dae2-…
+> ```
+>
+> **The caller asked for four hours and got thirty seconds, silently.**
+>
+> **This plan enumerated ONE flag — a G4 violation inside the phase that cites
+> G4.** An unenumerated set let the fix pick its own scope, which is the exact
+> failure G4 exists to stop.
+>
+> **`--restore` was never the bug. The bug is an early return that discards
+> everything after it**, and we had been describing one of its three symptoms.
+> **Enumerate every flag the attach path cannot honour, by name, and gate the
+> SET.** This is not scope growth; it is the same defect, correctly counted.
+
 **Steps**
 
-1. On the attach path, detect that `--restore` was passed and **cannot be
-   honoured** (a live board already holds the key).
+1. On the attach path, detect that **any flag that cannot be honoured** was
+   passed (a live board already holds the key) — `--restore`, `--timeout`,
+   `--title`, and anything else appended past line 414. Enumerate them.
 2. **Exit non-zero** (D3 — ruled). **This half stands and is ratified.**
 
    **⛔ THE CORRECTIVE-VERB HALF IS FALSIFIED AND MUST NOT SHIP — measured
@@ -1203,6 +1296,99 @@ clean.
 full suite runs and **that board is still alive, with its cards unchanged,
 afterwards.** Both directions (G2): confirm the pre-fix suite kills it.
 
+> ### ⛔ REOPENED 2026-08-06. P0e had TWO halves; we shipped one and declared it done.
+>
+> **The gate above is why nobody noticed.** It asserts the **board survives**.
+> It never asserts **the suite is green** under the seat-shell frame. **A world
+> where the tests fail with the key set satisfies this gate completely** — which
+> is how "P0e is done" and "the suite is red in a seat shell" were both true for
+> a release. **That is a G4 enumeration hole in a gate that already shipped.**
+>
+> **Half 1 — the ambient env.** Landed `4b55da0`. Still correct, and now known
+> to be **smaller than it looked**: the key axis is a **no-op in this repo**,
+> because level 3 and level 5 of `resolveSession` resolve to the same board (see
+> G1, amended). Two seats ran the key axis and got **opposite signs on the same
+> cells** — a real effect does not reverse when a different operator runs it.
+>
+> **Half 2 — the discovery pointer. UNBUILT, and it is the unblock for every
+> other lane.** The harness must set its **own private `TMPDIR`**, so a peer
+> suite cannot reach its pointer. See G5 for the mechanism and the evidence.
+>
+> **Still test-only. Still changes nothing a user sees. Still does not widen the
+> release.** P0e's original justification is unchanged — which is precisely why
+> this is P0e's second half and **not** a fifth defect lane.
+>
+> **Gate for half 2 — STRUCTURAL, ratified 2026-08-06 (cassandra).** Landed as
+> `d650c97`.
+>
+> ```
+> after a suite run under a known ambient TMPDIR:
+>   assert NO  <spell>-latest.json  at the TOP LEVEL of that TMPDIR
+>   assert the pointer EXISTS inside the per-suite dir
+> ```
+>
+> **An earlier draft of this gate asserted _"the full suite is green under a
+> private `TMPDIR`"_ and was STRUCK as an inverted control** — that outcome is
+> probabilistic and would fail a correct fix roughly one run in three. **This
+> one asserts the MECHANISM: a file's location does not flake.** False pre-fix,
+> true post-fix, deterministic in both directions, and it never reads a test
+> result.
+>
+> **⚠ The second cell is not optional.** Asserting only the _absence_ passes
+> trivially when the suite spawned no daemon at all. **That vacuity has bitten
+> this project four times** — P0's sub-64KiB fixture, P0b's degenerate
+> precondition, the ward's empty documented-set, `probe-help2`'s exit-127 cells.
+> **General form: every _"X is not there"_ needs _"and the thing that would have
+> put X there ran."_**
+>
+> **⚠ This gate is scoped to the PEER channel and does not read as such.** It is
+> satisfied completely by a build where **all fixtures in a file share one
+> pointer and race each other** — `mkdtempSync` at `server.test.ts:803` runs
+> once at **module scope**, so `TEST_TMPDIR` is per-**file**, not
+> per-**fixture**. **Per-run isolation is not per-fixture isolation**, and a
+> gate that cannot see the difference is partial isolation reading as total, at
+> the gate layer.
+>
+> **OPEN, unmeasured:** does any fixture's daemon outlive its test? If every
+> daemon dies with its test there is no intra-file concurrency and the question
+> closes. **Measure before building for it.**
+>
+> **⚠ Do NOT read a suite result — green or red — off a dirty tree.** Recorded
+> because the lead did it twice in ten minutes and published a false finding
+> from it. He ran the full gate while a peer had **uncommitted edits to
+> `server.test.ts`**, the file that spawns the daemons, got a red, and broadcast
+> _"G5 is necessary and not sufficient"_ as a measured result. It was withdrawn
+> within the hour: **both greens on record ran on a clean tree
+> (`uncheckedAgainst: []`), both reds on a dirty one**, and the variable tracked
+> peer WIP perfectly across four runs.
+>
+> **The instrument already existed and was already assigned.** `anthill commit`
+> prints `uncheckedAgainst` on every land, and the lead had explicitly taken
+> ownership of the cross-seat view of it one hour earlier. **He did not run
+> `git status` before treating an exit code as a fact about the world.**
+>
+> > **The SOP documents the green half — _"non-empty means your green was
+> > measured against work your commit does not include."_ The missing corollary
+> > is the dangerous one: a RED is equally uninterpretable, and a red is far
+> > more likely to be published as a finding.**
+>
+> **Standing precondition, all gates: `git status` first. A gate is
+> uninterpretable in BOTH directions while a peer has uncommitted work in the
+> tree.**
+>
+> **⚠ The production defect is NOT fixed by this and is deliberately out of
+> scope.** Users' daemons still share a machine-global pointer; four spells
+> carry the identical shape in source (bounty, glamour, imago, magpie). **That
+> is a candidate issue for Cole, filed beside #85–#88 with the contract
+> investigation** — it is the same question as last session's candidate #2 (_a
+> bounty read cannot identify which board answered it_) from the other end.
+> **Fixing it here means fixing it twice.**
+>
+> _And it would give this session no relief either way: seats run the **cached**
+> plugin copy (1.16.0), byte-identical to the repo but loaded from cache, so a
+> pointer fix landed tonight does not change the daemons currently polluting the
+> singleton._
+
 **⚠ What P0e is NOT.** It stops _our tests_ from seizing a live board. **It does
 not stop any other process carrying the ambient key from doing so**, and the
 read envelope still cannot tell you it happened. That half is a candidate issue
@@ -1299,9 +1485,50 @@ clobber is a footgun on a healthy daemon too.
    first-party one is not.** If D1.3 lands well, anthill#43 should shrink or be
    deleted rather than maintained._
 
-5. **#64 root cause — enumerate, don't guess.** The failure survived a
-   keep-alive tail, so the "idle timeout" theory is incomplete. The existing
-   backlog item says this explicitly.
+5. **#64 root cause — ~~enumerate, don't guess~~. THE IDLE-TIMEOUT FRAMING IS
+   DEAD ON ARITHMETIC (2026-08-06, daedalus). #64 is genuinely unexplained.**
+
+   The plan half-knew this — _"the failure survived a keep-alive tail, so the
+   idle timeout theory is incomplete."_ **The incompleteness is not which board
+   the tail was on. There was never a timeout short enough to fire.**
+
+   | fact                                                                           | value                           | landed                    |
+   | ------------------------------------------------------------------------------ | ------------------------------- | ------------------------- |
+   | reported death                                                                 | **~20 minutes**                 | reported **2026-07-09**   |
+   | default idle timeout (`server.ts:542`)                                         | **7200s — two hours**           | `d38a32a`, **2026-06-17** |
+   | the requested flag                                                             | `--timeout 14400` (4h)          | —                         |
+   | subscriber guard `if (subscriberCount > 0) return false` (`server.ts:210-212`) | watched boards never idle-close | `d38a32a`, **2026-06-17** |
+
+   **Both guards landed three weeks BEFORE the report.** At the time of the
+   report, a board with **zero** subscribers and **no** `--timeout` flag still
+   lives two hours. **A death at ~20 minutes is not reachable by any timeout
+   value in the code** — not the default, not the flag, watched or unwatched.
+
+   > **"Idle" is the reporter's inference, not a measurement.** Every story
+   > about _which timeout applied_ answers the wrong question. **Two were
+   > proposed on 2026-08-06 — the lead's (a keep-alive tail misresolved to a
+   > stranger board via the discovery singleton) and the engine seat's (a keyed
+   > attach silently drops `--timeout`) — and the arithmetic kills both
+   > equally.**
+
+   **The surviving candidate, recorded as a candidate:** _something closed it._
+   That needs no timeout, and it is the one class with a **proven instance in
+   this repo** — the gate destroying live boards (`4b55da0`), and `close --help`
+   executing (2026-08-06). **UNVERIFIED for #64 specifically.**
+
+   **⚠ #64 is NOT closed by the discovery-pointer fix.** That fix is right for
+   its own reasons and this is not one of them. _The lead proposed the inverse —
+   that fixing the pointer would close #64 and therefore cost nothing — and
+   flagged it in the same message as the hypothesis to trust least, because it
+   dissolved a scope problem too conveniently. It did, and it was._
+
+   **⚠ The reporter's binding is UNVERIFIED — UNREACHABLE-BY-CONSTRUCTION.** It
+   lives in another repo, in a session seven days before diagnostics logging
+   existed. Recorded as unreachable rather than counted as checked.
+
+   **This strengthens the case that P1 needs its own ratify round**, not that
+   #64 should be chased inside this project.
+
 6. **Fold in the robustness nits** (`2026-06-15-bounty-daemon-robustness-nits`):
    R1 `prevBlocked` stale entry; R2 non-numeric `?since=` replaying everything;
    #3 unbounded `events[]`; **#4 `tail` retries forever on abnormal daemon
