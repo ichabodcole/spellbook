@@ -90,6 +90,14 @@ one day** and **does not travel to CI.**
 | **106** rest on a **single derivation**                           | careful and **unfalsified — which is not cross-checked**                         |
 | **100 of 119** exercised by at least one test invocation          | **confirmed by execution rather than reading**; **19 are not, 9 of them magpie** |
 
+**⚠ INTERSECT THE TWO GAP MEASURES — `imago --models` has NO EVIDENCE ON EITHER
+AXIS.** The ward's findings (**undocumented**) and the coverage count
+(**unexercised**) are independent instruments, and **crossing them names the
+single weakest flag in the set — which neither instrument alone reports as
+special.** `grapevine --last` is undocumented but **exercised**;
+`imago --models` is **neither.** _The strongest coverage instrument this sprint
+produced, and it cost one join._
+
 **⛔ Do NOT write "119 flags verified."** The lane **consumed** the artifact, so
 the comparison **cannot disagree with itself**, and `strict: true` guards the
 **name**, not the **type**.
@@ -117,10 +125,29 @@ name in two parsers.
   `--`"_ and _"for free text containing dashes, use `--stdin`, or put it after a
   bare `--`"_ — and exits **2**. **Driven, not asserted:**
   `add -- write the --draft section` stores `'write the --draft section'`
-  verbatim; the unterminated form refuses. **So it is discoverable at FAILURE
-  time and not at COMPOSITION time** — which is the gap that matters for an
-  agent, because `SKILL.md` is what it reads _before_ acting. **One line per
-  affected spell closes it.**
+  verbatim; the unterminated form refuses.
+
+  **⛔ THE SHARP EDGE MUST BE IN THE LINE OR THE LINE IS A TRAP: FLAGS GO BEFORE
+  THE TERMINATOR.** Anything after it is **text — including a flag** — and it
+  fails **SILENTLY at exit 0**:
+
+  ```
+  add --session-key K -- another title --owner bob
+     -> owner=None · title='another title --owner bob' · EXIT 0
+  ```
+
+  **Correct POSIX semantics, and a silent exit-0 failure living inside the lane
+  that exists to abolish silent exit-0 failures.**
+
+  **⚠ Worst form, and it is a FIELD INSTANCE: it can eat the flag that ISOLATES
+  you.** A `--` placed before `--session-key` swallows the session key, so the
+  command runs **against whatever board ambient resolution finds** — `cassandra`
+  hit exactly this building P0c's cell 5, which then failed against a
+  **correct** fix. **Three seats found this edge from three directions in one
+  session.** **So it is discoverable at FAILURE time and not at COMPOSITION
+  time** — which is the gap that matters for an agent, because `SKILL.md` is
+  what it reads _before_ acting. **One line per affected spell closes it.**
+
 - **glamour · imago · magpie document no `/cmd` envelope at all**, so `applied`
   has nowhere to land in three of the four spells P0d changed. **Absent, not
   stale** — and whether they should acquire one is out of scope.
