@@ -2959,20 +2959,44 @@ async function runOpen(
     env: { ...hermeticEnv(), BOUNTY_HOME: opts.home },
   });
   const budget = opts.timeoutMs ?? 15000;
-  const timer = setTimeout(() => proc.kill("SIGKILL"), budget);
-  const [stdout, stderr] = await Promise.all([
-    new Response(proc.stdout).text(),
-    new Response(proc.stderr).text(),
+
+  // ⚠ G7 REACHABILITY — EXIT IS OBSERVED BEFORE THE PIPES ARE READ, and the
+  // order is the whole point.
+  //
+  // The previous version read BOTH pipes to completion and only then awaited
+  // `proc.exited`, so its G7 assertion sat downstream of an EOF it might never
+  // receive. A pipe reaches EOF when EVERY holder closes it — including a
+  // DETACHED GRANDCHILD. `bounty open` spawns exactly such a grandchild, so if
+  // that daemon ever held one of these handles, the reads would block forever,
+  // the assertion below would never execute, and the failure would surface as a
+  // suite timeout — which reads as flakiness, not as the hang it is. The cell
+  // would not go red; it would become UNREACHABLE.
+  //
+  // `SIGKILL` at the budget does NOT rescue it: it kills `proc`, not a detached
+  // grandchild, so pipes held by the daemon stay open after the kill.
+  //
+  // So termination is decided by racing `proc.exited` against a timer, touching
+  // no pipe. The reads happen afterwards and are themselves bounded, so this
+  // helper always returns a verdict rather than hanging.
+  const verdict = await Promise.race([
+    proc.exited.then((code) => ({ timedOut: false, code })),
+    Bun.sleep(budget).then(() => ({ timedOut: true, code: -1 })),
   ]);
-  const code = await proc.exited;
-  clearTimeout(timer);
+  if (verdict.timedOut) proc.kill("SIGKILL");
   const ms = performance.now() - started;
-  // G7: a process we had to kill did not terminate on its own.
-  expect({ verb: `open ${args.join(" ")}`, returnedOnItsOwn: ms < budget }).toEqual({
+
+  // G7, asserted on the pipe-independent verdict.
+  expect({ verb: `open ${args.join(" ")}`, returnedOnItsOwn: !verdict.timedOut }).toEqual({
     verb: `open ${args.join(" ")}`,
     returnedOnItsOwn: true,
   });
-  return { stdout, stderr, code, ms };
+
+  // Reads come last and are bounded — a grandchild still holding a handle
+  // degrades this to empty output instead of wedging the suite.
+  const drain = (s: ReadableStream<Uint8Array>) =>
+    Promise.race([new Response(s).text(), Bun.sleep(2000).then(() => "")]);
+  const [stdout, stderr] = await Promise.all([drain(proc.stdout), drain(proc.stderr)]);
+  return { stdout, stderr, code: verdict.code, ms };
 }
 
 function snapshotTaskCount(home: string, id: string): number | null {
@@ -3497,4 +3521,49 @@ describe("P0f — tail drains its terminal frame before exiting", () => {
     const ev = JSON.parse(bigLine as string) as { task?: { title?: string } };
     expect(ev.task?.title?.length).toBe(1_000_000);
   }, 60000);
+});
+
+// ── G7 REACHABILITY — the property runOpen's termination cell rests on ────
+//
+// `runOpen` can decide termination without reading the pipes (see the note in
+// it), but a detached grandchild holding a harness handle is still the thing
+// that would wedge any harness copied from it. Today `bounty open`'s daemon
+// holds NONE of them — `stdio: ["ignore", "ignore", <fd → daemon.log>]`.
+//
+// ⚠ THAT PROPERTY IS DOCUMENTED FOR A DIFFERENT REASON (#64, capturing Bun's
+// own hard-abort output on a durable log) AND IS LOAD-BEARING FOR G7 BY
+// ACCIDENT. Nothing asserted it. So a future edit "just piping stdout to read
+// the handshake" — one word, entirely reasonable, and exactly what glamour does
+// — would silently arm the hang class in every harness that copies this one.
+//
+// This is a SOURCE-SCANNING guard rather than a behavioural one on purpose: the
+// behaviour it protects is the ABSENCE of a hang, and you cannot assert an
+// absence by observing a passing run. It goes red on the one-word change and
+// names why. (Same instrument as the P0e hermeticity guard, which found five
+// spawn sites a mutation test could not reach.)
+test("G7 PRECONDITION — the detached daemon holds NO pipe from its spawner", async () => {
+  const src = codeLines(await Bun.file(CLI).text());
+  const m = /spawn\(process\.execPath, args, \{([\s\S]*?)\}\);/.exec(src);
+  expect(m).not.toBeNull();
+  const call = (m as RegExpExecArray)[1];
+
+  // The daemon must be detached — that is what makes it a grandchild of any
+  // harness driving the CLI, and therefore what makes its stdio load-bearing.
+  expect(call).toContain("detached: true");
+
+  const stdio = /stdio:\s*\[([^\]]*)\]/.exec(call);
+  expect(stdio).not.toBeNull();
+  const [stdin, stdout] = (stdio as RegExpExecArray)[1].split(",").map((x) => x.trim());
+
+  // stdin + stdout must be "ignore". stderr is deliberately NOT constrained to
+  // "ignore" — it is an opened fd to daemon.log (#64), which is a FILE and not
+  // a handle the spawner owns, so it cannot hold a harness pipe open.
+  expect({ stdin, stdout }).toEqual({ stdin: '"ignore"', stdout: '"ignore"' });
+
+  // And the failure this guard exists for, named so the red is self-explaining:
+  // "pipe" or "inherit" here hands the detached daemon a handle belonging to
+  // whoever spawned the CLI, so that pipe never reaches EOF and every harness
+  // copied from runOpen inherits a hang that reads as a timeout.
+  expect(call).not.toContain('"pipe"');
+  expect(call).not.toContain('"inherit"');
 });
