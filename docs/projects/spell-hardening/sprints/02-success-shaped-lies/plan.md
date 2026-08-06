@@ -894,14 +894,14 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
 - **A count travels with its denominator, or it does not travel.** **Four counts
   in this project have now been corrected for denominator reasons:**
 
-  | count                        | what happened                                                                                     |
-  | ---------------------------- | ------------------------------------------------------------------------------------------------- |
-  | discovery-pointer sites      | **22 vs 19 vs 10** — three greps, three unstated globs, still unresolved                          |
-  | `process.exit(` sites        | **44 vs 45** — same glob, two shas                                                                |
-  | conformant parsers           | **9 vs 10** — `Bun.argv` invisible to a `process.argv` sweep                                      |
-  | spells with a spawning test  | **"none of three"** — glob stopped at `scripts/`; the suites live in `tests/`                     |
-  | P0c flag count               | **112 vs 118** — five accumulators vs all six entry points, two denominators glued into one       |
-  | **`process.exit(` sites #2** | **45 GREP HITS vs 35 CODE SITES** — ten hits are COMMENTS, and they are our own remediation notes |
+  | count                        | what happened                                                                                                                     |
+  | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+  | discovery-pointer sites      | **22 vs 19 vs 10** — three greps, three unstated globs, still unresolved                                                          |
+  | `process.exit(` sites        | **44 vs 45** — same glob, two shas                                                                                                |
+  | conformant parsers           | **9 vs 10** — `Bun.argv` invisible to a `process.argv` sweep                                                                      |
+  | spells with a spawning test  | **"none of three"** — glob stopped at `scripts/`; the suites live in `tests/`                                                     |
+  | P0c flag count               | **112 vs 118 vs 119** — five accumulators · all six entry points · **and +1 after Cole's `--unarchive` rename minted a new flag** |
+  | **`process.exit(` sites #2** | **45 GREP HITS vs 35 CODE SITES** — ten hits are COMMENTS, and they are our own remediation notes                                 |
 
   > **⚠ The sixth row is a NEW MECHANISM and it inverts the other five.**
   > **Added 2026-08-06 (sprint 02) by `daedalus`, found while re-deriving P0f's
@@ -1254,16 +1254,29 @@ artifact answers half of what step 2 needs, and the half it does not answer is
 > an independent instrument: the figure is 118, not 112 — and the two numbers
 > below answer different questions.**
 >
-> | figure  | question it answers                                         |
-> | ------- | ----------------------------------------------------------- |
-> | **112** | flags across the **five accumulator** parsers               |
-> | **118** | flags across **all six converted entry points**             |
-> | **169** | **LINES** matching a `flags.` read in the five accumulators |
-> | **249** | **READ EXPRESSIONS** across all six                         |
+> | figure  | question it answers                                             |
+> | ------- | --------------------------------------------------------------- |
+> | **112** | flags across the **five accumulator** parsers                   |
+> | **118** | flags across **all six converted entry points**, at derivation  |
+> | **119** | **after `--unarchive` was minted by Cole's rename** — see below |
+> | **169** | **LINES** matching a `flags.` read in the five accumulators     |
+> | **249** | **READ EXPRESSIONS** across all six                             |
 >
 > **This document said "112 flags at the 6 converted entry points" — which glues
 > two denominators together.** `glamour/server.ts` is the sixth and contributes
 > **6** (`intent port project restore timeout title`); the 112 excludes it.
+>
+> **⏱ AND THE FIGURE HAS ALREADY DECAYED, BY THIS PLAN'S OWN RULE — 118 → 119.**
+> **Cole's `--restore`/`--unarchive` ruling MINTED A FLAG that did not exist
+> when the table was derived.** `thoth` caught it on his own artifact,
+> proactively, **by applying the decay rule he had landed two hours earlier** —
+> the first time that rule has fired on the seat who wrote it, and the first
+> time it has fired **before** anyone consumed a stale row.
+>
+> **⚠ A RULING IS AN INVALIDATOR TOO.** The decay rule was written about
+> **commits** moving the tree under an artifact. **A human decision that mints a
+> name moves it just as hard, and nothing about it looks like a commit** — it
+> arrives on the wire, not in `git log -S`.
 >
 > **And "169 consumption sites" is LINES, not reads.** A type derivation done
 > per-LINE misses **80 read expressions**, and several conflicts live on shared
@@ -1329,7 +1342,7 @@ fix, re-introduced by the fix, and on `add`/`message` it eats prose.
 > wrong fact is corrected by the next person who looks. **A false reassurance
 > gets no corrective feedback — it is read while planning, and only tested by
 > someone who tries to reach the thing it told them not to check.** Left
-> standing, it would have told this lane that its 118 unverified rows were
+> standing, it would have told this lane that its 119 unverified rows were
 > self-checking.
 
 > ### ⛔ RULED BY COLE 2026-08-06 — `glamour/cli.ts --restore` is renamed, because it CANNOT be typed
