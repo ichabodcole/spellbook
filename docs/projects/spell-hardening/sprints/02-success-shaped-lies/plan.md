@@ -1856,6 +1856,70 @@ _That is the same instrument gap that let the 23-minute hang ship._
    > cap, so the field takes it — then `tail` that one event. **The gate's own
    > vacuity rule (G8) applied to G8's own threshold.**
 
+   > ### ⛔⛔ THE ABOVE IS NECESSARY AND **NOT SUFFICIENT**. A cell built to it PASSES AGAINST THE BUG.
+   >
+   > **Measured by `daedalus` 2026-08-06, both directions, after his own
+   > correctly-labelled `RED PRE-FIX` cell passed with the bug restored —
+   > twice.**
+   >
+   > ```
+   > bug restored, 10 x 1MB tasks, tail --since 0 | cat, close at 0.02s/0.05s/0.15s/0.3s/1.0s
+   >    -> 10001074 bytes.  COMPLETE AT EVERY TIMING.
+   > with the fix, identical construction
+   >    -> 10001074 bytes.  BYTE-IDENTICAL.
+   > ```
+   >
+   > **Five timings, fixed and buggy indistinguishable. The cell CANNOT fail.**
+   >
+   > **⚠ THE DISCRIMINATING VARIABLE IS THE CONSUMER'S DRAIN STATE, NOT THE
+   > PAYLOAD SIZE.**
+   >
+   > ```
+   > same board, 3 x 1MB, tail piped to a NON-draining consumer:  | ( sleep 2; cat )
+   >    bug restored -> 65536 bytes       exactly the buffer
+   >    with the fix -> 3000440 bytes     complete
+   > ```
+   >
+   > **THAT is the cell.** The payload must be over-buffer **AND** the consumer
+   > must not be draining at the instant of exit. **`expect(bytes) > 65_536`
+   > before the parse remains correct and remains INSUFFICIENT.**
+   >
+   > **Why `| cat` cannot express it:** a continuously-draining consumer lets
+   > each write complete before the next arrives, so **the write immediately
+   > preceding the exit is the small `closed` frame**, which fits under the
+   > buffer. **The big-payload-in-flight-at-exit condition does not occur when
+   > someone is reading.**
+   >
+   > **It is realistic, not contrived:** any consumer momentarily not reading is
+   > in that state — the field condition for a Monitor-wrapped `tail` whose
+   > reader is busy.
+   >
+   > ### ⚠⚠ THIS DOES **NOT** INVALIDATE SPRINT 01's NINE ENTRY-POINT GATES. Read this before concluding it does.
+   >
+   > **The two verb classes differ in whether the consumer has TIME to drain,
+   > and the fixture spec was correct for the class it was derived from:**
+   >
+   > | verb class                        | shape                                        | is a big write in flight at exit?              |
+   > | --------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+   > | **one-shot** (`state`, `pull`, …) | one big `write()`, **then exit immediately** | **ALWAYS** — no time for any consumer to drain |
+   > | **streaming** (`tail`)            | many writes over seconds, **consumer-paced** | **ONLY if the consumer is stalled**            |
+   >
+   > **Sprint 01 measured 65536-vs-114042 on a one-shot verb through a shell
+   > pipe, and that discrimination was real.** The fixture spec was then
+   > **carried to a different verb class without being re-derived** — and its
+   > question changed on the way.
+   >
+   > **The generalisable form, and it is this session's most-repeated shape:** a
+   > correct measurement, carried to a context where the thing it discriminates
+   > on is no longer the thing that varies. **Re-derive a fixture when the verb
+   > class changes, exactly as you would re-derive a line reference when the
+   > tree moves.**
+   >
+   > **⚠ BINDS EVERY P0f CELL, INCLUDING ONES ALREADY DRAFTED. Like G6, a cell
+   > written to the old spec needs REWRITING, not re-running** — it is green
+   > against the bug, and **the label discipline cannot catch it**: daedalus's
+   > cell was correctly labelled `RED PRE-FIX` and was still not red.
+
 4. **`RED PRE-FIX` — assert BOTH directions in the SAME RUN: the piped form AND
    the file form.** One variable, two destinations:
 
