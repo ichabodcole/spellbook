@@ -183,6 +183,19 @@ is the _agent's_ interface.)
   code suffice. Don't pre-build snapshot/restore for state that's trivially
   reconstructable or genuinely ephemeral, and don't push the human surface onto
   the agent's HTTP path.
+- **Boundary check — the discovery pointer belongs in the spell's OWN home, not
+  `tmpdir()`.** A daemon that writes `<spell>-latest.json` into the OS temp
+  directory has put its session pointer in a namespace it does not control and
+  cannot scope: every process on the machine shares the one filename, so any
+  daemon booting anywhere overwrites it between another caller's write and read.
+  Put it under the spell's home (`BOUNTY_HOME`, `GRAPEVINE_HOME`, …) so the
+  env-scoping that already isolates the data store isolates discovery too.
+  **Cleanup discipline does not cover this** — see the
+  `exit-cleanup-must-verify-ownership` scenario, which four spells implement
+  correctly while all four still put the pointer in the shared dir. Verifying
+  you own a slot before releasing it says nothing about a global slot anyone may
+  claim; ownership-of-the-delete is not ownership-of-the-namespace, and the
+  collision happens at claim time.
 - **Repeal when:** a better agent-transport primitive supersedes
   cmd/state/events-over-HTTP (a first-class harness channel for spell state, or
   an MCP surface contract) — then rewrite the specifics; don't keep them from
