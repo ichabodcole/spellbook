@@ -126,3 +126,86 @@ describe("cli ↔ daemon", () => {
     rmSync(staleHome, { recursive: true, force: true });
   });
 });
+
+// ── P0f — `tail` drains its terminal frame before exiting ────────────────
+//
+// astrolabe's `streamEvents` wrote a frame and called process.exit on the next
+// statement. Bun's stdout is async on a PIPE, so the exit discards whatever has
+// not drained. `tail` is the verb agents leave running for hours, and the frames
+// it loses are the ones saying the stream ended.
+//
+// ⚠ THIS CELL DOES NOT USE `runCli` ABOVE, DELIBERATELY. That helper is
+// `Bun.spawn({stdout:"pipe"})`, and by G6 that construction CANNOT FAIL on this
+// defect — measured elsewhere in this repo at 65536 / 114042 / 65536 for the
+// same payload read three ways, with Bun.spawn's pipe the one that reads
+// COMPLETE. A gate adapted from `runCli` would be a decoration.
+//
+// ⚠ AND A >64KiB PAYLOAD ALONE IS NOT ENOUGH. Measured on bounty's twin of this
+// site with the bug present: 10 MB of replay through `| cat`, closing at five
+// different delays — complete every time, byte-identical to the fixed build. A
+// consumer that keeps draining lets each write finish before the next arrives.
+// The discriminating condition is that bytes are UNDRAINED at the instant of
+// exit, which is what `| ( sleep 2; cat )` arranges.
+describe("P0f — tail drains before exiting", () => {
+  test("RED PRE-FIX — a >64KiB replay survives tail's exit, and tail RETURNS", async () => {
+    const p0fHome = mkdtempSync(join(tmpdir(), "astrolabe-p0f-"));
+    try {
+      await runCli(p0fHome, ["open", "--no-open"]);
+      const added = await runCli(p0fHome, ["add", "Big Project", "--path", "~/big"]);
+      const id = (JSON.parse(added.out) as { id: string }).id;
+
+      // ONE event over the buffer: a single ~1 MB status summary, not many
+      // small events.
+      const big = "x".repeat(1_000_000);
+      const st = Bun.spawn(["bun", CLI, "status", id, "--stdin"], {
+        env: { ...process.env, ASTROLABE_HOME: p0fHome },
+        stdin: new TextEncoder().encode(big),
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      await st.exited;
+
+      const tail = Bun.spawn({
+        cmd: ["sh", "-c", `bun ${CLI} tail --since 0 | ( sleep 2; cat )`],
+        env: { ...process.env, ASTROLABE_HOME: p0fHome },
+        stdin: "ignore",
+        stdout: "pipe",
+        stderr: "ignore",
+      });
+
+      await Bun.sleep(400);
+      await runCli(p0fHome, ["close"]);
+
+      // G7 FIRST, and observed WITHOUT touching the pipes — a hang is a
+      // different failure from a truncation and must not be reported as one.
+      const budget = 25_000;
+      const verdict = await Promise.race([
+        tail.exited.then((code) => ({ timedOut: false, code })),
+        Bun.sleep(budget).then(() => ({ timedOut: true, code: -1 })),
+      ]);
+      if (verdict.timedOut) tail.kill("SIGKILL");
+      expect({ returnedOnItsOwn: !verdict.timedOut, code: verdict.code }).toEqual({
+        returnedOnItsOwn: true,
+        code: 0,
+      });
+
+      const out = await Promise.race([
+        new Response(tail.stdout).text(),
+        Bun.sleep(3000).then(() => ""),
+      ]);
+
+      // G8 — the over-buffer assertion BEFORE the parse, so a fixture that
+      // silently shrank would fail loudly instead of passing vacuously.
+      expect(out.length).toBeGreaterThan(65_536);
+
+      // And INTACT, not merely large: a truncated frame is cut mid-value, so it
+      // cannot parse. That is the whole check.
+      const line = out.split("\n").find((l) => l.includes('"status"') && l.length > 65_536);
+      expect(line).toBeDefined();
+      const ev = JSON.parse(line as string) as { summary?: string; status?: { summary?: string } };
+      expect((ev.summary ?? ev.status?.summary)?.length).toBe(1_000_000);
+    } finally {
+      rmSync(p0fHome, { recursive: true, force: true });
+    }
+  }, 60000);
+});
