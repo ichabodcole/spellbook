@@ -196,6 +196,18 @@ session by default; pass `--session <id>` to target a specific one.
 
 ### Verbs
 
+> **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
+> free text would otherwise be read as a flag:
+> `add -- "fix the --stdin handler later"`. **Anything after `--` is a
+> positional, including something that looks like a flag** — it is consumed
+> silently, at exit 0, with no warning.
+>
+> **⚠ For this spell that is worse than silent: a `--session-key` placed after
+> `--` is eaten, and the write lands on whatever board the ambient environment
+> resolves to.** The invocation looks isolated and is not. **Correct:
+> `bounty add --session-key K -- "text"`. Never
+> `bounty add -- --session-key K "text"`.**
+
 | Verb                                                                                                                   | Does                                                                                                                                 |
 | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                  | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69) |
