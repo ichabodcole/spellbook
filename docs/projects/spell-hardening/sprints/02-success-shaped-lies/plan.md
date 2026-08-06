@@ -752,6 +752,56 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   RELEASE-BEAT prerequisite** — _"did we make the suite worse?"_ is a question
   the release note cannot answer with an unmeasured number.
 
+- **🌳 A BARE `git worktree` HAS NO `node_modules` — AND IT FAILS AS A PLAUSIBLE
+  RESULT, NOT AS AN ERROR.**
+
+  **Added 2026-08-06 (sprint 02) by `cassandra`, against the instrument SHE
+  introduced to this team the same day.** A worktree checks out **tracked**
+  files; `node_modules` is gitignored, so it is **absent**, and every surface
+  test dies on module resolution:
+
+  ```
+  error: Cannot find module 'react/jsx-dev-runtime' from …/surface/GraphCanvas.tsx
+  error: Cannot find package 'micromark'            from …/surface/state/markdown.ts
+  ```
+
+  **⛔ THE SHAPE OF THE FAILURE IS THE HAZARD.** `bun test` reports these as
+  _"unhandled error between tests"_ **and keeps going** — so the run still emits
+  pass/fail numbers that a summary parser will happily scrape.
+
+  > **It would have produced a clean, well-formed `k of 4` in which the pre-P0d
+  > suite looked catastrophically broken — and the conclusion drawn from it
+  > would have been that P0d IMPROVED the suite.** Plausible, reproducible,
+  > release-note-bound, **and wrong in the direction that exonerates the change
+  > under test.**
+
+  **What caught it was a BYTE COUNT TOO SMALL** — a 985-byte log where a full
+  suite is hundreds of times that. **Not care, not review.** A full-length log
+  with a few extra failures would have shipped.
+
+  **Fix, and it is the MORE correct instrument rather than a workaround:**
+
+  ```
+  ln -s <repo>/node_modules <worktree>/node_modules
+  ```
+
+  The post-change figure was measured against the main repo's `node_modules`; a
+  worktree with its own freshly-installed tree **differs in exactly the
+  dimension nobody is controlling for.** **The symlink makes the two runs
+  comparable on the only axis that matters.**
+
+  **⚠ Scope, checked rather than assumed:** the P0b / P0d / P0f **drives** were
+  unaffected — they drive spell CLIs and daemons under
+  `plugins/spellbook/skills/`, which are Bun-native `.ts` with **no third-party
+  imports** (Contract 3, backends ship as source). **The dependency-free backend
+  is why, and that is a property of those spells, NOT of worktrees.** Anything
+  reaching `src/*/surface/` needs the symlink.
+
+  _`cassandra`'s seat doc has carried "a dev-mode daemon cannot be stood up in a
+  bare git worktree" since the mind-mapper rounds. **She introduced the pattern
+  to this team without carrying the caveat across.** The lesson was in the doc,
+  in her own words, and it did not fire._
+
 - **🔇 NEVER SILENCE A FIXTURE-BUILDING STEP.** `2>/dev/null` on a step you are
   about to assert nothing about is fine. **`2>/dev/null` on the step that
   CREATES the thing you measure discards the only evidence that distinguishes
@@ -2267,18 +2317,43 @@ because the release note is organised by issue.**
    > lane's scope.**
    >
    > **⛔ AND THE LEAD'S CONFIRMING INSTRUMENT WAS BROKEN.** I verified with
-   > `-- 'plugins/spellbook/skills/*/'` — **a trailing-slash pathspec that
-   > returns ZERO for every spell, including ones I knew had changed.** It would
-   > have "confirmed" grapevine-unchanged **by returning the same empty it
-   > returns for everything.**
+   > `-- 'plugins/spellbook/skills/*/'`, which returns **ZERO for every spell**,
+   > including ones I knew had changed. It would have "confirmed"
+   > grapevine-unchanged **by returning the same empty it returns for
+   > everything.**
    >
    > **What caught it: the SECOND glob also came back empty when it could not
    > possibly be.** The zero-guard — _a zero anywhere is the instrument until
    > proven otherwise_ — applied to my own check, one message after I praised
    > two seats for applying it to theirs.
    >
-   > **Use the plain path prefix.** `-- plugins/spellbook/skills`, no glob, no
-   > trailing slash. **Verified against a control that shares no pattern.**
+   > **⚠⚠ THE FIRST VERSION OF THIS WARNING BLAMED THE TRAILING SLASH. THAT WAS
+   > WRONG AND IT CONDEMNED A WORKING INSTRUMENT.** Corrected by `thoth`, four
+   > arms, measured at `82adf9a` and reproduced by the lead:
+   >
+   > ```
+   > 'plugins/spellbook/skills/*/'         ->   0    <- wildcard + trailing slash.  BROKEN
+   > 'plugins/spellbook/skills/*'          ->  16    wildcard, no slash            WORKS
+   > 'plugins/spellbook/skills/bounty/'    ->   4    literal + trailing slash      WORKS
+   > plugins/spellbook/skills              ->  16    bare prefix                   WORKS
+   > ```
+   >
+   > > **A pathspec combining a `*` WILDCARD with a TRAILING `/` silently
+   > > matches nothing.** Drop the trailing slash **whenever the pathspec
+   > > contains a wildcard**. **A literal path with a trailing slash is
+   > > unaffected.**
+   >
+   > **Why the correction matters more than the original warning:** `thoth`'s
+   > own grapevine check used `'…/skills/grapevine/'` — literal plus trailing
+   > slash — **which returns a REAL zero and was sound.** The broad wording
+   > would have forced him to disown a valid measurement. **A warning that
+   > condemns a working instrument costs you the instrument**, and _a wrong
+   > warning is worse than a wrong fact: a wrong fact is corrected by the next
+   > person who looks; a wrong warning stops them looking._ **This repo's SOP
+   > carries the same scar about `anthill status`.**
+   >
+   > **The durable remedy is unchanged and survives whichever clause is guilty:
+   > verify against a CONTROL THAT SHARES NO PATTERN.** Here, the bare prefix.
 
    **What the three actually need is a SCOPE CALL, not a re-read.** `applied`
    appears **10×** in bounty's `SKILL.md` and **0×** in glamour / imago / magpie
