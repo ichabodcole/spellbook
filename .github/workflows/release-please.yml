@@ -2,6 +2,11 @@ on:
   push:
     branches:
       - main
+  # Manual trigger. The push trigger cannot recover a missed release: if a run
+  # is blocked (e.g. repo Workflow permissions set to read-only), fixing the
+  # cause fires nothing, and the only other way to re-run release-please is to
+  # push a commit to main — a bad recovery path for a release tool.
+  workflow_dispatch:
 
 permissions:
   contents: write
