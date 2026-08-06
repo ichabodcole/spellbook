@@ -390,6 +390,34 @@ My own harness was immune **by accident** — file redirection + `kill -0`, chos
 Posting the method up front lets a peer attack the design instead of the outcome, and it converts "we agree" into something worth having.
 **An independent check must differ in METHOD, not only in operator** — but finish the thought: after confirming a peer's number by a different corpus and tool, I still shared their **lexical** blind spot, and said so. **Two lexical scanners agreeing about lexemes is one method run twice; two corpora agreeing about a trend is not.**
 
+### ⚠ TIMING can BE the condition — a fixture can satisfy a spec's letter and not its content
+
+The amended P0f fixture requires a consumer **not draining at the instant of exit**.
+My cell had the right SHAPE (`| ( sleep 2; cat )`) and the wrong SCHEDULE (closed at 4s, so the consumer had resumed draining before the exit fired).
+Result: **200285 vs 200286 — no truncation in either world**, which reads as *"the amended fixture does not discriminate"* — **a finding against a gate law landed twenty minutes earlier.**
+Corrected to block 8s / close at 1s: **65536 pre-fix, complete post-fix.** The law is right.
+**The failure presented as THE SPEC IS WRONG rather than MY CELL IS WRONG, and that is the most dangerous direction available, because it points outward at a peer's ruling.**
+**What caught it was that the result CONTRADICTED A MEASUREMENT ALREADY ON THE RECORD.** Against an empty record I would not have re-examined my own cell.
+**Generalise: a ratified fact is a tripwire that audits instruments nobody aimed it at — that is a reason to ratify beyond being right about the fact.**
+
+### `tail` carries SURFACE→AGENT events; every CLI verb is an AGENT action
+
+Spent a drive discovering this: a >64 KiB payload sent with the CLI's `say` never enters `tail`, because `emitEvent` for text lives in **`handleBrowserMsg`** (magpie `server.ts:335`, imago `:683`, glamour `:274` `message.send`), while the CLI's `say` goes `/cmd` → `handleAgentMsg`, which broadcasts to browsers and never emits.
+So **no CLI verb can put a large payload into the stream the drain defect truncates** — the fixture is only constructible over `/ws`, posting as the surface would.
+**This is not a quirk; it is what these spells ARE** — the membrane faces both ways, big payloads flow agent→surface, and the surface→agent events are small by nature.
+Bounty is the exception (agent writes enter its event log), which is exactly why a bounty-shaped assumption did not transfer.
+
+### Never `2>/dev/null` a FIXTURE-BUILDING step
+
+When my precondition went degenerate I had no diagnosis, because I had silenced the `say` that built the fixture — I had to re-run it with stderr visible to learn it had **succeeded**, which is what redirected me from the write to the stream.
+**Silencing a step you assert nothing about is fine. Silencing the step that CREATES the thing you measure discards the only evidence separating "the fixture failed" from "the fixture worked and the mechanism is elsewhere" — and those need opposite responses.**
+
+### Adopting a peer's mitigation means you can no longer confirm the hazard
+
+I drove glamour clean through the four-hazard stack — by sending stderr to a FILE and observing termination on the process, i.e. thoth's remedy adopted wholesale.
+**So the drive says nothing about whether the hazard is still live.** `UNVERIFIED-BY-CONSTRUCTION`.
+**"My run was safe" is evidence I obeyed a peer, not evidence the hazard is gone** — the same shape as adopting the `--pin` cwd mitigation. Say which one you have.
+
 ### Say what the gate CANNOT claim as loudly as what it can
 
 P0d's `/cmd` cells assert the ROUTE's answer, but post-fix the verdict ORIGINATES in a surface reducer — my probes cannot distinguish "reducer reports and route propagates" from "route hard-codes and discards it," because **both emit the bytes I measured.**
