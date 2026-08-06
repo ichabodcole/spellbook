@@ -4,6 +4,22 @@
 **For:** whoever leads `spell-hardening` (`prospero`) and the seats who ratify
 the seams they touch.
 
+> ## ⚠ STALENESS RULE — read this before anything below
+>
+> **Amended 2026-08-06 after the P0 ratify round.** The round this file called
+> for **happened**, and it falsified things this file asserts.
+>
+> **Where this file and [`plan.md`](./plan.md) disagree, THE PLAN WINS.**
+>
+> This rule exists because a document whose job is to say _"the other document
+> is stale"_ needs its **own** staleness rule — otherwise it becomes the stalest
+> thing in the project, since it is the one file nobody re-reads, because
+> everyone believes they already have. **Two of its claims moved on 2026-08-06
+> and this file did not move with them** (both are struck in place below).
+>
+> **The P0 family is now RATIFIED.** This file describes what the plan needed
+> _before_ that round; read it as history plus the corrections marked ⛔.
+
 ---
 
 ## Why this file exists
@@ -58,9 +74,22 @@ lose. It is in Phase 0b; use it verbatim.
 Rejecting unknown flags is the intended behaviour change. But `add` and
 `message` build free prose with `pos.join(" ")` and there is **no `--`
 terminator anywhere in `bounty/scripts/cli.ts`** — so
-`add write the --draft section` becomes a hard error the moment step 2 lands.
-anthill's own attempt at this guard broke seven positional tests. Pin a
+~~`add write the --draft section` becomes a hard error the moment step 2
+lands.~~ anthill's own attempt at this guard broke seven positional tests. Pin a
 positional-preservation control per affected verb.
+
+**⛔ CORRECTED 2026-08-06 — the struck sentence is wrong in the way that
+matters.** Measured on the shipped parser:
+
+```
+["write","the","--draft","section"]        -> "write the"       flags {draft:"section"}
+["fix","the","--stdin","handler","later"]  -> "fix the later"   flags {stdin:"handler"}
+```
+
+**Both exit 0 today.** The second deletes two words from the **middle** of a
+sentence and flips a real behavioural flag, on `message`. **These callers are
+already broken, silently; step 2 is what makes an existing corruption audible**
+— it is a repair, not a regression. See `plan.md` Phase 0c.
 
 **3. Two facts P0b's gate depends on are not guarded by any test.** That a
 mutation flushes the snapshot on a ~1s debounce, and that a keyed respawn does
@@ -75,10 +104,22 @@ in a skeleton is a hypothesis until the owning seat confirms it. Specifically:
 
 - **daedalus** — the file references and mechanisms in P0/P0b/P0c/P0d. Several
   are marked _"verified, fact not claim"_ with a date; those were run, not read.
-  The rest are hypotheses. One in particular is flagged and **still
+  The rest are hypotheses. ~~One in particular is flagged and **still
   unverified**: that `--fresh --restore` tears down a live board and respawns
   from snapshot. **D3's entire ruling rests on it.** Confirm it on a throwaway
-  board before building the refusal message that names it.
+  board before building the refusal message that names it.~~
+
+  **⛔ RESOLVED 2026-08-06 — IT IS FALSE, AND THE FAILURE MODE IS DATA LOSS. Do
+  not go "confirm" it; it has been confirmed.** `cli.ts:398-408` tears the board
+  down with `POST /cmd {type:"close"}`, and **`close` writes the snapshot** — so
+  it flushes the _empty_ live board over the populated snapshot, and `--restore`
+  then correctly restores from a file emptied 200ms earlier.
+
+  **`--fresh --restore` DESTROYS the snapshot it is meant to restore from.**
+  D3's non-zero-exit + `restoreSkipped` half stands; **its corrective-verb half
+  is struck — the refusal names no fix (ruled by Cole 2026-08-06), because there
+  is no safe one to name.** See `plan.md` Phase 0b and comms #24.
+
 - **cassandra** — every gate. Each was written by the author, and at least one
   earlier version of the P0b gate was a control that could not come out
   differently. **Ask of each gate: what result would have failed this?** If

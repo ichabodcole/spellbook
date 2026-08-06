@@ -1,11 +1,31 @@
 # Spell Hardening — Implementation Plan
 
 **Created:** 2026-08-05 **Related Proposal:** [proposal.md](./proposal.md)
-**Status:** Draft — **awaiting seam ratification (`anthill:plan`), and the plan
-has changed substantially since that line was first written.** Read
-[HANDOFF.md](./HANDOFF.md) before ratifying: P0b, P0c and P0d did not exist in
-the version last reviewed, and P0, P1 and both gate constructions were rewritten
-on 2026-08-06.
+**Status:** **P0 family RATIFIED 2026-08-06** by the anthill team (`daedalus`
+engine, `cassandra` verify, `thoth` grimoire; `prospero` leading). P1–P3 are
+**still unratified** and keep the caveat below.
+
+Read [HANDOFF.md](./HANDOFF.md) for how the plan reached this state: P0b, P0c
+and P0d did not exist in the version reviewed on 2026-08-05, and P0, P1 and both
+gate constructions were rewritten on 2026-08-06.
+
+> ### What the ratify round changed — read this before trusting a remembered version
+>
+> The round did **not** rubber-stamp the plan. It changed content, one gate's
+> validity, and one lane's justification:
+>
+> | change                                                                                          | who found it |
+> | ----------------------------------------------------------------------------------------------- | ------------ |
+> | **P0d's gate was DEFECTIVE — an inverted control that fails a _correct_ fix.** Rewritten below. | cassandra    |
+> | **P0c step 5 swept an EMPTY set**, and in the wrong direction. Re-worded as an invariant.       | thoth        |
+> | **P0c's positional corruption is LIVE today, not a future consequence of step 2.**              | thoth        |
+> | **The gates were never valid from a seat shell** — they inherit `BOUNTY_SESSION_KEY`.           | cassandra    |
+> | **Phase 0e added** — the project's own gate destroyed the team board twice.                     | daedalus     |
+> | **"Assert which session answered" is unsatisfiable from the read envelope.**                    | cassandra    |
+>
+> Three seats produced falsifications the lead did not anticipate, and two
+> falsified rulings the lead had already made. **A ratify round that produced
+> only agreement would have been the failure mode.**
 
 ---
 
@@ -41,6 +61,62 @@ three of these bugs are invisible to the person best positioned to notice them.
 
 ---
 
+## Cross-cutting gate requirements (ratified 2026-08-06 — apply to EVERY gate here)
+
+**These bind all four P0 gates and every gate added later. A gate that omits
+them is not merely risky; it is invalid.**
+
+### G1 — Every gate must scrub the ambient session key
+
+Every gate in this project drives real CLI verbs, so every gate inherits
+`BOUNTY_SESSION_KEY` from the shell it runs in. **A gate that attaches to a
+stranger board measures the stranger, silently, exit 0** — so P0c's and P0d's
+assertions would be evaluated against the wrong state and still pass.
+
+Every gate runs with **`env -u BOUNTY_SESSION_KEY -u BOUNTY_SESSION`**, a
+**unique `BOUNTY_HOME`**, and an **explicit throwaway `--session-key`**.
+
+**This is not a precaution. It is proven:** the project's own test suite
+attached to the live team board and called `close` on it, twice, on 2026-08-06
+(see Phase 0e).
+
+### G2 — A gate must be FALSE pre-fix **and TRUE post-fix**
+
+The question _"what result would have failed this gate?"_ finds **decoration** —
+a gate no result can fail. It does **not** find the worse failure, and P0d was
+the worse failure:
+
+| failure mode                                            | behaviour                              | why it is bad                                    |
+| ------------------------------------------------------- | -------------------------------------- | ------------------------------------------------ |
+| **Decoration** — no failing result exists               | passes silently forever                | tells you nothing                                |
+| **Inverted control** — fails the CORRECT implementation | **red gate that looks like diligence** | **dispatches the builder to break working code** |
+
+An inverted control cannot be caught by asking _"could this fail?"_, because it
+can — that is precisely the problem. **So evaluate every gate's assertion twice:
+once against the buggy world, once against the world after the intended fix.**
+The second check is the one nobody runs, and it found the only defective gate of
+the four.
+
+### G3 — Gates pin board identity OUT-OF-BAND, because the envelope cannot
+
+**Measured 2026-08-06: there is no session id, key, port or board identity
+anywhere in a `bounty state` response.** So "assert which session answered"
+cannot be satisfied from the payload — a gate must capture `session_id` from
+`open`'s stdout and bind every subsequent call to an explicit `--session-key`
+under a unique `BOUNTY_HOME`.
+
+_(The underlying gap — **a bounty read cannot tell you which board answered it**
+— is a candidate issue, not this project's to fix. It is the exact defect that
+let a seat's write land on a stranger board during this session.)_
+
+### G4 — Enumerate; never write "for each spell" or "an over-buffer payload"
+
+An unenumerated target set lets the implementer pick the fixture, and **a
+fixture the code already satisfies makes the gate pass trivially.** Every gate
+below names its sites, its literal invocations, and its byte thresholds.
+
+---
+
 ## Phase 0 — The drained exit (#77, #78, #80.2)
 
 **Owner:** daedalus · **Verify:** cassandra · **Blocks:** P2
@@ -61,6 +137,32 @@ discards whatever has not drained.
 **⚠ The audit is wider than the two reported spells.** A first-pass
 `grep -rln "process.exit(code)"` over `plugins/spellbook/skills/*/scripts/*.ts`
 returns **seven files**:
+
+**AUDIT COMPLETED 2026-08-06 (daedalus) — it is 10 sites, not 7, and every CLI
+shares the identical shape.** The differentiator is never the shape; it is
+**whether a verb can emit >64KiB.** Verdicts, with rule-outs recorded because a
+silent skip is indistinguishable from a miss:
+
+| site                          | >64KiB capable?                                                                                                                                                                                         | verdict       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `grapevine/cli.ts:1805`       | YES — `pull`/`read`/`grep`/`list` over an unbounded message log                                                                                                                                         | **FIX** (#77) |
+| `bounty/cli.ts:941`           | YES — `state`/`list` over an unbounded board (the 102-card board is live proof)                                                                                                                         | **FIX** (#78) |
+| **`mind-mapper/cli.ts:1568`** | **YES, and the worst of them** — `state` returns the FULL graph (nodes+edges+proposals+conversation+jobs+docs)                                                                                          | **FIX**       |
+| `magpie/cli.ts:886`           | YES — `export`/`extract`/`discover` emit element/bbox sets                                                                                                                                              | **FIX**       |
+| `astrolabe/cli.ts:467`        | YES — a CROSS-PROJECT observatory; it aggregates every project's board                                                                                                                                  | **FIX**       |
+| `imago/cli.ts:538`            | YES — `state`/`context`/`batch` carry accumulated conversation + proposals                                                                                                                              | **FIX**       |
+| `glamour/cli.ts:628`          | YES — `state`/`tray`/`gen-meta` carry generation metadata + tray contents                                                                                                                               | **FIX**       |
+| **`magpie/discover.ts:314`**  | **a 10th site nobody had listed** — third spelling                                                                                                                                                      | **FIX**       |
+| `digestify/review.ts:430`     | **CANNOT RULE OUT** — emits the human's submitted answers. Rarely 64KiB, but it is a **one-shot** tool: truncation eats the user's only submission with no retry. **The asymmetry of harm decides it.** | **FIX**       |
+| `grapevine/daemon.ts:962/965` | **RULED OUT** — shutdown handler; the daemon's only stdout write is a small boot JSON at `ready`, long before any exit path. Nothing is queued at exit.                                                 | **NO FIX**    |
+| the 5 `server.ts` exits       | **RULED OUT** — same reasoning: daemons emit a small ready-JSON at boot; their exit paths carry no payload.                                                                                             | **NO FIX**    |
+
+**⚠ The literal grep missed sites because the defect has THREE SPELLINGS:**
+`main().then(code => process.exit(code))`, `process.exit(code)`, and
+**`process.exit(await main(...))`** — the third is why `mind-mapper/cli.ts` and
+`magpie/discover.ts` never matched. **Search by shape, not by string.**
+
+_Superseded first-pass table (`grep -rln "process.exit(code)"`, seven files):_
 
 | File                          | Status                                                                         |
 | ----------------------------- | ------------------------------------------------------------------------------ |
@@ -118,6 +220,22 @@ write 300_000 bytes, natural return        →  pipe 300000   file 300000
 
 One variable, both directions. This is the control the fix should reproduce.
 
+**REPRODUCED IN THIS REPO 2026-08-06 (daedalus, Bun 1.3.14) — no longer an
+inherited claim:**
+
+```
+write 300_000 bytes then process.exit(0)   ->  pipe  65536   file 300001
+write 300_000 bytes, natural return        ->  pipe 300001   file 300001
+```
+
+**65,536 on the nose.** Nothing about this is machine- or runtime-specific.
+
+**Still `UNVERIFIED`:** that any specific spell's `state` crosses 64KiB _in
+practice_. The per-site verdicts below are from reading each verb's payload
+source, not from driving a >64KiB fixture through a real daemon. **That
+measurement IS the P0 regression test** (with the vacuity guard, mutation-
+verified by restoring the `process.exit`).
+
 **⚠ Do NOT fold the structured failure envelope into this phase — reversed
 2026-08-06.** It was briefly recommended here on the grounds that it lands in
 the same function P0 rewrites, so touching those lines twice is waste. **That
@@ -127,9 +245,33 @@ found the envelope's shape is known-incomplete (nine omitted members), so
 folding it in blocks a data-corruption fix on an open investigation. **Fix the
 drain only. Accept touching the exit path twice.**
 
-**Gate:** `grapevine pull` and `bounty state --full` both return valid JSON with
-`cursor` present, piped, on an over-buffer payload. Three consecutive runs (the
-original bug was deterministic at exactly 65,536 bytes).
+**Gate — REWRITTEN 2026-08-06 (cassandra's audit; two holes closed).** Subject
+to **G1–G4** above.
+
+The mechanism is no longer an inherited claim — **it reproduces in this repo**,
+one variable, both directions, on a 42-card board:
+
+```
+bounty state | wc -c   ->  65536      JSON.parse -> FAILED "Unterminated string"
+bounty state > file    -> 127948      JSON.parse -> OK
+```
+
+1. **The over-buffer precondition is its own cell, not prose.** Assert
+   `bytes > 65_536` **before** asserting the parse. The plan states this vacuity
+   trap for step 3's regression test and the old Gate line did not carry it — so
+   a fixture drifting under 64KiB would have passed in both worlds, forever.
+2. **Assert the piped form AND the file form in the same run** — one variable,
+   both directions, as above.
+3. **Enumerate every site step 2 rules IN** (G4). The old gate exercised only
+   `grapevine pull` and `bounty state --full`, so **a fix that patched the two
+   reported spells and skipped all five unreported ones passed cleanly** — the
+   phase's widest half was ungated. Either the gate names every site ruled in,
+   or **step 2's ruling-out record itself becomes the artifact under audit.**
+4. Three consecutive runs (the original bug was deterministic at exactly 65,536
+   bytes).
+
+_Note: "`cursor` present" adds almost nothing — a truncated payload fails
+`JSON.parse` first. Keep it, but it is not the discriminator it reads as._
 
 **#80 corroborates #78 from a second team** and sharpens the cost: the
 truncation did not merely produce bad data, it produced a **false rule** — "our
@@ -164,10 +306,56 @@ respawn. The reported board was **live and empty**, so hydration never fires —
 
 1. On the attach path, detect that `--restore` was passed and **cannot be
    honoured** (a live board already holds the key).
-2. **Exit non-zero** (D3 — ruled), and name the corrective verb in the message:
-   `--fresh --restore` tears the live board down and respawns from the snapshot.
-   A refusal that points at an available fix does not need a `--force` invented
-   for it.
+2. **Exit non-zero** (D3 — ruled). **This half stands and is ratified.**
+
+   **⛔ THE CORRECTIVE-VERB HALF IS FALSIFIED AND MUST NOT SHIP — measured
+   2026-08-06 (daedalus), on a throwaway key, with a valid precondition cell.**
+
+   D3 ruled that the refusal should name `--fresh --restore` as the fix, on the
+   claim that it "tears the live board down and respawns from the snapshot."
+   **The HANDOFF flagged this claim as the one still-unverified thing D3's
+   entire ruling rested on. It was measured. It is false, and the failure mode
+   is data loss.**
+
+   ```
+   PRECONDITION   live=0  snapshot=2     <- asserted as its own cell: VALID CONTROL
+
+   open --session-key K --restore <id>
+     EXIT 0 · occurrences of "restore" in stdout+stderr: 0
+     live AFTER = 0     -> --restore was INERT                       RATIFIED
+
+   open --session-key K --fresh --restore <id>
+     EXIT 0
+     live AFTER = 0     -> did NOT restore                           FALSIFIED
+     snapshot AFTER = 0 -> AND THE SNAPSHOT IS GONE
+   ```
+
+   **Mechanism — this is our own #73, load-bearing.** `cli.ts:398-408`, the
+   `live && flags.fresh` branch, tears the board down by sending
+   **`POST /cmd {type:"close"}`** — and **`close` writes the snapshot.** The
+   board being closed is the _empty_ one, so close flushes **live(0) over
+   snapshot(2)**. `--restore` _is_ then correctly appended at line 415 and the
+   new daemon _does_ restore — **from a snapshot emptied 200ms earlier.** The
+   teardown and the restore are wired to the same file **in the wrong order**;
+   `--restore` is not ignored here, it is honoured against a corpse the teardown
+   just made.
+
+   > **A user in the exact situation this message is written for — live board
+   > empty, real data only in the snapshot — would follow the instruction and
+   > destroy the only copy.** The refusal would convert a recoverable state into
+   > an unrecoverable one, with a non-zero exit and a helpful envelope field
+   > explaining that it had done so.
+
+   **Ruled (prospero, 2026-08-06): the refusal names NO corrective verb.** There
+   is currently no safe one. The only measured sequence that preserves the
+   snapshot is **`kill -9 <pid>` + a plain keyed `open`** (steps 1–4 of the
+   construction below) — and naming a `kill -9` in a user-facing refusal is a
+   decision for Cole, not a default. **An honest refusal that names no fix beats
+   a helpful one that names a destructive fix.**
+
+   **New defect, arguably outranking #80.1: `--fresh --restore` destroys a
+   snapshot.** Same family as #73. Recorded here; **filing is Cole's call.**
+
 3. **Announce in the envelope** (D1.2's convention, applied):
    `restoreSkipped: {requested, reason} | null` — **`null` when nothing was
    skipped, never absent.** The exit code is what a `set -e` wrapper or a
@@ -225,6 +413,31 @@ precondition in step 5 therefore has **no race to lose**, rather than a race
 that usually resolves in time. Assert it as its own cell so the gate fails when
 the number it depends on is stale, instead of silently comparing against it.
 
+**Both load-bearing facts RE-MEASURED AND RATIFIED 2026-08-06 (daedalus):**
+
+- **A mutation dirties the snapshot, flushed on a ~1s debounce** — snapshot
+  **absent** at t+0 after two `add`s; **present reading 2 at ~1000ms**. Confirms
+  that building the divergence by mutation destroys it.
+- **A keyed respawn does not mutate** — after `kill -9` + a plain keyed `open`,
+  live=0 while the **snapshot stayed 2**. This is what makes the construction
+  race-free, and why step 4 is correct.
+
+**⚠ They are still guarded by no test.** Pin both in `server.test.ts` as part of
+P0b, per below.
+
+**⚠ Reading the PID: `kill -9` must not read it from the discovery file.** That
+file carries `url`/`port`/`session_id`/`title` and **no PID** — a kill built on
+it silently no-ops, step 4 "respawns" onto the still-live board, and the
+precondition degenerates to live=2/snapshot=2. Step 6 then shows "live
+unchanged," which the plan warns is consistent with **both** inert and
+restored-same-contents. **This happened on the first attempt at the drive and
+the run looked clean.** Use `pgrep -f -- "--id <unique-session-id>"` — safe
+because the id is unique, unlike the shared `scripts/server.ts` argv that once
+cost this repo a live daemon.
+
+**What caught it: printing the precondition as an asserted `VALID-CONTROL` /
+`DEGENERATE` cell rather than treating step 4 as a step that obviously worked.**
+
 **⚠ This construction's correctness depends on facts no test currently guards**
 — that a mutation dirties the snapshot and flushes on a ~1s debounce, and that a
 keyed respawn does **not** mutate. Both were measured on 2026-08-06 and neither
@@ -250,11 +463,60 @@ sent as the replacement asserted "live unchanged == restore was inert." The
 shape is hard, not the people — assume the next version is wrong too until a
 mutation test says otherwise._
 
-**Gate:** build the divergence with the six-step construction above, asserting
-the precondition (live `0`, snapshot `N`) as its own cell, then run
+**Gate — AMENDED 2026-08-06 (cassandra's audit: the best-constructed of the
+four; one real hole).** Subject to **G1–G4** above.
+
+Build the divergence with the six-step construction above, asserting the
+precondition (live `0`, snapshot `N`) as its own cell, then run
 `open --session-key K --restore <id>` against the **live** board. It must exit
-non-zero and carry `restoreSkipped`. Then confirm `--fresh --restore` on the
-same key actually restores. Throwaway board only.
+non-zero and carry `restoreSkipped`. Throwaway board only.
+
+> **⛔ THE FINAL CELL IS STRUCK — it asserted a capability that does not exist,
+> and running it destroys the fixture.** The gate used to end: _"then confirm
+> `--fresh --restore` on the same key actually restores."_
+>
+> **`--fresh --restore` does not restore — it deletes the snapshot** (see step 2
+> above). So the cell could never have passed, and **a gate step is an
+> instruction someone follows**: whoever ran it would have destroyed the
+> snapshot the rest of the gate depends on, then read the resulting empty board
+> as a failed restore rather than as the gate eating its own fixture.
+>
+> **This cell was inside an audit I adopted "in full, no amendments," and its
+> auditor came back unprompted to say her own verdict was incomplete.** Both
+> facts are worth keeping: the adopt-in-full was mine, and the correction was
+> hers.
+
+**⚠ Hole closed — the `null` half was ungated.** D3/step 3 rules
+`restoreSkipped: {requested, reason} | null`, **"`null` when nothing was
+skipped, never absent."** The gate above only exercises the **skip** path, so
+**a fix that emits the field only when it skips passes it and violates the
+ruling.** Add a cell where a normal `open` skips nothing and the field must be
+**present and `null`**:
+
+```
+assert "restoreSkipped" in envelope     // NOT the same assertion as:
+assert envelope.restoreSkipped == null  // this one passes when the key is absent
+```
+
+Only the first catches it. Same rule for `snapshotBackedUp` and `hydrated` in
+P1.
+
+**⚠ Task-count evidence does NOT travel** (retained because the reasoning
+applies to any count-based cell, including ones added later, even though the
+step it was written about is now struck). A task count is the evidence this plan
+elsewhere declares inadmissible. It is admissible **only inside a construction
+that pins live `0` against snapshot `N`**, which is what makes the count
+discriminating. **Anyone reusing a count check outside this construction is back
+to the reporter's original error.**
+
+**Field note (2026-08-06, unplanned):** the lead restored a dead team board with
+`open --session-key … --restore <id>`. It worked — stdout was
+`{url, port, session_id, title}` and **nothing else. No mention of `--restore`
+in any form: not performed, not skipped, not confirmed.** So the **success**
+path is exactly as silent as the skip path, and the only evidence the restore
+fired was the task count. **A positive twin of `restoreSkipped` is therefore a
+real question — but do not mint a name for it here** (see the vocabulary note in
+P0c); it goes to the contract investigation with #85–#88.
 
 ---
 
@@ -287,18 +549,70 @@ add "y" --status=doing       → {"ok":true,"sent":"task.add"}            stored
 state --totally-bogus-flag z → exit 0, stderr empty
 ```
 
-**Blast radius — audited 2026-08-06:**
+**~~Blast radius — audited 2026-08-06~~ — FALSIFIED and re-measured 2026-08-06
+(thoth). The old per-spell table is below for the record; it is wrong in a way
+that changes the work.**
 
-| Spell         | `=` handling                            |
-| ------------- | --------------------------------------- |
-| `bounty`      | **none**                                |
-| `grapevine`   | **none**                                |
-| `glamour`     | partial                                 |
-| `imago`       | partial                                 |
-| `magpie`      | partial                                 |
-| `mind-mapper` | the only CLI that rejects unknown flags |
+> ~~`bounty` none · `grapevine` none · `glamour`/`imago`/`magpie` partial ·
+> `mind-mapper` the only CLI that rejects unknown flags~~
 
-The two with no handling at all are the two most-used spells.
+**The unit is the arg-parsing ENTRY POINT, not the spell. There are 15 across 8
+spells:**
+
+| parser                                          | count | `=` support      | unknown-flag rejection |
+| ----------------------------------------------- | ----- | ---------------- | ---------------------- |
+| `node:util` `parseArgs`, **all `strict: true`** | **9** | **YES — native** | **YES — already**      |
+| hand-rolled                                     | **6** | no               | no                     |
+
+**The 6 hand-rolled parsers are the ENTIRE fix:** `bounty/cli.ts`,
+`glamour/cli.ts`, `grapevine/cli.ts`, `imago/cli.ts`, `magpie/cli.ts`,
+**`magpie/discover.ts`**.
+
+**The 9 already correct:** `astrolabe/cli.ts`, `astrolabe/server.ts`,
+`bounty/server.ts`, `bounty/join.ts`, `digestify/review.ts`, `imago/server.ts`,
+`magpie/server.ts`, `mind-mapper/cli.ts`, `mind-mapper/server.ts` — grepped
+`strict:` in every one: **9 × `strict: true`, 0 × `strict: false`.**
+
+**Verified on the real artifact, not the source:**
+
+```
+$ bun astrolabe/scripts/cli.ts nosuchverb --port=9999
+astrolabe: Unknown option '--port'. To specify a positional argument starting
+with a '-', place it at the end of the command after '--', as in '-- "--port"'
+```
+
+One line proving **both** halves: it split `--port=9999` on the `=` natively,
+then rejected `--port` as unrecognized. **D4's ruled behaviour already ships in
+this house, in nine places, today.**
+
+**Three claims this kills:**
+
+1. **"`mind-mapper` is the only CLI that rejects unknown flags" — FALSE.** Not a
+   nit: that sentence sends the builder to mind-mapper for a reference
+   implementation when eight closer ones exist.
+2. **"`bounty`: `=` handling — none" — FALSE as a spell-level claim.** Two of
+   bounty's three entry points handle it natively; only `cli.ts` does not. Same
+   for `imago` and `magpie`, whose "partial" reads as one weak parser when it is
+   really **one broken hand-rolled parser beside one already-correct `node:util`
+   one, inside the same spell.**
+3. **"A spell is one parser" — FALSE, and it has teeth for step 5's ward.**
+   bounty's `SKILL.md` documents flags for **three** entry points in one
+   document: `--port`/`--host` (`:344-345`) belong to `server.ts`, `--url`
+   (`:561`) to `join.ts`, and neither appears in `cli.ts`.
+
+**⚠ Consequence for step 2 — the likely correct fix is not "add a registry to
+the bespoke parser," it is "DELETE the bespoke parser."** Replacing
+`bounty/cli.ts:291-313` with `node:util` `parseArgs({strict: true, options})`
+yields `=` support, unknown-flag rejection **and** the `--` terminator the
+prose-positional collision needs — all three from the standard library, in the
+shape nine siblings already use. **That makes "three spellings of one idea"
+impossible by construction rather than by discipline.**
+
+**`daedalus` rules this, not thoth:** `node:util` strict **throws** where the
+hand-rolled parser **returns**, so the migration is real per-verb work, and the
+`allowPositionals` interaction with `add`/`message` free prose is exactly where
+the reference implementation broke seven tests. **The target set is 6 files, and
+the pattern to copy is already inside the file being fixed.**
 
 **Reference implementation — anthill's `define.ts` (offered on #80,
 2026-08-06).** anthill landed this exact fix hours before we filed #81, for the
@@ -317,8 +631,38 @@ for:
   exposed than anthill here, not less: `add` (`cli.ts:775`) and `message`
   (`cli.ts:895`) build their text with **`pos.join(" ")`** — free prose, and
   `message` is a verb agents use conversationally. There is no `--` terminator
-  anywhere in the file. So `add write the --draft section` becomes a hard error
-  the moment step 2 lands.
+  anywhere in the file.
+
+**⚠⚠ CORRECTED 2026-08-06 — this plan, the HANDOFF and the convene brief all
+said `add write the --draft section` "becomes a hard error the moment step 2
+lands." All three were wrong in the way that matters.** The shipped `parseArgs`,
+run verbatim:
+
+```
+["write","the","--draft","section"]        -> pos.join(" ") = "write the"       flags {draft:"section"}
+["fix","the","--stdin","handler","later"]  -> pos.join(" ") = "fix the later"   flags {stdin:"handler"}
+```
+
+**Both exit 0 today.** The first silently truncates a task title. The second
+**deletes two words from the middle of a sentence and simultaneously flips a
+real behavioural flag (`--stdin`)** — on `message`, the verb `SKILL.md`
+advertises for conversational use.
+
+> **P0c step 2 does not break these callers. They are already broken, silently,
+> and step 2 is what makes an existing corruption audible.**
+
+**This changes P0c's justification, not its scope.** The `--` terminator is
+**not** a mitigation for a behaviour change we are choosing to make — it is
+**the fix for a live write-corruption bug**. The future-tense framing is what
+made step 2 read as a risk to be managed rather than a repair. **The issue's
+harm statement should lead with the corruption, not the mechanism:** _"a
+conversational verb silently deletes words from the middle of your message and
+flips a flag you did not pass"_ — #81 currently leads with `--flag=value`.
+
+**It also hands the gate a control it could not otherwise have:** a
+positional-preservation test asserting `"fix the --stdin handler later"`
+survives **fails on today's code.** Every other P0c assertion can only be
+written against post-fix behaviour.
 
 **Steps**
 
@@ -331,10 +675,17 @@ for:
    Resolve the prose-positional collision above in the same change — a `--`
    terminator is the conventional answer, and `--stdin` already exists as the
    escape hatch for both affected verbs.
-3. **Apply to every spell CLI, not just bounty and grapevine.** The partial
-   handlers in glamour/imago/magpie must end up on the same semantics — three
-   spellings of one idea is the failure mode the P2 flag-naming note warns
-   about.
+3. **Apply to all SIX hand-rolled entry points** — `bounty/cli.ts`,
+   `glamour/cli.ts`, `grapevine/cli.ts`, `imago/cli.ts`, `magpie/cli.ts`,
+   **`magpie/discover.ts`**. The other nine already have the ruled behaviour and
+   **must not be touched.**
+
+   **⚠ "Every spell CLI" under-scoped, and the miss is specific:** it reads as
+   `cli.ts` only, which **skips `magpie/discover.ts`** — a hand-rolled parser in
+   a spell whose `cli.ts` is also being fixed. **A per-spell checklist therefore
+   marks magpie done with a live defect still in it.** Track this list by
+   **entry point**, never by spell.
+
 4. **Regression tests on three axes.** A read path (`state --owner=X` must not
    return out-of-scope tasks); a write path (`add --owner=X` must not silently
    drop the owner) — a read-only test would have missed the worse half; and a
@@ -344,12 +695,72 @@ for:
    valid one: `--owner=forager` returning tasks is a control that cannot come
    out differently, and is precisely the paraphrase that hid this bug for a
    round.
-5. **`SKILL.md` sweep:** any documented example using a spelling that now errors
-   must be corrected in the same change.
+5. **~~`SKILL.md` sweep~~ — FALSIFIED 2026-08-06 (thoth). Replaced by an
+   invariant.**
+
+   The old wording — _"any documented example using a spelling that now errors
+   must be corrected in the same change"_ — **sweeps an empty set, in the wrong
+   direction.** Measured: **zero `--flag=value` occurrences in any spell
+   `SKILL.md`** (all seven files, broad regex `--[A-Za-z0-9_-]+=`, 0 hits). And
+   after step 1 the `=` form **starts working**, so a documented `=` example
+   would be _fixed_ by this change, not broken by it. The examples that begin to
+   error are the ones step 2 **rejects** — a different set entirely.
+
+   **Replacement, owned by `thoth` and carried as a ward** (amended by its own
+   author 2026-08-06 — the first wording assumed one parser per spell):
+
+   > **Every flag named in a spell's `SKILL.md` is in the recognized set of the
+   > ENTRY POINT that actually parses it, and every recognized flag across all
+   > of a spell's entry points is documented.**
+
+   **⚠ The naive "that CLI" version is worse than no ward.** bounty's `SKILL.md`
+   documents three entry points, so a doc-vs-`cli.ts` check reports **three
+   false positives on bounty today** — and **a check that cries wolf on correct
+   code gets switched off**, which is how a ward stops protecting the thing it
+   was written for.
+
+   A ward is checked **when an entry point changes**; a sweep is checked once.
+
+   **Ordering — half dissolved (good news).** For the **9 `node:util` entry
+   points the recognized set already exists** (the `options` object), so the
+   invariant is **checkable today** on 9 of 15, with no dependency on P0c. Only
+   the 6 hand-rolled ones need step 2 first.
+
+   **Ruled (prospero): HOLD the whole ward until P0c lands, then add all 15 at
+   once.** A ward covering 9 while six known-broken parsers sit outside it is a
+   checklist item that passes — and **reads as coverage.** The draft is written
+   and parked; landing it early buys a partial check at the cost of a false
+   all-clear, which is the exact trade this project exists to stop making.
+
+   **⚠ Scope by CLI, not by regex.** The only `=`-form examples anywhere under
+   the plugin are four lines in `imago/references/mediaforge.md`, and
+   **`media-forge` is an external tool that is legitimately `=`-spelled.** A
+   regex-driven sweep would "correct" them and **corrupt correct
+   documentation.**
 
 **⚠ This is a deliberate behaviour change.** Step 2 makes previously-silent
 callers start failing. That is the intent (D4), but it means P0c is the item
 most likely to surface breakage elsewhere in the house.
+
+**⚠ Doc/parser divergence stops being cosmetic.** Today a flag that is
+documented but unrecognized is silently ignored, exit 0. After step 2 it is a
+hard error — so drift becomes a **caller-facing failure**. That is what thoth's
+ward (step 5) exists to hold.
+
+**Ruling (prospero, 2026-08-06):** the recognized set is **code, not prose.**
+The registry lives in the parser; `SKILL.md` **documents** it; the ward checks
+they agree. **Do not derive the recognized set from `SKILL.md`, and do not let
+the doc become the registry.**
+
+> **⚠ A stronger version of this warning was drafted and then FALSIFIED within
+> the hour — recorded because the retraction is the useful part.** It claimed
+> P0c "converts every `SKILL.md` into a load-bearing registry" because
+> `parseArgs` "has no registry at all — step 2 authors the first one," and that
+> this would create a second source of truth in violation of `seams.md`.
+> **`node:util`'s `options` object IS a registry, and nine entry points in this
+> house already have one** (see the table below). Step 2 does not author a
+> convention; it **extends an existing in-house one to six holdouts.** The
+> author of the original claim found and retracted it himself.
 
 **anthill's caller audit — answered 2026-08-06, and it clears.** Its complete
 invocation set is four calls (`bounty state`, `bounty sessions`,
@@ -373,10 +784,70 @@ and `grep` for `--owner=` across their tree finds nothing. Treat this as
 pattern- consistent, not as a confirmed instance. The reproduction is the
 evidence; this is not.
 
-**Gate:** for each spell CLI, a `--key=value` flag is honoured identically to
-its space-separated form, and an unknown flag exits non-zero naming the flag.
-Plus the write-path assertion: `add --owner=<name>` stores the owner. Plus: no
-verb that takes free-prose positionals regressed.
+**Gate — REWRITTEN 2026-08-06 (cassandra's audit: survived, but the old Gate
+line was the weak paraphrase).** Subject to **G1–G4** above.
+
+**The old line said `=` must be "honoured identically to its space-separated
+form" — which is the valid-value comparison this plan itself calls "a control
+that cannot come out differently."** Step 4 had the sharp version; the Gate line
+did not, and **the Gate line is what gets implemented.** Hoisted:
+
+1. **`--owner=zzz-nobody-zzz` → ZERO tasks.** Not `--owner=alice` → some tasks.
+   A bogus value through the `=` form is the discriminating cell; a valid one is
+   the paraphrase that hid this bug for a round.
+2. **Unknown flag exits non-zero, naming the flag.**
+3. **Write path: `add --owner=<name>` stores the owner** — a read-only gate
+   misses the worse half.
+4. **Positional preservation, per affected verb, pinned as a LITERAL
+   invocation** (G4) — `add write the --draft section` and
+   `message fix the --stdin handler later`. **The second fails on today's code**
+   (see the correction above), which makes it the only P0c cell that is
+   discriminating pre-fix as well as post-fix.
+5. **Enumerate the ENTRY POINTS** (G4), not the spells — and **partition them**,
+   per the point below. "For each spell CLI" let a two-spell fix pass.
+
+**⚠ A green across all 15 entry points is ~60% VACUOUS, and it reads as the
+opposite.** The 9 `node:util` entry points **pass this gate before the fix and
+after it** — they were already conformant, so no result they produce can fail.
+By G2 that is decoration for those arms; it is only meaningful over the **6
+hand-rolled** ones.
+
+**Ruled: the gate reports its two populations separately.**
+
+```
+CONVERTED (6, discriminating): bounty/cli.ts glamour/cli.ts grapevine/cli.ts
+                               imago/cli.ts magpie/cli.ts magpie/discover.ts
+ALREADY CONFORMANT (9, regression-only): astrolabe/cli.ts astrolabe/server.ts
+                               bounty/server.ts bounty/join.ts digestify/review.ts
+                               imago/server.ts magpie/server.ts
+                               mind-mapper/cli.ts mind-mapper/server.ts
+```
+
+The 9 are still worth running — as a **regression check** that the change did
+not break them — but they must not be counted as evidence the fix works. **A
+single "15/15 green" is a true number that means far less than it looks like.**
+
+**⚠ And the same trap is waiting in the RELEASE NOTE, which is where it will
+actually mislead someone.** When P0c lands, the honest sentence is **not**
+_"unknown-flag rejection now works across the house"_ — that phrasing implies we
+built something that mostly already existed, and it will read as false to anyone
+who greps. The accurate claim, and the one to ship:
+
+> **6 converted · 9 already conformant · 15 total** — P0c brings six hand-rolled
+> parsers onto the `node:util` `strict` behaviour the other nine already had.
+
+**A true claim that reads as an overclaim costs the same trust as a false one**,
+and this project's whole subject is signals that mislead while being technically
+correct.
+
+Pre-fix baseline, measured on a throwaway board 2026-08-06:
+
+```
+--owner alice           -> 1 task  ["alice"]                correct
+--owner=alice           -> 2 tasks ["alice","maestro"]      whole board
+--owner=zzz-nobody-zzz  -> 2 tasks ["alice","maestro"]      whole board
+--totally-bogus-flag z  -> exit 0
+```
 
 ---
 
@@ -431,15 +902,210 @@ reported because nobody had a reason to distrust `ok`.
    [#82](https://github.com/ichabodcole/spellbook/issues/82)'s and is **on
    hold** — anything minted here would be re-spelled later.
 
-**Gate:** `add` with a duplicate `--id` exits non-zero **and** a subsequent
-`state` does not show the task — both halves, since the exit code alone is not
-observable through a pipe. For each of glamour/imago/magpie, a command the
-reducer declines must not answer `ok:true`.
+**Gate — ⛔ THE ORIGINAL WAS DEFECTIVE. REWRITTEN 2026-08-06 (cassandra's
+audit).** Subject to **G1–G4** above.
+
+> **Do not run the old gate.** It said: _"`add` with a duplicate `--id` exits
+> non-zero **and** a subsequent `state` does not show the task."_
+
+**Why it was defective — this is an _inverted control_, the failure mode G2
+exists to catch.** Measured on a throwaway board:
+
+```
+add "ORIGINAL TITLE" --id dup-probe --owner alice -> {"ok":true,...} exit 0
+add "IMPOSTOR TITLE" --id dup-probe --owner bob   -> {"ok":true,"sent":"task.add"} exit 0   <- #83
+state -> 1 task: id=dup-probe title="ORIGINAL TITLE" owner=alice   cursor 2 -> 2 (unchanged)
+```
+
+`applyTaskAdd` (`server.ts:410`) is
+`if (state.tasks.some(t => t.id === task.id)) return false;` — it does **not**
+overwrite and does **not** push. **On a duplicate id the board is completely
+unchanged, and the original keeps that id by construction.**
+
+So _"a subsequent `state` does not show the task"_ has two readings and the text
+picks neither:
+
+- **Literal** — _the id is absent from `state`._ **This fails against a correct
+  fix**, because the original still holds it. The only way to satisfy it is a
+  fix that also destroys the original — which the fix must never do.
+- **Charitable** — _the impostor's content never landed._ Correct, but the gate
+  never says it and never names the discriminating observable.
+
+**A gate whose plain reading fails the correct implementation is worse than a
+decorative one.** Decoration passes silently; this one produces a **false FAIL**
+and sends the builder to "fix" `applyTaskAdd`, which is already right.
+
+**Replacement — three cells, all measured to be discriminating:**
+
+1. `add` with a duplicate `--id` **exits non-zero** and the envelope reports
+   **`applied: false`** (existing field — mints nothing; see the vocabulary
+   note).
+2. **The surviving row is unchanged** — `title`, `owner`, `status`,
+   `enteredStatusAt` are all still the ORIGINAL's. **This is the cell that
+   catches a fix which silently overwrites**, the failure mode the literal
+   reading cannot see at all.
+3. **Task count unchanged AND `cursor` unchanged.** Cursor is the cheapest
+   strong tell — confirmed not to advance on a refused add — and it
+   discriminates _refused_ from _applied-then-reverted_.
+
+**Second half — REWRITTEN. It has a FALSE PREMISE, not merely a missing
+fixture.** The old cell read: _"For each of glamour/imago/magpie, a command the
+reducer declines must not answer `ok:true`."_ It named no declining command for
+any of the three, so the implementer picks the fixture — and picking one the
+reducer _accepts_ makes it pass trivially (G4).
+
+**Then it was driven, and the premise fails for one of the three:**
+
+| spell     | a decline a caller can observe?          | fixture              |
+| --------- | ---------------------------------------- | -------------------- |
+| `imago`   | yes — a bogus type returns `{"ok":true}` | **measured, usable** |
+| `magpie`  | yes — a bogus type returns `{"ok":true}` | **measured, usable** |
+| `glamour` | **NO — unmeasurable, see below**         | **none exists**      |
+
+**For `glamour`, `server.ts:352-360` never `await`s the handler**, so there is
+no point at which a decline becomes observable from outside — **the set of
+declining commands a caller can detect is empty by construction.** The cell is
+therefore **untestable pre-fix** on that arm: nothing can fail it, which is G2's
+decoration case arriving in the one arm nobody could fixture.
+
+**Ruled: the gate records the 1-of-3 hole as a VERDICT, not an absence.** Two
+arms gated with measured fixtures; `glamour` marked **`UNVERIFIABLE-PRE-FIX`**
+with the reason, and it becomes testable — and must then be gated — only once
+#84's `await` lands. **A silent 2-of-3 reads as full coverage**, which is the
+failure this project exists to stop.
+
+_Second instance of the false-premise category, and the category predicted it:
+the criterion was written after P0d's first defective cell and it found this one
+before anyone had looked at glamour._
 
 ⚠ **Do not extend this lane to #85–#88.** They are the same family and they are
 deliberately out of scope — the contract investigation decides what right looks
 like, and fixing them now means fixing them twice. See the proposal's Out of
 scope.
+
+---
+
+## Phase 0e — The gate destroys the board it is gating (NEW, 2026-08-06)
+
+**Owner:** daedalus · **Verify:** cassandra · **Ruled by prospero 2026-08-06:
+this is a PREREQUISITE, not a fifth defect lane.**
+
+**Not one of the fourteen.** Found by the team during the ratify round, by
+having it happen to them — **twice, in forty minutes.**
+
+### What happens
+
+1. Every seat shell carries **`BOUNTY_SESSION_KEY=spellbook`** (anthill sets it
+   so the team's verbs bind the team board — correct, and why our CLI calls
+   work).
+2. `server.test.ts`'s `runCli` (line 1533) spawns with
+   **`env: { ...process.env, ...opts.env }`** — it spreads the ambient
+   environment. The tests set `BOUNTY_HOME: uniqHome()` for isolation, with a
+   comment at line 777 saying it exists so snapshots "never leak into the user's
+   real `~/.bounty`".
+3. **`BOUNTY_HOME` isolates the SNAPSHOT store (`cli.ts:60`). It does not
+   isolate the KEY path.** `cmdOpen` (`cli.ts:384`) reads
+   `process.env.BOUNTY_SESSION_KEY`, and `sessionKeyToId("spellbook", cwd)`
+   resolves to the **live team board**.
+4. So the test's `open` takes the **idempotent-attach branch at
+   `cli.ts:388-397`** — the very lines P0b is about — attaches to the live team
+   board, adds fixture cards to it, and then calls
+   **`runCli(["close", "--session", session])`** (lines 1857, 2278).
+
+**`close` is the #73 clobber verb. The gate calls it on the team's board, by
+construction.**
+
+### The control (one variable, both directions)
+
+```
+bun test bounty/scripts/server.test.ts                 -> 181 pass  7 FAIL  exit 1   (board dies)
+env -u BOUNTY_SESSION_KEY bun test .../server.test.ts  -> 188 pass  0 fail  exit 0   (board survives)
+```
+
+Same suite, same machine, same minute. **The only difference is one inherited
+environment variable.**
+
+**The "7 failures" were the bug reporting itself** — the tests correctly noticed
+the board they had attached to held 7 tasks where they expected 1. **A red gate
+that is a symptom of your own live state is the same silent-wrong-answer shape
+as the rest of P0.** True baseline once scrubbed: **1289 pass / 0 fail**, biome
+clean.
+
+### Why this is a prerequisite and not scope growth
+
+- **It is test-only.** No production behaviour changes; it does not widen the
+  release.
+- **No land is safe until it exists.** `anthill commit` runs the project gate in
+  front of every commit, so **the team's own landing command was
+  board-destroying.**
+- **The SOP and this defect were in direct conflict:** the SOP tells every seat
+  to baseline the gate at join, and every seat that obeyed killed the board.
+
+### Steps
+
+1. **Scrub the ambient key in the test harness** — `runCli` (1533) and the
+   daemon-spawn helper (772-778):
+   `env: { ...process.env, BOUNTY_SESSION_KEY: undefined, BOUNTY_SESSION: undefined, ...opts.env }`.
+2. **Interim guard, already applied:** `.anthill/config.json`'s `gate` field was
+   changed to
+   `env -u BOUNTY_SESSION_KEY -u BOUNTY_SESSION bun run check && env -u … bun test`,
+   so every seat's land is scrubbed **by construction rather than by memory**.
+   **Revert it once step 1 lands** — the scrub belongs in the harness, not in
+   every consumer's config.
+
+**Gate:** with `BOUNTY_SESSION_KEY` set to a live throwaway board's key, the
+full suite runs and **that board is still alive, with its cards unchanged,
+afterwards.** Both directions (G2): confirm the pre-fix suite kills it.
+
+**⚠ What P0e is NOT.** It stops _our tests_ from seizing a live board. **It does
+not stop any other process carrying the ambient key from doing so**, and the
+read envelope still cannot tell you it happened. That half is a candidate issue
+below, not P0e.
+
+---
+
+## Candidate issues found during the ratify round (2026-08-06)
+
+**None of these are in the fourteen. None are fixed in this project.** Recorded
+so they are not re-derived, and so a lane does not quietly widen to catch one.
+**Filing is Cole's call.**
+
+| #   | finding                                                                                                                                                                                                                                                                                                                         | found by                                 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | **Any process carrying `BOUNTY_SESSION_KEY` can seize a live keyed board**, and the CLI serves it with no signal at the read site. A seat's write landed on a stranger board and failed with `no such task` — the wrong reason.                                                                                                 | daedalus + thoth (one event, two halves) |
+| 2   | **A bounty read cannot identify which board answered it** — no session id, key or port anywhere in the `state` envelope. This is what made #1 undetectable.                                                                                                                                                                     | cassandra                                |
+| 3   | **A `tail` that cannot attach retries forever**, announces it on **stderr**, and the shipped `grep -E '"type":"(task\|unblocked\|closed)"'` filter **swallows it** — so a wire attached to nothing is indistinguishable from a quiet lane. Sharpens P1 step 7: a tail that cannot attach must say so where the seat can see it. | thoth                                    |
+| 4   | **A performed `--restore` is as unannounced as a skipped one** (see P0b's field note). Raises whether `restoreSkipped` needs a positive twin — **do not mint a name; take it to the contract investigation.**                                                                                                                   | prospero                                 |
+
+Items 1–4 belong beside **#85–#88** with the
+[CLI-contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md).
+
+---
+
+## Vocabulary: the freeze guards the WRONG direction (ratified 2026-08-06, thoth)
+
+The rule "mint no new field names while #82 is on hold" was ratified on the
+assumption that these names already exist somewhere. **Measured — they do not:**
+
+| name               | in code                                                                    | in `SKILL.md`                           |
+| ------------------ | -------------------------------------------------------------------------- | --------------------------------------- |
+| `applied`          | **YES** — `bounty/scripts/server.ts:266` (`ApplyResult`), ~14 return sites | **YES** — `bounty/SKILL.md:228`, `:680` |
+| `restoreSkipped`   | no                                                                         | no                                      |
+| `snapshotBackedUp` | no                                                                         | no                                      |
+| `hydrated`         | no                                                                         | no                                      |
+
+So **"mint no new names" is trivially satisfiable and protects nothing** — there
+is nothing to re-spell. **The real hazard is the inverse: all three get written
+for the FIRST time, in different phases** (`restoreSkipped` in P0b step 3;
+`snapshotBackedUp` and `hydrated` in P1 steps 3–4) **and possibly different
+sessions — and a first spelling has no prior spelling to disagree with, so no
+grep, no test and no reviewer catches a divergence.** #82 governs cross-tool
+_convention_; this is _first use inside one tool_ and #82 would not have covered
+it.
+
+**Standing requirement:** `thoth` holds the three spellings as a canon fact and
+checks them **at each land**. P0d step 4's "use `applied`, do not invent" is
+**RATIFIED** — that field is real, documented and load-bearing.
 
 ---
 

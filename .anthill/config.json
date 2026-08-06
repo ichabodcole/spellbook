@@ -2,7 +2,7 @@
   "version": 2,
   "channel": "spellbook",
   "lead": "prospero",
-  "gate": "bun run check && bun test",
+  "gate": "env -u BOUNTY_SESSION_KEY -u BOUNTY_SESSION bun run check && env -u BOUNTY_SESSION_KEY -u BOUNTY_SESSION bun test",
   "seats": [
     {
       "handle": "prospero",
