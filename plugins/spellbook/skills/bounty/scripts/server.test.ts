@@ -2774,6 +2774,82 @@ describe("test hermeticity — discovery pointer (P0e half 2)", () => {
   }, 20000);
 });
 
+// ── P0 — the drained exit (#78) ──────────────────────────────────────────
+// Bun's stdout is ASYNCHRONOUS on a pipe and synchronous on a TTY or file, so
+// `process.exit(code)` discards whatever has not drained. Measured in this repo
+// on ONE board, one variable, both directions:
+//
+//   process.exit(code)         pipe  65536   file 114042   parse FAILED
+//   process.exitCode + return  pipe 114042   file 114042   parse OK
+//
+// 65,536 on the nose. The harm is worse than a crash: the payload is complete
+// and only the write is lost, so a reader gets well-formed-looking JSON that
+// stops mid-string. A team published the false rule "our board is too big to
+// read" and three agents worked under it for six messages.
+describe("P0 — a >64KiB payload survives a PIPE (#78)", () => {
+  test("state through a pipe is byte-identical to state in a file, and parses", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "60"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      // Build a board that clears 64KiB. 200 cards × a ~400-char title is
+      // ~114KB — comfortably over, with headroom so ordinary drift in the
+      // envelope cannot silently walk the fixture back under the threshold.
+      const pad = "x".repeat(400);
+      await Promise.all(
+        Array.from({ length: 200 }, (_, i) =>
+          runCli(["add", `card-${i}-${pad}`, "--id", `c${i}`, "--session", session], { env }),
+        ),
+      );
+
+      // ⚠ THE READER IS THE EXPERIMENT, AND `Bun.spawn({stdout:"pipe"})` IS
+      // BLIND TO THIS DEFECT. Measured on one board with the fix reverted:
+      //
+      //   shell pipe  (`cli state | wc -c`)          ->  65536   TRUNCATED
+      //   Bun.spawn   (stdout:"pipe", Response.text) -> 114042   COMPLETE
+      //   sh -c "cli state | cat"                    ->  65536   TRUNCATED
+      //
+      // So the obvious gate — call runCli and check the bytes — PASSES IN BOTH
+      // WORLDS. It was written that way first here and went green with the
+      // `process.exit` restored, which is a non-discriminating gate: the exact
+      // thing G2 exists to stop, and it looked completely reasonable.
+      //
+      // The CLI's own stdout must therefore be a REAL SHELL PIPE. `sh -c` gives
+      // it one; Bun's spawn pipe is the outer hop only, where nothing is at
+      // stake. (Why Bun's pipe survives is UNVERIFIED — plausibly the parent
+      // drains it from the first byte so the writer never blocks on a full
+      // 64KiB buffer — and the gate does not depend on that explanation.)
+      const shell = Bun.spawn({
+        cmd: ["sh", "-c", `bun run ${CLI} state --session ${session} | cat`],
+        stdout: "pipe",
+        stderr: "ignore",
+        stdin: "ignore",
+        env: { ...hermeticEnv(), ...env },
+      });
+      const piped = { stdout: await new Response(shell.stdout).text() };
+      await shell.exited;
+
+      // ── THE VACUITY GUARD, asserted BEFORE the parse ────────────────────
+      // A sub-64KiB fixture passes in BOTH worlds and stays green forever,
+      // including on the day it breaks: truncating 40KB at 65,536 is a no-op.
+      // So the size is a first-class assertion, not a comment — if the fixture
+      // ever shrinks this fails loudly instead of passing vacuously.
+      const bytes = Buffer.byteLength(piped.stdout);
+      expect({ overBuffer: bytes > 65_536, bytes }).toEqual({ overBuffer: true, bytes });
+
+      // Never truncated AT the boundary — the signature of the defect.
+      expect(bytes).not.toBe(65_536);
+
+      // And it must actually parse. This is what a caller experiences.
+      const parsed = JSON.parse(piped.stdout) as { state: BoardState };
+      expect(parsed.state.tasks).toHaveLength(200);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 120000);
+});
+
 // Structural companion to the behavioural gate above, and the load-bearing half
 // of the two. The behavioural test proves the pointer is contained TODAY, at the
 // sites that exist today; it cannot fail for a site written next month. A bare
