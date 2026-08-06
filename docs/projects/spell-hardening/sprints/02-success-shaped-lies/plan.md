@@ -2442,6 +2442,41 @@ beginning before it streams new ones.
 > running for hours. **Say that. A release note leading with truncated payloads
 > would be true and overstated, which costs the same trust as false.**
 >
+> **0a. THE FLAKE COMPARISON — the releasable sentence, and NOTHING stronger.**
+> **Measured by `cassandra` (`t-3190109f`), detached worktree at `8f4d92d`,
+> `node_modules` symlinked, per-run private `TMPDIR`, precondition asserting
+> zero module-resolution errors AND 1304 tests actually ran:**
+>
+> > **"The pre-P0d suite passed 4 of 4 full runs at `8f4d92d` (1304 tests / 101
+> > files each). The post-P0d suite failed 1 of 4, in
+> > `imago > marksUnseen freshness flag`. Both are four-run samples; they differ
+> > by one observation and we are not claiming a rate change."**
+>
+> **⛔ "THEY DIFFER" IS THE WHOLE COMPARATIVE CLAIM.** Not a rate change, not
+> _"P0d made it worse"_, and **never a percentage.** Both are **n=4 point
+> estimates differing by a single draw** — consistent with no difference at all
+> — and `thoth` already retracted precise arithmetic on exactly this n.
+>
+> **⚠ The direction is named so nobody has to infer it: the difference points
+> TOWARD P0d having introduced the flake.** That is the finding least convenient
+> for the lane that just shipped, **which is precisely why it is not being
+> sharpened.** _The honest position is that this measurement cannot distinguish
+> "P0d introduced it" from "we drew a 1 and a 0 from the same distribution."_
+>
+> **Every arm carried its denominator — 1304 / 0 / 101 — so no arm was a partial
+> run wearing a green.** One extra arm went green **under a full concurrent
+> suite plus 14 ambient daemons**, the most adverse conditions anything saw
+> today; post-P0d's red came under ordinary load. **Suggestive, not sufficient,
+> n=4.**
+>
+> **NOT ESTABLISHED, stated rather than left absent:** whether the flake
+> predates P0d (**0-of-4 is not evidence of absence at this n** — a 1-in-10
+> flake shows 0 of 4 more often than not) · any **per-cell rate** (no arm
+> failed, so there is nothing to attribute) · **ambient load was NOT
+> controlled**, 14 daemons live throughout, **12 predating today** — stated
+> rather than eliminated, because **clearing them would have measured pre-P0d
+> quiet against post-P0d loaded.**
+
 > **0b. A TEST DEPENDED ON THE DEFECT — say so, because it bounds what "the
 > suite was green" ever meant.** `imago/tests/cli.test.ts` asserted the `=` form
 > on **`--text`** — **a flag `imago` does not have.** Not in the artifact's 20,
