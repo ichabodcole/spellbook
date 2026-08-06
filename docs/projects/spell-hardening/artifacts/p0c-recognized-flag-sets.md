@@ -267,10 +267,43 @@ that is corroboration of the sets, and the only claim here I will call that.
 **What this method cannot see, stated so the next reader does not re-derive
 it:**
 
-- A **computed key** (`flags[someVar]`) is invisible. Searched: the only
-  computed-key sites in all five accumulators are the **parser's own
-  `flags[key] = …` writes** (2–3 per file, matching the write count exactly).
-  **Zero computed-key READS.** That is a measurement, not an absence.
+- A **computed key** (`flags[someVar]`) is invisible to this method. **⚠ RE-RUN
+  AT `b00428f` (cassandra, comms #325): there is now exactly ONE computed-key
+  read, and it did not exist when this table was derived.**
+
+  ```
+  bounty/scripts/cli.ts:450   ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f]))
+  ```
+
+  **Introduced by `8f4d92d` — P0b, this session, four hours after the derivation
+  sha.** At `f77ae33` the count was **0**; at `8f4d92d` and after it is **1**
+  (`git log -S "Boolean(flags[f])"` → that commit and no other). The original
+  claim was **true as stamped and false at HEAD** — which is only sayable
+  because the derivation carries a sha, and is why it does.
+
+  **Practical impact is small: under `strict: true`, `values[f]` over a
+  string-keyed object still works.** The hazard is that the one construct this
+  method cannot see now exists, so **"treat every count as a floor" has teeth it
+  did not have this morning.**
+
+  **This is the first recorded instance of the sprint's re-run rule** — the
+  standing precondition landed at `da1ec2b`, stated once in
+  [`sprints/02-success-shaped-lies/plan.md`](../sprints/02-success-shaped-lies/plan.md).
+  **Deferred to, not restated here:** a rule copied into the artifact it governs
+  is a second source of truth, and this file is the thing that decays.
+
+  **What this file owes, and it is the whole obligation:** re-run the absence
+  claims above before consuming them, and record the sha you re-ran at.
+
+  | re-run at                         | computed-key reads   |
+  | --------------------------------- | -------------------- |
+  | `f77ae33` (derivation)            | 0                    |
+  | `b00428f` (cassandra, comms #325) | **1** — `cli.ts:450` |
+
+  _`8f4d92d` invalidated two of this sprint's artifacts in one commit — this
+  claim and the exit-site count — which is the scar behind the rule, recorded
+  where the rule is, not here._
+
 - **Bare truthiness carries no type evidence** — `if (flags.x)` is satisfied by
   `true` and by any non-empty string. Every such row was resolved by reading its
   **other** sites or its helper, never by guessing from the flag name. A flag
