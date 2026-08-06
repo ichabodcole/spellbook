@@ -100,8 +100,15 @@ direct.
 - **The CLI** — `anthill` (run from the plugin; `convene` / `join` / `spawn` / `status` / `commit` /
   `down` wrap grapevine + bounty + tmux). `anthill join <handle>` emits your grounding docs + an
   action checklist — that checklist is the single source; don't restate it.
-  **⚠ `anthill status` does NOT cover comms** — it reports the grapevine roster only, so a seat can be
-  absent from comms and look present. Counting who is on that wire is currently a manual check.
+  **`anthill status` DOES cover comms — the warning that used to sit here was wrong, and it cost a seat.**
+  Presence is multi-source: a seat that is on comms and on no grapevine channel still appears in `status`.
+  _Measured 2026-08-06: `status` listed all four live seats, including `thoth`, who held a comms follow and no grapevine tail at all._
+  The retracted text claimed `status` read the grapevine roster only and that counting comms was a manual check.
+  **It talked a seat out of running the check that worked, and she then reported the gap the warning predicted** — a warning can manufacture the very blind spot it describes, because a seat who believes an instrument is blind stops reading it.
+  **The lesson generalises past this one line: a stale warning is worse than a stale fact.** A wrong fact is corrected by the next person who looks; a wrong warning stops them looking.
+  **For who has actually READ what, `status` is the wrong instrument — use `anthill comms positions`.**
+  It reports every seat's watermark in three states that are never flattened together: `never-followed` (null) versus present-but-behind (a gap) versus current.
+  That distinction is the one `status` genuinely cannot make, and it is what people reach for `status` hoping to get.
 
 ## Workflow — convene → plan → work → finalize
 
