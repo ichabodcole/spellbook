@@ -955,6 +955,38 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   to this team without carrying the caveat across.** The lesson was in the doc,
   in her own words, and it did not fire._
 
+- **👻 `uncheckedAgainst` CANNOT SEE AN UNTRACKED FILE — AND THE GATE EXECUTES
+  IT.**
+
+  **Found by `daedalus`, 2026-08-06, while the ward was being written.** An
+  untracked `grimoire/flag-invariant.test.ts` sat in the tree, **and `bun test`
+  ran it on every gate anyone fired** — inflating the suite by its cells, in
+  numbers that were then reported and compared.
+
+  ```
+  git status --porcelain | grep '^??'   ->  ?? grimoire/flag-invariant.test.ts
+  uncheckedAgainst                      ->  reports TRACKED dirt only. This file is INVISIBLE to it.
+  ```
+
+  > **`uncheckedAgainst` answers _"what tracked work was dirty when I
+  > committed"_. It does NOT answer _"what did the gate actually execute."_
+  > Those come apart exactly at an untracked file — which the gate runs and the
+  > envelope cannot see.**
+
+  **Why it matters beyond tidiness: a gate total is a DENOMINATOR**, and this
+  sprint compared totals across shas repeatedly (`1297 → 1304 → 1316 → 1327`).
+  **An untracked test file silently changes that denominator for everyone**, and
+  the one guard that would catch a partial run — _cite `pass/fail/files`_ —
+  catches a run that is too SMALL, **not one that is too LARGE.**
+
+  **CHECK: `git status --porcelain | grep '^??'` before reporting a gate
+  total**, and say what it returned. **Cheap, and it closes the one hole the
+  envelope has by construction.**
+
+  _Benign in this instance — the file passes and is thoth's, landing shortly.
+  Recorded because the NEXT one will not announce itself, and because the
+  envelope's blind spot is permanent while this file is temporary._
+
 - **🔇 NEVER SILENCE A FIXTURE-BUILDING STEP.** `2>/dev/null` on a step you are
   about to assert nothing about is fine. **`2>/dev/null` on the step that
   CREATES the thing you measure discards the only evidence that distinguishes
