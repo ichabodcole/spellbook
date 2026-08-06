@@ -752,6 +752,18 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   RELEASE-BEAT prerequisite** — _"did we make the suite worse?"_ is a question
   the release note cannot answer with an unmeasured number.
 
+- **🔇 NEVER SILENCE A FIXTURE-BUILDING STEP.** `2>/dev/null` on a step you are
+  about to assert nothing about is fine. **`2>/dev/null` on the step that
+  CREATES the thing you measure discards the only evidence that distinguishes
+  _"the fixture failed"_ from _"the fixture worked and the mechanism is
+  elsewhere."_** Those two demand opposite responses, and a silenced step cannot
+  tell them apart.
+
+  _Added 2026-08-06 (sprint 02) by `cassandra`, against her own drive: she ran
+  `say … >/dev/null 2>&1`, hit a degenerate precondition, and had **no
+  diagnosis** — she had to re-run `say` with stderr visible to learn it had
+  **succeeded**, which is what redirected her from the write to the stream._
+
 - **Reproduce the reporter's exact spelling, not a reasonable paraphrase.** **A
   paraphrase of the input is a control that cannot come out differently, because
   it removes the variable under test while still looking like the same test.**
@@ -2107,6 +2119,18 @@ beginning before it streams new ones.
 > This project exists because tools reported plausible, well-formed, wrong
 > results. **A release note that overstates does the same thing to a reader who
 > cannot grep.**
+>
+> **0. LEAD WITH THE LOST TERMINAL FRAME, NOT WITH TRUNCATED PAYLOADS — for
+> P0f.** **`cassandra` established, on all three spells by file and line, that
+> `tail` streams SURFACE→AGENT events and every CLI verb is an AGENT action.**
+> So a **>64 KiB payload through `tail` is NOT REACHABLE FROM THE CLI AT ALL** —
+> it needs a browser sending a very large message, which bounds that half's
+> real-world exposure far more tightly than this plan implied.
+>
+> **The harm that IS universal is the one the lane was named for: the terminal
+> `closed` frame is lost regardless of payload size**, on the verb agents leave
+> running for hours. **Say that. A release note leading with truncated payloads
+> would be true and overstated, which costs the same trust as false.**
 >
 > **1. Say WHICH HALF, per lane.** For the drained exit across both sprints:
 > _"the entry-point exits are fixed across eight files; the streaming verbs'
