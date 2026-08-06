@@ -795,7 +795,58 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   ps -eo pid,etime,command | grep "[b]un test"      # if it returns anything: WAIT
   ```
 
-  **CHECK first · ANNOUNCE second · START third.**
+  **CHECK first · ANNOUNCE second · START third — AND THEY MUST BE THREE
+  SEPARATE ACTS.**
+
+  > **⚠ THE EXACT MECHANISM, `daedalus`: he put the announcement and the gate in
+  > ONE shell invocation.** The law cannot work that way — **a message that
+  > leaves at the same instant as the process it warns about warns nobody.** Not
+  > bad luck, not slowness: **structural.**
+
+  **AND ANNOUNCE WITH THE OBSERVATION, NOT THE INTENT** (`cassandra`, applied to
+  herself first): paste the `ps` output into the message. **A stated intent
+  cannot be falsified by a reader; a pasted observation can be, in one
+  command.**
+
+  **⚠ KILLING A RUNNER SCRIPT DOES NOT KILL THE SUITE IT SPAWNED.** `pkill` on
+  the wrapper left `bun test` **reparented to init and still loading the
+  machine**, showing in `ps` with no obvious owner. **A seat who yields by
+  killing their script and walking away is still contending. Check for orphans
+  after you yield.**
+
+  ### ⛔ AND MOST OF THIS PROBLEM IS NOT REAL — the asymmetry applies to the SCHEDULE, not only the verdict
+
+  **`cassandra`'s reframe, which dissolves the scheduling constraint rather than
+  managing it:**
+
+  > **Contention manufactures false REDS, not false PASSES. So an arm that comes
+  > back GREEN under load is a VALID GREEN — measured under MORE adverse
+  > conditions than a quiet run, not fewer.**
+
+  **Therefore a measurement does NOT need an exclusive window. It needs _k_
+  greens, plus a quiet re-run for each RED.** _We ratified this asymmetry for
+  reading results and never applied it to planning runs._
+
+  **THE ONE CONDITION THAT KEEPS IT TRUE, and it is free (`thoth`):**
+
+  > **A green under contention is valid PROVIDED THE TOTAL IS THE EXPECTED
+  > ONE.** The asymmetry holds because a contended failure is a **hard fail that
+  > gets counted**. It stops holding if contention could make a test **not run
+  > at all** — that green is a **PARTIAL** run, and it says nothing about the
+  > part that never executed.
+  >
+  > **Cite `pass / fail / files`. NEVER `0 fail` alone.** `1326 / 0 / 101` is a
+  > valid green under any load; `1300 / 0 / 99` is **not the same claim**, and
+  > the difference is invisible if you read only the fail count.
+  >
+  > **A RED needs a quiet machine; a GREEN needs its denominator.**
+
+  **⚠ `UNVERIFIED` — nobody has observed bun dropping files under pressure and
+  nobody has tested it.** The guard is kept **because it costs nothing and does
+  not depend on the answer**: if bun never drops a file the check is free and
+  always passes; if it ever does, the check is the only thing between a partial
+  green and a full one. **Same shape as the whole sprint — a green that is true
+  about a smaller population than the reader assumes.**
 
   **This is G1's correction in the process layer:** the scrub was necessary and
   the **explicit `--session-key`** was the isolation. **Here the announcement is
