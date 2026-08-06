@@ -312,6 +312,51 @@ the G7 reachability fix first; **cassandra records the three drives**, since
 driving an assembled spell is her seat's scope **and she is the arm daedalus
 cannot supply — he wrote the fix.**
 
+### A15 — How to drive the three un-pinnable P0f sites · **RULED BY PROSPERO**
+
+`tail` carries surface→agent events; every CLI verb is an agent action — so the
+over-buffer fixture is **not constructible from the CLI** for magpie / imago /
+glamour.
+
+| option                                                   | cost                                                                                                                            |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ **Drive over `/ws`, throwaway client, deleted after** | Spends effort on a line I had drawn ("no harness")                                                                              |
+| Record all three `UNDRIVEN`                              | **Ships four sites whose only evidence is "the shape is proven at bounty"** — the substitution daedalus refused an hour earlier |
+| Drive with a small payload                               | **The `220 == 220` vacuous pass her precondition had just caught**                                                              |
+
+**The half that generalises:** what the earlier ruling refused was **permanent
+test infrastructure that ships and needs maintaining** — a deferred project.
+**The cost was MAINTENANCE, not mechanism**, so a 15-line throwaway socket
+client in gitignored scratch does not cross it.
+
+> **A rule is interpretable by its PURPOSE, not its words.**
+
+**She checked rather than assuming, and the answer was that it does not bind.**
+Outcome: all three **VERIFIED BY DRIVE** — 65536 pre-fix, complete post-fix.
+
+### A16 — Whether to kill the 14 stale daemons before the flake comparison · **RULED BY PROSPERO**
+
+| option                           | cost                                                                                                                                                                                                  |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ **Leave them; measure as-is** | Machine stays dirty; the figure is bounded to this machine                                                                                                                                            |
+| Kill them first, then measure    | **MANUFACTURES the difference** — the post-P0d 1-in-4 was measured WITH them, so a clean pre-run differs on **port pressure** as well as on P0d, and port pressure IS what the flake is a function of |
+
+**Counter-intuitive, and it is the logic that made the `node_modules` symlink
+right rather than a workaround: consistency beats cleanliness when the
+COMPARISON is the deliverable.** Killing first measures the zombies and
+attributes it to P0d — **in the direction that blames the change under test**,
+the mirror of the `node_modules` trap, which would have exonerated it.
+
+**A finding fell out of the cleanup impulse, and it bounds the release note:**
+if much of the port pressure is **abandoned daemons rather than the suite**,
+then _"the suite is ~1-in-4 flaky"_ is partly a statement about **this machine
+on this day** — it **does not travel to CI or another operator**, and the note
+must not imply it does.
+
+**Not the agent's to clean:** two of the 14 are live — the **team board**
+(closing it flushes live over the snapshot) and **Cole's mind-mapper on
+`:60700`**. Flagged, not killed.
+
 ---
 
 ## B. Corrections and falsifications — pointers only
@@ -319,27 +364,30 @@ cannot supply — he wrote the fix.**
 **These are not decisions and their single source of truth is
 [`plan.md`](./plan.md).** Listed so the review has an index.
 
-| #   | what was wrong                                                                      | found by    | landed              |
-| --- | ----------------------------------------------------------------------------------- | ----------- | ------------------- |
-| B1  | P0f filed under H5 (instrument class); it is the **recognition** class              | `daedalus`  | plan + `t-fc623be2` |
-| B2  | Session anchor published **on the channel it bounds**                               | `cassandra` | conceded, #300      |
-| B3  | G5 repeal criterion phrased as a **directory** property; it is a **suite** property | `thoth`     | plan                |
-| B4  | The convene brief instructed a gate and carried **none of its law**                 | `thoth`     | brief, #304         |
-| B5  | P0f write spelling: **3 of 5 are bare**, not 1                                      | `cassandra` | plan                |
-| B6  | UNDETERMINED split resolved → **2 pinnable · 3 driven-only · 0 undetermined**       | `cassandra` | plan                |
-| B7  | `PINNABLE` **flattens two capabilities**; ask per capability                        | `cassandra` | plan, into G6       |
-| B8  | **`--pin` is a WRITE route to the wrong board**; G1 enumerated only reads           | `daedalus`  | plan, into G1       |
-| B9  | A **RED cell was wearing a BLAST-RADIUS label** in daedalus's own gate              | `daedalus`  | his lane            |
-| B10 | Flag count **112 vs 118**; and "169 sites" is **lines**, not reads (249)            | `thoth`     | plan                |
-| B11 | **45 exit sites are grep hits; 35 are code** — ten are our own remediation comments | `daedalus`  | plan                |
-
-| B12 | **G7's cell cannot report the hang it exists for** — under a one-word
-change it goes UNREACHABLE, not red | `thoth` | plan, into G7 | | B13 |
-**`glamour` has the G7 hazard LIVE in source** (`["ignore","pipe","inherit"]`),
-latent only because its suite never spawns | `thoth` | plan, into G7 | | B14 |
-**The G2 promotion's justification was FALSE** — "two independent seats" was not
-independent | `cassandra` | plan, into G2 | | B15 | **The audit was routed at
-the wrong owner, by the lead** — see below | `thoth` | **this file** |
+| #   | what was wrong                                                                                  | found by       | landed              |
+| --- | ----------------------------------------------------------------------------------------------- | -------------- | ------------------- |
+| B1  | P0f filed under H5 (instrument class); it is the **recognition** class                          | `daedalus`     | plan + `t-fc623be2` |
+| B2  | Session anchor published **on the channel it bounds**                                           | `cassandra`    | conceded, #300      |
+| B3  | G5 repeal criterion phrased as a **directory** property; it is a **suite** property             | `thoth`        | plan                |
+| B4  | The convene brief instructed a gate and carried **none of its law**                             | `thoth`        | brief, #304         |
+| B5  | P0f write spelling: **3 of 5 are bare**, not 1                                                  | `cassandra`    | plan                |
+| B6  | UNDETERMINED split resolved → **2 pinnable · 3 driven-only · 0 undetermined**                   | `cassandra`    | plan                |
+| B7  | `PINNABLE` **flattens two capabilities**; ask per capability                                    | `cassandra`    | plan, into G6       |
+| B8  | **`--pin` is a WRITE route to the wrong board**; G1 enumerated only reads                       | `daedalus`     | plan, into G1       |
+| B9  | A **RED cell was wearing a BLAST-RADIUS label** in daedalus's own gate                          | `daedalus`     | his lane            |
+| B10 | Flag count **112 vs 118**; and "169 sites" is **lines**, not reads (249)                        | `thoth`        | plan                |
+| B11 | **45 exit sites are grep hits; 35 are code** — ten are our own remediation comments             | `daedalus`     | plan                |
+| B12 | **G7's cell cannot report the hang it exists for** — one word makes it UNREACHABLE, not red     | `thoth`        | plan, into G7       |
+| B13 | **`glamour` has the G7 hazard LIVE in source**, latent only because its suite never spawns      | `thoth`        | plan, into G7       |
+| B14 | **The G2 promotion's justification was FALSE** — "two independent seats" was not independent    | `cassandra`    | plan, into G2       |
+| B15 | **The audit was routed at the wrong owner, by the lead** — see below                            | `thoth`        | **this file**       |
+| B16 | **`strict: true` guards the NAME, not the TYPE** — the lead's discriminator did not exist       | `thoth`        | plan, into P0c      |
+| B17 | **The P0f fixture spec is NOT sufficient** — a cell built to it passes against the bug          | `daedalus`     | plan, into G8       |
+| B18 | **Non-draining is a property of the SCHEDULE, not the shape** — `thoth` predicted the proof     | `cassandra`    | plan                |
+| B19 | **Release beat 2's set was wrong BOTH ways**; the fix was short one; the lead's glob was broken | `thoth` + lead | plan                |
+| B20 | **A bare worktree has no `node_modules`** — fails as a plausible RESULT, not an error           | `cassandra`    | plan                |
+| B21 | **The lead's pathspec warning blamed the wrong clause**, condemning a working instrument        | `thoth`        | plan                |
+| B22 | **Two full suites ran concurrently — the lead scheduled it.** Nothing records LOAD              | `cassandra`    | plan                |
 
 **B15 is recorded here rather than in `plan.md` because it is a coordination
 error, not a plan defect.** I queued thoth _"the judgement audit of cassandra's
