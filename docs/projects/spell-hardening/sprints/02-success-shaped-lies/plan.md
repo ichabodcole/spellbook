@@ -706,6 +706,52 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   the judgement is auditable rather than remembered. **Anything under
   `plugins/spellbook/skills/*/scripts/` voids the gate, full stop.**
 
+- **🎲 A SINGLE RED IS NOT A FINDING — the full suite is ~1-in-4 FLAKY,
+  MEASURED.**
+
+  **Added 2026-08-06 (sprint 02) by `daedalus`, who got a red on a tree whose
+  only commit was a MARKDOWN FILE and measured instead of diagnosing.**
+
+  ```
+  full suite, IDENTICAL tree, 4 runs:   1315/0 · 1315/0 · 1314/1 · 1315/0   -> 1 red in 4
+  imago suite ALONE, same tree, 4 runs:  109/0 ·  109/0 ·  109/0 ·  109/0   -> 0 red in 4
+  ```
+
+  **The cell is `imago > marksUnseen freshness flag`, `ConnectionRefused` to its
+  own daemon's `/state`. It fails ONLY under the full 101-file parallel suite,
+  never in isolation** — daemon/port pressure, the same family as the
+  shared-`TMPDIR` race this plan already documents.
+
+  **The precondition above covers a red on a DIRTY tree. This is a red on a
+  CLEAN tree that was equally uninterpretable, and nothing covered it.**
+
+  > **RULE: re-run before you report. A red is a finding only if it
+  > REPRODUCES.**
+
+  **⛔ AND THE SECOND HALF, WHICH IS THE DANGEROUS ONE — a known flake gives
+  every future red an innocent explanation.** The first-order risk is a false
+  red wasting an hour. **The real risk is a REAL regression dismissed as
+  _"probably the flake."_** **So: NAME the flaky cell, every time.** A red in
+  `imago > marksUnseen freshness flag` is the known flake. **A red in any other
+  cell is a FINDING and the flake rate does not excuse it.** _"The suite is 25%
+  flaky"_ launders everything; _"this one cell is"_ launders nothing. **Record a
+  non-reproducing red WITH ITS CELL NAME rather than discarding it** — a second
+  sighting of the same cell is data, and a second sighting of a different cell
+  is a new flake.
+
+  _This is the THIRD time this session that an innocent explanation was
+  pre-supplied to the wrong diagnosis:_ glamour's _"tens of seconds cold"_
+  comment for a hang, sprint 01's remediation comments reading as defects, and
+  now a measured flake rate standing ready to excuse any red. **The pattern is
+  worth more than any of the three.**
+
+  **⚠ UNVERIFIED — the PRE-P0d rate.** P0d added two more spawned daemons to
+  imago's integration suite, and the rate was not measured before that change.
+  **`daedalus` declined to guess, which is correct.** To close it: `git stash`
+  the suite additions and run the full gate 4× at `8f4d92d`. **This is a
+  RELEASE-BEAT prerequisite** — _"did we make the suite worse?"_ is a question
+  the release note cannot answer with an unmeasured number.
+
 - **Reproduce the reporter's exact spelling, not a reasonable paraphrase.** **A
   paraphrase of the input is a control that cannot come out differently, because
   it removes the variable under test while still looking like the same test.**
