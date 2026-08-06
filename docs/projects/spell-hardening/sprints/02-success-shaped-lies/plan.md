@@ -1163,6 +1163,56 @@ to ship:
 **The first is the dangerous one** — it is the same class this lane exists to
 fix, re-introduced by the fix, and on `add`/`message` it eats prose.
 
+> ### ⛔⛔ `strict: true` GUARDS THE NAME, NOT THE TYPE. There is NO automatic discriminator for a wrong row.
+>
+> **Measured by `thoth`, `node:util` `parseArgs`, Bun 1.3.14, four arms —
+> falsifying a claim the LEAD made without measuring it:**
+>
+> ```
+> --mine typed STRING,   positional follows        -> NO ERROR  {values:{mine:"t-abc123"}, positionals:[]}
+> --owner typed BOOLEAN, value follows             -> NO ERROR  {values:{owner:true}, positionals:["alice"]}
+> --owner typed BOOLEAN, allowPositionals:false    -> THREW     "Unexpected argument 'alice'"
+> UNKNOWN flag under strict:true                   -> THREW     "Unknown option '--nosuchflag'"
+> ```
+>
+> **Both wrong-type cases parse SILENTLY AND WRONGLY, exit 0.** The `--mine`
+> case is the worse half exactly as stated above: **the positional is swallowed
+> and `positionals` comes back EMPTY** — on `add`/`message` that is the task
+> title vanishing.
+>
+> **So a wrong type row does NOT show up as a red test on its own.** It shows up
+> only if **a cell asserts the PARSED RESULT.**
+>
+> **⚠ The discriminator IS available — but not where the harm is.** With
+> `allowPositionals: false`, the boolean-typed-value case **does** throw. **The
+> entry points that take free prose cannot use it:** `bounty add` (`cli.ts:775`)
+> and `bounty message` (`:895`), both `pos.join(" ")` — **and those are the two
+> verbs this plan already identifies as the live write-corruption sites.**
+>
+> > **The mechanism that would catch a wrong type is unavailable precisely on
+> > the verbs where a wrong type corrupts a write.** Not irony — the same
+> > structure twice: **free positionals are what make the corruption possible
+> > AND what disable the guard.**
+>
+> **REQUIRED REPORT WHEN P0c LANDS — THREE buckets, never two:**
+>
+> | bucket                                                                    | status                                     |
+> | ------------------------------------------------------------------------- | ------------------------------------------ |
+> | exercised by a cell asserting the **parsed result**                       | **genuinely guarded**                      |
+> | exercised only by a cell asserting **exit code / unknown-flag rejection** | **guarded against the NAME, not the TYPE** |
+> | unexercised                                                               | **unguarded**                              |
+>
+> **The middle bucket is why this is written down: it looks like coverage in any
+> count that has two buckets.**
+>
+> **⚠ And the class of the lead's error is worth more than the error.** `thoth`
+> named it: **a sentence telling a reader something need not be checked.** A
+> wrong fact is corrected by the next person who looks. **A false reassurance
+> gets no corrective feedback — it is read while planning, and only tested by
+> someone who tries to reach the thing it told them not to check.** Left
+> standing, it would have told this lane that its 118 unverified rows were
+> self-checking.
+
 > ### ⛔ RULED BY COLE 2026-08-06 — `glamour/cli.ts --restore` is renamed, because it CANNOT be typed
 >
 > **`thoth` found a flag with no correct type, and both spellings are PUBLISHED
@@ -1880,9 +1930,19 @@ _That is the same instrument gap that let the 23-minute hang ship._
    >    with the fix -> 3000440 bytes     complete
    > ```
    >
-   > **THAT is the cell.** The payload must be over-buffer **AND** the consumer
-   > must not be draining at the instant of exit. **`expect(bytes) > 65_536`
-   > before the parse remains correct and remains INSUFFICIENT.**
+   > **THAT is the cell. BOTH conditions, and the second one's TIMING is part of
+   > it:**
+   >
+   > 1. the payload is **over-buffer**, and
+   > 2. the consumer is **not draining AT THE INSTANT OF EXIT.**
+   >
+   > **⚠ "At the instant of exit" is load-bearing, not decoration.** A cell that
+   > stalls the consumer at the wrong moment gets an indistinguishable pair
+   > again and reads as a passing gate. _(Narrowing supplied by `thoth`, who
+   > noted the phrase was in the prose and not in the rule line.)_
+   >
+   > **`expect(bytes) > 65_536` before the parse remains correct and remains
+   > INSUFFICIENT.**
    >
    > **Why `| cat` cannot express it:** a continuously-draining consumer lets
    > each write complete before the next arrives, so **the write immediately
