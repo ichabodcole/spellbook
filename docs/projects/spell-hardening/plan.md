@@ -87,8 +87,13 @@ with sources in `src/mind-mapper/`).
 3. Regression test per spell: generate a >64KiB payload, read it **through a
    pipe**, parse it. A test that doesn't pipe cannot catch this bug.
 
-**Reference control:** `anthill comms read` moves ~983KB through a pipe intact —
-its success path returns naturally. That is the target behaviour.
+**Reference control:** `anthill comms read` moves **2.78MB** through a pipe
+intact — measured on the same machine, same Bun, in the same session where
+`bounty state` truncated at 65,536 (reported 2026-08-06; supersedes the ~983KB
+figure from #77). Its success path **returns naturally instead of calling
+`process.exit`**. That is the target behaviour, and the reporter notes it is
+accidental rather than designed on their side — worth saying out loud in both
+repos so nobody later "tidies" a natural return into an explicit exit.
 
 **Gate:** `grapevine pull` and `bounty state --full` both return valid JSON with
 `cursor` present, piped, on an over-buffer payload. Three consecutive runs (the
@@ -237,12 +242,21 @@ for:
 
 **⚠ This is a deliberate behaviour change.** Step 2 makes previously-silent
 callers start failing. That is the intent (D4), but it means P0c is the item
-most likely to surface breakage elsewhere in the house — grep anthill's
-**invocations of `bounty`/`grapevine`** before the release, since it drives both
-spells. Note what the #80 exchange did and did not settle: anthill demonstrated
-that _its own_ parser handles `=` and rejects unknown flags. That is a reference
-implementation, not evidence about how it calls us. **The
-invocation-compatibility check is still ours to run.**
+most likely to surface breakage elsewhere in the house.
+
+**anthill's caller audit — answered 2026-08-06, and it clears.** Its complete
+invocation set is four calls (`bounty state`, `bounty sessions`,
+`bounty open --session-key … --pin --no-open`, `grapevine who <channel>`), all
+space-separated, with no `=` anywhere in code or in shipped prose — and it calls
+neither `add` nor `message`, so the `--` terminator work breaks nothing on their
+side. Their channel name, the one agent-controlled value they pass us, is
+validated against `[A-Za-z0-9._-]` and so cannot be re-read as a flag.
+
+**The residual argues _for_ P0c.** Their prose teaches the space form
+everywhere, but nothing stops an agent improvising `--status=doing` — agents
+adapt shipped examples constantly, which is what examples are for. Today that
+silently no-ops and reports `ok:true`. **The check is still ours to run for
+every other caller**, but the largest external consumer is clear.
 
 **Field corroboration (weak, and recorded as weak).** The reporter audited their
 102-card board for the write-corruption half: of cards whose titles name a seat,
@@ -360,6 +374,18 @@ the big swing
    planning signal, which is what #72 asked for.
 5. **#11 wordmark** — the surface still renders "Tuskboard"; regenerate as
    Bounty.
+6. **`state` should report the scope it applied** (added 2026-08-06 from the
+   anthill vine — small, and the same defect class as the rest of P0). `--mine`
+   means _own **plus claimable**_ (`cli.ts:241`), which is intended and is
+   documented at `SKILL.md:391`. `cli.ts:521` even announces it per call —
+   `# scoped to --mine (owner=X + claimable)` — **but it writes that to stderr,
+   and every consumer of `state` reads stdout through a pipe.** A second team
+   read `--mine` returning 62 rows as a filtering bug and came within a message
+   of filing it next to #81. Put the scope in the payload it describes, beside
+   `cursor`: `scope: {mine, owner, as, includesClaimable}`. **No semantic
+   change** — `--mine` keeps meaning mine-plus-claimable. This is the same rule
+   as D1.2 applied to a read: _a disclosure on a channel the consumer does not
+   read is not a disclosure._
 
 **⚠ Surface-mirror discipline:** every `server.ts` derivation touched here has a
 hand-written Alpine twin in `template.html` and **no test guards the drift.**
