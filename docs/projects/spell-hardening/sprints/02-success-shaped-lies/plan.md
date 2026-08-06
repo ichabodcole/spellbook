@@ -229,6 +229,29 @@ require. **The requirement does not vary with the file's presence.** Pass
 **This is not a precaution. It is proven:** the project's own test suite
 attached to the live team board and called `close` on it, twice, on 2026-08-06.
 
+> ### ⚠ G1 covers the READ routes. `--pin` is a WRITE route, and it was missing.
+>
+> **Added 2026-08-06 (sprint 02) by `daedalus`, hit while building P0b's
+> cells.**
+>
+> **`--pin` writes `<cwd>/.bounty-session`.** A cell that spawns a CLI **without
+> an explicit `cwd`** inherits the repo, writes that file at the **repo root**,
+> and **rebinds the team's own board** — because that file is `resolveSession`
+> **level 5**, and its contents are byte-identical to what level 3 derives.
+>
+> **Every route enumerated above is something the gate READS. This one is
+> something the gate WRITES**, and it survives the run — so the damage is not to
+> the measurement, it is to the next process that resolves a session anywhere
+> under this working copy, including a peer seat.
+>
+> **Pin `cwd` to a throwaway directory in any cell that passes `--pin`.** The
+> unique `BOUNTY_HOME` does **not** cover it: the pin is written relative to
+> **cwd**, not to `BOUNTY_HOME`.
+>
+> _Generalises past `--pin`: when you enumerate the ways a gate can reach the
+> wrong board, enumerate the writes as well as the reads. The read list was
+> complete and it was half the question._
+
 ### G2 — a gate must be FALSE pre-fix **and TRUE post-fix**
 
 | failure mode                                            | behaviour                              | why it is bad                                    |
@@ -303,9 +326,28 @@ test consumed 1,020s before dying on `ConnectionRefused` to its own `/state`.
 > **⚠ A green from a shared-pointer run is not weak evidence. It is NO
 > evidence.**
 
-**Repeal is per-spell and structural** — no pointer at the top level of the
-ambient `TMPDIR` **and** the pointer present in the per-suite dir — **never by a
-sibling spell's fix landing.** See the status table above.
+**Repeal is per-spell and structural** — no pointer **written BY THE SUITE** at
+the top level of the ambient `TMPDIR` **and** the pointer present in the
+per-suite dir — **never by a sibling spell's fix landing.** See the status table
+above.
+
+> **⚠ The criterion is a property of the SUITE, not of the DIRECTORY, and the
+> earlier wording said the directory.** Amended 2026-08-06 (sprint 02) after
+> `thoth` nearly filed a false regression off it and killed the finding himself.
+>
+> A `bounty-latest.json` sitting at the top level of the ambient `TMPDIR` right
+> now is **the live board daemon's**, written by `bounty/scripts/server.ts:1187`
+> **by design** — a shipped-source site, which `d650c97` never touched and which
+> the release section at the bottom of this plan explicitly says remains. **The
+> repeal ranges over the TEST-SIDE channel.** Read as a directory property, the
+> criterion pattern-matches perfectly and reports a regression that is not
+> there.
+>
+> **Same shape as the glamour note two entries up:** _"does this suite spawn?"_
+> was the wrong question and _"does this suite reach the pointer write?"_ was
+> the right one. **Here: "is there a pointer in the directory?" is wrong and
+> "did the suite put one there?" is right.** Both times the wrong question is
+> the one you can answer without running anything.
 
 > **⚠ G5 does NOT belong in `.anthill/config.json`'s gate string. Sprint 01
 > tried exactly that and reverted it.**
@@ -345,6 +387,26 @@ Bun.spawn({ cmd: ["sh", "-c", `bun run ${CLI} <verb> | cat`], stdout: "pipe" })
 
 **Binds P0f directly.** Any P0f gate drafted against `runCli` needs **REWRITING,
 not re-running.**
+
+> **⚠ COROLLARY, added 2026-08-06 (sprint 02) by `cassandra`: _"does a process
+> harness exist?"_ is the WRONG QUESTION — ask it once PER CAPABILITY.**
+>
+> **A drain cell and a termination cell have different harness requirements, and
+> they come apart at the site under test.** Termination is satisfiable under
+> `Bun.spawn({stdout:"pipe"})` — awaiting an exit works fine there. **Drain is
+> not, by this very rule.**
+>
+> So a single `PINNABLE` verdict per site **flattens two capabilities into one
+> word**, and the flattening is invisible: the harness genuinely exists, the
+> verdict is genuinely true of one cell, and nothing in the word says which.
+> **astrolabe is the worked example** — a real CLI-process harness at
+> `cli.test.ts:15`, spelled `stdout: "pipe"`, **pinnable for cell 6 and useless
+> for cells 1–5.**
+>
+> **Record the verdict per capability —
+> `PINNABLE (termination) · DRIVEN-ONLY (drain)` — never one label per site.**
+> _Same family as the count rule: a true word that answers a narrower question
+> than the one being asked._
 
 ### G7 (new) — every drain gate asserts the process **EXITS**
 
@@ -427,12 +489,42 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
 - **A count travels with its denominator, or it does not travel.** **Four counts
   in this project have now been corrected for denominator reasons:**
 
-  | count                       | what happened                                                                 |
-  | --------------------------- | ----------------------------------------------------------------------------- |
-  | discovery-pointer sites     | **22 vs 19 vs 10** — three greps, three unstated globs, still unresolved      |
-  | `process.exit(` sites       | **44 vs 45** — same glob, two shas                                            |
-  | conformant parsers          | **9 vs 10** — `Bun.argv` invisible to a `process.argv` sweep                  |
-  | spells with a spawning test | **"none of three"** — glob stopped at `scripts/`; the suites live in `tests/` |
+  | count                        | what happened                                                                                     |
+  | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+  | discovery-pointer sites      | **22 vs 19 vs 10** — three greps, three unstated globs, still unresolved                          |
+  | `process.exit(` sites        | **44 vs 45** — same glob, two shas                                                                |
+  | conformant parsers           | **9 vs 10** — `Bun.argv` invisible to a `process.argv` sweep                                      |
+  | spells with a spawning test  | **"none of three"** — glob stopped at `scripts/`; the suites live in `tests/`                     |
+  | P0c flag count               | **112 vs 118** — five accumulators vs all six entry points, two denominators glued into one       |
+  | **`process.exit(` sites #2** | **45 GREP HITS vs 35 CODE SITES** — ten hits are COMMENTS, and they are our own remediation notes |
+
+  > **⚠ The sixth row is a NEW MECHANISM and it inverts the other five.**
+  > **Added 2026-08-06 (sprint 02) by `daedalus`, found while re-deriving P0f's
+  > sites independently — he never reached the five; the denominator broke
+  > first.**
+  >
+  > **The first five rows are all MISSES — a glob asking something narrower than
+  > the sentence built on it. This one is a false POSITIVE.**
+  >
+  > Sprint 01's fix left a
+  > `` // `process.exitCode` + a natural return, NEVER `process.exit(code)` ``
+  > comment **at every site it repaired**. So **every site we FIX increments the
+  > count of sites that look unfixed** — the remediation's own documentation is
+  > textually indistinguishable from the defect it documents.
+  >
+  > **Two files' ONLY hit is that comment, i.e. they contain zero actual
+  > calls:** `digestify/scripts/review.ts` (raw 1 · code 0) and
+  > `magpie/scripts/discover.ts` (raw 1 · code 0). **Both opened by hand, not
+  > trusted to a stripper.**
+  >
+  > **`magpie/discover.ts` is the one that stings:** it was patched, then ruled
+  > **OUT** of sprint 01 — and it still answers the audit's own grep. **A future
+  > enumeration re-finds a site that was correctly excluded and re-litigates a
+  > closed ruling.**
+  >
+  > **Carry `35`, not `45`, and state which you mean.** Method:
+  > `find … -name "*.ts" ! -name "*.test.ts"`, then strip lines beginning `//`
+  > or `*`. _(Never a `scripts/` glob — that is row four.)_
 
   **The common factor is not carelessness. It is a GLOB STANDING IN FOR A
   QUESTION.** Every one of those greps was an honest measurement of something —
@@ -721,6 +813,27 @@ flags each entry point recognizes. It records no types.** `node:util`
 artifact answers half of what step 2 needs, and the half it does not answer is
 **~112 individual judgement calls the plan believed were already made.**
 
+> **⚠ COUNT CORRECTED 2026-08-06 (sprint 02) by `thoth`, who re-derived it with
+> an independent instrument: the figure is 118, not 112 — and the two numbers
+> below answer different questions.**
+>
+> | figure  | question it answers                                         |
+> | ------- | ----------------------------------------------------------- |
+> | **112** | flags across the **five accumulator** parsers               |
+> | **118** | flags across **all six converted entry points**             |
+> | **169** | **LINES** matching a `flags.` read in the five accumulators |
+> | **249** | **READ EXPRESSIONS** across all six                         |
+>
+> **This document said "112 flags at the 6 converted entry points" — which glues
+> two denominators together.** `glamour/server.ts` is the sixth and contributes
+> **6** (`intent port project restore timeout title`); the 112 excludes it.
+>
+> **And "169 consumption sites" is LINES, not reads.** A type derivation done
+> per-LINE misses **80 read expressions**, and several conflicts live on shared
+> lines. **Per-flag counts reproduced the artifact exactly in all five
+> accumulators (22/25/26/20/19) by a different instrument** — that pair is
+> corroboration; the totals were not.
+
 **Getting one wrong is not a no-op.** The two failure shapes, both silent enough
 to ship:
 
@@ -731,6 +844,48 @@ to ship:
 
 **The first is the dangerous one** — it is the same class this lane exists to
 fix, re-introduced by the fix, and on `add`/`message` it eats prose.
+
+> ### ⛔ RULED BY COLE 2026-08-06 — `glamour/cli.ts --restore` is renamed, because it CANNOT be typed
+>
+> **`thoth` found a flag with no correct type, and both spellings are PUBLISHED
+> in `glamour/SKILL.md`** — so this is not an internal inconsistency, it is two
+> shipped contracts `parseArgs` cannot both honour from one `options` map.
+>
+> | site                         | semantics                              | documented at  |
+> | ---------------------------- | -------------------------------------- | -------------- |
+> | `cli.ts:254` `style archive` | `flags.restore !== true` — **BOOLEAN** | `SKILL.md:180` |
+> | `cli.ts:317` `open` spawn    | `String(flags.restore)` — **STRING**   | `SKILL.md:167` |
+>
+> **Both failure modes are silent:** declare `boolean` and `open --restore <id>`
+> drops the id into positionals, forwarding `--restore true` so the daemon hunts
+> a snapshot named `true`. Declare `string` and `style archive <id> --restore`
+> either throws _"argument missing"_ or **swallows the next positional as its
+> value — this sprint's own defect class, re-introduced by the fix.**
+>
+> **RULING: rename the BOOLEAN one.** `style archive <id> --restore` becomes
+> **`--unarchive`**.
+>
+> ```
+> parseArgs options:  restore: {type:"string"}   unarchive: {type:"boolean"}
+> :254 becomes:       archived: !flags.unarchive
+> ```
+>
+> **Why that one and not the other:** `--restore <id>` is the **house-wide**
+> spelling — bounty, imago, magpie, glamour's own `open`, and
+> `glamour/server.ts` all mean _restore a session from an id_. **`style archive`
+> is the sole outlier**, `--unarchive` is a better name for the inverse of
+> archive, and the rename **kills the live bug below by construction**.
+>
+> **⚠ A live bug sits underneath this, independent of P0c, reported by `thoth`
+> and deliberately NOT fixed by him:** `:254` reads `flags.restore !== true`, so
+> if `restore` holds a **string** the expression is `true` and
+> **`glamour style archive <id> --restore foo` ARCHIVES instead of restoring —
+> exit 0, no signal.** The rename dissolves it. **Candidate issue; filing is
+> Cole's.**
+>
+> **`glamour/SKILL.md:180` must be updated in the same change.** A doc that
+> teaches the old spelling after the rename is a second, quieter source of
+> truth, and it is the one an agent reads.
 
 **Prerequisite step 0 (blocking):** **derive and record the type of every flag
 at every one of the six converted entry points**, into the same artifact, **read
@@ -1245,23 +1400,39 @@ process.stdout.write(`${payload}\n`); // ← may carry a scope guard, or none
 if (ev.type === "closed") process.exit(0);
 ```
 
-**⚠ The scope guard is NOT part of the shape.** Four sites spell the write as
-`if (inScope(ev) && !selfEcho) process.stdout.write(…)`. **`glamour/cli.ts:499`
-is a BARE ``process.stdout.write(`${payload}\n`)`` with no guard at all** —
-which matters because glamour is the one site whose line number moved, so it is
-the one site a builder must find by shape. **A search for the guarded spelling
-misses exactly the site the "search by shape" rule was written to protect.**
+**⚠ The scope guard is NOT part of the shape.** **THREE of the five sites are
+bare**, not one:
 
 | spell         | file                       | line at `7a32677` | write spelling      |
 | ------------- | -------------------------- | ----------------- | ------------------- |
 | **bounty**    | `bounty/scripts/cli.ts`    | **595**           | guarded             |
-| **magpie**    | `magpie/scripts/cli.ts`    | **280**           | guarded             |
+| **magpie**    | `magpie/scripts/cli.ts`    | **280**           | **BARE — no guard** |
 | **astrolabe** | `astrolabe/scripts/cli.ts` | **222**           | guarded             |
-| **imago**     | `imago/scripts/cli.ts`     | **281**           | guarded             |
+| **imago**     | `imago/scripts/cli.ts`     | **281**           | **BARE — no guard** |
 | **glamour**   | `glamour/scripts/cli.ts`   | **500**           | **BARE — no guard** |
 
 _The numbers pin the `process.exit`; the write is the line above it — glamour's
-is `:499`._
+is `:499`, imago's `:280`, magpie's `:279`._
+
+> **⚠ CORRECTED 2026-08-06 (sprint 02) by `cassandra`. The earlier table said
+> four guarded and glamour alone bare, and built a search instruction on it:**
+> _"glamour is the one site a builder must find by shape."_ **That sentence was
+> wrong and it was load-bearing.**
+>
+> **Measured at `f77ae33` by two methods sharing no mechanism** — an adjacency
+> scan pairing each `stdout.write` with the `process.exit` on the next line, and
+> a symbol-presence count. **`inScope` and `selfEcho` occur ZERO times in
+> imago's and magpie's `cli.ts`.** Corrected: **2 guarded (bounty, astrolabe) ·
+> 3 bare (glamour, imago, magpie).**
+>
+> **All five LINE NUMBERS were correct. Only the spelling column was wrong**, so
+> no gate cell changes — the cells enumerate by site and the sites are right.
+>
+> **The rule the section argues for is UNHARMED — it is three times better
+> supported than the sentence that argued for it.** A builder told glamour was
+> the sole exception would reasonably search the guarded spelling for the other
+> four and **silently find two**. **Search by SHAPE, and do not treat any guard
+> spelling as the invariant.**
 
 **⚠ glamour was `:481` in sprint 01's plan.** `62a5972` added 19 lines above it.
 **Sprint 01's number is not corrected there** — a frozen record is not amended —
@@ -1407,11 +1578,42 @@ count.**
 
 **The five sites do not fall into two populations. They fall into three:**
 
-| site                   | verdict          | what is established                                                                                      |
-| ---------------------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
-| **bounty · astrolabe** | **PINNABLE**     | harness confirmed in-plan; step 7 and cell 6 both run                                                    |
-| **glamour**            | **DRIVEN ONLY**  | **settled** — 7 test files, **none spawns a process**. Write a harness, or close by drive.               |
-| **magpie · imago**     | **UNDETERMINED** | a spawning integration test exists in each; whether it can drive `tail` through a pipe is **unverified** |
+| site                         | verdict         | what is established                                                                                   |
+| ---------------------------- | --------------- | ----------------------------------------------------------------------------------------------------- |
+| **bounty**                   | **PINNABLE**    | harness confirmed, **and it already holds BOTH halves** — see below                                   |
+| **astrolabe**                | **PINNABLE**    | **for cell 6 ONLY** — its harness is `Bun.spawn({stdout:"pipe"})`, which G6 says cannot fail on drain |
+| **glamour · imago · magpie** | **DRIVEN ONLY** | **settled** — no CLI-process harness in any of the three. Write one, or close by drive.               |
+
+> ### RESOLVED 2026-08-06 (sprint 02) by `cassandra` — the split is **`2 pinnable · 3 driven-only · 0 undetermined`**
+>
+> **The prerequisite read was done and the answer went the way the plan warned
+> against assuming.** `magpie/tests/daemon.integration.test.ts` and
+> `imago/tests/server.integration.test.ts` **spawn the DAEMON, never the CLI** —
+> zero occurrences of `cli.ts`, zero of `tail`, and `stdout: "ignore"` in both.
+> **They cannot drive `tail` through a pipe without new harness code**, so
+> magpie and imago ARE glamour's population after all.
+>
+> **⚠ And this plan named the wrong magpie file.** `magpie/tests/cli.test.ts`
+> exists and references `cli.ts` — but its own first line says _"Pure unit tests
+> for cli.ts helpers that don't need a running daemon."_ **It imports; it does
+> not spawn.** Anyone who grepped for a CLI-referencing test instead of opening
+> it would have marked magpie **pinnable on a file that cannot drive a
+> process.**
+>
+> **⚠ `PINNABLE` was itself flattening two capabilities that come apart at the
+> site under test, and astrolabe is where they come apart.** Cell 6
+> (termination) is satisfiable under `Bun.spawn` — awaiting an exit works fine.
+> **Cells 1–5 (drain) are NOT**, per G6. So _"is there a process harness?"_ is
+> the wrong question; **ask it once per capability.** astrolabe's
+> `cli.test.ts:15` is a real harness and is **not reusable for the drain cells
+> without rewriting to the `sh -c "… | cat"` form.**
+>
+> **Build bounty FIRST — its `server.test.ts` already contains both patterns**,
+> so the bounty cell is a composition rather than new harness work: the
+> G6-correct construction at **`:2824`**, a `tail` subprocess harness at
+> **`:1741` · `:1780` · `:1840`**, and an existing termination test at
+> **`:1733`**. **Lift bounty's shape to astrolabe**, then decide glamour, imago
+> and magpie on cost.
 
 **magpie and imago are NOT glamour's population.**
 `magpie/tests/daemon.integration.test.ts` and
