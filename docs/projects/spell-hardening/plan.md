@@ -265,19 +265,20 @@ shares the identical shape.** The differentiator is never the shape; it is
 **whether a verb can emit >64KiB.** Verdicts, with rule-outs recorded because a
 silent skip is indistinguishable from a miss:
 
-| site                          | >64KiB capable?                                                                                                                                                                                         | verdict       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `grapevine/cli.ts:1805`       | YES — `pull`/`read`/`grep`/`list` over an unbounded message log                                                                                                                                         | **FIX** (#77) |
-| `bounty/cli.ts:941`           | YES — `state`/`list` over an unbounded board (the 102-card board is live proof)                                                                                                                         | **FIX** (#78) |
-| **`mind-mapper/cli.ts:1568`** | **YES, and the worst of them** — `state` returns the FULL graph (nodes+edges+proposals+conversation+jobs+docs)                                                                                          | **FIX**       |
-| `magpie/cli.ts:886`           | YES — `export`/`extract`/`discover` emit element/bbox sets                                                                                                                                              | **FIX**       |
-| `astrolabe/cli.ts:467`        | YES — a CROSS-PROJECT observatory; it aggregates every project's board                                                                                                                                  | **FIX**       |
-| `imago/cli.ts:538`            | YES — `state`/`context`/`batch` carry accumulated conversation + proposals                                                                                                                              | **FIX**       |
-| `glamour/cli.ts:628`          | YES — `state`/`tray`/`gen-meta` carry generation metadata + tray contents                                                                                                                               | **FIX**       |
-| **`magpie/discover.ts:314`**  | **a 10th site nobody had listed** — third spelling                                                                                                                                                      | **FIX**       |
-| `digestify/review.ts:430`     | **CANNOT RULE OUT** — emits the human's submitted answers. Rarely 64KiB, but it is a **one-shot** tool: truncation eats the user's only submission with no retry. **The asymmetry of harm decides it.** | **FIX**       |
-| `grapevine/daemon.ts:962/965` | **RULED OUT** — shutdown handler; the daemon's only stdout write is a small boot JSON at `ready`, long before any exit path. Nothing is queued at exit.                                                 | **NO FIX**    |
-| the 5 `server.ts` exits       | **RULED OUT** — same reasoning: daemons emit a small ready-JSON at boot; their exit paths carry no payload.                                                                                             | **NO FIX**    |
+| site                              | >64KiB capable?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | verdict       |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `grapevine/cli.ts:1805`           | YES — `pull`/`read`/`grep`/`list` over an unbounded message log                                                                                                                                                                                                                                                                                                                                                                                                                                     | **FIX** (#77) |
+| `bounty/cli.ts:941`               | YES — `state`/`list` over an unbounded board (the 102-card board is live proof)                                                                                                                                                                                                                                                                                                                                                                                                                     | **FIX** (#78) |
+| **`mind-mapper/cli.ts:1568`**     | **YES, and the worst of them** — `state` returns the FULL graph (nodes+edges+proposals+conversation+jobs+docs)                                                                                                                                                                                                                                                                                                                                                                                      | **FIX**       |
+| `magpie/cli.ts:886`               | YES — `export`/`extract`/`discover` emit element/bbox sets                                                                                                                                                                                                                                                                                                                                                                                                                                          | **FIX**       |
+| `astrolabe/cli.ts:467`            | YES — a CROSS-PROJECT observatory; it aggregates every project's board                                                                                                                                                                                                                                                                                                                                                                                                                              | **FIX**       |
+| `imago/cli.ts:538`                | YES — `state`/`context`/`batch` carry accumulated conversation + proposals                                                                                                                                                                                                                                                                                                                                                                                                                          | **FIX**       |
+| `glamour/cli.ts:628`              | YES — `state`/`tray`/`gen-meta` carry generation metadata + tray contents                                                                                                                                                                                                                                                                                                                                                                                                                           | **FIX**       |
+| **`magpie/discover.ts:314`**      | **a 10th site nobody had listed** — third spelling                                                                                                                                                                                                                                                                                                                                                                                                                                                  | **FIX**       |
+| `digestify/review.ts:430`         | **CANNOT RULE OUT** — emits the human's submitted answers. Rarely 64KiB, but it is a **one-shot** tool: truncation eats the user's only submission with no retry. **The asymmetry of harm decides it.**                                                                                                                                                                                                                                                                                             | **FIX**       |
+| `grapevine/daemon.ts:962/965`     | **RULED OUT** — shutdown handler; the daemon's only stdout write is a small boot JSON at `ready`, long before any exit path. Nothing is queued at exit.                                                                                                                                                                                                                                                                                                                                             | **NO FIX**    |
+| the 5 `server.ts` exits           | **RULED OUT** — same reasoning: daemons emit a small ready-JSON at boot; their exit paths carry no payload.                                                                                                                                                                                                                                                                                                                                                                                         | **NO FIX**    |
+| **`src/mind-mapper/build.ts:92`** | **RULED OUT 2026-08-06** — an 11th site, carrying the third spelling (`process.exit(await main())`), and it was in **neither** the ruled-in nor the ruled-out list. It is a **build tool**: stdout is human progress text, nothing downstream `JSON.parse`s it. **A truncated build log is visible; a truncated `state` envelope is not** — that asymmetry is what the whole audit turns on. _Recorded rather than skipped, because this is precisely the site a silent skip would have swallowed._ | **NO FIX**    |
 
 **⚠ The literal grep missed sites because the defect has THREE SPELLINGS:**
 `main().then(code => process.exit(code))`, `process.exit(code)`, and
@@ -314,6 +315,40 @@ with sources in `src/mind-mapper/`).
    out and why — a silent skip is indistinguishable from a miss.
 3. Regression test per spell: generate a >64KiB payload, read it **through a
    pipe**, parse it. A test that doesn't pipe cannot catch this bug.
+
+   > ### ⛔ AMENDED 2026-08-06 — "through a pipe" NAMES TWO DIFFERENT THINGS AND ONLY ONE REPRODUCES THE BUG.
+   >
+   > **The sentence above is true, insufficient, and reads as complete. Measured
+   > on one board with the defect present, three readers:**
+   >
+   > ```
+   > shell pipe   cli state | wc -c                ->   65536   TRUNCATED
+   > Bun.spawn    stdout:"pipe" + Response.text()  ->  114042   COMPLETE
+   > sh -c        cli state | cat                  ->   65536   TRUNCATED
+   > ```
+   >
+   > **`Bun.spawn({stdout:"pipe"})` is how `runCli` and every harness in this
+   > repo drives a CLI — so a gate written that way CANNOT FAIL ON THIS
+   > DEFECT.** The engine seat wrote exactly that gate, it passed, he restored
+   > the bug, and **it passed again.**
+   >
+   > **Nine ruled-in sites × a gate that cannot fail = nine decoration gates,
+   > every one written by someone following this plan correctly.**
+   >
+   > **Use this construction verbatim — verified in both directions (green with
+   > the fix, RED under the mutation):**
+   >
+   > ```
+   > Bun.spawn({ cmd: ["sh", "-c", `bun run ${CLI} <verb> | cat`], stdout: "pipe" })
+   > ```
+   >
+   > **⚠ Any P0 gate drafted against `runCli` needs REWRITING, not re-running.**
+   >
+   > _Why Bun's pipe survives is **UNVERIFIED** — plausibly the parent drains
+   > from the first byte so the writer never blocks. **The gate deliberately
+   > does not depend on that explanation**, and it was left unpublished rather
+   > than asserted: "real symptom, inferred mechanism" is this project's
+   > recurring trap._
 
    **⚠ The vacuity trap — the regression cell must be over 65,536 _by
    construction_.** A test that pipes a small payload and asserts completeness
