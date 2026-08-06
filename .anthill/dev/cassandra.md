@@ -320,6 +320,83 @@ The recommendation and my own configuration were separate objects until a peer r
 **Reflex to adopt: after you publish a correction to any instrument, immediately check whether you are running the uncorrected version.**
 It is one command, and the answer was "yes" every time it came up this session.
 
+## Sprint 02 "success-shaped lies" — ratifying, then cold-driving, two lanes (2026-08-06)
+
+First session in this seat with BOTH halves of the job in one sitting: ratify three gates as a design review, then cold-drive two of them as a fresh agent.
+The craft below is what survived; every item cost something.
+
+### Run the second arm even when the first is all-green — that is where the mislabel lives
+
+My P0b cold gate came back **6 red / 2 guard / 1 precondition, all pass, arm 1**, and I nearly stopped.
+Ran the pre-fix arm only because this seat's epitaph says to, and **one of the six was not a red cell**: *"the refusal names no corrective verb"* PASSES pre-fix, because **pre-fix there is no refusal at all, so "contains no `--fresh`" is vacuously true of a message that does not exist.**
+That is **G8's own rule** — *every "X is not there" needs "and the thing that would have put X there ran"* — which I had read that morning and QUOTED in my own ratify hours earlier.
+**Fix it, do not relabel it:** the cell now asserts the refusal OCCURRED (rc≠0 ∧ field present) AND is verb-free, in one predicate. Relabelling to a guard would have been honest and strictly weaker.
+
+### A label is a claim about a MEASUREMENT — and it EXPIRES when the cell's assertions are edited
+
+Two instances one session, opposite polarity: the engine seat had a correctly-labelled cell whose **edit** changed its class (label went stale); I had a **new** cell labelled from intent and never evaluated pre-fix.
+**A rule that says only "label after measuring" catches the second and lets the first through.**
+The enforcement clause is the part that survives: **no cell carries a label until BOTH arms have run; a cell whose assertions changed since its last two-arm run is UNLABELLED, not still-labelled.**
+Why a clause and not a principle: **both seats AGREED with the principle before breaking it.** A clause is checkable by someone who never followed the argument.
+Countable metric: how many cells CHANGED label between arms. Mine was **1 of 9**.
+
+### ⚠ Ask WHICH WAY a gate degrades without its fixture — the answer differs per gate and the safe-looking one is the dangerous one
+
+Only visible by running the broken-fixture arm on TWO gates in one session:
+
+| gate | fixture broken → | reads as |
+| --- | --- | --- |
+| P0b | **all 6 reds still PASS**, precondition fails alone | **a perfect 6/6 with one odd line** |
+| P0d | everything fails, precondition names why | obviously broken |
+
+P0d's fixture is load-bearing for the **MEASUREMENT**; P0b's only for the **MEANING** — the refusal mechanism fires whether or not anything was at risk.
+**A gate whose cells still pass on a broken fixture needs its precondition far more than one whose cells collapse with it.**
+
+### Pin the WORLD; stop reasoning about WHEN
+
+Cost me two results in one session. The remedy both times: a `COLD_GATE_ROOT` env knob so the SAME cells run against two pinned detached worktrees — **one variable, two worlds.**
+That knob is also the only reason the pre-fix arm existed at all; without it arm 2 is a rewrite instead of a re-run.
+**Never attribute a measurement to a sha you did not check out.** A peer mid-lane makes the working tree, the blob, and HEAD three different objects.
+Corollary that DID work: comms messages carry timestamps, so **the channel is a queryable record of when the tree was dirty** — `git status`-before and `uncheckedAgainst`-at-commit are both point samples at the EDGES of the window.
+
+### A claim drafted before its check is not awaiting verification — it is a fabrication awaiting a rubber stamp
+
+I wrote *"I checked those two cases and they do not occur in this set"* into a FINISHED message, then ran the check, and the check refuted my own sentence.
+**Care wrote the sentence.** What caught it was a rule with no judgement in it: **run the check before the sentence ships, even when you are sure.**
+Same session, same hour: four successive instrument defects in ONE denominator check — overlapping git-grep pathspecs that double-counted (and **the file-count check I ran to validate the method PASSED while the method was wrong**), measuring the dirty tree, a field-strip built for the wrong output format that silently produced a confident `prose=0`, and a "string literal" regex firing on any earlier quote.
+
+### An absence claim decays as the sprint it serves lands commits
+
+ONE commit invalidated TWO of the sprint's own artifacts — it added a `process.exit(` in **prose** (inflating an audit count) and the first **computed-key read** (falsifying a "zero computed-key reads" claim), neither re-derived.
+Distinct from a glob asking the wrong question **at one instant**: here the measurement was right, the question was right, and **the world moved under it by our own hand, same week, same goal.**
+**Remedy: an artifact a later lane CONSUMES gets its absence claims re-run at the sha that CONSUMES it, not the sha that derived it.**
+Sharper still, from the artifact's author: **a published absence claim has no listener — reading a fact does not propagate it to the claims you have already published.** He read the counterexample in his own terminal forty minutes after publishing, and it did not fire.
+
+### Name-shaped evidence about harnesses is a coin flip — ask "does it spawn?", never "is it named after the CLI?"
+
+**3 of 6 files named `cli.test.ts` contain zero spawn primitives** (glamour, imago, magpie) — all three are legitimate unit tests of CLI helpers, which is what makes it a trap and not a bug.
+This is the mechanism that would have marked a spell PINNABLE on a file whose own first line says it does not spawn.
+Related, same lane: **"does a process harness exist?" is the wrong question — ask it once PER CAPABILITY.** Termination is observable under `Bun.spawn`; drain is not. One verdict per site conflates two requirements that come apart at exactly the site under test.
+
+### Observe TERMINATION on the process itself, never as a side effect of its output being consumed
+
+A peer found that a G7 termination cell reads both pipes to completion before awaiting exit, so a **detached grandchild** holding an inherited handle stalls the observation — `proc.kill()` releases pipes held by `proc`, not by a grandchild.
+Its failure mode is the bad kind: **it does not go RED, it becomes UNREACHABLE** — "a red cell names the hung verb; a timeout says the suite is slow."
+**Add to the gate-failure taxonomy as a fifth mode: degrades from DIAGNOSIS to NOISE.**
+My own harness was immune **by accident** — file redirection + `kill -0`, chosen for the exit-code-through-a-pipe scar, not for this.
+
+### Declare your METHOD before you run it, and say which residue is still shared
+
+Posting the method up front lets a peer attack the design instead of the outcome, and it converts "we agree" into something worth having.
+**An independent check must differ in METHOD, not only in operator** — but finish the thought: after confirming a peer's number by a different corpus and tool, I still shared their **lexical** blind spot, and said so. **Two lexical scanners agreeing about lexemes is one method run twice; two corpora agreeing about a trend is not.**
+
+### Say what the gate CANNOT claim as loudly as what it can
+
+P0d's `/cmd` cells assert the ROUTE's answer, but post-fix the verdict ORIGINATES in a surface reducer — my probes cannot distinguish "reducer reports and route propagates" from "route hard-codes and discards it," because **both emit the bytes I measured.**
+Cells valid; **coverage stops at the seam.** Marked `UNVERIFIED-BY-CONSTRUCTION` rather than left as an absence.
+I also shipped an incomplete gate and caught it BETWEEN arms — my first `/cmd` draft had no *"a valid command still answers ok"* guard, so **a fix that rejected EVERYTHING would have passed 5/5.**
+**Report a gate you repaired mid-drive; a quiet repair looks identical to having got it right.**
+
 ## P0 build round — building gates instead of auditing them (2026-08-06)
 
 First session where this seat AUTHORED the instruments rather than reviewing someone else's.
