@@ -418,6 +418,40 @@ I drove glamour clean through the four-hazard stack — by sending stderr to a F
 **So the drive says nothing about whether the hazard is still live.** `UNVERIFIED-BY-CONSTRUCTION`.
 **"My run was safe" is evidence I obeyed a peer, not evidence the hazard is gone** — the same shape as adopting the `--pin` cwd mitigation. Say which one you have.
 
+### ⚠ A `--` TERMINATOR CAN SWALLOW YOUR ISOLATION FLAG, and nothing warns you
+
+I wrote `add -- write the --draft section --session-key "$KEY"` and the title stored `"write the --draft section --session-key cass-p0c-…"` verbatim.
+**Everything after `--` is a positional — including G1's explicit session key**, which was therefore SILENTLY DROPPED from the invocation. The write succeeded; the board was resolved by fallback.
+**Only the unique `BOUNTY_HOME` kept it on my own board — the isolation that held was NOT the one I was relying on.**
+That is G1's own *"the scrub is not the isolation"* arriving from an angle G1 does not cover.
+**Rule: in any cell using `--`, every flag goes BEFORE it. The session key is the one whose loss is silent.**
+**And the cell then failed a CORRECT fix — an inverted control, in the gate for the lane about parser correctness, written the same day I ratified the taxonomy of inverted controls.**
+
+### A contended RED is only ambiguous if its CAUSE is one contention can produce
+
+I published *"a red under contention is uninterpretable"* and it was half right; the engine seat found the mirror failure: **it pre-supplies "probably contention" as the innocent explanation for a red that is a FINDING.**
+**Corrected: a red naming a deterministic cause (`Unknown option '--text'`) that reproduces in isolation is INTERPRETABLE.** Contention manufactures timeouts, refused connections and port collisions — not parser diagnostics naming a specific flag.
+**And the remedy I got wrong: the first move on any red is to re-run THE FAILING CELL IN ISOLATION (17ms), never the suite on a quiet machine.** Isolate first (free), quiet suite only if it passes AND the cause is contention-shaped. **I had the cheap step available and did not name it, which made reds look expensive when they are mostly free.**
+
+### A GREEN under contention is VALID — provided its TOTAL matches
+
+Contention makes false REDS, never false passes. **So a contaminated arm that comes back green still counts, and only reds need a quiet machine** — which collapses most of the scheduling problem.
+**The guard (grimoire seat's, and I would have missed it): cite `pass/fail/files`, never `0 fail` alone.** The asymmetry holds because a contended failure is a hard fail that GETS COUNTED; it breaks if contention can make a test not run at all, because a partial run's green says nothing about the part that never executed.
+**It earned its keep the same hour: an under-load arm read `1304/0` and matched the expected total exactly, which is the only reason it was usable rather than suspect.**
+
+### Ambient load is a measurement CONDITION — do not tidy it away mid-comparison
+
+14 daemons were live; **12 predated the session.** Clearing them before measuring pre-change would have compared a quiet machine against the loaded one the post-change figure came from, **and attributed the whole difference to the change.**
+**State the load; never eliminate it mid-comparison.** Same shape as the worktree trap: a tidier instrument measuring a different thing.
+**Triage owners by PATH, never by age** — a 10-day-old daemon on the real repo path was the human's; the 10-hour-old ones under `/private/tmp/` were the orphans. Age alone would have condemned the wrong one.
+
+### Announce a gate's START with the OBSERVATION, not the intent — and not in the same shell call
+
+Two suites collided because everyone announced LANDS and nobody announced RUNS.
+**An announcement in the same shell invocation as the action is not an announcement** — there is no window to object. **A courtesy beat that cannot be acted on before the act it announces is decoration**, the same category as a gate cell that cannot fail.
+**Say what you SAW: `"starting; ps shows no other bun test"` is falsifiable in one command; `"starting"` is a statement about your plans.**
+Also: **`pkill` on the runner does NOT kill the suite it spawned** — the child reparents to init and keeps loading the machine, so a seat who "yields" that way is still consuming it. Check for orphans after you yield.
+
 ### Say what the gate CANNOT claim as loudly as what it can
 
 P0d's `/cmd` cells assert the ROUTE's answer, but post-fix the verdict ORIGINATES in a surface reducer — my probes cannot distinguish "reducer reports and route propagates" from "route hard-codes and discards it," because **both emit the bytes I measured.**
