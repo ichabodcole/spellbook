@@ -1759,3 +1759,49 @@ describe("looksShellRisky (#60 inline-body footgun predicate)", () => {
     expect(looksShellRisky("")).toBe(false);
   });
 });
+
+// ── P0 — a >64KiB payload survives a PIPE (#77) ──────────────────────────
+// Bun's stdout is ASYNCHRONOUS on a pipe and synchronous on a TTY or file, so
+// `process.exit(code)` discards whatever has not drained. `pull` over an
+// unbounded message log is this spell's over-buffer verb.
+//
+// ⚠ THE READER IS PART OF THE EXPERIMENT. A harness that spawns the CLI with a
+// node/Bun pipe and drains it concurrently does NOT reproduce this — measured on
+// bounty: shell pipe 65536, Bun.spawn pipe 114042, same board, defect present.
+// So `bunRun` above CANNOT gate this defect, and a gate built on it passes in
+// both worlds. The CLI's stdout must be a REAL SHELL PIPE; `sh -c` gives it one
+// and the outer hop is where nothing is at stake. (Construction ratified for
+// every P0 gate — see the bounty twin in bounty/scripts/server.test.ts.)
+describe("P0 — a >64KiB pull survives a PIPE (#77)", () => {
+  test("pull through a shell pipe is complete and parses", async () => {
+    const ch = "p0_pipe";
+    await bunRun(["open", ch]);
+    // ~120KB of message log: comfortably over 64KiB, with headroom so ordinary
+    // drift in the envelope cannot silently walk the fixture back under it.
+    const body = "y".repeat(2000);
+    for (let i = 0; i < 60; i++) {
+      await bunRun(["send", ch, "--from", "p0", `${i}-${body}`]);
+    }
+
+    const shell = spawn("sh", ["-c", `${process.execPath} ${CLI} pull ${ch} --since 0 | cat`], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    TRACKED_PROCS.add(shell);
+    const chunks: Buffer[] = [];
+    shell.stdout.on("data", (b) => chunks.push(b));
+    await new Promise((r) => shell.on("exit", r));
+    const stdout = Buffer.concat(chunks).toString("utf-8");
+
+    // ── THE VACUITY GUARD, asserted BEFORE the parse ────────────────────
+    // A sub-64KiB fixture passes in BOTH worlds and stays green forever,
+    // including on the day it breaks: truncating 40KB at 65,536 is a no-op.
+    const bytes = Buffer.byteLength(stdout);
+    expect({ overBuffer: bytes > 65_536, bytes }).toEqual({ overBuffer: true, bytes });
+    // Never truncated AT the boundary — the signature of the defect.
+    expect(bytes).not.toBe(65_536);
+
+    const data = JSON.parse(stdout) as { messages: unknown[] };
+    expect(data.messages.length).toBe(60);
+  }, 120000);
+});
