@@ -212,6 +212,16 @@ precondition in step 5 therefore has **no race to lose**, rather than a race
 that usually resolves in time. Assert it as its own cell so the gate fails when
 the number it depends on is stale, instead of silently comparing against it.
 
+**⚠ This construction's correctness depends on facts no test currently guards**
+— that a mutation dirties the snapshot and flushes on a ~1s debounce, and that a
+keyed respawn does **not** mutate. Both were measured on 2026-08-06 and neither
+is pinned. **A doc claim drifts under its own code and fails no gate** (the
+reporter's phrasing, and it applies to this plan): if either behaviour changes,
+this gate keeps passing and stops meaning anything. **Pin both in
+`server.test.ts` as part of P0b**, not as a follow-up — a mutation flushes
+within the debounce, and `open --session-key` on a dead keyed board leaves the
+snapshot byte-identical.
+
 _Two incidentals from the probe, both worth their own attention._ Steps 1–4 are
 **#64 + #73's real-world sequence in four commands** — a respawn-empty over a
 good snapshot — which makes this a reusable P1 fixture; and the empty respawn
