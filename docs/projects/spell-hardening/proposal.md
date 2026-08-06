@@ -313,6 +313,15 @@ rather than work, which is defensible — the `=` form was never documented — 
 exist who use it successfully. Breaking them to punish a spelling is a worse
 trade than supporting it.
 
+**Corroborated externally, 2026-08-06.** The reporter landed the same ruling
+independently in anthill hours before #81 was filed — `=` split at parse time
+plus unknown-flag rejection at **parser altitude**, across 21 commands — for the
+positional version of this class. Their two scars transfer and are recorded in
+P0c: a per-verb guard reached **1 of 13** leaves, and the first working guard
+broke **seven** positional tests. Two houses reaching the same rule from
+different defects is the strongest evidence D4 is right that we are going to
+get.
+
 ## Technical Approach
 
 - **P0's fix is a drained exit, not pagination.** The payloads are already
@@ -358,6 +367,14 @@ trade than supporting it.
       visible in the envelope, with a regression test covering the live-board
       attach path.
 - [ ] A `close` cannot silently destroy a non-empty snapshot.
+- [ ] Every spell CLI honours `--key=value` identically to its space-separated
+      form and rejects an unknown flag by name, with read-path, write-path, and
+      positional-preservation tests — and no verb taking free prose regressed.
+- [ ] **Every gate above was checked with a control that could have failed.** A
+      paraphrase of the reported input is not a control; it removes the variable
+      under test while looking like the same test. This one is process, not
+      product, and it is here because ignoring it cost this project a wrong
+      triage on #80.
 - [ ] Blocked and session-length cards produce no false pokes; genuinely stalled
       cards still do.
 - [ ] `bun run check && bun test` green; cold-gate pass by the verify seat.

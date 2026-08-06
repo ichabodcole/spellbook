@@ -188,6 +188,26 @@ state --totally-bogus-flag z → exit 0, stderr empty
 
 The two with no handling at all are the two most-used spells.
 
+**Reference implementation — anthill's `define.ts` (offered on #80,
+2026-08-06).** anthill landed this exact fix hours before we filed #81, for the
+positional version of the same class: it splits on `=` at parse time
+(`if (!arg.includes("=") && isValueFlag(...))`) and rejects unrecognized flags
+at **parser altitude**, across 21 commands. Two lessons come with it, both paid
+for:
+
+- **Fix at parser altitude, not per-verb.** Their first attempt scoped the guard
+  to one verb's `run()` and reached **1 of 13** leaves. Ours has the same shape
+  — `parseArgs` is one function, but the _validation_ of what it produced is
+  currently nowhere, and adding it verb-by-verb repeats their miss.
+- **Positionals are what break.** Their first guard broke **seven tests**, and
+  they now pin three controls where the first positional must keep working
+  (`commit -- <paths>`, `comms send <body>`, `join <handle>`). Bounty is more
+  exposed than anthill here, not less: `add` (`cli.ts:775`) and `message`
+  (`cli.ts:895`) build their text with **`pos.join(" ")`** — free prose, and
+  `message` is a verb agents use conversationally. There is no `--` terminator
+  anywhere in the file. So `add write the --draft section` becomes a hard error
+  the moment step 2 lands.
+
 **Steps**
 
 1. **Support `--key=value`** in `parseArgs` — split on the first `=` only, so
@@ -195,25 +215,47 @@ The two with no handling at all are the two most-used spells.
 2. **Reject unrecognized flags** (D4 — ruled): non-zero exit, the offending flag
    named in the message. **Copy `mind-mapper`'s existing implementation** rather
    than inventing a second convention; if it needs generalising, lift it to a
-   shared shape and say so.
+   shared shape and say so. Do it **once at parser altitude**, not per verb.
+   Resolve the prose-positional collision above in the same change — a `--`
+   terminator is the conventional answer, and `--stdin` already exists as the
+   escape hatch for both affected verbs.
 3. **Apply to every spell CLI, not just bounty and grapevine.** The partial
    handlers in glamour/imago/magpie must end up on the same semantics — three
    spellings of one idea is the failure mode the P2 flag-naming note warns
    about.
-4. **Regression tests on both directions.** A read path (`state --owner=X` must
-   not return out-of-scope tasks) **and** a write path (`add --owner=X` must not
-   silently drop the owner). A read-only test would have missed the worse half.
+4. **Regression tests on three axes.** A read path (`state --owner=X` must not
+   return out-of-scope tasks); a write path (`add --owner=X` must not silently
+   drop the owner) — a read-only test would have missed the worse half; and a
+   **positional-preservation** control per affected verb, since that is what
+   broke in the reference implementation. Assert the read path with a **bogus
+   value through the `=` form** (`--owner=zzz-nobody-zzz` → zero tasks), not a
+   valid one: `--owner=forager` returning tasks is a control that cannot come
+   out differently, and is precisely the paraphrase that hid this bug for a
+   round.
 5. **`SKILL.md` sweep:** any documented example using a spelling that now errors
    must be corrected in the same change.
 
 **⚠ This is a deliberate behaviour change.** Step 2 makes previously-silent
 callers start failing. That is the intent (D4), but it means P0c is the item
-most likely to surface breakage elsewhere in the house — check anthill's
-invocations before the release, since it drives both spells.
+most likely to surface breakage elsewhere in the house — grep anthill's
+**invocations of `bounty`/`grapevine`** before the release, since it drives both
+spells. Note what the #80 exchange did and did not settle: anthill demonstrated
+that _its own_ parser handles `=` and rejects unknown flags. That is a reference
+implementation, not evidence about how it calls us. **The
+invocation-compatibility check is still ours to run.**
+
+**Field corroboration (weak, and recorded as weak).** The reporter audited their
+102-card board for the write-corruption half: of cards whose titles name a seat,
+19 have an owner, **5 are unowned**, 0 mismatched. They explicitly decline to
+attribute those 5 to `--owner=` — the `add` calls were hand-typed in agent panes
+and `grep` for `--owner=` across their tree finds nothing. Treat this as
+pattern- consistent, not as a confirmed instance. The reproduction is the
+evidence; this is not.
 
 **Gate:** for each spell CLI, a `--key=value` flag is honoured identically to
 its space-separated form, and an unknown flag exits non-zero naming the flag.
-Plus the write-path assertion: `add --owner=<name>` stores the owner.
+Plus the write-path assertion: `add --owner=<name>` stores the owner. Plus: no
+verb that takes free-prose positionals regressed.
 
 ---
 
@@ -359,7 +401,11 @@ it still reads as a timer, the model didn't change.
   was wrong, and the scratch board failed to reproduce it for one reason:
   **every check used the space-separated form.** _Lesson for the remaining
   phases — reproduce the reporter's exact spelling, not a reasonable paraphrase
-  of it._
+  of it._ The reporter's generalisation, which is the better statement and is
+  adopted here: **a paraphrase of the input is a control that cannot come out
+  differently, because it removes the variable under test while still looking
+  like the same test.** Applies to every gate in this plan, not just repro —
+  before accepting a gate as passed, ask what result would have failed it.
 - ~~Does P0's audit find the shape beyond the two reported spells?~~ **Yes —
   seven files.** Now a question of which of the five unreported ones can
   actually emit an over-buffer payload.
