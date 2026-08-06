@@ -54,6 +54,7 @@ import {
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs as nodeParseArgs } from "node:util";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
@@ -288,28 +289,92 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value` or boolean `--flag`.
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+//
+// The hand-rolled parser this replaces had three defects and every one of them
+// was silent:
+//
+//   --owner=alice        the whole `owner=alice` became a boolean key, so the
+//                        value was DROPPED and a read filter matched nothing —
+//                        a read returned the WHOLE BOARD instead of a subset
+//   --totally-bogus      accepted, exit 0, verb ran anyway
+//   add write the --draft section
+//                        `--draft` was read as a flag, so the title silently
+//                        TRUNCATED to "write the" at exit 0
+//
+// `node:util` strict gives all three fixes from the standard library — `=`
+// support, unknown-flag rejection, and the `--` terminator — in the shape
+// join.ts and server.ts in this very spell already use. That makes "three
+// spellings of one idea" impossible by construction rather than by discipline.
+//
+// ⚠ THE TYPES ARE LOAD-BEARING AND GETTING ONE WRONG IS NOT A NO-OP:
+//   a "string" that should be boolean SWALLOWS THE NEXT POSITIONAL as its value
+//   a "boolean" that should be string breaks `--owner alice` (alice becomes a
+//   positional)
+// Both are silent enough to ship. This set is thoth's audited artifact
+// (`docs/projects/spell-hardening/artifacts/p0c-recognized-flag-sets.md`):
+// 22 flags, 15 string / 7 boolean, each settled by unambiguous evidence at
+// EVERY consumption site. `expect` and `size` are string because they type off
+// parseExpect/parseSize, not off the bare truthiness at the call site.
+const CLI_OPTIONS = {
+  as: { type: "string" },
+  expect: { type: "string" },
+  id: { type: "string" },
+  notes: { type: "string" },
+  on: { type: "string" },
+  owner: { type: "string" },
+  restore: { type: "string" },
+  session: { type: "string" },
+  "session-key": { type: "string" },
+  since: { type: "string" },
+  size: { type: "string" },
+  status: { type: "string" },
+  tag: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+  fresh: { type: "boolean" },
+  full: { type: "boolean" },
+  mine: { type: "boolean" },
+  "no-open": { type: "boolean" },
+  pin: { type: "boolean" },
+  stdin: { type: "boolean" },
+  "stdin-tasks": { type: "boolean" },
+} as const;
+
+// A usage failure is THROWN rather than exiting, so `main` can return 2 and let
+// the runtime drain stdout — `die()` is process.exit, which is the defect this
+// sprint's sibling lanes exist to remove. Same reason the #80.1 refusal does
+// not route through die() either.
+class UsageError extends Error {}
+
 function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
-  const pos: string[] = [];
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      const next = args[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    } else {
-      pos.push(a);
-    }
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args,
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+    return {
+      pos: positionals,
+      flags: values as Record<string, string | boolean>,
+    };
+  } catch (e) {
+    // node:util names the offending token; keep that and add the escape hatch,
+    // because the most likely victim is free prose containing a dash-dash word
+    // (`add write the --draft section`), which TODAY truncates silently.
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new UsageError(
+      `${detail}\n` +
+        `  recognized flags: ${Object.keys(CLI_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n` +
+        `  for free text containing dashes, use --stdin, or put it after a bare --`,
+    );
   }
-  return { pos, flags };
 }
 
 type CmdResult = { ok?: boolean; applied?: boolean; error?: string };
@@ -870,7 +935,15 @@ const HELP = `bounty — an agent-driven task board.
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  const { pos, flags } = parseArgs(rest);
+  let pos: string[];
+  let flags: Record<string, string | boolean>;
+  try {
+    ({ pos, flags } = parseArgs(rest));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`bounty: ${e.message}\n`);
+    return 2;
+  }
   const session = resolveSession(flags);
   const as = resolveAs(flags);
 

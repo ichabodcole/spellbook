@@ -3567,3 +3567,169 @@ test("G7 PRECONDITION — the detached daemon holds NO pipe from its spawner", a
   expect(call).not.toContain('"pipe"');
   expect(call).not.toContain('"inherit"');
 });
+
+// ── P0c (#81) — `--flag=value`, and the verb that ran anyway ─────────────
+//
+// The hand-rolled parser had three silent defects. The `=` form dropped the
+// value (so a read FILTER matched nothing and returned the WHOLE BOARD),
+// unknown flags were accepted at exit 0, and free prose containing a `--word`
+// was silently truncated at that word.
+//
+// Fixed at PARSER ALTITUDE by deleting the bespoke parser for `node:util`
+// strict — anthill scoped the same guard to one verb's run() and reached 1 of
+// 13 leaves, which is why this is not done per verb.
+//
+// ⚠ Cell 1 uses a BOGUS value on purpose. `--owner=alice` returning tasks is
+// the paraphrase that hid this bug for a round: it "works" pre-fix too, because
+// the unfiltered whole board contains alice. Only a value matching NOTHING can
+// tell a working filter from an absent one.
+describe("P0c #81 — the equals form, and unknown flags", () => {
+  async function board(env: { BOUNTY_HOME: string }) {
+    const open = await runCli(["open", "--no-open", "--timeout", "60"], { env });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "alice task", "--owner", "alice", "--id", "a1", "--session", id], { env });
+    await runCli(["add", "maestro task", "--owner", "maestro", "--id", "m1", "--session", id], {
+      env,
+    });
+    return id;
+  }
+
+  test("RED PRE-FIX — a bogus --owner=<value> returns ZERO tasks, not the whole board", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      const r = await runCli(["state", "--owner=zzz-nobody-zzz", "--session", id], { env });
+      const d = JSON.parse(r.stdout) as { state: BoardState };
+      expect(d.state.tasks).toHaveLength(0); // pre-fix: 2 — the whole board
+      const hit = await runCli(["state", "--owner=alice", "--session", id], { env });
+      expect((JSON.parse(hit.stdout) as { state: BoardState }).state.tasks).toHaveLength(1);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("RED PRE-FIX — an unknown flag exits non-zero and NAMES the flag", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      const r = await runCli(["state", "--totally-bogus-flag", "z", "--session", id], { env });
+      expect(r.code).not.toBe(0); // pre-fix: 0, and the verb ran
+      expect(r.stderr).toContain("--totally-bogus-flag");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("RED PRE-FIX — `close --help` does NOT close the board", async () => {
+    // ⚠ THE DESTRUCTIVE ARM, and the most important user-facing fix in the
+    // lane. Pre-fix `--help` was swallowed as an unknown flag and `close` ran:
+    // asking for help DESTROYED the board — and `close` also writes the
+    // snapshot, so it takes the resume point with it.
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      const r = await runCli(["close", "--help", "--session", id], { env });
+      expect(r.code).not.toBe(0);
+      const after = await runCli(["state", "--session", id], { env });
+      expect(after.code).toBe(0); // the board is STILL THERE
+      expect((JSON.parse(after.stdout) as { state: BoardState }).state.tasks).toHaveLength(2);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("RED PRE-FIX — the WRITE path: add --owner=<name> stores the owner", async () => {
+    // A read-only gate misses the worse half: pre-fix the value was dropped, so
+    // the task was created UNOWNED at exit 0 — a silent write corruption.
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      await runCli(["add", "bob task", "--owner=bob", "--id", "b1", "--session", id], { env });
+      const d = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(d.state.tasks.find((t) => t.id === "b1")?.owner).toBe("bob");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("RED PRE-FIX — free prose with a --word is REFUSED, not silently truncated", async () => {
+    // Pre-fix `add write the --draft section` stored the title "write the" and
+    // exited 0. So the trade this lane makes is NOT "working prose → hard
+    // error"; it is "silent truncation → hard error", which is strictly an
+    // improvement. The plan's risk section argued against the fix using a
+    // capability the tool does not have.
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      const r = await runCli(
+        ["add", "write", "the", "--draft", "section", "--id", "p1", "--session", id],
+        { env },
+      );
+      expect(r.code).not.toBe(0);
+      expect(r.stderr).toContain("--draft");
+      const d = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(d.state.tasks.find((t) => t.id === "p1")).toBeUndefined(); // nothing stored
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  // ⚠ LABEL SPLIT AFTER MEASUREMENT — the THIRD time this session I put a
+  // guard's label on assertions that cannot hold pre-fix. The `--` terminator
+  // does not exist in the bespoke parser, so ANY cell exercising it is RED by
+  // construction. The pre-fix-passing shapes are the real guard, below.
+  test("RED PRE-FIX — the `--` terminator carries prose containing a --word", async () => {
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      await runCli(["add", "--id", "p3", "--session", id, "--", "write the --draft section"], {
+        env,
+      });
+      const d = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        state: BoardState;
+      };
+      expect(d.state.tasks.find((t) => t.id === "p3")?.title).toBe("write the --draft section");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("BLAST-RADIUS GUARD — positionals survive, per POSITIONAL SHAPE", async () => {
+    // ⚠ POSITIONALS ARE WHAT BREAK. anthill's first guard at this altitude broke
+    // seven tests, and bounty is MORE exposed — it had no `--` terminator at
+    // all. Pinned by SHAPE rather than by verb (anthill's three cells hold
+    // thirteen leaves): free prose, --stdin, and single-token ids.
+    //
+    // Every arm here PASSES PRE-FIX — that is what makes it a guard. It catches
+    // the conversion breaking what already worked. The terminator arm lived
+    // here until a mutation run showed it could not pass pre-fix; it is a red
+    // cell and now has its own.
+    const env = { BOUNTY_HOME: uniqHome() };
+    const id = await board(env);
+    try {
+      // free prose, multi-word, no dashes — the ordinary case
+      await runCli(["add", "write", "the", "section", "--id", "p2", "--session", id], { env });
+      // the --stdin escape hatch — the OLD parser honoured this one too
+      await runCli(["add", "--id", "p4", "--stdin", "--session", id], {
+        env,
+        stdin: "write the --draft section",
+      });
+      // single-token positional id
+      await runCli(["update", "p2", "--status", "doing", "--session", id], { env });
+
+      const d = JSON.parse((await runCli(["state", "--session", id], { env })).stdout) as {
+        state: BoardState;
+      };
+      const byId = (x: string) => d.state.tasks.find((t) => t.id === x);
+      expect(byId("p2")?.title).toBe("write the section");
+      expect(byId("p2")?.status).toBe("doing");
+      expect(byId("p4")?.title).toBe("write the --draft section");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+});
