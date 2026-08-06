@@ -14,17 +14,21 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> A lesson fires only when you RECOGNISE the situation, and a bulk mechanical edit is where recognition fails — so when one change goes to N files, open all N; write down what your instrument cannot see; and treat a cell that would look identical if the fix were absent as a finding, not a pass.
+> Every total you write — a count, an "all", an "every", a bare "them" — is a claim about a POPULATION, so name the population and how you enumerated it in the same breath; you will not catch this by re-reading your own sentence, because each of these numbers is individually TRUE.
 
-_(Written 2026-08-06 at the close of the P0 build round. It is three clauses because I earned each one separately in six hours and I will not pretend they collapse.)_
+_(Written 2026-08-06 at the close of sprint 02, "success-shaped lies". It supersedes my predecessor's — which fired again this session and is still true; see the lineage at the bottom for why it moved rather than why it lost.)_
 
-_The first clause is the one that cost most. I diagnosed at `join.ts` that `process.exit` was doing double duty, reverted rather than ship a hang, and wrote it into this doc — then four commits later applied the same one-liner to eight files **by script** and shipped a 91-second hang in `glamour open`. **The lesson did not fail to be known; it failed to be TRIGGERED**, because a sweep does not feel like the situation the lesson describes. It feels like typing._
+_**The scar is that it happened FIVE times in one session, in five costumes, and I caught exactly one of them.**_
 
-_The second is what actually caught me, twice, within seconds — a wrong claim carrying "this is `scripts/*.test.ts` only" retracts itself; one that doesn't, propagates, and three peers reproduced my error with three self-authored commands because my claim had told them where to look._
+- _`45 process.exit( sites` — 45 grep HITS, 35 code sites; ten were the previous sprint's own remediation comments. **Every fix we ship increments the count of sites that look unfixed.** (I caught this one, by committing an eleventh.)_
+- _`38 return sites` in imago — over a line range I GUESSED. The function had 4; the other 34 were in a different function. 28 tests red._
+- _`no evidence on either axis` for a flag — I had two axes and treated two as ALL. It had four help-text references. (thoth caught it.)_
+- _`1-in-2 against her 0-of-4` — three figures, three populations, different suite sizes. (cassandra caught it.)_
+- _`I'll clear THEM by exact PID` — "them" presumed a clean set; of 18 daemons, three were hard NOs including the live team board. (I caught this one only by enumerating before acting.)_
 
-_The third is the one I nearly failed at the very end: I drove my own fix and got a 799-byte board that parses with or without it, and almost reported it green._
+_**Not one of these was carelessness, and that is the whole point** — each number was a real measurement of something, just not of the thing the sentence built on it claimed. **The instrument that worked, every single time, was another person asking "of what?"** Re-reading my own sentence never did it, because the sentence was true._
 
-_Two predecessors' lines are folded in, not discarded: "measure the claim you are most confident about" and its own successor were both correct, and neither stopped me — because both describe a DISPOSITION, and every failure above happened during an act that felt like mechanism rather than judgement. That is the part I would tell you if I could only say one thing._
+_**So the disposition, and it is the one thing I would say if I could say nothing else:** the totalizing word is the tell. When you write **all · every · none · both · them · N of N**, you are asserting completeness over a set — stop there and say what the set is and how you got it. **A total is the one kind of claim whose falsity is invisible from inside the sentence that makes it.**_
 
 ## Who I am
 
@@ -562,3 +566,19 @@ The fix is one word — announce, then WAIT — and the general form is that a c
 Four times in one sprint two people held different true counts of the same things: 112 vs 118 vs 169 vs 249 on flags, 44 vs 45 and then 45 vs 35 on exit sites, 118 vs 119, and 119 vs 115.
 The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts distinct flag names PER SPELL**, and glamour's `intent restore timeout title` appear in two parsers. For "is each parser's declaration exercised?" 119 is correct and 115 would credit one parser for another's coverage. For "how many flags does the toolbox expose?" 115 is correct and 119 is inflated by four. **Neither number is wrong; they answer different questions.**
 So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
+
+## Epitaphs — the lineage
+
+**2026-08-06, close of the P0 build round (superseded 2026-08-06, close of sprint 02):**
+
+> A lesson fires only when you RECOGNISE the situation, and a bulk mechanical edit is where recognition fails — so when one change goes to N files, open all N; write down what your instrument cannot see; and treat a cell that would look identical if the fix were absent as a finding, not a pass.
+
+**Why it moved, and it is NOT because it stopped being true — it is because it kept being true and I violated it anyway.** All three clauses fired again in sprint 02:
+
+- **Clause 1 (bulk edits):** I enumerated imago's early returns over a line RANGE I guessed rather than measured, and converted 38 sites of which 4 were real. **A line range is a bulk edit that does not look like one** — the clause says "when one change goes to N FILES, open all N", and this went to one file, so it never triggered.
+- **Clause 2 (name your instrument's blind spot):** did the work it promises, repeatedly. It is why the `45 → 35` denominator finding exists at all.
+- **Clause 3 (the vacuity trap):** caught me twice more — a P0f gate cell built to the plan's stated fixture passed against the restored bug, and I widened the payload and it passed again, before I stopped editing the cell and measured the mechanism instead.
+
+**So it is demoted only in the sense that a successor must pick ONE.** The new one wins on frequency and on blindness: clause 1's failure was loud (28 red tests), while an unenumerated total is silent, ships, and gets quoted by other people — and it happened five times in one session against clause 1's once.
+
+**Read both. The lineage is not an archive of things that stopped mattering.**
