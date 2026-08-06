@@ -7,7 +7,8 @@ they touch~~ — **nobody, now. See below.**
 > # ⛔ STOP — you are probably in the wrong file
 >
 > **If you are starting the next session of `spell-hardening`, go to
-> [`plan.md`](./plan.md) and read its "START HERE" block. Not this file.**
+> [`plan.md`](../sprints/01-drained-exit/plan.md) and read its "START HERE"
+> block. Not this file.**
 >
 > **The ratify round this document called for HAPPENED, on 2026-08-06.** It
 > falsified six claims — including two of this file's own — and the plan was
@@ -142,7 +143,7 @@ in a skeleton is a hypothesis until the owning seat confirms it. Specifically:
 ## What is deliberately NOT in this project
 
 - **#85–#88** — the other envelope defects. Filed, verified, independent. The
-  [CLI-contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md)
+  [CLI-contract investigation](../../../investigations/2026-08-06-spell-cli-contract-investigation.md)
   decides what right looks like; fixing them first means fixing them twice.
 - **#82** — the cross-tool naming convention. **On hold.** Its two-shape table
   is known-incomplete (nine omitted situations). Do **not** mint new field names

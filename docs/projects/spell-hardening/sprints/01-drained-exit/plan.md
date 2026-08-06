@@ -1,13 +1,71 @@
-# Spell Hardening — Implementation Plan
+# Sprint 01 — The drained exit · Spell Hardening
 
-**Created:** 2026-08-05 **Related Proposal:** [proposal.md](./proposal.md)
-**Status:** **P0 family RATIFIED 2026-08-06** by the anthill team (`daedalus`
-engine, `cassandra` verify, `thoth` grimoire; `prospero` leading). P1–P3 are
-**still unratified** and keep the caveat below.
+> # ⛔ FROZEN 2026-08-06. This is a RECORD, not an instruction.
+>
+> **This plan was executed on 2026-08-06 and closed. It is never edited again**
+> — not a typo fix, not a status update. It exists to say what sprint 01
+> _planned_ and _knew at the time_, which is the one thing an amended plan can
+> no longer tell you.
+>
+> **Do not act on this document.** Its "▶ START HERE" block below says zero of
+> the fourteen issues are fixed and the P0 family is UNBUILT. **That was true
+> when it was written and is false now** — six code commits landed against it.
+>
+> | you want                               | read                                                                     |
+> | -------------------------------------- | ------------------------------------------------------------------------ |
+> | what actually shipped, and what didn't | [`outcome.md`](./outcome.md)                                             |
+> | what to build next                     | [`../02-success-shaped-lies/plan.md`](../02-success-shaped-lies/plan.md) |
+> | the project's arc and its four rulings | [`../../proposal.md`](../../proposal.md)                                 |
+> | the ledger                             | [`../../README.md`](../../README.md)                                     |
+>
+> **Carry-forward from this sprint happens by RESTATEMENT in sprint 02**, never
+> by editing this file. Where sprint 02 and this document disagree, sprint 02
+> wins — it is the one measured against the tree as it is now.
 
-[HANDOFF.md](./HANDOFF.md) is **historical** — it called for the ratify round
-that has since happened. Read it for the reasoning behind D1–D4, not for what to
-do next.
+## ⚠ How to read the `file:line` references in this document
+
+**Three different pinning states live in this file, and they do not look
+different from each other.** Stated once, here, because a frozen doc pointing at
+line numbers in a moving file misleads a reader who has no way to know it:
+
+| references                                            | pinned to                                          | how to read them                   |
+| ----------------------------------------------------- | -------------------------------------------------- | ---------------------------------- |
+| **Phase 0's audit table** (the 10-site verdict table) | **`5dfbb0d`**, stated in the table's own banner    | `git show 5dfbb0d:path/to/file.ts` |
+| **every other `file:line` in this document**          | **NOTHING — and this is not fixable in hindsight** | verify before use; see below       |
+| the six shipped commits                               | their own shas (see `outcome.md`)                  | `git show <sha>`                   |
+
+**Why the second row cannot be pinned.** These references were written across
+nine rounds of in-place amendment during one session, against a tree that was
+moving underneath them the whole time. **There is no single sha at which all of
+them were simultaneously true**, so stamping one on the document would
+manufacture an authority the references never had. Recorded as unpinnable rather
+than given a plausible sha — which is this project's own rule applied to itself.
+
+**Spot-checked at `7a32677`** (develop, post-merge) while freezing this
+document. The P0b / P0c / P0d references — which name code sprint 01 did **not**
+touch — still resolve: `bounty/cli.ts:388-397` and `:398-408` (the attach
+branch), `:291-313` (`parseArgs`), `:775`, `:793`, `:895`,
+`bounty/server.ts:266` and `:410`, `glamour/server.ts:486-497`,
+`imago/server.ts:1182-1190`.
+
+**One reference in Phase 0f is already stale, and it is the sprint's own fixes
+that moved it:** `glamour/cli.ts:481` was the `tail` `write→exit` pair when
+Phase 0f was written; at `7a32677` it is **`glamour/cli.ts:500`**, because
+`62a5972` added 19 lines above it. **It is not corrected here** — correcting it
+would be an edit to a frozen record, and the same instinct is what commit
+`82ec61c` refused when 6 of 9 audit refs went stale. **Sprint 02's plan carries
+all five `tail` sites re-pinned to `7a32677`.**
+
+---
+
+**Created:** 2026-08-05 **Related Proposal:** [proposal.md](../../proposal.md)
+**Status at close:** **P0 family RATIFIED 2026-08-06** by the anthill team
+(`daedalus` engine, `cassandra` verify, `thoth` grimoire; `prospero` leading).
+P1–P3 are **still unratified** and keep the caveat below.
+
+[the ratify-round handoff](../../_history/2026-08-05-handoff-ratify-round.md) is
+**historical** — it called for the ratify round that has since happened. Read it
+for the reasoning behind D1–D4, not for what to do next.
 
 ---
 
@@ -60,10 +118,10 @@ re-derive them from scratch as if they were unexamined.**
 
 ### Read these before you start
 
-[`.anthill/retro.md`](../../../.anthill/retro.md) — **nine hypotheses this round
-left for you to test**, each with its falsifier named.
-[`.anthill/principles.md`](../../../.anthill/principles.md) — the one principle
-the round earned.
+[`.anthill/retro.md`](../../../../../.anthill/retro.md) — **nine hypotheses this
+round left for you to test**, each with its falsifier named.
+[`.anthill/principles.md`](../../../../../.anthill/principles.md) — the one
+principle the round earned.
 
 **And the standing instruction that produced this plan's corrections, which the
 author of this line is now subject to:** the person who wrote a claim is the
@@ -488,7 +546,7 @@ verified by restoring the `process.exit`).
 2026-08-06.** It was briefly recommended here on the grounds that it lands in
 the same function P0 rewrites, so touching those lines twice is waste. **That
 was right about the cost and wrong about the risk:**
-[the contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md)
+[the contract investigation](../../../../investigations/2026-08-06-spell-cli-contract-investigation.md)
 found the envelope's shape is known-incomplete (nine omitted members), so
 folding it in blocks a data-corruption fix on an open investigation. **Fix the
 drain only. Accept touching the exit path twice.**
@@ -1618,7 +1676,7 @@ so they are not re-derived, and so a lane does not quietly widen to catch one.
 | 4   | **A performed `--restore` is as unannounced as a skipped one** (see P0b's field note). Raises whether `restoreSkipped` needs a positive twin — **do not mint a name; take it to the contract investigation.**                                                                                                                   | prospero                                 |
 
 Items 1–4 belong beside **#85–#88** with the
-[CLI-contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md).
+[CLI-contract investigation](../../../../investigations/2026-08-06-spell-cli-contract-investigation.md).
 
 ### Added by the BUILD round (2026-08-06, later the same day)
 
