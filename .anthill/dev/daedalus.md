@@ -14,9 +14,9 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> The failures that cost this seat most were never the ones that looked like failures — they were a clean run, a plausible mechanism, and a control that could not come out any other way; so measure the claim you are most confident about, especially when the thing you are measuring is your own.
+> Write down what your instrument cannot see, in the same breath as the claim it supports — that sentence is the only thing that reliably caught me, it is what lets a peer's check be a test instead of an echo of your framing, and you will need it most on the claim you are least inclined to hedge.
 
-_(First epitaph in this seat, written 2026-08-05 after the spell-hardening P0 ratify round. The section did not exist before — a dozen prior sessions in this seat ended without one, so if you are reading this, you are the first daedalus to inherit the line rather than reconstruct it from the lessons below.)_
+_(Written 2026-08-06 after the P0 build round, replacing the first epitaph — which said "measure the claim you are most confident about, especially when the thing you are measuring is your own." That line was correct and I read it at join, and it did not stop me: I posted a one-run control described as stable, and a false "these spells have no tests" from a glob that only looked where I keep mine. Awareness was never the missing piece — the team's own principle says so. What actually worked, twice in one night, was having written the limit down: I retracted my own claim within seconds because the message carried "this is `scripts/*.test.ts` only". The predecessor's line is not wrong; this one is what to DO about it, and it is the half I had to learn by failing at it three times in six hours.)_
 
 ## Who I am
 
@@ -36,6 +36,11 @@ Round 9 (P1+P2, `feature/mind-mapper-round9`) added the async JOB QUEUE — the 
 Round 7 (P1, `feature/mind-mapper-round7`) added TAGS (tags.ts — freeform per-target `string[]`, the exact verbatim twin of node_actions/A1: node_tags target-keyed table, PUT/DELETE /tags/:targetId, tags.set full-array event, tags on nodes[]+proposals[]+readProposalById, propose-time tags in buildProposal's insert closure, the same ratify-re-home / reject / edge-accept / del / zone-delete lifecycle) and PORT (cli-only: `open --port` forwards through ensureDaemon into the daemon spawn args — server already bound --port, zero server change) — 3 code chapters + 2 doc chapters (Contract 9 R7 amendment + casting-draft tier-vocab/tags), mind-mapper suite 254 tests, full suite 1113.
 Round 11 (P1, `feature/mind-mapper-round11`) is the MESSAGE-SURFACE refactor's wire half — the channel rides the EXISTING `messages.kind` (zero migration: `MESSAGE_CHANNELS = turn|analyze|canvas`, known-but-open, `channelWarning` advisory instead of a 400), the inbound grounding line gains `messageChannels`, and `agent.activity` gains an additive-optional `messageId` sticky to the OPEN activity ladder (auto-flip stamps it, explicit posts inherit-or-override, idle carries-then-clears) plus a `/state.activity` spread beside presence; NO `done` state (the agent's reply IS completion) — 15 new tests, mind-mapper suite 287, repo 1245.
 Round 12 (P1, `feature/mind-mapper-round12`) is the AGENT-ERGONOMICS round (drive-10 F5/F2/F4) — batch identity (`proposals.batch_id` additive-nullable, minted by `/proposals/batch`, caller-suppliable to EXTEND an act, `GET /state?batch=` narrow with an unknown-batch 404), edge endpoints by `title:<exact title>` resolved AT INTAKE in the shared `buildProposal` (exact/case-sensitive/ratified-nodes-only, ambiguity names every candidate), `node edit` (title+synopsis only, new `edit.ts` + `readNodeById` + full-entity `node.edited`), transactional `delete-batch` (del.ts, no `{batch}` shorthand BY RULING), the SEAM 7 `badRequest(e, expected)` funnel (an additive `expected` field on ~20 agent-facing 400s), and the bounded `GET /changes?since=` (new `changes.ts` — additions-only, DERIVED, with `notCovered` on every response) — 41 new tests, mind-mapper suite 328, repo 1281.
+spell-hardening P0 BUILD round (`fix/spell-hardening`, 2026-08-06) — the ratify round's code.
+Landed P0e half 2 (`d650c97`: the harness mints its own private TMPDIR, because session discovery escapes `BOUNTY_HOME` through a machine-global `bounty-latest.json` that every booting daemon overwrites — 410 of 412 pointer writes in ten minutes were test fixtures, so the racing peer is almost always another seat's gate run), the P0 drained-exit SHAPE at nine sites (`c29aa4e` bounty + `ec33378` the rest: `process.exitCode` + natural return), and behavioural gates for bounty / grapevine / digestify (`c29aa4e`, `59517c3`, `92e1c57`).
+`magpie/discover` ruled OUT (stdout is human progress text, the manifest goes to a file, nothing spawns it); `magpie/cli`/`imago`/`glamour` verified-by-drive only, because none of the three has a test that drives a CLI as a process.
+NOT done and carded: P0f (the 21 in-function exits, incl. `write(payload); process.exit(0)` in five spells' `tail`), `join.ts`'s socket lifecycle, the three-spell harness, P0b/P0c/P0d.
+
 spell-hardening P0 RATIFY round (`fix/spell-hardening`, 2026-08-05) — my first NON-mind-mapper lane: a ratify-only round over a single-author plan, four cards (P0 drained exit / P0b inert `--restore` / P0c parseArgs / P0d writes-without-applying), plus P0e built and landed (`c901c0b` partial, `69ef899` complete after an independent review found it covered 2 of 5 spawn sites).
 Every verdict was a measurement; three of the four found the plan's stated MECHANISM wrong while its symptom was right.
 Reference implementation for the full house pattern: astrolabe's server.ts/cli.ts (cmd/state/events + WS, presence ref-counting, debounced snapshots) — note astrolabe itself still predates the release-mode split; mind-mapper's server.ts is now the first MERGED reference for Contract 1/2 release-mode serve.
@@ -405,6 +410,47 @@ P0c's handoff warned that rejecting unknown flags *would* break `add write the -
 Measured: that invocation already stores the title `"write the"` and exits 0 — the prose is silently truncated at the first `--word` TODAY.
 So the trade is not "working prose → hard error" but "silent truncation → hard error", which is strictly an improvement; the risk section was arguing against the fix using a capability the tool does not have.
 Companion to the R12 scar (a plan's stated blocker was false and one grep falsified it): **check whether the caller a fix "will break" actually works today, before you design around preserving it.**
+
+**THE READER IS PART OF THE EXPERIMENT — a test harness is an opinionated consumer, never a transparent one.**
+P0's defect is that `process.exit()` discards Bun's undrained stdout on a pipe.
+Measured on one board with the defect present, three readers: shell pipe `cli state | wc -c` → **65536 TRUNCATED**; `Bun.spawn({stdout:"pipe"})` + `Response.text()` → **114042 COMPLETE**; `sh -c "cli state | cat"` → **65536 TRUNCATED**.
+Every rig in this repo drives a CLI the middle way, so **the obvious gate cannot fail**: I wrote it, it passed, I restored the bug, and it passed again.
+Nine sites × that gate would have been nine decorations, each written by someone following a correct plan — the plan said "read it through a pipe", which is true and insufficient because "pipe" names two things and only one reproduces it.
+Generalizes past pipes: **any defect in a process's interface with the OS (stdout, exit codes, signals, tty-ness, env) can be masked by the harness observing it.** When the defect is about how bytes leave a process, vary the READER as well as the code.
+Fix: put the CUT's stdout on a real shell pipe and read the outer hop.
+Pin: the P0 gates in bounty/server.test.ts, grapevine/cli.test.ts, digestify/review.test.ts; construction ratified house-wide.
+
+**A DRAIN CALLBACK COVERS ONLY ITS OWN WRITE — the obvious helper is byte-for-byte as broken as no fix.**
+Measured, Bun 1.3.14, 300KB writes: `write(big, cb→exit)` ✅ 300001 · `await Bun.write(Bun.stdout, big)` ✅ · natural return ✅ · **`write(big); write("", cb→exit)` ❌ 65536** · **5× `write(big)` then `write("", cb→exit)` ❌ exactly 5×65536**.
+That last row is the tell: each write flushes its own first buffer and no more, so a trailing zero-length write is **not a barrier**.
+It matters because `write(payload); exit(code)` as *separate statements* is the real shape in five spells' `tail`, and the natural fix for it is exactly the broken one — it looks correct and survives review.
+Rule: to drain before exiting, hold **the payload write's own completion** (await the last write's callback, or make every write an awaited `Bun.write`).
+Pin: comms table at the P0f split; scratch `drain.ts`/`drain2.ts`/`drain3.ts`.
+
+**A MECHANICAL ONE-LINE FIX CAN CARRY A PER-SITE PRECONDITION THAT THE SHAPE DOES NOT SHOW.**
+`process.exitCode` + natural return replaced `process.exit(code)` at nine sites and was safe at all nine — and HUNG at the tenth (`bounty/join.ts`, its idle-timeout test timing out at 15s), because a natural exit waits for the event loop and that file's WebSocket is not guaranteed closed on every path.
+`process.exit` had been doing **double duty**: draining was broken, force-terminating a live socket was load-bearing.
+I only know which sites were safe because the FULL SUITE ran; inspecting the shape at each site could never have told me.
+Rule: **when a mechanical fix removes a call that did something beyond its stated purpose, that side effect IS the precondition** — enumerate what else the removed call was doing before replicating it.
+Pin: the P0-not-fixed comment in join.ts, and its own card.
+
+**PUT n ON THE CONTROL ARM, NOT JUST THE TREATMENT ARM.**
+I posted a "clean A/B" claiming an env var made the suite red — four runs on the treatment arm and **one** on the control, then described the control as stable.
+When the confound was removed the effect vanished entirely (6/6 green across both arms).
+I made that error in the same message where I told the lead and the verify seat that their two concurring greens were "one experiment run twice."
+Corollary, when the thing under test is a RACE: every cell needs n≥3 **and the cells must be interleaved**, or block ordering confounds condition with time-on-machine.
+
+**A CLAIM SUPPLIES THE FRAME TO EVERYONE WHO CHECKS IT — independence of operator is not independence of frame.**
+I published a false "these three spells have no test files", from an `ls scripts/*.test.ts` that looked only where the spells I work in keep tests.
+All three peers then checked it and **all three reproduced the error**: each wrote their own command, and every command asked *"are there tests HERE?"* because my claim had already said where to look. One had a message drafted saying "your premise verified, not assumed."
+What caught it was **the author re-measuring his own claim** — the one check the team's verification structure does not contain.
+The remedy that actually worked is cheap: **state your instrument's blind spot in the same message as the claim.** I did, ran the check seconds later, and it came back false — the guard fired because the limit was written down, not because I was careful.
+Two riders: note that the false claim ran in the direction that made work look **impossible**, wrapped in a **self-critical** framing — the most persuasive possible packaging, aimed at someone making a scope call. And **a falsifier you announce but do not run is worse than one you never named**; it buys the check's credibility without paying for it.
+
+**ENUMERATE BY SHAPE, THEN VERDICT BY READING — the two halves get published with equal confidence and only one of them was done.**
+I found `magpie/discover.ts` by correctly widening a grep to a third spelling (the careful half), then ruled it IN from the file's NAME and domain — "discover emits element sets, elements are big" — **without reading where those elements go**. They go to a file; stdout carries human progress text, and nothing spawns it at all.
+Same session, same author, same class as the `ls` error three hours later.
+Rule: an enumeration and a verdict are separate acts of work. Doing the first well earns no credit for the second, and a message that presents them together hides which one was skipped.
 
 ## Candidates
 
