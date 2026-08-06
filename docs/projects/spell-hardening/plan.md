@@ -374,6 +374,44 @@ with sources in `src/mind-mapper/`).
    > ```
    >
    > **⚠ Any P0 gate drafted against `runCli` needs REWRITING, not re-running.**
+
+   > ### ⛔ AND EVERY P0/P0f GATE NEEDS A CELL ASSERTING THE PROCESS **EXITS**.
+   >
+   > **A drained-exit fix trades a truncation for a HANG wherever `process.exit`
+   > was load-bearing.** `ec33378` did exactly that at one site and it shipped.
+   >
+   > **`glamour open` post-fix ran for 23 MINUTES and never returned.** Pre-fix
+   > returned normally. **Mechanism measured in isolation, both directions:**
+   >
+   > ```
+   > spawn(detached, stdio ["ignore","pipe","inherit"]); child.unref(); natural return
+   >    -> STILL RUNNING after 6s        HANGS
+   > same + child.stdout.destroy() before returning
+   >    -> exited                        CLEAN
+   > ```
+   >
+   > **`unref()` releases the CHILD HANDLE. The piped stdout is a separate
+   > reffed stream and a daemon never closes it.** Under `process.exit(code)`
+   > the parent force-exited and the held handle was invisible.
+   >
+   > **Blast radius: `glamour` ONLY** — it is the one spell that pipes a
+   > **long-lived detached daemon's** stdout. grapevine's two piped spawns are
+   > `ps` and `lsof`, **awaited to exit**, and its daemon spawn is
+   > `["ignore","ignore","ignore"]`. _A `grep` for `stdio: ["ignore","pipe"`
+   > counts all three and cannot tell them apart; **enumerate by what the spawn
+   > IS, not by what it looks like.**_
+   >
+   > **Fix: read the boot JSON off the pipe, THEN `child.stdout.destroy()`, then
+   > return.** Destroying early breaks `open` loudly.
+   >
+   > **THE GATE LESSON, which outlives this instance:** the suite was green,
+   > both P0 gates were green, and **a 23-minute hang in a shipped spell's entry
+   > verb was invisible to every one of them, because nothing asserts that a CLI
+   > RETURNS.** **Assert the process ended — not only that its payload
+   > survived.**
+   >
+   > _Second per-site precondition invisible to shape inspection; `join.ts` was
+   > the first, and the engine seat generalised it correctly at the time._
    >
    > _Why Bun's pipe survives is **UNVERIFIED** — plausibly the parent drains
    > from the first byte so the writer never blocks. **The gate deliberately

@@ -255,6 +255,18 @@ before you treat a green as a verdict on your commit.**_
 - **A seat silent while holding a `doing` card is different from a seat quiet between tasks.**
   Roughly ten messages of the former is the cue to look at its pane — a blocked seat produces no
   output and every other surface reads normal.
+  **⚠ But the pane is NOT sufficient, and this bit a lead at exactly the ten-message mark.**
+  A pane shows the last frame the agent painted; `anthill comms positions` shows what it has *read*.
+  **Neither asks whether it is WORKING.** A seat four git-worktrees deep in a long drive, with seven live daemons, showed an idle prompt and `current, gap 0` — both true, both the wrong question.
+  **Check the PROCESS TABLE and the TREE — `ps`, `git worktree list` — before concluding a seat has stalled.**
+  _Scar: the lead concluded the verify seat was idle and started a competing drive on top of her live measurement. Caught by running `ps` before the measurement step; had he not, two daemons would have written one pointer and **she** would have reported the resulting mess as a finding._
+
+- **The waiting scar has a TWIN, and it is the half nobody had written down.**
+  Above: *a correctly-waiting seat produces no signal at all.*
+  **Also true: a correctly-WORKING seat produces no signal either, when the work is a long silent drive.**
+  The board says `doing`, the wire says nothing, and the process table is the only surface that knows.
+  **The two halves need opposite remedies and BOTH are required: the seat posts mid-flight; the lead checks `ps` before concluding.**
+  _Neither alone is enough — on the occasion that produced this rule the seat was working and the lead was checking, and they still nearly collided._
 - **Root-cause before cutting.** Report the root cause with evidence _before_ editing a fix — don't
   cut a phantom, don't assert a cause you haven't proven.
 - **Verify the real artifact, not a proxy.** Trust the rendered output; distrust the measurement or
