@@ -1,7 +1,11 @@
 # Spell Hardening — Implementation Plan
 
 **Created:** 2026-08-05 **Related Proposal:** [proposal.md](./proposal.md)
-**Status:** Draft — awaiting the team's seam ratification (`anthill:plan`)
+**Status:** Draft — **awaiting seam ratification (`anthill:plan`), and the plan
+has changed substantially since that line was first written.** Read
+[HANDOFF.md](./HANDOFF.md) before ratifying: P0b, P0c and P0d did not exist in
+the version last reviewed, and P0, P1 and both gate constructions were rewritten
+on 2026-08-06.
 
 ---
 
@@ -19,9 +23,9 @@ lands. Run `anthill:plan` first so the owning seats ratify the seams they touch.
 
 ## Outcome & Success Criteria
 
-Inherited from the proposal. **Definition of done for the project:** all twelve
-issues resolved-or-deferred-with-reason, gate green, cold-gate passed, release
-cut, `SKILL.md` true.
+Inherited from the proposal. **Definition of done for the project:** all
+fourteen issues resolved-or-deferred-with-reason, gate green, cold-gate passed,
+release cut, `SKILL.md` true.
 
 **Non-goals:** feature work of any kind; mind-mapper; the primitive
 investigations; a shared CLI library (P0 fixes a shape, it does not factor one).
@@ -113,6 +117,15 @@ write 300_000 bytes, natural return        →  pipe 300000   file 300000
 ```
 
 One variable, both directions. This is the control the fix should reproduce.
+
+**⚠ Do NOT fold the structured failure envelope into this phase — reversed
+2026-08-06.** It was briefly recommended here on the grounds that it lands in
+the same function P0 rewrites, so touching those lines twice is waste. **That
+was right about the cost and wrong about the risk:**
+[the contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md)
+found the envelope's shape is known-incomplete (nine omitted members), so
+folding it in blocks a data-corruption fix on an open investigation. **Fix the
+drain only. Accept touching the exit path twice.**
 
 **Gate:** `grapevine pull` and `bounty state --full` both return valid JSON with
 `cursor` present, piped, on an over-buffer payload. Three consecutive runs (the
@@ -364,6 +377,68 @@ evidence; this is not.
 its space-separated form, and an unknown flag exits non-zero naming the flag.
 Plus the write-path assertion: `add --owner=<name>` stores the owner. Plus: no
 verb that takes free-prose positionals regressed.
+
+---
+
+## Phase 0d — Writes that report success without applying (#83, #84)
+
+**Owner:** daedalus · **Verify:** cassandra · **No decision needed** — these are
+defects against an existing contract, not a new convention.
+
+Fourth P0 lane. Found by the 2026-08-06 envelope audit, not by a user. Same
+defect class as the rest of P0 and **on the write path**, which makes it the
+half that loses data rather than merely misreports it.
+
+### #83 — `bounty add` is the only write verb that ignores `applied`
+
+**The mechanism, verified 2026-08-06 (fact, not claim):** `server.ts` documents
+`applied` as existing so the CLI can confirm a write took, and returns
+`{ok:true, applied:false}` when `validateTask` rejects the task or
+`applyTaskAdd` refuses it (duplicate id). `cli.ts:793` discards the result:
+
+```ts
+await postCmd(session, { type: "task.add", task }, { as }); // no `const res =`
+```
+
+It is the **odd one out** — `update` (821), `claim` (838), `block`/`unblock`
+(864) and `remove` (883) all check. So this reads as an oversight, and the fix
+is to match its four siblings, not to invent anything.
+
+⚠ `message` (897), `close` (918) and the generic (914) also ignore it. Lower
+stakes, but **`close` ignoring a failed apply belongs in the same pass** given
+what P1 says about `close`.
+
+### #84 — `/cmd` answers `ok:true` before it knows
+
+glamour (`server.ts:352-360`) does not even `await` the handler; imago
+(`server.ts:1182-1190`) awaits and discards; magpie (`server.ts:635`) is the
+same shape. In those three spells `ok` means _"I parsed your JSON."_ In bounty
+and astrolabe it means _"the write took effect."_ **One word, two meanings, five
+spells.**
+
+**This is what P0's step 2 audit finds on the failure path** — it was never
+reported because nobody had a reason to distrust `ok`.
+
+**Steps**
+
+1. #83: capture the result and fail loudly, naming the id and the reason.
+2. #83: do the same for `close`; decide `message` and the generic explicitly and
+   record the decision either way.
+3. #84: `await` the handler in all three spells and return what it decided.
+4. **Do not invent a new field name.** Use `applied`, which already exists and
+   is already documented. The vocabulary question is
+   [#82](https://github.com/ichabodcole/spellbook/issues/82)'s and is **on
+   hold** — anything minted here would be re-spelled later.
+
+**Gate:** `add` with a duplicate `--id` exits non-zero **and** a subsequent
+`state` does not show the task — both halves, since the exit code alone is not
+observable through a pipe. For each of glamour/imago/magpie, a command the
+reducer declines must not answer `ok:true`.
+
+⚠ **Do not extend this lane to #85–#88.** They are the same family and they are
+deliberately out of scope — the contract investigation decides what right looks
+like, and fixing them now means fixing them twice. See the proposal's Out of
+scope.
 
 ---
 

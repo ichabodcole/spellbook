@@ -9,10 +9,10 @@ into P0 and D3 ruled, #81 filed and D4 ruled, 2026-08-06) **Created:**
 ## Overview
 
 `bounty` and `grapevine` are the **most-used spells** — every anthill session in
-this repo and others leans on them. Twelve GitHub issues are open against them,
-six filed on 2026-08-05 alone, and the triage that produced this project found
-that **five of them actively mislead rather than merely annoy**: they return
-plausible, well-formed, wrong results and exit 0.
+this repo and others leans on them. **Fourteen** GitHub issues are in scope, six
+filed on 2026-08-05 alone and two more on 2026-08-06, and the triage that
+produced this project found that **seven of them actively mislead rather than
+merely annoy**: they return plausible, well-formed, wrong results and exit 0.
 
 This project fixes them in a **harm-ordered sequence** and cuts a release, so
 teams already depending on these spells get the benefit immediately rather than
@@ -78,12 +78,12 @@ tool that was working perfectly.
 Four phases, ordered by **harm first, and by dependency where it forces the
 issue.**
 
-| Phase  | Theme                       | Issues / items                                      |
-| ------ | --------------------------- | --------------------------------------------------- |
-| **P0** | Silent wrong data           | #77, #78, #80, #81 (+ audit every other spell CLI)  |
-| **P1** | Daemon lifecycle + data     | #64, #73, #74, `bounty-daemon-robustness-nits`      |
-| **P2** | Bounded reads               | #75 + `bounty-tail-drain` (one flag, both spells)   |
-| **P3** | Legibility + honest signals | #79, #72, #11, #76, `bounty-heartbeat-skip-blocked` |
+| Phase  | Theme                       | Issues / items                                         |
+| ------ | --------------------------- | ------------------------------------------------------ |
+| **P0** | Silent wrong data           | #77, #78, #80, #81, #83, #84 (+ audit every spell CLI) |
+| **P1** | Daemon lifecycle + data     | #64, #73, #74, `bounty-daemon-robustness-nits`         |
+| **P2** | Bounded reads               | #75 + `bounty-tail-drain` (one flag, both spells)      |
+| **P3** | Legibility + honest signals | #79, #72, #11, #76, `bounty-heartbeat-skip-blocked`    |
 
 **P0 must go first, and not only because it is the worst.** A bounded
 `tail --no-follow` (P2) is a command that prints a payload and exits — **exactly
@@ -113,9 +113,10 @@ for #64.
 
 ## Scope
 
-**In scope.** The twelve triaged issues (ten at ratification, plus #80 and #81
-folded in 2026-08-06), plus three adjacent backlog items that touch the same
-code and are cheaper to do in the same pass than to schedule separately:
+**In scope.** The fourteen triaged issues (ten at ratification, plus #80 and #81
+folded in 2026-08-06, plus #83 and #84 from the envelope audit the same day),
+plus three adjacent backlog items that touch the same code and are cheaper to do
+in the same pass than to schedule separately:
 
 - `2026-06-15-bounty-tail-drain` — the bounty twin of #75. **Do them together**
   so `--drain` and `--no-follow` don't become two spellings of one idea.
@@ -136,11 +137,21 @@ code and are cheaper to do in the same pass than to schedule separately:
   change that falsifies it.
 - Feature-shaped backlog items: leaderboard, task metrics, sessions filter,
   grapevine rename/edit/presence/facilitation-timer, imago items.
+- **#85, #86, #87, #88 — the other envelope defects found by the 2026-08-06
+  audit.** Each is "this spell's envelope is wrong," and
+  [the CLI-contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md)
+  decides what right looks like. **Fixing them before it concludes means fixing
+  them twice.** They are filed, verified, and independent — they do not block
+  this release and this release does not block them.
+- **A structured failure envelope on stdout.** Also the contract's, and see the
+  reversal recorded in the plan's Phase 0: it lands in the same function P0
+  rewrites, but its shape is known-incomplete, so folding it in would block a
+  data-corruption fix on an open investigation.
 
 ## The four decisions — RULED (D1/D2 2026-08-05, D3/D4 2026-08-06)
 
 Everything else here has a known fix. These four did not, and they are why this
-is a project rather than twelve branches. **All four are now ruled. Do not
+is a project rather than fourteen branches. **All four are now ruled. Do not
 relitigate; falsify with evidence if you think one is wrong.**
 
 ### D1 — Snapshot safety semantics (P1) — RULED
@@ -359,10 +370,14 @@ get.
 
 ## Success Criteria
 
-- [ ] All twelve triaged issues closed or explicitly deferred with a reason.
+- [ ] All fourteen triaged issues closed or explicitly deferred with a reason.
 - [ ] `grapevine pull` and `bounty state --full` return valid, complete JSON
       through a pipe on >64KiB payloads, with a piping regression test each.
 - [ ] No spell CLI retains the undrained `process.exit` shape.
+- [ ] **No write verb reports success without confirming the write applied.**
+      `bounty add` checks `applied` like its four siblings (#83), and
+      glamour/imago/magpie's `/cmd` stops answering `ok:true` before it knows
+      (#84).
 - [ ] A `--restore` that cannot be honoured never reports success — it is
       visible in the envelope, with a regression test covering the live-board
       attach path.
@@ -388,5 +403,6 @@ get.
 - Fold-ins: `2026-06-15-bounty-tail-drain.md`,
   `2026-06-15-bounty-daemon-robustness-nits.md`,
   `2026-06-22-bounty-heartbeat-skip-blocked.md`
-- Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79, #80, #81
+- Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79, #80, #81, #83, #84 —
+  and, deferred to the contract investigation, #82, #85, #86, #87, #88
 - Code: `plugins/spellbook/skills/{grapevine,bounty}/scripts/`
