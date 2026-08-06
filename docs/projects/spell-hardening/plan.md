@@ -382,6 +382,25 @@ clobber is a footgun on a healthy daemon too.
 4. **`open --session-key` hydrates by default** (D1.3 — ruled), announcing
    `hydrated: {from, taskCount} | null`, with `--fresh` to opt out. **Do not
    prompt** — a prompt in an agent path is a hang.
+
+   **⚠ The announcement must distinguish the two failures, because a consumer
+   provably cannot.** anthill already ships the warning bounty does not
+   (anthill#43): `convene` reads `bounty sessions`, subtracts the live count
+   from the snapshot's, and prints
+   `POSSIBLE BOARD LOSS … Do NOT close the board`. **It fires identically in two
+   worlds that need opposite actions** — a respawn-empty over an intact snapshot
+   (**recoverable**, and the reason not to `close`) and a snapshot `close`
+   already clobbered (**unrecoverable**, where the honest answer is stop). Two
+   reads and a subtraction cannot tell them apart; `open` knows at the moment it
+   happens. Whatever we emit must name **which** one, or we have shipped their
+   ambiguity first-party.
+
+   _Their reporter also notes they **nearly dismissed** their own warning —
+   `.bounty-session` pointed at the populated session, which looked like proof
+   it was spurious. **A reconstructed warning is one a caller argues with; a
+   first-party one is not.** If D1.3 lands well, anthill#43 should shrink or be
+   deleted rather than maintained._
+
 5. **#64 root cause — enumerate, don't guess.** The failure survived a
    keep-alive tail, so the "idle timeout" theory is incomplete. The existing
    backlog item says this explicitly.
@@ -393,9 +412,20 @@ clobber is a footgun on a healthy daemon too.
    so consumers can tell death from idle. Three agents' Monitors died silently
    alongside the daemon.
 
+**The mechanism splits, and both a fixture and a real event agree.** The
+respawn-empty does **not** touch the snapshot — the clobber is `close`'s alone.
+Verified on a throwaway board 2026-08-06 (P0b's construction, steps 1–4), and
+corroborated independently by the reporter's unplanned session-12 incident: a
+multi-session board went live-and-empty over a **97-task** snapshot and the
+snapshot was **intact**, recovered by reading `~/.bounty/snapshots/<id>.json` by
+hand. Those cards are still on their board. **So #64/#73 are two bugs that read
+as one**, they fail in opposite directions (exposure vs destruction), and the
+guards can be built and gated separately.
+
 **Gate:** kill a daemon holding a populated board; respawn; `close`; confirm the
 snapshot still holds the tasks. This is the exact sequence that destroyed data
-twice — reproduce it on a **throwaway** board.
+twice — reproduce it on a **throwaway** board. **P0b's six-step construction is
+this fixture**; build it once and both phases use it.
 
 ---
 
