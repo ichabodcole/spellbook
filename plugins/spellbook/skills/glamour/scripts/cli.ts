@@ -496,8 +496,25 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
         try {
           const ev = JSON.parse(payload) as { id?: number; type?: string };
           if (typeof ev.id === "number" && ev.id > since) since = ev.id;
+          if (ev.type === "closed") {
+            // P0f — SHAPE B: the drain callback rides THIS write, so it fires
+            // on this write's completion. NOT a trailing `write("", cb)` — a
+            // drain callback covers only its own write and is not a barrier
+            // (measured byte-for-byte as broken as no fix), and that is exactly
+            // the helper this write-then-exit shape invites.
+            //
+            // PER-SITE PRECONDITION, read at THIS site rather than carried over
+            // from a sibling: the exit sits inside `while (!stopped)` ->
+            // `while (true)` -> the frame loop, so `process.exitCode` + a
+            // natural return (shape D) does NOT leave the tail — it falls
+            // through and the loops go round again. The explicit `return` is
+            // what exits the loops; the callback is what drains. Both, for
+            // different reasons.
+            process.stdout.write(`${payload}\n`, () => process.exit(0));
+            stopped = true;
+            return;
+          }
           process.stdout.write(`${payload}\n`);
-          if (ev.type === "closed") process.exit(0);
         } catch {
           /* skip malformed frame */
         }
