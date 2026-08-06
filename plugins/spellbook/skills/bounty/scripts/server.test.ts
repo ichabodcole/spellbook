@@ -760,6 +760,26 @@ describe("htmlEscape", () => {
 
 type ReadyInfo = { url: string; port: number; session_id: string };
 
+// ── Test hermeticity (#P0e) ──────────────────────────────────────────────
+// The ambient environment binds every bounty verb to a REAL board: `cmdOpen`
+// reads $BOUNTY_SESSION_KEY and derives a board id from it, and `resolveSession`
+// falls back to $BOUNTY_SESSION. BOUNTY_HOME isolates the SNAPSHOT STORE only —
+// it does NOT cover the key path — so a suite that scrubs only BOUNTY_HOME is
+// still bound to whatever live board the shell points at. Measured: running
+// this file inside an anthill seat shell (which exports BOUNTY_SESSION_KEY)
+// made `open` take the idempotent-attach branch onto the TEAM's live board,
+// write fixture cards into it, and then `close` it — the verb that clobbers the
+// snapshot. Scrub the key path here, at the ONE place both spawn helpers share,
+// so the hermeticity cannot drift between them.
+// Computed per CALL, not once at module load: a module-load snapshot would make
+// the regression test below vacuous (it sets the ambient key *during* the test,
+// which a snapshot taken at import time could never have contained), and it
+// would also miss anything that sets the variable after import.
+function hermeticEnv(): Record<string, string | undefined> {
+  const { BOUNTY_SESSION_KEY: _k, BOUNTY_SESSION: _s, ...rest } = process.env;
+  return rest;
+}
+
 // Spawn the daemon and wait until it's reachable. Readiness is discovered via
 // the daemon's discovery file (`bounty-<id>.json`) + a /state probe — the
 // daemon no longer prints a `ready` line on stdout (the SSE event log is the
@@ -775,7 +795,7 @@ async function spawnServerReady(
     stderr: "ignore",
     // Isolate persistence to a throwaway dir — a test suite must NOT write
     // snapshots into the user's real ~/.bounty (the default BOUNTY_HOME).
-    env: { ...process.env, BOUNTY_HOME: uniqHome() },
+    env: { ...hermeticEnv(), BOUNTY_HOME: uniqHome() },
   });
   const discoveryFile = join(tmpdir(), `bounty-${id}.json`);
   const deadline = Date.now() + 5000;
@@ -1530,7 +1550,7 @@ async function runCli(args: string[], opts: { stdin?: string; env?: Record<strin
     stdin: opts.stdin !== undefined ? new TextEncoder().encode(opts.stdin) : "ignore",
     stdout: "pipe",
     stderr: "pipe",
-    env: { ...process.env, ...opts.env },
+    env: { ...hermeticEnv(), ...opts.env },
   });
   const [stdout, stderr] = await Promise.all([
     new Response(proc.stdout).text(),
@@ -2576,4 +2596,74 @@ describe("join.ts", () => {
     await hostProc.exited;
     await joiner.exited;
   }, 15000);
+});
+
+// ── P0e — test hermeticity: the suite must not touch a LIVE board ────────
+// Regression for the defect that killed this team's board mid-session: a seat
+// shell exports $BOUNTY_SESSION_KEY, `runCli` inherited it, `open` took the
+// idempotent-attach branch onto the real board, and a later `close` clobbered
+// its snapshot. BOUNTY_HOME did not help — it scopes the snapshot store, not
+// the key path.
+//
+// Two-directional BY CONSTRUCTION: with the ambient key inherited this fails
+// (the CLI reports the keyed board's id and the board is later torn down);
+// with HERMETIC_ENV it passes. Do not "simplify" it by dropping the ambient
+// set — that variable IS the experiment.
+describe("test hermeticity (P0e)", () => {
+  test("an ambient BOUNTY_SESSION_KEY does NOT bind the suite to a live board", async () => {
+    const key = `p0e-${crypto.randomUUID().slice(0, 8)}`;
+    const home = uniqHome();
+    const victimId = sessionKeyToId(key);
+
+    // Stand up the "victim" board the way a real seat would, and put a marker
+    // on it. This board plays the part of the team's live board.
+    await runCli(["open", "--no-open", "--timeout", "30", "--session-key", key], {
+      env: { BOUNTY_HOME: home },
+    });
+    await runCli(["add", "marker", "--id", "marker", "--session-key", key], {
+      env: { BOUNTY_HOME: home },
+    });
+
+    const readVictim = async () => {
+      const r = await runCli(["state", "--session-key", key], { env: { BOUNTY_HOME: home } });
+      try {
+        return (JSON.parse(r.stdout) as { state: BoardState }).state.tasks.map((t) => t.id);
+      } catch {
+        return null; // board is down / unreachable
+      }
+    };
+
+    try {
+      // ── PRECONDITION CELL (cassandra, comms #40) ────────────────────────
+      // Assert the victim is provably ALIVE and POPULATED *before* measuring.
+      // Without this the test passes vacuously when the board never came up:
+      // "nothing was killed" and "nothing was ever there" are indistinguishable
+      // at the end of the run. This is the P0b degenerate-control scar, pinned.
+      expect(await readVictim()).toEqual(["marker"]);
+
+      // ── THE MEASUREMENT ────────────────────────────────────────────────
+      // Simulate a seat shell: the ambient key is set for the CLI we spawn.
+      // Under the bug this `open` attaches to the victim and returns ITS id.
+      // Set the ambient key on the RUNNER, exactly as a seat shell does. This is
+      // the channel the fix covers; passing it via opts.env would bypass the
+      // scrub by design and test nothing.
+      process.env.BOUNTY_SESSION_KEY = key;
+      const open = await runCli(["open", "--no-open", "--timeout", "10"], {
+        env: { BOUNTY_HOME: uniqHome() },
+      });
+      const spawned = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+
+      // It must have minted its OWN board, not seized the keyed one.
+      expect(spawned).not.toBe(victimId);
+
+      // And the victim must be untouched — still alive, still holding its card.
+      expect(await readVictim()).toEqual(["marker"]);
+
+      await runCli(["close", "--session", spawned], { env: { BOUNTY_HOME: home } });
+    } finally {
+      process.env.BOUNTY_SESSION_KEY = undefined;
+      delete process.env.BOUNTY_SESSION_KEY;
+      await runCli(["close", "--session-key", key], { env: { BOUNTY_HOME: home } });
+    }
+  }, 30000);
 });

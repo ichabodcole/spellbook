@@ -1046,12 +1046,14 @@ clean.
 1. **Scrub the ambient key in the test harness** — `runCli` (1533) and the
    daemon-spawn helper (772-778):
    `env: { ...process.env, BOUNTY_SESSION_KEY: undefined, BOUNTY_SESSION: undefined, ...opts.env }`.
-2. **Interim guard, already applied:** `.anthill/config.json`'s `gate` field was
-   changed to
-   `env -u BOUNTY_SESSION_KEY -u BOUNTY_SESSION bun run check && env -u … bun test`,
-   so every seat's land is scrubbed **by construction rather than by memory**.
-   **Revert it once step 1 lands** — the scrub belongs in the harness, not in
-   every consumer's config.
+2. ~~**Interim guard, already applied:** `.anthill/config.json`'s `gate` field
+   was changed to scrub the vars, so every seat's land is scrubbed **by
+   construction rather than by memory**.~~ **DONE AND REVERTED 2026-08-06.** The
+   guard did its job while step 1 was being built; the config is back to
+   `bun run check && bun test`, because the scrub belongs in the harness and not
+   in every consumer's config. **A workaround left in place after its fix lands
+   is a second, quieter source of truth** — and it would have hidden a
+   regression in step 1 from every seat.
 
 **Gate:** with `BOUNTY_SESSION_KEY` set to a live throwaway board's key, the
 full suite runs and **that board is still alive, with its cards unchanged,
