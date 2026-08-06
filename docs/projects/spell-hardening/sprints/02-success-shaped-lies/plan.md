@@ -2231,12 +2231,65 @@ because the release note is organised by issue.**
 
 1. **Conventional commits throughout** (`fix(bounty)`, `fix(grapevine)`) —
    release-please owns versions, **no hand-edited version.**
-2. **Re-read both `SKILL.md` files against what actually shipped.** Anything
-   this project falsified must be corrected here; that is the in-scope slice of
-   `2026-07-09-bounty-grapevine-skill-review`. **P0d's `bounty/SKILL.md` edit is
-   NOT deferred to here** — it lands inside P0d (step 5), because that lane is
-   the only place that knows what the new `applied` contract says. This pass
-   checks it, it does not author it.
+2. **Re-read the `SKILL.md` of EVERY SPELL THIS SPRINT CHANGED — DERIVED, never
+   a remembered list.**
+
+   ```
+   git diff --name-only <sprint-base>..HEAD -- plugins/spellbook/skills | cut -d/ -f4 | sort -u
+   ```
+
+   **⛔ NO TRAILING SLASH AND NO `*` — see the instrument warning below.** At
+   `f77ae33..HEAD` this yields **FIVE**:
+   `astrolabe · bounty · glamour · imago · magpie`. **grapevine returns a
+   MEASURED ZERO.**
+
+   > **⚠ The old wording said _"both `SKILL.md` files"_ — bounty and grapevine —
+   > and it was wrong in BOTH directions.** `grapevine` changed **nothing** this
+   > entire sprint, and **three spells P0d changed were outside its scope.**
+   > Found by `thoth`, auditing the release section before the beat ran.
+   >
+   > **Where it came from is this session's most-repeated shape, for the fourth
+   > time:** _"both files"_ was **correct for sprint 01**, whose scope was
+   > bounty and grapevine. **It was carried into sprint 02's plan without being
+   > re-derived**, and P0d reached four spells sprint 01 never touched.
+   >
+   > **`thoth`'s framing, which is the retro-worthy half: three of the four
+   > instances today were carried across a boundary BY A DOCUMENT rather than by
+   > a person.** _Prose carries a denominator forward silently, and **nothing in
+   > a doc goes red when its scope changes underneath it.**_
+   >
+   > **A derived set cannot go stale between sprints. A named one already did.**
+
+   > **⛔⛔ AND THE CORRECTION'S OWN DENOMINATOR WAS SHORT — the set is FIVE,
+   > not four.** `thoth` named bounty · glamour · imago · magpie (P0d's
+   > `server.ts`) and **missed `astrolabe`**, changed by **P0f** (`cli.ts:222` +
+   > its cell at `5dc8377`). **A correction derived from ONE LANE inherits that
+   > lane's scope.**
+   >
+   > **⛔ AND THE LEAD'S CONFIRMING INSTRUMENT WAS BROKEN.** I verified with
+   > `-- 'plugins/spellbook/skills/*/'` — **a trailing-slash pathspec that
+   > returns ZERO for every spell, including ones I knew had changed.** It would
+   > have "confirmed" grapevine-unchanged **by returning the same empty it
+   > returns for everything.**
+   >
+   > **What caught it: the SECOND glob also came back empty when it could not
+   > possibly be.** The zero-guard — _a zero anywhere is the instrument until
+   > proven otherwise_ — applied to my own check, one message after I praised
+   > two seats for applying it to theirs.
+   >
+   > **Use the plain path prefix.** `-- plugins/spellbook/skills`, no glob, no
+   > trailing slash. **Verified against a control that shares no pattern.**
+
+   **What the three actually need is a SCOPE CALL, not a re-read.** `applied`
+   appears **10×** in bounty's `SKILL.md` and **0×** in glamour / imago / magpie
+   — **but those three document no `/cmd` response envelope AT ALL.** So it is
+   an **ABSENT** doc surface, not a **STALE** one, and the two need opposite
+   fixes: stale → correct the sentence; **absent → decide whether they should
+   document an envelope at all.** _`thoth` explicitly does not propose that they
+   should; their agent surface may simply be smaller. The point is that the old
+   beat would never have surfaced the question, because it never opened those
+   files._
+
 3. **Cold-gate the assembled release**, not just the lanes.
 4. **Move every closed backlog item to `docs/backlog/_archive/`.**
 5. **Comment the GitHub issues as they close.** **Zero of the fourteen were
