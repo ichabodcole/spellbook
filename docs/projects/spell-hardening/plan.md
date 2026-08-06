@@ -438,6 +438,87 @@ harm statement is better evidence than the original.
 
 ---
 
+## Phase 0f — The in-function exits (NEW, 2026-08-06, UNBUILT)
+
+**Owner:** daedalus · **Verify:** cassandra · **Split out of P0 deliberately —
+see below. Do NOT fold this back in.**
+
+**P0's audit enumerated ONE exit per FILE — the `main()` wrapper. The defect's
+unit is the SITE.** The three-spellings insight was about _how `main()` exits_;
+it never asked whether a file has other exits. **It does.**
+
+**Denominator, measured 2026-08-06 by a source-scanning guard over
+`plugins/spellbook/skills/**/scripts/\*.ts`: 44 remaining `process.exit(`sites** after`c29aa4e`+`ec33378`
+fixed the nine entry points. **The guard reaches 35 that a mutation test
+structurally cannot** — H5's prediction, confirmed with a number.
+
+**The highest-harm shape, in five spells, on consecutive lines** — `bounty:595`,
+`magpie:280`, `astrolabe:222`, `imago:281`, `glamour:481`:
+
+```ts
+if (inScope(ev) && !selfEcho) process.stdout.write(`${payload}\n`);
+if (ev.type === "closed") process.exit(0);
+```
+
+**Write the terminal event, then exit on the next line.** A `tail` is _always_
+on a pipe. **The events a consumer loses are the ones saying the stream ended**
+— and `tail` is the verb agents leave running for hours. Plus the SIGINT
+handlers (`const stop = () => process.exit(0)`) and the `if (grounded)`
+session-gone paths.
+
+### ⛔ The shape is NOT the one-liner, and the obvious helper is a TRAP
+
+**Measured (daedalus, Bun 1.3.14, 300KB per write, real shell pipe) BEFORE
+anything was written:**
+
+| #     | shape                                                      | bytes      | verdict                    |
+| ----- | ---------------------------------------------------------- | ---------- | -------------------------- |
+| A     | `write(big); process.exit(0)`                              | **65536**  | the defect                 |
+| B     | `write(big, () => process.exit(0))` — cb on the SAME write | 300001     | ✅                         |
+| C     | `await Bun.write(Bun.stdout, big); exit`                   | 300001     | ✅                         |
+| D     | `write(big); process.exitCode = 0` (natural return)        | 300001     | ✅                         |
+| **F** | **`write(big); write("", () => process.exit(0))`**         | **65536**  | ❌ **as broken as no fix** |
+| **G** | **5× `write(big)`, then `write("", cb → exit)`**           | **327680** | ❌ **exactly 5 × 65536**   |
+| I     | 5× `write(big, cb)`, await the LAST cb, exit               | 1500005    | ✅                         |
+
+> **F is the helper anyone writes** when the write and the exit are separate
+> statements — which is the situation at all five `tail` sites. **It is
+> byte-for-byte the defect and it looks correct.** **G is why: a drain callback
+> covers only its own write. It is not a barrier.**
+
+_Stated as measured behaviour at 1.3.14, not as a claim about Bun's internals._
+
+**⚠ And `D` (natural return) is NOT universally safe.** At
+`bounty/scripts/join.ts` the one-liner **hangs** — `join.ts > idle timeout`
+times out at 15s — because `process.exit` was doing **double duty**: the drain
+was broken **and** force-terminating a live WebSocket was load-bearing. **The
+honest fix there is a socket-lifecycle change, not P0's shape.** Carded
+separately. **Shipping a hang to fix a truncation is a bad trade.**
+
+**So P0f is a per-site lane with per-site preconditions.** _"A per-site shape
+change with a per-site precondition cannot be verified by inspecting the
+shape."_
+
+### Why this is a NAMED lane and not folded back into P0
+
+**This project has now shipped "done" three times over an unenumerated
+remainder:** P0e held two halves, P0b enumerated one flag of three, P0 counted
+files instead of sites. **Each read as complete because the part that shipped
+was the part someone had enumerated.**
+
+**The release note must say WHICH HALF.** The honest sentence is _"the
+entry-point exits are fixed across nine files; the streaming verbs' terminal
+exits are P0f"_ — **not** _"the drained exit is fixed."_ **A true claim that
+reads as total costs the same trust as a false one.**
+
+**Also ruled OUT and recorded** (daedalus, 2026-08-06): `grapevine/cli.ts`'s
+`die()` — a small stderr write then `exit 2`, no stdout payload pending; and
+`mind-mapper/server.ts:1784` — third spelling but a daemon, small boot JSON long
+before any exit path. **The `die()` family in the other five CLIs is UNVERIFIED
+— rule it in or out by measurement and record the rule-out either way.**
+
+---
+
 ## Phase 0b — The inert `--restore` (#80.1)
 
 **Owner:** daedalus · **Verify:** cassandra · **D3 ruled:** non-zero exit
