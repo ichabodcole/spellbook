@@ -374,6 +374,25 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     die(`glamour server failed to start: ${msg}`);
   });
 
+  // ⚠ RELEASE THE DAEMON'S STDOUT PIPE, or this CLI never exits.
+  //
+  // `child.unref()` above releases the CHILD PROCESS handle. The piped stdout is
+  // a SEPARATE reffed handle, and the daemon runs forever — so once `open` stops
+  // force-exiting, the parent's event loop waits on a stream that will never
+  // close. Measured: `open --no-open` still running at 91s; with this line, 1s.
+  //
+  // This became live when P0 replaced `process.exit(code)` with `process.exitCode`
+  // + a natural return: `process.exit` had been doing DOUBLE DUTY, draining stdout
+  // (broken — it truncated at 65,536) AND terminating despite a live child pipe
+  // (load-bearing, and unnoticed). Removing it fixed the first and exposed the
+  // second. `join.ts` has the same shape and is deliberately NOT converted.
+  //
+  // `unref()` rather than `destroy()`: both measured clean, and unref is the
+  // conservative one — it leaves the stream usable and only stops it holding the
+  // loop. The handshake is the sole read, so nothing downstream needs it.
+  // biome-ignore lint/style/noNonNullAssertion: stdio "pipe" guarantees stdout
+  child.stdout!.unref();
+
   let parsed: { url: string; port: number; session_id: string };
   try {
     parsed = JSON.parse(info) as typeof parsed;
