@@ -1,16 +1,17 @@
 # Spell Hardening — fix what the shipped spells are getting wrong, then release
 
-**Status:** Approved (scope + execution ratified by Cole, 2026-08-05)
-**Created:** 2026-08-05 **Author:** Cole Reed (triaged with Claude Code)
+**Status:** Approved (scope + execution ratified by Cole, 2026-08-05; #80 folded
+into P0 and D3 ruled 2026-08-06) **Created:** 2026-08-05 **Author:** Cole Reed
+(triaged with Claude Code)
 
 ---
 
 ## Overview
 
 `bounty` and `grapevine` are the **most-used spells** — every anthill session in
-this repo and others leans on them. Ten GitHub issues are open against them,
-five filed on 2026-08-05 alone, and the triage that produced this project found
-that **three of them actively mislead rather than merely annoy**: they return
+this repo and others leans on them. Eleven GitHub issues are open against them,
+six filed on 2026-08-05 alone, and the triage that produced this project found
+that **four of them actively mislead rather than merely annoy**: they return
 plausible, well-formed, wrong results and exit 0.
 
 This project fixes them in a **harm-ordered sequence** and cuts a release, so
@@ -32,6 +33,18 @@ ending at message #68 when it stood at #116, stamped a verdict on that stale
 watermark, and the lead read the watermark as evidence the agent had ignored a
 briefing — and broadcast that inference before retracting it. **One silent
 truncation produced a wrong verdict and a wrong judgement of a teammate.**
+
+**1b. A recovery command that reports success and does nothing (correctness).**
+`bounty open --session-key K --restore <id>` is **accepted, prints normal
+discovery JSON, and exits 0 without restoring anything** whenever a live board
+already holds the key: `cli.ts:388-397` takes the idempotent-attach branch and
+returns, and `--restore` is not appended to the daemon's args until line 415 —
+past the return. The flag is never consulted, and nothing says so. A second team
+hit this on a board whose snapshot held 97 tasks and whose live board held 0
+(#80). **This is the worst possible position for a silent no-op:** it is the
+_recovery_ command, reached only after the caller has already accepted something
+is wrong with the board — so an empty result is exactly what they are primed to
+believe. They recovered only by reading `~/.bounty/snapshots/<id>.json` by hand.
 
 **2. Data loss during recovery (integrity).** When the bounty daemon dies,
 `open --session-key K` respawns an **empty** board under the same id, and
@@ -57,7 +70,7 @@ issue.**
 
 | Phase  | Theme                       | Issues / items                                      |
 | ------ | --------------------------- | --------------------------------------------------- |
-| **P0** | Silent wrong data           | #77, #78 (+ audit every other spell CLI)            |
+| **P0** | Silent wrong data           | #77, #78, #80 (+ audit every other spell CLI)       |
 | **P1** | Daemon lifecycle + data     | #64, #73, #74, `bounty-daemon-robustness-nits`      |
 | **P2** | Bounded reads               | #75 + `bounty-tail-drain` (one flag, both spells)   |
 | **P3** | Legibility + honest signals | #79, #72, #11, #76, `bounty-heartbeat-skip-blocked` |
@@ -67,6 +80,21 @@ issue.**
 the shape that loses its tail to the P0 bug.** Shipping P2 first would deliver a
 brand-new way to silently lose history.
 
+**#80 sits in P0, not beside its neighbours in P1.** Its first half (the inert
+`--restore`) is about keyed-board recovery, which _looks_ like P1's territory
+next to #73/#74. But P1 is about **destruction**, and this is about **recovery
+not working and saying it did** — the P0 defect class exactly. It is also
+independent: it needs neither D1's snapshot ruling nor #64's root cause, and its
+fix has P0's shape (refuse loudly, or state the skip in the envelope). Its
+second half (`bounty state --full` truncating through a pipe) is #78, already P0
+— so splitting #80 across phases would separate one report's two halves for no
+gain.
+
+**#80 is not covered by D1.3.** Hydrate-by-default fixes the **dead**-daemon
+respawn. #80's board was **live and empty**, so hydration never fires and
+`--restore` is the only lever there is. The two rulings are complementary, not
+overlapping.
+
 **P1's internal order is also forced.** #64 (the daemon dies) is the _trigger_;
 #73/#74 (recovery clobbers the snapshot) is the _consequence_. But they are
 independently worth fixing — an unguarded clobbering `close` is a loaded footgun
@@ -75,9 +103,9 @@ for #64.
 
 ## Scope
 
-**In scope.** The ten triaged issues, plus three adjacent backlog items that
-touch the same code and are cheaper to do in the same pass than to schedule
-separately:
+**In scope.** The eleven triaged issues (ten at ratification, plus #80 folded in
+2026-08-06), plus three adjacent backlog items that touch the same code and are
+cheaper to do in the same pass than to schedule separately:
 
 - `2026-06-15-bounty-tail-drain` — the bounty twin of #75. **Do them together**
   so `--drain` and `--no-follow` don't become two spellings of one idea.
@@ -99,11 +127,11 @@ separately:
 - Feature-shaped backlog items: leaderboard, task metrics, sessions filter,
   grapevine rename/edit/presence/facilitation-timer, imago items.
 
-## The two decisions — RULED (2026-08-05)
+## The three decisions — RULED (D1/D2 2026-08-05, D3 2026-08-06)
 
-Everything else here has a known fix. These two did not, and they are why this
-is a project rather than ten branches. **Both are now ruled. Do not relitigate;
-falsify with evidence if you think one is wrong.**
+Everything else here has a known fix. These three did not, and they are why this
+is a project rather than eleven branches. **All three are now ruled. Do not
+relitigate; falsify with evidence if you think one is wrong.**
 
 ### D1 — Snapshot safety semantics (P1) — RULED
 
@@ -203,6 +231,50 @@ not two overlapping fixes.
 **What "evidence" means is the one open sub-question**, and it is the owning
 seat's to answer with a proposal to the lead — not a licence to expand scope.
 
+### D3 — Does a skipped `--restore` exit non-zero? (P0) — RULED
+
+Added 2026-08-06 with #80; **ratified by Cole the same day.** D1.2's convention
+already settles **half** of this: the skip is announced as a **field in the
+envelope**, not stderr prose — `restoreSkipped: {requested, reason} | null`,
+present-and-null when nothing was skipped. What D1.2 does not settle is whether
+the **exit code** also moves.
+
+**Ruled: yes — non-zero, _and_ the field. Not either/or.** The field is what an
+agent parses; the exit code is what a `set -e` wrapper or a Monitor catches. #80
+asks for exactly this, in these words: _"we would rather have a non-zero exit or
+an explicit field than a friendlier default."_
+
+**The objection to answer is D1.1's — "refusals breed `--force`."** It does not
+transfer here, for a reason we can check rather than assert:
+
+- **D1.1 governs `close`** — an involuntary path every session hits. A refusal
+  there is on the critical path, so a bypass flag inevitably enters the runbook.
+  `open --restore` against a live board is a **deliberate, rare, and
+  self-contradictory** request: the caller is naming a snapshot to load _and_ a
+  live board already holds the key.
+- **The bypass already exists and is honest.** `--fresh --restore` means "tear
+  the live board down, respawn from this snapshot." A refusal that names an
+  available corrective verb is not a dead end, and does not need a `--force`
+  invented for it.
+- **It breaks no routine path — verified, not assumed.** anthill is the
+  reporting caller, and it never scripts `--restore`.
+  `scripts/anthill/commands/team-convene.ts:73` explicitly declines to (_"We
+  cannot restore the snapshot from here (that is spellbook's side of the
+  seam)"_) and instead emits `boardShadowWarning`, which tells a human or agent
+  to recover deliberately. So `--restore` is only ever reached as an intentional
+  act — the case where a non-zero exit is a gift rather than an interruption.
+
+**Why this was ours to decide and not the reporter's.** #80 deliberately
+declined to prescribe a fix (_"we are not asking for specific implementations"_)
+— which is what a good report does. Handing the design back would invert that,
+and the reporter is in any case the party least able to weigh it, since D1's
+rulings aren't visible to them.
+
+_Adjacent, out of scope:_ anthill's own comment at `team-convene.ts:100` still
+reads _"bounty's `open` is NOT idempotent (always spawns a fresh daemon)"_ —
+stale since #69 made keyed open idempotent, and part of why this surprised the
+team. Worth reporting to anthill; not this project's to fix.
+
 ## Technical Approach
 
 - **P0's fix is a drained exit, not pagination.** The payloads are already
@@ -240,10 +312,13 @@ seat's to answer with a proposal to the lead — not a licence to expand scope.
 
 ## Success Criteria
 
-- [ ] All ten triaged issues closed or explicitly deferred with a reason.
+- [ ] All eleven triaged issues closed or explicitly deferred with a reason.
 - [ ] `grapevine pull` and `bounty state --full` return valid, complete JSON
       through a pipe on >64KiB payloads, with a piping regression test each.
 - [ ] No spell CLI retains the undrained `process.exit` shape.
+- [ ] A `--restore` that cannot be honoured never reports success — it is
+      visible in the envelope, with a regression test covering the live-board
+      attach path.
 - [ ] A `close` cannot silently destroy a non-empty snapshot.
 - [ ] Blocked and session-length cards produce no false pokes; genuinely stalled
       cards still do.
@@ -258,5 +333,5 @@ seat's to answer with a proposal to the lead — not a licence to expand scope.
 - Fold-ins: `2026-06-15-bounty-tail-drain.md`,
   `2026-06-15-bounty-daemon-robustness-nits.md`,
   `2026-06-22-bounty-heartbeat-skip-blocked.md`
-- Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79
+- Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79, #80
 - Code: `plugins/spellbook/skills/{grapevine,bounty}/scripts/`

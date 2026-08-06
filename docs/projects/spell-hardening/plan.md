@@ -19,7 +19,7 @@ lands. Run `anthill:plan` first so the owning seats ratify the seams they touch.
 
 ## Outcome & Success Criteria
 
-Inherited from the proposal. **Definition of done for the project:** all ten
+Inherited from the proposal. **Definition of done for the project:** all eleven
 issues resolved-or-deferred-with-reason, gate green, cold-gate passed, release
 cut, `SKILL.md` true.
 
@@ -37,7 +37,7 @@ three of these bugs are invisible to the person best positioned to notice them.
 
 ---
 
-## Phase 0 — The drained exit (#77, #78)
+## Phase 0 — The drained exit (#77, #78, #80.2)
 
 **Owner:** daedalus · **Verify:** cassandra · **Blocks:** P2
 
@@ -93,6 +93,56 @@ its success path returns naturally. That is the target behaviour.
 **Gate:** `grapevine pull` and `bounty state --full` both return valid JSON with
 `cursor` present, piped, on an over-buffer payload. Three consecutive runs (the
 original bug was deterministic at exactly 65,536 bytes).
+
+**#80 corroborates #78 from a second team** and sharpens the cost: the
+truncation did not merely produce bad data, it produced a **false rule** — "our
+board is too big to read" — which the reporter published and three agents then
+worked under for six messages. Nothing to fix beyond #78; recorded because the
+harm statement is better evidence than the original.
+
+---
+
+## Phase 0b — The inert `--restore` (#80.1)
+
+**Owner:** daedalus · **Verify:** cassandra · **D3 ruled:** non-zero exit
+**and** an envelope field
+
+Separate lane from the drained exit: same phase and same defect class (a command
+that cannot do the thing and returns something shaped like success), but a
+completely different mechanism — control flow, not stdout draining. Do not merge
+the two fixes into one commit.
+
+**The mechanism, verified 2026-08-06 (fact, not claim):**
+`plugins/spellbook/skills/bounty/scripts/cli.ts:388-397` — when `--session-key`
+resolves to a board that is already live, `cmdOpen` takes the idempotent-attach
+branch and **returns**. `--restore` is not appended to the daemon's args until
+line 415, past that return. The flag is therefore never consulted on the attach
+path, and nothing reports the skip.
+
+**Not covered by D1.3.** Hydrate-by-default addresses the **dead**-daemon
+respawn. The reported board was **live and empty**, so hydration never fires —
+`--restore` was the only lever, and it was inert.
+
+**Steps**
+
+1. On the attach path, detect that `--restore` was passed and **cannot be
+   honoured** (a live board already holds the key).
+2. **Exit non-zero** (D3 — ruled), and name the corrective verb in the message:
+   `--fresh --restore` tears the live board down and respawns from the snapshot.
+   A refusal that points at an available fix does not need a `--force` invented
+   for it.
+3. **Announce in the envelope** (D1.2's convention, applied):
+   `restoreSkipped: {requested, reason} | null` — **`null` when nothing was
+   skipped, never absent.** The exit code is what a `set -e` wrapper or a
+   Monitor catches; the field is what an agent parses.
+4. **`SKILL.md` names the field and stops** (D1.4 — ruled). Two lines at most;
+   do not restate the semantics.
+
+**Gate:** open a keyed board, seed it, kill the daemon's board contents so live
+is empty while the snapshot is populated, then re-run
+`open --session-key K --restore <id>` against the **live** board. It must exit
+non-zero and carry `restoreSkipped`. Then confirm `--fresh --restore` on the
+same key actually restores. Throwaway board only.
 
 ---
 
@@ -227,6 +277,15 @@ it still reads as a timer, the model didn't change.
 - ~~D1 and D2 need Cole.~~ **Both ruled 2026-08-05** (proposal). One
   sub-question survives: **what counts as "evidence"** for D2's poke — owning
   seat proposes, lead rules.
+- ~~D3 (#80: does a skipped `--restore` exit non-zero?) needs Cole.~~ **Ruled
+  2026-08-06** — non-zero exit **and** the envelope field. P0b is unblocked.
+- **#80's `--owner` sub-claim is unreproduced.** The report says
+  `state --owner <name>` returns the full board while `--mine` filters; a
+  2026-08-06 check on a scratch board found `--owner` filtering correctly, and
+  the wiring at `cli.ts:764` → `cmdState` is sound. Working theory: a misread of
+  a **truncated** payload, i.e. a symptom of #78 rather than a defect. Confirm
+  against the reporter's actual command before filing anything; do not fix
+  blind.
 - ~~Does P0's audit find the shape beyond the two reported spells?~~ **Yes —
   seven files.** Now a question of which of the five unreported ones can
   actually emit an over-buffer payload.
