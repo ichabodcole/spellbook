@@ -27,6 +27,7 @@ import {
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs as nodeParseArgs } from "node:util";
 
 const DATA_DIR = process.env.GRAPEVINE_HOME ?? join(homedir(), ".grapevine");
 const PORT_FILE = join(DATA_DIR, "daemon.port");
@@ -1464,21 +1465,13 @@ async function cmdReap(opts: { force?: boolean; dryRun?: boolean }) {
   printJson({ ok: true, dry_run: !!opts.dryRun, kept, reaped, skipped });
 }
 
-const BOOLEAN_FLAGS = new Set([
-  "quiet",
-  "from-start",
-  "verbose",
-  "stdin",
-  "literal",
-  "text",
-  "all",
-  "human",
-  "lurk",
-  "force",
-  "fresh",
-  "yes",
-  "dry-run",
-]);
+// (BOOLEAN_FLAGS was here. It listed which flags take no value — half a
+// registry, consulted by the hand-rolled parser. Its 13 entries now live in
+// CLI_OPTIONS below as `{type:"boolean"}`, verified 13-for-13 against thoth's
+// independently-derived artifact before the move. Deleted rather than left
+// beside its replacement: a second source of truth for the same fact is the
+// drift bug this lane exists to remove, and it would no longer be consulted
+// by anything.)
 
 // Signature of a heredoc fumble: a line that is (or begins with) a
 // `bun … cli.ts … send` invocation. When a `send --stdin <<EOF` is botched, the
@@ -1506,37 +1499,101 @@ export function looksShellRisky(text: string): boolean {
   return SHELL_METACHAR_RE.test(text);
 }
 
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+//
+// grapevine already had HALF a registry: `BOOLEAN_FLAGS` above told the parser
+// which flags take no value. What it had no notion of was which flags EXIST, so
+// an unknown flag was accepted at exit 0 and the verb ran anyway, and free prose
+// containing a `--word` was silently truncated at that word.
+//
+// ⚠ grapevine is the OUTLIER of the six, and it is worth saying why so nobody
+// reads it as merely behind: it types its value flags with a CAST
+// (`flags.topic as string | undefined`) where the other entry points use a
+// `typeof` guard. A cast is a claim with NO RUNTIME CHECK, so grapevine carried
+// a class of latent type-lie the others were guarded against — and bare value
+// flags produced silent wrong values rather than errors:
+//
+//   --last   bare  ->  parseInt(true, 10)  ->  NaN, silently
+//   --topic  bare  ->  `true` in a field DECLARED `string`
+//
+// `strict: true` turns each of those from a silent wrong value into a
+// caller-facing error, which is the lane's whole purpose and the largest
+// behaviour delta of the six entry points.
+//
+// The boolean set below is BOOLEAN_FLAGS, unchanged — extracted from this file
+// and diffed against thoth's independently-derived artifact: 13 for 13, exact,
+// zero divergence in either direction.
+const CLI_OPTIONS = {
+  as: { type: "string" },
+  "body-file": { type: "string" },
+  channels: { type: "string" },
+  from: { type: "string" },
+  hold: { type: "string" },
+  "in-reply-to": { type: "string" },
+  last: { type: "string" },
+  max: { type: "string" },
+  note: { type: "string" },
+  since: { type: "string" },
+  status: { type: "string" },
+  timeout: { type: "string" },
+  topic: { type: "string" },
+  all: { type: "boolean" },
+  "dry-run": { type: "boolean" },
+  force: { type: "boolean" },
+  fresh: { type: "boolean" },
+  "from-start": { type: "boolean" },
+  human: { type: "boolean" },
+  literal: { type: "boolean" },
+  lurk: { type: "boolean" },
+  quiet: { type: "boolean" },
+  stdin: { type: "boolean" },
+  text: { type: "boolean" },
+  verbose: { type: "boolean" },
+  yes: { type: "boolean" },
+} as const;
+
+class UsageError extends Error {}
+
 function parseFlags(argv: string[]): {
   positional: string[];
   flags: Record<string, string | boolean>;
 } {
-  const positional: string[] = [];
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      if (BOOLEAN_FLAGS.has(key)) {
-        flags[key] = true;
-        continue;
-      }
-      const next = argv[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    } else {
-      positional.push(a);
-    }
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args: argv,
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+    return {
+      positional: positionals,
+      flags: values as Record<string, string | boolean>,
+    };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new UsageError(
+      `${detail}\n` +
+        `  recognized flags: ${Object.keys(CLI_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n` +
+        `  for a message body containing dashes, use --stdin or --body-file, ` +
+        `or put it after a bare --`,
+    );
   }
-  return { positional, flags };
 }
 
 async function main(argv: string[]): Promise<number> {
   const [cmd, ...rest] = argv;
-  const { positional, flags } = parseFlags(rest);
+  // Usage failures return 2 rather than exiting, so the runtime drains stdout.
+  let positional: string[];
+  let flags: Record<string, string | boolean>;
+  try {
+    ({ positional, flags } = parseFlags(rest));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`grapevine: ${e.message}\n`);
+    return 2;
+  }
 
   switch (cmd) {
     case "open":

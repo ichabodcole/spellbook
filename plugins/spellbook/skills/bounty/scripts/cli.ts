@@ -54,6 +54,7 @@ import {
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs as nodeParseArgs } from "node:util";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
@@ -288,28 +289,92 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value` or boolean `--flag`.
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+//
+// The hand-rolled parser this replaces had three defects and every one of them
+// was silent:
+//
+//   --owner=alice        the whole `owner=alice` became a boolean key, so the
+//                        value was DROPPED and a read filter matched nothing —
+//                        a read returned the WHOLE BOARD instead of a subset
+//   --totally-bogus      accepted, exit 0, verb ran anyway
+//   add write the --draft section
+//                        `--draft` was read as a flag, so the title silently
+//                        TRUNCATED to "write the" at exit 0
+//
+// `node:util` strict gives all three fixes from the standard library — `=`
+// support, unknown-flag rejection, and the `--` terminator — in the shape
+// join.ts and server.ts in this very spell already use. That makes "three
+// spellings of one idea" impossible by construction rather than by discipline.
+//
+// ⚠ THE TYPES ARE LOAD-BEARING AND GETTING ONE WRONG IS NOT A NO-OP:
+//   a "string" that should be boolean SWALLOWS THE NEXT POSITIONAL as its value
+//   a "boolean" that should be string breaks `--owner alice` (alice becomes a
+//   positional)
+// Both are silent enough to ship. This set is thoth's audited artifact
+// (`docs/projects/spell-hardening/artifacts/p0c-recognized-flag-sets.md`):
+// 22 flags, 15 string / 7 boolean, each settled by unambiguous evidence at
+// EVERY consumption site. `expect` and `size` are string because they type off
+// parseExpect/parseSize, not off the bare truthiness at the call site.
+const CLI_OPTIONS = {
+  as: { type: "string" },
+  expect: { type: "string" },
+  id: { type: "string" },
+  notes: { type: "string" },
+  on: { type: "string" },
+  owner: { type: "string" },
+  restore: { type: "string" },
+  session: { type: "string" },
+  "session-key": { type: "string" },
+  since: { type: "string" },
+  size: { type: "string" },
+  status: { type: "string" },
+  tag: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+  fresh: { type: "boolean" },
+  full: { type: "boolean" },
+  mine: { type: "boolean" },
+  "no-open": { type: "boolean" },
+  pin: { type: "boolean" },
+  stdin: { type: "boolean" },
+  "stdin-tasks": { type: "boolean" },
+} as const;
+
+// A usage failure is THROWN rather than exiting, so `main` can return 2 and let
+// the runtime drain stdout — `die()` is process.exit, which is the defect this
+// sprint's sibling lanes exist to remove. Same reason the #80.1 refusal does
+// not route through die() either.
+class UsageError extends Error {}
+
 function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
-  const pos: string[] = [];
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      const next = args[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    } else {
-      pos.push(a);
-    }
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args,
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+    return {
+      pos: positionals,
+      flags: values as Record<string, string | boolean>,
+    };
+  } catch (e) {
+    // node:util names the offending token; keep that and add the escape hatch,
+    // because the most likely victim is free prose containing a dash-dash word
+    // (`add write the --draft section`), which TODAY truncates silently.
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new UsageError(
+      `${detail}\n` +
+        `  recognized flags: ${Object.keys(CLI_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n` +
+        `  for free text containing dashes, use --stdin, or put it after a bare --`,
+    );
   }
-  return { pos, flags };
 }
 
 type CmdResult = { ok?: boolean; applied?: boolean; error?: string };
@@ -334,6 +399,34 @@ async function postCmd(
   if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
   if (!opts.quiet) printJson({ ok: true, sent: msg.type });
   return (data ?? {}) as CmdResult;
+}
+
+// #83 — honour the daemon's verdict for every verb that has no bespoke result
+// handling. A FUNNEL, deliberately, rather than the same three lines pasted at
+// four call sites: a prose convention ("remember to check `applied`") is not
+// inheritable and is exactly how `add` came to be the odd one out among five
+// write verbs. A future verb inherits the contract by routing through here.
+//
+// The `applied === false` test is explicit, not truthiness: a daemon that omits
+// the field entirely (an older build, or a command type it answers without a
+// verdict) must keep its ack rather than being reported as a failure — absent is
+// not the same as false, and conflating them would turn a version skew into a
+// storm of fake errors.
+// The failure ENVELOPE carries `applied: false` on stdout, beside the non-zero
+// exit and the human line on stderr — the same two-channel shape P0b's refusal
+// uses. The exit code is what a `set -e` wrapper or a Monitor catches; the
+// envelope is what an agent parses. Reporting only on stderr would leave a
+// stdout reader with an empty payload, which is indistinguishable from a verb
+// that produced no output for a benign reason.
+function ackOrFail(type: unknown, res: CmdResult): number {
+  if (res.applied === false) {
+    const error = res.error ?? `the daemon did not apply ${String(type)} — the board is unchanged`;
+    printJson({ ok: false, applied: false, sent: type, error });
+    process.stderr.write(`bounty: ${error}\n`);
+    return 1;
+  }
+  printJson({ ok: true, sent: type });
+  return 0;
 }
 
 function newTaskId(): string {
@@ -372,7 +465,36 @@ function writePin(sessionId: string) {
   }
 }
 
-async function cmdOpen(flags: Record<string, string | boolean>) {
+// #80.1 — flags whose EFFECT IS LOST on the idempotent-attach path.
+//
+// The attach branch below RETURNS before the daemon argument list is built, so
+// every flag that only ever takes effect as a daemon arg is silently discarded:
+// the caller asks for a four-hour timeout, gets thirty seconds, and is told
+// nothing. `--restore` was only ever one of three symptoms of that one return.
+//
+// ⚠ DERIVE THIS SET BY LOST EFFECT, NEVER BY POSITION. "Appended past the
+// return" and "not honoured on attach" look like two spellings of one set and
+// they are not — the positional reading is wrong in BOTH directions at once:
+//
+//   --title    lost      MISSED by a positional cutoff (appended before --restore)
+//   --timeout  lost      MISSED by a positional cutoff (likewise)
+//   --restore  lost      caught either way
+//   --no-open  honoured  WRONGLY INCLUDED by a positional cutoff — on the attach
+//                        path there is nothing to open, so it is VACUOUSLY
+//                        honoured; the caller asked for a thing already true
+//   --pin      honoured  never reached by a positional cutoff at all — it runs
+//                        INSIDE the attach branch, above the return
+//
+// Refusing on --no-open or --pin would make every caller that rejoins a live
+// board start failing (`open --session-key K --pin --no-open` is a real, live
+// invocation) — this lane's own cure inflicting this lane's own disease.
+//
+// The membership test is `Boolean(flags[f])`, deliberately the SAME truthiness
+// the daemon-arg construction uses, so "we refuse it" and "it would have had an
+// effect" cannot drift apart.
+const ATTACH_LOST_FLAGS = ["title", "timeout", "restore"] as const;
+
+async function cmdOpen(flags: Record<string, string | boolean>): Promise<number> {
   // #69: a caller-owned key derives a deterministic, project-scoped board id, and
   // `open` becomes IDEMPOTENT against it — a live board for the key is ATTACHED
   // to (nothing spawned), a dead/absent one is (re)spawned under the same id. So
@@ -390,10 +512,50 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     if (live && !flags.fresh) {
       // Idempotent attach — the board for this key is already up. Emit the same
       // discovery JSON a spawn would, so the caller gets port/url either way.
-      printJson(live);
+      const requested = ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f]));
+      const named = requested.map((f) => `--${f}`).join(", ");
+      if (requested.length) {
+        // #80.1 — REFUSE rather than attach-and-discard. The exit code is what a
+        // `set -e` wrapper or a Monitor catches; `restoreSkipped` is what an
+        // agent parses. 2 = bad input, matching `die()` and the house exit-code
+        // contract — but NOT via `die()`, which is process.exit(2) and would
+        // discard this envelope on a pipe (the drained-exit defect, re-committed
+        // in the act of printing the field that fixes this one).
+        //
+        // ⛔ The refusal NAMES NO CORRECTIVE VERB. Ruled by Cole 2026-08-06 and
+        // not reopenable here. The obvious helpful suggestion — "--fresh
+        // --restore" — is MEASURED to destroy the user's only copy of their
+        // data: --fresh tears the board down by POSTing {type:"close"}, close
+        // unconditionally writes the snapshot (server.ts:1286), so an EMPTY live
+        // board flushes empty over a populated snapshot, and --restore then
+        // faithfully restores from the corpse the teardown just made. A user in
+        // exactly the situation this message is written for would follow the
+        // advice and lose everything. Say what is true; offer no fix.
+        printJson({
+          ...live,
+          restoreSkipped: {
+            requested,
+            reason: `a live board already exists for this key, so open attached to it instead of spawning a daemon; ${named} configure a daemon at spawn time and the running board was left unchanged`,
+          },
+        });
+        process.stderr.write(
+          `bounty: refusing to attach — ${named} cannot take effect on a board that is already running (key "${key}", board ${forcedId})\n`,
+        );
+        // HONOUR-WHAT-YOU-CAN, ruled by prospero 2026-08-06 and written here
+        // because the two readings are indistinguishable from the diff: --pin is
+        // performed even on the refusal, because it is NOT in the lost-effect
+        // set — the attach path really does what --pin asked. Withholding it
+        // would make one flag's behaviour depend on an unrelated flag, which is
+        // the same over-inclusive error as refusing on --no-open, just spelled
+        // as a side effect instead of an exit code. The refusal is about the
+        // flags whose effect is lost, and only those.
+        if (flags.pin) writePin(forcedId);
+        return 2;
+      }
+      printJson({ ...live, restoreSkipped: null });
       process.stderr.write(`# attached to existing board ${forcedId} (key "${key}")\n`);
       if (flags.pin) writePin(forcedId);
-      return;
+      return 0;
     }
     if (live && flags.fresh) {
       // Replace it: close the live board over its own protocol, then wait for it
@@ -454,16 +616,21 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
       try {
         const r = await fetch(`http://127.0.0.1:${s.port}/state`);
         if (r.ok) {
-          printJson(s);
+          // `restoreSkipped` is PRESENT AND NULL on every success path, never
+          // absent (#80.1 / D1.2). A field that appears only when it has
+          // something to say cannot be told apart from a build that does not
+          // emit it at all, so `"restoreSkipped" in envelope` is the assertion
+          // that has teeth and `=== null` alone is the one that passes vacuously.
+          printJson({ ...s, restoreSkipped: null });
           if (flags.pin) writePin(s.session_id);
-          return;
+          return 0;
         }
       } catch {
         /* not up yet */
       }
     }
   }
-  die("bounty daemon failed to start within 5s");
+  return die("bounty daemon failed to start within 5s");
 }
 
 async function cmdState(
@@ -591,8 +758,33 @@ async function cmdTail(
           // Scope filter, then self-echo suppression. `closed` is lifecycle, so
           // it always passes — but guard the exit outside the filter regardless.
           const selfEcho = self !== undefined && ev.by === self;
-          if (inScope(ev) && !selfEcho) process.stdout.write(`${payload}\n`);
-          if (ev.type === "closed") process.exit(0);
+          const emit = inScope(ev) && !selfEcho;
+          if (ev.type === "closed") {
+            // P0f — the terminal frame is the one a consumer most needs and the
+            // one `write(payload); process.exit(0)` throws away: Bun's stdout is
+            // async on a PIPE, and an explicit exit discards whatever has not
+            // drained (measured in this repo at exactly 65,536 bytes).
+            //
+            // SHAPE B — the callback rides THIS write, so it fires on THIS
+            // write's completion. Do NOT "fix" this with a trailing
+            // `write("", () => exit)`: a drain callback covers only its own
+            // write and is not a barrier — measured byte-for-byte as broken as
+            // no fix at all, and it is the helper this shape invites.
+            //
+            // PER-SITE PRECONDITION, checked here and not inferred from the
+            // shape: this exit sits THREE loops deep (while → for-sep →
+            // for-line), so `process.exitCode` + a natural return — the tidy
+            // one-liner used at the nine entry points — does NOT return from a
+            // tail. It falls through and the loop goes round again. That is the
+            // 23-minute `glamour open` hang, one sprint later, in a new place.
+            // The explicit `return` below is what leaves all three loops; the
+            // callback is what drains. Both are required, for different reasons.
+            if (emit) process.stdout.write(`${payload}\n`, () => process.exit(0));
+            else process.exit(0);
+            stopped = true;
+            return;
+          }
+          if (emit) process.stdout.write(`${payload}\n`);
         } catch {
           /* skip malformed frame */
         }
@@ -743,14 +935,23 @@ const HELP = `bounty — an agent-driven task board.
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  const { pos, flags } = parseArgs(rest);
+  let pos: string[];
+  let flags: Record<string, string | boolean>;
+  try {
+    ({ pos, flags } = parseArgs(rest));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`bounty: ${e.message}\n`);
+    return 2;
+  }
   const session = resolveSession(flags);
   const as = resolveAs(flags);
 
   switch (verb) {
     case "open":
-      await cmdOpen(flags);
-      break;
+      // Propagates cmdOpen's code so the #80.1 refusal actually reaches the
+      // shell — `break` here would swallow it into main's trailing `return 0`.
+      return await cmdOpen(flags);
     case "tail": {
       const mine = flags.mine === true;
       if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
@@ -790,7 +991,22 @@ async function main(argv: string[]): Promise<number> {
       if (addSize) task.size = addSize;
       const addExpect = parseExpect(flags.expect);
       if (addExpect !== undefined) task.expect = addExpect;
-      await postCmd(session, { type: "task.add", task }, { as });
+      // #83 — `add` was the ONLY write verb that discarded the daemon's verdict:
+      // update/claim/block/unblock/remove all read it. So this is an oversight
+      // corrected to match its four siblings, not a new convention.
+      //
+      // No no-op branch here, unlike `update`. `update` has a legitimate
+      // applied:false (the task already held the value); `add` does not — a
+      // refusal means the shape was invalid or the id was taken, and both are
+      // real failures. The daemon names which.
+      const res = await postCmd(session, { type: "task.add", task }, { as, quiet: true });
+      if (!res.applied) {
+        const error = res.error ?? `task ${task.id} was not added`;
+        printJson({ ok: false, applied: false, id: task.id, error });
+        process.stderr.write(`bounty: ${error}\n`);
+        return 1;
+      }
+      printJson({ ok: true, added: task.id });
       break;
     }
     case "update": {
@@ -894,8 +1110,16 @@ async function main(argv: string[]): Promise<number> {
     case "message": {
       const text = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!text) die("usage: message <text...> [--stdin]");
-      await postCmd(session, { type: "message", text }, { as });
-      break;
+      // DECIDED EXPLICITLY (plan step 2), and recorded because "we checked it"
+      // and "it cannot fail" are different claims: the daemon answers `message`
+      // with applied:true unconditionally today, so routing it through the
+      // funnel changes NOTHING now. It is a regression guard — if `message`ever
+      // grows a refusal (a closed board, a rejected payload), the CLI reports it
+      // without anyone remembering to come back here.
+      return ackOrFail(
+        "message",
+        await postCmd(session, { type: "message", text }, { as, quiet: true }),
+      );
     }
     case "init": {
       const msg: Record<string, unknown> = { type: "init" };
@@ -911,12 +1135,20 @@ async function main(argv: string[]): Promise<number> {
           die("init --stdin-tasks: invalid JSON on stdin");
         }
       }
-      await postCmd(session, msg, { as });
-      break;
+      // The generic path — and the one with a REAL behaviour change today. The
+      // daemon's command dispatch ends in `return {ok:true, applied:false}` for
+      // any type it does not recognise, so an unrecognised command has always
+      // been answered with a success-shaped envelope. Routing through the funnel
+      // is what turns that into a visible failure.
+      return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
     }
     case "close":
-      await postCmd(session, { type: "close" }, { as });
-      break;
+      // Same explicit decision as `message`: applied:true unconditionally today,
+      // so this is a regression guard rather than a fix. It earns its place
+      // because `close` is the verb that WRITES THE SNAPSHOT — a close that
+      // silently failed to apply, reported as success, is how a caller concludes
+      // its data was persisted when it was not.
+      return ackOrFail("close", await postCmd(session, { type: "close" }, { as, quiet: true }));
     case "info":
       cmdInfo(session);
       break;

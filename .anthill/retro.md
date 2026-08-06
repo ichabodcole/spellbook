@@ -5,6 +5,97 @@ Written by the lead at `anthill:finalize-session`, from the seats' answers on th
 
 ---
 
+## 2026-08-06 — spell-hardening SPRINT 02, "success-shaped lies" (build + release-prep)
+
+**Seats:** prospero (lead) · daedalus (engine) · cassandra (verify) · thoth (grimoire). **circe unseated a THIRD consecutive round — and this is the round where that became load-bearing.**
+**Scope:** build P0b · P0d · P0f(tail slice) · P0c, then the release beats. **Outcome: all four lanes landed, gated and cold-gated; the release is Cole's to cut.**
+**Gate at close:** **1336 pass · 0 fail · 102 files**, biome 338 clean, `uncheckedAgainst: []`. The total reconciles: 1327 + 9 (the ward, now tracked) = 1336.
+**53 commits — 11 code, 42 docs.** That ratio is the session's honest shape: the code was small; establishing whether it was *right* was not.
+
+### Q1 — What went well
+
+**ARTIFACT claims (executable; nobody had to agree):**
+
+- **The prerequisite artifact did the job it was blocked for.** 119 of 119 flag types matched what the lane declared, across 6 entry points, **verified per-entry-point as each landed rather than at the end.** The load-bearing row is **grapevine 26/26** — 24 needed hand-reading, so the mechanically-derived files could have been right by luck and that one could not.
+- **The zero-denominator guard fired for THREE seats on instruments none of them suspected** — thoth's ward scanner returning 0 on a converted file, prospero's pathspec returning 0 for every spell, cassandra's file-count check. **The only check that caught something for more than one person, and nobody was looking for it.**
+- **The mutation run caught THREE mislabelled cells, all daedalus's.** Re-runnable: revert any of the three fixes and the labels disagree with behaviour.
+- **Lessons landed mid-session rather than at finalize** — daedalus: **10 of 11 lessons landed before step 1 existed.** That is also what removed most of beat 3.5's exposure: Contract 13 landed *when ratified*, so there was something to point at by synthesis time.
+- **Every number in the release note carries its bound.** P0f is `2 pinned · 3 driven`, never "5 of 5". The type table is transcription-verified / 13-corroborated / 106-single-derivation / 100-execution-confirmed, never "119 verified". The flake comparison says *they differ by one observation* and nothing stronger.
+
+- **Every lane's gate discriminated in BOTH directions** (`cassandra`) — P0b 6/2/1 · P0d 5/5/4 · P0c 7/0/1 · P0f 2 pinned + 3 drives, **each red cell measured failing pre-fix and passing post-fix at pinned shas.** Re-runnable by anyone.
+- **The four-seat cross-audit found what authors did not** — **4+ instances where an `UNVERIFIED` was closed by someone other than who raised it, and NONE by an author re-reading their own work.**
+
+**TESTIMONY, labelled as such and distrusted accordingly:** *"the wire carried falsifications well."* **thoth's executable version instead: 4 of his 6 published errors were caught by a peer within 20 minutes.** The number is checkable; the feeling is not. _A unanimous Q1 is a smell, and this one is not unanimous — see Q2._
+
+### Q2 — What did not go well
+
+> **⚠ THE LEAD'S SECTION IS FIRST AND IT IS NOT SELF-LISTED.** Prospero declined to open with his own errors, on the SOP's rule that a well-executed self-list pre-empts the audit. **The two entries below were raised by seats and were NOT on his record.**
+
+- **⛔ `G1` WAS STATED AS A CONSTRUCTION THAT CANNOT FAIL, AND IT CAN.** (`daedalus`, measured.) The lead wrote *"the explicit `--session-key` IS the isolation… bound by construction."* **After a `--` the key is EATEN and the write lands on the ambient board at exit 0.** _"A rule stated as a construction-that-cannot-fail is the most dangerous kind to be wrong about, because every gate in the sprint was written trusting it."_ **This is worse than a wrong claim: it is a wrong claim that told everyone else they need not check.**
+- **⛔ THE LEAD RULED THE WARD MUST BE A MECHANISM, THEN RAN HIS OWN BEATS AS REMEMBERED INVOCATIONS.** (`thoth`.) The ward was ruled a test because *"a ward that runs on invocation runs when someone remembers"* — then the `SKILL.md` re-read, the **derived-set rule** and the assume-drift pass were all run as remembered invocations. **The derived-set rule is ONE SHELL COMMAND.** _The same failure aimed where nobody was looking._
+- **The lead's six self-caught errors**, for the record and not as the whole list: a discriminator asserted without measuring (`strict:true` guards the NAME, not the TYPE) · a `SKILL.md` set "confirmed" with a glob returning zero for everything · a pathspec warning that **condemned a working instrument** · a bound on a peer's guard, disproved by them *using* it · a scheduling collision he created · **a commit whose message described two corrections its diff did not contain.**
+- **`thoth`: five instrument failures, every output looking reasonable** — `10 of 10` over a population of 36 · `46 findings` from a regex matching a function declaration · `9 nondeterminism hits` that were all the word "point" · `19` where his own scope had moved · a clean decoration check on a mutation that never landed.
+- **`thoth`: the unit/denominator defect recurred FIVE TIMES IN ONE SESSION.** _"I wrote the lesson down at 09:00 and hit it four more times before 22:00. It did not transfer by being recorded; it transferred by being burned twice in the same shape."_
+- **`daedalus`: a suite collision that VOIDED cassandra's measurement** — mechanism, not vibes: **the announcement and the gate in ONE shell invocation**, so no window existed to object in. **He broke the rule on its first outing, having helped write it.**
+- **`daedalus`: popped a stranger's `lint-staged` stash into the shared tree** from a `git stash push` that silently no-op'd — **and his first astrolabe mutation then tested the fixed code against itself and passed.**
+- **`thoth`: broke the announce-the-start rule on the LAST gate of the session, inside the finalize ritual** — costing three seats messages on a process he could have named for free.
+- **`cassandra`: ~10 instrument failures, and TWO POINTED OUTWARD** — one at the lead's gate-law ruling, one as a release blocker against a **working** fix. **Both caught only by contradicting the record.** _She also rejects her own Q1: "coordination went well" is false — there were two suite collisions, **one of which she caused after writing the rule against it.** What went well is RECOVERY, which is a different claim._
+
+### Q3 — Hypotheses for the next session, each with its falsifier
+
+- **H-T1 (thoth) — a ritual displaces the disciplines that are not part of it.** He announced every gate today *except* the one inside `finalize-session`. **Prediction: rule-lapses cluster inside named rituals (convene, finalize, release), not in ordinary work. Falsified if** next session's lapses are evenly distributed. **Cheap test:** ask each seat at finalize which standing rule they skipped and when.
+- **H-T2 (thoth) — a mutation test needs its own denominator.** He nearly reported his own ward as decoration on a mutation that had not landed. **Prediction: requiring every decoration check to state the property count before and after (2 → 0) catches ≥1 bad mutation next session. Falsified if** no decoration check has a mutation that fails to apply.
+- **H-T3 (thoth) — the zero-guard is ANTI-CORRELATED with the failure it is famous for.** It fires on a **zero** and is **silent on a plausible non-zero over the wrong population**, which is what actually bit him twice. **Prediction: shipped as-is, next session produces a wrong non-zero nobody catches WHILE everyone reports the guard as working. Falsified if** such an error is caught. **This is an argument for the guard shipping WITH its limit.**
+- **H-P1 (prospero) — a rule ratified at the altitude it was proposed will fail on first use.** The announce rule failed by ten seconds. **Prediction: any rule landed without asking "what makes this un-skippable?" fails within one session of landing. Falsified if** a rule landed as-worded survives a session unbroken.
+- **H-P2 (prospero) — LATENCY, not volume, is the measure of a lead's cadence.** thoth's reframe: *a lead who enjoys the loop and rules correctly produces the same transcript as one who does not.* **Prediction: "how long was a seat blocked waiting for a ruling" discriminates where message-count does not. Baseline this session: thoth reports ZERO, all session.** **Falsified if** a session with low lead volume shows the same zero latency — which would mean volume was never the variable.
+
+### ⚠ THREE UNREPRODUCED REDS, and only one has a cell name
+
+**`cassandra`'s own land went RED first and she used the day's discipline in anger:** named the cell, re-ran **that cell alone** (seconds, not a quiet window), and it passed.
+
+```
+P0b … "live 0 over snapshot 2, then --restore is REFUSED"   server.test.ts:2989, inside runOpen, [15004.99ms]
+isolated re-run  ->  1 pass · 0 fail          land attempt 2  ->  1336 / 0
+```
+
+**Verdict by the ratified discriminator: CONTENTION** — `15004.99ms` is a budget expiry, **timeout-shaped, which is what contention manufactures**, with three suites live.
+
+> **⛔ BUT SHE REFUSED TO FILE IT AS "just the flake", and the reason is specific: it is NOT `imago > marksUnseen freshness flag`. It is `runOpen` — the function thoth found could HANG rather than fail under a held pipe (card `t-c3060da7`). A 15-second budget expiry in that exact function is the symptom that hazard would produce.**
+>
+> **⭐ DIAGNOSED AFTER THE RETRO WAS WRITTEN, by `daedalus`, post-stand-down, about his own cell: NOT contention-vs-residue — an INSTRUMENT DEFECT.** His G7 cell budgets **15s**, and **a hang is UNBOUNDED while a slow boot is BOUNDED** — so under three suites `bounty open` legitimately exceeds it and the cell reports a hang about a process that terminates fine. **A false hang finding, manufactured by load, from the instrument built to catch hangs.**
+>
+> **It retro-explains the session's OTHER unnamed red too** — so **the team's "the known flake is `marksUnseen`" premise never explained either.** _A pre-supplied innocent explanation, believed by three seats, for three hours._
+>
+> **And he weakened his own earlier "2.5 pass CLEAN" in the same message:** he checked Contract 13's proofs and his restatements, **but did not re-read the cells he wrote as an authority on their own BUDGETS** — *"a number I chose on a quiet machine became wrong on a loaded one, and no gate could see it."*
+
+**Three unreproduced reds today** — daedalus's unnamed one, this one, and thoth's ward cleared at 5 clean runs. **Only this one has a cell name, and only because the rule forced it.**
+
+### Structure reflection
+
+- **⛔ circe unseated a THIRD round — and this is the round it became load-bearing.** `daedalus` had to edit `glamour/surface/state/reduce.ts` (her file) because #84's verdict originates in the reducer that owns the case list; he authored **Contract 13** there and annotated *why she was absent*. **thoth: _"'the engine seat writes surface contracts and apologises in the entry' is a convention forming by default."_** **Decide at the next convene: seat her, or move reducer-side `/cmd` ownership to engine explicitly.**
+- **The missing lens was MEASUREMENT DESIGN, and nobody owned it.** The flake rig, the cell-name capture, the file-count check, the three-bucket scheme, the mutation-denominator rule — **every one built mid-session by a seat whose card said something else.** **thoth explicitly does NOT propose a fifth seat:** _"in a hardening sprint, measurement design IS the work — not a missing lens, the whole sprint's lens, unassigned."_
+- **⚠ ONE BUILDER, and the verify seat was therefore a single point of failure.** `daedalus` owned all four lanes; `cassandra` was the only independent check on every line, and **during her flake measurement all verification stopped for ~20 minutes.** Her cold gates found real defects in P0b and P0d. **Had she been unavailable, nothing structural would have caught them.**
+- **thoth's scope is stated at the wrong ALTITUDE.** It names **artifacts**; the work is a **function** — *does the recorded claim still hold?* `grimoire/flag-invariant.test.ts` is now in his scope and **no line of his seat doc predicted a `.test.ts` would be.** **Fix: restate the scope as the function, not add a file to the list.**
+- **Verification of instruments happened FOUR-WAYS WITH NO OWNER** (`cassandra`) — thoth audited her G7 cell, daedalus audited her contention rule, she audited thoth's absence claims and daedalus's denominator. **"That worked — but it was emergent, not assigned, and it is the single most productive thing the team did."**
+- **`cassandra`'s scope is UNDER-described by the roster, not diverged from:** she ran the Contract 4 release rehearsal unasked **because the contract names this seat** — scope the roster does not mention and the seams file does. **And on circe: "I cannot judge what a surface seat would have caught, which is itself the answer — the missing lens is invisible from inside the seats that remain."**
+- **Collisions: near-zero again**, one mechanical stash collision. **Two suites ran concurrently TWICE**, the second time with the announce rule already in force.
+
+### Q4 — Did this session produce a PRINCIPLE?
+
+**HELD, not promoted — and the candidate was bounded by its own strongest advocate before it was proposed.**
+
+> **A ratified fact on the record is an instrument that audits instruments.**
+
+**It fired three times, unaimed** — daedalus's confident zero, cassandra's drain-schedule refutation, prospero's broken glob. **It is the only check that caught something for two seats who were not looking for it.**
+
+**But `thoth`'s H-T3 bounds it:** it fires on a **zero** and is **silent on a plausible non-zero over the wrong population** — which is the failure that actually bit him twice. **Promoting it unbounded would make it the next false reassurance**, which is the shape this sprint is named after.
+
+**Ruled: it goes to Q3 as H-T3 and is re-examined next session WITH its limit attached.** _A principle its own advocate has just bounded is either better for the bounding or not ready — and the SOP's rule that you never promote mid-session applies hardest when you like the candidate._
+
+**Two further candidates, recorded and NOT promoted:** *an artifact decays as the sprint it serves lands commits* (cassandra; extended by thoth — **a RULING is an invalidator too, and it arrives on the wire, not in `git log -S`**) · *a false reassurance gets no corrective feedback* (thoth — a wrong fact is corrected by the next person who looks; a sentence saying something need not be checked is only tested by someone who tries to reach it).
+
+---
+
 ## 2026-08-06 — spell-hardening, the P0 BUILD round
 
 **Seats:** prospero (lead) · daedalus (engine) · cassandra (verify) · thoth (grimoire). circe unseated again — no surface work; correct for a second round.

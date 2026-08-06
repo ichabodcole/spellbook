@@ -176,6 +176,11 @@ session by default; pass `--session <id>` to target a specific one.
 > - Every verb accepts `--session-key K` (or read it from
 >   `$BOUNTY_SESSION_KEY`), re-deriving the same id each time.
 >   `open --pin --session-key K` persists the derived id to `.bounty-session`.
+> - `--title`, `--timeout` and `--restore` configure a daemon **at spawn time**,
+>   so on the attach path they cannot take effect. `open` **refuses** (exit `2`)
+>   rather than attaching and discarding them, and every `open` envelope carries
+>   `restoreSkipped` — `null` when nothing was skipped, `{requested, reason}`
+>   when the refusal fired.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -190,6 +195,18 @@ session by default; pass `--session <id>` to target a specific one.
 > `bun run` fails with a confusing "module not found."
 
 ### Verbs
+
+> **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
+> free text would otherwise be read as a flag:
+> `add -- "fix the --stdin handler later"`. **Anything after `--` is a
+> positional, including something that looks like a flag** — it is consumed
+> silently, at exit 0, with no warning.
+>
+> **⚠ For this spell that is worse than silent: a `--session-key` placed after
+> `--` is eaten, and the write lands on whatever board the ambient environment
+> resolves to.** The invocation looks isolated and is not. **Correct:
+> `bounty add --session-key K -- "text"`. Never
+> `bounty add -- --session-key K "text"`.**
 
 | Verb                                                                                                                   | Does                                                                                                                                 |
 | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -225,9 +242,12 @@ echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Spr
 ### Read-back, not inference
 
 `cli.ts state` returns `{ state, cursor }` — the canonical board plus the
-current event cursor. After any write, read `state` to **confirm it applied**;
-you never have to render HTML or infer from the event stream. `cursor` is the
-resume point you hand to `tail --since <cursor>`.
+current event cursor; you never have to render HTML or infer from the event
+stream. `cursor` is the resume point you hand to `tail --since <cursor>`.
+
+**A write confirms itself** — the verb reports the daemon's `applied` verdict
+(non-zero exit + `applied: false` + a named `error` on a refusal), so `state` is
+for **reading the board**, not for checking whether your last write landed.
 
 **Scope it like `tail`.** On a shared board, `state --mine --as <you>` (or
 `--owner <name>`) filters the read-back to your own + claimable tasks — the
@@ -676,9 +696,15 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
   by the shell if passed as a positional argument. Pipe them through `--stdin`
   instead — it reads the body verbatim, defeating the quoting problem that used
   to require an inline-script seed dance.
-- **Read `state` to confirm, don't assume.** A `cli.ts add`/`update` returns
-  `{ok:true, sent:…}` — that's a transport ack, not proof the daemon applied
-  your intent. When it matters, follow with `cli.ts state` and check the board.
+- **A write verb tells you whether it took.** Every write (`add`, `update`,
+  `claim`, `block`/`unblock`, `remove`, `message`, `close`) reports the daemon's
+  `applied` verdict: on success it exits `0`; on a refusal it exits non-zero and
+  prints an envelope carrying `applied: false` and an `error` naming the reason.
+  A duplicate `--id` is a refusal — the board is left unchanged and the existing
+  task keeps its id. **You no longer need a follow-up `state` to find out
+  whether a write landed;** read the exit code, or `applied` if you are parsing
+  stdout. `state` remains the way to read the board, not the way to confirm a
+  write.
 - **Don't merge tail's stderr into stdout.** Monitor notifies on every stdout
   line; the keepalive tick + diagnostics ride stderr by design. `2>&1` turns
   every keepalive into a spurious notification. Leave them split.

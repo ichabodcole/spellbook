@@ -61,6 +61,86 @@ that bite if unknown; for full Bun API docs read
   `.tsx`/`.jsx`/`.js` directly and Bun bundles them; `<link>` to CSS/Tailwind
   bundles too. Full React/CSS/Tailwind support, no separate bundler.
 
+## Landing work — branches, merges, and the PR message
+
+> **⚠ This section OVERRIDES the merge defaults in any plugin skill.**
+> `project-docs:finalize-branch` defaults to **squash-merge**. **Do not squash
+> in this repo unless the test below passes.** Plugin skills supply the
+> _trigger_; this file supplies the _content_ — the same split as `gate` in
+> `.anthill/config.json`, which has no default on purpose.
+
+**Flow:** feature branch off `develop` → **named merge** into `develop` → push →
+PR `develop` → `main` → merge → pull `main`, merge into `develop`, push.
+
+### Do NOT squash a feature branch. Merge it, and name the merge.
+
+**Squashing is only correct when BOTH are true:**
+
+1. **Nothing cites a sha from the branch** — not in `docs/`, not in `.anthill/`,
+   not in a commit body. _Check: `git log <base>..HEAD --format=%h`, then `git grep` each over
+   TRACKED paths only — an earlier figure of "32" counted untracked scratch and
+   was wrong._
+2. **There is one author** — no `Anthill-Seat:` trailers to destroy.
+
+**Neither holds for agent-team work, and the numbers are not marginal.** Sprint
+02 of spell-hardening: **10 of 60 shas cited in live documents**, four seats'
+trailers. Squashing would have broken 32 references **to the anti-drift
+mechanism this project deliberately adopted** — plans pin `file:line` claims to
+shas precisely because line numbers rot.
+
+```
+git merge --no-ff <branch> -m "<subject>" -m "<body>"
+```
+
+### Reading history — two queries, two questions
+
+```bash
+# what FEATURES landed          (~22 entries)
+git log --merges --format='%h %ci %s' | grep -v "Merge pull request"
+
+# what RELEASES shipped         (main's spine)
+git log --first-parent main --format='%h %ci %s'
+```
+
+> **⚠ `--first-parent develop` does NOT work here and is a trap.** The
+> `develop`→`main` PR merge is created **on main**, so its first parent is main
+> and its second is develop. The back-merge then **fast-forwards** develop onto
+> that commit — so develop adopts **main's** spine and every named feature merge
+> drops to a second parent, invisible to `--first-parent`.
+
+### The PR message is written by a FRESH agent, from the tree
+
+**Not by the lead of the session that did the work.** The lead knows what was
+_interesting_ (the falsifications, the instrument failures — that is the
+**retro**); it does not reliably know what was _delivered_.
+
+**And the reconstruction is the point:** a fresh agent reading the tree is doing
+exactly what a future reader will do. **If it cannot write a good message from
+the artifacts, that is a finding about the docs, not about the agent** — and you
+want that at merge time. _Same rule as the cold reviewer: give it the tree, not
+the wire._
+
+**Dispatch it with the branch and the base and nothing else.** No session log,
+no summary. It reads `git log`, the diff, and the project docs, then writes:
+
+- **subject** — what shipped, in the USER's terms. ✅
+  `bounty close --help no longer closes the board` ❌ `P0c parser conversion`
+- **body** — what it was for · what was delivered · decisions a reader needs ·
+  **what it deliberately does NOT reach.** Short. Not a changelog.
+
+```bash
+gh pr create --base main --head develop --title "<subject>" --body-file <file>
+```
+
+**⛔ The agent CREATES the PR. Cole MERGES it.** `gh pr merge` lands on `main`
+and triggers release-please — that is the release, and the release is Cole's.
+**When merging, pass the subject** so the release spine is named rather than
+`Merge pull request #NN`:
+
+```bash
+gh pr merge --merge --subject "<subject>" --body-file <file>
+```
+
 ## Where the canon lives
 
 - **What a spell is, and why** —

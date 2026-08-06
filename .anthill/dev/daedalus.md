@@ -14,17 +14,21 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> A lesson fires only when you RECOGNISE the situation, and a bulk mechanical edit is where recognition fails — so when one change goes to N files, open all N; write down what your instrument cannot see; and treat a cell that would look identical if the fix were absent as a finding, not a pass.
+> Every total you write — a count, an "all", an "every", a bare "them" — is a claim about a POPULATION, so name the population and how you enumerated it in the same breath; you will not catch this by re-reading your own sentence, because each of these numbers is individually TRUE.
 
-_(Written 2026-08-06 at the close of the P0 build round. It is three clauses because I earned each one separately in six hours and I will not pretend they collapse.)_
+_(Written 2026-08-06 at the close of sprint 02, "success-shaped lies". It supersedes my predecessor's — which fired again this session and is still true; see the lineage at the bottom for why it moved rather than why it lost.)_
 
-_The first clause is the one that cost most. I diagnosed at `join.ts` that `process.exit` was doing double duty, reverted rather than ship a hang, and wrote it into this doc — then four commits later applied the same one-liner to eight files **by script** and shipped a 91-second hang in `glamour open`. **The lesson did not fail to be known; it failed to be TRIGGERED**, because a sweep does not feel like the situation the lesson describes. It feels like typing._
+_**The scar is that it happened FIVE times in one session, in five costumes, and I caught exactly one of them.**_
 
-_The second is what actually caught me, twice, within seconds — a wrong claim carrying "this is `scripts/*.test.ts` only" retracts itself; one that doesn't, propagates, and three peers reproduced my error with three self-authored commands because my claim had told them where to look._
+- _`45 process.exit( sites` — 45 grep HITS, 35 code sites; ten were the previous sprint's own remediation comments. **Every fix we ship increments the count of sites that look unfixed.** (I caught this one, by committing an eleventh.)_
+- _`38 return sites` in imago — over a line range I GUESSED. The function had 4; the other 34 were in a different function. 28 tests red._
+- _`no evidence on either axis` for a flag — I had two axes and treated two as ALL. It had four help-text references. (thoth caught it.)_
+- _`1-in-2 against her 0-of-4` — three figures, three populations, different suite sizes. (cassandra caught it.)_
+- _`I'll clear THEM by exact PID` — "them" presumed a clean set; of 18 daemons, three were hard NOs including the live team board. (I caught this one only by enumerating before acting.)_
 
-_The third is the one I nearly failed at the very end: I drove my own fix and got a 799-byte board that parses with or without it, and almost reported it green._
+_**Not one of these was carelessness, and that is the whole point** — each number was a real measurement of something, just not of the thing the sentence built on it claimed. **The instrument that worked, every single time, was another person asking "of what?"** Re-reading my own sentence never did it, because the sentence was true._
 
-_Two predecessors' lines are folded in, not discarded: "measure the claim you are most confident about" and its own successor were both correct, and neither stopped me — because both describe a DISPOSITION, and every failure above happened during an act that felt like mechanism rather than judgement. That is the part I would tell you if I could only say one thing._
+_**So the disposition, and it is the one thing I would say if I could say nothing else:** the totalizing word is the tell. When you write **all · every · none · both · them · N of N**, you are asserting completeness over a set — stop there and say what the set is and how you got it. **A total is the one kind of claim whose falsity is invisible from inside the sentence that makes it.**_
 
 ## Who I am
 
@@ -503,3 +507,78 @@ SEAM 3's honest upgrade path, if a delta ever needs to cover more: `proposals.up
 `title:` refs deliberately do NOT resolve in `ratify-batch`'s `anchors[]` (node/parent refs) — one intake resolution site this round, and an anchor failure lands at the human's ruling act. If anchors get hand-wired as often as edges were, that's the next candidate; resolve it at the same intake-vs-ruling argument.
 A `batchId` on RATIFY-BATCH (grouping a ruling act the way SEAM 1 groups a staging act) was not built — and note that ratify-batch deliberately still takes explicit ids only, per R6's no-auto-include ruling, which is also why `state --batch` feeding straight into a sweep was refused.
 Bun test passing is not a typecheck: `tsc --noEmit` still gates test files — `Bun.serve().port` is `number | undefined` (narrow once in the helper, not per call site) and `Record<string, unknown>` fields need an `as string` before `toContain`; run the tsc sweep on new test files before handing off.
+
+**THE BOUNDARIES OF A LINE RANGE ARE A MEASUREMENT, NOT AN OBSERVATION — and this is my epitaph's first clause in the costume I did not recognise.**
+Converting imago's `handleAgentMsg` to return a verdict, I enumerated its early `return;` sites over lines **498–1155**, a range I GUESSED from where the if-chain appeared to end, got **38**, and converted them mechanically.
+The function ends at **619** and has **4**. The other 34 were in `handleBrowserMsg` — a different function, serving the WebSocket, whose callers have no response to carry a verdict. My terminal `else { return false }` landed there too, so `handleAgentMsg` declared `Promise<boolean>` and returned `undefined` on every success: 28 tests red, all saying `/cmd batch.add failed: 400`.
+**The break was loud, which is the only reason it cost twenty minutes instead of shipping.** Had `handleBrowserMsg` returned anything truthy, the identical edit would have produced a silently over-broad verdict and every guard I had written would still have passed.
+**The tell I walked past:** I found "two if-chains in one function", called it a curiosity, and built an elaborate model on top of the wrong premise — I wrote a comment reasoning about "chain 1 vs chain 2". **A second chain at the same indent IS the signature of a second function.** `grep -n "^  function"` ends it in one command; it is what I ran FIRST for magpie afterwards and it took ten seconds.
+Rule: **enumerate the CONTAINERS, then the sites within one container.** And note the same class bit me in miniature in the same edit — two sites with trailing comments that my `endswith("return;")` filter could not see — **which I caught, seconds before missing the bigger one. Catching one instance of a class does not inoculate you against the next.**
+Pin: imago server.ts handleAgentMsg/handleBrowserMsg, commit 14bec41.
+
+**WHEN A GATE CELL PASSES IN BOTH WORLDS, STOP EDITING THE CELL AND GO MEASURE THE MECHANISM.**
+P0f's plan specified the fixture: _"ONE EVENT whose payload exceeds 64 KiB"_, driven through `sh -c "… | cat"`. I built exactly that; it passed with the bug restored. I widened the payload 10× and shortened the timing; **it passed again.** My instinct both times was to adjust the fixture.
+Measuring instead: bug present, 10 MB of replay through `| cat`, closing at 0.02/0.05/0.15/0.3/1.0s → **10001074 bytes, complete, at every timing** — byte-identical to the fixed build.
+**The discriminating variable was never the payload size. It is whether bytes are UNDRAINED at the instant of exit.** A consumer that keeps reading lets each write complete before the next arrives, and the write immediately preceding a `tail`'s exit is the small `closed` frame. Through a NON-draining consumer (`| ( sleep 2; cat )`): **65536 with the bug, 3000440 with the fix.**
+Generalises past this defect: **a plan's fixture spec is a claim like its mechanism is.** Two failed cells in a row is not a fixture-tuning problem, it is the signal that the stated variable is not the operative one. The cheapest next move is a direct measurement of the phenomenon, not a third cell.
+Pin: bounty server.test.ts P0f cell (the comment carries the five timings), commit 2334ed2; the amendment it forced is now gate law.
+
+**A LABEL IS A CLAIM ABOUT A MEASUREMENT AND CANNOT BE ASSIGNED BEFORE THE MEASUREMENT — I got this wrong TWICE in one session, in two lanes.**
+P0b: I put `restoreSkipped` assertions inside a cell named `BLAST-RADIUS GUARD`. That field does not exist pre-fix, so the cell could not pass in the buggy world — a RED cell wearing a guard's label.
+P0d: I labelled a cell `RED PRE-FIX` whose own inline comment said _"the daemon already reported the truth here"_ — it passes pre-fix and is a guard.
+**Both times the mutation run caught it, and both times my own comment contained the correct information while the label contradicted it.** The mechanism is that writing the assertions and choosing the label are ONE act, so the label records intent rather than behaviour.
+The remedy is not care: it is that **the mutation run audits the LABELS, not only the code**, and a label is provisional until it has run in both directions.
+
+**A CONFIDENT ZERO FROM A BROKEN INSTRUMENT — caught only because it disagreed with something already ratified.**
+Deriving which spells can pin a CLI process, I asked "which test files both spawn AND reference `cli.ts`?" and got **zero for all four spells**. That would have made every P0f site driven-only. It was wrong: astrolabe spawns through a `const CLI = join(...)`, so the literal `cli.ts` never appears on the spawn line.
+**Nothing about the result looked broken** — a zero is a well-formed answer. I only re-checked because it contradicted a fact the team had already ratified, and opening the four files gave the true split.
+Generalises: **a zero deserves the same suspicion as a surprising positive**, and the practical trigger is that a result which contradicts an established fact is a claim about your instrument first and about the world second.
+
+**A REMEDIATION'S OWN COMMENTS INFLATE THE COUNT OF SITES THAT LOOK UNREMEDIATED.**
+The sprint's inherited denominator — "45 non-test `process.exit(` sites" — is **45 raw grep hits but 35 code sites**; ten are sprint 01's own explanatory notes (`// process.exitCode + a natural return, NEVER process.exit(code)`). Two files (`digestify/review.ts`, `magpie/discover.ts`) have raw=1/code=0: their only hit is the comment left by the fix, and `magpie/discover.ts` was explicitly ruled OUT of that sprint — so a future enumeration re-finds a site that was correctly excluded and re-litigates a closed ruling.
+**I found it by committing one:** my own P0b comment took `bounty/cli.ts` from 4 hits to 5.
+This is the inverse of the failure already in this doc. I had "an audit anchored on a literal grep inherits that grep's blind spot" filed as **under**-counting via a synonym; this is **over**-counting via the fix's own prose. **Every site we repair increments the count of sites that look unrepaired.**
+
+**A PERMISSIVE PARSER LETS TESTS ACCUMULATE ASSERTIONS ABOUT FLAGS THAT DO NOT EXIST, AND EVERY ONE READS AS COVERAGE.**
+Converting imago's parser to a strict registry turned its own `cli.test.ts` red: it asserted the `=` form using `--text=a=b=c`, and **imago has never had a `--text` flag** — not in the audited artifact, not in the source. It was an arbitrary stand-in that worked only because the old parser accepted whatever it was handed.
+**The test was green BECAUSE of the defect.** It is not collateral damage from the fix; it is a second instance of the same defect, sitting in the suite, invisible.
+**There is no way to find these by inspection** — a test of a non-existent flag is textually identical to a test of a real one. **The conversion is the enumerator.** So when you add a registry to a permissive parser, expect the defect in the test suite too, and read each red as a finding rather than as breakage.
+Pin: imago/tests/cli.test.ts, rewritten against `--options` plus a cell asserting `--text` is now refused by name; commit e7504cf.
+
+**A RED UNDER CONTENTION IS NOT AUTOMATICALLY UNINTERPRETABLE — the discriminator is whether contention could produce THAT CAUSE.**
+The team ruled that a green under machine contention stands (contention makes false reds, not false passes) and that a red is uninterpretable. My P0c gate went red while a peer's four measurement arms were live, and I was one step from re-running it under that rule.
+It would have been wrong: the red was **deterministic, reproduced in 17ms in isolation, and named its cause** — `Unknown option '--text'`, one flag, one file. Contention manufactures timeouts, refused connections and port collisions; it cannot manufacture that.
+**The rule as first written pre-supplied "probably contention" as the innocent explanation for a red that was actually a finding** — the mirror of the failure it was written to prevent. Accepted and extended by the verify seat: an ambiguous red needs THE CELL re-run in isolation, not a quiet machine.
+Generalises: whenever a rule tells you to discount evidence, ask whether the discount's mechanism could actually produce what you are looking at.
+
+**THE LAST ENTRY POINT IN A SWEEP IS THE ONE THE AUDIT CANNOT SEE — and it can carry several independent cloaks at once.**
+`glamour/server.ts` was the sixth of six flag parsers and had THREE, any one of which returns a confident zero to a reasonable audit: it has **zero `flags.` reads** (so a `flags.`-pattern sweep finds nothing), it reads **`Bun.argv`** not `process.argv` (the synonym already recorded above), and it is a **lookup** parser (`args.indexOf("--" + name)`, value = `args[i+1]`) rather than an accumulator.
+It carried exactly the bug that shape predicts: `flag()` returned `args[i+1]` unconditionally, so `--restore --title X` yielded `restore === "--title"` — the next FLAG silently eaten as the previous flag's VALUE.
+This is why the lane insisted on tracking by ENTRY POINT and never by spell: glamour's `cli.ts` and `server.ts` are two different parsers, so a per-spell checklist marks glamour done with a live defect still in it.
+**Corollary before converting any daemon's parser to strict: check what its own spawner passes it.** Strict rejects unknown flags including the ones its sibling CLI hands it at launch, and that failure lands at spawn time where nothing catches it.
+
+**ANNOUNCING AN ACTION AND TAKING IT IN THE SAME BREATH IS NOT AN ANNOUNCEMENT.**
+The team adopted "announce the START of a full gate, not just the land", after two suites collided. My first compliance put the `comms send` and the gate in ONE shell invocation — so the announcement and the thing it announced were simultaneous, and there was never an interval in which anyone could object. A peer asked me to hold and could not be heard, because my suite was already running when her message existed.
+**I satisfied the letter of a brand-new rule while removing the only property that makes it work.** Same shape as a falsifier you name but do not run: it buys the check's credibility without paying for it.
+The fix is one word — announce, then WAIT — and the general form is that a check with no gap between the check and the act is a log line, not a check.
+
+**THE DENOMINATOR IS A PROPERTY OF THE QUESTION, NOT OF THE POPULATION.**
+Four times in one sprint two people held different true counts of the same things: 112 vs 118 vs 169 vs 249 on flags, 44 vs 45 and then 45 vs 35 on exit sites, 118 vs 119, and 119 vs 115.
+The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts distinct flag names PER SPELL**, and glamour's `intent restore timeout title` appear in two parsers. For "is each parser's declaration exercised?" 119 is correct and 115 would credit one parser for another's coverage. For "how many flags does the toolbox expose?" 115 is correct and 119 is inflated by four. **Neither number is wrong; they answer different questions.**
+So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
+
+## Epitaphs — the lineage
+
+**2026-08-06, close of the P0 build round (superseded 2026-08-06, close of sprint 02):**
+
+> A lesson fires only when you RECOGNISE the situation, and a bulk mechanical edit is where recognition fails — so when one change goes to N files, open all N; write down what your instrument cannot see; and treat a cell that would look identical if the fix were absent as a finding, not a pass.
+
+**Why it moved, and it is NOT because it stopped being true — it is because it kept being true and I violated it anyway.** All three clauses fired again in sprint 02:
+
+- **Clause 1 (bulk edits):** I enumerated imago's early returns over a line RANGE I guessed rather than measured, and converted 38 sites of which 4 were real. **A line range is a bulk edit that does not look like one** — the clause says "when one change goes to N FILES, open all N", and this went to one file, so it never triggered.
+- **Clause 2 (name your instrument's blind spot):** did the work it promises, repeatedly. It is why the `45 → 35` denominator finding exists at all.
+- **Clause 3 (the vacuity trap):** caught me twice more — a P0f gate cell built to the plan's stated fixture passed against the restored bug, and I widened the payload and it passed again, before I stopped editing the cell and measured the mechanism instead.
+
+**So it is demoted only in the sense that a successor must pick ONE.** The new one wins on frequency and on blindness: clause 1's failure was loud (28 red tests), while an unenumerated total is silent, ships, and gets quoted by other people — and it happened five times in one session against clause 1's once.
+
+**Read both. The lineage is not an archive of things that stopped mattering.**

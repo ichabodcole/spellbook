@@ -24,6 +24,7 @@ import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { parseArgs as nodeParseArgs } from "node:util";
 import { optimizeImageDataUrl } from "../surface/state/imageOptimize.server";
 
 const SCRIPT_DIR = dirname(Bun.fileURLToPath(import.meta.url));
@@ -92,36 +93,81 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value` or boolean `--flag`.
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+//
+// This parser already split on the first `=`. What it lacked was a REGISTRY:
+// an unknown flag was accepted at exit 0 and the verb ran anyway, and free
+// prose containing a `--word` was silently truncated at that word. `node:util`
+// strict supplies rejection and the `--` terminator alongside the `=` handling.
+//
+// ⚠ `--restore` HAD NO CORRECT TYPE and this is the sprint's one genuine design
+// blocker, RULED BY COLE. It was BOOLEAN in `style-archive` (`archived:
+// flags.restore !== true`) and STRING in `open`'s daemon spawn — one flag name,
+// two incompatible types, one options map. Declaring it boolean sends `open`'s
+// id to positionals and forwards `--restore true`, so the daemon hunts a
+// snapshot named "true"; declaring it string makes `style-archive <id>
+// --restore` swallow the next positional, which is this sprint's own defect
+// class re-introduced by its fix.
+//
+// Ruled: rename the BOOLEAN one. `--restore` keeps the house-wide string
+// spelling it shares with bounty, imago, magpie and glamour's own server.ts;
+// `style-archive` takes `--unarchive`, which names the inverse of archive
+// better anyway. It also kills a live bug BY CONSTRUCTION: `flags.restore !==
+// true` meant `style-archive <id> --restore foo` ARCHIVED instead of restoring,
+// at exit 0, with no signal.
+const CLI_OPTIONS = {
+  colors: { type: "string" },
+  content: { type: "string" },
+  cost: { type: "string" },
+  custom: { type: "string" },
+  file: { type: "string" },
+  intent: { type: "string" },
+  kind: { type: "string" },
+  label: { type: "string" },
+  model: { type: "string" },
+  note: { type: "string" },
+  prompt: { type: "string" },
+  prompts: { type: "string" },
+  restore: { type: "string" },
+  round: { type: "string" },
+  seed: { type: "string" },
+  session: { type: "string" },
+  since: { type: "string" },
+  src: { type: "string" },
+  "start-timeout": { type: "string" },
+  status: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+  url: { type: "string" },
+  full: { type: "boolean" },
+  "no-open": { type: "boolean" },
+  unarchive: { type: "boolean" },
+} as const;
+
+export class UsageError extends Error {}
+
 export function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
-  const pos: string[] = [];
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith("--")) {
-      const body = a.slice(2);
-      // `--key=value` (equals form) — split on the FIRST `=`
-      const eq = body.indexOf("=");
-      if (eq >= 0) {
-        flags[body.slice(0, eq)] = body.slice(eq + 1);
-        continue;
-      }
-      // `--key value` (space form) — consume next arg unless it's another flag
-      const key = body;
-      const next = args[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    } else {
-      pos.push(a);
-    }
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args,
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+    return { pos: positionals, flags: values as Record<string, string | boolean> };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new UsageError(
+      `${detail}\n` +
+        `  recognized flags: ${Object.keys(CLI_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n` +
+        `  for free text containing dashes, put it after a bare --`,
+    );
   }
-  return { pos, flags };
 }
 
 export function buildSayCmd(
@@ -251,7 +297,7 @@ export function buildStyleArchiveCmd(
   return {
     type: "style.archive",
     id: pos[0],
-    archived: flags.restore !== true,
+    archived: !flags.unarchive,
   };
 }
 
@@ -496,8 +542,25 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
         try {
           const ev = JSON.parse(payload) as { id?: number; type?: string };
           if (typeof ev.id === "number" && ev.id > since) since = ev.id;
+          if (ev.type === "closed") {
+            // P0f — SHAPE B: the drain callback rides THIS write, so it fires
+            // on this write's completion. NOT a trailing `write("", cb)` — a
+            // drain callback covers only its own write and is not a barrier
+            // (measured byte-for-byte as broken as no fix), and that is exactly
+            // the helper this write-then-exit shape invites.
+            //
+            // PER-SITE PRECONDITION, read at THIS site rather than carried over
+            // from a sibling: the exit sits inside `while (!stopped)` ->
+            // `while (true)` -> the frame loop, so `process.exitCode` + a
+            // natural return (shape D) does NOT leave the tail — it falls
+            // through and the loops go round again. The explicit `return` is
+            // what exits the loops; the callback is what drains. Both, for
+            // different reasons.
+            process.stdout.write(`${payload}\n`, () => process.exit(0));
+            stopped = true;
+            return;
+          }
           process.stdout.write(`${payload}\n`);
-          if (ev.type === "closed") process.exit(0);
         } catch {
           /* skip malformed frame */
         }
@@ -542,7 +605,19 @@ const HELP = `glamour — a grounded visual conversation surface.
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  const { pos, flags } = parseArgs(rest);
+  // A usage failure returns 2 rather than exiting, so the runtime drains stdout
+  // — an explicit process.exit is the drained-exit defect the sibling lanes of
+  // this sprint exist to remove. Uncaught, it would also surface as a raw stack
+  // trace at exit 1, which is not a usage error to anyone reading it.
+  let pos: string[];
+  let flags: Record<string, string | boolean>;
+  try {
+    ({ pos, flags } = parseArgs(rest));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`glamour: ${e.message}\n`);
+    return 2;
+  }
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
   switch (verb) {

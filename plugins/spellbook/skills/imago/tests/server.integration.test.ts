@@ -1201,3 +1201,52 @@ describe("variant.remove", () => {
     ws.close();
   });
 });
+
+// ── P0d / #84 — /cmd must not answer ok before it knows ──────────────────
+//
+// ⚠ imago is THE DISPROOF that this is an `await` bug, and that is why these
+// cells assert the VERDICT and never the presence of an `await`. This spell's
+// handler was async AND its route already awaited it correctly — and it
+// answered {"ok":true} to commands it dropped anyway, because the handler
+// returned nothing for the route to propagate. An `await`-shaped check passes
+// here TODAY, unfixed, which is exactly what makes it the wrong check.
+test("RED PRE-FIX — a bogus /cmd type is refused, not answered ok", async () => {
+  const s = await spawnDaemon();
+  const r = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "zzz-not-a-real-command" }),
+  });
+  const body = (await r.json()) as { ok?: boolean; applied?: boolean };
+  expect(body.ok).not.toBe(true);
+  expect(body.applied).toBe(false);
+});
+
+test("BLAST-RADIUS GUARD — a valid command still answers ok, and malformed JSON still fails", async () => {
+  // ⚠ GREEN TODAY, MUST STAY GREEN. A recognised command that is a legitimate
+  // no-op must ALSO still answer ok — the verdict is "was the type recognised",
+  // deliberately not "did state change", so that guarded branches inside the
+  // handler do not start reporting failure at working callers.
+  const s = await spawnDaemon();
+  const ok = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "say", text: "probe" }),
+  });
+  expect(((await ok.json()) as { ok?: boolean }).ok).toBe(true);
+
+  // `say` with an empty text is RECOGNISED but inert — still ok, by design.
+  const inert = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "say", text: "" }),
+  });
+  expect(((await inert.json()) as { ok?: boolean }).ok).toBe(true);
+
+  const bad = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{not json",
+  });
+  expect((await bad.json()) as { error?: string }).toMatchObject({ error: "bad json" });
+});
