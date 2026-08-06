@@ -3255,3 +3255,147 @@ describe("P0b — the snapshot facts the construction rests on", () => {
     }
   }, 40000);
 });
+
+// ── P0d / #83 — `add` was the only write verb that ignored `applied` ──────
+//
+// ⛔ THIS GATE REPLACES A DEFECTIVE ORIGINAL, which read: "`add` with a
+// duplicate --id exits non-zero AND a subsequent `state` does not show the
+// task." That is an INVERTED CONTROL — it FAILS against a correct fix. On a
+// duplicate id `applyTaskAdd` returns false without touching state, so the
+// ORIGINAL keeps that id by construction; the only implementation satisfying
+// the old cell's literal reading is one that also destroys the original. A gate
+// whose plain reading fails the correct implementation is worse than a
+// decorative one: decoration passes silently, this produces a false FAIL and
+// dispatches a builder to "fix" code that is already right.
+//
+// Labels below, and they are NOT all discriminating: 1 RED PRE-FIX + 2
+// BLAST-RADIUS GUARDS. Reporting "3 cells green" would be a coverage claim
+// three times its true size.
+describe("P0d #83 — a duplicate add is a REFUSAL, not a silent success", () => {
+  test("RED PRE-FIX — duplicate --id exits non-zero and the envelope says applied:false", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const first = await runCli(
+        ["add", "ORIGINAL TITLE", "--id", "dup-probe", "--owner", "alice", "--session", session],
+        { env },
+      );
+      expect(first.code).toBe(0);
+
+      // Today: {"ok":true,"sent":"task.add"} at exit 0 — the success-shaped lie.
+      const second = await runCli(
+        ["add", "IMPOSTOR TITLE", "--id", "dup-probe", "--owner", "bob", "--session", session],
+        { env },
+      );
+      expect(second.code).not.toBe(0);
+      const envelope = JSON.parse(second.stdout) as { applied?: boolean; error?: string };
+      expect(envelope.applied).toBe(false);
+      // The reason is named, not merely signalled — `applied:false` alone
+      // conflated an invalid shape with a taken id and told the caller neither.
+      expect(envelope.error).toContain("dup-probe");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 40000);
+
+  test("BLAST-RADIUS GUARD — the surviving row is the ORIGINAL, field for field", async () => {
+    // ⚠ ALREADY TRUE PRE-FIX. Do not try to make it red. It catches a fix that
+    // "resolves" the duplicate by overwriting — the failure mode the retired
+    // literal reading could not see at all, and one that only the change itself
+    // can introduce.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(
+        ["add", "ORIGINAL TITLE", "--id", "dup2", "--owner", "alice", "--session", session],
+        { env },
+      );
+      const before = JSON.parse(
+        (await runCli(["state", "--session", session], { env })).stdout,
+      ) as {
+        state: BoardState;
+      };
+      const original = before.state.tasks.find((t) => t.id === "dup2");
+
+      await runCli(
+        ["add", "IMPOSTOR TITLE", "--id", "dup2", "--owner", "bob", "--session", session],
+        { env },
+      );
+      const after = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+      };
+      const survivor = after.state.tasks.find((t) => t.id === "dup2");
+      expect(survivor).toEqual(original);
+      expect(survivor).toMatchObject({ title: "ORIGINAL TITLE", owner: "alice", status: "todo" });
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 40000);
+
+  test("BLAST-RADIUS GUARD — task count AND cursor unchanged by the refusal", async () => {
+    // ⚠ ALSO ALREADY TRUE PRE-FIX. The cursor is the cheapest strong tell that
+    // the daemon REFUSED rather than applied-then-reverted: an apply would have
+    // emitted an event and advanced it. Worth keeping for exactly that, and not
+    // evidence that the fix works.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "one", "--id", "c1", "--session", session], { env });
+      const before = JSON.parse(
+        (await runCli(["state", "--session", session], { env })).stdout,
+      ) as {
+        state: BoardState;
+        cursor: number;
+      };
+      await runCli(["add", "impostor", "--id", "c1", "--session", session], { env });
+      const after = JSON.parse((await runCli(["state", "--session", session], { env })).stdout) as {
+        state: BoardState;
+        cursor: number;
+      };
+      expect(after.state.tasks).toHaveLength(before.state.tasks.length);
+      expect(after.cursor).toBe(before.cursor);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 40000);
+
+  // ⚠ LABEL CORRECTED AFTER MEASUREMENT — it read RED PRE-FIX and it is not.
+  // This cell passes pre-fix, because the DAEMON already answered honestly;
+  // #83's defect was the CLI discarding that answer, and this cell drives the
+  // daemon directly. The comment inside it said so while the label contradicted
+  // it — the second time in one session I wrote the label and the assertions in
+  // one act and the label recorded my INTENT rather than the cell's measured
+  // behaviour. A label is a claim about a measurement and cannot be assigned
+  // before the measurement is taken.
+  test("BLAST-RADIUS GUARD — an UNRECOGNISED command type still answers applied:false", async () => {
+    // bounty's own instance of #84's shape: the daemon's dispatch ends in
+    // `return {ok:true, applied:false}` for any type it does not recognise, and
+    // the CLI's generic path printed the transport ack regardless. This drives
+    // it through the real wire rather than the CLI, because no CLI verb can
+    // send an unknown type — the defect lives at the /cmd contract.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "30"], { env });
+    const board = JSON.parse(open.stdout) as { session_id: string; port: number };
+    try {
+      const r = await fetch(`http://127.0.0.1:${board.port}/cmd`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "zzz-not-a-real-command" }),
+      });
+      const body = (await r.json()) as { ok?: boolean; applied?: boolean };
+      // The daemon already reported the truth here; #83 is that the CLI threw
+      // it away. Pinning it means a future dispatch refactor cannot quietly
+      // start answering `applied:true` to a command it drops.
+      expect(body.applied).toBe(false);
+    } finally {
+      await runCli(["close", "--session", board.session_id], { env });
+    }
+  }, 40000);
+});

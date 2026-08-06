@@ -336,6 +336,34 @@ async function postCmd(
   return (data ?? {}) as CmdResult;
 }
 
+// #83 — honour the daemon's verdict for every verb that has no bespoke result
+// handling. A FUNNEL, deliberately, rather than the same three lines pasted at
+// four call sites: a prose convention ("remember to check `applied`") is not
+// inheritable and is exactly how `add` came to be the odd one out among five
+// write verbs. A future verb inherits the contract by routing through here.
+//
+// The `applied === false` test is explicit, not truthiness: a daemon that omits
+// the field entirely (an older build, or a command type it answers without a
+// verdict) must keep its ack rather than being reported as a failure — absent is
+// not the same as false, and conflating them would turn a version skew into a
+// storm of fake errors.
+// The failure ENVELOPE carries `applied: false` on stdout, beside the non-zero
+// exit and the human line on stderr — the same two-channel shape P0b's refusal
+// uses. The exit code is what a `set -e` wrapper or a Monitor catches; the
+// envelope is what an agent parses. Reporting only on stderr would leave a
+// stdout reader with an empty payload, which is indistinguishable from a verb
+// that produced no output for a benign reason.
+function ackOrFail(type: unknown, res: CmdResult): number {
+  if (res.applied === false) {
+    const error = res.error ?? `the daemon did not apply ${String(type)} — the board is unchanged`;
+    printJson({ ok: false, applied: false, sent: type, error });
+    process.stderr.write(`bounty: ${error}\n`);
+    return 1;
+  }
+  printJson({ ok: true, sent: type });
+  return 0;
+}
+
 function newTaskId(): string {
   return `t-${crypto.randomUUID().slice(0, 8)}`;
 }
@@ -865,7 +893,22 @@ async function main(argv: string[]): Promise<number> {
       if (addSize) task.size = addSize;
       const addExpect = parseExpect(flags.expect);
       if (addExpect !== undefined) task.expect = addExpect;
-      await postCmd(session, { type: "task.add", task }, { as });
+      // #83 — `add` was the ONLY write verb that discarded the daemon's verdict:
+      // update/claim/block/unblock/remove all read it. So this is an oversight
+      // corrected to match its four siblings, not a new convention.
+      //
+      // No no-op branch here, unlike `update`. `update` has a legitimate
+      // applied:false (the task already held the value); `add` does not — a
+      // refusal means the shape was invalid or the id was taken, and both are
+      // real failures. The daemon names which.
+      const res = await postCmd(session, { type: "task.add", task }, { as, quiet: true });
+      if (!res.applied) {
+        const error = res.error ?? `task ${task.id} was not added`;
+        printJson({ ok: false, applied: false, id: task.id, error });
+        process.stderr.write(`bounty: ${error}\n`);
+        return 1;
+      }
+      printJson({ ok: true, added: task.id });
       break;
     }
     case "update": {
@@ -969,8 +1012,16 @@ async function main(argv: string[]): Promise<number> {
     case "message": {
       const text = flags.stdin === true ? await readStdin() : pos.join(" ");
       if (!text) die("usage: message <text...> [--stdin]");
-      await postCmd(session, { type: "message", text }, { as });
-      break;
+      // DECIDED EXPLICITLY (plan step 2), and recorded because "we checked it"
+      // and "it cannot fail" are different claims: the daemon answers `message`
+      // with applied:true unconditionally today, so routing it through the
+      // funnel changes NOTHING now. It is a regression guard — if `message`ever
+      // grows a refusal (a closed board, a rejected payload), the CLI reports it
+      // without anyone remembering to come back here.
+      return ackOrFail(
+        "message",
+        await postCmd(session, { type: "message", text }, { as, quiet: true }),
+      );
     }
     case "init": {
       const msg: Record<string, unknown> = { type: "init" };
@@ -986,12 +1037,20 @@ async function main(argv: string[]): Promise<number> {
           die("init --stdin-tasks: invalid JSON on stdin");
         }
       }
-      await postCmd(session, msg, { as });
-      break;
+      // The generic path — and the one with a REAL behaviour change today. The
+      // daemon's command dispatch ends in `return {ok:true, applied:false}` for
+      // any type it does not recognise, so an unrecognised command has always
+      // been answered with a success-shaped envelope. Routing through the funnel
+      // is what turns that into a visible failure.
+      return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
     }
     case "close":
-      await postCmd(session, { type: "close" }, { as });
-      break;
+      // Same explicit decision as `message`: applied:true unconditionally today,
+      // so this is a regression guard rather than a fix. It earns its place
+      // because `close` is the verb that WRITES THE SNAPSHOT — a close that
+      // silently failed to apply, reported as success, is how a caller concludes
+      // its data was persisted when it was not.
+      return ackOrFail("close", await postCmd(session, { type: "close" }, { as, quiet: true }));
     case "info":
       cmdInfo(session);
       break;

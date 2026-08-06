@@ -142,7 +142,12 @@ export async function startDaemon(opts: StartOpts) {
     resolveDone = r;
   });
 
-  const handleAgentMsg = (msg: AgentCommand) => {
+  // #84 — RETURNS A VERDICT. Previously void, so the /cmd route had nothing to
+  // report and answered a literal {ok:true} to every command including ones it
+  // dropped. Note the defect is NOT a missing `await`: this handler is
+  // synchronous, and imago's twin IS correctly awaited and was broken anyway.
+  // The fix is that a decision exists at all.
+  const handleAgentMsg = (msg: AgentCommand): boolean => {
     if (msg.type === "say") {
       addMessage(state, {
         id: `m-${randHex(4)}`,
@@ -153,11 +158,11 @@ export async function startDaemon(opts: StartOpts) {
         ts: Date.now(),
       });
       broadcastState();
-      return;
+      return true;
     }
     if (msg.type === "close") {
       resolveDone({ code: 0, reason: "close" });
-      return;
+      return true;
     }
     if (msg.type === "gen.add") {
       const it = makeItem({
@@ -178,7 +183,7 @@ export async function startDaemon(opts: StartOpts) {
       });
       materializeItem(sessionFilesDir, it);
       if (addItem(state, it)) broadcastState();
-      return;
+      return true;
     }
     if (msg.type === "style.save") {
       const canonicalItems = state.library.filter((i) => i.canonical && !i.archived);
@@ -197,16 +202,20 @@ export async function startDaemon(opts: StartOpts) {
       });
       state.tray.push(style);
       broadcastState();
-      return;
+      return true;
     }
     if (msg.type === "style.archive") {
       setStyleArchived(GLAMOUR_HOME, PROJECT_KEY, msg.id, msg.archived);
       applyAgentMsg(state, msg); // flips the in-memory tray entry
       broadcastState();
-      return;
+      return true;
     }
-    applyAgentMsg(state, msg);
-    broadcastState();
+    // The fallthrough is the only path that can be UNRECOGNISED, and the
+    // reducer is what knows: it owns the case list, so the verdict comes from
+    // there rather than from a second enumeration here.
+    const recognised = applyAgentMsg(state, msg);
+    if (recognised) broadcastState();
+    return recognised;
   };
 
   // --- browser messages (WebSocket) ------------------------------------------
@@ -356,8 +365,23 @@ export async function startDaemon(opts: StartOpts) {
           .json()
           .then((b) => {
             touch();
-            handleAgentMsg(b as AgentCommand);
-            return Response.json({ ok: true });
+            // #84 — propagate the handler's verdict instead of a literal
+            // {ok:true}. `applied` is the field bounty already uses
+            // (server.ts ApplyResult); no new vocabulary is minted here.
+            const applied = handleAgentMsg(b as AgentCommand);
+            if (!applied) {
+              return Response.json(
+                {
+                  ok: false,
+                  applied: false,
+                  error: `unrecognised command type ${JSON.stringify(
+                    (b as { type?: unknown })?.type,
+                  )} — nothing was applied`,
+                },
+                { status: 400 },
+              );
+            }
+            return Response.json({ ok: true, applied: true });
           })
           .catch(() => Response.json({ error: "bad json" }, { status: 400 }));
       if (req.method === "GET" && path.startsWith("/assets/")) {

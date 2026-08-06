@@ -228,7 +228,11 @@ export function agentRepliedSince(messages: Message[], sinceTs: number): boolean
   return messages.some((m) => m.who === "agent" && m.ts > sinceTs);
 }
 
-export function applyAgentMsg(state: GlamourState, msg: AgentCommand): void {
+// Returns whether the command type was RECOGNISED — the verdict the /cmd route
+// propagates (#84). Recognised-and-applied is `true`; an unknown type is
+// `false`. This is deliberately not "did state change": a recognised command
+// that is a legitimate no-op still applied.
+export function applyAgentMsg(state: GlamourState, msg: AgentCommand): boolean {
   switch (msg.type) {
     case "init":
       if (typeof msg.title === "string") state.title = msg.title;
@@ -268,5 +272,15 @@ export function applyAgentMsg(state: GlamourState, msg: AgentCommand): void {
     case "say":
     case "close":
       break; // handled by the server (appended to conversation / shutdown)
+    default:
+      // #84 — the switch had NO default, so an unrecognised command type did
+      // nothing and the /cmd route still answered {ok:true}: a bogus type was
+      // byte-identical to an executed one. The verdict has to be produced HERE,
+      // by the code that actually knows the recognised set, and not mirrored
+      // into a list beside the switch — a hand-maintained mirror of a case list
+      // drifts silently the moment a case is added, which is a defect this repo
+      // has already shipped twice.
+      return false;
   }
+  return true;
 }
