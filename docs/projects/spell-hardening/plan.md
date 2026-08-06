@@ -383,7 +383,8 @@ verb that takes free-prose positionals regressed.
 ## Phase 0d — Writes that report success without applying (#83, #84)
 
 **Owner:** daedalus · **Verify:** cassandra · **No decision needed** — these are
-defects against an existing contract, not a new convention.
+defects against an existing contract, not a new convention. **Placement in P0
+ruled by Cole 2026-08-06**, over the scope-growth objection.
 
 Fourth P0 lane. Found by the 2026-08-06 envelope audit, not by a user. Same
 defect class as the rest of P0 and **on the write path**, which makes it the

@@ -83,9 +83,11 @@ in a skeleton is a hypothesis until the owning seat confirms it. Specifically:
   earlier version of the P0b gate was a control that could not come out
   differently. **Ask of each gate: what result would have failed this?** If
   there isn't one, the gate is decoration.
-- **prospero** — phase order, and whether P0d belongs in P0 at all (the argument
-  is that it is the same defect class on the write path; the counter-argument is
-  that it is scope growth on an already-large release).
+- **prospero** — phase order. ~~Whether P0d belongs in P0 at all.~~ **Ruled by
+  Cole 2026-08-06: P0d stays in P0.** The scope-growth counter-argument was put
+  to him and declined — it is the same defect class on the write path and it
+  ships with the rest of P0. Not open; falsify with evidence if you think it is
+  wrong, but do not reopen it as a preference.
 
 ## What is deliberately NOT in this project
 
