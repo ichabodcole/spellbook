@@ -218,8 +218,26 @@ async function streamEvents(
           };
           if (typeof ev.id === "number" && ev.id > since) since = ev.id;
           const selfEcho = opts.self !== undefined && ev.by === opts.self;
-          if (inScope(ev) && !selfEcho) process.stdout.write(`${payload}\n`);
-          if (ev.type === "closed") process.exit(0);
+          const emit = inScope(ev) && !selfEcho;
+          if (ev.type === "closed") {
+            // P0f — SHAPE B: the drain callback rides THIS write, so it fires on
+            // this write's completion. NOT a trailing `write("", cb)`, which
+            // covers only its own write and is not a barrier.
+            //
+            // PER-SITE PRECONDITION, read at THIS site — and astrolabe is the
+            // one of the five that differs. The exit lives in `streamEvents`,
+            // NOT in a `cmdTail`, and there is no `stopped` flag here to set:
+            // the enclosing loops are `for (;;)` -> `for (;;)` -> the frame
+            // loop. `return` is safe because `streamEvents` is awaited directly
+            // from main's switch and main returns straight after — so returning
+            // ends the process rather than landing in another retry loop, which
+            // is the thing that had to be checked and could not be inferred
+            // from the shape.
+            if (emit) process.stdout.write(`${payload}\n`, () => process.exit(0));
+            else process.exit(0);
+            return;
+          }
+          if (emit) process.stdout.write(`${payload}\n`);
         } catch {
           /* skip malformed frame */
         }

@@ -340,3 +340,48 @@ test("focus moves are ambient (no agent event)", async () => {
   expect(after).not.toContain('"type":"focus.set"');
   ws.close();
 });
+
+// ── P0d / #84 — /cmd must not answer ok before it knows ──────────────────
+//
+// Measured pre-fix on all three spells: a bogus `type` returned {"ok":true},
+// byte-identical to an executed command. The daemon CAN reject (malformed JSON
+// → {"error":"bad json"}), which is what makes the bogus-type answer a real
+// answer rather than an everything-is-fine stub — and that third row is why
+// this cell discriminates.
+//
+// ⚠ Gate on the VERDICT, never on the presence of an `await`: imago's handler
+// was ALREADY correctly awaited and was broken anyway.
+test("RED PRE-FIX — a bogus /cmd type is refused, not answered ok", async () => {
+  const r = await fetch(`${base}/cmd`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "zzz-not-a-real-command" }),
+  });
+  const body = (await r.json()) as { ok?: boolean; applied?: boolean };
+  expect(body.ok).not.toBe(true);
+  expect(body.applied).toBe(false);
+});
+
+test("BLAST-RADIUS GUARD — a valid command still answers ok", async () => {
+  // ⚠ GREEN TODAY AND MUST STAY GREEN. This is the cell that catches a verdict
+  // propagation which rejects everything — the over-inclusive failure mode.
+  const r = await fetch(`${base}/cmd`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type: "say", text: "probe" }),
+  });
+  const body = (await r.json()) as { ok?: boolean };
+  expect(body.ok).toBe(true);
+});
+
+test("BLAST-RADIUS GUARD — malformed JSON is still refused at the PARSE layer", async () => {
+  // A different layer from the switch, and the reason the bogus-type cell is
+  // discriminating rather than vacuous: it proves the daemon's refusal path
+  // existed independently of this fix.
+  const r = await fetch(`${base}/cmd`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{not json",
+  });
+  expect((await r.json()) as { error?: string }).toMatchObject({ error: "bad json" });
+});

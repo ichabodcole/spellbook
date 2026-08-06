@@ -76,6 +76,11 @@ act.
 
 ## Verbs
 
+> **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
+> free text would otherwise be read as a flag. **Anything after `--` is a
+> positional, including something that looks like a flag** — it is consumed
+> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`.
+
 All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/magpie/scripts/cli.ts <verb>`. Verb
 first; pass `--session <id>` **after the verb** to target a specific session
 (default: most recent). `help` prints the full surface.

@@ -1,11 +1,28 @@
 # Sprint 02 — Success-shaped lies
 
-**Created:** 2026-08-06 **Status:** ACTIVE, unbuilt **Project:**
+**Created:** 2026-08-06 **Status:** ACTIVE, building **Project:**
 [Spell Hardening](../../README.md) · [proposal.md](../../proposal.md)
 **Predecessor:** [sprint 01 outcome](../01-drained-exit/outcome.md) — read it
 before this **Frozen predecessor plan:**
 [`../01-drained-exit/plan.md`](../01-drained-exit/plan.md) — **a record, not an
 instruction. Do not act on it.**
+
+> ### 📋 Decisions live in [`decisions.md`](./decisions.md), beside this file
+>
+> **This plan says what to build. The decision log says what was CHOSEN, what
+> the alternatives were, what each would have cost, and WHO RULED.** They are
+> different questions and neither answers the other.
+>
+> **Read it before you argue with a ruling in this plan** — Cole's `--unarchive`
+> rename, P0b's no-corrective-verb refusal, and the scope lines that were
+> deliberately left unclaimed are all there **with the options that were not
+> taken.**
+>
+> _Added after `thoth` measured that `decisions.md` was reachable from nothing:
+> `grep -rln "decisions.md"` over the whole project returned **zero files**. The
+> link ran one way only. **An out-of-band record nobody routes to is out-of-band
+> in the way that does not help** — the same defect this sprint's own session
+> anchor had, ninety minutes earlier, conceded by the same author._
 
 > ## All `file:line` references in this document are at `7a32677`
 >
@@ -229,6 +246,29 @@ require. **The requirement does not vary with the file's presence.** Pass
 **This is not a precaution. It is proven:** the project's own test suite
 attached to the live team board and called `close` on it, twice, on 2026-08-06.
 
+> ### ⚠ G1 covers the READ routes. `--pin` is a WRITE route, and it was missing.
+>
+> **Added 2026-08-06 (sprint 02) by `daedalus`, hit while building P0b's
+> cells.**
+>
+> **`--pin` writes `<cwd>/.bounty-session`.** A cell that spawns a CLI **without
+> an explicit `cwd`** inherits the repo, writes that file at the **repo root**,
+> and **rebinds the team's own board** — because that file is `resolveSession`
+> **level 5**, and its contents are byte-identical to what level 3 derives.
+>
+> **Every route enumerated above is something the gate READS. This one is
+> something the gate WRITES**, and it survives the run — so the damage is not to
+> the measurement, it is to the next process that resolves a session anywhere
+> under this working copy, including a peer seat.
+>
+> **Pin `cwd` to a throwaway directory in any cell that passes `--pin`.** The
+> unique `BOUNTY_HOME` does **not** cover it: the pin is written relative to
+> **cwd**, not to `BOUNTY_HOME`.
+>
+> _Generalises past `--pin`: when you enumerate the ways a gate can reach the
+> wrong board, enumerate the writes as well as the reads. The read list was
+> complete and it was half the question._
+
 ### G2 — a gate must be FALSE pre-fix **and TRUE post-fix**
 
 | failure mode                                            | behaviour                              | why it is bad                                    |
@@ -266,6 +306,68 @@ still asserted, still printed, and still fails the run when it degenerates
 it. When you report, **report the counts separately** — _"1 red pre-fix, 2
 blast-radius guards, 1 precondition"_ — never a single total.
 
+> ### ⚠ G2 AMENDED 2026-08-06 (sprint 02) — WHEN a label may be assigned, and when it EXPIRES
+>
+> **Two mislabelled cells shipped in one session, from two seats in opposite
+> roles.** The rule earned by them:
+>
+> > **A label is a claim about a measurement, so it cannot be assigned before
+> > the measurement is taken — and it EXPIRES when the cell's assertions are
+> > edited.**
+> >
+> > **Enforcement: no cell carries a label until BOTH arms have run. A cell
+> > whose assertions changed since its last two-arm run is UNLABELLED, not
+> > still-labelled.**
+>
+> **⛔ Do NOT cite this as "two seats found it independently." That is FALSE and
+> its own author killed the claim.** `cassandra` had **read `daedalus`'s report
+> of the defect, including his mechanism for it, forty minutes before she
+> committed the same class.** It is one seat reporting and a second committing
+> anyway, having read the report.
+>
+> **That is the stronger argument, not the weaker one:** a **fresh, explicit,
+> peer-delivered, written** warning did not prevent the second instance. **This
+> is `principles.md`'s entry firing exactly as written** — the failure mode is
+> the FEELING of having covered it — **which is precisely why the remedy is a
+> mechanical gate and not anyone's awareness.**
+>
+> **The two are DIFFERENT sub-mechanisms, and the first half of the rule catches
+> only one of them:**
+>
+> |         | `daedalus`                                              | `cassandra`                                        |
+> | ------- | ------------------------------------------------------- | -------------------------------------------------- |
+> | cell    | pre-existing, **correctly** labelled                    | new                                                |
+> | fault   | **an edit changed the class; the label did not follow** | **the label was never derived from a pre-fix run** |
+> | symptom | RED wearing GUARD                                       | GUARD wearing RED                                  |
+>
+> **His label WAS assigned after a measurement — just a different one, then
+> silently invalidated by an edit. That is why the EXPIRY clause is not a
+> flourish: without it the rule is satisfied by his original cell and still lets
+> his defect through.**
+>
+> **Why an enforcement clause and not just the principle:** the principle is
+> about epistemics and **can be agreed with while changing nothing** — both
+> seats agreed with it before breaking it. **The enforcement clause is checkable
+> by someone who has not understood the argument**, which is the only kind of
+> rule that outlives the session that wrote it.
+>
+> **It also makes the pre-fix arm non-optional, which is the real prize.**
+> cassandra's arm 1 came back 6/6 green and **she nearly stopped**; the finding
+> came only from running an arm she expected to learn nothing from. **Under this
+> rule, skipping an arm is VISIBLE as an unlabelled cell instead of invisible as
+> a confident one.**
+>
+> **The metric that shows the rule working — and it is countable:** _how many
+> cells CHANGED label when arm 2 ran._ **First datapoint, cassandra's P0b cold
+> gate: 1 of 9** (labelled 7 red / 1 guard before running; reported 6 red / 2
+> guard / 1 precondition after).
+>
+> **FALSIFIED IF** a session runs both arms on every cell, labels only from arm
+> results, re-runs both arms after every assertion edit — **and a mislabelled
+> cell still ships.** **NOT falsified by** a session with no mislabels: that is
+> the base rate, and it looks identical to a week when nobody wrote a tricky
+> cell.
+
 ### G3 — pin board identity OUT-OF-BAND, because the envelope cannot
 
 **There is no session id, key, port or board identity anywhere in a
@@ -283,6 +385,34 @@ below names its sites, its literal invocations, and its byte thresholds.
 **Sprint 01's own G4 violations, for calibration:** P0b enumerated one flag of
 three; P0's audit enumerated one exit per file; P0e's gate asserted the board
 survives and never that the suite is green.
+
+> ### ⚠ A FILENAME IS NOT EVIDENCE OF A CAPABILITY — `cli.test.ts` is a coin flip
+>
+> **Added 2026-08-06 (sprint 02) by `cassandra`. Measured across the whole
+> roster:** _of files named `cli.test.ts`, how many actually spawn a process?_
+> **Glob: `find plugins/spellbook/skills -name "cli.test.ts"` → 6 files, all
+> inspected.**
+>
+> ```
+> astrolabe/scripts/cli.test.ts     spawn-primitives=1     real harness
+> grapevine/scripts/cli.test.ts     spawn-primitives=3     real harness
+> mind-mapper/scripts/cli.test.ts   spawn-primitives=19    real harness
+> glamour/tests/cli.test.ts         spawn-primitives=0   ← NO harness
+> imago/tests/cli.test.ts           spawn-primitives=0   ← NO harness
+> magpie/tests/cli.test.ts          spawn-primitives=0   ← NO harness
+> ```
+>
+> **3 of 6.** All three empty ones are **legitimate unit tests of CLI helper
+> functions** — which is exactly why this is a trap and not a bug.
+>
+> > **Ask _"does this file SPAWN a process?"_, never _"is this file NAMED after
+> > the CLI?"_ — and answer it BY CALL SITE.**
+>
+> **This is the mechanism that would have marked magpie PINNABLE**: the plan
+> named `magpie/tests/daemon.integration.test.ts`, and anyone reaching for the
+> more obvious `magpie/tests/cli.test.ts` would have found a CLI-named test
+> file, matched it against _"does a harness exist?"_, and been wrong. **That one
+> was caught by opening the file. The rule is cheaper than the catch.**
 
 ### G5 — every gate POSITIVELY ASSIGNS a private `TMPDIR`
 
@@ -303,9 +433,28 @@ test consumed 1,020s before dying on `ConnectionRefused` to its own `/state`.
 > **⚠ A green from a shared-pointer run is not weak evidence. It is NO
 > evidence.**
 
-**Repeal is per-spell and structural** — no pointer at the top level of the
-ambient `TMPDIR` **and** the pointer present in the per-suite dir — **never by a
-sibling spell's fix landing.** See the status table above.
+**Repeal is per-spell and structural** — no pointer **written BY THE SUITE** at
+the top level of the ambient `TMPDIR` **and** the pointer present in the
+per-suite dir — **never by a sibling spell's fix landing.** See the status table
+above.
+
+> **⚠ The criterion is a property of the SUITE, not of the DIRECTORY, and the
+> earlier wording said the directory.** Amended 2026-08-06 (sprint 02) after
+> `thoth` nearly filed a false regression off it and killed the finding himself.
+>
+> A `bounty-latest.json` sitting at the top level of the ambient `TMPDIR` right
+> now is **the live board daemon's**, written by `bounty/scripts/server.ts:1187`
+> **by design** — a shipped-source site, which `d650c97` never touched and which
+> the release section at the bottom of this plan explicitly says remains. **The
+> repeal ranges over the TEST-SIDE channel.** Read as a directory property, the
+> criterion pattern-matches perfectly and reports a regression that is not
+> there.
+>
+> **Same shape as the glamour note two entries up:** _"does this suite spawn?"_
+> was the wrong question and _"does this suite reach the pointer write?"_ was
+> the right one. **Here: "is there a pointer in the directory?" is wrong and
+> "did the suite put one there?" is right.** Both times the wrong question is
+> the one you can answer without running anything.
 
 > **⚠ G5 does NOT belong in `.anthill/config.json`'s gate string. Sprint 01
 > tried exactly that and reverted it.**
@@ -346,6 +495,26 @@ Bun.spawn({ cmd: ["sh", "-c", `bun run ${CLI} <verb> | cat`], stdout: "pipe" })
 **Binds P0f directly.** Any P0f gate drafted against `runCli` needs **REWRITING,
 not re-running.**
 
+> **⚠ COROLLARY, added 2026-08-06 (sprint 02) by `cassandra`: _"does a process
+> harness exist?"_ is the WRONG QUESTION — ask it once PER CAPABILITY.**
+>
+> **A drain cell and a termination cell have different harness requirements, and
+> they come apart at the site under test.** Termination is satisfiable under
+> `Bun.spawn({stdout:"pipe"})` — awaiting an exit works fine there. **Drain is
+> not, by this very rule.**
+>
+> So a single `PINNABLE` verdict per site **flattens two capabilities into one
+> word**, and the flattening is invisible: the harness genuinely exists, the
+> verdict is genuinely true of one cell, and nothing in the word says which.
+> **astrolabe is the worked example** — a real CLI-process harness at
+> `cli.test.ts:15`, spelled `stdout: "pipe"`, **pinnable for cell 6 and useless
+> for cells 1–5.**
+>
+> **Record the verdict per capability —
+> `PINNABLE (termination) · DRIVEN-ONLY (drain)` — never one label per site.**
+> _Same family as the count rule: a true word that answers a narrower question
+> than the one being asked._
+
 ### G7 (new) — every drain gate asserts the process **EXITS**
 
 **A drained-exit fix trades a truncation for a HANG wherever `process.exit` was
@@ -374,6 +543,180 @@ spelling, leaving the stream usable and only stopping it from holding the loop.
 **The lesson, which outlives the instance:** the suite was green, both P0 gates
 were green, and **a 23-minute hang in a shipped spell's entry verb was invisible
 to every one of them, because nothing asserts that a CLI RETURNS.**
+
+> ### ⏱ G7 AMENDED AGAIN 2026-08-06 — SET A LIVENESS BUDGET FROM THE **FAILURE**, NOT FROM THE SUCCESS
+>
+> **`daedalus`, post-stand-down, diagnosing his own cell after `cassandra`'s
+> land went red inside it.**
+>
+> ```
+> server.test.ts:2961   budget = opts.timeoutMs ?? 15000
+> her failure           15004.99ms      <- budget expiry to the millisecond
+> ```
+>
+> **A G7 assertion detects a HANG, and a hang is UNBOUNDED** — it never returns,
+> at any budget. **A slow boot is BOUNDED**, and under three concurrent suites
+> `bounty open` legitimately exceeds 15s. **So the cell reports _"this process
+> did not terminate on its own"_ about a process that terminates fine.**
+>
+> > **A FALSE HANG FINDING, MANUFACTURED BY LOAD, FROM THE INSTRUMENT BUILT TO
+> > CATCH HANGS.** This sprint's defect class, inside this sprint's own gate.
+>
+> > **A liveness assertion implemented as a timeout is contention-sensitive BY
+> > CONSTRUCTION. Set its budget from the FAILURE it detects (UNBOUNDED), never
+> > from the success it expects (a few seconds). A tight budget on an unbounded
+> > failure mode is ALL COST AND NO COVERAGE.**
+>
+> **Raise it to 60–120s and the assertion loses NOTHING** — `glamour open` ran
+> **23 minutes**; a 60s budget catches that identically to 15s.
+>
+> **⚠⚠ AND THE TWO G7 FIXES ARE COUPLED — `thoth` connected what neither of us
+> had.** Raising the budget is **safe only because `t-c3060da7` already
+> landed**: before the reorder, exit was observed _through the pipes_, so a
+> longer budget would have meant **waiting longer on an EOF a detached
+> grandchild can withhold forever** — trading a fast false positive for a slow
+> true hang. **After the reorder, exit is raced independently of the pipes, so a
+> bigger budget costs only time.** **Do not raise a liveness budget without
+> checking what the assertion waits ON.**
+>
+> **⚠ It retro-explains the session's OTHER unnamed red** (`daedalus`, #420) —
+> same shape, suspect now `runOpen`'s budget rather than `marksUnseen`. **So the
+> team's "the known flake is `marksUnseen`" premise never explained either
+> unnamed red:** a pre-supplied innocent explanation, believed by three seats,
+> for three hours. **Carded (`t-defc47e3`), not patched post-cut.**
+
+> ### ⚠⚠ G7 AMENDED 2026-08-06 (sprint 02) — asserting the exit is not enough. The assertion must be REACHABLE when the process does not exit.
+>
+> **Found by `thoth` in the H7 judgement audit, driven both directions outside
+> the repo. This is G8's vacuity rule turned on G7 itself:**
+>
+> > **Every _"the process returned"_ needs _"and my instrument could have
+> > observed it NOT returning."_**
+>
+> **The mechanism.** A termination cell that **reads both pipes to completion
+> BEFORE awaiting exit** puts its own assertion downstream of an EOF it may
+> never get. `proc.kill("SIGKILL")` at the budget releases pipes held by
+> **`proc`** — it does **not** release a pipe held by a **detached grandchild**,
+> and `bounty open` spawns exactly such a grandchild (`cli.ts:534-540`,
+> `detached: true` + `unref()`).
+>
+> **Measured, minimal repro, only the grandchild's stderr mode differing:**
+>
+> ```
+> mode=file     (today's bounty)     {"ms":20,"code":0,"reachedAssertion":true,"returnedOnItsOwn":true}
+> mode=inherit  (a ONE-WORD change)  exit=137 — killed at 20s, NOTHING printed
+> ```
+>
+> **Under the change the cell does not go RED. It becomes UNREACHABLE** — and
+> **the failure MODE changes with it: from a red cell naming the hung verb, to a
+> bare suite timeout with no diagnosis.** A red cell tells you which verb hung.
+> A timeout tells you the suite is slow. **The instrument built to catch a
+> 23-minute hang would itself hang, and report nothing.**
+>
+> **⛔ And the reason it works TODAY is an accident of an unrelated decision.**
+> `bounty/cli.ts:522-529` gives the daemon
+> `stdio: ["ignore","ignore", fd→daemon.log]`, so **it holds none of the
+> harness's three handles** — which is why EOF ever arrives. **That property is
+> documented as being about #64 crash-trace capture. It is load-bearing for G7
+> as a SIDE EFFECT, and nothing asserts it.** _(`daemon.log` appears twice in
+> `server.test.ts`, both times asserting its CONTENTS, never the daemon's handle
+> shape.)_ **An engineer improving #64 by inheriting stderr would break G7
+> house-wide and see only a slow suite.**
+>
+> **BOTH remedies are required, and they do different jobs:**
+>
+> 1. **Make exit observable independently of the pipes** —
+>    `Promise.race([proc.exited, timer])` resolved **before** the reads.
+>    **Structural: removes the dependency.**
+> 2. **A `PRECONDITION` cell asserting the daemon's handle shape** — that
+>    `open`'s spawned daemon holds no pipe from the harness. **It goes red at
+>    the moment of the one-word change, naming the reason.**
+>
+> **1 alone leaves the next harness author to rediscover this. 2 alone leaves
+> the harness able to hang.**
+>
+> ### ⛔ BLAST RADIUS WALKED — 7 of 7 CLIs, by call site. **`glamour` has the hazard LIVE in its source.**
+>
+> **`thoth`, same session, having marked it UNVERIFIED himself.** And the
+> discriminating property turned out **not** to be `Promise.all` in the harness:
+> it is **whether the DETACHED daemon inherits a handle the harness can be
+> holding.** So the enumeration is over every `detached: true` spawn in every
+> spell's `cli.ts`, not over the test files.
+>
+> | spell                                  | daemon stdio                            | hazard                                             |
+> | -------------------------------------- | --------------------------------------- | -------------------------------------------------- |
+> | **glamour** (`cli.ts:326-331`)         | `["ignore", "pipe", "inherit"]`         | **⛔ YES — stderr INHERITED by a detached daemon** |
+> | bounty                                 | `["ignore", "ignore", <fd→daemon.log>]` | no                                                 |
+> | astrolabe · imago · magpie · grapevine | `["ignore", "ignore", "ignore"]`        | no                                                 |
+> | mind-mapper                            | `"ignore"`                              | no                                                 |
+>
+> **Denominator: 7 CLIs enumerated, 7 produced a spawn site, 1 hazard.** A zero
+> anywhere would have been the instrument, not the answer.
+>
+> **It is LATENT, not live — and that is exactly why it is written here.**
+> glamour's suite contains **ZERO subprocess spawns** (enumerated by call site,
+> not name-grepped); its daemon runs in-process. **So nothing hangs today.**
+>
+> **⚠⚠ BUT P0c CONVERTS `glamour/cli.ts` AND P0f'S TAIL SLICE TOUCHES GLAMOUR —
+> and neither can be gated without a subprocess harness glamour does not have.**
+> The natural move is to copy `runOpen`, the reference harness every P0b cell
+> uses.
+>
+> > **A `runOpen`-shaped harness pointed at `glamour open` does not FAIL. It
+> > HANGS past its own budget and prints NOTHING** — the exact
+> > `exit=137 / nothing printed` from the driven repro above.
+> >
+> > **And the builder will read that as glamour being slow to boot** — its own
+> > comments warn the first React bundle "can take tens of seconds cold" and
+> > default the handshake to **45s**. **The most plausible wrong diagnosis
+> > available is sitting in the same file.**
+>
+> **This is the sprint's own thesis, in a gate: a cell that cannot do the thing,
+> does not do it, and does not say so.**
+>
+> **THE FIX FOR WHOEVER WRITES GLAMOUR'S CELL — do not copy `runOpen`
+> unchanged.** Either resolve exit independently of the pipes (remedy 1 above),
+> **or spawn glamour's CLI with `stderr: "ignore"` in the harness** so there is
+> no pipe for the daemon to hold. **The second is one word and it is enough for
+> a gate cell.**
+>
+> **NOT ruled: whether `glamour/cli.ts`'s `"inherit"` should change.** glamour
+> is the only spell that pipes its daemon's stdout for a handshake line, so its
+> stderr handling plausibly has a reason nobody has found yet. **Engine's call;
+> backlog candidate either way.**
+>
+> ---
+>
+> ### ⛔⛔ AT GLAMOUR, FOUR HAZARDS STACK — and each one ALONE is fine
+>
+> **`cassandra`, amending her own P0f ratify. Read before writing glamour's P0f
+> or P0c cell.**
+>
+> 1. **Shape D is the fix most likely to be reached for** — and this plan
+>    already rules it **presumptively wrong** at these five sites, because
+>    setting `exitCode` inside three nested loops falls through and loops again.
+> 2. **glamour is DRIVEN-ONLY** — no CLI harness exists, so **one gets
+>    written.**
+> 3. **The obvious harness to copy is `runOpen`** — and pointed at
+>    `glamour open` **it does not fail. It HANGS past its budget and prints
+>    nothing.**
+> 4. **glamour's own source pre-supplies the wrong diagnosis** —
+>    `cli.ts:335-337` comments the first React bundle _"can take tens of seconds
+>    cold"_, and the handshake defaults to **45s** for that reason.
+>
+> > **The one site where a shape-D hang is most likely to be INTRODUCED is also
+> > the site whose new harness CANNOT REPORT a hang, in the spell whose own
+> > source hands the builder a ready-made innocent explanation.** A 45-second
+> > no-output run, in the spell that documents slow cold boots, reads as
+> > **slow** — not **hung**.
+>
+> **NONE of the four is a defect. The STACK is** — and it is invisible from
+> inside any one of them, which is why it took three seats, none of whom were
+> looking for it.
+>
+> **⚠ The feasibility estimate is AMENDED with it.** glamour's
+> `DRIVEN-ONLY — write a harness, or close by drive` read as though _"write a
+> harness"_ were the cheap option. **At glamour it is the TRAPPED one.**
 
 ### G8 (new) — the vacuity rule, in its general form
 
@@ -404,6 +747,313 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   the judgement is auditable rather than remembered. **Anything under
   `plugins/spellbook/skills/*/scripts/` voids the gate, full stop.**
 
+- **🎲 A SINGLE RED IS NOT A FINDING — the full suite is ~1-in-4 FLAKY,
+  MEASURED.**
+
+  **Added 2026-08-06 (sprint 02) by `daedalus`, who got a red on a tree whose
+  only commit was a MARKDOWN FILE and measured instead of diagnosing.**
+
+  ```
+  full suite, IDENTICAL tree, 4 runs:   1315/0 · 1315/0 · 1314/1 · 1315/0   -> 1 red in 4
+  imago suite ALONE, same tree, 4 runs:  109/0 ·  109/0 ·  109/0 ·  109/0   -> 0 red in 4
+  ```
+
+  **The cell is `imago > marksUnseen freshness flag`, `ConnectionRefused` to its
+  own daemon's `/state`. It fails ONLY under the full 101-file parallel suite,
+  never in isolation** — daemon/port pressure, the same family as the
+  shared-`TMPDIR` race this plan already documents.
+
+  **The precondition above covers a red on a DIRTY tree. This is a red on a
+  CLEAN tree that was equally uninterpretable, and nothing covered it.**
+
+  > **RULE: re-run before you report. A red is a finding only if it
+  > REPRODUCES.**
+
+  **⛔ AND THE SECOND HALF, WHICH IS THE DANGEROUS ONE — a known flake gives
+  every future red an innocent explanation.** The first-order risk is a false
+  red wasting an hour. **The real risk is a REAL regression dismissed as
+  _"probably the flake."_** **So: NAME the flaky cell, every time.** A red in
+  `imago > marksUnseen freshness flag` is the known flake. **A red in any other
+  cell is a FINDING and the flake rate does not excuse it.** _"The suite is 25%
+  flaky"_ launders everything; _"this one cell is"_ launders nothing. **Record a
+  non-reproducing red WITH ITS CELL NAME rather than discarding it** — a second
+  sighting of the same cell is data, and a second sighting of a different cell
+  is a new flake.
+
+  _This is the THIRD time this session that an innocent explanation was
+  pre-supplied to the wrong diagnosis:_ glamour's _"tens of seconds cold"_
+  comment for a hang, sprint 01's remediation comments reading as defects, and
+  now a measured flake rate standing ready to excuse any red. **The pattern is
+  worth more than any of the three.**
+
+  **⚠ UNVERIFIED — the PRE-P0d rate.** P0d added two more spawned daemons to
+  imago's integration suite, and the rate was not measured before that change.
+  **`daedalus` declined to guess, which is correct.** To close it: `git stash`
+  the suite additions and run the full gate 4× at `8f4d92d`. **This is a
+  RELEASE-BEAT prerequisite** — _"did we make the suite worse?"_ is a question
+  the release note cannot answer with an unmeasured number.
+
+- **📣 ANNOUNCE A FULL GATE WHEN YOU _START_ IT, NOT ONLY WHEN IT LANDS — and
+  `uncheckedAgainst` CANNOT SEE THIS.**
+
+  **Added 2026-08-06 (sprint 02) by `cassandra`, after two seats ran two full
+  101-file parallel suites concurrently on one machine with 14 spell daemons
+  live.** Neither seat did anything wrong: **both announce LANDS and neither
+  announces RUNS.**
+
+  > **`uncheckedAgainst` records dirty FILES. NOTHING records CONCURRENT LOAD.**
+
+  **And this sprint measured two things that are properties of the MACHINE
+  rather than of the tree** — the **flake rate** (daemon/port pressure) and the
+  **drain timing** (scheduler). **For those, _"what else was running"_ is a
+  precondition of the same rank as _"was the tree clean"_, and we have an
+  instrument for one and nothing for the other.**
+
+  **The asymmetry decides what to do about a run caught under load:**
+
+  | outcome under contention | verdict                                                                                                     |
+  | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+  | **GREEN**                | **stands** — contention manufactures false REDS, not false passes                                           |
+  | **RED**                  | **uninterpretable** — and worse, _"probably the flake"_ is pre-supplied and would be wrong for a NEW reason |
+
+  **A measurement OF machine pressure taken UNDER machine pressure is void, not
+  weakened.** _`cassandra` killed her own flake measurement rather than report
+  it: she had serialised against herself, and the machine is shared._
+
+  **⛔⛔ AND THE ANNOUNCE RULE IS NECESSARY AND NOT SUFFICIENT — IT FAILED ON
+  ITS FIRST OUTING, BY TEN SECONDS.** `daedalus` followed it faithfully and
+  announced — **but he announced AT the start, not BEFORE it**, so his offer
+  _"say so and I will hold"_ was unactionable: by the time it was read he was
+  already running, and `cassandra`'s flake re-run was contaminated **a second
+  time.**
+
+  > **An announcement is a RECORD, not a LOCK.**
+
+  **THE MECHANICAL HALF, which does not depend on a peer being awake, reading,
+  and fast:**
+
+  ```
+  ps -eo pid,etime,command | grep "[b]un test"      # if it returns anything: WAIT
+  ```
+
+  **CHECK first · ANNOUNCE second · START third — AND THEY MUST BE THREE
+  SEPARATE ACTS.**
+
+  > **⚠ THE EXACT MECHANISM, `daedalus`: he put the announcement and the gate in
+  > ONE shell invocation.** The law cannot work that way — **a message that
+  > leaves at the same instant as the process it warns about warns nobody.** Not
+  > bad luck, not slowness: **structural.**
+
+  **AND ANNOUNCE WITH THE OBSERVATION, NOT THE INTENT** (`cassandra`, applied to
+  herself first): paste the `ps` output into the message. **A stated intent
+  cannot be falsified by a reader; a pasted observation can be, in one
+  command.**
+
+  **⚠ KILLING A RUNNER SCRIPT DOES NOT KILL THE SUITE IT SPAWNED.** `pkill` on
+  the wrapper left `bun test` **reparented to init and still loading the
+  machine**, showing in `ps` with no obvious owner. **A seat who yields by
+  killing their script and walking away is still contending. Check for orphans
+  after you yield.**
+
+  ### ⛔ AND MOST OF THIS PROBLEM IS NOT REAL — the asymmetry applies to the SCHEDULE, not only the verdict
+
+  **`cassandra`'s reframe, which dissolves the scheduling constraint rather than
+  managing it:**
+
+  > **Contention manufactures false REDS, not false PASSES. So an arm that comes
+  > back GREEN under load is a VALID GREEN — measured under MORE adverse
+  > conditions than a quiet run, not fewer.**
+
+  **Therefore a measurement does NOT need an exclusive window. It needs _k_
+  greens, plus a quiet re-run for each RED.** _We ratified this asymmetry for
+  reading results and never applied it to planning runs._
+
+  **THE ONE CONDITION THAT KEEPS IT TRUE, and it is free (`thoth`):**
+
+  > **A green under contention is valid PROVIDED THE TOTAL IS THE EXPECTED
+  > ONE.** The asymmetry holds because a contended failure is a **hard fail that
+  > gets counted**. It stops holding if contention could make a test **not run
+  > at all** — that green is a **PARTIAL** run, and it says nothing about the
+  > part that never executed.
+  >
+  > **Cite `pass / fail / files`. NEVER `0 fail` alone.** `1326 / 0 / 101` is a
+  > valid green under any load; `1300 / 0 / 99` is **not the same claim**, and
+  > the difference is invisible if you read only the fail count.
+  >
+  > **A RED needs a quiet machine; a GREEN needs its denominator.**
+
+  ### ⛔ A RED UNDER CONTENTION IS NOT AUTOMATICALLY NOISE — the rule needed this clause and did not have it
+
+  **`daedalus`, having been one step from re-running a red that was REAL.**
+
+  > **A red under contention is uninterpretable WHEN ITS CAUSE IS ONE CONTENTION
+  > COULD PRODUCE** — a timeout, a refused connection, a port collision. **A red
+  > that NAMES A DETERMINISTIC CAUSE and REPRODUCES IN ISOLATION is
+  > interpretable**, and re-running it burns a quiet window to re-learn
+  > something you already know.
+
+  **His red was `Unknown option '--text'` — a specific flag, in a specific file,
+  reproducible in 17ms alone. Contention cannot manufacture that.**
+
+  **⚠ THE FAILURE MODE THE UNQUALIFIED RULE INVITES IS THE MIRROR OF THE ONE IT
+  PREVENTS: it pre-supplies _"probably contention"_ as the innocent explanation
+  for a red that is a FINDING.** That is the **fourth** pre-supplied innocent
+  explanation this sprint — and **the first one pointing AT a green rather than
+  away from one.** _The others excused a symptom; this one would have DISCARDED
+  a finding._
+
+  ### ⭐ AND THE WHOLE THING COLLAPSES — a red does NOT need a quiet machine. It needs ONE CELL.
+
+  **`cassandra`, retiring her own remedy as the expensive one:**
+
+  > **The first move on ANY red is to RE-RUN THE FAILING CELL IN ISOLATION — not
+  > the suite, and not on a quiet machine.**
+
+  **The argument is `daedalus`'s own number: 17ms.** A single-cell re-run needs
+  **no quiet window, no coordination, no announcement** — and it discriminates
+  immediately:
+
+  | isolated re-run | cause shape                       | verdict                                                              |
+  | --------------- | --------------------------------- | -------------------------------------------------------------------- |
+  | **fails**       | any                               | **FINDING.** Contention cannot make a test fail in isolation.        |
+  | passes          | timeout · ECONNREFUSED · port     | contention-or-flake — **now** a quiet full run is worth its cost     |
+  | passes          | deterministic, names a flag/value | **suspect your FIXTURE or a test-order dependency**, not the machine |
+
+  > **Sequence: ISOLATE THE CELL (free) → only then consider a QUIET SUITE
+  > (expensive).**
+
+  **This sprint paid the expensive step first, twice.** _"The cheap step was
+  available and I did not name it, which is why my rule read as 'reds are
+  costly' when reds are mostly cheap."_ **The scheduling problem this rule was
+  written to manage largely does not exist.**
+
+  **⚠ `UNVERIFIED` — nobody has observed bun dropping files under pressure and
+  nobody has tested it.** The guard is kept **because it costs nothing and does
+  not depend on the answer**: if bun never drops a file the check is free and
+  always passes; if it ever does, the check is the only thing between a partial
+  green and a full one. **Same shape as the whole sprint — a green that is true
+  about a smaller population than the reader assumes.**
+
+  **This is G1's correction in the process layer:** the scrub was necessary and
+  the **explicit `--session-key`** was the isolation. **Here the announcement is
+  the scrub and `ps` is the explicit key.** _Same necessary-and-not-sufficient
+  shape as the P0f fixture spec, three hours later, one layer up._
+
+  **⚠ The scheduling error was the LEAD's.** I sent her to measure daemon
+  pressure with the board showing P0c `doing` in front of me, and called it
+  _"the only clean window it will get."_ **A window is not clean because nothing
+  has landed; it is clean because nothing is RUNNING** — and the board shows
+  lands, not runs. **The same blind spot the rule above names, in the surface I
+  was reading it from.**
+
+- **🌳 A BARE `git worktree` HAS NO `node_modules` — AND IT FAILS AS A PLAUSIBLE
+  RESULT, NOT AS AN ERROR.**
+
+  **Added 2026-08-06 (sprint 02) by `cassandra`, against the instrument SHE
+  introduced to this team the same day.** A worktree checks out **tracked**
+  files; `node_modules` is gitignored, so it is **absent**, and every surface
+  test dies on module resolution:
+
+  ```
+  error: Cannot find module 'react/jsx-dev-runtime' from …/surface/GraphCanvas.tsx
+  error: Cannot find package 'micromark'            from …/surface/state/markdown.ts
+  ```
+
+  **⛔ THE SHAPE OF THE FAILURE IS THE HAZARD.** `bun test` reports these as
+  _"unhandled error between tests"_ **and keeps going** — so the run still emits
+  pass/fail numbers that a summary parser will happily scrape.
+
+  > **It would have produced a clean, well-formed `k of 4` in which the pre-P0d
+  > suite looked catastrophically broken — and the conclusion drawn from it
+  > would have been that P0d IMPROVED the suite.** Plausible, reproducible,
+  > release-note-bound, **and wrong in the direction that exonerates the change
+  > under test.**
+
+  **What caught it was a BYTE COUNT TOO SMALL** — a 985-byte log where a full
+  suite is hundreds of times that. **Not care, not review.** A full-length log
+  with a few extra failures would have shipped.
+
+  **Fix, and it is the MORE correct instrument rather than a workaround:**
+
+  ```
+  ln -s <repo>/node_modules <worktree>/node_modules
+  ```
+
+  The post-change figure was measured against the main repo's `node_modules`; a
+  worktree with its own freshly-installed tree **differs in exactly the
+  dimension nobody is controlling for.** **The symlink makes the two runs
+  comparable on the only axis that matters.**
+
+  **⚠ Scope, checked rather than assumed:** the P0b / P0d / P0f **drives** were
+  unaffected — they drive spell CLIs and daemons under
+  `plugins/spellbook/skills/`, which are Bun-native `.ts` with **no third-party
+  imports** (Contract 3, backends ship as source). **The dependency-free backend
+  is why, and that is a property of those spells, NOT of worktrees.** Anything
+  reaching `src/*/surface/` needs the symlink.
+
+  _`cassandra`'s seat doc has carried "a dev-mode daemon cannot be stood up in a
+  bare git worktree" since the mind-mapper rounds. **She introduced the pattern
+  to this team without carrying the caveat across.** The lesson was in the doc,
+  in her own words, and it did not fire._
+
+- **👻 `uncheckedAgainst` CANNOT SEE AN UNTRACKED FILE — AND THE GATE EXECUTES
+  IT.**
+
+  **Found by `daedalus`, 2026-08-06, while the ward was being written.** An
+  untracked `grimoire/flag-invariant.test.ts` sat in the tree, **and `bun test`
+  ran it on every gate anyone fired** — inflating the suite by its cells, in
+  numbers that were then reported and compared.
+
+  ```
+  git status --porcelain | grep '^??'   ->  ?? grimoire/flag-invariant.test.ts
+  uncheckedAgainst                      ->  reports TRACKED dirt only. This file is INVISIBLE to it.
+  ```
+
+  > **`uncheckedAgainst` answers _"what tracked work was dirty when I
+  > committed"_. It does NOT answer _"what did the gate actually execute."_
+  > Those come apart exactly at an untracked file — which the gate runs and the
+  > envelope cannot see.**
+
+  **Why it matters beyond tidiness: a gate total is a DENOMINATOR**, and this
+  sprint compared totals across shas repeatedly (`1297 → 1304 → 1316 → 1327`).
+  **An untracked test file silently changes that denominator for everyone.**
+
+  > **⛔ THE LEAD WROTE THAT THE `pass/fail/files` GUARD "catches a run that is
+  > too SMALL, not one that is too LARGE." THAT IS FALSE — and `cassandra`
+  > disproved it by USING it in the direction I had just ruled out, minutes
+  > later.**
+  >
+  > **The `files` half is TWO-SIDED.** Measured: **101 tracked `.test.ts` files
+  > · 102 on disk** — the untracked ward is the difference. So a gate reporting
+  > **102 files** is caught by the same guard that catches 99. **She verified
+  > her own land was clean of the untracked file by reading
+  > `101 files, not 102`.**
+  >
+  > **`thoth` built it for partial runs; it turned out to bound the denominator
+  > from BOTH ends.** _An instrument that is better than the argument that
+  > produced it — the inverse of everything else this sprint caught, and worth
+  > recording for exactly that reason._
+
+  **CHECK: `git status --porcelain | grep '^??'` before reporting a gate
+  total**, and say what it returned. **Cheap, and it closes the one hole the
+  envelope has by construction.**
+
+  _Benign in this instance — the file passes and is thoth's, landing shortly.
+  Recorded because the NEXT one will not announce itself, and because the
+  envelope's blind spot is permanent while this file is temporary._
+
+- **🔇 NEVER SILENCE A FIXTURE-BUILDING STEP.** `2>/dev/null` on a step you are
+  about to assert nothing about is fine. **`2>/dev/null` on the step that
+  CREATES the thing you measure discards the only evidence that distinguishes
+  _"the fixture failed"_ from _"the fixture worked and the mechanism is
+  elsewhere."_** Those two demand opposite responses, and a silenced step cannot
+  tell them apart.
+
+  _Added 2026-08-06 (sprint 02) by `cassandra`, against her own drive: she ran
+  `say … >/dev/null 2>&1`, hit a degenerate precondition, and had **no
+  diagnosis** — she had to re-run `say` with stderr visible to learn it had
+  **succeeded**, which is what redirected her from the write to the stream._
+
 - **Reproduce the reporter's exact spelling, not a reasonable paraphrase.** **A
   paraphrase of the input is a control that cannot come out differently, because
   it removes the variable under test while still looking like the same test.**
@@ -427,12 +1077,42 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
 - **A count travels with its denominator, or it does not travel.** **Four counts
   in this project have now been corrected for denominator reasons:**
 
-  | count                       | what happened                                                                 |
-  | --------------------------- | ----------------------------------------------------------------------------- |
-  | discovery-pointer sites     | **22 vs 19 vs 10** — three greps, three unstated globs, still unresolved      |
-  | `process.exit(` sites       | **44 vs 45** — same glob, two shas                                            |
-  | conformant parsers          | **9 vs 10** — `Bun.argv` invisible to a `process.argv` sweep                  |
-  | spells with a spawning test | **"none of three"** — glob stopped at `scripts/`; the suites live in `tests/` |
+  | count                        | what happened                                                                                                                     |
+  | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+  | discovery-pointer sites      | **22 vs 19 vs 10** — three greps, three unstated globs, still unresolved                                                          |
+  | `process.exit(` sites        | **44 vs 45** — same glob, two shas                                                                                                |
+  | conformant parsers           | **9 vs 10** — `Bun.argv` invisible to a `process.argv` sweep                                                                      |
+  | spells with a spawning test  | **"none of three"** — glob stopped at `scripts/`; the suites live in `tests/`                                                     |
+  | P0c flag count               | **112 vs 118 vs 119** — five accumulators · all six entry points · **and +1 after Cole's `--unarchive` rename minted a new flag** |
+  | **`process.exit(` sites #2** | **45 GREP HITS vs 35 CODE SITES** — ten hits are COMMENTS, and they are our own remediation notes                                 |
+
+  > **⚠ The sixth row is a NEW MECHANISM and it inverts the other five.**
+  > **Added 2026-08-06 (sprint 02) by `daedalus`, found while re-deriving P0f's
+  > sites independently — he never reached the five; the denominator broke
+  > first.**
+  >
+  > **The first five rows are all MISSES — a glob asking something narrower than
+  > the sentence built on it. This one is a false POSITIVE.**
+  >
+  > Sprint 01's fix left a
+  > `` // `process.exitCode` + a natural return, NEVER `process.exit(code)` ``
+  > comment **at every site it repaired**. So **every site we FIX increments the
+  > count of sites that look unfixed** — the remediation's own documentation is
+  > textually indistinguishable from the defect it documents.
+  >
+  > **Two files' ONLY hit is that comment, i.e. they contain zero actual
+  > calls:** `digestify/scripts/review.ts` (raw 1 · code 0) and
+  > `magpie/scripts/discover.ts` (raw 1 · code 0). **Both opened by hand, not
+  > trusted to a stripper.**
+  >
+  > **`magpie/discover.ts` is the one that stings:** it was patched, then ruled
+  > **OUT** of sprint 01 — and it still answers the audit's own grep. **A future
+  > enumeration re-finds a site that was correctly excluded and re-litigates a
+  > closed ruling.**
+  >
+  > **Carry `35`, not `45`, and state which you mean.** Method:
+  > `find … -name "*.ts" ! -name "*.test.ts"`, then strip lines beginning `//`
+  > or `*`. _(Never a `scripts/` glob — that is row four.)_
 
   **The common factor is not carelessness. It is a GLOB STANDING IN FOR A
   QUESTION.** Every one of those greps was an honest measurement of something —
@@ -441,6 +1121,38 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   same breath.** A figure with no denominator is a success-shaped number: it
   looks like evidence, it survives review, and it is the shape this whole sprint
   exists to stop shipping.
+
+- **⏱ AN ARTIFACT DECAYS AS THE SPRINT IT SERVES LANDS COMMITS — and the
+  sprint's own fixes are the fastest-moving invalidator of the sprint's own
+  measurements.**
+
+  **Added 2026-08-06 (sprint 02) by `cassandra`. This is a TIME AXIS and it is
+  NOT the same failure as the rows above.** Every one of those is a glob asking
+  the wrong question **at one instant**. Here **the measurement was right, the
+  question was right, and the world moved under it — by our own hand, in the
+  same week, to serve the same goal.**
+
+  **The evidence is one commit invalidating two artifacts:** `8f4d92d` (P0b's
+  land) simultaneously
+  - added a `process.exit(2)` **in prose**, taking the exit-site count 45 → 46;
+  - added the **first computed-key read** in the roster (`bounty/cli.ts:450`,
+    `ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f]))`), **falsifying the P0c
+    artifact's "zero computed-key reads" absence claim.**
+
+  **`git log -S "Boolean(flags[f])"` returns `8f4d92d` and only `8f4d92d`.**
+  **Neither artifact was re-derived, and neither would have been.**
+
+  > **RULE: any artifact a later lane CONSUMES has its ABSENCE CLAIMS re-run at
+  > the sha that CONSUMES it, not at the sha that DERIVED it.**
+
+  **And the sha stamp is what makes the correction sayable at all.** The claim
+  was **true at `f77ae33`** — its stamped derivation sha — and **false at
+  HEAD**. Without _"derived at `f77ae33`"_ there is no way to distinguish
+  _"thoth was wrong"_ from _"the world moved"_, and **those two demand opposite
+  responses.** **Put the sha in the CLAIM, not only in the footer.**
+
+  _Same clock as `magpie/discover.ts` re-answering an audit that ruled it out —
+  but running on the ARTIFACTS rather than on the code._
 
 ---
 
@@ -721,6 +1433,40 @@ flags each entry point recognizes. It records no types.** `node:util`
 artifact answers half of what step 2 needs, and the half it does not answer is
 **~112 individual judgement calls the plan believed were already made.**
 
+> **⚠ COUNT CORRECTED 2026-08-06 (sprint 02) by `thoth`, who re-derived it with
+> an independent instrument: the figure is 118, not 112 — and the two numbers
+> below answer different questions.**
+>
+> | figure  | question it answers                                             |
+> | ------- | --------------------------------------------------------------- |
+> | **112** | flags across the **five accumulator** parsers                   |
+> | **118** | flags across **all six converted entry points**, at derivation  |
+> | **119** | **after `--unarchive` was minted by Cole's rename** — see below |
+> | **169** | **LINES** matching a `flags.` read in the five accumulators     |
+> | **249** | **READ EXPRESSIONS** across all six                             |
+>
+> **This document said "112 flags at the 6 converted entry points" — which glues
+> two denominators together.** `glamour/server.ts` is the sixth and contributes
+> **6** (`intent port project restore timeout title`); the 112 excludes it.
+>
+> **⏱ AND THE FIGURE HAS ALREADY DECAYED, BY THIS PLAN'S OWN RULE — 118 → 119.**
+> **Cole's `--restore`/`--unarchive` ruling MINTED A FLAG that did not exist
+> when the table was derived.** `thoth` caught it on his own artifact,
+> proactively, **by applying the decay rule he had landed two hours earlier** —
+> the first time that rule has fired on the seat who wrote it, and the first
+> time it has fired **before** anyone consumed a stale row.
+>
+> **⚠ A RULING IS AN INVALIDATOR TOO.** The decay rule was written about
+> **commits** moving the tree under an artifact. **A human decision that mints a
+> name moves it just as hard, and nothing about it looks like a commit** — it
+> arrives on the wire, not in `git log -S`.
+>
+> **And "169 consumption sites" is LINES, not reads.** A type derivation done
+> per-LINE misses **80 read expressions**, and several conflicts live on shared
+> lines. **Per-flag counts reproduced the artifact exactly in all five
+> accumulators (22/25/26/20/19) by a different instrument** — that pair is
+> corroboration; the totals were not.
+
 **Getting one wrong is not a no-op.** The two failure shapes, both silent enough
 to ship:
 
@@ -731,6 +1477,185 @@ to ship:
 
 **The first is the dangerous one** — it is the same class this lane exists to
 fix, re-introduced by the fix, and on `add`/`message` it eats prose.
+
+> ### ⛔⛔ `strict: true` GUARDS THE NAME, NOT THE TYPE. There is NO automatic discriminator for a wrong row.
+>
+> **Measured by `thoth`, `node:util` `parseArgs`, Bun 1.3.14, four arms —
+> falsifying a claim the LEAD made without measuring it:**
+>
+> ```
+> --mine typed STRING,   positional follows        -> NO ERROR  {values:{mine:"t-abc123"}, positionals:[]}
+> --owner typed BOOLEAN, value follows             -> NO ERROR  {values:{owner:true}, positionals:["alice"]}
+> --owner typed BOOLEAN, allowPositionals:false    -> THREW     "Unexpected argument 'alice'"
+> UNKNOWN flag under strict:true                   -> THREW     "Unknown option '--nosuchflag'"
+> ```
+>
+> **Both wrong-type cases parse SILENTLY AND WRONGLY, exit 0.** The `--mine`
+> case is the worse half exactly as stated above: **the positional is swallowed
+> and `positionals` comes back EMPTY** — on `add`/`message` that is the task
+> title vanishing.
+>
+> **So a wrong type row does NOT show up as a red test on its own.** It shows up
+> only if **a cell asserts the PARSED RESULT.**
+>
+> **⚠ The discriminator IS available — but not where the harm is.** With
+> `allowPositionals: false`, the boolean-typed-value case **does** throw. **The
+> entry points that take free prose cannot use it:** `bounty add` (`cli.ts:775`)
+> and `bounty message` (`:895`), both `pos.join(" ")` — **and those are the two
+> verbs this plan already identifies as the live write-corruption sites.**
+>
+> > **The mechanism that would catch a wrong type is unavailable precisely on
+> > the verbs where a wrong type corrupts a write.** Not irony — the same
+> > structure twice: **free positionals are what make the corruption possible
+> > AND what disable the guard.**
+>
+> **REQUIRED REPORT WHEN P0c LANDS — THREE buckets, never two:**
+>
+> | bucket                                                                    | status                                     |
+> | ------------------------------------------------------------------------- | ------------------------------------------ |
+> | exercised by a cell asserting the **parsed result**                       | **genuinely guarded**                      |
+> | exercised only by a cell asserting **exit code / unknown-flag rejection** | **guarded against the NAME, not the TYPE** |
+> | unexercised                                                               | **unguarded**                              |
+>
+> **The middle bucket is why this is written down: it looks like coverage in any
+> count that has two buckets.**
+>
+> ### ⚠ AND "119 OF 119 VERIFIED" IS TWO STATIC READINGS OF THE SAME CODE — do not let it into the note as runtime proof
+>
+> **`thoth` bounded his own result at `e7504cf`, unprompted.** The comparison —
+> **6 of 6 entry points · 119 flags · zero divergence**, sets compared **sorted
+> and in both directions**, with a guard asserting six files were read before it
+> reported — establishes something real and narrower than it sounds:
+>
+> - **DOES establish:** the 119 declared types match what the consumption sites
+>   say they should be. **The blocking prerequisite did its job** — 119 type
+>   decisions were made against a table, **not as fresh judgement calls inside a
+>   bulk edit**, which is the shape this plan forbade.
+> - **DOES NOT establish:** that the types are **right about runtime**. **A row
+>   where BOTH the table and the lane misread the same call site is invisible to
+>   this comparison.**
+>
+> **So the release note must not say "119 flags verified" unqualified.** The
+> discriminator is still the **drive**, because `strict: true` guards the NAME
+> and not the TYPE — **the exercised-flag report in three buckets is where the
+> real coverage question gets answered, and it is not this.**
+>
+> ### ⛔⛔ AND IT IS WEAKER STILL — IT IS NOT TWO INDEPENDENT READINGS. THE LANE **CONSUMED** THE ARTIFACT.
+>
+> **`daedalus`, bounding a result in his own favour, sharper than its author
+> did.** He did not derive the types. **He read them out of the artifact and
+> declared them.** So a systematic error in the original derivation is **present
+> in his source**, and the check compares the table **to a copy of itself that
+> has been through him.** **It cannot disagree with itself.**
+>
+> _His own seat doc's line, arriving from the other direction: a claim supplies
+> the frame to everyone who checks it. **Same operator, two methods, is strictly
+> weaker than two operators — and the artifact is the common ancestor of
+> both.**_
+>
+> **THE HONEST PHRASING FOR THE RELEASE NOTE — three lines, not one:**
+>
+> | claim                                                             | strength                                                                                                                                                                            |
+> | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | **119 of 119 DECLARED consistently with their consumption sites** | **transcription verified** across six entry points — catches a dropped flag, a typo'd key, a slip in a bulk edit                                                                    |
+> | **13 of 119 corroborated by a GENUINELY INDEPENDENT source**      | grapevine's own `BOOLEAN_FLAGS`, extracted from the shipped runtime registry **before** reading the table, diffed both ways — **the only one of the six with two separate origins** |
+> | **106 rest on a SINGLE derivation**                               | careful and **unfalsified — which is not the same as cross-checked**                                                                                                                |
+>
+> **Nobody is asked to re-derive 106 flags.** The cost is real and the risk is
+> low: **a wrong type is not silent** — it swallows a positional or breaks the
+> space form, and the suites plus the drives exercise the load-bearing ones.
+> **What is asked is that the number not travel as CORROBORATION when it is
+> TRANSCRIPTION**, because _"119/119, zero divergence"_ is the exact shape of a
+> success-shaped number: **true, impressive, and answering a narrower question
+> than the sentence built on it.**
+>
+> ### ⚠ A THIRD DENOMINATOR — 119 is per-ENTRY-POINT, 115 is per-SPELL, and the ward and the coverage report CANNOT share one
+>
+> **`thoth`, from his own output; reproduced by the lead:**
+>
+> ```
+> glamour/cli.ts     26 flags
+> glamour/server.ts   6 flags      -> 32 SLOTS, but 28 UNIQUE NAMES
+> in BOTH:  intent · restore · timeout · title
+>
+> per-ENTRY-POINT total:      119      "how many flag DECLARATIONS exist"
+> per-SPELL-unique total:     115      "how many distinct names does a USER see"
+> ```
+>
+> **Both are right and they answer different questions.**
+>
+> | claim                                   | denominator              | why                                                                                 |
+> | --------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
+> | **COVERAGE** — "is this flag exercised" | **119, per entry point** | glamour's `--restore` is **genuinely two things** and each needs testing separately |
+> | **DOCUMENTATION** — the ward            | **115, per spell**       | `SKILL.md` documents **a spell**, not a parser                                      |
+>
+> **⛔ So the ward and the exercised-flag report MUST NOT share a denominator —
+> and they would have shipped looking as though they did.** `restore` is one of
+> the four, **the flag whose two senses started this entire thread.**
+>
+> **⚠ THE CHEAP CLOSE, AVAILABLE AND NOT YET RUN:** the suite is **already a
+> partial cross-check and nobody has counted it.** Every flag exercised by a
+> passing test has had its type **confirmed by execution rather than by
+> reading**. A count of _"flags appearing in any test invocation"_ is **one grep
+> and no judgement**, and it yields a real second denominator. **Routed to the
+> three-bucket report — it is the same question.**
+>
+> _The two rows carrying the weight are the ones where the instrument was
+> useless: **grapevine 26/26**, where 24 rows needed hand-reading because it
+> casts (`flags.topic as string`) where its siblings use a `typeof` guard; and
+> **`glamour/server.ts` 6/6**, enumerated entirely by hand and the entry point
+> the ward scanner returned a **zero** on. **Both files where the method was a
+> person rather than a pattern came back exact.**_
+>
+> **⚠ And the class of the lead's error is worth more than the error.** `thoth`
+> named it: **a sentence telling a reader something need not be checked.** A
+> wrong fact is corrected by the next person who looks. **A false reassurance
+> gets no corrective feedback — it is read while planning, and only tested by
+> someone who tries to reach the thing it told them not to check.** Left
+> standing, it would have told this lane that its 119 unverified rows were
+> self-checking.
+
+> ### ⛔ RULED BY COLE 2026-08-06 — `glamour/cli.ts --restore` is renamed, because it CANNOT be typed
+>
+> **`thoth` found a flag with no correct type, and both spellings are PUBLISHED
+> in `glamour/SKILL.md`** — so this is not an internal inconsistency, it is two
+> shipped contracts `parseArgs` cannot both honour from one `options` map.
+>
+> | site                         | semantics                              | documented at  |
+> | ---------------------------- | -------------------------------------- | -------------- |
+> | `cli.ts:254` `style archive` | `flags.restore !== true` — **BOOLEAN** | `SKILL.md:180` |
+> | `cli.ts:317` `open` spawn    | `String(flags.restore)` — **STRING**   | `SKILL.md:167` |
+>
+> **Both failure modes are silent:** declare `boolean` and `open --restore <id>`
+> drops the id into positionals, forwarding `--restore true` so the daemon hunts
+> a snapshot named `true`. Declare `string` and `style archive <id> --restore`
+> either throws _"argument missing"_ or **swallows the next positional as its
+> value — this sprint's own defect class, re-introduced by the fix.**
+>
+> **RULING: rename the BOOLEAN one.** `style archive <id> --restore` becomes
+> **`--unarchive`**.
+>
+> ```
+> parseArgs options:  restore: {type:"string"}   unarchive: {type:"boolean"}
+> :254 becomes:       archived: !flags.unarchive
+> ```
+>
+> **Why that one and not the other:** `--restore <id>` is the **house-wide**
+> spelling — bounty, imago, magpie, glamour's own `open`, and
+> `glamour/server.ts` all mean _restore a session from an id_. **`style archive`
+> is the sole outlier**, `--unarchive` is a better name for the inverse of
+> archive, and the rename **kills the live bug below by construction**.
+>
+> **⚠ A live bug sits underneath this, independent of P0c, reported by `thoth`
+> and deliberately NOT fixed by him:** `:254` reads `flags.restore !== true`, so
+> if `restore` holds a **string** the expression is `true` and
+> **`glamour style archive <id> --restore foo` ARCHIVES instead of restoring —
+> exit 0, no signal.** The rename dissolves it. **Candidate issue; filing is
+> Cole's.**
+>
+> **`glamour/SKILL.md:180` must be updated in the same change.** A doc that
+> teaches the old spelling after the rename is a second, quieter source of
+> truth, and it is the one an agent reads.
 
 **Prerequisite step 0 (blocking):** **derive and record the type of every flag
 at every one of the six converted entry points**, into the same artifact, **read
@@ -1245,23 +2170,39 @@ process.stdout.write(`${payload}\n`); // ← may carry a scope guard, or none
 if (ev.type === "closed") process.exit(0);
 ```
 
-**⚠ The scope guard is NOT part of the shape.** Four sites spell the write as
-`if (inScope(ev) && !selfEcho) process.stdout.write(…)`. **`glamour/cli.ts:499`
-is a BARE ``process.stdout.write(`${payload}\n`)`` with no guard at all** —
-which matters because glamour is the one site whose line number moved, so it is
-the one site a builder must find by shape. **A search for the guarded spelling
-misses exactly the site the "search by shape" rule was written to protect.**
+**⚠ The scope guard is NOT part of the shape.** **THREE of the five sites are
+bare**, not one:
 
 | spell         | file                       | line at `7a32677` | write spelling      |
 | ------------- | -------------------------- | ----------------- | ------------------- |
 | **bounty**    | `bounty/scripts/cli.ts`    | **595**           | guarded             |
-| **magpie**    | `magpie/scripts/cli.ts`    | **280**           | guarded             |
+| **magpie**    | `magpie/scripts/cli.ts`    | **280**           | **BARE — no guard** |
 | **astrolabe** | `astrolabe/scripts/cli.ts` | **222**           | guarded             |
-| **imago**     | `imago/scripts/cli.ts`     | **281**           | guarded             |
+| **imago**     | `imago/scripts/cli.ts`     | **281**           | **BARE — no guard** |
 | **glamour**   | `glamour/scripts/cli.ts`   | **500**           | **BARE — no guard** |
 
 _The numbers pin the `process.exit`; the write is the line above it — glamour's
-is `:499`._
+is `:499`, imago's `:280`, magpie's `:279`._
+
+> **⚠ CORRECTED 2026-08-06 (sprint 02) by `cassandra`. The earlier table said
+> four guarded and glamour alone bare, and built a search instruction on it:**
+> _"glamour is the one site a builder must find by shape."_ **That sentence was
+> wrong and it was load-bearing.**
+>
+> **Measured at `f77ae33` by two methods sharing no mechanism** — an adjacency
+> scan pairing each `stdout.write` with the `process.exit` on the next line, and
+> a symbol-presence count. **`inScope` and `selfEcho` occur ZERO times in
+> imago's and magpie's `cli.ts`.** Corrected: **2 guarded (bounty, astrolabe) ·
+> 3 bare (glamour, imago, magpie).**
+>
+> **All five LINE NUMBERS were correct. Only the spelling column was wrong**, so
+> no gate cell changes — the cells enumerate by site and the sites are right.
+>
+> **The rule the section argues for is UNHARMED — it is three times better
+> supported than the sentence that argued for it.** A builder told glamour was
+> the sole exception would reasonably search the guarded spelling for the other
+> four and **silently find two**. **Search by SHAPE, and do not treat any guard
+> spelling as the invariant.**
 
 **⚠ glamour was `:481` in sprint 01's plan.** `62a5972` added 19 lines above it.
 **Sprint 01's number is not corrected there** — a frozen record is not amended —
@@ -1367,6 +2308,111 @@ _That is the same instrument gap that let the 23-minute hang ship._
    > cap, so the field takes it — then `tail` that one event. **The gate's own
    > vacuity rule (G8) applied to G8's own threshold.**
 
+   > ### ⛔⛔ THE ABOVE IS NECESSARY AND **NOT SUFFICIENT**. A cell built to it PASSES AGAINST THE BUG.
+   >
+   > **Measured by `daedalus` 2026-08-06, both directions, after his own
+   > correctly-labelled `RED PRE-FIX` cell passed with the bug restored —
+   > twice.**
+   >
+   > ```
+   > bug restored, 10 x 1MB tasks, tail --since 0 | cat, close at 0.02s/0.05s/0.15s/0.3s/1.0s
+   >    -> 10001074 bytes.  COMPLETE AT EVERY TIMING.
+   > with the fix, identical construction
+   >    -> 10001074 bytes.  BYTE-IDENTICAL.
+   > ```
+   >
+   > **Five timings, fixed and buggy indistinguishable. The cell CANNOT fail.**
+   >
+   > **⚠ THE DISCRIMINATING VARIABLE IS THE CONSUMER'S DRAIN STATE, NOT THE
+   > PAYLOAD SIZE.**
+   >
+   > ```
+   > same board, 3 x 1MB, tail piped to a NON-draining consumer:  | ( sleep 2; cat )
+   >    bug restored -> 65536 bytes       exactly the buffer
+   >    with the fix -> 3000440 bytes     complete
+   > ```
+   >
+   > **THAT is the cell. BOTH conditions, and the second one's TIMING is part of
+   > it:**
+   >
+   > 1. the payload is **over-buffer**, and
+   > 2. the consumer is **not draining AT THE INSTANT OF EXIT.**
+   >
+   > **⚠ "At the instant of exit" is load-bearing, not decoration.** A cell that
+   > stalls the consumer at the wrong moment gets an indistinguishable pair
+   > again and reads as a passing gate. _(Narrowing supplied by `thoth`, who
+   > noted the phrase was in the prose and not in the rule line.)_
+   >
+   > **⛔ THAT PREDICTION CAME TRUE WITHIN THE HOUR, ON A DIFFERENT SEAT.**
+   > `cassandra` ran the amended construction on bounty to confirm the law
+   > independently, blocked her consumer **2s** and closed the board at **4s** —
+   > so **the consumer had resumed draining before the exit fired:**
+   >
+   > ```
+   > [PRE]  200285      [POST] 200286     <- no truncation in EITHER world
+   > ```
+   >
+   > **On its face that reads as _"the amended fixture does not discriminate
+   > either"_ — a finding AGAINST a rule landed twenty minutes earlier.** It was
+   > her cell. Corrected to block **8s** and close at **1s**:
+   >
+   > ```
+   > [PRE]  65536       [POST] 200286     <- exactly the buffer, then complete
+   > ```
+   >
+   > > **"Non-draining at the instant of exit" is a property of the SCHEDULE,
+   > > not of the consumer's SHAPE.** Her cell had the right shape and the wrong
+   > > schedule.
+   >
+   > **The direction of the failure is what earns this the space: a fixture can
+   > implement the LETTER of a spec and not its CONTENT, and it then presents as
+   > _"the spec is wrong"_ rather than _"my cell is wrong"_ — pointing OUTWARD,
+   > at a peer's ruling.** That is the most dangerous direction available.
+   >
+   > **What caught it: the result CONTRADICTED A MEASUREMENT ALREADY ON THE
+   > RECORD** — the same tripwire that caught `daedalus`'s confident zero. **A
+   > ratified fact auditing an instrument nobody aimed at it, third instance
+   > this session.**
+   >
+   > **`expect(bytes) > 65_536` before the parse remains correct and remains
+   > INSUFFICIENT.**
+   >
+   > **Why `| cat` cannot express it:** a continuously-draining consumer lets
+   > each write complete before the next arrives, so **the write immediately
+   > preceding the exit is the small `closed` frame**, which fits under the
+   > buffer. **The big-payload-in-flight-at-exit condition does not occur when
+   > someone is reading.**
+   >
+   > **It is realistic, not contrived:** any consumer momentarily not reading is
+   > in that state — the field condition for a Monitor-wrapped `tail` whose
+   > reader is busy.
+   >
+   > ### ⚠⚠ THIS DOES **NOT** INVALIDATE SPRINT 01's NINE ENTRY-POINT GATES. Read this before concluding it does.
+   >
+   > **The two verb classes differ in whether the consumer has TIME to drain,
+   > and the fixture spec was correct for the class it was derived from:**
+   >
+   > | verb class                        | shape                                        | is a big write in flight at exit?              |
+   > | --------------------------------- | -------------------------------------------- | ---------------------------------------------- |
+   > | **one-shot** (`state`, `pull`, …) | one big `write()`, **then exit immediately** | **ALWAYS** — no time for any consumer to drain |
+   > | **streaming** (`tail`)            | many writes over seconds, **consumer-paced** | **ONLY if the consumer is stalled**            |
+   >
+   > **Sprint 01 measured 65536-vs-114042 on a one-shot verb through a shell
+   > pipe, and that discrimination was real.** The fixture spec was then
+   > **carried to a different verb class without being re-derived** — and its
+   > question changed on the way.
+   >
+   > **The generalisable form, and it is this session's most-repeated shape:** a
+   > correct measurement, carried to a context where the thing it discriminates
+   > on is no longer the thing that varies. **Re-derive a fixture when the verb
+   > class changes, exactly as you would re-derive a line reference when the
+   > tree moves.**
+   >
+   > **⚠ BINDS EVERY P0f CELL, INCLUDING ONES ALREADY DRAFTED. Like G6, a cell
+   > written to the old spec needs REWRITING, not re-running** — it is green
+   > against the bug, and **the label discipline cannot catch it**: daedalus's
+   > cell was correctly labelled `RED PRE-FIX` and was still not red.
+
 4. **`RED PRE-FIX` — assert BOTH directions in the SAME RUN: the piped form AND
    the file form.** One variable, two destinations:
 
@@ -1407,11 +2453,42 @@ count.**
 
 **The five sites do not fall into two populations. They fall into three:**
 
-| site                   | verdict          | what is established                                                                                      |
-| ---------------------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
-| **bounty · astrolabe** | **PINNABLE**     | harness confirmed in-plan; step 7 and cell 6 both run                                                    |
-| **glamour**            | **DRIVEN ONLY**  | **settled** — 7 test files, **none spawns a process**. Write a harness, or close by drive.               |
-| **magpie · imago**     | **UNDETERMINED** | a spawning integration test exists in each; whether it can drive `tail` through a pipe is **unverified** |
+| site                         | verdict         | what is established                                                                                   |
+| ---------------------------- | --------------- | ----------------------------------------------------------------------------------------------------- |
+| **bounty**                   | **PINNABLE**    | harness confirmed, **and it already holds BOTH halves** — see below                                   |
+| **astrolabe**                | **PINNABLE**    | **for cell 6 ONLY** — its harness is `Bun.spawn({stdout:"pipe"})`, which G6 says cannot fail on drain |
+| **glamour · imago · magpie** | **DRIVEN ONLY** | **settled** — no CLI-process harness in any of the three. Write one, or close by drive.               |
+
+> ### RESOLVED 2026-08-06 (sprint 02) by `cassandra` — the split is **`2 pinnable · 3 driven-only · 0 undetermined`**
+>
+> **The prerequisite read was done and the answer went the way the plan warned
+> against assuming.** `magpie/tests/daemon.integration.test.ts` and
+> `imago/tests/server.integration.test.ts` **spawn the DAEMON, never the CLI** —
+> zero occurrences of `cli.ts`, zero of `tail`, and `stdout: "ignore"` in both.
+> **They cannot drive `tail` through a pipe without new harness code**, so
+> magpie and imago ARE glamour's population after all.
+>
+> **⚠ And this plan named the wrong magpie file.** `magpie/tests/cli.test.ts`
+> exists and references `cli.ts` — but its own first line says _"Pure unit tests
+> for cli.ts helpers that don't need a running daemon."_ **It imports; it does
+> not spawn.** Anyone who grepped for a CLI-referencing test instead of opening
+> it would have marked magpie **pinnable on a file that cannot drive a
+> process.**
+>
+> **⚠ `PINNABLE` was itself flattening two capabilities that come apart at the
+> site under test, and astrolabe is where they come apart.** Cell 6
+> (termination) is satisfiable under `Bun.spawn` — awaiting an exit works fine.
+> **Cells 1–5 (drain) are NOT**, per G6. So _"is there a process harness?"_ is
+> the wrong question; **ask it once per capability.** astrolabe's
+> `cli.test.ts:15` is a real harness and is **not reusable for the drain cells
+> without rewriting to the `sh -c "… | cat"` form.**
+>
+> **Build bounty FIRST — its `server.test.ts` already contains both patterns**,
+> so the bounty cell is a composition rather than new harness work: the
+> G6-correct construction at **`:2824`**, a `tail` subprocess harness at
+> **`:1741` · `:1780` · `:1840`**, and an existing termination test at
+> **`:1733`**. **Lift bounty's shape to astrolabe**, then decide glamour, imago
+> and magpie on cost.
 
 **magpie and imago are NOT glamour's population.**
 `magpie/tests/daemon.integration.test.ts` and
@@ -1464,6 +2541,73 @@ beginning before it streams new ones.
 > results. **A release note that overstates does the same thing to a reader who
 > cannot grep.**
 >
+> **0. LEAD WITH THE LOST TERMINAL FRAME, NOT WITH TRUNCATED PAYLOADS — for
+> P0f.** **`cassandra` established, on all three spells by file and line, that
+> `tail` streams SURFACE→AGENT events and every CLI verb is an AGENT action.**
+> So a **>64 KiB payload through `tail` is NOT REACHABLE FROM THE CLI AT ALL** —
+> it needs a browser sending a very large message, which bounds that half's
+> real-world exposure far more tightly than this plan implied.
+>
+> **The harm that IS universal is the one the lane was named for: the terminal
+> `closed` frame is lost regardless of payload size**, on the verb agents leave
+> running for hours. **Say that. A release note leading with truncated payloads
+> would be true and overstated, which costs the same trust as false.**
+>
+> **0a. THE FLAKE COMPARISON — the releasable sentence, and NOTHING stronger.**
+> **Measured by `cassandra` (`t-3190109f`), detached worktree at `8f4d92d`,
+> `node_modules` symlinked, per-run private `TMPDIR`, precondition asserting
+> zero module-resolution errors AND 1304 tests actually ran:**
+>
+> > **"The pre-P0d suite passed 4 of 4 full runs at `8f4d92d` (1304 tests / 101
+> > files each). The post-P0d suite failed 1 of 4, in
+> > `imago > marksUnseen freshness flag`. Both are four-run samples; they differ
+> > by one observation and we are not claiming a rate change."**
+>
+> **⛔ "THEY DIFFER" IS THE WHOLE COMPARATIVE CLAIM.** Not a rate change, not
+> _"P0d made it worse"_, and **never a percentage.** Both are **n=4 point
+> estimates differing by a single draw** — consistent with no difference at all
+> — and `thoth` already retracted precise arithmetic on exactly this n.
+>
+> **⚠ The direction is named so nobody has to infer it: the difference points
+> TOWARD P0d having introduced the flake.** That is the finding least convenient
+> for the lane that just shipped, **which is precisely why it is not being
+> sharpened.** _The honest position is that this measurement cannot distinguish
+> "P0d introduced it" from "we drew a 1 and a 0 from the same distribution."_
+>
+> **Every arm carried its denominator — 1304 / 0 / 101 — so no arm was a partial
+> run wearing a green.** One extra arm went green **under a full concurrent
+> suite plus 14 ambient daemons**, the most adverse conditions anything saw
+> today; post-P0d's red came under ordinary load. **Suggestive, not sufficient,
+> n=4.**
+>
+> **NOT ESTABLISHED, stated rather than left absent:** whether the flake
+> predates P0d (**0-of-4 is not evidence of absence at this n** — a 1-in-10
+> flake shows 0 of 4 more often than not) · any **per-cell rate** (no arm
+> failed, so there is nothing to attribute) · **ambient load was NOT
+> controlled**, 14 daemons live throughout, **12 predating today** — stated
+> rather than eliminated, because **clearing them would have measured pre-P0d
+> quiet against post-P0d loaded.**
+
+> **0b. A TEST DEPENDED ON THE DEFECT — say so, because it bounds what "the
+> suite was green" ever meant.** `imago/tests/cli.test.ts` asserted the `=` form
+> on **`--text`** — **a flag `imago` does not have.** Not in the artifact's 20,
+> not in the source, never a flag: **an arbitrary stand-in name that worked only
+> because the old parser accepted whatever it was handed.**
+>
+> **The test was passing BECAUSE of the permissiveness P0c removes.** It is not
+> collateral damage from the fix — **it is a second instance of the same defect,
+> sitting in the test suite, invisible until the registry named it.**
+>
+> **Generalises, and belongs in the note:** a permissive parser lets tests
+> accumulate assertions about **flags that do not exist**, and **every one reads
+> as coverage.** They cannot be found by inspection — **they look exactly like
+> tests of real flags.** _The conversion is what enumerates them._
+>
+> **Rewritten against a real flag (`--options`, whose values genuinely carry
+> `k=v`), property under test unchanged, plus a new cell asserting `--text` is
+> now REFUSED BY NAME** — so the stand-in's absence is **pinned** rather than
+> merely removed.
+>
 > **1. Say WHICH HALF, per lane.** For the drained exit across both sprints:
 > _"the entry-point exits are fixed across eight files; the streaming verbs'
 > `tail` exits are fixed in five spells; the remaining in-function exits are
@@ -1494,14 +2638,128 @@ beginning before it streams new ones.
 > **A true claim that reads as an overclaim costs the same trust as a false
 > one.**
 
+### The closable set — mapped, and it is 6 of the 14
+
+**Drafted by the lead ahead of the beats so the count is not improvised at
+release time. UNVERIFIED until each is re-checked against what actually
+shipped.**
+
+| issue   | closed by                                        | status                    |
+| ------- | ------------------------------------------------ | ------------------------- |
+| **#77** | sprint 01 P0 (`ec33378`) + gate `59517c3`        | **closable**              |
+| **#78** | sprint 01 P0 (`c29aa4e`) + gate                  | **closable**              |
+| **#80** | **BOTH halves, across BOTH sprints** — see below | **closable**              |
+| **#81** | P0c                                              | **not yet — P0c unbuilt** |
+| **#83** | P0d (`14bec41`)                                  | **closable**              |
+| **#84** | P0d (`14bec41`)                                  | **closable**              |
+
+**⚠ #80 is the one to get right.** Its title carries **two** defects — _"a
+skipped `--restore` **and** a pipe-truncated `state`"_. The truncation half was
+fixed in **sprint 01**; the skipped-`--restore` half is **P0b, this sprint**.
+**Closing it must cite both, or the comment claims one sprint did work the other
+did.**
+
+**⚠ And the release spans TWO sprints, which the note must say.** #77 and #78
+were fixed in sprint 01 and **never closed** — its outcome's honest headline is
+_"zero of the fourteen are closed."_ **So this release closes sprint 01's work
+as well as sprint 02's**, and a note implying sprint 02 fixed them is false.
+
+**The other eight are NOT closable and each has a reason** — not a backlog to
+tidy later: **#64** genuinely unexplained, needs its own investigation · **#73 ·
+#74 · #79** are P1, **unratified** · **#72 · #76** are P2/P3, unratified ·
+**#82** on hold · **#85–#88** deliberately out of scope with the contract
+investigation.
+
+**⚠ P0f's tail slice closes NO issue.** It has no number — it was found by this
+project, not reported. **Do not let a lane with real shipped code go unmentioned
+because the release note is organised by issue.**
+
 1. **Conventional commits throughout** (`fix(bounty)`, `fix(grapevine)`) —
    release-please owns versions, **no hand-edited version.**
-2. **Re-read both `SKILL.md` files against what actually shipped.** Anything
-   this project falsified must be corrected here; that is the in-scope slice of
-   `2026-07-09-bounty-grapevine-skill-review`. **P0d's `bounty/SKILL.md` edit is
-   NOT deferred to here** — it lands inside P0d (step 5), because that lane is
-   the only place that knows what the new `applied` contract says. This pass
-   checks it, it does not author it.
+2. **Re-read the `SKILL.md` of EVERY SPELL THIS SPRINT CHANGED — DERIVED, never
+   a remembered list.**
+
+   ```
+   git diff --name-only <sprint-base>..HEAD -- plugins/spellbook/skills | cut -d/ -f4 | sort -u
+   ```
+
+   **⛔ NO TRAILING SLASH AND NO `*` — see the instrument warning below.** At
+   `f77ae33..HEAD` this yields **FIVE**:
+   `astrolabe · bounty · glamour · imago · magpie`. **grapevine returns a
+   MEASURED ZERO.**
+
+   > **⚠ The old wording said _"both `SKILL.md` files"_ — bounty and grapevine —
+   > and it was wrong in BOTH directions.** `grapevine` changed **nothing** this
+   > entire sprint, and **three spells P0d changed were outside its scope.**
+   > Found by `thoth`, auditing the release section before the beat ran.
+   >
+   > **Where it came from is this session's most-repeated shape, for the fourth
+   > time:** _"both files"_ was **correct for sprint 01**, whose scope was
+   > bounty and grapevine. **It was carried into sprint 02's plan without being
+   > re-derived**, and P0d reached four spells sprint 01 never touched.
+   >
+   > **`thoth`'s framing, which is the retro-worthy half: three of the four
+   > instances today were carried across a boundary BY A DOCUMENT rather than by
+   > a person.** _Prose carries a denominator forward silently, and **nothing in
+   > a doc goes red when its scope changes underneath it.**_
+   >
+   > **A derived set cannot go stale between sprints. A named one already did.**
+
+   > **⛔⛔ AND THE CORRECTION'S OWN DENOMINATOR WAS SHORT — the set is FIVE,
+   > not four.** `thoth` named bounty · glamour · imago · magpie (P0d's
+   > `server.ts`) and **missed `astrolabe`**, changed by **P0f** (`cli.ts:222` +
+   > its cell at `5dc8377`). **A correction derived from ONE LANE inherits that
+   > lane's scope.**
+   >
+   > **⛔ AND THE LEAD'S CONFIRMING INSTRUMENT WAS BROKEN.** I verified with
+   > `-- 'plugins/spellbook/skills/*/'`, which returns **ZERO for every spell**,
+   > including ones I knew had changed. It would have "confirmed"
+   > grapevine-unchanged **by returning the same empty it returns for
+   > everything.**
+   >
+   > **What caught it: the SECOND glob also came back empty when it could not
+   > possibly be.** The zero-guard — _a zero anywhere is the instrument until
+   > proven otherwise_ — applied to my own check, one message after I praised
+   > two seats for applying it to theirs.
+   >
+   > **⚠⚠ THE FIRST VERSION OF THIS WARNING BLAMED THE TRAILING SLASH. THAT WAS
+   > WRONG AND IT CONDEMNED A WORKING INSTRUMENT.** Corrected by `thoth`, four
+   > arms, measured at `82adf9a` and reproduced by the lead:
+   >
+   > ```
+   > 'plugins/spellbook/skills/*/'         ->   0    <- wildcard + trailing slash.  BROKEN
+   > 'plugins/spellbook/skills/*'          ->  16    wildcard, no slash            WORKS
+   > 'plugins/spellbook/skills/bounty/'    ->   4    literal + trailing slash      WORKS
+   > plugins/spellbook/skills              ->  16    bare prefix                   WORKS
+   > ```
+   >
+   > > **A pathspec combining a `*` WILDCARD with a TRAILING `/` silently
+   > > matches nothing.** Drop the trailing slash **whenever the pathspec
+   > > contains a wildcard**. **A literal path with a trailing slash is
+   > > unaffected.**
+   >
+   > **Why the correction matters more than the original warning:** `thoth`'s
+   > own grapevine check used `'…/skills/grapevine/'` — literal plus trailing
+   > slash — **which returns a REAL zero and was sound.** The broad wording
+   > would have forced him to disown a valid measurement. **A warning that
+   > condemns a working instrument costs you the instrument**, and _a wrong
+   > warning is worse than a wrong fact: a wrong fact is corrected by the next
+   > person who looks; a wrong warning stops them looking._ **This repo's SOP
+   > carries the same scar about `anthill status`.**
+   >
+   > **The durable remedy is unchanged and survives whichever clause is guilty:
+   > verify against a CONTROL THAT SHARES NO PATTERN.** Here, the bare prefix.
+
+   **What the three actually need is a SCOPE CALL, not a re-read.** `applied`
+   appears **10×** in bounty's `SKILL.md` and **0×** in glamour / imago / magpie
+   — **but those three document no `/cmd` response envelope AT ALL.** So it is
+   an **ABSENT** doc surface, not a **STALE** one, and the two need opposite
+   fixes: stale → correct the sentence; **absent → decide whether they should
+   document an envelope at all.** _`thoth` explicitly does not propose that they
+   should; their agent surface may simply be smaller. The point is that the old
+   beat would never have surfaced the question, because it never opened those
+   files._
+
 3. **Cold-gate the assembled release**, not just the lanes.
 4. **Move every closed backlog item to `docs/backlog/_archive/`.**
 5. **Comment the GitHub issues as they close.** **Zero of the fourteen were

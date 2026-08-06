@@ -209,7 +209,19 @@ async function main(argv: string[]): Promise<number> {
   const broadcastPresence = () => broadcast({ type: "presence", agent: sseClients.size > 0 });
 
   // ── agent commands (POST /cmd) ────────────────────────────────────
-  function handleAgentMsg(raw: Record<string, unknown>) {
+  // #84 — RETURNS A VERDICT: `true` if the command type was RECOGNISED.
+  // The switch below had 13 cases and NO `default:`, so an unrecognised type
+  // fell straight through and the /cmd route still answered {ok:true} — a bogus
+  // type was byte-identical to an executed one, measured live.
+  //
+  // "Recognised", NOT "changed state": several cases are guarded by a shape
+  // check and legitimately do nothing, and reporting those as failures would
+  // break working callers. The narrower contract is a deliberately unclaimed gap.
+  //
+  // ⚠ handleBrowserMsg below is a SEPARATE function with a near-identical
+  // switch. It is NOT part of this verdict — the WebSocket has no response to
+  // carry one — and must not be folded in.
+  function handleAgentMsg(raw: Record<string, unknown>): boolean {
     const msg = raw as AgentCommand;
     switch (msg.type) {
       case "init":
@@ -306,7 +318,10 @@ async function main(argv: string[]): Promise<number> {
       case "close":
         resolveDone({ code: 0, reason: "close" });
         break;
+      default:
+        return false; // unrecognised type — the missing `default:` is the defect
     }
+    return true;
   }
 
   // ── browser messages (WebSocket) ──────────────────────────────────
@@ -631,8 +646,22 @@ async function main(argv: string[]): Promise<number> {
             .json()
             .then((body) => {
               touch();
-              handleAgentMsg(body as Record<string, unknown>);
-              return new Response('{"ok":true}', {
+              // #84 — propagate the handler's verdict rather than a literal
+              // {ok:true}. `applied` is bounty's existing field; nothing new.
+              const applied = handleAgentMsg(body as Record<string, unknown>);
+              if (!applied) {
+                return Response.json(
+                  {
+                    ok: false,
+                    applied: false,
+                    error: `unrecognised command type ${JSON.stringify(
+                      (body as { type?: unknown })?.type,
+                    )} — nothing was applied`,
+                  },
+                  { status: 400 },
+                );
+              }
+              return new Response('{"ok":true,"applied":true}', {
                 headers: { "Content-Type": "application/json" },
               });
             })

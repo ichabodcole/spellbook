@@ -495,7 +495,25 @@ async function main(argv: string[]): Promise<number> {
   }
 
   // ── agent commands (POST /cmd) ────────────────────────────────────
-  async function handleAgentMsg(msg: Record<string, unknown>) {
+  // #84 — RETURNS A VERDICT: `true` if the command type was RECOGNISED.
+  //
+  // ⚠ imago is the DISPROOF that this is an `await` bug. This handler is async
+  // AND its /cmd route already awaits it correctly — and the defect was present
+  // anyway, because the route answered a literal {ok:true} while the handler
+  // gave it nothing to report. Adding `await` to glamour would only have made
+  // glamour resemble imago, which was also broken.
+  //
+  // "Recognised", NOT "changed state": the four early returns below are guards
+  // inside recognised branches (an empty variant list, a missing id), and each
+  // returns `true`. Reporting a recognised-but-inert command as a failure would
+  // break working callers — the over-inclusive error P0b had to avoid in this
+  // same sprint. The narrower contract (did it actually take effect?) is a real
+  // gap, deliberately UNCLAIMED and raised rather than silently assumed.
+  //
+  // ⚠ handleBrowserMsg below is a SEPARATE function with its own if-chain and a
+  // near-identical shape. It is NOT part of this verdict and must not be folded
+  // in: it serves the WebSocket, whose callers have no response to carry one.
+  async function handleAgentMsg(msg: Record<string, unknown>): Promise<boolean> {
     const t = msg.type as string;
     if (t === "init") {
       if (typeof msg.title === "string") state.title = msg.title;
@@ -532,7 +550,7 @@ async function main(argv: string[]): Promise<number> {
       const variantsIn = Array.isArray(msg.variants)
         ? (msg.variants as Array<Record<string, unknown>>)
         : [];
-      if (variantsIn.length === 0) return;
+      if (variantsIn.length === 0) return true;
       const batchId = newId("b");
       const variants: Variant[] = [];
       for (const raw of variantsIn) {
@@ -549,7 +567,7 @@ async function main(argv: string[]): Promise<number> {
           analysis: "",
         });
       }
-      if (variants.length === 0) return;
+      if (variants.length === 0) return true;
       const batch: Batch = {
         id: batchId,
         kind: msg.kind === "edit" ? "edit" : "generate",
@@ -582,14 +600,14 @@ async function main(argv: string[]): Promise<number> {
     } else if (t === "ref.select") {
       // the agent points a variant at the next gen — the user sees it highlight
       const hit = findVariant(msg.id as string);
-      if (!hit) return;
+      if (!hit) return true;
       hit.variant.refSelected = msg.selected === true;
       broadcastState();
     } else if (t === "variant.analyze") {
       // the agent writes its read onto a generated/imported image — durable
       // metadata stored on the variant (persists in the snapshot).
       const hit = findVariant(msg.id as string);
-      if (!hit || typeof msg.text !== "string") return;
+      if (!hit || typeof msg.text !== "string") return true;
       hit.variant.analysis = msg.text;
       // imported images carry a hash → cache by it so re-importing the same pixels
       // reuses the read (preserves the old ref.analyze behavior across the merge)
@@ -615,7 +633,10 @@ async function main(argv: string[]): Promise<number> {
       broadcastState();
     } else if (t === "close") {
       resolveDone({ code: 0, reason: "close" });
+    } else {
+      return false; // unrecognised type — this chain had no terminal else at all
     }
+    return true;
   }
 
   function sseResponse(url: URL): Response {
@@ -1184,8 +1205,23 @@ async function main(argv: string[]): Promise<number> {
             .json()
             .then(async (body) => {
               touch();
-              await handleAgentMsg(body as Record<string, unknown>);
-              return new Response('{"ok":true}', {
+              // #84 — the `await` here was ALREADY correct. What was missing is
+              // a verdict to propagate, so this answered a literal ok:true even
+              // to commands it dropped.
+              const applied = await handleAgentMsg(body as Record<string, unknown>);
+              if (!applied) {
+                return Response.json(
+                  {
+                    ok: false,
+                    applied: false,
+                    error: `unrecognised command type ${JSON.stringify(
+                      (body as { type?: unknown })?.type,
+                    )} — nothing was applied`,
+                  },
+                  { status: 400 },
+                );
+              }
+              return new Response('{"ok":true,"applied":true}', {
                 headers: { "Content-Type": "application/json" },
               });
             })

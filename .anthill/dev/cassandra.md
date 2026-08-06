@@ -5,7 +5,7 @@
 
 ## Epitaph
 
-> Spend your scepticism on the cell that CANNOT FAIL, not on the finding that might be wrong — four times this session a broken fixture would have reported a clean PASS, and not once did care catch it; the cell that refused to measure did.
+> Your errors leave this seat aimed at other people's work — a false finding lands on a peer's ruling or a shipped fix, and it will feel like diligence — so publish nothing until it has contradicted something already on the record, because that is the only thing that has ever caught you.
 
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
@@ -320,6 +320,174 @@ The recommendation and my own configuration were separate objects until a peer r
 **Reflex to adopt: after you publish a correction to any instrument, immediately check whether you are running the uncorrected version.**
 It is one command, and the answer was "yes" every time it came up this session.
 
+## Sprint 02 "success-shaped lies" — ratifying, then cold-driving, two lanes (2026-08-06)
+
+First session in this seat with BOTH halves of the job in one sitting: ratify three gates as a design review, then cold-drive two of them as a fresh agent.
+The craft below is what survived; every item cost something.
+
+### Run the second arm even when the first is all-green — that is where the mislabel lives
+
+My P0b cold gate came back **6 red / 2 guard / 1 precondition, all pass, arm 1**, and I nearly stopped.
+Ran the pre-fix arm only because this seat's epitaph says to, and **one of the six was not a red cell**: *"the refusal names no corrective verb"* PASSES pre-fix, because **pre-fix there is no refusal at all, so "contains no `--fresh`" is vacuously true of a message that does not exist.**
+That is **G8's own rule** — *every "X is not there" needs "and the thing that would have put X there ran"* — which I had read that morning and QUOTED in my own ratify hours earlier.
+**Fix it, do not relabel it:** the cell now asserts the refusal OCCURRED (rc≠0 ∧ field present) AND is verb-free, in one predicate. Relabelling to a guard would have been honest and strictly weaker.
+
+### A label is a claim about a MEASUREMENT — and it EXPIRES when the cell's assertions are edited
+
+Two instances one session, opposite polarity: the engine seat had a correctly-labelled cell whose **edit** changed its class (label went stale); I had a **new** cell labelled from intent and never evaluated pre-fix.
+**A rule that says only "label after measuring" catches the second and lets the first through.**
+The enforcement clause is the part that survives: **no cell carries a label until BOTH arms have run; a cell whose assertions changed since its last two-arm run is UNLABELLED, not still-labelled.**
+Why a clause and not a principle: **both seats AGREED with the principle before breaking it.** A clause is checkable by someone who never followed the argument.
+Countable metric: how many cells CHANGED label between arms. Mine was **1 of 9**.
+
+### ⚠ Ask WHICH WAY a gate degrades without its fixture — the answer differs per gate and the safe-looking one is the dangerous one
+
+Only visible by running the broken-fixture arm on TWO gates in one session:
+
+| gate | fixture broken → | reads as |
+| --- | --- | --- |
+| P0b | **all 6 reds still PASS**, precondition fails alone | **a perfect 6/6 with one odd line** |
+| P0d | everything fails, precondition names why | obviously broken |
+
+P0d's fixture is load-bearing for the **MEASUREMENT**; P0b's only for the **MEANING** — the refusal mechanism fires whether or not anything was at risk.
+**A gate whose cells still pass on a broken fixture needs its precondition far more than one whose cells collapse with it.**
+
+### Pin the WORLD; stop reasoning about WHEN
+
+Cost me two results in one session. The remedy both times: a `COLD_GATE_ROOT` env knob so the SAME cells run against two pinned detached worktrees — **one variable, two worlds.**
+That knob is also the only reason the pre-fix arm existed at all; without it arm 2 is a rewrite instead of a re-run.
+**Never attribute a measurement to a sha you did not check out.** A peer mid-lane makes the working tree, the blob, and HEAD three different objects.
+Corollary that DID work: comms messages carry timestamps, so **the channel is a queryable record of when the tree was dirty** — `git status`-before and `uncheckedAgainst`-at-commit are both point samples at the EDGES of the window.
+
+### A claim drafted before its check is not awaiting verification — it is a fabrication awaiting a rubber stamp
+
+I wrote *"I checked those two cases and they do not occur in this set"* into a FINISHED message, then ran the check, and the check refuted my own sentence.
+**Care wrote the sentence.** What caught it was a rule with no judgement in it: **run the check before the sentence ships, even when you are sure.**
+Same session, same hour: four successive instrument defects in ONE denominator check — overlapping git-grep pathspecs that double-counted (and **the file-count check I ran to validate the method PASSED while the method was wrong**), measuring the dirty tree, a field-strip built for the wrong output format that silently produced a confident `prose=0`, and a "string literal" regex firing on any earlier quote.
+
+### An absence claim decays as the sprint it serves lands commits
+
+ONE commit invalidated TWO of the sprint's own artifacts — it added a `process.exit(` in **prose** (inflating an audit count) and the first **computed-key read** (falsifying a "zero computed-key reads" claim), neither re-derived.
+Distinct from a glob asking the wrong question **at one instant**: here the measurement was right, the question was right, and **the world moved under it by our own hand, same week, same goal.**
+**Remedy: an artifact a later lane CONSUMES gets its absence claims re-run at the sha that CONSUMES it, not the sha that derived it.**
+Sharper still, from the artifact's author: **a published absence claim has no listener — reading a fact does not propagate it to the claims you have already published.** He read the counterexample in his own terminal forty minutes after publishing, and it did not fire.
+
+### Name-shaped evidence about harnesses is a coin flip — ask "does it spawn?", never "is it named after the CLI?"
+
+**3 of 6 files named `cli.test.ts` contain zero spawn primitives** (glamour, imago, magpie) — all three are legitimate unit tests of CLI helpers, which is what makes it a trap and not a bug.
+This is the mechanism that would have marked a spell PINNABLE on a file whose own first line says it does not spawn.
+Related, same lane: **"does a process harness exist?" is the wrong question — ask it once PER CAPABILITY.** Termination is observable under `Bun.spawn`; drain is not. One verdict per site conflates two requirements that come apart at exactly the site under test.
+
+### Observe TERMINATION on the process itself, never as a side effect of its output being consumed
+
+A peer found that a G7 termination cell reads both pipes to completion before awaiting exit, so a **detached grandchild** holding an inherited handle stalls the observation — `proc.kill()` releases pipes held by `proc`, not by a grandchild.
+Its failure mode is the bad kind: **it does not go RED, it becomes UNREACHABLE** — "a red cell names the hung verb; a timeout says the suite is slow."
+**Add to the gate-failure taxonomy as a fifth mode: degrades from DIAGNOSIS to NOISE.**
+My own harness was immune **by accident** — file redirection + `kill -0`, chosen for the exit-code-through-a-pipe scar, not for this.
+
+### Declare your METHOD before you run it, and say which residue is still shared
+
+Posting the method up front lets a peer attack the design instead of the outcome, and it converts "we agree" into something worth having.
+**An independent check must differ in METHOD, not only in operator** — but finish the thought: after confirming a peer's number by a different corpus and tool, I still shared their **lexical** blind spot, and said so. **Two lexical scanners agreeing about lexemes is one method run twice; two corpora agreeing about a trend is not.**
+
+### ⚠ TIMING can BE the condition — a fixture can satisfy a spec's letter and not its content
+
+The amended P0f fixture requires a consumer **not draining at the instant of exit**.
+My cell had the right SHAPE (`| ( sleep 2; cat )`) and the wrong SCHEDULE (closed at 4s, so the consumer had resumed draining before the exit fired).
+Result: **200285 vs 200286 — no truncation in either world**, which reads as *"the amended fixture does not discriminate"* — **a finding against a gate law landed twenty minutes earlier.**
+Corrected to block 8s / close at 1s: **65536 pre-fix, complete post-fix.** The law is right.
+**The failure presented as THE SPEC IS WRONG rather than MY CELL IS WRONG, and that is the most dangerous direction available, because it points outward at a peer's ruling.**
+**What caught it was that the result CONTRADICTED A MEASUREMENT ALREADY ON THE RECORD.** Against an empty record I would not have re-examined my own cell.
+**Generalise: a ratified fact is a tripwire that audits instruments nobody aimed it at — that is a reason to ratify beyond being right about the fact.**
+
+### `tail` carries SURFACE→AGENT events; every CLI verb is an AGENT action
+
+Spent a drive discovering this: a >64 KiB payload sent with the CLI's `say` never enters `tail`, because `emitEvent` for text lives in **`handleBrowserMsg`** (magpie `server.ts:335`, imago `:683`, glamour `:274` `message.send`), while the CLI's `say` goes `/cmd` → `handleAgentMsg`, which broadcasts to browsers and never emits.
+So **no CLI verb can put a large payload into the stream the drain defect truncates** — the fixture is only constructible over `/ws`, posting as the surface would.
+**This is not a quirk; it is what these spells ARE** — the membrane faces both ways, big payloads flow agent→surface, and the surface→agent events are small by nature.
+Bounty is the exception (agent writes enter its event log), which is exactly why a bounty-shaped assumption did not transfer.
+
+### Never `2>/dev/null` a FIXTURE-BUILDING step
+
+When my precondition went degenerate I had no diagnosis, because I had silenced the `say` that built the fixture — I had to re-run it with stderr visible to learn it had **succeeded**, which is what redirected me from the write to the stream.
+**Silencing a step you assert nothing about is fine. Silencing the step that CREATES the thing you measure discards the only evidence separating "the fixture failed" from "the fixture worked and the mechanism is elsewhere" — and those need opposite responses.**
+
+### Adopting a peer's mitigation means you can no longer confirm the hazard
+
+I drove glamour clean through the four-hazard stack — by sending stderr to a FILE and observing termination on the process, i.e. thoth's remedy adopted wholesale.
+**So the drive says nothing about whether the hazard is still live.** `UNVERIFIED-BY-CONSTRUCTION`.
+**"My run was safe" is evidence I obeyed a peer, not evidence the hazard is gone** — the same shape as adopting the `--pin` cwd mitigation. Say which one you have.
+
+### ⚠ A `--` TERMINATOR CAN SWALLOW YOUR ISOLATION FLAG, and nothing warns you
+
+I wrote `add -- write the --draft section --session-key "$KEY"` and the title stored `"write the --draft section --session-key cass-p0c-…"` verbatim.
+**Everything after `--` is a positional — including G1's explicit session key**, which was therefore SILENTLY DROPPED from the invocation. The write succeeded; the board was resolved by fallback.
+**Only the unique `BOUNTY_HOME` kept it on my own board — the isolation that held was NOT the one I was relying on.**
+That is G1's own *"the scrub is not the isolation"* arriving from an angle G1 does not cover.
+**Rule: in any cell using `--`, every flag goes BEFORE it. The session key is the one whose loss is silent.**
+**And the cell then failed a CORRECT fix — an inverted control, in the gate for the lane about parser correctness, written the same day I ratified the taxonomy of inverted controls.**
+
+### A contended RED is only ambiguous if its CAUSE is one contention can produce
+
+I published *"a red under contention is uninterpretable"* and it was half right; the engine seat found the mirror failure: **it pre-supplies "probably contention" as the innocent explanation for a red that is a FINDING.**
+**Corrected: a red naming a deterministic cause (`Unknown option '--text'`) that reproduces in isolation is INTERPRETABLE.** Contention manufactures timeouts, refused connections and port collisions — not parser diagnostics naming a specific flag.
+**And the remedy I got wrong: the first move on any red is to re-run THE FAILING CELL IN ISOLATION (17ms), never the suite on a quiet machine.** Isolate first (free), quiet suite only if it passes AND the cause is contention-shaped. **I had the cheap step available and did not name it, which made reds look expensive when they are mostly free.**
+
+### A GREEN under contention is VALID — provided its TOTAL matches
+
+Contention makes false REDS, never false passes. **So a contaminated arm that comes back green still counts, and only reds need a quiet machine** — which collapses most of the scheduling problem.
+**The guard (grimoire seat's, and I would have missed it): cite `pass/fail/files`, never `0 fail` alone.** The asymmetry holds because a contended failure is a hard fail that GETS COUNTED; it breaks if contention can make a test not run at all, because a partial run's green says nothing about the part that never executed.
+**It earned its keep the same hour: an under-load arm read `1304/0` and matched the expected total exactly, which is the only reason it was usable rather than suspect.**
+
+### Ambient load is a measurement CONDITION — do not tidy it away mid-comparison
+
+14 daemons were live; **12 predated the session.** Clearing them before measuring pre-change would have compared a quiet machine against the loaded one the post-change figure came from, **and attributed the whole difference to the change.**
+**State the load; never eliminate it mid-comparison.** Same shape as the worktree trap: a tidier instrument measuring a different thing.
+**Triage owners by PATH, never by age** — a 10-day-old daemon on the real repo path was the human's; the 10-hour-old ones under `/private/tmp/` were the orphans. Age alone would have condemned the wrong one.
+
+### Announce a gate's START with the OBSERVATION, not the intent — and not in the same shell call
+
+Two suites collided because everyone announced LANDS and nobody announced RUNS.
+**An announcement in the same shell invocation as the action is not an announcement** — there is no window to object. **A courtesy beat that cannot be acted on before the act it announces is decoration**, the same category as a gate cell that cannot fail.
+**Say what you SAW: `"starting; ps shows no other bun test"` is falsifiable in one command; `"starting"` is a statement about your plans.**
+Also: **`pkill` on the runner does NOT kill the suite it spawned** — the child reparents to init and keeps loading the machine, so a seat who "yields" that way is still consuming it. Check for orphans after you yield.
+
+### A REJECTION is only a regression if the thing was ever SUPPORTED
+
+Driving the release rehearsal, `grapevine open --no-open` was refused and I had it written up as a blocker.
+**grapevine never had `--no-open`** (0 hits pre-conversion, absent from its registry, absent from its usage — it is a channel, not a browser surface). **Pre-fix the flag was silently swallowed; post-fix it is named. The "failure" was the fix working.**
+Then I did it again with `--channel`, which is a POSITIONAL there. **Three house-wide-vocabulary assumptions in one hour, by the seat whose own doc says spells diverge exactly where a fixture depends on them.**
+**Rule: before reporting that a spell REJECTED something, establish that it ever ACCEPTED it — one `git show <pre-sha>:<file> | grep -c <flag>`.**
+
+### An EXIT CODE cannot tell you WHICH guard fired
+
+Probing six entry points with `state --totally-bogus-flag`, one returned rc=2 **for the positional `state`**, never reaching my flag. A uniform `6/6 rc=2` table would have been TRUE and not evidence for its own headline.
+**Caught by reading the MESSAGE, not the code.** **When a probe's verdict is a status code, construct it so only one guard can fire — or read the text.**
+
+### The `files` denominator is TWO-SIDED, and an instrument can beat the argument that built it
+
+Built to catch a PARTIAL run (too few tests); it equally catches a run that is too LARGE. An untracked test file in the tree made on-disk 102 vs tracked 101, and **the same guard that catches `99` catches `102`.**
+**`git ls-files | grep -c '\.test\.ts$'` vs the run's `across N files` catches untracked tests that EXECUTED — and `uncheckedAgainst` structurally cannot, because an untracked file is not "dirty".**
+**Kept on cost alone ("it does not depend on the answer") with its hazard marked UNVERIFIED, it has since paid out three times, twice in directions nobody predicted.**
+
+### Publish the DERIVATION, never the value it produced today
+
+I published that check citing `101`. A land later it was `102`, and anyone holding the number would read a correct gate as contaminated — a false positive in a check written to catch a false negative.
+**A constant inside a check is a fact with an expiry date and nothing tells the reader it expired.** Cite the command.
+Related, same hour: **mtime is not provenance.** I nearly cleared a land on "that file's mtime is later than my run" — mtime is the LAST write, not creation. **Asking "did X run in my gate" wants a COUNT of what ran, never a TIMESTAMP of when something changed.**
+
+### Simulate a consumer with `git archive`, never a working-tree copy
+
+The marketplace copies the git-TRACKED subtree, so `git archive HEAD plugins/spellbook | tar -x` is the honest instrument; **a working-tree copy carries gitignored artifacts a consumer never receives.** Same class as a worktree that has `node_modules` when a real one does not.
+Verified there: no `node_modules`, zero `package.json`, all six converted entry points rejecting unknown flags, five spells booting and serving. **This is Contract 4's rehearsal and the contract names this seat.**
+
+### Say what the gate CANNOT claim as loudly as what it can
+
+P0d's `/cmd` cells assert the ROUTE's answer, but post-fix the verdict ORIGINATES in a surface reducer — my probes cannot distinguish "reducer reports and route propagates" from "route hard-codes and discards it," because **both emit the bytes I measured.**
+Cells valid; **coverage stops at the seam.** Marked `UNVERIFIED-BY-CONSTRUCTION` rather than left as an absence.
+I also shipped an incomplete gate and caught it BETWEEN arms — my first `/cmd` draft had no *"a valid command still answers ok"* guard, so **a fix that rejected EVERYTHING would have passed 5/5.**
+**Report a gate you repaired mid-drive; a quiet repair looks identical to having got it right.**
+
 ## P0 build round — building gates instead of auditing them (2026-08-06)
 
 First session where this seat AUTHORED the instruments rather than reviewing someone else's.
@@ -382,3 +550,15 @@ It prints `0` **and** exits 1 on no match: `|| echo 0` appends a second value ·
 
 The SOP's scar is *"a correctly-waiting seat produces no signal."* **Its twin: long silent drives look identical to idleness**, and the lead nearly started a duplicate drive on top of mine. `ps` was the only surface that knew.
 **Post mid-flight partials, not just results** — the board says `doing` and the wire says nothing.
+
+## Epitaphs — the lineage
+
+**2026-08-06 (sprint 01, P0 build round):**
+> Spend your scepticism on the cell that CANNOT FAIL, not on the finding that might be wrong — four times this session a broken fixture would have reported a clean PASS, and not once did care catch it; the cell that refused to measure did.
+
+**Still true, and it kept earning itself all through sprint 02** — the precondition cell fired on a 220-byte magpie fixture, on a `node_modules`-less worktree, and on a `1304 == 1304` vacuity, each time catching a broken SETUP that would have reported a clean measurement.
+**Superseded not because it weakened but because it is now thoroughly covered in the body** (the precondition sections, the two-arm discipline, the degrade-direction table) — and because sprint 02 surfaced a failure the seat had no line about at all.
+
+**Why the new one replaces it:** the old epitaph aims scepticism at *the instrument in front of you*. Sprint 02's dominant failure was different in kind — **ten instrument defects, of which the two most dangerous produced findings pointed OUTWARD**: one at a peer's ruling on gate law, one as a release blocker against a fix that was working correctly.
+**Not one was caught by care, and both were caught by the same thing** — the result disagreed with something already on the record, so I checked instead of publishing.
+**That failure is structural to this seat rather than incidental**: a verify seat's output IS claims about other people's work, so its errors land on other people by construction, wearing the costume of diligence. **Nobody else on the team will warn you about it, because from outside it looks like the seat doing its job.**

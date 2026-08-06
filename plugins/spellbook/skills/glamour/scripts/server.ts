@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseArgs as nodeParseArgs } from "node:util";
 import index from "../surface/index.html";
 import { loadSnapshot, materializeItem, saveSnapshot } from "../surface/state/persist.server";
 import {
@@ -142,7 +143,12 @@ export async function startDaemon(opts: StartOpts) {
     resolveDone = r;
   });
 
-  const handleAgentMsg = (msg: AgentCommand) => {
+  // #84 — RETURNS A VERDICT. Previously void, so the /cmd route had nothing to
+  // report and answered a literal {ok:true} to every command including ones it
+  // dropped. Note the defect is NOT a missing `await`: this handler is
+  // synchronous, and imago's twin IS correctly awaited and was broken anyway.
+  // The fix is that a decision exists at all.
+  const handleAgentMsg = (msg: AgentCommand): boolean => {
     if (msg.type === "say") {
       addMessage(state, {
         id: `m-${randHex(4)}`,
@@ -153,11 +159,11 @@ export async function startDaemon(opts: StartOpts) {
         ts: Date.now(),
       });
       broadcastState();
-      return;
+      return true;
     }
     if (msg.type === "close") {
       resolveDone({ code: 0, reason: "close" });
-      return;
+      return true;
     }
     if (msg.type === "gen.add") {
       const it = makeItem({
@@ -178,7 +184,7 @@ export async function startDaemon(opts: StartOpts) {
       });
       materializeItem(sessionFilesDir, it);
       if (addItem(state, it)) broadcastState();
-      return;
+      return true;
     }
     if (msg.type === "style.save") {
       const canonicalItems = state.library.filter((i) => i.canonical && !i.archived);
@@ -197,16 +203,20 @@ export async function startDaemon(opts: StartOpts) {
       });
       state.tray.push(style);
       broadcastState();
-      return;
+      return true;
     }
     if (msg.type === "style.archive") {
       setStyleArchived(GLAMOUR_HOME, PROJECT_KEY, msg.id, msg.archived);
       applyAgentMsg(state, msg); // flips the in-memory tray entry
       broadcastState();
-      return;
+      return true;
     }
-    applyAgentMsg(state, msg);
-    broadcastState();
+    // The fallthrough is the only path that can be UNRECOGNISED, and the
+    // reducer is what knows: it owns the case list, so the verdict comes from
+    // there rather than from a second enumeration here.
+    const recognised = applyAgentMsg(state, msg);
+    if (recognised) broadcastState();
+    return recognised;
   };
 
   // --- browser messages (WebSocket) ------------------------------------------
@@ -356,8 +366,23 @@ export async function startDaemon(opts: StartOpts) {
           .json()
           .then((b) => {
             touch();
-            handleAgentMsg(b as AgentCommand);
-            return Response.json({ ok: true });
+            // #84 — propagate the handler's verdict instead of a literal
+            // {ok:true}. `applied` is the field bounty already uses
+            // (server.ts ApplyResult); no new vocabulary is minted here.
+            const applied = handleAgentMsg(b as AgentCommand);
+            if (!applied) {
+              return Response.json(
+                {
+                  ok: false,
+                  applied: false,
+                  error: `unrecognised command type ${JSON.stringify(
+                    (b as { type?: unknown })?.type,
+                  )} — nothing was applied`,
+                },
+                { status: 400 },
+              );
+            }
+            return Response.json({ ok: true, applied: true });
           })
           .catch(() => Response.json({ error: "bad json" }, { status: 400 }));
       if (req.method === "GET" && path.startsWith("/assets/")) {
@@ -483,25 +508,66 @@ export async function startDaemon(opts: StartOpts) {
   return { port: boundPort, sessionId, close, done, shutdown };
 }
 
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE. The SIXTH entry point.
+//
+// ⚠ THIS ONE HAS ZERO `flags.` READS, so a `flags.`-pattern audit returns zero
+// here — and a zero reads identically to "no drift". It was a LOOKUP parser:
+// `const flag = (name) => { const i = args.indexOf(`--${name}`); return i >= 0
+// ? args[i + 1] : undefined; }`. It also read `Bun.argv`, not `process.argv`,
+// which is the synonym that has made this repo's greps lie before.
+//
+// It had a LATENT, PRE-EXISTING bug the conversion fixes as a side effect, noted
+// so the change is not mistaken for a regression: `flag()` returned `args[i+1]`
+// UNCONDITIONALLY, so `--restore --title X` yielded `restore === "--title"` —
+// the next FLAG silently consumed as the previous flag's VALUE.
+//
+// All six are string by construction (the old helper returned the next argv
+// element). `port` and `timeout` are Number()-coerced at the call site, which is
+// a value read, not a boolean one. The daemon takes no positionals, so strict's
+// default rejection of them is correct.
+//
+// Verified before converting: `cli.ts` spawns this daemon with exactly --title,
+// --intent, --timeout, --restore and --project, all inside this set — so strict
+// cannot refuse the daemon's own launch.
+const DAEMON_OPTIONS = {
+  intent: { type: "string" },
+  port: { type: "string" },
+  project: { type: "string" },
+  restore: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+} as const;
+
 if (import.meta.main) {
-  const args = Bun.argv.slice(2);
-  const flag = (name: string) => {
-    const i = args.indexOf(`--${name}`);
-    return i >= 0 ? args[i + 1] : undefined;
-  };
-  const d = await startDaemon({
-    port: flag("port") ? Number(flag("port")) : 0,
-    title: flag("title"),
-    intent: flag("intent"),
-    restore: flag("restore"),
-    timeoutS: flag("timeout") ? Number(flag("timeout")) : undefined,
-    project: flag("project"),
-  });
-  process.stdout.write(
-    `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId })}\n`,
-  );
-  const res = await d.done;
-  // Wait for the closed SSE event to flush before exiting.
-  await d.shutdown;
-  process.exit(res.code);
+  let flags: Record<string, string | undefined> | null = null;
+  try {
+    flags = nodeParseArgs({ args: Bun.argv.slice(2), options: DAEMON_OPTIONS, strict: true })
+      .values as Record<string, string | undefined>;
+  } catch (e) {
+    process.stderr.write(
+      `glamour: ${e instanceof Error ? e.message : String(e)}\n` +
+        `  recognized flags: ${Object.keys(DAEMON_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n`,
+    );
+    // exitCode + natural end, never process.exit — the drained-exit discipline.
+    process.exitCode = 2;
+  }
+  if (flags) {
+    const d = await startDaemon({
+      port: flags.port ? Number(flags.port) : 0,
+      title: flags.title,
+      intent: flags.intent,
+      restore: flags.restore,
+      timeoutS: flags.timeout ? Number(flags.timeout) : undefined,
+      project: flags.project,
+    });
+    process.stdout.write(
+      `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId })}\n`,
+    );
+    const res = await d.done;
+    // Wait for the closed SSE event to flush before exiting.
+    await d.shutdown;
+    process.exit(res.code);
+  }
 }

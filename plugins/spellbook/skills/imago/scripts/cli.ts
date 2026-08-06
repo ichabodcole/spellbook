@@ -33,6 +33,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs as nodeParseArgs } from "node:util";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
@@ -105,38 +106,68 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value` or boolean `--flag`.
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+//
+// The hand-rolled parser had no registry, so an unknown flag was accepted at
+// exit 0 and the verb ran anyway, and free prose containing a `--word` was
+// silently truncated at that word. `node:util` strict supplies rejection, the
+// `=` form and the `--` terminator from the standard library.
+//
+// Types are thoth's audited artifact (17 string · 3 boolean), each settled by
+// unambiguous evidence at every consumption site. Getting one wrong is not a
+// no-op: a "string" that should be boolean SWALLOWS THE NEXT POSITIONAL, and a
+// "boolean" that should be string breaks the space form.//
+// `kind` is STRING despite reading as `flags.kind === "edit"` — it is compared
+// to a string literal, not tested for presence. Declaring it boolean there
+// would make `--kind edit` push "edit" into positionals and the comparison
+// would never match: a silent no-op, not a crash.
+const CLI_OPTIONS = {
+  content: { type: "string" },
+  "edited-from": { type: "string" },
+  image: { type: "string" },
+  kind: { type: "string" },
+  link: { type: "string" },
+  models: { type: "string" },
+  n: { type: "string" },
+  options: { type: "string" },
+  prompt: { type: "string" },
+  restore: { type: "string" },
+  session: { type: "string" },
+  since: { type: "string" },
+  summary: { type: "string" },
+  tag: { type: "string" },
+  tags: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+  clear: { type: "boolean" },
+  full: { type: "boolean" },
+  "no-open": { type: "boolean" },
+} as const;
+
+class UsageError extends Error {}
+
 export function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
-  const pos: string[] = [];
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith("--")) {
-      const body = a.slice(2);
-      // `--key=value` (equals form) — split on the FIRST `=` so the value can
-      // itself contain `=`. An empty value (`--key=`) is still a string ("").
-      const eq = body.indexOf("=");
-      if (eq >= 0) {
-        flags[body.slice(0, eq)] = body.slice(eq + 1);
-        continue;
-      }
-      // `--key value` (space form) — consume the next arg as the value unless it's
-      // another flag, in which case `--key` is a boolean.
-      const key = body;
-      const next = args[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else {
-        flags[key] = true;
-      }
-    } else {
-      pos.push(a);
-    }
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args,
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+    return { pos: positionals, flags: values as Record<string, string | boolean> };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new UsageError(
+      `${detail}\n` +
+        `  recognized flags: ${Object.keys(CLI_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n` +
+        `  for free text containing dashes, use --stdin, or put it after a bare --`,
+    );
   }
-  return { pos, flags };
 }
 
 async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
@@ -277,8 +308,25 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
         try {
           const ev = JSON.parse(payload) as { id?: number; type?: string };
           if (typeof ev.id === "number" && ev.id > since) since = ev.id;
+          if (ev.type === "closed") {
+            // P0f — SHAPE B: the drain callback rides THIS write, so it fires
+            // on this write's completion. NOT a trailing `write("", cb)` — a
+            // drain callback covers only its own write and is not a barrier
+            // (measured byte-for-byte as broken as no fix), and that is exactly
+            // the helper this write-then-exit shape invites.
+            //
+            // PER-SITE PRECONDITION, read at THIS site rather than carried over
+            // from a sibling: the exit sits inside `while (!stopped)` ->
+            // `while (true)` -> the frame loop, so `process.exitCode` + a
+            // natural return (shape D) does NOT leave the tail — it falls
+            // through and the loops go round again. The explicit `return` is
+            // what exits the loops; the callback is what drains. Both, for
+            // different reasons.
+            process.stdout.write(`${payload}\n`, () => process.exit(0));
+            stopped = true;
+            return;
+          }
           process.stdout.write(`${payload}\n`);
-          if (ev.type === "closed") process.exit(0);
         } catch {
           /* skip malformed frame */
         }
@@ -379,7 +427,16 @@ const HELP = `imago — a grounded image conversation.
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  const { pos, flags } = parseArgs(rest);
+  // A usage failure returns 2 rather than exiting, so the runtime drains stdout.
+  let pos: string[];
+  let flags: Record<string, string | boolean>;
+  try {
+    ({ pos, flags } = parseArgs(rest));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`imago: ${e.message}\n`);
+    return 2;
+  }
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
   switch (verb) {

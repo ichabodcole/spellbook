@@ -18,9 +18,22 @@ test("equals form: --key=value (the regression)", () => {
   expect(flags.tag).toBe("hero");
 });
 
+// ⚠ This used `--text=a=b=c`, and imago's CLI NEVER READS `flags.text` — it was
+// an arbitrary stand-in that only worked because the old parser accepted any
+// flag name it was handed. So the test depended on exactly the permissiveness
+// P0c removes, and it went red the moment the registry landed. Rewritten
+// against a REAL flag; the property under test is unchanged, and `--options` is
+// the honest choice because its values genuinely carry `k=v` pairs.
 test("equals form splits on the FIRST = so the value can contain =", () => {
-  const { flags } = parseArgs(["--text=a=b=c"]);
-  expect(flags.text).toBe("a=b=c");
+  const { flags } = parseArgs(["--options=a=b=c"]);
+  expect(flags.options).toBe("a=b=c");
+});
+
+// And the flag that stand-in named is now REFUSED, which is the point of the
+// lane: an unrecognised flag is a caller-facing error instead of a silent
+// accept-and-ignore.
+test("an unrecognised flag is refused, naming it", () => {
+  expect(() => parseArgs(["--text=a=b=c"])).toThrow(/--text/);
 });
 
 test("empty equals value is the string '' (not a boolean)", () => {

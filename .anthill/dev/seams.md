@@ -684,3 +684,25 @@ your derive doesn't produce**, and carry them. `mergeLayout` was written twice
 this bug. Corollary for verification: a fix here is only provable by **matched
 arms with enough trials** (before-arm rates ranged 2/8–4/8; a single 8-trial arm
 could not have called it).
+
+## Contract 13 — A `/cmd` route's verdict originates in the REDUCER, not in a list beside it
+
+**Owner:** daedalus (engine / the `/cmd` routes) · **Pointed at from:** the surface seat's reducers · _(accreted sprint 02 "success-shaped lies", P0d/#84, 2026-08-06; ratified by prospero as of comms #324)_
+
+> **⚠ Authorship note, stated so a future reader does not infer a scope grab.** This contract's surface half lives in `glamour/surface/state/reduce.ts`, which is **circe's** file. She is unseated (third round running), and prospero ruled that the seat which made the reducer return the verdict holds the contract. **If circe is re-seated, this entry is hers to amend or falsify.**
+
+**The contract, stated once:** a spell daemon's `POST /cmd` route must answer with a **verdict it received from the code that owns the recognised set**, never with a literal `ok:true` and never with a verdict derived from a second enumeration of command types maintained beside the dispatch.
+
+Concretely, as built in the three co-presence spells:
+
+- `handleAgentMsg` **returns a boolean** — `true` iff the command type was RECOGNISED — and the route propagates it: `{ok:true, applied:true}` on recognition, HTTP **400** with `{ok:false, applied:false, error}` naming the offending type otherwise.
+- Where the recognised set lives in a **reducer** (glamour's `applyAgentMsg`), the reducer returns the verdict (`default: return false` / `return true`) and the server consumes it. Where the dispatch lives in the server itself (imago's if-chain, magpie's switch), the terminal `else` / `default` produces it there.
+- The field is **`applied`** — bounty's existing `ApplyResult` field (`bounty/server.ts`). No new vocabulary is minted for this.
+
+**The verdict means "was the type RECOGNISED", explicitly NOT "did state change".** These handlers contain guarded branches that legitimately do nothing (a missing id, an empty list, a wrong-typed field); a recognised-but-inert command answers `ok`. The narrower contract is a **named, unclaimed gap** (backlog: _"`ok` means recognised, not applied"_), ruled out of scope because it is a new contract rather than a defect, and because it is ~38 per-site judgements in imago alone, each able to break a working caller.
+
+**Why it bites — and this is the general half, worth more than the instance:** the tempting implementation is a `RECOGNISED_TYPES` set beside the switch, because it needs no change to the reducer. **A hand-maintained mirror of a case list drifts silently the moment a case is added, and this repo has shipped that exact bug twice** — the bounty surface's Alpine mirror of `server.ts` helpers, and `propose-node --stdin` dropping `tags` because the CLI built its POST body from an explicit field list that the route had outgrown. In both, every test passed: the mirror and its source were each internally consistent. **A verdict sourced from the owner of the set cannot drift from it, because there is only one list.**
+
+**Where it ENDS — the grain this was ratified at.** The contract covers the **agent-facing `/cmd` route only**. Each of these spells has a sibling `handleBrowserMsg` serving the WebSocket with a near-identical chain, and it is deliberately **NOT** in scope: a WebSocket message has no response to carry a verdict. _A builder who folds the two together because they look alike will produce a change no test observes_ — and one already did, in the session that produced this contract (34 edits landed in the wrong function of the pair; the giveaway was that `handleAgentMsg` began returning `undefined` on success). **Treat the two handlers as separate contracts with one shape, never as one contract.**
+
+**Proof:** one RED PRE-FIX cell per spell (a bogus `type` is refused), each verified to FAIL against the pre-fix code and pass after; plus per-spell BLAST-RADIUS GUARDS asserting a valid command still answers `ok`, a recognised-but-inert command still answers `ok`, and malformed JSON is still refused at the PARSE layer — that last one is what makes the red cell discriminating rather than vacuous, because it proves the refusal path existed independently of the fix. `glamour/tests/daemon.integration.test.ts`, `imago/tests/server.integration.test.ts`, `magpie/tests/daemon.integration.test.ts`; commit `14bec41`.

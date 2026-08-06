@@ -145,16 +145,33 @@ describe("slice 4 cli builders", () => {
       label: "house style",
     });
   });
-  test("style-archive defaults archived true; --restore flips it", () => {
+  // RENAMED per Cole's A9 ruling: this verb's un-archive flag was `--restore`,
+  // which had no correct type — boolean here, string in `open`'s daemon spawn,
+  // and node:util takes ONE options map per entry point. `--restore` keeps the
+  // house-wide string spelling; this one becomes `--unarchive`.
+  test("style-archive defaults archived true; --unarchive flips it", () => {
     expect(buildStyleArchiveCmd(["s1"], {})).toEqual({
       type: "style.archive",
       id: "s1",
       archived: true,
     });
-    expect(buildStyleArchiveCmd(["s1"], { restore: true })).toEqual({
+    expect(buildStyleArchiveCmd(["s1"], { unarchive: true })).toEqual({
       type: "style.archive",
       id: "s1",
       archived: false,
     });
+  });
+
+  // ⚠ THE LIVE BUG THE RENAME KILLS BY CONSTRUCTION. The old predicate was
+  // `flags.restore !== true`, so passing a STRING — which `--restore foo` did,
+  // and which `open`'s own `--restore <id>` spelling invites — evaluated
+  // truthy-but-not-`true` and ARCHIVED instead of restoring, at exit 0 with no
+  // signal. `!flags.unarchive` cannot express that: a boolean-typed flag can
+  // never hold a string, so the failure is now unrepresentable rather than
+  // merely unlikely.
+  test("un-archiving cannot be silently inverted by a stray value", () => {
+    expect(buildStyleArchiveCmd(["s1"], { unarchive: true }).archived).toBe(false);
+    // and the old spelling is simply not recognised any more
+    expect(buildStyleArchiveCmd(["s1"], { restore: "foo" }).archived).toBe(true);
   });
 });

@@ -564,3 +564,39 @@ test("POST /cmd bundle.set records the bundle for the Export download", async ()
   expect(st.bundle?.name).toBe("magpie-bundle.zip");
   expect(st.bundle?.count).toBe(3);
 });
+
+// ── P0d / #84 — /cmd must not answer ok before it knows ──────────────────
+// magpie's switch had 13 cases and NO `default:`, so an unrecognised type fell
+// through and the route still answered {"ok":true}. Gate on the VERDICT, not on
+// an `await` — imago's handler was already correctly awaited and still broken.
+test("RED PRE-FIX — a bogus /cmd type is refused, not answered ok", async () => {
+  const s = await spawnDaemon();
+  const r = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "zzz-not-a-real-command" }),
+  });
+  const body = (await r.json()) as { ok?: boolean; applied?: boolean };
+  expect(body.ok).not.toBe(true);
+  expect(body.applied).toBe(false);
+});
+
+test("BLAST-RADIUS GUARD — a valid command still answers ok, and malformed JSON still fails", async () => {
+  // ⚠ GREEN TODAY, MUST STAY GREEN — catches a propagation that rejects
+  // everything. The malformed-JSON arm is the proof that the daemon's refusal
+  // path predates this fix, which is what makes the red cell above meaningful.
+  const s = await spawnDaemon();
+  const ok = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ type: "say", text: "probe" }),
+  });
+  expect(((await ok.json()) as { ok?: boolean }).ok).toBe(true);
+
+  const bad = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{not json",
+  });
+  expect((await bad.json()) as { error?: string }).toMatchObject({ error: "bad json" });
+});

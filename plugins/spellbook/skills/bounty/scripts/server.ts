@@ -842,13 +842,33 @@ async function main(argv: string[]): Promise<number> {
       emitEvent({ type: "init", title: state.title, by });
       return { ok: true, applied: true };
     } else if (msg.type === "task.add") {
+      // #83 — `applied:false` alone conflated TWO causes and named neither, so
+      // the CLI could not tell the caller what went wrong even once it started
+      // reading the verdict. Both causes now carry an `error` (an existing field
+      // of ApplyResult — no new vocabulary), because "the reason" is what makes
+      // the refusal actionable rather than merely loud.
       const task = validateTask(msg.task);
-      if (task && applyTaskAdd(state, task)) {
-        broadcast({ type: "task.add", task });
-        emitEvent({ type: "task.add", task, by, owner: task.owner });
-        return { ok: true, applied: true };
+      if (!task) {
+        return {
+          ok: true,
+          applied: false,
+          error: "task rejected: needs a string id, a string title, and a valid status",
+        };
       }
-      return { ok: true, applied: false };
+      if (!applyTaskAdd(state, task)) {
+        // applyTaskAdd refuses a duplicate id WITHOUT touching state — it neither
+        // overwrites nor appends — so the existing task keeps that id and every
+        // field of it. The message says so, because the caller's next question is
+        // "did I just clobber the original?" and the answer is no.
+        return {
+          ok: true,
+          applied: false,
+          error: `task ${task.id} already exists — the board is unchanged and the existing task kept its id`,
+        };
+      }
+      broadcast({ type: "task.add", task });
+      emitEvent({ type: "task.add", task, by, owner: task.owner });
+      return { ok: true, applied: true };
     } else if (msg.type === "task.update") {
       // Cooperative-claim guard: a claim can't steal an already-owned task. The
       // lead's `update --owner` (no claim flag) always wins — that's the
