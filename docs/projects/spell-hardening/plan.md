@@ -954,25 +954,39 @@ reducer declines must not answer `ok:true`."_ It named no declining command for
 any of the three, so the implementer picks the fixture — and picking one the
 reducer _accepts_ makes it pass trivially (G4).
 
-**Then it was driven, and the premise fails for one of the three:**
+**Then it was driven. All three arms are MEASURED, none inferred** — the fixture
+is a bogus `type` on `/cmd`:
 
-| spell     | a decline a caller can observe?          | fixture              |
-| --------- | ---------------------------------------- | -------------------- |
-| `imago`   | yes — a bogus type returns `{"ok":true}` | **measured, usable** |
-| `magpie`  | yes — a bogus type returns `{"ok":true}` | **measured, usable** |
-| `glamour` | **NO — unmeasurable, see below**         | **none exists**      |
+| spell     | answer to a command it silently drops |
+| --------- | ------------------------------------- |
+| `imago`   | **`{"ok":true}`**                     |
+| `magpie`  | **`{"ok":true}`**                     |
+| `glamour` | **`{"ok":true}`**                     |
 
-**For `glamour`, `server.ts:352-360` never `await`s the handler**, so there is
-no point at which a decline becomes observable from outside — **the set of
-declining commands a caller can detect is empty by construction.** The cell is
-therefore **untestable pre-fix** on that arm: nothing can fail it, which is G2's
-decoration case arriving in the one arm nobody could fixture.
+```
+glamour  {"type":"zzz-not-a-real-command"}  ->  {"ok":true}
+glamour  {"type":"say","text":"probe"}      ->  {"ok":true}
+glamour  malformed JSON                     ->  {"error":"bad json"}
+```
 
-**Ruled: the gate records the 1-of-3 hole as a VERDICT, not an absence.** Two
-arms gated with measured fixtures; `glamour` marked **`UNVERIFIABLE-PRE-FIX`**
-with the reason, and it becomes testable — and must then be gated — only once
-#84's `await` lands. **A silent 2-of-3 reads as full coverage**, which is the
-failure this project exists to stop.
+**The third row is what makes the first discriminating:** the daemon _can_
+reject, so `{"ok":true}` to a command it drops is a real answer rather than an
+everything-is-fine stub. **#84's defect is confirmed live across the full set.**
+
+> _**Superseded within the hour, and the supersession is the lesson.** This cell
+> was briefly ruled **`UNVERIFIABLE-PRE-FIX` for `glamour`** — reasoning that
+> `server.ts:352-360` never `await`s the handler, so no decline is observable
+> and nothing could fail the cell. **That was a verdict-of-absence built on a
+> structural read**, and it dissolved as soon as someone got a glamour daemon up
+> a **different way** (running `server.ts` directly instead of through `open`)
+> and drove it._
+>
+> _**An arm that looks unfixturable is often an arm nobody has tried hard enough
+> to fixture.** Recording the hole was right; keeping it would not have been._
+
+**The rule it was recorded for still stands, and is why the hole surfaced at
+all:** a gate arm that cannot be driven is written down as a **verdict**, never
+left as an absence — **a silent 2-of-3 reads as full coverage.**
 
 _Second instance of the false-premise category, and the category predicted it:
 the criterion was written after P0d's first defective cell and it found this one
@@ -1035,9 +1049,24 @@ clean.
 
 - **It is test-only.** No production behaviour changes; it does not widen the
   release.
-- **No land is safe until it exists.** `anthill commit` runs the project gate in
-  front of every commit, so **the team's own landing command was
-  board-destroying.**
+- **No land is safe until it exists.** The land command a seat is handed at join
+  is **`<project gate> && anthill commit …`** — one shell string, composed at
+  `team-join.ts:243` — so **landing runs the gate, and the team's own landing
+  command was board-destroying.**
+
+  > **⚠ Corrected 2026-08-06. This bullet used to say "`anthill commit` runs the
+  > project gate in front of every commit." That is FALSE** — `team-commit.ts`
+  > never executes a gate; it only names one in warning strings. **The shell
+  > chain runs it.**
+  >
+  > **The conclusion was unaffected and the mechanism was wrong, which is why it
+  > survived four readers.** It was written here by the lead, repeated in a
+  > ruling, and then inherited by three seats — one into an upstream issue draft
+  > whose top-ranked fix was unimplementable _because_ of it, and one into a
+  > proof that had to be downgraded to a conditional inference. **A false
+  > mechanism attached to a true conclusion is invisible to anyone checking the
+  > conclusion.**
+
 - **The SOP and this defect were in direct conflict:** the SOP tells every seat
   to baseline the gate at join, and every seat that obeyed killed the board.
 

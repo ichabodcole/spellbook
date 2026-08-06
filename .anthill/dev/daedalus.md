@@ -12,6 +12,12 @@ When something's no longer true, fix it.
 > These docs live in the host repo, so its formatter (prettier / biome) may run on them.
 > One sentence per line makes a reflow a no-op.
 
+## Epitaph
+
+> The failures that cost this seat most were never the ones that looked like failures — they were a clean run, a plausible mechanism, and a control that could not come out any other way; so measure the claim you are most confident about, especially when the thing you are measuring is your own.
+
+_(First epitaph in this seat, written 2026-08-05 after the spell-hardening P0 ratify round. The section did not exist before — a dozen prior sessions in this seat ended without one, so if you are reading this, you are the first daedalus to inherit the line rather than reconstruct it from the lessons below.)_
+
 ## Who I am
 
 The seat that owns what is TRUE in a spell: canonical state, the daemon that holds it, and the wire the agent drives it through.
@@ -30,6 +36,8 @@ Round 9 (P1+P2, `feature/mind-mapper-round9`) added the async JOB QUEUE — the 
 Round 7 (P1, `feature/mind-mapper-round7`) added TAGS (tags.ts — freeform per-target `string[]`, the exact verbatim twin of node_actions/A1: node_tags target-keyed table, PUT/DELETE /tags/:targetId, tags.set full-array event, tags on nodes[]+proposals[]+readProposalById, propose-time tags in buildProposal's insert closure, the same ratify-re-home / reject / edge-accept / del / zone-delete lifecycle) and PORT (cli-only: `open --port` forwards through ensureDaemon into the daemon spawn args — server already bound --port, zero server change) — 3 code chapters + 2 doc chapters (Contract 9 R7 amendment + casting-draft tier-vocab/tags), mind-mapper suite 254 tests, full suite 1113.
 Round 11 (P1, `feature/mind-mapper-round11`) is the MESSAGE-SURFACE refactor's wire half — the channel rides the EXISTING `messages.kind` (zero migration: `MESSAGE_CHANNELS = turn|analyze|canvas`, known-but-open, `channelWarning` advisory instead of a 400), the inbound grounding line gains `messageChannels`, and `agent.activity` gains an additive-optional `messageId` sticky to the OPEN activity ladder (auto-flip stamps it, explicit posts inherit-or-override, idle carries-then-clears) plus a `/state.activity` spread beside presence; NO `done` state (the agent's reply IS completion) — 15 new tests, mind-mapper suite 287, repo 1245.
 Round 12 (P1, `feature/mind-mapper-round12`) is the AGENT-ERGONOMICS round (drive-10 F5/F2/F4) — batch identity (`proposals.batch_id` additive-nullable, minted by `/proposals/batch`, caller-suppliable to EXTEND an act, `GET /state?batch=` narrow with an unknown-batch 404), edge endpoints by `title:<exact title>` resolved AT INTAKE in the shared `buildProposal` (exact/case-sensitive/ratified-nodes-only, ambiguity names every candidate), `node edit` (title+synopsis only, new `edit.ts` + `readNodeById` + full-entity `node.edited`), transactional `delete-batch` (del.ts, no `{batch}` shorthand BY RULING), the SEAM 7 `badRequest(e, expected)` funnel (an additive `expected` field on ~20 agent-facing 400s), and the bounded `GET /changes?since=` (new `changes.ts` — additions-only, DERIVED, with `notCovered` on every response) — 41 new tests, mind-mapper suite 328, repo 1281.
+spell-hardening P0 RATIFY round (`fix/spell-hardening`, 2026-08-05) — my first NON-mind-mapper lane: a ratify-only round over a single-author plan, four cards (P0 drained exit / P0b inert `--restore` / P0c parseArgs / P0d writes-without-applying), plus P0e built and landed (`c901c0b`, test hermeticity).
+Every verdict was a measurement; three of the four found the plan's stated MECHANISM wrong while its symptom was right.
 Reference implementation for the full house pattern: astrolabe's server.ts/cli.ts (cmd/state/events + WS, presence ref-counting, debounced snapshots) — note astrolabe itself still predates the release-mode split; mind-mapper's server.ts is now the first MERGED reference for Contract 1/2 release-mode serve.
 
 ## Boundaries
@@ -349,8 +357,54 @@ I wrote a schema comment containing `` `POST /proposals/batch` `` and got a wall
 I appended a `runCliStdin(body, ...args)` helper to cli.test.ts; one already existed 500 lines up with the signature `(args, body)`. Both are module-scope `function` declarations, so the later one won for the WHOLE module and two pre-existing R6 tests started failing with "JSON Parse error: Unexpected EOF" — a failure that points at the parse, not at the shadowing. Rule: before appending a helper to a shared test file, grep the file for the name; and when a long-green test starts failing on something unrelated to your change, suspect a name collision before you suspect the code.
 
 
+**A SETUP STEP is an untested assumption wearing the costume of a fact — assert your preconditions IN-BAND, in the probe's own output.**
+My first P0b probe read the daemon PID from bounty's discovery file, which carries only url/port/session_id/title — no pid.
+The `kill -9` silently no-op'd, the "respawn" re-attached to the still-live board, and the precondition became live=2/snapshot=2 instead of live=0/snapshot=2.
+The measurement then showed "live unchanged after --restore", which the plan itself warns is consistent with BOTH *inert* and *restored-the-same-contents* — a clean-looking run that proved nothing, and I nearly reported it.
+What caught it was making the precondition a printed cell that can read `DEGENERATE`, not a step I assumed had worked.
+This is the schema-migration scar generalized past schemas: **a probe that cannot announce its own control is invalid is a probe that will eventually lie to you**, and it lies most convincingly when the setup fails silently.
+It fired three times in one session — my P0b probe, cassandra's P0d empty-set cell, and my own P0e test draft.
+Pin: the `YES-VALID-CONTROL` / `NO-DEGENERATE` line in the P0b probe; the precondition `expect` in server.test.ts's P0e test.
+
+**A WRONG MECHANISM attached to a REAL symptom is more dangerous than a wrong symptom — because the fix ships, goes green, closes the issue, and the bug stays.**
+#84 reported that glamour/imago/magpie "answer ok before awaiting the handler."
+Brace-matching the full handler bodies: imago is `async` AND its call site already awaits it; glamour (66 lines) and magpie (99 lines) contain ZERO async markers, so there is nothing to await.
+Adding the missing `await` would have changed nothing in two spells and was already done in the third.
+The defect was real by a different route — none carry an `applied` field, and an unrecognised command type reaches `{"ok":true}` by falling through a switch with no `default:` (confirmed live on all three: a bogus type is byte-identical to an executed one).
+Rule: **verify the MECHANISM independently of the SYMPTOM.** The symptom is usually observed and true; the mechanism is usually inferred, and inference is where single-author plans fail.
+Measured rate this session: 4 symptoms real, 3 mechanisms wrong.
+
+**`close` is a WRITE verb wearing a lifecycle verb's name — every place it appears as "cleanup" is a candidate clobber site.**
+Third distinct incident from one root: my original #73 data loss, this session's gate closing the team board, and P0b's `--fresh --restore`.
+That last one is the sharpest: `--fresh` tears down by POSTing `{type:"close"}`, which flushes the (empty) live board over the snapshot; `--restore` then correctly restores from the corpse the teardown just made.
+So the plan's ruled corrective message — *"run `--fresh --restore` to recover"* — would tell a user whose only data is in the snapshot to destroy it, at exit 0, with a tidy envelope field explaining the loss.
+Generalizes: **when a recovery path is two verbs, check what the FIRST one WRITES before trusting the second one reads it.** A teardown that persists state is a write, and a write ordered before a read of the same file is a clobber.
+
+**PARTIAL isolation reads as TOTAL isolation, and a comment asserting the isolation makes it worse.**
+bounty's test suite scrubbed `BOUNTY_HOME` (with a comment at :777 saying it exists so snapshots never leak into the user's real `~/.bounty`) — but `BOUNTY_HOME` scopes the SNAPSHOT STORE only, not the key path, and the discovery pointers live unscoped in `tmpdir()`.
+So the suite inherited a seat shell's `$BOUNTY_SESSION_KEY`, attached to the team's LIVE board, wrote fixture cards into it, and closed it. Running the gate — which the SOP tells every seat to do at join — destroyed the team's state.
+Rule: **isolation must be a scrub-list derived from every env var the code under test READS, not a set-list of the ones the author thought of** — a set-list cannot notice a variable it never heard of, and the CUT's own `process.env` reads are the enumerable source (the events.ts totality-guard move, applied to environment).
+Corollary for the test of such a fix: **verify your fixture arrives through the SAME channel the fix filters.** My first P0e test injected the key via `opts.env`, which by design overrides the scrub — it exercised a bypass and would never have discriminated.
+Second corollary: compute the scrub PER CALL, not as a module-load snapshot — a snapshot makes the regression vacuous, because the test sets the ambient key during the run.
+Pin: `hermeticEnv()` + the P0e test in bounty/scripts/server.test.ts, commit c901c0b, mutation-verified (and independently re-verified by cassandra in three directions).
+
+**An audit anchored on a LITERAL grep inherits that grep's blind spot, and the blind spot is always a SYNONYM.**
+P0's plan enumerated seven files from `grep -rln "process.exit(code)"`; the real count is nine, because `process.exit(await main(...))` is the same defect in a different spelling — and it caught mind-mapper's cli.ts:1568 (MINE) and magpie/discover.ts:314.
+Rule: enumerate the SHAPES first (what does "exit after writing" look like in this language?) then grep each, or anchor on the concept's invariant (`import.meta.main`) that every spelling must carry.
+Same class as the R10 route-origin falsification: **verify the enumeration METHOD before trusting the enumeration.**
+
+**A plan's RISK section is a claim like its goals are, and it gets less scrutiny because it sounds like caution.**
+P0c's handoff warned that rejecting unknown flags *would* break `add write the --draft section`.
+Measured: that invocation already stores the title `"write the"` and exits 0 — the prose is silently truncated at the first `--word` TODAY.
+So the trade is not "working prose → hard error" but "silent truncation → hard error", which is strictly an improvement; the risk section was arguing against the fix using a capability the tool does not have.
+Companion to the R12 scar (a plan's stated blocker was false and one grep falsified it): **check whether the caller a fix "will break" actually works today, before you design around preserving it.**
+
 ## Candidates
 
+**glamour's `open` prints a URL for a daemon that is already gone** — `server.ts` run directly is healthy (alive at t+4s, /state 200), but via `cli.ts open` there are ZERO server processes at t+300ms after a successful handshake, so the fault is the CLI's spawn path, not the daemon. Unproven hypothesis: `cli.ts:326-332` spawns `detached:true` + `unref()` but `stdio:["ignore","pipe","inherit"]`, and the CLI reading the handshake then exiting takes the pipe (and inherited stderr) with it. thoth's canon read rules out "by design" — SKILL.md documents a 60s idle retirement and death is under 6s. Mine to fix; not carded as of session end.
+**`--fresh --restore` destroys the snapshot it restores from** (see the `close`-is-a-write lesson) — falsified D3's ruled corrective verb; prospero holds the scope call on whether it is a card or a filing.
+**P0's actual fixes are NOT built** — this was a ratify round. Nine sites need the drain fix, and each needs a >64KiB piped regression carrying cassandra's `expect(bytes).toBeGreaterThan(65_536)` vacuity guard plus a mutation-verify. The two daemon classes are ruled out with reasons recorded.
+The 12 non-bounty `pos.join` free-prose sites (astrolabe 1, glamour 3, imago 5, magpie 3) are grep-identified, NOT driven — each needs a live daemon to confirm the stored value. mind-mapper and grapevine have zero and are immune, mind-mapper because it takes prose via `--stdin`/`--body-file`, which dodged the whole class by accident.
 sqlite-vec / embeddings for `similar` (V2 per proposal.md's explicit V1 absence) — search.ts's typed-hit shape (`kind: "node"|"doc"|"message"`, per prospero's ruling msg 36) already leaves room for a `kind: "vector"` hit without a breaking change.
 The check-then-spawn race in cli.ts's `ensureDaemon` (livePort() check + spawn isn't atomic) — observed for real when prospero's double-open raced mine during the P1 gate re-drive; a lockfile or spawn-then-verify-you-won retry would close it.
 A cli `restart` (or dev route hot-reload) if V1 route iteration stays frequent post-V1 — see the routes-bake-at-boot scar (hit repeatedly this session).

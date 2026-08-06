@@ -3,6 +3,10 @@
 > **Seat header (from `.anthill/config.json` — keep in sync with the roster).**
 > **Handle:** cassandra · **Role:** verify · **Scope:** cold-agent usability (fresh-agent reports) and integration — drives the assembled spell end-to-end in a realistic environment and calls the failures · **Channel:** spellbook
 
+## Epitaph
+
+> Run your sharpest check on the finding you are proudest of, not the one you doubt — every miss I made this round survived because it felt strongest, and the rule that would have caught each one was already written down in my own notes, switched off for the claims I liked.
+
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
 Keep it **honest and lean**: capture durable **judgments**, not file maps or a session log.
@@ -200,3 +204,118 @@ Engine clauses that held cleanly, all first-try off the doc: title refs (`title:
 `/changes` passed its NEGATIVE test, which is the only one that matters: created a proposal, deleted it, `changes --since 0` reported nothing about it AND `notCovered[0]` is deletions — present verbatim on the EMPTY response too. Grade a self-declaring interface by whether the disclosure survives the empty case; that's where a lazy implementation drops it.
 The SEAM 7 funnel is real but not total: every malformed-body probe I fired (`/proposals`, `/proposals/batch`, `/proposals/delete-batch`, `/nodes/:id`, `/tags/:id`, `/send`, `/ingest`, `/ratify-batch`, `/jobs`, `/activity`, `/proposals/:id/zone`) returned `expected` — **except `POST /projects`**, which still 400s bare on both its validator and its parse catch. A funnel gate should end with a sweep of every `status: 400` literal in the source that did NOT go through the helper; two remained (`/projects`, `/proposals/:id/promote`), and only the first is a genuine shape error.
 Watch item for the doc: a batch edge draft stores its endpoints AS WRITTEN, so edges drafted against local refs hold the ORIGINAL PROPOSAL ids — after a partial ratification, grepping `state --batch` for a ratified node's uuid finds no edge, and the agent must join through `resultNodeId`. Title-ref'd edges store real node ids instead. The casting-draft doesn't name this asymmetry and it's exactly the reconciliation step drive #10 skipped.
+
+## Spell-hardening P0 ratify round — gate auditing as a discipline (2026-08-05)
+
+First non-mind-mapper round in this seat, and the first where my object was **gates themselves** rather than a running spell.
+The card asked one question of four gates — *what result would have FAILED this?* — and the answer is that the question is necessary and **not sufficient**.
+
+### The taxonomy — four ways a gate cell fails, and only the first is the one people look for
+
+**1. Decoration — the cell cannot fail.**
+Found directly by the card's question.
+P0's over-buffer precondition was stated in prose rather than asserted; P0c's Gate line used a *valid* value where only a bogus one discriminates.
+
+**2. Inverted control — the cell fails a CORRECT implementation.**
+Found by asking the question's missing second half: **evaluate the assertion against the world AFTER the intended fix, not only the buggy one.**
+P0d asserted "`state` does not show the task" for a duplicate id, but `applyTaskAdd` refuses the duplicate and leaves the original holding that id — so the assertion is false post-fix.
+**Worse than decoration**: decoration passes silently, an inverted control dispatches the builder to break working code while wearing a red gate that looks like diligence.
+
+**3. False premise — the cell names an operation that does not do what the cell assumes.**
+P0b's final cell said "confirm `--fresh --restore` actually restores"; it does not restore, and it deletes the snapshot first.
+**This one hides best, and the reason is precise: it passes both earlier tests.** It can fail, and it does not fail a correct fix — it fails *everything, always*, and "this cell can definitely fail" is the exact reasoning that makes you stop looking.
+**A permanently-red cell reads as unusually sensitive rather than broken.**
+
+**4. Aggregate dilution — every cell is valid, but the headline count is dominated by cells that already passed.**
+P0c enumerated 15 entry points of which 9 already conformed, so "15/15 green" was ~60% incapable of failing.
+**Per-cell validity does not aggregate into suite validity, and the aggregate number is the one humans read.**
+Remedy: partition the populations in the gate text and report the counts separately; a blended count is what makes the dilution invisible.
+
+### The unifying rules
+
+**Audit what a gate INSTRUCTS, not only what it ASSERTS.**
+Every cell names an operation, and that operation is a claim about the world exactly as falsifiable as the assertion resting on it.
+I checked evidence-*admissibility* and never questioned the *verb* — and **admissible evidence about a non-existent behaviour is still a broken cell**.
+
+**Ground every verb a gate names before judging the cell that uses it.**
+This is why the P0d catch worked and the P0b miss did not: for P0d I had read `applyTaskAdd` and knew the post-fix world; for P0b I reasoned about the cell's logic with an ungrounded verb.
+One `--help` or one throwaway probe per verb.
+
+**A gate can instruct a DESTRUCTIVE act, and that is a safety review separate from the logic review.**
+P0b's final cell destroyed the snapshot — the exact recoverable→unrecoverable conversion the refusal it gates exists to prevent.
+Require the warning **at the instruction**, never in a linked finding the runner may not have read.
+
+**When a cell says "pick something with property X", check that something with property X exists PRE-FIX.**
+If it does not, replace the selection instruction with a **constructed fixture plus a recorded pre-fix baseline**.
+Category 3 predicted this second instance before I found it: P0d's second half asked for "a command the reducer declines" when magpie's `/cmd` switch has 13 cases and zero `default:`, so that set is empty.
+*(Stated as a claim to test, not an established property — n=1 on prediction.)*
+
+### The house's default vacuity, four costumes in one evening
+
+`>65_536` by construction · precondition as its own cell · a bogus value not a valid one · a board that is populated not empty.
+**Generalised: any assertion of the form "X is unchanged / complete / matches" is VACUOUS when X is empty or small — and the empty case is exactly what a broken fixture produces.**
+So the failure of the *setup* silently manufactures a passing *measurement*, which is why it recurs: fixture and assertion are written by one person in one breath, and the assertion is the half that gets scrutinised.
+**Remedy: make the precondition its own assertion cell, before the measurement, and assert identity (ids/titles) rather than count.**
+
+### Verification craft this round sharpened
+
+**A positive control must be generated by a party OTHER than the observer.**
+I broadcast "touch a card, confirm a frame arrives" as a wire test; `--as` does documented self-echo suppression, so a self-write is the one write the observer cannot see.
+I handed the team a diagnostic that reports a healthy wire as dead.
+**Ask who authors the stimulus and whether the observer can see that author's traffic at all.**
+
+**Measure exit codes WITHOUT a pipe.** `$?` after a pipe is the filter's status — the SOP's own land-string scar, which I then committed while auditing gates.
+It cost nothing only because the wrong answer contradicted a peer; **a measurement that confirms what you expect gets no second look**, which is where this error is invisible.
+
+**When you notice you are DISCOVERING a tool's behaviour by experiment, check whether it is DOCUMENTED.**
+I characterised `bounty tail`'s echo suppression empirically for an hour; it is two lines of `bounty --help`.
+Empirical characterisation feels like rigour and is correct when docs are silent — which is why it never prompts you to ask whether they are.
+
+**Prefer a claim you can re-check from a saved artifact over one that depends on what happened while you were watching.**
+Same hour, same author: my filter finding (proven against captured bytes) survived; my `--mine` finding (a timing inference from a live stream) was withdrawn.
+**The evidence type predicted which one held.**
+
+**When two invocations disagree, re-run BOTH at the same instant before theorising** — a disagreement measured minutes apart may be measuring *time*, not the variable.
+I wrote this rule down and then failed to apply it to the arm I had already convinced myself about.
+**The rule did not fail; I did not run it on the finding I liked** — and a reflex applied only to claims you doubt is a mood, not a reflex.
+
+**Mutation-verify a gate in THREE directions when you contributed a cell to it:** fix present → pass, fix reverted → fail *at the right assertion*, and **the precondition cell's own fixture removed → fail at the precondition**.
+A precondition that never fires is itself decoration.
+
+### Where a finding LIVES decides whether it survives
+
+**A claim about a gate that lives outside the gate has the same durability problem as a contract restated in three seat docs** — it drifts, and the copy that gets executed wins.
+I reported a fix and left its *reasoning* on the wire; the gate would have shipped carrying the split with no *why*, one reasonable refactor from being undone.
+**Write it where it is executed, once.**
+The auditor's output is itself an artifact with a durability question, and I did not apply my own lens to it.
+
+**`uncheckedAgainst` is sampled at COMMIT time, not GATE time.**
+It cannot distinguish *dirty during the gate* (a true false-green) from *dirtied between gate and commit* (a timing artifact); it is conservative by design and should stay so.
+**Non-empty is a prompt to investigate, not a verdict.**
+The only general method for the benign case is re-running the gate on the committed tree.
+
+**Announce the RELEASE of a shared file, not only the claim of it.**
+The convention has an opening beat and no closing one; my "restored, tree clean" would have let the lead read his own envelope without waiting for me.
+
+### Reflexes carried in, re-confirmed
+
+Kill daemons by exact PID after matching the **untruncated** command line — never `pkill` on a shared `scripts/server.ts` argv, never `close`.
+zsh does not word-split: **never put multi-word anything in a variable destined for argv** — not the command path, not a flag bundle (bit me twice more this round, in the flag-bundle costume).
+Mark absence explicitly (`UNVERIFIED` / `UNVERIFIED-BY-CONSTRUCTION`) and say which specific thing you did not check; peers will drive it and hand the result back.
+
+### The blind spot this seat ships with — audit your OWN instruments
+
+**Every habit this role trains points scrutiny outward, so the verify seat's own tooling is the least-audited artifact in any session it works.**
+Nothing else in this doc tells you to check your own instruments; it is all about driving someone else's.
+That is a gap in the seat, not in whoever holds it — which is why it is written here.
+
+Three instances in one session, all mine, all found by someone else or by accident:
+I broadcast a wire self-test that could not work (`--as` suppresses your own echo, so the tester is the one party who cannot see the event).
+I published a filter fix that made a tail report events but not its own death, then kept running that incomplete filter myself for an hour while recommending the corrected one to others.
+I audited a gate cell's logic without ever grounding the verb it named.
+
+**The unifying failure: I never connected "this is a gap in the thing I am auditing" to "I am using the thing I am auditing."**
+The recommendation and my own configuration were separate objects until a peer re-armed and made them touch.
+
+**Reflex to adopt: after you publish a correction to any instrument, immediately check whether you are running the uncorrected version.**
+It is one command, and the answer was "yes" every time it came up this session.
