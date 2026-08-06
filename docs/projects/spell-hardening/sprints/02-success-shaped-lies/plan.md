@@ -752,6 +752,63 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   RELEASE-BEAT prerequisite** — _"did we make the suite worse?"_ is a question
   the release note cannot answer with an unmeasured number.
 
+- **📣 ANNOUNCE A FULL GATE WHEN YOU _START_ IT, NOT ONLY WHEN IT LANDS — and
+  `uncheckedAgainst` CANNOT SEE THIS.**
+
+  **Added 2026-08-06 (sprint 02) by `cassandra`, after two seats ran two full
+  101-file parallel suites concurrently on one machine with 14 spell daemons
+  live.** Neither seat did anything wrong: **both announce LANDS and neither
+  announces RUNS.**
+
+  > **`uncheckedAgainst` records dirty FILES. NOTHING records CONCURRENT LOAD.**
+
+  **And this sprint measured two things that are properties of the MACHINE
+  rather than of the tree** — the **flake rate** (daemon/port pressure) and the
+  **drain timing** (scheduler). **For those, _"what else was running"_ is a
+  precondition of the same rank as _"was the tree clean"_, and we have an
+  instrument for one and nothing for the other.**
+
+  **The asymmetry decides what to do about a run caught under load:**
+
+  | outcome under contention | verdict                                                                                                     |
+  | ------------------------ | ----------------------------------------------------------------------------------------------------------- |
+  | **GREEN**                | **stands** — contention manufactures false REDS, not false passes                                           |
+  | **RED**                  | **uninterpretable** — and worse, _"probably the flake"_ is pre-supplied and would be wrong for a NEW reason |
+
+  **A measurement OF machine pressure taken UNDER machine pressure is void, not
+  weakened.** _`cassandra` killed her own flake measurement rather than report
+  it: she had serialised against herself, and the machine is shared._
+
+  **⛔⛔ AND THE ANNOUNCE RULE IS NECESSARY AND NOT SUFFICIENT — IT FAILED ON
+  ITS FIRST OUTING, BY TEN SECONDS.** `daedalus` followed it faithfully and
+  announced — **but he announced AT the start, not BEFORE it**, so his offer
+  _"say so and I will hold"_ was unactionable: by the time it was read he was
+  already running, and `cassandra`'s flake re-run was contaminated **a second
+  time.**
+
+  > **An announcement is a RECORD, not a LOCK.**
+
+  **THE MECHANICAL HALF, which does not depend on a peer being awake, reading,
+  and fast:**
+
+  ```
+  ps -eo pid,etime,command | grep "[b]un test"      # if it returns anything: WAIT
+  ```
+
+  **CHECK first · ANNOUNCE second · START third.**
+
+  **This is G1's correction in the process layer:** the scrub was necessary and
+  the **explicit `--session-key`** was the isolation. **Here the announcement is
+  the scrub and `ps` is the explicit key.** _Same necessary-and-not-sufficient
+  shape as the P0f fixture spec, three hours later, one layer up._
+
+  **⚠ The scheduling error was the LEAD's.** I sent her to measure daemon
+  pressure with the board showing P0c `doing` in front of me, and called it
+  _"the only clean window it will get."_ **A window is not clean because nothing
+  has landed; it is clean because nothing is RUNNING** — and the board shows
+  lands, not runs. **The same blind spot the rule above names, in the surface I
+  was reading it from.**
+
 - **🌳 A BARE `git worktree` HAS NO `node_modules` — AND IT FAILS AS A PLAUSIBLE
   RESULT, NOT AS AN ERROR.**
 
