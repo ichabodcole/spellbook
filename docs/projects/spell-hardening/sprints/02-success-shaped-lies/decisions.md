@@ -357,6 +357,46 @@ must not imply it does.
 (closing it flushes live over the snapshot) and **Cole's mind-mapper on
 `:60700`**. Flagged, not killed.
 
+### A17 — Where the ward lives · **RULED BY PROSPERO**
+
+| option                               | cost                                                              |
+| ------------------------------------ | ----------------------------------------------------------------- |
+| ✅ **A test, on every gate**         | Must be **green when it lands** — so the findings get fixed first |
+| A step in the `ward` skill           | **Runs when someone REMEMBERS to invoke it**                      |
+| A script in `grimoire/`, run by hand | Same failure, one indirection further away                        |
+
+**The argument is this session's own record.** Every mechanism that WORKED today
+could not be skipped — the precondition cell that refuses to report,
+`uncheckedAgainst` printed unasked, the denominator guard that fires before a
+rate exists. **Every mechanism that FAILED depended on someone remembering:**
+the announce rule, the re-run-at-consuming-sha rule, the lead's routing.
+
+> **A ward that runs on invocation is a ward that runs when someone remembers.**
+
+**Carried into it: the ward is structurally blind to the `--` terminator class**
+(a _behaviour_, not a flag) — **stated in its own header rather than widened**,
+because a check whose blind spot is undocumented is the shape this sprint spent
+the day removing.
+
+### A18 — The terminator hazard: docs or code? · **RULED BY PROSPERO**
+
+| option                    | cost                                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ✅ **Docs + a G1 clause** | Relies on the reader                                                                                                                                                                             |
+| A code guard              | **A parser CANNOT distinguish an eaten flag from a legitimate title containing `--owner`** — after the terminator it is text _by definition_. Any guard is a heuristic that fires on valid input |
+
+**Ruled docs**, with the G1 clause that **the explicit `--session-key` is only
+isolation if it PRECEDES any `--`**. The code option is **carded as a candidate,
+not dismissed**: a stderr warning when a post-terminator positional exactly
+matches a recognised flag name — cheap, catches the footgun, can false-positive.
+**Cole's call whether that noise is worth it.**
+
+**Severity bounded by its own finder:** the worst form is **bounty-only** — it
+is the only spell with an ambient env binding. **And `grapevine` is safe
+STRUCTURALLY, not luckily:** its channel is a **positional**, and `--` does not
+eat positionals — it only reclassifies what follows _as_ one. **The hazard is
+confined to verbs whose target is passed as a FLAG.**
+
 ---
 
 ## B. Corrections and falsifications — pointers only
