@@ -2162,6 +2162,42 @@ beginning before it streams new ones.
 > **A true claim that reads as an overclaim costs the same trust as a false
 > one.**
 
+### The closable set — mapped, and it is 6 of the 14
+
+**Drafted by the lead ahead of the beats so the count is not improvised at
+release time. UNVERIFIED until each is re-checked against what actually
+shipped.**
+
+| issue   | closed by                                        | status                    |
+| ------- | ------------------------------------------------ | ------------------------- |
+| **#77** | sprint 01 P0 (`ec33378`) + gate `59517c3`        | **closable**              |
+| **#78** | sprint 01 P0 (`c29aa4e`) + gate                  | **closable**              |
+| **#80** | **BOTH halves, across BOTH sprints** — see below | **closable**              |
+| **#81** | P0c                                              | **not yet — P0c unbuilt** |
+| **#83** | P0d (`14bec41`)                                  | **closable**              |
+| **#84** | P0d (`14bec41`)                                  | **closable**              |
+
+**⚠ #80 is the one to get right.** Its title carries **two** defects — _"a
+skipped `--restore` **and** a pipe-truncated `state`"_. The truncation half was
+fixed in **sprint 01**; the skipped-`--restore` half is **P0b, this sprint**.
+**Closing it must cite both, or the comment claims one sprint did work the other
+did.**
+
+**⚠ And the release spans TWO sprints, which the note must say.** #77 and #78
+were fixed in sprint 01 and **never closed** — its outcome's honest headline is
+_"zero of the fourteen are closed."_ **So this release closes sprint 01's work
+as well as sprint 02's**, and a note implying sprint 02 fixed them is false.
+
+**The other eight are NOT closable and each has a reason** — not a backlog to
+tidy later: **#64** genuinely unexplained, needs its own investigation · **#73 ·
+#74 · #79** are P1, **unratified** · **#72 · #76** are P2/P3, unratified ·
+**#82** on hold · **#85–#88** deliberately out of scope with the contract
+investigation.
+
+**⚠ P0f's tail slice closes NO issue.** It has no number — it was found by this
+project, not reported. **Do not let a lane with real shipped code go unmentioned
+because the release note is organised by issue.**
+
 1. **Conventional commits throughout** (`fix(bounty)`, `fix(grapevine)`) —
    release-please owns versions, **no hand-edited version.**
 2. **Re-read both `SKILL.md` files against what actually shipped.** Anything
