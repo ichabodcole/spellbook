@@ -858,7 +858,33 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   PREVENTS: it pre-supplies _"probably contention"_ as the innocent explanation
   for a red that is a FINDING.** That is the **fourth** pre-supplied innocent
   explanation this sprint — and **the first one pointing AT a green rather than
-  away from one.**
+  away from one.** _The others excused a symptom; this one would have DISCARDED
+  a finding._
+
+  ### ⭐ AND THE WHOLE THING COLLAPSES — a red does NOT need a quiet machine. It needs ONE CELL.
+
+  **`cassandra`, retiring her own remedy as the expensive one:**
+
+  > **The first move on ANY red is to RE-RUN THE FAILING CELL IN ISOLATION — not
+  > the suite, and not on a quiet machine.**
+
+  **The argument is `daedalus`'s own number: 17ms.** A single-cell re-run needs
+  **no quiet window, no coordination, no announcement** — and it discriminates
+  immediately:
+
+  | isolated re-run | cause shape                       | verdict                                                              |
+  | --------------- | --------------------------------- | -------------------------------------------------------------------- |
+  | **fails**       | any                               | **FINDING.** Contention cannot make a test fail in isolation.        |
+  | passes          | timeout · ECONNREFUSED · port     | contention-or-flake — **now** a quiet full run is worth its cost     |
+  | passes          | deterministic, names a flag/value | **suspect your FIXTURE or a test-order dependency**, not the machine |
+
+  > **Sequence: ISOLATE THE CELL (free) → only then consider a QUIET SUITE
+  > (expensive).**
+
+  **This sprint paid the expensive step first, twice.** _"The cheap step was
+  available and I did not name it, which is why my rule read as 'reds are
+  costly' when reds are mostly cheap."_ **The scheduling problem this rule was
+  written to manage largely does not exist.**
 
   **⚠ `UNVERIFIED` — nobody has observed bun dropping files under pressure and
   nobody has tested it.** The guard is kept **because it costs nothing and does
