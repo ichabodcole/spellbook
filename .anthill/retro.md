@@ -62,7 +62,11 @@ isolated re-run  ->  1 pass · 0 fail          land attempt 2  ->  1336 / 0
 
 > **⛔ BUT SHE REFUSED TO FILE IT AS "just the flake", and the reason is specific: it is NOT `imago > marksUnseen freshness flag`. It is `runOpen` — the function thoth found could HANG rather than fail under a held pipe (card `t-c3060da7`). A 15-second budget expiry in that exact function is the symptom that hazard would produce.**
 >
-> **WATCH ITEM, next sprint, stated UNRESOLVED rather than closed:** consistent with contention **and** with a load-sensitive residue of the pipe hazard. **This session cannot separate them.**
+> **⭐ DIAGNOSED AFTER THE RETRO WAS WRITTEN, by `daedalus`, post-stand-down, about his own cell: NOT contention-vs-residue — an INSTRUMENT DEFECT.** His G7 cell budgets **15s**, and **a hang is UNBOUNDED while a slow boot is BOUNDED** — so under three suites `bounty open` legitimately exceeds it and the cell reports a hang about a process that terminates fine. **A false hang finding, manufactured by load, from the instrument built to catch hangs.**
+>
+> **It retro-explains the session's OTHER unnamed red too** — so **the team's "the known flake is `marksUnseen`" premise never explained either.** _A pre-supplied innocent explanation, believed by three seats, for three hours._
+>
+> **And he weakened his own earlier "2.5 pass CLEAN" in the same message:** he checked Contract 13's proofs and his restatements, **but did not re-read the cells he wrote as an authority on their own BUDGETS** — *"a number I chose on a quiet machine became wrong on a loaded one, and no gate could see it."*
 
 **Three unreproduced reds today** — daedalus's unnamed one, this one, and thoth's ward cleared at 5 clean runs. **Only this one has a cell name, and only because the rule forced it.**
 

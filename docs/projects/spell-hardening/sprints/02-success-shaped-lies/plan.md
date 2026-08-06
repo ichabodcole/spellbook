@@ -544,6 +544,47 @@ spelling, leaving the stream usable and only stopping it from holding the loop.
 were green, and **a 23-minute hang in a shipped spell's entry verb was invisible
 to every one of them, because nothing asserts that a CLI RETURNS.**
 
+> ### ⏱ G7 AMENDED AGAIN 2026-08-06 — SET A LIVENESS BUDGET FROM THE **FAILURE**, NOT FROM THE SUCCESS
+>
+> **`daedalus`, post-stand-down, diagnosing his own cell after `cassandra`'s
+> land went red inside it.**
+>
+> ```
+> server.test.ts:2961   budget = opts.timeoutMs ?? 15000
+> her failure           15004.99ms      <- budget expiry to the millisecond
+> ```
+>
+> **A G7 assertion detects a HANG, and a hang is UNBOUNDED** — it never returns,
+> at any budget. **A slow boot is BOUNDED**, and under three concurrent suites
+> `bounty open` legitimately exceeds 15s. **So the cell reports _"this process
+> did not terminate on its own"_ about a process that terminates fine.**
+>
+> > **A FALSE HANG FINDING, MANUFACTURED BY LOAD, FROM THE INSTRUMENT BUILT TO
+> > CATCH HANGS.** This sprint's defect class, inside this sprint's own gate.
+>
+> > **A liveness assertion implemented as a timeout is contention-sensitive BY
+> > CONSTRUCTION. Set its budget from the FAILURE it detects (UNBOUNDED), never
+> > from the success it expects (a few seconds). A tight budget on an unbounded
+> > failure mode is ALL COST AND NO COVERAGE.**
+>
+> **Raise it to 60–120s and the assertion loses NOTHING** — `glamour open` ran
+> **23 minutes**; a 60s budget catches that identically to 15s.
+>
+> **⚠⚠ AND THE TWO G7 FIXES ARE COUPLED — `thoth` connected what neither of us
+> had.** Raising the budget is **safe only because `t-c3060da7` already
+> landed**: before the reorder, exit was observed _through the pipes_, so a
+> longer budget would have meant **waiting longer on an EOF a detached
+> grandchild can withhold forever** — trading a fast false positive for a slow
+> true hang. **After the reorder, exit is raced independently of the pipes, so a
+> bigger budget costs only time.** **Do not raise a liveness budget without
+> checking what the assertion waits ON.**
+>
+> **⚠ It retro-explains the session's OTHER unnamed red** (`daedalus`, #420) —
+> same shape, suspect now `runOpen`'s budget rather than `marksUnseen`. **So the
+> team's "the known flake is `marksUnseen`" premise never explained either
+> unnamed red:** a pre-supplied innocent explanation, believed by three seats,
+> for three hours. **Carded (`t-defc47e3`), not patched post-cut.**
+
 > ### ⚠⚠ G7 AMENDED 2026-08-06 (sprint 02) — asserting the exit is not enough. The assertion must be REACHABLE when the process does not exit.
 >
 > **Found by `thoth` in the H7 judgement audit, driven both directions outside
