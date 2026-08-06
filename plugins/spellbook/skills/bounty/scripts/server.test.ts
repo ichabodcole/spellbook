@@ -3399,3 +3399,102 @@ describe("P0d #83 — a duplicate add is a REFUSAL, not a silent success", () =>
     }
   }, 40000);
 });
+
+// ── P0f (slice) — the `tail` write→exit pair ─────────────────────────────
+//
+// `tail` wrote the terminal frame and exited on the NEXT statement. Bun's
+// stdout is async on a PIPE, so an explicit exit discards whatever has not
+// drained — measured in this repo at exactly 65,536 bytes. `tail` is the verb
+// agents leave running for hours, and the frames it loses are the ones saying
+// the stream ended.
+//
+// G6 — DRIVEN THROUGH A REAL SHELL PIPE, `sh -c "… | cat"`. This is not a
+// stylistic choice and a `runCli`-style `Bun.spawn({stdout:"pipe"})` CANNOT
+// FAIL on this defect: measured on one board, the same payload read three ways
+// gave 65536 / 114042 / 65536 — Bun.spawn's pipe is the one that reads
+// COMPLETE. The engine seat wrote that gate last sprint, it passed, he restored
+// the bug, and it passed again.
+//
+// G8 — the fixture is ONE event over the buffer, not many small ones, and the
+// byte assertion comes BEFORE the parse so a fixture that silently shrinks
+// fails loudly instead of passing vacuously.
+//
+// G7 — the process must EXIT. A drain fix trades a truncation for a hang
+// wherever process.exit was load-bearing, and here the exit sits three loops
+// deep. A hang would otherwise surface as a test timeout, which reads as
+// flakiness rather than as the regression it is.
+describe("P0f — tail drains its terminal frame before exiting", () => {
+  test("RED PRE-FIX — a >64KiB replay survives tail's exit, and tail RETURNS", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "60"], { env });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+
+    // ONE event whose payload exceeds 64 KiB — a single 100 KB title, not many
+    // small events. `bounty tail` replays its entire event history, so a
+    // --since 0 tail re-emits this frame and then the `closed` frame.
+    const big = "x".repeat(1_000_000);
+    const added = await runCli(["add", "--id", "big-1", "--stdin", "--session", id], {
+      env,
+      stdin: big,
+    });
+    expect(added.code).toBe(0);
+
+    const proc = Bun.spawn({
+      // ⚠ `| ( sleep 2; cat )` — a NON-DRAINING consumer, and it is the whole
+      // fixture. See the note above the sleep below.
+      cmd: ["sh", "-c", `bun run ${CLI} tail --since 0 --session ${id} | ( sleep 2; cat )`],
+      stdout: "pipe",
+      stderr: "ignore",
+      stdin: "ignore",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home },
+    });
+
+    // ⚠⚠ THE NON-DRAINING CONSUMER IS THE FIXTURE — a big payload alone is NOT
+    // enough, and this cell was VACUOUS twice before it discriminated.
+    //
+    // MEASURED, bug restored, 10 MB of replay through `| cat`, closing at
+    // 0.02s / 0.05s / 0.15s / 0.3s / 1.0s: **10001074 bytes every time —
+    // complete, at every timing.** A reader that keeps draining lets each write
+    // complete before the next arrives, and the write immediately preceding the
+    // exit is the small `closed` frame, which fits under the buffer. So a gate
+    // built only to "ONE event over 64 KiB" passes with the bug in place.
+    //
+    // What discriminates is whether bytes are UNDRAINED at the instant of exit.
+    // With `| ( sleep 2; cat )` the pipe stays full and the tail's writes sit
+    // buffered, so the exit discards them:
+    //
+    //     bug restored -> 65536 bytes    (exactly the buffer)
+    //     with the fix -> 3000440 bytes  (complete)
+    //
+    // That is realistic, not contrived: any consumer momentarily not reading —
+    // a busy Monitor, a slow downstream — is in this state.
+    await Bun.sleep(300);
+    await runCli(["close", "--session", id], { env });
+
+    const budget = 25_000;
+    const killer = setTimeout(() => proc.kill("SIGKILL"), budget);
+    const started = performance.now();
+    const out = await new Response(proc.stdout).text();
+    const code = await proc.exited;
+    clearTimeout(killer);
+    const ms = performance.now() - started;
+
+    // G7 FIRST — a hang is a different failure from a truncation and must not
+    // be reported as one.
+    expect({ returnedOnItsOwn: ms < budget, code }).toEqual({ returnedOnItsOwn: true, code: 0 });
+
+    // G8 — the over-buffer assertion BEFORE any parse. A fixture that shrank
+    // below the buffer would pass every assertion below it while proving
+    // nothing. The threshold is the 64 KiB buffer; the fixture is ~15x it.
+    expect(out.length).toBeGreaterThan(65_536);
+
+    // And the payload is INTACT, not merely large: the big frame parses and
+    // carries all 100,000 characters. A truncated frame is cut mid-value, so it
+    // cannot parse — that is the whole check.
+    const bigLine = out.split("\n").find((l) => l.includes("big-1") && l.includes("task.add"));
+    expect(bigLine).toBeDefined();
+    const ev = JSON.parse(bigLine as string) as { task?: { title?: string } };
+    expect(ev.task?.title?.length).toBe(1_000_000);
+  }, 60000);
+});

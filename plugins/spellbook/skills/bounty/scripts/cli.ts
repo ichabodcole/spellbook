@@ -693,8 +693,33 @@ async function cmdTail(
           // Scope filter, then self-echo suppression. `closed` is lifecycle, so
           // it always passes — but guard the exit outside the filter regardless.
           const selfEcho = self !== undefined && ev.by === self;
-          if (inScope(ev) && !selfEcho) process.stdout.write(`${payload}\n`);
-          if (ev.type === "closed") process.exit(0);
+          const emit = inScope(ev) && !selfEcho;
+          if (ev.type === "closed") {
+            // P0f — the terminal frame is the one a consumer most needs and the
+            // one `write(payload); process.exit(0)` throws away: Bun's stdout is
+            // async on a PIPE, and an explicit exit discards whatever has not
+            // drained (measured in this repo at exactly 65,536 bytes).
+            //
+            // SHAPE B — the callback rides THIS write, so it fires on THIS
+            // write's completion. Do NOT "fix" this with a trailing
+            // `write("", () => exit)`: a drain callback covers only its own
+            // write and is not a barrier — measured byte-for-byte as broken as
+            // no fix at all, and it is the helper this shape invites.
+            //
+            // PER-SITE PRECONDITION, checked here and not inferred from the
+            // shape: this exit sits THREE loops deep (while → for-sep →
+            // for-line), so `process.exitCode` + a natural return — the tidy
+            // one-liner used at the nine entry points — does NOT return from a
+            // tail. It falls through and the loop goes round again. That is the
+            // 23-minute `glamour open` hang, one sprint later, in a new place.
+            // The explicit `return` below is what leaves all three loops; the
+            // callback is what drains. Both are required, for different reasons.
+            if (emit) process.stdout.write(`${payload}\n`, () => process.exit(0));
+            else process.exit(0);
+            stopped = true;
+            return;
+          }
+          if (emit) process.stdout.write(`${payload}\n`);
         } catch {
           /* skip malformed frame */
         }
