@@ -87,6 +87,16 @@ with sources in `src/mind-mapper/`).
 3. Regression test per spell: generate a >64KiB payload, read it **through a
    pipe**, parse it. A test that doesn't pipe cannot catch this bug.
 
+   **⚠ The vacuity trap — the regression cell must be over 65,536 _by
+   construction_.** A test that pipes a small payload and asserts completeness
+   **passes in both worlds**, goes green for years, and is still green on the
+   day it breaks: a 64KiB truncation of a sub-64KiB payload is indistinguishable
+   from success. Put a positive control _inside_ the assertion —
+   `expect(bytes).toBeGreaterThan(65_536)` before asserting the parse — so a
+   fixture that silently shrinks fails loudly instead of passing vacuously.
+   **Mutation-verify it**: restore the `process.exit`, confirm the new test
+   fails **alone**, restore the fix.
+
 **Reference control:** `anthill comms read` moves **2.78MB** through a pipe
 intact — measured on the same machine, same Bun, in the same session where
 `bounty state` truncated at 65,536 (reported 2026-08-06; supersedes the ~983KB
@@ -94,6 +104,15 @@ figure from #77). Its success path **returns naturally instead of calling
 `process.exit`**. That is the target behaviour, and the reporter notes it is
 accidental rather than designed on their side — worth saying out loud in both
 repos so nobody later "tidies" a natural return into an explicit exit.
+
+**The mechanism, isolated in a second runtime (reporter, 2026-08-06):**
+
+```
+write 300_000 bytes then process.exit(0)   →  pipe 65536    file 300000
+write 300_000 bytes, natural return        →  pipe 300000   file 300000
+```
+
+One variable, both directions. This is the control the fix should reproduce.
 
 **Gate:** `grapevine pull` and `bounty state --full` both return valid JSON with
 `cursor` present, piped, on an over-buffer payload. Three consecutive runs (the
@@ -143,8 +162,43 @@ respawn. The reported board was **live and empty**, so hydration never fires —
 4. **`SKILL.md` names the field and stops** (D1.4 — ruled). Two lines at most;
    do not restate the semantics.
 
+**Real-board baseline — captured 2026-08-06 by the reporter, on the recovered
+102-card board.** This is the pre-fix artifact the regression test gets written
+against; our own repro is synthetic.
+
+```
+snapshot 102 · live deliberately diverged to 103
+bounty open --session-key anthill-dev --restore k-anthill-dev-adad92ec
+  EXIT ..... 0
+  STDOUT ... {"url":…,"port":…,"session_id":"k-anthill-dev-adad92ec","title":"Bounty Board"}
+  STDERR ... # attached to existing board k-anthill-dev-adad92ec (key "anthill-dev")
+live AFTER . 103        (divergence survived)
+```
+
+**Nothing in stdout or stderr mentions `--restore` in any form** — not
+performed, not skipped, not refused. That absence, plus the unreachable line
+415, is what proves inertness. **The task-count delta does not**, per the gate
+note below.
+
+**⚠ The gate must read the SNAPSHOT count immediately before the restore call.**
+Reading it at the top of the sequence produces a control that cannot come out
+differently. Snapshots are **not** close-only: `server.ts:650-651` and `:1235`
+mark the snapshot dirty on every board mutation and flush on a ~1s debounce —
+verified on a throwaway board 2026-08-06 (card added, snapshot file absent at
+t+0, present with the card at t+~1s). So a live board that has been diverged has
+almost certainly diverged the snapshot too, and "live unchanged after restore"
+is then consistent with both _inert_ and _restored the same contents_. Diverge
+live **and** confirm the snapshot still differs at call time, or the gate proves
+nothing.
+
+_Recorded because both teams shipped this bug in one evening: the reporter's
+first baseline compared 102 to 102, and the sequence this plan's author sent
+them as its replacement asserted "live unchanged == restore was inert" — the
+same degenerate control, written into the fix for it._
+
 **Gate:** open a keyed board, seed it, kill the daemon's board contents so live
-is empty while the snapshot is populated, then re-run
+is empty while the snapshot is populated — **re-reading the snapshot at call
+time to confirm the divergence is real** — then re-run
 `open --session-key K --restore <id>` against the **live** board. It must exit
 non-zero and carry `restoreSkipped`. Then confirm `--fresh --restore` on the
 same key actually restores. Throwaway board only.
@@ -386,6 +440,13 @@ the big swing
    change** — `--mine` keeps meaning mine-plus-claimable. This is the same rule
    as D1.2 applied to a read: _a disclosure on a channel the consumer does not
    read is not a disclosure._
+7. **`bounty sessions` emits prose, not JSON** — alone among the read verbs
+   (`k-anthill-dev-adad92ec  102 tasks  — anthill-dev — session 12`). Every
+   other read returns an envelope, so a caller that reasonably assumes JSON gets
+   a parse error from the one verb used **during recovery**, when they are
+   already worried the data is gone. Same family as #79: the tool answering in a
+   shape the caller did not ask for. Give it the standard envelope; keep a human
+   rendering behind `--human` if it is worth keeping at all.
 
 **⚠ Surface-mirror discipline:** every `server.ts` derivation touched here has a
 hand-written Alpine twin in `template.html` and **no test guards the drift.**
