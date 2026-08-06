@@ -534,3 +534,31 @@ Generalises: **a zero deserves the same suspicion as a surprising positive**, an
 The sprint's inherited denominator — "45 non-test `process.exit(` sites" — is **45 raw grep hits but 35 code sites**; ten are sprint 01's own explanatory notes (`// process.exitCode + a natural return, NEVER process.exit(code)`). Two files (`digestify/review.ts`, `magpie/discover.ts`) have raw=1/code=0: their only hit is the comment left by the fix, and `magpie/discover.ts` was explicitly ruled OUT of that sprint — so a future enumeration re-finds a site that was correctly excluded and re-litigates a closed ruling.
 **I found it by committing one:** my own P0b comment took `bounty/cli.ts` from 4 hits to 5.
 This is the inverse of the failure already in this doc. I had "an audit anchored on a literal grep inherits that grep's blind spot" filed as **under**-counting via a synonym; this is **over**-counting via the fix's own prose. **Every site we repair increments the count of sites that look unrepaired.**
+
+**A PERMISSIVE PARSER LETS TESTS ACCUMULATE ASSERTIONS ABOUT FLAGS THAT DO NOT EXIST, AND EVERY ONE READS AS COVERAGE.**
+Converting imago's parser to a strict registry turned its own `cli.test.ts` red: it asserted the `=` form using `--text=a=b=c`, and **imago has never had a `--text` flag** — not in the audited artifact, not in the source. It was an arbitrary stand-in that worked only because the old parser accepted whatever it was handed.
+**The test was green BECAUSE of the defect.** It is not collateral damage from the fix; it is a second instance of the same defect, sitting in the suite, invisible.
+**There is no way to find these by inspection** — a test of a non-existent flag is textually identical to a test of a real one. **The conversion is the enumerator.** So when you add a registry to a permissive parser, expect the defect in the test suite too, and read each red as a finding rather than as breakage.
+Pin: imago/tests/cli.test.ts, rewritten against `--options` plus a cell asserting `--text` is now refused by name; commit e7504cf.
+
+**A RED UNDER CONTENTION IS NOT AUTOMATICALLY UNINTERPRETABLE — the discriminator is whether contention could produce THAT CAUSE.**
+The team ruled that a green under machine contention stands (contention makes false reds, not false passes) and that a red is uninterpretable. My P0c gate went red while a peer's four measurement arms were live, and I was one step from re-running it under that rule.
+It would have been wrong: the red was **deterministic, reproduced in 17ms in isolation, and named its cause** — `Unknown option '--text'`, one flag, one file. Contention manufactures timeouts, refused connections and port collisions; it cannot manufacture that.
+**The rule as first written pre-supplied "probably contention" as the innocent explanation for a red that was actually a finding** — the mirror of the failure it was written to prevent. Accepted and extended by the verify seat: an ambiguous red needs THE CELL re-run in isolation, not a quiet machine.
+Generalises: whenever a rule tells you to discount evidence, ask whether the discount's mechanism could actually produce what you are looking at.
+
+**THE LAST ENTRY POINT IN A SWEEP IS THE ONE THE AUDIT CANNOT SEE — and it can carry several independent cloaks at once.**
+`glamour/server.ts` was the sixth of six flag parsers and had THREE, any one of which returns a confident zero to a reasonable audit: it has **zero `flags.` reads** (so a `flags.`-pattern sweep finds nothing), it reads **`Bun.argv`** not `process.argv` (the synonym already recorded above), and it is a **lookup** parser (`args.indexOf("--" + name)`, value = `args[i+1]`) rather than an accumulator.
+It carried exactly the bug that shape predicts: `flag()` returned `args[i+1]` unconditionally, so `--restore --title X` yielded `restore === "--title"` — the next FLAG silently eaten as the previous flag's VALUE.
+This is why the lane insisted on tracking by ENTRY POINT and never by spell: glamour's `cli.ts` and `server.ts` are two different parsers, so a per-spell checklist marks glamour done with a live defect still in it.
+**Corollary before converting any daemon's parser to strict: check what its own spawner passes it.** Strict rejects unknown flags including the ones its sibling CLI hands it at launch, and that failure lands at spawn time where nothing catches it.
+
+**ANNOUNCING AN ACTION AND TAKING IT IN THE SAME BREATH IS NOT AN ANNOUNCEMENT.**
+The team adopted "announce the START of a full gate, not just the land", after two suites collided. My first compliance put the `comms send` and the gate in ONE shell invocation — so the announcement and the thing it announced were simultaneous, and there was never an interval in which anyone could object. A peer asked me to hold and could not be heard, because my suite was already running when her message existed.
+**I satisfied the letter of a brand-new rule while removing the only property that makes it work.** Same shape as a falsifier you name but do not run: it buys the check's credibility without paying for it.
+The fix is one word — announce, then WAIT — and the general form is that a check with no gap between the check and the act is a log line, not a check.
+
+**THE DENOMINATOR IS A PROPERTY OF THE QUESTION, NOT OF THE POPULATION.**
+Four times in one sprint two people held different true counts of the same things: 112 vs 118 vs 169 vs 249 on flags, 44 vs 45 and then 45 vs 35 on exit sites, 118 vs 119, and 119 vs 115.
+The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts distinct flag names PER SPELL**, and glamour's `intent restore timeout title` appear in two parsers. For "is each parser's declaration exercised?" 119 is correct and 115 would credit one parser for another's coverage. For "how many flags does the toolbox expose?" 115 is correct and 119 is inflated by four. **Neither number is wrong; they answer different questions.**
+So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
