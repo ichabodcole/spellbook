@@ -11,11 +11,11 @@ project closes them.
 
 ## Sprints
 
-| #   | Sprint                                                          | Status      | Opened     | Closed     | Outcome                                         |
-| --- | --------------------------------------------------------------- | ----------- | ---------- | ---------- | ----------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)               | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md) |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md) | **Active**  | 2026-08-06 | —          | —                                               |
-| 03  | —                                                               | Not planned | —          | —          | —                                               |
+| #   | Sprint                                                          | Status      | Opened     | Closed     | Outcome                                         | Decisions                                                  |
+| --- | --------------------------------------------------------------- | ----------- | ---------- | ---------- | ----------------------------------------------- | ---------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)               | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md) | —                                                          |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md) | **Active**  | 2026-08-06 | —          | —                                               | [decisions](./sprints/02-success-shaped-lies/decisions.md) |
+| 03  | —                                                               | Not planned | —          | —          | —                                               | —                                                          |
 
 **Status values:** Not planned | Active | Complete | Abandoned
 

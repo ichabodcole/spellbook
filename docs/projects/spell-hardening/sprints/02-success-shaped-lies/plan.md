@@ -1,11 +1,28 @@
 # Sprint 02 — Success-shaped lies
 
-**Created:** 2026-08-06 **Status:** ACTIVE, unbuilt **Project:**
+**Created:** 2026-08-06 **Status:** ACTIVE, building **Project:**
 [Spell Hardening](../../README.md) · [proposal.md](../../proposal.md)
 **Predecessor:** [sprint 01 outcome](../01-drained-exit/outcome.md) — read it
 before this **Frozen predecessor plan:**
 [`../01-drained-exit/plan.md`](../01-drained-exit/plan.md) — **a record, not an
 instruction. Do not act on it.**
+
+> ### 📋 Decisions live in [`decisions.md`](./decisions.md), beside this file
+>
+> **This plan says what to build. The decision log says what was CHOSEN, what
+> the alternatives were, what each would have cost, and WHO RULED.** They are
+> different questions and neither answers the other.
+>
+> **Read it before you argue with a ruling in this plan** — Cole's `--unarchive`
+> rename, P0b's no-corrective-verb refusal, and the scope lines that were
+> deliberately left unclaimed are all there **with the options that were not
+> taken.**
+>
+> _Added after `thoth` measured that `decisions.md` was reachable from nothing:
+> `grep -rln "decisions.md"` over the whole project returned **zero files**. The
+> link ran one way only. **An out-of-band record nobody routes to is out-of-band
+> in the way that does not help** — the same defect this sprint's own session
+> anchor had, ninety minutes earlier, conceded by the same author._
 
 > ## All `file:line` references in this document are at `7a32677`
 >
