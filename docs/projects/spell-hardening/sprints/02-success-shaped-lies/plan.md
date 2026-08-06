@@ -1433,6 +1433,69 @@ fix, re-introduced by the fix, and on `add`/`message` it eats prose.
 > **The middle bucket is why this is written down: it looks like coverage in any
 > count that has two buckets.**
 >
+> ### ⚠ AND "119 OF 119 VERIFIED" IS TWO STATIC READINGS OF THE SAME CODE — do not let it into the note as runtime proof
+>
+> **`thoth` bounded his own result at `e7504cf`, unprompted.** The comparison —
+> **6 of 6 entry points · 119 flags · zero divergence**, sets compared **sorted
+> and in both directions**, with a guard asserting six files were read before it
+> reported — establishes something real and narrower than it sounds:
+>
+> - **DOES establish:** the 119 declared types match what the consumption sites
+>   say they should be. **The blocking prerequisite did its job** — 119 type
+>   decisions were made against a table, **not as fresh judgement calls inside a
+>   bulk edit**, which is the shape this plan forbade.
+> - **DOES NOT establish:** that the types are **right about runtime**. **A row
+>   where BOTH the table and the lane misread the same call site is invisible to
+>   this comparison.**
+>
+> **So the release note must not say "119 flags verified" unqualified.** The
+> discriminator is still the **drive**, because `strict: true` guards the NAME
+> and not the TYPE — **the exercised-flag report in three buckets is where the
+> real coverage question gets answered, and it is not this.**
+>
+> ### ⛔⛔ AND IT IS WEAKER STILL — IT IS NOT TWO INDEPENDENT READINGS. THE LANE **CONSUMED** THE ARTIFACT.
+>
+> **`daedalus`, bounding a result in his own favour, sharper than its author
+> did.** He did not derive the types. **He read them out of the artifact and
+> declared them.** So a systematic error in the original derivation is **present
+> in his source**, and the check compares the table **to a copy of itself that
+> has been through him.** **It cannot disagree with itself.**
+>
+> _His own seat doc's line, arriving from the other direction: a claim supplies
+> the frame to everyone who checks it. **Same operator, two methods, is strictly
+> weaker than two operators — and the artifact is the common ancestor of
+> both.**_
+>
+> **THE HONEST PHRASING FOR THE RELEASE NOTE — three lines, not one:**
+>
+> | claim                                                             | strength                                                                                                                                                                            |
+> | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | **119 of 119 DECLARED consistently with their consumption sites** | **transcription verified** across six entry points — catches a dropped flag, a typo'd key, a slip in a bulk edit                                                                    |
+> | **13 of 119 corroborated by a GENUINELY INDEPENDENT source**      | grapevine's own `BOOLEAN_FLAGS`, extracted from the shipped runtime registry **before** reading the table, diffed both ways — **the only one of the six with two separate origins** |
+> | **106 rest on a SINGLE derivation**                               | careful and **unfalsified — which is not the same as cross-checked**                                                                                                                |
+>
+> **Nobody is asked to re-derive 106 flags.** The cost is real and the risk is
+> low: **a wrong type is not silent** — it swallows a positional or breaks the
+> space form, and the suites plus the drives exercise the load-bearing ones.
+> **What is asked is that the number not travel as CORROBORATION when it is
+> TRANSCRIPTION**, because _"119/119, zero divergence"_ is the exact shape of a
+> success-shaped number: **true, impressive, and answering a narrower question
+> than the sentence built on it.**
+>
+> **⚠ THE CHEAP CLOSE, AVAILABLE AND NOT YET RUN:** the suite is **already a
+> partial cross-check and nobody has counted it.** Every flag exercised by a
+> passing test has had its type **confirmed by execution rather than by
+> reading**. A count of _"flags appearing in any test invocation"_ is **one grep
+> and no judgement**, and it yields a real second denominator. **Routed to the
+> three-bucket report — it is the same question.**
+>
+> _The two rows carrying the weight are the ones where the instrument was
+> useless: **grapevine 26/26**, where 24 rows needed hand-reading because it
+> casts (`flags.topic as string`) where its siblings use a `typeof` guard; and
+> **`glamour/server.ts` 6/6**, enumerated entirely by hand and the entry point
+> the ward scanner returned a **zero** on. **Both files where the method was a
+> person rather than a pattern came back exact.**_
+>
 > **⚠ And the class of the lead's error is worth more than the error.** `thoth`
 > named it: **a sentence telling a reader something need not be checked.** A
 > wrong fact is corrected by the next person who looks. **A false reassurance
