@@ -305,6 +305,24 @@ async function main(argv: string[]): Promise<number> {
   return code;
 }
 
+// ⚠ P0 (#77/#78) — THIS SITE CARRIES THE DRAINED-EXIT DEFECT AND IS DELIBERATELY
+// NOT FIXED HERE. Recorded rather than skipped, because a silent skip is
+// indistinguishable from a miss.
+//
+// The defect is real and sharper than in the CLIs: `main` emits the terminal
+// `disconnected` frame on the line before it returns, so the write most at risk
+// is the exact one every consumer waits for.
+//
+// The one-line fix that works everywhere else — `process.exitCode` + a natural
+// return — HANGS HERE. Measured: `join.ts > idle timeout reports reason
+// 'timeout'` times out at 15s, because a natural exit waits for the loop to
+// drain and this file's WebSocket is not guaranteed closed on every exit path.
+// `process.exit` was doing double duty: draining the payload was broken, but
+// force-terminating a live socket was load-bearing.
+//
+// So the honest fix is a lifecycle change (close the socket on every path, then
+// return naturally), not the one-liner — a bigger change than P0's shape fix and
+// carded separately. Shipping a hang to fix a truncation is a bad trade.
 if (import.meta.main) {
   const exitCode = await main(process.argv.slice(2));
   process.exit(exitCode);
