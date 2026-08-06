@@ -53,9 +53,41 @@ not fire.** Every spell CLI reports failure by `die()` → stderr prose → exit
 That is a failure signal for a human at a TTY, and **not a failure signal for
 the actual consumer at all.**
 
-This is the same defect class as the whole `spell-hardening` P0 lane — _the tool
-could not do the thing and returned something shaped like success_ — pointed at
-the failure path instead of the success path.
+**Reproduced independently on anthill's CLI, in another repo — and it is more
+precise than "agents lose the exit code":**
+
+```
+anthill comms send --as <bogus>              → exit 1     ✅
+anthill comms send --as <bogus> | head       → exit 0     🔴 masked
+R=$(anthill comms send --as <bogus>)         → exit 1     ✅ substitution preserves it
+```
+
+**A pipeline masks the code; command substitution preserves it.** So the
+exposure depends on a construction nobody chooses deliberately — which is worse
+than a uniform loss, because it works until it doesn't.
+
+### The framing that follows, and it is the investigation's central claim
+
+> **The envelope is the only signal that survives the way agents actually invoke
+> a CLI. The exit code is not.** (`anthill:maestro`)
+
+anthill's failing command still returned `ok: false` **with its error string,
+through the pipe, intact.** An anthill agent that pipes loses the exit code and
+loses nothing that matters.
+
+**A spellbook agent that pipes gets `ok: true` — always — and exit 0. It has
+nothing.** Not a degraded signal: **no signal, and a positively reassuring
+one.**
+
+That is the exact shape of every defect in this family — _exit 0, well-formed
+output, nothing happened_ — so the missing error envelope is not a gap beside
+the `spell-hardening` P0 lane. **It is the same bug, on the failure path, in
+every spell at once.**
+
+_Note anthill did not choose `ok: false` for this reason; it degrades safely by
+accident. Which is the [`A MASK IS NOT A DEPENDENCY`](#) pattern again: a
+side-effect that is load-bearing appears in no graph, so nothing announces when
+a reasonable unrelated change removes it._
 
 ## Investigation Findings
 
@@ -105,6 +137,15 @@ ships without it.**
 | h   | **best-effort batch as scalar counters**           | `magpie extract` `{cut:12, failed:3}` — per-item identity and obstacle unrecoverable from stdout                                            |
 | i   | **transactional batch**                            | mind-mapper's all-or-nothing batches, where per-item failure nouns must **never** appear — a deliberate ruling, and the opposite of shape 3 |
 
+**(i) also bounds a rule that was stated as universal.** _"Per-item outcomes may
+be failures"_ holds for **best-effort** batches only; a transactional batch must
+never emit one, because a single bad item rolls the whole call back and no item
+has an individual fate. Its author's own reading: _"my 'per-item outcomes can be
+failures' was stated as a universal and is bounded to best-effort batches — that
+is my domain error."_ Same failure shape as the altitude rule's unstated domain
+(Finding 2): **a criterion states a predicate, and the part omitted is its
+domain.**
+
 ### Finding 4 — The best failure design in the repo is already in-house, and the draft rule would have outlawed it
 
 `mind-mapper` proxies non-2xx bodies to **stdout as JSON** while exiting 2, with
@@ -144,6 +185,20 @@ The instinct to make it meaningful is wrong, for a reason worth recording:
 meaningful `ok` would have caught neither — it would duplicate the exit code and
 leave the real gap where it was. The gap is the **missing error envelope**
 (Finding 4), not the unused boolean.
+
+**⚠ Corrected 2026-08-06, after the ruling was already agreed by both teams.**
+The conclusion above survives; the argument originally given for it did not.
+Both teams justified leaving `ok` inert on the grounds that _"the exit code
+already carries failure, and two sources of truth for one fact is worse than one
+inert field."_ The measurement in **Current State Analysis** shows the exit code
+does not carry it through a pipeline. So `ok` is decoration **because the error
+envelope is missing**, not because the exit code has it covered — and an
+always-true `ok` on a failed piped command is not merely uninformative, it is
+**actively reassuring**, which is strictly worse than absent.
+
+_Recorded in full because the sequence is the lesson: a premise stated
+confidently by one party, agreed by the other, ratified, and false — caught only
+when someone ran it._
 
 ⚠ An always-true field documented as "never trust this" is its own trap: a
 future maintainer reads it as a bug and emits `false`, and every consumer that
@@ -208,8 +263,29 @@ a string prefix.
   `spell-hardening`'s release.
 - **Do not ratify #82's vocabulary yet.** Finding 3 means the enumeration is
   known-incomplete, and _an enumeration that omits a member reads complete_.
-  Ratify the **two membership rules** and the **class-alongside-noun** fallback
-  — those survive whatever the words become.
+
+### Settled by both consumers, 2026-08-06 — safe to build on
+
+- **A structured failure envelope on stdout is BLOCKING**, not deferred. It is
+  the only channel that survives a normal agent invocation, and today a failed
+  spell command through a pipe emits an actively reassuring `ok: true`.
+  mind-mapper's typed nouns are the starting point.
+- **The two membership rules**, with (i)'s correction: per-**item** outcomes may
+  be failure nouns **in best-effort batches**; per-**operation** outcomes may
+  not; **transactional** batches may not either.
+- **A coarse class carried alongside the specific noun.** The property both
+  parties would now defend hardest: _an unrecognised noun must still route
+  correctly._ It is the only thing that makes an open vocabulary extensible
+  without a cascade — and this investigation is itself the proof that nobody
+  enumerates completely on the first pass.
+
+### Withdrawn
+
+- **`<verb>Skipped`.** Putting the verb in the **key** defeats shape 1's own
+  test (_decide from the noun without knowing the verb_) and cannot express two
+  skips in one call. It was proposed to dodge the `skipped` collision in Finding
+  5 — **a namespace problem answered with a shape decision.** A uniform plural
+  (`skipped: [{what, reason}]`, empty array when none) resolves both.
 
 **Rationale:** the deciding factor is that this is a _harvest_, not a design.
 Findings 4 and 5 show the answers exist in the tree; what is missing is a
