@@ -975,9 +975,23 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
 
   **Why it matters beyond tidiness: a gate total is a DENOMINATOR**, and this
   sprint compared totals across shas repeatedly (`1297 → 1304 → 1316 → 1327`).
-  **An untracked test file silently changes that denominator for everyone**, and
-  the one guard that would catch a partial run — _cite `pass/fail/files`_ —
-  catches a run that is too SMALL, **not one that is too LARGE.**
+  **An untracked test file silently changes that denominator for everyone.**
+
+  > **⛔ THE LEAD WROTE THAT THE `pass/fail/files` GUARD "catches a run that is
+  > too SMALL, not one that is too LARGE." THAT IS FALSE — and `cassandra`
+  > disproved it by USING it in the direction I had just ruled out, minutes
+  > later.**
+  >
+  > **The `files` half is TWO-SIDED.** Measured: **101 tracked `.test.ts` files
+  > · 102 on disk** — the untracked ward is the difference. So a gate reporting
+  > **102 files** is caught by the same guard that catches 99. **She verified
+  > her own land was clean of the untracked file by reading
+  > `101 files, not 102`.**
+  >
+  > **`thoth` built it for partial runs; it turned out to bound the denominator
+  > from BOTH ends.** _An instrument that is better than the argument that
+  > produced it — the inverse of everything else this sprint caught, and worth
+  > recording for exactly that reason._
 
   **CHECK: `git status --porcelain | grep '^??'` before reporting a gate
   total**, and say what it returned. **Cheap, and it closes the one hole the
