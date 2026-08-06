@@ -841,6 +841,25 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   >
   > **A RED needs a quiet machine; a GREEN needs its denominator.**
 
+  ### ⛔ A RED UNDER CONTENTION IS NOT AUTOMATICALLY NOISE — the rule needed this clause and did not have it
+
+  **`daedalus`, having been one step from re-running a red that was REAL.**
+
+  > **A red under contention is uninterpretable WHEN ITS CAUSE IS ONE CONTENTION
+  > COULD PRODUCE** — a timeout, a refused connection, a port collision. **A red
+  > that NAMES A DETERMINISTIC CAUSE and REPRODUCES IN ISOLATION is
+  > interpretable**, and re-running it burns a quiet window to re-learn
+  > something you already know.
+
+  **His red was `Unknown option '--text'` — a specific flag, in a specific file,
+  reproducible in 17ms alone. Contention cannot manufacture that.**
+
+  **⚠ THE FAILURE MODE THE UNQUALIFIED RULE INVITES IS THE MIRROR OF THE ONE IT
+  PREVENTS: it pre-supplies _"probably contention"_ as the innocent explanation
+  for a red that is a FINDING.** That is the **fourth** pre-supplied innocent
+  explanation this sprint — and **the first one pointing AT a green rather than
+  away from one.**
+
   **⚠ `UNVERIFIED` — nobody has observed bun dropping files under pressure and
   nobody has tested it.** The guard is kept **because it costs nothing and does
   not depend on the answer**: if bun never drops a file the check is free and
@@ -2333,6 +2352,26 @@ beginning before it streams new ones.
 > `closed` frame is lost regardless of payload size**, on the verb agents leave
 > running for hours. **Say that. A release note leading with truncated payloads
 > would be true and overstated, which costs the same trust as false.**
+>
+> **0b. A TEST DEPENDED ON THE DEFECT — say so, because it bounds what "the
+> suite was green" ever meant.** `imago/tests/cli.test.ts` asserted the `=` form
+> on **`--text`** — **a flag `imago` does not have.** Not in the artifact's 20,
+> not in the source, never a flag: **an arbitrary stand-in name that worked only
+> because the old parser accepted whatever it was handed.**
+>
+> **The test was passing BECAUSE of the permissiveness P0c removes.** It is not
+> collateral damage from the fix — **it is a second instance of the same defect,
+> sitting in the test suite, invisible until the registry named it.**
+>
+> **Generalises, and belongs in the note:** a permissive parser lets tests
+> accumulate assertions about **flags that do not exist**, and **every one reads
+> as coverage.** They cannot be found by inspection — **they look exactly like
+> tests of real flags.** _The conversion is what enumerates them._
+>
+> **Rewritten against a real flag (`--options`, whose values genuinely carry
+> `k=v`), property under test unchanged, plus a new cell asserting `--text` is
+> now REFUSED BY NAME** — so the stand-in's absence is **pinned** rather than
+> merely removed.
 >
 > **1. Say WHICH HALF, per lane.** For the drained exit across both sprints:
 > _"the entry-point exits are fixed across eight files; the streaming verbs'
