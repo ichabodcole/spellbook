@@ -1705,7 +1705,7 @@ describe("cli.ts ↔ daemon parity", () => {
       cmd: ["bun", "run", CLI, "tail", "--since", "0", "--session", session],
       stdout: "pipe",
       stderr: "pipe",
-      env: { ...process.env, ...env },
+      env: { ...hermeticEnv(), ...env },
     });
     await new Promise((r) => setTimeout(r, 300)); // let the tail subscribe
     await runCli(["add", "tailed task", "--id", "tt", "--session", session], { env });
@@ -1744,7 +1744,7 @@ describe("cli.ts ↔ daemon parity", () => {
         cmd: ["bun", "run", CLI, "tail", "--since", String(cursor), "--session", session],
         stdout: "pipe",
         stderr: "pipe",
-        env: { ...process.env, ...env },
+        env: { ...hermeticEnv(), ...env },
       });
       await new Promise((r) => setTimeout(r, 500));
       tail.kill();
@@ -1804,7 +1804,7 @@ describe("ownership scoping (Phase C E2E)", () => {
       cmd: ["bun", "run", CLI, "tail", "--since", "0", "--session", session, ...scopeArgs],
       stdout: "pipe",
       stderr: "pipe",
-      env: { ...process.env, ...env },
+      env: { ...hermeticEnv(), ...env },
     });
     await wait(400); // subscribe
     await mutate();
@@ -2666,4 +2666,19 @@ describe("test hermeticity (P0e)", () => {
       await runCli(["close", "--session-key", key], { env: { BOUNTY_HOME: home } });
     }
   }, 30000);
+});
+
+// Structural guard for the hermeticity fix (P0e, hardened after independent
+// review). The original fix scrubbed two spawn sites and a comment claimed that
+// was "the ONE place both spawn helpers share" — there were five, and the three
+// `tail` spawns bypassed the scrub entirely. A prose instruction cannot stop the
+// sixth one from being written; this test can. It reads its own source, so a new
+// `{ ...process.env }` spawn fails here instead of leaking the ambient session
+// key into a live board months later.
+test("P0e — no spawn site in this file inherits a bare process.env", async () => {
+  const src = await Bun.file(import.meta.path).text();
+  // Match the spawn-env idiom only; the hermeticEnv() helper itself legitimately
+  // destructures process.env and must not trip this.
+  const offenders = [...src.matchAll(/env:\s*\{\s*\.\.\.process\.env/g)];
+  expect(offenders).toHaveLength(0);
 });

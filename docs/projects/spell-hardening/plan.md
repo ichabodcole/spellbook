@@ -556,22 +556,51 @@ that changes the work.**
 > ~~`bounty` none · `grapevine` none · `glamour`/`imago`/`magpie` partial ·
 > `mind-mapper` the only CLI that rejects unknown flags~~
 
-**The unit is the arg-parsing ENTRY POINT, not the spell. There are 15 across 8
+**The unit is the arg-parsing ENTRY POINT, not the spell. There are 16 across 8
 spells:**
 
-| parser                                          | count | `=` support      | unknown-flag rejection |
-| ----------------------------------------------- | ----- | ---------------- | ---------------------- |
-| `node:util` `parseArgs`, **all `strict: true`** | **9** | **YES — native** | **YES — already**      |
-| hand-rolled                                     | **6** | no               | no                     |
+| parser                                          | count  | `=` support      | unknown-flag rejection |
+| ----------------------------------------------- | ------ | ---------------- | ---------------------- |
+| `node:util` `parseArgs`, **all `strict: true`** | **10** | **YES — native** | **YES — already**      |
+| hand-rolled                                     | **6**  | no               | no                     |
 
 **The 6 hand-rolled parsers are the ENTIRE fix:** `bounty/cli.ts`,
-`glamour/cli.ts`, `grapevine/cli.ts`, `imago/cli.ts`, `magpie/cli.ts`,
-**`magpie/discover.ts`**.
+`glamour/cli.ts`, **`glamour/server.ts`**, `grapevine/cli.ts`, `imago/cli.ts`,
+`magpie/cli.ts`.
 
-**The 9 already correct:** `astrolabe/cli.ts`, `astrolabe/server.ts`,
+**The 10 already correct:** `astrolabe/cli.ts`, `astrolabe/server.ts`,
 `bounty/server.ts`, `bounty/join.ts`, `digestify/review.ts`, `imago/server.ts`,
-`magpie/server.ts`, `mind-mapper/cli.ts`, `mind-mapper/server.ts` — grepped
-`strict:` in every one: **9 × `strict: true`, 0 × `strict: false`.**
+`magpie/server.ts`, **`magpie/discover.ts`**, `mind-mapper/cli.ts`,
+`mind-mapper/server.ts`.
+
+> ### ⚠ CORRECTED 2026-08-06 by an independent review, then RE-DERIVED. Read this before trusting any count above.
+>
+> **The first version of this table said 15 / 6 / 9 and named
+> `magpie/discover.ts` as hand-rolled. It is not** — `discover.ts:262` is
+> `const { parseArgs } = await import("node:util")` with `strict: true` at
+> `:272`.
+>
+> **Two instrument blind spots, not two typos:**
+>
+> | detector                                   | could not see                             | consequence                                  |
+> | ------------------------------------------ | ----------------------------------------- | -------------------------------------------- |
+> | `grep 'from "node:util"'` (classifier)     | a **dynamic** `await import("node:util")` | `discover.ts` misfiled as hand-rolled        |
+> | `grep "process.argv"` (entry-point finder) | **`Bun.argv`**                            | **`glamour/server.ts` never counted at all** |
+>
+> **`glamour/server.ts:486-497` is a hand-rolled parser that was missing from
+> the set entirely** —
+> `args.indexOf(\`--${name}\`)`, so no `=`, no unknown-flag rejection, no positionals. **It parses `--restore`.\*\*
+>
+> **⚠ The hand-rolled count staying at 6 is a COINCIDENCE** — `discover.ts` left
+> the set and `glamour/server.ts` entered it. **A number that did not move makes
+> this look like a one-word edit. It was a re-derivation.**
+>
+> _Both greps were honest measurements, run and not recalled. **The failure was
+> not "did you check" but "what can the check not see" — a real measurement
+> whose question was wrong.**_
+>
+> _`grapevine/scripts/daemon.ts` was flagged `UNVERIFIED` and is now **settled:
+> it parses no arguments**, so the total is 16 and not 17._
 
 **Verified on the real artifact, not the source:**
 
@@ -677,11 +706,11 @@ written against post-fix behaviour.
    escape hatch for both affected verbs.
 3. **Apply to all SIX hand-rolled entry points** — `bounty/cli.ts`,
    `glamour/cli.ts`, `grapevine/cli.ts`, `imago/cli.ts`, `magpie/cli.ts`,
-   **`magpie/discover.ts`**. The other nine already have the ruled behaviour and
+   **`glamour/server.ts`**. The other ten already have the ruled behaviour and
    **must not be touched.**
 
    **⚠ "Every spell CLI" under-scoped, and the miss is specific:** it reads as
-   `cli.ts` only, which **skips `magpie/discover.ts`** — a hand-rolled parser in
+   `cli.ts` only, which **skips `glamour/server.ts`** — a hand-rolled parser in
    a spell whose `cli.ts` is also being fixed. **A per-spell checklist therefore
    marks magpie done with a live defect still in it.** Track this list by
    **entry point**, never by spell.
@@ -816,7 +845,7 @@ hand-rolled** ones.
 
 ```
 CONVERTED (6, discriminating): bounty/cli.ts glamour/cli.ts grapevine/cli.ts
-                               imago/cli.ts magpie/cli.ts magpie/discover.ts
+                               imago/cli.ts magpie/cli.ts glamour/server.ts
 ALREADY CONFORMANT (9, regression-only): astrolabe/cli.ts astrolabe/server.ts
                                bounty/server.ts bounty/join.ts digestify/review.ts
                                imago/server.ts magpie/server.ts
@@ -833,8 +862,9 @@ _"unknown-flag rejection now works across the house"_ — that phrasing implies 
 built something that mostly already existed, and it will read as false to anyone
 who greps. The accurate claim, and the one to ship:
 
-> **6 converted · 9 already conformant · 15 total** — P0c brings six hand-rolled
-> parsers onto the `node:util` `strict` behaviour the other nine already had.
+> **6 converted · 10 already conformant · 16 total** — P0c brings six
+> hand-rolled parsers onto the `node:util` `strict` behaviour the other nine
+> already had.
 
 **A true claim that reads as an overclaim costs the same trust as a false one**,
 and this project's whole subject is signals that mislead while being technically
@@ -882,11 +912,28 @@ what P1 says about `close`.
 
 ### #84 — `/cmd` answers `ok:true` before it knows
 
-glamour (`server.ts:352-360`) does not even `await` the handler; imago
-(`server.ts:1182-1190`) awaits and discards; magpie (`server.ts:635`) is the
-same shape. In those three spells `ok` means _"I parsed your JSON."_ In bounty
-and astrolabe it means _"the write took effect."_ **One word, two meanings, five
-spells.**
+**⚠ MECHANISM CORRECTED 2026-08-06 (daedalus, falsified in comms #34 and adopted
+— the plan text was not amended until now).** The original framing called this
+an `await` bug. **It is not, and `imago` is the disproof:**
+
+```ts
+// glamour server.ts:354-360   — not awaited …          returns {ok:true}
+handleAgentMsg(b as AgentCommand);
+return Response.json({ ok: true });
+
+// imago server.ts:1182-1190   — AWAITED, correctly … returns {ok:true} anyway
+await handleAgentMsg(body as Record<string, unknown>);
+return new Response('{"ok":true}', …);
+```
+
+**`imago` already does the thing the fix was going to instruct.** So the defect
+cannot be the missing `await`: **the route returns `ok:true` unconditionally,
+and `handleAgentMsg` hands it nothing to report.** Adding `await` to glamour
+makes glamour resemble imago — **which is also broken.**
+
+magpie (`server.ts:635`) is the same shape. In those three spells `ok` means _"I
+parsed your JSON."_ In bounty and astrolabe it means _"the write took effect."_
+**One word, two meanings, five spells.**
 
 **This is what P0's step 2 audit finds on the failure path** — it was never
 reported because nobody had a reason to distrust `ok`.
@@ -896,7 +943,23 @@ reported because nobody had a reason to distrust `ok`.
 1. #83: capture the result and fail loudly, naming the id and the reason.
 2. #83: do the same for `close`; decide `message` and the generic explicitly and
    record the decision either way.
-3. #84: `await` the handler in all three spells and return what it decided.
+3. #84: ~~`await` the handler in all three spells and return what it decided.~~
+   **REWRITTEN — the original step was a NO-OP that would have closed the issue
+   without fixing it.** `imago` already awaits and is still broken, so "add the
+   `await`" changes nothing there and only makes glamour resemble a second
+   broken spell. **The actual work is two-part and the first part is the one the
+   old step hid:**
+
+   a. **`handleAgentMsg` must RETURN a verdict** in all three spells — today it
+   returns nothing, so there is no decision for the route to propagate. This is
+   the real change and it is inside the handler, not at the route. b. **The
+   route must propagate that verdict** instead of returning a literal `ok:true`.
+   `await` is necessary here but nowhere near sufficient, and it was never the
+   defect.
+
+   ⚠ **Gate this on the verdict, not on the presence of an `await`** — an
+   `await`-shaped check passes against imago **today**, unfixed.
+
 4. **Do not invent a new field name.** Use `applied`, which already exists and
    is already documented. The vocabulary question is
    [#82](https://github.com/ichabodcole/spellbook/issues/82)'s and is **on
