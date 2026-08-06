@@ -1482,6 +1482,30 @@ fix, re-introduced by the fix, and on `add`/`message` it eats prose.
 > success-shaped number: **true, impressive, and answering a narrower question
 > than the sentence built on it.**
 >
+> ### ⚠ A THIRD DENOMINATOR — 119 is per-ENTRY-POINT, 115 is per-SPELL, and the ward and the coverage report CANNOT share one
+>
+> **`thoth`, from his own output; reproduced by the lead:**
+>
+> ```
+> glamour/cli.ts     26 flags
+> glamour/server.ts   6 flags      -> 32 SLOTS, but 28 UNIQUE NAMES
+> in BOTH:  intent · restore · timeout · title
+>
+> per-ENTRY-POINT total:      119      "how many flag DECLARATIONS exist"
+> per-SPELL-unique total:     115      "how many distinct names does a USER see"
+> ```
+>
+> **Both are right and they answer different questions.**
+>
+> | claim                                   | denominator              | why                                                                                 |
+> | --------------------------------------- | ------------------------ | ----------------------------------------------------------------------------------- |
+> | **COVERAGE** — "is this flag exercised" | **119, per entry point** | glamour's `--restore` is **genuinely two things** and each needs testing separately |
+> | **DOCUMENTATION** — the ward            | **115, per spell**       | `SKILL.md` documents **a spell**, not a parser                                      |
+>
+> **⛔ So the ward and the exercised-flag report MUST NOT share a denominator —
+> and they would have shipped looking as though they did.** `restore` is one of
+> the four, **the flag whose two senses started this entire thread.**
+>
 > **⚠ THE CHEAP CLOSE, AVAILABLE AND NOT YET RUN:** the suite is **already a
 > partial cross-check and nobody has counted it.** Every flag exercised by a
 > passing test has had its type **confirmed by execution rather than by
