@@ -180,25 +180,55 @@ performed, not skipped, not refused. That absence, plus the unreachable line
 415, is what proves inertness. **The task-count delta does not**, per the gate
 note below.
 
-**⚠ The gate must read the SNAPSHOT count immediately before the restore call.**
-Reading it at the top of the sequence produces a control that cannot come out
-differently. Snapshots are **not** close-only: `server.ts:650-651` and `:1235`
-mark the snapshot dirty on every board mutation and flush on a ~1s debounce —
-verified on a throwaway board 2026-08-06 (card added, snapshot file absent at
-t+0, present with the card at t+~1s). So a live board that has been diverged has
-almost certainly diverged the snapshot too, and "live unchanged after restore"
-is then consistent with both _inert_ and _restored the same contents_. Diverge
-live **and** confirm the snapshot still differs at call time, or the gate proves
-nothing.
+**⚠ Do not build the divergence by mutating the live board.** Snapshots are
+**not** close-only: `server.ts:650-651` and `:1235` mark the snapshot dirty on
+every board mutation and flush on a ~1s debounce (verified 2026-08-06 — card
+added, snapshot absent at t+0, present with the card at t+~1s). So emptying live
+flushes an **empty snapshot**, and the divergence this gate depends on destroys
+itself. "Live unchanged after restore" is then consistent with both _inert_ and
+_restored the same contents_.
 
-_Recorded because both teams shipped this bug in one evening: the reporter's
-first baseline compared 102 to 102, and the sequence this plan's author sent
-them as its replacement asserted "live unchanged == restore was inert" — the
-same degenerate control, written into the fix for it._
+**Reading the snapshot "immediately before the restore" does not fix it** — that
+is the moment most likely to land **inside** the debounce window of the setup
+step before it, and a stale read is indistinguishable from a true one. The
+reporter hit exactly this: they re-read diligently, got
+`snapshot 102 / live 103`, and the number was an artifact of the race that
+**arrived as evidence for the wrong model.**
 
-**Gate:** open a keyed board, seed it, kill the daemon's board contents so live
-is empty while the snapshot is populated — **re-reading the snapshot at call
-time to confirm the divergence is real** — then re-run
+**Verified race-free construction (probe run 2026-08-06 — use this):**
+
+```
+1. open --session-key K --no-open ; add x2
+2. poll the snapshot file until it reads 2   <- deterministic; never a fixed sleep
+3. kill -9 the daemon                        <- NOT close; close writes the snapshot (#73)
+4. open --session-key K --no-open            -> live 0, snapshot 2
+5. assert live == 0 AND snapshot == 2        <- its own cell, before the measurement
+6. open --session-key K --restore <id>       <- the measurement
+```
+
+Step 4 respawns **empty without mutating**, so nothing is dirty and nothing is
+in flight — measured stable at live `0` / snapshot `2` after 3s idle. The
+precondition in step 5 therefore has **no race to lose**, rather than a race
+that usually resolves in time. Assert it as its own cell so the gate fails when
+the number it depends on is stale, instead of silently comparing against it.
+
+_Two incidentals from the probe, both worth their own attention._ Steps 1–4 are
+**#64 + #73's real-world sequence in four commands** — a respawn-empty over a
+good snapshot — which makes this a reusable P1 fixture; and the empty respawn
+did **not** clobber the snapshot, confirming the clobber belongs to `close`
+(#73) and not to `open`. Second, step 4's stderr was **completely empty**: no
+attach line, and no warning that it had just respawned an empty board on top of
+a populated snapshot. That silence is D1.3's whole case.
+
+_Recorded because three separate attempts at this one control were degenerate in
+one evening: the reporter's first baseline compared 102 to 102; their re-read
+"fix" landed inside the debounce window; and the sequence this plan's author
+sent as the replacement asserted "live unchanged == restore was inert." The
+shape is hard, not the people — assume the next version is wrong too until a
+mutation test says otherwise._
+
+**Gate:** build the divergence with the six-step construction above, asserting
+the precondition (live `0`, snapshot `N`) as its own cell, then run
 `open --session-key K --restore <id>` against the **live** board. It must exit
 non-zero and carry `restoreSkipped`. Then confirm `--fresh --restore` on the
 same key actually restores. Throwaway board only.
