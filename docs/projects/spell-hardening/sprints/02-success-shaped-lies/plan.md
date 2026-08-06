@@ -757,6 +757,38 @@ fixture that silently shrinks fails loudly instead of passing vacuously.
   looks like evidence, it survives review, and it is the shape this whole sprint
   exists to stop shipping.
 
+- **⏱ AN ARTIFACT DECAYS AS THE SPRINT IT SERVES LANDS COMMITS — and the
+  sprint's own fixes are the fastest-moving invalidator of the sprint's own
+  measurements.**
+
+  **Added 2026-08-06 (sprint 02) by `cassandra`. This is a TIME AXIS and it is
+  NOT the same failure as the rows above.** Every one of those is a glob asking
+  the wrong question **at one instant**. Here **the measurement was right, the
+  question was right, and the world moved under it — by our own hand, in the
+  same week, to serve the same goal.**
+
+  **The evidence is one commit invalidating two artifacts:** `8f4d92d` (P0b's
+  land) simultaneously
+  - added a `process.exit(2)` **in prose**, taking the exit-site count 45 → 46;
+  - added the **first computed-key read** in the roster (`bounty/cli.ts:450`,
+    `ATTACH_LOST_FLAGS.filter((f) => Boolean(flags[f]))`), **falsifying the P0c
+    artifact's "zero computed-key reads" absence claim.**
+
+  **`git log -S "Boolean(flags[f])"` returns `8f4d92d` and only `8f4d92d`.**
+  **Neither artifact was re-derived, and neither would have been.**
+
+  > **RULE: any artifact a later lane CONSUMES has its ABSENCE CLAIMS re-run at
+  > the sha that CONSUMES it, not at the sha that DERIVED it.**
+
+  **And the sha stamp is what makes the correction sayable at all.** The claim
+  was **true at `f77ae33`** — its stamped derivation sha — and **false at
+  HEAD**. Without _"derived at `f77ae33`"_ there is no way to distinguish
+  _"thoth was wrong"_ from _"the world moved"_, and **those two demand opposite
+  responses.** **Put the sha in the CLAIM, not only in the footer.**
+
+  _Same clock as `magpie/discover.ts` re-answering an audit that ruled it out —
+  but running on the ARTIFACTS rather than on the code._
+
 ---
 
 ## Lane P0b — the early return that discards a flag set (#80.1)

@@ -242,6 +242,53 @@ load-bearing for G7 **as a side effect**, asserted nowhere.
 harness files share the primitives, but `Promise.all` near a spawn is a shape,
 not a diagnosis. **Enumerate by call site; one file-open each.**
 
+### A12 — What `/cmd`'s verdict MEANS · **RULED BY PROSPERO**, proposed by `daedalus`
+
+P0d makes `/cmd` return a verdict. **Which verdict** was an open choice, and
+daedalus stated it rather than defaulting it.
+
+| option                           | cost                                                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ **"was the type RECOGNISED"** | A real gap remains: a recognised type that silently does nothing still reports `ok`                                                               |
+| "did state CHANGE"               | **Breaks working callers** — these handlers are full of guarded branches that legitimately do nothing; **~38 per-site judgements in imago alone** |
+
+**Taken:** recognised. **The narrower contract is ruled OUT of this sprint and
+left explicitly UNCLAIMED** (card `t-d7a3fa14`).
+
+**Two reasons, and the second is mine:** reporting legitimate no-ops as failures
+is **P0b's over-inclusive error in a new spelling** — twice in one session, in
+two costumes. And _"did state change"_ is a **NEW CONTRACT, not a defect against
+an existing one**: #83 and #84 are defects, this is a feature. **~38 per-site
+judgements each able to break a caller is the exact bulk shape that cost 28
+tests the same hour.**
+
+**The judgement worth repeating: leaving a real gap named and unclaimed beats
+half-doing it.**
+
+### A13 — Where glamour's verdict comes from · **DECIDED BY `daedalus`**, ratified
+
+| option                                          | cost                                                                                                                                                     |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ **`applyAgentMsg` (the reducer) returns it** | Crosses a seat boundary — engine logic in a surface-owned file                                                                                           |
+| A recognised-set list beside the switch         | **A hand-kept mirror of a case list**, the drift bug this repo has shipped **twice** (the bounty surface mirror; `propose-node --stdin` dropping `tags`) |
+
+**Ratified**, and the anti-mirror reasoning is the durable half — it will
+otherwise be re-litigated by whoever next wants a list beside a switch.
+
+**Consequences, both recorded rather than absorbed:**
+
+1. **It is a SEAM** — `glamour/surface/state/reduce.ts` →
+   `glamour/scripts/server.ts`'s `/cmd` route. **daedalus writes the `seams.md`
+   entry**, noting that circe (its normal owner) is unseated.
+2. **P0d's gate coverage STOPS AT IT.** The three `/cmd` cells assert the
+   **route's** answer; the verdict now crosses a boundary **none of them
+   observes.** Cells valid, coverage bounded — **stated in the verdict, not
+   discovered later.**
+
+**For the structure reflection, not for now:** a P0d fix that could not be made
+without touching a surface reducer is an argument about where that boundary sits
+— and it is the **third consecutive round** circe has been unseated.
+
 ---
 
 ## B. Corrections and falsifications — pointers only
