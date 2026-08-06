@@ -110,6 +110,17 @@ name in two parsers.
   form on **`--text`, a flag imago does not have** — it passed only because the
   old parser accepted anything. **A permissive parser lets tests accumulate
   assertions about flags that do not exist, and every one reads as coverage.**
+- **The `--` terminator is DOCUMENTED NOWHERE** — 0 of 6 `SKILL.md` files
+  mention it, and it is **new user-facing behaviour** that P0c introduced.
+  **Bounded, and the bound matters:** the refusal message teaches it **twice**,
+  inline, at the moment of failure — _"place it at the end of the command after
+  `--`"_ and _"for free text containing dashes, use `--stdin`, or put it after a
+  bare `--`"_ — and exits **2**. **Driven, not asserted:**
+  `add -- write the --draft section` stores `'write the --draft section'`
+  verbatim; the unterminated form refuses. **So it is discoverable at FAILURE
+  time and not at COMPOSITION time** — which is the gap that matters for an
+  agent, because `SKILL.md` is what it reads _before_ acting. **One line per
+  affected spell closes it.**
 - **glamour · imago · magpie document no `/cmd` envelope at all**, so `applied`
   has nowhere to land in three of the four spells P0d changed. **Absent, not
   stale** — and whether they should acquire one is out of scope.
@@ -132,6 +143,36 @@ no number because this project found it.
 investigation.
 
 ---
+
+## ⚠ TWO BEATS ARE DOWNSTREAM OF THE RELEASE, NOT UPSTREAM — the plan lists all four as the agent's
+
+**Found running the beats. `plan.md` lists "archive every closed backlog item"
+and "comment the GitHub issues as they close" alongside beats the agent CAN
+discharge — and neither can be done before Cole cuts.**
+
+| beat                             | when                                                      |
+| -------------------------------- | --------------------------------------------------------- |
+| `SKILL.md` re-read               | ✅ **DONE** — 3 of 4 clean, one gap (the `--` terminator) |
+| cold-gate the assembled release  | ✅ **agent-side, pending the ward**                       |
+| **archive closed backlog items** | ⛔ **AFTER the release**                                  |
+| **comment the issues**           | ⛔ **AFTER the release**                                  |
+
+**The backlog audit, run anyway so the work is ready:**
+
+- **`2026-08-05-cli-stdout-truncation-on-pipe.md`** — tracks **#77 + #78**, both
+  closable. **The ONLY archivable item**, and **it is not archivable YET**:
+  archiving it now marks it done **before the release that fixes it exists.**
+- **Four items are explicitly _"Not among the fourteen"_ and were deliberately
+  NOT folded in** — the performed-`--restore` silence, `tail`'s full-history
+  replay, the machine-global discovery pointer (**Cole ruled: file, don't
+  fix**), and `bounty message` leaving no durable trace. **All stay.**
+- **Everything else maps to P1/P2/P3, all UNRATIFIED**, or to `#64`, which is
+  genuinely unexplained. **None closed.**
+
+> **So the honest count is: 1 backlog item becomes archivable when Cole cuts,
+> and 0 are archivable now.** _Doing it early would be the release note's own
+> defect class committed in the filing system — marking work done against a
+> release nobody can install._
 
 ## Not for the agent
 
