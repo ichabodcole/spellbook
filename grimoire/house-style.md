@@ -183,6 +183,19 @@ is the _agent's_ interface.)
   code suffice. Don't pre-build snapshot/restore for state that's trivially
   reconstructable or genuinely ephemeral, and don't push the human surface onto
   the agent's HTTP path.
+- **Boundary check — the discovery pointer belongs in the spell's OWN home, not
+  `tmpdir()`.** A daemon that writes `<spell>-latest.json` into the OS temp
+  directory has put its session pointer in a namespace it does not control and
+  cannot scope: every process on the machine shares the one filename, so any
+  daemon booting anywhere overwrites it between another caller's write and read.
+  Put it under the spell's home (`BOUNTY_HOME`, `GRAPEVINE_HOME`, …) so the
+  env-scoping that already isolates the data store isolates discovery too.
+  **Cleanup discipline does not cover this** — see the
+  `exit-cleanup-must-verify-ownership` scenario, which four spells implement
+  correctly while all four still put the pointer in the shared dir. Verifying
+  you own a slot before releasing it says nothing about a global slot anyone may
+  claim; ownership-of-the-delete is not ownership-of-the-namespace, and the
+  collision happens at claim time.
 - **Repeal when:** a better agent-transport primitive supersedes
   cmd/state/events-over-HTTP (a first-class harness channel for spell state, or
   an MCP surface contract) — then rewrite the specifics; don't keep them from
@@ -227,6 +240,46 @@ of the file; assets load CDN libs inline.
 
 - **Boundary check:** —
 - **Repeal when:** —
+
+### Enumerate the roster by behaviour, never by a fixed path or a name.
+
+Spells do not agree on where things live, and a glob written from the spell in
+front of you is a silent filter: it returns a confident, well-formed answer
+about a set it never looked at. **Tests are the live instance — five spells keep
+them in `scripts/`, three (`glamour`, `imago`, `magpie`) in `tests/`:**
+
+```
+find plugins/spellbook/skills -name "*.test.ts"      ✅ 63
+ls   plugins/spellbook/skills/*/scripts/*.test.ts    ❌ 37 — blind to three whole spells
+```
+
+The same shape bites lexically as well as structurally. Measured across one
+session: `process.argv` blind to `Bun.argv`; a static-import scan blind to
+`await import("node:util")`; a search for `parseArgs` blind to a parser named
+`parseFlags`; `flags\.` blind to `flags["no-open"]` — and that last one misses
+at least one flag in **every** hand-rolled CLI, not merely some.
+
+**Ask what the check cannot see, not whether it ran.** A sweep that fails to run
+reports the same thing as a sweep that found nothing, and a sweep that ran over
+the wrong set reports it more convincingly.
+
+- **Boundary check:** an enumeration you can verify by _listing_ it — a
+  registry, an `options` object, a config array — is a real denominator and
+  needs none of this. The rule is for enumerations _derived_ by search. And
+  assert the denominator alongside the finding ("223 enumerated, 223 produced a
+  count"): that is a claim the failure mode cannot fake, where a count alone is.
+- **Repeal when:** the roster's layout is uniform _and_ enforced by something
+  that fails when it drifts. Convention alone does not repeal it — the layout
+  above _was_ the convention.
+
+_Scar: **all four seats of one team hit this single glob in one afternoon.** A
+ward put three spells' legitimate flags on a delete-list from it; three hours
+later a second seat reported those same spells had "no test files at all" as a
+planning fact; a third had a message written that "verified" it — using the same
+glob; and the lead re-ran it to check and got the same wrong answer for the same
+reason. **The first seat had already published the diagnosis.** It lived in a
+message, addressed to two people, under a headline about something else — which
+is exactly why it now lives in the tree instead._
 
 ### Carry the Bun gotchas forward.
 

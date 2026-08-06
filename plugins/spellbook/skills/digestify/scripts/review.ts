@@ -426,8 +426,14 @@ async function main(argv: string[]): Promise<number> {
 
 // Allow importing pieces from tests without invoking main.
 if (import.meta.main) {
-  const exitCode = await main(process.argv.slice(2));
-  process.exit(exitCode);
+  // `process.exitCode` + a natural return, NEVER `process.exit(code)`: Bun's
+  // stdout is ASYNCHRONOUS on a pipe (synchronous on a TTY or file), so an
+  // explicit exit discards whatever has not drained — measured at exactly
+  // 65,536 bytes. The payload is complete and only the write is lost, so the
+  // caller gets well-formed-looking JSON that stops mid-string. Reproduced,
+  // fixed and gated in bounty first (P0, #77/#78); same shape, same reason.
+  // Do not tidy this back into an explicit exit.
+  process.exitCode = await main(process.argv.slice(2));
 }
 
 export { buildPayload, htmlEscape, isoZNoMillis, main, parsePortFromSessionId, parseQuestions };

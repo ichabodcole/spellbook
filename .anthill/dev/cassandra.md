@@ -5,7 +5,7 @@
 
 ## Epitaph
 
-> Run your sharpest check on the finding you are proudest of, not the one you doubt — every miss I made this round survived because it felt strongest, and the rule that would have caught each one was already written down in my own notes, switched off for the claims I liked.
+> Spend your scepticism on the cell that CANNOT FAIL, not on the finding that might be wrong — four times this session a broken fixture would have reported a clean PASS, and not once did care catch it; the cell that refused to measure did.
 
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
@@ -319,3 +319,66 @@ The recommendation and my own configuration were separate objects until a peer r
 
 **Reflex to adopt: after you publish a correction to any instrument, immediately check whether you are running the uncorrected version.**
 It is one command, and the answer was "yes" every time it came up this session.
+
+## P0 build round — building gates instead of auditing them (2026-08-06)
+
+First session where this seat AUTHORED the instruments rather than reviewing someone else's.
+Ten-plus defects were found in mine; the craft below is what survived.
+
+### The precondition cell is worth more than the assertion it guards
+
+**It fired four times and was right every time**, and each firing was a broken FIXTURE that would otherwise have reported a clean PASS:
+a 36-byte mind-mapper state (bootstrap ordering), a 799-byte glamour state (wrong `say` convention), a 0-byte glamour arm (a real shipped hang), and a `>65536` threshold that a smaller payload would have satisfied vacuously.
+**Every one would have read as `COMPLETE == COMPLETE`** — the failure of the setup silently manufacturing a passing measurement.
+**Rule: in any gate of the form "X is unchanged / complete / matches", assert the FIXTURE FIRST as its own cell, printing its measured value.**
+The assertion is the half that gets scrutinised; the setup is the half that fails silently. **Print the number (`overBuffer: true (bytes=88941)`) so the cell NAMES the state rather than dying of it** — daedalus's shape, better than mine.
+
+### Assert TERMINATION whenever the fix's failure mode is non-termination
+
+Every gate I built measured BYTES and none asserted the CLI EXITS — for six spells.
+A shipped hang surfaced only as `0 bytes` because my harness gave up: **an accident of the wrapper, not an assertion.** To a byte count, a hang and a silent success are identical.
+**P0 replaced `process.exit(code)` with a natural return, and a natural return is exactly the change that can fail to terminate** (reverted at `bounty/join.ts`, shipped in glamour).
+**Match the assertion to the fix's failure mode, not to the bug's symptom.**
+
+### Drive BOTH arms even when the pre-fix result feels already known
+
+glamour pre-fix returned; glamour post-fix hung. Same spell, same fixture, one commit apart — **a controlled experiment I did not design.** The two-arm structure built to measure truncation is what isolated a regression introduced BY the fix.
+
+### A DENOMINATOR IS A CLAIM ABOUT THE CELLS YOU DID NOT RUN
+
+Three seats published three mechanisms for one anomaly in an hour; all three measurements were real and reproducible, all three mechanisms wrong, because nobody ran the cell separating their mechanism from the next-most-obvious one.
+**Before publishing a mechanism, construct the cell that discriminates it from the runner-up, and run it.** Each cost ten seconds.
+(The anomaly: **executing** a CJS binding — `require`/`module`/`__dirname` — in `bun -e` makes an uncaught throw exit 0 silently. `if(false){require(...)}; throw` exits 1, which is what pins "executed" over "present". Remedy: explicit `catch{process.exit(1)}`, or `bun run <file>`.)
+
+### Verifying a peer's claim with the peer's own METHOD is duplication, not verification
+
+Twice: prospero "independently verified" my finding by running my exact command; I "verified" daedalus's enumeration with his own `ls .../scripts/*.test.ts` glob. **Both reproduced. Both were wrong.**
+**An independent check must differ in METHOD, not only in operator** — `find` over a subtree cannot assume the location a glob assumes. **A confirmation is worse than the original error: it converts one seat's mistake into an agreed fact.**
+
+### Name the LAYER, not just the SHA
+
+Four committed-vs-working disagreements in one session, the last one with both seats citing correctly.
+**`git show <sha>:<file>` (blob) · working tree · `HEAD`-at-the-moment-you-read-it are three different objects**, and a peer mid-land makes them disagree honestly.
+**Measuring a shared tree and attributing the result to a commit** hit three seats; `git status` belongs in the MEASURING step, not the write-up. **When auditing a peer's artifact, copy it out and cite a sha256** — mine changed between my read and my run, and I nearly reported a defect already fixed.
+
+### My instruments erred consistently toward UNDER-reporting
+
+Of ten-plus defects, **not one was a false positive in my favour**: a discriminator blind to id families I had not anticipated (hiding 2 of 3 intruders in my own published evidence), a fingerprint blind to mutation, a tautological all-clear wired to the baseline, an empty-array expansion that dies only on bash 3.2.
+**So "do my results look right?" cannot find them — they DID look right.** The only things that worked were a peer running my code, and cells whose frame I did not choose.
+
+### Gate-driving craft, per spell
+
+**Ground verbs from SOURCE, never `--help`** — the hand-rolled parsers swallow it and EXECUTE the verb (`close --help` closes the board). Astrolabe dispatches `--help` properly; not knowing which is which is the point.
+**Spells that look alike diverge exactly where a fixture depends on them:** `say --stdin` (magpie) vs `say <positional>` (glamour, imago); `state` defaults to `?lean=1` in glamour/imago and needs `--full`, so a lean gate is permanently vacuous rather than wrong.
+**The two-reader design is the reusable core:** reader A to a FILE with no pipe anywhere; reader B through `sh -c "… | cat"`. Pre-fix they disagree and the disagreement IS the defect. A `Bun.spawn({stdout:"pipe"})` harness CANNOT fail on this class.
+**Six spells truncate at exactly 65536** regardless of payload size — the buffer boundary is the mechanism.
+
+### `grep -c` — one root, four costumes, all mine, after fixing it three times
+
+It prints `0` **and** exits 1 on no match: `|| echo 0` appends a second value · its exit status read as a verdict · `grep -c … && next` skips the chain · `[ "$(grep -c … || echo 0)" -ge 1 ]` throws on `0\n0`.
+**Never in a chain or a substitution without a separate assignment.** Recorded because a defect I accepted, understood and could explain did not transfer to the next script I wrote thirty minutes later — the team's first principle, n=4, by the seat that keeps quoting it.
+
+### A correctly-WORKING seat produces no signal either
+
+The SOP's scar is *"a correctly-waiting seat produces no signal."* **Its twin: long silent drives look identical to idleness**, and the lead nearly started a duplicate drive on top of mine. `ps` was the only surface that knew.
+**Post mid-flight partials, not just results** — the board says `doing` and the wire says nothing.

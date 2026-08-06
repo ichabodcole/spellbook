@@ -22,9 +22,20 @@ parseArgs()          still whitespace-only, no `=`, no unknown-flag rejection   
 bounty add           still `await postCmd(...)` with no `const res =`             <- P0d live (#83)
 ```
 
-**The one thing that HAS shipped is `Phase 0e`** — a test-hermeticity fix,
+**~~The one thing that HAS shipped is `Phase 0e`~~ — CORRECTED 2026-08-06:
+`Phase 0e` is HALF shipped and was REOPENED.** It is a test-hermeticity fix,
 admitted as a prerequisite because the project's own gate was destroying the
-team board. **It is test-only and changes nothing a user sees.**
+team board. It is test-only and changes nothing a user sees — **but it had two
+halves and only one landed, and its gate could not see the difference.** See
+Phase 0e.
+
+> **⚠ BEFORE YOU MEASURE ANYTHING, read G5 — it is ACTIVE, and `d650c97` did NOT
+> repeal it** (it fixed **bounty's** suite; glamour still writes the global
+> pointer in-process, imago and magpie are unverified). Every gate must be run
+> with `TMPDIR=$(mktemp -d)`. **A green from a shared-pointer run is not weak
+> evidence — it is no evidence**, and that voids every baseline in this repo
+> recorded before 2026-08-06, including two independently-agreeing 1291/0 runs
+> that were read as corroborating each other.
 
 ### Build order, and why it is not negotiable
 
@@ -167,6 +178,96 @@ An unenumerated target set lets the implementer pick the fixture, and **a
 fixture the code already satisfies makes the gate pass trivially.** Every gate
 below names its sites, its literal invocations, and its byte thresholds.
 
+### G5 — Every gate POSITIVELY ASSIGNS a private `TMPDIR` (added 2026-08-06)
+
+**`TMPDIR=$(mktemp -d)`, not `env -u TMPDIR`.** A scrub is insufficient: an
+unset `TMPDIR` still resolves to the shared machine default.
+
+**Why, established causally 2026-08-06 and not by correlation.** Session
+discovery does **not** go through `BOUNTY_HOME` — it goes to a machine-global
+singleton at a fixed path (`cli.ts:85-86`, `join.ts:84-85`,
+`server.ts:1186-1187`, all `join(tmpdir(), "bounty-latest.json")`). If a second
+bounty daemon boots inside the test's ~200ms write→read window, the joiner
+resolves **someone else's board**. The verify seat proved it with a labelled
+tracer: injecting daemons named `inj-<pid>-<run>-<iter>` produced a suite
+failure whose **own expectation contained the injected id**.
+
+**The second daemon is us.** 410 of 412 recent pointer writes were `e2e-*` test
+fixtures — roughly 40 daemon boots per minute while a gate runs. Cleanup exists
+but is **graceful-exit-only**, and test daemons die by kill, so nothing has ever
+swept: 2206 stale pointer files, oldest 11 days.
+
+**The magnitude, which a coin-flip race cannot produce:** the same 1291-test
+suite ran **1125s shared** and **107s private** — and the shared run's slowest
+test consumed 1,020s before timing out and dying on `ConnectionRefused` to its
+own `/state`.
+
+> **⚠ A green from a shared-pointer run is not weak evidence. It is NO
+> evidence.** The race fires roughly once per run and a saturating injector
+> reproduced it only 2 times in 3. **Every green measured under a shared pointer
+> before 2026-08-06 is void**, including two independently-agreeing 1291/0
+> baselines that were read as corroboration and were two draws from one
+> distribution.
+
+**⚠ G5 does NOT belong in `.anthill/config.json`'s gate.** That is the shape
+Phase 0e step 2 already deleted — _a workaround left in place after its fix
+lands is a second, quieter source of truth._ **The tmpdir belongs in the
+harness** (Phase 0e half 2).
+
+> ### ⛔ THE REPEAL CRITERION WAS WRONG AND WOULD HAVE SELF-FIRED. Rewritten 2026-08-06.
+>
+> **It read: _"repealed the moment the harness does it for you."_ `d650c97` made
+> that true — for BOUNTY's harness — so by its own words G5 self-repealed on
+> landing, while three other suites still write the machine-global pointer.**
+>
+> **"The harness" is singular in the sentence and plural in the world.** Same
+> unit-of-analysis error as P0's file-vs-site — **placed in a repeal criterion,
+> which is the worst possible home for it, because a repeal fires silently and
+> removes a protection nobody re-checks.**
+>
+> **Rewritten, per-spell and measurable:**
+>
+> **G5 is repealed FOR A GIVEN SPELL when that spell's own suite is proven not
+> to write `<spell>-latest.json` to the ambient `TMPDIR`** — proven by the
+> structural gate (no pointer at top level **and** the pointer present in the
+> per-suite dir), **never by a sibling spell's fix landing.**
+>
+> | spell          | status                                                                                                                |
+> | -------------- | --------------------------------------------------------------------------------------------------------------------- |
+> | bounty         | ✅ `d650c97`                                                                                                          |
+> | glamour        | ❌ `tests/daemon.integration.test.ts` imports `startDaemon` and `server.ts:405-415` writes the pointer **in-process** |
+> | imago · magpie | ❓ **UNVERIFIED** — both have a TMPDIR-handling test file, which is not proof                                         |
+>
+> **One of four. G5 stays for everyone until all four are green.**
+>
+> _The glamour case is worth keeping: it writes the pointer **in-process**, so a
+> `Bun.spawn` grep sees nothing. **"Does this suite spawn?" is not the question.
+> "Does this suite reach the code that writes the pointer?" is.**_
+
+### G1 — amended 2026-08-06: the explicit `--session-key` IS the isolation
+
+`resolveSession` (`cli.ts`) has **six** precedence levels, and only the top four
+are environment:
+
+```
+1. --session-key   2. --session   3. $BOUNTY_SESSION_KEY
+4. $BOUNTY_SESSION 5. .bounty-session (walking UP from cwd)   6. the latest pointer
+```
+
+**Level 5 is a tracked file in this repo** containing the team board's id —
+**byte-identical to what level 3 derives.** So `env -u BOUNTY_SESSION_KEY` does
+not isolate a process whose cwd is under this repo; **it demotes one route to
+another route with the same destination.**
+
+**G1 already required an explicit throwaway `--session-key`, and that clause is
+what actually protects you.** What was wrong was the rationale: the scrub reads
+as the isolation and the explicit key as belt-and-braces. **It is the reverse. A
+gate that scrubs and omits the explicit key is not partially isolated — it is
+not isolated at all, and it looks more careful than one that does neither.**
+
+_Three people mis-ran this in the same direction on 2026-08-06. That is not
+three mistakes; it is one rule whose stated reason was wrong._
+
 ---
 
 ## Phase 0 — The drained exit (#77, #78, #80.2)
@@ -190,24 +291,47 @@ discards whatever has not drained.
 `grep -rln "process.exit(code)"` over `plugins/spellbook/skills/*/scripts/*.ts`
 returns **seven files**:
 
+> ### ⚠ EVERY LINE NUMBER IN THIS TABLE IS **AT `5dfbb0d`** (pre-fix). They are STALE against HEAD BY CONSTRUCTION.
+>
+> **Measured at finalize: 6 of 9 now land on unrelated code.**
+> `glamour/cli.ts:628` was `process.exit(code)` when the audit was written; it
+> is now `await postCmd(session, {type:"close"})` and the exit moved to `:653`.
+> **The fixes this table commissioned are what moved them.**
+>
+> **A `file:line` reference is a claim about a TREE, and it decays the moment
+> anyone acts on it** — which for an audit table is immediately, because its
+> whole purpose is to be acted on. **Same rule this session derived for claims
+> on the wire: name the layer.** Here the layer is `5dfbb0d`, stated once,
+> above.
+>
+> **Do not renumber these.** They are correct as a record of the pre-fix world
+> and that is what the table is for. **To find a site today, search by SHAPE** —
+> `process.exit(code)`, `main().then(code => …)`, `process.exit(await main(…))`
+> — which is what the audit itself concluded and what does not decay.
+>
+> _Found by the lead running step 2.5 against a doc he had landed hours earlier.
+> It failed no gate, and the table reads exactly as authoritative as it did
+> before._
+
 **AUDIT COMPLETED 2026-08-06 (daedalus) — it is 10 sites, not 7, and every CLI
 shares the identical shape.** The differentiator is never the shape; it is
 **whether a verb can emit >64KiB.** Verdicts, with rule-outs recorded because a
 silent skip is indistinguishable from a miss:
 
-| site                          | >64KiB capable?                                                                                                                                                                                         | verdict       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| `grapevine/cli.ts:1805`       | YES — `pull`/`read`/`grep`/`list` over an unbounded message log                                                                                                                                         | **FIX** (#77) |
-| `bounty/cli.ts:941`           | YES — `state`/`list` over an unbounded board (the 102-card board is live proof)                                                                                                                         | **FIX** (#78) |
-| **`mind-mapper/cli.ts:1568`** | **YES, and the worst of them** — `state` returns the FULL graph (nodes+edges+proposals+conversation+jobs+docs)                                                                                          | **FIX**       |
-| `magpie/cli.ts:886`           | YES — `export`/`extract`/`discover` emit element/bbox sets                                                                                                                                              | **FIX**       |
-| `astrolabe/cli.ts:467`        | YES — a CROSS-PROJECT observatory; it aggregates every project's board                                                                                                                                  | **FIX**       |
-| `imago/cli.ts:538`            | YES — `state`/`context`/`batch` carry accumulated conversation + proposals                                                                                                                              | **FIX**       |
-| `glamour/cli.ts:628`          | YES — `state`/`tray`/`gen-meta` carry generation metadata + tray contents                                                                                                                               | **FIX**       |
-| **`magpie/discover.ts:314`**  | **a 10th site nobody had listed** — third spelling                                                                                                                                                      | **FIX**       |
-| `digestify/review.ts:430`     | **CANNOT RULE OUT** — emits the human's submitted answers. Rarely 64KiB, but it is a **one-shot** tool: truncation eats the user's only submission with no retry. **The asymmetry of harm decides it.** | **FIX**       |
-| `grapevine/daemon.ts:962/965` | **RULED OUT** — shutdown handler; the daemon's only stdout write is a small boot JSON at `ready`, long before any exit path. Nothing is queued at exit.                                                 | **NO FIX**    |
-| the 5 `server.ts` exits       | **RULED OUT** — same reasoning: daemons emit a small ready-JSON at boot; their exit paths carry no payload.                                                                                             | **NO FIX**    |
+| site                              | >64KiB capable?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | verdict       |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
+| `grapevine/cli.ts:1805`           | YES — `pull`/`read`/`grep`/`list` over an unbounded message log                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **FIX** (#77) |
+| `bounty/cli.ts:941`               | YES — `state`/`list` over an unbounded board (the 102-card board is live proof)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | **FIX** (#78) |
+| **`mind-mapper/cli.ts:1568`**     | **YES, and the worst of them** — `state` returns the FULL graph (nodes+edges+proposals+conversation+jobs+docs)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **FIX**       |
+| `magpie/cli.ts:886`               | YES — `export`/`extract`/`discover` emit element/bbox sets                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **FIX**       |
+| `astrolabe/cli.ts:467`            | YES — a CROSS-PROJECT observatory; it aggregates every project's board                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | **FIX**       |
+| `imago/cli.ts:538`                | YES — `state`/`context`/`batch` carry accumulated conversation + proposals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **FIX**       |
+| `glamour/cli.ts:628`              | YES — `state`/`tray`/`gen-meta` carry generation metadata + tray contents                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | **FIX**       |
+| **`magpie/discover.ts:314`**      | ~~**a 10th site nobody had listed** — third spelling~~ **⛔ RULED OUT 2026-08-06 by its own finder, verified independently.** The original ruling said _"emits element/bbox sets"_ — **true, and they go to `Bun.write(out, …)`, a FILE** (`:288`). Stdout gets a human summary (`:294`, `:296`). **Nothing spawns it**: the only reference outside the file is `tests/discover.test.ts`, a unit **import**. _The audit asked "can this emit a large payload?" The question is "can it emit a large payload THROUGH THE PIPE?" — **the payload and the channel were treated as one thing.** First instance where the error made the set too BIG rather than too small, which is why it survived: an over-inclusive audit looks like diligence and costs only effort._ | **NO FIX**    |
+| `digestify/review.ts:430`         | **CANNOT RULE OUT** — emits the human's submitted answers. Rarely 64KiB, but it is a **one-shot** tool: truncation eats the user's only submission with no retry. **The asymmetry of harm decides it.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **FIX**       |
+| `grapevine/daemon.ts:962/965`     | **RULED OUT** — shutdown handler; the daemon's only stdout write is a small boot JSON at `ready`, long before any exit path. Nothing is queued at exit.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | **NO FIX**    |
+| the 5 `server.ts` exits           | **RULED OUT** — same reasoning: daemons emit a small ready-JSON at boot; their exit paths carry no payload.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | **NO FIX**    |
+| **`src/mind-mapper/build.ts:92`** | **RULED OUT 2026-08-06** — an 11th site, carrying the third spelling (`process.exit(await main())`), and it was in **neither** the ruled-in nor the ruled-out list. It is a **build tool**: stdout is human progress text, nothing downstream `JSON.parse`s it. **A truncated build log is visible; a truncated `state` envelope is not** — that asymmetry is what the whole audit turns on. _Recorded rather than skipped, because this is precisely the site a silent skip would have swallowed._                                                                                                                                                                                                                                                                   | **NO FIX**    |
 
 **⚠ The literal grep missed sites because the defect has THREE SPELLINGS:**
 `main().then(code => process.exit(code))`, `process.exit(code)`, and
@@ -244,6 +368,78 @@ with sources in `src/mind-mapper/`).
    out and why — a silent skip is indistinguishable from a miss.
 3. Regression test per spell: generate a >64KiB payload, read it **through a
    pipe**, parse it. A test that doesn't pipe cannot catch this bug.
+
+   > ### ⛔ AMENDED 2026-08-06 — "through a pipe" NAMES TWO DIFFERENT THINGS AND ONLY ONE REPRODUCES THE BUG.
+   >
+   > **The sentence above is true, insufficient, and reads as complete. Measured
+   > on one board with the defect present, three readers:**
+   >
+   > ```
+   > shell pipe   cli state | wc -c                ->   65536   TRUNCATED
+   > Bun.spawn    stdout:"pipe" + Response.text()  ->  114042   COMPLETE
+   > sh -c        cli state | cat                  ->   65536   TRUNCATED
+   > ```
+   >
+   > **`Bun.spawn({stdout:"pipe"})` is how `runCli` and every harness in this
+   > repo drives a CLI — so a gate written that way CANNOT FAIL ON THIS
+   > DEFECT.** The engine seat wrote exactly that gate, it passed, he restored
+   > the bug, and **it passed again.**
+   >
+   > **Nine ruled-in sites × a gate that cannot fail = nine decoration gates,
+   > every one written by someone following this plan correctly.**
+   >
+   > **Use this construction verbatim — verified in both directions (green with
+   > the fix, RED under the mutation):**
+   >
+   > ```
+   > Bun.spawn({ cmd: ["sh", "-c", `bun run ${CLI} <verb> | cat`], stdout: "pipe" })
+   > ```
+   >
+   > **⚠ Any P0 gate drafted against `runCli` needs REWRITING, not re-running.**
+
+   > ### ⛔ AND EVERY P0/P0f GATE NEEDS A CELL ASSERTING THE PROCESS **EXITS**.
+   >
+   > **A drained-exit fix trades a truncation for a HANG wherever `process.exit`
+   > was load-bearing.** `ec33378` did exactly that at one site and it shipped.
+   >
+   > **`glamour open` post-fix ran for 23 MINUTES and never returned.** Pre-fix
+   > returned normally. **Mechanism measured in isolation, both directions:**
+   >
+   > ```
+   > spawn(detached, stdio ["ignore","pipe","inherit"]); child.unref(); natural return
+   >    -> STILL RUNNING after 6s        HANGS
+   > same + child.stdout.destroy() before returning
+   >    -> exited                        CLEAN
+   > ```
+   >
+   > **`unref()` releases the CHILD HANDLE. The piped stdout is a separate
+   > reffed stream and a daemon never closes it.** Under `process.exit(code)`
+   > the parent force-exited and the held handle was invisible.
+   >
+   > **Blast radius: `glamour` ONLY** — it is the one spell that pipes a
+   > **long-lived detached daemon's** stdout. grapevine's two piped spawns are
+   > `ps` and `lsof`, **awaited to exit**, and its daemon spawn is
+   > `["ignore","ignore","ignore"]`. _A `grep` for `stdio: ["ignore","pipe"`
+   > counts all three and cannot tell them apart; **enumerate by what the spawn
+   > IS, not by what it looks like.**_
+   >
+   > **Fix: read the boot JSON off the pipe, THEN `child.stdout.destroy()`, then
+   > return.** Destroying early breaks `open` loudly.
+   >
+   > **THE GATE LESSON, which outlives this instance:** the suite was green,
+   > both P0 gates were green, and **a 23-minute hang in a shipped spell's entry
+   > verb was invisible to every one of them, because nothing asserts that a CLI
+   > RETURNS.** **Assert the process ended — not only that its payload
+   > survived.**
+   >
+   > _Second per-site precondition invisible to shape inspection; `join.ts` was
+   > the first, and the engine seat generalised it correctly at the time._
+   >
+   > _Why Bun's pipe survives is **UNVERIFIED** — plausibly the parent drains
+   > from the first byte so the writer never blocks. **The gate deliberately
+   > does not depend on that explanation**, and it was left unpublished rather
+   > than asserted: "real symptom, inferred mechanism" is this project's
+   > recurring trap._
 
    **⚠ The vacuity trap — the regression cell must be over 65,536 _by
    construction_.** A test that pipes a small payload and asserts completeness
@@ -333,6 +529,88 @@ harm statement is better evidence than the original.
 
 ---
 
+## Phase 0f — The in-function exits (NEW, 2026-08-06, UNBUILT)
+
+**Owner:** daedalus · **Verify:** cassandra · **Split out of P0 deliberately —
+see below. Do NOT fold this back in.**
+
+**P0's audit enumerated ONE exit per FILE — the `main()` wrapper. The defect's
+unit is the SITE.** The three-spellings insight was about _how `main()` exits_;
+it never asked whether a file has other exits. **It does.**
+
+**Denominator, measured 2026-08-06 by a source-scanning guard over
+`plugins/spellbook/skills/**/scripts/\*.ts`: 44 remaining `process.exit(`sites** after`c29aa4e`+`ec33378`
+fixed the eight ruled-in entry points (magpie/discover.ts was ruled OUT
+2026-08-06). **The guard reaches 35 that a mutation test structurally cannot** —
+H5's prediction, confirmed with a number.
+
+**The highest-harm shape, in five spells, on consecutive lines** — `bounty:595`,
+`magpie:280`, `astrolabe:222`, `imago:281`, `glamour:481`:
+
+```ts
+if (inScope(ev) && !selfEcho) process.stdout.write(`${payload}\n`);
+if (ev.type === "closed") process.exit(0);
+```
+
+**Write the terminal event, then exit on the next line.** A `tail` is _always_
+on a pipe. **The events a consumer loses are the ones saying the stream ended**
+— and `tail` is the verb agents leave running for hours. Plus the SIGINT
+handlers (`const stop = () => process.exit(0)`) and the `if (grounded)`
+session-gone paths.
+
+### ⛔ The shape is NOT the one-liner, and the obvious helper is a TRAP
+
+**Measured (daedalus, Bun 1.3.14, 300KB per write, real shell pipe) BEFORE
+anything was written:**
+
+| #     | shape                                                      | bytes      | verdict                    |
+| ----- | ---------------------------------------------------------- | ---------- | -------------------------- |
+| A     | `write(big); process.exit(0)`                              | **65536**  | the defect                 |
+| B     | `write(big, () => process.exit(0))` — cb on the SAME write | 300001     | ✅                         |
+| C     | `await Bun.write(Bun.stdout, big); exit`                   | 300001     | ✅                         |
+| D     | `write(big); process.exitCode = 0` (natural return)        | 300001     | ✅                         |
+| **F** | **`write(big); write("", () => process.exit(0))`**         | **65536**  | ❌ **as broken as no fix** |
+| **G** | **5× `write(big)`, then `write("", cb → exit)`**           | **327680** | ❌ **exactly 5 × 65536**   |
+| I     | 5× `write(big, cb)`, await the LAST cb, exit               | 1500005    | ✅                         |
+
+> **F is the helper anyone writes** when the write and the exit are separate
+> statements — which is the situation at all five `tail` sites. **It is
+> byte-for-byte the defect and it looks correct.** **G is why: a drain callback
+> covers only its own write. It is not a barrier.**
+
+_Stated as measured behaviour at 1.3.14, not as a claim about Bun's internals._
+
+**⚠ And `D` (natural return) is NOT universally safe.** At
+`bounty/scripts/join.ts` the one-liner **hangs** — `join.ts > idle timeout`
+times out at 15s — because `process.exit` was doing **double duty**: the drain
+was broken **and** force-terminating a live WebSocket was load-bearing. **The
+honest fix there is a socket-lifecycle change, not P0's shape.** Carded
+separately. **Shipping a hang to fix a truncation is a bad trade.**
+
+**So P0f is a per-site lane with per-site preconditions.** _"A per-site shape
+change with a per-site precondition cannot be verified by inspecting the
+shape."_
+
+### Why this is a NAMED lane and not folded back into P0
+
+**This project has now shipped "done" three times over an unenumerated
+remainder:** P0e held two halves, P0b enumerated one flag of three, P0 counted
+files instead of sites. **Each read as complete because the part that shipped
+was the part someone had enumerated.**
+
+**The release note must say WHICH HALF.** The honest sentence is _"the
+entry-point exits are fixed across eight files; the streaming verbs' terminal
+exits are P0f"_ — **not** _"the drained exit is fixed."_ **A true claim that
+reads as total costs the same trust as a false one.**
+
+**Also ruled OUT and recorded** (daedalus, 2026-08-06): `grapevine/cli.ts`'s
+`die()` — a small stderr write then `exit 2`, no stdout payload pending; and
+`mind-mapper/server.ts:1784` — third spelling but a daemon, small boot JSON long
+before any exit path. **The `die()` family in the other five CLIs is UNVERIFIED
+— rule it in or out by measurement and record the rule-out either way.**
+
+---
+
 ## Phase 0b — The inert `--restore` (#80.1)
 
 **Owner:** daedalus · **Verify:** cassandra · **D3 ruled:** non-zero exit
@@ -354,10 +632,33 @@ path, and nothing reports the skip.
 respawn. The reported board was **live and empty**, so hydration never fires —
 `--restore` was the only lever, and it was inert.
 
+> ### ⚠ SCOPE CHANGED 2026-08-06 — this lane is the FLAG SET, not `--restore` alone.
+>
+> **The early return at `cli.ts:388-397` silently discards `--timeout`,
+> `--restore` AND `--title`** — every flag appended after it. Verified against
+> the live process, not the CLI's own echo:
+>
+> ```
+> open --session-key K --timeout 14400   ->  "# attached to existing board"   exit 0
+> ps -o args= of the daemon:  server.ts --timeout 30 --no-open --id k-dae2-…
+> ```
+>
+> **The caller asked for four hours and got thirty seconds, silently.**
+>
+> **This plan enumerated ONE flag — a G4 violation inside the phase that cites
+> G4.** An unenumerated set let the fix pick its own scope, which is the exact
+> failure G4 exists to stop.
+>
+> **`--restore` was never the bug. The bug is an early return that discards
+> everything after it**, and we had been describing one of its three symptoms.
+> **Enumerate every flag the attach path cannot honour, by name, and gate the
+> SET.** This is not scope growth; it is the same defect, correctly counted.
+
 **Steps**
 
-1. On the attach path, detect that `--restore` was passed and **cannot be
-   honoured** (a live board already holds the key).
+1. On the attach path, detect that **any flag that cannot be honoured** was
+   passed (a live board already holds the key) — `--restore`, `--timeout`,
+   `--title`, and anything else appended past line 414. Enumerate them.
 2. **Exit non-zero** (D3 — ruled). **This half stands and is ratified.**
 
    **⛔ THE CORRECTIVE-VERB HALF IS FALSIFIED AND MUST NOT SHIP — measured
@@ -802,12 +1103,12 @@ written against post-fix behaviour.
 
    A ward is checked **when an entry point changes**; a sweep is checked once.
 
-   **Ordering — half dissolved (good news).** For the **9 `node:util` entry
+   **Ordering — half dissolved (good news).** For the **10 `node:util` entry
    points the recognized set already exists** (the `options` object), so the
-   invariant is **checkable today** on 9 of 15, with no dependency on P0c. Only
+   invariant is **checkable today** on 10 of 16, with no dependency on P0c. Only
    the 6 hand-rolled ones need step 2 first.
 
-   **Ruled (prospero): HOLD the whole ward until P0c lands, then add all 15 at
+   **Ruled (prospero): HOLD the whole ward until P0c lands, then add all 16 at
    once.** A ward covering 9 while six known-broken parsers sit outside it is a
    checklist item that passes — and **reads as coverage.** The draft is written
    and parked; landing it early buys a partial check at the cost of a false
@@ -838,7 +1139,7 @@ the doc become the registry.**
 > P0c "converts every `SKILL.md` into a load-bearing registry" because
 > `parseArgs` "has no registry at all — step 2 authors the first one," and that
 > this would create a second source of truth in violation of `seams.md`.
-> **`node:util`'s `options` object IS a registry, and nine entry points in this
+> **`node:util`'s `options` object IS a registry, and ten entry points in this
 > house already have one** (see the table below). Step 2 does not author a
 > convention; it **extends an existing in-house one to six holdouts.** The
 > author of the original claim found and retracted it himself.
@@ -887,8 +1188,8 @@ did not, and **the Gate line is what gets implemented.** Hoisted:
 5. **Enumerate the ENTRY POINTS** (G4), not the spells — and **partition them**,
    per the point below. "For each spell CLI" let a two-spell fix pass.
 
-**⚠ A green across all 15 entry points is ~60% VACUOUS, and it reads as the
-opposite.** The 9 `node:util` entry points **pass this gate before the fix and
+**⚠ A green across all 16 entry points is ~60% VACUOUS, and it reads as the
+opposite.** The 10 `node:util` entry points **pass this gate before the fix and
 after it** — they were already conformant, so no result they produce can fail.
 By G2 that is decoration for those arms; it is only meaningful over the **6
 hand-rolled** ones.
@@ -1203,6 +1504,99 @@ clean.
 full suite runs and **that board is still alive, with its cards unchanged,
 afterwards.** Both directions (G2): confirm the pre-fix suite kills it.
 
+> ### ⛔ REOPENED 2026-08-06. P0e had TWO halves; we shipped one and declared it done.
+>
+> **The gate above is why nobody noticed.** It asserts the **board survives**.
+> It never asserts **the suite is green** under the seat-shell frame. **A world
+> where the tests fail with the key set satisfies this gate completely** — which
+> is how "P0e is done" and "the suite is red in a seat shell" were both true for
+> a release. **That is a G4 enumeration hole in a gate that already shipped.**
+>
+> **Half 1 — the ambient env.** Landed `4b55da0`. Still correct, and now known
+> to be **smaller than it looked**: the key axis is a **no-op in this repo**,
+> because level 3 and level 5 of `resolveSession` resolve to the same board (see
+> G1, amended). Two seats ran the key axis and got **opposite signs on the same
+> cells** — a real effect does not reverse when a different operator runs it.
+>
+> **Half 2 — the discovery pointer. UNBUILT, and it is the unblock for every
+> other lane.** The harness must set its **own private `TMPDIR`**, so a peer
+> suite cannot reach its pointer. See G5 for the mechanism and the evidence.
+>
+> **Still test-only. Still changes nothing a user sees. Still does not widen the
+> release.** P0e's original justification is unchanged — which is precisely why
+> this is P0e's second half and **not** a fifth defect lane.
+>
+> **Gate for half 2 — STRUCTURAL, ratified 2026-08-06 (cassandra).** Landed as
+> `d650c97`.
+>
+> ```
+> after a suite run under a known ambient TMPDIR:
+>   assert NO  <spell>-latest.json  at the TOP LEVEL of that TMPDIR
+>   assert the pointer EXISTS inside the per-suite dir
+> ```
+>
+> **An earlier draft of this gate asserted _"the full suite is green under a
+> private `TMPDIR`"_ and was STRUCK as an inverted control** — that outcome is
+> probabilistic and would fail a correct fix roughly one run in three. **This
+> one asserts the MECHANISM: a file's location does not flake.** False pre-fix,
+> true post-fix, deterministic in both directions, and it never reads a test
+> result.
+>
+> **⚠ The second cell is not optional.** Asserting only the _absence_ passes
+> trivially when the suite spawned no daemon at all. **That vacuity has bitten
+> this project four times** — P0's sub-64KiB fixture, P0b's degenerate
+> precondition, the ward's empty documented-set, `probe-help2`'s exit-127 cells.
+> **General form: every _"X is not there"_ needs _"and the thing that would have
+> put X there ran."_**
+>
+> **⚠ This gate is scoped to the PEER channel and does not read as such.** It is
+> satisfied completely by a build where **all fixtures in a file share one
+> pointer and race each other** — `mkdtempSync` at `server.test.ts:803` runs
+> once at **module scope**, so `TEST_TMPDIR` is per-**file**, not
+> per-**fixture**. **Per-run isolation is not per-fixture isolation**, and a
+> gate that cannot see the difference is partial isolation reading as total, at
+> the gate layer.
+>
+> **OPEN, unmeasured:** does any fixture's daemon outlive its test? If every
+> daemon dies with its test there is no intra-file concurrency and the question
+> closes. **Measure before building for it.**
+>
+> **⚠ Do NOT read a suite result — green or red — off a dirty tree.** Recorded
+> because the lead did it twice in ten minutes and published a false finding
+> from it. He ran the full gate while a peer had **uncommitted edits to
+> `server.test.ts`**, the file that spawns the daemons, got a red, and broadcast
+> _"G5 is necessary and not sufficient"_ as a measured result. It was withdrawn
+> within the hour: **both greens on record ran on a clean tree
+> (`uncheckedAgainst: []`), both reds on a dirty one**, and the variable tracked
+> peer WIP perfectly across four runs.
+>
+> **The instrument already existed and was already assigned.** `anthill commit`
+> prints `uncheckedAgainst` on every land, and the lead had explicitly taken
+> ownership of the cross-seat view of it one hour earlier. **He did not run
+> `git status` before treating an exit code as a fact about the world.**
+>
+> > **The SOP documents the green half — _"non-empty means your green was
+> > measured against work your commit does not include."_ The missing corollary
+> > is the dangerous one: a RED is equally uninterpretable, and a red is far
+> > more likely to be published as a finding.**
+>
+> **Standing precondition, all gates: `git status` first. A gate is
+> uninterpretable in BOTH directions while a peer has uncommitted work in the
+> tree.**
+>
+> **⚠ The production defect is NOT fixed by this and is deliberately out of
+> scope.** Users' daemons still share a machine-global pointer; four spells
+> carry the identical shape in source (bounty, glamour, imago, magpie). **That
+> is a candidate issue for Cole, filed beside #85–#88 with the contract
+> investigation** — it is the same question as last session's candidate #2 (_a
+> bounty read cannot identify which board answered it_) from the other end.
+> **Fixing it here means fixing it twice.**
+>
+> _And it would give this session no relief either way: seats run the **cached**
+> plugin copy (1.16.0), byte-identical to the repo but loaded from cache, so a
+> pointer fix landed tonight does not change the daemons currently polluting the
+> singleton._
+
 **⚠ What P0e is NOT.** It stops _our tests_ from seizing a live board. **It does
 not stop any other process carrying the ambient key from doing so**, and the
 read envelope still cannot tell you it happened. That half is a candidate issue
@@ -1225,6 +1619,24 @@ so they are not re-derived, and so a lane does not quietly widen to catch one.
 
 Items 1–4 belong beside **#85–#88** with the
 [CLI-contract investigation](../../investigations/2026-08-06-spell-cli-contract-investigation.md).
+
+### Added by the BUILD round (2026-08-06, later the same day)
+
+**Same rules: none are in the fourteen, none are fixed here, filing is Cole's
+call.** Every one was found by using the shipped spells on ourselves.
+
+| #   | finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | found by                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| 5   | **`close --help` CLOSES THE BOARD.** `--help` is unrecognized, the hand-rolled parser discards it, and the verb runs. `state --help` dumps the board; `tail --help` opens the stream and never exits. The three verbs that reject do so **by accident** — they demand a positional. **P0c fixes the destructive half by construction** (step 2 rejects unknown flags); making `--help` actually _print help_ is new behaviour and is **not** in scope. **The harm statement belongs in #81: an unrecognized flag is not ignored — the verb executes anyway, so on a destructive verb it is a destructive act with no signal.** | cassandra                    |
+| 6   | **The discovery pointer is a machine-global singleton** at `join(tmpdir(), "<spell>-latest.json")`, unscoped by `BOUNTY_HOME`, in **bounty, glamour, imago and magpie**. Cleanup exists but is **graceful-exit-only**, so killed daemons never unlink: 2206 stale files, oldest 11 days. **Proven causally** (labelled-tracer injection). **`d650c97` closed the TEST-side channel repo-wide; 22 shipped-source sites remain — that is G5's repeal criterion, quantified.**                                                                                                                                                    | thoth + daedalus + cassandra |
+| 7   | **`bounty message` answers `{"ok":true,"sent":"message"}` and leaves no durable trace** — `server.ts:949-950` `broadcast(...)` with no `events.push(...)`, alone among the write paths. Same family as #83/#84: a write-shaped verb reporting success with nothing to read back.                                                                                                                                                                                                                                                                                                                                               | prospero                     |
+| 8   | **`bounty tail` replays its entire event history** with no default anchor — the same shape as the comms wire, which at least documents it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | prospero                     |
+| 9   | **`mind-mapper` ships as inert payload.** 58 tracked files under `plugins/spellbook/skills/mind-mapper/`, **no `SKILL.md`**, absent from `grimoire/trigger-registry.md`. Per Contract 4 the marketplace copies the whole tracked subtree (`source: ./plugins/spellbook`), so it ships and registers nothing. **Not a user hazard — it presents no trigger surface — but "deliberately unreleased" and "tracked in the shipped subtree" cannot both be true.** Needs Cole: pre-release, or fallen out of the registry?                                                                                                          | thoth                        |
+
+**⚠ #64 is NOT on this list and must not be closed by item 6.** See Phase 1 step
+5 — the idle-timeout framing is arithmetically impossible, and the lead's
+proposal that fixing the pointer would close #64 (and therefore cost nothing)
+was withdrawn.
 
 ---
 
@@ -1299,9 +1711,50 @@ clobber is a footgun on a healthy daemon too.
    first-party one is not.** If D1.3 lands well, anthill#43 should shrink or be
    deleted rather than maintained._
 
-5. **#64 root cause — enumerate, don't guess.** The failure survived a
-   keep-alive tail, so the "idle timeout" theory is incomplete. The existing
-   backlog item says this explicitly.
+5. **#64 root cause — ~~enumerate, don't guess~~. THE IDLE-TIMEOUT FRAMING IS
+   DEAD ON ARITHMETIC (2026-08-06, daedalus). #64 is genuinely unexplained.**
+
+   The plan half-knew this — _"the failure survived a keep-alive tail, so the
+   idle timeout theory is incomplete."_ **The incompleteness is not which board
+   the tail was on. There was never a timeout short enough to fire.**
+
+   | fact                                                                           | value                           | landed                    |
+   | ------------------------------------------------------------------------------ | ------------------------------- | ------------------------- |
+   | reported death                                                                 | **~20 minutes**                 | reported **2026-07-09**   |
+   | default idle timeout (`server.ts:542`)                                         | **7200s — two hours**           | `d38a32a`, **2026-06-17** |
+   | the requested flag                                                             | `--timeout 14400` (4h)          | —                         |
+   | subscriber guard `if (subscriberCount > 0) return false` (`server.ts:210-212`) | watched boards never idle-close | `d38a32a`, **2026-06-17** |
+
+   **Both guards landed three weeks BEFORE the report.** At the time of the
+   report, a board with **zero** subscribers and **no** `--timeout` flag still
+   lives two hours. **A death at ~20 minutes is not reachable by any timeout
+   value in the code** — not the default, not the flag, watched or unwatched.
+
+   > **"Idle" is the reporter's inference, not a measurement.** Every story
+   > about _which timeout applied_ answers the wrong question. **Two were
+   > proposed on 2026-08-06 — the lead's (a keep-alive tail misresolved to a
+   > stranger board via the discovery singleton) and the engine seat's (a keyed
+   > attach silently drops `--timeout`) — and the arithmetic kills both
+   > equally.**
+
+   **The surviving candidate, recorded as a candidate:** _something closed it._
+   That needs no timeout, and it is the one class with a **proven instance in
+   this repo** — the gate destroying live boards (`4b55da0`), and `close --help`
+   executing (2026-08-06). **UNVERIFIED for #64 specifically.**
+
+   **⚠ #64 is NOT closed by the discovery-pointer fix.** That fix is right for
+   its own reasons and this is not one of them. _The lead proposed the inverse —
+   that fixing the pointer would close #64 and therefore cost nothing — and
+   flagged it in the same message as the hypothesis to trust least, because it
+   dissolved a scope problem too conveniently. It did, and it was._
+
+   **⚠ The reporter's binding is UNVERIFIED — UNREACHABLE-BY-CONSTRUCTION.** It
+   lives in another repo, in a session seven days before diagnostics logging
+   existed. Recorded as unreachable rather than counted as checked.
+
+   **This strengthens the case that P1 needs its own ratify round**, not that
+   #64 should be chased inside this project.
+
 6. **Fold in the robustness nits** (`2026-06-15-bounty-daemon-robustness-nits`):
    R1 `prevBlocked` stale entry; R2 non-numeric `?since=` replaying everything;
    #3 unbounded `events[]`; **#4 `tail` retries forever on abnormal daemon
@@ -1419,6 +1872,39 @@ it still reads as a timer, the model didn't change.
 ---
 
 ## Release
+
+> ### ⚠ THE RELEASE NOTE IS WHERE THIS PROJECT'S OWN DEFECT CLASS WILL RECUR
+>
+> **Every honest sentence below was earned by a false one being caught first.**
+> This project exists because tools reported plausible, well-formed, wrong
+> results — **a release note that overstates does the same thing to a reader who
+> cannot grep.**
+>
+> **1. Say WHICH HALF.** P0 fixed the **entry-point** exits at eight ruled-in
+> sites (nine were fixed; `magpie/discover.ts` was subsequently ruled OUT). **44
+> in-function sites remain (Phase 0f)**, including the `write→exit` pair inside
+> `tail` in five spells. The honest sentence is _"the entry-point exits are
+> fixed across eight files; the streaming verbs' terminal exits are filed as
+> P0f"_ — **not** _"the drained exit is fixed."_
+>
+> **2. Distinguish PINNED from VERIFIED.** A **test** prevents regression
+> tomorrow; a **drive** proves it today. Sites verified by a recorded drive
+> (magpie/cli, imago, glamour — no process-spawning harness exists in those
+> suites) are **not pinned**, and _"9 of 9 gated"_ would assert the first while
+> delivering the second.
+>
+> **3. Say CONVERTED vs ALREADY CONFORMANT.** For P0c: **6 converted · 10
+> already conformant · 16 total.** _"Unknown-flag rejection now works across the
+> house"_ implies we built something that mostly already existed and **will read
+> as false to anyone who greps.**
+>
+> **4. Name what a fix does NOT reach.** `d650c97` closed the discovery
+> pointer's **test-side** channel; **22 shipped-source sites remain.** Seats
+> also run the **cached** plugin copy, so an in-repo fix does not change
+> already-running daemons.
+>
+> **A true claim that reads as an overclaim costs the same trust as a false
+> one.**
 
 1. Conventional commits throughout (`fix(bounty)`, `fix(grapevine)`,
    `feat(bounty)`) — release-please owns versions, **no hand-edited version**.

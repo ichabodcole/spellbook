@@ -16,7 +16,7 @@
 //       * join.ts idle timeout reports reason: "timeout"
 
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -775,9 +775,43 @@ type ReadyInfo = { url: string; port: number; session_id: string };
 // the regression test below vacuous (it sets the ambient key *during* the test,
 // which a snapshot taken at import time could never have contained), and it
 // would also miss anything that sets the variable after import.
+//
+// ── HALF 2: the discovery pointer (P0e reopened) ─────────────────────────
+// Scrubbing the key path was only half the isolation. Session DISCOVERY does
+// not go through BOUNTY_HOME at all: `cli.ts`, `join.ts` and `server.ts` all
+// compose `join(tmpdir(), "bounty-latest.json")` — a MACHINE-GLOBAL singleton.
+// Every daemon that boots anywhere on the machine overwrites it, so a peer
+// suite (or another agent, or another project) can land inside the ~200ms
+// window between this suite writing the pointer and reading it back. Measured:
+// an injected daemon made this file's own assertions come back holding a
+// FOREIGN session id, and 410 of 412 pointer writes on this machine in ten
+// minutes were test fixtures — i.e. the peer is almost always another suite.
+//
+// So the harness assigns its own private TMPDIR and every spawn inherits it.
+// A peer cannot reach a directory it cannot name.
+//
+// Note the deliberate asymmetry with the scrub above, because it looks like an
+// inconsistency and is not: the SCRUB is recomputed per call (the ambient key
+// changes during the run and a snapshot would miss it), while the TMPDIR is
+// resolved ONCE and held (every spawn in this file must agree on one pointer
+// directory — a fresh dir per call would hide each daemon from the very next
+// CLI invocation that has to discover it).
+//
+// NOT put in the consumer's gate string on purpose: a `TMPDIR=$(mktemp -d)`
+// pasted into `config.json` is a workaround living outside the thing it fixes,
+// which is the shape this phase already deleted once. The harness owns it.
+const TEST_TMPDIR = mkdtempSync(join(tmpdir(), "bounty-suite-"));
+
+// The machine-global temp dir — the one every OTHER bounty process on this box
+// resolves to. Captured for the half-2 regression to assert AGAINST; nothing in
+// this suite may compose a pointer path from it (the structural guard enforces
+// that). Safe to read here because this file never mutates process.env.TMPDIR:
+// the private dir travels to children through hermeticEnv(), not through us.
+const SHARED_TMPDIR = tmpdir();
+
 function hermeticEnv(): Record<string, string | undefined> {
   const { BOUNTY_SESSION_KEY: _k, BOUNTY_SESSION: _s, ...rest } = process.env;
-  return rest;
+  return { ...rest, TMPDIR: TEST_TMPDIR };
 }
 
 // Spawn the daemon and wait until it's reachable. Readiness is discovered via
@@ -797,7 +831,9 @@ async function spawnServerReady(
     // snapshots into the user's real ~/.bounty (the default BOUNTY_HOME).
     env: { ...hermeticEnv(), BOUNTY_HOME: uniqHome() },
   });
-  const discoveryFile = join(tmpdir(), `bounty-${id}.json`);
+  // TEST_TMPDIR, not tmpdir(): the daemon we just spawned writes its discovery
+  // file into the TMPDIR we handed it, so the parent must look in the same place.
+  const discoveryFile = join(TEST_TMPDIR, `bounty-${id}.json`);
   const deadline = Date.now() + 5000;
   while (Date.now() < deadline) {
     try {
@@ -1539,7 +1575,7 @@ const CLI = join(SCRIPT_DIR, "cli.ts");
 // A fresh per-test BOUNTY_HOME so snapshot/discovery state never leaks between
 // tests (Phase B writes snapshots here; Phase A keeps tests isolated up front).
 function uniqHome(): string {
-  return join(tmpdir(), `bounty-test-${crypto.randomUUID().slice(0, 8)}`);
+  return join(TEST_TMPDIR, `bounty-test-${crypto.randomUUID().slice(0, 8)}`);
 }
 
 type CliResult = { stdout: string; stderr: string; code: number };
@@ -2565,6 +2601,10 @@ describe("join.ts", () => {
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
+      // join.ts resolves `bounty-latest.json` out of ITS OWN tmpdir, so it must
+      // share the host daemon's. Omitting env here inherited the machine-global
+      // dir and this test looked for a pointer the host wrote somewhere else.
+      env: hermeticEnv(),
     });
     const seen = await collectStdout(joiner, (m) => m.type === "joined", 5000);
     const joined = seen.find((m) => m.type === "joined");
@@ -2586,6 +2626,10 @@ describe("join.ts", () => {
       stdin: "pipe",
       stdout: "pipe",
       stderr: "pipe",
+      // Benign today — an explicit --url skips discovery entirely — but the
+      // harness rule is that no child inherits the ambient environment, so the
+      // next edit to this call cannot quietly reintroduce the leak.
+      env: hermeticEnv(),
     });
     const seen = await collectStdout(joiner, (m) => m.type === "disconnected", 5000);
     const disc = seen.find((m) => m.type === "disconnected");
@@ -2676,9 +2720,195 @@ describe("test hermeticity (P0e)", () => {
 // `{ ...process.env }` spawn fails here instead of leaking the ambient session
 // key into a live board months later.
 test("P0e — no spawn site in this file inherits a bare process.env", async () => {
-  const src = await Bun.file(import.meta.path).text();
+  // Comments stripped: this gate is documented in prose that necessarily QUOTES
+  // the idiom it forbids, and the first version of the half-2 gate below was
+  // tripped by exactly that. A guard must not be able to fail on its own docs.
+  const src = codeLines(await Bun.file(import.meta.path).text());
   // Match the spawn-env idiom only; the hermeticEnv() helper itself legitimately
   // destructures process.env and must not trip this.
   const offenders = [...src.matchAll(/env:\s*\{\s*\.\.\.process\.env/g)];
   expect(offenders).toHaveLength(0);
+});
+
+// ── P0e half 2 — the discovery pointer must not escape the suite ─────────
+// The behavioural gate. Half 1's regression proves the suite does not SEIZE a
+// live board; this one proves a peer cannot PERTURB the suite — the direction
+// that shipped unfixed, because the shipped gate asserted only that the victim
+// board survived and never that the suite was isolated from strangers.
+describe("test hermeticity — discovery pointer (P0e half 2)", () => {
+  test("a harness-spawned daemon writes its pointer into the SUITE's tmpdir, never the machine-global one", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    const id = ready.session_id;
+    try {
+      // ── PRECONDITION CELL ───────────────────────────────────────────────
+      // "No pointer in the shared dir" is also what you see when the daemon
+      // never booted — so the measurement below needs the positive fact stated
+      // first, in this test, where a reader can see it.
+      //
+      // Stated honestly, because overclaiming a control is the thing this team
+      // has spent the night finding: this cell is NOT independent of
+      // spawnServerReady, which polls the very path being asserted and throws on
+      // timeout. Under the mutation that removes the TMPDIR override, the run
+      // goes red in that helper (measured: 5043ms, "server did not become
+      // ready") rather than here. So this cell's job is to make the vacuity
+      // condition VISIBLE and locally checkable, not to be a second detector.
+      // A genuinely independent control would need a boot path that does not
+      // consult the pointer, and there isn't one.
+      expect({
+        cell: "precondition",
+        pointerInSuiteDir: existsSync(join(TEST_TMPDIR, `bounty-${id}.json`)),
+      }).toEqual({ cell: "precondition", pointerInSuiteDir: true });
+
+      // ── THE MEASUREMENT ────────────────────────────────────────────────
+      // Scoped to THIS run's unique session id on purpose. The obvious
+      // assertion — that `bounty-latest.json` in the shared dir is unchanged —
+      // is peer-SENSITIVE: any other suite or agent booting a board during this
+      // test would fail it, so the gate would flake for a reason unrelated to
+      // the defect. A unique id is untouchable by peers, so a failure here can
+      // only mean OUR daemon wrote OUR pointer into the global directory.
+      expect(existsSync(join(SHARED_TMPDIR, `bounty-${id}.json`))).toBe(false);
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  }, 20000);
+});
+
+// ── P0 — the drained exit (#78) ──────────────────────────────────────────
+// Bun's stdout is ASYNCHRONOUS on a pipe and synchronous on a TTY or file, so
+// `process.exit(code)` discards whatever has not drained. Measured in this repo
+// on ONE board, one variable, both directions:
+//
+//   process.exit(code)         pipe  65536   file 114042   parse FAILED
+//   process.exitCode + return  pipe 114042   file 114042   parse OK
+//
+// 65,536 on the nose. The harm is worse than a crash: the payload is complete
+// and only the write is lost, so a reader gets well-formed-looking JSON that
+// stops mid-string. A team published the false rule "our board is too big to
+// read" and three agents worked under it for six messages.
+describe("P0 — a >64KiB payload survives a PIPE (#78)", () => {
+  test("state through a pipe is byte-identical to state in a file, and parses", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "60"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      // Build a board that clears 64KiB. 200 cards × a ~400-char title is
+      // ~114KB — comfortably over, with headroom so ordinary drift in the
+      // envelope cannot silently walk the fixture back under the threshold.
+      const pad = "x".repeat(400);
+      await Promise.all(
+        Array.from({ length: 200 }, (_, i) =>
+          runCli(["add", `card-${i}-${pad}`, "--id", `c${i}`, "--session", session], { env }),
+        ),
+      );
+
+      // ⚠ THE READER IS THE EXPERIMENT, AND `Bun.spawn({stdout:"pipe"})` IS
+      // BLIND TO THIS DEFECT. Measured on one board with the fix reverted:
+      //
+      //   shell pipe  (`cli state | wc -c`)          ->  65536   TRUNCATED
+      //   Bun.spawn   (stdout:"pipe", Response.text) -> 114042   COMPLETE
+      //   sh -c "cli state | cat"                    ->  65536   TRUNCATED
+      //
+      // So the obvious gate — call runCli and check the bytes — PASSES IN BOTH
+      // WORLDS. It was written that way first here and went green with the
+      // `process.exit` restored, which is a non-discriminating gate: the exact
+      // thing G2 exists to stop, and it looked completely reasonable.
+      //
+      // The CLI's own stdout must therefore be a REAL SHELL PIPE. `sh -c` gives
+      // it one; Bun's spawn pipe is the outer hop only, where nothing is at
+      // stake. (Why Bun's pipe survives is UNVERIFIED — plausibly the parent
+      // drains it from the first byte so the writer never blocks on a full
+      // 64KiB buffer — and the gate does not depend on that explanation.)
+      const shell = Bun.spawn({
+        cmd: ["sh", "-c", `bun run ${CLI} state --session ${session} | cat`],
+        stdout: "pipe",
+        stderr: "ignore",
+        stdin: "ignore",
+        env: { ...hermeticEnv(), ...env },
+      });
+      const piped = { stdout: await new Response(shell.stdout).text() };
+      await shell.exited;
+
+      // ── THE VACUITY GUARD, asserted BEFORE the parse ────────────────────
+      // A sub-64KiB fixture passes in BOTH worlds and stays green forever,
+      // including on the day it breaks: truncating 40KB at 65,536 is a no-op.
+      // So the size is a first-class assertion, not a comment — if the fixture
+      // ever shrinks this fails loudly instead of passing vacuously.
+      const bytes = Buffer.byteLength(piped.stdout);
+      expect({ overBuffer: bytes > 65_536, bytes }).toEqual({ overBuffer: true, bytes });
+
+      // Never truncated AT the boundary — the signature of the defect.
+      expect(bytes).not.toBe(65_536);
+
+      // And it must actually parse. This is what a caller experiences.
+      const parsed = JSON.parse(piped.stdout) as { state: BoardState };
+      expect(parsed.state.tasks).toHaveLength(200);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 120000);
+});
+
+// Structural companion to the behavioural gate above, and the load-bearing half
+// of the two. The behavioural test proves the pointer is contained TODAY, at the
+// sites that exist today; it cannot fail for a site written next month. A bare
+// `join(tmpdir(), …)` anywhere in this file re-opens the machine-global path
+// silently — the failure mode is a green suite that is quietly racing every
+// other bounty process on the box.
+//
+// This is the same instrument that caught half 1's real gap: a mutation test
+// reaches only the mechanism it mutates, while a source scan reaches every site
+// in the file, including the ones nobody remembered to route through the helper.
+// Reading `import.meta.path` (the file as it exists on disk) rather than
+// reasoning about the imports is the whole point.
+// Strip `//` line comments before any source scan. Learned the hard way, twice
+// in one edit: the first cut of the gate below matched the sentence in its own
+// documentation and reported four offenders when the code had one. A guard that
+// its own prose can trip gets "fixed" by softening the regex, which is how a
+// real offender slips through later.
+function codeLines(src: string): string {
+  return src
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("//"))
+    .join("\n");
+}
+
+test("P0e half 2 — no site in this file composes a path from the machine-global tmpdir", async () => {
+  const src = codeLines(await Bun.file(import.meta.path).text());
+  // `join(tmpdir(), …)` is the pointer-path idiom. The ONE legitimate use is
+  // minting TEST_TMPDIR *under* the machine dir, which is exempted by name
+  // rather than by loosening the pattern.
+  const offenders = [...src.matchAll(/join\(\s*tmpdir\(\)/g)].filter(
+    (m) => !src.slice(Math.max(0, m.index - 14), m.index).includes("mkdtempSync("),
+  );
+  expect(offenders).toHaveLength(0);
+});
+
+// The gap that the half-1 guard could not see, found by this very change: the
+// `join.ts` joiner was spawned with NO `env:` key at all. Half 1 matched the
+// `env: { ...process.env }` idiom, so a spawn that simply omits `env` was
+// invisible to it — inheriting the ambient environment wholesale is the SAME
+// defect spelled as an absence rather than as a spread. Half 1 was reported
+// complete and independently reviewed with that site sitting in the file.
+//
+// This is the seat's own principle arriving a third time: an audit anchored on
+// one spelling inherits that spelling's blind spot, and the blind spot is always
+// a synonym. So this gate asserts a POSITIVE property — every spawn carries an
+// env — instead of enumerating the wrong ways to write one.
+test("P0e — EVERY Bun.spawn in this file passes an explicit env", async () => {
+  const src = codeLines(await Bun.file(import.meta.path).text());
+  const bare: string[] = [];
+  for (const m of src.matchAll(/Bun\.spawn\(/g)) {
+    // Walk to the matching close paren so the check sees exactly this call.
+    let depth = 0;
+    let i = m.index + "Bun.spawn".length;
+    for (; i < src.length; i++) {
+      if (src[i] === "(") depth++;
+      else if (src[i] === ")" && --depth === 0) break;
+    }
+    const call = src.slice(m.index, i);
+    if (!/\benv\s*:/.test(call)) bare.push(call.slice(0, 80));
+  }
+  expect(bare).toEqual([]);
 });
