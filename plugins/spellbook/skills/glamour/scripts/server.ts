@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { parseArgs as nodeParseArgs } from "node:util";
 import index from "../surface/index.html";
 import { loadSnapshot, materializeItem, saveSnapshot } from "../surface/state/persist.server";
 import {
@@ -507,25 +508,66 @@ export async function startDaemon(opts: StartOpts) {
   return { port: boundPort, sessionId, close, done, shutdown };
 }
 
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE. The SIXTH entry point.
+//
+// ⚠ THIS ONE HAS ZERO `flags.` READS, so a `flags.`-pattern audit returns zero
+// here — and a zero reads identically to "no drift". It was a LOOKUP parser:
+// `const flag = (name) => { const i = args.indexOf(`--${name}`); return i >= 0
+// ? args[i + 1] : undefined; }`. It also read `Bun.argv`, not `process.argv`,
+// which is the synonym that has made this repo's greps lie before.
+//
+// It had a LATENT, PRE-EXISTING bug the conversion fixes as a side effect, noted
+// so the change is not mistaken for a regression: `flag()` returned `args[i+1]`
+// UNCONDITIONALLY, so `--restore --title X` yielded `restore === "--title"` —
+// the next FLAG silently consumed as the previous flag's VALUE.
+//
+// All six are string by construction (the old helper returned the next argv
+// element). `port` and `timeout` are Number()-coerced at the call site, which is
+// a value read, not a boolean one. The daemon takes no positionals, so strict's
+// default rejection of them is correct.
+//
+// Verified before converting: `cli.ts` spawns this daemon with exactly --title,
+// --intent, --timeout, --restore and --project, all inside this set — so strict
+// cannot refuse the daemon's own launch.
+const DAEMON_OPTIONS = {
+  intent: { type: "string" },
+  port: { type: "string" },
+  project: { type: "string" },
+  restore: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+} as const;
+
 if (import.meta.main) {
-  const args = Bun.argv.slice(2);
-  const flag = (name: string) => {
-    const i = args.indexOf(`--${name}`);
-    return i >= 0 ? args[i + 1] : undefined;
-  };
-  const d = await startDaemon({
-    port: flag("port") ? Number(flag("port")) : 0,
-    title: flag("title"),
-    intent: flag("intent"),
-    restore: flag("restore"),
-    timeoutS: flag("timeout") ? Number(flag("timeout")) : undefined,
-    project: flag("project"),
-  });
-  process.stdout.write(
-    `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId })}\n`,
-  );
-  const res = await d.done;
-  // Wait for the closed SSE event to flush before exiting.
-  await d.shutdown;
-  process.exit(res.code);
+  let flags: Record<string, string | undefined> | null = null;
+  try {
+    flags = nodeParseArgs({ args: Bun.argv.slice(2), options: DAEMON_OPTIONS, strict: true })
+      .values as Record<string, string | undefined>;
+  } catch (e) {
+    process.stderr.write(
+      `glamour: ${e instanceof Error ? e.message : String(e)}\n` +
+        `  recognized flags: ${Object.keys(DAEMON_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n`,
+    );
+    // exitCode + natural end, never process.exit — the drained-exit discipline.
+    process.exitCode = 2;
+  }
+  if (flags) {
+    const d = await startDaemon({
+      port: flags.port ? Number(flags.port) : 0,
+      title: flags.title,
+      intent: flags.intent,
+      restore: flags.restore,
+      timeoutS: flags.timeout ? Number(flags.timeout) : undefined,
+      project: flags.project,
+    });
+    process.stdout.write(
+      `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId })}\n`,
+    );
+    const res = await d.done;
+    // Wait for the closed SSE event to flush before exiting.
+    await d.shutdown;
+    process.exit(res.code);
+  }
 }

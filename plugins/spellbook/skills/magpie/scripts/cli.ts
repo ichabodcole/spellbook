@@ -36,6 +36,7 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseArgs as nodeParseArgs } from "node:util";
 import { newId } from "../surface/state/reduce";
 import type { Element } from "../surface/state/types";
 import { chosenVersion } from "../surface/state/versions";
@@ -114,33 +115,63 @@ async function api(
 }
 
 // Split argv into positionals + flags. `--flag value`, `--flag=value`, or boolean.
+// #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE.
+//
+// The hand-rolled parser had no registry, so an unknown flag was accepted at
+// exit 0 and the verb ran anyway, and free prose containing a `--word` was
+// silently truncated at that word. `node:util` strict supplies rejection, the
+// `=` form and the `--` terminator from the standard library.
+//
+// Types are thoth's audited artifact (15 string · 4 boolean), each settled by
+// unambiguous evidence at every consumption site. Getting one wrong is not a
+// no-op: a "string" that should be boolean SWALLOWS THE NEXT POSITIONAL, and a
+// "boolean" that should be string breaks the space form.
+const CLI_OPTIONS = {
+  alpha: { type: "string" },
+  bbox: { type: "string" },
+  ids: { type: "string" },
+  intent: { type: "string" },
+  label: { type: "string" },
+  model: { type: "string" },
+  name: { type: "string" },
+  options: { type: "string" },
+  pad: { type: "string" },
+  restore: { type: "string" },
+  session: { type: "string" },
+  since: { type: "string" },
+  timeout: { type: "string" },
+  title: { type: "string" },
+  type: { type: "string" },
+  full: { type: "boolean" },
+  "no-open": { type: "boolean" },
+  remove: { type: "boolean" },
+  stdin: { type: "boolean" },
+} as const;
+
+class UsageError extends Error {}
+
 export function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
-  const pos: string[] = [];
-  const flags: Record<string, string | boolean> = {};
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (a.startsWith("--")) {
-      const body = a.slice(2);
-      const eq = body.indexOf("=");
-      if (eq >= 0) {
-        flags[body.slice(0, eq)] = body.slice(eq + 1);
-        continue;
-      }
-      const next = args[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[body] = next;
-        i++;
-      } else {
-        flags[body] = true;
-      }
-    } else {
-      pos.push(a);
-    }
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args,
+      options: CLI_OPTIONS,
+      strict: true,
+      allowPositionals: true,
+    });
+    return { pos: positionals, flags: values as Record<string, string | boolean> };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    throw new UsageError(
+      `${detail}\n` +
+        `  recognized flags: ${Object.keys(CLI_OPTIONS)
+          .map((k) => `--${k}`)
+          .join(" ")}\n` +
+        `  for free text containing dashes, use --stdin, or put it after a bare --`,
+    );
   }
-  return { pos, flags };
 }
 
 // Read all of stdin as text (Bun.stdin). Used by `--stdin` so NL text isn't a
@@ -805,7 +836,16 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  const { pos, flags } = parseArgs(rest);
+  // A usage failure returns 2 rather than exiting, so the runtime drains stdout.
+  let pos: string[];
+  let flags: Record<string, string | boolean>;
+  try {
+    ({ pos, flags } = parseArgs(rest));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`magpie: ${e.message}\n`);
+    return 2;
+  }
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
   switch (verb) {
