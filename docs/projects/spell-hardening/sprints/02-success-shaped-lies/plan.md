@@ -369,6 +369,34 @@ below names its sites, its literal invocations, and its byte thresholds.
 three; P0's audit enumerated one exit per file; P0e's gate asserted the board
 survives and never that the suite is green.
 
+> ### ⚠ A FILENAME IS NOT EVIDENCE OF A CAPABILITY — `cli.test.ts` is a coin flip
+>
+> **Added 2026-08-06 (sprint 02) by `cassandra`. Measured across the whole
+> roster:** _of files named `cli.test.ts`, how many actually spawn a process?_
+> **Glob: `find plugins/spellbook/skills -name "cli.test.ts"` → 6 files, all
+> inspected.**
+>
+> ```
+> astrolabe/scripts/cli.test.ts     spawn-primitives=1     real harness
+> grapevine/scripts/cli.test.ts     spawn-primitives=3     real harness
+> mind-mapper/scripts/cli.test.ts   spawn-primitives=19    real harness
+> glamour/tests/cli.test.ts         spawn-primitives=0   ← NO harness
+> imago/tests/cli.test.ts           spawn-primitives=0   ← NO harness
+> magpie/tests/cli.test.ts          spawn-primitives=0   ← NO harness
+> ```
+>
+> **3 of 6.** All three empty ones are **legitimate unit tests of CLI helper
+> functions** — which is exactly why this is a trap and not a bug.
+>
+> > **Ask _"does this file SPAWN a process?"_, never _"is this file NAMED after
+> > the CLI?"_ — and answer it BY CALL SITE.**
+>
+> **This is the mechanism that would have marked magpie PINNABLE**: the plan
+> named `magpie/tests/daemon.integration.test.ts`, and anyone reaching for the
+> more obvious `magpie/tests/cli.test.ts` would have found a CLI-named test
+> file, matched it against _"does a harness exist?"_, and been wrong. **That one
+> was caught by opening the file. The rule is cheaper than the catch.**
+
 ### G5 — every gate POSITIVELY ASSIGNS a private `TMPDIR`
 
 **`TMPDIR=$(mktemp -d)`, not `env -u TMPDIR`.** A scrub is insufficient: an
@@ -598,6 +626,39 @@ to every one of them, because nothing asserts that a CLI RETURNS.**
 > is the only spell that pipes its daemon's stdout for a handshake line, so its
 > stderr handling plausibly has a reason nobody has found yet. **Engine's call;
 > backlog candidate either way.**
+>
+> ---
+>
+> ### ⛔⛔ AT GLAMOUR, FOUR HAZARDS STACK — and each one ALONE is fine
+>
+> **`cassandra`, amending her own P0f ratify. Read before writing glamour's P0f
+> or P0c cell.**
+>
+> 1. **Shape D is the fix most likely to be reached for** — and this plan
+>    already rules it **presumptively wrong** at these five sites, because
+>    setting `exitCode` inside three nested loops falls through and loops again.
+> 2. **glamour is DRIVEN-ONLY** — no CLI harness exists, so **one gets
+>    written.**
+> 3. **The obvious harness to copy is `runOpen`** — and pointed at
+>    `glamour open` **it does not fail. It HANGS past its budget and prints
+>    nothing.**
+> 4. **glamour's own source pre-supplies the wrong diagnosis** —
+>    `cli.ts:335-337` comments the first React bundle _"can take tens of seconds
+>    cold"_, and the handshake defaults to **45s** for that reason.
+>
+> > **The one site where a shape-D hang is most likely to be INTRODUCED is also
+> > the site whose new harness CANNOT REPORT a hang, in the spell whose own
+> > source hands the builder a ready-made innocent explanation.** A 45-second
+> > no-output run, in the spell that documents slow cold boots, reads as
+> > **slow** — not **hung**.
+>
+> **NONE of the four is a defect. The STACK is** — and it is invisible from
+> inside any one of them, which is why it took three seats, none of whom were
+> looking for it.
+>
+> **⚠ The feasibility estimate is AMENDED with it.** glamour's
+> `DRIVEN-ONLY — write a harness, or close by drive` read as though _"write a
+> harness"_ were the cheap option. **At glamour it is the TRAPPED one.**
 
 ### G8 (new) — the vacuity rule, in its general form
 
