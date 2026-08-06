@@ -584,6 +584,15 @@ to every one of them, because nothing asserts that a CLI RETURNS.**
 > team's "the known flake is `marksUnseen`" premise never explained either
 > unnamed red:** a pre-supplied innocent explanation, believed by three seats,
 > for three hours. **Carded (`t-defc47e3`), not patched post-cut.**
+>
+> **⚠ A CARD ID IS A DANGLING POINTER OUTSIDE THE SESSION THAT MINTED IT.** The
+> bounty board is **not in this repo** — so `t-defc47e3` resolves to nothing for
+> any reader who was not on that board, which an outside reader hit immediately.
+> **The fix is not to stop citing cards; it is to make the citation
+> self-contained.** The diagnosis and the remedy are both stated above, so this
+> paragraph survives the card. **Whenever a committed document cites a card,
+> carry enough of its content that the reference is a convenience rather than a
+> dependency.**
 
 > ### ⚠⚠ G7 AMENDED 2026-08-06 (sprint 02) — asserting the exit is not enough. The assertion must be REACHABLE when the process does not exit.
 >
@@ -2502,7 +2511,17 @@ those two files to find out.
 > decides whether you are extending a harness or writing one.
 
 **⚠ Carry the split itself as UNVERIFIED until that read happens** — same rule
-as the discovery-pointer figure. **Do not write `2 pinned + 3 driven` and do not
+as the discovery-pointer figure.
+
+> **✅ DISCHARGED — the prohibition below is the RECORD, not a live rule.** Both
+> files were opened (`cassandra`, then independently re-derived by `daedalus`),
+> the split is confirmed **`2 pinnable · 3 driven-only · 0 undetermined`**, and
+> **`2 pinned + 3 driven` is now the correct phrasing.** Kept un-deleted because
+> it records what was required before the read — **but a reader landing here
+> first would take it as live, which is exactly what happened to an outside
+> reader of this document.**
+
+**Do not write `2 pinned + 3 driven` and do not
 write `4 pinned + 1 driven`.** Write
 **`2 pinnable · 1 driven-only · 2 undetermined`** until the files are read, then
 replace it with what they say.

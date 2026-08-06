@@ -81,6 +81,16 @@ instead of restoring, exit 0.
 > `imago > marksUnseen freshness flag`. Both are four-run samples; they differ
 > by one observation and we are not claiming a rate change.**
 
+> **⚠ SUPERSEDED IN PART, after this draft was written — see `6dfe493`.** The red
+> above is attributed to `imago > marksUnseen freshness flag`, the then-"known
+> flake". **That premise explained NEITHER of the session's two unnamed reds.**
+> Root cause, diagnosed post-stand-down by the seat whose cell it was: a **G7
+> liveness budget of 15s** in `runOpen`. **A hang is UNBOUNDED; a slow boot is
+> BOUNDED**, and under concurrent suites `bounty open` legitimately exceeds 15s —
+> **a false hang finding, manufactured by load, from the instrument built to
+> catch hangs.** Carded, not patched.
+> **The 0-of-4 / 1-of-4 figures STAND. The attribution of the 1 does NOT.**
+
 **No percentage. No "P0d made it worse."** The difference **points toward P0d
 having introduced it** — stated because it is the least convenient direction —
 and **n=4 cannot distinguish that from two draws of one distribution.**

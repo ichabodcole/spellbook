@@ -77,12 +77,13 @@ PR `develop` → `main` → merge → pull `main`, merge into `develop`, push.
 **Squashing is only correct when BOTH are true:**
 
 1. **Nothing cites a sha from the branch** — not in `docs/`, not in `.anthill/`,
-   not in a commit body. _Check: `git log <base>..HEAD --format=%h` and grep for
-   each._
+   not in a commit body. _Check: `git log <base>..HEAD --format=%h`, then `git grep` each over
+   TRACKED paths only — an earlier figure of "32" counted untracked scratch and
+   was wrong._
 2. **There is one author** — no `Anthill-Seat:` trailers to destroy.
 
 **Neither holds for agent-team work, and the numbers are not marginal.** Sprint
-02 of spell-hardening: **32 of 59 shas cited in live documents**, four seats'
+02 of spell-hardening: **10 of 60 shas cited in live documents**, four seats'
 trailers. Squashing would have broken 32 references **to the anti-drift
 mechanism this project deliberately adopted** — plans pin `file:line` claims to
 shas precisely because line numbers rot.
