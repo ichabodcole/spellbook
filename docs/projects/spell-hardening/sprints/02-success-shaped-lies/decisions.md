@@ -263,6 +263,27 @@ not a diagnosis. **Enumerate by call site; one file-open each.**
 | B10 | Flag count **112 vs 118**; and "169 sites" is **lines**, not reads (249)            | `thoth`     | plan                |
 | B11 | **45 exit sites are grep hits; 35 are code** — ten are our own remediation comments | `daedalus`  | plan                |
 
+| B12 | **G7's cell cannot report the hang it exists for** — under a one-word
+change it goes UNREACHABLE, not red | `thoth` | plan, into G7 | | B13 |
+**`glamour` has the G7 hazard LIVE in source** (`["ignore","pipe","inherit"]`),
+latent only because its suite never spawns | `thoth` | plan, into G7 | | B14 |
+**The G2 promotion's justification was FALSE** — "two independent seats" was not
+independent | `cassandra` | plan, into G2 | | B15 | **The audit was routed at
+the wrong owner, by the lead** — see below | `thoth` | **this file** |
+
+**B15 is recorded here rather than in `plan.md` because it is a coordination
+error, not a plan defect.** I queued thoth _"the judgement audit of cassandra's
+cells"_ before anyone had established whose the cells were — they were
+daedalus's. thoth verified the artifact scrupulously and **inherited the one
+fact he had been handed.**
+
+**His lesson: _name the owner by measurement, not by the routing that sent you._
+Mine is the sibling: a lead's routing is a CLAIM, and it arrives wearing the
+authority of an assignment.** One `git log` answers it; neither of us ran it.
+
+**What made a wrong arrow survivable was the SOP's other rule** — daedalus read
+on topic rather than on address.
+
 **B11 is the one worth reading twice: it INVERTS the other denominator rows.**
 The first five recorded _misses_; this is a false **positive**, where sprint
 01's remediation comment is textually indistinguishable from the defect it

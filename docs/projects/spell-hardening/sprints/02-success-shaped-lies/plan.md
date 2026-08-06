@@ -549,13 +549,55 @@ to every one of them, because nothing asserts that a CLI RETURNS.**
 > **1 alone leaves the next harness author to rediscover this. 2 alone leaves
 > the harness able to hang.**
 >
-> **⚠ BLAST RADIUS IS UNVERIFIED AND MUST NOT BE GREPPED.** Four other harness
-> files use the same primitives — `astrolabe/cli.test.ts`,
-> `mind-mapper/cli.test.ts` (8 sites), `mind-mapper/send-body.test.ts`, and a
-> second site in `bounty/server.test.ts`. **`Promise.all` near a spawn is a
-> SHAPE, not a diagnosis.** **The discriminating question is whether the site
-> spawns a detached grandchild at all** — without one the ordering is harmless.
-> **Enumerate by CALL SITE and open each file. One file-open each.**
+> ### ⛔ BLAST RADIUS WALKED — 7 of 7 CLIs, by call site. **`glamour` has the hazard LIVE in its source.**
+>
+> **`thoth`, same session, having marked it UNVERIFIED himself.** And the
+> discriminating property turned out **not** to be `Promise.all` in the harness:
+> it is **whether the DETACHED daemon inherits a handle the harness can be
+> holding.** So the enumeration is over every `detached: true` spawn in every
+> spell's `cli.ts`, not over the test files.
+>
+> | spell                                  | daemon stdio                            | hazard                                             |
+> | -------------------------------------- | --------------------------------------- | -------------------------------------------------- |
+> | **glamour** (`cli.ts:326-331`)         | `["ignore", "pipe", "inherit"]`         | **⛔ YES — stderr INHERITED by a detached daemon** |
+> | bounty                                 | `["ignore", "ignore", <fd→daemon.log>]` | no                                                 |
+> | astrolabe · imago · magpie · grapevine | `["ignore", "ignore", "ignore"]`        | no                                                 |
+> | mind-mapper                            | `"ignore"`                              | no                                                 |
+>
+> **Denominator: 7 CLIs enumerated, 7 produced a spawn site, 1 hazard.** A zero
+> anywhere would have been the instrument, not the answer.
+>
+> **It is LATENT, not live — and that is exactly why it is written here.**
+> glamour's suite contains **ZERO subprocess spawns** (enumerated by call site,
+> not name-grepped); its daemon runs in-process. **So nothing hangs today.**
+>
+> **⚠⚠ BUT P0c CONVERTS `glamour/cli.ts` AND P0f'S TAIL SLICE TOUCHES GLAMOUR —
+> and neither can be gated without a subprocess harness glamour does not have.**
+> The natural move is to copy `runOpen`, the reference harness every P0b cell
+> uses.
+>
+> > **A `runOpen`-shaped harness pointed at `glamour open` does not FAIL. It
+> > HANGS past its own budget and prints NOTHING** — the exact
+> > `exit=137 / nothing printed` from the driven repro above.
+> >
+> > **And the builder will read that as glamour being slow to boot** — its own
+> > comments warn the first React bundle "can take tens of seconds cold" and
+> > default the handshake to **45s**. **The most plausible wrong diagnosis
+> > available is sitting in the same file.**
+>
+> **This is the sprint's own thesis, in a gate: a cell that cannot do the thing,
+> does not do it, and does not say so.**
+>
+> **THE FIX FOR WHOEVER WRITES GLAMOUR'S CELL — do not copy `runOpen`
+> unchanged.** Either resolve exit independently of the pipes (remedy 1 above),
+> **or spawn glamour's CLI with `stderr: "ignore"` in the harness** so there is
+> no pipe for the daemon to hold. **The second is one word and it is enough for
+> a gate cell.**
+>
+> **NOT ruled: whether `glamour/cli.ts`'s `"inherit"` should change.** glamour
+> is the only spell that pipes its daemon's stdout for a handshake line, so its
+> stderr handling plausibly has a reason nobody has found yet. **Engine's call;
+> backlog candidate either way.**
 
 ### G8 (new) — the vacuity rule, in its general form
 
