@@ -344,3 +344,75 @@ describe("end-to-end via subprocess", () => {
     await proc.exited; // let timeout fire
   }, 15000);
 });
+
+// ── P0 — a >64KiB submission survives a PIPE (#78 family) ────────────────
+// Bun's stdout is ASYNCHRONOUS on a pipe and synchronous on a TTY or file, so
+// `process.exit(code)` discards whatever has not drained — measured at exactly
+// 65,536 bytes.
+//
+// digestify is the asymmetry-of-harm case rather than the size case: the payload
+// is the human's ONE submission, written once and never retryable, so a
+// truncation eats work that cannot be regenerated. That is why it was ruled IN
+// despite rarely reaching 64KiB in practice.
+//
+// ⚠ THE READER IS PART OF THE EXPERIMENT. `spawnAndWaitForReady` above uses
+// Bun.spawn's own pipe, which does NOT reproduce this defect (measured on
+// bounty: shell pipe 65536, Bun.spawn pipe 114042, same payload). So this gate
+// puts review.ts's stdout on a REAL SHELL PIPE via `sh -c … | cat` and reads the
+// outer hop, where nothing is at stake. stderr stays a direct pipe so the ready
+// line is still readable.
+describe("P0 — a >64KiB submission survives a PIPE", () => {
+  test("the submitted answers come back whole through a shell pipe", async () => {
+    const proc = Bun.spawn({
+      cmd: ["sh", "-c", `${process.execPath} run ${SCRIPT} --no-open --timeout 20 | cat`],
+      stdin: "pipe",
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    proc.stdin.write(new TextEncoder().encode("::: question id=q1\nWhy?\n:::"));
+    proc.stdin.end();
+
+    // Same ready-line discipline as the helper above, on stderr.
+    const reader = proc.stderr.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    let ready: { port: number } | null = null;
+    const deadline = Date.now() + 10000;
+    while (Date.now() < deadline && !ready) {
+      const { done, value } = await reader.read();
+      if (value) buf += dec.decode(value, { stream: true });
+      let nl = buf.indexOf("\n");
+      while (nl >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (line.startsWith("{") && line.includes('"port"')) ready = JSON.parse(line);
+        nl = buf.indexOf("\n");
+      }
+      if (done) break;
+    }
+    reader.releaseLock();
+    if (!ready) throw new Error("subprocess didn't print ready line");
+
+    // ~120KB of answer: over the buffer by a wide margin so ordinary drift
+    // cannot silently walk the fixture back under the threshold.
+    const answer = "z".repeat(120_000);
+    await fetch(`http://127.0.0.1:${ready.port}/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: { q1: answer }, comments: [] }),
+    });
+
+    const stdout = await new Response(proc.stdout).text();
+    await proc.exited;
+
+    // ── THE VACUITY GUARD, asserted BEFORE the parse ────────────────────
+    // A sub-64KiB fixture passes in BOTH worlds and stays green forever,
+    // including on the day it breaks.
+    const bytes = Buffer.byteLength(stdout);
+    expect({ overBuffer: bytes > 65_536, bytes }).toEqual({ overBuffer: true, bytes });
+    expect(bytes).not.toBe(65_536);
+
+    const payload = JSON.parse(stdout) as { answers: Record<string, string> };
+    expect(payload.answers.q1).toHaveLength(120_000);
+  }, 40000);
+});

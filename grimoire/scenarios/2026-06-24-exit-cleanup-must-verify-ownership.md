@@ -52,3 +52,39 @@ check, and put the ownership truth where the live instance writes it (the daemon
 owns its own port/pid — the thin CLI only reads). Then layer the operator tools
 (diagnose / reap / roll) on that floor: once a stale process can't wipe a live
 one's files, "kill the errant process" stops being dangerous.
+
+## Boundary check — added 2026-08-06, after the rule was obeyed and the failure happened anyway
+
+**Ownership-of-the-delete is not ownership-of-the-namespace, and the rule above
+only governs the delete.**
+
+The rule propagated well. Four spells built after it — bounty, glamour, imago,
+magpie — each implement the predicate faithfully
+(`if (parsed.session_id === sessionId) unlinkSync(latestFile)`). None of them
+ignored it.
+
+**And all four put that pointer in `tmpdir()`,** where the filename is shared
+with every process on the machine. The scenario above reasons about
+`$GRAPEVINE_HOME` — a namespace the spell **controls**, shared between a handful
+of its own daemons. That premise is what makes an ownership check sufficient,
+and it was never written down, so it did not travel. The guard is the visible
+artifact; the condition that makes the guard enough is invisible, and it is
+silently re-assumed at every copy.
+
+The failure this leaves open is not a bad teardown — it is a **claim-time
+collision**. A daemon writes the pointer, and any daemon booting anywhere
+overwrites it before the first one's caller reads it back. Measured on bounty
+(2026-08-06): a joiner emitted `type:"joined"` and connected **to a foreign live
+board**, exit 0 — a silent mis-join, not the clean "session not running" error
+the shipped code's own comment promised.
+
+**So the imperative gains its boundary: verify ownership before you release
+shared state, AND own the namespace you claim in.** If the namespace is
+machine-global, no teardown discipline can save you, because the damage is done
+before any teardown runs. See `house-style.md` → "Drive a conjuration through a
+daemon + thin CLI" for the placement rule this produced.
+
+**The transmission lesson, which is the general one:** a scenario carries its
+**imperative** with high fidelity and its **premise** invisibly. Four correct
+implementations, four identical defects, zero deviations. When you write one,
+state the boundary — it is the half that does not travel on its own.

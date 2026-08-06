@@ -6,6 +6,12 @@ out
 dist
 *.tgz
 
+# mind-mapper is relocated per seams Contract 4 — its dist/ ships committed
+# (the deployed spell folder has no surface source, only the pre-built
+# output). Other spells un-ignore their own dist/ when they relocate too.
+!plugins/spellbook/skills/mind-mapper/dist
+!plugins/spellbook/skills/mind-mapper/dist/**
+
 # code coverage
 coverage
 *.lcov
@@ -41,3 +47,5 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .agents/
 .playwright-mcp/
 .anthill/scratch/
+.bounty-session
+.anthill/comms

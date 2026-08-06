@@ -939,8 +939,18 @@ async function main(argv: string[]): Promise<number> {
 }
 
 if (import.meta.main) {
-  const code = await main(process.argv.slice(2));
-  process.exit(code);
+  // `process.exitCode` + a natural return, NEVER `process.exit(code)`. Bun's
+  // stdout is asynchronous on a PIPE and synchronous on a TTY or file, so an
+  // explicit exit discards whatever has not drained — measured in this repo at
+  // exactly 65,536 bytes, with the file form of the same payload complete. The
+  // symptom is a truncated JSON body that fails to parse, and the harm is worse
+  // than a crash: a reader concluded "our board is too big to read" and three
+  // agents worked under that false rule.
+  //
+  // Setting exitCode and letting the process end naturally lets the runtime
+  // flush first, and preserves the exit code the verb chose. Do not "tidy" this
+  // back into an explicit exit.
+  process.exitCode = await main(process.argv.slice(2));
 }
 
 export type { Session };
