@@ -171,6 +171,42 @@ investigation.
 
 ---
 
+## ⭐ The assembled release DRIVES CLEAN as a consumer
+
+**`cassandra`'s Contract 4 rehearsal, driven from the extracted subtree — not
+inferred from the repo suite.**
+
+**Instrument:** `git archive HEAD plugins/spellbook | tar -x -C <throwaway>` —
+**not** a working-tree copy, which would carry **gitignored artifacts a consumer
+never receives.** _Same class as measuring a worktree that has `node_modules`
+when a real one does not._
+
+```
+skills present : astrolabe bounty digestify glamour grapevine imago magpie mind-mapper
+node_modules   : NONE anywhere        package.json : 0
+```
+
+| behaviour                                              | lane | consumer result                    |
+| ------------------------------------------------------ | ---- | ---------------------------------- |
+| `--owner=zzz-nobody` → **0 tasks**                     | P0c  | ✅ _(pre-fix: whole board)_        |
+| unknown flag → **rc=2, NAMES it**                      | P0c  | ✅ `Unknown option '--bogus-flag'` |
+| **`close --help` → rc=2, BOARD SURVIVES**              | P0c  | ✅ **1 task still there**          |
+| spawn envelope carries `restoreSkipped`                | P0b  | ✅ present, `null`                 |
+| `--restore` on attach → rc=2 + `requested:["restore"]` | P0b  | ✅                                 |
+| duplicate `--id` → rc=1, `applied:false`               | P0d  | ✅                                 |
+
+> **All four lanes' user-visible behaviour is present and correct in the
+> artifact a consumer installs.**
+
+**⚠ WHAT THE REHEARSAL DOES NOT ESTABLISH — stated, not left absent:** **bounty
+ONLY** (the other five converted entry points are **unverified by this
+rehearsal**) · **NOT a drain check** (P0f needs the over-buffer + non-draining
+fixture; it is covered by the pinned cells and the three `/ws` drives, **at repo
+shas, not from the consumer copy**) · **NOT the `dist/` half of Contract 4**
+(mind-mapper/astrolabe, untouched by this sprint) · **NOT the marketplace
+mechanism** — `git archive` simulates the copy; **installing through Claude Code
+is `UNVERIFIED-BY-CONSTRUCTION` and only the real cut tests it.**
+
 ## ⚠ TWO BEATS ARE DOWNSTREAM OF THE RELEASE, NOT UPSTREAM — the plan lists all four as the agent's
 
 **Found running the beats. `plan.md` lists "archive every closed backlog item"
