@@ -802,12 +802,12 @@ written against post-fix behaviour.
 
    A ward is checked **when an entry point changes**; a sweep is checked once.
 
-   **Ordering — half dissolved (good news).** For the **9 `node:util` entry
+   **Ordering — half dissolved (good news).** For the **10 `node:util` entry
    points the recognized set already exists** (the `options` object), so the
-   invariant is **checkable today** on 9 of 15, with no dependency on P0c. Only
+   invariant is **checkable today** on 10 of 16, with no dependency on P0c. Only
    the 6 hand-rolled ones need step 2 first.
 
-   **Ruled (prospero): HOLD the whole ward until P0c lands, then add all 15 at
+   **Ruled (prospero): HOLD the whole ward until P0c lands, then add all 16 at
    once.** A ward covering 9 while six known-broken parsers sit outside it is a
    checklist item that passes — and **reads as coverage.** The draft is written
    and parked; landing it early buys a partial check at the cost of a false
@@ -887,8 +887,8 @@ did not, and **the Gate line is what gets implemented.** Hoisted:
 5. **Enumerate the ENTRY POINTS** (G4), not the spells — and **partition them**,
    per the point below. "For each spell CLI" let a two-spell fix pass.
 
-**⚠ A green across all 15 entry points is ~60% VACUOUS, and it reads as the
-opposite.** The 9 `node:util` entry points **pass this gate before the fix and
+**⚠ A green across all 16 entry points is ~60% VACUOUS, and it reads as the
+opposite.** The 10 `node:util` entry points **pass this gate before the fix and
 after it** — they were already conformant, so no result they produce can fail.
 By G2 that is decoration for those arms; it is only meaningful over the **6
 hand-rolled** ones.
