@@ -289,6 +289,29 @@ otherwise be re-litigated by whoever next wants a list beside a switch.
 without touching a surface reducer is an argument about where that boundary sits
 — and it is the **third consecutive round** circe has been unseated.
 
+### A14 — Gates before P0c, and who writes which · **RULED BY PROSPERO**, argued by `daedalus`
+
+P0f's five sites were fixed but only **1 of 5 gated**. P0c is the integration
+lane that reshapes `main()` and invalidates edit sites across everything landed.
+
+| option                                          | cost                                                                                                                                         |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅ **Gates first, split across two seats**      | Delays the largest lane; the sprint's remaining time goes to verification rather than new code                                               |
+| Open P0c now, gate P0f after                    | **P0c rebases onto four sites whose only evidence is "the shape is proven elsewhere"** — the exact substitution this sprint exists to refuse |
+| Build harnesses for all three driven-only sites | **Explicitly OUT of sprint scope**; it is why 4 of sprint 01's 9 were driven, not pinned                                                     |
+
+**daedalus's argument, ratified verbatim:** _"P0c rebases onto these lanes and a
+lane whose gate was never written cannot tell anyone whether P0c broke it."_ The
+plan already says P0c's gate **re-runs theirs** — a gate that does not exist
+cannot be re-run.
+
+**Target is `2 pinned · 3 driven`, stated as the honest maximum inside scope**,
+not as a shortfall. **Split to parallelise:** daedalus writes astrolabe's cell
+fresh (never adapting its `Bun.spawn` harness, which G6 says cannot fail) plus
+the G7 reachability fix first; **cassandra records the three drives**, since
+driving an assembled spell is her seat's scope **and she is the arm daedalus
+cannot supply — he wrote the fix.**
+
 ---
 
 ## B. Corrections and falsifications — pointers only
