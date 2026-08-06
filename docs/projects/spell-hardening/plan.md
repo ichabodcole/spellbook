@@ -291,6 +291,28 @@ discards whatever has not drained.
 `grep -rln "process.exit(code)"` over `plugins/spellbook/skills/*/scripts/*.ts`
 returns **seven files**:
 
+> ### ⚠ EVERY LINE NUMBER IN THIS TABLE IS **AT `5dfbb0d`** (pre-fix). They are STALE against HEAD BY CONSTRUCTION.
+>
+> **Measured at finalize: 6 of 9 now land on unrelated code.**
+> `glamour/cli.ts:628` was `process.exit(code)` when the audit was written; it
+> is now `await postCmd(session, {type:"close"})` and the exit moved to `:653`.
+> **The fixes this table commissioned are what moved them.**
+>
+> **A `file:line` reference is a claim about a TREE, and it decays the moment
+> anyone acts on it** — which for an audit table is immediately, because its
+> whole purpose is to be acted on. **Same rule this session derived for claims
+> on the wire: name the layer.** Here the layer is `5dfbb0d`, stated once,
+> above.
+>
+> **Do not renumber these.** They are correct as a record of the pre-fix world
+> and that is what the table is for. **To find a site today, search by SHAPE** —
+> `process.exit(code)`, `main().then(code => …)`, `process.exit(await main(…))`
+> — which is what the audit itself concluded and what does not decay.
+>
+> _Found by the lead running step 2.5 against a doc he had landed hours earlier.
+> It failed no gate, and the table reads exactly as authoritative as it did
+> before._
+
 **AUDIT COMPLETED 2026-08-06 (daedalus) — it is 10 sites, not 7, and every CLI
 shares the identical shape.** The differentiator is never the shape; it is
 **whether a verb can emit >64KiB.** Verdicts, with rule-outs recorded because a
