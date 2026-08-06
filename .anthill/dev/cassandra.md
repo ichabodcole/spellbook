@@ -5,7 +5,7 @@
 
 ## Epitaph
 
-> Spend your scepticism on the cell that CANNOT FAIL, not on the finding that might be wrong — four times this session a broken fixture would have reported a clean PASS, and not once did care catch it; the cell that refused to measure did.
+> Your errors leave this seat aimed at other people's work — a false finding lands on a peer's ruling or a shipped fix, and it will feel like diligence — so publish nothing until it has contradicted something already on the record, because that is the only thing that has ever caught you.
 
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
@@ -452,6 +452,35 @@ Two suites collided because everyone announced LANDS and nobody announced RUNS.
 **Say what you SAW: `"starting; ps shows no other bun test"` is falsifiable in one command; `"starting"` is a statement about your plans.**
 Also: **`pkill` on the runner does NOT kill the suite it spawned** — the child reparents to init and keeps loading the machine, so a seat who "yields" that way is still consuming it. Check for orphans after you yield.
 
+### A REJECTION is only a regression if the thing was ever SUPPORTED
+
+Driving the release rehearsal, `grapevine open --no-open` was refused and I had it written up as a blocker.
+**grapevine never had `--no-open`** (0 hits pre-conversion, absent from its registry, absent from its usage — it is a channel, not a browser surface). **Pre-fix the flag was silently swallowed; post-fix it is named. The "failure" was the fix working.**
+Then I did it again with `--channel`, which is a POSITIONAL there. **Three house-wide-vocabulary assumptions in one hour, by the seat whose own doc says spells diverge exactly where a fixture depends on them.**
+**Rule: before reporting that a spell REJECTED something, establish that it ever ACCEPTED it — one `git show <pre-sha>:<file> | grep -c <flag>`.**
+
+### An EXIT CODE cannot tell you WHICH guard fired
+
+Probing six entry points with `state --totally-bogus-flag`, one returned rc=2 **for the positional `state`**, never reaching my flag. A uniform `6/6 rc=2` table would have been TRUE and not evidence for its own headline.
+**Caught by reading the MESSAGE, not the code.** **When a probe's verdict is a status code, construct it so only one guard can fire — or read the text.**
+
+### The `files` denominator is TWO-SIDED, and an instrument can beat the argument that built it
+
+Built to catch a PARTIAL run (too few tests); it equally catches a run that is too LARGE. An untracked test file in the tree made on-disk 102 vs tracked 101, and **the same guard that catches `99` catches `102`.**
+**`git ls-files | grep -c '\.test\.ts$'` vs the run's `across N files` catches untracked tests that EXECUTED — and `uncheckedAgainst` structurally cannot, because an untracked file is not "dirty".**
+**Kept on cost alone ("it does not depend on the answer") with its hazard marked UNVERIFIED, it has since paid out three times, twice in directions nobody predicted.**
+
+### Publish the DERIVATION, never the value it produced today
+
+I published that check citing `101`. A land later it was `102`, and anyone holding the number would read a correct gate as contaminated — a false positive in a check written to catch a false negative.
+**A constant inside a check is a fact with an expiry date and nothing tells the reader it expired.** Cite the command.
+Related, same hour: **mtime is not provenance.** I nearly cleared a land on "that file's mtime is later than my run" — mtime is the LAST write, not creation. **Asking "did X run in my gate" wants a COUNT of what ran, never a TIMESTAMP of when something changed.**
+
+### Simulate a consumer with `git archive`, never a working-tree copy
+
+The marketplace copies the git-TRACKED subtree, so `git archive HEAD plugins/spellbook | tar -x` is the honest instrument; **a working-tree copy carries gitignored artifacts a consumer never receives.** Same class as a worktree that has `node_modules` when a real one does not.
+Verified there: no `node_modules`, zero `package.json`, all six converted entry points rejecting unknown flags, five spells booting and serving. **This is Contract 4's rehearsal and the contract names this seat.**
+
 ### Say what the gate CANNOT claim as loudly as what it can
 
 P0d's `/cmd` cells assert the ROUTE's answer, but post-fix the verdict ORIGINATES in a surface reducer — my probes cannot distinguish "reducer reports and route propagates" from "route hard-codes and discards it," because **both emit the bytes I measured.**
@@ -521,3 +550,15 @@ It prints `0` **and** exits 1 on no match: `|| echo 0` appends a second value ·
 
 The SOP's scar is *"a correctly-waiting seat produces no signal."* **Its twin: long silent drives look identical to idleness**, and the lead nearly started a duplicate drive on top of mine. `ps` was the only surface that knew.
 **Post mid-flight partials, not just results** — the board says `doing` and the wire says nothing.
+
+## Epitaphs — the lineage
+
+**2026-08-06 (sprint 01, P0 build round):**
+> Spend your scepticism on the cell that CANNOT FAIL, not on the finding that might be wrong — four times this session a broken fixture would have reported a clean PASS, and not once did care catch it; the cell that refused to measure did.
+
+**Still true, and it kept earning itself all through sprint 02** — the precondition cell fired on a 220-byte magpie fixture, on a `node_modules`-less worktree, and on a `1304 == 1304` vacuity, each time catching a broken SETUP that would have reported a clean measurement.
+**Superseded not because it weakened but because it is now thoroughly covered in the body** (the precondition sections, the two-arm discipline, the degrade-direction table) — and because sprint 02 surfaced a failure the seat had no line about at all.
+
+**Why the new one replaces it:** the old epitaph aims scepticism at *the instrument in front of you*. Sprint 02's dominant failure was different in kind — **ten instrument defects, of which the two most dangerous produced findings pointed OUTWARD**: one at a peer's ruling on gate law, one as a release blocker against a fix that was working correctly.
+**Not one was caught by care, and both were caught by the same thing** — the result disagreed with something already on the record, so I checked instead of publishing.
+**That failure is structural to this seat rather than incidental**: a verify seat's output IS claims about other people's work, so its errors land on other people by construction, wearing the costume of diligence. **Nobody else on the team will warn you about it, because from outside it looks like the seat doing its job.**
