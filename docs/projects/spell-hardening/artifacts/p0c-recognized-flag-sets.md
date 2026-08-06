@@ -114,3 +114,169 @@ instrument, not the answer — a sweep that fails to run reports the same thing 
 a sweep that found nothing.
 
 _Derived and verified at `d2380a3`, 2026-08-06._
+
+---
+
+# P0c step 0 — the TYPES
+
+**Owner:** `thoth` · **Ruled** a P0c blocking prerequisite at comms #295 ·
+**Card** `t-f50f9d8b` · **Derived at `f77ae33`, 2026-08-06**
+
+**This section answers the half the sets above do not.** `node:util` `parseArgs`
+requires `{type: "boolean" | "string"}` **per option**. Every type below is read
+off the **code that consumes the flag** — `typeof flags.x === "string"`,
+`String(flags.x)`, a helper whose first line is `typeof v !== "string"`, a
+comparison to `true`. **Never off `SKILL.md`, never off the flag's name.**
+
+## Read this before you use the table
+
+1. **The denominator is 118 across SIX entry points, not 112.** 112 counts the
+   **five accumulators only**; `glamour/server.ts` contributes the other **6**.
+   The two numbers were glued together in the plan and the card.
+2. **"169 consumption sites" above is LINES. There are 249 read EXPRESSIONS.**
+   Both are right and they answer different questions. **A type derivation done
+   per-line misses 80 reads**, and several flags are read more than once on one
+   line. Counted: `grep -nE 'flags\.[A-Za-z_$]|flags\["' <file> | wc -l` → 169
+   over the five accumulators.
+3. **NOTHING HERE HAS BEEN DRIVEN.** Every row is static evidence at the
+   consumption site. The instruction above — _drive each verb before converting
+   it_ — is **step 2's obligation and this section does not discharge it.**
+   Marked `UNVERIFIED-BY-CONSTRUCTION` for behaviour; verified for consumption
+   shape.
+4. **One flag has NO correct type. See the conflict below. It is a design
+   ruling, not a cell.**
+
+## ⛔ The conflict — `glamour/cli.ts --restore`
+
+```
+glamour/scripts/cli.ts:254   archived: flags.restore !== true,                     <- BOOLEAN semantics
+glamour/scripts/cli.ts:317   if (flags.restore) daemonArgs.push("--restore", String(flags.restore));   <- STRING semantics
+```
+
+Two verbs, one flag name, incompatible types, one `options` map.
+
+| declared  | what breaks                            | how it fails                                                                                                                                              |
+| --------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `boolean` | `glamour open --restore <id>`          | the id falls to **positionals**; `:317` forwards `--restore true`; the daemon hunts a snapshot named `true`                                               |
+| `string`  | `glamour style archive <id> --restore` | strict **throws** "argument missing" — or **swallows the next positional as the value**, which is this sprint's own defect class re-introduced by the fix |
+
+**Neither is a no-op. Do not resolve this in the table.**
+
+**A separate live bug underneath it, reported not fixed:** `:254` is
+`flags.restore !== true`, so when `restore` holds a **string**,
+`glamour style archive <id> --restore foo` **archives instead of restoring**,
+exit 0, no signal. Candidate issue; filing is Cole's.
+
+## The types
+
+**Every flag not named in the conflict above is settled by unambiguous evidence
+at every one of its consumption sites.** A flag whose sites disagreed would
+appear as a second conflict row; exactly one did.
+
+### `bounty/scripts/cli.ts` — 22 (15 string · 7 boolean)
+
+```
+string  (15): as expect id notes on owner restore session session-key since size status tag timeout title
+boolean  (7): fresh full mine no-open pin stdin stdin-tasks
+```
+
+`expect` and `size` type off their helpers (`parseExpect`/`parseSize`, both
+`if (typeof value !== "string") return undefined`), **not** off the bare
+truthiness at the call site.
+
+### `glamour/scripts/cli.ts` — 25 (22 string · 2 boolean · 1 CONFLICT)
+
+```
+string  (22): colors content cost custom file intent kind label model note prompt prompts round seed session since src start-timeout status timeout title url
+boolean  (2): full no-open
+CONFLICT (1): restore   <- see above
+```
+
+`custom` types off `parseCustom` (`typeof v !== "string"`). **Its values are
+`k=v,k=v` pairs — a live test case for step 1's "split on the FIRST `=` only".**
+
+### `glamour/scripts/server.ts` — 6 (6 string) — the LOOKUP parser
+
+```
+string   (6): intent port project restore timeout title
+```
+
+**⚠ This entry point has ZERO `flags.` reads.** It is
+`const flag = (name) => { const i = args.indexOf(\`--${name}\`); return i >= 0 ?
+args[i+1] : undefined; }` (`server.ts:487-490`). **A `flags.`-pattern derivation
+returns zero here and a zero reads identically to "no drift".\*\* Enumerated by
+hand.
+
+All six are string by construction — `flag()` returns the next argv element.
+`port` and `timeout` are `Number(...)`-coerced at the call site, which is a
+value read, not a boolean one.
+
+**Latent, pre-existing, out of scope:** `flag()` returns `args[i+1]`
+**unconditionally**, so `--restore --title X` yields `restore === "--title"`.
+Converting this parser fixes it as a side effect; noting it so the change is not
+mistaken for a regression.
+
+### `grapevine/scripts/cli.ts` — 26 (13 string · 13 boolean)
+
+```
+string  (13): as body-file channels from hold in-reply-to last max note since status timeout topic
+boolean (13): all dry-run force fresh from-start human literal lurk quiet stdin text verbose yes
+```
+
+**⚠ grapevine is the outlier and here is WHY, so nobody treats it as merely
+behind.** It types its flags with a **cast**
+(`flags.topic as string | undefined`) where the other four use a **`typeof`
+guard**. **A cast is a claim with no runtime check**, so grapevine's value flags
+carry a class of latent type-lie the other four are guarded against. Two live
+instances:
+
+- `:1687` `flags.last !== undefined ? parseInt(flags.last as string, 10)` — bare
+  `--last` yields `parseInt(true)` → **`NaN`, silently**.
+- `:1544` `topic: flags.topic as string | undefined` — bare `--topic` puts
+  **`true`** into a field typed `string`.
+
+`max` types off `resolveTailMax` (`typeof flag === "string" ? flag : env`).
+**Converting grapevine to `strict: true` turns each of these from a silent wrong
+value into a caller-facing error** — the lane's stated purpose, and the largest
+behaviour delta of the six.
+
+### `imago/scripts/cli.ts` — 20 (17 string · 3 boolean)
+
+```
+string  (17): content edited-from image kind link models n options prompt restore session since summary tag tags timeout title
+boolean  (3): clear full no-open
+```
+
+`kind` is **string**, not boolean, despite reading as `flags.kind === "edit"` —
+it is compared to a string literal (`:436`).
+
+### `magpie/scripts/cli.ts` — 19 (15 string · 4 boolean)
+
+```
+string  (15): alpha bbox ids intent label model name options pad restore session since timeout title type
+boolean  (4): full no-open remove stdin
+```
+
+## Denominator
+
+**6 of 6 entry points read; 6 of 6 produced a set. 118 of 118 flags typed: 88
+string · 29 boolean · 1 conflict.** Flag COUNTS reproduce the five accumulator
+sets above exactly (22 / 25 / 26 / 20 / 19) from an independent instrument —
+that is corroboration of the sets, and the only claim here I will call that.
+
+**What this method cannot see, stated so the next reader does not re-derive
+it:**
+
+- A **computed key** (`flags[someVar]`) is invisible. Searched: the only
+  computed-key sites in all five accumulators are the **parser's own
+  `flags[key] = …` writes** (2–3 per file, matching the write count exactly).
+  **Zero computed-key READS.** That is a measurement, not an absence.
+- **Bare truthiness carries no type evidence** — `if (flags.x)` is satisfied by
+  `true` and by any non-empty string. Every such row was resolved by reading its
+  **other** sites or its helper, never by guessing from the flag name. A flag
+  read **only** as bare truthiness with no second site would be genuinely
+  undetermined; **there are none.**
+- **Behaviour is undriven** (point 3 above).
+
+_Derived at `f77ae33`, 2026-08-06. Conflict and denominator corrections
+published at comms #308._
