@@ -19,7 +19,7 @@ lands. Run `anthill:plan` first so the owning seats ratify the seams they touch.
 
 ## Outcome & Success Criteria
 
-Inherited from the proposal. **Definition of done for the project:** all eleven
+Inherited from the proposal. **Definition of done for the project:** all twelve
 issues resolved-or-deferred-with-reason, gate green, cold-gate passed, release
 cut, `SKILL.md` true.
 
@@ -143,6 +143,77 @@ is empty while the snapshot is populated, then re-run
 `open --session-key K --restore <id>` against the **live** board. It must exit
 non-zero and carry `restoreSkipped`. Then confirm `--fresh --restore` on the
 same key actually restores. Throwaway board only.
+
+---
+
+## Phase 0c — The unparsed `--flag=value` (#81)
+
+**Owner:** daedalus · **Verify:** cassandra · **D4 ruled:** support `=` **and**
+reject unknown flags
+
+Third P0 lane, third mechanism. **This one is house-wide, not bounty-only** — it
+is the widest-blast-radius item in the project and the only P0 item that
+silently corrupts **writes**.
+
+**The mechanism, verified 2026-08-06 (fact, not claim):** `parseArgs` splits on
+whitespace only, so `--owner=forager` yields a flag literally named
+`owner=forager` with value `true`, and `flags.owner` stays `undefined`.
+Downstream, `typeof flags.owner === "string"` is false → `scope.owner` is
+undefined → `cmdState`'s `if (scope.owner || scope.mine)` block never runs → the
+unfiltered board prints, exit 0. `--mine` is unaffected only because it is
+boolean and takes no value — that asymmetry is what disguised this as an
+`--owner` defect in #80.
+
+**Reproduced on a 5-task board** (no large or recovered board needed):
+
+```
+state --owner forager        → 3 tasks  ["forager"]                     correct
+state --owner=forager        → 5 tasks  ["forager","maestro","None"]    whole board
+state --owner=zzz-nobody-zzz → 5 tasks  ["forager","maestro","None"]    whole board, exit 0
+add "x" --owner=maestro      → {"ok":true,"sent":"task.add"}            stored owner = NONE
+add "y" --status=doing       → {"ok":true,"sent":"task.add"}            stored status = todo
+state --totally-bogus-flag z → exit 0, stderr empty
+```
+
+**Blast radius — audited 2026-08-06:**
+
+| Spell         | `=` handling                            |
+| ------------- | --------------------------------------- |
+| `bounty`      | **none**                                |
+| `grapevine`   | **none**                                |
+| `glamour`     | partial                                 |
+| `imago`       | partial                                 |
+| `magpie`      | partial                                 |
+| `mind-mapper` | the only CLI that rejects unknown flags |
+
+The two with no handling at all are the two most-used spells.
+
+**Steps**
+
+1. **Support `--key=value`** in `parseArgs` — split on the first `=` only, so
+   values containing `=` survive.
+2. **Reject unrecognized flags** (D4 — ruled): non-zero exit, the offending flag
+   named in the message. **Copy `mind-mapper`'s existing implementation** rather
+   than inventing a second convention; if it needs generalising, lift it to a
+   shared shape and say so.
+3. **Apply to every spell CLI, not just bounty and grapevine.** The partial
+   handlers in glamour/imago/magpie must end up on the same semantics — three
+   spellings of one idea is the failure mode the P2 flag-naming note warns
+   about.
+4. **Regression tests on both directions.** A read path (`state --owner=X` must
+   not return out-of-scope tasks) **and** a write path (`add --owner=X` must not
+   silently drop the owner). A read-only test would have missed the worse half.
+5. **`SKILL.md` sweep:** any documented example using a spelling that now errors
+   must be corrected in the same change.
+
+**⚠ This is a deliberate behaviour change.** Step 2 makes previously-silent
+callers start failing. That is the intent (D4), but it means P0c is the item
+most likely to surface breakage elsewhere in the house — check anthill's
+invocations before the release, since it drives both spells.
+
+**Gate:** for each spell CLI, a `--key=value` flag is honoured identically to
+its space-separated form, and an unknown flag exits non-zero naming the flag.
+Plus the write-path assertion: `add --owner=<name>` stores the owner.
 
 ---
 
@@ -279,13 +350,16 @@ it still reads as a timer, the model didn't change.
   seat proposes, lead rules.
 - ~~D3 (#80: does a skipped `--restore` exit non-zero?) needs Cole.~~ **Ruled
   2026-08-06** — non-zero exit **and** the envelope field. P0b is unblocked.
-- **#80's `--owner` sub-claim is unreproduced.** The report says
-  `state --owner <name>` returns the full board while `--mine` filters; a
-  2026-08-06 check on a scratch board found `--owner` filtering correctly, and
-  the wiring at `cli.ts:764` → `cmdState` is sound. Working theory: a misread of
-  a **truncated** payload, i.e. a symptom of #78 rather than a defect. Confirm
-  against the reporter's actual command before filing anything; do not fix
-  blind.
+- ~~#80's `--owner` sub-claim is unreproduced.~~ **Resolved 2026-08-06 — it was
+  real, and it was not the truncation.** The reporter's measurement was
+  **unpiped** against a whole 122KB payload, with a discriminating control: a
+  **nonexistent** owner also returned the full board, which a
+  working-but-permissive filter cannot produce. Root cause is `parseArgs` not
+  handling `--key=value` → **#81**, now P0c. The earlier "symptom of #78" theory
+  was wrong, and the scratch board failed to reproduce it for one reason:
+  **every check used the space-separated form.** _Lesson for the remaining
+  phases — reproduce the reporter's exact spelling, not a reasonable paraphrase
+  of it._
 - ~~Does P0's audit find the shape beyond the two reported spells?~~ **Yes —
   seven files.** Now a question of which of the five unreported ones can
   actually emit an over-buffer payload.

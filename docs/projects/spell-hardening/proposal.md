@@ -1,17 +1,17 @@
 # Spell Hardening — fix what the shipped spells are getting wrong, then release
 
 **Status:** Approved (scope + execution ratified by Cole, 2026-08-05; #80 folded
-into P0 and D3 ruled 2026-08-06) **Created:** 2026-08-05 **Author:** Cole Reed
-(triaged with Claude Code)
+into P0 and D3 ruled, #81 filed and D4 ruled, 2026-08-06) **Created:**
+2026-08-05 **Author:** Cole Reed (triaged with Claude Code)
 
 ---
 
 ## Overview
 
 `bounty` and `grapevine` are the **most-used spells** — every anthill session in
-this repo and others leans on them. Eleven GitHub issues are open against them,
+this repo and others leans on them. Twelve GitHub issues are open against them,
 six filed on 2026-08-05 alone, and the triage that produced this project found
-that **four of them actively mislead rather than merely annoy**: they return
+that **five of them actively mislead rather than merely annoy**: they return
 plausible, well-formed, wrong results and exit 0.
 
 This project fixes them in a **harm-ordered sequence** and cuts a release, so
@@ -46,6 +46,16 @@ _recovery_ command, reached only after the caller has already accepted something
 is wrong with the board — so an empty result is exactly what they are primed to
 believe. They recovered only by reading `~/.bounty/snapshots/<id>.json` by hand.
 
+**1c. A flag spelling nobody rejects (correctness, house-wide).** `parseArgs`
+splits on whitespace only, so `--owner=forager` registers a flag literally named
+`owner=forager` and `flags.owner` stays undefined — the scope filter never runs
+and **the entire board prints, exit 0.** The tell is that a _nonexistent_ owner
+returns everything too. It corrupts writes the same way: `add --owner=maestro`
+returns `{"ok":true}` and stores the task **unowned**. Unknown flags never warn
+at all. **`bounty` and `grapevine` have no `=` handling whatsoever** — the two
+most-used spells — and only `mind-mapper` rejects unknown flags (#81). Found
+while triaging #80's `--owner` claim, which turned out not to be the truncation.
+
 **2. Data loss during recovery (integrity).** When the bounty daemon dies,
 `open --session-key K` respawns an **empty** board under the same id, and
 `close` then writes 0 tasks over the good snapshot, unconditionally, with no
@@ -70,7 +80,7 @@ issue.**
 
 | Phase  | Theme                       | Issues / items                                      |
 | ------ | --------------------------- | --------------------------------------------------- |
-| **P0** | Silent wrong data           | #77, #78, #80 (+ audit every other spell CLI)       |
+| **P0** | Silent wrong data           | #77, #78, #80, #81 (+ audit every other spell CLI)  |
 | **P1** | Daemon lifecycle + data     | #64, #73, #74, `bounty-daemon-robustness-nits`      |
 | **P2** | Bounded reads               | #75 + `bounty-tail-drain` (one flag, both spells)   |
 | **P3** | Legibility + honest signals | #79, #72, #11, #76, `bounty-heartbeat-skip-blocked` |
@@ -103,9 +113,9 @@ for #64.
 
 ## Scope
 
-**In scope.** The eleven triaged issues (ten at ratification, plus #80 folded in
-2026-08-06), plus three adjacent backlog items that touch the same code and are
-cheaper to do in the same pass than to schedule separately:
+**In scope.** The twelve triaged issues (ten at ratification, plus #80 and #81
+folded in 2026-08-06), plus three adjacent backlog items that touch the same
+code and are cheaper to do in the same pass than to schedule separately:
 
 - `2026-06-15-bounty-tail-drain` — the bounty twin of #75. **Do them together**
   so `--drain` and `--no-follow` don't become two spellings of one idea.
@@ -127,10 +137,10 @@ cheaper to do in the same pass than to schedule separately:
 - Feature-shaped backlog items: leaderboard, task metrics, sessions filter,
   grapevine rename/edit/presence/facilitation-timer, imago items.
 
-## The three decisions — RULED (D1/D2 2026-08-05, D3 2026-08-06)
+## The four decisions — RULED (D1/D2 2026-08-05, D3/D4 2026-08-06)
 
-Everything else here has a known fix. These three did not, and they are why this
-is a project rather than eleven branches. **All three are now ruled. Do not
+Everything else here has a known fix. These four did not, and they are why this
+is a project rather than twelve branches. **All four are now ruled. Do not
 relitigate; falsify with evidence if you think one is wrong.**
 
 ### D1 — Snapshot safety semantics (P1) — RULED
@@ -275,6 +285,34 @@ reads _"bounty's `open` is NOT idempotent (always spawns a fresh daemon)"_ —
 stale since #69 made keyed open idempotent, and part of why this surprised the
 team. Worth reporting to anthill; not this project's to fix.
 
+### D4 — How far does the flag-parsing fix go? (P0) — RULED
+
+Added 2026-08-06 with #81; **ratified by Cole the same day.** #81's immediate
+defect is that `--key=value` is unparsed. The decision was whether to stop
+there.
+
+**Ruled: both halves. Support `--key=value` _and_ reject unrecognized flags
+loudly** (non-zero exit, the offending flag named in the message).
+
+- **`=` support alone fixes one spelling and leaves the class intact.** Every
+  other typo — `--ownr`, `--staus` — stays silent, and the failure mode is
+  identical: a well-formed answer to a question nobody asked.
+- **The precedent is in-house.** `mind-mapper` is the only spell CLI that
+  already rejects unknown flags. Copy it rather than invent a convention.
+- **It is a deliberate behaviour change**, and that is the point. A caller
+  passing a stray flag starts getting an error where it previously got silence.
+  This is the same reasoning D3 applied to a skipped `--restore`: **when the
+  tool cannot do the thing, say so.**
+- **Consistent with D1.1's anti-`--force` rule.** No bypass flag is introduced —
+  there is nothing to bypass, because the corrective action is to spell the flag
+  correctly.
+
+_Rejected: "reject unknown flags only."_ It would make `--owner=x` fail loudly
+rather than work, which is defensible — the `=` form was never documented — but
+`glamour`, `imago`, and `magpie` have partial `=` handling today, so callers
+exist who use it successfully. Breaking them to punish a spelling is a worse
+trade than supporting it.
+
 ## Technical Approach
 
 - **P0's fix is a drained exit, not pagination.** The payloads are already
@@ -312,7 +350,7 @@ team. Worth reporting to anthill; not this project's to fix.
 
 ## Success Criteria
 
-- [ ] All eleven triaged issues closed or explicitly deferred with a reason.
+- [ ] All twelve triaged issues closed or explicitly deferred with a reason.
 - [ ] `grapevine pull` and `bounty state --full` return valid, complete JSON
       through a pipe on >64KiB payloads, with a piping regression test each.
 - [ ] No spell CLI retains the undrained `process.exit` shape.
@@ -333,5 +371,5 @@ team. Worth reporting to anthill; not this project's to fix.
 - Fold-ins: `2026-06-15-bounty-tail-drain.md`,
   `2026-06-15-bounty-daemon-robustness-nits.md`,
   `2026-06-22-bounty-heartbeat-skip-blocked.md`
-- Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79, #80
+- Issues: #11, #64, #72, #73, #74, #75, #76, #77, #78, #79, #80, #81
 - Code: `plugins/spellbook/skills/{grapevine,bounty}/scripts/`
