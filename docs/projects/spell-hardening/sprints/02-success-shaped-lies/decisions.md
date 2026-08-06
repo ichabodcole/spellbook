@@ -182,6 +182,68 @@ today `flags.restore !== true` means `glamour style archive <id> --restore foo`
 
 ---
 
+### A10 — Promoting the label-timing rule into G2 · **RULED BY PROSPERO**, narrowed by `cassandra`
+
+I proposed promoting daedalus's line — _a label is a claim about a measurement,
+so it cannot be assigned before the measurement is taken_ — **on the stated
+grounds that two seats in opposite roles had hit it independently.** I asked
+cassandra to falsify it.
+
+| option                                              | cost                                                                  |
+| --------------------------------------------------- | --------------------------------------------------------------------- |
+| ✅ **Promote WITH the expiry clause + enforcement** | Longer rule; needs a two-arm run before any label exists              |
+| Promote as I first worded it                        | **Catches cassandra's instance and MISSES daedalus's** — see below    |
+| Hold for a third instance                           | Two instances already shipped; a third costs another mislabelled gate |
+
+**She could not falsify it and instead did something more useful — narrowed it,
+and killed my justification for it.**
+
+**My "two independent seats" claim was FALSE.** She had read daedalus's report
+of the defect, **including his mechanism**, forty minutes before committing the
+same class herself. **Not two independent discoveries — one report, and a second
+seat committing it anyway having read it.**
+
+**That is a stronger argument for promotion, not a weaker one:** a fresh,
+explicit, peer-delivered, _written_ warning did not prevent it. Which is exactly
+why the remedy must be **a mechanical gate rather than awareness**.
+
+**And the two instances are different sub-mechanisms** — his was a correctly
+labelled cell whose class was changed by a later edit; hers was a label never
+derived from a pre-fix run at all. **My wording caught only hers.** The expiry
+clause is what catches his.
+
+**Landed wording, with its enforcement and its falsifier, in `plan.md` under
+G2.** Countable metric: _cells that CHANGED label when arm 2 ran_. First
+datapoint: **1 of 9.**
+
+### A11 — G7's reachability · **RULED BY PROSPERO**, found by `thoth`'s H7 audit
+
+**Both remedies, not one.** `thoth` preferred (1) and would take both; I ruled
+both required, and the card (`t-c3060da7`) carries them.
+
+| option                                                | cost                                                      |
+| ----------------------------------------------------- | --------------------------------------------------------- |
+| ✅ **Reorder the awaits AND add a precondition cell** | Two changes instead of one                                |
+| Reorder only                                          | Leaves the next harness author to rediscover the coupling |
+| Precondition cell only                                | Leaves the harness able to hang                           |
+
+**The finding:** the G7 termination cell **cannot report the hang it exists
+for.** It reads both pipes to completion before awaiting exit, so its assertion
+sits downstream of an EOF that a detached grandchild can withhold forever. Under
+a one-word change it does not go **red** — it becomes **unreachable**, and the
+failure mode degrades from _"a red cell naming the hung verb"_ to _"a slow
+suite."_
+
+**It works today only by accident:** bounty's daemon holds none of the harness's
+handles, a property documented as being about **#64 crash capture** and
+load-bearing for G7 **as a side effect**, asserted nowhere.
+
+**Blast radius deliberately left UNVERIFIED and NOT grepped** — four other
+harness files share the primitives, but `Promise.all` near a spawn is a shape,
+not a diagnosis. **Enumerate by call site; one file-open each.**
+
+---
+
 ## B. Corrections and falsifications — pointers only
 
 **These are not decisions and their single source of truth is

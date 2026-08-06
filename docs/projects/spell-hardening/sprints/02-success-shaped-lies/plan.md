@@ -289,6 +289,68 @@ still asserted, still printed, and still fails the run when it degenerates
 it. When you report, **report the counts separately** — _"1 red pre-fix, 2
 blast-radius guards, 1 precondition"_ — never a single total.
 
+> ### ⚠ G2 AMENDED 2026-08-06 (sprint 02) — WHEN a label may be assigned, and when it EXPIRES
+>
+> **Two mislabelled cells shipped in one session, from two seats in opposite
+> roles.** The rule earned by them:
+>
+> > **A label is a claim about a measurement, so it cannot be assigned before
+> > the measurement is taken — and it EXPIRES when the cell's assertions are
+> > edited.**
+> >
+> > **Enforcement: no cell carries a label until BOTH arms have run. A cell
+> > whose assertions changed since its last two-arm run is UNLABELLED, not
+> > still-labelled.**
+>
+> **⛔ Do NOT cite this as "two seats found it independently." That is FALSE and
+> its own author killed the claim.** `cassandra` had **read `daedalus`'s report
+> of the defect, including his mechanism for it, forty minutes before she
+> committed the same class.** It is one seat reporting and a second committing
+> anyway, having read the report.
+>
+> **That is the stronger argument, not the weaker one:** a **fresh, explicit,
+> peer-delivered, written** warning did not prevent the second instance. **This
+> is `principles.md`'s entry firing exactly as written** — the failure mode is
+> the FEELING of having covered it — **which is precisely why the remedy is a
+> mechanical gate and not anyone's awareness.**
+>
+> **The two are DIFFERENT sub-mechanisms, and the first half of the rule catches
+> only one of them:**
+>
+> |         | `daedalus`                                              | `cassandra`                                        |
+> | ------- | ------------------------------------------------------- | -------------------------------------------------- |
+> | cell    | pre-existing, **correctly** labelled                    | new                                                |
+> | fault   | **an edit changed the class; the label did not follow** | **the label was never derived from a pre-fix run** |
+> | symptom | RED wearing GUARD                                       | GUARD wearing RED                                  |
+>
+> **His label WAS assigned after a measurement — just a different one, then
+> silently invalidated by an edit. That is why the EXPIRY clause is not a
+> flourish: without it the rule is satisfied by his original cell and still lets
+> his defect through.**
+>
+> **Why an enforcement clause and not just the principle:** the principle is
+> about epistemics and **can be agreed with while changing nothing** — both
+> seats agreed with it before breaking it. **The enforcement clause is checkable
+> by someone who has not understood the argument**, which is the only kind of
+> rule that outlives the session that wrote it.
+>
+> **It also makes the pre-fix arm non-optional, which is the real prize.**
+> cassandra's arm 1 came back 6/6 green and **she nearly stopped**; the finding
+> came only from running an arm she expected to learn nothing from. **Under this
+> rule, skipping an arm is VISIBLE as an unlabelled cell instead of invisible as
+> a confident one.**
+>
+> **The metric that shows the rule working — and it is countable:** _how many
+> cells CHANGED label when arm 2 ran._ **First datapoint, cassandra's P0b cold
+> gate: 1 of 9** (labelled 7 red / 1 guard before running; reported 6 red / 2
+> guard / 1 precondition after).
+>
+> **FALSIFIED IF** a session runs both arms on every cell, labels only from arm
+> results, re-runs both arms after every assertion edit — **and a mislabelled
+> cell still ships.** **NOT falsified by** a session with no mislabels: that is
+> the base rate, and it looks identical to a week when nobody wrote a tricky
+> cell.
+
 ### G3 — pin board identity OUT-OF-BAND, because the envelope cannot
 
 **There is no session id, key, port or board identity anywhere in a
@@ -436,6 +498,64 @@ spelling, leaving the stream usable and only stopping it from holding the loop.
 **The lesson, which outlives the instance:** the suite was green, both P0 gates
 were green, and **a 23-minute hang in a shipped spell's entry verb was invisible
 to every one of them, because nothing asserts that a CLI RETURNS.**
+
+> ### ⚠⚠ G7 AMENDED 2026-08-06 (sprint 02) — asserting the exit is not enough. The assertion must be REACHABLE when the process does not exit.
+>
+> **Found by `thoth` in the H7 judgement audit, driven both directions outside
+> the repo. This is G8's vacuity rule turned on G7 itself:**
+>
+> > **Every _"the process returned"_ needs _"and my instrument could have
+> > observed it NOT returning."_**
+>
+> **The mechanism.** A termination cell that **reads both pipes to completion
+> BEFORE awaiting exit** puts its own assertion downstream of an EOF it may
+> never get. `proc.kill("SIGKILL")` at the budget releases pipes held by
+> **`proc`** — it does **not** release a pipe held by a **detached grandchild**,
+> and `bounty open` spawns exactly such a grandchild (`cli.ts:534-540`,
+> `detached: true` + `unref()`).
+>
+> **Measured, minimal repro, only the grandchild's stderr mode differing:**
+>
+> ```
+> mode=file     (today's bounty)     {"ms":20,"code":0,"reachedAssertion":true,"returnedOnItsOwn":true}
+> mode=inherit  (a ONE-WORD change)  exit=137 — killed at 20s, NOTHING printed
+> ```
+>
+> **Under the change the cell does not go RED. It becomes UNREACHABLE** — and
+> **the failure MODE changes with it: from a red cell naming the hung verb, to a
+> bare suite timeout with no diagnosis.** A red cell tells you which verb hung.
+> A timeout tells you the suite is slow. **The instrument built to catch a
+> 23-minute hang would itself hang, and report nothing.**
+>
+> **⛔ And the reason it works TODAY is an accident of an unrelated decision.**
+> `bounty/cli.ts:522-529` gives the daemon
+> `stdio: ["ignore","ignore", fd→daemon.log]`, so **it holds none of the
+> harness's three handles** — which is why EOF ever arrives. **That property is
+> documented as being about #64 crash-trace capture. It is load-bearing for G7
+> as a SIDE EFFECT, and nothing asserts it.** _(`daemon.log` appears twice in
+> `server.test.ts`, both times asserting its CONTENTS, never the daemon's handle
+> shape.)_ **An engineer improving #64 by inheriting stderr would break G7
+> house-wide and see only a slow suite.**
+>
+> **BOTH remedies are required, and they do different jobs:**
+>
+> 1. **Make exit observable independently of the pipes** —
+>    `Promise.race([proc.exited, timer])` resolved **before** the reads.
+>    **Structural: removes the dependency.**
+> 2. **A `PRECONDITION` cell asserting the daemon's handle shape** — that
+>    `open`'s spawned daemon holds no pipe from the harness. **It goes red at
+>    the moment of the one-word change, naming the reason.**
+>
+> **1 alone leaves the next harness author to rediscover this. 2 alone leaves
+> the harness able to hang.**
+>
+> **⚠ BLAST RADIUS IS UNVERIFIED AND MUST NOT BE GREPPED.** Four other harness
+> files use the same primitives — `astrolabe/cli.test.ts`,
+> `mind-mapper/cli.test.ts` (8 sites), `mind-mapper/send-body.test.ts`, and a
+> second site in `bounty/server.test.ts`. **`Promise.all` near a spawn is a
+> SHAPE, not a diagnosis.** **The discriminating question is whether the site
+> spawns a detached grandchild at all** — without one the ordering is harmless.
+> **Enumerate by CALL SITE and open each file. One file-open each.**
 
 ### G8 (new) — the vacuity rule, in its general form
 
