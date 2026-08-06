@@ -236,9 +236,35 @@ Three homes, and the split is not optional — no single home covers all five:
 
 ## Open questions
 
-- **Who declares a death?** For a sprint it is the closer. For a backlog item,
+- ~~**Who declares a death?** For a sprint it is the closer. For a backlog item,
   the person merging the fix may not know an item exists. That asymmetry is
-  probably the real difficulty.
+  probably the real difficulty.~~
+
+  > **PROPOSED ANSWER, Cole, 2026-08-06 — a sweep at finalize, not at merge.**
+  >
+  > **Invert it.** Don't ask the merger "does this close a backlog item?" — they
+  > don't know the item exists, which is the asymmetry. Ask at the **end of a
+  > sprint or project**, as a finalize beat: _here is what we accomplished;
+  > which backlog items does it close?_ **Dispatch a subagent to sweep**,
+  > because the question is a read across many files and the answer is a short
+  > list.
+  >
+  > **Why this resolves it:** the closer holds the one thing the merger lacks —
+  > **a complete account of what the session did.** The backlog reader and the
+  > work-knower become the same agent. It will miss some, and that is accepted;
+  > it catches the majority and it hangs off a ritual that already exists.
+  >
+  > **Precondition, from `#11`:** the sweep must report **verified fixed** (code
+  > checked, fix cited) separately from **probably fixed**. When this sweep was
+  > run manually on 2026-08-06 it produced exactly one verified close out of 31
+  > items — and it was only right about `#11` because it looked past the text
+  > into a binary asset. A sweep that collapses those two buckets will close
+  > things that aren't done.
+  >
+  > **Where it hooks:** `anthill:finalize-session`, alongside the seat-doc
+  > synthesis — and the same beat covers the scratch sweep (`anthill#93`), so
+  > one ritual closes two of the five artifacts here.
+
 - **Can an automated sweep be trusted?** `#11` says not alone: it looks fixed to
   every text-based check and is not, because the defect is in a binary asset.
   Any mechanical closer needs a "verified fixed" vs "probably fixed" split — a
@@ -248,6 +274,35 @@ Three homes, and the split is not optional — no single home covers all five:
   act. Unproven.
 - **Is `_history/` a close or a deferral?** It preserves provenance, but a
   document moved there is still a document nobody re-reads.
+
+## The ownership question underneath all of this
+
+Noted 2026-08-06, because it shapes where any fix lands and it is currently
+unresolved.
+
+**There are two systems here — `project-docs` and `anthill` — and it is not
+settled which owns a ritual.** `finalize-session` is anthill's; the project
+folder conventions are project-docs'; a "finalize branch" beat belongs to
+neither cleanly. Every close proposed above had to pick a home, and the picking
+was ad hoc.
+
+**The direction Cole is moving (his framing, recorded not ratified):** toward
+anthill, but with the rituals **not pre-baked into anthill releases**. Instead a
+team defines its own checklist — its methodology docs — and the skills **point
+at** them. anthill ships the field notes: what has been found to work, so a team
+doesn't reinvent everything, while still being able to bring in what fits and
+modify it.
+
+**Why that matters to this investigation specifically:** it changes the unit of
+the fix. If rituals are team-defined and skill-referenced, then the answer is
+not "add a backlog-sweep step to `finalize-session`" — it is **"make
+`finalize-session` able to run a team's own close-list, and put the backlog
+sweep in this repo's list."** The five gaps above would then be closed by
+config, not by five upstream patches, and every other team gets the pattern
+rather than the specific step.
+
+This is the strongest argument found so far for that direction, so it is
+recorded here as evidence rather than left in conversation.
 
 ## Related
 
