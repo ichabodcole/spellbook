@@ -348,6 +348,30 @@ unfixed.**
   filing is still Cole's).
 - **Whether glamour / imago / magpie can be closed by DRIVE at acceptable cost**
   — established only that no CLI-process harness exists in any of the three.
-- **A label-timing amendment to G2** — daedalus's _"a label is a claim about a
-  measurement, so it cannot be assigned before the measurement is taken."_ Held
-  pending one more instance; **P0d will supply or deny it.**
+- ~~**A label-timing amendment to G2**~~ — **RESOLVED and landed** (see A10).
+  The second instance arrived from `cassandra` before P0d, from the opposite
+  role.
+- **⏳ HELD FOR THE RETRO, deliberately not promoted: the artifact-decay rule as
+  a team PRINCIPLE.** It is standing law in `plan.md` for this sprint — a
+  gate-law act. **Promoting it to `principles.md` is a different act and the SOP
+  forbids doing it mid-session:** _never add one mid-session; the pressure to
+  generalise peaks exactly when you have just been burned._ **`thoth` called
+  this and he was right — I was drifting toward promoting it.** Retro Q3, with
+  its scar, and **`cassandra` owns it** since the instant-axis/time-axis cut is
+  hers.
+- **📊 For the retro, with a COUNT rather than as anecdotes: ~8 instrument
+  failures across 4 seats in one session, all ONE SHAPE** — a **lexical**
+  instrument standing in for a **structural** question. An awk range that
+  over-ran; an `indexOf` reading the first of 36 maps; a `sed` window that
+  displayed the counterexample without it firing; a narrowing blind to
+  `parse*(flags.x)`; a `] *=` matching `===`; a guessed line range spanning two
+  functions; an `endswith` blind to trailing comments; a routing claim made from
+  memory. **The denominator table records what a count was wrong ABOUT; this
+  records why the instrument COULD NOT SEE it.**
+- **The best single sentence the session produced, `thoth`'s, and it belongs
+  wherever the decay rule lands:** _"A published absence claim has no listener.
+  Reading a fact does not propagate it to the claims you have already
+  published."_ He read the counterexample to his own published claim, in a `sed`
+  window, in a different investigation, **forty minutes after publishing it**,
+  and it did not fire. **That is why the remedy is a mechanical re-run and not
+  care.**
