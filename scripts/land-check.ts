@@ -93,9 +93,16 @@ console.log("");
 
 if (safe) {
   console.log("  ✅ SQUASH-SAFE — nothing cites a branch sha, single author.");
-  console.log(`     git merge --squash ${head}`);
+  console.log("     Squashing is PERMITTED, not required. Two ways to land:");
+  console.log("");
+  console.log(`     git merge --squash ${head}     # collapse to ONE commit`);
   console.log("     git commit                     # ⚠ --squash STAGES ONLY. It does not commit.");
-  console.log(`     …or for a single commit:  git merge --ff-only ${head}`);
+  console.log("");
+  console.log(
+    `     git merge --ff-only ${head}    # KEEP the branch's ${shas.length} commit(s), linear`,
+  );
+  console.log("       ↑ fast-forward preserves every commit as-is. Prefer it when the");
+  console.log("         commit messages carry reasoning worth keeping addressable.");
 } else {
   console.log("  ⛔ DO NOT SQUASH — merge it, and NAME the merge.");
   if (cited.length) console.log(`     ${cited.length} sha citation(s) would break.`);

@@ -36,10 +36,22 @@ git checkout <base>             # you merge FROM the base
 git merge --ff-only origin/<base>   # base must be current
 ```
 
-**⚠ Run `land-check` by path, not `bun run land-check`, when standing on the
-base** — the script may not exist on that branch yet:
-`bun scripts/land-check.ts` from the branch, or
+**Run the check BEFORE you switch — it takes both refs:**
+
+```bash
+bun scripts/land-check.ts <base> <branch>   # from the branch, before checkout
+```
+
+This is the easy path and it sidesteps a trap: the script may not exist on the
+base yet, so once you are standing there `bun run land-check` can fail on a
+branch that adds it. If you already switched, run it by path or via
 `git show <branch>:scripts/land-check.ts`.
+
+> **⚠ Run the gate UNPIPED.** finalize-branch's format/lint/types/test gate
+> still applies, and `bun test | tail` reports the **exit code of `tail`** —
+> which is always 0. Redirect to a file and read `$?`:
+> `bun test > /tmp/gate.log 2>&1; echo $?`. This has produced a false green more
+> than once, including on the run that first exercised this skill.
 
 ## 1 · Decide the strategy
 
@@ -65,17 +77,35 @@ bun scripts/land-check.ts [base] [head]
 for the verdict it reached, with this branch's name already in them. **Prefer
 what it printed over anything retyped here.**
 
-Its blind spot, which it cannot print: **it greps the branch's committed tree**,
-so anything uncommitted is invisible to it.
+**Two blind spots it cannot print:**
 
-## 2 · Merge
+- **It greps the branch's committed tree** — anything uncommitted is invisible.
+- **It greps THIS REPO ONLY.** A sha cited in an external knowledge base —
+  HiveMind, an Operator doc, a GitHub issue — is structurally invisible to it,
+  and this repo's sha-pinning habit does not stop at the repo boundary. **If you
+  published anything citing a branch sha outside the tree, the check cannot see
+  it and you must.**
 
-**Run the commands `land-check` printed for your verdict** — it substitutes the
-branch name and cannot drift from itself. The two things it cannot put in a
-command line:
+## 2 · Merge — THREE outcomes, not two
 
-**Squash-safe:** `git merge --squash` **stages and does not commit.** The tree
-looks merged, `git log` disagrees, and nothing errors.
+**Exit 0 permits squashing; it does not require it.** There are three ways to
+land and the check only ranks the first two:
+
+|                                     | keeps                            | when                                                          |
+| ----------------------------------- | -------------------------------- | ------------------------------------------------------------- |
+| `git merge --squash` + `git commit` | **one** new commit               | the intermediate commits are noise                            |
+| `git merge --ff-only`               | **every** branch commit, linear  | the commit messages carry reasoning worth keeping addressable |
+| `git merge --no-ff -F <file>`       | every commit **+ a named merge** | required at exit 1                                            |
+
+**Run the commands `land-check` printed** — it substitutes the branch name and
+cannot drift from itself. The one thing it cannot put in a command line:
+`git merge --squash` **stages and does not commit.** The tree looks merged,
+`git log` disagrees, and nothing errors.
+
+> **⚠ `--ff-only` does not collapse anything.** It is not "the single-commit
+> option" — fast-forward moves the base pointer and preserves the branch exactly
+> as it is. A two-commit branch stays two commits. _This skill and the script
+> both called it "for a single commit" until a real landing proved otherwise._
 
 **Named merge:** build **ONE file** — subject, **blank line**, body:
 
