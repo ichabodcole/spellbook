@@ -68,6 +68,22 @@ that bite if unknown; for full Bun API docs read
 > in this repo unless the test below passes.** Plugin skills supply the
 > _trigger_; this file supplies the _content_ — the same split as `gate` in
 > `.anthill/config.json`, which has no default on purpose.
+>
+> **Repeal criterion — and it scopes to the OVERRIDE, not to the policy.**
+> Repeal the override framing above when `finalize-branch` stops choosing a
+> merge strategy and instead **resolves a project-owned policy** (asked for
+> upstream as
+> [project-docs-scaffold-template#149](https://github.com/ichabodcole/project-docs-scaffold-template/issues/149)).
+> At that point there is nothing left to override — the plugin is asking.
+>
+> **⛔ That does NOT repeal the policy below.** When the plugin defers, this
+> section stops being an override and becomes **the content it resolves** — so
+> it is needed _more_, not less. Deleting it on that trigger would remove the
+> answer at the moment something finally asks the question. _This distinction is
+> written out because the repo has already been bitten by a repeal criterion
+> that self-fired: sprint 01's G5 said "repealed the moment the harness does it
+> for you," one harness did, and by its own words the rule repealed itself while
+> three other suites were still broken._
 
 **Flow:** feature branch off `develop` → **named merge** into `develop` → push →
 PR `develop` → `main` → merge → pull `main`, merge into `develop`, push.
@@ -77,20 +93,32 @@ PR `develop` → `main` → merge → pull `main`, merge into `develop`, push.
 **Squashing is only correct when BOTH are true:**
 
 1. **Nothing cites a sha from the branch** — not in `docs/`, not in `.anthill/`,
-   not in a commit body. _Check: `git log <base>..HEAD --format=%h`, then `git grep` each over
-   TRACKED paths only — an earlier figure of "32" counted untracked scratch and
-   was wrong._
+   not in a commit body. _Check: `git log <base>..HEAD --format=%h`, then
+   `git grep` each over TRACKED paths only — an earlier figure of "32" counted
+   untracked scratch and was wrong._
 2. **There is one author** — no `Anthill-Seat:` trailers to destroy.
 
 **Neither holds for agent-team work, and the numbers are not marginal.** Sprint
 02 of spell-hardening: **10 of 60 shas cited in live documents**, four seats'
-trailers. Squashing would have broken 32 references **to the anti-drift
+trailers. Squashing would have broken all **10 references to the anti-drift
 mechanism this project deliberately adopted** — plans pin `file:line` claims to
 shas precisely because line numbers rot.
 
+**Do not run this test by hand — it is mechanised, and the script is the source
+of truth for both the verdict and the commands:**
+
+```bash
+bun scripts/land-check.ts <base> <branch>    # 0 squash-safe · 1 named merge · 2 no verdict
 ```
-git merge --no-ff <branch> -m "<subject>" -m "<body>"
-```
+
+**The full procedure is the `land` skill** (`.claude/skills/land/`) — invoke it
+at the moment you merge. It carries the merge-message construction, the PR
+message, the back-merge, and the traps.
+
+> **⛔ Build the merge message as ONE file and pass `-F`.** Not
+> `-m "<subject>" -m "<body>"`, and never `-m "<subject>" -F <body>` — git
+> concatenates with no blank line, so the whole first paragraph becomes the
+> subject. That shipped a **251-character subject** here once already.
 
 ### Reading history — two queries, two questions
 

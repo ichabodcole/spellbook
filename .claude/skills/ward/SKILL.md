@@ -3,12 +3,17 @@ name: ward
 description: >
   Consistency checklist for the Spellbook — the wards that catch drift and
   missed updates when the book changes. Use when adding a spell, revising a
-  spell, changing a house-style convention, reserving or renaming a spell, or
-  bumping the spellbook plugin version. Triggers when a user says "add a spell",
-  "new spell", "revise a spell", "bump the spellbook version", "change a
-  convention", "rename a spell", "reserve a name", "run the wards", "check
-  consistency", or when editing marketplace.json, plugin.json, the grimoire, or
-  any of the spell listings. Run it before merging a spellbook change.
+  spell, changing a house-style convention, reserving or renaming a spell,
+  bumping the spellbook plugin version, or changing repo tooling that ships to
+  nobody (scripts, CI, hooks, package.json, AGENTS.md, repo-local skills under
+  .claude/skills/). Triggers when a user says "add a spell", "new spell",
+  "revise a spell", "bump the spellbook version", "change a convention", "rename
+  a spell", "reserve a name", "run the wards", "check consistency", or when
+  editing marketplace.json, plugin.json, the grimoire, any of the spell
+  listings, or repo tooling. Run it before merging a spellbook change — and
+  before merging a repo-tooling change, where its job is choosing the right
+  conventional-commit type so release-please does not ship a version nobody
+  needs.
 ---
 
 # Ward
@@ -141,6 +146,34 @@ anything that pointed at it, and leave the historical record intact.
       `grep -rIn "<name>" plugins/ .claude-plugin/ README.md` returns only the
       trigger-registry retirement record (and any intentional history).
 - [ ] Drift check passes: the spell-folder roster matches every synced listing.
+
+### Changing repo tooling (nothing ships)
+
+**Scripts, repo-local skills under `.claude/skills/`, CI, hooks, `package.json`,
+`AGENTS.md`, docs-about-process.** The distinguishing fact: **a consumer who
+installs the plugin gets nothing different.**
+
+**None of the spell checklists above apply** — no roster changed, so the synced
+listings cannot drift, and the drift check is not the thing to run.
+
+- [ ] **Confirm nothing under `plugins/spellbook/` changed.** If something did,
+      this is the wrong checklist — it is a spell revision as well.
+- [ ] **Commit as `chore(...)`.** ⚠ **This is the whole point of the
+      change-type.** release-please has **no path filter**, so _every_
+      conventional commit on `main` bumps the shipped plugin: a `feat(` here
+      ships a **byte-identical plugin under a new version number**, and a `fix(`
+      here claims a fix nobody receives. **Ask: does a CONSUMER get anything
+      different? If no, it is a `chore`.** _(Caught for real — a `feat(land):`
+      on a repo-local skill, amended before it reached `main`.)_
+- [ ] **`bun run check && bun test` still green**, and **run the gate unpiped**
+      — `bun test | tail` reports `tail`'s exit code, which is always 0.
+- [ ] If it adds or changes a **repo-local skill** (`.claude/skills/<name>/`),
+      give it a feedback touchpoint and **cold-read it with a fresh agent** —
+      the author cannot see which ordinary steps they left out.
+- [ ] If it duplicates something a **script already prints at runtime**, delete
+      the duplicate and point at the tool's output instead. A restated
+      instruction outranks the tool's live behavior and goes stale silently.
+- [ ] **No version bump, no `SKILL.md` roster edit, no marketplace edit.**
 
 ### Bumping the spellbook plugin version
 
