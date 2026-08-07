@@ -1,144 +1,205 @@
 ---
 name: land
 description: >
-  How this repo lands finished work — the merge strategy decision, the named
-  merge, and the PR message. Use when a branch is complete and about to be
-  merged, when opening a develop→main pull request, or when finalizing a branch.
-  Triggers when a user says "merge this branch", "land this", "open the PR",
-  "create a pull request", "finalize the branch", "ready to merge", "ship this",
-  or when a session's work is done and needs to reach develop or main. Run it
-  BEFORE merging, not after. It OVERRIDES the squash default in
-  project-docs:finalize-branch.
+  The merge step for this repo — decide squash vs named merge, write the merge
+  message, and produce the PR message. Use when a branch is complete and about
+  to be merged, when opening a develop→main pull request, or when finalizing a
+  branch. Triggers when a user says "merge this branch", "land this", "open the
+  PR", "create a pull request", "finalize the branch", "ready to merge", "ship
+  this", or when a session's work is done and needs to reach develop or main.
+  Run it BEFORE merging. It replaces ONLY the merge-strategy step of
+  project-docs:finalize-branch — not that skill's review, docs or quality gates.
 ---
 
-# land — getting finished work onto develop and main
+# land — the merge step
 
-> **This skill exists because the policy cannot live in a plugin.**
-> `project-docs:finalize-branch` defaults to **squash-merge**, we do not own it,
-> and a local-cache edit dies on the next plugin update. The plugin supplies the
-> _trigger_; this repo supplies the _content_ — the same split as `gate` in
-> `.anthill/config.json`, which has no default on purpose.
+> **⚠ THIS IS NOT THE WHOLE LANDING PROCEDURE.** It replaces exactly one step of
+> `project-docs:finalize-branch` — **its squash-merge default** — because that
+> default is wrong here and we cannot durably edit a plugin we do not own.
+> **Everything else finalize-branch does still applies: code review, session
+> docs, and the format / lint / types / test gate. Run those.** If you were told
+> "just follow the land skill", you were told wrong.
 >
-> **Full policy: [`AGENTS.md` § Landing work](../../../AGENTS.md).** This skill
-> is the procedure; that section is the reference.
+> Reference: [`AGENTS.md` § Landing work](../../../AGENTS.md).
+
+**Scope of each part:** §1–2 are **feature → develop**. §3–5 are **develop →
+main**. They are separate jobs; you are usually asked for one, not both.
 
 ---
 
-## 1 · Decide the merge strategy — by RUNNING the check, not by remembering it
+## 0 · Preconditions — none of §1 means anything without these
 
 ```bash
-bun run land-check [base] [head]
+git status --porcelain          # must be EMPTY
+git fetch origin                # land-check compares LOCAL refs; a stale base changes the verdict
+git checkout <base>             # you merge FROM the base
+git merge --ff-only origin/<base>   # base must be current
 ```
 
-**Exits 0 = squash-safe · exits 1 = must be a named merge.** It tests two
-things:
+**⚠ Run `land-check` by path, not `bun run land-check`, when standing on the
+base** — the script may not exist on that branch yet:
+`bun scripts/land-check.ts` from the branch, or
+`git show <branch>:scripts/land-check.ts`.
 
-1. **does any tracked file cite a sha from the branch?** — squashing breaks
-   those references, and this repo deliberately pins `file:line` claims to shas
-   as an anti-drift mechanism
-2. **is there more than one author?** — squashing destroys `Anthill-Seat:`
-   attribution, which is the only way _"whose judgment produced this?"_ is
-   answerable afterwards
+## 1 · Decide the strategy
 
-**Do not reason about the answer. Run it.** It discriminates — a solo chore
-branch comes back squash-safe, an agent-team branch does not.
+**The decision is: _would squashing destroy information someone will later
+need?_** Two kinds are known to matter here — **commit shas cited in the
+project's own docs** (this repo pins claims to shas on purpose) and **per-seat
+attribution**. `land-check` mechanises exactly those two. **They are the tested
+cases, not the whole question** — if you can name a third thing this branch's
+history carries, the script's green does not overrule you.
+
+```bash
+bun scripts/land-check.ts [base] [head]
+```
+
+| exit  | meaning                                                                                     |
+| ----- | ------------------------------------------------------------------------------------------- |
+| **0** | **squash-safe**                                                                             |
+| **1** | **named merge required**                                                                    |
+| **2** | **NO VERDICT** — empty range. Stale base, already merged, or base == head. **Not a green.** |
+
+**⚠ Read the output, not just the exit code.** The script prints its own caveats
+— including where its author count fails open — and prints the exact commands
+for the verdict it reached, with this branch's name already in them. **Prefer
+what it printed over anything retyped here.**
+
+Its blind spot, which it cannot print: **it greps the branch's committed tree**,
+so anything uncommitted is invisible to it.
 
 ## 2 · Merge
 
-**Squash-safe:** `git merge --squash <branch>` — or `--ff-only` for a single
-commit.
+**Run the commands `land-check` printed for your verdict** — it substitutes the
+branch name and cannot drift from itself. The two things it cannot put in a
+command line:
 
-**Not squash-safe:** build **ONE message file** — subject, **blank line**, body
-— then:
+**Squash-safe:** `git merge --squash` **stages and does not commit.** The tree
+looks merged, `git log` disagrees, and nothing errors.
+
+**Named merge:** build **ONE file** — subject, **blank line**, body:
+
+```
+Merge <branch>: <what a USER got, in their terms>
+
+<why it existed · what was delivered · decisions a reader needs ·
+ what it deliberately does NOT reach>
+```
 
 ```bash
 git merge --no-ff <branch> -F <file>
 ```
 
 > **⛔ NEVER `-m "subject" -F body`.** git concatenates them **with no blank
-> line**, so the entire first paragraph becomes the subject. This produced a
-> 251-character subject on a real merge and broke the `git log --merges` view
-> that naming the merge exists to create. Caught only by reading `%s` back.
+> line**, so the whole first paragraph becomes the subject. This produced a
+> **251-character subject** on a real merge and broke the `git log --merges`
+> view that naming the merge exists to create.
 
-**Verify by reading the result back**, not by trusting the command:
+**Verify by reading back — and fix it before pushing:**
 
 ```bash
-git log -1 --format='%s' | wc -c     # subject should be ~one line
-git log -1 --format='%h parents: %p' # a real merge has TWO parents
+git log -1 --format='%s' | wc -c        # want < ~100. If it is 251, you hit the trap above.
+git log -1 --format='%h parents: %p'    # a NAMED MERGE has two parents; a squash has one
+git commit --amend -F <file>            # the fix, if the subject is wrong. Only before pushing.
 ```
 
-## 3 · The PR message — written by a FRESH agent, from the tree
+**If it conflicts:** the branch needed rebasing onto the base.
+`git merge --abort`, rebase or merge the base into the branch, re-run the gate
+there, then come back. **Do not resolve a large conflict inside the landing
+merge** — it buries a rebase inside a commit that claims to be a merge.
 
-**Not by the lead of the session that did the work.** That agent knows what was
-_interesting_ (the falsifications, the instrument failures — that is the
-**retro**); it does not reliably know what was _delivered_.
+**Afterwards:** delete the merged branch, and delete the message file (it is
+untracked and will otherwise get swept into a later `git add -A`).
 
-**And the reconstruction is the point:** a fresh agent reading the tree does
-exactly what a future reader will do. **If it cannot write a good message from
-the artifacts, that is a finding about the docs, not about the agent.**
+## 3 · The PR message — a FRESH agent, from the tree
 
-**Dispatch it with the branch, the base, and NOTHING else.** No session log, no
-summary. Tell it to read `git log`, the diff, and the project docs — and that if
-it cannot establish something, reporting the gap is more useful than resolving
-it.
+**Not the lead of the session that did the work.** That agent knows what was
+_interesting_ (the falsifications — that is the **retro**); it does not reliably
+know what was _delivered_.
 
-Ask it to return, separately from the prose:
+**The reconstruction is the point:** a fresh agent reading the tree does what a
+future reader will do. **If it cannot write a good message from the artifacts,
+that is a finding about the docs, not about the agent.**
 
-- what it could **not** determine from the tree
-- where documents **contradicted** each other or the code
-- whether the release-note draft (if any) was **sufficient on its own**
+Dispatch it with the branch, the base, and **nothing else** — no session log, no
+summary. Ask it to return, separately from the prose: what it could **not**
+determine, where documents **contradicted** each other or the code, and whether
+the release-note draft was **sufficient on its own**.
 
-_On a real run this found four stale artifacts, including a superseded flake
-attribution in a draft nobody had amended, and a wrong number sitting in
-`AGENTS.md` that was known-wrong an hour earlier._
+_On a real run this found four stale artifacts — including a superseded
+attribution in a draft nobody had amended, and a number in `AGENTS.md` that had
+been known-wrong for an hour._
 
 ## 4 · Cold-read the message before it ships
 
 **A second fresh agent. Give it the message text and forbid it from looking
 anything up.** If it wants to go check something, _that is the finding_.
 
-Ask for: **terms it could not confidently interpret** — distinguishing _"I don't
-know this word"_ from _"I know it but it might mean something specific here"_ —
-**claims it could not evaluate**, and **what it would take away in 2–3
-sentences.**
+Ask for **terms it could not confidently interpret** — separating _"I don't know
+this word"_ from _"I know it but it might mean something specific here"_ — and
+**what it would take away in 2–3 sentences.**
 
-> **The second category is the dangerous one.** A term the reader
-> half-recognises is worse than one they do not recognise at all: an unknown
-> word makes them look it up, a familiar-looking one lets them carry on with the
-> wrong reading.
+> **The second category is the dangerous one.** A half-recognised term is worse
+> than an unknown one: an unknown word makes them look it up, a familiar-looking
+> one lets them carry on with the wrong reading.
 
-_On a real run this caught `cold-gated` being readable as its opposite, an
-undefined `board` in the headline claim, and a **live footgun filed under
-"limitations"** — where a skimmer would file it as a known issue rather than
-something shipped that they must act on._
+**What to do with the findings — this is not optional and it is not a loop:**
+
+1. **Wrong or stale facts → fix in the tree and commit.** They are defects.
+2. **Ambiguous terms → fix in the message.**
+3. **Something SHIPPED that reads as a limitation → move it to its own
+   section.**
+4. **Re-run the cold read only if you changed the message's structure**, not for
+   wording. **One re-read maximum** — past that you are polishing.
+
+_On a real run this caught a term readable as its own opposite, an undefined
+word carrying the headline claim, and a **live footgun filed under
+"limitations"**._
 
 ## 5 · Open the PR — the agent creates it, the human merges
+
+**Push first.** `gh pr create` uses the _pushed_ branch; an unpushed commit is
+silently absent from the PR. **Pushing is the human's here — ask.**
 
 ```bash
 gh pr create --base main --head develop \
   --title "$(head -1 msg.md)" --body-file <(tail -n +3 msg.md)
 ```
 
-> **⚠ `gh` splits title and body; `git` does not.** The same file feeds both,
-> but `gh pr create` needs `--title` and `--body-file` separately — `tail -n +3`
-> skips the subject and the blank line.
+> **⚠ `gh` splits title and body; `git` does not.** And `tail -n +3` assumes
+> **exactly one** subject line and **one** blank line — check `sed -n '1,3p'`
+> first, or the body silently loses its first line.
 
-**⛔ Push before you create the PR.** `gh pr create` uses the pushed branch; a
-local commit that has not been pushed will silently not be in the PR. **Pushing
-is the human's** in this repo — ask, do not assume.
-
-**⛔ The agent does NOT merge to main.** That is the release: it triggers
-release-please. **Merging is the human's.**
-
-**When merging, pass the subject** — otherwise GitHub writes
-`Merge pull request #NN from ichabodcole/develop` and the release spine stays
-unnamed:
+**⛔ The agent does NOT merge to main** — that is the release; it triggers
+release-please. **Hand the human this command; do not run it:**
 
 ```bash
 gh pr merge <n> --merge --subject "<subject>"
 ```
 
-## 6 · Reading history afterwards
+Without `--subject`, GitHub writes `Merge pull request #NN from …` and the
+release spine stays unnamed.
+
+**Then the back-merge, which is a real step and not trivia:**
+
+```bash
+git checkout main && git pull && git checkout develop && git merge main && git push
+```
+
+## 6 · Choosing the commit type — it decides the released version
+
+**release-please has NO path filter: every conventional commit on `main` bumps
+the shipped plugin.**
+
+- **`chore(...)`** — repo tooling, CI, skills, scripts, docs-about-process.
+  **Nothing under `plugins/spellbook/`. Does not bump.**
+- **`fix(...)`** — patch · **`feat(...)`** — minor · **`feat!:`** — major.
+
+> **Ask before you pick: does a CONSUMER get anything different?** If not, it is
+> a `chore`. A `feat(` on repo tooling ships a byte-identical plugin under a new
+> version number.
+
+## 7 · Reading history afterwards
 
 ```bash
 git log --merges --format='%h %ci %s' | grep -v "Merge pull request"   # FEATURES
@@ -146,7 +207,25 @@ git log --first-parent main --format='%h %ci %s'                        # RELEAS
 ```
 
 > **⚠ `--first-parent develop` does NOT work here.** The `develop`→`main` PR
-> merge is created **on main**, so its first parent is main and its second is
-> develop; the back-merge then **fast-forwards** develop onto it. develop adopts
-> **main's** spine and every named feature merge drops to a second parent,
-> invisible to that query.
+> merge is created **on main**, so its first parent is main; the back-merge then
+> **fast-forwards** develop onto it. develop adopts **main's** spine and every
+> named feature merge drops to a second parent, invisible to that query.
+
+## 8 · Feedback — this skill has been wrong before
+
+**Every warning above is a scar**, which means this document is sharp on the
+failures it has already survived and blank on the ones it hasn't. **A landing
+that went wrong in a way not described here is the most valuable thing you can
+report**, and it will not arrive on its own.
+
+Before you close out, answer two questions — the second is the one that pays:
+
+1. **What bit?** Anything here wrong, stale, or missing at the moment you needed
+   it.
+2. **What did you trust by default that turned out to be load-bearing?** A step
+   that read as obvious, an assumption this skill never states. **A clean run
+   suppresses exactly this signal** — name it anyway.
+
+Then update this file. **Do not wait for a second occurrence**: the scars here
+each cost a real merge, and the only reason they are written down is that
+somebody paid for them twice.
