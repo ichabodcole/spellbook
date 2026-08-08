@@ -188,6 +188,47 @@ I drafted a ward as an untracked test; every gate the team ran executed it. It p
 **`uncheckedAgainst` reports dirty TRACKED paths, so an untracked file is invisible to it** — the field answers *"was my green measured against uncommitted TRACKED work"*, which is narrower than its reputation.
 _The SOP already says draft new files in scratch. I did it anyway, because writing a `.test.ts` did not FEEL like drafting on the gate surface. The gate does not care how it felt._
 
+**A REAL MEASUREMENT ATTACHED TO AN UNCHECKED ASSERTION LAUNDERS THE ASSERTION. Third instance of this seat's most-prone failure — and it happened INSIDE a message arguing for measuring over asserting.**
+I wrote *"the OTHER name in your `uncheckedAgainst` is MINE"* — a claim about a peer's output **that I never read** — then supplied a genuine measurement beside it (the gate provably ignores my path; 341 files green with it dirty). His envelope held **one** entry and it was not mine: my file went dirty **after** his commit landed.
+**The measurement was true and answered a different question. Its presence is what made the whole message read as measured**, including the sentence that was pure inference.
+**And the guard I did deploy pointed the wrong way:** I marked the `bun test` arm `UNVERIFIED` — a known unknown — and never noticed the unflagged assertion sitting above it. **Flagging protects what you already suspect and is silent on what you never noticed you were claiming.**
+**Operational, and it is not "be careful": when a sentence is ABOUT A PEER'S OUTPUT, QUOTE THE OUTPUT.** Not *"I believe I am in that list"* — paste the list. It was one message away.
+_Two corrections came back, and the better one was not the correction to my claim. `uncheckedAgainst` is a **snapshot at the commit instant**, not a live query, so cross-checking it against a current `git status` compares two different times — a disagreement is evidence about ELAPSED TIME, not about either instrument (daedalus). And the entry is discharged **structurally**: `.anthill/` is excluded from the gate twice over, so it could never have been a false green for anyone (cassandra). **My one command was right and a config read was strictly better** — a measurement answers "is it true now", a configuration answers "could it ever have been otherwise."_
+
+**A VERDICT CAN BE RIGHT AND ITS REASON FALSE — and that is worse than being wrong, because nothing will ever contradict it.**
+I ruled out the `die()` family as *"stderr-only, nothing buffered on stdout."* Measured over a real shell pipe: **stderr truncates identically to stdout, at the same byte (65536).** The stream is not what protects `die()`; **the payload fitting the pipe buffer is.**
+The verdict survived. The justification did not — **and the justification is the half that travels**, because mine gave the rule-out no boundary. A future `die()` printing a usage block walks past 64 KiB and truncates, and the reader has been told the stream makes it safe.
+**A wrong verdict gets falsified by outcome. A right verdict with a false reason never does** — the outcome keeps agreeing with it, so no one re-derives it, and the reasoning is what the next person copies.
+**Every rule-out states its BOUNDARY in the same breath as its verdict.** One without a boundary is a reassurance wearing a measurement's clothes.
+_Third pin for "a reasoned dismissal is worse than a bare wrong claim." This is the sharpest form of it._
+
+**AN EXEMPTION IS A REASSURANCE IN EXECUTABLE FORM, AND IT IS THE ONE PART OF A PREDICATE NOBODY RE-EXAMINES.**
+`mkdtempSync(join(tmpdir(), …))` is the exempted pattern in the ratified `tmpdir()` predicate — I adopted daedalus's exemption deliberately, per my own rule about not minting a second predicate. **951 leaked `glamour-styles-*` dirs live inside that exemption**, oldest Jul 16, growing ~1 per suite run, invisible to every sweep including the ones I ran.
+**One predicate, two harms, written for one:** a mkdtemp'd dir CANNOT collide (namespace — exemption correct) and is NEVER removed unless someone removes it (lifecycle — exemption silent).
+**So an exemption must name the harm it was written for**, or a reader cannot see the harms it was not. *Being exempted is what "does not need checking" means* — which is exactly why nothing ever checks it.
+
+**A WRONG ZERO NEVER LOOKS WRONG. That is what makes a null result the most dangerous thing to build an argument on.**
+I reported *"the gate added zero"* from `find … -maxdepth 1` — **the silent-filter failure whose house-style rule I wrote, with the `63 vs 37` measurement in it.** True count without the depth limit: 1695 → **8231**, with 332 in the preceding two hours.
+**The aggravating half is not the number, it is that I built an ARGUMENT on it** — offered as a live negative control nobody designed, which is the most persuasive form available.
+**A wrong non-zero sometimes looks wrong; a wrong zero cannot.** So: **never let a null result stand as evidence without re-deriving the population it ranged over.** The zero is the one output whose instrument you cannot audit from the output.
+
+**A HEDGE LOWERS THE PRICE OF ENDORSING — the inverse of what `UNVERIFIED` is for, and it is this seat's specific trap.**
+cassandra marked an `EMFILE` hazard `UNVERIFIED`. I wrote *"your conditional hazard stands exactly as you wrote it."* She then ran it: refuted, and the restricted arm was faster.
+**"I agreed without measuring" is true and is not the lesson. An endorsement transfers epistemic WEIGHT without transferring EVIDENCE, and it lands hardest on a claim that is already hedged** — assenting to something already flagged feels costless. The output reads to a third party as corroborated while containing zero new observations.
+**I falsified a great deal that session and still did this once — on the one claim that was already marked.** Being the agreeable seat does not fire on confident claims; it fires where agreement looks free.
+**Never endorse an `UNVERIFIED`. Run it, or say "unmeasured by me too"** — which carries the fact the endorsement omits: the number of people who have checked is still zero.
+
+**A PLACEMENT DEFECT IS INVISIBLE TO THE RULE'S AUTHOR.**
+House-style already said *"a sweep that fails to RUN reports the same thing as a sweep that found nothing."* cassandra then found that exact shape shipped in three spells' CLIs — a failed read and an empty result printing one string at exit 0. **I did not connect them until she drove it.**
+The reason is **where I filed it**: under *"Enumerate the roster by behaviour,"* in a section about authoring wards. **Nobody writing `cmdSessions` reads a rule about enumerating the spell roster.** The rule is filed under the INSTRUMENT subject; the defect is in the OUTPUT CONTRACT.
+**Placement is what an author cannot audit** — knowing the rule means never noticing which route reaches it. **So ask of every canon sentence: who arrives here, and by what route?** Not: is it true, and is it findable by someone already looking for it.
+
+**A THREAD OF HIGH-QUALITY REPLIES IS WHAT DRIFT LOOKS LIKE FROM THE INSIDE.**
+My card went to `review` and I kept measuring for three more messages; the board sat at `doing: 0` with no build cards while three seats counted temp files.
+**Every message was a real finding, individually justified, and each was a direct reply to a peer — so no single one ever looked like the moment to stop**, because the alternative was leaving a defect unreported.
+**The tell I had and never used: I HAD NO CARD.** Not *"is this valuable?"* — that always answers yes — but **"whose card is this on?"**, which has a checkable answer.
+_And the carve-out, because over-broad self-criticism is its own error: one of those messages was in-lane canon work with a home. **The right response to a drift accounting you agree with is a boundary, not agreement.**_
+
 **Name the LAYER, not only the SHA.**
 On a shared tree two seats can both cite correctly and still disagree: `git show HEAD:<file>` answers _has it LANDED_, a plain read answers _does it EXIST_, and those are indistinguishable in prose. Say _"at `<sha>`, committed blob"_ or _"working tree on top of `<sha>`"_. **This is my own blob-verification lesson's next turn — the blob is right for one question and wrong for the other, and a mid-land window asks both at once.**
 
@@ -202,6 +243,7 @@ On a shared tree two seats can both cite correctly and still disagree: `git show
 **Reporting a ward's total without saying which POPULATION it counted.** A count whose majority is a known artifact is worse than no count — the real signal (3 · 3 · 4) was invisible inside a headline of 47. **Suppressing the artifact is not enough; the total must name its denominator.** (cassandra's framing, and it generalises past wards.)
 **Marking a datum `UNVERIFIED` and then supplying a confident CAUSE for it in the same breath.** The marking protects the comparison and does nothing about the explanation, and the explanation is the part that travels — a flagged number invites no follow-up, a stated cause does.
 **Treating "N of M already do X" as a safety argument.** The majority pattern is what everyone reaches for, so the one member it does not fit is simultaneously the member that gets skipped in sweeps, receives a fix that does not apply, and looks like negligence when it is structure. **glamour was the outlier three times in one session** — no spawn env for `TMPDIR` (its daemon runs in-process), the unscoped pointer for the same reason, and the only piped daemon stdout (it needs a handshake line; its siblings poll the discovery file). **Ask what makes the outlier DIFFERENT before assuming it is merely behind.**
+⛔ **And the sign can go the other way — sighting four, sprint 03: glamour was the outlier by being RIGHT.** It is the only terminal-exit site that does not use the majority `await main(); process.exit()` shape, because its in-process daemon has no `main` to hide the teardown inside — so it explicitly `await d.shutdown`s the SSE flush the other six get for free. **A sweep phrased "make glamour match the others" reads as consistency work and would have removed a guard.** The structural difference is the whole answer in both directions; "merely behind" is never it.
 **Writing a repeal criterion without a denominator.** *"Repealed the moment the harness does it for you"* fired early because the harness did it for ONE spell of four — and the scope was stated three times, in the commit message and twice on the wire. **Not a knowledge failure, a propagation one: nobody re-reads a conditional when its condition is satisfied, because satisfaction feels like completion.** Name the SET a repeal ranges over, so partial satisfaction reads as partial.
 **Landing in a shared file because it is "my lane."** Lane ownership is not a claim on a file; a claim on a file is. The near-miss that did not happen was routing, not care — I OFFERED an SOP edit instead of landing it and the lead had it claimed minutes later. The commit returns `ok:true` and no guard fires, and **`git status <path>` cannot even tell you whose the dirty hunks are** — git attributes commits, never the working tree.
 
@@ -214,6 +256,9 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Where they get written:** `restoreSkipped` in P0b step 3; `snapshotBackedUp` and `hydrated` in P1 steps 3–4 — **different phases, plausibly different sessions, so plausibly not the instance that ratified this.**
 **Discharge it by:** grepping each name at the moment its phase lands, and confirming the envelope carries `| null` present-and-null rather than absent (the absent-vs-null distinction is the half a field name cannot convey).
 **Retire this entry** once all three exist in code and are documented — at that point a grep does the work and the obligation is over.
+**Status 2026-08-08 sprint 03 (re-checked at `a5c322a`): UNCHANGED — `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO.**
+P1 did not land in sprint 03 (the ratify round consumed it), so there was no opportunity to diverge and no opportunity to discharge.
+**prospero ruled the ping a PRECONDITION of the P1 land, not a courtesy (#459 §6)** — so the next holder of this seat should expect to be called, rather than having to watch for it.
 **Status 2026-08-06 sprint 02 (checked at `bbc61c2`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO — NOT discharged.**
 `restoreSkipped` landed with P0b (`8f4d92d`): **20 sites across 3 files, zero variants**, swept case-insensitively for `restoreskipped` / `restore_skipped` / `restore-skipped` / `skippedRestore`.
 **The half a field name cannot convey was also right:** the envelope carries `restoreSkipped: null` present-and-null on the success paths, and a test asserts `"restoreSkipped" in env` rather than a value — the absent-vs-null distinction, built without being asked.
@@ -229,13 +274,9 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Two findings on first run, both closed in the same commit** (`grapevine --last`, `imago --models`), plus the `--` terminator line across all six spells whose CLI sets `allowPositionals` — **a set derived by measurement, because a named set was wrong twice that day.**
 **Still open for the next runner:** the `forwarded` reachability check (requirement 3) is DESIGNED but NOT BUILT — the ward currently exempts internal entry points without verifying every flag they parse is reachable from a documented one. That exemption is a hiding place until it is.
 
-_Superseded, kept for its reasoning:_ **the flag/doc invariant was EXECUTABLE and BUILT before it landed —**
-Both halves run: (1) the doc↔registry diff, and (2) the internal-entry-point exemption plus its reachability check.
-It independently reproduces the corrected **16 entry points / 10 `node:util` / 6 hand-rolled**, and finds **7 dead flags · 3 test-only** across the 6 internal entry points (`bounty/server.ts` clean, for the right reason: its `--port`/`--host` really are documented).
-**Family is decided by the IMPORT of `node:util`, never by the token `parseArgs`** — four spells define a LOCAL function of that exact name, and that identifier collision is what made the original classifier wrong.
-**Three reachability categories, not two: caller-facing · TEST-ONLY (legitimate, never delete) · dead.** Merging the last two hands a builder a delete-list containing something the gate depends on — a cry-wolf you ACT on, which is worse than one you ignore.
-**Still unbuilt, named so it is not lost:** `forwarded` matches only double-quoted `"--flag"` literals, so a caller using a template literal is invisible → a FALSE dead verdict carrying delete-this advice. Same class, same consequence, different input. Fix this before the ward lands.
-**Scratch does not travel — re-derive from `plan.md` and this entry if the prototype is gone.**
+_PRUNED 2026-08-08: the pre-land design notes for this ward are gone — the ward LANDED at `bbc61c2` and the code is now the source of truth for its own design. What survives is only what the code cannot say:_
+**Family is decided by the IMPORT of `node:util`, never by the token `parseArgs`** — four spells define a LOCAL function of that exact name, and that collision is what made the original classifier wrong.
+**Three reachability categories, not two: caller-facing · TEST-ONLY (legitimate, never delete) · dead.** Merging the last two hands a builder a delete-list containing something the gate depends on — **a cry-wolf you ACT on, which is worse than one you ignore.**
 **Four design requirements, each earned by RUNNING the invariant rather than reasoning about it — do not drop them when the wording is rewritten:**
 1. **Enumerate entry points by what parses arguments** — not by filename, not by `process.argv`, not by static import. All three were used and all three were wrong (`Bun.argv` and dynamic `await import("node:util")` are both invisible to them).
 2. **The documentation half applies to CALLER-FACING entry points only.** An entry point spawned solely by a sibling in the same spell is internal — its argv is a private contract, and documenting it publishes an interface the spell does not offer. Run unbounded it produced a **6-item false positive** on glamour's daemon.
