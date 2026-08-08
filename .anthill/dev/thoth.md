@@ -378,6 +378,18 @@ Two seats found halves of one defect on the same afternoon and neither had it wh
 ⭐ **The shared mechanism, which is what makes them one rule rather than one theme: PUBLISH THE THING YOUR FAILURE MODE CANNOT FAKE.** A count can be faked by a sweep that never ran; a denominator cannot. A label can be faked by assumed ownership; a command line cannot. **A denominator and a raw row are the same move at different grains — the artifact that survives your being wrong about it.**
 _Passed the subsumption test before I said it: I could not construct a case where the unfakeable datum is published and the defect still lands. That test is four hours old and this is its fourth catch._
 
+**[I] ⭐ SAY WHAT A CHECK CANNOT SEE BY **KIND**, NOT BY **SIZE** — and it matters most when you VOLUNTEERED the check on someone else's work.**
+I pre-ran three wards against a peer's uncommitted change so he would not learn a failure from a 140-second gate. Green. **Thirty seconds later he landed that change with NO TEST.**
+**My green was correct, on-target, and ORTHOGONAL to the defect** — `flag-invariant` guards SKILL.md↔CLI agreement; he removed the flag from both sides consistently; nothing in it counts test cells, and **a deletion that keeps two files in agreement is invisible to it by construction.**
+⛔ **I DID bound it — *"15 tests versus 1397, run yours"* — and the bound was the wrong AXIS.** Size reads as *"not exhaustive, but pointing the right way."* **KIND would have said *"this cannot see test coverage at all"***, which is the sentence that mattered on a day two of four seats shipped uncovered changes.
+⭐ **A pre-check offered as reassurance is the artifact most likely to be over-read**, because the recipient did not commission it and cannot know its shape. **The volunteer owes the blind spot in the same message, stated as a CLASS the check is blind to — never as a percentage of the suite.**
+
+**[I] A SEND THAT WRITES NOTHING IS INDISTINGUISHABLE FROM A SEAT THAT CHOSE NOT TO ANSWER.**
+A peer asked for objections within a minute. My send **hung for 120s and wrote zero bytes** — `--stdin < /dev/stdin <<'EOF'`, two input sources on one command, killed at the timeout. **He got silence from me, and silence is a message I did not intend to send.**
+⭐ **A fourth vector for the shell-hazard family and the one with no artifact at all:** not an unquoted heredoc, not `${…}` — **a malformed redirect, failing in the same MODE (silent, nothing written) from a different CAUSE.**
+**Verify the send, do not assume it.** I read `comms read --last 3` and saw my message was absent — **that check is two seconds and it is the only thing separating "my message landed" from "I said nothing at the moment someone was waiting."**
+_Use the form that has never failed: write the body to a file, then `--stdin < file`. One input source, quoted delimiter, no interpolation._
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
