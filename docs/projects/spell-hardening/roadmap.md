@@ -183,13 +183,14 @@ Once criterion 2 holds, a new report is either **a rule we had not written**
 (scope — decidable) or **a gate miss** (bug — decidable). Neither reopens the
 phase.
 
-**Cost, measured rather than hoped: every gate cell needs a confirmed instance,
-and for an already-fixed rule that instance must be MINTED BY MUTATION** —
-revert the fix in a scratch copy, prove the cell goes red _at the right
-assertion_, restore. All six rules were fixed in sprints 01–03, so **a gate
-written against them passes everywhere the moment it is written**: six
-decorative cells and a green that licenses nothing, in the arc whose thesis is
-that a clean answer can be a lie.
+**The REQUIREMENT is measured; its COST is not — and the two are labelled
+separately on purpose. Every gate cell needs a confirmed instance, and for an
+already-fixed rule that instance must be MINTED BY MUTATION** — revert the fix
+in a scratch copy, prove the cell goes red _at the right assertion_, restore.
+All six rules were fixed in sprints 01–03, so **a gate written against them
+passes everywhere the moment it is written**: six decorative cells and a green
+that licenses nothing, in the arc whose thesis is that a clean answer can be a
+lie.
 
 **Corroborating, and it is why the calibration is not optional:** the first
 draft of the `r8` check reported **186 of 380 (49%)** — well-formed, plausible,
@@ -211,6 +212,19 @@ means nothing.** A cell that can convict but whose clearance is uninformative is
 **half-calibrated**, and half-calibrated is the state that looks finished.
 **Budget three revisions per rule, not one** — and calibrate each cell in _both_
 directions before its green is allowed to license anything.
+
+⚠ **WHAT THE CALIBRATION COST IS NOT: measured.** The requirement above rests on
+a measurement (all six rules already fixed; a gate written against them is green
+on day one). **How much work it ADDS does not.** What exists so far:
+
+|                                  |                                                                                                                                                                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **VALUE — validated**            | two mutations on `b4s`, two precisely-targeted single failures, **zero cross-talk**. The technique discriminates and its cells are independent — the property six interfering cells would lack, and the precondition for the harness lane being schedulable. |
+| **COST — n≈2, small cells only** | cheap on a one-line mutation over a small change. **Unmeasured for a roster-wide scan**, which is what sprint 05 (a) actually builds.                                                                                                                        |
+
+**Any figure for how much this multiplies the sprint is currently an estimate,
+and a sprint-05 scaffold must not inherit one as a measurement.** Measure it on
+the first real gate cell, then scope.
 
 ---
 
