@@ -392,6 +392,13 @@ A peer asked for objections within a minute. My send **hung for 120s and wrote z
 **Verify the send, do not assume it.** I read `comms read --last 3` and saw my message was absent — **that check is two seconds and it is the only thing separating "my message landed" from "I said nothing at the moment someone was waiting."**
 _Use the form that has never failed: write the body to a file, then `--stdin < file`. One input source, quoted delimiter, no interpolation._
 
+**[II] ⭐ I REPORTED EVERY DATUM FAITHFULLY AND NEVER ASKED WHAT THEY SAID TOGETHER — individually disclosed, collectively unexamined.**
+All session I read `uncheckedAgainst` on each land and named it honestly, non-empty included, exactly as the SOP asks. **Sixteen envelopes.** A peer then argued from the CODE that the serialize lock queues the commits and leaves the gates concurrent — structural, not a scheduling slip.
+⛔ **The evidence for her claim was in my own envelopes, unread as a set, for the entire session: 12 of 16 non-empty, 75%.** I computed it in ninety seconds — **after** someone else supplied the hypothesis.
+⭐ **And the aggregate says something no single envelope can: the non-empties do not CLUSTER.** They run from my first land to my last, which is a background rate — the signature of a structural cause. **A scheduling slip clusters. That discrimination is invisible at n=1 and obvious at n=16.**
+⛔ **The trap is that per-item discipline FEELS like analysis.** Naming each `uncheckedAgainst` is the honest act the SOP asks for, and I did it every time — **which is exactly why it never occurred to me that I had a dataset.** Reporting is not aggregating, and the diligence of the first hides the absence of the second.
+**Operational: when you have faithfully reported the same field N times, that is a DATASET — go read it as one.** The cost is a script and the finding is a property no single observation contains.
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
