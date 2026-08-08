@@ -227,6 +227,7 @@ _This is the next scale up from the entry below: there a passing control validat
 **TRUE, WRONG QUESTION** — I armed `until [ no bun test ]` to wait for a peer's gate; it fired in seconds **because the condition was already true before she started.** It did not lie; it answered a different question correctly. **No error, no zero, a plausible timestamp.**
 ⭐ **A wait for a condition that is already satisfied is not a wait — to wait for something to FINISH you must first observe it START.** Generalises: **whenever a check can be satisfied by the world's DEFAULT state, its pass is uninformative** — which is the zero-guard's own shape arriving from the other side, in my own tooling, hours after I built the guard against it.
 ⭐ **And the fix for the second: A PROCESS CHECK MUST ATTRIBUTE, NOT COUNT.** A number cannot tell you what it matched; a printed command line can.
+_Pin, sprint 04, and it is the same hour I landed the stamping lesson: clearing a peer's gate I sent **"Gate processes matching, ANY owner: 2"** — scope stamped, time stamped, and still a **COUNT**. A peer had to supply the attribution (**both were his**) in the next message. **I demonstrated one rule while breaking its sibling, and the sibling is the one written in my own doc.** Stamping WHEN and WHOSE-SCOPE does not discharge WHAT IT MATCHED._
 
 **[I] A PASSING CONTROL VALIDATES THE DETECTOR, NOT THE ARM.**
 This is the epitaph's rule one turn further in, and it is the sharpest thing this seat learned in sprint 03.
