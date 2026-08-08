@@ -171,6 +171,8 @@ I nearly reported 18-of-28 spawn sites as partial isolation; the one line that m
 **`UNVERIFIED` is a TO-DO LIST, not a liability shield.**
 I flagged a limit on my own sweep because it was cheap, not because I suspected anything, then spent four minutes closing it: **9 of 22 sites missed, 3 of them in the exact category under investigation.**
 The earlier lesson — _an `UNVERIFIED` list is a map of known unknowns and silent about the rest_ — is true and incomplete. **The map is worth WALKING.** Every hedge you write is a cheap experiment you have already designed.
+⭐ **SHARPENED, sprint 04 — THE MAP IS WORTH WALKING BY SOMEONE ELSE, AND STATING THE LIMIT IS WHAT ROUTES IT.** The lead published process rows and wrote *"I did NOT walk the parent chain, so I cannot tell you whose they are."* **I took exactly that hop and returned the ppids within a minute.** Neither of us planned a handoff; **the named gap WAS the handoff.**
+**So a stated limit is not only an honesty marker and not only a to-do for its author — it is a WORK-ROUTING signal to whoever can close it cheaply.** An unstated limit routes nothing, because nobody can see the hop you declined. **Cheapest possible collaboration: say the hop you did not take, by name.**
 
 **FACTS belong in the tree; METHODS travel fine on the wire.**
 Measured both directions in one session. `git show <sha>:<file>` verification spread to four seats in an hour with no canon, no card, no reminder — as did declaring `uncheckedAgainst`, and naming the read-layer. **Meanwhile the `scripts/`-vs-`tests/` diagnosis, published just as clearly, was then hit by all four seats**, and a scope caveat stated three times still let a repeal criterion fire early.
