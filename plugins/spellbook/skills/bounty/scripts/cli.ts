@@ -7,7 +7,7 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]  # spawn a daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently — #69)
 //   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
-//   bun cli.ts state [--full] [--owner <name> | --mine] [--as <name>]    # scoped read-back
+//   bun cli.ts state [--owner <name> | --mine] [--as <name>]    # scoped read-back (full; --full accepted, it is the default)
 //     Each task carries derived `blocked` + `liveBlockers:[{id,title,status}]`
 //     (the not-done blockers), so a filtered blocked task stays actionable.
 //
@@ -691,13 +691,37 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   return die("bounty daemon failed to start within 5s");
 }
 
+// b6 — `full` is no longer a parameter. The read is always full, so there is
+// nothing for it to select. The FLAG stays declared in CLI_OPTIONS so a strict
+// parser still accepts `state --full` from existing callers (removing it would
+// exit 2 on them), and `readMode: "full"` in the response confirms they got what
+// they asked for rather than leaving it assumed.
 async function cmdState(
   session: string | undefined,
-  full: boolean,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
 ) {
   const s = requireSession(session);
-  const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
+  // b6 — DEFAULT FLIPPED. This line used to read `${full ? "" : "?lean=1"}`, so
+  // the most-used read in the toolbox asked for LEAN and `--full` asked for
+  // everything. That is a lossy read as the default, and it was harmless only by
+  // accident of the server ignoring the parameter.
+  //
+  // ⛔ A PRE-INSTALLED ABSENCE WITH A TRIGGER DATE: server.ts documents that
+  // `lean ≈ full today` and explicitly reserves the right to implement a real
+  // lean later. On the day anyone does, every existing caller would silently
+  // start receiving a TRIMMED payload with nothing saying which mode produced
+  // it. Flipping it is free and safe TODAY precisely because the flag is
+  // currently a no-op, and impossible to do safely afterwards.
+  //
+  // A LOSSY READ MUST BE OPTED INTO, NEVER DEFAULTED.
+  //
+  // `--full` is KEPT and now names the default. It is not removed: the parser is
+  // strict, so an unknown flag exits 2 — deleting it would turn every existing
+  // `state --full` caller into a hard failure to fix a flag that never did
+  // anything. It is documented as compatibility rather than left to look load-
+  // bearing (cassandra's r4: SKILL.md advertised it with no note that it was
+  // inert, and that is the contract a cold agent reads).
+  const { status, data } = await api(s.port, "GET", "/state");
   if (status !== 200) die(`state failed (HTTP ${status})`);
   // Scoped readback (mirrors `tail` semantics): --owner X = X's tasks; --mine =
   // own + claimable (unowned). Each retained task keeps its computed
@@ -709,7 +733,17 @@ async function cmdState(
       d.state.tasks = d.state.tasks.filter((t) => ownerInScope(t.owner, scope));
     }
   }
-  printJson(data);
+  // b6 — the response now STATES WHICH MODE ANSWERED IT rather than leaving the
+  // caller to assume its request was honoured. Always "full", because that is
+  // what the daemon actually serves; `readMode` is a claim about the ANSWER, not
+  // an echo of the ASK.
+  //
+  // DOMAIN, stated because a present-and-null field is only honest over one
+  // (outcome-contract Boundary 3): `readMode` ranges over what THIS CLI
+  // requested and what the daemon returned for `/state`. It says nothing about
+  // any other route, and it is not a promise that a future lean would be
+  // reported here — that would be the same fuse one level up.
+  printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
 async function cmdTail(
@@ -964,7 +998,8 @@ async function readStdin(): Promise<string> {
 const HELP = `bounty — an agent-driven task board.
 
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)
-  state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
+  state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }
+           (--full is accepted but redundant: the read is full by default — b6)
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
   update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
@@ -1023,7 +1058,7 @@ async function main(argv: string[]): Promise<number> {
     case "state": {
       const mine = flags.mine === true;
       if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
-      await cmdState(session, flags.full === true, {
+      await cmdState(session, {
         owner: typeof flags.owner === "string" ? flags.owner : undefined,
         mine,
         as,
