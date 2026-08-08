@@ -2,7 +2,7 @@
 
 **Status:** Active **Started:** 2026-08-05 **Current sprint:** **none building —
 [03 is complete and shipped in v2.1.0](./sprints/03-what-close-takes-with-it/plan.md);
-the next sprint is unscoped**
+[04 is scaffolded, awaiting ratify](./sprints/04-the-shape-of-nothing/plan.md)**
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
@@ -26,11 +26,12 @@ project closes them.
 
 ## Sprints
 
-| #   | Sprint                                                                    | Status   | Opened     | Closed     | Outcome                                                | Decisions                                                       |
-| --- | ------------------------------------------------------------------------- | -------- | ---------- | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                               |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
-| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                              | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
+| #   | Sprint                                                                    | Status      | Opened     | Closed     | Outcome                                                | Decisions                                                       |
+| --- | ------------------------------------------------------------------------- | ----------- | ---------- | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                               |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete    | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
+| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete    | 2026-08-07 | 2026-08-08 | **none — see note below**                              | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
+| 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | 🟡 Scaffold | —          | —          | —                                                      | —                                                               |
 
 **Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 
@@ -94,19 +95,43 @@ the snapshot-rotation path, the project's first _durability_ family fix.
 > corrected by running `ward` instead of reasoning from the changelog's shape.
 > The rule was already written down; nobody consulted it._
 
-### Issue ledger
+### Issue ledger — measured 2026-08-08
 
-**8 of the 14 closed** — `#73` `#74` `#77` `#78` `#80` `#81` `#83` `#84`.
+> **⚠ THE PREVIOUS VERSION OF THIS SECTION SAID "SIX REMAIN" AND THEN LISTED
+> NINE ISSUE NUMBERS**, against a `14` denominator that is a curated set and
+> cannot be reconstructed from the tree. **A miscount, in the ledger, inside a
+> project about miscounting — written 2026-08-08 and corrected the same day.**
+> Replaced with a derivable population: every issue in `#64`–`#88` this project
+> has touched, split by whether it predates the project.
 
-**Six remain:** `#64` has a **root-cause hypothesis but no reproduction**
-(v2.1.0's `idleTimeout: 255` against Bun's 10s default explains "idle-died even
-with a keep-alive tail" — deliberately left open until a real session confirms
-it); `#79` `#72` `#76` are P2/P3 and unratified; `#82` is on hold; `#85`–`#88`
-sit with the CLI-contract investigation.
+```
+issues #64–#88 touched by this project:  21
+  pre-existing (before 2026-08-05):       9   → 5 closed, 4 open
+  filed DURING the project:              12   → 6 closed, 6 open
+                                         ──
+  total                                        11 closed, 10 open
+```
 
-**⚠ The count still is not a measure of what is left** — sprint 03's P1d–P1f
-were found by this project and have no issue number, exactly as sprint 02's P0f
-closed nothing.
+**Closed (11):** `#67` `#68` `#69` `#73` `#74` `#77` `#78` `#80` `#81` `#83`
+`#84`.
+
+**Open (10):** `#64` has a **root-cause hypothesis but no reproduction** —
+v2.1.0's `idleTimeout: 255` against Bun's 10s default explains "idle-died even
+with a keep-alive tail", and it is **deliberately open** until anthill runs the
+pre-registered measurement · `#79` `#82` `#85` `#86` `#88` are the **absence
+family** and are [sprint 04](./sprints/04-the-shape-of-nothing/plan.md)'s scope
+· `#87` is arguably that family and was left out so the ratify round has to
+decide it · `#72` `#75` `#11` are features/cosmetic, not hardening · `#76` is a
+real defect, unratified.
+
+**⚠ THIS PROJECT HAS FILED MORE ISSUES THAN IT STARTED WITH — 12 against 9** —
+and that is the method working, not failing. **The count is converging in SHAPE
+rather than in size: 8 of the 10 still open are one family.**
+
+**⚠ And the count still undercounts what we find.** Our own findings route to
+[`docs/backlog/`](../../backlog/), never to issues (issues are inbound from
+other teams). Sprint 03's P1d–P1f and both 2026-08-08 grapevine items are
+invisible to the table above, exactly as sprint 02's P0f closed nothing.
 
 ## Other Documents
 
