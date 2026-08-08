@@ -91,11 +91,24 @@ _(The earlier version of this document ran those two sentences together.)_
 
 ### ⛔ TWO SUPPORTING CLAIMS WERE FALSE, AND ONE CHANGES THE SHAPE
 
-1. **`H-D3` is decoupled.** `bun run check` is **biome**; TypeScript is absent
-   from dependencies entirely — so a repo-wide `tsc` gate is _adopting a
-   dependency_, not draining a 398-item queue. **And it does not matter:** both
-   shipped wards run repo-wide today under `bun test` and neither type-checks
-   anything. **H-D3 can be TRUE and this end condition still reachable.**
+1. **`H-D3` is decoupled — from the gate's EXISTENCE.** `bun run check` is
+   **biome**; TypeScript is absent from dependencies entirely — so a repo-wide
+   `tsc` gate is _adopting a dependency_, not draining a 398-item queue. **And
+   it does not block criterion 2:** both shipped wards run repo-wide today under
+   `bun test` and neither type-checks anything. **H-D3 can be TRUE and this end
+   condition still reachable.**
+
+   ⚠ **BUT IT RE-COUPLES AT PRECISION, and that is a later decision nobody
+   should inherit as settled.** The `r8` check's v3 identifies mutators **by
+   name** (`add|create|save|…|push|set`), which sweeps in `arr.push()`,
+   `params.set()` and `setTimeout()` — so its 114-of-123 red is **inflated and
+   was reported as inflated.** Distinguishing a real mutator from a
+   same-named-method requires either **type information** or **per-spell
+   knowledge — and per-spell knowledge is precisely what `r8` established a gate
+   must not need.** So: **the gate exists without types; a LOW-NOISE gate may
+   not.** If that trade is ever forced, adopting TypeScript is a **cost and
+   appetite decision — Cole's**, not a wire call. It is not forced yet.
+
 2. ⭐ **The project's own thesis is what makes two of its rules uncheckable.** A
    checker looking at a `0` faces **exactly the ambiguity the rule forbids** —
    it cannot tell _"0 because zero"_ from _"0 because it failed"_ without
