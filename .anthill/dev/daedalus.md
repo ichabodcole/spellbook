@@ -656,6 +656,42 @@ Four times in one sprint two people held different true counts of the same thing
 The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts distinct flag names PER SPELL**, and glamour's `intent restore timeout title` appear in two parsers. For "is each parser's declaration exercised?" 119 is correct and 115 would credit one parser for another's coverage. For "how many flags does the toolbox expose?" 115 is correct and 119 is inflated by four. **Neither number is wrong; they answer different questions.**
 So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
 
+**MUTATION-VERIFY ON A PRIVATE TREE. THE SHARED CHECKOUT MUST NEVER GO DELIBERATELY RED.**
+Mutation verification means breaking a file on purpose. I did that in the shared tree and two seats gated inside the window: one got a red naming my file, one measured the biome half and sent an urgent warning.
+Neither could have known, because I announced the GATE RUN and never the BROKEN WINDOW — and the broken window is the more dangerous of the two. A gate run costs a peer 135 seconds; a deliberately-red tree costs them a false diagnosis of their own work.
+**To a peer, a red from my deliberate mutation, a red from my half-finished TDD, and a red from a genuine defect in my code are byte-identical.** The tree has no field that says "this red is on purpose and expires in ninety seconds."
+The SOP says draft NEW FILES in scratch; it does not say MUTATE EXISTING ONES there, and that is the case that bit two people.
+Fix: `git worktree add --detach`, copy the new test file in, run against the committed pre-fix code, remove the worktree. **Forty seconds, and I used it for the next three cards with zero peer cost.**
+Pin: the b11 window (comms #666/#668), then b10/b12/b13 mutations run clean in worktrees.
+
+**ENUMERATE THE CALL SITES OF A SINK — IT IS A DIFFERENT ACT FROM TRACING THE ROUTES A TICKET DESCRIBES, AND ONLY THE FIRST IS BOUNDED BY WHAT THE REPORTER NOTICED.**
+Paid twice now. Sprint 03: reading `saveSnapshot`'s call sites found a third route to the sink that neither issue mentioned, and that route is the one that discriminated the predicates.
+Sprint 04: I took b5 (a count is wrong) and read the call sites around it, which found b11 — a truncated final line silently destroying the next write, reusing an id, at `ok:true`. **b11 was the worst defect of the sprint and no ticket described it.**
+The ticket bounds your attention to the path the reporter walked. The sink's call sites bound it to the code.
+
+**GREP THE TESTS BEFORE YOU REMOVE PERMISSIVE BEHAVIOUR — IT SEPARATES "FIX AN ACCIDENT" FROM "DELETE A CAPABILITY", AND IT COSTS ONE COMMAND.**
+b9: I was told to stop imago's `context.add` overwriting a style. One test went red — titled *"upserts a style on name"*, with the comment `// re-add same name → upsert (no duplicate), updates content`. **The destructive half was DESIGNED.** My own r2 report had called it "silently destroys", which was true of its CONSEQUENCE and said nothing about its PROVENANCE.
+Removing it would have deleted a shipped, tested agent capability AND answered a question the lead had explicitly reserved for the human — a refusal is a design decision wearing safety's clothes.
+b10, same session: I ran the check first. Every block test seeds real tasks; nothing asserted the permissive path. **Incidental, not designed — so removing it was correct.**
+**The same red means opposite things depending on that one grep**, and the grep is the whole difference.
+Pin: b9 held at `doing` and escalated rather than landed; prospero re-ruled (keep the upsert, make it LOUD, and carry the PRIOR VALUE so the write is recoverable).
+
+**A CARD'S STATED MECHANISM IS A CLAIM, AND A FIX BUILT TO A WRONG ONE SHIPS GREEN AND LEAVES THE BUG.**
+Twice in one sprint, both from the lead, both with a real symptom:
+- **b10** — "a silent PERMANENT block that never resolves." Measured: it does not block at all. `isBlocked` requires the blocker to EXIST and `liveBlockers` filters the same way, both by design, both commented. **The true defect is the inverse and worse: a guard the caller believes is in place and is not**, with the envelope saying `"blocked"` while `/state` says `blocked:false`.
+- **b12** — "silent dedupe." The id is minted at the call site and no caller can supply one, so the dedupe branch needs a 2^32 collision. **Dead code.** The reachable defect was #87's discarded id in a third spell.
+Both cards were written from a real observation. **Verify the mechanism independently of the symptom** — and say which half you are correcting, because the symptom usually survives.
+
+**THE REAL TEST OF A WRITE IS A READ.**
+b11's three cells: id-not-reused, append-not-fused, and **readback through the daemon**. Only the third is decisive — a bytes-on-disk assertion passes even when the daemon can never serve the message again.
+Its pre-fix output is the sprint in one line: a send that returned success, then `{"ok":true,"messages":[],"cursor":0}`.
+Rule: when the thing under test is a write, assert it through the READER the consumer actually uses, never through the storage layer.
+
+**A RED CELL IS NOT EVIDENCE UNTIL YOU HAVE READ WHICH ASSERTION PRODUCED IT.**
+My first b5 mutation went 3-for-3 red and proved nothing: `ch` was `undefined` because under `bun test -t b5` no earlier test had started the shared daemon, so `list` answered `{daemon:false, channels:[]}`. **Three red cells failing on the harness, not the defect** — and for my purposes the output looked exactly like success.
+This is the vacuity trap with the sign flipped: I have spent two sprints asking whether a PASS could have happened in both worlds, and never once asked it of a FAIL.
+Fix was an idempotent `start` plus a comment; the lesson is that a mutation run audits the FAILURE MESSAGE, not the pass/fail count.
+
 ## Epitaphs — the lineage
 
 **2026-08-06, close of sprint 02 (superseded 2026-08-08, close of sprint 03):**
