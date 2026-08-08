@@ -1243,6 +1243,81 @@ describe("grapevine cli", () => {
     expect(ch.message_count).not.toBeNull();
   });
 
+  // --- b11: a truncated final line must not destroy the next write -----------
+  //
+  // Fixture is the measured one: three well-formed messages, then a final line
+  // cut mid-JSON — what a crash or kill during appendFileSync leaves behind.
+  // Pre-fix, loading this channel reset next_id to 1 (empty catch), so the next
+  // send reused id 1 AND fused onto the unterminated line, making both records
+  // permanently unreadable, at ok:true.
+
+  test("b11: a send after a truncated final line does NOT reuse an id", async () => {
+    await bunRun(["start"]);
+    const good = [1, 2, 3]
+      .map((id) =>
+        JSON.stringify({ id, ts: 1700000000000, from: "x", kind: "msg", text: `m${id}` }),
+      )
+      .join("\n");
+    writeFileSync(
+      join(HOME, "channels", "b11_ids.jsonl"),
+      // no trailing newline on the fragment — that is the whole defect
+      `${good}\n{"id":4,"ts":170000000`,
+    );
+    const r = await bunRun(["send", "b11_ids", "--from", "flint", "after-the-tail"]);
+    expect(r.code).toBe(0);
+    // RED PRE-FIX: this was 1 — an id that already exists in the file.
+    expect(JSON.parse(r.stdout).id).toBeGreaterThan(3);
+  });
+
+  test("b11: the appended message stays PARSEABLE — it is not fused onto the fragment", async () => {
+    await bunRun(["start"]);
+    const good = [1, 2]
+      .map((id) =>
+        JSON.stringify({ id, ts: 1700000000000, from: "x", kind: "msg", text: `m${id}` }),
+      )
+      .join("\n");
+    writeFileSync(join(HOME, "channels", "b11_fuse.jsonl"), `${good}\n{"id":3,"ts":17000`);
+    await bunRun(["send", "b11_fuse", "--from", "flint", "SURVIVOR"]);
+    const raw = readFileSync(join(HOME, "channels", "b11_fuse.jsonl"), "utf-8");
+    const parseable = raw
+      .split("\n")
+      .filter((l) => l.trim())
+      .flatMap((l) => {
+        try {
+          return [JSON.parse(l) as { text?: string }];
+        } catch {
+          return [];
+        }
+      });
+    // RED PRE-FIX: the new message was concatenated onto the truncated
+    // fragment, so NOTHING in the file carried this text.
+    expect(parseable.some((m) => m.text === "SURVIVOR")).toBe(true);
+    // And the fragment is still its own line rather than having swallowed one.
+    expect(raw).toContain('{"id":3,"ts":17000');
+  });
+
+  test("b11: the message is READABLE BACK through the daemon, not merely on disk", async () => {
+    await bunRun(["start"]);
+    writeFileSync(join(HOME, "channels", "b11_read.jsonl"), '{"id":1,"ts":1,"from":"x"');
+    await bunRun(["send", "b11_read", "--from", "flint", "RECOVERABLE"]);
+    // The real test of a write is a read: verifying bytes on disk would pass
+    // even if the daemon could never serve them again.
+    const pull = await bunRun(["pull", "b11_read"]);
+    expect(pull.stdout).toContain("RECOVERABLE");
+  });
+
+  test("b11 GUARD — a healthy channel's bytes are unchanged (no stray separator)", async () => {
+    await bunRun(["start"]);
+    await bunRun(["open", "b11_healthy"]);
+    await bunRun(["send", "b11_healthy", "--from", "flint", "one"]);
+    await bunRun(["send", "b11_healthy", "--from", "flint", "two"]);
+    const raw = readFileSync(join(HOME, "channels", "b11_healthy.jsonl"), "utf-8");
+    // Passes in BOTH worlds by design: it exists to catch the fix inserting a
+    // blank line into every healthy append, which would be a new defect.
+    expect(raw).not.toContain("\n\n");
+    expect(raw.endsWith("\n")).toBe(true);
+  });
+
   // --- daemon lifecycle: start / restart -------------------------------------
   // These manipulate the shared daemon, so they run LAST in the file. afterAll
   // tears down whatever daemon is left standing.
