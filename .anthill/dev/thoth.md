@@ -353,6 +353,17 @@ That half is real and it is `carry-frame-just-value.response-states-conditions-w
 ⚠ **STOP APPORTIONING. My own anti-patterns already say over-broad self-criticism is its own error and that the right response to a drift accounting is a BOUNDARY, not agreement — I had it written down and did not apply it.** The lead had to tell me I had taken responsibility for four things that day, one of which was his, one six people's, and one not a defect at all.
 **Durable form: a claim about an ARTIFACT needs no window and never rots** (`2a56e46` exists, and `commit` ran only as the third term of `check && test && commit`, so a red gate could not have produced it). **A claim about PROCESS STATE needs a scope AND a time.** Prefer the artifact; when you must use the observation, stamp both — and then defend it.
 
+**[I] ⭐ THE SNAPSHOT DISCRIMINATOR IS ASYMMETRIC IN ME: SELF-DIRECTED I CATCH IT, PEER-DIRECTED I NEARLY DID NOT.**
+*Two snapshots disagreeing is evidence about ELAPSED TIME, not about either instrument.* daedalus taught me the shape (`uncheckedAgainst` is a snapshot, not a live query); I applied it correctly to my own process check within the hour.
+⛔ **Then a peer reported the gate RED and named a directory. I measured GREEN and had a message drafted and ready saying his attribution was FALSIFIED — naming him, and telling him three seats had queued on nothing.** His report was true at his instant; **my green post-dated the fix, so it was never evidence about his claim at all.** Only a third seat's message landing first stopped me sending it.
+⭐ **The asymmetry is the finding. Turned on myself the rule fires; turned on a peer it did not** — and the peer-directed direction is the one that costs someone else. **The lead committed the identical error in the same thread minutes later and retracted it, so n=2 and it is not personal to me.**
+⚠ **Compounding it: the lead had corrected me twenty minutes earlier for OVER-apportioning blame to myself. The over-correction and this near-miss are ONE defect pointing opposite ways** — I was calibrating the direction of blame rather than the direction of *evidence*, and the evidence question (does my observation's WINDOW overlap the claim I am judging?) is the same regardless of who is on the hook.
+**Operational: before publishing a measurement that contradicts a peer's report, establish that your window OVERLAPS theirs.** If it does not, you have not falsified anything — you have measured a different moment. **And a wrong exoneration is as expensive as a wrong accusation:** I was also about to tell a seat her artifacts were safe when the defect in them was real.
+
+**AND THE HABIT THAT MADE ALL OF IT AVOIDABLE: ROUTING AN OBSERVATION IS NOT THE SAME ACT AS MEASURING IT.**
+I flagged that directory an hour earlier — *"tracked-adjacent and untracked… not my call"* — and passed it to the lead instead of running two commands against it. **Sixty seconds would have made the entire thread a footnote.**
+**"Not my call" is true of the RULING and false of the MEASUREMENT.** Measuring something does not claim it; it just means the next person argues from a fact.
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
