@@ -3950,3 +3950,192 @@ describe("P1a/P1b — the shrinkage guard, end to end", () => {
     }
   }, 60000);
 });
+
+// ── P1e + D1.2 — the idle timeout, and the readable blank ────────────────────
+describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", () => {
+  test("the configured idleTimeout EXCEEDS the heartbeat interval", () => {
+    // Source-scanned rather than driven, and the reason is that DRIVING it would
+    // need a >10s quiet connection per assertion — a 10s+ cell per run, to prove
+    // a one-key config fact. The relationship is what matters and it is the
+    // relationship that was broken: Bun's default is 10s and the heartbeat is
+    // 15s, so on an otherwise-idle connection the heartbeat could NEVER fire.
+    //
+    // ⚠ This asserts the two numbers stay ordered, NOT that any death was
+    // caused by their being unordered. See the source comment: P1e is
+    // consistent with #64's clue and untested against it.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    const idle = src.match(/idleTimeout:\s*(\d+)/);
+    const hb = src.match(/\}, (\d+)\);\n\s*sseTimers\.add\(hb\);/);
+    expect(idle).not.toBe(null);
+    expect(hb).not.toBe(null);
+    const idleMs = Number(idle?.[1]) * 1000;
+    const hbMs = Number(hb?.[1]);
+    expect(idleMs).toBeGreaterThan(hbMs);
+  });
+
+  test("idleTimeout is not ZERO — 0 stalls the initial response rather than disabling", () => {
+    // Measured in mind-mapper: `idleTimeout: 0` does not mean "no timeout", it
+    // empirically stalls the first response. A future editor reaching for 0 as
+    // "disable it" would reintroduce a worse bug than the one this fixes, so the
+    // refusal is pinned rather than left in a comment.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    expect(src).not.toMatch(/idleTimeout:\s*0\b/);
+  });
+});
+
+describe("D1.2 — snapshotBackedUp is a READABLE BLANK on /state, never absent", () => {
+  test("a daemon that has rotated NOTHING still carries the field, as null", async () => {
+    // The whole point of the ruling: `null` means "not needed" and an ABSENT
+    // field means "not reported", and a consumer cannot tell those apart. The
+    // event alone cannot satisfy this — an event is absent when nothing
+    // happened, by construction.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "d12-"));
+    const key = `d12-${crypto.randomUUID().slice(0, 8)}`;
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const { session_id: id, port } = JSON.parse(open.stdout) as {
+      session_id: string;
+      port: number;
+    };
+    try {
+      const body = (await (await fetch(`http://127.0.0.1:${port}/state`)).json()) as Record<
+        string,
+        unknown
+      >;
+      // `in` is the assertion with teeth. `=== null` alone passes vacuously
+      // against a build that does not emit the field at all — the restoreSkipped
+      // lesson (#80.1/D1.2), which is the same ruling's other half.
+      expect("snapshotBackedUp" in body).toBe(true);
+      expect(body.snapshotBackedUp).toBe(null);
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 40000);
+});
+
+// ── P1d — a dropped --size/--expect becomes AUDIBLE, not an error ────────────
+//
+// Ruled by Cole: KEEP the leniency, make it audible. parseSize/parseExpect
+// dropping a bad value is a deliberate anti-typo behaviour (cli.ts comment) and
+// reversing it re-opens that hazard. What changes is that the caller is TOLD.
+//
+// The scaffold's framing -- "add and update disagree about whether a bad --size
+// is an error" -- was FALSIFIED by measurement this sprint: they are
+// byte-identical, and update's exit 2 is its EMPTY-PATCH guard firing because
+// the dropped size left nothing to patch. These cells pin that they stay
+// identical, so the asymmetry cannot appear for real later.
+describe("P1d — the leniency is audible", () => {
+  test("add REPORTS an ignored --size and still succeeds", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-a-"));
+    const key = `p1d-a-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const r = await runCli(["add", "x", "--id", "t1", "--size", "ongoing", "--session", id], {
+        env,
+      });
+      const out = JSON.parse(r.stdout) as {
+        ok: boolean;
+        valuesIgnored: Array<{ flag: string; value: string }> | null;
+      };
+      expect(out.ok).toBe(true); // the leniency STAYS — this is not an error
+      expect(out.valuesIgnored?.[0]?.flag).toBe("size");
+      expect(out.valuesIgnored?.[0]?.value).toBe("ongoing");
+      expect(r.stderr).toContain("ignored --size"); // mirrored for a human
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("a CLEAN add carries the field as null — present, never absent", async () => {
+    // `in` is the assertion with teeth: `=== null` passes vacuously against a
+    // build that never emits the field (the restoreSkipped lesson).
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-n-"));
+    const key = `p1d-n-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const r = await runCli(["add", "y", "--id", "t2", "--size", "M", "--session", id], { env });
+      const out = JSON.parse(r.stdout) as Record<string, unknown>;
+      expect("valuesIgnored" in out).toBe(true);
+      expect(out.valuesIgnored).toBe(null);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("update with a bad size AND another flag behaves EXACTLY like add", async () => {
+    // The discriminating cell from the measurement, now pinned: the two verbs
+    // do NOT disagree, and this is what stops the scaffold's claim becoming
+    // true later by accident.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-u-"));
+    const key = `p1d-u-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "z", "--id", "t3", "--session", id], { env });
+      const r = await runCli(
+        ["update", "t3", "--size", "bogus", "--owner", "alice", "--session", id],
+        { env },
+      );
+      expect(r.code).toBe(0); // NOT a refusal — identical to add
+      const out = JSON.parse(r.stdout) as {
+        valuesIgnored: Array<{ flag: string }> | null;
+      };
+      expect(out.valuesIgnored?.[0]?.flag).toBe("size");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("update with ONLY a bad size names the flag IN THE REFUSAL — no envelope prints here", async () => {
+    // The case the envelope cannot reach, and the one a caller actually hits.
+    // The patch is empty BECAUSE the size was dropped, so the refusal has to
+    // carry the report or it is lost exactly when it is most needed. The old
+    // message blamed an empty patch and never mentioned the flag that was
+    // passed — and omitted --size from the list of flags that would have worked,
+    // which a VALID --size does.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-r-"));
+    const key = `p1d-r-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "w", "--id", "t4", "--session", id], { env });
+      const r = await runCli(["update", "t4", "--size", "bogus", "--session", id], { env });
+      expect(r.code).toBe(2); // still a usage error — that behaviour is unchanged
+      expect(r.stderr).toContain("--size");
+      expect(r.stderr).toContain("bogus");
+      expect(r.stderr).toContain("not one of S|M|L");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("--expect gets the SAME treatment — it had the identical silent drop", async () => {
+    // parseExpect has the same shape as parseSize and was on no card. One field
+    // covers both, rather than minting the first member of a per-flag family.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-e-"));
+    const key = `p1d-e-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const r = await runCli(["add", "e", "--id", "t5", "--expect", "soon", "--session", id], {
+        env,
+      });
+      const out = JSON.parse(r.stdout) as { valuesIgnored: Array<{ flag: string }> | null };
+      expect(out.valuesIgnored?.[0]?.flag).toBe("expect");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+});

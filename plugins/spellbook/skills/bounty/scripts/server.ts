@@ -700,6 +700,25 @@ async function main(argv: string[]): Promise<number> {
   // point (the state worth keeping is whatever existed before THIS daemon
   // started writing).
   let rotatedThisSession = false;
+  // D1.2's readable blank. The ruling says `snapshotBackedUp: {...} | null`,
+  // "null when nothing happened, NEVER ABSENT — a readable blank distinguishes
+  // 'not needed' from 'not reported'", and that stderr prose does not count
+  // because the consumer is an agent parsing JSON.
+  //
+  // ⛔ THE EVENT ALONE CANNOT SATISFY THAT, AND THE REASON IS STRUCTURAL: an
+  // event is ABSENT when nothing happened, so "no rotation" and "a daemon that
+  // never emits this" are byte-identical to a consumer. The ruling was written
+  // for a command-response trigger (close/restore) which has an envelope; the
+  // trigger that shipped is a BACKGROUND FLUSH, which has no response to carry a
+  // field. `/state` is the home that survives that change — it is the agent's
+  // JSON surface and it is readable at any time, including after the one page
+  // refresh that loses an event.
+  //
+  // This is my own recorded lesson arriving at a second spell: a signal whose
+  // ABSENCE is indistinguishable from "nothing is happening" needs a read
+  // alongside its event; event-only is fine only for signals that are
+  // self-evidently transient.
+  let snapshotBackedUp: { path: string; taskCount: number; reason: string } | null = null;
   const saveSnapshot = () => {
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
@@ -708,7 +727,13 @@ async function main(argv: string[]): Promise<number> {
       // this daemon's life. See shouldRotateSnapshot for why the predicate is
       // shrinkage rather than emptiness, and why it fires once per boot.
       const prior = snapshotTaskCount(path);
-      if (shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)) {
+      // `prior !== null` is redundant at RUNTIME — shouldRotateSnapshot returns
+      // false for null, and a unit cell pins that. It is here so the compiler
+      // narrows `prior` to number for the `taskCount` field below; without it,
+      // tsc reports TS2322 and `bun test` stays green, which is the standing
+      // bun-green-is-not-tsc-clean trap. Keeping the predicate total anyway is
+      // deliberate: it stays correct for any caller, not just this one.
+      if (prior !== null && shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)) {
         // `.bak.json` and not `.bak`: the suffix is what makes this recoverable
         // through the verbs that already exist. `sessions` lists *.json and
         // strips the extension, so the backup appears there by name; and
@@ -717,6 +742,11 @@ async function main(argv: string[]): Promise<number> {
         const backup = join(SNAPSHOTS_DIR, `${sessionId}.pre-${Date.now()}.bak.json`);
         copyFileSync(path, backup);
         rotatedThisSession = true;
+        snapshotBackedUp = {
+          path: backup,
+          taskCount: prior,
+          reason: `about to write ${state.tasks.length} tasks over ${prior}`,
+        };
         // ⛔ AND IT SAYS SO. A silent rotation is a success-shaped lie, which is
         // the defect family this whole project is named after — the user would
         // be protected and never know they had needed protecting. Three
@@ -1067,6 +1097,24 @@ async function main(argv: string[]): Promise<number> {
     server = Bun.serve({
       port,
       hostname: host,
+      // P1e (re-scoped from #64). Bun's default request idleTimeout is 10s, and
+      // the SSE heartbeat below fires every 15s — so on an OTHERWISE-IDLE
+      // connection the heartbeat cannot fire, because the connection is severed
+      // five seconds before it is due. An agent `tail` on a quiet board is
+      // exactly that connection.
+      //
+      // 255 is Bun's clamped maximum. Do NOT use 0 to mean "disabled": measured
+      // in mind-mapper, 0 stalls the initial response rather than disabling the
+      // timeout.
+      //
+      // ⚠ THE CLAIM SHIPS BOUNDED. This is CONSISTENT WITH #64's reporter clue
+      // (read-heavy dies / write-heavy survives — traffic resets the idle timer,
+      // so the 10s cut is not unconditional) and it is UNTESTED AGAINST it. It
+      // does not "explain" those deaths: the reporter was an agent and cannot be
+      // asked, the instrument post-dates the report, and open question 6 is
+      // permanently unanswerable. A heartbeat that can now fire is the fix; the
+      // reported deaths remain undiagnosed.
+      idleTimeout: 255,
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
@@ -1086,9 +1134,15 @@ async function main(argv: string[]): Promise<number> {
         // touch() so agent reads count as activity (idle-touch, #6).
         if (req.method === "GET" && path === "/state") {
           touch();
-          return new Response(JSON.stringify({ state: projectState(), cursor: eventSeq }), {
-            headers: { "Content-Type": "application/json" },
-          });
+          // `snapshotBackedUp` is spread AT THE HANDLER, beside cursor — it is a
+          // daemon-level fact about this process, not board state, so it does
+          // not belong inside projectState(). Always present; null means "no
+          // rotation has happened in this daemon's life", which is a readable
+          // blank rather than an absence (D1.2).
+          return new Response(
+            JSON.stringify({ state: projectState(), cursor: eventSeq, snapshotBackedUp }),
+            { headers: { "Content-Type": "application/json" } },
+          );
         }
         // Agent live tail: SSE stream of the event log, resumable via ?since=.
         if (req.method === "GET" && path === "/events") {

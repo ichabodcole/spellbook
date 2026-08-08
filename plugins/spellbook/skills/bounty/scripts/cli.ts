@@ -270,6 +270,64 @@ function parseExpect(value: string | boolean | undefined): number | undefined {
   return Number.isFinite(m) && m > 0 ? m : undefined;
 }
 
+// P1d — the LENIENCY STAYS and the envelope says what it cost.
+//
+// `parseSize`/`parseExpect` dropping a bad value is a deliberate anti-typo
+// ruling (see the comment above them), and reversing it re-opens that hazard.
+// Ruled by Cole: keep the leniency, make it AUDIBLE. So the drop is unchanged
+// and the caller is now TOLD.
+//
+// ⚠ This is the `restoreSkipped` SHAPE and deliberately not its name, because it
+// is the opposite EVENT. `restoreSkipped` means "your flag was valid and the
+// situation could not honour it" — the user did nothing wrong. This means "your
+// value was invalid and we chose to ignore it" — the user made a typo, and what
+// they need is the legal set, not an explanation about their board.
+//
+// NAME `valuesIgnored` RULED BY thoth. Three parts, each overturnable:
+//   `Ignored` not `Skipped` — skipped implies an OBSTACLE (the flag was fine,
+//     the situation was not, which is `restoreSkipped`); ignored implies a
+//     CHOICE. cli.ts:259 already uses that word for this behaviour.
+//   `values` not `size`/`flags` — `--size` was RECOGNISED; it parsed, it is a
+//     real flag. What was unusable was its VALUE. `ignoredFlags` would send a
+//     reader hunting for whether the flag is supported at all.
+//   Grouped by CAUSE, present-and-null — the house shape, whose first member is
+//     `restoreSkipped`. A new grouped field earns its place when the cause
+//     changes what the CALLER DOES: restoreSkipped → fix your situation;
+//     valuesIgnored → fix your typo. Same remedy → same field.
+//
+// ⛔ THE SHAPE DELIBERATELY DIVERGES FROM `restoreSkipped`, AND THIS IS THE ONE
+// DECISION THAT IS MINE RATHER THAN thoth's. `restoreSkipped` is
+// `{requested: string[], reason: string}` — one reason for all its flags, which
+// is honest there because they share one cause by construction (the board was
+// live, full stop). Ours do NOT: `add --size bogus --expect abc` is one command
+// with TWO different reasons, and a single `reason` string is wrong about
+// whichever flag it does not describe.
+//
+// So each entry carries its own reason. And the key is NOT reused: calling it
+// `requested` while holding objects, when `restoreSkipped.requested` holds
+// strings, would give one house key-name two element types — a consumer that
+// learned the first breaks silently on the second. Diverging VISIBLY is safer
+// than diverging under a shared name.
+type IgnoredValue = { flag: string; value: string; reason: string };
+
+function ignoredValues(flags: Record<string, string | boolean>): IgnoredValue[] {
+  const out: IgnoredValue[] = [];
+  // Bare flag names, matching `restoreSkipped.requested`'s convention.
+  if (typeof flags.size === "string" && parseSize(flags.size) === undefined)
+    out.push({ flag: "size", value: flags.size, reason: "not one of S|M|L" });
+  if (typeof flags.expect === "string" && parseExpect(flags.expect) === undefined)
+    out.push({ flag: "expect", value: flags.expect, reason: "not a positive number" });
+  return out;
+}
+
+// Mirror to stderr, the house pattern for an advisory (edgeDraftWarning, the
+// tags soft-cap, the unknown-channel advisory): the JSON envelope carries it for
+// a parser, stderr carries it for a human, and neither is the only copy.
+function warnIgnored(ignored: IgnoredValue[]): void {
+  for (const i of ignored)
+    process.stderr.write(`bounty: ignored --${i.flag} ${JSON.stringify(i.value)} — ${i.reason}\n`);
+}
+
 async function api(
   port: number,
   method: string,
@@ -991,6 +1049,8 @@ async function main(argv: string[]): Promise<number> {
       if (addSize) task.size = addSize;
       const addExpect = parseExpect(flags.expect);
       if (addExpect !== undefined) task.expect = addExpect;
+      const addIgnored = ignoredValues(flags);
+      warnIgnored(addIgnored);
       // #83 — `add` was the ONLY write verb that discarded the daemon's verdict:
       // update/claim/block/unblock/remove all read it. So this is an oversight
       // corrected to match its four siblings, not a new convention.
@@ -1006,7 +1066,10 @@ async function main(argv: string[]): Promise<number> {
         process.stderr.write(`bounty: ${error}\n`);
         return 1;
       }
-      printJson({ ok: true, added: task.id });
+      // Present-and-null, never absent (the restoreSkipped lesson, D1.2): a
+      // field that appears only when it has something to say cannot be told
+      // apart from a build that does not emit it at all.
+      printJson({ ok: true, added: task.id, valuesIgnored: addIgnored.length ? addIgnored : null });
       break;
     }
     case "update": {
@@ -1026,8 +1089,28 @@ async function main(argv: string[]): Promise<number> {
       if (upSize) patch.size = upSize;
       const upExpect = parseExpect(flags.expect);
       if (upExpect !== undefined) patch.expect = upExpect;
-      if (Object.keys(patch).length === 0)
-        die("update: nothing to change (give --status/--title/--notes/--owner/--tag/--stdin)");
+      const upIgnored = ignoredValues(flags);
+      warnIgnored(upIgnored);
+      if (Object.keys(patch).length === 0) {
+        // ⛔ THE ENVELOPE NEVER PRINTS ON THIS PATH, so the ignored-flag report
+        // has to ride the refusal itself — and this is the case where the caller
+        // most needs it. `update <id> --size bogus` with no other flag lands
+        // HERE: the size was dropped, which left the patch empty, which is why
+        // it refuses. Measured, and the refusal used to blame an empty patch
+        // while saying nothing about the flag the caller actually passed.
+        //
+        // `--size`/`--expect` are also ADDED to the flag list: the old message
+        // omitted them, and that omission was read (by the sprint scaffold, and
+        // by me at first) as a symptom of the drop. It is a second, real defect
+        // — a VALID `--size` does populate the patch, so it always belonged in
+        // the list of flags that would have made this succeed.
+        const why = upIgnored.length
+          ? ` — ${upIgnored.map((i) => `--${i.flag} ${JSON.stringify(i.value)} was ignored (${i.reason})`).join("; ")}`
+          : "";
+        die(
+          `update: nothing to change (give --status/--title/--notes/--owner/--tag/--size/--expect/--stdin)${why}`,
+        );
+      }
       // Surface the daemon's outcome (like claim/block), distinguishing the two
       // kinds of applied:false: WITH an error = not-found / rejected (e.g. the
       // verb mis-routed to a stranger board) → a visible, nonzero failure, never
@@ -1036,12 +1119,22 @@ async function main(argv: string[]): Promise<number> {
       // task exists and the board is right.
       const res = await postCmd(session, { type: "task.update", id, patch }, { as, quiet: true });
       if (res.applied) {
-        printJson({ ok: true, updated: id });
+        printJson({ ok: true, updated: id, valuesIgnored: upIgnored.length ? upIgnored : null });
       } else if (res.error) {
         process.stderr.write(`bounty: ${res.error}\n`);
         return 1;
       } else {
-        printJson({ ok: true, updated: id, noop: true });
+        // The no-op branch carries it too. Leaving it off here would mean the
+        // field's presence depended on whether the daemon happened to change
+        // anything — so a caller could not tell "no ignored flags" from "this
+        // build does not report them", which is the exact absence the
+        // present-and-null rule exists to prevent.
+        printJson({
+          ok: true,
+          updated: id,
+          noop: true,
+          valuesIgnored: upIgnored.length ? upIgnored : null,
+        });
       }
       break;
     }
