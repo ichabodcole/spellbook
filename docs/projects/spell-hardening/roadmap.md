@@ -52,11 +52,36 @@ roster-wide and already inside the gate:
 
 **And a purpose-built check convicted a real defect it was never told about:** a
 scan keying on _dispatch branch captures a return → the local never escapes into
-an outbound payload → the callee is a mutator_ flagged **6 of 302 branches
-(2.0%) across all eight spells**, naming no spell and no path. It convicted
-imago `context.add`, **independently rediscovered `#87`**, and **found a defect
-nobody knew about** — glamour `gen.add` drops `addItem`'s return, so a silent
-dedupe returns `ok:true`.
+an outbound payload → the callee is a mutator_ flagged **6 of 302 dispatch
+branches**, naming no spell and no path. It convicted imago `context.add`,
+**independently rediscovered `#87`**, and **found a defect nobody knew about** —
+glamour `gen.add` drops `addItem`'s return, so a silent dedupe returns
+`ok:true`. One false positive, and it was **a stateable scope bug** (it flagged
+a _browser_ handler, where no caller awaits an envelope) rather than a per-spell
+exception — which is the distinction that decides whether a gate survives.
+
+⛔ **THAT IS A PRECISION RESULT AND THERE IS NO RECALL CLAIM. The `6 / 302`
+figure is NOT a coverage rate**, and an earlier version of this section reported
+it as though it were. **The check keys on _captured_ returns, so it is blind to
+every non-capturing call — and that blind set contains both extremes:**
+
+```
+bounty  task.add     no capture, REPORTS the refusal with a reason   -> unflagged  ✅ correct
+magpie  element.add  no capture, drops the outcome entirely (agent)  -> unflagged  ⛔ wrong
+```
+
+**The best behaviour in the house and the most complete drop in the house are
+indistinguishable to the instrument.** So the check has been shown to CONVICT;
+it has never been shown that its SILENCE means anything. **A rate over a
+denominator the check cannot fully see is not a coverage figure.**
+
+⭐ **The green arm exists, and it is the answer to the defect** —
+`bounty task.add` is the exact analogue of imago's `context.add` and does the
+opposite: `ok: true, applied: false` with
+`"task … already exists — the board is unchanged and the existing task kept its id"`.
+**That error answers the precise question imago's silent dedupe leaves
+unanswerable — _did I just clobber the original?_** The house has a worked
+example of the right thing, in the spell we coordinate on.
 
 ⚠ **Precision, because the distinction is load-bearing:** none of the three
 wards enforces any rule in the sprint-05 table. They enforce **adjacent**
@@ -120,6 +145,21 @@ draft of the `r8` check reported **186 of 380 (49%)** — well-formed, plausible
 precisely formatted, and wrong, at exit 0. It was caught by the hit rate being
 **implausible on its face**, not by review. **The first draft of every such
 check will be wrong in a way that reads as authoritative.**
+
+⭐ **AND THE SECOND DRAFT WAS TOO, IN A QUIETER WAY.** One rule took **three**
+instrument revisions, each failure a different class:
+
+```
+v1  brace-matching / mark-to-mark slicing   -> 49% noise, caught by implausibility
+v2  capture-and-drop                        -> convicts (precision OK), but its GREEN is meaningless
+v3  must ALSO catch the uncaptured call     -> not yet built
+```
+
+**v2 is the instructive one: it works, its hits are real, and its silence still
+means nothing.** A cell that can convict but whose clearance is uninformative is
+**half-calibrated**, and half-calibrated is the state that looks finished.
+**Budget three revisions per rule, not one** — and calibrate each cell in _both_
+directions before its green is allowed to license anything.
 
 ---
 
