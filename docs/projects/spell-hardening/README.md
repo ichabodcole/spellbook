@@ -1,7 +1,8 @@
 # Spell Hardening
 
-**Status:** Active **Started:** 2026-08-05 **Current sprint:** **none — 02 is
-closed, 03 is not planned**
+**Status:** Active **Started:** 2026-08-05 **Current sprint:** **none building —
+02 is closed;
+[03 is scaffolded, awaiting ratify](./sprints/03-what-close-takes-with-it/plan.md)**
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
@@ -11,16 +12,23 @@ project closes them.
 
 ## Sprints
 
-| #   | Sprint                                                          | Status      | Opened     | Closed     | Outcome                                                | Decisions                                                  |
-| --- | --------------------------------------------------------------- | ----------- | ---------- | ---------- | ------------------------------------------------------ | ---------------------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)               | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                          |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md) | Complete    | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md) |
-| 03  | —                                                               | Not planned | —          | —          | —                                                      | —                                                          |
+| #   | Sprint                                                                    | Status      | Opened     | Closed     | Outcome                                                | Decisions                                                  |
+| --- | ------------------------------------------------------------------------- | ----------- | ---------- | ---------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                          |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete    | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md) |
+| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | 🟡 Scaffold | —          | —          | —                                                      | —                                                          |
 
-**Status values:** Not planned | Active | Complete | Abandoned
+**Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 
-Sprint 03 is listed because both prior sprints deferred work **with names** —
-see [sprint 02's outcome](./sprints/02-success-shaped-lies/outcome.md),
+> **🟡 Scaffold** means the scope is written down and argued, but **not ratified
+> and not buildable.** Sprint 01's ratify round falsified six claims in a plan
+> written by one author; sprint 02's much narrower round found two more. **A
+> scaffold has not survived that yet.** _(Status added 2026-08-08 — the previous
+> four values had no way to say "proposed", so a scaffold would have had to
+> masquerade as `Active` or hide as `Not planned`.)_
+
+Sprint 03 is scaffolded because both prior sprints deferred work **with names**
+— see [sprint 02's outcome](./sprints/02-success-shaped-lies/outcome.md),
 "CARRY-FORWARD → sprint 03," for what it inherits and what it explicitly does
 not.
 
