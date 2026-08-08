@@ -1,7 +1,13 @@
 # daedalus — engine
 
 > **Seat header (from `.anthill/config.json` — keep in sync with the roster).**
-> **Handle:** daedalus · **Role:** engine · **Scope:** the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests · **Channel:** spellbook
+> **Handle:** daedalus · **Role:** engine · **Scope:** the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests; AND the command-verdict path wherever it physically lives, including a surface reducer that owns a /cmd case list (seams Contract 13) · **Channel:** spellbook
+
+> **Scope widened 2026-08-07 at convene, by ruling — read this once.**
+> You authored Contract 13 in `glamour/surface/state/reduce.ts` — circe's file — and annotated why she was absent.
+> That was the third consecutive round of the engine seat writing a surface contract and apologising in the entry, and thoth named it: *"a convention forming by default."*
+> **It is now the roster, not an apology.** The command-verdict path is yours wherever it lives; you do not need circe seated to touch a reducer that owns a `/cmd` case list.
+> The boundary that did NOT move: rendering, layout, theming and tokens in that same file are still hers.
 
 This is daedalus's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
