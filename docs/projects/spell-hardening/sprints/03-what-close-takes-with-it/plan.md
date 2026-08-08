@@ -30,17 +30,18 @@ bun run check && bun test          # run UNPIPED; `| tail` reports tail's exit c
 ```
 
 **The team.** Five seats are defined in `.anthill/config.json`; the lead is
-`prospero`. Which seats this sprint actually needs is
-[Open question 9](#open-questions) — it is not settled, and `circe` in
-particular has now been unseated three consecutive rounds.
+`prospero`. **The split below was ruled 2026-08-07** — lane assignments are
+still the ratify round's to challenge, but the seating is settled: `circe` takes
+no lane this sprint, which is correct for the work and is
+[a fourth consecutive unseating carried to the finalize reflection](#open-questions).
 
-| seat        | scope                                         | proposed lane — NOT ratified              |
-| ----------- | --------------------------------------------- | ----------------------------------------- |
-| `prospero`  | lead — orchestration, the land, human liaison | the beat, sequencing, the decision log    |
-| `daedalus`  | conjuration backends + thin `cli.ts` + tests  | P1a/P1b, P1e, P1f                         |
-| `cassandra` | cold-agent usability, end-to-end drive        | the live-team beat, P1c                   |
-| `thoth`     | craft canon, `inscribe`/`ward`, naming        | P0f-remainder, the denominator re-measure |
-| `circe`     | React studios, Alpine surfaces, theme tokens  | none proposed — see Open question 9       |
+| seat        | scope                                         | proposed lane — assignments not ratified   |
+| ----------- | --------------------------------------------- | ------------------------------------------ |
+| `prospero`  | lead — orchestration, the land, human liaison | the beat, sequencing, the decision log     |
+| `daedalus`  | conjuration backends + thin `cli.ts` + tests  | P1a/P1b, P1e, P1f                          |
+| `cassandra` | cold-agent usability, end-to-end drive        | the live-team beat, P1c                    |
+| `thoth`     | craft canon, `inscribe`/`ward`, naming        | P0f-remainder, the denominator re-measure  |
+| `circe`     | React studios, Alpine surfaces, theme tokens  | **none — ruled, no surface work in scope** |
 
 **The frozen predecessor plans are READABLE, and you will need them.**
 [`../01-drained-exit/plan.md`](../01-drained-exit/plan.md) ·
@@ -320,15 +321,25 @@ these summaries.
    investigation declined to invent a mechanism. Chase it, or record it as
    permanently unexplained? With no reporter, "unexplained" may be the only
    honest terminal state.
-8. ⚠ **Does the live-team beat run inside this sprint, or as its own session?**
-   **This blocks everything** — the beat is sequenced first, so if it is not in
-   the sprint, the sprint's first act is not in the sprint. **Answer this before
-   any lane opens.**
-9. ⚠ **Which seats does this sprint need?** Every proposed lane is daemon, CLI
-   or server work. The one surface-shaped item (`#72`) is out of scope, so
-   `circe` has no lane — a fourth consecutive unseating. Sprint 02's outcome
-   already called three _"an argument about where that boundary sits."_ Decide
-   at convene, not after.
+8. ✅ **Does the live-team beat run inside this sprint?** Ruled 2026-08-07:
+   **yes, in the sprint.** It no longer blocks opening lanes. **Still open,
+   deliberately: whether it goes FIRST.** The scaffold proposes it does, on the
+   grounds that a validation pass which only ever sees the fixed world cannot
+   tell you whether the instrument would have caught the broken one — the
+   inverted-control problem (G2) raised to the level of a whole method. That
+   argument and its cost are the ratify round's to attack; see the beat's ⚠
+   UNRESOLVED block.
+9. ✅ **Which seats does this sprint need?** Ruled 2026-08-07: **the proposed
+   split is fine; `circe` takes no lane.** Correct for the work — every lane is
+   daemon, CLI or server, and the one surface-shaped item (`#72`) is out of
+   scope. ⚠ **Carried to the structure reflection at finalize, not dropped.**
+   This is `circe`'s **fourth consecutive** unseating, and sprint 02's outcome
+   already called three _"an argument about where that boundary sits… not
+   headcount but shape."_ Four rounds of a seat having no work is a fact about
+   the roster rather than about the sprints — and the unseated seat is the one
+   that never accumulates the scars that would tell you whether the boundary is
+   drawn right. **Record it at finalize; do not let a fourth pass unremarked
+   because each round's answer was individually correct.**
 
 ---
 
