@@ -250,9 +250,33 @@ uncalibrated cells the requirement exists to prevent.**
 hypothesis, arriving from a third direction: make the measurement cheap and the
 discipline survives contact; leave it expensive and it gets skipped.**
 
-⚠ **A sprint-05 scaffold must measure its first DAEMON-BEHAVIOUR cell — not a
-text one — before committing to a shape.** All three data points above are the
-cheap end.
+### ⛔ AND THE CATEGORY ITSELF WAS WRONG — corrected by its author, 29 seconds of reading
+
+**The premise under all of the above was _"an already-fixed rule with no cell,
+whose defect nobody has looked at in weeks."_ That population does not exist.**
+
+Measured on `#81` (sprint 02): its fix `df91148` shipped **six regression cells
+with the fix**, and the commit body states the defect, the mechanism and the
+real-world symptom. **Reconstruction is a `git show`.** The cognitive cost
+priced above is one this team already paid, in its commit hygiene, months ago.
+
+⭐ **SO THE REAL SPRINT-05 COST IS NEITHER RECONSTRUCTION NOR A MULTIPLIER — IT
+IS N-WAY VERIFICATION:**
+
+> **Per-spell regression cells already exist. What sprint 05 adds is a
+> ROSTER-WIDE conformance cell — and a roster-wide cell must be shown to convict
+> in EACH spell. That is N mutations, not one.**
+
+⚠ **Every cost datum on this page measures ONE mutation for ONE spell. All of
+them are the `N = 1` slice of a quantity nobody has measured.** The honest
+estimate is `N spells × single-cell cost`, and the single-cell cost is now known
+to span ~1s (`bun test -t` in a worktree) to ~9.5m (full suite) depending on
+choices the scaffold makes.
+
+**The day-one-green risk survives this correction, restated:** the danger is not
+six decorative cells — per-spell cells exist and were calibrated when written.
+**It is that a ROSTER-WIDE cell verified against one spell is uncalibrated for
+the other seven**, and reads identically.
 
 ---
 
