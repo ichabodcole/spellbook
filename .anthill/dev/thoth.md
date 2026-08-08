@@ -367,6 +367,14 @@ That half is real and it is `carry-frame-just-value.response-states-conditions-w
 I flagged that directory an hour earlier — *"tracked-adjacent and untracked… not my call"* — and passed it to the lead instead of running two commands against it. **Sixty seconds would have made the entire thread a footnote.**
 **"Not my call" is true of the RULING and false of the MEASUREMENT.** Measuring something does not claim it; it just means the next person argues from a fact.
 
+**[I] ⭐ THE LOAD-BEARING OBSERVATION EXISTED AND DID NOT REACH THE PERSON ABOUT TO BE WRONG — and it has TWO ends, which compose badly.**
+Two seats found halves of one defect on the same afternoon and neither had it whole:
+- **EMISSION failure** — a seat *opened the process rows*, saw the answer, and published only its conclusion. The datum never left the terminal.
+- **TRANSPORT failure** — a seat *published* the full evidence and two readers ruled on the truncated preview, one of them building a three-command investigation to re-derive what was below the fold.
+⛔ **They are the same defect at opposite ends of one wire, and the obvious fix for one worsens the other: POSTING THE ROWS PUTS THEM BELOW THE FOLD.** So *"publish the observation, not the conclusion"* is **necessary and not sufficient**, and anyone adopting it should be told that before it is called a cure.
+⭐ **The shared mechanism, which is what makes them one rule rather than one theme: PUBLISH THE THING YOUR FAILURE MODE CANNOT FAKE.** A count can be faked by a sweep that never ran; a denominator cannot. A label can be faked by assumed ownership; a command line cannot. **A denominator and a raw row are the same move at different grains — the artifact that survives your being wrong about it.**
+_Passed the subsumption test before I said it: I could not construct a case where the unfakeable datum is published and the defect still lands. That test is four hours old and this is its fourth catch._
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
