@@ -37,13 +37,28 @@ signal deaths    subscribers  NOT RECORDED — the field is absent, 156 of 156
    changed.** Ruled in by the lead: log `subscribers` as part of the funnel
    edit.
 
-   ✅ **CLOSED — the fix landed in this session.** `bounty/scripts/server.ts`,
-   in `requestShutdown`: `logDaemon("signal", { signal, subscribers:
-   sockets.size
-   - sseClients.size
-     })`. **Past tense throughout this item is deliberate: it describes the 30-day window this artifact measured, and that window ends before the fix.** A future reader comparing pre- and post-`2cc513d`
-     signal records will find the field appears partway through — **that is this
-     finding being acted on, not an inconsistency in the log.**
+   ✅ **CLOSED — the fix landed in this session**, in `requestShutdown`
+   (`bounty/scripts/server.ts`):
+
+   ```ts
+   logDaemon("signal", { signal, subscribers: sockets.size + sseClients.size });
+   ```
+
+   **Past tense throughout this item is deliberate: it describes the 30-day
+   window this artifact measured, and that window ends before the fix.** A
+   future reader comparing pre- and post-`2cc513d` signal records will find the
+   field appears partway through — **that is this finding being acted on, not an
+   inconsistency in the log.**
+
+   ⛔ **That line was corrupted by the formatter on its first land and is fenced
+   now because of it.** As inline code it was reflowed across lines, and the `+`
+   landed at the start of a continuation line where markdown read it as a list
+   bullet — so `7e3271d` shipped `sockets.size - sseClients.size`, **a
+   subtraction, describing code that sums.** The seat-doc convention warns about
+   exactly this (_"a wrapped continuation line can be mangled into a stray list
+   item, corrupting the trail"_) and `.anthill/` is `.prettierignore`d so it
+   never happens there. **`docs/` is not, so the warning applies here and the
+   protection does not. Fence anything containing an operator.**
 
    ⚠ **And the plan's "156 of 224" is a count of _deaths_, never of _affected
    clients_.** Nothing in this log can produce the second number; the write-up
