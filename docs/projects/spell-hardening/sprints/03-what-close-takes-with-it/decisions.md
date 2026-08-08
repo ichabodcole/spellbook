@@ -205,14 +205,26 @@ falsified** — see [§B3](#b).
 produced real findings about a **different product** while `doing: 0` and no
 lane card existed. **The seat who opened the thread is the one who called it.**
 
-**Findings preserved:** 856 leaked dirs house-wide · glamour 790 · bounty 66 ·
-**magpie ZERO, the control that proves the fix** · 951 `glamour-styles-*`
+**Findings preserved:** ~~856 leaked dirs house-wide · glamour 790 · bounty 66~~
+· **magpie ZERO, the control that proves the fix** · ~~951 `glamour-styles-*`~~
 invisible to the ratified `tmpdir()` predicate **by design** · `TEST_TMPDIR` has
-no teardown · **anthill's own tooling at 9,001 — 4× all of spellbook combined.**
+no teardown · ~~**anthill's own tooling at 9,001 — 4× all of spellbook
+combined.**~~
+
+> **⚠ SUPERSEDED 2026-08-08, and the correction inverts the headline.** Every
+> struck figure was measured with a sweep that never opened the suite roots.
+> Corrected: **spellbook 15,623 · bounty 12,830 · mind-mapper 1,450 · glamour
+> 1,328 · anthill 9,026** — so anthill is **0.58×** spellbook, not 4×, and
+> `bounty` alone exceeds it. The magpie-as-control claim **survives**. Full
+> reconciliation and the reproduction command:
+> [`docs/backlog/2026-08-08-tmpdir-leak-house-wide.md`](../../../../backlog/2026-08-08-tmpdir-leak-house-wide.md).
+> **Struck rather than rewritten**, because the way the number was wrong is the
+> reusable part — see A10's own routing note below, which held.
 
 **Routing:** ours → `docs/backlog/`, not GitHub issues (those are inbound from
 other teams). The anthill figure is the lead's outward send via
-`anthill feedback`.
+`anthill feedback` — sent, as
+[`ichabodcole/anthill#100`](https://github.com/ichabodcole/anthill/issues/100).
 
 ---
 
