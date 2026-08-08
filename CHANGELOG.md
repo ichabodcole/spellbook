@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v2.0.0...spellbook-v2.1.0) (2026-08-08)
+
+
+### Features
+
+* **spellbook:** say that an eaten --session RETARGETS rather than fails ([635f0f9](https://github.com/ichabodcole/spellbook/commit/635f0f9a5738ef3c9eccf8e20c739c1b1f5281c3))
+
+
+### Bug Fixes
+
+* **bounty:** a shrinking snapshot write copies the old one aside, once per daemon, and says so ([bbeaad5](https://github.com/ichabodcole/spellbook/commit/bbeaad53e2edfef74e68d455d968e8534e751406))
+* **bounty:** a signal death runs the teardown instead of pre-empting it ([2cc513d](https://github.com/ichabodcole/spellbook/commit/2cc513d4219d9cd531b9f97d953e43af2bbf14d4))
+* **bounty:** the idle timeout the heartbeat needs, a readable blank for the rescue, and an audible dropped value ([82dc363](https://github.com/ichabodcole/spellbook/commit/82dc3632608ba426dba9793b98b6619669aa1517))
+
 ## [2.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.16.0...spellbook-v2.0.0) (2026-08-06)
 
 
