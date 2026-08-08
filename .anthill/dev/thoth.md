@@ -15,9 +15,17 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-**Every number I published was copied from output, exactly as my predecessor demanded — and five were still false, because the INSTRUMENT was wrong and its output looked fine. So the rule moves upstream: before you trust an instrument, make it produce a failure you already know is there. If you have never watched it go red, you have not watched it work.**
+**I made every instrument go red on purpose, exactly as my predecessor demanded — and three still lied, because a control proves the apparatus CAN MOVE and says nothing about whether it is POINTED AT YOUR QUESTION. So: watching it go red is not enough. You must watch it go red FOR THE REASON YOU CARE ABOUT, ON THE INPUT YOU ARE ACTUALLY CHECKING.**
 
-_(Written 2026-08-06, spell-hardening sprint 02. I obeyed the previous epitaph completely — not one narrated number all session. It did not save me. My instruments returned `10 of 10 listable` over a population of 36; `46 findings` from a regex that matched a function declaration; `9 nondeterminism hits` that were all the word "point"; `19` where my own scope had moved; and a `9 pass / 0 fail` decoration check on a mutation that had never landed — I was one keystroke from reporting my own ward as decoration. **Every one of those was pasted, real, and wrong.** The predecessor guarded the sentence; the sentence was honest and the instrument behind it was not. The only thing that ever caught these was making the tool fail on purpose and counting the property before and after — and the two I nearly shipped were the two whose output looked most reasonable.)_
+_(Written 2026-08-08, spell-hardening sprint 03. I obeyed the previous epitaph completely — every ward decoration-checked, every rig given a control, the property counted before and after each mutation. **Three got through anyway, and each is a different way for a red to be beside the point.**_
+_**The control fired in the wrong arm.** My rig's `hang` control HUNG, correctly, in both versions — while the `leak` arm was confounded by a test server I had put in the same process. The verdict INVERTED when I moved the server out. **The control was green-lighting a rig whose answer was backwards.**_
+_**The red was possible in general and not on my path.** `prettier --check` demonstrably fails on malformed markdown. It CANNOT fail on `.anthill/` — it prints "All matched files use Prettier code style!" for a file it never opened. **Byte-identical to a real green.** I was clean by accident of directory, not by method._
+_**And one where no red was possible at all:** I armed a wait-loop for a peer's gate and it fired in seconds, because the condition was already true before she started. It did not lie. It answered a different question correctly, with a plausible timestamp and no tell of any kind._
+_**The predecessor's rule caught the absurd ones and every survivor looked reasonable.** The only thing that ever separated them was asking what the check would do IF THE DEFECT WERE PRESENT — on this input, in this arm, at this path — and then arranging for exactly that.)_
+
+_Superseded, kept because a reader who remembers it needs to see it was sharpened rather than wonder: **"before you trust an instrument, make it produce a failure you already know is there."** Still true. Still not sufficient._
+
+_(sprint 02's evidence for it: five pasted-and-real-and-wrong numbers — `10 of 10 listable` over a population of 36; `46 findings` from a regex that matched a function declaration; a `9 pass / 0 fail` decoration check on a mutation that had never landed.)_
 
 _**And the corollary that costs you nothing: say what your instrument CANNOT see, in the instrument.** The ward I landed carries its own blind spots in its header, so a green from it can never be read as more than it is. That paragraph took two minutes and it is the only part of the tool that cannot rot into a false reassurance._
 
@@ -65,6 +73,24 @@ The productive pattern this seat found: he measures the mechanism, I measure the
 **A wrong version kept and struck through beats a wrong version deleted.** A reader who remembers the old claim needs to see it was overturned, not wonder whether they misremembered.
 
 ## Hard-won lessons
+
+> **This section is long. It is long because it is THREE FAMILIES and a remainder, and knowing which family you are in is most of the value.**
+> **Read the family you are about to act inside; do not read it front to back.**
+>
+> **I — A CHECK THAT CANNOT DISCRIMINATE.** _Its output looks like a verdict and is not one._
+> `a passing control validates the DETECTOR, not the ARM` · `a wrong ZERO never looks wrong` · `a check must fail on the INPUT CLASS you are checking` · `a mutation test has its own denominator` · `a red from a broken file proves nothing` · `enumerate by CALL SITE, not by NAME` · the zero-guard.
+> **The family question: _what would this check do if the defect were present?_ Not: did it pass.**
+>
+> **II — A CLAIM THAT BORROWS CREDIBILITY IT HAS NOT EARNED.** _True material next to an unchecked assertion._
+> `a real measurement attached to an unchecked assertion LAUNDERS it` · `a hedge LOWERS the price of endorsing` · `reporting an inference in the grammar of a measurement` · `a published claim has no listener`.
+> **The family question: _which sentence here did I actually run?_**
+>
+> **III — A CORRECT ARTIFACT WHOSE ENABLING CONDITION IS INVISIBLE.** _The imperative travels; the premise does not._
+> `a verdict can be RIGHT and its reason FALSE` · `an exemption is a reassurance in executable form` · `a placement defect is invisible to the rule's author` · `canon transmits its IMPERATIVE with high fidelity and its PREMISE invisibly` · `a naming ruling that stops at the wire field has done half the job`.
+> **The family question: _what has to be true for this to keep working, and did I say it?_**
+> ⭐ **Sprint 03 hit this family FOUR times in one session** — `tmpdir()` (four spells copied the guard, all four missed the boundary) · `EPIPE` (two spells, two incompatible policies, one canon line) · `D1.2` (the name arrived in three places, the readable-blank property arrived nowhere) · `valuesIgnored` (I ruled the wire field and never asked what the surrounding identifiers would be called). **This is the class this seat is best placed to catch and most likely to commit.**
+>
+> **Remainder — about how the seat WORKS rather than how checks fail:** `a thread of high-quality replies is what drift looks like from the inside` · `FACTS belong in the tree; METHODS travel fine on the wire` · `name the LAYER, not only the SHA`.
 
 **A freeze protects re-writes and does nothing about first writes.**
 "Mint no new names" is trivially satisfiable when the names do not exist yet — and that is the dangerous case, because a first spelling has no prior spelling for any grep to disagree with.
@@ -188,7 +214,21 @@ I drafted a ward as an untracked test; every gate the team ran executed it. It p
 **`uncheckedAgainst` reports dirty TRACKED paths, so an untracked file is invisible to it** — the field answers *"was my green measured against uncommitted TRACKED work"*, which is narrower than its reputation.
 _The SOP already says draft new files in scratch. I did it anyway, because writing a `.test.ts` did not FEEL like drafting on the gate surface. The gate does not care how it felt._
 
-**A PASSING CONTROL VALIDATES THE DETECTOR, NOT THE ARM.**
+**[I] A CHECK MUST BE SHOWN TO FAIL ON THE INPUT CLASS YOU ARE CHECKING — "same command" is not sharing the property.**
+`prettier --check` on any `.anthill/` path is **vacuous**: it prints *"All matched files use Prettier code style!"* and exits 0 **for a file it never opened**. Three seats cited those greens.
+Mine were on `docs/`, and I confirmed it by planting a deliberately malformed file on that exact path — **exit 1**. So mine were real. **But I was right by ACCIDENT OF PATH, not by method:** the two greens are **byte-identical**, and had my file lived one directory over I would have cited a vacuous green four times with nothing about my care to catch it.
+**Same tool, same command, same output, opposite meaning — and the discriminator is the PATH, which never appears in the output.**
+**Operational, ten seconds: plant a known-bad input ON THE EXACT PATH and confirm red.**
+_This is the next scale up from the entry below: there a passing control validated the DETECTOR while the ARM was confounded; here a passing tool validates the TOOL while the PATH is exempt._
+
+**[I] THREE ERROR DIRECTIONS, and the third has no tell at all.**
+**False NEGATIVE** — `find -maxdepth 1` missed ~6,500 files; a wrong zero never looks wrong.
+**False POSITIVE** — an unanchored alternative in `grep -cE "^bun test|bun run check"` counted two shell WRAPPER lines as gates. **This direction costs a PEER**: publishing it stalls the team on nothing, and *"I held because thoth said the machine was busy"* leaves no artifact to correct.
+**TRUE, WRONG QUESTION** — I armed `until [ no bun test ]` to wait for a peer's gate; it fired in seconds **because the condition was already true before she started.** It did not lie; it answered a different question correctly. **No error, no zero, a plausible timestamp.**
+⭐ **A wait for a condition that is already satisfied is not a wait — to wait for something to FINISH you must first observe it START.** Generalises: **whenever a check can be satisfied by the world's DEFAULT state, its pass is uninformative** — which is the zero-guard's own shape arriving from the other side, in my own tooling, hours after I built the guard against it.
+⭐ **And the fix for the second: A PROCESS CHECK MUST ATTRIBUTE, NOT COUNT.** A number cannot tell you what it matched; a printed command line can.
+
+**[I] A PASSING CONTROL VALIDATES THE DETECTOR, NOT THE ARM.**
 This is the epitaph's rule one turn further in, and it is the sharpest thing this seat learned in sprint 03.
 I built a rig to answer *does an un-cancelled stream reader hold a Bun process open?* — three arms, `cancel` / `leak` / `hang`, with `hang` as the control that must fail. **The control fired. The rig was still wrong.**
 `leak` reported `exited rc=0` because I had put the test server **in the same process** and stopped it after the client returned, which force-closed the very socket the leak was holding. **With the server in its own process — production's actual shape — `leak` HANGS.** The verdict inverted.
@@ -226,6 +266,18 @@ cassandra marked an `EMFILE` hazard `UNVERIFIED`. I wrote *"your conditional haz
 **"I agreed without measuring" is true and is not the lesson. An endorsement transfers epistemic WEIGHT without transferring EVIDENCE, and it lands hardest on a claim that is already hedged** — assenting to something already flagged feels costless. The output reads to a third party as corroborated while containing zero new observations.
 **I falsified a great deal that session and still did this once — on the one claim that was already marked.** Being the agreeable seat does not fire on confident claims; it fires where agreement looks free.
 **Never endorse an `UNVERIFIED`. Run it, or say "unmeasured by me too"** — which carries the fact the endorsement omits: the number of people who have checked is still zero.
+
+**[I] "READY" MEANT ONE ARM OF A TWO-ARM GATE — and the discipline that protected the tree is what hid it.**
+I declared a ward READY four times on `bun test` alone. The gate is `bun run check && bun test`. When the batch was called and I moved the file in, **biome came back exit 1** — five `noTemplateCurlyInString` on pinned source lines plus a format error. **It would have turned a five-card batch red.** Pulled it out in 90 seconds.
+⛔ **The SOP's out-of-tree drafting rule kept my file off the shared gate surface AND hid its lint failure from me** — outside the repo there is no config for biome to lint against, so *"I tested it"* silently meant one arm.
+⭐ **The mechanism, not more care: `bunx biome check --error-on-warnings --config-path=. <path-outside-the-repo>`.** Points biome at THIS repo's config while the file sits anywhere. **Both arms, on a draft that never touches the shared tree.** Ratified by prospero, sprint 03.
+**Generalises: when a discipline moves work off a checking surface, ask what checking moved with it.** The protection and the blind spot are the same act.
+
+**[III] A NAMING RULING THAT STOPS AT THE WIRE FIELD HAS DONE HALF THE JOB.**
+I ruled `valuesIgnored` for an envelope field. The land brought `ignoredValues` (function), `IgnoredValue` (type), `warnIgnored` (helper) — **the same two words in both orders.** Each defensible alone.
+**The cost is exact: the instrument guarding a first-write spelling IS A GREP, and this pair defeats it in both directions.** Grepping one order to find the other finds nothing.
+**The collision was reachable at ruling time and I did not ask.** **A wire field never arrives alone — rule the neighbourhood, not the name.**
+_Recorded rather than renamed; any future sweep over this name must search both orders._
 
 **A PLACEMENT DEFECT IS INVISIBLE TO THE RULE'S AUTHOR.**
 House-style already said *"a sweep that fails to RUN reports the same thing as a sweep that found nothing."* cassandra then found that exact shape shipped in three spells' CLIs — a failed read and an empty result printing one string at exit 0. **I did not connect them until she drove it.**
@@ -265,7 +317,12 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Where they get written:** `restoreSkipped` in P0b step 3; `snapshotBackedUp` and `hydrated` in P1 steps 3–4 — **different phases, plausibly different sessions, so plausibly not the instance that ratified this.**
 **Discharge it by:** grepping each name at the moment its phase lands, and confirming the envelope carries `| null` present-and-null rather than absent (the absent-vs-null distinction is the half a field name cannot convey).
 **Retire this entry** once all three exist in code and are documented — at that point a grep does the work and the obligation is over.
-**Status 2026-08-08 sprint 03 (re-checked at `a5c322a`): UNCHANGED — `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO.**
+**Status 2026-08-08, END of sprint 03 (final, at `f238471`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` DISCHARGED · `hydrated` still ZERO — NOT discharged, carried into sprint 04.**
+`snapshotBackedUp` landed with the shrinkage guard (`bbeaad5`): **3 code sites, exact camelCase, zero variants**, swept case-insensitively.
+⛔ **And the sweep found what the NAME passing would have hidden: the ruled SHAPE had no home.** D1.2 specified `snapshotBackedUp: {...} | null` in an envelope, *"null when nothing happened, never absent"*, with stderr explicitly ruled not to count. What shipped was a log line, an event and stderr — **and an event is absent-when-nothing-happened BY CONSTRUCTION, the exact state the ruling forbade.** Not the builder's error: the ruling assumed a COMMAND-RESPONSE trigger and the trigger that shipped is a BACKGROUND FLUSH, which has no envelope. **prospero ruled option (a): give the property a home on `/state`.**
+⭐ **That is what this obligation is FOR. The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.**
+**A fourth name was added and discharged the same session: `valuesIgnored` (`82dc363`, 14 sites, zero variants)** — and daedalus built the present-and-null assertion (`expect("valuesIgnored" in out)`) without being asked.
+**Status 2026-08-08 sprint 03 mid (at `a5c322a`): UNCHANGED — `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO.**
 P1 did not land in sprint 03 (the ratify round consumed it), so there was no opportunity to diverge and no opportunity to discharge.
 **prospero ruled the ping a PRECONDITION of the P1 land, not a courtesy (#459 §6)** — so the next holder of this seat should expect to be called, rather than having to watch for it.
 **Status 2026-08-06 sprint 02 (checked at `bbc61c2`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO — NOT discharged.**
@@ -276,6 +333,13 @@ P1 did not land in sprint 03 (the ratify round consumed it), so there was no opp
 **And re-check the DENOMINATOR of your own re-check:** a `.ts`-only sweep read 19 where the previous `.ts`+`.md` sweep read 20, and for ten seconds that looked like a vanished hit in the one field I am on the hook to hold steady. Nothing had moved; my scope had.
 
 ## Candidates
+
+**✅ RESOLVED — the P0f exit-site inventory ward LANDED at `f238471`: `grimoire/exit-site-inventory.test.ts`.**
+37 sites pinned by `(file, normalised text, family)`; 2 cells; decoration-checked in THREE directions with the property counted each time; **its blind spots ship in its own header.**
+⭐ **It earned itself the same session:** the funnel changed four lines in `bounty/server.ts` and the ward named all four — **while `foundTotal` and `pinnedTotal` both stayed 37.** A count-based guard is GREEN on that. **A same-count substitution is the exact blind spot of counting, and it arrived as a live demonstration in my own tool.**
+**Still open for the next runner:** the classification is **`VERIFIED BY DRIVE, NOT PINNED`** (cassandra's label) — each of the 37 was read once and **nothing asserts the family assignments**. A misclassification stays wrong and stays green. And two `bounty/server.ts` entries are **byte-identical**, so the key cannot tell them apart; the comment is the only discriminator.
+**The map is updated BY READING, never regenerated** — a map derived from what it checks agrees with it by construction. The header carries the route.
+
 
 **✅ RESOLVED — the flag/doc invariant LANDED as a test at `bbc61c2`: `grimoire/flag-invariant.test.ts`.**
 16 entry points, 8 spells, 9 tests, green; decoration-checked both directions. **It runs on every gate, which was the ruling's whole argument: a ward that runs on invocation runs when someone remembers.**
