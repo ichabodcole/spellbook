@@ -1,8 +1,8 @@
 # Spell Hardening
 
 **Status:** Active **Started:** 2026-08-05 **Current sprint:** **none building —
-02 is closed;
-[03 is scaffolded, awaiting ratify](./sprints/03-what-close-takes-with-it/plan.md)**
+[03 is complete and shipped in v2.1.0](./sprints/03-what-close-takes-with-it/plan.md);
+the next sprint is unscoped**
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
@@ -26,11 +26,11 @@ project closes them.
 
 ## Sprints
 
-| #   | Sprint                                                                    | Status      | Opened     | Closed     | Outcome                                                | Decisions                                                  |
-| --- | ------------------------------------------------------------------------- | ----------- | ---------- | ---------- | ------------------------------------------------------ | ---------------------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                          |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete    | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md) |
-| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | 🟡 Scaffold | —          | —          | —                                                      | —                                                          |
+| #   | Sprint                                                                    | Status   | Opened     | Closed     | Outcome                                                | Decisions                                                       |
+| --- | ------------------------------------------------------------------------- | -------- | ---------- | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                               |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
+| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                              | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
 
 **Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 
@@ -41,22 +41,72 @@ project closes them.
 > four values had no way to say "proposed", so a scaffold would have had to
 > masquerade as `Active` or hide as `Not planned`.)_
 
-Sprint 03 is scaffolded because both prior sprints deferred work **with names**
+Sprint 03 was scaffolded because both prior sprints deferred work **with names**
 — see [sprint 02's outcome](./sprints/02-success-shaped-lies/outcome.md),
 "CARRY-FORWARD → sprint 03," for what it inherits and what it explicitly does
-not.
+not. It was ratified at its convene on 2026-08-07 (the round falsified six
+scaffold claims, including the predicate every lane was about to be built on),
+built across six lanes, and merged on 2026-08-08.
 
-**Release:
-[spellbook v2.0.0](https://github.com/ichabodcole/spellbook/releases/tag/spellbook-v2.0.0)**
-— cut 2026-08-06 from `a0d8c17`. **6 of the 14 issues are closed** — `#77` `#78`
-`#80` `#81` `#83` `#84`. **Eight remain**: `#64` is genuinely unexplained, `#73`
-`#74` `#79` `#72` `#76` are P1/P2/P3 and **all unratified**, `#82` is on hold,
-and `#85`–`#88` sit with the CLI-contract investigation.
+> **⚠ SPRINT 03 HAS NO `outcome.md`, AND THAT IS A GAP RATHER THAN A CHOICE.**
+> Sprints 01 and 02 both have one. For sprint 03 the durable account of what
+> shipped lives in the **named merge commit `88a298f`** — why it existed, what a
+> caller gets, the decisions, and what it deliberately does not reach — plus
+> [`decisions.md`](./sprints/03-what-close-takes-with-it/decisions.md) for the
+> rulings and [`.anthill/retro.md`](../../../.anthill/retro.md) for the retro.
+> **This matters more than usual here:** the sprint's own open question 2 ruled
+> that lanes P1d–P1f get **no GitHub issue**, so for those three there is no
+> record outside this project folder and that commit body.
+>
+> _Found by a fresh agent reconstructing the release from the tree — it could
+> not establish from the docs whether the sprint had happened, because this file
+> still said "scaffolded, awaiting ratify" a day after it shipped._
+
+## Releases
+
+**[v2.0.0](https://github.com/ichabodcole/spellbook/releases/tag/spellbook-v2.0.0)
+— sprints 01–02.** Cut 2026-08-06 from `a0d8c17`.
 
 > **⚠ The `2.0.0` is not this project's.** The lead predicted `v1.17.0` and
 > never checked for a `!`; an unrelated `feat(mind-mapper)!:` on the same train
-> forced the major. **Two of the six closed issues (`#77`, `#78`) are sprint
-> 01's work**, fixed then and never closed. **Sprint 02 closed four.**
+> forced the major. **Two of its closed issues (`#77`, `#78`) are sprint 01's
+> work**, fixed then and never closed. **Sprint 02 closed four.**
+
+**[v2.1.0](https://github.com/ichabodcole/spellbook/releases/tag/spellbook-v2.1.0)
+— sprint 03.** Cut 2026-08-08 from `88a298f`. Closes **`#73`** and **`#74`** —
+the snapshot-rotation path, the project's first _durability_ family fix.
+
+> **⚠ The changelog reads backwards, and the error is NOT the one it looks
+> like.** The minor was driven by a single `feat(spellbook)` commit changing
+> fifteen lines of warning prose across three `SKILL.md` files — which looks
+> wrong and **is correct**: [`ward`](../../../.claude/skills/ward/SKILL.md)
+> rules that spell content defaults to `feat`/minor, and "changed guidance" is
+> named in it explicitly. Spell prose ships; a consumer really does receive it.
+>
+> **The actual inversion is the other half.** Sprint 03's genuinely additive API
+> surface — `snapshotBackedUp` on `GET /state`, `valuesIgnored` on
+> `add`/`update`, a new `"signal"` value in the `closed` frame's `reason` — all
+> shipped as **`fix(bounty)`**. By `ward`'s own rule those are behavioral
+> changes and belong under `feat`. So the "Features" section lists one warning
+> line while three new fields a consumer can key on sit under "Bug Fixes."
+>
+> _First written here the wrong way round — blaming the doc commit — and
+> corrected by running `ward` instead of reasoning from the changelog's shape.
+> The rule was already written down; nobody consulted it._
+
+### Issue ledger
+
+**8 of the 14 closed** — `#73` `#74` `#77` `#78` `#80` `#81` `#83` `#84`.
+
+**Six remain:** `#64` has a **root-cause hypothesis but no reproduction**
+(v2.1.0's `idleTimeout: 255` against Bun's 10s default explains "idle-died even
+with a keep-alive tail" — deliberately left open until a real session confirms
+it); `#79` `#72` `#76` are P2/P3 and unratified; `#82` is on hold; `#85`–`#88`
+sit with the CLI-contract investigation.
+
+**⚠ The count still is not a measure of what is left** — sprint 03's P1d–P1f
+were found by this project and have no issue number, exactly as sprint 02's P0f
+closed nothing.
 
 ## Other Documents
 

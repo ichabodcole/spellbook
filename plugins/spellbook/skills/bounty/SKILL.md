@@ -33,8 +33,8 @@ it through a thin **`cli.ts`** over HTTP —
 
 - `cli.ts open` spawns the daemon (it survives the CLI process) and opens the
   user's browser to the board,
-- `cli.ts state` reads the board back (`{ state, cursor }`) — confirm a command
-  applied without parsing HTML,
+- `cli.ts state` reads the board back (`{ state, cursor, snapshotBackedUp }`) —
+  confirm a command applied without parsing HTML,
 - `cli.ts tail` streams user actions as JSONL (wrap with the **Monitor** tool to
   react live, in a fresh turn per event),
 - `cli.ts add` / `update` / `remove` / `message` / `init` / `close` drive it.
@@ -211,7 +211,7 @@ session by default; pass `--session <id>` to target a specific one.
 | Verb                                                                                                                   | Does                                                                                                                                 |
 | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `open [--title T] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]`                  | spawn the daemon (or resume a saved session); print session JSON. `--session-key` binds it to a caller-owned key, idempotently (#69) |
-| `state [--full] [--owner <name> \| --mine] [--as <name>]`                                                              | read-back `{ state, cursor }` — confirm a command applied; scope like `tail`                                                         |
+| `state [--full] [--owner <name> \| --mine] [--as <name>]`                                                              | read-back `{ state, cursor, snapshotBackedUp }` — confirm a command applied; scope like `tail`                                       |
 | `tail [--since N] [--owner <name> \| --mine] [--as <name>]`                                                            | stream board events as JSONL (wrap with Monitor); scope to an owner; resumes `--since`                                               |
 | `add <title…> [--status S] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--id ID] [--stdin]`  | add a task (optionally assigned / labelled / sized)                                                                                  |
 | `update <id> [--status S] [--title T] [--notes N] [--owner N] [--tag a,b] [--size S\|M\|L] [--expect <min>] [--stdin]` | patch a task (`--owner` assigns/reassigns; `--tag` sets labels, `--size`/`--expect` set the heartbeat threshold)                     |
@@ -241,13 +241,33 @@ echo '[{"id":"t1","title":"first","status":"todo"}]' | bun $CLI init --title Spr
 
 ### Read-back, not inference
 
-`cli.ts state` returns `{ state, cursor }` — the canonical board plus the
-current event cursor; you never have to render HTML or infer from the event
-stream. `cursor` is the resume point you hand to `tail --since <cursor>`.
+`cli.ts state` returns `{ state, cursor, snapshotBackedUp }` — the canonical
+board, the current event cursor, and whether this daemon has rotated a snapshot
+aside. You never have to render HTML or infer from the event stream. `cursor` is
+the resume point you hand to `tail --since <cursor>`.
+
+**`snapshotBackedUp` is `{ path, taskCount, reason } | null`, and it is
+PRESENT-AND-NULL, never absent.** `null` means this daemon has not rotated
+anything; a non-null value means it copied the on-disk snapshot aside before a
+shrinking write, and names the file. See **Durability** for when that fires.
+
+> **Why it lives here and not only on the event stream.** An event is _absent_
+> when nothing happened, so "no rotation" and "a daemon too old to report one"
+> are byte-identical to a consumer. A readable blank distinguishes them, and
+> `state` is readable at any time — including after the page refresh or tail
+> restart that loses an event.
 
 **A write confirms itself** — the verb reports the daemon's `applied` verdict
 (non-zero exit + `applied: false` + a named `error` on a refusal), so `state` is
 for **reading the board**, not for checking whether your last write landed.
+
+**`add` and `update` also report what they THREW AWAY.** A bad `--size` or
+`--expect` value is deliberately ignored rather than fatal (a typo must not set
+a bogus size), but the drop is no longer silent: the envelope carries
+`valuesIgnored: [{ flag, value, reason }] | null` — again present-and-null — and
+each drop is mirrored to stderr. `update <id> --size bogus` with no other flag
+refuses, and the refusal now names the ignored value as its own cause rather
+than reporting an empty patch.
 
 **Scope it like `tail`.** On a shared board, `state --mine --as <you>` (or
 `--owner <name>`) filters the read-back to your own + claimable tasks — the
@@ -382,7 +402,9 @@ verb resets the idle timer) and keep-alive-while-watched (a live tab or tail
 holds the board open — see `--timeout`), a board you're actively driving _or_
 just watching survives long stretches and a restart.
 
-- `cli.ts sessions` lists saved snapshots (id · task count · title).
+- `cli.ts sessions` lists saved snapshots (id · task count · title) —
+  **including any `<id>.pre-<ts>.bak` rotation backups**, which appear there by
+  name.
 - `cli.ts open --restore <id>` brings a saved board back. The snapshot is merged
   over defaults (old snapshots gain new fields cleanly) and its tasks are run
   through the same `validateTask` boundary, so a malformed or legacy entry is
@@ -390,6 +412,33 @@ just watching survives long stretches and a restart.
 
 The restored daemon gets a **new** session id (and writes its own snapshot on
 close); the snapshot you restored from is left intact.
+
+#### Snapshot rotation — the guard against writing a smaller board over a bigger one
+
+The final write on close is **unconditional** (it is the resume point). What
+protects it is a rotation in front of every write: **before the first write of
+this daemon's life that would SHRINK the on-disk task count**, the existing
+snapshot is copied to `<session_id>.pre-<ts>.bak.json`.
+
+- **The predicate is shrinkage, not emptiness.** A respawn over a dead board
+  starts empty and writes 0 over N — but draining a board card-by-card produces
+  one shrinking write per card, and loses just as much. `next < prior` covers
+  both; `next === 0` covers only the first.
+- **It fires once per daemon session**, not per write. Rotating per write with
+  any retention bound N means rotation N+1 evicts the pre-drain snapshot — the
+  guard eats what it protects. A restart re-arms it.
+- **It announces itself** on four surfaces, because they fail differently: the
+  daemon log survives the daemon's death, a `snapshotBackedUp` event reaches a
+  live tail, stderr reaches whoever is watching the process, and
+  `state.snapshotBackedUp` is readable at any time.
+- **Recovery needs no new verb** — the `.bak.json` suffix is chosen so
+  `sessions` lists it and `open --restore <id>.pre-<ts>.bak` resolves it.
+
+> **⚠ RECOVER FROM THE BACKUP WITH THE HIGHEST `taskCount`, NOT THE NEWEST
+> TIMESTAMP.** There is deliberately no retention policy (bounding it re-creates
+> the bug above), so backups accumulate. Two consecutive boot-empty-then-close
+> cycles leave a good backup from the first daemon and an **empty** one from the
+> second. Nothing is lost — but _"restore the latest backup"_ recovers nothing.
 
 ### Ownership & scoping (multi-agent)
 
