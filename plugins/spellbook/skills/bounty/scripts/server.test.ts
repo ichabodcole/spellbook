@@ -2067,6 +2067,41 @@ describe("dependencies (Phase D)", () => {
     for (const task of tasks) await cmd(url, { type: "task.add", task });
   }
 
+  test("b10: block on a NONEXISTENT task is refused — it would constrain nothing", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [{ id: "R", title: "R", status: "todo" }]);
+    // RED PRE-FIX: this answered {ok:true, applied:true} and wrote a dangling
+    // edge. The subject's existence was checked; the blocker's was not.
+    const res = await cmd(ready.url, { type: "task.block", id: "R", on: ["ghost"] });
+    expect(res.data.applied).toBe(false);
+    expect(String(res.data.error)).toContain("ghost");
+    // and nothing was written — a refused command must not half-apply
+    const s = await state(ready.url);
+    expect(find(s, "R")?.blockedBy ?? []).toEqual([]);
+    proc.kill();
+    await proc.exited;
+  }, 15000);
+
+  test("b10: a partly-unknown blocker list is refused WHOLE and names every unknown id", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "R", title: "R", status: "todo" },
+      { id: "REAL", title: "REAL", status: "todo" },
+    ]);
+    // All-or-nothing, mirroring the cycle guard: a 44-id cleanup must not become
+    // a bisect, and a partial apply would leave the caller's model wrong.
+    const res = await cmd(ready.url, { type: "task.block", id: "R", on: ["REAL", "g1", "g2"] });
+    expect(res.data.applied).toBe(false);
+    const err = String(res.data.error);
+    expect(err).toContain("g1");
+    expect(err).toContain("g2");
+    const s = await state(ready.url);
+    // the VALID edge was not applied either — whole-command refusal
+    expect(find(s, "R")?.blockedBy ?? []).toEqual([]);
+    proc.kill();
+    await proc.exited;
+  }, 15000);
+
   test("block adds edges; unblock removes them", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
     await seedTasks(ready.url, [

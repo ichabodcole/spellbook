@@ -1113,6 +1113,30 @@ async function main(argv: string[]): Promise<number> {
     } else if (msg.type === "task.block") {
       const task = state.tasks.find((t) => t.id === msg.id);
       if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      // b10 — the SUBJECT's existence was checked one line up; the BLOCKERS'
+      // was not. So `block <real> --on <typo>` was accepted at ok:true and
+      // created an edge that constrains NOTHING: isBlocked and the /state
+      // liveBlockers projection both require a blocker to EXIST, so a dangling
+      // id is inert by design. The envelope answered {"blocked":"<id>"} while
+      // /state answered blocked:false — one command saying two things.
+      //
+      // ⚠ Note this is the INVERSE of how it was first reported: the risk is
+      // not a block that never resolves, it is a guard the caller believes is
+      // in place and is not. Measured before fixing.
+      //
+      // Refusal rather than a report, for the reason the card names: `add`
+      // REFUSES a missing title while this ACCEPTED a missing referent — same
+      // tool, same minute. This restores the uniformity, and the traversal that
+      // finds the referent was already being done by canReach below.
+      const unknown = msg.on.filter((b) => !state.tasks.some((t) => t.id === b));
+      if (unknown.length)
+        return {
+          ok: true,
+          applied: false,
+          error:
+            `no such task${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")} — ` +
+            `nothing was blocked (a blocker that does not exist would constrain nothing)`,
+        };
       // Cycle/self-ref guard: reject the WHOLE command if any proposed edge
       // would close a loop. New edges all originate at `id` (out-edges), so a
       // back-path can only run through existing edges — a per-edge canReach
