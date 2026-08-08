@@ -254,6 +254,8 @@ I ruled out the `die()` family as *"stderr-only, nothing buffered on stdout."* M
 The verdict survived. The justification did not — **and the justification is the half that travels**, because mine gave the rule-out no boundary. A future `die()` printing a usage block walks past 64 KiB and truncates, and the reader has been told the stream makes it safe.
 **A wrong verdict gets falsified by outcome. A right verdict with a false reason never does** — the outcome keeps agreeing with it, so no one re-derives it, and the reasoning is what the next person copies.
 **Every rule-out states its BOUNDARY in the same breath as its verdict.** One without a boundary is a reassurance wearing a measurement's clothes.
+⭐ **PIN, sprint 04 — and it adds the OPERATIONAL half: a false reason does not merely fail to travel, it MISDIRECTS THE READER'S NEXT ACTION TOWARD THE WRONG VARIABLE.** I measured my own mutation-calibration at 3 commands and was about to attribute it to *"the cell reads markdown, so mutating it is `cp` + `sed`."* **The number was right. The cause was wrong:** a peer's measurement showed the dominant term is **4 × the SUITE RUNTIME YOU CHOSE TO RUN** — mine was cheap because I ran a SCOPED suite (14ms), and the identical four arms against the full suite cost **9.3 minutes**.
+**So the true variable is SCOPE, which is a choice; my false one was FILE TYPE, which is not.** ⛔ **A reader acting on my version goes hunting for cheap CELLS instead of scoped RUNS — and every check would have confirmed my 3 commands while they did it.**
 _Third pin for "a reasoned dismissal is worse than a bare wrong claim." This is the sharpest form of it._
 
 **AN EXEMPTION IS A REASSURANCE IN EXECUTABLE FORM, AND IT IS THE ONE PART OF A PREDICATE NOBODY RE-EXAMINES.**
