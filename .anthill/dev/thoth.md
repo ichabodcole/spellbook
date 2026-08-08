@@ -398,6 +398,8 @@ All session I read `uncheckedAgainst` on each land and named it honestly, non-em
 ⭐ **And the aggregate says something no single envelope can: the non-empties do not CLUSTER.** They run from my first land to my last, which is a background rate — the signature of a structural cause. **A scheduling slip clusters. That discrimination is invisible at n=1 and obvious at n=16.**
 ⛔ **The trap is that per-item discipline FEELS like analysis.** Naming each `uncheckedAgainst` is the honest act the SOP asks for, and I did it every time — **which is exactly why it never occurred to me that I had a dataset.** Reporting is not aggregating, and the diligence of the first hides the absence of the second.
 **Operational: when you have faithfully reported the same field N times, that is a DATASET — go read it as one.** The cost is a script and the finding is a property no single observation contains.
+⭐ **SHARPENED (the lead named this class from a peer's instance minutes later): CONSUMPTION fails TWO ways — NOT READING, and READING-WITHOUT-AGGREGATING — and the second is invisible to every check aimed at the first.** A peer printed rows and did not read them: a MISS, catchable by *"did you read it?"*. **Mine was not a miss — ask me that question and the honest answer is YES, SIXTEEN TIMES.** Per-item diligence is a true and complete answer to the wrong question.
+⚠ **And the division of labour it explains: a peer found the mechanism from the SOURCE while I sat on the frequency — because code carries no per-item ritual, and my ritual consumed each datum on arrival and thereby RETIRED it. The discipline that made me honest is what made the aggregate invisible.**
 
 ## Anti-patterns
 
