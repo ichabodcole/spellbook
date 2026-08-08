@@ -329,6 +329,21 @@ The only tool in the repo that reads markdown is `prettier`, and **it is not in 
 ⭐ **Consequence I paid for: a whole-repo gate over a file class it cannot read CONVERTS A PEER'S DELIBERATE RED INTO A BLOCK on work that cannot possibly be related.** I ran the gate for a two-file markdown commit and got 3 failures, all another seat's `RED PRE-FIX` TDD tests. **Under tests-first a red tree is the normal mid-lane state, so this is structural, not unlucky.**
 _Now canon: the markdown gap is criterion 2 clause (ii) — point at it, do not restate it._
 
+**[II] ⭐ A FINDING DOES NOT PROPAGATE TO ITS OWN FINDER — FOURTH INSTANCE, AND THIS TIME THE COUNTEREXAMPLE WAS A FILE I WROTE AND KEPT NAMING.**
+The lead ruled the gate could not see markdown. I relied on it for three lands, then "confirmed its expiry" — framing it as *"true when ruled, false now, a datable expiry."*
+⛔ **It was NEVER true. `grimoire/flag-invariant.test.ts` — MY ward, landed `bbc61c2` 2026-08-06, two days BEFORE the ruling — `readFileSync`s eight `SKILL.md` files and asserts on their contents on every gate run.**
+**I cited that ward three times that same hour** — in this doc, in my `a4` commit message, in my reasoning about what wards should look like — **while making a claim it disproves, about a file in the same directory I own.**
+**The previous instance was reading a counterexample on screen and not seeing it. This one is worse: I wrote it, and I kept saying its name.**
+⭐ **The remedy is not vigilance — I looked at it repeatedly. It is: VERIFY THE REPEAL, DO NOT ANNOUNCE IT.** When publishing a claim about a MECHANISM (*"X cannot see Y"*), **enumerate everything that could see Y and check them** — do not reason from the one checker you have in mind. `bun test` runs arbitrary code; a file-type allow-list governs `biome` and nothing else.
+⚠ **And I preferred the wrong version because it was TIDIER** — "expired, not wrong" makes a ruling look like a well-behaved temporal boundary check instead of an error. **Watch for the framing that flatters the artifact.**
+
+**[I] ⭐ AN ENUMERATION CAN BE CORRECT WHILE THE QUESTION IS UNNAMED — and the discriminator can be INVISIBLE AT THE CALL SITE.**
+Running the remedy above, *"what could see a markdown change"* returned **three** test files where I had claimed one. **My first reading was "my scope was too narrow."** I checked the discriminator instead of publishing: the other two **MINT** the markdown they read into a temp dir at test time (`mind-mapper` ratify/ingest), so no tracked file is involved.
+⭐ **That is a FOURTH population — FIXTURE markdown — and it is indistinguishable from tracked markdown under every search run that day: same `readFileSync`, same extension, same `.test.ts`, same directory shape. The discriminator is whether the file is TRACKED, which does not appear at the call site at all.**
+**So the enumeration was right and the QUESTION was unnamed** — *"what reads markdown"* returns 3, *"what breaks if I edit tracked markdown"* returns 1.
+**This is the boundary check I landed hours earlier firing on its own author**, and it is the second such walk that day. _Both recorded in the ledger (`fd2c09b`) rather than left on the wire — not recording a walk is the exact defect the row was added to fix._
+⚠ **Corollary worth its own line: a population can appear TEN MINUTES AFTER a diagnosis that enumerated the populations.** Three were named and closed a four-correction thread; the fourth surfaced immediately after. **"We have now enumerated the kinds" is itself a claim with a denominator.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
