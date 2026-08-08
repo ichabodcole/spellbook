@@ -51,6 +51,11 @@ pictures) · **magpie** (pull individual assets _out_ of a composite image).
 > free text would otherwise be read as a flag. **Anything after `--` is a
 > positional, including something that looks like a flag** — it is consumed
 > silently, at exit 0, with no warning. Put every flag to the LEFT of `--`.
+>
+> **⚠ If the eaten flag is `--session`, imago does not fail — it retargets.** It
+> falls back to the machine-global `imago-latest.json` pointer, so the command
+> lands on **the most recently opened imago session on this machine**, which may
+> not be yours.
 
 All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/imago/scripts/cli.ts <verb>`. To
 target a specific session, put `--session <id>` **after the verb and its flags**

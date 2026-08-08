@@ -2521,10 +2521,9 @@ as the discovery-pointer figure.
 > first would take it as live, which is exactly what happened to an outside
 > reader of this document.**
 
-**Do not write `2 pinned + 3 driven` and do not
-write `4 pinned + 1 driven`.** Write
-**`2 pinnable · 1 driven-only · 2 undetermined`** until the files are read, then
-replace it with what they say.
+**Do not write `2 pinned + 3 driven` and do not write `4 pinned + 1 driven`.**
+Write **`2 pinnable · 1 driven-only · 2 undetermined`** until the files are
+read, then replace it with what they say.
 
 **The reason is not pedantry: pinned and driven are different guarantees.** A
 split reported with false confidence **overstates what survives into next week**

@@ -1,5 +1,17 @@
 # Release note — DRAFT
 
+> **✅ SHIPPED as
+> [spellbook v2.0.0](https://github.com/ichabodcole/spellbook/releases/tag/spellbook-v2.0.0),
+> 2026-08-06.** This file is kept as the **drafting record** — what was claimed
+> _before_ the cut, and what the honesty rules made it say. **It is not the
+> sprint's summary**; that is [`outcome.md`](./outcome.md), which supersedes it
+> and carries the post-release facts this draft could not know.
+>
+> **This draft names no version, which is why it got that part right by
+> omission.** The lead separately predicted `v1.17.0` and was wrong — it shipped
+> **major**, for a reason unrelated to any lane here. See the outcome's
+> headline.
+
 **Status: DRAFT — every figure below is `UNVERIFIED` until re-checked against
 what actually shipped.** Drafted by `prospero` **before** the last beats
 finished, so that **the counts were not improvised at release time** — which is
@@ -81,15 +93,15 @@ instead of restoring, exit 0.
 > `imago > marksUnseen freshness flag`. Both are four-run samples; they differ
 > by one observation and we are not claiming a rate change.**
 
-> **⚠ SUPERSEDED IN PART, after this draft was written — see `6dfe493`.** The red
-> above is attributed to `imago > marksUnseen freshness flag`, the then-"known
-> flake". **That premise explained NEITHER of the session's two unnamed reds.**
-> Root cause, diagnosed post-stand-down by the seat whose cell it was: a **G7
-> liveness budget of 15s** in `runOpen`. **A hang is UNBOUNDED; a slow boot is
-> BOUNDED**, and under concurrent suites `bounty open` legitimately exceeds 15s —
-> **a false hang finding, manufactured by load, from the instrument built to
-> catch hangs.** Carded, not patched.
-> **The 0-of-4 / 1-of-4 figures STAND. The attribution of the 1 does NOT.**
+> **⚠ SUPERSEDED IN PART, after this draft was written — see `6dfe493`.** The
+> red above is attributed to `imago > marksUnseen freshness flag`, the
+> then-"known flake". **That premise explained NEITHER of the session's two
+> unnamed reds.** Root cause, diagnosed post-stand-down by the seat whose cell
+> it was: a **G7 liveness budget of 15s** in `runOpen`. **A hang is UNBOUNDED; a
+> slow boot is BOUNDED**, and under concurrent suites `bounty open` legitimately
+> exceeds 15s — **a false hang finding, manufactured by load, from the
+> instrument built to catch hangs.** Carded, not patched. **The 0-of-4 / 1-of-4
+> figures STAND. The attribution of the 1 does NOT.**
 
 **No percentage. No "P0d made it worse."** The difference **points toward P0d
 having introduced it** — stated because it is the least convenient direction —

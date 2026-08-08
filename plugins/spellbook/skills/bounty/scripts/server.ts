@@ -52,6 +52,7 @@
 
 import {
   appendFileSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -71,6 +72,11 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // the same path, so override BOUNTY_HOME to relocate both.
 const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
 const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
+// P1f — how long the teardown gets after a signal before the watchdog forces
+// the exit. Generous on purpose: it is a HANG backstop, not a deadline, and
+// the teardown's own bounded waits (150ms + a 200ms race) total well under it.
+// Env-overridable for tests only.
+const SHUTDOWN_WATCHDOG_MS = Number(process.env.BOUNTY_SHUTDOWN_WATCHDOG_MS ?? 5000);
 
 // Durable, append-only diagnostics log (#64). The daemon runs headless — cli.ts
 // `open` spawns it with stdout/stderr discarded — so a death (idle-close, crash,
@@ -212,6 +218,49 @@ function shouldIdleClose(subscriberCount: number, idleMs: number, timeoutMs: num
   return idleMs >= timeoutMs;
 }
 
+// #73/#74 — how many tasks the ON-DISK snapshot holds, or null when we cannot
+// honestly say. Absent, unparseable, or a non-array `tasks` all return null and
+// NOT zero: zero would mean "a snapshot exists and holds nothing", which makes a
+// first-ever write look like a shrink from an empty board, and makes a
+// half-written file report every later write as data loss. null declines to
+// answer, and the predicate below treats declining as "do not rotate".
+function snapshotTaskCount(path: string): number | null {
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as { tasks?: unknown };
+    return Array.isArray(parsed.tasks) ? parsed.tasks.length : null;
+  } catch {
+    return null;
+  }
+}
+
+// #73/#74 — should this snapshot write copy the existing file aside first?
+// Clock-free and fs-free so it is testable without a daemon (the shouldIdleClose
+// shape).
+//
+// ⛔ THE PREDICATE IS SHRINKAGE, NOT EMPTINESS. Both issues ask for a guard
+// against writing an EMPTY board over a populated snapshot. That does not cover
+// what was measured: a keyed respawn over a dead board starts empty, and then
+// ONE `add` — no `close` anywhere — flushed 3 tasks down to 1 through the
+// debounced path. An emptiness guard permits that write, because 1 is not 0.
+// Emptiness is the WORST CASE of this predicate, never a separate branch.
+//
+// ⛔ AND IT IS ONCE PER DAEMON SESSION. Writes happen per MUTATION, so a human
+// draining a board card-by-card produces one shrinking write each. Rotating
+// per-write with any retention bound N means rotation N+1 evicts the pre-drain
+// snapshot — the guard eats what it protects. Rotating on the FIRST shrink since
+// boot captures the state that existed before this daemon touched anything,
+// which is precisely what #73 and #74 wanted back, and it needs no retention
+// policy at all.
+function shouldRotateSnapshot(
+  priorTaskCount: number | null,
+  nextTaskCount: number,
+  alreadyRotatedThisSession: boolean,
+): boolean {
+  if (alreadyRotatedThisSession) return false;
+  if (priorTaskCount === null) return false; // nothing readable to protect
+  return nextTaskCount < priorTaskCount;
+}
+
 // wip-cue: the owners who have >= threshold cards in DOING — a soft, per-owner
 // WIP signal ("you've got a pileup; wrap one before pulling more"). Per-owner, so
 // legit parallel owners each under the limit never trip it. UNOWNED doing cards
@@ -245,7 +294,10 @@ function transitionStamp(
   return { enteredStatusAt: now, statusHistory };
 }
 
-type CloseReason = "user" | "timeout" | "close";
+// P1f adds "signal": a daemon killed by SIGTERM/SIGINT now runs the teardown
+// and its `closed` frame says so. Borrowing "close" would have been a
+// success-shaped lie — a consumer cannot tell an orderly shutdown from a kill.
+type CloseReason = "user" | "timeout" | "close" | "signal";
 type DoneResult = { code: number; reason: CloseReason };
 
 // `as` is the caller's --as identity (stamped onto the event `by`); cooperative
@@ -584,30 +636,59 @@ async function main(argv: string[]): Promise<number> {
     }
   };
 
-  // Crash + signal handlers catch the JS-level and OS-level deaths that headless
-  // stdio otherwise swallows. There is no prior signal handling to compose with,
-  // and these preserve the pre-existing behavior (an untrapped crash/signal still
-  // dies) — they only add the missing log line. The graceful-shutdown path
-  // (snapshot save on `done`) is unaffected: it runs on the clean close/timeout
-  // route, not through these.
+  // P1f — signal deaths now run the TEARDOWN instead of pre-empting it.
+  //
+  // The defect these handlers used to be: `process.exit` here fires immediately,
+  // so `await done` below NEVER resolves and the entire teardown block is
+  // unreachable — no final snapshot, no `closed` frame, no discovery cleanup.
+  // That ONE fact is P1f's defect (156 of 226 recorded deaths emitted no `closed`
+  // frame) and a pair of P0f exit sites at once.
+  //
+  // ⛔ THE HAZARD, AND WHY THIS IS NOT THE `join.ts` SCAR. `process.exit` in a
+  // signal handler does DOUBLE DUTY: it runs the teardown's job (ending) AND
+  // skips the teardown. Removing it to gain the teardown can LOSE THE ENDING —
+  // which shipped a 23-minute hang in a released spell once already.
+  //
+  // Two things make the ending safe here, and neither is "the teardown is
+  // well-behaved":
+  //   1. The terminal `process.exit(exitCode)` at `import.meta.main` STAYS. This
+  //      change does not swap an exit for a natural return; it only redirects
+  //      the signal path INTO the bounded teardown that already precedes that
+  //      exit. Every await in that block is bounded (a 150ms sleep, a
+  //      Promise.race with a 200ms cap, fs work).
+  //   2. A WATCHDOG, below, force-exits if the teardown does not finish. So
+  //      termination is guaranteed by construction rather than by the teardown
+  //      being correct — the property a gate can actually assert.
+  //
+  // `requestShutdown` is a mutable hook because these handlers must be installed
+  // BEFORE the work they guard, while `done`/`sockets`/`sseClients` do not exist
+  // until later. Until it is assigned, a signal falls back to the old immediate
+  // exit — a signal during startup MUST still kill the process, and pretending
+  // otherwise would introduce a hang in exactly the window with nothing to save.
+  let requestShutdown: ((code: number, reason: string, signal: string) => void) | null = null;
+  const onFatal = (signal: string, code: number) => () => {
+    if (requestShutdown) requestShutdown(code, "signal", signal);
+    else {
+      logDaemon("signal", { signal, phase: "pre-init" });
+      process.exit(code);
+    }
+  };
   process.on("uncaughtException", (e) => {
     logDaemon("uncaughtException", {
       error: String(e),
       stack: e instanceof Error ? e.stack : undefined,
     });
+    // NOT routed through the teardown. An uncaught exception means invariants
+    // are already unknown, and the teardown WRITES THE SNAPSHOT — flushing
+    // possibly-corrupt state over a good one is the #73 failure with extra
+    // steps. Dying loudly and leaving the last good snapshot is correct here.
     process.exit(1);
   });
   process.on("unhandledRejection", (e) => {
     logDaemon("unhandledRejection", { error: String(e) });
   });
-  process.on("SIGTERM", () => {
-    logDaemon("signal", { signal: "SIGTERM" });
-    process.exit(143);
-  });
-  process.on("SIGINT", () => {
-    logDaemon("signal", { signal: "SIGINT" });
-    process.exit(130);
-  });
+  process.on("SIGTERM", onFatal("SIGTERM", 143));
+  process.on("SIGINT", onFatal("SIGINT", 130));
 
   const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
@@ -651,10 +732,81 @@ async function main(argv: string[]): Promise<number> {
   // timer flushes it, and a final write lands on close. The snapshot is keyed by
   // session id and KEPT on close (it's the resume point for --restore).
   let snapDirty = false;
+  // #73/#74 — ONCE PER DAEMON SESSION. Lives here, in the daemon's closure, so
+  // "session" means exactly "this process": a restart re-arms it, which is the
+  // point (the state worth keeping is whatever existed before THIS daemon
+  // started writing).
+  let rotatedThisSession = false;
+  // D1.2's readable blank. The ruling says `snapshotBackedUp: {...} | null`,
+  // "null when nothing happened, NEVER ABSENT — a readable blank distinguishes
+  // 'not needed' from 'not reported'", and that stderr prose does not count
+  // because the consumer is an agent parsing JSON.
+  //
+  // ⛔ THE EVENT ALONE CANNOT SATISFY THAT, AND THE REASON IS STRUCTURAL: an
+  // event is ABSENT when nothing happened, so "no rotation" and "a daemon that
+  // never emits this" are byte-identical to a consumer. The ruling was written
+  // for a command-response trigger (close/restore) which has an envelope; the
+  // trigger that shipped is a BACKGROUND FLUSH, which has no response to carry a
+  // field. `/state` is the home that survives that change — it is the agent's
+  // JSON surface and it is readable at any time, including after the one page
+  // refresh that loses an event.
+  //
+  // This is my own recorded lesson arriving at a second spell: a signal whose
+  // ABSENCE is indistinguishable from "nothing is happening" needs a read
+  // alongside its event; event-only is fine only for signals that are
+  // self-evidently transient.
+  let snapshotBackedUp: { path: string; taskCount: number; reason: string } | null = null;
   const saveSnapshot = () => {
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
-      writeFileSync(join(SNAPSHOTS_DIR, `${sessionId}.json`), JSON.stringify(state));
+      const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+      // Copy the existing snapshot aside BEFORE the first shrinking write of
+      // this daemon's life. See shouldRotateSnapshot for why the predicate is
+      // shrinkage rather than emptiness, and why it fires once per boot.
+      const prior = snapshotTaskCount(path);
+      // `prior !== null` is redundant at RUNTIME — shouldRotateSnapshot returns
+      // false for null, and a unit cell pins that. It is here so the compiler
+      // narrows `prior` to number for the `taskCount` field below; without it,
+      // tsc reports TS2322 and `bun test` stays green, which is the standing
+      // bun-green-is-not-tsc-clean trap. Keeping the predicate total anyway is
+      // deliberate: it stays correct for any caller, not just this one.
+      if (prior !== null && shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)) {
+        // `.bak.json` and not `.bak`: the suffix is what makes this recoverable
+        // through the verbs that already exist. `sessions` lists *.json and
+        // strips the extension, so the backup appears there by name; and
+        // `open --restore <id>.pre-<ts>.bak` resolves it, because restore joins
+        // SNAPSHOTS_DIR with the arg plus ".json". Zero new recovery surface.
+        const backup = join(SNAPSHOTS_DIR, `${sessionId}.pre-${Date.now()}.bak.json`);
+        copyFileSync(path, backup);
+        rotatedThisSession = true;
+        snapshotBackedUp = {
+          path: backup,
+          taskCount: prior,
+          reason: `about to write ${state.tasks.length} tasks over ${prior}`,
+        };
+        // ⛔ AND IT SAYS SO. A silent rotation is a success-shaped lie, which is
+        // the defect family this whole project is named after — the user would
+        // be protected and never know they had needed protecting. Three
+        // surfaces, because they fail differently: the durable log survives the
+        // daemon, the event reaches a live tail, and stderr reaches whoever is
+        // watching the process.
+        logDaemon("snapshotBackedUp", {
+          backup,
+          priorTasks: prior,
+          nextTasks: state.tasks.length,
+        });
+        emitEvent({
+          type: "snapshotBackedUp",
+          backup,
+          priorTasks: prior,
+          nextTasks: state.tasks.length,
+          by: "system",
+        });
+        process.stderr.write(
+          `bounty: snapshot was about to shrink ${prior} → ${state.tasks.length} tasks; copied the old one to ${backup}\n`,
+        );
+      }
+      writeFileSync(path, JSON.stringify(state));
     } catch {
       /* persistence is best-effort */
     }
@@ -680,6 +832,35 @@ async function main(argv: string[]): Promise<number> {
       res(v);
     };
   });
+
+  // P1f — arm the signal path now that `done` exists. Everything below is what
+  // the handlers above could not reach at registration time.
+  //
+  // ⛔ THE WATCHDOG IS THE LOAD-BEARING PART, not the resolve. `resolveDone`
+  // alone would make termination depend on the teardown completing, and "the
+  // teardown always completes" is exactly the kind of claim that shipped a
+  // 23-minute hang. This makes the ending unconditional: teardown finishes and
+  // clears it (the normal path, and the timer never fires), or it does not and
+  // the process still dies with the right code.
+  //
+  // REF'd deliberately — an unref'd timer cannot rescue a hang, because a hang
+  // means something else is already holding the loop open. The cost is that the
+  // timer keeps the loop alive until teardown clears it, which is why
+  // `clearTimeout` sits at the end of the teardown rather than being optional.
+  let shutdownWatchdog: ReturnType<typeof setTimeout> | null = null;
+  requestShutdown = (code, reason, signal) => {
+    // `subscribers` on the signal path — the field this class of death has never
+    // carried. Today `signal` is the only exit class that omits it, so nothing
+    // in daemon.log would change when this fix lands; measuring the fix later
+    // requires the instrument to exist now. Captured BEFORE teardown closes
+    // anything, matching the `exit` line's own discipline.
+    logDaemon("signal", { signal, subscribers: sockets.size + sseClients.size });
+    shutdownWatchdog = setTimeout(() => {
+      logDaemon("shutdownWatchdog", { signal, note: "teardown did not finish; forcing exit" });
+      process.exit(code);
+    }, SHUTDOWN_WATCHDOG_MS);
+    resolveDone({ code, reason: reason as CloseReason });
+  };
 
   let lastActivity = performance.now();
   const touch = () => {
@@ -982,6 +1163,24 @@ async function main(argv: string[]): Promise<number> {
     server = Bun.serve({
       port,
       hostname: host,
+      // P1e (re-scoped from #64). Bun's default request idleTimeout is 10s, and
+      // the SSE heartbeat below fires every 15s — so on an OTHERWISE-IDLE
+      // connection the heartbeat cannot fire, because the connection is severed
+      // five seconds before it is due. An agent `tail` on a quiet board is
+      // exactly that connection.
+      //
+      // 255 is Bun's clamped maximum. Do NOT use 0 to mean "disabled": measured
+      // in mind-mapper, 0 stalls the initial response rather than disabling the
+      // timeout.
+      //
+      // ⚠ THE CLAIM SHIPS BOUNDED. This is CONSISTENT WITH #64's reporter clue
+      // (read-heavy dies / write-heavy survives — traffic resets the idle timer,
+      // so the 10s cut is not unconditional) and it is UNTESTED AGAINST it. It
+      // does not "explain" those deaths: the reporter was an agent and cannot be
+      // asked, the instrument post-dates the report, and open question 6 is
+      // permanently unanswerable. A heartbeat that can now fire is the fix; the
+      // reported deaths remain undiagnosed.
+      idleTimeout: 255,
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
@@ -1001,9 +1200,15 @@ async function main(argv: string[]): Promise<number> {
         // touch() so agent reads count as activity (idle-touch, #6).
         if (req.method === "GET" && path === "/state") {
           touch();
-          return new Response(JSON.stringify({ state: projectState(), cursor: eventSeq }), {
-            headers: { "Content-Type": "application/json" },
-          });
+          // `snapshotBackedUp` is spread AT THE HANDLER, beside cursor — it is a
+          // daemon-level fact about this process, not board state, so it does
+          // not belong inside projectState(). Always present; null means "no
+          // rotation has happened in this daemon's life", which is a readable
+          // blank rather than an absence (D1.2).
+          return new Response(
+            JSON.stringify({ state: projectState(), cursor: eventSeq, snapshotBackedUp }),
+            { headers: { "Content-Type": "application/json" } },
+          );
         }
         // Agent live tail: SSE stream of the event log, resumable via ?since=.
         if (req.method === "GET" && path === "/events") {
@@ -1300,6 +1505,10 @@ async function main(argv: string[]): Promise<number> {
     subscribers: sockets.size + sseClients.size,
     idleMs: performance.now() - lastActivity,
   });
+  // Clear the shutdown watchdog: the teardown reached this point, so the
+  // force-exit is no longer needed AND the ref'd timer must stop holding the
+  // event loop or the natural drain never happens.
+  if (shutdownWatchdog) clearTimeout(shutdownWatchdog);
   clearInterval(idleTimer);
   clearInterval(snapTimer);
   clearInterval(heartbeatTimer);
@@ -1354,5 +1563,7 @@ export {
   ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
+  shouldRotateSnapshot,
+  snapshotTaskCount,
   validateTask,
 };

@@ -61,13 +61,37 @@ that bite if unknown; for full Bun API docs read
   `.tsx`/`.jsx`/`.js` directly and Bun bundles them; `<link>` to CSS/Tailwind
   bundles too. Full React/CSS/Tailwind support, no separate bundler.
 
-## Landing work — branches, merges, and the PR message
+## Branch Landing Policy
 
-> **⚠ This section OVERRIDES the merge defaults in any plugin skill.**
-> `project-docs:finalize-branch` defaults to **squash-merge**. **Do not squash
-> in this repo unless the test below passes.** Plugin skills supply the
-> _trigger_; this file supplies the _content_ — the same split as `gate` in
-> `.anthill/config.json`, which has no default on purpose.
+Branches, merges, and the PR message. **`project-docs:finalize-branch` resolves
+this section by name** — the heading text is the contract, so do not rename it.
+
+**Run this before deciding a strategy:**
+
+```bash
+bun scripts/land-check.ts <base> <branch>
+```
+
+**Exit `0` = squash-safe · `1` = named merge required · `2` = no verdict**
+(empty range — a stale base or an already-merged branch; **not** a green).
+**Exit 0 PERMITS squashing; it does not require it** — fast-forward keeps the
+branch's commits and is usually the better choice when their messages carry
+reasoning.
+
+> **⚠ Other plugin skills may still default to squash** — e.g.
+> `superpowers:finishing-a-development-branch`. **This section wins.** Plugin
+> skills supply the _trigger_; this file supplies the _content_ — the same split
+> as `gate` in `.anthill/config.json`, which has no default on purpose.
+>
+> _Narrowed 2026-08-07 by its own repeal criterion. This used to override
+> `finalize-branch` too; as of project-docs 3.1.0 that skill **asks** instead of
+> defaulting, so there is nothing left to override there. The criterion
+> deliberately scoped to the override framing and **not** to the policy — when
+> the plugin defers, this section becomes the content it resolves, so it is
+> needed more rather than less. (Sprint 01's G5 is why that distinction was
+> written down: it said "repealed the moment the harness does it for you," one
+> harness did, and the rule repealed itself while three suites were still
+> broken.)_
 
 **Flow:** feature branch off `develop` → **named merge** into `develop` → push →
 PR `develop` → `main` → merge → pull `main`, merge into `develop`, push.
@@ -77,20 +101,28 @@ PR `develop` → `main` → merge → pull `main`, merge into `develop`, push.
 **Squashing is only correct when BOTH are true:**
 
 1. **Nothing cites a sha from the branch** — not in `docs/`, not in `.anthill/`,
-   not in a commit body. _Check: `git log <base>..HEAD --format=%h`, then `git grep` each over
-   TRACKED paths only — an earlier figure of "32" counted untracked scratch and
-   was wrong._
-2. **There is one author** — no `Anthill-Seat:` trailers to destroy.
+   not in a commit body. **⚠ The check greps THIS REPO ONLY** — a sha cited in
+   an external knowledge base or a GitHub issue is invisible to it, and you must
+   supply that yourself.
+2. **There is one author** — no `Anthill-Seat:` trailers to destroy. **⚠ This
+   fails open**: without trailers it counts _git_ authors, and git records the
+   human as author of every seat's commit, so a four-agent branch reports 1.
 
 **Neither holds for agent-team work, and the numbers are not marginal.** Sprint
 02 of spell-hardening: **10 of 60 shas cited in live documents**, four seats'
-trailers. Squashing would have broken 32 references **to the anti-drift
+trailers. Squashing would have broken all **10 references to the anti-drift
 mechanism this project deliberately adopted** — plans pin `file:line` claims to
 shas precisely because line numbers rot.
 
-```
-git merge --no-ff <branch> -m "<subject>" -m "<body>"
-```
+**The full procedure is the `land` skill** (`.claude/skills/land/`) — invoke it
+at the moment you merge. It carries the merge-message construction, the PR
+message, the back-merge, and the traps. **Prefer what `land-check` printed over
+anything retyped here.**
+
+> **⛔ Build the merge message as ONE file and pass `-F`.** Not
+> `-m "<subject>" -m "<body>"`, and never `-m "<subject>" -F <body>` — git
+> concatenates with no blank line, so the whole first paragraph becomes the
+> subject. That shipped a **251-character subject** here once already.
 
 ### Reading history — two queries, two questions
 
@@ -143,6 +175,13 @@ gh pr merge --merge --subject "<subject>" --body-file <file>
 
 ## Where the canon lives
 
+- **The documentation structure** — [`docs/README.md`](./docs/README.md), with
+  [`docs/AGENTS.md`](./docs/AGENTS.md) as the agent-facing tour (it loads
+  automatically once you are working in `docs/`). **`docs/` is a structured
+  system with a lifecycle, not a folder of loose files** — read one of those two
+  before filing anything, because where a document goes is a decision the
+  structure has already made. **For what happened recently, start with
+  [`docs/memories/`](./docs/memories/).**
 - **What a spell is, and why** —
   [`docs/PROJECT_MANIFESTO.md`](./docs/PROJECT_MANIFESTO.md) (agent-as-runtime,
   surface-fit, co-presence, the craft loop).

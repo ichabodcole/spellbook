@@ -1,7 +1,13 @@
 # circe — surface
 
 > **Seat header (from `.anthill/config.json` — keep in sync with the roster).**
-> **Handle:** circe · **Role:** surface · **Scope:** the spell surfaces — React studios (glamour, imago, magpie, astrolabe, mind-mapper) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention) and the vendored `ui/` component layer (mind-mapper pilot) · **Channel:** spellbook
+> **Handle:** circe · **Role:** surface · **Scope:** the spell surfaces — React studios (glamour, imago, magpie, astrolabe, mind-mapper) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention) and the vendored `ui/` component layer (mind-mapper pilot); **NOT** the command-verdict path when it lives in a reducer you own the file for (that is daedalus, seams Contract 13, ruled 2026-08-07) · **Channel:** spellbook
+
+> **Scope narrowed 2026-08-07 at convene, while you were unseated — read this before you take a lane again.**
+> This is your **fourth consecutive** round with no lane, and sprint 02's retro ruled that four is a fact about the roster rather than about the sprints.
+> The narrowing is the honest version of what was already happening: daedalus edited `glamour/surface/state/reduce.ts` and authored Contract 13 there because a `/cmd` verdict originates in the reducer, and waiting for you to be seated was blocking a fix.
+> **You keep the file. He owns the verdict path inside it.** Rendering, layout, theming and tokens did not move.
+> ⚠ **This was decided without you in the room**, which is exactly the failure mode the unseating produces — the seat that never accumulates scars is the one that cannot argue about where its own boundary sits. **If it is wrong, say so on the wire the next time you are seated; it is a ruling, not a fact.**
 
 This is circe's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.

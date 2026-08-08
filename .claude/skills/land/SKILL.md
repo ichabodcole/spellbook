@@ -7,20 +7,25 @@ description: >
   branch. Triggers when a user says "merge this branch", "land this", "open the
   PR", "create a pull request", "finalize the branch", "ready to merge", "ship
   this", or when a session's work is done and needs to reach develop or main.
-  Run it BEFORE merging. It replaces ONLY the merge-strategy step of
-  project-docs:finalize-branch — not that skill's review, docs or quality gates.
+  Run it BEFORE merging. It is the merge step ONLY — it is what this repo's
+  AGENTS.md "Branch Landing Policy" points at, and it does not replace
+  project-docs:finalize-branch's review, session docs or quality gates.
 ---
 
 # land — the merge step
 
-> **⚠ THIS IS NOT THE WHOLE LANDING PROCEDURE.** It replaces exactly one step of
-> `project-docs:finalize-branch` — **its squash-merge default** — because that
-> default is wrong here and we cannot durably edit a plugin we do not own.
-> **Everything else finalize-branch does still applies: code review, session
-> docs, and the format / lint / types / test gate. Run those.** If you were told
-> "just follow the land skill", you were told wrong.
+> **⚠ THIS IS NOT THE WHOLE LANDING PROCEDURE.** It is the merge step only.
+> **Everything `project-docs:finalize-branch` does still applies: code review,
+> session docs, and the format / lint / types / test gate. Run those.** If you
+> were told "just follow the land skill", you were told wrong.
 >
-> Reference: [`AGENTS.md` § Landing work](../../../AGENTS.md).
+> **As of project-docs 3.1.0, `finalize-branch` ASKS rather than defaulting** —
+> it resolves the project's `## Branch Landing Policy` and no longer picks a
+> strategy on its own. So this skill is no longer an override; it is the
+> procedure that policy points at. _Before 3.1.0 it existed because the plugin
+> defaulted to squash and we could not durably edit a plugin we do not own._
+>
+> Policy: [`AGENTS.md` § Branch Landing Policy](../../../AGENTS.md).
 
 **Scope of each part:** §1–2 are **feature → develop**. §3–5 are **develop →
 main**. They are separate jobs; you are usually asked for one, not both.

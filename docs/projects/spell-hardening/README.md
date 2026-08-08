@@ -1,39 +1,62 @@
 # Spell Hardening
 
-**Status:** Active **Started:** 2026-08-05 **Current sprint:**
-[02-success-shaped-lies](./sprints/02-success-shaped-lies/)
+**Status:** Active **Started:** 2026-08-05 **Current sprint:** **none building —
+02 is closed;
+[03 is scaffolded, awaiting ratify](./sprints/03-what-close-takes-with-it/plan.md)**
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
 project closes them.
 
+> **⚠ The scope widened at sprint 03, and the sentence above no longer covers
+> all of it.** `#73`/`#74` — `close` writing live state over a populated
+> snapshot — are **not** misreports. The command does the thing; **it destroys
+> your data doing it.** Cole ruled 2026-08-07 that they belong here rather than
+> in a separate project, so the honest description is now **two** families:
+>
+> 1. **Honest reporting** — a command that cannot do the thing says it did.
+> 2. **Durability** — a command that can do the thing takes something with it.
+>
+> **Sprint 03 also carries lanes with no issue number** (P1d–P1f, found by this
+> project rather than reported to it), so **the open-issue count is no longer a
+> measure of what is left.** It was already an imperfect one — sprint 02's P0f
+> closed nothing either.
+
 **The arc:** [proposal.md](./proposal.md)
 
 ## Sprints
 
-| #   | Sprint                                                          | Status      | Opened     | Closed     | Outcome                                         | Decisions                                                  |
-| --- | --------------------------------------------------------------- | ----------- | ---------- | ---------- | ----------------------------------------------- | ---------------------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)               | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md) | —                                                          |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md) | **Active**  | 2026-08-06 | —          | —                                               | [decisions](./sprints/02-success-shaped-lies/decisions.md) |
-| 03  | —                                                               | Not planned | —          | —          | —                                               | —                                                          |
+| #   | Sprint                                                                    | Status      | Opened     | Closed     | Outcome                                                | Decisions                                                  |
+| --- | ------------------------------------------------------------------------- | ----------- | ---------- | ---------- | ------------------------------------------------------ | ---------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                          |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete    | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md) |
+| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | 🟡 Scaffold | —          | —          | —                                                      | —                                                          |
 
-**Status values:** Not planned | Active | Complete | Abandoned
+**Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 
-Sprint 03 is listed because sprint 01 deferred work with names — see sprint 02's
-plan for what it inherits and what it explicitly does not.
+> **🟡 Scaffold** means the scope is written down and argued, but **not ratified
+> and not buildable.** Sprint 01's ratify round falsified six claims in a plan
+> written by one author; sprint 02's much narrower round found two more. **A
+> scaffold has not survived that yet.** _(Status added 2026-08-07 — the previous
+> four values had no way to say "proposed", so a scaffold would have had to
+> masquerade as `Active` or hide as `Not planned`.)_
 
-**Release:** **none cut yet — and the cut is Cole's.** Sprint 01 closed no
-issues. **Sprint 02's CODE IS COMPLETE** (final gate
-`1336 pass · 0 fail · 102 files` at `bbc61c2`, all four lanes landed and
-cold-gated), **and 6 of the 14 issues become closable when the release is cut**
-— `#77` `#78` `#80` `#81` `#83` `#84`.
+Sprint 03 is scaffolded because both prior sprints deferred work **with names**
+— see [sprint 02's outcome](./sprints/02-success-shaped-lies/outcome.md),
+"CARRY-FORWARD → sprint 03," for what it inherits and what it explicitly does
+not.
 
-> **⚠ Sprint 02 stays `Active` deliberately.** A sprint closes when its
-> **outcome** is written, and **that cannot be honest until the release
-> exists**: two of its four release beats — archiving closed backlog items, and
-> commenting the issues — are **downstream of the cut**, not upstream.
-> **`outcome.md` is OWED at close** and is the carry-forward artifact for
-> sprint 03.
+**Release:
+[spellbook v2.0.0](https://github.com/ichabodcole/spellbook/releases/tag/spellbook-v2.0.0)**
+— cut 2026-08-06 from `a0d8c17`. **6 of the 14 issues are closed** — `#77` `#78`
+`#80` `#81` `#83` `#84`. **Eight remain**: `#64` is genuinely unexplained, `#73`
+`#74` `#79` `#72` `#76` are P1/P2/P3 and **all unratified**, `#82` is on hold,
+and `#85`–`#88` sit with the CLI-contract investigation.
+
+> **⚠ The `2.0.0` is not this project's.** The lead predicted `v1.17.0` and
+> never checked for a `!`; an unrelated `feat(mind-mapper)!:` on the same train
+> forced the major. **Two of the six closed issues (`#77`, `#78`) are sprint
+> 01's work**, fixed then and never closed. **Sprint 02 closed four.**
 
 ## Other Documents
 
