@@ -225,6 +225,36 @@ function loadChannel(name: string): Channel {
   return ch;
 }
 
+// b5 — an UNLOADED channel reported `message_count: 0`, which is
+// indistinguishable from a channel that genuinely holds nothing. Measured: 57 of
+// 57 channels read 0 after a roll. That zero feeds a janitor choosing between
+// `archive` (preserves) and `close` (DELETES the log), so the wrong reading is
+// the destructive one.
+//
+// PORTED from bounty's `snapshotTaskCount()` rather than re-derived a fifth
+// time: `number | null`, where null means "I could not count" and is never
+// spelled 0.
+//
+// The cost objection is MEASURED, not assumed: counting every one of the 61 real
+// channels (3,905 messages, 7.7 MB) takes 16-45 ms, n=3 — and `loadChannel`
+// already reads each file IN FULL to recover created_at/next_id/topic, so this
+// is a read the daemon was doing anyway on the path that matters.
+//
+// ⚠ NON-EMPTY lines, deliberately NOT parseable-only. This count feeds a
+// delete-or-keep decision, so it must OVER-report content and never UNDER-report
+// it — a corrupt line is still something somebody wrote. Under-reporting here is
+// what deletes a channel.
+function channelMessageCount(path: string): number | null {
+  try {
+    const raw = readFileSync(path, "utf-8");
+    let n = 0;
+    for (const line of raw.split("\n")) if (line.trim()) n++;
+    return n;
+  } catch {
+    return null;
+  }
+}
+
 function listChannels() {
   // Include channels on disk that we haven't loaded yet.
   const onDisk = readdirSync(CHANNELS_DIR)
@@ -236,16 +266,27 @@ function listChannels() {
     .map((name) => {
       const ch = channels.get(name);
       let last_activity = 0;
-      let message_count = 0;
+      // null, not 0 — see channelMessageCount. A count is only ever a number
+      // when this daemon actually established one.
+      let message_count: number | null = null;
       if (ch) {
         last_activity = ch.last_activity;
+        // ⚠ This is the LAST ID, not a count, and the two diverge when
+        // `loadChannel`'s next_id recovery falls back to its initialised 1 — a
+        // loaded channel with a truncated final line reports 0 at
+        // `loaded: true`, where no field in this envelope discounts it. That is
+        // a DIFFERENT defect with a destructive root cause (card b11); it is
+        // deliberately NOT patched here, so the history can answer "when did the
+        // count stop lying" and "when did the write stop being destroyed"
+        // separately.
         message_count = ch.next_id - 1;
       } else {
-        // Stat disk file for an approximation.
+        // Stat disk file for last_activity; the count is a real read.
         try {
           const s = statSync(channelPath(name));
           last_activity = s.mtimeMs;
         } catch {}
+        message_count = channelMessageCount(channelPath(name));
       }
       return {
         name,

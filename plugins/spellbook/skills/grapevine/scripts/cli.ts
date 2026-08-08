@@ -87,7 +87,9 @@ type AnnounceReceipt = {
 type ChannelSummary = {
   name: string;
   subscribers: number;
-  message_count: number;
+  // null = the daemon could not establish a count (unreadable file), NEVER 0.
+  // 0 means "this channel is genuinely empty" and nothing else — b5.
+  message_count: number | null;
   last_activity: number;
   loaded: boolean;
 };
