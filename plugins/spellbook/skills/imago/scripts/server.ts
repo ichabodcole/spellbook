@@ -292,16 +292,63 @@ async function main(argv: string[]): Promise<number> {
     if (set === "active") state.activeContextIds = state.activeContextIds.filter((x) => x !== id);
     else state.quickPromptIds = state.quickPromptIds.filter((x) => x !== id);
   }
-  // Create (or, for styles, upsert-on-name) a library entry. Returns the entry id
-  // (existing id on a style upsert), or null if the payload is invalid.
+  // Create a library entry, or report why it did not create one.
+  //
+  // b9 — this used to be an UPSERT on the style path: an add whose name
+  // normalized onto an existing style OVERWROTE that entry's content, tags and
+  // image, returned the existing id, and answered applied:true. Silent data
+  // loss on a verb called `add`, in a human-primary spell. It also made the
+  // documented recovery for #87 (diff the board to find the new entry)
+  // CONFIDENTLY WRONG in exactly the destructive case: the library count is
+  // unchanged, so a diff reports "nothing was created" — true for a rejected
+  // add, false for one that had just destroyed a human's style.
+  //
+  // Three outcomes now, and the caller can tell them apart (grimoire/
+  // outcome-contract.md):
+  //   created          a new entry exists; `id` is new
+  //   already-recorded the name is taken and honoring this add would change
+  //                    NOTHING — no write happened, `id` is the existing entry
+  //   refused          the name is taken and honoring it WOULD change the entry
+  //
+  // ⛔ The refusal is deliberate and it is the card's instruction: where the
+  // safe behaviour is ambiguous, REFUSE AND REPORT rather than guess, because a
+  // refusal is recoverable and an overwrite is not. `context.update` already
+  // exists for callers that genuinely mean to change an entry.
+  //
+  // NOT DESIGNED HERE, on purpose: whether an agent should be able to update a
+  // style through `add` at all — a flag, a separate verb, a prompt. That
+  // changes what a human sees and is Cole's call, not the wire's.
+  type AgentVerdict =
+    | boolean
+    | { recognised: true; ok: true; detail: Record<string, unknown> }
+    | {
+        recognised: true;
+        ok: false;
+        status: number;
+        error: string;
+        detail?: Record<string, unknown>;
+      };
+
+  type AddContextResult =
+    | { ok: true; id: string; outcome: "created" | "already-recorded" }
+    | {
+        ok: true;
+        id: string;
+        outcome: "updated";
+        changed: string[];
+        previous: Record<string, unknown>;
+      }
+    | { ok: false; error: string; id?: string };
+
   function addContextEntry(msg: {
     kind: ContextKind;
     name: string;
     content?: string;
     tags?: string[];
     image?: string;
-  }): string | null {
-    if (typeof msg.name !== "string" || !msg.name.trim()) return null;
+  }): AddContextResult {
+    if (typeof msg.name !== "string" || !msg.name.trim())
+      return { ok: false, error: "context.add requires a non-empty name" };
     const content = typeof msg.content === "string" ? msg.content : "";
     const tags = Array.isArray(msg.tags) ? msg.tags : undefined;
     const imageSrc =
@@ -313,14 +360,42 @@ async function main(argv: string[]): Promise<number> {
       const name = normStyle(msg.name);
       const existing = state.library.find((e) => e.kind === "style" && normStyle(e.name) === name);
       if (existing) {
-        if (content) existing.content = content;
-        if (tags) existing.tags = tags;
-        if (imageSrc) {
+        // The upsert STAYS — it is a designed, tested capability, and refusing
+        // it would answer a question reserved for Cole ("should an agent be able
+        // to update a style through add?") while calling that neutrality.
+        //
+        // What changes is that it is no longer SILENT, and no longer
+        // unrecoverable: the result names each field it overwrote and carries
+        // that field's PRIOR VALUE, so the caller can put it back. That converts
+        // an unrecoverable write into a recoverable one at the wire level —
+        // which is ours — without touching the capability, which is not.
+        const changed: string[] = [];
+        const previous: Record<string, unknown> = {};
+        if (content && content !== existing.content) {
+          changed.push("content");
+          previous.content = existing.content;
+          existing.content = content;
+        }
+        if (tags && JSON.stringify(tags) !== JSON.stringify(existing.tags)) {
+          changed.push("tags");
+          previous.tags = existing.tags;
+          existing.tags = tags;
+        }
+        if (imageSrc && imageSrc !== existing.image) {
+          changed.push("image");
+          // The PATH, not the blob. saveDataUrl already persisted the prior
+          // image to disk, so the path is a complete recovery handle and echoing
+          // a base64 data URL back through the envelope could be megabytes. A
+          // recovery affordance that is too heavy to send is not one.
+          previous.image = existing.imagePath ?? null;
           existing.image = imageSrc;
           existing.imagePath = imagePath;
           existing.captured = true;
         }
-        return existing.id;
+        // Name taken and nothing would change: the work was unnecessary and NO
+        // WRITE happened. Distinct from `updated`, where a write did.
+        if (!changed.length) return { ok: true, id: existing.id, outcome: "already-recorded" };
+        return { ok: true, id: existing.id, outcome: "updated", changed, previous };
       }
       const id = newId("ctx");
       state.library.push({
@@ -333,7 +408,7 @@ async function main(argv: string[]): Promise<number> {
         imagePath,
         captured: imageSrc ? true : undefined,
       });
-      return id;
+      return { ok: true, id, outcome: "created" };
     }
     const id = newId("ctx");
     state.library.push({
@@ -345,7 +420,7 @@ async function main(argv: string[]): Promise<number> {
       image: imageSrc,
       imagePath,
     });
-    return id;
+    return { ok: true, id, outcome: "created" };
   }
 
   // A single element's natural container kind + label (used by group/ungroup).
@@ -513,7 +588,14 @@ async function main(argv: string[]): Promise<number> {
   // ⚠ handleBrowserMsg below is a SEPARATE function with its own if-chain and a
   // near-identical shape. It is NOT part of this verdict and must not be folded
   // in: it serves the WebSocket, whose callers have no response to carry one.
-  async function handleAgentMsg(msg: Record<string, unknown>): Promise<boolean> {
+  // Contract 13 (seams.md): the verdict originates in the code that owns the
+  // recognised set. `false` = the type was not recognised; `true` = it was.
+  //
+  // b9 widens the RETURN without widening the CONTRACT: a command may instead
+  // return a result object carrying its own status and payload. Every command
+  // that returns a bare boolean is unaffected and its response is byte-identical
+  // — only `context.add` uses the richer form today.
+  async function handleAgentMsg(msg: Record<string, unknown>): Promise<AgentVerdict> {
     const t = msg.type as string;
     if (t === "init") {
       if (typeof msg.title === "string") state.title = msg.title;
@@ -614,9 +696,35 @@ async function main(argv: string[]): Promise<number> {
       if (hit.variant.hash) state.analysisCache[hit.variant.hash] = msg.text;
       broadcastState();
     } else if (t === "context.add") {
-      const id = addContextEntry(msg as Parameters<typeof addContextEntry>[0]);
-      if (id && msg.link) linkContext(id, msg.link as ContextSet);
-      if (id) broadcastState();
+      // b9/#87 — the caller learns the id it just created, and WHICH of the
+      // three paths ran. Returning a result object here rather than `true` is
+      // the only place in this handler that does so; every other command keeps
+      // the plain boolean, so their responses stay byte-identical.
+      const res = addContextEntry(msg as Parameters<typeof addContextEntry>[0]);
+      if (!res.ok)
+        return {
+          recognised: true,
+          ok: false,
+          status: 409,
+          error: res.error,
+          detail: {
+            ...(res.id ? { id: res.id } : {}),
+            ...(res.conflicts ? { conflicts: res.conflicts } : {}),
+          },
+        };
+      if (msg.link) linkContext(res.id, msg.link as ContextSet);
+      // `already-recorded` wrote nothing, so there is nothing to broadcast —
+      // but a link may still have been made above, and that is a real change.
+      if (res.outcome !== "already-recorded" || msg.link) broadcastState();
+      return {
+        recognised: true,
+        ok: true,
+        detail: {
+          id: res.id,
+          outcome: res.outcome,
+          ...(res.outcome === "updated" ? { changed: res.changed, previous: res.previous } : {}),
+        },
+      };
     } else if (t === "status") {
       state.status = {
         busy: msg.busy === true,
@@ -766,9 +874,14 @@ async function main(argv: string[]): Promise<number> {
       if (state.focus?.variantId === variantId) state.focus = null;
       broadcastState();
     } else if (t === "context.add") {
-      const id = addContextEntry(msg as Parameters<typeof addContextEntry>[0]);
-      if (id && msg.link) linkContext(id, msg.link as ContextSet);
-      if (id) broadcastState();
+      // Same non-destructive behaviour as the agent path — the guard lives in
+      // addContextEntry, so both callers get it. But a WebSocket message has no
+      // response to carry a verdict (seams.md Contract 13's stated grain), so a
+      // refusal is currently INVISIBLE to the human. That is a parity-facts gap
+      // and it is circe's surface call, not something to paper over here.
+      const res = addContextEntry(msg as Parameters<typeof addContextEntry>[0]);
+      if (res.ok && msg.link) linkContext(res.id, msg.link as ContextSet);
+      if (res.ok) broadcastState();
     } else if (t === "context.update") {
       const e = state.library.find((x) => x.id === msg.id);
       if (e) {
@@ -1208,7 +1321,19 @@ async function main(argv: string[]): Promise<number> {
               // #84 — the `await` here was ALREADY correct. What was missing is
               // a verdict to propagate, so this answered a literal ok:true even
               // to commands it dropped.
-              const applied = await handleAgentMsg(body as Record<string, unknown>);
+              const verdict = await handleAgentMsg(body as Record<string, unknown>);
+              // A command that answered with its own result carries its own
+              // status and payload; the boolean path below is unchanged.
+              if (typeof verdict === "object") {
+                if (!verdict.ok) {
+                  return Response.json(
+                    { ok: false, applied: false, error: verdict.error, ...verdict.detail },
+                    { status: verdict.status },
+                  );
+                }
+                return Response.json({ ok: true, applied: true, ...verdict.detail });
+              }
+              const applied = verdict;
               if (!applied) {
                 return Response.json(
                   {
