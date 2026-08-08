@@ -28,9 +28,13 @@ record, not an instruction. Do not act on either.**
 >   [its section](#the-live-team-validation-beat--and-it-is-a-lane-not-a-checkbox).
 >   The whole scope above was established by **subagents in isolation**, and
 >   three of these defects are not reachable in that regime.
-> - ⏳ **Still outstanding: a decision from Cole** on whether the
->   destructive-close family belongs in this project at all — see
->   [Open questions](#open-questions--for-the-ratify-round-and-for-cole).
+> - ✅ **The destructive-close family STAYS in this project**, ruled by Cole
+>   2026-08-08, over spinning up a separate `bounty snapshot lifecycle` project.
+>   **This widens the project's thesis beyond honest reporting to durability** —
+>   the README is amended to match.
+> - ✅ **P1d, P1e and P1f are NOT filed as issues**, ruled by Cole 2026-08-08.
+>   **They are tracked in this document and nowhere else**, which makes this
+>   plan load-bearing in a way the previous two were not.
 
 ---
 
@@ -65,14 +69,14 @@ why this sprint leads with them.
 **Order is not free** — P1a/P1b share a mechanism and must be one lane; the P0f
 remainder rebases onto everything, so it goes last.
 
-| lane                         | issue        | what it is                                                                                                                                                                                                                     | why now                                                                                                                                                              |
-| ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **P1a + P1b — one lane**     | `#73`, `#74` | `close` writes live state over the on-disk snapshot unconditionally; respawn+close can destroy a keyed board's snapshot                                                                                                        | **The only remaining DATA-LOSS defects.** The team has designed around them three times rather than fix them                                                         |
-| **P1c**                      | `#79`        | `bounty list` lists **boards**, not tasks — an empty result reads as "no cards"                                                                                                                                                | The purest remaining instance of this project's own thesis, and small                                                                                                |
-| **P0f-remainder**            | —            | the ~30 remaining in-function `process.exit(` sites, the `die()` family, the SIGINT handlers                                                                                                                                   | **Ruled by Cole 2026-08-08: sprint 03 finishes it.** Two deferrals is enough                                                                                         |
-| **P1d — CANDIDATE, unfiled** | none yet     | `bounty add --size <bogus>` returns `ok:true` at exit 0 and **silently discards the size**                                                                                                                                     | Found 2026-08-08. See below — it is the sprint's own defect class, still live                                                                                        |
-| **P1e — CANDIDATE, unfiled** | from `#64`   | **The SSE keep-alive has never once fired.** `Bun.serve` is called with no `idleTimeout`, so Bun's **10 s** default severs the connection **5 s before** the 15 s heartbeat                                                    | Reproduced at HEAD; the severing line appears **29 times in the production log**. Explains the reporter's read-heavy-dies / write-heavy-survives clue                |
-| **P1f — CANDIDATE, unfiled** | from `#64`   | **A dead board is indistinguishable from a quiet one, forever.** The terminal `closed` frame reaches only clients connected at that instant; SIGTERM/SIGINT/`uncaughtException` never emit it — **156 of 224 recorded deaths** | **The purest instance of this project's thesis yet** — `tail` prints _"no session yet, retrying…"_ indefinitely at a board that is gone. Observed running **6 days** |
+| lane                        | issue                  | what it is                                                                                                                                                                                                                     | why now                                                                                                                                                              |
+| --------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P1a + P1b — one lane**    | `#73`, `#74`           | `close` writes live state over the on-disk snapshot unconditionally; respawn+close can destroy a keyed board's snapshot                                                                                                        | **The only remaining DATA-LOSS defects.** The team has designed around them three times rather than fix them                                                         |
+| **P1c**                     | `#79`                  | `bounty list` lists **boards**, not tasks — an empty result reads as "no cards"                                                                                                                                                | The purest remaining instance of this project's own thesis, and small                                                                                                |
+| **P0f-remainder**           | —                      | the ~30 remaining in-function `process.exit(` sites, the `die()` family, the SIGINT handlers                                                                                                                                   | **Ruled by Cole 2026-08-08: sprint 03 finishes it.** Two deferrals is enough                                                                                         |
+| **P1d — tracked here only** | _no issue, by ruling_  | `bounty add --size <bogus>` returns `ok:true` at exit 0 and **silently discards the size**                                                                                                                                     | Found 2026-08-08. See below — it is the sprint's own defect class, still live                                                                                        |
+| **P1e — tracked here only** | _re-scoped from `#64`_ | **The SSE keep-alive has never once fired.** `Bun.serve` is called with no `idleTimeout`, so Bun's **10 s** default severs the connection **5 s before** the 15 s heartbeat                                                    | Reproduced at HEAD; the severing line appears **29 times in the production log**. Explains the reporter's read-heavy-dies / write-heavy-survives clue                |
+| **P1f — tracked here only** | _re-scoped from `#64`_ | **A dead board is indistinguishable from a quiet one, forever.** The terminal `closed` frame reaches only clients connected at that instant; SIGTERM/SIGINT/`uncaughtException` never emit it — **156 of 224 recorded deaths** | **The purest instance of this project's thesis yet** — `tail` prints _"no session yet, retrying…"_ indefinitely at a board that is gone. Observed running **6 days** |
 
 ### Why `#73` and `#74` are ONE lane, not two
 
@@ -267,14 +271,33 @@ already paid for.**
 
 ## Open questions — for the ratify round and for Cole
 
-1. **Does the destructive-close family belong in spell-hardening at all?**
-   `#73`/`#74` are really _bounty snapshot lifecycle_. The case for keeping them
-   here: same defect family, same instruments, the gate law is already tuned,
-   and the project's own error messages are shaped by the bug. The case against:
-   this is the first lane whose subject is **durability**, not **honest
-   reporting**, and the project's one-sentence thesis does not stretch to cover
-   it. **Unresolved. Cole's call.**
-2. **Is P1d filed, folded in, or ruled out?**
+1. ~~**Does the destructive-close family belong in spell-hardening at all?**~~
+   **✅ RULED BY COLE 2026-08-08 — it stays here. Fold it in.** _"I'd rather
+   that than add another project, plan etc."_ The option not taken was a
+   separate `bounty snapshot lifecycle` project; its cost is a second proposal,
+   a second plan, and a second gate law to keep in sync, **to buy a cleaner
+   thesis and nothing else.** **⚠ The consequence, stated rather than absorbed:
+   the project's one-sentence thesis is now wider than its README says.** _"A
+   command that cannot do the thing returns something shaped like success"_ does
+   not cover `close`, which does the thing and destroys your data doing it. The
+   README is amended alongside this ruling — **a scope decision that leaves the
+   project's own description behind is how a project quietly becomes something
+   else.**
+2. ~~**Is P1d filed, folded in, or ruled out?**~~ **✅ RULED BY COLE 2026-08-08
+   — folded in, NOT filed. Same for P1e and P1f.** _"I'd skip the issues for the
+   Ps, I don't think it really buys us anything, but issues to then close."_ An
+   issue opened by us, worked by us, and closed by us in the same sprint is
+   bookkeeping wearing tracking's clothes. **⚠ Two consequences, and the first
+   one bites at release time:**
+   - **This sprint will ship fixes that close NO issue.** That is not new —
+     sprint 02's P0f closed none either _("it has no number because this project
+     found it")_ — but with four such lanes it becomes the norm rather than the
+     exception. **Do not let the release note imply the issue count measures the
+     sprint.**
+   - **The plan is now the only record of P1d–P1f.** Nothing external will
+     survive it. **That makes this document load-bearing in a way the previous
+     two plans were not**, and it is an argument for freezing it carefully at
+     close rather than letting it rot as a superseded artifact.
 3. ~~**What does the `#64` investigation say** — lane, park, or dissolve?~~
    **ANSWERED 2026-08-08: re-scope.** The idle framing is falsified; P1e and P1f
    are what `#64` becomes.
@@ -311,6 +334,8 @@ already paid for.**
 
 ## Not the agent's to do
 
-- **Filing the P1d candidate**, and any other candidate this sprint surfaces.
 - **Cutting the release and pushing.** The agent stages and stops.
-- **Ruling question 1.**
+- **Convening the team** for the live-team validation beat, and deciding when.
+
+_(Filing issues for P1d–P1f was here until 2026-08-08. **Ruled out** — see Open
+question 2. They are tracked in this document and nowhere else.)_

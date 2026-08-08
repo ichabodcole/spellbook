@@ -8,6 +8,20 @@ Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
 project closes them.
 
+> **⚠ The scope widened at sprint 03, and the sentence above no longer covers
+> all of it.** `#73`/`#74` — `close` writing live state over a populated
+> snapshot — are **not** misreports. The command does the thing; **it destroys
+> your data doing it.** Cole ruled 2026-08-08 that they belong here rather than
+> in a separate project, so the honest description is now **two** families:
+>
+> 1. **Honest reporting** — a command that cannot do the thing says it did.
+> 2. **Durability** — a command that can do the thing takes something with it.
+>
+> **Sprint 03 also carries lanes with no issue number** (P1d–P1f, found by this
+> project rather than reported to it), so **the open-issue count is no longer a
+> measure of what is left.** It was already an imperfect one — sprint 02's P0f
+> closed nothing either.
+
 **The arc:** [proposal.md](./proposal.md)
 
 ## Sprints
