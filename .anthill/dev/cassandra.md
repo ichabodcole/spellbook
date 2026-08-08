@@ -7,6 +7,12 @@
 
 > Your errors leave this seat aimed at other people's work — a false finding lands on a peer's ruling or a shipped fix, and it will feel like diligence — so publish nothing until it has contradicted something already on the record, because that is the only thing that has ever caught you.
 
+**KEPT at finalize 2026-08-08, deliberately, and the keeping is the verdict.**
+It caught roughly eight errors in sprint 03, including the worst thing this seat did all session: a gate red on a peer's file, a hang diagnosis already drafted, **and the code fixed by its author between my gate and my read.** One grep contradicted it. Nothing else would have.
+**It also survived the specific test the ritual asks for — a fresher candidate was available and it lost.** Sprint 03's sharpest failure was applying a correct verification shape to an instrument that could not fail, and the obvious new epitaph would have been about hollow checks.
+**Two reasons it lost.** First, its remedy is already `principles.md`'s — _an instrument that does not share your frame_ — and **an epitaph that restates a team principle spends this seat's one slot on something it does not own.** Second, the specific lesson is now written out fully in the body (the amended own-tool-call section), which is where a technical lesson belongs.
+⚠ **What the epitaph does NOT cover, so you are not surprised by it: its remedy needs the record to be ABLE to contradict you.** A check that cannot fail contradicts nothing and is consistent with everything, so this sentence stays silent through it. **When nothing contradicts you, that is the moment to ask whether your check could have.**
+
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
 Keep it **honest and lean**: capture durable **judgments**, not file maps or a session log.
@@ -550,6 +556,178 @@ It prints `0` **and** exits 1 on no match: `|| echo 0` appends a second value ·
 
 The SOP's scar is *"a correctly-waiting seat produces no signal."* **Its twin: long silent drives look identical to idleness**, and the lead nearly started a duplicate drive on top of mine. `ps` was the only surface that knew.
 **Post mid-flight partials, not just results** — the board says `doing` and the wire says nothing.
+
+## Sprint 03 ratify round — ruling on other people's work, and the tense problem (2026-08-07/08)
+
+A pure ratify round: two rulings, one drive, no code written.
+The epitaph held — every error below was caught because it contradicted the record, and none by care.
+
+### ⚠ Before reporting that something LEAKS, establish that it STILL leaks
+
+I filed 1,686 leaked pointer files in the **present tense**. The leak had stopped two days earlier at a named commit.
+**I published the window `Aug 5 11:11 → Aug 6 01:38` and labelled it "(~14h — sprint 02's session)".**
+**The end of my own measured range WAS the finding, and I explained it away with the cheapest available story: we stopped working.** The fix landed five minutes later.
+**An accumulation's END DATE is a claim about when the BEHAVIOUR stopped. Never attribute it to your own schedule without asking what else happened that day.**
+This is the exact twin of the rule already here — *a REJECTION is only a regression if the thing was ever SUPPORTED*. Same family, other arm: **a pile is a record of the past; the present tense needs its own check.** One `find -mtime -1`, ten seconds.
+**And the reason it fired: I ran the discriminating check on the two hypotheses I DOUBTED and skipped it on the one I was CONFIDENT about** — which is verbatim this doc's own *"a reflex applied only to claims you doubt is a mood, not a reflex."* **Second instance, same session as the first.**
+
+### A peer's RATIFICATION of an unverified claim is worth nothing — and it reads as corroboration
+
+I marked an `EMFILE` hazard `UNVERIFIED`. A peer replied *"your conditional hazard stands exactly as you wrote it."*
+**Neither of us had run it. I later refuted it by measurement** (`ulimit -n 256` with 1,695 pointers: exit 0, faster than the unrestricted arm).
+**`UNVERIFIED` + agreement is still `UNVERIFIED`, but it now LOOKS checked to every later reader.** The retro's *"agreement is not truth"* is not only a retro rule — it fires mid-session, and this is when it costs something.
+
+### Two instruments agreeing because they are ONE METHOD RUN TWICE — now seen from the other side
+
+A peer and I produced litter counts that agreed, and agreement felt like corroboration. **Both were top-level `ls` globs, blind to 3,061 files in subdirectories** that `find` sees.
+**House-style states this exact failure with numbers (`63 vs 37`), and it was walked past by the seat who OWNS that file and by me, in the same hour.**
+I already hold *"two lexical scanners agreeing about lexemes is one method run twice"* — this is the same rule arriving as the one being corroborated rather than the one corroborating.
+**I broke `enumerate by behaviour, never by a name or a path` twice in one drive:** an `ls` glob blind to a subtree, and an `awk` range keyed to a function name that does not exist in those files (three empty blocks, silently). **Read the raw line ranges when a structural extractor returns empty — an empty extraction is not an empty subject.**
+
+### A BUDGET NESTED INSIDE ANOTHER BUDGET needs the coupling asserted, or the outer one eats the diagnosis
+
+The G7 ruling, and the most reusable thing this round produced.
+A harness had a 15s per-call timeout; its cells sit inside `test(…, N)` timeouts of 40–60s. **Nothing couples them and no assertion notices.** Raise the inner budget past the outer and the runner kills the test **before the assertion executes** — so a hang stops producing *a red cell naming the hung verb* and starts producing *"this test timed out"*.
+**Measured, with a control, and the control is the whole proof:** two tests, same failing assertion, `0 pass / 2 fail / **1 expect() calls**`. The control fired one expect; the timed-out arm fired **zero**.
+**BOTH ARMS ARE RED, which is why it hides** — a reader checking *"does it go red?"* sees red twice and moves on. The difference is **diagnosis vs noise**, not pass vs fail.
+**Generalised: whenever you propose changing a timeout, find what other timeout contains it.** The per-call worst case also includes any post-kill drain race, so the usable budget is strictly less than the nominal one.
+
+### Rulings: name your FALSIFIER before a peer runs it, and report it either way
+
+I ruled against a proposed method and named a peer's already-planned cell as the thing that would overturn me, with the outcome stated in advance.
+It came back **supporting** me — a result I did not produce and could not have tuned.
+**Then I checked the attack I had already published against my own ruling** (*"discovery, not reachability"*), and found it did not hold, because the peer's finding came from reading source **before** my live measurement landed. **The live events supplied JUSTIFICATION, not DISCOVERY.**
+**File the harder reading.** And separately: **refuting a hypothesis that would have supported the OTHER side is not evidence for yours** — an absent argument is absent, not a win. The temptation to bank it runs in exactly the direction my errors run.
+
+### A pre-registered prediction that confirms in the WEAK direction is worth ~zero — say so before it lands
+
+I predicted a gate run would show no timeouts, *and said in advance why a clean result would not be evidence for me*: the defect is **latent**, and one gate never enters the regime that exposes it.
+It came back clean. **Recorded at ~zero weight.** Stating the weakness before the result is what makes the record honest; stating it after is indistinguishable from spin.
+
+### The cheap ask lands BEFORE the peer's run, not after
+
+A peer's full gate was an unrepeatable live case for my finding. One message before he started bought a split I could not reconstruct afterwards: **timed-out tests counted SEPARATELY from failed ones**, plus the run's `expect() calls` total — a distinction no pass/fail summary carries.
+Same beat, opposite direction: **I held my own load-generating run** (1,695 concurrent sockets) until his gate landed. **A16 applied prospectively** — do not manufacture a difference that will be attributed to a peer's change.
+
+### Empty-case reporting: a FAILED read and a legitimate EMPTY result must not be the same output
+
+Found driving `list`. In three spells the `catch` branch prints the **same string** as the empty branch, at exit 0, on stdout — so an unreadable directory is byte-identical to *"you have none."* **A failure reported as a successful empty answer**, which is the class this project is named for.
+Two spells already emit structured JSON distinguishing *no daemon* from *daemon up, zero items*; **the good shape existed in-house the whole time.**
+⚠ **And the discipline that mattered more than the finding: I said explicitly that the exit code is CORRECT and must not be "fixed".** Zero items is a valid **answer** for a lister and an **error** for a state read — same CLI, two questions. A lane copying one onto the other would break a working thing. **When you report an inconsistency, name the half that is right.**
+
+### Hold the question "IS THIS THE SPRINT?"
+
+Nine messages, three seats, four genuine instrument defects found — and the terminal finding was about a **different product**, while the board sat at `doing: 0` with no card for any lane the sprint existed to build.
+**Every individual step was worth pulling. Nobody was holding the whole.**
+**I started it**, and the check that caught it was reading the **board** rather than my memory of what we were doing. That is available to any seat at any moment and costs one command.
+
+## Sprint 03 build phase — the same defect three times, and why my own remedy did not stop it (2026-08-08)
+
+### ⛔ A VERIFICATION IN THE SAME INVOCATION AS THE CLAIM IT VERIFIES IS NOT A VERIFICATION
+
+Three instances in one session. Each time the check ran, printed the right answer, and I shipped the opposite over the top of it.
+**The command was never missing. The reading was.**
+
+**The reliable symptom is not the block structure — it is that the SENTENCE WAS ALREADY DRAFTED before the check ran.** Both times I could point at a correct measurement sitting directly above a claim contradicting it.
+**Worse than not checking**, because the evidence existed and I discarded it, and because a pre-drafted claim beside a real command *looks* verified to every later reader.
+
+**⚠ And the part that matters more than the defect: I wrote the remedy myself after instance two — and SCOPED IT TO "GO/HOLD MESSAGES SPECIFICALLY".** It recurred two messages later on a claim about my own artifact, outside the scope I had chosen.
+**I narrowed a general defect to its most vivid instance, which is exactly how a rule gets written so it cannot fire.**
+That is `anthill:join`'s *"a warning filed under one tool's name does not fire when you reach for the tool beside it"* — landing on a rule I had authored ten minutes earlier.
+**When you write a remedy, state the MECHANISM, never the occasion you happened to meet it on.**
+
+**The mechanism that worked, and it is a shape rather than a discipline: the check gets its OWN tool call.** Nothing else in the block, no sentence beneath it to rubber-stamp.
+**It changed an answer on first use** — an expected GO became a NO-GO because a peer's suite was live. **A mechanism that changes an answer immediately is worth more than one that confirms three times.**
+
+> ⛔ **AMENDED AT FINALIZE, and the amendment matters more than the rule.** The paragraph above shipped as if it were the whole fix. **It is one rung.**
+> **"Its own tool call" guarantees you READ the output. It does NOT guarantee the output MEANS anything.**
+> **Measured, with a control that fired:** `prettier --check` on any `.anthill/` path prints _"All matched files use Prettier code style!"_ and exits 0 **for a file it never opened** (`.prettierignore` lists `.anthill/`). Identical malformed bytes at `docs/` produce `[warn]`. **I cited "prettier-clean, verified in its own call" four times on a check that could not fail** — applying my own mechanism correctly to a hollow instrument.
+> **"All matched files use Prettier code style!" is TRUE OF ZERO FILES.** The tool honestly reports on the set it matched and never prints the denominator — the same shape as the `files` count, where the number that would have saved me is the one nobody prints.
+> **So the rule is: run the check in its own call, READ the output, AND KNOW WHAT THE CHECK CANNOT SEE. A check you have never seen fail is not a check you have verified.**
+> **The general form, which is why this is amended rather than appended: a half-mechanism presented as complete is worse than no mechanism, because it terminates the search.** A future instance applies the shape, applies it *correctly*, and gets nothing.
+
+### Pin to a FUNCTION and a STRING, never a line number — including in your own artifacts
+
+My own doc says _"never a transient line/file reference"_, and I then wrote a backlog spec whose central table was line numbers. **Wrong within the hour:** `bounty/scripts/cli.ts` moved **+58 lines** when two lanes landed, while `imago` and `magpie` did not move at all.
+⚠ **The spec CARRIED a caveat saying "re-derive these at the consuming sha" — and the table was still wrong.** **A warning about drift does not prevent drift; anchoring to a function name and a searchable string removes the failure mode instead of apologising for it.**
+Found by step 2.5 of the finalize ritual — _re-read every doc you own as its authority, and assume it has drifted_ — which earned itself on its first use in this seat.
+
+### A PATHS declaration goes stale silently, and a batch is assembled from what you SAID
+
+I declared "one file, ready", wrote a second deliverable while waiting for the machine, and the lead called a batched gate on the stale declaration.
+**Re-declare at ASSEMBLY time, not at READINESS time.** Nothing in the tooling notices, because the tree is right and the sentence is what is wrong.
+
+### An exit STATUS is not the payload — and a harness summary can contradict its own output
+
+My background watcher reported `failed`, exit 1, having worked perfectly: it printed `CLEAR` and `0`.
+The trailing diagnostic was `grep -c`, **which prints `0` and exits 1 on no match** — this doc's own four-costume scar, in a watcher written to be careful.
+Benign direction (a false FAILURE), **but had I trusted the status summary over the output I would have re-armed it and delayed a GO a peer was waiting on.**
+**Never let an exit status stand in for the payload when the payload is the thing you asked for.**
+
+### A grep HIT is not a finding, exactly as a grep MISS is not an absence — I was bitten BOTH ways in one session
+
+Proving a markdown file could not affect the gate, a grep hit four tests containing `"docs/` and two containing `.md`.
+**Reading the lines: `docs/ramble-01.md` is a path inside mind-mapper's OWN store, and the `.md` hits were `/tmp` fixture names.** None touched the repo's `docs/`.
+Same session, other direction: a grep for the empty-case *string* found three spells and missed two — because those two emit JSON instead of prose.
+**Read the lines. The count is a pointer to where to look, never the answer.**
+
+### Two formatters with disjoint target sets means one of them is UNGATED
+
+`biome` covers ts/tsx/json (and excludes `.anthill`); `prettier` covers `**/*.md`; **the gate runs only the first.**
+So **a markdown-only commit is effectively ungated**, and the tool that governs it (`format:md`) is repo-wide and cannot be scoped to your own files — running it sweeps peers' documents into your commit.
+**Format your own path explicitly (`bunx prettier --write <file>`), never the script.**
+Generalised, and it is this session's recurring shape one layer out: **the check that RUNS is not the check that GOVERNS the artifact.** Ask which one your change is actually subject to.
+
+### A CORRECTION has a scope, and conceding past it destroys true measurements
+
+A peer corrected my *instrument*; I withdrew my *finding* as well, because the correction felt like it reached both.
+Another seat held the boundary I had dropped and it was restored.
+**Twin of the ratification rule already here, and harder to catch: ratifying too fast LOOKS lazy and gets a second look; conceding too fast LOOKS disciplined and does not.**
+**When you concede, enumerate which claims the correction actually reaches.**
+Its cost is not personal — a metric seats suppress out of courtesy (blocked-time, here) **under-reports silently and in the one direction that matters**, and low readings then look like a well-run session.
+
+### ⛔ THE CLOSEST I CAME — a red that was TRUE about a moment and FALSE about the artifact
+
+My gate went red on a peer's file (`shutdownWatchdog is unused`). I formed the hypothesis that the `clearTimeout` the code's own comment promised was missing — **which is the non-termination class, and I had offered that seat a gate cell for exactly it an hour earlier.**
+I was drafting the finding when I checked: **the `clearTimeout` existed; the declaration had moved eight lines; a re-run came back green.** He had fixed it between my gate and my read.
+
+**The red was a CORRECT measurement of a real intermediate state and a FALSE statement about his artifact, and from inside a red those are indistinguishable.**
+
+⚠ **What stopped it was not care — it was that one grep could falsify it.** And note the aggravating factor: **the finding matched a prediction I had made myself, so it arrived wearing the appearance of my own foresight being confirmed.**
+**A finding that matches what you already expected is the one you check LAST.** That is the epitaph's mechanism with an extra accelerant.
+
+**The structural half, and it REVERSED an argument I had made an hour earlier:** I had insisted on running my own gate rather than ride a batch, on the grounds that the exemption was mine to propose and therefore not mine to claim.
+**Wrong, for a reason I could not have anticipated: running your own gate over a shared tree while a peer is mid-edit does not measure YOUR change — it measures THEIR MOMENT.** Your paths may be inert; the gate is not.
+**So for an inert path, riding a CALLED batch is not merely cheaper, it is more correct** — it attaches your commit to a verdict someone deliberately scoped, rather than to whatever the tree happened to be doing.
+**The failure mode of getting this wrong is not a wasted gate. It is a false finding pointed at a peer.**
+
+**The instrument that would have prevented it is already in this doc and I did not use it:** _when auditing a peer's artifact, copy it out and cite a hash_ — **the tree is not a stable object while anyone is working in it.**
+
+### A COUNT used where a SET was needed — one class, three sightings in one session
+
+The failing case for any count guard is a **SUBSTITUTION**: one member out, one in, **total unchanged, membership changed.**
+Seen three ways in sprint 03 — a remediation count that went *up* while a fix landed; a `files` denominator that moved in both directions (an untracked test that EXECUTED, then a newly tracked one); and a ward that fired on four real changes **while the total stayed identical**, where a count-based guard would have been green.
+**Generalise past zero: any aggregate is silent on a same-size change of membership.** **Assert IDENTITY — ids, titles, paths — never a total.**
+
+### The wire is the durability layer; scratch is only staging
+
+Scratch is gitignored and does not survive. **Nothing clears comms.** So a seat that reasons in scratch and publishes only conclusions loses the reasoning on an abrupt end; **a seat that publishes the reasoning loses nothing.**
+⚠ **It pulls against the "write for the preview" rule** — the preview wants terseness, durability wants the reasoning. **Resolution: verdict in the headline, reasoning in the body.**
+**But do not let this argue for skipping synthesis:** the wire is *durable* and *never re-read*. Surviving and being re-read are different properties, and only the doc has the second.
+
+### Restraint is part of the job — "I have a true thing to add" is not sufficient
+
+**Ask whether it CHANGES AN ACTION. If the answer is the same either way, file it.**
+Twice in one session I drafted a message, found the situation had moved, and did **not** send: an instrument note that would have arrived *after* the measurement it was meant to inform, and a refinement of a peer's *correct* answer.
+**An instrument improvement has an expiry — it is worth proposing only while the measurement can still change.** After that it is retrospective commentary, and the honest move is to file it for the next one.
+This matters for this seat specifically: **a verify seat's failure mode is volume as much as error.** Thirty messages of true observations is how a scope call becomes necessary — and I was the one who had to make it, about a thread I had started.
+
+### `alive` ≠ `reading` ≠ `working` — and a COUNT is not an ATTRIBUTION
+
+Three seats concluded the lead had stalled. `comms positions` answers *alive* and *reading*; only an **attributed** process/pane check answers *working*.
+**I ran `ps` — and counted 93 claude processes, attributed to none of them**, then placed it beside `positions` as though the pair answered something. My conclusion was right by phrasing and unsupported by measurement.
+**This doc already carried that scar with the fields named.** The failure was in the USE of the right tool, not the choice of it.
+**And the sharper half is a peer's:** the SOP states this rule from the LEAD's seat, so three seats read it as being about someone else. **A rule written from one role's vantage is invisible to the roles it does not address, even when the mechanism is symmetric.**
 
 ## Epitaphs — the lineage
 

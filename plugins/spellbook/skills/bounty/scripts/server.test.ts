@@ -16,7 +16,14 @@
 //       * join.ts idle timeout reports reason: "timeout"
 
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +56,8 @@ import {
   ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
+  shouldRotateSnapshot,
+  snapshotTaskCount,
   type Task,
   type TaskStatus,
   validateTask,
@@ -809,8 +818,19 @@ const TEST_TMPDIR = mkdtempSync(join(tmpdir(), "bounty-suite-"));
 // the private dir travels to children through hermeticEnv(), not through us.
 const SHARED_TMPDIR = tmpdir();
 
+// ⛔ The scrub list is NOT a set someone remembered — it is the env-typed half of
+// AMBIENT_BINDINGS in preflight.ts, and preflight.test.ts source-scans this
+// destructure to prove they agree. Adding a binding there without adding it here
+// is RED, which is the only reason this list can be trusted later.
+//
+// BOUNTY_AS joined it in sprint 03: the enumeration that found it also found why
+// it had been missed for two sprints — `grep 'process.env.'` cannot see
+// BOUNTY_SESSION at all, because resolveSession reads it off an INJECTED env
+// param (cli.ts:182). A scrub list derived by that grep is short and looks
+// complete. TMPDIR is assigned rather than deleted (children need a private
+// one); BOUNTY_HOME is assigned per-test by uniqHome().
 function hermeticEnv(): Record<string, string | undefined> {
-  const { BOUNTY_SESSION_KEY: _k, BOUNTY_SESSION: _s, ...rest } = process.env;
+  const { BOUNTY_SESSION_KEY: _k, BOUNTY_SESSION: _s, BOUNTY_AS: _a, ...rest } = process.env;
   return { ...rest, TMPDIR: TEST_TMPDIR };
 }
 
@@ -2999,7 +3019,14 @@ async function runOpen(
   return { stdout, stderr, code: verdict.code, ms };
 }
 
-function snapshotTaskCount(home: string, id: string): number | null {
+// Renamed from `snapshotTaskCount` in sprint 03: that name is now a REAL
+// export of server.ts (the shrinkage guard's prior-count reader), and an
+// import of it here was SILENTLY SHADOWED by this local declaration —
+// no runtime error, just the wrong function with the wrong arity. `bun test`
+// cannot see that; `tsc` reports it as TS2440 and the repo gate does not run
+// tsc. This helper resolves home+id, which the exported one deliberately does
+// not, so it stays — under a name that cannot collide.
+function snapshotTaskCountAt(home: string, id: string): number | null {
   try {
     const raw = readFileSync(join(home, "snapshots", `${id}.json`), "utf8");
     return (JSON.parse(raw) as { tasks?: unknown[] }).tasks?.length ?? 0;
@@ -3031,8 +3058,8 @@ describe("P0b — open refuses rather than discarding flags on the attach path",
     // debounce (server.ts:708 marks dirty, :1238 drains), so a sleep either
     // races or is pure padding.
     const deadline = Date.now() + 10000;
-    while (Date.now() < deadline && snapshotTaskCount(home, id) !== 2) await Bun.sleep(100);
-    expect(snapshotTaskCount(home, id)).toBe(2);
+    while (Date.now() < deadline && snapshotTaskCountAt(home, id) !== 2) await Bun.sleep(100);
+    expect(snapshotTaskCountAt(home, id)).toBe(2);
 
     // Step 3 — kill -9. NOT close: close writes the snapshot (server.ts:1286),
     // which would flush the board we are about to empty OVER the fixture. And
@@ -3071,7 +3098,7 @@ describe("P0b — open refuses rather than discarding flags on the attach path",
     // control is invalid is a probe that will eventually lie — and this exact
     // control has been degenerate three separate times in this project.
     const liveNow = await liveTaskCount(revived.port);
-    const snapNow = snapshotTaskCount(home, id);
+    const snapNow = snapshotTaskCountAt(home, id);
     const control = liveNow === 0 && snapNow === 2 ? "VALID-CONTROL" : "DEGENERATE";
     expect({ control, live: liveNow, snapshot: snapNow }).toEqual({
       control: "VALID-CONTROL",
@@ -3249,14 +3276,14 @@ describe("P0b — the snapshot facts the construction rests on", () => {
     const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
     await runCli(["add", "keep me", "--id", "k1", "--session", id], { env: { BOUNTY_HOME: home } });
     const deadline = Date.now() + 10000;
-    while (Date.now() < deadline && snapshotTaskCount(home, id) !== 1) await Bun.sleep(100);
-    expect(snapshotTaskCount(home, id)).toBe(1); // PRECONDITION: a full snapshot exists
+    while (Date.now() < deadline && snapshotTaskCountAt(home, id) !== 1) await Bun.sleep(100);
+    expect(snapshotTaskCountAt(home, id)).toBe(1); // PRECONDITION: a full snapshot exists
 
     await runCli(["remove", "k1", "--session", id], { env: { BOUNTY_HOME: home } });
     await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
     await Bun.sleep(500);
     // close flushed the NOW-EMPTY board over the snapshot that held the task.
-    expect(snapshotTaskCount(home, id)).toBe(0);
+    expect(snapshotTaskCountAt(home, id)).toBe(0);
   }, 40000);
 
   test("FACT 2 — snapshots are NOT close-only: a mutation flushes on the ~1s debounce", async () => {
@@ -3272,8 +3299,8 @@ describe("P0b — the snapshot facts the construction rests on", () => {
       await runCli(["add", "solo", "--id", "s1", "--session", id], { env: { BOUNTY_HOME: home } });
       // No close anywhere in this cell — the flush must happen on its own.
       const deadline = Date.now() + 10000;
-      while (Date.now() < deadline && snapshotTaskCount(home, id) !== 1) await Bun.sleep(100);
-      expect(snapshotTaskCount(home, id)).toBe(1);
+      while (Date.now() < deadline && snapshotTaskCountAt(home, id) !== 1) await Bun.sleep(100);
+      expect(snapshotTaskCountAt(home, id)).toBe(1);
     } finally {
       await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
     }
@@ -3732,4 +3759,537 @@ describe("P0c #81 — the equals form, and unknown flags", () => {
       await runCli(["close", "--session", id], { env });
     }
   }, 40000);
+});
+
+// ── P1a/P1b — the SHRINKAGE guard at the snapshot sink (#73, #74) ────────────
+//
+// The defect both issues describe: a keyed `open` over a DEAD board respawns
+// EMPTY (cmdOpen passes --restore only if the caller typed it), and then any
+// write flushes that empty state over the populated snapshot. Measured this
+// sprint: one `add`, NO `close` anywhere, took a snapshot 3 tasks -> 1 task
+// (452 -> 172 bytes) about a second later via the debounce path.
+//
+// ⛔ WHY THE PREDICATE IS SHRINKAGE AND NOT EMPTINESS. Both issues ask for a
+// guard against writing an EMPTY board over a populated snapshot, and that is
+// what the sprint plan assumed. It does not cover the measurement above,
+// because 1 is not 0. Emptiness is the WORST CASE of the real predicate, not
+// its definition — so it is an input here, never a branch.
+//
+// ⛔ AND WHY ROTATION IS ONCE PER DAEMON SESSION, NOT PER WRITE. Writes are per
+// MUTATION (the flush is a 1s dirty-check), so a human draining a 26-card board
+// card-by-card produces up to 26 shrinking writes. With any retention bound N,
+// rotation N+1 evicts the pre-drain snapshot — the guard eats the thing it
+// exists to protect. Once-per-boot bounds rotations by BOOTS, captures exactly
+// the state that existed before this daemon touched it (which is what both
+// issues asked to get back), and needs no retention policy at all.
+describe("shouldRotateSnapshot — the shrinkage predicate", () => {
+  test("a SHRINKING write rotates: the measured 3 -> 1 case", () => {
+    expect(shouldRotateSnapshot(3, 1, false)).toBe(true);
+  });
+
+  test("EMPTINESS is the worst case of shrinkage, not a separate rule", () => {
+    // The case both issues actually filed. It must pass through the same
+    // predicate, or the guard has two branches that can disagree.
+    expect(shouldRotateSnapshot(18, 0, false)).toBe(true);
+  });
+
+  test("a SAME-SIZE write does NOT rotate — this is the common case", () => {
+    // Measured live on the team board: a card claim rewrote 26 -> 26. If this
+    // rotated, every ordinary edit would mint a backup.
+    expect(shouldRotateSnapshot(26, 26, false)).toBe(false);
+  });
+
+  test("a GROWING write does NOT rotate", () => {
+    expect(shouldRotateSnapshot(3, 4, false)).toBe(false);
+  });
+
+  test("ONCE PER SESSION: a second shrink in the same daemon does NOT rotate", () => {
+    // The load-bearing cell. Without it the guard is per-write, and a
+    // card-by-card drain evicts the pre-drain snapshot with its own backups.
+    expect(shouldRotateSnapshot(3, 1, true)).toBe(false);
+    expect(shouldRotateSnapshot(1, 0, true)).toBe(false);
+  });
+
+  test("NO PRIOR SNAPSHOT never rotates — there is nothing to protect", () => {
+    // null = no readable snapshot on disk (fresh store, or unreadable). Copying
+    // a file that is absent or corrupt would fail, and a first-ever write is not
+    // a loss.
+    expect(shouldRotateSnapshot(null, 0, false)).toBe(false);
+    expect(shouldRotateSnapshot(null, 5, false)).toBe(false);
+  });
+
+  test("a prior of ZERO never rotates, even writing zero", () => {
+    // An empty snapshot has nothing to lose, so rotating it is pure litter —
+    // and this is the case a naive `next < prior` with a null-coalesce to 0
+    // would get right by accident and a `prior >= 0` check would get wrong.
+    expect(shouldRotateSnapshot(0, 0, false)).toBe(false);
+  });
+});
+
+describe("snapshotTaskCount — reading the prior, honestly", () => {
+  const dir = mkdtempSync(join(TEST_TMPDIR, "snapcount-"));
+
+  test("counts the tasks in a well-formed snapshot", () => {
+    const p = join(dir, "ok.json");
+    writeFileSync(p, JSON.stringify({ title: "T", tasks: [{ id: "a" }, { id: "b" }] }));
+    expect(snapshotTaskCount(p)).toBe(2);
+  });
+
+  test("an ABSENT file is null, NOT zero", () => {
+    // The distinction the predicate depends on. Zero would mean "a snapshot
+    // exists and holds nothing"; null means "there is no snapshot". Collapsing
+    // them makes a first-ever write look like a shrink from an empty board.
+    expect(snapshotTaskCount(join(dir, "nope.json"))).toBe(null);
+  });
+
+  test("a CORRUPT file is null, NOT zero — and that is the safe direction", () => {
+    // A half-written snapshot must not read as "0 tasks" and thereby report
+    // every subsequent write as a shrink. null declines to answer.
+    const p = join(dir, "corrupt.json");
+    writeFileSync(p, '{"title":"T","tasks":[{"id":"a"');
+    expect(snapshotTaskCount(p)).toBe(null);
+  });
+
+  test("a snapshot whose `tasks` is not an array is null, not a guess", () => {
+    const p = join(dir, "weird.json");
+    writeFileSync(p, JSON.stringify({ title: "T", tasks: "nope" }));
+    expect(snapshotTaskCount(p)).toBe(null);
+  });
+});
+
+// ── P1a/P1b — the guard END TO END, on the real defect ───────────────────────
+// The predicate cells above prove the DECISION. This proves the SINK is wired to
+// it — a pure predicate nobody calls is a helper, not a fix.
+//
+// The construction is #73/#74's actual shape: seed a snapshot, kill the daemon
+// so it writes NOTHING on the way out, respawn under the SAME KEY (which does
+// not hydrate — measured), then make ONE ordinary mutation and let the ~1s
+// debounce flush it. No `close`, no `--fresh`, no `--restore` anywhere.
+describe("P1a/P1b — the shrinkage guard, end to end", () => {
+  test("a respawned-empty board's first write COPIES the old snapshot aside, and SAYS so", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1a-"));
+    const key = `p1a-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string; port: number }).session_id;
+    const port = (JSON.parse(open.stdout) as { port: number }).port;
+    for (const t of ["a", "b", "c"])
+      await runCli(["add", t, "--id", `p1a-${t}`, "--session", id], { env });
+    const seeded = Date.now() + 10000;
+    while (Date.now() < seeded && snapshotTaskCountAt(home, id) !== 3) await Bun.sleep(100);
+    // PRECONDITION, printable as a failure rather than assumed: if the snapshot
+    // never reached 3, everything below is vacuous and would read as "no loss".
+    expect(snapshotTaskCountAt(home, id)).toBe(3);
+
+    // SIGKILL, by exact PID off the port. NOT `pkill -f`, and not a pattern on
+    // the board id — the id appears in the argv of the process doing the
+    // matching, so such a pattern lists the harness's own shell.
+    const lsof = Bun.spawnSync(["lsof", "-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"]);
+    const pids = new TextDecoder().decode(lsof.stdout).trim().split("\n").filter(Boolean);
+    expect(pids.length).toBeGreaterThan(0); // a kill that no-ops makes the run read clean
+    for (const pid of pids) Bun.spawnSync(["kill", "-9", pid]);
+    await Bun.sleep(600);
+    // A killed daemon writes nothing on the way out — so the snapshot is intact
+    // and the cell below is measuring the RESPAWN, not the kill.
+    expect(snapshotTaskCountAt(home, id)).toBe(3);
+
+    const respawn = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id2 = (JSON.parse(respawn.stdout) as { session_id: string }).session_id;
+    expect(id2).toBe(id); // same key, same board id — that is what makes it a clobber
+    try {
+      // ONE mutation. This is the write that used to take the snapshot 3 -> 1.
+      await runCli(["add", "d", "--id", "p1a-d", "--session", id], { env });
+      const flushed = Date.now() + 10000;
+      while (Date.now() < flushed && snapshotTaskCountAt(home, id) !== 1) await Bun.sleep(100);
+      expect(snapshotTaskCountAt(home, id)).toBe(1); // the shrink still HAPPENS
+
+      // ...but the old one was copied aside first. THIS is the fix.
+      const backups = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.pre-`),
+      );
+      expect(backups.length).toBe(1);
+      const rescued = JSON.parse(
+        readFileSync(join(home, "snapshots", backups[0] as string), "utf8"),
+      ) as { tasks: unknown[] };
+      expect(rescued.tasks.length).toBe(3);
+
+      // AND IT SAID SO. A silent rescue is a success-shaped lie: the user is
+      // protected and never learns they needed protecting.
+      const log = readFileSync(join(home, "daemon.log"), "utf8");
+      // daemon.log is NOT pure JSONL: cli.ts points the daemon's native stderr
+      // at this same file (#64, so Bun's own hard-abort output is captured), so
+      // the structured lines are interleaved with plain prose. Parsing every
+      // line blows up on our OWN human-readable announcement — which is how this
+      // cell first discovered that the stderr half lands here too.
+      const said = log
+        .split("\n")
+        .filter((l) => l.startsWith("{"))
+        .map((l) => JSON.parse(l) as { reason?: string; priorTasks?: number; nextTasks?: number })
+        .filter((e) => e.reason === "snapshotBackedUp");
+      expect(said.length).toBe(1);
+      expect(said[0]?.priorTasks).toBe(3);
+      expect(said[0]?.nextTasks).toBe(1);
+      // The human-readable half, in the same file, naming the numbers and the
+      // file — this is what someone reading a log after a scare actually finds.
+      expect(log).toContain("snapshot was about to shrink 3 → 1 tasks");
+      expect(log).toContain(`${id}.pre-`);
+
+      // ONCE PER SESSION: a SECOND shrink in the same daemon must NOT rotate
+      // again. Without this the guard is per-write, and a card-by-card drain
+      // evicts the rescued snapshot with the guard's own backups.
+      await runCli(["remove", "p1a-d", "--session", id], { env });
+      await Bun.sleep(1600);
+      expect(snapshotTaskCountAt(home, id)).toBe(0);
+      expect(
+        readdirSync(join(home, "snapshots")).filter((f) => f.startsWith(`${id}.pre-`)).length,
+      ).toBe(1);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 60000);
+});
+
+// ── P1e + D1.2 — the idle timeout, and the readable blank ────────────────────
+describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", () => {
+  test("the configured idleTimeout EXCEEDS the heartbeat interval", () => {
+    // Source-scanned rather than driven, and the reason is that DRIVING it would
+    // need a >10s quiet connection per assertion — a 10s+ cell per run, to prove
+    // a one-key config fact. The relationship is what matters and it is the
+    // relationship that was broken: Bun's default is 10s and the heartbeat is
+    // 15s, so on an otherwise-idle connection the heartbeat could NEVER fire.
+    //
+    // ⚠ This asserts the two numbers stay ordered, NOT that any death was
+    // caused by their being unordered. See the source comment: P1e is
+    // consistent with #64's clue and untested against it.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    const idle = src.match(/idleTimeout:\s*(\d+)/);
+    const hb = src.match(/\}, (\d+)\);\n\s*sseTimers\.add\(hb\);/);
+    expect(idle).not.toBe(null);
+    expect(hb).not.toBe(null);
+    const idleMs = Number(idle?.[1]) * 1000;
+    const hbMs = Number(hb?.[1]);
+    expect(idleMs).toBeGreaterThan(hbMs);
+  });
+
+  test("idleTimeout is not ZERO — 0 stalls the initial response rather than disabling", () => {
+    // Measured in mind-mapper: `idleTimeout: 0` does not mean "no timeout", it
+    // empirically stalls the first response. A future editor reaching for 0 as
+    // "disable it" would reintroduce a worse bug than the one this fixes, so the
+    // refusal is pinned rather than left in a comment.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    expect(src).not.toMatch(/idleTimeout:\s*0\b/);
+  });
+});
+
+describe("D1.2 — snapshotBackedUp is a READABLE BLANK on /state, never absent", () => {
+  test("a daemon that has rotated NOTHING still carries the field, as null", async () => {
+    // The whole point of the ruling: `null` means "not needed" and an ABSENT
+    // field means "not reported", and a consumer cannot tell those apart. The
+    // event alone cannot satisfy this — an event is absent when nothing
+    // happened, by construction.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "d12-"));
+    const key = `d12-${crypto.randomUUID().slice(0, 8)}`;
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const { session_id: id, port } = JSON.parse(open.stdout) as {
+      session_id: string;
+      port: number;
+    };
+    try {
+      const body = (await (await fetch(`http://127.0.0.1:${port}/state`)).json()) as Record<
+        string,
+        unknown
+      >;
+      // `in` is the assertion with teeth. `=== null` alone passes vacuously
+      // against a build that does not emit the field at all — the restoreSkipped
+      // lesson (#80.1/D1.2), which is the same ruling's other half.
+      expect("snapshotBackedUp" in body).toBe(true);
+      expect(body.snapshotBackedUp).toBe(null);
+    } finally {
+      await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
+    }
+  }, 40000);
+});
+
+// ── P1d — a dropped --size/--expect becomes AUDIBLE, not an error ────────────
+//
+// Ruled by Cole: KEEP the leniency, make it audible. parseSize/parseExpect
+// dropping a bad value is a deliberate anti-typo behaviour (cli.ts comment) and
+// reversing it re-opens that hazard. What changes is that the caller is TOLD.
+//
+// The scaffold's framing -- "add and update disagree about whether a bad --size
+// is an error" -- was FALSIFIED by measurement this sprint: they are
+// byte-identical, and update's exit 2 is its EMPTY-PATCH guard firing because
+// the dropped size left nothing to patch. These cells pin that they stay
+// identical, so the asymmetry cannot appear for real later.
+describe("P1d — the leniency is audible", () => {
+  test("add REPORTS an ignored --size and still succeeds", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-a-"));
+    const key = `p1d-a-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const r = await runCli(["add", "x", "--id", "t1", "--size", "ongoing", "--session", id], {
+        env,
+      });
+      const out = JSON.parse(r.stdout) as {
+        ok: boolean;
+        valuesIgnored: Array<{ flag: string; value: string }> | null;
+      };
+      expect(out.ok).toBe(true); // the leniency STAYS — this is not an error
+      expect(out.valuesIgnored?.[0]?.flag).toBe("size");
+      expect(out.valuesIgnored?.[0]?.value).toBe("ongoing");
+      expect(r.stderr).toContain("ignored --size"); // mirrored for a human
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("a CLEAN add carries the field as null — present, never absent", async () => {
+    // `in` is the assertion with teeth: `=== null` passes vacuously against a
+    // build that never emits the field (the restoreSkipped lesson).
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-n-"));
+    const key = `p1d-n-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const r = await runCli(["add", "y", "--id", "t2", "--size", "M", "--session", id], { env });
+      const out = JSON.parse(r.stdout) as Record<string, unknown>;
+      expect("valuesIgnored" in out).toBe(true);
+      expect(out.valuesIgnored).toBe(null);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("update with a bad size AND another flag behaves EXACTLY like add", async () => {
+    // The discriminating cell from the measurement, now pinned: the two verbs
+    // do NOT disagree, and this is what stops the scaffold's claim becoming
+    // true later by accident.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-u-"));
+    const key = `p1d-u-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "z", "--id", "t3", "--session", id], { env });
+      const r = await runCli(
+        ["update", "t3", "--size", "bogus", "--owner", "alice", "--session", id],
+        { env },
+      );
+      expect(r.code).toBe(0); // NOT a refusal — identical to add
+      const out = JSON.parse(r.stdout) as {
+        valuesIgnored: Array<{ flag: string }> | null;
+      };
+      expect(out.valuesIgnored?.[0]?.flag).toBe("size");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("update with ONLY a bad size names the flag IN THE REFUSAL — no envelope prints here", async () => {
+    // The case the envelope cannot reach, and the one a caller actually hits.
+    // The patch is empty BECAUSE the size was dropped, so the refusal has to
+    // carry the report or it is lost exactly when it is most needed. The old
+    // message blamed an empty patch and never mentioned the flag that was
+    // passed — and omitted --size from the list of flags that would have worked,
+    // which a VALID --size does.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-r-"));
+    const key = `p1d-r-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "w", "--id", "t4", "--session", id], { env });
+      const r = await runCli(["update", "t4", "--size", "bogus", "--session", id], { env });
+      expect(r.code).toBe(2); // still a usage error — that behaviour is unchanged
+      expect(r.stderr).toContain("--size");
+      expect(r.stderr).toContain("bogus");
+      expect(r.stderr).toContain("not one of S|M|L");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+
+  test("--expect gets the SAME treatment — it had the identical silent drop", async () => {
+    // parseExpect has the same shape as parseSize and was on no card. One field
+    // covers both, rather than minting the first member of a per-flag family.
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1d-e-"));
+    const key = `p1d-e-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const r = await runCli(["add", "e", "--id", "t5", "--expect", "soon", "--session", id], {
+        env,
+      });
+      const out = JSON.parse(r.stdout) as { valuesIgnored: Array<{ flag: string }> | null };
+      expect(out.valuesIgnored?.[0]?.flag).toBe("expect");
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 40000);
+});
+
+// ── P1f — the teardown funnel: signal deaths run it instead of pre-empting it ─
+//
+// ⛔ THE FAILURE MODE OF THIS FIX IS NON-TERMINATION, so a cell that measures
+// the FRAME cannot fail on it. `process.exit` in a signal handler did DOUBLE
+// DUTY — it ended the process AND skipped the teardown — and removing it to gain
+// the teardown can lose the ending. To a frame-counting cell, a hang and a
+// success are identical. So TERMINATION is asserted first and separately, on the
+// process itself, never as a side effect of its output being consumed.
+//
+// Signals are ENUMERATED, never "for each signal" (G4): SIGTERM and SIGINT are
+// separate cells because they are separate handlers and one can be wired wrong.
+// MUTATION-VERIFIED, both directions, and the SPLIT is the point:
+//   pre-fix  3 pass / 2 fail
+//   post-fix 5 pass / 0 fail
+// The two that fail pre-fix (the `closed` frame, and `subscribers` on the
+// signal path) are the evidence. The three that pass in BOTH worlds are
+// GUARDS and are labelled so — the old code ended the process correctly, so a
+// termination cell cannot discriminate the fix. It exists to catch the fix
+// LOSING the ending, which is the failure this whole lane was warned about.
+describe("P1f — a signal death runs the teardown AND still ends the process", () => {
+  // Budget comes from the FAILURE, not the success: a hang is unbounded, so a
+  // tight budget is all cost and no coverage. It sits strictly below the
+  // enclosing test(…, N) so the runner cannot kill the test before this
+  // assertion executes — otherwise a hang reads as "the suite is slow" instead
+  // of a red cell naming the hung path.
+  const EXIT_BUDGET_MS = 8000;
+
+  async function exitsOnSignal(signal: "SIGTERM" | "SIGINT", expectCode: number) {
+    const { proc, ready } = await spawnServerReady();
+    // A REAL consumer, attached before the signal: #73's lesson is that emitting
+    // a frame and DELIVERING it are different claims, so the frame is observed
+    // where a consumer would see it, not at the emit site.
+    const frames: Array<Record<string, unknown>> = [];
+    const ac = new AbortController();
+    const sse = fetch(`${ready.url}/events?since=0`, { signal: ac.signal })
+      .then(async (r) => {
+        const reader = r.body?.getReader();
+        if (!reader) return;
+        const dec = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          for (const line of buf.split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              frames.push(JSON.parse(line.slice(6)) as Record<string, unknown>);
+            } catch {}
+          }
+          buf = buf.slice(buf.lastIndexOf("\n") + 1);
+        }
+      })
+      .catch(() => {});
+    await Bun.sleep(300); // let the stream attach before we kill the daemon
+
+    proc.kill(signal);
+
+    // ⛔ THE TERMINATION ASSERTION. Observed on the process, with a budget, and
+    // NOT inferred from the stream ending — a stream can end because the socket
+    // died while the process lives on.
+    const exited = await Promise.race([
+      proc.exited,
+      Bun.sleep(EXIT_BUDGET_MS).then(() => "HUNG" as const),
+    ]);
+    ac.abort();
+    await sse;
+    expect(exited).not.toBe("HUNG");
+    expect(exited).toBe(expectCode);
+    return frames;
+  }
+
+  // ⚠ GUARD, MEASURED — this PASSES in both worlds and that is not a defect in
+  // the cell. The old code terminated perfectly well; what it skipped was the
+  // teardown. So this cell cannot be evidence FOR the fix, and calling it one
+  // would be a label assigned before its measurement. Its job is the opposite:
+  // to go red if the fix ever LOSES the ending, which is the failure mode the
+  // join.ts scar actually shipped. Verified by mutation: 3 pass / 2 fail
+  // pre-fix, and this was one of the three.
+  test("GUARD — SIGTERM still ends the process, exit 143", async () => {
+    await exitsOnSignal("SIGTERM", 143);
+  }, 30000);
+
+  // GUARD, same as above — measured passing pre-fix.
+  test("GUARD — SIGINT still ends the process, exit 130", async () => {
+    // Enumerated rather than inferred from SIGTERM — a separate handler is a
+    // separate site, and a per-site precondition is what the join.ts scar was.
+    await exitsOnSignal("SIGINT", 130);
+  }, 30000);
+
+  test("RED PRE-FIX — a signal death delivers the `closed` frame, reason 'signal'", async () => {
+    // This is the cell that must FAIL against the old code: the old handler
+    // process.exit'd, so `await done` never resolved and the emit at the end of
+    // teardown was unreachable. 156 of 226 recorded deaths carried no frame.
+    const frames = await exitsOnSignal("SIGTERM", 143);
+    const closed = frames.find((f) => f.type === "closed");
+    expect(closed).toBeDefined();
+    // "signal", not "close": borrowing another reason's name would leave a
+    // consumer unable to tell an orderly shutdown from a kill.
+    expect(closed?.reason).toBe("signal");
+  }, 30000);
+
+  test("THE INSTRUMENT — the signal path logs `subscribers`", async () => {
+    // Without this, nothing in daemon.log changes when the fix lands: `signal`
+    // is the only exit class that has never carried the field, so the fix would
+    // be unmeasurable afterwards. Captured before teardown closes anything.
+    const home = uniqHome();
+    const id = `p1f-${crypto.randomUUID().slice(0, 8)}`;
+    const proc = Bun.spawn({
+      cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--id", id],
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home },
+    });
+    const discovery = join(TEST_TMPDIR, `bounty-${id}.json`);
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline && !existsSync(discovery)) await Bun.sleep(80);
+    proc.kill("SIGTERM");
+    const exited = await Promise.race([
+      proc.exited,
+      Bun.sleep(EXIT_BUDGET_MS).then(() => "HUNG" as const),
+    ]);
+    expect(exited).not.toBe("HUNG");
+    const log = readFileSync(join(home, "daemon.log"), "utf8");
+    const sig = log
+      .split("\n")
+      .filter((l) => l.startsWith("{"))
+      .map((l) => JSON.parse(l) as { reason?: string; subscribers?: number })
+      .filter((e) => e.reason === "signal");
+    expect(sig.length).toBeGreaterThan(0);
+    expect(typeof sig[0]?.subscribers).toBe("number");
+  }, 30000);
+
+  // GUARD, measured passing pre-fix — which is exactly what a blast-radius
+  // cell should do: it watches the class the change did NOT intend to touch.
+  test("GUARD — blast radius: a clean close still exits 0", async () => {
+    // The funnel edits the SHARED teardown path, so the guard against trading
+    // one death class for another is that the untouched class still works.
+    const { proc, ready } = await spawnServerReady();
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      body: JSON.stringify({ type: "close" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const exited = await Promise.race([
+      proc.exited,
+      Bun.sleep(EXIT_BUDGET_MS).then(() => "HUNG" as const),
+    ]);
+    expect(exited).not.toBe("HUNG");
+    expect(exited).toBe(0);
+  }, 30000);
 });

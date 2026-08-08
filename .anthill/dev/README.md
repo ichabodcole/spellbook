@@ -10,8 +10,8 @@ inter-seat truth lives once in [`seams.md`](./seams.md). How the whole system wo
 | Handle | Role | Scope |
 | --- | --- | --- |
 | prospero | lead | orchestration, the file-scoped atomic land, human liaison, and repo ops (release-please cuts, dependency updates, marketplace.json / plugin.json manifests) |
-| daedalus | engine | the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests |
-| circe | surface | the spell surfaces — React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention) |
+| daedalus | engine | the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests; AND the command-verdict path wherever it physically lives, including a surface reducer that owns a /cmd case list (seams Contract 13) |
+| circe | surface | the spell surfaces — React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention); NOT the command-verdict path when it lives in a reducer she owns the file for (that is daedalus, seams Contract 13, ruled 2026-08-07) |
 | thoth | grimoire | the craft canon and its tooling — grimoire/house-style.md, decay-ledger, trigger-registry, manifesto sync, naming/coalescence — and the inscribe / ward authoring rituals they must stay in lockstep with |
 | cassandra | verify | cold-agent usability (fresh-agent reports) and integration — drives the assembled spell end-to-end in a realistic environment and calls the failures |
 

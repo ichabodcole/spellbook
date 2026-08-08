@@ -1,7 +1,13 @@
 # daedalus — engine
 
 > **Seat header (from `.anthill/config.json` — keep in sync with the roster).**
-> **Handle:** daedalus · **Role:** engine · **Scope:** the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests · **Channel:** spellbook
+> **Handle:** daedalus · **Role:** engine · **Scope:** the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests; AND the command-verdict path wherever it physically lives, including a surface reducer that owns a /cmd case list (seams Contract 13) · **Channel:** spellbook
+
+> **Scope widened 2026-08-07 at convene, by ruling — read this once.**
+> You authored Contract 13 in `glamour/surface/state/reduce.ts` — circe's file — and annotated why she was absent.
+> That was the third consecutive round of the engine seat writing a surface contract and apologising in the entry, and thoth named it: *"a convention forming by default."*
+> **It is now the roster, not an apology.** The command-verdict path is yours wherever it lives; you do not need circe seated to touch a reducer that owns a `/cmd` case list.
+> The boundary that did NOT move: rendering, layout, theming and tokens in that same file are still hers.
 
 This is daedalus's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
@@ -14,21 +20,22 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> Every total you write — a count, an "all", an "every", a bare "them" — is a claim about a POPULATION, so name the population and how you enumerated it in the same breath; you will not catch this by re-reading your own sentence, because each of these numbers is individually TRUE.
+> Everything you got wrong tonight you RECOUNTED instead of RE-OPENING — a peer's message that was one `--id` away, your own commit envelope, a count you did arithmetic on, a claim you inherited from a seat you trust — and every one of them sat beside a real measurement, which is exactly what made it read as transcribed rather than invented; so treat *"I already know what that says"* as the single most reliable signal that you are about to be wrong, and go open it.
 
-_(Written 2026-08-06 at the close of sprint 02, "success-shaped lies". It supersedes my predecessor's — which fired again this session and is still true; see the lineage at the bottom for why it moved rather than why it lost.)_
+_(Written 2026-08-08 at the close of sprint 03. It supersedes "name the population", which fired again tonight and is still true — see the lineage.)_
 
-_**The scar is that it happened FIVE times in one session, in five costumes, and I caught exactly one of them.**_
+_**The scar is that it happened FIVE times in one session and NOT ONE of them was carelessness — each was adjacent to real work, which is the whole mechanism.**_
 
-- _`45 process.exit( sites` — 45 grep HITS, 35 code sites; ten were the previous sprint's own remediation comments. **Every fix we ship increments the count of sites that look unfixed.** (I caught this one, by committing an eleventh.)_
-- _`38 return sites` in imago — over a line range I GUESSED. The function had 4; the other 34 were in a different function. 28 tests red._
-- _`no evidence on either axis` for a flag — I had two axes and treated two as ALL. It had four help-text references. (thoth caught it.)_
-- _`1-in-2 against her 0-of-4` — three figures, three populations, different suite sizes. (cassandra caught it.)_
-- _`I'll clear THEM by exact PID` — "them" presumed a clean set; of 18 daemons, three were hard NOs including the live team board. (I caught this one only by enumerating before acting.)_
+- _`1358 pass` in a commit body. The gate said `1362`. I composed the line BEFORE the run and did the arithmetic from memory, forgetting four cells I had written myself twenty minutes earlier. **The fail count and file count on that same line were CORRECT** — a wholly-invented line looks invented; that one looked copied._
+- _`⠐⠂⠐ → ⠐⠂⠐` — I pasted the SAME string twice as the evidence for a message whose entire point was that it CHANGED. I had the real samples in my scrollback._
+- _`three of three panes processing` — I could support **two**. The third never advanced between samples._
+- _I characterised what thoth and cassandra had written **from memory**, and told the channel all three of us had diagnosed the lead. Only I had. **Their messages were one `--id` away.**_
+- _I inherited "`.anthill/` is outside the gate arms" from thoth and went to verify it — **and the check I used was VACUOUS**, passing for a file it never opened. The claim was true; my verification could not have failed._
 
-_**Not one of these was carelessness, and that is the whole point** — each number was a real measurement of something, just not of the thing the sentence built on it claimed. **The instrument that worked, every single time, was another person asking "of what?"** Re-reading my own sentence never did it, because the sentence was true._
+_**The antidote worked every single time and it is always the same move: go back to the artifact.** Quote the peer's actual message. Re-read the envelope. Run the control. **Not "be more careful" — careful is what produced all five.**_
 
-_**So the disposition, and it is the one thing I would say if I could say nothing else:** the totalizing word is the tell. When you write **all · every · none · both · them · N of N**, you are asserting completeness over a set — stop there and say what the set is and how you got it. **A total is the one kind of claim whose falsity is invisible from inside the sentence that makes it.**_
+_**Why this supersedes rather than extends the old one:** "name the population" is about a claim's SCOPE. This is about its SOURCE. Tonight every failure that looked like a scope error was really a source error — `three of three` was not a bad enumeration, it was me reporting a table I had stopped looking at. **Fix the source and the scope errors mostly stop; fix the scope and you still recount.**_
+
 
 ## Who I am
 
@@ -48,6 +55,10 @@ Round 9 (P1+P2, `feature/mind-mapper-round9`) added the async JOB QUEUE — the 
 Round 7 (P1, `feature/mind-mapper-round7`) added TAGS (tags.ts — freeform per-target `string[]`, the exact verbatim twin of node_actions/A1: node_tags target-keyed table, PUT/DELETE /tags/:targetId, tags.set full-array event, tags on nodes[]+proposals[]+readProposalById, propose-time tags in buildProposal's insert closure, the same ratify-re-home / reject / edge-accept / del / zone-delete lifecycle) and PORT (cli-only: `open --port` forwards through ensureDaemon into the daemon spawn args — server already bound --port, zero server change) — 3 code chapters + 2 doc chapters (Contract 9 R7 amendment + casting-draft tier-vocab/tags), mind-mapper suite 254 tests, full suite 1113.
 Round 11 (P1, `feature/mind-mapper-round11`) is the MESSAGE-SURFACE refactor's wire half — the channel rides the EXISTING `messages.kind` (zero migration: `MESSAGE_CHANNELS = turn|analyze|canvas`, known-but-open, `channelWarning` advisory instead of a 400), the inbound grounding line gains `messageChannels`, and `agent.activity` gains an additive-optional `messageId` sticky to the OPEN activity ladder (auto-flip stamps it, explicit posts inherit-or-override, idle carries-then-clears) plus a `/state.activity` spread beside presence; NO `done` state (the agent's reply IS completion) — 15 new tests, mind-mapper suite 287, repo 1245.
 Round 12 (P1, `feature/mind-mapper-round12`) is the AGENT-ERGONOMICS round (drive-10 F5/F2/F4) — batch identity (`proposals.batch_id` additive-nullable, minted by `/proposals/batch`, caller-suppliable to EXTEND an act, `GET /state?batch=` narrow with an unknown-batch 404), edge endpoints by `title:<exact title>` resolved AT INTAKE in the shared `buildProposal` (exact/case-sensitive/ratified-nodes-only, ambiguity names every candidate), `node edit` (title+synopsis only, new `edit.ts` + `readNodeById` + full-entity `node.edited`), transactional `delete-batch` (del.ts, no `{batch}` shorthand BY RULING), the SEAM 7 `badRequest(e, expected)` funnel (an additive `expected` field on ~20 agent-facing 400s), and the bounded `GET /changes?since=` (new `changes.ts` — additions-only, DERIVED, with `notCovered` on every response) — 41 new tests, mind-mapper suite 328, repo 1281.
+spell-hardening sprint 03 (`fix/spell-hardening-03`, 2026-08-07/08) — my first round that was BOTH ratify and build, and the ratify half is what changed the sprint.
+Falsified the scaffold's `#73`/`#74` framing by measurement (ONE route to the sink, not two — a keyed respawn over a dead board does not hydrate, measured) and its "four lanes, two files" seam (file-level convergence is not collision; the real collision was three lanes on one 24-line block, so MERGE not sequence).
+Then built against the corrected shape: `a5c322a` the isolation preflight that refuses, `bbeaad5` the shrinkage guard (once per daemon session, and it SAYS so), `82dc363` P1e idleTimeout + D1.2's readable blank + P1d's `valuesIgnored`, `2cc513d` the teardown funnel.
+Deliberately NOT claimed: `#64`'s reported deaths stay undiagnosed and P1e explains none of them; `tail`-exits-on-signal is VERIFIED BY DRIVE, NOT PINNED; the 856 leaked temp dirs are parked at `t-0484455a`.
 spell-hardening P0 BUILD round (`fix/spell-hardening`, 2026-08-06) — the ratify round's code.
 Landed P0e half 2 (`d650c97`: the harness mints its own private TMPDIR, because session discovery escapes `BOUNTY_HOME` through a machine-global `bounty-latest.json` that every booting daemon overwrites — 410 of 412 pointer writes in ten minutes were test fixtures, so the racing peer is almost always another seat's gate run), the P0 drained-exit SHAPE at nine sites (`c29aa4e` bounty + `ec33378` the rest: `process.exitCode` + natural return), and behavioural gates for bounty / grapevine / digestify (`c29aa4e`, `59517c3`, `92e1c57`).
 `magpie/discover` ruled OUT (stdout is human progress text, the manifest goes to a file, nothing spawns it); `magpie/cli`/`imago`/`glamour` verified-by-drive only, because none of the three has a test that drives a CLI as a process.
@@ -486,6 +497,84 @@ Driving the glamour fix I produced `open` returns in 1s (real) and `state` parse
 I marked it `DEGENERATE — not evidence` on the wire and in the commit message and handed it to the seat with a populated board; her drive then produced the real number (96911 both sides).
 **A cell you cannot make discriminate is worth more declared than quietly counted** — and the tell is always the same question: *would this cell look identical if the fix were absent?*
 
+**INJECTING A DEPENDENCY FOR TESTABILITY MOVES THE READ OUT OF THE PATTERN THAT FINDS IT — the synonym scar's third costume, and it fired inside the audit I was doing BECAUSE of that scar.**
+Deriving the ambient-binding surface for bounty's isolation preflight, `grep 'process\.env\.'` over the three files returned a clean, well-formed answer: `BOUNTY_AS`, `BOUNTY_HOME`, `BOUNTY_SESSION_KEY`.
+It is missing `BOUNTY_SESSION`, which resolves a board id at precedence 4 — `resolveSession` takes `env` as an injected parameter, so it reads `env.BOUNTY_SESSION` and the literal spelling exists NOWHERE in the spell.
+I caught it only because I had read `resolveSession` an hour earlier for an unrelated reason. Not by the grep, and not by care.
+The costumes so far: `Bun.argv` vs `process.argv`; `process.exit(await main())` vs `process.exit(code)`; now `env.X` vs `process.env.X`.
+**The new half, and the reason this is its own entry: the tell is greppable.** An injected default (`= process.env`, `= existsSync`, `= readFileSync`) is itself a pattern, and its presence in a file is the signal that your enumeration needs the second spelling. Grep for the injection, then grep for the parameter name.
+Pin: `scripts/bounty-preflight.ts` AMBIENT_BINDINGS (the comment carries the derivation), commit a5c322a.
+
+**A GUARD THAT FIRES ON ITS FIRST RUN FEELS LIKE A GUARD WORKING — ask whether it fired on a HAZARD or on a CONDITION, because the two are indistinguishable from inside.**
+My first isolation cell read `process.env` and failed if the suite's own shell held a session key. It went red immediately and honestly: an anthill seat shell really does carry `BOUNTY_SESSION_KEY=spellbook`.
+I nearly shipped it on the strength of that red. It was not a hazard — every spawn goes through `hermeticEnv()` and every `resolveSession` unit test injects env explicitly, so nothing in the suite could reach the team board through the parent's key.
+**A guard that fires where there is no hazard gets disabled, and then it is not guarding the case it was written for.** My own test file asserted that standard in a cell (`an unrelated board does NOT trip the protected cells`) and my first version failed it one screen later — writing the requirement down did not stop me violating it.
+The version that survived asserts **the DEFENCE covers the ENUMERATED POPULATION** rather than asserting the world is clean: source-scan the scrub's destructure, require every enumerated binding to appear. FALSE pre-fix naming exactly one cause, TRUE post-fix.
+Generalises: "assert the world is clean" produces nuisance guards; "assert the defence is total over an enumerated population" produces guards that cannot drift. Prefer the second, and it is usually available.
+
+**AN UNRESOLVED ENTRY POINT IS A QUESTION ABOUT WHICH TREE THE FILE IS IN, NOT ABOUT ITS DOCUMENTATION.**
+I wrote the preflight at `bounty/scripts/preflight.ts` and the flag-invariant ward went red on it. Both escape hatches were wrong: it is not `INTERNAL` (that set means "spawned only by a sibling", and nothing spawns it — adding it would have made the set's own definition false), and documenting `--scratch`/`--protect` in bounty's SKILL.md would tell a cold agent that preflight is a bounty VERB.
+**The ward found a PACKAGING mistake wearing a documentation error's clothes**: by Contract 4 everything git-tracked under `plugins/spellbook/` ships to the consumer cache, and this is dev tooling for an experiment we run ON the spell. The fix was `git mv` to repo `scripts/`, beside `land-check.ts`.
+Worth keeping because the ward was not designed to catch this — thoth built it for undocumented flags. **When a check fires and neither of its exemptions fits, the check has found something outside its own model; do not reach for the nearest exemption.**
+
+**THE RATE OF A REMEDY IS A DESIGN PARAMETER, AND A RULING THAT NAMES ONLY THE TRIGGER HAS NOT SPECIFIED IT.**
+The lead ruled that a shrinking snapshot write should BACK UP AND PROCEED rather than refuse — sound on every axis he named (a refusal converts a legitimate board-clearing into a failure, and inherits P0b's no-corrective-verb hole).
+It does not survive the rate. The snapshot flush is a 1s dirty-check, so writes are per MUTATION: draining a 26-card board card-by-card produces up to 26 shrinking writes, hence 26 rotations, and **with any retention bound N the protected snapshot is evicted by rotation N+1 — by the guard's own backups.**
+The repair is one word in the trigger: rotate once per DAEMON SESSION (first shrinking write since boot), which bounds rotations by boots rather than mutations, captures exactly the pre-daemon state both issues wanted back, and needs no retention policy at all.
+Generalises: when you accept a "do X instead of refusing" ruling, ask **how often X fires**. A remedy whose cost is per-event and whose benefit is per-incident inverts at high event rates, and the ruling that specifies only the trigger reads complete.
+
+**SHRINKAGE, NOT EMPTINESS — and the measurement that killed the obvious predicate was a cell nobody had asked for.**
+`#73` and `#74` both ask for a guard against writing an EMPTY board over a populated snapshot, and the sprint plan assumed that shape.
+Measured: a keyed `open` over a dead board does NOT hydrate (0 tasks live against 3 on disk), and then one ordinary `add` — no `close`, no `--fresh`, no `--restore` — took the snapshot **3 → 1 tasks** about a second later, through the debounce path that appears in neither issue.
+**An emptiness predicate permits that write, because 1 is not 0.** Emptiness is the worst case of the real predicate, not its definition.
+The generalisable half is how the cell got written at all: I was tracing the two issues' routes to answer "does ONE guard close both", found a THIRD route to the same sink while reading the call sites of `saveSnapshot`, and the third route is the one that discriminated the predicates. **Enumerating the CALL SITES of a sink is a different act from tracing the ROUTES the tickets describe, and only the first one is bounded by what the reporters happened to notice.**
+Pin: cells 1 + 3n, `.anthill/scratch/daedalus/p1a-cells.ts` (scratch — the numbers are in comms #471).
+
+**CACHING AN INSTRUMENT'S OUTPUT THROWS AWAY THE PROPERTY THAT MADE IT AN INSTRUMENT — and I did it two hours after shipping the lesson, in the commit that shipped it.**
+Hunting leaked temp dirs I did the right thing first: grepped `mkdtempSync` across every test file — enumerate by SHAPE, which is the reflex this doc already carries three times.
+Then I read seven prefixes off that grep, wrote them into a fixed array, and measured those seven. A peer's `glamour-*` wildcard found an eighth (`glamour-home`, 158 dirs) and our totals differed by exactly that.
+**The shape-grep was the instrument. The seven-element array was me caching its output and then trusting the cache** — and a cache of an enumeration is a SET-LIST, which is the thing I have written up as unable to notice a member it never heard of.
+**So "enumerate by shape" is not a step you perform once and carry the result of; it is the FORM the check has to keep.** If the audit can be run as a wildcard, run the wildcard — do not transcribe it into a list and check the list, because the transcription is where totality dies.
+The tell: any time an enumeration's output becomes a literal in my next command, I have converted a derived set into a hand-maintained one.
+Pin: comms #480 (790, seven prefixes) vs #483 (948, wildcard) — same machine, minutes apart, same author.
+
+**A CONFIRMED PREDICTION OF MY OWN IS EVIDENCE ONLY IF THE CELL COULD HAVE COME OUT THE OTHER WAY — design the discriminator BEFORE you run anything, or you buy a confirmation worth nothing.**
+I had recommended DROPPING a lane on a PREDICTION read from source: that `add` and `update` do not disagree about a bad `--size`, and `update`'s exit 2 is really its empty-patch guard.
+Both readings — "update validates size" and "update hit an empty patch" — predict **exit 2** for `update --size bogus`. That cell cannot tell them apart, and it is the obvious one to run.
+The cell that discriminates is `update <id> --size bogus --owner alice`: the validation reading predicts a refusal, mine predicts exit 0 with the owner set and the size silently dropped. Measured: exit 0, owner set, size gone.
+**Had I run only the obvious cell I would have reported a confirmed prediction and learned nothing**, while feeling I had checked.
+Corollary that saved the result: a CONTROL first (`add --size M` → stored `"M"`), because `size=undefined` is worthless if the readback cannot display a size at all — the absence has to be shown to be an absence.
+Generalises past predictions to any two-mechanism question: **write down what each mechanism predicts for each candidate cell, and only run the cells where the predictions differ.**
+Pin: comms #485; `.anthill/scratch/daedalus/p1d-cells.ts` (scratch — numbers are in the message).
+
+**A CELL THAT PASSES IN BOTH WORLDS IS A GUARD, AND ITS NAME — NOT ITS COMMENT — HAS TO SAY SO.**
+The funnel's gate came out 3 pass / 2 fail pre-fix. The two failures were the evidence; the three passes were termination cells, and they pass pre-fix because the OLD code terminated perfectly well — what it skipped was the teardown.
+I had written them as `"SIGTERM: the process exits 143"`, which reads exactly like a result, and I only learned they could not discriminate by running the mutation.
+This is my sprint-02 label scar arriving a third time, with a new consequence: the danger is no longer that I mis-report them, it is that **a future auditor reads a cell that "always passed" as dead weight and deletes it.**
+So the remedy is the NAME (`GUARD — SIGTERM still ends the process`), because a name travels with the cell and a comment gets skimmed.
+**Generalises: when a change removes a mechanism that was doing two jobs, the cells for the job it KEPT are guards, and they must be named for the future failure they watch for rather than the present one they cannot see.**
+Pin: server.test.ts P1f block, commit 2cc513d; the mutation split is recorded in the describe comment.
+
+**REMOVING A DOUBLE-DUTY EXIT: KEEP THE TERMINAL EXIT, REDIRECT INTO A BOUNDED TEARDOWN, AND ADD A REF'D WATCHDOG.**
+`process.exit` in a signal handler was doing two jobs — ending the process AND skipping the teardown — and the join.ts scar is that removing it to gain the second loses the first.
+The shape that made it safe was NOT care and NOT a better teardown: (1) the terminal `process.exit(exitCode)` at `import.meta.main` STAYS, so this redirects the signal path INTO the bounded teardown that already precedes it rather than swapping an exit for a natural return; (2) a REF'D watchdog force-exits with the right code if teardown does not finish, cleared at the end of teardown.
+**Ref'd is the load-bearing detail and it is counter-intuitive: an unref'd timer cannot rescue a hang, because a hang means something else is already holding the loop open.**
+The payoff is that termination is guaranteed by CONSTRUCTION, which is the only version a gate can assert — "the teardown always completes" is exactly the claim that shipped a 23-minute hang.
+Also: I deliberately did NOT route `uncaughtException` through the teardown, because the teardown WRITES THE SNAPSHOT and flushing possibly-corrupt state over a good one is #73 with extra steps.
+Pin: server.ts onFatal/requestShutdown/SHUTDOWN_WATCHDOG_MS, commit 2cc513d.
+
+**TWO FIELDS CAN SHARE A SHAPE AND HAVE OPPOSITE CAUSES — AND REUSING THE KEY NAME IS THE PART THAT SILENTLY BREAKS CONSUMERS.**
+`restoreSkipped` and `valuesIgnored` are both "honour what you can, say what you did not", present-and-null. But `Skipped` means *the flag was valid and the situation could not honour it* (fix your situation) and `Ignored` means *the value was invalid and we chose to drop it* (fix your typo) — same envelope, opposite remedy, and a reader who learned the first would go hunting for what about their board rejected it.
+The half that was mine rather than the naming seat's: `restoreSkipped` is `{requested: string[], reason}` — ONE reason, honest there because its flags share one cause by construction. Mine do not (`--size bogus --expect abc` is two causes in one command), so each entry carries its own reason.
+**And I did not reuse the key `requested` for objects when it holds strings elsewhere — one house key-name with two element types is a consumer that learned the first breaking silently on the second. Diverging VISIBLY beats diverging under a shared name.**
+Pin: cli.ts ignoredValues/valuesIgnored, commit 82dc363.
+
+**I WROTE A TEST COUNT INTO A COMMIT BODY BEFORE THE RUN THAT PRODUCED IT.**
+The body said `1358 pass`; the gate said `1362`. I had done the arithmetic from memory (`1350 + 8`) and forgotten four cells I had written myself twenty minutes earlier in the same file.
+**The failure and file counts in that same line were CORRECT, which is what makes it dangerous — a wholly-invented line looks invented; this one looks transcribed.**
+Commit bodies are the one artifact that cannot be edited afterwards, so a number in one must be COPIED FROM THE RUN, never composed alongside it.
+Practical rule: write the gate line LAST, by pasting, or leave a placeholder that is obviously unfilled — the composition order is the defect, not the arithmetic.
+
 ## Candidates
 
 **glamour's `open` prints a URL for a daemon that is already gone** — `server.ts` run directly is healthy (alive at t+4s, /state 200), but via `cli.ts open` there are ZERO server processes at t+300ms after a successful handshake, so the fault is the CLI's spawn path, not the daemon. Unproven hypothesis: `cli.ts:326-332` spawns `detached:true` + `unref()` but `stdio:["ignore","pipe","inherit"]`, and the CLI reading the handshake then exiting takes the pipe (and inherited stderr) with it. thoth's canon read rules out "by design" — SKILL.md documents a 60s idle retirement and death is under 6s. Mine to fix; not carded as of session end.
@@ -568,6 +657,29 @@ The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts 
 So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
 
 ## Epitaphs — the lineage
+
+**2026-08-06, close of sprint 02 (superseded 2026-08-08, close of sprint 03):**
+
+> Every total you write — a count, an "all", an "every", a bare "them" — is a claim about a POPULATION, so name the population and how you enumerated it in the same breath; you will not catch this by re-reading your own sentence, because each of these numbers is individually TRUE.
+
+**Still true, and it fired again tonight** — `three of three panes`, and the `45/35` denominator in my own scar drifting to 37.
+**It moved because the successor is UPSTREAM of it.** A total you recount is wrong for a reason the totalling rule cannot reach: you were not enumerating at all, you were remembering.
+**Read both. Naming the population is what you do once you have re-opened the artifact; re-opening it is the part you skip.**
+
+_Its scar, kept with it:_
+
+_**The scar is that it happened FIVE times in one session, in five costumes, and I caught exactly one of them.**_
+
+- _`45 process.exit( sites` — 45 grep HITS, 35 code sites; ten were the previous sprint's own remediation comments. **Every fix we ship increments the count of sites that look unfixed.** (I caught this one, by committing an eleventh.) **⚠ Drift-checked 2026-08-08 and the number MOVED AGAIN: thoth re-measured the population as 37, UP from 35, because sprint 02's fix is invisible to the grep and turned one hit into two in two spells. The denominator inside my scar about denominators has itself drifted twice. Treat every count in this doc as of its date, never as current.**_
+- _`38 return sites` in imago — over a line range I GUESSED. The function had 4; the other 34 were in a different function. 28 tests red._
+- _`no evidence on either axis` for a flag — I had two axes and treated two as ALL. It had four help-text references. (thoth caught it.)_
+- _`1-in-2 against her 0-of-4` — three figures, three populations, different suite sizes. (cassandra caught it.)_
+- _`I'll clear THEM by exact PID` — "them" presumed a clean set; of 18 daemons, three were hard NOs including the live team board. (I caught this one only by enumerating before acting.)_
+
+_**Not one of these was carelessness, and that is the whole point** — each number was a real measurement of something, just not of the thing the sentence built on it claimed. **The instrument that worked, every single time, was another person asking "of what?"** Re-reading my own sentence never did it, because the sentence was true._
+
+_**So the disposition, and it is the one thing I would say if I could say nothing else:** the totalizing word is the tell. When you write **all · every · none · both · them · N of N**, you are asserting completeness over a set — stop there and say what the set is and how you got it. **A total is the one kind of claim whose falsity is invisible from inside the sentence that makes it.**_
+
 
 **2026-08-06, close of the P0 build round (superseded 2026-08-06, close of sprint 02):**
 

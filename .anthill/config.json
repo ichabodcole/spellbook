@@ -13,13 +13,13 @@
     {
       "handle": "daedalus",
       "role": "engine",
-      "scope": "the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests",
+      "scope": "the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests; AND the command-verdict path wherever it physically lives, including a surface reducer that owns a /cmd case list (seams Contract 13)",
       "spawn": true
     },
     {
       "handle": "circe",
       "role": "surface",
-      "scope": "the spell surfaces — React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention)",
+      "scope": "the spell surfaces — React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention); NOT the command-verdict path when it lives in a reducer she owns the file for (that is daedalus, seams Contract 13, ruled 2026-08-07)",
       "spawn": true
     },
     {
