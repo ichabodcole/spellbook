@@ -293,6 +293,42 @@ _And the carve-out, because over-broad self-criticism is its own error: one of t
 **Name the LAYER, not only the SHA.**
 On a shared tree two seats can both cite correctly and still disagree: `git show HEAD:<file>` answers _has it LANDED_, a plain read answers _does it EXIST_, and those are indistinguishable in prose. Say _"at `<sha>`, committed blob"_ or _"working tree on top of `<sha>`"_. **This is my own blob-verification lesson's next turn — the blob is right for one question and wrong for the other, and a mid-land window asks both at once.**
 
+**[II] A SUBSUMPTION CLAIM IS A CLAIM ABOUT MECHANISM. If your evidence is that the statements RHYME, you measured the PROSE and reported it as the mechanism.**
+I ruled that three rules were one rule at three grains because *"carry the frame, not just the value"* is true of all three. It is true of all three **as English** and false of them **as mechanism**.
+⛔ **This is the one shape my existing guard cannot see, and that is the whole entry: there was no missing measurement to flag.** I did not skip a check — **I ran the wrong instrument and it returned a real result.** `UNVERIFIED` is a map of known unknowns and nothing here felt unknown.
+**Being the seat whose subject matter is WORDS is exactly what makes prose-shape feel like evidence.** No other seat is exposed to this the way this one is.
+⭐ **The remedy is one line and it is cheaper than the argument it replaces: BEFORE CLAIMING A SUBSUMES B, CONSTRUCT THE CASE WHERE A HOLDS AND B FAILS.** A subsumption dies to a single counterexample, so *attempting* the counterexample IS the entire test. circe's was one sentence long and I never tried to build it.
+**Within ninety minutes it caught its own author and then the lead** — prospero applied it to his own drafted resolution and killed it before sending.
+⚠ **Deferred to `principles.md` at finalize, deliberately, and the deferral is part of the lesson:** the pressure to generalise peaks right after being burned, which was exactly then. **It cost nothing to keep using it unwritten** — a method that works unwritten does not need canon, it needs a cold argument.
+
+**[I] EXPRESSION and DETECTION are orthogonal axes of a field, and a defect on one is NOT a discount on an argument resting on the other.**
+`valuesIgnored`: **expression** = can the shape SAY the state (per-entry reasons — sound, and the divergence case). **Detection** = can the field NOTICE the state (post-`--` tokens never enter its domain — a real, separate bug).
+**The pull when the second landed was to soften the first to look even-handed.** That would have shipped a weakened version of an argument to the human who had explicitly asked us to hunt for it.
+⭐ **Name the axis; concede the axis that is actually hit.** Even-handedness that concedes a correct claim is not fairness, it is a false balance with a measurement attached.
+
+**[I] A COUNT CAN BE RIGHT WHILE ITS POPULATION STATEMENT IS WRONG — and the reader-facing failure INVERTS.**
+`Open (10)` listing 11 entries reads as broken arithmetic. The arithmetic was exact; `#11` was a real issue sitting outside the declared `#64`–`#88`.
+⛔ **My first reading by eye was "the correction miscounts again" — FALSE. Publishing it would have been a third-generation miscount inside the section about miscounting.**
+**Caught by a range predicate in my counting script I had not asked for and would not have thought to check.** Not care.
+**Fix by NAMING the exception, never by changing the number** — an unnamed exception is what made the original denominator unreconstructible, so tidying the number reproduces the disease at a smaller dose.
+
+**[III] A HEADING LEVEL CAN BE LOAD-BEARING ON A COUNTABLE INVARIANT, and prose cannot tell you which one.**
+Ruled: *one section, three clauses* — explicitly to keep the rule count honest. I wrote the clauses as `###`, and **this file's convention is that `###` IS a rule**, so I had silently added three top-level rules: the exact thing the ruling forbade.
+**The ruling and the markdown were saying different things and both looked right.** Caught by running the ledger's rules-vs-rows invariant **against my own edit** — 19/17 before, 17/17 after.
+⭐ **Generalises past markdown: when a ruling is stated in prose and enforced by a count, the encoding is where it silently inverts.** Run the invariant on your own change before you land it, not on the tree afterwards.
+
+**[Remainder] WHEN A RULING IS RESTATED, DIFF THE RESTATEMENT AGAINST THE RULING. The drift is in the SUMMARIES, not the decisions.**
+Three lead rulings were corrected by seats in one session and **all three had the same shape: the ruling was RIGHT and its restatement one message later was LOOSER.** `parity-acts` was ruled NOT a rule and reappeared as row four of "four sibling rules."
+⛔ **My own part is the lesson, not the catch:** I had written it correctly in my own table and **never reconciled the two messages.** circe found the contradiction; I merely failed to propagate it.
+**Writing the right thing is not the same act as checking that two sources agree, and only the second is a check.** This is squarely this seat's scope and it is now a standing check.
+
+**[Remainder] THIS SEAT'S ENTIRE SUBJECT MATTER IS OUTSIDE THE GATE.**
+`bun run check` is biome-only, and `biome.json`'s `files.includes` is an **allow-list of ts/tsx/json/jsonc** — markdown is excluded **by construction**, so no path and no invocation reaches it (measured: pointing biome at a `.md` returns `Checked 0 files … paths were provided but ignored`). `bun test` executes none either.
+**So every file this seat owns — house-style, the ledger, the registry, scenarios, the manifesto mirror, every plan — is unguarded by the gate, and a green on a docs commit is a VACUOUS green byte-identical to a real one.**
+The only tool in the repo that reads markdown is `prettier`, and **it is not in the gate**. For a doc change the informative check and the gated check are different tools, and only the uninformative one is named in the land string.
+⭐ **Consequence I paid for: a whole-repo gate over a file class it cannot read CONVERTS A PEER'S DELIBERATE RED INTO A BLOCK on work that cannot possibly be related.** I ran the gate for a two-file markdown commit and got 3 failures, all another seat's `RED PRE-FIX` TDD tests. **Under tests-first a red tree is the normal mid-lane state, so this is structural, not unlucky.**
+_Now canon: the markdown gap is criterion 2 clause (ii) — point at it, do not restate it._
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
@@ -317,20 +353,29 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Where they get written:** `restoreSkipped` in P0b step 3; `snapshotBackedUp` and `hydrated` in P1 steps 3–4 — **different phases, plausibly different sessions, so plausibly not the instance that ratified this.**
 **Discharge it by:** grepping each name at the moment its phase lands, and confirming the envelope carries `| null` present-and-null rather than absent (the absent-vs-null distinction is the half a field name cannot convey).
 **Retire this entry** once all three exist in code and are documented — at that point a grep does the work and the obligation is over.
-**Status 2026-08-08, END of sprint 03 (final, at `f238471`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` DISCHARGED · `hydrated` still ZERO — NOT discharged, carried into sprint 04.**
-`snapshotBackedUp` landed with the shrinkage guard (`bbeaad5`): **3 code sites, exact camelCase, zero variants**, swept case-insensitively.
+**Status 2026-08-08, sprint 04 (at `ba4b9dd`): UNCHANGED — `hydrated` still ZERO, still NOT discharged. P1 did not land in sprint 04 either.**
+Sprint 04 was a ratify-and-canon sprint for this seat; there was no opportunity to diverge and none to discharge.
+**Zero hits means zero opportunities to diverge, not a pass** — that sentence is now three sprints old and still the whole point.
+⭐ **The obligation's SHAPE was vindicated again in sprint 04 and it is worth the next holder knowing why it is not busywork:** the `#82` work turned on `valuesIgnored`, and the thing that mattered was **not** the name — it was that the field's *domain* was silent, so its `null` could not be read.
+**The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.** Hold the property, not the spelling.
+**prospero holds the P1 ping as a precondition of the land (#459 §6) and re-affirmed it in sprint 04** — expect to be called; do not watch for it.
+
+### Discharge record — the durable facts. There is exactly ONE status, and it is above.
+
+`restoreSkipped` — DISCHARGED sprint 02 with P0b (`8f4d92d`): **20 sites across 3 files, zero variants**, swept case-insensitively for `restoreskipped` / `restore_skipped` / `restore-skipped` / `skippedRestore`.
+**The half a field name cannot convey was also right:** the envelope carries `restoreSkipped: null` present-and-null on the success paths, and a test asserts `"restoreSkipped" in env` rather than a value — the absent-vs-null distinction, built without being asked.
+
+`snapshotBackedUp` — DISCHARGED sprint 03 with the shrinkage guard (`bbeaad5`): **3 code sites, exact camelCase, zero variants**, swept case-insensitively.
 ⛔ **And the sweep found what the NAME passing would have hidden: the ruled SHAPE had no home.** D1.2 specified `snapshotBackedUp: {...} | null` in an envelope, *"null when nothing happened, never absent"*, with stderr explicitly ruled not to count. What shipped was a log line, an event and stderr — **and an event is absent-when-nothing-happened BY CONSTRUCTION, the exact state the ruling forbade.** Not the builder's error: the ruling assumed a COMMAND-RESPONSE trigger and the trigger that shipped is a BACKGROUND FLUSH, which has no envelope. **prospero ruled option (a): give the property a home on `/state`.**
 ⭐ **That is what this obligation is FOR. The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.**
+
 **A fourth name was added and discharged the same session: `valuesIgnored` (`82dc363`, 14 sites, zero variants)** — and daedalus built the present-and-null assertion (`expect("valuesIgnored" in out)`) without being asked.
-**Status 2026-08-08 sprint 03 mid (at `a5c322a`): UNCHANGED — `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO.**
-P1 did not land in sprint 03 (the ratify round consumed it), so there was no opportunity to diverge and no opportunity to discharge.
-**prospero ruled the ping a PRECONDITION of the P1 land, not a courtesy (#459 §6)** — so the next holder of this seat should expect to be called, rather than having to watch for it.
-**Status 2026-08-06 sprint 02 (checked at `bbc61c2`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO — NOT discharged.**
-`restoreSkipped` landed with P0b (`8f4d92d`): **20 sites across 3 files, zero variants**, swept case-insensitively for `restoreskipped` / `restore_skipped` / `restore-skipped` / `skippedRestore`.
-**The half a field name cannot convey was also right:** the envelope carries `restoreSkipped: null` present-and-null on the success paths, and a test asserts `"restoreSkipped" in env` rather than a value — the absent-vs-null distinction, built without being asked.
-`snapshotBackedUp` and `hydrated` land in P1 — a different sprint, so plausibly not this instance. **Zero hits means zero opportunities to diverge, not a pass.**
-**Grep case-INSENSITIVELY** — a case-sensitive grep gave this seat a false negative on text it had personally verified. `Hydrate-by-default` is prose, not a variant; chased and killed, recorded so the next runner does not re-chase it.
+
+**Method, carried forward:** **grep case-INSENSITIVELY** — a case-sensitive grep gave this seat a false negative on text it had personally verified. `Hydrate-by-default` is prose, not a variant; chased and killed, recorded so the next runner does not re-chase it.
 **And re-check the DENOMINATOR of your own re-check:** a `.ts`-only sweep read 19 where the previous `.ts`+`.md` sweep read 20, and for ten seconds that looked like a vanished hit in the one field I am on the hook to hold steady. Nothing had moved; my scope had.
+
+_PRUNED 2026-08-08 (sprint 04): three intermediate **"status: UNCHANGED"** snapshots — sprint 02, sprint 03 mid, sprint 03 end — collapsed into the single current status above plus these discharge records._
+_**Four status blocks for one obligation is the accretion this seat spent sprint 04 objecting to**, and the snapshots carried nothing the current status and the discharge facts do not. Keep ONE status; append to the discharge record; never stack another snapshot._
 
 ## Candidates
 
@@ -369,4 +414,16 @@ Decide the policy before widening the rule; a gotcha that names a symptom withou
 **The consequence I have now paid for: "undocumented" is not ONE state.** *Documented nowhere* is a dark flag; *documented in the tool only* is reachable by anyone who runs `--help` but invisible to an agent reading `SKILL.md` to decide **whether to reach for it at all**.
 **My ward reports them identically, so my "2 real findings" overstated** — they are two instances of the milder class. **A ward whose findings all read at one severity has the same defect as a count without its denominator.**
 The tie-break I used when writing the fixes, which is the durable part: **`SKILL.md` is the agent's DECISION surface — enough to decide _whether_; the tool carries _how_.** And copy the tool's own wording rather than re-authoring it, or you have minted a second source that can drift.
-**The decay-ledger has never been walked by this seat.** Rows marked `(seed)` are still unvalidated. Worth a pass whose output is deletions, not additions.
+**✅ PARTLY PAID 2026-08-08 (`ba4b9dd`) — the decay ledger was walked for the FIRST TIME, scoped to supersession. What it found is worse than "nobody has pruned it."**
+⛔ **The accretion control was broken in BOTH directions at once**, and my own objection had understated it: it had never pruned anything, **and applied literally it would have deleted nearly everything.**
+- **Coverage:** 16 house-style rules, 15 rows — while the ledger's own first line says *"Every rule has a row here."* **A live falsehood in the mechanism's own description.** The unlisted rule was `Enumerate the roster by behaviour` — **the most-reinforced rule of the sprint**, four walks in one day, **none recordable because there was no row to bump.**
+- ⭐ **A rule with no row is a THIRD state the model does not have** — not active, not stale, **unlisted**: it can neither decay nor be reinforced, and is **indistinguishable from a rule nobody wrote.**
+- **Criterion:** *"2 release cycles"* measures **two days** here (`v2.0.0` 2026-08-06 → `v2.1.0` 2026-08-08). Applied literally it **condemns 14 of 15 rows**, perennials and the thesis included. The unit tracks **commit traffic**, not craft evolution. Now marked **UNSET** in the file with its measurement; **I deliberately supplied no replacement number** — a criterion that has never fired has no evidence behind any threshold, and swapping unusable for unmeasured hides the defect.
+- **Supersession found (1):** parity-facts supersedes `readback-parity`. ⭐ **The canon had ALREADY asked the two-directional question** — *"can both parties see it"* — **and then supplied only *"the agent's half."* That parenthetical announced a human half existed and left it unspecified for as long as the rule stood.** The old rule could not fail human-ward, so it would have **certified a violating spell as compliant.**
+- **Honest accounting:** the ledger did **not** shrink by a row (readback-parity was a boundary check inside a row). Net +1 section with one internal replacement. **That is less than the lead hoped for and I said so rather than dressing it up.**
+
+**⛔ STILL UNPAID, and this is the part to carry: FOUR ROWS STILL SAY `(seed)` AND HAVE NEVER BEEN WALKED BY ANYONE.**
+`Surface-fit` · `Keep the client thin` · `Carry the Bun gotchas forward` · `Mature principle` (the last is perennial, so exempt from decay but still unvalidated *here*).
+**A `(seed)` row is a rule this repo inherited and never earned** — the ledger's own text says not to treat one as settled until real use has walked it, and nobody ever has.
+**Two structural fixes are DESIGNED and NOT BUILT, deliberately:** (1) re-express staleness in time — needs a ruling, not an invention; (2) a coverage test (`every ### has a row`) — **needs a stable key first**, because rows key on an **abbreviated paraphrase** of the rule title, which is why the gap survived and why my own matcher produced a false positive on `Mature principle` (the row exists).
+⚠ **Do not build the test before the key.** A paraphrase-keyed check is the `enumerate by NAME` failure wearing a test's clothes — and I broke that rule *inside the check for that rule*.
