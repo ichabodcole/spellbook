@@ -1,5 +1,62 @@
 # Changelog
 
+## [2.0.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.16.0...spellbook-v2.0.0) (2026-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* **mind-mapper:** collapse the capture panels into the message stream (R11 SEAM 3/4/5)
+
+### Features
+
+* **grimoire:** the SKILL.md flag invariant as a ward, and the two gaps it needed closed ([bbc61c2](https://github.com/ichabodcole/spellbook/commit/bbc61c2bf594c3d37da12c450519da86ebb7dc18))
+* **mind-mapper:** agent ergonomics — batch identity, title refs, node edit, bounded delta (R12) ([b9d5dd9](https://github.com/ichabodcole/spellbook/commit/b9d5dd9bc8a8044028f6b4140d4581faea50498a))
+* **mind-mapper:** collapse the capture panels into the message stream (R11 SEAM 3/4/5) ([273d254](https://github.com/ichabodcole/spellbook/commit/273d25470052f436dc6b7de0422f3843a921d678))
+* **mind-mapper:** FILTER — faceted board filter (Status/Tier/Tags), terminal to the chain (R7 P2) ([5a361ef](https://github.com/ichabodcole/spellbook/commit/5a361ef230cd661818ed400741c36f263c8c22db))
+* **mind-mapper:** jobs queue discoverability + Select label trim (R10 SEAM 2/3) ([e787255](https://github.com/ichabodcole/spellbook/commit/e787255fbcfa399e84c2bcec18d5bbf465ab6062))
+* **mind-mapper:** orphan visibility — mark a canon node nothing connects to (R12 SEAM 6) ([422cbfc](https://github.com/ichabodcole/spellbook/commit/422cbfc910f96d2ac18e1da1085b8416b8db2c3e))
+* **mind-mapper:** Phase 0 spike — graph board, context rail, focus lens, search, shadcn layer (+ research docs) ([4a6d008](https://github.com/ichabodcole/spellbook/commit/4a6d008553161f72ab877383b7bbaf7bad62830c))
+* **mind-mapper:** PORT — open --port forwards a stable bind through ensureDaemon ([cbcbe16](https://github.com/ichabodcole/spellbook/commit/cbcbe16db4ddb3a4398fd58afbcc1c9088a7e116))
+* **mind-mapper:** R7 P1 surface — ratify tier-picker fallback, directional select, doc backlinks, markdown doc-view ([e233858](https://github.com/ichabodcole/spellbook/commit/e2338581671a1d51141c03f6463775e589d6669e))
+* **mind-mapper:** Round 3 — exploration zones + promotion, project lifecycle, and drive-2 surface features ([a0c6f2a](https://github.com/ichabodcole/spellbook/commit/a0c6f2ac8667ee31a48aef55f042f7082e7325d9))
+* **mind-mapper:** Round 4 — action slots + ratify-anywhere, automated activity, doc-kind honesty, build stamp ([29e27df](https://github.com/ichabodcole/spellbook/commit/29e27dfc995f797037e4f5706637f77a5687c5b8))
+* **mind-mapper:** Round 5 — subgraphs (node-anchored submaps) + drive-4 cluster ([4e4571f](https://github.com/ichabodcole/spellbook/commit/4e4571fbf1c632cf8f252247ef23ad203e19e36e))
+* **mind-mapper:** Round 6 — ratify-batch, node/proposal deletion, edge-follows-ratify, batch-render fix, processing/tray/submap-create ([b5c99c8](https://github.com/ichabodcole/spellbook/commit/b5c99c83534018c9b2262583232c6d6f887d7f1d))
+* **mind-mapper:** Round 8 surface polish — shadcn overlays + unified action model ([9e1120d](https://github.com/ichabodcole/spellbook/commit/9e1120d11c79fa1dbac96ed558373214a79f97ad))
+* **mind-mapper:** Round 9 engine — the async job queue (jobs table, lifecycle, lease) ([a7b1ad9](https://github.com/ichabodcole/spellbook/commit/a7b1ad94133b69ab487bc53a4fcde40992839046))
+* **mind-mapper:** Round 9 surface — off-canvas jobs sidebar + activity-derived liveness ([600fcd9](https://github.com/ichabodcole/spellbook/commit/600fcd90546bb2008de4aa80eaecd2cc97f75eb3))
+* **mind-mapper:** SUBMAPPEND — ratify a pending group into a submap (R7 P2) ([0c01de5](https://github.com/ichabodcole/spellbook/commit/0c01de55ce51b95ad6ad74c097aa7116fefc7753))
+* **mind-mapper:** TAGS engine — freeform per-target tags, the node_actions twin ([05bce6e](https://github.com/ichabodcole/spellbook/commit/05bce6e68224435c10d885944eab82138ae1dfd1))
+* **mind-mapper:** TAGS surface — tag chips, add/edit affordance, reuse autocomplete (R7 P2) ([01f6b90](https://github.com/ichabodcole/spellbook/commit/01f6b90bb1cfd2f7b9ca242617dcee1610b67f3a))
+* **mind-mapper:** TAGS wire — PUT/DELETE /tags/:targetId + tags on propose + cli verb ([ff1e381](https://github.com/ichabodcole/spellbook/commit/ff1e38185673105bcdd67753307f0082957d7758))
+* **mind-mapper:** the `--inbound` human-intent stream (R10 SEAM 1) ([50468f0](https://github.com/ichabodcole/spellbook/commit/50468f04321014be844ac3dae5a84e3920154856))
+* **mind-mapper:** the message channel wire + activity-tied-to-a-message (R11 SEAM 1/2) ([524205b](https://github.com/ichabodcole/spellbook/commit/524205bca75aa46c6154e69a30f39371d884856a))
+* **mind-mapper:** V1 — persistent knowledge-map spell with live casting-agent loop (+ plan, research, drive findings) ([626fe17](https://github.com/ichabodcole/spellbook/commit/626fe177925198333fd44a473f4321aa68a4b2d4))
+* **mind-mapper:** V1.x Track A — presence/activity ladder, doc lifecycle (delete/marks/analyze), human authoring w/ ratify-time doc attach, message evidence, hardened tail, surface hardening (+ drive [#2](https://github.com/ichabodcole/spellbook/issues/2) findings) ([db321c2](https://github.com/ichabodcole/spellbook/commit/db321c24370d5608562f6b740fe87cf187fc2519))
+
+
+### Bug Fixes
+
+* **bounty:** delete the bespoke flag parser for node:util strict (P0c 1/6) ([82adf9a](https://github.com/ichabodcole/spellbook/commit/82adf9a8161659b453f5cfc592c5398a9da0f0fb))
+* **bounty:** make the test suite hermetic — the gate was destroying live boards ([4b55da0](https://github.com/ichabodcole/spellbook/commit/4b55da0a3ce0fdaae0929e76e1cd887735fecb0f))
+* **bounty:** open refuses rather than discarding flags on the attach path ([8f4d92d](https://github.com/ichabodcole/spellbook/commit/8f4d92da21a178a7461c96d724b37349f30bb813))
+* **bounty:** P0 — the drained exit, and the gate that a Bun.spawn pipe could not see ([c29aa4e](https://github.com/ichabodcole/spellbook/commit/c29aa4e5ac5b3d98babe5f354a02fcb9c8ccdf1a))
+* **bounty:** P0e half 2 — the discovery pointer escapes BOUNTY_HOME, so the harness owns its own TMPDIR ([d650c97](https://github.com/ichabodcole/spellbook/commit/d650c975d7414a984b4c827b380682c347dab9bb))
+* **bounty:** tail drains its terminal frame before exiting (P0f, 1 of 5) ([2334ed2](https://github.com/ichabodcole/spellbook/commit/2334ed2d7721c9eeeb2072bed5deadd55da3c15e))
+* **glamour:** parser altitude + Cole's --restore/--unarchive split (P0c 2/6) ([a1e97a2](https://github.com/ichabodcole/spellbook/commit/a1e97a2c3e7e253a7ca1f53eb1ce474f7a32d694))
+* **glamour:** release the daemon's stdout pipe in open, or the CLI never exits ([62a5972](https://github.com/ichabodcole/spellbook/commit/62a59722208886e72f84d235aa5ac9e5fa3a6a8c))
+* **grapevine:** parser altitude — strict registry, 26 flags (P0c 3/6) ([2d8d578](https://github.com/ichabodcole/spellbook/commit/2d8d578793c12bb0c26f314de0683392a95215e2))
+* **mind-mapper:** propose-node/edge --stdin forwards top-level tags (cold-gate bug) ([b42488d](https://github.com/ichabodcole/spellbook/commit/b42488d4147bd790795856c47cdc2f971cfb7737))
+* **mind-mapper:** R11 cold-gate paper-cuts + zone-provenance clause ([e61c013](https://github.com/ichabodcole/spellbook/commit/e61c013df86375257e0c9fe23c18239d05556e3c))
+* **mind-mapper:** R12 cold-gate findings — the stranded-node advisory + funnel gaps ([4eeb3be](https://github.com/ichabodcole/spellbook/commit/4eeb3beef78fe74d9424ff08f0074619d3450b2f))
+* **mind-mapper:** retain React Flow's measurement across node rebuilds — nodes and edges silently vanished ([ce44228](https://github.com/ichabodcole/spellbook/commit/ce44228ea19462a1aea0a3ba48c961b24f51dd66))
+* **mind-mapper:** SUBMAPPEND drill-in waits for the minted parent node (R7 P2) ([f3e2c8d](https://github.com/ichabodcole/spellbook/commit/f3e2c8d9e70cadec68e24c2921224cc8d9e13cf1))
+* **spells:** P0 — the drained exit at the remaining eight CLI sites ([ec33378](https://github.com/ichabodcole/spellbook/commit/ec33378a8660d61990ca643915b560539f017323))
+* **spells:** parser altitude at the last three entry points (P0c 6/6) ([e7504cf](https://github.com/ichabodcole/spellbook/commit/e7504cf4ce15a41782b539848748338b3103ae00))
+* **spells:** tail drains its terminal frame before exiting (P0f, 4 of 5) ([714af29](https://github.com/ichabodcole/spellbook/commit/714af29afe6729a71d819b417888a5cd99e52c46))
+* **spells:** writes report whether they applied, instead of always ok ([14bec41](https://github.com/ichabodcole/spellbook/commit/14bec4121304b81ddb88f34d58775c0631a07ccd))
+* the independent review's findings, and the deeper one they exposed ([180a5e2](https://github.com/ichabodcole/spellbook/commit/180a5e274aed549b756415b713f7e0e627d23dfb))
+
 ## [1.16.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v1.15.1...spellbook-v1.16.0) (2026-07-10)
 
 
