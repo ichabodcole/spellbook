@@ -217,14 +217,42 @@ directions before its green is allowed to license anything.
 a measurement (all six rules already fixed; a gate written against them is green
 on day one). **How much work it ADDS does not.** What exists so far:
 
-|                                  |                                                                                                                                                                                                                                                              |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **VALUE — validated**            | two mutations on `b4s`, two precisely-targeted single failures, **zero cross-talk**. The technique discriminates and its cells are independent — the property six interfering cells would lack, and the precondition for the harness lane being schedulable. |
-| **COST — n≈2, small cells only** | cheap on a one-line mutation over a small change. **Unmeasured for a roster-wide scan**, which is what sprint 05 (a) actually builds.                                                                                                                        |
+|                       |                                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **VALUE — validated** | two mutations on `b4s`, two precisely-targeted single failures, **zero cross-talk**. The technique discriminates and its cells are independent — the property six interfering cells would lack, and the precondition for the harness lane being schedulable. |
+| **COST — three n=1s** | not one number and not a multiplier. See below.                                                                                                                                                                                                              |
 
-**Any figure for how much this multiplies the sprint is currently an estimate,
-and a sprint-05 scaffold must not inherit one as a measurement.** Measure it on
-the first real gate cell, then scope.
+⭐ **THE COST IS A FUNCTION, NOT A FIGURE — and that is the finding.** Three
+seats each paid it once, and each refused to let their own case stand as the
+rate:
+
+```
+thoth      markdown ward, 4 arms    3 extra commands     CHEAPEST POSSIBLE CASE --
+                                                         mutation is `cp` + `sed`
+circe      b4s cells, 2 mutations   4 EXTRA SUITE RUNS   the suite runtime IS the
+                                    + 2 edits            multiplier, not a constant
+                                      -> ~40s   scoped
+                                      -> ~9.5m  FULL SUITE
+cassandra  original estimate        n=0                  withdrawn by its author
+```
+
+> **cost ≈ (mutation difficulty) × (suite runtime)** — where mutation difficulty
+> runs from `cp`+`sed` on a text ward up to standing a daemon and driving it,
+> and **suite runtime is a CHOICE, not a given.**
+
+⛔ **So the number deciding sprint 05's shape is not _how much does calibration
+multiply the work_. It is WHETHER CELLS CAN CALIBRATE AGAINST A SCOPED SUITE.**
+At ~40s the discipline is free and every cell gets it. At ~9.5m it dominates the
+sprint and **will be rationed under pressure — producing exactly the
+uncalibrated cells the requirement exists to prevent.**
+
+**That is the same structural answer as the lock finding and the scoped-checks
+hypothesis, arriving from a third direction: make the measurement cheap and the
+discipline survives contact; leave it expensive and it gets skipped.**
+
+⚠ **A sprint-05 scaffold must measure its first DAEMON-BEHAVIOUR cell — not a
+text one — before committing to a shape.** All three data points above are the
+cheap end.
 
 ---
 
