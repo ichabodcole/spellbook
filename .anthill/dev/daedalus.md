@@ -542,6 +542,34 @@ Corollary that saved the result: a CONTROL first (`add --size M` → stored `"M"
 Generalises past predictions to any two-mechanism question: **write down what each mechanism predicts for each candidate cell, and only run the cells where the predictions differ.**
 Pin: comms #485; `.anthill/scratch/daedalus/p1d-cells.ts` (scratch — numbers are in the message).
 
+**A CELL THAT PASSES IN BOTH WORLDS IS A GUARD, AND ITS NAME — NOT ITS COMMENT — HAS TO SAY SO.**
+The funnel's gate came out 3 pass / 2 fail pre-fix. The two failures were the evidence; the three passes were termination cells, and they pass pre-fix because the OLD code terminated perfectly well — what it skipped was the teardown.
+I had written them as `"SIGTERM: the process exits 143"`, which reads exactly like a result, and I only learned they could not discriminate by running the mutation.
+This is my sprint-02 label scar arriving a third time, with a new consequence: the danger is no longer that I mis-report them, it is that **a future auditor reads a cell that "always passed" as dead weight and deletes it.**
+So the remedy is the NAME (`GUARD — SIGTERM still ends the process`), because a name travels with the cell and a comment gets skimmed.
+**Generalises: when a change removes a mechanism that was doing two jobs, the cells for the job it KEPT are guards, and they must be named for the future failure they watch for rather than the present one they cannot see.**
+Pin: server.test.ts P1f block, commit 2cc513d; the mutation split is recorded in the describe comment.
+
+**REMOVING A DOUBLE-DUTY EXIT: KEEP THE TERMINAL EXIT, REDIRECT INTO A BOUNDED TEARDOWN, AND ADD A REF'D WATCHDOG.**
+`process.exit` in a signal handler was doing two jobs — ending the process AND skipping the teardown — and the join.ts scar is that removing it to gain the second loses the first.
+The shape that made it safe was NOT care and NOT a better teardown: (1) the terminal `process.exit(exitCode)` at `import.meta.main` STAYS, so this redirects the signal path INTO the bounded teardown that already precedes it rather than swapping an exit for a natural return; (2) a REF'D watchdog force-exits with the right code if teardown does not finish, cleared at the end of teardown.
+**Ref'd is the load-bearing detail and it is counter-intuitive: an unref'd timer cannot rescue a hang, because a hang means something else is already holding the loop open.**
+The payoff is that termination is guaranteed by CONSTRUCTION, which is the only version a gate can assert — "the teardown always completes" is exactly the claim that shipped a 23-minute hang.
+Also: I deliberately did NOT route `uncaughtException` through the teardown, because the teardown WRITES THE SNAPSHOT and flushing possibly-corrupt state over a good one is #73 with extra steps.
+Pin: server.ts onFatal/requestShutdown/SHUTDOWN_WATCHDOG_MS, commit 2cc513d.
+
+**TWO FIELDS CAN SHARE A SHAPE AND HAVE OPPOSITE CAUSES — AND REUSING THE KEY NAME IS THE PART THAT SILENTLY BREAKS CONSUMERS.**
+`restoreSkipped` and `valuesIgnored` are both "honour what you can, say what you did not", present-and-null. But `Skipped` means *the flag was valid and the situation could not honour it* (fix your situation) and `Ignored` means *the value was invalid and we chose to drop it* (fix your typo) — same envelope, opposite remedy, and a reader who learned the first would go hunting for what about their board rejected it.
+The half that was mine rather than the naming seat's: `restoreSkipped` is `{requested: string[], reason}` — ONE reason, honest there because its flags share one cause by construction. Mine do not (`--size bogus --expect abc` is two causes in one command), so each entry carries its own reason.
+**And I did not reuse the key `requested` for objects when it holds strings elsewhere — one house key-name with two element types is a consumer that learned the first breaking silently on the second. Diverging VISIBLY beats diverging under a shared name.**
+Pin: cli.ts ignoredValues/valuesIgnored, commit 82dc363.
+
+**I WROTE A TEST COUNT INTO A COMMIT BODY BEFORE THE RUN THAT PRODUCED IT.**
+The body said `1358 pass`; the gate said `1362`. I had done the arithmetic from memory (`1350 + 8`) and forgotten four cells I had written myself twenty minutes earlier in the same file.
+**The failure and file counts in that same line were CORRECT, which is what makes it dangerous — a wholly-invented line looks invented; this one looks transcribed.**
+Commit bodies are the one artifact that cannot be edited afterwards, so a number in one must be COPIED FROM THE RUN, never composed alongside it.
+Practical rule: write the gate line LAST, by pasting, or leave a placeholder that is obviously unfilled — the composition order is the defect, not the arithmetic.
+
 ## Candidates
 
 **glamour's `open` prints a URL for a daemon that is already gone** — `server.ts` run directly is healthy (alive at t+4s, /state 200), but via `cli.ts open` there are ZERO server processes at t+300ms after a successful handshake, so the fault is the CLI's spawn path, not the daemon. Unproven hypothesis: `cli.ts:326-332` spawns `detached:true` + `unref()` but `stdio:["ignore","pipe","inherit"]`, and the CLI reading the handshake then exiting takes the pipe (and inherited stderr) with it. thoth's canon read rules out "by design" — SKILL.md documents a 60s idle retirement and death is under 6s. Mine to fix; not carded as of session end.
