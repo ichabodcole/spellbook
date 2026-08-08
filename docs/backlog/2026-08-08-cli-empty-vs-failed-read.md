@@ -43,16 +43,29 @@ Two lesser consequences of the same shape: the sentence lands on **stdout** in a
 
 ## The sites
 
-| spell    | verb       | file:line                            |
-| -------- | ---------- | ------------------------------------ |
-| `bounty` | `sessions` | `scripts/cli.ts:809` (catch), `:832` |
-| `bounty` | `list`     | `scripts/cli.ts:897`                 |
-| `imago`  | `sessions` | `scripts/cli.ts:377` (catch), `:402` |
-| `magpie` | `sessions` | `scripts/cli.ts:353` (catch), `:376` |
+**Anchored by FUNCTION and STRING, which do not drift. Line numbers are a
+convenience and are stated as "as of" only.**
 
-Seven sites, three files. Line numbers are as of `d95e61d`; re-derive them at
-the consuming sha rather than trusting this table — sprint 03 landed edits in
-all three files after this was written.
+| spell    | verb       | function      | the two sites                               |
+| -------- | ---------- | ------------- | ------------------------------------------- |
+| `bounty` | `sessions` | `cmdSessions` | the `catch` branch, and `if (!rows.length)` |
+| `bounty` | `list`     | `cmdList`     | `if (!live.length)`                         |
+| `imago`  | `sessions` | `cmdSessions` | the `catch` branch, and `if (!rows.length)` |
+| `magpie` | `sessions` | `cmdSessions` | the `catch` branch, and `if (!rows.length)` |
+
+**Seven sites, three files.** Find them with the string, not the line:
+
+```
+grep -n 'no saved sessions\|no running boards' plugins/spellbook/skills/{bounty,imago,magpie}/scripts/cli.ts
+```
+
+⚠ **This table was line-numbered when first written, and the numbers were wrong
+within the hour** — `bounty/scripts/cli.ts` moved **+58 lines** when P1d and the
+funnel landed (`809/832/897` → `867/890/955`), while `imago` and `magpie` did
+not move at all. **A caveat saying "re-derive these" did not stop the table
+being wrong; anchoring to a function and a string removes the failure mode
+instead of warning about it.** _(As of `f2d92c8`: bounty 867/890/955 · imago
+377/402 · magpie 353/376.)_
 
 ## The ratified pattern — do not invent a sixth
 
@@ -60,12 +73,15 @@ Two spells already carry the correct shape, at **five sites**. **Copy one of
 these; do not design a new one.**
 
 ```ts
-astrolabe/scripts/cli.ts:332   printJson({ ok: true, running: false, projects: [] })
-grapevine/scripts/cli.ts:390   printJson({ ok: true, daemon: false, channels: [] })
-grapevine/scripts/cli.ts:572   printJson({ ok: true, daemon: false, channel: name, subscribers: [] })
-grapevine/scripts/cli.ts:589   printJson({ ok: true, daemon: false, channels: [] })
-grapevine/scripts/cli.ts:925   printJson({ ok: true, messages: [] })
+astrolabe  cmdList     printJson({ ok: true, running: false, projects: [] })
+grapevine  cmdList     printJson({ ok: true, daemon: false, channels: [] })
+grapevine  cmdWho      printJson({ ok: true, daemon: false, channel: name, subscribers: [] })
+grapevine  cmdWhoAll   printJson({ ok: true, daemon: false, channels: [] })
+grapevine  (messages)  printJson({ ok: true, messages: [] })
 ```
+
+_(Function names, not lines — the grapevine messages site alone moved `925` →
+`1336` between this file being written and being re-read at finalize.)_
 
 Structured output carrying **both** an explicit empty collection **and** a state
 flag that distinguishes _no daemon_ from _daemon up, zero items_.

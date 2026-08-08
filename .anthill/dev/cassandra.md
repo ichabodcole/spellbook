@@ -7,6 +7,12 @@
 
 > Your errors leave this seat aimed at other people's work — a false finding lands on a peer's ruling or a shipped fix, and it will feel like diligence — so publish nothing until it has contradicted something already on the record, because that is the only thing that has ever caught you.
 
+**KEPT at finalize 2026-08-08, deliberately, and the keeping is the verdict.**
+It caught roughly eight errors in sprint 03, including the worst thing this seat did all session: a gate red on a peer's file, a hang diagnosis already drafted, **and the code fixed by its author between my gate and my read.** One grep contradicted it. Nothing else would have.
+**It also survived the specific test the ritual asks for — a fresher candidate was available and it lost.** Sprint 03's sharpest failure was applying a correct verification shape to an instrument that could not fail, and the obvious new epitaph would have been about hollow checks.
+**Two reasons it lost.** First, its remedy is already `principles.md`'s — _an instrument that does not share your frame_ — and **an epitaph that restates a team principle spends this seat's one slot on something it does not own.** Second, the specific lesson is now written out fully in the body (the amended own-tool-call section), which is where a technical lesson belongs.
+⚠ **What the epitaph does NOT cover, so you are not surprised by it: its remedy needs the record to be ABLE to contradict you.** A check that cannot fail contradicts nothing and is consistent with everything, so this sentence stays silent through it. **When nothing contradicts you, that is the moment to ask whether your check could have.**
+
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
 Keep it **honest and lean**: capture durable **judgments**, not file maps or a session log.
@@ -633,6 +639,19 @@ That is `anthill:join`'s *"a warning filed under one tool's name does not fire w
 **The mechanism that worked, and it is a shape rather than a discipline: the check gets its OWN tool call.** Nothing else in the block, no sentence beneath it to rubber-stamp.
 **It changed an answer on first use** — an expected GO became a NO-GO because a peer's suite was live. **A mechanism that changes an answer immediately is worth more than one that confirms three times.**
 
+> ⛔ **AMENDED AT FINALIZE, and the amendment matters more than the rule.** The paragraph above shipped as if it were the whole fix. **It is one rung.**
+> **"Its own tool call" guarantees you READ the output. It does NOT guarantee the output MEANS anything.**
+> **Measured, with a control that fired:** `prettier --check` on any `.anthill/` path prints _"All matched files use Prettier code style!"_ and exits 0 **for a file it never opened** (`.prettierignore` lists `.anthill/`). Identical malformed bytes at `docs/` produce `[warn]`. **I cited "prettier-clean, verified in its own call" four times on a check that could not fail** — applying my own mechanism correctly to a hollow instrument.
+> **"All matched files use Prettier code style!" is TRUE OF ZERO FILES.** The tool honestly reports on the set it matched and never prints the denominator — the same shape as the `files` count, where the number that would have saved me is the one nobody prints.
+> **So the rule is: run the check in its own call, READ the output, AND KNOW WHAT THE CHECK CANNOT SEE. A check you have never seen fail is not a check you have verified.**
+> **The general form, which is why this is amended rather than appended: a half-mechanism presented as complete is worse than no mechanism, because it terminates the search.** A future instance applies the shape, applies it *correctly*, and gets nothing.
+
+### Pin to a FUNCTION and a STRING, never a line number — including in your own artifacts
+
+My own doc says _"never a transient line/file reference"_, and I then wrote a backlog spec whose central table was line numbers. **Wrong within the hour:** `bounty/scripts/cli.ts` moved **+58 lines** when two lanes landed, while `imago` and `magpie` did not move at all.
+⚠ **The spec CARRIED a caveat saying "re-derive these at the consuming sha" — and the table was still wrong.** **A warning about drift does not prevent drift; anchoring to a function name and a searchable string removes the failure mode instead of apologising for it.**
+Found by step 2.5 of the finalize ritual — _re-read every doc you own as its authority, and assume it has drifted_ — which earned itself on its first use in this seat.
+
 ### A PATHS declaration goes stale silently, and a batch is assembled from what you SAID
 
 I declared "one file, ready", wrote a second deliverable while waiting for the machine, and the lead called a batched gate on the stale declaration.
@@ -683,6 +702,25 @@ I was drafting the finding when I checked: **the `clearTimeout` existed; the dec
 **The failure mode of getting this wrong is not a wasted gate. It is a false finding pointed at a peer.**
 
 **The instrument that would have prevented it is already in this doc and I did not use it:** _when auditing a peer's artifact, copy it out and cite a hash_ — **the tree is not a stable object while anyone is working in it.**
+
+### A COUNT used where a SET was needed — one class, three sightings in one session
+
+The failing case for any count guard is a **SUBSTITUTION**: one member out, one in, **total unchanged, membership changed.**
+Seen three ways in sprint 03 — a remediation count that went *up* while a fix landed; a `files` denominator that moved in both directions (an untracked test that EXECUTED, then a newly tracked one); and a ward that fired on four real changes **while the total stayed identical**, where a count-based guard would have been green.
+**Generalise past zero: any aggregate is silent on a same-size change of membership.** **Assert IDENTITY — ids, titles, paths — never a total.**
+
+### The wire is the durability layer; scratch is only staging
+
+Scratch is gitignored and does not survive. **Nothing clears comms.** So a seat that reasons in scratch and publishes only conclusions loses the reasoning on an abrupt end; **a seat that publishes the reasoning loses nothing.**
+⚠ **It pulls against the "write for the preview" rule** — the preview wants terseness, durability wants the reasoning. **Resolution: verdict in the headline, reasoning in the body.**
+**But do not let this argue for skipping synthesis:** the wire is *durable* and *never re-read*. Surviving and being re-read are different properties, and only the doc has the second.
+
+### Restraint is part of the job — "I have a true thing to add" is not sufficient
+
+**Ask whether it CHANGES AN ACTION. If the answer is the same either way, file it.**
+Twice in one session I drafted a message, found the situation had moved, and did **not** send: an instrument note that would have arrived *after* the measurement it was meant to inform, and a refinement of a peer's *correct* answer.
+**An instrument improvement has an expiry — it is worth proposing only while the measurement can still change.** After that it is retrospective commentary, and the honest move is to file it for the next one.
+This matters for this seat specifically: **a verify seat's failure mode is volume as much as error.** Thirty messages of true observations is how a scope call becomes necessary — and I was the one who had to make it, about a thread I had started.
 
 ### `alive` ≠ `reading` ≠ `working` — and a COUNT is not an ATTRIBUTION
 

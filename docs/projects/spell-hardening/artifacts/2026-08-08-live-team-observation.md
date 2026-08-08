@@ -30,14 +30,26 @@ signal deaths    subscribers  NOT RECORDED — the field is absent, 156 of 156
 
 **Three findings, each landing on another lane:**
 
-1. **The signal path records no `subscribers`, at all.** It is 156 of 226 deaths
-   — **69%** — and the only death class that omits the field. P1f's funnel
-   exists to emit a terminal `closed` frame on exactly that path, so **after the
-   funnel lands there is no recorded quantity that changes.** Ruled in by the
-   lead: log `subscribers` as part of the funnel edit. ⚠ **And the plan's "156
-   of 224" is a count of _deaths_, never of _affected clients_.** Nothing in
-   this log can produce the second number; the write-up must not slide from one
-   to the other.
+1. **The signal path recorded no `subscribers`, at all.** It was 156 of 226
+   deaths — **69%** — and the only death class that omitted the field. P1f's
+   funnel exists to emit a terminal `closed` frame on exactly that path, so
+   **after the funnel landed there would have been no recorded quantity that
+   changed.** Ruled in by the lead: log `subscribers` as part of the funnel
+   edit.
+
+   ✅ **CLOSED — the fix landed in this session.** `bounty/scripts/server.ts`,
+   in `requestShutdown`: `logDaemon("signal", { signal, subscribers:
+   sockets.size
+   - sseClients.size
+     })`. **Past tense throughout this item is deliberate: it describes the 30-day window this artifact measured, and that window ends before the fix.** A future reader comparing pre- and post-`2cc513d`
+     signal records will find the field appears partway through — **that is this
+     finding being acted on, not an inconsistency in the log.**
+
+   ⚠ **And the plan's "156 of 224" is a count of _deaths_, never of _affected
+   clients_.** Nothing in this log can produce the second number; the write-up
+   must not slide from one to the other. **That caveat is unaffected by the
+   fix** — the new field counts connections at death, which is still not a count
+   of clients who wanted a frame.
 
 2. **Open question 7 — the `#64` "~20 minute" figure.** Every idle death in 30
    days, by duration: **`5s` ×1, `7200s` ×31. Two distinct values. Zero between
