@@ -400,6 +400,27 @@ the wrong set reports it more convincingly.
   needs none of this. The rule is for enumerations _derived_ by search. And
   assert the denominator alongside the finding ("223 enumerated, 223 produced a
   count"): that is a claim the failure mode cannot fake, where a count alone is.
+- **Boundary check — PUBLISH THE DATUM YOUR FAILURE MODE CANNOT FAKE, _WHERE THE
+  READER WILL REACH IT_.** This is the same move as asserting the denominator,
+  at the grain of a **message**: when you measure **shared state** — the tree,
+  the process table, the gate — put the **rows** on the wire, not your reading
+  of them. A count can be faked by a sweep that never ran; a denominator cannot.
+  A label can be faked by an assumed owner; a printed command line cannot.
+  **Both are the artifact that survives your being wrong about it.** Applies to
+  clearances and intermediate measurements, which is where nobody thinks to
+  apply it.
+  - **The `where` is not decoration and it is why this clause has two halves.**
+    Two failures of one defect were found the same afternoon: an observation
+    held **in a seat's terminal** (emitted to nobody) and an observation
+    published **below the preview fold** (transported to nobody). ⛔ **They
+    compose badly — posting the rows appends them, which puts them below the
+    fold.** So the datum goes in the headline or the first screen. A rule that
+    said only _"publish the observation"_ would ship the other half of the
+    defect it prevents.
+  - **Boundary:** shared state only. A private inference about your own lane is
+    wire noise.
+  - **Repeal when:** the shared resource is queryable by every seat on demand —
+    the rows stop needing publication once anyone can pull them.
 - **Boundary check — NAME THE QUESTION BEFORE THE BEHAVIOUR. "By behaviour, not
   by name" is necessary and NOT sufficient.** There is often **no single set**:
   the denominator is a function of the question, and two behaviour-shaped
