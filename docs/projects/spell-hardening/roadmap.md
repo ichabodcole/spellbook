@@ -49,7 +49,9 @@ sprints.
 **Thesis:** a consumer must be able to distinguish _"nothing is there"_ from _"I
 cannot tell you."_
 
-**Blocked on:** `#82`'s cross-tool spelling — **Cole's ruling, not a lane.**
+**Keystone RULED 2026-08-08** — `#82`'s cross-tool spelling is adopted, both
+shapes. No longer blocking. The operative test for the team: adopt anthill's
+spelling **unless it requires a trade-off other than development work.**
 
 Six instance lanes (`#79`, `#85`, `#86`, `#88`, grapevine `message_count`, and
 an unverified `--full`/`?lean=1` no-op) plus one owed cross-team lane (the `--`

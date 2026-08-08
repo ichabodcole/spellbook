@@ -48,19 +48,44 @@ more expensive every sprint, and **both are still small enough to change.**
 
 ---
 
-## The keystone — `#82`, and it is COLE'S RULING, not a lane
+## The keystone — `#82`, **RULED 2026-08-08. No longer blocking.**
 
-`#82` asks: when a CLI is asked to do something and does not do it, **how do the
-two toolchains say so, and can they say it the same way?**
+`#82` asked how two toolchains spell _asked-for-didn't-happen_ and
+_done-but-not-how-you'd-assume_. **Cole ruled: adopt the shared spelling, both
+shapes, even where it costs us work.**
+[The ruling, in full](https://github.com/ichabodcole/spellbook/issues/82#issuecomment-5227641234).
 
-**Nothing below should be built before that ruling exists.** Every lane is an
-implementation of a vocabulary, and implementing five spells against a
-vocabulary that then changes is the most expensive available ordering.
+| situation                                          | shape                                                                 |
+| -------------------------------------------------- | --------------------------------------------------------------------- |
+| completed, but by a path the caller may not expect | **`outcome: "<noun>"`** — enumerated, never a boolean                 |
+| requested and did **not** happen                   | **`<verb>Skipped: { requested, reason } \| null`** — present-and-null |
 
-⚠ **The scaffold's own claim, offered to be falsified:** that `#82` is a
-prerequisite rather than a parallel lane. **If the ratify round finds the lanes
-are separable from the spelling, this ordering is wrong and the sprint gets
-wider and faster.**
+The second is already ours (`#80`), unchanged. **The new commitment is the
+noun.**
+
+> **⭐ THE OPERATIVE INSTRUCTION FOR THIS SPRINT.** Adopt anthill's spelling
+> **unless adopting it requires a trade-off OTHER THAN development work.** More
+> work on our side is **not** a reason to diverge. A case where their shape is
+> genuinely wrong for something spellbook does **is** — and it goes back to Cole
+> rather than being resolved in-lane. **The ratify round should actively hunt
+> for one.**
+
+**Not a rule of law.** A team with a genuine specific concern may still handle
+it differently; what is refused is reinventing the same solution slightly
+differently for the same problem. **The value named is a reference
+implementation** — so project #3 points at something instead of deriving it a
+fourth time.
+
+⚠ **Where the standard LIVES is deliberately not ruled, and is not a blocker.**
+Neither repo can host the other's canon. The expected eventual shape is a
+cross-project playbook — _"how to design your CLI for this class of problem"_ —
+versioned, centralized, offering good defaults rather than mandates. **Until
+then: adopt in both repos, cross-reference `#82`, and let the duplication be
+visible rather than pretending it is single-sourced.** _(This answers open
+question 3 below with "deferred on purpose", not with an address.)_
+
+**Still open:** the nouns themselves. `"created" | "already-recorded"` is a
+proposal, not a ruling — implementation, and the ratify round can settle it.
 
 ---
 
