@@ -12,12 +12,18 @@
 // PACKAGING mistake, and the fix is the move, not an exemption.
 // Sibling of `land-check.ts`, which is the same genre.
 //
+// ⚠ NO LINE NUMBERS IN THIS FILE, DELIBERATELY. The first cut of this header
+// pinned ~10 sites as `cli.ts:590`, `server.ts:1206-1207` and so on. Within the
+// same session I changed both files and MOST OF THOSE PINS ROTTED — cli.ts:590
+// became 648, server.ts:1206 became 1411. Symbol names survive an edit; line
+// numbers are a claim about a file's shape at one instant. Anchor on names.
+//
 // WHAT THIS IS FOR. A drive that closes, restores or clobbers a board must first
 // prove it is pointed somewhere disposable. The plan's safety section says to
 // "print the resolved paths and confirm each is under scratch" — that is a
 // discipline, and a discipline is skippable because the destructive command
 // works fine without it. So the same pure function lives in the gate
-// (preflight.test.ts) as well as here: forgetting it is red, not silent.
+// (bounty-preflight.test.ts) as well as here: forgetting it is red, not silent.
 //
 // ⛔ THE ENUMERATION IS THE LOAD-BEARING PART, NOT THE CHECKS.
 // The bindings below are derived from every ambient input the SHIPPED code
@@ -28,19 +34,20 @@
 //
 // ⚠ AND THE OBVIOUS ENUMERATION METHOD IS BROKEN. `grep 'process\.env\.'` over
 // the spell returns BOUNTY_AS / BOUNTY_HOME / BOUNTY_SESSION_KEY — a clean,
-// well-formed, INCOMPLETE answer. `resolveSession` (cli.ts:165-193) takes `env`
-// as an injected parameter, so it reads `env.BOUNTY_SESSION` (cli.ts:182) and
+// well-formed, INCOMPLETE answer. `resolveSession` in cli.ts takes `env` as an
+// injected parameter, so it reads `env.BOUNTY_SESSION` and
 // the literal `process.env.BOUNTY_SESSION` spelling exists nowhere. Injecting a
 // dependency for testability MOVES the read out of the pattern that finds it.
 // When re-deriving this list, grep BOTH spellings — and treat an injected
 // default (`= process.env`) as the tell that you must.
 //
-// ⚠ TMPDIR is not read as an env var at all: it arrives via `tmpdir()`
-// (cli.ts:87/877/886, join.ts:84-85, server.ts:1206-1207). It is listed here
+// ⚠ TMPDIR is not read as an env var at all: it arrives via `tmpdir()` — in
+// cli.ts (`sessionFilePath`, `cmdList`), join.ts, and server.ts's discovery
+// writer. It is listed here
 // because it is an ambient BINDING, which is the population that matters — the
 // spelling is an implementation detail of how the code reaches it.
 //
-// ⚠ `.bounty-session` is a FILE found by walking UP from cwd (cli.ts:183-191),
+// ⚠ `.bounty-session` is a FILE found by walking UP from cwd (`resolveSession`),
 // so NO env scrub can cover it. `anthill convene` writes one at the repo root.
 // It is in this list because the question is "what can bind me to a board I did
 // not name", not "what environment variables exist".
@@ -52,7 +59,7 @@ import { dirname, join, resolve, sep } from "node:path";
 /**
  * Every ambient input that can bind a bounty command to a board or a store the
  * caller did not name. Adding one here without adding a cell fails the totality
- * guard in preflight.test.ts, so this list and the checks cannot drift apart.
+ * guard in bounty-preflight.test.ts, so this list and the checks cannot drift apart.
  */
 export const AMBIENT_BINDINGS = [
   "BOUNTY_HOME",
@@ -107,7 +114,7 @@ function underAny(path: string, roots: string[]): boolean {
   });
 }
 
-/** The nearest `.bounty-session` at or above `from`, or null. Mirrors cli.ts:183-191. */
+/** The nearest `.bounty-session` at or above `from`, or null. Mirrors resolveSession's walk-up. */
 function findAmbientPin(from: string, exists: (p: string) => boolean): string | null {
   let dir = resolve(from);
   for (;;) {
@@ -171,7 +178,7 @@ export function isolationReport(input: IsolationInput): IsolationReport {
       env.BOUNTY_HOME,
       join(homedir(), ".bounty"),
       scratchRoots,
-      "scopes the snapshot store and daemon.log (cli.ts:61/590, server.ts:72)",
+      "scopes the snapshot store and daemon.log (SNAPSHOTS_DIR in cli.ts and server.ts, plus cmdOpen's daemon.log fd)",
     ),
   );
   cells.push(
@@ -187,21 +194,21 @@ export function isolationReport(input: IsolationInput): IsolationReport {
     scrubCell(
       "BOUNTY_SESSION_KEY",
       env.BOUNTY_SESSION_KEY,
-      "resolves a board id at precedence 3 (cli.ts:181) and is read again by open (cli.ts:507)",
+      "resolves a board id at precedence 3 in resolveSession, and is read again by cmdOpen",
     ),
   );
   cells.push(
     scrubCell(
       "BOUNTY_SESSION",
       env.BOUNTY_SESSION,
-      "a RAW board id at precedence 4 (cli.ts:182) — read off an injected param, so a `process.env.` grep does not find it",
+      "a RAW board id at precedence 4 in resolveSession — read off an injected param, so a `process.env.` grep does not find it",
     ),
   );
   cells.push(
     scrubCell(
       "BOUNTY_AS",
       env.BOUNTY_AS,
-      "stamps the actor on every write (cli.ts:386) — not a data-loss route, listed because the scrub list must not be a set someone remembered",
+      "stamps the actor on every write (resolveAs in cli.ts) — not a data-loss route, listed because the scrub list must not be a set someone remembered",
     ),
   );
 
@@ -211,7 +218,7 @@ export function isolationReport(input: IsolationInput): IsolationReport {
     binding: ".bounty-session",
     status: pin === null ? "PASS" : "DEGENERATE",
     observed: pin ?? "<none on the walk-up>",
-    why: "binds a board at precedence 5 by walking UP from cwd (cli.ts:183-191); convene writes one at the repo root and NO env scrub can cover a file",
+    why: "binds a board at precedence 5 by walking UP from cwd (resolveSession); convene writes one at the repo root and NO env scrub can cover a file",
   });
 
   // The protected boards, asserted POSITIVELY and BY NAME. A path-shape check
