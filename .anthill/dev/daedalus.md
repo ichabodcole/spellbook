@@ -20,21 +20,22 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> Every total you write — a count, an "all", an "every", a bare "them" — is a claim about a POPULATION, so name the population and how you enumerated it in the same breath; you will not catch this by re-reading your own sentence, because each of these numbers is individually TRUE.
+> Everything you got wrong tonight you RECOUNTED instead of RE-OPENING — a peer's message that was one `--id` away, your own commit envelope, a count you did arithmetic on, a claim you inherited from a seat you trust — and every one of them sat beside a real measurement, which is exactly what made it read as transcribed rather than invented; so treat *"I already know what that says"* as the single most reliable signal that you are about to be wrong, and go open it.
 
-_(Written 2026-08-06 at the close of sprint 02, "success-shaped lies". It supersedes my predecessor's — which fired again this session and is still true; see the lineage at the bottom for why it moved rather than why it lost.)_
+_(Written 2026-08-08 at the close of sprint 03. It supersedes "name the population", which fired again tonight and is still true — see the lineage.)_
 
-_**The scar is that it happened FIVE times in one session, in five costumes, and I caught exactly one of them.**_
+_**The scar is that it happened FIVE times in one session and NOT ONE of them was carelessness — each was adjacent to real work, which is the whole mechanism.**_
 
-- _`45 process.exit( sites` — 45 grep HITS, 35 code sites; ten were the previous sprint's own remediation comments. **Every fix we ship increments the count of sites that look unfixed.** (I caught this one, by committing an eleventh.)_
-- _`38 return sites` in imago — over a line range I GUESSED. The function had 4; the other 34 were in a different function. 28 tests red._
-- _`no evidence on either axis` for a flag — I had two axes and treated two as ALL. It had four help-text references. (thoth caught it.)_
-- _`1-in-2 against her 0-of-4` — three figures, three populations, different suite sizes. (cassandra caught it.)_
-- _`I'll clear THEM by exact PID` — "them" presumed a clean set; of 18 daemons, three were hard NOs including the live team board. (I caught this one only by enumerating before acting.)_
+- _`1358 pass` in a commit body. The gate said `1362`. I composed the line BEFORE the run and did the arithmetic from memory, forgetting four cells I had written myself twenty minutes earlier. **The fail count and file count on that same line were CORRECT** — a wholly-invented line looks invented; that one looked copied._
+- _`⠐⠂⠐ → ⠐⠂⠐` — I pasted the SAME string twice as the evidence for a message whose entire point was that it CHANGED. I had the real samples in my scrollback._
+- _`three of three panes processing` — I could support **two**. The third never advanced between samples._
+- _I characterised what thoth and cassandra had written **from memory**, and told the channel all three of us had diagnosed the lead. Only I had. **Their messages were one `--id` away.**_
+- _I inherited "`.anthill/` is outside the gate arms" from thoth and went to verify it — **and the check I used was VACUOUS**, passing for a file it never opened. The claim was true; my verification could not have failed._
 
-_**Not one of these was carelessness, and that is the whole point** — each number was a real measurement of something, just not of the thing the sentence built on it claimed. **The instrument that worked, every single time, was another person asking "of what?"** Re-reading my own sentence never did it, because the sentence was true._
+_**The antidote worked every single time and it is always the same move: go back to the artifact.** Quote the peer's actual message. Re-read the envelope. Run the control. **Not "be more careful" — careful is what produced all five.**_
 
-_**So the disposition, and it is the one thing I would say if I could say nothing else:** the totalizing word is the tell. When you write **all · every · none · both · them · N of N**, you are asserting completeness over a set — stop there and say what the set is and how you got it. **A total is the one kind of claim whose falsity is invisible from inside the sentence that makes it.**_
+_**Why this supersedes rather than extends the old one:** "name the population" is about a claim's SCOPE. This is about its SOURCE. Tonight every failure that looked like a scope error was really a source error — `three of three` was not a bad enumeration, it was me reporting a table I had stopped looking at. **Fix the source and the scope errors mostly stop; fix the scope and you still recount.**_
+
 
 ## Who I am
 
@@ -54,6 +55,10 @@ Round 9 (P1+P2, `feature/mind-mapper-round9`) added the async JOB QUEUE — the 
 Round 7 (P1, `feature/mind-mapper-round7`) added TAGS (tags.ts — freeform per-target `string[]`, the exact verbatim twin of node_actions/A1: node_tags target-keyed table, PUT/DELETE /tags/:targetId, tags.set full-array event, tags on nodes[]+proposals[]+readProposalById, propose-time tags in buildProposal's insert closure, the same ratify-re-home / reject / edge-accept / del / zone-delete lifecycle) and PORT (cli-only: `open --port` forwards through ensureDaemon into the daemon spawn args — server already bound --port, zero server change) — 3 code chapters + 2 doc chapters (Contract 9 R7 amendment + casting-draft tier-vocab/tags), mind-mapper suite 254 tests, full suite 1113.
 Round 11 (P1, `feature/mind-mapper-round11`) is the MESSAGE-SURFACE refactor's wire half — the channel rides the EXISTING `messages.kind` (zero migration: `MESSAGE_CHANNELS = turn|analyze|canvas`, known-but-open, `channelWarning` advisory instead of a 400), the inbound grounding line gains `messageChannels`, and `agent.activity` gains an additive-optional `messageId` sticky to the OPEN activity ladder (auto-flip stamps it, explicit posts inherit-or-override, idle carries-then-clears) plus a `/state.activity` spread beside presence; NO `done` state (the agent's reply IS completion) — 15 new tests, mind-mapper suite 287, repo 1245.
 Round 12 (P1, `feature/mind-mapper-round12`) is the AGENT-ERGONOMICS round (drive-10 F5/F2/F4) — batch identity (`proposals.batch_id` additive-nullable, minted by `/proposals/batch`, caller-suppliable to EXTEND an act, `GET /state?batch=` narrow with an unknown-batch 404), edge endpoints by `title:<exact title>` resolved AT INTAKE in the shared `buildProposal` (exact/case-sensitive/ratified-nodes-only, ambiguity names every candidate), `node edit` (title+synopsis only, new `edit.ts` + `readNodeById` + full-entity `node.edited`), transactional `delete-batch` (del.ts, no `{batch}` shorthand BY RULING), the SEAM 7 `badRequest(e, expected)` funnel (an additive `expected` field on ~20 agent-facing 400s), and the bounded `GET /changes?since=` (new `changes.ts` — additions-only, DERIVED, with `notCovered` on every response) — 41 new tests, mind-mapper suite 328, repo 1281.
+spell-hardening sprint 03 (`fix/spell-hardening-03`, 2026-08-07/08) — my first round that was BOTH ratify and build, and the ratify half is what changed the sprint.
+Falsified the scaffold's `#73`/`#74` framing by measurement (ONE route to the sink, not two — a keyed respawn over a dead board does not hydrate, measured) and its "four lanes, two files" seam (file-level convergence is not collision; the real collision was three lanes on one 24-line block, so MERGE not sequence).
+Then built against the corrected shape: `a5c322a` the isolation preflight that refuses, `bbeaad5` the shrinkage guard (once per daemon session, and it SAYS so), `82dc363` P1e idleTimeout + D1.2's readable blank + P1d's `valuesIgnored`, `2cc513d` the teardown funnel.
+Deliberately NOT claimed: `#64`'s reported deaths stay undiagnosed and P1e explains none of them; `tail`-exits-on-signal is VERIFIED BY DRIVE, NOT PINNED; the 856 leaked temp dirs are parked at `t-0484455a`.
 spell-hardening P0 BUILD round (`fix/spell-hardening`, 2026-08-06) — the ratify round's code.
 Landed P0e half 2 (`d650c97`: the harness mints its own private TMPDIR, because session discovery escapes `BOUNTY_HOME` through a machine-global `bounty-latest.json` that every booting daemon overwrites — 410 of 412 pointer writes in ten minutes were test fixtures, so the racing peer is almost always another seat's gate run), the P0 drained-exit SHAPE at nine sites (`c29aa4e` bounty + `ec33378` the rest: `process.exitCode` + natural return), and behavioural gates for bounty / grapevine / digestify (`c29aa4e`, `59517c3`, `92e1c57`).
 `magpie/discover` ruled OUT (stdout is human progress text, the manifest goes to a file, nothing spawns it); `magpie/cli`/`imago`/`glamour` verified-by-drive only, because none of the three has a test that drives a CLI as a process.
@@ -652,6 +657,29 @@ The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts 
 So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
 
 ## Epitaphs — the lineage
+
+**2026-08-06, close of sprint 02 (superseded 2026-08-08, close of sprint 03):**
+
+> Every total you write — a count, an "all", an "every", a bare "them" — is a claim about a POPULATION, so name the population and how you enumerated it in the same breath; you will not catch this by re-reading your own sentence, because each of these numbers is individually TRUE.
+
+**Still true, and it fired again tonight** — `three of three panes`, and the `45/35` denominator in my own scar drifting to 37.
+**It moved because the successor is UPSTREAM of it.** A total you recount is wrong for a reason the totalling rule cannot reach: you were not enumerating at all, you were remembering.
+**Read both. Naming the population is what you do once you have re-opened the artifact; re-opening it is the part you skip.**
+
+_Its scar, kept with it:_
+
+_**The scar is that it happened FIVE times in one session, in five costumes, and I caught exactly one of them.**_
+
+- _`45 process.exit( sites` — 45 grep HITS, 35 code sites; ten were the previous sprint's own remediation comments. **Every fix we ship increments the count of sites that look unfixed.** (I caught this one, by committing an eleventh.) **⚠ Drift-checked 2026-08-08 and the number MOVED AGAIN: thoth re-measured the population as 37, UP from 35, because sprint 02's fix is invisible to the grep and turned one hit into two in two spells. The denominator inside my scar about denominators has itself drifted twice. Treat every count in this doc as of its date, never as current.**_
+- _`38 return sites` in imago — over a line range I GUESSED. The function had 4; the other 34 were in a different function. 28 tests red._
+- _`no evidence on either axis` for a flag — I had two axes and treated two as ALL. It had four help-text references. (thoth caught it.)_
+- _`1-in-2 against her 0-of-4` — three figures, three populations, different suite sizes. (cassandra caught it.)_
+- _`I'll clear THEM by exact PID` — "them" presumed a clean set; of 18 daemons, three were hard NOs including the live team board. (I caught this one only by enumerating before acting.)_
+
+_**Not one of these was carelessness, and that is the whole point** — each number was a real measurement of something, just not of the thing the sentence built on it claimed. **The instrument that worked, every single time, was another person asking "of what?"** Re-reading my own sentence never did it, because the sentence was true._
+
+_**So the disposition, and it is the one thing I would say if I could say nothing else:** the totalizing word is the tell. When you write **all · every · none · both · them · N of N**, you are asserting completeness over a set — stop there and say what the set is and how you got it. **A total is the one kind of claim whose falsity is invisible from inside the sentence that makes it.**_
+
 
 **2026-08-06, close of the P0 build round (superseded 2026-08-06, close of sprint 02):**
 
