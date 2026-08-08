@@ -149,30 +149,17 @@ or a pre-sprint chore; it is a miscount inside a section about miscounting.**
 
 ---
 
-## Does this project end? — a projection, offered to be wrong
+## Does this project end? — see the roadmap
 
-**The original thesis is nearly done.** Six of the eight closures are
-success-shaped lies. What remains is largely one family, which is the whole
-argument for this sprint.
+**Single-sourced deliberately.** The end-condition claim and the sprint 05
+forecast live in **[roadmap.md](../../roadmap.md)**, not here — a prediction
+kept in two homes drifts, and this plan is superseded when the sprint closes
+while the forecast has to outlive it.
 
-**What would make it never end:** the two biggest closures were cross-spell —
-`#81` (`--flag=value` silently ignored, **all spells**) and `#84` (`/cmd`
-returns `ok:true`, three spells). **The population scales with SPELL COUNT, not
-with defect count.** Eight spells × every rule we derive is a treadmill.
-
-> **⭐ THE PROPOSED END CONDITION — and the sprint 05 candidate.** The project
-> ends not at zero defects but at the point where **a new spell cannot ship a
-> new instance of an old defect.** Every rule we have derived —
-> present-and-null, null-not-zero, `--flag=value`, the exit-code contract,
-> no-op-is-not-failure — is currently enforced by our having found each
-> violation individually. **One conformance gate every spell runs retires the
-> class and makes spell #9 inherit it for free.**
->
-> **So: sprint 05 is likely, and it should be the GATE, not more lanes.** Sprint
-> 04 finishes the family; sprint 05 makes the family unrepeatable. That is the
-> light at the end, and it is two sprints out rather than indefinite.
-
----
+**The one line this sprint needs:** the original success-shaped-lies thesis is
+nearly done, what remains is largely one family, and **the proposed end
+condition is a conformance gate rather than more lanes.** If that is right,
+sprint 04 finishes the family and sprint 05 makes it unrepeatable.
 
 ## The roster — redraw at convene, ruled by Cole 2026-08-08
 

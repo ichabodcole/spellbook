@@ -22,7 +22,9 @@ project closes them.
 > measure of what is left.** It was already an imperfect one — sprint 02's P0f
 > closed nothing either.
 
-**The arc:** [proposal.md](./proposal.md)
+**The arc:** [proposal.md](./proposal.md) · **What is coming:**
+[roadmap.md](./roadmap.md) — the end condition, the sprint 05 forecast, and what
+is parked. **A forecast, not a plan.**
 
 ## Sprints
 
