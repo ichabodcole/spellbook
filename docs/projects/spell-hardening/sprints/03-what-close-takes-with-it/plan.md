@@ -18,12 +18,19 @@ record, not an instruction. Do not act on either.**
 > sprint 02's much narrower round still found two more.** Writing cells before
 > ratify means writing cells against a scope that has not survived contact.
 >
-> **Two inputs are still outstanding and may change the shape below:**
+> **Inputs since the first draft:**
 >
-> - **The `#64` investigation** (running 2026-08-08) — its outcome decides
->   whether `#64` becomes a lane, stays parked, or dissolves.
-> - **A decision from Cole** on whether the destructive-close family belongs in
->   this project at all — see [Open questions](#open-questions).
+> - ✅ **The `#64` investigation CONCLUDED 2026-08-08** —
+>   [the document](../../../../investigations/2026-08-08-bounty-daemon-idle-death.md),
+>   _Proposal Recommended, for a different defect than `#64` names._ The idle
+>   framing is falsified; **P1e and P1f below are what `#64` becomes.**
+> - ✅ **A live-team validation beat is IN**, ruled by Cole 2026-08-08 — see
+>   [its section](#the-live-team-validation-beat--and-it-is-a-lane-not-a-checkbox).
+>   The whole scope above was established by **subagents in isolation**, and
+>   three of these defects are not reachable in that regime.
+> - ⏳ **Still outstanding: a decision from Cole** on whether the
+>   destructive-close family belongs in this project at all — see
+>   [Open questions](#open-questions--for-the-ratify-round-and-for-cole).
 
 ---
 
@@ -58,12 +65,14 @@ why this sprint leads with them.
 **Order is not free** — P1a/P1b share a mechanism and must be one lane; the P0f
 remainder rebases onto everything, so it goes last.
 
-| lane                         | issue        | what it is                                                                                                              | why now                                                                                                      |
-| ---------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| **P1a + P1b — one lane**     | `#73`, `#74` | `close` writes live state over the on-disk snapshot unconditionally; respawn+close can destroy a keyed board's snapshot | **The only remaining DATA-LOSS defects.** The team has designed around them three times rather than fix them |
-| **P1c**                      | `#79`        | `bounty list` lists **boards**, not tasks — an empty result reads as "no cards"                                         | The purest remaining instance of this project's own thesis, and small                                        |
-| **P0f-remainder**            | —            | the ~30 remaining in-function `process.exit(` sites, the `die()` family, the SIGINT handlers                            | **Ruled by Cole 2026-08-08: sprint 03 finishes it.** Two deferrals is enough                                 |
-| **P1d — CANDIDATE, unfiled** | none yet     | `bounty add --size <bogus>` returns `ok:true` at exit 0 and **silently discards the size**                              | Found 2026-08-08. See below — it is the sprint's own defect class, still live                                |
+| lane                         | issue        | what it is                                                                                                                                                                                                                     | why now                                                                                                                                                              |
+| ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P1a + P1b — one lane**     | `#73`, `#74` | `close` writes live state over the on-disk snapshot unconditionally; respawn+close can destroy a keyed board's snapshot                                                                                                        | **The only remaining DATA-LOSS defects.** The team has designed around them three times rather than fix them                                                         |
+| **P1c**                      | `#79`        | `bounty list` lists **boards**, not tasks — an empty result reads as "no cards"                                                                                                                                                | The purest remaining instance of this project's own thesis, and small                                                                                                |
+| **P0f-remainder**            | —            | the ~30 remaining in-function `process.exit(` sites, the `die()` family, the SIGINT handlers                                                                                                                                   | **Ruled by Cole 2026-08-08: sprint 03 finishes it.** Two deferrals is enough                                                                                         |
+| **P1d — CANDIDATE, unfiled** | none yet     | `bounty add --size <bogus>` returns `ok:true` at exit 0 and **silently discards the size**                                                                                                                                     | Found 2026-08-08. See below — it is the sprint's own defect class, still live                                                                                        |
+| **P1e — CANDIDATE, unfiled** | from `#64`   | **The SSE keep-alive has never once fired.** `Bun.serve` is called with no `idleTimeout`, so Bun's **10 s** default severs the connection **5 s before** the 15 s heartbeat                                                    | Reproduced at HEAD; the severing line appears **29 times in the production log**. Explains the reporter's read-heavy-dies / write-heavy-survives clue                |
+| **P1f — CANDIDATE, unfiled** | from `#64`   | **A dead board is indistinguishable from a quiet one, forever.** The terminal `closed` frame reaches only clients connected at that instant; SIGTERM/SIGINT/`uncaughtException` never emit it — **156 of 224 recorded deaths** | **The purest instance of this project's thesis yet** — `tail` prints _"no session yet, retrying…"_ indefinitely at a board that is gone. Observed running **6 days** |
 
 ### Why `#73` and `#74` are ONE lane, not two
 
@@ -116,6 +125,82 @@ omitting `--size`, **the flag the caller actually passed.**
 ⚠ **Filing is Cole's call, not the agent's.** Either file it and pull it in, or
 rule it out loud into the contract investigation.
 
+### P1e / P1f — what the `#64` investigation actually found
+
+[`docs/investigations/2026-08-08-bounty-daemon-idle-death.md`](../../../../investigations/2026-08-08-bounty-daemon-idle-death.md)
+— **Outcome: Proposal Recommended, for a different defect than `#64` names.**
+
+**The idle framing is dead, three independent ways.** `~/.bounty/daemon.log`
+holds 30 days and 224 matched birth→death pairs; across **all 32 `timeout`
+exits, `subscribers` was 0 — 32 of 32.** The idle logic never once closed a
+board with somebody connected. That joins the arithmetic (re-verified at
+`d8e5b6f`) and a controlled experiment.
+
+> **⚠ The instrument built for `#64` post-dates `#64` by 64 minutes.** `e10c994`
+> landed `2026-07-09T01:14Z`; the issue was filed `2026-07-09T00:09:52Z`.
+> **Every death the reporter actually experienced is pre-instrument and
+> permanently unrecoverable.** We are not diagnosing the reported deaths — we
+> cannot. We are diagnosing two defects found while looking for them.
+
+**Recommendation carried forward: re-title and re-scope `#64`, do not close
+it.** P1e and P1f are what it should become.
+
+---
+
+## The live-team validation beat — and it is a LANE, not a checkbox
+
+**Ruled by Cole 2026-08-08.** Everything above was established by **subagents in
+isolation**. That is the wrong regime for three of these defects, and the gaps
+are specific rather than theoretical:
+
+| what was NOT reachable in isolation                                                                       | why a live team reaches it                                                      |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `#73` / `#74` were marked **NOT TESTABLE SAFELY** — reproducing them requires running the destructive act | A **disposable** board can be destroyed on purpose                              |
+| `#64`'s original conditions: several seats tailing one board **for hours**                                | That is literally what a convened team does                                     |
+| **P1e** is masked by `cli.ts tail`, which silently reconnects                                             | Real seats hold **browser tabs** and long-lived consumers that do not reconnect |
+| **P1f** needs a client that was **not** connected at the moment of death                                  | Seats join and leave at different times by nature                               |
+
+**The claim being tested is not "does the bug exist" but "does subagent testing
+replicate the real multi-agent experience."** If the live run reproduces what
+the subagents found, the isolated method is validated for next time — **which is
+worth as much as the bug findings.** If it does not, we have learned that our
+cheapest instrument does not see this class, and that is worth more.
+
+> **⚠ This beat also carries the only remaining route to `#64`'s central
+> question.** `#64` was filed **by an agent, not by Cole**, so the reporter
+> cannot be asked what their keep-alive actually was — and that fact decides
+> whether P1e is cause or coincidence (see Open question 6). **Run both consumer
+> shapes deliberately: a `cli.ts tail`, which reconnects and masks the severing,
+> and a non-reconnecting consumer, which does not.** If only one regime produces
+> a death resembling the report, that is the answer we cannot get any other way.
+
+> ### ⛔ The isolation requirement, and it is not optional
+>
+> **This beat deliberately destroys boards while a live team is coordinating
+> over a board.** That is the exact shape of sprint 01's **P0e** — _"the
+> project's own gate destroyed the live team board twice in forty minutes."_ We
+> would be doing it on purpose this time, which makes it a controlled experiment
+> rather than an accident **only if the isolation is mechanical.**
+>
+> - **The test board MUST NOT be the team's coordination board.** Redirect
+>   `BOUNTY_HOME` **and** `TMPDIR` into scratch for every test invocation.
+> - **`anthill convene` writes `.bounty-session` at the repo root**, which is
+>   `resolveSession` level 5 — so **convene itself creates the ambient binding**
+>   this beat must escape. Every test command passes an explicit
+>   `--session-key`, and per G1 that key **is** the isolation only if it
+>   precedes any `--`.
+> - **Never run `close` against an un-redirected board.** `#73` is unfixed for
+>   the duration of the lane that fixes it.
+> - The investigation's own probe **overwrote the machine-global
+>   `bounty-latest.json`** before it isolated `TMPDIR` — a first-hand demo of
+>   the defect, from the agent sent to study it. **Isolate before the first
+>   command, not after the first surprise.**
+
+**Sequencing:** run this beat **before** the fixes, not after. A validation pass
+that only ever sees the fixed world cannot tell you whether the instrument would
+have caught the broken one — the inverted-control problem (G2) at the level of a
+whole method.
+
 ---
 
 ## Not in this sprint
@@ -123,13 +208,13 @@ rule it out loud into the contract investigation.
 Stated explicitly, because sprint 01's outcome proved that **deferred work with
 no name comes back as a surprise.**
 
-| out                                                             | where it goes instead                                                                                                                                                         |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `#82`, `#85`–`#88`                                              | [the CLI-contract investigation](../../../../investigations/2026-08-06-spell-cli-contract-investigation.md), **Active**. It decides what right looks like; a lane comes after |
-| `#64`                                                           | **Under investigation now.** Not a lane until the investigation says what the mechanism is                                                                                    |
-| `#72` (size affordance), `#11` (wordmark), `#75` (bounded tail) | Not this defect family. Backlog                                                                                                                                               |
-| A CLI-process harness for glamour · imago · magpie              | Still out of scope. Still the reason 3 of 5 P0f sites are driven rather than pinned                                                                                           |
-| The narrower `/cmd` contract (_"did state CHANGE"_)             | Ruled out in sprint 02 (A12) and **left explicitly unclaimed** — `t-d7a3fa14`                                                                                                 |
+| out                                                             | where it goes instead                                                                                                                                                                                                                                                 |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `#82`, `#85`–`#88`                                              | [the CLI-contract investigation](../../../../investigations/2026-08-06-spell-cli-contract-investigation.md), **Active**. It decides what right looks like; a lane comes after                                                                                         |
+| `#64` **as filed** — "the daemon idle-dies"                     | **Investigated and falsified 2026-08-08.** The idle logic is exonerated 32/32. The issue should be **re-titled and re-scoped**, not closed; P1e and P1f are what it becomes. **The reported deaths themselves are unrecoverable** — no instrument existed at the time |
+| `#72` (size affordance), `#11` (wordmark), `#75` (bounded tail) | Not this defect family. Backlog                                                                                                                                                                                                                                       |
+| A CLI-process harness for glamour · imago · magpie              | Still out of scope. Still the reason 3 of 5 P0f sites are driven rather than pinned                                                                                                                                                                                   |
+| The narrower `/cmd` contract (_"did state CHANGE"_)             | Ruled out in sprint 02 (A12) and **left explicitly unclaimed** — `t-d7a3fa14`                                                                                                                                                                                         |
 
 ---
 
@@ -190,7 +275,9 @@ already paid for.**
    reporting**, and the project's one-sentence thesis does not stretch to cover
    it. **Unresolved. Cole's call.**
 2. **Is P1d filed, folded in, or ruled out?**
-3. **What does the `#64` investigation say** — lane, park, or dissolve?
+3. ~~**What does the `#64` investigation say** — lane, park, or dissolve?~~
+   **ANSWERED 2026-08-08: re-scope.** The idle framing is falsified; P1e and P1f
+   are what `#64` becomes.
 4. **Is the sprint 02 flake carding (G7's 15s liveness budget) in scope**, or
    does it stay carded? It is an instrument defect, and this sprint depends on
    that instrument.
@@ -198,6 +285,27 @@ already paid for.**
    sites minus a named and justified remainder? **Sprint 01 and 02 both shipped
    "done" over an unenumerated remainder. Define the denominator before
    starting, not at the release.**
+6. **⛔ NOT ANSWERABLE — the reporter cannot be asked.** The one fact that would
+   decide whether **P1e is cause or coincidence** is what the "host keep-alive
+   tail" was in the reported sessions: `cli.ts tail` reconnects silently and
+   masks the severing, so P1e would be incidental; a browser tab or any
+   non-reconnecting consumer makes it very likely causal. **`#64` was filed by
+   an agent, not by Cole, so there is no reporter to ask** _(established
+   2026-08-08)_. **Consequence, and it is the reason the live-team beat is a
+   lane rather than a checkbox: the question can only be settled by
+   RECONSTRUCTION.** Run real seats against a disposable board with **both**
+   consumer shapes — a `cli.ts tail` and a non-reconnecting one — and see which
+   regime produces a death that looks like the report. **Do not resolve this by
+   reasoning about the code; that is what two sprints already did.**
+7. **The ~20-minute number in `#64` matches nothing in the code** — no floor, no
+   interval, no backoff. The investigation **declined to invent a mechanism for
+   it.** Does the live-team beat try to reproduce a ~20-minute death
+   specifically, or do we record the number as permanently unexplained? **⚠ With
+   the reporter unavailable, "unexplained" may be the only honest terminal
+   state** — say so rather than fitting a mechanism to a number.
+8. **Does the live-team beat run inside this sprint, or as its own session?** It
+   needs a convened team, hours of wall-clock, and deliberate board destruction
+   — a different rhythm from a build lane.
 
 ---
 
