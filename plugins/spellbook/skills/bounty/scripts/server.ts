@@ -52,6 +52,7 @@
 
 import {
   appendFileSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -210,6 +211,49 @@ function cardPassesFilter(task: Task, activeTags: string[], activeOwners: string
 function shouldIdleClose(subscriberCount: number, idleMs: number, timeoutMs: number): boolean {
   if (subscriberCount > 0) return false;
   return idleMs >= timeoutMs;
+}
+
+// #73/#74 — how many tasks the ON-DISK snapshot holds, or null when we cannot
+// honestly say. Absent, unparseable, or a non-array `tasks` all return null and
+// NOT zero: zero would mean "a snapshot exists and holds nothing", which makes a
+// first-ever write look like a shrink from an empty board, and makes a
+// half-written file report every later write as data loss. null declines to
+// answer, and the predicate below treats declining as "do not rotate".
+function snapshotTaskCount(path: string): number | null {
+  try {
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as { tasks?: unknown };
+    return Array.isArray(parsed.tasks) ? parsed.tasks.length : null;
+  } catch {
+    return null;
+  }
+}
+
+// #73/#74 — should this snapshot write copy the existing file aside first?
+// Clock-free and fs-free so it is testable without a daemon (the shouldIdleClose
+// shape).
+//
+// ⛔ THE PREDICATE IS SHRINKAGE, NOT EMPTINESS. Both issues ask for a guard
+// against writing an EMPTY board over a populated snapshot. That does not cover
+// what was measured: a keyed respawn over a dead board starts empty, and then
+// ONE `add` — no `close` anywhere — flushed 3 tasks down to 1 through the
+// debounced path. An emptiness guard permits that write, because 1 is not 0.
+// Emptiness is the WORST CASE of this predicate, never a separate branch.
+//
+// ⛔ AND IT IS ONCE PER DAEMON SESSION. Writes happen per MUTATION, so a human
+// draining a board card-by-card produces one shrinking write each. Rotating
+// per-write with any retention bound N means rotation N+1 evicts the pre-drain
+// snapshot — the guard eats what it protects. Rotating on the FIRST shrink since
+// boot captures the state that existed before this daemon touched anything,
+// which is precisely what #73 and #74 wanted back, and it needs no retention
+// policy at all.
+function shouldRotateSnapshot(
+  priorTaskCount: number | null,
+  nextTaskCount: number,
+  alreadyRotatedThisSession: boolean,
+): boolean {
+  if (alreadyRotatedThisSession) return false;
+  if (priorTaskCount === null) return false; // nothing readable to protect
+  return nextTaskCount < priorTaskCount;
 }
 
 // wip-cue: the owners who have >= threshold cards in DOING — a soft, per-owner
@@ -651,10 +695,51 @@ async function main(argv: string[]): Promise<number> {
   // timer flushes it, and a final write lands on close. The snapshot is keyed by
   // session id and KEPT on close (it's the resume point for --restore).
   let snapDirty = false;
+  // #73/#74 — ONCE PER DAEMON SESSION. Lives here, in the daemon's closure, so
+  // "session" means exactly "this process": a restart re-arms it, which is the
+  // point (the state worth keeping is whatever existed before THIS daemon
+  // started writing).
+  let rotatedThisSession = false;
   const saveSnapshot = () => {
     try {
       mkdirSync(SNAPSHOTS_DIR, { recursive: true });
-      writeFileSync(join(SNAPSHOTS_DIR, `${sessionId}.json`), JSON.stringify(state));
+      const path = join(SNAPSHOTS_DIR, `${sessionId}.json`);
+      // Copy the existing snapshot aside BEFORE the first shrinking write of
+      // this daemon's life. See shouldRotateSnapshot for why the predicate is
+      // shrinkage rather than emptiness, and why it fires once per boot.
+      const prior = snapshotTaskCount(path);
+      if (shouldRotateSnapshot(prior, state.tasks.length, rotatedThisSession)) {
+        // `.bak.json` and not `.bak`: the suffix is what makes this recoverable
+        // through the verbs that already exist. `sessions` lists *.json and
+        // strips the extension, so the backup appears there by name; and
+        // `open --restore <id>.pre-<ts>.bak` resolves it, because restore joins
+        // SNAPSHOTS_DIR with the arg plus ".json". Zero new recovery surface.
+        const backup = join(SNAPSHOTS_DIR, `${sessionId}.pre-${Date.now()}.bak.json`);
+        copyFileSync(path, backup);
+        rotatedThisSession = true;
+        // ⛔ AND IT SAYS SO. A silent rotation is a success-shaped lie, which is
+        // the defect family this whole project is named after — the user would
+        // be protected and never know they had needed protecting. Three
+        // surfaces, because they fail differently: the durable log survives the
+        // daemon, the event reaches a live tail, and stderr reaches whoever is
+        // watching the process.
+        logDaemon("snapshotBackedUp", {
+          backup,
+          priorTasks: prior,
+          nextTasks: state.tasks.length,
+        });
+        emitEvent({
+          type: "snapshotBackedUp",
+          backup,
+          priorTasks: prior,
+          nextTasks: state.tasks.length,
+          by: "system",
+        });
+        process.stderr.write(
+          `bounty: snapshot was about to shrink ${prior} → ${state.tasks.length} tasks; copied the old one to ${backup}\n`,
+        );
+      }
+      writeFileSync(path, JSON.stringify(state));
     } catch {
       /* persistence is best-effort */
     }
@@ -1354,5 +1439,7 @@ export {
   ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
+  shouldRotateSnapshot,
+  snapshotTaskCount,
   validateTask,
 };

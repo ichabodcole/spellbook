@@ -16,7 +16,14 @@
 //       * join.ts idle timeout reports reason: "timeout"
 
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +56,8 @@ import {
   ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
+  shouldRotateSnapshot,
+  snapshotTaskCount,
   type Task,
   type TaskStatus,
   validateTask,
@@ -3010,7 +3019,14 @@ async function runOpen(
   return { stdout, stderr, code: verdict.code, ms };
 }
 
-function snapshotTaskCount(home: string, id: string): number | null {
+// Renamed from `snapshotTaskCount` in sprint 03: that name is now a REAL
+// export of server.ts (the shrinkage guard's prior-count reader), and an
+// import of it here was SILENTLY SHADOWED by this local declaration —
+// no runtime error, just the wrong function with the wrong arity. `bun test`
+// cannot see that; `tsc` reports it as TS2440 and the repo gate does not run
+// tsc. This helper resolves home+id, which the exported one deliberately does
+// not, so it stays — under a name that cannot collide.
+function snapshotTaskCountAt(home: string, id: string): number | null {
   try {
     const raw = readFileSync(join(home, "snapshots", `${id}.json`), "utf8");
     return (JSON.parse(raw) as { tasks?: unknown[] }).tasks?.length ?? 0;
@@ -3042,8 +3058,8 @@ describe("P0b — open refuses rather than discarding flags on the attach path",
     // debounce (server.ts:708 marks dirty, :1238 drains), so a sleep either
     // races or is pure padding.
     const deadline = Date.now() + 10000;
-    while (Date.now() < deadline && snapshotTaskCount(home, id) !== 2) await Bun.sleep(100);
-    expect(snapshotTaskCount(home, id)).toBe(2);
+    while (Date.now() < deadline && snapshotTaskCountAt(home, id) !== 2) await Bun.sleep(100);
+    expect(snapshotTaskCountAt(home, id)).toBe(2);
 
     // Step 3 — kill -9. NOT close: close writes the snapshot (server.ts:1286),
     // which would flush the board we are about to empty OVER the fixture. And
@@ -3082,7 +3098,7 @@ describe("P0b — open refuses rather than discarding flags on the attach path",
     // control is invalid is a probe that will eventually lie — and this exact
     // control has been degenerate three separate times in this project.
     const liveNow = await liveTaskCount(revived.port);
-    const snapNow = snapshotTaskCount(home, id);
+    const snapNow = snapshotTaskCountAt(home, id);
     const control = liveNow === 0 && snapNow === 2 ? "VALID-CONTROL" : "DEGENERATE";
     expect({ control, live: liveNow, snapshot: snapNow }).toEqual({
       control: "VALID-CONTROL",
@@ -3260,14 +3276,14 @@ describe("P0b — the snapshot facts the construction rests on", () => {
     const id = (JSON.parse(open.stdout) as { session_id: string }).session_id;
     await runCli(["add", "keep me", "--id", "k1", "--session", id], { env: { BOUNTY_HOME: home } });
     const deadline = Date.now() + 10000;
-    while (Date.now() < deadline && snapshotTaskCount(home, id) !== 1) await Bun.sleep(100);
-    expect(snapshotTaskCount(home, id)).toBe(1); // PRECONDITION: a full snapshot exists
+    while (Date.now() < deadline && snapshotTaskCountAt(home, id) !== 1) await Bun.sleep(100);
+    expect(snapshotTaskCountAt(home, id)).toBe(1); // PRECONDITION: a full snapshot exists
 
     await runCli(["remove", "k1", "--session", id], { env: { BOUNTY_HOME: home } });
     await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
     await Bun.sleep(500);
     // close flushed the NOW-EMPTY board over the snapshot that held the task.
-    expect(snapshotTaskCount(home, id)).toBe(0);
+    expect(snapshotTaskCountAt(home, id)).toBe(0);
   }, 40000);
 
   test("FACT 2 — snapshots are NOT close-only: a mutation flushes on the ~1s debounce", async () => {
@@ -3283,8 +3299,8 @@ describe("P0b — the snapshot facts the construction rests on", () => {
       await runCli(["add", "solo", "--id", "s1", "--session", id], { env: { BOUNTY_HOME: home } });
       // No close anywhere in this cell — the flush must happen on its own.
       const deadline = Date.now() + 10000;
-      while (Date.now() < deadline && snapshotTaskCount(home, id) !== 1) await Bun.sleep(100);
-      expect(snapshotTaskCount(home, id)).toBe(1);
+      while (Date.now() < deadline && snapshotTaskCountAt(home, id) !== 1) await Bun.sleep(100);
+      expect(snapshotTaskCountAt(home, id)).toBe(1);
     } finally {
       await runCli(["close", "--session", id], { env: { BOUNTY_HOME: home } });
     }
@@ -3743,4 +3759,194 @@ describe("P0c #81 — the equals form, and unknown flags", () => {
       await runCli(["close", "--session", id], { env });
     }
   }, 40000);
+});
+
+// ── P1a/P1b — the SHRINKAGE guard at the snapshot sink (#73, #74) ────────────
+//
+// The defect both issues describe: a keyed `open` over a DEAD board respawns
+// EMPTY (cmdOpen passes --restore only if the caller typed it), and then any
+// write flushes that empty state over the populated snapshot. Measured this
+// sprint: one `add`, NO `close` anywhere, took a snapshot 3 tasks -> 1 task
+// (452 -> 172 bytes) about a second later via the debounce path.
+//
+// ⛔ WHY THE PREDICATE IS SHRINKAGE AND NOT EMPTINESS. Both issues ask for a
+// guard against writing an EMPTY board over a populated snapshot, and that is
+// what the sprint plan assumed. It does not cover the measurement above,
+// because 1 is not 0. Emptiness is the WORST CASE of the real predicate, not
+// its definition — so it is an input here, never a branch.
+//
+// ⛔ AND WHY ROTATION IS ONCE PER DAEMON SESSION, NOT PER WRITE. Writes are per
+// MUTATION (the flush is a 1s dirty-check), so a human draining a 26-card board
+// card-by-card produces up to 26 shrinking writes. With any retention bound N,
+// rotation N+1 evicts the pre-drain snapshot — the guard eats the thing it
+// exists to protect. Once-per-boot bounds rotations by BOOTS, captures exactly
+// the state that existed before this daemon touched it (which is what both
+// issues asked to get back), and needs no retention policy at all.
+describe("shouldRotateSnapshot — the shrinkage predicate", () => {
+  test("a SHRINKING write rotates: the measured 3 -> 1 case", () => {
+    expect(shouldRotateSnapshot(3, 1, false)).toBe(true);
+  });
+
+  test("EMPTINESS is the worst case of shrinkage, not a separate rule", () => {
+    // The case both issues actually filed. It must pass through the same
+    // predicate, or the guard has two branches that can disagree.
+    expect(shouldRotateSnapshot(18, 0, false)).toBe(true);
+  });
+
+  test("a SAME-SIZE write does NOT rotate — this is the common case", () => {
+    // Measured live on the team board: a card claim rewrote 26 -> 26. If this
+    // rotated, every ordinary edit would mint a backup.
+    expect(shouldRotateSnapshot(26, 26, false)).toBe(false);
+  });
+
+  test("a GROWING write does NOT rotate", () => {
+    expect(shouldRotateSnapshot(3, 4, false)).toBe(false);
+  });
+
+  test("ONCE PER SESSION: a second shrink in the same daemon does NOT rotate", () => {
+    // The load-bearing cell. Without it the guard is per-write, and a
+    // card-by-card drain evicts the pre-drain snapshot with its own backups.
+    expect(shouldRotateSnapshot(3, 1, true)).toBe(false);
+    expect(shouldRotateSnapshot(1, 0, true)).toBe(false);
+  });
+
+  test("NO PRIOR SNAPSHOT never rotates — there is nothing to protect", () => {
+    // null = no readable snapshot on disk (fresh store, or unreadable). Copying
+    // a file that is absent or corrupt would fail, and a first-ever write is not
+    // a loss.
+    expect(shouldRotateSnapshot(null, 0, false)).toBe(false);
+    expect(shouldRotateSnapshot(null, 5, false)).toBe(false);
+  });
+
+  test("a prior of ZERO never rotates, even writing zero", () => {
+    // An empty snapshot has nothing to lose, so rotating it is pure litter —
+    // and this is the case a naive `next < prior` with a null-coalesce to 0
+    // would get right by accident and a `prior >= 0` check would get wrong.
+    expect(shouldRotateSnapshot(0, 0, false)).toBe(false);
+  });
+});
+
+describe("snapshotTaskCount — reading the prior, honestly", () => {
+  const dir = mkdtempSync(join(TEST_TMPDIR, "snapcount-"));
+
+  test("counts the tasks in a well-formed snapshot", () => {
+    const p = join(dir, "ok.json");
+    writeFileSync(p, JSON.stringify({ title: "T", tasks: [{ id: "a" }, { id: "b" }] }));
+    expect(snapshotTaskCount(p)).toBe(2);
+  });
+
+  test("an ABSENT file is null, NOT zero", () => {
+    // The distinction the predicate depends on. Zero would mean "a snapshot
+    // exists and holds nothing"; null means "there is no snapshot". Collapsing
+    // them makes a first-ever write look like a shrink from an empty board.
+    expect(snapshotTaskCount(join(dir, "nope.json"))).toBe(null);
+  });
+
+  test("a CORRUPT file is null, NOT zero — and that is the safe direction", () => {
+    // A half-written snapshot must not read as "0 tasks" and thereby report
+    // every subsequent write as a shrink. null declines to answer.
+    const p = join(dir, "corrupt.json");
+    writeFileSync(p, '{"title":"T","tasks":[{"id":"a"');
+    expect(snapshotTaskCount(p)).toBe(null);
+  });
+
+  test("a snapshot whose `tasks` is not an array is null, not a guess", () => {
+    const p = join(dir, "weird.json");
+    writeFileSync(p, JSON.stringify({ title: "T", tasks: "nope" }));
+    expect(snapshotTaskCount(p)).toBe(null);
+  });
+});
+
+// ── P1a/P1b — the guard END TO END, on the real defect ───────────────────────
+// The predicate cells above prove the DECISION. This proves the SINK is wired to
+// it — a pure predicate nobody calls is a helper, not a fix.
+//
+// The construction is #73/#74's actual shape: seed a snapshot, kill the daemon
+// so it writes NOTHING on the way out, respawn under the SAME KEY (which does
+// not hydrate — measured), then make ONE ordinary mutation and let the ~1s
+// debounce flush it. No `close`, no `--fresh`, no `--restore` anywhere.
+describe("P1a/P1b — the shrinkage guard, end to end", () => {
+  test("a respawned-empty board's first write COPIES the old snapshot aside, and SAYS so", async () => {
+    const home = uniqHome();
+    const cwd = mkdtempSync(join(TEST_TMPDIR, "p1a-"));
+    const key = `p1a-${crypto.randomUUID().slice(0, 8)}`;
+    const env = { BOUNTY_HOME: home };
+
+    const open = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id = (JSON.parse(open.stdout) as { session_id: string; port: number }).session_id;
+    const port = (JSON.parse(open.stdout) as { port: number }).port;
+    for (const t of ["a", "b", "c"])
+      await runCli(["add", t, "--id", `p1a-${t}`, "--session", id], { env });
+    const seeded = Date.now() + 10000;
+    while (Date.now() < seeded && snapshotTaskCountAt(home, id) !== 3) await Bun.sleep(100);
+    // PRECONDITION, printable as a failure rather than assumed: if the snapshot
+    // never reached 3, everything below is vacuous and would read as "no loss".
+    expect(snapshotTaskCountAt(home, id)).toBe(3);
+
+    // SIGKILL, by exact PID off the port. NOT `pkill -f`, and not a pattern on
+    // the board id — the id appears in the argv of the process doing the
+    // matching, so such a pattern lists the harness's own shell.
+    const lsof = Bun.spawnSync(["lsof", "-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"]);
+    const pids = new TextDecoder().decode(lsof.stdout).trim().split("\n").filter(Boolean);
+    expect(pids.length).toBeGreaterThan(0); // a kill that no-ops makes the run read clean
+    for (const pid of pids) Bun.spawnSync(["kill", "-9", pid]);
+    await Bun.sleep(600);
+    // A killed daemon writes nothing on the way out — so the snapshot is intact
+    // and the cell below is measuring the RESPAWN, not the kill.
+    expect(snapshotTaskCountAt(home, id)).toBe(3);
+
+    const respawn = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    const id2 = (JSON.parse(respawn.stdout) as { session_id: string }).session_id;
+    expect(id2).toBe(id); // same key, same board id — that is what makes it a clobber
+    try {
+      // ONE mutation. This is the write that used to take the snapshot 3 -> 1.
+      await runCli(["add", "d", "--id", "p1a-d", "--session", id], { env });
+      const flushed = Date.now() + 10000;
+      while (Date.now() < flushed && snapshotTaskCountAt(home, id) !== 1) await Bun.sleep(100);
+      expect(snapshotTaskCountAt(home, id)).toBe(1); // the shrink still HAPPENS
+
+      // ...but the old one was copied aside first. THIS is the fix.
+      const backups = readdirSync(join(home, "snapshots")).filter((f) =>
+        f.startsWith(`${id}.pre-`),
+      );
+      expect(backups.length).toBe(1);
+      const rescued = JSON.parse(
+        readFileSync(join(home, "snapshots", backups[0] as string), "utf8"),
+      ) as { tasks: unknown[] };
+      expect(rescued.tasks.length).toBe(3);
+
+      // AND IT SAID SO. A silent rescue is a success-shaped lie: the user is
+      // protected and never learns they needed protecting.
+      const log = readFileSync(join(home, "daemon.log"), "utf8");
+      // daemon.log is NOT pure JSONL: cli.ts points the daemon's native stderr
+      // at this same file (#64, so Bun's own hard-abort output is captured), so
+      // the structured lines are interleaved with plain prose. Parsing every
+      // line blows up on our OWN human-readable announcement — which is how this
+      // cell first discovered that the stderr half lands here too.
+      const said = log
+        .split("\n")
+        .filter((l) => l.startsWith("{"))
+        .map((l) => JSON.parse(l) as { reason?: string; priorTasks?: number; nextTasks?: number })
+        .filter((e) => e.reason === "snapshotBackedUp");
+      expect(said.length).toBe(1);
+      expect(said[0]?.priorTasks).toBe(3);
+      expect(said[0]?.nextTasks).toBe(1);
+      // The human-readable half, in the same file, naming the numbers and the
+      // file — this is what someone reading a log after a scare actually finds.
+      expect(log).toContain("snapshot was about to shrink 3 → 1 tasks");
+      expect(log).toContain(`${id}.pre-`);
+
+      // ONCE PER SESSION: a SECOND shrink in the same daemon must NOT rotate
+      // again. Without this the guard is per-write, and a card-by-card drain
+      // evicts the rescued snapshot with the guard's own backups.
+      await runCli(["remove", "p1a-d", "--session", id], { env });
+      await Bun.sleep(1600);
+      expect(snapshotTaskCountAt(home, id)).toBe(0);
+      expect(
+        readdirSync(join(home, "snapshots")).filter((f) => f.startsWith(`${id}.pre-`)).length,
+      ).toBe(1);
+    } finally {
+      await runCli(["close", "--session", id], { env });
+    }
+  }, 60000);
 });
