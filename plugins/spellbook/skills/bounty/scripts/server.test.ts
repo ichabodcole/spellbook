@@ -809,8 +809,19 @@ const TEST_TMPDIR = mkdtempSync(join(tmpdir(), "bounty-suite-"));
 // the private dir travels to children through hermeticEnv(), not through us.
 const SHARED_TMPDIR = tmpdir();
 
+// ⛔ The scrub list is NOT a set someone remembered — it is the env-typed half of
+// AMBIENT_BINDINGS in preflight.ts, and preflight.test.ts source-scans this
+// destructure to prove they agree. Adding a binding there without adding it here
+// is RED, which is the only reason this list can be trusted later.
+//
+// BOUNTY_AS joined it in sprint 03: the enumeration that found it also found why
+// it had been missed for two sprints — `grep 'process.env.'` cannot see
+// BOUNTY_SESSION at all, because resolveSession reads it off an INJECTED env
+// param (cli.ts:182). A scrub list derived by that grep is short and looks
+// complete. TMPDIR is assigned rather than deleted (children need a private
+// one); BOUNTY_HOME is assigned per-test by uniqHome().
 function hermeticEnv(): Record<string, string | undefined> {
-  const { BOUNTY_SESSION_KEY: _k, BOUNTY_SESSION: _s, ...rest } = process.env;
+  const { BOUNTY_SESSION_KEY: _k, BOUNTY_SESSION: _s, BOUNTY_AS: _a, ...rest } = process.env;
   return { ...rest, TMPDIR: TEST_TMPDIR };
 }
 
