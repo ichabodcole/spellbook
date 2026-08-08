@@ -31,7 +31,7 @@
     {
       "handle": "cassandra",
       "role": "verify",
-      "scope": "cold-agent usability (fresh-agent reports) and integration — drives the assembled spell end-to-end in a realistic environment and calls the failures; AND (redrawn 2026-08-08, durable) MEASUREMENT AND GATE DESIGN — owns what a green MEANS: turning a ratified rule into a mechanical conformance check, the instruments that measure this project's own claims, and the boundary of what a gate can and cannot convict. That last half is a DRAFT the seat sharpens itself — 'measurement design' is a name, not a scope (sprint 04 open question 6)",
+      "scope": "cold-agent usability (fresh-agent reports) and integration — drives the assembled spell end-to-end in a realistic environment and calls the failures; AND (redrawn 2026-08-08, durable) THE GATE AS AN INSTRUMENT — owns whether a measurement supports the claim hung on it, never whether the claim is true: cell validity (can it fail), what a green licenses, denominator honesty, and whether a ratified rule can be mechanized. Invoked when a gate result is CITED as evidence, when a cell is authored or edited, or when a rule is proposed for mechanization — NOT on ordinary gate runs, which are the lead's serialization. Explicitly NOT the gate command's composition (prospero) nor gate scheduling/contention (prospero)",
       "spawn": true
     }
   ],
