@@ -1,23 +1,34 @@
 # Sprint 03 — What close takes with it
 
-**Created:** 2026-08-07 · **Status:** 🟡 SCAFFOLD — proposed scope, not
-ratified, not buildable · **Base sha:** `e582150` (`develop`) · **Project:**
-[Spell Hardening](../../README.md) · [proposal.md](../../proposal.md)
+**Created:** 2026-08-07 · **Status:** 🟢 RATIFIED — scope cut and lanes open ·
+**Base sha:** `003af0d` (`develop`) · **Branch:** `fix/spell-hardening-03` ·
+**Project:** [Spell Hardening](../../README.md) ·
+[proposal.md](../../proposal.md) · **[decisions.md](./decisions.md)**
 
 **Predecessor:** [sprint 02 outcome](../02-success-shaped-lies/outcome.md) —
 read it before this.
 
-> ## 🟡 This is a scaffold. Do not build from it.
+> ## 🟢 Ratified 2026-08-08. Build from the CUT, not from the original scope.
 >
-> It states what we propose to do and why, at the level a ratify round can
-> attack. It has no lane steps, no gate cells and no acceptance criteria — those
-> are written **after** the scope is ratified, because sprint 01's ratify round
-> falsified six claims in a plan written by one author, and sprint 02's much
-> narrower round still found two more.
+> This document was a 🟡 scaffold until the ratify round of 2026-08-07/08. **The
+> round did what it was for: it killed the predicate every lane was about to be
+> built on.** Read [`decisions.md`](./decisions.md) alongside this — the
+> rulings, the options not taken, and the six falsifications live there.
 >
-> **This document has had one cold read** (2026-08-07, fresh agent, no repo
-> access). Its findings are folded in. Sections marked ⚠ UNRESOLVED are where it
-> objected and the objection stands.
+> **⛔ Six claims in this document were falsified by measurement. They are
+> marked `⛔ FALSIFIED` inline and indexed in
+> [`decisions.md` §B](./decisions.md#b). Where a falsified claim and a ratified
+> one disagree, the ratified one wins — and the falsified text is kept rather
+> than deleted, because a plan that quietly heals looks like one that was
+> right.**
+>
+> **Base sha corrected:** the header said `e582150` while the branch was cut at
+> `003af0d` — two commits ahead, **and both were this document's own rulings.**
+>
+> **This document had one cold read** (2026-08-07, fresh agent, no repo access)
+> before the round. Its findings were folded in, and **the round then falsified
+> two claims the cold read had passed** — a cold read is not a substitute for a
+> measurement.
 
 ---
 
@@ -82,15 +93,47 @@ That is a different severity class, and it is why this sprint leads with them.
 | **P0f-remainder**           | —                      | the remaining in-function `process.exit(` sites, the `die()` family, the SIGINT handlers                                                                   | **Denominator is 35 code sites and KNOWN STALE** — see below                     |
 | **The live-team beat**      | —                      | validate the above with real terminal seats rather than isolated subagents                                                                                 | ⚠ **Justification contested by the cold read** — see its section                 |
 
-**Ordering:** P1a/P1b first (highest severity). P0f-remainder last — it edits
-exit sites across both `cli.ts` and `server.ts`, which is where the other lanes
-also live, so it rebases onto them rather than the reverse.
+> ## 🟢 THE RATIFIED CUT — build this, not the table above
+>
+> **Ruled by Cole 2026-08-08 on `daedalus`'s site-level seam analysis
+> ([decisions.md A8](./decisions.md)).** The scaffold's own prediction — _"the
+> likeliest correct verdict on this scope is too much"_ — was correct, and this
+> is the cut:
+>
+> | order | lane                                                                                    | seat        | card         |
+> | ----- | --------------------------------------------------------------------------------------- | ----------- | ------------ |
+> | 1     | **The shrinkage guard** at the sink, rotate once per daemon session, and say it         | `daedalus`  | `t-2e69f932` |
+> | 2     | **The teardown funnel** — P1f + the P0f signal slice as ONE edit · **blocked on 1**     | `daedalus`  | `t-1b9424ab` |
+> | 3     | **P1e** — `idleTimeout`, XS, disjoint                                                   | `daedalus`  | `t-b1e870a5` |
+> | 4     | **P1d** — an audible dropped `--size` (Cole's ruling; NOT the scaffold's P1d)           | `daedalus`  | `t-67a95057` |
+> | 5     | **The P0f remediation** over the 37 measured sites, with a gate cell                    | `thoth`     | `t-df17accf` |
+> | ∥     | **The re-scoped beat** — mine `daemon.log` + observe this session; destructive half CUT | `cassandra` | `t-a92ea25c` |
+> | ∥     | **P1c — SPEC ONLY**, the fix deferred out of the sprint                                 | `cassandra` | `t-991ab386` |
+>
+> **⛔ The funnel is blocked on the guard by a real blocker edge, not by
+> convention.** Routing signals through teardown makes `saveSnapshot` run where
+> it does not run today — **on a guardless tree that ships a clobber on the next
+> SIGTERM.** That is the `join.ts` scar exactly: `process.exit` was doing double
+> duty, and here the double duty is _"die without writing the snapshot."_
 
-⚠ **The seam the ratify round should attack: four lanes converge on two files.**
-`#73`/`#74` and P1e/P1f are `server.ts`; P1c, P1d and much of P0f are `cli.ts`.
-Nothing in this scaffold says how those lanes avoid each other. No lane carries
-a size estimate either, so a ratify round can attack scope membership but not
-scope volume — and the likeliest correct verdict on this scope is _"too much."_
+**Ordering (original, superseded by the cut above):** P1a/P1b first (highest
+severity). P0f-remainder last — it edits exit sites across both `cli.ts` and
+`server.ts`, which is where the other lanes also live, so it rebases onto them
+rather than the reverse.
+
+⛔ **FALSIFIED — "four lanes converge on two files" is the WRONG GRANULARITY.**
+The scaffold asked how four lanes sharing two files avoid each other. **Two
+files is a coincidence of where code lives, not a seam.** Measured by the lines
+each lane actually edits, **P1e, P1c and P1d are disjoint** — from each other
+and from everything else, landable in any order by anyone.
+
+**The real collision is three lanes on ONE 24-line region**, and they do not
+merely overlap — **they are the same edit.** The handlers at `server.ts:603-610`
+`process.exit` immediately, so `await done` (1293) never resolves and the whole
+teardown block is unreachable. That single fact is P1f's defect (1309), two P0f
+sites (605, 609), **and** load-bearing for P1a/P1b (1306). **Sequencing them
+means three seats rebasing three times over one region; merging them is one edit
+to one funnel.** Sizes are in [`decisions.md` A8](./decisions.md).
 
 ### P1a/P1b — what is demonstrated, and what is not
 
@@ -155,6 +198,16 @@ the defect. Sprint 02 fixed five (`tail`). **35 − 5 = 30 is arithmetic, not a
 measurement**, and every site we fix increments the count of sites that look
 unfixed.
 
+> ⛔ **FALSIFIED, and the direction is the finding: the answer is 37, and the
+> count went UP.** `thoth` measured all 37, zero families left `UNVERIFIED`.
+> **Sprint 02's fix is invisible to the grep, and in two spells it turned one
+> hit into two.** So the subtraction was wrong in both operands and in its sign.
+>
+> **This is `H-T3` landing exactly where its own author predicted it would** — a
+> plausible non-zero over the wrong population, which the zero-guard is silent
+> on, found in his own lane. **The denominator was the lane's first task, and it
+> was right to be.**
+
 ⚠ **The scaffold does not supply a discriminator between a remediation comment
 and a live defect.** Producing one is step zero of this lane; without it, an
 agent grep-and-fixing will churn its own prior work.
@@ -205,6 +258,26 @@ controlled experiment only if the isolation is mechanical.
    having exported the variables — the `#64` investigation's own probe overwrote
    the machine-global `bounty-latest.json` because it isolated after the first
    surprise rather than before the first command.
+
+   > ⛔ **FALSIFIED AS WRITTEN — "under scratch" is NOT isolation for board
+   > IDENTITY.** `sessionKeyToId` scopes the key by `findScopeRoot`, which walks
+   > up to the nearest `.git`. **`.anthill/scratch/` is inside this repo, so a
+   > board opened from scratch derives the SAME scope hash as the repo root.**
+   > Scratch isolates the _files_; it does not isolate the _id_. **Run from a
+   > cwd outside the repo entirely, under a private `TMPDIR`, with a key that is
+   > not `spellbook`.**
+   >
+   > **And enumerate the scrub list from the CUT's own `process.env` reads, not
+   > from a remembered set** — a set-list cannot notice a variable it never
+   > heard of. The full enumeration (including the `.bounty-session` walk-up at
+   > precedence level 5, which `convene` itself creates) is in `t-f0d334da`.
+   >
+   > **The reusable preflight is built and landed at `a5c322a`** — 14 cells,
+   > including `cassandra`'s addition: **assert the resolved snapshots dir does
+   > not contain `k-spellbook-f4249899.json`.** A path-shape check passes on a
+   > correctly-shaped path pointing at the wrong place; **naming the file is the
+   > version that cannot.**
+
 2. **Back up first.** Copy the real snapshot directory and `bounty-latest.json`
    outside the blast radius. `#73` is unfixed for the duration of the lane that
    fixes it, and this is a snapshot-destroying experiment.
@@ -306,22 +379,56 @@ these summaries.
    becomes the only record of P1d–P1f, which makes freezing it carefully at
    close load-bearing in a way the previous two plans were not.
 3. ✅ **What does the `#64` investigation say?** Re-scope. P1e and P1f.
-4. **Is G7's 15 s liveness budget in scope**, or does it stay carded? This
-   sprint depends on that instrument.
-5. **What does "finishes it" mean for P0f** — all 35 code sites, or all minus a
-   named and justified remainder? Define the denominator before starting, not at
-   the release. Sprints 01 and 02 both shipped "done" over an unenumerated
-   remainder.
+4. ✅ **Is G7's 15 s liveness budget in scope?** Ruled 2026-08-08 by
+   `cassandra`: **IN SCOPE — and the carded fix is WRONG as written.** _"Raise
+   it to 60s/120s and the assertion loses nothing"_ is false: **at 60s it loses
+   the assertion on 7 of 7 cells**, measured with a control. **It is a COUPLING
+   fix, not a number change** — and raising the budget is safe only _because_
+   the reorder in `t-c3060da7` landed. **That sentence travels with the card.**
+5. ✅ **What does "finishes it" mean for P0f?** Answered with a **denominator,
+   not arithmetic: 37 sites, all read, zero families `UNVERIFIED`.** See the
+   falsification above. The remediation lane is `t-df17accf`, and per the
+   ratified `H-P1` answer it ships **a gate cell, not a definition** — _if only
+   a definition is reachable, say so rather than shipping it and hoping._
 6. ⛔ **NOT ANSWERABLE — the reporter cannot be asked.** Whether P1e is cause or
    coincidence turns on what the "host keep-alive tail" was in the reported
    sessions; `#64` was filed by an agent, not by Cole. It can only be settled by
    reconstruction — run both consumer shapes and see which regime produces a
    death resembling the report.
-7. **The ~20-minute figure in `#64` matches nothing in the code.** The
-   investigation declined to invent a mechanism. Chase it, or record it as
-   permanently unexplained? With no reporter, "unexplained" may be the only
-   honest terminal state.
-8. ✅ **Does the live-team beat run inside this sprint?** Ruled 2026-08-07:
+7. ✅ **The ~20-minute figure in `#64`.** Ruled 2026-08-08: **record it as
+   permanently unexplained — and it is now a MEASURED terminal state rather than
+   a shrug.** `cassandra` measured every idle death in 30 days: **two distinct
+   values only, `5s` (n=1, a configured test timeout) and `7200s` (n=31, the
+   2-hour default). Zero deaths between 600s and 1800s. Zero anywhere near 20
+   minutes.** So the figure matches nothing in the code **and nothing in 226
+   recorded deaths across 191 sessions** — which does not explain it, but
+   **removes the last place an explanation was plausibly hiding.**
+
+   ⚠ **Carried forward verbatim, not weakened:** the instrument **post-dates
+   `#64`'s report by 64 minutes**, so this exonerates the idle logic **for the
+   window the log covers** and says nothing about the reported events. `#64`'s
+   specific deaths remain undiagnosable.
+
+8. ⛔ **NEW, and it binds the funnel lane: the signal path does not record
+   `subscribers`, so the funnel's fix is unverifiable against our only
+   longitudinal instrument.** Death classes in `daemon.log`: `ready` (232),
+   `close` (38), `timeout` (32) all record `subscribers`; **`signal` (156 — 69%
+   of all deaths) records none.** P1f exists to emit the terminal `closed` frame
+   on exactly that path, so **after the fix lands there is no recorded quantity
+   that changes — the log looks identical before and after.**
+
+   **Ruled: log `subscribers` on the signal path as part of the funnel edit.**
+   One field, at a call site the lane is already touching. Without it the funnel
+   ships `UNVERIFIED-BY-CONSTRUCTION`.
+
+   ⚠ **And a write-up binding:** _"156 of 224 deaths emitted no `closed` frame"_
+   is **correct** (now 156 of **226**), but it is a count of **deaths**, never
+   of **affected clients** — and nothing in this log can produce the second
+   number. **Do not let the outcome slide from one to the other.** For scale,
+   the population the frame has ever reached: **8 of 38 clean closes had
+   `subscribers > 0`.**
+
+9. ✅ **Does the live-team beat run inside this sprint?** Ruled 2026-08-07:
    **yes, in the sprint.** It no longer blocks opening lanes. **Still open,
    deliberately: whether it goes FIRST.** The scaffold proposes it does, on the
    grounds that a validation pass which only ever sees the fixed world cannot
@@ -329,17 +436,17 @@ these summaries.
    inverted-control problem (G2) raised to the level of a whole method. That
    argument and its cost are the ratify round's to attack; see the beat's ⚠
    UNRESOLVED block.
-9. ✅ **Which seats does this sprint need?** Ruled 2026-08-07: **the proposed
-   split is fine; `circe` takes no lane.** Correct for the work — every lane is
-   daemon, CLI or server, and the one surface-shaped item (`#72`) is out of
-   scope. ⚠ **Carried to the structure reflection at finalize, not dropped.**
-   This is `circe`'s **fourth consecutive** unseating, and sprint 02's outcome
-   already called three _"an argument about where that boundary sits… not
-   headcount but shape."_ Four rounds of a seat having no work is a fact about
-   the roster rather than about the sprints — and the unseated seat is the one
-   that never accumulates the scars that would tell you whether the boundary is
-   drawn right. **Record it at finalize; do not let a fourth pass unremarked
-   because each round's answer was individually correct.**
+10. ✅ **Which seats does this sprint need?** Ruled 2026-08-07: **the proposed
+    split is fine; `circe` takes no lane.** Correct for the work — every lane is
+    daemon, CLI or server, and the one surface-shaped item (`#72`) is out of
+    scope. ⚠ **Carried to the structure reflection at finalize, not dropped.**
+    This is `circe`'s **fourth consecutive** unseating, and sprint 02's outcome
+    already called three _"an argument about where that boundary sits… not
+    headcount but shape."_ Four rounds of a seat having no work is a fact about
+    the roster rather than about the sprints — and the unseated seat is the one
+    that never accumulates the scars that would tell you whether the boundary is
+    drawn right. **Record it at finalize; do not let a fourth pass unremarked
+    because each round's answer was individually correct.**
 
 ---
 
