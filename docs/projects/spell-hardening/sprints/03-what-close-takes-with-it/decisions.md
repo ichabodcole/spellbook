@@ -13,6 +13,20 @@ only records the winner is indistinguishable from a narrative.
 amendments to [`plan.md`](./plan.md) and are listed in §B as pointers only, so
 this file does not become a second source of truth for them.
 
+> ⛔ **LINE NUMBERS IN THIS DOCUMENT ARE PINNED TO `003af0d` AND MOST OF THEM
+> HAVE ROTTED. Anchor on the SYMBOL NAMES, not the numbers.** Six commits landed
+> after these entries were written and the files moved under them — measured at
+> finalize: the signal handlers cited as `server.ts:603-610` are now at 690-691;
+> the refusal comment cited as `cli.ts:525-533` is at 594; `parseSize` cited at
+> 259-261 is at 262.
+>
+> **The numbers are left as written rather than renumbered, deliberately.**
+> Renumbering would make them correct until the next commit and wrong silently
+> after — **the same trap one lap later.** `daedalus` hit this inside a single
+> session on his own preflight header (`cli.ts:590` → 648, `server.ts:1206`
+> → 1411) and stripped every pin from it: **symbol names survive an edit; a line
+> number is a claim about a file's shape at one instant.**
+
 ---
 
 ## A. Decisions

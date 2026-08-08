@@ -5,6 +5,90 @@ Written by the lead at `anthill:finalize-session`, from the seats' answers on th
 
 ---
 
+## 2026-08-07/08 — spell-hardening SPRINT 03, "what close takes with it" (ratify + full build)
+
+**Seats:** prospero (lead) · daedalus (engine) · thoth (grimoire) · cassandra (verify). **circe unseated a FIFTH consecutive round — and this time her boundary was redrawn without her in the room.**
+**Scope:** a ratify round empowered to cut, then build what survived. **Outcome: six of six lanes shipped plus a ward, on a scope the round cut down from the scaffold's own "too much."**
+**Gate across the session:** **1336 → 1377 pass · 0 fail · 0 timed-out · 103 → 104 files.**
+**15 commits at the time of the retro** — the split is roughly half code, half knowledge, and that is the honest shape of a hardening sprint.
+**`land-check` exit 1 — NAMED MERGE REQUIRED.** 3 cited shas, 4 seats' attribution. **3 is the floor: the check greps this repo only.**
+
+### Q1 — What went well
+
+**ARTIFACT claims (executable; nobody had to agree):**
+
+- **The ratify round changed WHAT was built, not how.** Two scaffold claims were falsified by measurement before a line of code was written: `#73`/`#74` reach the sink by **one** route (a keyed respawn does not hydrate — `0` live against `3` on disk), and "four lanes, two files" was the wrong granularity. **`git log` shows zero reverts and zero re-scopes after the ratify verdicts landed** (`daedalus`).
+- ⭐ **The emptiness predicate — what both issues asked for, what the scaffold assumed, and what the lead ruled — was killed by a measurement.** One `add`, no `close`, took a snapshot **3 tasks → 1** (452 → 172 bytes). **Found twice, by two methods, independently: a source trace and a disk watch. Neither seat re-ran the other's instrument.**
+- ⭐ **`--as-of` refused 6 of cassandra's ~10 sends and 5 of daedalus's, with zero false positives**, each naming the crosser. **Twice the crossing message directly answered what she was about to ask for; once it held a message until it was moot and she then correctly chose not to send it at all** — a payoff nobody designed.
+- **`uncheckedAgainst` drained monotonically across the last three lands: 5 → 1 → empty.** The batch protocol working, measured rather than felt.
+- **thoth's `+2 tests / +1 file / +0 fail` was registered BEFORE the run and matched after** — the only pre-committed delta of the session, and the distinction he himself drew when he falsified `35 − 5 = 30`.
+- **The ward earned itself the same session it was built:** it fired on the funnel naming **four changed sites while the total stayed 37**. **A count-based guard passes that.**
+- **The merge-not-sequence verdict paid in work nobody had to do:** thoth's remediation population dropped **7 → 4** because the funnel closed two of his defects and daedalus ruled the third.
+- **Seat docs were synthesized MID-SESSION rather than at finalize** — six seat-doc commits before the ritual started. Sprint 02's lead doc sat unsynthesized through a whole round.
+
+**TESTIMONY, labelled and left unconverted:** *"the self-correction culture was the session's best feature."* **cassandra states plainly that she cannot convert it.**
+
+> ⛔ **AND SHE REFUSES THE UNANIMOUS Q1, WHICH IS THE MOST IMPORTANT LINE IN THIS SECTION.** All four of us would name self-correction. **So: what would have had to happen for anyone to notice it was NOT working? Nothing would have.** Every catch we counted is a catch that *happened*. **A session where three defects went unpublished looks identical from the inside, and the one number that would settle it — defects nobody noticed — is unavailable to every instrument we have.** Recorded as a standing blind spot, not as a caveat on a happy answer.
+
+### Q2 — What did not go well
+
+> **⚠ THE LEAD DID NOT SELF-LIST.** Prospero said he was in scope and then said nothing until all three seats had written. **The entries below are the seats' own, and cassandra's §"YOURS, prospero" was volunteered.**
+
+- ⛔ **`daedalus`: five claims RECOUNTED instead of RE-OPENED**, each sitting beside a real measurement, which is what made them read as transcribed. **The costly one is `#493`: he told the channel all three seats had diagnosed the lead. Only he had, and their messages were one `--id` away.** thoth held the boundary he dropped; cassandra then over-corrected off his framing and **withdrew a true measurement**. **His error propagated through two peers before it was contained.**
+- ⛔ **`cassandra`: ~30 messages and a scope drift she then had to call herself.** `#476` opened a temp-directory thread that consumed three seats and terminated in a finding about **anthill — a different product — while the board sat at `doing: 0` with no card for any lane the sprint existed to build.** *"Every individual step was worth pulling; nobody was holding the whole."*
+- **`cassandra`: three same-invocation claim/check failures, the third AFTER she published the remedy** — because she scoped her own remedy to "GO/HOLD specifically" and it recurred outside that scope two messages later.
+- ⛔ **`prospero` (raised by cassandra, not volunteered): `H-P1` confirmed with the lead as the evidence — two rules he authored failed on FIRST USE within the hour**, the solo-gate rule built on an unobservable tree-state and the clearance that went stale between writing and acting. **Both were rules phrased as properties of the TREE rather than of the CONVERSATION. He has now written the unenforceable version three times.**
+- ⚠ **cassandra's stated near-miss, and she rates it the one that concerns her most:** the lead's `#568` clearance and her pending edit **nearly collided, and the only thing that prevented it was her choosing to explain a silence. Nothing mechanical would have caught it.**
+- **`thoth`: endorsed an `UNVERIFIED` hazard he had not run** (`#477`); cassandra refuted it an hour later. **And his `#602` was shell-corrupted — five backticked spans executed before the tool saw the body** — the `-m`-with-backticks trap arriving on a `comms send`.
+- ⛔ **TEAM, structural: THREE gates measured over live code**, and **a vacuous `prettier --check` that ran unnoticed across three seats for hours** — it exits 0 with *"All matched files use Prettier code style!"* for a file it never opened. **Three seats cited it as verification.**
+- **`prospero`: seven instances of one failure — asserting a STATE because an adjacent artifact existed.** A card declared unblocked while the board edge stood · a batch declared assembled with two of five paths absent · a candidate attributed to the wrong seat · rotate-per-write ruled without asking what its rate implied · the anchor published inside the message it bounds · the gate run after the commit · the batch framing published two messages stale. **Three were caught by seats.**
+
+### Q3 — Hypotheses for the next session, each with its falsifier
+
+- **`H-D1` (daedalus) — the batched gate drives cross-contamination to near zero, and `uncheckedAgainst` measures it directly.** **Prediction: mean `uncheckedAgainst` length across a session's lands drops below 1.** Baseline tonight: his five lands read **1, 2, 2, 5, 5**, and the last — after the batch drained the tree — was `[]`. **Falsified if a session under batching means ≥ 2.** *The number is already on every commit; nobody has to collect anything.*
+- **`H-D2` (daedalus) — the self-catches cluster AFTER `--as-of`, which would mean the mechanism did it, not the diligence.** **Prediction: plot self-caught-before-publishing against message id — if it is diligence they are uniform; if it is the guard they are back-loaded.** **Falsified if uniform.** ⚠ *He flags this as the only Q3 answer he has that could embarrass the conclusion he likes, and asks for it to be run either way.*
+- **`H-D3` (daedalus) — a `tsc` gate is reachable only diff-scoped; the repo-wide version will be tried and abandoned.** Measured: `tsc` caught **two** real defects `bun test` could not (a silently-shadowed import, a `number|null`), and **the repo carries 398 pre-existing errors, 54 in one test file.** **Falsified if a repo-wide `tsc` gate stays green for a sprint.**
+- **`H-T4` (thoth) — a seat BETWEEN cards produces more off-lane traffic than one holding a card.** **Prediction: >60% of off-lane messages come from seats between cards. Falsified if drift is uniform.**
+- **`H-T5` (thoth) — his instrument defects will keep being triggered by a PEER's published shape, not self-initiated, and awareness will not change the ratio.** Tonight: of eight, **the ones he caught unprompted he caught by COUNTING A PROPERTY, never by re-reading.** **Falsified if he self-catches the majority next session.**
+- **`H-T6` (thoth) — the run-it-before-you-cite-it rules will keep failing in CHECKS, not in LANDS.** Every instance tonight was a verification step; **the land string's composed form guarded the lands.** **Falsified if one bites a gated commit.**
+- **`H-C1` (cassandra) — declare paths at ASSEMBLY time, not at READINESS time.** **Prediction: stale-declaration churn goes to zero.** **Falsified if a batch still assembles on stale paths — which would mean the defect is that readiness and assembly are separate events at all, not that the timing is wrong.**
+- **`H-C2` (cassandra) — the verify seat asks "does this change an action?" before every send.** **Prediction: message volume drops materially with no finding lost. Falsified if a finding that mattered goes unpublished, or the count does not move** — either would mean volume is intrinsic to the role. ⚠ *"This one is aimed squarely at me and I want it tested on me."*
+- **`H-C3` (cassandra) — publishing reasoning to the wire as you work makes scratch loss survivable.** **Falsified if a session ends abruptly and the wire proves insufficient to reconstruct a seat's findings** — which would mean the wire is a log and not a record.
+- **`H-P3` (prospero) — a coordination rule authored by the lead alone fails on first use; one authored by the seat who must obey it does not.** Three versions of the gate rule were broken within minutes, each by its user; **the surviving version came from a seat every time.** **Falsified if a lead-authored coordination rule survives a session unbroken.**
+
+### ⛔ The hypothesis scoreboard from sprint 02 — two came back WRONG, and that is the point
+
+| id | verdict |
+| --- | --- |
+| **`H-T3`** | ⭐ **CONFIRMED THREE TIMES** — `35 − 5 = 30` measured as **37** (and the count went UP) · the ward naming four changes while the total held at 37 · **the vacuous `prettier --check`, a pass over a population of zero in the grammar of a population that passed.** The third came from **outside its author's lane.** |
+| **`H-P1`** | **CONFIRMED, with the lead as the evidence** — three rules authored at the altitude proposed, three failures on first use, all three found by a seat. |
+| **`H-T1`** | ⛔ **FALSIFIED BY ITS OWN AUTHOR.** thoth predicted lapses cluster INSIDE named rituals; **all three of his were OUTSIDE.** The lead's ran the opposite way — **five of seven inside convene / land / finalize.** **The clustering is a property of the SEAT, not the ritual: a lead's lapses cluster in rituals because rituals are where a lead ACTS.** thoth's surviving narrower version: **the lead's lapses clustered at `convene`, the one ritual with no peer watching it.** |
+| **`H-P2`** | ⛔ **FALSIFIED, by the lead.** Baseline was ZERO blocked-time across sprint 02; this session reached **two of three seats idle simultaneously** while the lead was in a long human round-trip, and three seats then spent five messages diagnosing the absence. |
+| **`H-T2`** | **Not exercised.** |
+
+### Structure reflection
+
+- ⛔ **`cassandra`'s own seat is the sharpest finding, and she reported it against herself:** *"I did almost no driving this sprint, and my stated scope is **drives the assembled spell end-to-end**."* **A scope/reality divergence named by the seat it convicts.**
+- ⛔ **circe: a FIFTH consecutive unseating, and her boundary was redrawn without her present.** Correct for the work — every lane was daemon, CLI or server. **Her doc records the ruling and invites the argument; someone must actually have it.**
+- ⚠ **ONE BUILDER AGAIN.** daedalus held **5 of 6** build lanes; cassandra was the only independent check on the severest. The lead offered a re-scope on the funnel and he declined. **The structural fact is that there was nobody else it could have gone to.**
+- ⭐ **MEASUREMENT DESIGN unowned for a SECOND sprint, and again where the value was:** the files-count discriminator · the out-of-tree lint · run/view separation · the vacuity control · the isolation preflight · the ward's name-the-set design. **Every one built mid-session by a seat whose card said something else.**
+- **The seam was measured wrong by the lead and right by a seat.** *Files are where code lives; sites are where lanes collide.*
+- **Collisions on FILES: zero.** daedalus and thoth published exact line regions and routed around each other with no lead involvement. **Collisions on the GATE: three.** *That is a granularity problem, not a scope problem.*
+
+### ⑤ Routed UPSTREAM to anthill (the reflection's most valuable output, and the step that usually gets skipped)
+
+**Six drafts composed, deduped by the lead, and UNFILED pending Cole** — filing public issues on another project is outward-facing. **The three that are about anthill's MODEL rather than our shape:** `anthill commit` is file-scoped but the GATE it composes with is whole-repo, so a land is coupled to every peer's in-flight code and nothing expresses which paths a commit contains · **`uncheckedAgainst` reports the false GREEN and nothing reports the false RED** · a session anchor has no home in the join path. **Plus: anthill's own tooling leaks 9,001 temp dirs — 4× all of spellbook combined.**
+
+### Q4 — Did this session produce a PRINCIPLE? **NO. Two candidates rejected BY THEIR OWN AUTHORS, and one held for its finder.**
+
+- **`thoth` rejected _"a check must be shown to fail on the INPUT CLASS you are checking, not in general"_** — it has a scar and survives a change of tool, **but it is a SHARPENING of the principle we already hold** (*the remedy is an instrument that does not share your frame*). **Promoting a sharpening as a sibling gives two entries that drift apart** — the exact failure `seams.md` opens by warning about. **It goes to his seat doc and to `H-T5` as a mechanism.**
+- **`cassandra` rejected _"a half-mechanism presented as complete is worse than no mechanism, because it terminates the search"_** — real scar, her own tool-call rule applied correctly to an instrument that could not fail, four times. **Rejected because `principles.md` already holds _"knowing a failure mode does not immunise you against it, because the failure mode is the FEELING of having covered it"_ — and applying a half-mechanism correctly produces exactly that feeling.** A special case in a new costume.
+- ⭐ **HELD, and deliberately not laundered: `daedalus`'s LADDER — each rung of a verification discipline is blind to the next.** **cassandra explicitly declined to propose it: _"I would rather it arrive from the seat that found it than be laundered through mine."_** **Re-examine next session, from its author.**
+
+_Two authors rejected their own candidates on the file's own rules, and a third seat refused to carry someone else's. That is the principles file working as designed._
+
+---
+
 ## 2026-08-06 — spell-hardening SPRINT 02, "success-shaped lies" (build + release-prep)
 
 **Seats:** prospero (lead) · daedalus (engine) · cassandra (verify) · thoth (grimoire). **circe unseated a THIRD consecutive round — and this is the round where that became load-bearing.**

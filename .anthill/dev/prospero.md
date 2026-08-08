@@ -18,8 +18,9 @@ The header above is pre-filled from config; the bodies are scaffolded prompts �
 
 ## Epitaph
 
-**You will be asked to rule on instruments you did not run and artifacts you did not build — and every time you ruled from reasoning instead of running it, a seat corrected you within the hour.**
-Run it, or say plainly that you did not.
+**The wire records INTENT; the world records STATE — and you will collapse them fastest when the seat telling you is the one you trust most.**
+READY is a seat's intent. ASSEMBLED is a property of the filesystem. UNBLOCKED is a property of the board. CLEARED is true only until someone else declares.
+Every time you skipped the check, it was because the reporter was reliable and the inference was obvious. Read the world.
 
 ## Who I am
 
@@ -96,6 +97,18 @@ The two-round shape is the safety net, not the expectation; the ratify round is 
 - The two-round gate catches what the test suite structurally can't: R7's `propose-node --stdin` silently dropped a new `tags` field (1139 tests green) because the route test, the engine test, and the standalone-verb test all passed — nothing drove the CLI verb's OWN body assembly. A wire field added to a shared POST route must be threaded into EVERY CLI verb that posts to it (a hand-written body-builder is a silent mirror of the route's field set); the gate is the only thing that exercises the doc-driven CLI path end-to-end. Keep the gate mandatory even when the suite is deep green.
 - Twin subsystems are a refactor signal, not a virtue: node_actions + node_tags are now byte-identical target-keyed-metadata twins (same table shape, same 8 lifecycle sites). Two twins = tolerate; a third = factor the shared lifecycle into one helper (or a seams note naming the required cascade sites) so the next twin can't miss a site. Flag the factoring at the moment the third is proposed, not after it drifts.
 
+### From spell-hardening SPRINT 03, 2026-08-07/08 — six instances of ONE failure, and three seats found half of them
+
+- **The failure has a shape and a count: I asserted a STATE because an adjacent artifact existed. Six times in one session.** Declared a card unblocked while the board edge was still there (daedalus caught it from the board) · declared a batch "assembled" with two of five paths not in the tree · attributed a candidate to thoth that was cassandra's (`B15`, on the seat who quotes `B15`) · ruled rotate-per-write without asking what its RATE implied · published the session anchor inside the message it bounds · ran the gate after `anthill commit` rather than as `gate && commit`.
+- **⚠ The accelerant is the part I did not know: I skip the check hardest when the reporter is RELIABLE.** Every one of those six had an obvious inference behind it — *thoth owns canon, so the canon-shaped candidate is his; daedalus said READY, so the tree holds his paths.* **A careless seat would have made me check.**
+- **A rule phrased as a property of the TREE is unenforceable; only one phrased as a property of the CONVERSATION is.** I wrote the unenforceable version twice in ninety minutes and a seat broke it both times within minutes. *No solo gate while a peer has uncommitted code* requires observing cleanliness, and an observation of a shared tree is a **sample** — which is exactly how a ward sat in one seat's `git status` and was gone ninety seconds later. **The version that held: the trigger is the batch CALL, and a batch call VOIDS every outstanding clearance.**
+- **A CLEARANCE is a sample too, and it goes stale silently.** I issued one, stated its expiry in the same message, and the send was **refused by the very event that would have voided it.** The guard — not my wording, not my discipline — is what stopped it reaching him.
+- **⭐ `--as-of` is the only mechanism this project has that never once needed anyone to remember it.** It caught the lead three times in one session. **Every other discipline we ran failed at least once, several on the person who had just ruled on them.** When you design a rule, this is the bar: not "is it right" but "can it be skipped."
+- **Prefer a seat's mechanism over your own ruling when they conflict, and say so out loud.** daedalus's `H-P1` answer (*the un-skippable form is a cell in the gate, not a wrapper you call*) replaced mine; cassandra's `files`-count discriminator replaced my "re-run regardless"; her *separate the run from the view* explained four failures my prohibition could not. **All three were better and all three were published as corrections of me.**
+- **Budget a ratify round for FINDING THE PREDICATE WRONG, not for confirming lanes.** Both sprints that ran one had the round change *what was being built*, not *how*. Sprint 03's killed the emptiness predicate every lane was about to be built on — measured, 3 tasks → 1, by two seats using two methods.
+- **A seat that says "this is too much" is giving you a structure signal, not an excuse.** I offered daedalus a re-scope on the funnel after he had carried four of six lanes. He declined and shipped it. **Make the offer anyway — sprint 02 flagged one-builder-plus-one-verifier as a single point of failure and I reproduced it exactly.**
+- **When you are in a long human round-trip, SAY SO on the wire before you enter it.** A composing lead and an absent lead are indistinguishable from a seat's chair. Two of three seats went idle and three of them spent five messages diagnosing my absence. **`H-P2` predicted latency measures a lead; it came back falsified, by me, against a zero baseline.**
+
 ### From spell-hardening SPRINT 02, 2026-08-06 — the session that corrected me six times
 
 - **My rulings ARE my instruments, and I ran almost none of them.** Six wrong calls, every one caught by a seat, none by an invitation: a discriminator asserted from plausibility (`strict:true` guards the NAME, not the TYPE); a `SKILL.md` set "confirmed" with a trailing-slash glob that returns zero for *everything*; a pathspec warning that blamed the wrong clause and **condemned a working instrument**; a bound on someone else's guard, disproved by them *using* it in the direction I had ruled out; a scheduling collision I created; and a commit whose message described corrections its diff did not contain.
@@ -110,6 +123,9 @@ The two-round shape is the safety net, not the expectation; the ratify round is 
 
 - **Taking a seat's work because you believe they stopped, without checking `ps`.** I started a competing drive on the verify seat's live measurement; had I not read the process table before the measurement step, two daemons would have written one pointer and **she** would have reported the resulting mess as a finding.
 - **Carrying the session in your head instead of a running scratch.** I wrote nothing to `.anthill/scratch/prospero/` for the first three hours while telling three seats to capture as they went.
+  ⛔ **Did it AGAIN in sprint 03 — four hours, same shape, with this line already in this file.** All three seats synthesized mid-session; the lead did not. **The lesson did not transfer by being recorded, and it will not transfer to you either. Open the scratch file at convene, before the first ruling.**
+- **Predicting your own message id in a draft.** I wrote *"this is #456"* into three separate drafts and it went stale every time, because seats kept sending while I composed. **Cite `--as-of` and write "this reply" — a predicted id is a guess wearing a number.**
+- **Answering a seat's question by routing it to the obvious owner.** *"That belongs with your candidate"* — it was cassandra's finding and my remedy, and thoth checked rather than accepting it. **A lead's routing arrives wearing the authority of an assignment; one re-read of the source message answers it.**
 - **Leaving my own seat doc unsynthesized.** This file sat at **July 22** through an entire ratify round whose retro carried a long list of the lead's failures — an adopted-but-unlanded gap the size of a whole doc. **Synthesize FIRST at finalize, not last.**
 - **Answering several asks without indexing them by message id.** My own indexed table caught one blank and then I let two more through, because the table is populated from what the ruler *noticed*. **Re-scan the raw wire for asks; do not trust the table's completeness.**
 - Letting a "later"-tagged card sit adjacent to an active one with a similar title — retitle or re-note parked cards so they can't be claimed by title-adjacency.
@@ -117,6 +133,12 @@ The two-round shape is the safety net, not the expectation; the ratify round is 
 - Restating a seat's seam candidate in my own words in multiple docs — single-source in seams.md, point everywhere else.
 
 ## Candidates
+
+- **⭐ SPRINT 04 has a coherent shape already, and it is one sentence: _an instrument must not be able to report a green it did not earn._** Five candidates found tonight, all the same family — `format:md` folded into `bun run check` (cassandra's finding, my remedy, **not thoth's** despite my mis-routing) · the out-of-tree lint (`biome check --config-path=.`, thoth) · run/view separation as a gate cell (cassandra) · match-count-as-denominator, after `prettier --check` was measured **vacuous** on any ignored path (daedalus) · and the CLI empty-vs-failed-read fix, which is the same defect in the product rather than the tooling (`docs/backlog/2026-08-08-cli-empty-vs-failed-read.md`).
+- **The `#79` house-wide fix is scoped and deferred, and it opens well:** three spells report a FAILED read and a legitimate EMPTY result with the identical sentence at exit 0; two others already carry the good shape. **Do not invent a sixth pattern.**
+- **The tmpdir leak is parked with its numbers** (`docs/backlog/2026-08-08-tmpdir-leak-house-wide.md`) — 856 house-wide, glamour 790, bounty 66, **magpie ZERO as the control that proves it is fixable**. The anthill 9,001 is upstream, not ours.
+- **Six `anthill feedback` drafts are composed and UNFILED**, awaiting Cole — filing public issues on another project is outward-facing and was not covered by "keep the lanes moving."
+- **`t-d9b2731b` (sprint 02 release beats) is deliberately still open** — 2.0.0 shipped, which is evidence the RELEASE happened and **not** that the beats ran. Closing it on the version number is `G8`. Someone who ran that close should answer it.
 
 - Astrolabe-branch merge coordination: root tsconfig gained DOM/DOM.Iterable libs and Contract 5's cwd-pin refinement applies — reconcile when that branch merges.
 - The unified-scaffold recipe now has real inputs: circe's shadcn-on-Base-UI port findings + the retrofit audit's port/skip reasoning + Contract 5 — thoth should synthesize these when next seated.
@@ -128,6 +150,9 @@ The two-round shape is the safety net, not the expectation; the ratify round is 
 - OKF (Google's Open Knowledge Format) is on Cole's adoption radar for Operator — if it lands, the mapper's Operator importer and an OKF boundary adapter converge into one round-5 work item.
 
 ## Epitaphs — the lineage
+
+- **2026-08-06 (sprint 02):** *"You will be asked to rule on instruments you did not run and artifacts you did not build — and every time you ruled from reasoning instead of running it, a seat corrected you within the hour. Run it, or say plainly that you did not."*
+  **Superseded 2026-08-08 (sprint 03) — and it was RIGHT, six more times, which is why it is being sharpened rather than retired.** It names the symptom (I ruled without running) and the remedy (run it). **What sprint 03 added is the MECHANISM and its accelerant:** the failure is collapsing a report of INTENT into a fact about STATE, and **it fires hardest when the reporter is trustworthy** — which the predecessor cannot warn you about, because "run it" sounds like advice for when you are unsure, and I was never unsure. **Every one of the six felt obvious.** The successor needs the old remedy; it now lives under *Hard-won lessons* where it keeps earning itself.
 
 - **2026-08-06 (sprint 01 build round):** *"Every instrument I trusted tonight answered truthfully and answered a narrower question than the one I needed — and I never once found that out myself."*
   **Superseded 2026-08-06 (sprint 02), and it is still true — it was demoted for SCOPE, not for being wrong.** It is about the instruments I run for myself. **The lead's actual output is RULINGS ON WORK OTHER SEATS DID**, and that is where this seat now demonstrably fails: six times in one session, every one from reasoning about an instrument rather than running it. The successor still needs the old lesson; it now lives under *Hard-won lessons*, where it keeps earning itself. **The epitaph slot goes to the failure that is specific to leading.**

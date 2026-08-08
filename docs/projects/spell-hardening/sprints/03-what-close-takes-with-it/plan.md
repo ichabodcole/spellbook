@@ -8,6 +8,15 @@
 **Predecessor:** [sprint 02 outcome](../02-success-shaped-lies/outcome.md) —
 read it before this.
 
+> ⛔ **LINE NUMBERS IN THIS DOCUMENT ARE PINNED TO `003af0d` AND MOST HAVE
+> ROTTED — anchor on the SYMBOL NAMES.** Six commits landed after this was
+> written. Measured at finalize: the signal handlers cited as
+> `server.ts:603-610` are now at 690-691; `cli.ts:525-533` is at 594;
+> `cli.ts:259-261` is at 262. **They are left as written rather than renumbered
+> — renumbering makes them correct until the next commit and wrong silently
+> after, which is the same trap one lap later.** See
+> [`decisions.md`](./decisions.md) for the measurement.
+
 > ## 🟢 Ratified 2026-08-08. Build from the CUT, not from the original scope.
 >
 > This document was a 🟡 scaffold until the ratify round of 2026-08-07/08. **The
