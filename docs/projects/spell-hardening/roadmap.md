@@ -268,6 +268,33 @@ an anonymous inline handler without naming any of them. **Intent was.**
   predicates. **It gets its own ratify round.** A discovery lane that inherits a
   harness's schedule is how a sprint lies about its size.
 
+### ⛔ A HARD CONSTRAINT ON HOW (a) IS RUN — measured 2026-08-08, not anticipated
+
+> **Mutation calibration happens in an ISOLATED COPY, never in the shared tree.
+> If a mutation must touch the shared tree, it is ANNOUNCED before and cleared
+> after — the window is the announcement, not the mutation.**
+
+**Why this is a constraint and not hygiene.** Sprint 04 logged three separate
+"gate contention" incidents — a seat blocked behind a peer, a gate red on a
+peer's in-flight tests, and two seats measuring RED and GREEN on the same
+artifact minutes apart. **All three turned out to be one mechanism, and it was
+not scheduling:** a seat was deliberately breaking code to prove a cell could
+fail.
+
+**A seat mutating to calibrate is INDISTINGUISHABLE, to every other seat, from a
+broken tree.** Same red, same files, same gate. The discriminator — _this red is
+intentional and mine_ — exists only in the mutating seat's head.
+
+**Sprint 05 (a) requires mutation calibration for EVERY cell.** That is not one
+window, it is dozens. **On a shared tree, the sprint would spend most of its
+wall-clock looking broken to everyone not currently mutating** — every peer gate
+run a false red, every peer land blocked or misattributed.
+
+_(The requirement's original wording already said "revert the fix in a scratch
+copy." That read as fastidiousness. Sprint 04 established it is what makes the
+sprint runnable at all — one incident is a nuisance, dozens is a sprint that
+cannot report its own state.)_
+
 ⚠ **THE DENOMINATOR IS THE TRAP, AND IT IS ALREADY SOLVED — REUSE IT.**
 
 ```
