@@ -10,7 +10,8 @@
     "lint": "biome check --error-on-warnings .",
     "lint:fix": "biome check --write --error-on-warnings .",
     "check": "biome check --error-on-warnings .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "land-check": "bun scripts/land-check.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,json,jsonc}": [
