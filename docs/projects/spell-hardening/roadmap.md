@@ -113,15 +113,53 @@ _(The earlier version of this document ran those two sentences together.)_
 2. **The rules exist and are enforced** — `grimoire/house-style.md` carries them
    in its mandatory shape, and a conformance gate **fails** a new violation.
 
-⭐ **AND A THIRD CLAUSE INSIDE CRITERION 2, earned on 2026-08-08:**
+⭐ **AND TWO MORE CLAUSES INSIDE CRITERION 2, both earned on 2026-08-08:**
 
-> **A conformance gate must state what it cannot see.**
+> **(i) A conformance gate must state what it cannot see.**
 
 Both shipped wards already carry a _"what this cannot see"_ block. Without it,
 _"the gate is green"_ is an answer that does not state the question it answered
 — and **the arc-end test below is only DECIDABLE if the gate's coverage is
 written down.** That is the difference between ending the arc and believing you
 have.
+
+> **(ii) Every rule must name the check that enforces it, and every check must
+> cite the rule it enforces — bidirectionally, and the link itself is gated.**
+
+**Measured, and it is why (ii) exists:** `bunx biome check` on a `.md` reports
+`Checked 0 files` at exit 1, and `bun run check` is biome-only. **The gate
+cannot read a single markdown file in this repo** — so `house-style.md`, the
+decay ledger, the trigger registry and every sprint plan are outside it. The
+tool that _does_ read markdown is `prettier`, which lives in `format:md` and the
+pre-commit hook, **not in the gate.** For a docs change the informative check
+and the gated check are different tools, and only the uninformative one is named
+in the land string.
+
+**That does not sink criterion 2** — a conformance gate convicts _code_, not
+prose, so rules living in a file the gate cannot read is survivable. **What is
+not survivable is the consequence:**
+
+> **A check written as a `.test.ts` IS gated. A rule written as prose in
+> `house-style.md` is NOT. So _"the rule exists"_ and _"the rule is enforced"_
+> have NO SHARED MECHANISM, and nothing detects the gap between them.**
+
+A rule whose text drifts from the test enforcing it cannot be caught, because
+one half is invisible to the gate. **That is the decay ledger's paraphrase
+problem at a higher altitude.**
+
+⭐ **The fix already exists in this repo and enforces a different pair.**
+`grimoire/flag-invariant.test.ts` checks `SKILL.md` ↔ entry-point flags **in
+both directions with a zero-denominator guard on each side.** Point that same
+pattern at rules ↔ checks: **a gated test that reads the prose, extracts the
+rule set, and asserts a live check for each — and, in the other direction, that
+every conformance check cites a rule that still exists.** The template is built,
+battle-tested through three wrong enumerators, and was written by the seat that
+found this gap.
+
+⚠ **And a docs-only commit currently earns a VACUOUS GREEN that is
+byte-identical to a real one.** The gate's own output must distinguish _"checked
+0 files of your type"_ from _"checked and passed"_ — clause (i) applied to the
+gate itself, which is where this arc keeps arriving.
 
 ### How to tell the arc has ended
 
