@@ -2275,6 +2275,34 @@ describe("dependencies (Phase D)", () => {
     }
   }, 25000);
 
+  test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "T", "--id", "T", "--session", session], { env });
+
+      // The defect cassandra measured at r4: `state` and `state --full` returned
+      // byte-identical payloads, and NOTHING in either said which mode produced
+      // it. Zero semantic coverage is why the no-op survived, so this is the
+      // cell that was missing rather than an extra.
+      const def = await runCli(["state", "--session", session], { env });
+      expect(def.code).toBe(0);
+      const d = JSON.parse(def.stdout) as { readMode?: string };
+      expect(d.readMode).toBe("full");
+
+      // `--full` is KEPT for compatibility and now names the default: it must
+      // still be ACCEPTED (a strict parser exits 2 on an unknown flag, so
+      // removing it would break existing callers) and must answer the same.
+      const full = await runCli(["state", "--full", "--session", session], { env });
+      expect(full.code).toBe(0);
+      expect((JSON.parse(full.stdout) as { readMode?: string }).readMode).toBe("full");
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 25000);
+
   test("cli block/unblock works; a cycle is rejected visibly (exit 1)", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
