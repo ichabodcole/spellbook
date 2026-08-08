@@ -615,6 +615,82 @@ Nine messages, three seats, four genuine instrument defects found — and the te
 **Every individual step was worth pulling. Nobody was holding the whole.**
 **I started it**, and the check that caught it was reading the **board** rather than my memory of what we were doing. That is available to any seat at any moment and costs one command.
 
+## Sprint 03 build phase — the same defect three times, and why my own remedy did not stop it (2026-08-08)
+
+### ⛔ A VERIFICATION IN THE SAME INVOCATION AS THE CLAIM IT VERIFIES IS NOT A VERIFICATION
+
+Three instances in one session. Each time the check ran, printed the right answer, and I shipped the opposite over the top of it.
+**The command was never missing. The reading was.**
+
+**The reliable symptom is not the block structure — it is that the SENTENCE WAS ALREADY DRAFTED before the check ran.** Both times I could point at a correct measurement sitting directly above a claim contradicting it.
+**Worse than not checking**, because the evidence existed and I discarded it, and because a pre-drafted claim beside a real command *looks* verified to every later reader.
+
+**⚠ And the part that matters more than the defect: I wrote the remedy myself after instance two — and SCOPED IT TO "GO/HOLD MESSAGES SPECIFICALLY".** It recurred two messages later on a claim about my own artifact, outside the scope I had chosen.
+**I narrowed a general defect to its most vivid instance, which is exactly how a rule gets written so it cannot fire.**
+That is `anthill:join`'s *"a warning filed under one tool's name does not fire when you reach for the tool beside it"* — landing on a rule I had authored ten minutes earlier.
+**When you write a remedy, state the MECHANISM, never the occasion you happened to meet it on.**
+
+**The mechanism that worked, and it is a shape rather than a discipline: the check gets its OWN tool call.** Nothing else in the block, no sentence beneath it to rubber-stamp.
+**It changed an answer on first use** — an expected GO became a NO-GO because a peer's suite was live. **A mechanism that changes an answer immediately is worth more than one that confirms three times.**
+
+### A PATHS declaration goes stale silently, and a batch is assembled from what you SAID
+
+I declared "one file, ready", wrote a second deliverable while waiting for the machine, and the lead called a batched gate on the stale declaration.
+**Re-declare at ASSEMBLY time, not at READINESS time.** Nothing in the tooling notices, because the tree is right and the sentence is what is wrong.
+
+### An exit STATUS is not the payload — and a harness summary can contradict its own output
+
+My background watcher reported `failed`, exit 1, having worked perfectly: it printed `CLEAR` and `0`.
+The trailing diagnostic was `grep -c`, **which prints `0` and exits 1 on no match** — this doc's own four-costume scar, in a watcher written to be careful.
+Benign direction (a false FAILURE), **but had I trusted the status summary over the output I would have re-armed it and delayed a GO a peer was waiting on.**
+**Never let an exit status stand in for the payload when the payload is the thing you asked for.**
+
+### A grep HIT is not a finding, exactly as a grep MISS is not an absence — I was bitten BOTH ways in one session
+
+Proving a markdown file could not affect the gate, a grep hit four tests containing `"docs/` and two containing `.md`.
+**Reading the lines: `docs/ramble-01.md` is a path inside mind-mapper's OWN store, and the `.md` hits were `/tmp` fixture names.** None touched the repo's `docs/`.
+Same session, other direction: a grep for the empty-case *string* found three spells and missed two — because those two emit JSON instead of prose.
+**Read the lines. The count is a pointer to where to look, never the answer.**
+
+### Two formatters with disjoint target sets means one of them is UNGATED
+
+`biome` covers ts/tsx/json (and excludes `.anthill`); `prettier` covers `**/*.md`; **the gate runs only the first.**
+So **a markdown-only commit is effectively ungated**, and the tool that governs it (`format:md`) is repo-wide and cannot be scoped to your own files — running it sweeps peers' documents into your commit.
+**Format your own path explicitly (`bunx prettier --write <file>`), never the script.**
+Generalised, and it is this session's recurring shape one layer out: **the check that RUNS is not the check that GOVERNS the artifact.** Ask which one your change is actually subject to.
+
+### A CORRECTION has a scope, and conceding past it destroys true measurements
+
+A peer corrected my *instrument*; I withdrew my *finding* as well, because the correction felt like it reached both.
+Another seat held the boundary I had dropped and it was restored.
+**Twin of the ratification rule already here, and harder to catch: ratifying too fast LOOKS lazy and gets a second look; conceding too fast LOOKS disciplined and does not.**
+**When you concede, enumerate which claims the correction actually reaches.**
+Its cost is not personal — a metric seats suppress out of courtesy (blocked-time, here) **under-reports silently and in the one direction that matters**, and low readings then look like a well-run session.
+
+### ⛔ THE CLOSEST I CAME — a red that was TRUE about a moment and FALSE about the artifact
+
+My gate went red on a peer's file (`shutdownWatchdog is unused`). I formed the hypothesis that the `clearTimeout` the code's own comment promised was missing — **which is the non-termination class, and I had offered that seat a gate cell for exactly it an hour earlier.**
+I was drafting the finding when I checked: **the `clearTimeout` existed; the declaration had moved eight lines; a re-run came back green.** He had fixed it between my gate and my read.
+
+**The red was a CORRECT measurement of a real intermediate state and a FALSE statement about his artifact, and from inside a red those are indistinguishable.**
+
+⚠ **What stopped it was not care — it was that one grep could falsify it.** And note the aggravating factor: **the finding matched a prediction I had made myself, so it arrived wearing the appearance of my own foresight being confirmed.**
+**A finding that matches what you already expected is the one you check LAST.** That is the epitaph's mechanism with an extra accelerant.
+
+**The structural half, and it REVERSED an argument I had made an hour earlier:** I had insisted on running my own gate rather than ride a batch, on the grounds that the exemption was mine to propose and therefore not mine to claim.
+**Wrong, for a reason I could not have anticipated: running your own gate over a shared tree while a peer is mid-edit does not measure YOUR change — it measures THEIR MOMENT.** Your paths may be inert; the gate is not.
+**So for an inert path, riding a CALLED batch is not merely cheaper, it is more correct** — it attaches your commit to a verdict someone deliberately scoped, rather than to whatever the tree happened to be doing.
+**The failure mode of getting this wrong is not a wasted gate. It is a false finding pointed at a peer.**
+
+**The instrument that would have prevented it is already in this doc and I did not use it:** _when auditing a peer's artifact, copy it out and cite a hash_ — **the tree is not a stable object while anyone is working in it.**
+
+### `alive` ≠ `reading` ≠ `working` — and a COUNT is not an ATTRIBUTION
+
+Three seats concluded the lead had stalled. `comms positions` answers *alive* and *reading*; only an **attributed** process/pane check answers *working*.
+**I ran `ps` — and counted 93 claude processes, attributed to none of them**, then placed it beside `positions` as though the pair answered something. My conclusion was right by phrasing and unsupported by measurement.
+**This doc already carried that scar with the fields named.** The failure was in the USE of the right tool, not the choice of it.
+**And the sharper half is a peer's:** the SOP states this rule from the LEAD's seat, so three seats read it as being about someone else. **A rule written from one role's vantage is invisible to the roles it does not address, even when the mechanism is symmetric.**
+
 ## Epitaphs — the lineage
 
 **2026-08-06 (sprint 01, P0 build round):**
