@@ -2604,12 +2604,32 @@ describe("liveBoards", () => {
   });
 
   test("includes only boards the probe reports live, carrying their task counts", async () => {
+    // b1 — the probe now answers `{tasks} | null`. The OUTER null still means
+    // NOT LIVE (dropped); the shape changed so a live board can separately
+    // report an unknown count. This test's intent is unchanged.
     const probe = async (s: Session) =>
-      s.session_id === "bounty-b" ? null : s.session_id === "bounty-a" ? 3 : 0;
+      s.session_id === "bounty-b" ? null : { tasks: s.session_id === "bounty-a" ? 3 : 0 };
     const live = await liveBoards([mk("a"), mk("b"), mk("c")], probe);
     expect(live.map((l) => l.session_id).sort()).toEqual(["bounty-a", "bounty-c"]); // b stale, skipped
     expect(live.find((l) => l.session_id === "bounty-a")?.tasks).toBe(3);
     expect(live.find((l) => l.session_id === "bounty-a")?.title).toBe("Board a");
+  });
+
+  test("b1: a LIVE board with an unreadable count stays listed, with tasks null — not 0, not dropped", async () => {
+    // The two nulls must not collapse. A board that ANSWERS but whose body we do
+    // not recognise used to report 0 — indistinguishable from empty (b5's defect
+    // in this probe). Reporting the DEAD null instead would be worse: liveBoards
+    // drops those, so a live board would vanish from `list` entirely.
+    const probe = async (s: Session) =>
+      s.session_id === "bounty-b" ? null : { tasks: s.session_id === "bounty-a" ? null : 2 };
+    const live = await liveBoards([mk("a"), mk("b"), mk("c")], probe);
+    // still LISTED — the live-but-uncountable board did not disappear
+    expect(live.map((l) => l.session_id).sort()).toEqual(["bounty-a", "bounty-c"]);
+    const a = live.find((l) => l.session_id === "bounty-a");
+    expect(a?.tasks).toBeNull();
+    expect(a?.tasks).not.toBe(0);
+    // and a real count is still a real count
+    expect(live.find((l) => l.session_id === "bounty-c")?.tasks).toBe(2);
   });
 
   test("empty list when nothing is live", async () => {

@@ -924,21 +924,30 @@ function cmdSessions() {
   if (!rows.length) process.stdout.write("no saved sessions\n");
 }
 
-type LiveBoard = { session_id: string; title: string; url: string; tasks: number };
+// b1 — `tasks` is `number | null`: null means the board ANSWERED but its task
+// count could not be established. Before, an unrecognised body reported 0, which
+// is indistinguishable from an empty board (b5's defect in this probe). It could
+// not simply become null at the probe, because liveBoards treats null as DEAD
+// and would have made a live-but-uncountable board VANISH from `list` — worse
+// than a wrong count. Distinguishing "not live" from "live, uncountable" needs
+// the two nulls to live at different levels, which is this type change.
+type LiveBoard = { session_id: string; title: string; url: string; tasks: number | null };
 
 // Filter discovered sessions to the LIVE ones via an injected probe (task count
 // if the board answers, null if dead/stale). Probes run in parallel. Injecting
 // the probe keeps the live-filter unit-testable without spawning real daemons.
 async function liveBoards(
   discovered: Session[],
-  probe: (s: Session) => Promise<number | null>,
+  probe: (s: Session) => Promise<{ tasks: number | null } | null>,
 ): Promise<LiveBoard[]> {
   const probed = await Promise.all(
     discovered.map(async (s) => {
-      const tasks = await probe(s);
-      return tasks === null
+      // OUTER null = the board did not answer, so it is not live and is dropped.
+      // The count INSIDE a live board may separately be null — see LiveBoard.
+      const probed = await probe(s);
+      return probed === null
         ? null
-        : { session_id: s.session_id, title: s.title, url: s.url, tasks };
+        : { session_id: s.session_id, title: s.title, url: s.url, tasks: probed.tasks };
     }),
   );
   return probed.filter((b): b is LiveBoard => b !== null);
@@ -947,7 +956,7 @@ async function liveBoards(
 // Liveness probe: GET /state with a short timeout. Returns the task count if the
 // board answers, null if unreachable (a stale discovery file left by a daemon
 // that died without cleanup).
-async function probeBoard(s: Session): Promise<number | null> {
+async function probeBoard(s: Session): Promise<{ tasks: number | null } | null> {
   try {
     // b6 — `?lean=1` SURVIVES HERE ON PURPOSE, and this is the deliberate
     // opt-in the flipped default exists to make possible. b6's rule is that a
@@ -959,17 +968,14 @@ async function probeBoard(s: Session): Promise<number | null> {
     const res = await fetch(`${s.url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
     if (!res.ok) return null;
     const body = (await res.json()) as { state?: { tasks?: unknown[] } };
-    // ⚠ KNOWN, CARDED, NOT FIXED HERE: a board that answers 200 with a body this
-    // shape-check does not recognise reports 0 — indistinguishable from a board
-    // that is genuinely empty. That is b5's defect in this probe.
-    //
-    // It is NOT a one-line `: null`, and that is why it is not fixed in passing:
-    // `liveBoards` treats null as DEAD and filters the board OUT, so returning
-    // null here would make a live-but-uncountable board VANISH from `list` —
-    // strictly worse than a wrong count. The honest shape needs `LiveBoard.tasks`
-    // to be `number | null` so "live, could not count" is expressible, and that
-    // is b1's territory (`list`'s output shape), not this line's.
-    return Array.isArray(body.state?.tasks) ? body.state.tasks.length : 0;
+    // b1 — TWO DIFFERENT NULLS, and keeping them apart is the whole point. The
+    // outer null (returned above and below) means NOT LIVE, and liveBoards drops
+    // that board. This inner one means LIVE BUT UNCOUNTABLE: the board answered
+    // 200 and its body was not the shape we recognise. It used to report 0,
+    // which is indistinguishable from an empty board — b5's defect in this
+    // probe — and it must NOT collapse into the dead null, or a live board
+    // disappears from `list` entirely.
+    return { tasks: Array.isArray(body.state?.tasks) ? body.state.tasks.length : null };
   } catch {
     return null;
   }
@@ -1000,10 +1006,29 @@ async function cmdList() {
   }
   const live = await liveBoards(discovered, probeBoard);
   live.sort((a, b) => a.session_id.localeCompare(b.session_id));
+  // b1 / #79 — SAY WHICH QUESTION THIS ANSWERED. The reporter seeded six cards,
+  // ran `list` to confirm they were there, got nothing back, and concluded the
+  // cards had not been created — one message from filing a false defect against
+  // a working tool. `list` is the verb a caller reaches for to see what is ON a
+  // board; it enumerates BOARDS. The verb is right and the noun is a different
+  // one than the caller has in mind, and an empty set is exactly what they
+  // expect to see when their cards are missing, so it CONFIRMS the wrong
+  // hypothesis instead of raising a question.
+  //
+  // Naming the noun on every path — including the populated one — is what lets a
+  // caller notice they asked a different question than the one answered.
+  process.stdout.write(`${live.length} running board${live.length === 1 ? "" : "s"}\n`);
   for (const b of live) {
-    process.stdout.write(`${b.session_id}  ${b.tasks} tasks  ${b.url}  — ${b.title}\n`);
+    // A null count is LIVE BUT UNCOUNTABLE, never 0. Rendered as "?" so it can
+    // never be read as an empty board — the whole reason the two nulls are kept
+    // apart upstream.
+    const count = b.tasks === null ? "? (unreadable)" : `${b.tasks} tasks`;
+    process.stdout.write(`${b.session_id}  ${count}  ${b.url}  — ${b.title}\n`);
   }
-  if (!live.length) process.stdout.write("no running boards\n");
+  if (!live.length)
+    process.stdout.write(
+      "this lists BOARDS, not tasks — for the cards ON a board use `bounty state`\n",
+    );
 }
 
 // Read all of stdin as a single string. Used by --stdin so free text (titles,
