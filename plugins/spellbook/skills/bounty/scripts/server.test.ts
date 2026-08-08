@@ -4139,3 +4139,157 @@ describe("P1d — the leniency is audible", () => {
     }
   }, 40000);
 });
+
+// ── P1f — the teardown funnel: signal deaths run it instead of pre-empting it ─
+//
+// ⛔ THE FAILURE MODE OF THIS FIX IS NON-TERMINATION, so a cell that measures
+// the FRAME cannot fail on it. `process.exit` in a signal handler did DOUBLE
+// DUTY — it ended the process AND skipped the teardown — and removing it to gain
+// the teardown can lose the ending. To a frame-counting cell, a hang and a
+// success are identical. So TERMINATION is asserted first and separately, on the
+// process itself, never as a side effect of its output being consumed.
+//
+// Signals are ENUMERATED, never "for each signal" (G4): SIGTERM and SIGINT are
+// separate cells because they are separate handlers and one can be wired wrong.
+// MUTATION-VERIFIED, both directions, and the SPLIT is the point:
+//   pre-fix  3 pass / 2 fail
+//   post-fix 5 pass / 0 fail
+// The two that fail pre-fix (the `closed` frame, and `subscribers` on the
+// signal path) are the evidence. The three that pass in BOTH worlds are
+// GUARDS and are labelled so — the old code ended the process correctly, so a
+// termination cell cannot discriminate the fix. It exists to catch the fix
+// LOSING the ending, which is the failure this whole lane was warned about.
+describe("P1f — a signal death runs the teardown AND still ends the process", () => {
+  // Budget comes from the FAILURE, not the success: a hang is unbounded, so a
+  // tight budget is all cost and no coverage. It sits strictly below the
+  // enclosing test(…, N) so the runner cannot kill the test before this
+  // assertion executes — otherwise a hang reads as "the suite is slow" instead
+  // of a red cell naming the hung path.
+  const EXIT_BUDGET_MS = 8000;
+
+  async function exitsOnSignal(signal: "SIGTERM" | "SIGINT", expectCode: number) {
+    const { proc, ready } = await spawnServerReady();
+    // A REAL consumer, attached before the signal: #73's lesson is that emitting
+    // a frame and DELIVERING it are different claims, so the frame is observed
+    // where a consumer would see it, not at the emit site.
+    const frames: Array<Record<string, unknown>> = [];
+    const ac = new AbortController();
+    const sse = fetch(`${ready.url}/events?since=0`, { signal: ac.signal })
+      .then(async (r) => {
+        const reader = r.body?.getReader();
+        if (!reader) return;
+        const dec = new TextDecoder();
+        let buf = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          for (const line of buf.split("\n")) {
+            if (!line.startsWith("data: ")) continue;
+            try {
+              frames.push(JSON.parse(line.slice(6)) as Record<string, unknown>);
+            } catch {}
+          }
+          buf = buf.slice(buf.lastIndexOf("\n") + 1);
+        }
+      })
+      .catch(() => {});
+    await Bun.sleep(300); // let the stream attach before we kill the daemon
+
+    proc.kill(signal);
+
+    // ⛔ THE TERMINATION ASSERTION. Observed on the process, with a budget, and
+    // NOT inferred from the stream ending — a stream can end because the socket
+    // died while the process lives on.
+    const exited = await Promise.race([
+      proc.exited,
+      Bun.sleep(EXIT_BUDGET_MS).then(() => "HUNG" as const),
+    ]);
+    ac.abort();
+    await sse;
+    expect(exited).not.toBe("HUNG");
+    expect(exited).toBe(expectCode);
+    return frames;
+  }
+
+  // ⚠ GUARD, MEASURED — this PASSES in both worlds and that is not a defect in
+  // the cell. The old code terminated perfectly well; what it skipped was the
+  // teardown. So this cell cannot be evidence FOR the fix, and calling it one
+  // would be a label assigned before its measurement. Its job is the opposite:
+  // to go red if the fix ever LOSES the ending, which is the failure mode the
+  // join.ts scar actually shipped. Verified by mutation: 3 pass / 2 fail
+  // pre-fix, and this was one of the three.
+  test("GUARD — SIGTERM still ends the process, exit 143", async () => {
+    await exitsOnSignal("SIGTERM", 143);
+  }, 30000);
+
+  // GUARD, same as above — measured passing pre-fix.
+  test("GUARD — SIGINT still ends the process, exit 130", async () => {
+    // Enumerated rather than inferred from SIGTERM — a separate handler is a
+    // separate site, and a per-site precondition is what the join.ts scar was.
+    await exitsOnSignal("SIGINT", 130);
+  }, 30000);
+
+  test("RED PRE-FIX — a signal death delivers the `closed` frame, reason 'signal'", async () => {
+    // This is the cell that must FAIL against the old code: the old handler
+    // process.exit'd, so `await done` never resolved and the emit at the end of
+    // teardown was unreachable. 156 of 226 recorded deaths carried no frame.
+    const frames = await exitsOnSignal("SIGTERM", 143);
+    const closed = frames.find((f) => f.type === "closed");
+    expect(closed).toBeDefined();
+    // "signal", not "close": borrowing another reason's name would leave a
+    // consumer unable to tell an orderly shutdown from a kill.
+    expect(closed?.reason).toBe("signal");
+  }, 30000);
+
+  test("THE INSTRUMENT — the signal path logs `subscribers`", async () => {
+    // Without this, nothing in daemon.log changes when the fix lands: `signal`
+    // is the only exit class that has never carried the field, so the fix would
+    // be unmeasurable afterwards. Captured before teardown closes anything.
+    const home = uniqHome();
+    const id = `p1f-${crypto.randomUUID().slice(0, 8)}`;
+    const proc = Bun.spawn({
+      cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--id", id],
+      stdin: "ignore",
+      stdout: "ignore",
+      stderr: "ignore",
+      env: { ...hermeticEnv(), BOUNTY_HOME: home },
+    });
+    const discovery = join(TEST_TMPDIR, `bounty-${id}.json`);
+    const deadline = Date.now() + 5000;
+    while (Date.now() < deadline && !existsSync(discovery)) await Bun.sleep(80);
+    proc.kill("SIGTERM");
+    const exited = await Promise.race([
+      proc.exited,
+      Bun.sleep(EXIT_BUDGET_MS).then(() => "HUNG" as const),
+    ]);
+    expect(exited).not.toBe("HUNG");
+    const log = readFileSync(join(home, "daemon.log"), "utf8");
+    const sig = log
+      .split("\n")
+      .filter((l) => l.startsWith("{"))
+      .map((l) => JSON.parse(l) as { reason?: string; subscribers?: number })
+      .filter((e) => e.reason === "signal");
+    expect(sig.length).toBeGreaterThan(0);
+    expect(typeof sig[0]?.subscribers).toBe("number");
+  }, 30000);
+
+  // GUARD, measured passing pre-fix — which is exactly what a blast-radius
+  // cell should do: it watches the class the change did NOT intend to touch.
+  test("GUARD — blast radius: a clean close still exits 0", async () => {
+    // The funnel edits the SHARED teardown path, so the guard against trading
+    // one death class for another is that the untouched class still works.
+    const { proc, ready } = await spawnServerReady();
+    await fetch(`${ready.url}/cmd`, {
+      method: "POST",
+      body: JSON.stringify({ type: "close" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    const exited = await Promise.race([
+      proc.exited,
+      Bun.sleep(EXIT_BUDGET_MS).then(() => "HUNG" as const),
+    ]);
+    expect(exited).not.toBe("HUNG");
+    expect(exited).toBe(0);
+  }, 30000);
+});

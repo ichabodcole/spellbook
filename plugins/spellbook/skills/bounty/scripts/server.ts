@@ -72,6 +72,11 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // the same path, so override BOUNTY_HOME to relocate both.
 const BOUNTY_HOME = process.env.BOUNTY_HOME ?? join(homedir(), ".bounty");
 const SNAPSHOTS_DIR = join(BOUNTY_HOME, "snapshots");
+// P1f — how long the teardown gets after a signal before the watchdog forces
+// the exit. Generous on purpose: it is a HANG backstop, not a deadline, and
+// the teardown's own bounded waits (150ms + a 200ms race) total well under it.
+// Env-overridable for tests only.
+const SHUTDOWN_WATCHDOG_MS = Number(process.env.BOUNTY_SHUTDOWN_WATCHDOG_MS ?? 5000);
 
 // Durable, append-only diagnostics log (#64). The daemon runs headless — cli.ts
 // `open` spawns it with stdout/stderr discarded — so a death (idle-close, crash,
@@ -289,7 +294,10 @@ function transitionStamp(
   return { enteredStatusAt: now, statusHistory };
 }
 
-type CloseReason = "user" | "timeout" | "close";
+// P1f adds "signal": a daemon killed by SIGTERM/SIGINT now runs the teardown
+// and its `closed` frame says so. Borrowing "close" would have been a
+// success-shaped lie — a consumer cannot tell an orderly shutdown from a kill.
+type CloseReason = "user" | "timeout" | "close" | "signal";
 type DoneResult = { code: number; reason: CloseReason };
 
 // `as` is the caller's --as identity (stamped onto the event `by`); cooperative
@@ -628,30 +636,59 @@ async function main(argv: string[]): Promise<number> {
     }
   };
 
-  // Crash + signal handlers catch the JS-level and OS-level deaths that headless
-  // stdio otherwise swallows. There is no prior signal handling to compose with,
-  // and these preserve the pre-existing behavior (an untrapped crash/signal still
-  // dies) — they only add the missing log line. The graceful-shutdown path
-  // (snapshot save on `done`) is unaffected: it runs on the clean close/timeout
-  // route, not through these.
+  // P1f — signal deaths now run the TEARDOWN instead of pre-empting it.
+  //
+  // The defect these handlers used to be: `process.exit` here fires immediately,
+  // so `await done` below NEVER resolves and the entire teardown block is
+  // unreachable — no final snapshot, no `closed` frame, no discovery cleanup.
+  // That ONE fact is P1f's defect (156 of 226 recorded deaths emitted no `closed`
+  // frame) and a pair of P0f exit sites at once.
+  //
+  // ⛔ THE HAZARD, AND WHY THIS IS NOT THE `join.ts` SCAR. `process.exit` in a
+  // signal handler does DOUBLE DUTY: it runs the teardown's job (ending) AND
+  // skips the teardown. Removing it to gain the teardown can LOSE THE ENDING —
+  // which shipped a 23-minute hang in a released spell once already.
+  //
+  // Two things make the ending safe here, and neither is "the teardown is
+  // well-behaved":
+  //   1. The terminal `process.exit(exitCode)` at `import.meta.main` STAYS. This
+  //      change does not swap an exit for a natural return; it only redirects
+  //      the signal path INTO the bounded teardown that already precedes that
+  //      exit. Every await in that block is bounded (a 150ms sleep, a
+  //      Promise.race with a 200ms cap, fs work).
+  //   2. A WATCHDOG, below, force-exits if the teardown does not finish. So
+  //      termination is guaranteed by construction rather than by the teardown
+  //      being correct — the property a gate can actually assert.
+  //
+  // `requestShutdown` is a mutable hook because these handlers must be installed
+  // BEFORE the work they guard, while `done`/`sockets`/`sseClients` do not exist
+  // until later. Until it is assigned, a signal falls back to the old immediate
+  // exit — a signal during startup MUST still kill the process, and pretending
+  // otherwise would introduce a hang in exactly the window with nothing to save.
+  let requestShutdown: ((code: number, reason: string, signal: string) => void) | null = null;
+  const onFatal = (signal: string, code: number) => () => {
+    if (requestShutdown) requestShutdown(code, "signal", signal);
+    else {
+      logDaemon("signal", { signal, phase: "pre-init" });
+      process.exit(code);
+    }
+  };
   process.on("uncaughtException", (e) => {
     logDaemon("uncaughtException", {
       error: String(e),
       stack: e instanceof Error ? e.stack : undefined,
     });
+    // NOT routed through the teardown. An uncaught exception means invariants
+    // are already unknown, and the teardown WRITES THE SNAPSHOT — flushing
+    // possibly-corrupt state over a good one is the #73 failure with extra
+    // steps. Dying loudly and leaving the last good snapshot is correct here.
     process.exit(1);
   });
   process.on("unhandledRejection", (e) => {
     logDaemon("unhandledRejection", { error: String(e) });
   });
-  process.on("SIGTERM", () => {
-    logDaemon("signal", { signal: "SIGTERM" });
-    process.exit(143);
-  });
-  process.on("SIGINT", () => {
-    logDaemon("signal", { signal: "SIGINT" });
-    process.exit(130);
-  });
+  process.on("SIGTERM", onFatal("SIGTERM", 143));
+  process.on("SIGINT", onFatal("SIGINT", 130));
 
   const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
@@ -795,6 +832,35 @@ async function main(argv: string[]): Promise<number> {
       res(v);
     };
   });
+
+  // P1f — arm the signal path now that `done` exists. Everything below is what
+  // the handlers above could not reach at registration time.
+  //
+  // ⛔ THE WATCHDOG IS THE LOAD-BEARING PART, not the resolve. `resolveDone`
+  // alone would make termination depend on the teardown completing, and "the
+  // teardown always completes" is exactly the kind of claim that shipped a
+  // 23-minute hang. This makes the ending unconditional: teardown finishes and
+  // clears it (the normal path, and the timer never fires), or it does not and
+  // the process still dies with the right code.
+  //
+  // REF'd deliberately — an unref'd timer cannot rescue a hang, because a hang
+  // means something else is already holding the loop open. The cost is that the
+  // timer keeps the loop alive until teardown clears it, which is why
+  // `clearTimeout` sits at the end of the teardown rather than being optional.
+  let shutdownWatchdog: ReturnType<typeof setTimeout> | null = null;
+  requestShutdown = (code, reason, signal) => {
+    // `subscribers` on the signal path — the field this class of death has never
+    // carried. Today `signal` is the only exit class that omits it, so nothing
+    // in daemon.log would change when this fix lands; measuring the fix later
+    // requires the instrument to exist now. Captured BEFORE teardown closes
+    // anything, matching the `exit` line's own discipline.
+    logDaemon("signal", { signal, subscribers: sockets.size + sseClients.size });
+    shutdownWatchdog = setTimeout(() => {
+      logDaemon("shutdownWatchdog", { signal, note: "teardown did not finish; forcing exit" });
+      process.exit(code);
+    }, SHUTDOWN_WATCHDOG_MS);
+    resolveDone({ code, reason: reason as CloseReason });
+  };
 
   let lastActivity = performance.now();
   const touch = () => {
@@ -1439,6 +1505,10 @@ async function main(argv: string[]): Promise<number> {
     subscribers: sockets.size + sseClients.size,
     idleMs: performance.now() - lastActivity,
   });
+  // Clear the shutdown watchdog: the teardown reached this point, so the
+  // force-exit is no longer needed AND the ref'd timer must stop holding the
+  // event loop or the natural drain never happens.
+  if (shutdownWatchdog) clearTimeout(shutdownWatchdog);
   clearInterval(idleTimer);
   clearInterval(snapTimer);
   clearInterval(heartbeatTimer);
