@@ -150,8 +150,11 @@ keep working something together.
   affordance ask: can _both_ parties see it (each through their lens), and is
   the work-object actionable from _both_ seats? If you're building a
   prompt-box-and-submit (words in, result out, no shared surface), the pipeline
-  has reasserted itself — stop. (The agent's half of "both see it" is
-  **readback-parity**: `state` must reach surface parity, computed not raw.)
+  has reasserted itself — stop. (**Both** halves of "both see it" are the
+  parity-facts rule under _Carry the frame, not just the value_ — including the
+  agent's, historically called **readback-parity**: `state` must reach surface
+  parity, computed not raw. That name covered the agent's half only, and the
+  human's half went unwritten for as long as it stood.)
 - **Repeal when:** —
 
 ### Keep the client thin — MCP at the auth layer.
@@ -217,6 +220,89 @@ where the signal originates.
 - **Boundary check:** an _opening_, not an interrogation — offered at a natural
   close, easy to skip. Don't nag, and don't manufacture friction to report.
 - **Repeal when:** never — feedback is how the system improves at all.
+
+### Carry the frame, not just the value.
+
+Three rules with one family resemblance and **three different mechanisms**. The
+family name is how you recognise a fourth one; it is **not** a derivation, and
+none of these follows from the others.
+
+> **⚠ Siblings, not a hierarchy.** A response can state its window perfectly and
+> still never carry the fact, because a response only answers questions that
+> were asked — and the missing fact is one nobody can ask for. _(The subsumption
+> was claimed, tested, and refuted at sprint 04's ratify round, by constructing
+> the case where one holds and the other fails.)_
+
+#### A response states the conditions it was produced under.
+
+An answer that cannot say what question it answered can be misread as the answer
+to a different question — and no amount of validating the response fixes it,
+because the missing information was never in the response.
+
+- **Boundary check:** the test is whether a **consumer** can tell two different
+  questions apart from the reply alone — not whether the reply is well-formed. A
+  complete, valid, exit-0 payload passes every completeness test there is and
+  still fails this. Scope it to what the caller could plausibly have asked
+  differently (a window, a filter, a mode); a response need not restate its
+  entire input.
+- **Repeal when:** the transport carries the request alongside the reply, so the
+  pairing is structural and the echo is genuinely redundant.
+
+_Scar: `comms read --since <id>` is strictly-greater-than, so a session anchor
+card instructing "backfill from 622" returned `{"messages":[]}` at exit 0 — a
+complete answer to the wrong window, indistinguishable from an empty channel.
+Four seats hit it at join in one morning. The envelope carries
+`{channel, messages}` — no `since` echo, no head, no count — so the same command
+returned 0 and then 1 four minutes later with nothing to say which it had done._
+
+#### A noun carries the class it belongs to.
+
+An enumerated outcome tells a caller **which** state occurred; a caller that has
+never seen that particular noun still has to route. Carry the coarse class
+beside the specific noun, or an unrecognised value is indistinguishable from a
+broken one.
+
+- **Boundary check:** this applies where the vocabulary can **grow** — a set a
+  future version may extend. A closed set the consumer is compiled against does
+  not need it. It is not a licence to invent a parallel taxonomy: one coarse
+  class, alongside, not instead of.
+- **Repeal when:** the noun set is genuinely frozen and versioned, so an
+  unrecognised value is a protocol error rather than a forward-compatible one.
+
+The full contract — the two shapes, the membership rules, the falsifier and the
+three boundaries — lives in [`outcome-contract.md`](./outcome-contract.md) and
+is **not restated here**.
+
+#### The other party's channel carries the fact at all.
+
+> A view may be asymmetric in **FORM**. It may not be asymmetric in **FACTS**.
+> The test: name the fact the party is acting on. Ask whether the other party
+> could obtain that same fact through its own channel. If not, you have found a
+> **MISSING FIELD**. **Run it in both directions or it will be enforced in
+> one.** Superset means **throughput**, never **act**. Taste and authority are
+> the human's and are not facts.
+
+- **Boundary check:** _facts_ only. Whether the agent **should** be able to
+  perform a given act is a design question ruled act by act, and it is not this
+  rule — a norm nobody can afford to satisfy gets selectively enforced, and
+  selective enforcement of a parity rule is worse than no rule.
+- **Repeal when:** never — but the **facts/acts** line is the thing to re-check,
+  because facts keep migrating out of the "human-only" column. Several supposed
+  human superpowers turned out to be missing fields.
+
+> ⛔ **This supersedes `readback-parity`**, which was the _agent's half_ of the
+> co-presence rule's "can both parties see it" test. That parenthetical
+> announced a human half existed and left it unspecified for as long as the rule
+> stood — so **the old rule could not fail in the human-ward direction, and
+> would have certified a violating spell as compliant.**
+
+_Scar: `bounty`'s `restoreSkipped` / `snapshotBackedUp` reach the agent
+present-and-null on every path; the human surface (`scripts/template.html`, 958
+lines) renders no field, badge or banner for the same fact — so a board that
+returned `tasks: []` over a snapshot holding 35 looks exactly like an empty
+board, and the one human-visible mention is a `confirm()` string implying the
+snapshot mechanism is fine. The rule was born from bounty's readback gap and
+then left bounty's opposite gap open._
 
 ---
 
