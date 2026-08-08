@@ -11,7 +11,7 @@ project closes them.
 > **⚠ The scope widened at sprint 03, and the sentence above no longer covers
 > all of it.** `#73`/`#74` — `close` writing live state over a populated
 > snapshot — are **not** misreports. The command does the thing; **it destroys
-> your data doing it.** Cole ruled 2026-08-08 that they belong here rather than
+> your data doing it.** Cole ruled 2026-08-07 that they belong here rather than
 > in a separate project, so the honest description is now **two** families:
 >
 > 1. **Honest reporting** — a command that cannot do the thing says it did.
@@ -37,7 +37,7 @@ project closes them.
 > **🟡 Scaffold** means the scope is written down and argued, but **not ratified
 > and not buildable.** Sprint 01's ratify round falsified six claims in a plan
 > written by one author; sprint 02's much narrower round found two more. **A
-> scaffold has not survived that yet.** _(Status added 2026-08-08 — the previous
+> scaffold has not survived that yet.** _(Status added 2026-08-07 — the previous
 > four values had no way to say "proposed", so a scaffold would have had to
 > masquerade as `Active` or hide as `Not planned`.)_
 
