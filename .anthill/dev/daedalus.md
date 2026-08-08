@@ -492,6 +492,56 @@ Driving the glamour fix I produced `open` returns in 1s (real) and `state` parse
 I marked it `DEGENERATE — not evidence` on the wire and in the commit message and handed it to the seat with a populated board; her drive then produced the real number (96911 both sides).
 **A cell you cannot make discriminate is worth more declared than quietly counted** — and the tell is always the same question: *would this cell look identical if the fix were absent?*
 
+**INJECTING A DEPENDENCY FOR TESTABILITY MOVES THE READ OUT OF THE PATTERN THAT FINDS IT — the synonym scar's third costume, and it fired inside the audit I was doing BECAUSE of that scar.**
+Deriving the ambient-binding surface for bounty's isolation preflight, `grep 'process\.env\.'` over the three files returned a clean, well-formed answer: `BOUNTY_AS`, `BOUNTY_HOME`, `BOUNTY_SESSION_KEY`.
+It is missing `BOUNTY_SESSION`, which resolves a board id at precedence 4 — `resolveSession` takes `env` as an injected parameter, so it reads `env.BOUNTY_SESSION` and the literal spelling exists NOWHERE in the spell.
+I caught it only because I had read `resolveSession` an hour earlier for an unrelated reason. Not by the grep, and not by care.
+The costumes so far: `Bun.argv` vs `process.argv`; `process.exit(await main())` vs `process.exit(code)`; now `env.X` vs `process.env.X`.
+**The new half, and the reason this is its own entry: the tell is greppable.** An injected default (`= process.env`, `= existsSync`, `= readFileSync`) is itself a pattern, and its presence in a file is the signal that your enumeration needs the second spelling. Grep for the injection, then grep for the parameter name.
+Pin: `scripts/bounty-preflight.ts` AMBIENT_BINDINGS (the comment carries the derivation), commit a5c322a.
+
+**A GUARD THAT FIRES ON ITS FIRST RUN FEELS LIKE A GUARD WORKING — ask whether it fired on a HAZARD or on a CONDITION, because the two are indistinguishable from inside.**
+My first isolation cell read `process.env` and failed if the suite's own shell held a session key. It went red immediately and honestly: an anthill seat shell really does carry `BOUNTY_SESSION_KEY=spellbook`.
+I nearly shipped it on the strength of that red. It was not a hazard — every spawn goes through `hermeticEnv()` and every `resolveSession` unit test injects env explicitly, so nothing in the suite could reach the team board through the parent's key.
+**A guard that fires where there is no hazard gets disabled, and then it is not guarding the case it was written for.** My own test file asserted that standard in a cell (`an unrelated board does NOT trip the protected cells`) and my first version failed it one screen later — writing the requirement down did not stop me violating it.
+The version that survived asserts **the DEFENCE covers the ENUMERATED POPULATION** rather than asserting the world is clean: source-scan the scrub's destructure, require every enumerated binding to appear. FALSE pre-fix naming exactly one cause, TRUE post-fix.
+Generalises: "assert the world is clean" produces nuisance guards; "assert the defence is total over an enumerated population" produces guards that cannot drift. Prefer the second, and it is usually available.
+
+**AN UNRESOLVED ENTRY POINT IS A QUESTION ABOUT WHICH TREE THE FILE IS IN, NOT ABOUT ITS DOCUMENTATION.**
+I wrote the preflight at `bounty/scripts/preflight.ts` and the flag-invariant ward went red on it. Both escape hatches were wrong: it is not `INTERNAL` (that set means "spawned only by a sibling", and nothing spawns it — adding it would have made the set's own definition false), and documenting `--scratch`/`--protect` in bounty's SKILL.md would tell a cold agent that preflight is a bounty VERB.
+**The ward found a PACKAGING mistake wearing a documentation error's clothes**: by Contract 4 everything git-tracked under `plugins/spellbook/` ships to the consumer cache, and this is dev tooling for an experiment we run ON the spell. The fix was `git mv` to repo `scripts/`, beside `land-check.ts`.
+Worth keeping because the ward was not designed to catch this — thoth built it for undocumented flags. **When a check fires and neither of its exemptions fits, the check has found something outside its own model; do not reach for the nearest exemption.**
+
+**THE RATE OF A REMEDY IS A DESIGN PARAMETER, AND A RULING THAT NAMES ONLY THE TRIGGER HAS NOT SPECIFIED IT.**
+The lead ruled that a shrinking snapshot write should BACK UP AND PROCEED rather than refuse — sound on every axis he named (a refusal converts a legitimate board-clearing into a failure, and inherits P0b's no-corrective-verb hole).
+It does not survive the rate. The snapshot flush is a 1s dirty-check, so writes are per MUTATION: draining a 26-card board card-by-card produces up to 26 shrinking writes, hence 26 rotations, and **with any retention bound N the protected snapshot is evicted by rotation N+1 — by the guard's own backups.**
+The repair is one word in the trigger: rotate once per DAEMON SESSION (first shrinking write since boot), which bounds rotations by boots rather than mutations, captures exactly the pre-daemon state both issues wanted back, and needs no retention policy at all.
+Generalises: when you accept a "do X instead of refusing" ruling, ask **how often X fires**. A remedy whose cost is per-event and whose benefit is per-incident inverts at high event rates, and the ruling that specifies only the trigger reads complete.
+
+**SHRINKAGE, NOT EMPTINESS — and the measurement that killed the obvious predicate was a cell nobody had asked for.**
+`#73` and `#74` both ask for a guard against writing an EMPTY board over a populated snapshot, and the sprint plan assumed that shape.
+Measured: a keyed `open` over a dead board does NOT hydrate (0 tasks live against 3 on disk), and then one ordinary `add` — no `close`, no `--fresh`, no `--restore` — took the snapshot **3 → 1 tasks** about a second later, through the debounce path that appears in neither issue.
+**An emptiness predicate permits that write, because 1 is not 0.** Emptiness is the worst case of the real predicate, not its definition.
+The generalisable half is how the cell got written at all: I was tracing the two issues' routes to answer "does ONE guard close both", found a THIRD route to the same sink while reading the call sites of `saveSnapshot`, and the third route is the one that discriminated the predicates. **Enumerating the CALL SITES of a sink is a different act from tracing the ROUTES the tickets describe, and only the first one is bounded by what the reporters happened to notice.**
+Pin: cells 1 + 3n, `.anthill/scratch/daedalus/p1a-cells.ts` (scratch — the numbers are in comms #471).
+
+**CACHING AN INSTRUMENT'S OUTPUT THROWS AWAY THE PROPERTY THAT MADE IT AN INSTRUMENT — and I did it two hours after shipping the lesson, in the commit that shipped it.**
+Hunting leaked temp dirs I did the right thing first: grepped `mkdtempSync` across every test file — enumerate by SHAPE, which is the reflex this doc already carries three times.
+Then I read seven prefixes off that grep, wrote them into a fixed array, and measured those seven. A peer's `glamour-*` wildcard found an eighth (`glamour-home`, 158 dirs) and our totals differed by exactly that.
+**The shape-grep was the instrument. The seven-element array was me caching its output and then trusting the cache** — and a cache of an enumeration is a SET-LIST, which is the thing I have written up as unable to notice a member it never heard of.
+**So "enumerate by shape" is not a step you perform once and carry the result of; it is the FORM the check has to keep.** If the audit can be run as a wildcard, run the wildcard — do not transcribe it into a list and check the list, because the transcription is where totality dies.
+The tell: any time an enumeration's output becomes a literal in my next command, I have converted a derived set into a hand-maintained one.
+Pin: comms #480 (790, seven prefixes) vs #483 (948, wildcard) — same machine, minutes apart, same author.
+
+**A CONFIRMED PREDICTION OF MY OWN IS EVIDENCE ONLY IF THE CELL COULD HAVE COME OUT THE OTHER WAY — design the discriminator BEFORE you run anything, or you buy a confirmation worth nothing.**
+I had recommended DROPPING a lane on a PREDICTION read from source: that `add` and `update` do not disagree about a bad `--size`, and `update`'s exit 2 is really its empty-patch guard.
+Both readings — "update validates size" and "update hit an empty patch" — predict **exit 2** for `update --size bogus`. That cell cannot tell them apart, and it is the obvious one to run.
+The cell that discriminates is `update <id> --size bogus --owner alice`: the validation reading predicts a refusal, mine predicts exit 0 with the owner set and the size silently dropped. Measured: exit 0, owner set, size gone.
+**Had I run only the obvious cell I would have reported a confirmed prediction and learned nothing**, while feeling I had checked.
+Corollary that saved the result: a CONTROL first (`add --size M` → stored `"M"`), because `size=undefined` is worthless if the readback cannot display a size at all — the absence has to be shown to be an absence.
+Generalises past predictions to any two-mechanism question: **write down what each mechanism predicts for each candidate cell, and only run the cells where the predictions differ.**
+Pin: comms #485; `.anthill/scratch/daedalus/p1d-cells.ts` (scratch — numbers are in the message).
+
 ## Candidates
 
 **glamour's `open` prints a URL for a daemon that is already gone** — `server.ts` run directly is healthy (alive at t+4s, /state 200), but via `cli.ts open` there are ZERO server processes at t+300ms after a successful handshake, so the fault is the CLI's spawn path, not the daemon. Unproven hypothesis: `cli.ts:326-332` spawns `detached:true` + `unref()` but `stdio:["ignore","pipe","inherit"]`, and the CLI reading the handshake then exiting takes the pipe (and inherited stderr) with it. thoth's canon read rules out "by design" — SKILL.md documents a 60s idle retirement and death is under 6s. Mine to fix; not carded as of session end.
