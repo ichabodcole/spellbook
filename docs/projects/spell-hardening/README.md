@@ -106,12 +106,21 @@ the snapshot-rotation path, the project's first _durability_ family fix.
 > Replaced with a derivable population: every issue in `#64`–`#88` this project
 > has touched, split by whether it predates the project.
 
+> **⚠ CORRECTED AGAIN 2026-08-08 (thoth, sprint 04).** The version above
+> replaced a curated `14` with the derivable range `#64`–`#88` — and then
+> **listed `#11` inside it**, which is outside that range. The counts were RIGHT
+> and the LIST violated its own stated population, so a reader who counts the
+> entries gets 11 against a header saying 10 and concludes the arithmetic is
+> broken. **It is not; the population statement was.** An exception that is not
+> named is what made the first `14` unreconstructible, and naming it is the
+> whole fix.
+
 ```
-issues #64–#88 touched by this project:  21
-  pre-existing (before 2026-08-05):       9   → 5 closed, 4 open
-  filed DURING the project:              12   → 6 closed, 6 open
+issues touched by this project:          22
+  in range #64–#88:                      21   → 11 closed, 10 open
+  outside it: #11 (pre-existing, cosmetic) 1   →  0 closed,  1 open
                                          ──
-  total                                        11 closed, 10 open
+  total                                        11 closed, 11 open
 ```
 
 **Closed (11):** `#67` `#68` `#69` `#73` `#74` `#77` `#78` `#80` `#81` `#83`
