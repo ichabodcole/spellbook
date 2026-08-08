@@ -551,6 +551,70 @@ It prints `0` **and** exits 1 on no match: `|| echo 0` appends a second value ·
 The SOP's scar is *"a correctly-waiting seat produces no signal."* **Its twin: long silent drives look identical to idleness**, and the lead nearly started a duplicate drive on top of mine. `ps` was the only surface that knew.
 **Post mid-flight partials, not just results** — the board says `doing` and the wire says nothing.
 
+## Sprint 03 ratify round — ruling on other people's work, and the tense problem (2026-08-07/08)
+
+A pure ratify round: two rulings, one drive, no code written.
+The epitaph held — every error below was caught because it contradicted the record, and none by care.
+
+### ⚠ Before reporting that something LEAKS, establish that it STILL leaks
+
+I filed 1,686 leaked pointer files in the **present tense**. The leak had stopped two days earlier at a named commit.
+**I published the window `Aug 5 11:11 → Aug 6 01:38` and labelled it "(~14h — sprint 02's session)".**
+**The end of my own measured range WAS the finding, and I explained it away with the cheapest available story: we stopped working.** The fix landed five minutes later.
+**An accumulation's END DATE is a claim about when the BEHAVIOUR stopped. Never attribute it to your own schedule without asking what else happened that day.**
+This is the exact twin of the rule already here — *a REJECTION is only a regression if the thing was ever SUPPORTED*. Same family, other arm: **a pile is a record of the past; the present tense needs its own check.** One `find -mtime -1`, ten seconds.
+**And the reason it fired: I ran the discriminating check on the two hypotheses I DOUBTED and skipped it on the one I was CONFIDENT about** — which is verbatim this doc's own *"a reflex applied only to claims you doubt is a mood, not a reflex."* **Second instance, same session as the first.**
+
+### A peer's RATIFICATION of an unverified claim is worth nothing — and it reads as corroboration
+
+I marked an `EMFILE` hazard `UNVERIFIED`. A peer replied *"your conditional hazard stands exactly as you wrote it."*
+**Neither of us had run it. I later refuted it by measurement** (`ulimit -n 256` with 1,695 pointers: exit 0, faster than the unrestricted arm).
+**`UNVERIFIED` + agreement is still `UNVERIFIED`, but it now LOOKS checked to every later reader.** The retro's *"agreement is not truth"* is not only a retro rule — it fires mid-session, and this is when it costs something.
+
+### Two instruments agreeing because they are ONE METHOD RUN TWICE — now seen from the other side
+
+A peer and I produced litter counts that agreed, and agreement felt like corroboration. **Both were top-level `ls` globs, blind to 3,061 files in subdirectories** that `find` sees.
+**House-style states this exact failure with numbers (`63 vs 37`), and it was walked past by the seat who OWNS that file and by me, in the same hour.**
+I already hold *"two lexical scanners agreeing about lexemes is one method run twice"* — this is the same rule arriving as the one being corroborated rather than the one corroborating.
+**I broke `enumerate by behaviour, never by a name or a path` twice in one drive:** an `ls` glob blind to a subtree, and an `awk` range keyed to a function name that does not exist in those files (three empty blocks, silently). **Read the raw line ranges when a structural extractor returns empty — an empty extraction is not an empty subject.**
+
+### A BUDGET NESTED INSIDE ANOTHER BUDGET needs the coupling asserted, or the outer one eats the diagnosis
+
+The G7 ruling, and the most reusable thing this round produced.
+A harness had a 15s per-call timeout; its cells sit inside `test(…, N)` timeouts of 40–60s. **Nothing couples them and no assertion notices.** Raise the inner budget past the outer and the runner kills the test **before the assertion executes** — so a hang stops producing *a red cell naming the hung verb* and starts producing *"this test timed out"*.
+**Measured, with a control, and the control is the whole proof:** two tests, same failing assertion, `0 pass / 2 fail / **1 expect() calls**`. The control fired one expect; the timed-out arm fired **zero**.
+**BOTH ARMS ARE RED, which is why it hides** — a reader checking *"does it go red?"* sees red twice and moves on. The difference is **diagnosis vs noise**, not pass vs fail.
+**Generalised: whenever you propose changing a timeout, find what other timeout contains it.** The per-call worst case also includes any post-kill drain race, so the usable budget is strictly less than the nominal one.
+
+### Rulings: name your FALSIFIER before a peer runs it, and report it either way
+
+I ruled against a proposed method and named a peer's already-planned cell as the thing that would overturn me, with the outcome stated in advance.
+It came back **supporting** me — a result I did not produce and could not have tuned.
+**Then I checked the attack I had already published against my own ruling** (*"discovery, not reachability"*), and found it did not hold, because the peer's finding came from reading source **before** my live measurement landed. **The live events supplied JUSTIFICATION, not DISCOVERY.**
+**File the harder reading.** And separately: **refuting a hypothesis that would have supported the OTHER side is not evidence for yours** — an absent argument is absent, not a win. The temptation to bank it runs in exactly the direction my errors run.
+
+### A pre-registered prediction that confirms in the WEAK direction is worth ~zero — say so before it lands
+
+I predicted a gate run would show no timeouts, *and said in advance why a clean result would not be evidence for me*: the defect is **latent**, and one gate never enters the regime that exposes it.
+It came back clean. **Recorded at ~zero weight.** Stating the weakness before the result is what makes the record honest; stating it after is indistinguishable from spin.
+
+### The cheap ask lands BEFORE the peer's run, not after
+
+A peer's full gate was an unrepeatable live case for my finding. One message before he started bought a split I could not reconstruct afterwards: **timed-out tests counted SEPARATELY from failed ones**, plus the run's `expect() calls` total — a distinction no pass/fail summary carries.
+Same beat, opposite direction: **I held my own load-generating run** (1,695 concurrent sockets) until his gate landed. **A16 applied prospectively** — do not manufacture a difference that will be attributed to a peer's change.
+
+### Empty-case reporting: a FAILED read and a legitimate EMPTY result must not be the same output
+
+Found driving `list`. In three spells the `catch` branch prints the **same string** as the empty branch, at exit 0, on stdout — so an unreadable directory is byte-identical to *"you have none."* **A failure reported as a successful empty answer**, which is the class this project is named for.
+Two spells already emit structured JSON distinguishing *no daemon* from *daemon up, zero items*; **the good shape existed in-house the whole time.**
+⚠ **And the discipline that mattered more than the finding: I said explicitly that the exit code is CORRECT and must not be "fixed".** Zero items is a valid **answer** for a lister and an **error** for a state read — same CLI, two questions. A lane copying one onto the other would break a working thing. **When you report an inconsistency, name the half that is right.**
+
+### Hold the question "IS THIS THE SPRINT?"
+
+Nine messages, three seats, four genuine instrument defects found — and the terminal finding was about a **different product**, while the board sat at `doing: 0` with no card for any lane the sprint existed to build.
+**Every individual step was worth pulling. Nobody was holding the whole.**
+**I started it**, and the check that caught it was reading the **board** rather than my memory of what we were doing. That is available to any seat at any moment and costs one command.
+
 ## Epitaphs — the lineage
 
 **2026-08-06 (sprint 01, P0 build round):**
