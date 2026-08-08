@@ -488,3 +488,52 @@ describe("b4 — a departure is observable through a pipe", () => {
     expect(JSON.parse(out).answers).toEqual({ q1: "still here" });
   }, 20000);
 });
+
+// ── b4s: the surface's departure beacon ─────────────────────────────────────
+// `template.html` is invisible to `bun run check` — biome's files.includes is an
+// allow-list of ts/tsx/json/jsonc, so a syntax error in 1475 lines of inline
+// Alpine ships silently. These cells are the only mechanical guard that file has.
+// They run against the SERVED html, not the source, so the substitution pass in
+// renderPage is exercised too.
+describe("surface departure beacon (b4s)", () => {
+  async function servedAppScript(port: number): Promise<string> {
+    const html = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+    const blocks = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    expect(blocks.length).toBeGreaterThan(0);
+    return blocks[blocks.length - 1];
+  }
+
+  // FAILS IF: the pre-b4s beforeunload is restored (it beaconed /cancel only, and
+  // only when dirty). The behavioural half — a presence check, NOT proof the beacon
+  // fires. Whether beforeunload actually dispatches is browser-only and stays so.
+  test("served surface beacons /left on departure, and keeps /cancel", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "5"],
+      "::: question id=q1\nQ?\n:::",
+    );
+    const app = await servedAppScript(ready.port);
+    expect(app).toContain('"/left"');
+    expect(app).toContain("engaged: dirty");
+    // /cancel must survive unchanged — house-style pins 130 to "closed tab after
+    // interacting", so the dirty gate on /cancel is canon, not incidental.
+    expect(app).toContain('"/cancel"');
+    await postCancel(ready.port);
+    await proc.exited;
+  }, 15000);
+
+  // FAILS IF: any syntax error is introduced anywhere in template.html.
+  // This is the cell biome cannot provide for this file. Bun.Transpiler PARSES
+  // without evaluating — deliberately not `new Function`, which compiles the
+  // source into a callable and is the wrong tool for a parse assertion.
+  test("served app script parses", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "5"],
+      "::: question id=q1\nQ?\n:::",
+    );
+    const app = await servedAppScript(ready.port);
+    const transpiler = new Bun.Transpiler({ loader: "js" });
+    expect(() => transpiler.transformSync(app)).not.toThrow();
+    await postCancel(ready.port);
+    await proc.exited;
+  }, 15000);
+});
