@@ -949,9 +949,26 @@ async function liveBoards(
 // that died without cleanup).
 async function probeBoard(s: Session): Promise<number | null> {
   try {
+    // b6 — `?lean=1` SURVIVES HERE ON PURPOSE, and this is the deliberate
+    // opt-in the flipped default exists to make possible. b6's rule is that a
+    // LOSSY READ MUST BE OPTED INTO, NEVER DEFAULTED; a liveness probe with a
+    // 600ms budget that reads nothing but a count is exactly the caller that
+    // should opt in. Flipping cmdState and leaving this untouched is the rule
+    // applied, not the rule half-applied. (Raised by cassandra, #777 — the
+    // comment did not say, and an unexplained survivor reads as an oversight.)
     const res = await fetch(`${s.url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
     if (!res.ok) return null;
     const body = (await res.json()) as { state?: { tasks?: unknown[] } };
+    // ⚠ KNOWN, CARDED, NOT FIXED HERE: a board that answers 200 with a body this
+    // shape-check does not recognise reports 0 — indistinguishable from a board
+    // that is genuinely empty. That is b5's defect in this probe.
+    //
+    // It is NOT a one-line `: null`, and that is why it is not fixed in passing:
+    // `liveBoards` treats null as DEAD and filters the board OUT, so returning
+    // null here would make a live-but-uncountable board VANISH from `list` —
+    // strictly worse than a wrong count. The honest shape needs `LiveBoard.tasks`
+    // to be `number | null` so "live, could not count" is expressible, and that
+    // is b1's territory (`list`'s output shape), not this line's.
     return Array.isArray(body.state?.tasks) ? body.state.tasks.length : 0;
   } catch {
     return null;
