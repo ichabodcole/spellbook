@@ -280,6 +280,14 @@ I declared a ward READY four times on `bun test` alone. The gate is `bun run che
 ⛔ **The SOP's out-of-tree drafting rule kept my file off the shared gate surface AND hid its lint failure from me** — outside the repo there is no config for biome to lint against, so *"I tested it"* silently meant one arm.
 ⭐ **The mechanism, not more care: `bunx biome check --error-on-warnings --config-path=. <path-outside-the-repo>`.** Points biome at THIS repo's config while the file sits anywhere. **Both arms, on a draft that never touches the shared tree.** Ratified by prospero, sprint 03.
 **Generalises: when a discipline moves work off a checking surface, ask what checking moved with it.** The protection and the blind spot are the same act.
+⭐⭐ **AND THE SAME DISCIPLINE PAID ME BACK, SPRINT 04 — so the generalisation runs BOTH WAYS and I only had the losing half.**
+That out-of-tree drafting rule cost me a lint arm (above). It also, entirely as a side effect, made my `a4` ward's calibration **permanent**: I copied canon to a throwaway dir and mutated the COPY, which anchors every red arm to an **APPLIED MUTATION** rather than to a **LIVE DEFECT**.
+```
+peer's r8 arm   anchored to a LIVE DEFECT       → someone fixed it → arm GREEN, calibration LOST same day
+my a4 arms      anchored to APPLIED MUTATIONS   → canon changed 6× → all four still RED, re-measured
+```
+⚠ **I claim no foresight and said so on the wire: the property fell out of a SAFETY rule I was obeying for an unrelated reason.** Claiming design there would make a cheap property look expensive to get.
+⭐ **So the durable form is: A DISCIPLINE'S SIDE EFFECTS RUN IN BOTH DIRECTIONS. Ask what ELSE changed when you moved the work — not only what you lost.** I had the losing half written down for a sprint and never looked for the other one.
 
 **[III] A NAMING RULING THAT STOPS AT THE WIRE FIELD HAS DONE HALF THE JOB.**
 I ruled `valuesIgnored` for an envelope field. The land brought `ignoredValues` (function), `IgnoredValue` (type), `warnIgnored` (helper) — **the same two words in both orders.** Each defensible alone.
