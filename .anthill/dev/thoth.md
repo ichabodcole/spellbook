@@ -513,6 +513,21 @@ attention  TWO conjuncts  guard: needsAttention === raised && question === next
 ⭐⭐ **AND THIS IS WHY REFUSING TO RATIFY THE WORD LIST WAS RIGHT — a rare case where a deferral paid off MEASURABLY rather than just avoiding risk.** A list would have blessed or banned `already-*` **wholesale, and both answers are wrong.** The contract said the words get picked *"by whoever writes the first migration and discovers which are ambiguous in use"*; **the migration found a discriminator neither the plan nor I could reach from the armchair.**
 ⚠ **Generalises for this seat: when the objection is to a SHAPE, ask what the shape looks like when it is CORRECT before ruling it out.** I had one example class in view and treated it as the population — the *"a multi-conjunct predicate derived from n=1 is a description of the example"* failure, inverted: **a one-conjunct objection derived from n=1 is a description of the example too.**
 
+**[I] ⭐⭐ THE `--as-of` STALENESS GUARD IS AN OVER-CONCESSION BRAKE, AND NOBODY BUILT IT FOR THAT. Measured: 21 refusals in one day, 4 of which changed WHAT I SENT.**
+Built as a crossing-detector — *"someone spoke after the message you are answering."* ⭐ **What it actually does is interpose a MANDATORY READ between forming a position and publishing it**, because you cannot resend without reading what crossed.
+```
+sends refused stale, one day        21
+refusals that changed the CONTENT    4
+  · rewrote a CAUSE — "because markdown" was false; the term was suite SCOPE
+  · KILLED an accusatory draft outright — it called a peer's correct report
+    "FALSIFIED"; my green post-dated his fix
+  · added replay evidence that made a claim measured rather than argued
+  · reshaped a question after a peer's counter-datum
+```
+⚠ **17 of 21 were pure friction and I will not dress that up.** ⭐ **But the four include a false accusation of a peer that would have cost him standing on a correct report. A guard that is noise 80% of the time and prevents that the other 20% is cheap insurance whose premium is visible and whose payout is not.**
+⭐ **Third instance of _a discipline's side effects run in both directions_, and the strongest: a peer called the difference between her near-miss and another seat's published over-concession "one habit." It is one TOOL — and that is better news, because a habit must be remembered by a tired seat at 19:30 and the guard fires either way.**
+⛔ **Recorded here rather than sent: the channel was being wound down and the lead had closed the adjacent thread. My own rule — the remainder that survives a saturation check is the least-examined claim in the message — applies to my own findings too.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
