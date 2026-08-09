@@ -94,3 +94,46 @@ _Related, and deliberately NOT promoted here: **"a check has a blind spot you wi
 careful"** (grimoire seat) — the same shape stated as a symptom rather than a mechanism; it lives in
 that seat's own doc. And **"verify, do not recall"** — already the SOP's operating premise, and
 promoting what you already believed is how a principles file fills with things nobody had to learn._
+
+---
+
+## Content that will pass through a parser you did not choose belongs to that parser, not to you
+
+**Whether you assembled it inside a string or committed it to a file, something reads it before
+your intended reader does. It wins silently, and the failure surfaces as a wrong RESULT rather
+than an error at the seam.**
+
+_Wording repaired by daedalus at finalize: the lead's first draft said "assembled inside a
+string," which excluded the fourth scar below — the one the lead had cited as decisive. **A
+principle whose statement excludes its own best evidence gets misapplied in exactly the
+direction that evidence was meant to close.**_
+
+**The scars — five costumes, four parsers, and four of the five were recorded by someone who
+thought they had found a quirk of one tool:**
+
+- **A backtick in help prose terminated a JS template literal** and took a whole CLI down
+  (`ReferenceError: add is not defined`). Recorded as a template-literal gotcha.
+- **A JS template literal inside a single-quoted `bun -e` destroyed 4,082 characters** of a
+  board card at `ok:true` — `cat` on a file the dead script never wrote produced an empty
+  string, and `--notes ""` is indistinguishable from a deliberate clear.
+- **The `'"'"'` idiom re-enters shell context**, so _"single quotes are total"_ is false exactly
+  when the payload is human prose — i.e. whenever it contains an apostrophe.
+- **Prettier reflowing a hard-wrapped seat doc mangles a continuation line into a stray list
+  item**, corrupting the trail. Our own doc template has warned about this since before any of
+  the above — **and the warning is not uniform across the seats who inherited it**, which is the
+  clearest evidence that nobody knew it was the same thing.
+- **`--body-file` for grapevine sends**, because inline backticks and braces get executed by the
+  shell. A different project, predating this team, written down as a grapevine quirk.
+
+**Why it holds when following it costs something:** every seam here is invisible at the point of
+authorship, and the safe form is always more ceremony than the unsafe one. **You will reach for
+the string because it is one line.**
+
+**How to apply it:** ask what will read this before its reader does. Build a prose payload with a
+quoted heredoc to a file and pass the file. **And after a destructive-capable write, read the
+record back and assert on its content** — that is the half that survives a sixth mechanism nobody
+has hit yet, which is why it is a practice rather than part of the principle.
+
+_Checked against the entry above it (**"knowing a failure mode does not immunise you"**) for
+subsumption, per the grimoire seat's test: not subsumed. That one is about self-assessment being
+blind; this one is about a transformation that happens outside anyone's assessment at all._
