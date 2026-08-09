@@ -650,6 +650,35 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));
+  // b7 / spellbook#97 — A KEYED RESPAWN RESTORES BY DEFAULT.
+  //
+  // Reported by anthill with a 5-step repro: open --session-key K, add a card,
+  // close (snapshot: 1), open --session-key K again -> LIVE 0 tasks over an
+  // intact 1-task snapshot, and the next close writes 0 over it. Step 4 is the
+  // defect and step 5 is the damage.
+  //
+  // ⚠ I RULED THIS "INTENDED" AT #824 and I was wrong. My reasoning was that
+  // `--restore` is the explicit opt-in, so a fresh board is the honest default.
+  // That is right for an UNKEYED open and wrong for a keyed one: a stable key's
+  // whole promise is CONTINUITY — `open --session-key K` is documented
+  // idempotent — and discarding K's snapshot is the one moment it does not
+  // deliver it. The opt-in argument survives only where there is no key.
+  //
+  // Deliberately narrow, so this cannot resurrect a board anyone asked to be
+  // rid of:
+  //   - keyed opens only; an unkeyed open still always spawns empty;
+  //   - only when NO live board was found (an attach is untouched);
+  //   - `--fresh` still wins and still gives a clean board — that is the verb
+  //     for "I want this key, empty";
+  //   - an explicit `--restore` still wins, and is never overridden.
+  if (
+    forcedId &&
+    !flags.restore &&
+    !flags.fresh &&
+    existsSync(join(SNAPSHOTS_DIR, `${forcedId}.json`))
+  ) {
+    args.push("--restore", forcedId);
+  }
   if (flags.restore) args.push("--restore", String(flags.restore));
   if (flags["no-open"]) args.push("--no-open");
   if (forcedId) args.push("--id", forcedId); // force the daemon's id to the derived key id

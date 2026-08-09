@@ -2296,19 +2296,18 @@ describe("dependencies (Phase D)", () => {
     const after = await runCli(["state", "--session", s1], { env });
     expect(after.code).not.toBe(0);
 
-    // And the race itself: a reopen issued immediately must respawn rather than
-    // attach to the dying daemon. This is the assertion that convicts the bug —
-    // pre-fix it saw the OLD board's two tasks.
-    const open2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
-      env,
-    });
-    const s2 = (JSON.parse(open2.stdout) as { session_id: string }).session_id;
-    try {
-      const st = await runCli(["state", "--session", s2], { env });
-      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
-    } finally {
-      await runCli(["close", "--session", s2], { env });
-    }
+    // ⛔ THE REOPEN ASSERTION WAS REMOVED, DELIBERATELY, AND THIS IS WHY.
+    //
+    // It used to read: reopen immediately, expect an EMPTY board, because
+    // attaching to the dying daemon would have shown the old two tasks. b7 makes
+    // a keyed respawn RESTORE its snapshot — so a correct reopen now shows two
+    // tasks and an incorrect one (attached to the corpse) ALSO shows two tasks.
+    // The cell can no longer tell them apart.
+    //
+    // Keeping it would have been worse than deleting it: it would still pass,
+    // and it would look like it was covering the race. The two assertions above
+    // — `down: true`, and state REFUSING immediately after close — are the ones
+    // that convict this defect, and both are RED pre-fix.
   }, 30000);
 
   test("b14: `down` is present on EVERY close, never absent", async () => {
@@ -2392,6 +2391,74 @@ describe("dependencies (Phase D)", () => {
       await runCli(["close", "--session", session], { env });
     }
   }, 30000);
+
+  test("b7/#97: a keyed respawn RESTORES the key's snapshot", async () => {
+    // anthill's 5-step repro verbatim (spellbook#97). Step 4 was the defect —
+    // a dead board respawned EMPTY over an intact snapshot — and step 5 was the
+    // damage, because the next close wrote 0 over it.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b7-${crypto.randomUUID().slice(0, 8)}`;
+    const open1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(open1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "MUST SURVIVE", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    const open2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(open2.stdout) as { session_id: string }).session_id;
+    try {
+      const st = await runCli(["state", "--session", s2], { env });
+      const tasks = (JSON.parse(st.stdout) as { state: { tasks: { title: string }[] } }).state
+        .tasks;
+      // RED PRE-FIX: this was []. A stable key's promise is continuity, and this
+      // is the one moment it did not deliver it.
+      expect(tasks.map((t) => t.title)).toEqual(["MUST SURVIVE"]);
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
+  test("b7 GUARD — `--fresh` STILL gives a clean board, and an UNKEYED open still spawns empty", async () => {
+    // A REAL guard this time, and I checked the direction before naming it: both
+    // arms pass pre-fix and post-fix. It exists because the danger of a
+    // default-restore is resurrecting a board somebody deliberately emptied —
+    // `--fresh` is the verb for "this key, clean", and it must keep working.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b7g-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "should not come back", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    const o2 = await runCli(
+      ["open", "--no-open", "--session-key", key, "--fresh", "--timeout", "20"],
+      { env },
+    );
+    const s2 = (JSON.parse(o2.stdout) as { session_id: string }).session_id;
+    try {
+      const st = await runCli(["state", "--session", s2], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+
+    // and an UNKEYED open is untouched — it has no key, so no continuity promise
+    const o3 = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const s3 = (JSON.parse(o3.stdout) as { session_id: string }).session_id;
+    try {
+      const st3 = await runCli(["state", "--session", s3], { env });
+      expect((JSON.parse(st3.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", s3], { env });
+    }
+  }, 40000);
 
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();
@@ -3290,7 +3357,14 @@ describe("P0b — open refuses rather than discarding flags on the attach path",
     }
 
     // Step 4 — respawn EMPTY under the same key, without mutating anything.
-    const second = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    //
+    // ⚠ `--fresh` is now REQUIRED to construct this. Before b7 a keyed respawn
+    // came up empty on its own and this line relied on that; b7 makes a keyed
+    // respawn RESTORE its snapshot, so "empty board over a populated snapshot"
+    // must be asked for explicitly. The scenario under test is unchanged — only
+    // the way it is built. (This cell's own precondition guard caught the change:
+    // it printed DEGENERATE rather than passing quietly.)
+    const second = await runOpen(["--session-key", key, "--fresh", "--no-open"], { home, cwd });
     const revived = JSON.parse(second.stdout) as { session_id: string; port: number };
     expect(revived.session_id).toBe(id); // same key ⇒ same board id
 
@@ -4096,7 +4170,14 @@ describe("P1a/P1b — the shrinkage guard, end to end", () => {
     // and the cell below is measuring the RESPAWN, not the kill.
     expect(snapshotTaskCountAt(home, id)).toBe(3);
 
-    const respawn = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    // `--fresh` for the same reason as P0b: post-b7 a keyed respawn RESTORES, so
+    // the empty-board precondition is now explicit. Worth noting what that means
+    // for THIS scenario in the real world — a SIGKILLed board's keyed respawn now
+    // comes back with its cards, so the respawned-empty-then-clobber sequence
+    // this guard was built for is substantially rarer than when it was written.
+    // The guard still earns its place: --fresh, a genuine drain, and any other
+    // route to a shrinking write all still reach it.
+    const respawn = await runOpen(["--session-key", key, "--fresh", "--no-open"], { home, cwd });
     const id2 = (JSON.parse(respawn.stdout) as { session_id: string }).session_id;
     expect(id2).toBe(id); // same key, same board id — that is what makes it a clobber
     try {
