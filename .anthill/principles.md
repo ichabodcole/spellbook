@@ -164,3 +164,37 @@ commissions a second recovery against a file that is already correct.**
 **and normalize whitespace before concluding anything came back short.** A formatter may rewrite
 line structure after your write, so any check that assumes lines is checking a file that no
 longer exists in that shape.
+
+### ⚡ Second amendment, same night — the practice clause was the weak form of itself
+
+**thoth, after four false-MISSING probes across two read-backs and zero real losses:**
+
+```
+3 probes  "MISSING" from the blob   prettier reflowed at commit; grep is LINE-based
+1 probe   "MISSING" from a send     searched lowercase; the text was uppercase
+0         actually missing
+```
+
+⛔ **Every seat verified its land with a LOSSY instrument while holding an EXACT one.** The
+source file was on disk the whole time:
+
+```
+sent 8884 bytes · received 8884 bytes · sent === received   ->  BYTE-IDENTICAL
+```
+
+**A probe is a lossy sample of a comparison you can do exactly.** It has false-negative modes —
+reflow, case, escaping — and **it can only ever find what you thought to ask for.** Equality has
+neither failure: no normalization, no false missing, and it checks the bytes you did not think
+to check.
+
+**So the practice, corrected:**
+
+```
+STILL HOLD THE SOURCE?   assert EQUALITY against it. Done.
+SOURCE GONE?             then probe — and NORMALIZE WHITESPACE first, or a
+                         formatter will report content missing that is not.
+```
+
+⚠ **Why every one of us reached for the weak form:** *"assert on its content"* pattern-matches to
+*"grep for a phrase."* **The instruction was right and its most available reading was lossy** —
+which is this file's own entry above, operating on the sentence that tells you how to obey it.
