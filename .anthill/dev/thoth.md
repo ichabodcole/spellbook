@@ -15,6 +15,25 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
+**Your instruments are not the things you CALL instruments — they are every line whose output you will repeat to someone as fact, and the ten-second reader you throw away is the one that will lie, because it is the only one nobody reviews and the only one you never thought to control.**
+
+_(Written 2026-08-08, spell-hardening sprint 04. **This supersedes the epitaph below and is upstream of it, not a replacement for it.** My predecessor's rule is correct and it is complete for everything inside the set of things you are already scrutinizing. **Every failure I shipped tonight was outside that set** — not one of them was in a ward, a rig or a test, because those I controlled exactly as instructed.)_
+
+```
+FIVE, one session, none of them things I would have called an instrument:
+
+  (j.data?.cards) ?? []        an ok:false error  ->  "0 cards, clean board"   published as measurement
+  if (j.ok !== true)           a VALID payload    ->  "NOT OK: undefined"      the same error, reversed
+  read --last 1, check id      a zero-byte send   ->  "landed"                 58 times, unnoticed
+  grep -E '"type":"(task|…)"'  17 of 25 events    ->  silence                  a card filed to me, eaten
+  bun run check | tail         a red gate         ->  exit 0                   tail's status, not the gate's
+```
+
+_⛔ **The tell they share is not carelessness — it is CATEGORY.** A ward gets a header naming its blind spots, a control arm, a mutation to prove it can go red. **A one-off gets none of that, and then I quote its output to four peers in the same sentence I would have used for the ward.** ⭐ **The throwaway is strictly MORE dangerous than the ward: same authority when repeated, none of the review, and it is written in the two minutes when you are impatient to know the answer.**_
+_⚠ **And it will not feel like an instrument to you either — that is the whole mechanism.** I wrote the ban on the exact operator that bit me (`??`, `outcome-contract.md`), cited it three times, and then used it in a diagnostic three hours later, because I had filed the rule under "tests" and this was "just a quick check." **There is no such category. If its output leaves your terminal, it is an instrument.**_
+
+_**Kept below, and it earned itself tonight rather than merely surviving:** its second clause — _run a peer's published defect against your own work_ — is the ONLY reason four of the five above were ever found. A peer falsified a remedy at #929; I ran its shape against my own send routine and that is how the 58-send audit happened. **It did not fail. It fired, and it works. Mine names the population it fires ON.**_
+
 **I made every instrument go red on purpose, exactly as my predecessor demanded — and three still lied, because a control proves the apparatus CAN MOVE and says nothing about whether it is POINTED AT YOUR QUESTION. So: watching it go red is not enough. You must watch it go red FOR THE REASON YOU CARE ABOUT, ON THE INPUT YOU ARE ACTUALLY CHECKING.**
 
 _(Written 2026-08-08, spell-hardening sprint 03. I obeyed the previous epitaph completely — every ward decoration-checked, every rig given a control, the property counted before and after each mutation. **Three got through anyway, and each is a different way for a red to be beside the point.**_
@@ -663,7 +682,10 @@ _Origin worth keeping: the lead first ruled the substance into "the sprint-05 sc
 
 
 **✅ RESOLVED — the flag/doc invariant LANDED as a test at `bbc61c2`: `grimoire/flag-invariant.test.ts`.**
-16 entry points, 8 spells, 9 tests, green; decoration-checked both directions. **It runs on every gate, which was the ruling's whole argument: a ward that runs on invocation runs when someone remembers.**
+Green, decoration-checked **both** directions (a flag in a `SKILL.md` is recognized by some entry point; a caller-facing entry point's flags are named in that `SKILL.md`). **It runs on every gate, which was the ruling's whole argument: a ward that runs on invocation runs when someone remembers.**
+⛔ **PRUNED 2026-08-08, SECOND PASS: this line also carried "16 entry points, 8 spells, 9 tests" and I had left it standing while pruning the identical defect four lines below.** ⭐ **The counts were not even the roster's — the ward derives `spells` from _entry points that PARSE ARGS_ (`flag-invariant.test.ts:127`), so "8 spells" answered a question nobody reading this doc would have asked.** _Ask the ward; it re-derives on every gate._
+⭐⭐ **AND THE PART THAT MAKES THIS A DISCIPLINE RATHER THAN A CLEAN-UP: THE NUMBER I DELETED WAS CORRECT.** Re-measured at finalize, independently, after the lead reported a different figure — **16 entry points, 8 spells, both confirmed here** (`glamour/scripts/server.ts:574` is the sixteenth, a `nodeParseArgs({…, strict: true})` a path-based sweep misses). **I pruned a TRUE count.** ⛔ **Because accuracy-today is not the property that matters — RE-DERIVABILITY is, and an inlined count has none of it however right it is right now.** _Pruning a wrong number is bookkeeping; pruning a right one is the actual rule._
+⭐ **The split that paid for this: my seat doc said 16 and was right; my comms message `#885` said 15 and was wrong; and the LEAD BUILT CARD `c1` ON THE WIRE NUMBER, instructing sprint 05 not to re-derive it.** ⛔ **The durable artifact — the thing that gets re-read and re-verified at finalize — held the truth. The write-only channel carried the error, and the error is what propagated, because the wire is what the reader was reading.** _Concrete argument for "a wire is not a store": not that the wire forgets, but that nothing ever RE-CHECKS it._
 **Its blind spots ship in its own header** — it is keyed on flag NAMES, so it can never see the `--` terminator class; it checks presence, not whether a description is true; and a flag documented only in the CLI's usage string counts as undocumented, deliberately.
 **Two findings on first run, both closed in the same commit** (`grapevine --last`, `imago --models`), plus the `--` terminator line across **every spell whose entry points set `allowPositionals` — a set the WARD enumerates by behaviour; do not copy the count here.**
 ⛔ **PRUNED 2026-08-08: this line used to say "all SIX spells" and it had rotted to 8** (astrolabe and mind-mapper joined the roster; nothing re-ran the prose). **The ward was right the whole time — `flag-invariant.test.ts:92` anchors on the `strict:`/`allowPositionals:` structural sibling and re-derives on every gate.**
@@ -683,7 +705,7 @@ _PRUNED 2026-08-08: the pre-land design notes for this ward are gone — the war
 **The reasoning is the durable part:** `inscribe` is a skill and skills are not always in the loop, so an inscribe-only matrix never runs on the existing roster where every observed defect lives; and `ward` fires on **change**, so a spell nobody edits is never interrogated by it either. **Authored / changed / untouched — a trigger set with a hole in it is how the roster's oldest spells stay the least examined.** Backlog: `docs/backlog/2026-08-06-desire-path-hints-in-spell-responses.md`. Raw material: cassandra's seat doc carries observed failure modes in matrix shape. Open: does the rule reach non-spell tooling (that widens house-style's scope — Cole's call), and is `uncheckedAgainst` the first worked example.
 
 **The `EPIPE` gotcha says "swallow" and two spells disagree about what that means.**
-House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in 2 of 9 spells, in two incompatible shapes:** `bounty/join.ts:72` swallows and continues; `magpie/cli.ts:54` exits the process.
+House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in exactly two places, in two incompatible shapes** — re-verified 2026-08-08, both pins exact: `bounty/scripts/join.ts:72` swallows and continues (rethrows anything that is not `EPIPE`); `magpie/scripts/cli.ts:54` calls `process.exit(0)` from an `stdout.on("error")` handler. _(This line said "2 of **9** spells" and the roster is 8 — a denominator I never measured, on a finding the ratio was never part of. **The two shapes are the finding; the fraction was decoration that rotted.**)_
 **"Swallow" and "exit" are different policies, and the canon line does not say which it means** — so both implementers were obeying it. Same class as the `tmpdir()` boundary that four spells re-assumed identically: **the imperative travelled and the policy did not.**
 Decide the policy before widening the rule; a gotcha that names a symptom without naming the response will be implemented differently every time.
 
