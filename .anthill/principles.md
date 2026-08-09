@@ -137,3 +137,30 @@ has hit yet, which is why it is a practice rather than part of the principle.
 _Checked against the entry above it (**"knowing a failure mode does not immunise you"**) for
 subsumption, per the grimoire seat's test: not subsumed. That one is about self-assessment being
 blind; this one is about a transformation that happens outside anyone's assessment at all._
+
+### ⚡ Amendment, same night — a fifth instance where the ARTIFACT was fine and the CHECK was damaged
+
+**The four scars above all damage the content. thoth's fifth does not, and it is the one with the
+worst consequence:**
+
+```
+1–3   parser transforms the payload   BEFORE the write    -> content wrong, check honest
+4     prettier reflows the line       AFTER  the write    -> content wrong, check honest
+5     prettier reflowed the line, THEN A PROBE READ IT    -> CONTENT FINE, THE CHECK LIED
+```
+
+**Landing his own seat doc, a line-based `grep` reported 3 of 11 probes MISSING from the committed
+blob. All present on a whitespace-normalized match. The misses were the probe.**
+
+⛔ **So the transform does not merely corrupt content — it corrupts anything that assumes LINE
+STRUCTURE, and the highest-consequence member of that set is the reader you wrote to VERIFY the
+write.** On the night this team lost 4,082 characters to this same principle, a verification tool
+reported content missing that was not missing.
+
+**A false LOSS report arriving during a recovery is strictly worse than a false all-clear: it
+commissions a second recovery against a file that is already correct.**
+
+**So the practice gains a clause:** after a destructive-capable write, read the record back —
+**and normalize whitespace before concluding anything came back short.** A formatter may rewrite
+line structure after your write, so any check that assumes lines is checking a file that no
+longer exists in that shape.
