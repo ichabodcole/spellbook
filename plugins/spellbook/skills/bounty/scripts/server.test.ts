@@ -29,6 +29,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   deriveSessionId,
+  describeSessionSource,
   findScopeRoot,
   liveBoards,
   ownerInScope,
@@ -37,6 +38,7 @@ import {
   resolveSession,
   type Session,
   sessionKeyToId,
+  shouldTailGiveUp,
   slugifyKey,
 } from "./cli.ts";
 import {
@@ -2403,6 +2405,88 @@ describe("pickTailSession (tail pin — cross-project hijack guard)", () => {
 
   test("returns null when nothing resolves yet (no board up)", () => {
     expect(pickTailSession(undefined, reader(null))).toBeNull();
+  });
+});
+
+// ── shouldTailGiveUp (#98 — fail-fast on never-attached pinned tail) ─────
+//
+// Pure decision function: should an explicitly-targeted tail that has never
+// successfully attached (SSE fetch + usable body) give up?  All inputs are
+// injectable — no Date.now(), no real sleeps.  The 15-second production grace
+// is passed as `graceMs`, and the clock is the `now` parameter.
+
+describe("shouldTailGiveUp (#98 — fail-fast on never-attached pinned tail)", () => {
+  const GRACE = 15_000;
+
+  test("unpinned tail never gives up, regardless of elapsed time", () => {
+    // pinned=undefined → always false: the `latest` wait is legitimate.
+    expect(shouldTailGiveUp(undefined, false, 0, GRACE, 999_999)).toBe(false);
+  });
+
+  test("pinned tail within grace period keeps retrying", () => {
+    // 5s elapsed < 15s grace → still within budget.
+    expect(shouldTailGiveUp("some-id", false, 1000, GRACE, 6000)).toBe(false);
+  });
+
+  test("pinned tail past grace period that never connected gives up", () => {
+    // 20s elapsed > 15s grace → dead end.
+    expect(shouldTailGiveUp("some-id", false, 0, GRACE, 20_000)).toBe(true);
+  });
+
+  test("pinned tail past grace that DID connect keeps retrying (#64 separation)", () => {
+    // everConnected=true → this is a reconnect attempt, not a #98 dead end.
+    expect(shouldTailGiveUp("some-id", true, 0, GRACE, 20_000)).toBe(false);
+  });
+
+  test("exactly at grace boundary does not trigger (> not >=)", () => {
+    expect(shouldTailGiveUp("some-id", false, 0, GRACE, GRACE)).toBe(false);
+  });
+
+  test("one ms past grace boundary triggers", () => {
+    expect(shouldTailGiveUp("some-id", false, 0, GRACE, GRACE + 1)).toBe(true);
+  });
+
+  test("custom grace period is respected", () => {
+    const shortGrace = 1_000;
+    expect(shouldTailGiveUp("some-id", false, 0, shortGrace, 500)).toBe(false);
+    expect(shouldTailGiveUp("some-id", false, 0, shortGrace, 1_500)).toBe(true);
+  });
+});
+
+// ── describeSessionSource (#98 — retry message provenance) ───────────────
+//
+// Mirrors resolveSession's precedence to produce a human-readable string for
+// diagnostic messages.  Pure — env and startDir are injected.
+
+describe("describeSessionSource (#98 — retry message provenance)", () => {
+  test("--session-key includes the key and cwd", () => {
+    const s = describeSessionSource({ "session-key": "anthill-dev" }, {}, "/repo");
+    expect(s).toBe("--session-key 'anthill-dev' + cwd /repo");
+  });
+
+  test("--session names the raw id", () => {
+    expect(describeSessionSource({ session: "abc-123" }, {}, "/x")).toBe("--session 'abc-123'");
+  });
+
+  test("$BOUNTY_SESSION_KEY includes the key and cwd", () => {
+    const s = describeSessionSource({}, { BOUNTY_SESSION_KEY: "team" }, "/repo");
+    expect(s).toBe("$BOUNTY_SESSION_KEY 'team' + cwd /repo");
+  });
+
+  test("$BOUNTY_SESSION names the env var value", () => {
+    expect(describeSessionSource({}, { BOUNTY_SESSION: "env-id" }, "/x")).toBe(
+      "$BOUNTY_SESSION 'env-id'",
+    );
+  });
+
+  test("--session-key wins over $BOUNTY_SESSION (mirrors resolveSession precedence)", () => {
+    const s = describeSessionSource({ "session-key": "flag" }, { BOUNTY_SESSION: "env" }, "/x");
+    expect(s).toContain("--session-key");
+    expect(s).not.toContain("BOUNTY_SESSION");
+  });
+
+  test("returns undefined when no explicit source (latest / pin-file)", () => {
+    expect(describeSessionSource({}, {}, "/x")).toBeUndefined();
   });
 });
 

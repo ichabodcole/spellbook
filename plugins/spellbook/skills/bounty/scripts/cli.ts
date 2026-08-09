@@ -192,6 +192,35 @@ function resolveSession(
   return undefined;
 }
 
+// Describe how a session was resolved — for diagnostic messages (e.g. the retry
+// line in `tail`).  Mirrors the precedence of `resolveSession` (#59/#69)
+// without re-resolving; if the order changes there, update here.
+function describeSessionSource(
+  flags: Record<string, string | boolean>,
+  env: Record<string, string | undefined> = process.env,
+  startDir: string = process.cwd(),
+): string | undefined {
+  if (typeof flags["session-key"] === "string")
+    return `--session-key '${flags["session-key"]}' + cwd ${startDir}`;
+  if (typeof flags.session === "string") return `--session '${flags.session}'`;
+  if (env.BOUNTY_SESSION_KEY)
+    return `$BOUNTY_SESSION_KEY '${env.BOUNTY_SESSION_KEY}' + cwd ${startDir}`;
+  if (env.BOUNTY_SESSION) return `$BOUNTY_SESSION '${env.BOUNTY_SESSION}'`;
+  return undefined;
+}
+
+// #98: Give up on a pinned tail that never connected after the grace period.
+// Unpinned tails wait indefinitely for the latest session.
+function shouldTailGiveUp(
+  pinned: string | undefined,
+  everConnected: boolean,
+  startedAt: number,
+  graceMs: number,
+  now: number = Date.now(),
+): boolean {
+  return pinned !== undefined && !everConnected && now - startedAt > graceMs;
+}
+
 function readSession(session?: string): Session | null {
   try {
     return JSON.parse(readFileSync(sessionFilePath(session), "utf8")) as Session;
@@ -716,10 +745,20 @@ async function cmdTail(
   session: string | undefined,
   sinceArg: number,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
+  sessionSource?: string,
 ) {
   let since = sinceArg;
   let delay = 250;
   let stopped = false;
+  // #98 — fail-fast guard: an explicitly-targeted tail (--session / --session-key
+  // / env / .bounty-session) that never attaches is a dead end, not a wait.
+  // After a short grace (long enough for a concurrent `open` to finish), exit
+  // nonzero.  An unpinned tail waiting for any board (`latest`) keeps infinite
+  // retry — that is legitimate.  `everConnected` distinguishes #98 (never
+  // attached) from #64 (attached, then lost).
+  const graceMs = 15_000;
+  const startedAt = Date.now();
+  let everConnected = false;
   const stop = () => {
     stopped = true;
     process.exit(0);
@@ -752,7 +791,18 @@ async function cmdTail(
   while (!stopped) {
     const resolved = pickTailSession(pinned, readSession);
     if (!resolved) {
-      process.stderr.write("# no session yet, retrying…\n");
+      const target = pinned ?? "latest";
+      const derivation = sessionSource ? ` (${sessionSource})` : "";
+      // An explicitly-pinned tail that has NEVER connected and has exceeded the
+      // grace period is a dead end — the id won't spontaneously appear.
+      if (shouldTailGiveUp(pinned, everConnected, startedAt, graceMs)) {
+        process.stderr.write(
+          `# FATAL: session ${target} not found after ${Math.round(graceMs / 1000)}s${derivation} — exiting. ` +
+            `Check that the board is open and that --session-key / --session and cwd are correct.\n`,
+        );
+        process.exit(1);
+      }
+      process.stderr.write(`# no session yet for ${target}${derivation} — retrying…\n`);
       await sleep(delay);
       delay = Math.min(delay * 2, 5000);
       continue;
@@ -778,6 +828,7 @@ async function cmdTail(
       continue;
     }
     delay = 250;
+    everConnected = true;
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
@@ -1013,11 +1064,17 @@ async function main(argv: string[]): Promise<number> {
     case "tail": {
       const mine = flags.mine === true;
       if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
-      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1, {
-        owner: typeof flags.owner === "string" ? flags.owner : undefined,
-        mine,
-        as,
-      });
+      const source = describeSessionSource(flags);
+      await cmdTail(
+        session,
+        typeof flags.since === "string" ? parseInt(flags.since, 10) : -1,
+        {
+          owner: typeof flags.owner === "string" ? flags.owner : undefined,
+          mine,
+          as,
+        },
+        source,
+      );
       break;
     }
     case "state": {
@@ -1279,4 +1336,13 @@ if (import.meta.main) {
 }
 
 export type { Session };
-export { liveBoards, main, ownerInScope, parseTags, pickTailSession, resolveSession };
+export {
+  describeSessionSource,
+  liveBoards,
+  main,
+  ownerInScope,
+  parseTags,
+  pickTailSession,
+  resolveSession,
+  shouldTailGiveUp,
+};
