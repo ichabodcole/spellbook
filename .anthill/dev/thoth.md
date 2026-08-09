@@ -475,6 +475,17 @@ CACHED  …/spellbook/2.1.0/…/daemon.ts:239 let message_count = 0;            
 ⚠ **Operational consequence, immediate: when an outside team files a repro (they filed `spellbook#97` the same evening), running it with the cached CLI makes "still broken" uninformative and "fixed" impossible.** **State which binary you ran or the outcome cannot be read.**
 ⭐ **And it is the CHANNEL/SURFACE question at a third grain in one afternoon:** the fact was on the envelope AND the event wire · then a whole grapevine channel nobody was armed on (the SOP names three coordination surfaces, the manifest arms two — `grapevine: null`) · then **two copies of one tool, one fixed and one running.** **Each time the missing question was *which surface am I actually looking at?*** — which is why *"I checked"* is under-specified in this system unless it names WHICH.
 
+**[II] ⭐ MY r1 OBJECTION WAS HALF WRONG, AND THE HALF THAT FAILED IS THE ONE I ARGUED FROM SHAPE.**
+I objected at r1 that `already-*` was *"a boolean encoded into a string prefix in four of five proposed nouns"* — the exact shape `#82` exists to kill. **Measured after the first real migration:**
+```
+already-connected / already-disconnected   OPPOSED PAIR — prefix separates two states   ✅ defensible
+already-raised    / already-cleared        OPPOSED PAIR — same                          ✅
+already-recorded  (glamour, imago)         SOLITARY at its site                         ⛔ objection holds
+```
+⛔ **The defect was never the PREFIX. It was the prefix WITHOUT A SIBLING** — alone at a site it carries nothing the field's existence does not; in an opposed pair it is the whole discriminator. **I generalised from a plausible shape and got the boundary wrong in the permissive direction.**
+⭐⭐ **AND THIS IS WHY REFUSING TO RATIFY THE WORD LIST WAS RIGHT — a rare case where a deferral paid off MEASURABLY rather than just avoiding risk.** A list would have blessed or banned `already-*` **wholesale, and both answers are wrong.** The contract said the words get picked *"by whoever writes the first migration and discovers which are ambiguous in use"*; **the migration found a discriminator neither the plan nor I could reach from the armchair.**
+⚠ **Generalises for this seat: when the objection is to a SHAPE, ask what the shape looks like when it is CORRECT before ruling it out.** I had one example class in view and treated it as the population — the *"a multi-conjunct predicate derived from n=1 is a description of the example"* failure, inverted: **a one-conjunct objection derived from n=1 is a description of the example too.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
