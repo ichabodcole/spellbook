@@ -1114,11 +1114,68 @@ async function cmdRestart(opts: { force?: boolean }) {
   printJson({ ok: true, restarted: true, port: fresh, previous_pid: previousPid });
 }
 
+// b3 — THE VERSION VERIFY, AS ONE SOURCE FOR BOTH PATHS.
+//
+// `roll` is documented as "the recommended deploy step … + version verify", and
+// the verify had two ways to say nothing:
+//
+//   COLD PATH — no daemon running: it spawned one and printed neither `version`
+//   nor `version_ok`. The fields were ABSENT, so a caller checking the verify
+//   got `undefined` on the exact path where the verify never happened.
+//
+//   WARM PATH — the probe was wrapped in `catch {}`, leaving `version = null`,
+//   and `version_ok: null === PLUGIN_VERSION` evaluates to FALSE. "I could not
+//   check" was reported as "the version is WRONG" — a boolean that cannot say
+//   "unknown" is the canonical shape of this sprint's defect, and false is the
+//   worst available answer because it is actionable and incorrect.
+//
+// So `version_ok` is now `boolean | null`: null means UNCHECKED, never false.
+// `version_unchecked_reason` is present-and-null beside it, because a bare null
+// tells a caller the check did not happen and not why.
+//
+// One helper rather than two call sites: a second copy of this logic on the cold
+// path is the mirror-drift trap, and the cold path is precisely the one nobody
+// re-reads.
+export async function probeVersion(port: number): Promise<{
+  version: string | null;
+  version_ok: boolean | null;
+  version_unchecked_reason: string | null;
+}> {
+  try {
+    const v = (await api<RootInfo>(port, "GET", "/")).data?.version ?? null;
+    if (v === null) {
+      return {
+        version: null,
+        version_ok: null,
+        version_unchecked_reason: "the daemon answered but reported no version",
+      };
+    }
+    return { version: v, version_ok: v === PLUGIN_VERSION, version_unchecked_reason: null };
+  } catch (e) {
+    return {
+      version: null,
+      version_ok: null,
+      version_unchecked_reason: `could not reach the daemon to verify: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
+    };
+  }
+}
+
 async function cmdRoll(opts: { force?: boolean }) {
   const port = await readDaemonPort();
   if (!port) {
+    // COLD PATH — nothing was running, so this is a start rather than a roll.
+    // It still reports the verify, because "no daemon was up" is not a reason to
+    // stay silent about which version is now serving.
     const fresh = await ensureDaemon();
-    printJson({ ok: true, rolled: true, previous_pid: null, port: fresh });
+    printJson({
+      ok: true,
+      rolled: true,
+      previous_pid: null,
+      port: fresh,
+      ...(await probeVersion(fresh)),
+    });
     return;
   }
   const { total, channels } = await fetchActiveSubscribers(port);
@@ -1147,10 +1204,6 @@ async function cmdRoll(opts: { force?: boolean }) {
   }
   releaseHold(); // our turn to spawn the new version
   const fresh = await ensureDaemon();
-  let version: string | null = null;
-  try {
-    version = (await api<RootInfo>(fresh, "GET", "/")).data?.version ?? null;
-  } catch {}
   let pid: number | null = null;
   try {
     pid = (await api<RootInfo>(fresh, "GET", "/")).data?.pid ?? null;
@@ -1161,8 +1214,7 @@ async function cmdRoll(opts: { force?: boolean }) {
     previous_pid: previousPid,
     pid,
     port: fresh,
-    version,
-    version_ok: version === PLUGIN_VERSION,
+    ...(await probeVersion(fresh)),
   });
 }
 

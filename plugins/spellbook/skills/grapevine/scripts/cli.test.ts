@@ -8,7 +8,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { looksShellRisky } from "./cli.ts";
+import { looksShellRisky, probeVersion } from "./cli.ts";
 
 const HOME = mkdtempSync(join(tmpdir(), "grapevine-test-"));
 const CLI = join(import.meta.dir, "cli.ts");
@@ -1179,6 +1179,23 @@ describe("grapevine cli", () => {
       (c: { name: string }) => c.name === "test_force",
     );
     expect(ch.message_count).toBe(1);
+  });
+
+  test("b3: an UNREACHABLE daemon makes version_ok NULL, never false", async () => {
+    // `roll` is the documented deploy step and its verify had two silences. The
+    // warm-path one is this: the probe was wrapped in `catch {}`, leaving
+    // version = null, and `null === PLUGIN_VERSION` evaluates to FALSE. So "I
+    // could not check" was reported as "the version is WRONG" — actionable and
+    // incorrect, which is worse than saying nothing.
+    //
+    // Port 1 is reserved and nothing listens on it, so the probe must fail.
+    const r = await probeVersion(1);
+    // RED PRE-FIX: this was `false`.
+    expect(r.version_ok).toBeNull();
+    expect(r.version_ok).not.toBe(false);
+    expect(r.version).toBeNull();
+    // and a bare null tells a caller the check did not happen, not WHY
+    expect(r.version_unchecked_reason).toBeTruthy();
   });
 
   // --- b5: message_count must distinguish "empty" from "I did not count" -----
