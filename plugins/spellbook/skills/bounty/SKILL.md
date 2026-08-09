@@ -180,7 +180,8 @@ session by default; pass `--session <id>` to target a specific one.
 >   so on the attach path they cannot take effect. `open` **refuses** (exit `2`)
 >   rather than attaching and discarding them, and every `open` envelope carries
 >   `restoreSkipped` — `null` when nothing was skipped, `{requested, reason}`
->   when the refusal fired.
+>   when an **explicit** `--restore` could not be honoured (a keyed respawn
+>   restores by default and never populates this field) when the refusal fired.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass

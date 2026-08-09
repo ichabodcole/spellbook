@@ -278,8 +278,14 @@ function parseExpect(value: string | boolean | undefined): number | undefined {
 // and the caller is now TOLD.
 //
 // ⚠ This is the `restoreSkipped` SHAPE and deliberately not its name, because it
-// is the opposite EVENT. `restoreSkipped` means "your flag was valid and the
-// situation could not honour it" — the user did nothing wrong. This means "your
+// is the opposite EVENT. `restoreSkipped` means "your EXPLICIT `--restore` was
+// valid and the situation could not honour it" — the user did nothing wrong.
+// (EXPLICIT is load-bearing since `fb209f1`: a keyed respawn restores BY
+// DEFAULT, but that path pushes a spawn arg and never sets `flags.restore`, so
+// it can never populate this field. There is ONE trigger, not two — and a
+// default restore cannot be "skipped" in this field's sense at all, because its
+// guard condition IS the skip condition. Ruled after the trigger count was
+// found to have silently doubled underneath the old wording.) This means "your
 // value was invalid and we chose to ignore it" — the user made a typo, and what
 // they need is the legal set, not an explanation about their board.
 //
