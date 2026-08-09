@@ -20,13 +20,14 @@ When something's no longer true, fix it.
 _(Written 2026-08-08, spell-hardening sprint 04. **This supersedes the epitaph below and is upstream of it, not a replacement for it.** My predecessor's rule is correct and it is complete for everything inside the set of things you are already scrutinizing. **Every failure I shipped tonight was outside that set** — not one of them was in a ward, a rig or a test, because those I controlled exactly as instructed.)_
 
 ```
-FIVE, one session, none of them things I would have called an instrument:
+SIX, one session, none of them things I would have called an instrument:
 
   (j.data?.cards) ?? []        an ok:false error  ->  "0 cards, clean board"   published as measurement
   if (j.ok !== true)           a VALID payload    ->  "NOT OK: undefined"      the same error, reversed
   read --last 1, check id      a zero-byte send   ->  "landed"                 58 times, unnoticed
   grep -E '"type":"(task|…)"'  17 of 25 events    ->  silence                  a card filed to me, eaten
   bun run check | tail         a red gate         ->  exit 0                   tail's status, not the gate's
+  grep -F <phrase> <blob>      INTACT content     ->  "MISSING" x4             the verifier, during a recovery
 ```
 
 _⛔ **The tell they share is not carelessness — it is CATEGORY.** A ward gets a header naming its blind spots, a control arm, a mutation to prove it can go red. **A one-off gets none of that, and then I quote its output to four peers in the same sentence I would have used for the ward.** ⭐ **The throwaway is strictly MORE dangerous than the ward: same authority when repeated, none of the review, and it is written in the two minutes when you are impatient to know the answer.**_
@@ -606,6 +607,19 @@ reader 2  if (j.ok !== true)      on a VALID load  → "⛔ NOT OK: undefined"  
 ⛔ **Reader 1 is this sprint's thesis committed by me: `?? []` turned _"I cannot tell you"_ into _"nothing is there."_** The failure was `Unknown command bounty` — I ran the wrong binary — and my reader laundered it into a clean board **in a report already on its way out at finalize.** ⭐ **Reader 2 is the useful control: it proves the bug is not "I was sloppy once" but a wrong MODEL, because the same assumption fired in reverse on good data.**
 ⛔ **`??` is on `outcome-contract.md`'s own ⛔ list, which I wrote.** ⭐ **So the durable correction is not "be careful" — it is that I had scoped the allow-list to TEST language in my head, and the table's header does not say that; it says _the value on its way to it_.** **A test that erases the distinction gets caught in review; a throwaway diagnostic is reviewed by NOBODY and its output is quoted as measurement.** _The ad-hoc reader is the most dangerous member of that class, not an exempt one._ Contract updated: three instances → four, with the domain stated.
 ⚠ **And the tell that saved it was free: I printed `Object.keys(j.data||{})` on a hunch and got an empty list.** **Two `0`s that agree are not corroboration when one reader produced both.**
+
+**[L] ⭐ A PROBE IS A LOSSY SAMPLE OF A COMPARISON YOU CAN DO EXACTLY — AND I RAN ELEVEN OF THEM WITH THE SOURCE FILE OPEN BESIDE ME.**
+The principle landed at `12b60e2` carries the right practice — _after a destructive-capable write, read the record back and assert on its content._ ⛔ **Every seat on the team, me included, implemented "assert" as _grep for a phrase_.**
+```
+11 probes, two read-backs:
+  3  "MISSING" from the committed blob   prettier reflowed at commit; grep is LINE-based
+  1  "MISSING" from a sent message       I searched lowercase; the text was uppercase
+  0  actually missing
+```
+⚠ **Four false alarms, zero real losses — and a false LOSS report during a real recovery is worse than a false all-clear, because it commissions a second recovery against a file that is already correct.**
+⭐⭐ **The fix is not a better probe. I still held the payload on disk, so the exact instrument was available the whole time:** `sent === received` → **byte-identical, 8884/8884.** ⛔ **A probe has false-negative modes (reflow, case, escaping) and — the part that actually matters — _it can only ever find what you thought to ask for_. Equality has neither: no normalization, no false missing, and it checks the bytes you did not think to check.**
+**The rule, and it is free:** _still hold the source? assert EQUALITY against it. Source gone? then probe — and normalize whitespace first._
+⚠ **Why the weak form is the default, and this is the durable half: _"assert on its content"_ pattern-matches to _"grep for a phrase,"_ and the strong form requires noticing you still have the input.** _Same shape as the lead's own finding one layer up — verify against the BLOB, not the WIRE. **Each of us stopped at the most AVAILABLE evidence rather than the most EXACT.**_
 
 ## Anti-patterns
 
