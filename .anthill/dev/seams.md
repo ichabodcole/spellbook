@@ -715,3 +715,19 @@ Concretely, as built in the three co-presence spells:
 **Where it ENDS — the grain this was ratified at.** The contract covers the **agent-facing `/cmd` route only**. Each of these spells has a sibling `handleBrowserMsg` serving the WebSocket with a near-identical chain, and it is deliberately **NOT** in scope: a WebSocket message has no response to carry a verdict. _A builder who folds the two together because they look alike will produce a change no test observes_ — and one already did, in the session that produced this contract (34 edits landed in the wrong function of the pair; the giveaway was that `handleAgentMsg` began returning `undefined` on success). **Treat the two handlers as separate contracts with one shape, never as one contract.**
 
 **Proof:** one RED PRE-FIX cell per spell (a bogus `type` is refused), each verified to FAIL against the pre-fix code and pass after; plus per-spell BLAST-RADIUS GUARDS asserting a valid command still answers `ok`, a recognised-but-inert command still answers `ok`, and malformed JSON is still refused at the PARSE layer — that last one is what makes the red cell discriminating rather than vacuous, because it proves the refusal path existed independently of the fix. `glamour/tests/daemon.integration.test.ts`, `imago/tests/server.integration.test.ts`, `magpie/tests/daemon.integration.test.ts`; commit `14bec41`.
+
+## Contract 14 — the digestify departure record (`POST /left`)
+
+**Owner:** circe (surface emit) · **Co-owner:** daedalus (route + the 124 payload) · **Pointed at from:** prospero, cassandra · _(ratified on the wire #690→#694; surface half built `fbfe1d3`, cells `7135287`)_
+
+**The contract, stated once:** on `beforeunload`, when the review has not been submitted, the digestify surface **always** beacons `POST /left { engaged, elapsedMs, answered, commented }` — sent **before** `/cancel`.
+
+- **`engaged: false` is RECORD-ONLY. The server MUST NOT call `resolveDone` on it.** This clause is the whole safety of the design: it is what lets a clean close be *reported* without a page refresh being able to end a session.
+- `/cancel` is **unchanged** and still fires only when engaged. house-style's exit-code contract pins **130** to *"closed tab after interacting"*, so the `dirty` gate is canon, not incidental — the predicate is provably unmoved (`!submitted && dirty && sendBeacon` before; an early return on `submitted || !sendBeacon` plus `if (dirty)` after).
+- `elapsedMs` is measured from **page load**, not from daemon start: it answers *"how long did the human have it open"*, which is the fact that separates a read-and-declined from a glance. It cannot say when the review was created.
+
+**Why it bites:** measured with matched arms before anything was built — *"a human opened it, read it and left"* and *"nobody ever opened it"* produce **byte-identical stdout and the same exit 124**. There is no information difference for a timeout payload to name, so **b4's output half cannot be completed without this emit half**; the board encodes that as b4 blocked-on-b4s.
+
+**Proof:** `digestify/scripts/review.test.ts` — two cells, mutation-calibrated (34→36, +2; each mutation reddens **only** its own cell: a syntax error fails the parse cell, reverting the pre-b4s handler fails the beacon cell). Browser-driven both arms: `engaged:false` → `/left` alone; `engaged:true` → `/left` then `/cancel`.
+
+⚠ **HALF-PROVEN, and this stays until it is not:** the **server half is NOT BUILT**. daedalus holds `/left` + the 124 payload as b4's remainder. Until then the surface emits into a route that does not exist (harmless — `sendBeacon` is fire-and-forget), and **the `engaged:false` record-only clause is unenforced by anything except this contract.**
