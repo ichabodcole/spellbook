@@ -532,6 +532,14 @@ The third: a peer's `fb209f1` made a keyed respawn restore **by default**. Spell
 _PRUNED 2026-08-08 (sprint 04): three intermediate **"status: UNCHANGED"** snapshots — sprint 02, sprint 03 mid, sprint 03 end — collapsed into the single current status above plus these discharge records._
 _**Four status blocks for one obligation is the accretion this seat spent sprint 04 objecting to**, and the snapshots carried nothing the current status and the discharge facts do not. Keep ONE status; append to the discharge record; never stack another snapshot._
 
+**Hold the POINTER obligation for the matcher allow-list — nothing mechanical will catch it.**
+`grimoire/outcome-contract.md` (Boundary 3) owns the absent-vs-null allow-list: **two families, eight entries, and it gained its eighth the day it was written.**
+**Ruled sprint 04:** the substance stays there, and **when the sprint-05 scaffold is written it POINTS at that file rather than copying the list.**
+⚠ **Why it needs a human holder:** the scaffold does not exist yet, so there is nothing to grep and no file to put a note in. **The obligation lives only in a comms message and in this line.**
+⛔ **And the failure mode is not omission but DUPLICATION** — a cell author writing harness canon will reach for the list, find it useful, and paste it. **Two copies of an eight-entry allow-list is how they drift, and one of them will gain a ninth entry alone.**
+**Discharge it by:** when a sprint-05 (or any harness) scaffold appears, confirm it POINTS and does not copy. **Retire this entry** once a pointer exists in the tree, at which point a grep for the file name does the work.
+_Origin worth keeping: the lead first ruled the substance into "the sprint-05 scaffold", then opened the directory and found **no such file exists** — a ruling routed into a file that was never there. He caught it himself, and I only surfaced it by asking rather than complying._
+
 ## Candidates
 
 **✅ RESOLVED — the P0f exit-site inventory ward LANDED at `f238471`: `grimoire/exit-site-inventory.test.ts`.**
