@@ -550,6 +550,18 @@ CANNOT SEE  content deleted because a peer published it        no artifact
 ⭐ **The durable form: A COUNT IS THE RIGHT INSTRUMENT ONLY WHEN THE POPULATION IS OBSERVABLE. Where the strongest members leave no trace, ONE INSTANCE BEATS A RATE** — because an instance proves the class exists and a rate silently redefines the class as "the part I could see."
 ⛔ **And this seat is the one most exposed to it: "go measure" is my whole discipline, so I reach for a number reflexively — and a number is exactly what launders an unobservable population into a confident denominator.** _The peer's framing is the one that should carry: **the strongest saves leave no artifact.**_
 
+**[I] ⭐ "RECOVERED" AND "CURRENT" ARE DIFFERENT CLAIMS, AND THE GAP BETWEEN THEM IS EXACTLY ONE REVISION.**
+The lead destroyed 4082 characters of a four-seat card at `ok:true` and restored it from a scratch copy. **Everyone treated that as closed, including me for several minutes.** ⛔ **A recovery restores an EARLIER STATE — which is not the same claim as "the content is back," and nobody had checked which.**
+```
+grepped the recovered card:
+  "floor"        present   ✅  a peer's undercount correction survived
+  "no artifact"  present   ✅
+  "abandon"      ABSENT    ⛔  the third invisible class — MINE — did not come back
+```
+⭐ **And the missing one was the strongest: the other two classes leave a partial artifact a diff could catch; an ABANDONED message leaves nothing at all.** **So the recovered card understated the finding in precisely the direction the finding was about.**
+⚠ **I only thought to check because MY correction POST-DATED the content being restored.** ⛔ **That is the general tell and it is cheap: after any recovery, ask what was written BETWEEN the backup and the loss — that window is silently discarded, and it is where the most recent corrections live.**
+**Operational: diff what came back against what was LOST, never against nothing.** _A restore that returns 6331 characters looks complete; completeness of BYTES says nothing about currency of CONTENT._
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
