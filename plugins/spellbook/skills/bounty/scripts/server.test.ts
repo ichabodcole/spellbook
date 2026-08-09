@@ -2460,6 +2460,92 @@ describe("dependencies (Phase D)", () => {
     }
   }, 40000);
 
+  test("b15: a restore that was ATTEMPTED and FAILED is reported, not silent", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b15-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "will be corrupted", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    // Corrupt the snapshot mid-JSON — what a partial write leaves behind.
+    const snap = join(home, "snapshots", `${s1}.json`);
+    const raw = readFileSync(snap, "utf8");
+    writeFileSync(snap, raw.slice(0, Math.floor(raw.length / 2)));
+
+    // b7 made EVERY keyed respawn pass --restore, so this path is now the common
+    // one rather than an explicit opt-in. Pre-fix the failure went to the
+    // daemon's stderr — a log file the caller never reads — and the board came
+    // up empty at exit 0 with nothing saying a restore had been tried.
+    const o2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(o2.stdout) as { session_id: string }).session_id;
+    try {
+      const boot = JSON.parse(o2.stdout) as {
+        restoreFailed: { path: string; reason: string } | null;
+      };
+      // RED PRE-FIX: the field did not exist. `open` is the command whose
+      // restore failed, so it is the response that must carry it.
+      //
+      // ⚠ `not.toBeNull()` alone is WRONG here and the mutation run caught it:
+      // `undefined` passes that assertion, so it conflates ABSENT with
+      // PRESENT-AND-POPULATED — the exact distinction this sprint is about,
+      // written into a cell testing that distinction. Assert presence first.
+      expect(Object.hasOwn(boot, "restoreFailed")).toBe(true);
+      expect(boot.restoreFailed).not.toBeNull();
+      expect(boot.restoreFailed?.path).toContain(s1);
+      expect(boot.restoreFailed?.reason).toBeTruthy();
+
+      // and it outlives the boot line, which one refresh would otherwise lose
+      const st = await runCli(["state", "--session", s2], { env });
+      const body = JSON.parse(st.stdout) as {
+        state: { tasks: unknown[] };
+        restoreFailed: { reason: string } | null;
+      };
+      expect(body.state.tasks).toEqual([]); // still empty — but now SAID
+      expect(body.restoreFailed).not.toBeNull();
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
+  test("b15 GUARD — a HEALTHY restore reports restoreFailed null, never absent", async () => {
+    // The failure mode of this field is firing on every boot, or appearing only
+    // when something broke. Either makes it unreadable. Checked against the
+    // mutation direction before naming: this one is RED PRE-FIX too (the field
+    // did not exist), so it is NOT a guard against the fix — it guards the
+    // present-and-null property, and I am naming it accordingly rather than
+    // calling it a guard against the defect.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b15g-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "survives", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+    const o2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(o2.stdout) as { session_id: string }).session_id;
+    try {
+      const body = JSON.parse(o2.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(body, "restoreFailed")).toBe(true);
+      expect(body.restoreFailed).toBeNull();
+      const st = await runCli(["state", "--session", s2], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toHaveLength(
+        1,
+      );
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };

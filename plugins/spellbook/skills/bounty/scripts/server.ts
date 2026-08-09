@@ -718,6 +718,9 @@ async function main(argv: string[]): Promise<number> {
   // tasks run through validateTask (filter-and-keep-valid) so a malformed or
   // legacy entry is dropped, not fatal.
   const state: BoardState = { title: v.title as string, tasks: [] };
+  // b15 — present-and-null on every boot: null means "no restore failed", never
+  // "this daemon does not report restore failures".
+  let restoreFailed: { path: string; reason: string } | null = null;
   if (v.restore) {
     const restoreArg = v.restore as string;
     const restorePath = existsSync(restoreArg)
@@ -731,9 +734,27 @@ async function main(argv: string[]): Promise<number> {
         ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
         : [];
     } catch (e) {
-      process.stderr.write(
-        `bounty: restore failed (${restorePath}): ${e instanceof Error ? e.message : String(e)}\n`,
-      );
+      // b15 — A RESTORE THAT WAS ATTEMPTED AND FAILED USED TO BE INVISIBLE.
+      // This branch wrote to the DAEMON'S stderr, and cli.ts spawns the daemon
+      // with stderr pointed at a log file the caller never reads — then it
+      // CONTINUED with the empty default board. An empty board, exit 0, and
+      // nothing in any envelope saying a restore had even been tried.
+      //
+      // ⚠ MY OWN fb209f1 WIDENED THIS. Before it, only an explicit `--restore`
+      // reached here; now EVERY keyed respawn passes --restore, so a corrupt
+      // snapshot silently yields an empty board on the common path. b7's defect,
+      // recreated by b7's fix, on the error branch.
+      //
+      // Distinct from `restoreSkipped`, ruled to mean "your EXPLICIT --restore
+      // was valid and the situation could not honour it" — never attempted.
+      // This one WAS attempted and broke. Same envelope shape, opposite remedy:
+      // skipped means fix your situation, failed means your snapshot is damaged
+      // and here is the path.
+      restoreFailed = {
+        path: restorePath,
+        reason: e instanceof Error ? e.message : String(e),
+      };
+      process.stderr.write(`bounty: restore failed (${restorePath}): ${restoreFailed.reason}\n`);
     }
   }
   const sockets = new Set<ServerWebSocket<unknown>>();
@@ -1264,7 +1285,14 @@ async function main(argv: string[]): Promise<number> {
           // rotation has happened in this daemon's life", which is a readable
           // blank rather than an absence (D1.2).
           return new Response(
-            JSON.stringify({ state: projectState(), cursor: eventSeq, snapshotBackedUp }),
+            JSON.stringify({
+              state: projectState(),
+              cursor: eventSeq,
+              snapshotBackedUp,
+              // b15 — also readable here: a boot line is missable and this fact
+              // outlives it.
+              restoreFailed,
+            }),
             { headers: { "Content-Type": "application/json" } },
           );
         }
@@ -1473,6 +1501,11 @@ async function main(argv: string[]): Promise<number> {
     port: boundPort,
     session_id: sessionId,
     title: state.title,
+    // b15 — rides the DISCOVERY payload because that is what `open` prints, and
+    // `open` is the command whose restore just failed. Reporting it only on a
+    // later /state would mean the caller learns of it, if at all, on a different
+    // command than the one that broke.
+    restoreFailed,
   });
   try {
     writeFileSync(sessionFile, sessionInfo);
