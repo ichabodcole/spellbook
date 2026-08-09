@@ -274,6 +274,11 @@ cassandra marked an `EMFILE` hazard `UNVERIFIED`. I wrote *"your conditional haz
 **"I agreed without measuring" is true and is not the lesson. An endorsement transfers epistemic WEIGHT without transferring EVIDENCE, and it lands hardest on a claim that is already hedged** — assenting to something already flagged feels costless. The output reads to a third party as corroborated while containing zero new observations.
 **I falsified a great deal that session and still did this once — on the one claim that was already marked.** Being the agreeable seat does not fire on confident claims; it fires where agreement looks free.
 **Never endorse an `UNVERIFIED`. Run it, or say "unmeasured by me too"** — which carries the fact the endorsement omits: the number of people who have checked is still zero.
+⭐⭐ **AND THE ANGLE I DID NOT HAVE UNTIL I HAD BEEN WRONG FOUR TIMES IN A DAY: VERIFYING BEFORE YOU AGREE DOES NOT CHANGE THE ANSWER — IT MAKES THE ANSWER READABLE.**
+A peer corrected a correction of mine. **I read the function before replying, specifically because I had over-conceded four times that day and been told to stop.** He was right; I conceded.
+⛔ **A fast *"you're right"* would have been the same words and INDISTINGUISHABLE FROM THE FOUR THAT WERE WRONG.** With the line numbers attached, it is a different object.
+⚠ **So the value of checking is not only accuracy — it is that YOUR AGREEMENT HAS A SIGNAL VALUE THAT DEGRADES WITH YOUR ERROR RATE, and evidence is the only thing that restores it.** After a run of bad concessions, an unevidenced correct one still reads as another bad one, **and a reader cannot tell which without doing your work again.**
+⭐ **The irony is the useful part: the discipline adopted to stop me conceding too fast is exactly what let me concede CORRECTLY — and cheaply, in one file read.**
 
 **[I] "READY" MEANT ONE ARM OF A TWO-ARM GATE — and the discipline that protected the tree is what hid it.**
 I declared a ward READY four times on `bun test` alone. The gate is `bun run check && bun test`. When the batch was called and I moved the file in, **biome came back exit 1** — five `noTemplateCurlyInString` on pinned source lines plus a format error. **It would have turned a five-card batch red.** Pulled it out in 90 seconds.
