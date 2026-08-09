@@ -695,7 +695,16 @@ could not have called it).
 
 Concretely, as built in the three co-presence spells:
 
-- `handleAgentMsg` **returns a boolean** — `true` iff the command type was RECOGNISED — and the route propagates it: `{ok:true, applied:true}` on recognition, HTTP **400** with `{ok:false, applied:false, error}` naming the offending type otherwise.
+- `handleAgentMsg` **returns a verdict** — at minimum a boolean, `true` iff the command type was RECOGNISED — and the route propagates it: `{ok:true, applied:true}` on recognition, HTTP **400** with `{ok:false, applied:false, error}` naming the offending type otherwise.
+
+> **⚠ Sprint-04 amendment (2026-08-08, daedalus — found at the finalize drift-check, in my own contract, caused by my own commits).**
+> This bullet said **"returns a boolean"** as a statement of as-built. That became **false for two of the three spells on the day it was written into a card lane**: `imago` (`5e6aacd`, b9) and `magpie` (`78563c6`, b13) now return
+> `AgentVerdict = boolean | {recognised:true; ok:true; detail} | {recognised:true; ok:false; status; error}`, because #82's outcome contract needs a recognised command to report a MINTED ID or a REFUSAL, which one bit cannot carry.
+> **glamour's `applyAgentMsg` still returns a bare boolean and the sentence is still accurate there** — so the drift was partial, which is the kind that reads as correct.
+> **The contract itself is UNCHANGED and was strengthened, not falsified:** the verdict still originates in the code that owns the recognised set, and `applied` is still the field. Only the verdict's TYPE widened — a recognised command may now answer with its detail instead of a bare `true`.
+> **The lesson for whoever holds this next: an "as built" sentence has a shelf life its "the contract is" sentence does not.** State the invariant in the contract clause and the current shape in a dated amendment, or the doc rots at exactly the rate the code improves.
+
+
 - Where the recognised set lives in a **reducer** (glamour's `applyAgentMsg`), the reducer returns the verdict (`default: return false` / `return true`) and the server consumes it. Where the dispatch lives in the server itself (imago's if-chain, magpie's switch), the terminal `else` / `default` produces it there.
 - The field is **`applied`** — bounty's existing `ApplyResult` field (`bounty/server.ts`). No new vocabulary is minted for this.
 
