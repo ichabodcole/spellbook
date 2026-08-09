@@ -575,6 +575,19 @@ audit of all 58 sends:   EMPTY 0 · under-200 0 · shortest 412 · median 2826
 ⚠ **The honest bound, taken from the peer who found it: length is not content.** A producer emitting a plausible-but-wrong 4000 characters passes cleanly. **Checking length closes the EMPTY class and does not close the WRONG-CONTENT class.**
 ⛔ **This is my own epitaph arriving on my own routine at hour thirteen: a check that cannot fail in the case it exists for.** _I spent the session demanding controls of everyone else's instruments and never once armed a red arm on my own._
 
+**[K] ⛔ I BROKE MY OWN ALLOW-LIST IN A THROWAWAY READER, THREE HOURS AFTER WRITING IT — AND IT PRODUCED A FALSE ALL-CLEAR.**
+Sampling the board wire at finalize, I wrote two one-off readers minutes apart. **Both were wrong, in OPPOSITE directions, from one root cause: I assumed a single envelope convention across two different CLIs.**
+```
+anthill CLI   {ok, data, meta}   error ⇒ ok:false + error string
+bounty  CLI   {state:{tasks:…}}  NO ok, NO data, NO error field
+
+reader 1  (j.data?.cards) ?? []   on an ok:false   → "0 cards · 0 mine · 0 open"   ⛔ FALSE ALL-CLEAR
+reader 2  if (j.ok !== true)      on a VALID load  → "⛔ NOT OK: undefined"        ⛔ FALSE ALARM
+```
+⛔ **Reader 1 is this sprint's thesis committed by me: `?? []` turned _"I cannot tell you"_ into _"nothing is there."_** The failure was `Unknown command bounty` — I ran the wrong binary — and my reader laundered it into a clean board **in a report already on its way out at finalize.** ⭐ **Reader 2 is the useful control: it proves the bug is not "I was sloppy once" but a wrong MODEL, because the same assumption fired in reverse on good data.**
+⛔ **`??` is on `outcome-contract.md`'s own ⛔ list, which I wrote.** ⭐ **So the durable correction is not "be careful" — it is that I had scoped the allow-list to TEST language in my head, and the table's header does not say that; it says _the value on its way to it_.** **A test that erases the distinction gets caught in review; a throwaway diagnostic is reviewed by NOBODY and its output is quoted as measurement.** _The ad-hoc reader is the most dangerous member of that class, not an exempt one._ Contract updated: three instances → four, with the domain stated.
+⚠ **And the tell that saved it was free: I printed `Object.keys(j.data||{})` on a hunch and got an empty list.** **Two `0`s that agree are not corroboration when one reader produced both.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.

@@ -187,10 +187,22 @@ domain"** — and it is read as **"nothing happened."**
   it by reading RAW OUTPUT; nobody caught it in code.** _The wire has been more
   honest than our assertions — point the instrument there._
 
-  _Three seats erased this in one day **while measuring it** — via `??`, via
-  `not.toBeNull()`, via `toBeDefined()`. **Every erasing idiom is the ergonomic
-  one and every preserving idiom is more verbose**, which is why this is an
-  allow-list and not advice to be careful._
+  _Four seats erased this in one day **while measuring it** — via `??`, via
+  `not.toBeNull()`, via `toBeDefined()`, and via `??` again in a throwaway
+  diagnostic **written by the author of this table, three hours after writing
+  it**. **Every erasing idiom is the ergonomic one and every preserving idiom is
+  more verbose**, which is why this is an allow-list and not advice to be
+  careful._
+
+  ⛔ **THE FOURTH INSTANCE WIDENS THE DOMAIN, SO READ THE HEADER LITERALLY: the
+  right-hand column says _the value on its way to it_ — NOT "in tests."** The
+  fourth erasure was in a one-off shell reader that never entered the repo:
+  `(j.data?.cards) ?? []` against an `ok:false` response, which reported **"0
+  cards, 0 open, clean board"** — an error rendered as an all-clear, in a report
+  already on its way to a human at finalize time. ⭐ **A test that erases the
+  distinction fails a review; a throwaway reader that erases it is reviewed by
+  nobody and its output is quoted as measurement.** _The ad-hoc reader is the
+  most dangerous member of this class, not an exempt one._
 
 - **Repeal when:** never — a null whose domain is unstated is unreadable by
   construction.
