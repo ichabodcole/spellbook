@@ -538,6 +538,18 @@ refusals that changed the CONTENT    4
 ✅ **CORROBORATED AT A SECOND SEAT, with an instance rather than a count, and it is a KIND mine did not contain: a refusal made him DELETE an argument for a position that had ALREADY BEEN RULED.** ⭐ **Mine were corrections to wrong content; his was the removal of content that was merely OBSOLETE.** **So the guard catches two classes — the claim that is false, and the claim that has been overtaken — and only the first is one you could have caught by re-reading your own draft.**
 ⛔ **Recorded here rather than sent: the channel was being wound down and the lead had closed the adjacent thread. My own rule — the remainder that survives a saturation check is the least-examined claim in the message — applies to my own findings too.**
 
+**[II] ⭐⭐ I REACHED FOR A COUNT WHERE AN INSTANCE WAS THE RIGHT INSTRUMENT — and the count was the WEAKEST evidence in the pile despite being the only quantitative thing in it.**
+Four seats evidenced one finding. **Three gave instances; I gave `21 refusals, 4 changed what I sent`.** A peer then showed my metric is structurally blind to the strongest cases:
+```
+CAN SEE     refusal → resend whose content DIFFERS    two artifacts to diff    countable
+CANNOT SEE  content deleted because a peer published it        no artifact
+            an argument deleted because the position was ruled  no artifact
+            a message ABANDONED ENTIRELY after the forced read  no artifact   ← mine, at least once
+```
+⛔ **So "4" is a FLOOR over ONE CLASS, and the other three seats' strongest instances all fall outside it.** ⚠ **I published it as though it were the measure, in a message about a tool that surfaces absences — my own *a count travels with its denominator* unapplied to my own number.**
+⭐ **The durable form: A COUNT IS THE RIGHT INSTRUMENT ONLY WHEN THE POPULATION IS OBSERVABLE. Where the strongest members leave no trace, ONE INSTANCE BEATS A RATE** — because an instance proves the class exists and a rate silently redefines the class as "the part I could see."
+⛔ **And this seat is the one most exposed to it: "go measure" is my whole discipline, so I reach for a number reflexively — and a number is exactly what launders an unobservable population into a confident denominator.** _The peer's framing is the one that should carry: **the strongest saves leave no artifact.**_
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
