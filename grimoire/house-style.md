@@ -338,11 +338,23 @@ is **not restated here**.
 
 _Scar: `bounty`'s `restoreSkipped` / `snapshotBackedUp` reach the agent
 present-and-null on every path; the human surface (`scripts/template.html`, 958
-lines) renders no field, badge or banner for the same fact — so a board that
-returned `tasks: []` over a snapshot holding 35 looks exactly like an empty
-board, and the one human-visible mention is a `confirm()` string implying the
-snapshot mechanism is fine. The rule was born from bounty's readback gap and
-then left bounty's opposite gap open._
+lines) renders no field, badge or banner for the same fact — **still 0 of 958,
+re-measured after the fix below**. The rule was born from bounty's readback gap
+and then left bounty's opposite gap open._
+
+_The instance that produced it is FIXED and the rule is not: a keyed respawn
+**returned** `tasks: []` over a snapshot holding 35 and looked exactly like an
+empty board, with the one human-visible mention a `confirm()` string implying
+the snapshot mechanism was fine (`spellbook#97`, fixed in `fb209f1` — a keyed
+respawn now restores by default). **The disclosure asymmetry it illustrates is
+unchanged**, which is why the scar stays._
+
+> ⚠ **A scar in the PRESENT TENSE acquires an expiry the moment its instance is
+> fixed, and nothing announces it.** Write the instance in the **past tense with
+> its fix cited**, and state separately whether the rule still holds — a reader
+> who goes looking for a live case, finds none, and concludes the rule is stale
+> has been misled by grammar. _(Found by the clause's own author, hours after
+> writing it, applying a standing check she had just watched land elsewhere.)_
 
 ---
 
