@@ -1312,13 +1312,48 @@ async function main(argv: string[]): Promise<number> {
       // is what turns that into a visible failure.
       return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
     }
-    case "close":
+    case "close": {
       // Same explicit decision as `message`: applied:true unconditionally today,
       // so this is a regression guard rather than a fix. It earns its place
       // because `close` is the verb that WRITES THE SNAPSHOT — a close that
       // silently failed to apply, reported as success, is how a caller concludes
       // its data was persisted when it was not.
-      return ackOrFail("close", await postCmd(session, { type: "close" }, { as, quiet: true }));
+      const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
+      // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
+      // the daemon ACKED the command, and the daemon acks before it finishes
+      // tearing down. Measured: `state` on the same session STILL ANSWERS with
+      // the full board immediately after a successful close, and only stops
+      // after a settle. So a caller that closed and reopened attached to the
+      // dying board instead of respawning — success reported an ACT, not its
+      // COMPLETION.
+      //
+      // The wait is not new machinery: `open --fresh` already polls
+      // `boardIfLive` for up to 3s after its own teardown POST. This applies the
+      // discipline that already existed one function away, which is also why the
+      // bound and the interval match it rather than being invented here.
+      //
+      // `down` is REPORTED rather than enforced: if the daemon outlives the
+      // bound, that is a real fact a caller may need (a wedged teardown), and
+      // exiting non-zero would turn a slow close into a failed one. Present on
+      // every close, never absent — a readable blank beats an absence.
+      const resolved = requireSession(session);
+      const deadline = Date.now() + 3000;
+      let down = false;
+      while (Date.now() < deadline) {
+        if (!(await boardIfLive(resolved.session_id))) {
+          down = true;
+          break;
+        }
+        await sleep(80);
+      }
+      if (!closeRes.applied) return ackOrFail("close", closeRes);
+      printJson({ ok: true, sent: "close", down });
+      if (!down)
+        process.stderr.write(
+          "bounty: close acked but the daemon was still answering after 3s — a reopen may attach to it\n",
+        );
+      return 0;
+    }
     case "info":
       cmdInfo(session);
       break;

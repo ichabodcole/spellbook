@@ -2275,6 +2275,62 @@ describe("dependencies (Phase D)", () => {
     }
   }, 25000);
 
+  test("b14: close waits for the daemon to be DOWN, and an immediate reopen gets a fresh board", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b14-${crypto.randomUUID().slice(0, 8)}`;
+    const open1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(open1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "one", "--session", s1], { env });
+    await runCli(["add", "two", "--session", s1], { env });
+
+    const closed = await runCli(["close", "--session", s1], { env });
+    // RED PRE-FIX: `close` acked as soon as the daemon received the command, and
+    // the daemon acks before it finishes tearing down.
+    expect((JSON.parse(closed.stdout) as { down?: boolean }).down).toBe(true);
+
+    // The board must be gone the instant close returns — previously `state`
+    // still answered here with the full board.
+    const after = await runCli(["state", "--session", s1], { env });
+    expect(after.code).not.toBe(0);
+
+    // And the race itself: a reopen issued immediately must respawn rather than
+    // attach to the dying daemon. This is the assertion that convicts the bug —
+    // pre-fix it saw the OLD board's two tasks.
+    const open2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(open2.stdout) as { session_id: string }).session_id;
+    try {
+      const st = await runCli(["state", "--session", s2], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
+  test("b14: `down` is present on EVERY close, never absent", async () => {
+    // ⚠ NOT a guard, and I labelled it one until the mutation run said otherwise:
+    // this is RED PRE-FIX (expected true, received false) because the field does
+    // not exist before the fix, so it cannot pass in both worlds. The label was
+    // written when the assertions were, which records intent rather than
+    // behaviour — the mutation run audits LABELS, not only code.
+    //
+    // What it asserts: a field that appears only when it has something to say
+    // cannot be distinguished from a daemon that does not report it, so `down`
+    // is present on every close as a readable blank.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const closed = await runCli(["close", "--session", session], { env });
+    const body = JSON.parse(closed.stdout) as Record<string, unknown>;
+    expect(Object.hasOwn(body, "down")).toBe(true);
+    expect(typeof body.down).toBe("boolean");
+  }, 30000);
+
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
