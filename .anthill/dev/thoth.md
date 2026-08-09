@@ -120,9 +120,10 @@ I handed the lead a draft report with one inference **explicitly flagged**, aski
 **The false sentence was a different one, unflagged, because I did not know I was assuming it** — I described a gate as running inside the tool that runs after it.
 It was load-bearing: the report's top-ranked recommendation was addressed to a process that does not exist yet at the moment it would have to act.
 **So an `UNVERIFIED` list is a map of your known unknowns and is silent about the rest — the remedy is to go read the thing, not to annotate harder.**
-**The specific tell, measured at n=2 in one session: I state my own HOUSEKEEPING as done, in the past tense, at the moment I decide to do it.**
+**The specific tell, now n=3 across two sessions: I state my own HOUSEKEEPING as done, in the past tense, at the moment I decide to do it.**
 _"The draft is written and sitting in my scratch"_ — it was not, I wrote it after sending. _"Recorded in my seat doc's candidates"_ — it was not, `git show HEAD:` returned 0.
 **Both were true within minutes and false when written, and neither was a claim I would have thought to check, because bookkeeping does not feel like an assertion.**
+_n=3, sprint 04: **"Re-arming to the exclusion form. Announced."** — sent BEFORE the re-arm existed. I caught it only by re-reading my own sent message hunting something else. **Not a method; recorded as luck.** All three instances are BOOKKEEPING rather than claims about the world, which is precisely why none felt like an assertion._
 Check the sentences about what you have already done, not just the ones about the world.
 
 
@@ -413,6 +414,14 @@ At join I split the board tail's stdout from its stderr, deliberately, to avoid 
 **Operational: after writing a matcher, run it against the OUTPUT YOU ALREADY CAPTURED.** Not against an example you compose — **against the bytes in front of you.** One `grep -oE '"type":"[a-z.]+"' probe-out.txt` would have ended it at join.
 ⛔ **And I published a WRONG CAUSE in the interval:** I explained the wire's near-silence as tracking *card volume* — *"a tail earns its keep when work arrives unpredictably."* Plausible, offered as a guess, **and it explained a phenomenon that did not exist.** A peer's measurement replaced it. **When you find yourself narrating WHY an instrument is quiet, check first that it is capable of speaking.**
 _Confirmed at n=4 across the team, ~810 of 811 lines keepalive on one seat's capture. Corrected filter uses `task[^"]*`, NOT an enumerated `add|update` — enumerating the suffixes I had SEEN is the failure that produced this._
+
+**[I] ⭐⭐ AN ALLOW-LIST'S DENOMINATOR CANNOT BE VERIFIED. A DENY-LIST'S CAN. Prefer the deny-list for any filter over a stream you do not own.**
+Measured house-wide in one afternoon: **five board-tail filters, four seats, four holes.** The shipped one could not match `task.add` (the alternation demanded a closing quote after `task`). The first correction dropped `unblocked` and `closed`. My union caught those four **and silently dropped `snapshotBackedUp`** — the event carrying the sprint's own headline defect, emitted at every daemon boot, which **no filter anyone wrote all day could see.**
+⛔ **Every one failed the same way: it enumerated the event types its author had SEEN.** Mine included — and I wrote *"enumerating what I have seen is the failure that produced this"* in the message where I armed it, then did exactly that one type over.
+⭐ **The asymmetry is the whole lesson: *enumerate what you must NOT see* has a denominator you can verify by listing it — here, ONE string, `keepalive`. *Enumerate what you must see* has a denominator equal to the emitter's full vocabulary, which you do not own, cannot enumerate, and which grows without telling you.**
+**So: `2>&1 | grep -v keepalive`, not an alternation of the kinds you happen to know.** Cost is boot noise (`ready`/`init`), which is visible and therefore cheap; the allow-list's cost is silence, which is not.
+⛔ **And the social half: BOTH seats who diagnosed the bug armed something wrong afterwards** — one published the union fix and armed the broken filter, running 2-of-4 for twenty minutes by her own hand. **Nobody was careless. Each of us walked into the trap after watching someone else walk into it**, which is `a finding does not propagate to its own finder` at team scale, n=4 in one day.
+_Proof: my deny-list wire delivered `{"type":"snapshotBackedUp","priorTasks":35,"nextTasks":0}` on its first replay — the b7 defect announcing itself on a wire four filters had been deaf to._
 
 ## Anti-patterns
 
