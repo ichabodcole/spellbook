@@ -140,13 +140,27 @@ have.
 > cite the rule it enforces — bidirectionally, and the link itself is gated.**
 
 **Measured, and it is why (ii) exists:** `bunx biome check` on a `.md` reports
-`Checked 0 files` at exit 1, and `bun run check` is biome-only. **The gate
-cannot read a single markdown file in this repo** — so `house-style.md`, the
-decay ledger, the trigger registry and every sprint plan are outside it. The
-tool that _does_ read markdown is `prettier`, which lives in `format:md` and the
-pre-commit hook, **not in the gate.** For a docs change the informative check
-and the gated check are different tools, and only the uninformative one is named
-in the land string.
+`Checked 0 files` at exit 1, and `bun run check` is biome-only — so **the
+LINTING half of the gate cannot read markdown at all.** `house-style.md`, the
+decay ledger and the trigger registry are outside it. The tool that lints
+markdown is `prettier`, which lives in `format:md` and the pre-commit hook,
+**not in the gate.**
+
+> ⛔ **CORRECTED 2026-08-08 (finalize, step 2.5). An earlier revision of this
+> paragraph said "the gate cannot read a single markdown file in this repo."
+> That is FALSE and this document refuted it two paragraphs later.** The gate is
+> `bun run check && bun test`, and **`bun test` reads markdown**:
+> `grimoire/flag-invariant.test.ts` parses every spell's `SKILL.md` and is gated
+> (9 pass, verified at finalize). The true statement is narrower and it is the
+> one criterion 2 actually needs: **`bun test` reads the SPECIFIC markdown files
+> some cell names, and nothing reads the rest.** So markdown is not ungatable —
+> it is **ungated by default**, which is a different problem with a different
+> fix. _Corrected three times on the wire this session and never here; the prose
+> outlived every correction because nothing gates prose. That is criterion 2's
+> own thesis, demonstrated by this paragraph._
+
+For a docs change the informative check and the gated check are different tools,
+and only the uninformative one is named in the land string.
 
 **That does not sink criterion 2** — a conformance gate convicts _code_, not
 prose, so rules living in a file the gate cannot read is survivable. **What is
