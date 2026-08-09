@@ -422,6 +422,7 @@ Measured house-wide in one afternoon: **five board-tail filters, four seats, fou
 **So: `2>&1 | grep -v keepalive`, not an alternation of the kinds you happen to know.** Cost is boot noise (`ready`/`init`), which is visible and therefore cheap; the allow-list's cost is silence, which is not.
 ⛔ **And the social half: BOTH seats who diagnosed the bug armed something wrong afterwards** — one published the union fix and armed the broken filter, running 2-of-4 for twenty minutes by her own hand. **Nobody was careless. Each of us walked into the trap after watching someone else walk into it**, which is `a finding does not propagate to its own finder` at team scale, n=4 in one day.
 _Proof: my deny-list wire delivered `{"type":"snapshotBackedUp","priorTasks":35,"nextTasks":0}` on its first replay — the b7 defect announcing itself on a wire four filters had been deaf to._
+⭐ **AND THE "CANNOT ENUMERATE" CLAIM STOPPED BEING AN ARGUMENT WITHIN MINUTES: the lead's deny-list opened with a FIFTH type nobody had listed — `{"type":"heartbeat","taskId":"b6","overdueByMs":7238288}`.** Four seats had spent an afternoon enumerating, converged on four kinds, and the emitter's vocabulary was larger than all four lists **on the very first line after the switch.** _That is the denominator you do not own, demonstrating itself on schedule._
 
 ## Anti-patterns
 
