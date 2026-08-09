@@ -149,6 +149,27 @@ domain"** — and it is read as **"nothing happened."**
 - **Boundary check:** state what the field ranges over, in the field's own
   documentation. If you cannot state the domain, the `null` is not readable and
   the field is not yet honest.
+- ⛔ **Boundary check — YOUR ASSERTION MUST BE ABLE TO TELL ABSENT FROM
+  PRESENT-AND-NULL, AND MOST CANNOT.** Measured on `bun:test`:
+
+  ```
+                          {f: null}   {}        discriminates?
+  toBeNull()              pass        FAIL      ✅
+  toEqual(null)           pass        FAIL      ✅
+  toStrictEqual(null)     pass        FAIL      ✅
+  "f" in o                pass        FAIL      ✅
+  not.toBeNull()          FAIL        pass      ⛔ INVERTED — passes on ABSENT
+  toBeUndefined()         FAIL        pass      ⛔ passes on ABSENT
+  ```
+
+  **A field can be correctly present-and-null while the test asserting it passes
+  on the absent case** — so the convention is only as honest as the matcher
+  guarding it. **Prefer `"key" in envelope`: it tests PRESENCE, which is the
+  half the value cannot express.** _Two seats erased this distinction in one day
+  while measuring it — one via `??`, one via `not.toBeNull()` — and a third
+  found four of eight common idioms erase it, including the ones reached for by
+  default._
+
 - **Repeal when:** never — a null whose domain is unstated is unreadable by
   construction.
 
