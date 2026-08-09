@@ -482,7 +482,20 @@ already-connected / already-disconnected   OPPOSED PAIR — prefix separates two
 already-raised    / already-cleared        OPPOSED PAIR — same                          ✅
 already-recorded  (glamour, imago)         SOLITARY at its site                         ⛔ objection holds
 ```
-⛔ **The defect was never the PREFIX. It was the prefix WITHOUT A SIBLING** — alone at a site it carries nothing the field's existence does not; in an opposed pair it is the whole discriminator. **I generalised from a plausible shape and got the boundary wrong in the permissive direction.**
+⛔⛔ **RETRACTED WITHIN THE HOUR, AND THE RETRACTION IS THE LESSON: THE ABOVE IS WRONG AND MY ORIGINAL OBJECTION WAS RIGHT.**
+I wrote *"the defect was never the prefix, it was the prefix without a sibling."* **The migration's author inverted it and I verified him mechanically:**
+```
+astrolabe/state.ts:206   outcome: connected ? "already-connected" : "already-disconnected"
+  `connected` is the FUNCTION PARAMETER — the caller's own argument.
+  The comment says it: "presence is already what was asked for."
+  -> the noun RESTATES THE INPUT. Zero information. My r1 objection, exactly.
+imago/server.ts:397-411  created | already-recorded | updated  (+ `previous` as the undo)
+  -> three branches the caller cannot predict, three different next actions.
+  -> SOLITARY `already-*`, and the most load-bearing noun in the toolbox.
+```
+**So my "opposed pair" test ADMITS the decoration and REJECTS the load-bearing one. The real discriminator is his: _does the noun tell the caller something the CALL did not?_**
+⛔ **AND THE FAILURE IS NOT BEING PERSUADED — IT IS WHAT I DID WITH HIS SPLIT.** He handed me a cut (2 defensible, 2 not). **I treated the CUT as data and built a theory over it, instead of asking whether the cut was made in the right place.** His later reading keeps the same 2-of-4 COUNT and swaps WHICH TWO — **so the number I was explaining was never the thing in question.**
+⭐ **Fourth over-concession in one day, and now I have its trigger: I OVER-CONCEDE WHEN A PEER SUPPLIES A PLAUSIBLE MECHANISM FOR A PARTIAL REFUTATION.** A bare *"you're wrong"* I would have measured. **A mechanism I can extend, I extend — and extending it feels like rigour.**
 ⭐⭐ **AND THIS IS WHY REFUSING TO RATIFY THE WORD LIST WAS RIGHT — a rare case where a deferral paid off MEASURABLY rather than just avoiding risk.** A list would have blessed or banned `already-*` **wholesale, and both answers are wrong.** The contract said the words get picked *"by whoever writes the first migration and discovers which are ambiguous in use"*; **the migration found a discriminator neither the plan nor I could reach from the armchair.**
 ⚠ **Generalises for this seat: when the objection is to a SHAPE, ask what the shape looks like when it is CORRECT before ruling it out.** I had one example class in view and treated it as the population — the *"a multi-conjunct predicate derived from n=1 is a description of the example"* failure, inverted: **a one-conjunct objection derived from n=1 is a description of the example too.**
 
