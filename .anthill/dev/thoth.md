@@ -446,6 +446,16 @@ The lead reported at convene that a tool *"cannot report"* a defect. Measured ho
 ⭐ **So the leverage is not at read-time; it is where the QUESTION IS FORMED.** The lead formed his by trusting a characterisation rather than reading a channel, and every later reader inherited the frame. **When you accept a claim about how a tool behaves, THAT is the moment to ask which channels were checked** — afterwards the datum can sit in front of you nine times and stay invisible.
 _The CONSUMPTION leg at its widest: not "printed to you and unread" (a miss), not "read N times, never aggregated" (my own), but **held N times with no question to attach it to.**_
 
+**[I] ⭐⭐ THE SPELL CLIs YOU INVOKE ARE THE CACHED PLUGIN, NOT THIS REPO — so a fix landed today is NOT in the tool you use to verify it.**
+Measured: I ran `grapevine list` from the path in my own join manifest and **reproduced `b5` live** — ten unloaded channels each reporting `message_count: 0` — **hours after that exact bug was fixed and landed.**
+```
+REPO    grapevine/scripts/daemon.ts:292   let message_count: number | null = null;   ← fixed
+CACHED  …/spellbook/2.1.0/…/daemon.ts:239 let message_count = 0;                     ← what I ran
+```
+⛔ **Every `bounty` call this seat made all session — every clearance, every `state --mine`, the board tail itself — resolved through `~/.claude/plugins/cache/spellbook-marketplace/spellbook/<version>/`.** The join manifest hands you that path. **So the team lands fixes in one tree and verifies with another.**
+⚠ **Operational consequence, immediate: when an outside team files a repro (they filed `spellbook#97` the same evening), running it with the cached CLI makes "still broken" uninformative and "fixed" impossible.** **State which binary you ran or the outcome cannot be read.**
+⭐ **And it is the CHANNEL/SURFACE question at a third grain in one afternoon:** the fact was on the envelope AND the event wire · then a whole grapevine channel nobody was armed on (the SOP names three coordination surfaces, the manifest arms two — `grapevine: null`) · then **two copies of one tool, one fixed and one running.** **Each time the missing question was *which surface am I actually looking at?*** — which is why *"I checked"* is under-specified in this system unless it names WHICH.
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
