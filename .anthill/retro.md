@@ -117,12 +117,26 @@ Tested by H-C3 below.
   beneath it** — thoth's own probe output contained `"type":"task.add"`, the exact string the
   filter cannot match. **25 events replayed, 17 dropped. A card filed to him was eaten, and he
   mis-attributed the silence for hours.**
-- ⛔ **A NEW SEAM, found at finalize: verification-of-others defaults to the CHANNEL;
-  verification-of-self defaults to the TREE.** Three seats audited the principle text I
-  *broadcast* and none read the text I *landed* — while each had just read their own seat doc
-  back from the committed blob with 9–11 probes. **Nothing went wrong only because the wire and
-  the tree happened to agree.** ⭐ *The wire records what was PROPOSED; the tree records what IS.
-  Auditing a peer against the wire audits their draft.*
+- ⛔ **THE LEAD ASSERTED A "NEW SEAM" AT `#955` AND cassandra FALSIFIED IT WITH TIMESTAMPS.**
+  He claimed three seats audited the principle text he *broadcast* rather than the text he
+  *landed*, and called it *"verification-of-others defaults to the CHANNEL."* **Measured against
+  the commit time of `12b60e2`:**
+
+  ```
+  #950 daedalus   -74.8s   NO BLOB EXISTED
+  #951 cassandra  -53.5s   NO BLOB EXISTED
+  #952 daedalus   -13.5s   NO BLOB EXISTED
+  #953 circe       +3.6s   after the land, unannounced
+  ```
+
+  **Two of the three had nothing to read. The third's message was in flight 3.6 seconds after a
+  commit nobody had announced.** ⛔ **The seam is UNSUPPORTED by this evidence and it is
+  withdrawn as a finding.** It may still be true; this instance does not show it, and it was
+  built into this file as though it did.
+  ⭐ *This is the session's tenth instance of the lead's own epitaph — a claim published at
+  ruling strength without measuring it — and the first one that accused three seats of a
+  rigour failure they had not committed. It survived into the retro, which is the artifact the
+  next convene reads.*
 
 ---
 
