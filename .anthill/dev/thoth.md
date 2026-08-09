@@ -496,6 +496,15 @@ imago/server.ts:397-411  created | already-recorded | updated  (+ `previous` as 
 **So my "opposed pair" test ADMITS the decoration and REJECTS the load-bearing one. The real discriminator is his: _does the noun tell the caller something the CALL did not?_**
 ⛔ **AND THE FAILURE IS NOT BEING PERSUADED — IT IS WHAT I DID WITH HIS SPLIT.** He handed me a cut (2 defensible, 2 not). **I treated the CUT as data and built a theory over it, instead of asking whether the cut was made in the right place.** His later reading keeps the same 2-of-4 COUNT and swaps WHICH TWO — **so the number I was explaining was never the thing in question.**
 ⭐ **Fourth over-concession in one day, and now I have its trigger: I OVER-CONCEDE WHEN A PEER SUPPLIES A PLAUSIBLE MECHANISM FOR A PARTIAL REFUTATION.** A bare *"you're wrong"* I would have measured. **A mechanism I can extend, I extend — and extending it feels like rigour.**
+✅ **APPLIED THE FIX WITHIN THE HOUR, AND IT PAID — the shortest gap between a lesson and its use this seat has recorded.**
+Minutes later the same peer applied the corrected test to his own work and returned a new cut: *"all four of my nouns are convicted."* **An hour earlier I would have taken that count and moved on. Instead I checked WHERE the cut falls.**
+```
+presence   ONE conjunct   noun restates the caller's arg                      ⛔
+attention  TWO conjuncts  guard: needsAttention === raised && question === next
+                          noun restates ONLY the arg — drops the second fact  ⛔⛔
+```
+⭐ **His cut held (all four convicted) AND one site was WORSE than he conceded:** the attention no-op fires on two conjuncts, the second of which is a real fact the caller did not supply, **and the noun spends the field echoing the half they already knew.** The others had nothing to carry; that one had something and discarded it.
+**So the operational form is: TEST THE CUT, NOT THE COUNT.** A peer's partition can be right in number and wrong in placement — **and checking placement is what surfaces the finding that accepting the count would have buried.**
 ⭐⭐ **AND THIS IS WHY REFUSING TO RATIFY THE WORD LIST WAS RIGHT — a rare case where a deferral paid off MEASURABLY rather than just avoiding risk.** A list would have blessed or banned `already-*` **wholesale, and both answers are wrong.** The contract said the words get picked *"by whoever writes the first migration and discovers which are ambiguous in use"*; **the migration found a discriminator neither the plan nor I could reach from the armchair.**
 ⚠ **Generalises for this seat: when the objection is to a SHAPE, ask what the shape looks like when it is CORRECT before ruling it out.** I had one example class in view and treated it as the population — the *"a multi-conjunct predicate derived from n=1 is a description of the example"* failure, inverted: **a one-conjunct objection derived from n=1 is a description of the example too.**
 
