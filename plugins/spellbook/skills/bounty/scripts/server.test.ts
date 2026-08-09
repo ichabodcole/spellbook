@@ -2331,6 +2331,68 @@ describe("dependencies (Phase D)", () => {
     expect(typeof body.down).toBe("boolean");
   }, 30000);
 
+  test("b8: init REPORTS the tasks it dropped, and names why", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      // The convene case verbatim: well-formed-LOOKING tasks with no caller
+      // supplied `id`. 18 went in and 0 were seeded, at {ok:true, applied:true}.
+      const payload = JSON.stringify([
+        { title: "card-1", status: "todo" },
+        { title: "card-2", status: "todo" },
+      ]);
+      const res = await runCli(["init", "--stdin-tasks", "--session", session], {
+        env,
+        stdin: payload,
+      });
+      const body = JSON.parse(res.stdout) as {
+        tasksDropped: { requested: number; dropped: { index: number; reason: string }[] } | null;
+      };
+      // RED PRE-FIX: the field did not exist, so a total rejection and a good
+      // seed were the same envelope.
+      expect(body.tasksDropped).not.toBeNull();
+      expect(body.tasksDropped?.requested).toBe(2);
+      expect(body.tasksDropped?.dropped).toHaveLength(2);
+      // the reason must name the asymmetry that makes this invisible: `add`
+      // mints ids and `init` does not
+      expect(body.tasksDropped?.dropped[0]?.reason).toContain("id");
+      // and the board really is empty — the drop is real, not cosmetic
+      const st = await runCli(["state", "--session", session], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 30000);
+
+  test("b8: a GOOD seed reports tasksDropped null — present, not absent", async () => {
+    // RED PRE-FIX too (the field did not exist at all), and it carries the other
+    // half: a field that only appears when something went wrong cannot be
+    // distinguished from a daemon that does not report drops. Null is the
+    // readable blank that makes the populated case trustworthy.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const payload = JSON.stringify([{ id: "x1", title: "card-1", status: "todo" }]);
+      const res = await runCli(["init", "--stdin-tasks", "--session", session], {
+        env,
+        stdin: payload,
+      });
+      const body = JSON.parse(res.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(body, "tasksDropped")).toBe(true);
+      expect(body.tasksDropped).toBeNull();
+      const st = await runCli(["state", "--session", session], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toHaveLength(
+        1,
+      );
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 30000);
+
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };

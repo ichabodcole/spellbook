@@ -19,7 +19,7 @@
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
-//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board
+//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board (each task needs id+title+status)
 //   bun cli.ts list                                        # running boards (live)
 //   bun cli.ts close | info | sessions | help              # sessions = saved snapshots
 //
@@ -482,6 +482,24 @@ function ackOrFail(type: unknown, res: CmdResult): number {
     printJson({ ok: false, applied: false, sent: type, error });
     process.stderr.write(`bounty: ${error}\n`);
     return 1;
+  }
+  // b8 — forward the daemon's drop report when there is one. `init` filters
+  // untrusted tasks and used to say nothing, so 18 tasks in / 0 seeded answered
+  // {ok:true}. The field rides the ACK because that is the response the caller
+  // reads; it is omitted rather than null-stuffed on verbs that never drop, and
+  // the daemon sends null on an init that dropped nothing (present-and-null
+  // where it is meaningful, absent where it is not applicable).
+  const dropped = (res as { tasksDropped?: unknown }).tasksDropped;
+  if (dropped !== undefined) {
+    printJson({ ok: true, sent: type, tasksDropped: dropped });
+    if (dropped && typeof dropped === "object") {
+      const d = dropped as { requested: number; dropped: { index: number; reason: string }[] };
+      process.stderr.write(
+        `bounty: ${d.dropped.length} of ${d.requested} task(s) were DROPPED and not seeded:\n`,
+      );
+      for (const item of d.dropped) process.stderr.write(`  [${item.index}] ${item.reason}\n`);
+    }
+    return 0;
   }
   printJson({ ok: true, sent: type });
   return 0;
@@ -1051,7 +1069,9 @@ const HELP = `bounty — an agent-driven task board.
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
   remove <id>                        delete a task
   message <text...> [--stdin]        show a toast on the board
-  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin)
+  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin; each
+           task REQUIRES id + title + status. init does NOT mint ids, unlike add. Any
+           dropped task is reported per-entry in tasksDropped)
   list                               list currently-RUNNING boards (id/tasks/url/title)
   sessions                           list saved SNAPSHOTS (incl. closed boards)
   close | info | help

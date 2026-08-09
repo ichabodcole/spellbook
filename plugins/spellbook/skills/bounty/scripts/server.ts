@@ -406,21 +406,40 @@ function cleanTags(value: unknown): string[] {
   return out;
 }
 
-function validateTask(t: unknown): Task | null {
-  if (!t || typeof t !== "object") return null;
+// b8 — WHY a task is rejected, as the SINGLE source of the rules.
+//
+// `init --stdin-tasks` filters-and-keeps-valid and reported nothing: 18
+// well-formed-LOOKING tasks were posted at convene, every one was dropped for a
+// missing caller-supplied `id`, and the envelope answered {ok:true,
+// applied:true} with a board of zero. The asymmetry is invisible from the
+// outside because `add` MINTS an id for you and `init` does not, while the help
+// said only "tasks = JSON array on stdin".
+//
+// The reason lives HERE rather than being re-derived at the call site: a second
+// copy of these conditions is the mirror-drift trap this repo has shipped twice
+// (the bounty surface mirror, and `propose-node --stdin` dropping tags). One
+// list, two readers.
+function taskRejection(t: unknown): string | null {
+  if (!t || typeof t !== "object") return "not a JSON object";
   const cand = t as Record<string, unknown>;
-  if (typeof cand.id !== "string" || typeof cand.title !== "string") return null;
-  if (typeof cand.status !== "string" || !VALID_STATUS.includes(cand.status as TaskStatus)) {
-    return null;
-  }
-  if (cand.notes !== undefined && typeof cand.notes !== "string") return null;
-  if (cand.owner !== undefined && typeof cand.owner !== "string") return null;
+  if (typeof cand.id !== "string")
+    return "missing `id` (string, REQUIRED — init does not mint ids; `add` does)";
+  if (typeof cand.title !== "string") return "missing `title` (string, required)";
+  if (typeof cand.status !== "string" || !VALID_STATUS.includes(cand.status as TaskStatus))
+    return `invalid \`status\` (required, one of ${VALID_STATUS.join(" | ")})`;
+  if (cand.notes !== undefined && typeof cand.notes !== "string") return "`notes` must be a string";
+  if (cand.owner !== undefined && typeof cand.owner !== "string") return "`owner` must be a string";
   if (
     cand.blockedBy !== undefined &&
     (!Array.isArray(cand.blockedBy) || cand.blockedBy.some((x) => typeof x !== "string"))
-  ) {
-    return null;
-  }
+  )
+    return "`blockedBy` must be an array of strings";
+  return null;
+}
+
+function validateTask(t: unknown): Task | null {
+  if (taskRejection(t) !== null) return null;
+  const cand = t as Record<string, unknown>;
   const tags = cleanTags(cand.tags);
   // Transition substrate is server-generated; on restore we preserve it
   // leniently — drop a malformed value rather than reject the whole task, so a
@@ -1015,13 +1034,28 @@ async function main(argv: string[]): Promise<number> {
       // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
       // Route through applyTaskAdd so a freshly-seeded task gets a baseline
       // transition stamp (and a restored one keeps its preserved history).
+      // b8 — COUNT AND NAME THE DROPS. Filtering is correct (the /cmd body is
+      // untrusted), but reporting nothing meant a caller could not distinguish a
+      // GOOD SEED from a TOTAL REJECTION: 18 tasks in, 0 seeded, applied:true.
+      let dropped: { index: number; reason: string }[] = [];
       if (Array.isArray(msg.tasks)) {
         state.tasks = [];
+        dropped = msg.tasks
+          .map((raw, index) => ({ index, reason: taskRejection(raw) }))
+          .filter((d): d is { index: number; reason: string } => d.reason !== null);
         for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
       }
       broadcast({ type: "init", title: state.title, tasks: state.tasks });
       emitEvent({ type: "init", title: state.title, by });
-      return { ok: true, applied: true };
+      // Present-and-null, never absent: an absent field cannot distinguish "all
+      // your tasks were seeded" from "this daemon does not report drops".
+      return {
+        ok: true,
+        applied: true,
+        tasksDropped: dropped.length
+          ? { requested: Array.isArray(msg.tasks) ? msg.tasks.length : 0, dropped }
+          : null,
+      };
     } else if (msg.type === "task.add") {
       // #83 — `applied:false` alone conflated TWO causes and named neither, so
       // the CLI could not tell the caller what went wrong even once it started
