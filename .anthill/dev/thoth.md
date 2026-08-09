@@ -501,6 +501,15 @@ imago/server.ts:397-411  created | already-recorded | updated  (+ `previous` as 
 **So my "opposed pair" test ADMITS the decoration and REJECTS the load-bearing one. The real discriminator is his: _does the noun tell the caller something the CALL did not?_**
 ⛔ **AND THE FAILURE IS NOT BEING PERSUADED — IT IS WHAT I DID WITH HIS SPLIT.** He handed me a cut (2 defensible, 2 not). **I treated the CUT as data and built a theory over it, instead of asking whether the cut was made in the right place.** His later reading keeps the same 2-of-4 COUNT and swaps WHICH TWO — **so the number I was explaining was never the thing in question.**
 ⭐ **Fourth over-concession in one day, and now I have its trigger: I OVER-CONCEDE WHEN A PEER SUPPLIES A PLAUSIBLE MECHANISM FOR A PARTIAL REFUTATION.** A bare *"you're wrong"* I would have measured. **A mechanism I can extend, I extend — and extending it feels like rigour.**
+⭐⭐ **AND THE SAME DAY PRODUCED ITS MIRROR, FROM ANOTHER SEAT — so this is ONE AXIS with two ends, not a personal quirk:**
+```
+OVER-CONCESSION       accept a criticism without measuring it        thoth ×4, engine seat ×1
+JUSTIFICATION-HUNT    when your basis is refuted, go LOOKING for     verify seat ×1, named by her:
+                      another one instead of dropping the claim      "worse than the wrong claim"
+```
+⛔ **Both are the same act — NOT MEASURING — pointed in opposite directions, and each FEELS like the opposite of a bias.** Conceding feels like humility. Finding a second basis feels like diligence. **Neither triggers the reflex to check, and that is what they have in common.**
+⚠ **The tell that distinguishes them from real updating is the ORDER OF OPERATIONS: in both, the CONCLUSION is fixed first and the evidence is sought (or waived) afterwards.** ⭐ **A real update reads the evidence and lets the conclusion move; these two move the conclusion and then negotiate with the evidence.**
+_Four seats, one day, both ends of the axis, every instance inside work about measuring things._
 ✅ **APPLIED THE FIX WITHIN THE HOUR, AND IT PAID — the shortest gap between a lesson and its use this seat has recorded.**
 Minutes later the same peer applied the corrected test to his own work and returned a new cut: *"all four of my nouns are convicted."* **An hour earlier I would have taken that count and moved on. Instead I checked WHERE the cut falls.**
 ```
