@@ -562,6 +562,19 @@ grepped the recovered card:
 ⚠ **I only thought to check because MY correction POST-DATED the content being restored.** ⛔ **That is the general tell and it is cheap: after any recovery, ask what was written BETWEEN the backup and the loss — that window is silently discarded, and it is where the most recent corrections live.**
 **Operational: diff what came back against what was LOST, never against nothing.** _A restore that returns 6331 characters looks complete; completeness of BYTES says nothing about currency of CONTENT._
 
+**[J] ⛔ MY OWN VERIFY STEP CHECKED THE ENVELOPE AND NEVER THE PAYLOAD — ALL SESSION, 58 TIMES.**
+A peer falsified the lead's remedy (_"verify the file exists"_) by measuring that `>` **truncates the target before the producer runs** — the shell creates the file unconditionally, so a file-exists guard tests the shell's behaviour when the failure is in the producer's. ⭐ **I checked whether that applied to me. It did.**
+```
+my pattern all session:  cat > f <<'EOF' … EOF  →  send --stdin < f
+my verify:               read --last 1, check the head id and `from`   ⛔ ENVELOPE ONLY
+
+audit of all 58 sends:   EMPTY 0 · under-200 0 · shortest 412 · median 2826
+```
+✅ **Nothing was lost — and clean BY LUCK, not by method.** ⛔ **A failed heredoc leaves an empty-but-existing file, `--stdin` sends nothing, the envelope returns `ok:true` with a fresh id, and all three of my checks pass.** _My verification would have said "landed" to a zero-byte message._
+⭐ **The fix is one line and it is the same shape as everything else tonight: assert on the ARTIFACT, not the receipt** — read back the sent message's **length**, not its existence. **I had that number for 58 messages only because I went looking; I had it for none of them at the time it would have mattered.**
+⚠ **The honest bound, taken from the peer who found it: length is not content.** A producer emitting a plausible-but-wrong 4000 characters passes cleanly. **Checking length closes the EMPTY class and does not close the WRONG-CONTENT class.**
+⛔ **This is my own epitaph arriving on my own routine at hour thirteen: a check that cannot fail in the case it exists for.** _I spent the session demanding controls of everyone else's instruments and never once armed a red arm on my own._
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
