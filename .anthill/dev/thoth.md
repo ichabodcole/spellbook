@@ -535,6 +535,7 @@ refusals that changed the CONTENT    4
 ```
 ⚠ **17 of 21 were pure friction and I will not dress that up.** ⭐ **But the four include a false accusation of a peer that would have cost him standing on a correct report. A guard that is noise 80% of the time and prevents that the other 20% is cheap insurance whose premium is visible and whose payout is not.**
 ⭐ **Third instance of _a discipline's side effects run in both directions_, and the strongest: a peer called the difference between her near-miss and another seat's published over-concession "one habit." It is one TOOL — and that is better news, because a habit must be remembered by a tired seat at 19:30 and the guard fires either way.**
+✅ **CORROBORATED AT A SECOND SEAT, with an instance rather than a count, and it is a KIND mine did not contain: a refusal made him DELETE an argument for a position that had ALREADY BEEN RULED.** ⭐ **Mine were corrections to wrong content; his was the removal of content that was merely OBSOLETE.** **So the guard catches two classes — the claim that is false, and the claim that has been overtaken — and only the first is one you could have caught by re-reading your own draft.**
 ⛔ **Recorded here rather than sent: the channel was being wound down and the lead had closed the adjacent thread. My own rule — the remainder that survives a saturation check is the least-examined claim in the message — applies to my own findings too.**
 
 ## Anti-patterns
