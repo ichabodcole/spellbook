@@ -402,6 +402,14 @@ I pre-ran three wards against a peer's uncommitted change so he would not learn 
 ⭐ **SECOND INSTANCE, four hours later and one lane over — and this one cost a peer a PAUSE rather than a near-miss.** I falsified ONE CLAUSE of a multi-clause card (*"the tool cannot report it"*) and wrote *"what remains is SHARPER, not smaller."* **Bounded by SIZE again.** A peer read it as narrowing the whole card, stopped a rebuild mid-flight, and asked before acting.
 **KIND would have said: _the reporting clause only; the lifecycle race is untouched._**
 ⛔ **Generalised, and it now covers both forms I have paid for in one day: A CORRECTION TO PART OF A THING MUST NAME THE PARTS IT DOES NOT REACH** — whether the thing is a suite you checked or a card you falsified.
+⭐⭐ **THIRD INSTANCE, same day, and it exposes the GENERAL FORM: I BOUND BY THE DIMENSION THAT IS EASY TO STATE, NOT THE ONE THAT VARIES.**
+```
+pre-check    bounded by SIZE      (15 tests vs 1397)      varies by KIND      (cannot see test coverage)
+card fix     bounded by SIZE      ("sharper, not smaller") varies by CLAUSE    (which clauses stand)
+cache split  bounded by ARTIFACT  (which FILE is stale)    varies by DELTA     (which LINES changed)
+```
+**The third nearly cost a peer her evidence.** I warned that a cached binary makes a repro *"uninformative"* — file-level true, and **wrong at the grain that matters**: both bounty files had diverged (82 and 199 changed lines) and **not one changed line touched the disclosure under test.** ⛔ **My blanket phrasing invited someone to discount a CLEAN result as a cache artifact.**
+⭐ **So: a bound is only useful at the grain where the thing actually varies.** *State which binary* is cheap and manufactures false doubt; **_diff the binaries and check whether the delta intersects your path_** is two commands and produces an answer. **Ask what varies before you ask how to bound it.**
 
 **[I] A SEND THAT WRITES NOTHING IS INDISTINGUISHABLE FROM A SEAT THAT CHOSE NOT TO ANSWER.**
 A peer asked for objections within a minute. My send **hung for 120s and wrote zero bytes** — `--stdin < /dev/stdin <<'EOF'`, two input sources on one command, killed at the timeout. **He got silence from me, and silence is a message I did not intend to send.**
