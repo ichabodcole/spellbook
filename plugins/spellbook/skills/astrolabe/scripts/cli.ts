@@ -127,14 +127,26 @@ async function postCmd(base: string, body: Record<string, unknown>) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  return (await res.json()) as { ok: boolean; applied: boolean; error?: string };
+  return (await res.json()) as { ok: boolean; applied: boolean; error?: string; outcome?: string };
 }
 
 // Apply a /cmd, surface a rejection on stderr + non-zero exit (exit-code
 // contract), and echo the structured result on stdout on success.
 async function cmd(base: string, body: Record<string, unknown>) {
   const r = await postCmd(base, body);
-  if (!r.applied) die(r.error ?? `command '${String(body.type)}' was not applied`);
+  // b2/#85 — DISTINGUISH THE TWO KINDS OF applied:false. WITH an error = a real
+  // rejection (unknown project, duplicate) -> visible, non-zero, unchanged.
+  // WITHOUT an error = a benign no-op: the state was already what was asked for,
+  // the project exists, the daemon is right, and nothing is wrong. That used to
+  // exit 2 with "command 'attention' was not applied", so re-issuing an
+  // already-applied command was a hard failure — while bounty treats the
+  // identical payload as ordinary success.
+  //
+  // This is bounty's discipline (cli.ts `task.update`), ported rather than
+  // re-derived. It reports the daemon's `outcome` noun instead of bounty's
+  // `noop: true` boolean, per the outcome contract's "enumerated, never a
+  // boolean" — the noun says WHICH state made the work unnecessary.
+  if (!r.applied && r.error) die(r.error);
   printJson(r);
 }
 

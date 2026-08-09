@@ -40,13 +40,29 @@ export type ObservatoryState = {
 };
 
 // applied:false means the command was a no-op or rejected; `error` explains a
-// rejection (a benign no-op carries no error). `id` is set by applyProjectAdd to
-// the id it derived/used, so callers don't re-derive the slug.
+// rejection. `id` is set by applyProjectAdd to the id it derived/used, so callers
+// don't re-derive the slug.
+//
+// b2/#85 — A BENIGN NO-OP NOW CARRIES AN `outcome` NOUN. It used to carry
+// nothing at all, so `applied:false` with no error was the only signal, and
+// cli.ts could not distinguish "the state is already what you asked for" from
+// "your command was rejected" — it died on both, exit 2. Re-issuing a command
+// whose effect was already in place was a hard failure, while bounty treats the
+// identical payload as ordinary success.
+//
+// The NOUN rather than a boolean is deliberate and it is a departure from
+// bounty's `noop: true`, which is the shape I was pointed at. Per
+// grimoire/outcome-contract.md a completed-by-an-unexpected-path result is
+// `outcome: "<noun>"`, "enumerated, never a boolean", and the noun must name the
+// STATE that made the work unnecessary rather than the tool's action. A boolean
+// says only "nothing happened"; `already-connected` tells a caller WHICH state
+// it found, which is what it needs to decide its next act.
 export type ReducerResult = {
   state: ObservatoryState;
   applied: boolean;
   error?: string;
   id?: string;
+  outcome?: string;
 };
 
 // ── Surface projection / wire contract ───────────────────────────────
@@ -182,7 +198,13 @@ export function applySetPresence(
     return { state, applied: false, error: `unknown project '${id}'` };
   }
   if ((state.presence[id]?.connected ?? false) === connected) {
-    return { state, applied: false }; // no-op
+    // Benign no-op: presence is already what was asked for. Names the state, not
+    // the action (outcome-contract membership rule 2).
+    return {
+      state,
+      applied: false,
+      outcome: connected ? "already-connected" : "already-disconnected",
+    };
   }
   return {
     state: { ...state, presence: { ...state.presence, [id]: { connected } } },
@@ -232,7 +254,8 @@ export function applyAttention(
     (prev?.needsAttention ?? false) === raised &&
     (prev?.question ?? undefined) === nextQuestion
   ) {
-    return { state, applied: false }; // no-op
+    // Benign no-op: the attention flag AND its question already match.
+    return { state, applied: false, outcome: raised ? "already-raised" : "already-cleared" };
   }
   const next: Status = {
     summary: prev?.summary ?? "",
