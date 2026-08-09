@@ -495,6 +495,15 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 Sprint 04 was a ratify-and-canon sprint for this seat; there was no opportunity to diverge and none to discharge.
 **Zero hits means zero opportunities to diverge, not a pass** — that sentence is now three sprints old and still the whole point.
 ⭐ **The obligation's SHAPE was vindicated again in sprint 04 and it is worth the next holder knowing why it is not busywork:** the `#82` work turned on `valuesIgnored`, and the thing that mattered was **not** the name — it was that the field's *domain* was silent, so its `null` could not be read.
+⭐⭐ **THIRD INSTANCE, sprint 04 close, and three-for-three is the whole argument for a HUMAN holder: THE NAME WAS FINE EVERY TIME.**
+```
+snapshotBackedUp  name clean, 3 sites   →  the ruled SHAPE had no home (event, not envelope)
+valuesIgnored     name clean, 14 sites  →  the DOMAIN silently excluded the case under test
+restoreSkipped    name clean, 32 sites  →  the TRIGGER CONDITION doubled underneath it
+```
+The third: a peer's `fb209f1` made a keyed respawn restore **by default**. Spelling swept clean — 32 sites, zero variants. ⛔ **But `cli.ts:281` still defines the field as *"your FLAG was valid and the situation could not honour it"* — written for a world with one trigger, when there are now two.** Does it fire when a DEFAULT restore is skipped, or only an EXPLICIT one? **The canon sentence no longer discriminates**, and it is the definition an agent reads to decide whether to trust the field.
+⚠ **I did NOT rule the semantics — I have not read the populating branch and the call is the owner's.** The claim is only that the sentence stopped discriminating.
+⭐ **So the durable form: a grep proves the SPELLING survived a land. Nothing mechanical notices that the WORLD THE DEFINITION DESCRIBES has changed underneath it.** **Check the sentence, not just the token — and check it at the moment the mechanism moves, because that is the only moment anyone remembers the sentence exists.**
 **The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.** Hold the property, not the spelling.
 **prospero holds the P1 ping as a precondition of the land (#459 §6) and re-affirmed it in sprint 04** — expect to be called; do not watch for it.
 
