@@ -165,10 +165,32 @@ domain"** — and it is read as **"nothing happened."**
   **A field can be correctly present-and-null while the test asserting it passes
   on the absent case** — so the convention is only as honest as the matcher
   guarding it. **Prefer `"key" in envelope`: it tests PRESENCE, which is the
-  half the value cannot express.** _Two seats erased this distinction in one day
-  while measuring it — one via `??`, one via `not.toBeNull()` — and a third
-  found four of eight common idioms erase it, including the ones reached for by
-  default._
+  half the value cannot express.**
+
+  ⛔ **TWO FAMILIES, NOT ONE LIST — a cell needs both arms, and either alone
+  leaves a hole:**
+
+  ```
+  MATCHER — the assertion        LANGUAGE — the value on its way to it
+    ✅ toBeNull · toEqual(null)    ✅ "k" in o · Object.hasOwn · === null
+       toStrictEqual · "k" in o    ⛔ ??   ||   !x   ?.     (all erase it)
+    ⛔ not.toBeNull · toBeFalsy
+       toBeUndefined · toBeDefined
+  ```
+
+  ⛔ **`toBeDefined()` PASSES on `null` — measured.** It reads as _"assert this
+  is populated"_ and is satisfied by present-and-null: the erasure in the
+  **other** direction, and the most common matcher of the family in this repo.
+
+  ⭐ **The observation that outranks the allow-list: `JSON.stringify` PRESERVES
+  the distinction** (`{"f":null}` vs `{}`). **Every seat who caught this caught
+  it by reading RAW OUTPUT; nobody caught it in code.** _The wire has been more
+  honest than our assertions — point the instrument there._
+
+  _Three seats erased this in one day **while measuring it** — via `??`, via
+  `not.toBeNull()`, via `toBeDefined()`. **Every erasing idiom is the ergonomic
+  one and every preserving idiom is more verbose**, which is why this is an
+  allow-list and not advice to be careful._
 
 - **Repeal when:** never — a null whose domain is unstated is unreadable by
   construction.
