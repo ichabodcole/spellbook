@@ -181,7 +181,15 @@ session by default; pass `--session <id>` to target a specific one.
 >   rather than attaching and discarding them, and every `open` envelope carries
 >   `restoreSkipped` — `null` when nothing was skipped, `{requested, reason}`
 >   when an **explicit** `--restore` could not be honoured (a keyed respawn
->   restores by default and never populates this field) when the refusal fired.
+>   restores by default and never populates this field).
+> - **`restoreSkipped` and `restoreFailed` are different situations and call for
+>   different fixes.** `restoreSkipped` means the restore was **never
+>   attempted** — fix your invocation. `restoreFailed` —
+>   `{path, reason} | null`, on the `open` envelope and on the daemon's boot log
+>   — means it **was** attempted and the snapshot could not be read; the board
+>   comes up **empty** and your snapshot is the damaged thing. A restore that
+>   fails is not a restore that was skipped, and a caller that treats them alike
+>   will "fix" a healthy command line and leave a corrupt snapshot in place.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
