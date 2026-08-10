@@ -1,15 +1,17 @@
 ---
 name: land
 description: >
-  The merge step for this repo — decide squash vs named merge, write the merge
-  message, and produce the PR message. Use when a branch is complete and about
-  to be merged, when opening a develop→main pull request, or when finalizing a
-  branch. Triggers when a user says "merge this branch", "land this", "open the
-  PR", "create a pull request", "finalize the branch", "ready to merge", "ship
-  this", or when a session's work is done and needs to reach develop or main.
-  Run it BEFORE merging. It is the merge step ONLY — it is what this repo's
-  AGENTS.md "Branch Landing Policy" points at, and it does not replace
-  project-docs:finalize-branch's review, session docs or quality gates.
+  The merge step for this repo — decide squash vs named merge, and write the
+  release message that feeds BOTH the PR body and the merge commit body (one
+  file, two destinations; without it the merge keeps only the title). Use when a
+  branch is complete and about to be merged, when opening a develop→main pull
+  request, or when finalizing a branch. Triggers when a user says "merge this
+  branch", "land this", "open the PR", "create a pull request", "finalize the
+  branch", "ready to merge", "ship this", or when a session's work is done and
+  needs to reach develop or main. Run it BEFORE merging. It is the merge step
+  ONLY — it is what this repo's AGENTS.md "Branch Landing Policy" points at, and
+  it does not replace project-docs:finalize-branch's review, session docs or
+  quality gates.
 ---
 
 # land — the merge step
@@ -146,7 +148,12 @@ merge** — it buries a rebase inside a commit that claims to be a merge.
 **Afterwards:** delete the merged branch, and delete the message file (it is
 untracked and will otherwise get swept into a later `git add -A`).
 
-## 3 · The PR message — a FRESH agent, from the tree
+## 3 · The release message — a FRESH agent, from the tree
+
+**Write it to a file (`msg.md`) and keep that file until the merge has landed.**
+It is **one** artifact with **two** destinations — the PR body (§5) and the
+merge commit body (§5). Retyping it into GitHub's web form loses it from the
+tree; see the scar in §5.
 
 **Not the lead of the session that did the work.** That agent knows what was
 _interesting_ (the falsifications — that is the **retro**); it does not reliably
@@ -205,15 +212,70 @@ gh pr create --base main --head develop \
 > **exactly one** subject line and **one** blank line — check `sed -n '1,3p'`
 > first, or the body silently loses its first line.
 
-**⛔ The agent does NOT merge to main** — that is the release; it triggers
-release-please. **Hand the human this command; do not run it:**
+**⚠ THE PR USUALLY ALREADY EXISTS — `create` is the less common case.** The
+human opens it before handing the landing over, so the verb you actually need is
+`edit`, with the same file and the same two flags:
 
 ```bash
-gh pr merge <n> --merge --subject "<subject>"
+gh pr edit <n> --title "$(head -1 msg.md)" --body-file <(tail -n +3 msg.md)
+```
+
+`gh pr create` **fails** against an existing head branch, so reaching for it
+first costs a round trip; and an untitled PR sitting at `Develop` with an empty
+body is the normal starting state, not a broken one. **`gh pr list` first** if
+you do not know which you are in.
+
+_This section documented only `create` through the run that first exercised it —
+where the human had already opened the PR and the agent used `edit` without the
+skill ever mentioning it. Reported independently by anthill's `chronicle` on the
+`crosstalk` channel the same day, from their own first real run._
+
+**⛔ The agent does NOT merge to main** — that is the release; it triggers
+release-please. **Hand the human this command; do not run it — and hand it over
+with `msg.md` still on disk, because the merge needs the same file:**
+
+```bash
+gh pr merge <n> --merge \
+  --subject "$(head -1 msg.md)" --body-file <(tail -n +3 msg.md)
 ```
 
 Without `--subject`, GitHub writes `Merge pull request #NN from …` and the
 release spine stays unnamed.
+
+> **⛔ WITHOUT `--body-file`, EVERYTHING §3 AND §4 PRODUCED IS DISCARDED AT THE
+> LAST STEP.** GitHub does **not** use the PR body as the merge commit body — it
+> writes **the PR title, again**, and that is all `main` keeps. **Measured:** an
+> 11,280-character release note, two fresh-agent passes and one cold read, and
+> the merge commit `a777652` carries an **81-byte** body that is its own subject
+> repeated.
+>
+> **The PR body and the merge message are the same content with different
+> lifetimes**, and the skill used to treat them as one artifact while delivering
+> it only to the shorter-lived one. The PR body is conversation — it lives on
+> GitHub, beside the review. **The merge commit is the only copy in the tree**,
+> and `git log --first-parent main` is where anyone reconstructs what a release
+> was. **Write the file once; pass it to both commands.**
+>
+> _This is the second scar in this section with one shape: the message did not
+> come out the way it was written. The first was the 251-character subject (§2).
+> Both were invisible until somebody read `git log` afterwards, which is why the
+> read-back below is not optional._
+
+**Read the merge commit back — it is the artifact, not the PR page:**
+
+```bash
+git checkout main && git pull
+git log -1 --format='%s' | wc -c    # the subject you wrote, not "Merge pull request …"
+git log -1 --format='%b' | wc -c    # if this is ~the length of the subject, --body-file was dropped
+```
+
+> **⚠ The release notes are a THIRD artifact and this does not fix them.**
+> release-please builds `CHANGELOG.md` and the GitHub Release from conventional
+> commit **subjects only** — never from this body. So the fullest account of a
+> release lives in `git log` and nowhere a consumer looks. **Landing the note as
+> a file in the tree is the fix for that**, and it is deliberately NOT specified
+> here: it belongs in the shared project-docs standard so every project gets the
+> same shape, rather than being invented per-repo. _(Ruled 2026-08-10.)_
 
 **Then the back-merge, which is a real step and not trivia:**
 
