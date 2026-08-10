@@ -233,4 +233,21 @@ either evidence for H4 or evidence of a missing lens.
 `c1` (the `--` terminator sweep, 8 spells / 16 entry points) · `s5-1` (bounty's boolean vs the
 contract's nouns, blocked on the noun set) · `s5-2` (WHO vs WHAT) · `s5-3` (the null-vs-absent
 allow-list) · `s5-4` (the `--as-of` finding, for anthill) · `s5-5` (destructive `--notes` at
-ok:true) · `s5-6` (**inbound: `spellbook#98`**).
+ok:true) · `s5-6` (**inbound: `spellbook#98`**) · `s5-7` (departure records are not session-scoped,
+for anthill).
+
+> **⚠ `s5-7` WAS MISSING FROM THIS LIST UNTIL 2026-08-10, AND THE OMISSION HAS THE SHAPE OF THE
+> THING THE SPRINT WAS ABOUT.** It was filed after this file was landed, so it lived only on the
+> board — and the board was torn down. A list that reads as complete and is short by one is exactly
+> the failure mode we spent the sprint on: **nothing announced the absence.** Recovered verbatim
+> from the board snapshot `~/.bounty/snapshots/k-spellbook-f4249899.json`, which is the only reason
+> it was recoverable at all. **Land a carry into the file at the moment it is carded, not at
+> finalize** — this is the same "land a contract when it is ratified" rule the ritual already
+> teaches for `seams.md`, and it failed here for the same reason.
+>
+> **`s5-7` re-measured 2026-08-10**, after every daemon in the session had died: `prospero.json`
+> still reads `2026-08-08T09:05Z` while the other four read `2026-08-09T03:02–03:14`. The record
+> survives across sessions unscoped, as claimed. **The inferred half remains inferred** — the
+> processes died rather than exiting through `anthill down`, so no clean teardown ever consulted the
+> guard, and whether it prefers a stale departure over live presence is still unmeasured. Report it
+> as two claims, not one.
