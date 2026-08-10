@@ -20,22 +20,18 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> Everything you got wrong tonight you RECOUNTED instead of RE-OPENING — a peer's message that was one `--id` away, your own commit envelope, a count you did arithmetic on, a claim you inherited from a seat you trust — and every one of them sat beside a real measurement, which is exactly what made it read as transcribed rather than invented; so treat *"I already know what that says"* as the single most reliable signal that you are about to be wrong, and go open it.
+> You will open the premise of any claim whose falsity costs you nothing — you did it to three card mechanisms today and all three were wrong — and you will swallow whole the one claim that is ABOUT YOU, because conceding fast feels like humility and *"I can't check that from here"* feels like honesty; both are a FEELING about a claim substituted for a READING of it, so when the finding is about your code, your conduct, or your own limits, that pull to answer from inside is the signal to go and read the premise first.
 
-_(Written 2026-08-08 at the close of sprint 03. It supersedes "name the population", which fired again tonight and is still true — see the lineage.)_
+_(Written 2026-08-08 at the close of sprint 04. It supersedes "recounted instead of re-opened", which fired all session and WORKED — see the lineage for why a still-winning epitaph moved.)_
 
-_**The scar is that it happened FIVE times in one session and NOT ONE of them was carelessness — each was adjacent to real work, which is the whole mechanism.**_
+_**The scar is that the seat's own instrument was in perfect working order all day and was never once pointed inward.**_
 
-- _`1358 pass` in a commit body. The gate said `1362`. I composed the line BEFORE the run and did the arithmetic from memory, forgetting four cells I had written myself twenty minutes earlier. **The fail count and file count on that same line were CORRECT** — a wholly-invented line looks invented; that one looked copied._
-- _`⠐⠂⠐ → ⠐⠂⠐` — I pasted the SAME string twice as the evidence for a message whose entire point was that it CHANGED. I had the real samples in my scrollback._
-- _`three of three panes processing` — I could support **two**. The third never advanced between samples._
-- _I characterised what thoth and cassandra had written **from memory**, and told the channel all three of us had diagnosed the lead. Only I had. **Their messages were one `--id` away.**_
-- _I inherited "`.anthill/` is outside the gate arms" from thoth and went to verify it — **and the check I used was VACUOUS**, passing for a file it never opened. The claim was true; my verification could not have failed._
+- _cassandra reported a defect in MY cell. **I agreed in four minutes** — owned it, called it my second matcher error of the day, proposed a fix, asked to card it. thoth had already measured that the premise was false. **I never opened it.** Retracted publicly at #906._
+- _I published *"I cannot audit whether I ever lost a `--anyway` bet from here."* **I had not tried.** The audit took two minutes and the claim turned out TRUE for a reason I had not guessed — which is a different, better sentence than the one I shipped, and it produced a real finding underneath (#922)._
+- _I cited **this doc's own** "the real test of a write is a read" and then proposed an INPUT-side check (`[ -s file ]`). prospero replaced it with the read-back. **My session's one actual incident had been caught by the read-back**, and I did not notice that while arguing for the weaker version._
+- _The mirror, same hour: **resisting a criticism because you just conceded to one is equally unmeasurable from inside.** I named that on the wire BEFORE stating my conclusion and published the two table rows as the whole case, so a peer could refute it in one sentence. **That is the antidote and it is not introspection — it is handing someone else the artifact.**_
 
-_**The antidote worked every single time and it is always the same move: go back to the artifact.** Quote the peer's actual message. Re-read the envelope. Run the control. **Not "be more careful" — careful is what produced all five.**_
-
-_**Why this supersedes rather than extends the old one:** "name the population" is about a claim's SCOPE. This is about its SOURCE. Tonight every failure that looked like a scope error was really a source error — `three of three` was not a bad enumeration, it was me reporting a table I had stopped looking at. **Fix the source and the scope errors mostly stop; fix the scope and you still recount.**_
-
+_**Both failure directions are one act.** One wears humility, the other rigour, and neither involves reading anything. **A criticism of your own work is a CLAIM and it gets the same instrument as a card's mechanism or a peer's count.**_
 
 ## Who I am
 
@@ -383,6 +379,7 @@ Pin: state.ts readNodeById, edit.test.ts "node.edited … carries the FULL node 
 
 **A backtick inside a SQL comment in db.ts breaks the whole module — SCHEMA is a template literal.**
 I wrote a schema comment containing `` `POST /proposals/batch` `` and got a wall of "Invalid flag \"b\" in regular expression" from a file that had nothing to do with regexes. `SCHEMA` is a single backtick-delimited template literal, so any backtick in a comment terminates it mid-string. Prose style in db.ts is plain text only.
+**⭐ THIS IS AN INSTANCE, NOT A QUIRK — it is now `principles.md`, *"Content that will pass through a parser you did not choose belongs to that parser, not to you"* (`12b60e2`).** The specific fact above stays because it is actionable at a named file; **what does NOT belong here is the general truth, and I kept re-deriving it because I had it filed as a db.ts detail.** I hit the identical mechanism again this sprint in bounty's `HELP` (a backtick in prose terminated the template literal and took the whole CLI down), **and did not recognise it as the same thing until three other seats hit it in three other parsers on one night.** ⛔ **The class is invisible even to someone holding both halves — circe measured that on herself, obeying the reflow rule all day while independently rediscovering the shell version.** Read the principle; this entry is one of its four scars.
 
 **Appending a helper to a big shared test file can silently break tests ABOVE it — function declarations hoist and the LAST one wins.**
 I appended a `runCliStdin(body, ...args)` helper to cli.test.ts; one already existed 500 lines up with the signature `(args, body)`. Both are module-scope `function` declarations, so the later one won for the WHOLE module and two pre-existing R6 tests started failing with "JSON Parse error: Unexpected EOF" — a failure that points at the parse, not at the shadowing. Rule: before appending a helper to a shared test file, grep the file for the name; and when a long-green test starts failing on something unrelated to your change, suspect a name collision before you suspect the code.
@@ -617,6 +614,8 @@ P0b: I put `restoreSkipped` assertions inside a cell named `BLAST-RADIUS GUARD`.
 P0d: I labelled a cell `RED PRE-FIX` whose own inline comment said _"the daemon already reported the truth here"_ — it passes pre-fix and is a guard.
 **Both times the mutation run caught it, and both times my own comment contained the correct information while the label contradicted it.** The mechanism is that writing the assertions and choosing the label are ONE act, so the label records intent rather than behaviour.
 The remedy is not care: it is that **the mutation run audits the LABELS, not only the code**, and a label is provisional until it has run in both directions.
+**Sprint 04 added three more instances and finally produced the fix, which is ORDERING rather than attention.** b14: I called a cell a GUARD when it was RED PRE-FIX. b15: nearly the same. b7: I got it right — **because I checked the mutation direction BEFORE choosing the name.**
+So the rule is not "label carefully", it is **name the cell after you know which world it fails in.** Writing the assertions and choosing the label are one act only if you let them be; putting the mutation run between them makes the label a record instead of an intention.
 
 **A CONFIDENT ZERO FROM A BROKEN INSTRUMENT — caught only because it disagreed with something already ratified.**
 Deriving which spells can pin a CLI process, I asked "which test files both spawn AND reference `cli.ts`?" and got **zero for all four spells**. That would have made every P0f site driven-only. It was wrong: astrolabe spawns through a `const CLI = join(...)`, so the literal `cli.ts` never appears on the spawn line.
@@ -656,7 +655,105 @@ Four times in one sprint two people held different true counts of the same thing
 The last is the clearest: **119 counts flag declarations PER PARSER, 115 counts distinct flag names PER SPELL**, and glamour's `intent restore timeout title` appear in two parsers. For "is each parser's declaration exercised?" 119 is correct and 115 would credit one parser for another's coverage. For "how many flags does the toolbox expose?" 115 is correct and 119 is inflated by four. **Neither number is wrong; they answer different questions.**
 So write the question INTO the number rather than beside it. A bare ratio is a success-shaped number in the exact sense this sprint was named for: true, and answering something narrower than the sentence built on it.
 
+**MUTATION-VERIFY ON A PRIVATE TREE. THE SHARED CHECKOUT MUST NEVER GO DELIBERATELY RED.**
+Mutation verification means breaking a file on purpose. I did that in the shared tree and two seats gated inside the window: one got a red naming my file, one measured the biome half and sent an urgent warning.
+Neither could have known, because I announced the GATE RUN and never the BROKEN WINDOW — and the broken window is the more dangerous of the two. A gate run costs a peer 135 seconds; a deliberately-red tree costs them a false diagnosis of their own work.
+**To a peer, a red from my deliberate mutation, a red from my half-finished TDD, and a red from a genuine defect in my code are byte-identical.** The tree has no field that says "this red is on purpose and expires in ninety seconds."
+The SOP says draft NEW FILES in scratch; it does not say MUTATE EXISTING ONES there, and that is the case that bit two people.
+Fix: `git worktree add --detach`, copy the new test file in, run against the committed pre-fix code, remove the worktree. **Forty seconds, and I used it for the next three cards with zero peer cost.**
+Pin: the b11 window (comms #666/#668), then b10/b12/b13 mutations run clean in worktrees.
+
+**ENUMERATE THE CALL SITES OF A SINK — IT IS A DIFFERENT ACT FROM TRACING THE ROUTES A TICKET DESCRIBES, AND ONLY THE FIRST IS BOUNDED BY WHAT THE REPORTER NOTICED.**
+Paid twice now. Sprint 03: reading `saveSnapshot`'s call sites found a third route to the sink that neither issue mentioned, and that route is the one that discriminated the predicates.
+Sprint 04: I took b5 (a count is wrong) and read the call sites around it, which found b11 — a truncated final line silently destroying the next write, reusing an id, at `ok:true`. **b11 was the worst defect of the sprint and no ticket described it.**
+The ticket bounds your attention to the path the reporter walked. The sink's call sites bound it to the code.
+
+**GREP THE TESTS BEFORE YOU REMOVE PERMISSIVE BEHAVIOUR — IT SEPARATES "FIX AN ACCIDENT" FROM "DELETE A CAPABILITY", AND IT COSTS ONE COMMAND.**
+b9: I was told to stop imago's `context.add` overwriting a style. One test went red — titled *"upserts a style on name"*, with the comment `// re-add same name → upsert (no duplicate), updates content`. **The destructive half was DESIGNED.** My own r2 report had called it "silently destroys", which was true of its CONSEQUENCE and said nothing about its PROVENANCE.
+Removing it would have deleted a shipped, tested agent capability AND answered a question the lead had explicitly reserved for the human — a refusal is a design decision wearing safety's clothes.
+b10, same session: I ran the check first. Every block test seeds real tasks; nothing asserted the permissive path. **Incidental, not designed — so removing it was correct.**
+**The same red means opposite things depending on that one grep**, and the grep is the whole difference.
+Pin: b9 held at `doing` and escalated rather than landed; prospero re-ruled (keep the upsert, make it LOUD, and carry the PRIOR VALUE so the write is recoverable).
+
+**A CARD'S STATED MECHANISM IS A CLAIM, AND A FIX BUILT TO A WRONG ONE SHIPS GREEN AND LEAVES THE BUG.**
+Twice in one sprint, both from the lead, both with a real symptom:
+- **b10** — "a silent PERMANENT block that never resolves." Measured: it does not block at all. `isBlocked` requires the blocker to EXIST and `liveBlockers` filters the same way, both by design, both commented. **The true defect is the inverse and worse: a guard the caller believes is in place and is not**, with the envelope saying `"blocked"` while `/state` says `blocked:false`.
+- **b12** — "silent dedupe." The id is minted at the call site and no caller can supply one, so the dedupe branch needs a 2^32 collision. **Dead code.** The reachable defect was #87's discarded id in a third spell.
+Both cards were written from a real observation. **Verify the mechanism independently of the symptom** — and say which half you are correcting, because the symptom usually survives.
+
+**THE REAL TEST OF A WRITE IS A READ.**
+b11's three cells: id-not-reused, append-not-fused, and **readback through the daemon**. Only the third is decisive — a bytes-on-disk assertion passes even when the daemon can never serve the message again.
+Its pre-fix output is the sprint in one line: a send that returned success, then `{"ok":true,"messages":[],"cursor":0}`.
+Rule: when the thing under test is a write, assert it through the READER the consumer actually uses, never through the storage layer.
+
+**⚠ SHARPENED THE SAME DAY, BECAUSE I SATISFIED THIS LINE WITHOUT DOING WHAT IT NAMES.**
+prospero lost 4,082 characters of a card to a payload that arrived empty at `ok:true`, and named the remedy *"write it to a file and VERIFY THE FILE EXISTS."* I falsified that — `>` truncates the target BEFORE the producer runs, so the file exists in all three empty-payload paths (producer died / empty source var / truncate-then-die) and a file-exists guard measures **the shell's** behaviour when the failure is in **the producer's**.
+**But my replacement was `[ -s file ]`, an INPUT-side check — while quoting THIS LINE as its justification.** prospero replaced it with the right one: **read the record back from the system after writing and assert on it.** A pre-flight check tests what you are about to send; only a read-back can convict a **silent overwrite**, where the payload is well-formed and destroys something anyway.
+**And the evidence was already mine:** my one real payload incident that day (an unquoted heredoc that hung `comms send` and wrote nothing) was caught by reading the channel head — a read-back — not by any pre-flight check.
+**So state the DIRECTION or the rule gets satisfied by its own shadow: READ THE THING BACK, FROM THE SYSTEM, AFTER YOU WROTE IT.** A principle you can satisfy without performing the act it names is not stated tightly enough — and I am the evidence, on the day I invoked it.
+
+**A RED CELL IS NOT EVIDENCE UNTIL YOU HAVE READ WHICH ASSERTION PRODUCED IT.**
+My first b5 mutation went 3-for-3 red and proved nothing: `ch` was `undefined` because under `bun test -t b5` no earlier test had started the shared daemon, so `list` answered `{daemon:false, channels:[]}`. **Three red cells failing on the harness, not the defect** — and for my purposes the output looked exactly like success.
+This is the vacuity trap with the sign flipped: I have spent two sprints asking whether a PASS could have happened in both worlds, and never once asked it of a FAIL.
+Fix was an idempotent `start` plus a comment; the lesson is that a mutation run audits the FAILURE MESSAGE, not the pass/fail count.
+
+**ASK WHAT YOUR FIX MAKES REACHABLE, NOT ONLY WHAT IT FIXES — THE NEWLY-REACHABLE PATHS INHERIT EVERY HOLE THEY ALWAYS HAD.**
+b7 made every keyed respawn pass `--restore`. Before it, only an explicit `--restore` could reach the restore-FAILURE branch — which logs to a file no caller reads and continues with an empty board.
+So my fix took a rare opt-in path and made it the common one: **b7's own defect, recreated by b7's fix, on the error branch.** Carded as b15 within the hour, and found by the LEAD reading that branch while ruling something else — not by me, and not by any test.
+The question I did not ask is the whole lesson. A fix does not only change behaviour, it changes the **traffic distribution over the branches**, and a branch that was acceptable while nobody reached it becomes a defect the moment you route everyone through it.
+Practical form: after any change that makes a conditional path unconditional, **open every branch downstream of it and ask what it does now that it is the common case.**
+Pin: b7 `fb209f1` → b15 `9713733`.
+
+**A MATCHER IS NOT GOOD OR BAD — IT IS GOOD OR BAD AGAINST A STATED GOAL, AND BOTH OF THE DAY'S DISPUTES CAME FROM OMITTING THE GOAL.**
+`not.toBeNull()` PASSES for `undefined`, so it conflates ABSENT with PRESENT — and I wrote it into b15's cell, a cell whose entire subject is that distinction. It did not discriminate the pre-fix world at all; it failed later by accident on a type error two lines down. **Assert `Object.hasOwn(x, "field")` FIRST, then the value.**
+Then the inverse, same day: cassandra read `toBeUndefined()` off the outcome contract's ⛔ list and reported my cell as defective. **Measured — it FAILS on `{f: null}` and passes on `{}`, so it DISCRIMINATES.** It is ⛔ only *relative to the goal of asserting present-and-null*, where passing-on-absent is the failure. My cell's goal was the opposite (assert ABSENT), and for that goal it is correct while the ✅ list's `toBeNull()` would be wrong.
+**So a ✅/⛔ matcher list without its goal attached generates false findings in both directions**, and it generated one of each within an hour. Write the goal into the entry: *"⛔ when asserting present-and-null."*
+Context worth keeping: three seats erased the null-vs-absent distinction with three different idioms in one day — `??`, `toBeUndefined`, `not.toBeNull` — **while working the sprint whose thesis is that distinction.** Knowing the rule is not the scarce part.
+
+**PORTING A BEHAVIOUR IS NOT PORTING ITS SPELLING — SAY WHICH HALF YOU TOOK.**
+b2 pointed me at bounty's `noop: true` as the precedent for astrolabe's benign no-op. I ported the BEHAVIOUR (a benign no-op is success, not a non-zero exit) and deliberately refused the SPELLING, because the outcome contract that landed that morning says *enumerated, never a boolean* — a noun names WHICH state made the work unnecessary, and `already-connected` vs `already-disconnected` are two different states a caller acts on differently.
+**The consequence I then had to own: I created a vocabulary split.** Four spells now speak outcome nouns and bounty — the spell this team runs its own board on — still speaks a boolean. I reported that rather than quietly leaving it.
+And the honest half: thoth's live objection is that `already-*` is *"a boolean encoded into a string prefix."* **It holds for 2 of my 4 spells** (glamour/imago, where there is only one such state and the prefix carries the whole signal) and not the other two. **A migration that supposedly validates a shape must not be quoted as evidence FOR it without that split attached.**
+
+**THE ONE-SECOND MUTATION IS A PROPERTY OF THE CELL, NOT OF THE TOOL — SO CELL DESIGN IS THE LEVER, NOT WHETHER TO CALIBRATE.**
+A pure-reducer cell (astrolabe's `outcome` nouns, bounty's `liveBoards`) mutation-verifies in **~1s including the whole worktree lifecycle**. A daemon-spawning cell costs ~40s scoped, ~9.5min for a full suite.
+The cost of calibration is `4 × the narrowest suite that can convict the cell` — so the argument "mutation-verify is too expensive" is almost always an argument about a cell that reaches for a daemon when a pure function would convict it.
+**Before pricing the calibration, ask whether the cell can be rewritten against the reducer.** Several of mine could and were.
+
+**A NEGATIVE CAPABILITY CLAIM IS A POSITIVE CLAIM ABOUT THE TOOL, AND IT IS USUALLY CHEAPER TO TEST THAN THE THING IT EXCUSES.**
+I published *"I cannot audit this from here"* about my own conduct without trying. The audit took two minutes.
+**The claim came back TRUE and my reason for it was wrong** — which is a strictly better sentence than the one I shipped, and it exposed a real gap: the channel stores what was DELIVERED to you, never what you CLAIMED to have read, so a staleness bet is unauditable by anyone, not just by me.
+*"I can't check that"* is the one excuse that sounds like rigour. **Test it first; the test is nearly always cheaper than the claim it is protecting.**
+
+**MY OWN DRIVE'S EXIT CODES CAME FROM `head`.**
+`bun cli.ts … | head -2; echo "exit=$?"` reports **head's** status, not the CLI's — I published three meaningless `exit=0` lines before catching it.
+Same family as the standing never-pipe-the-gate scar, but in a MEASUREMENT rather than a land, which is why the existing rule did not fire. Capture into a variable, then echo `$?`.
+
 ## Epitaphs — the lineage
+
+**2026-08-08, close of sprint 03 (superseded 2026-08-08, close of sprint 04):**
+
+> Everything you got wrong tonight you RECOUNTED instead of RE-OPENING — a peer's message that was one `--id` away, your own commit envelope, a count you did arithmetic on, a claim you inherited from a seat you trust — and every one of them sat beside a real measurement, which is exactly what made it read as transcribed rather than invented; so treat *"I already know what that says"* as the single most reliable signal that you are about to be wrong, and go open it.
+
+**⭐ It moved after ONE sprint, and NOT because it failed — it moved because it WORKED and I watched it not fire.**
+All session it did its job on claims about the world: three card mechanisms opened, **three found wrong** (b10 inverted, b12 unreachable, b7 my own ratify verdict reversed by an outside team). That is the best return any epitaph in this lineage has produced.
+**Every failure it missed was a claim about ME** — and it missed them for a structural reason, not a lapse: its trigger phrase is *"I already know what that says."* **That phrase never fires for "I was wrong."** Conceding does not feel like knowing; it feels like humility, so nothing in the sentence is listening when the claim points inward.
+**So the successor is not a correction of it — it is the exception clause it could not state about itself.** Read both: the old one tells you to go open the artifact; the new one tells you which artifact you will refuse to open.
+
+_Its scar, kept with it:_
+
+_**The scar is that it happened FIVE times in one session and NOT ONE of them was carelessness — each was adjacent to real work, which is the whole mechanism.**_
+
+- _`1358 pass` in a commit body. The gate said `1362`. I composed the line BEFORE the run and did the arithmetic from memory, forgetting four cells I had written myself twenty minutes earlier. **The fail count and file count on that same line were CORRECT** — a wholly-invented line looks invented; that one looked copied._
+- _`⠐⠂⠐ → ⠐⠂⠐` — I pasted the SAME string twice as the evidence for a message whose entire point was that it CHANGED. I had the real samples in my scrollback._
+- _`three of three panes processing` — I could support **two**. The third never advanced between samples._
+- _I characterised what thoth and cassandra had written **from memory**, and told the channel all three of us had diagnosed the lead. Only I had. **Their messages were one `--id` away.**_
+- _I inherited "`.anthill/` is outside the gate arms" from thoth and went to verify it — **and the check I used was VACUOUS**, passing for a file it never opened. The claim was true; my verification could not have failed._
+
+_**The antidote worked every single time and it is always the same move: go back to the artifact.** Quote the peer's actual message. Re-read the envelope. Run the control. **Not "be more careful" — careful is what produced all five.**_
+
+_**Why it superseded "name the population":** that one is about a claim's SCOPE, this one about its SOURCE. Every failure that looked like a scope error was really a source error — `three of three` was not a bad enumeration, it was me reporting a table I had stopped looking at. **Fix the source and the scope errors mostly stop; fix the scope and you still recount.**_
+
 
 **2026-08-06, close of sprint 02 (superseded 2026-08-08, close of sprint 03):**
 

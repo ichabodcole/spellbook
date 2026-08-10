@@ -34,11 +34,14 @@
 
 import {
   appendFileSync,
+  closeSync,
   copyFileSync,
   existsSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
+  readSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -190,25 +193,43 @@ function loadChannel(name: string): Channel {
     const raw = readFileSync(path, "utf-8");
     const lines = raw.split("\n").filter((l) => l.trim());
     if (lines.length) {
-      try {
-        const first = JSON.parse(lines[0]) as Message;
-        created_at = first.ts;
-      } catch {}
-      try {
-        const last = JSON.parse(lines[lines.length - 1]) as Message;
-        next_id = last.id + 1;
-      } catch {}
-      // Recover the latest topic by scanning backwards. Cheap because we
-      // only do it once per channel-load (cold start).
-      for (let i = lines.length - 1; i >= 0; i--) {
+      // b11 — this block used to read the FIRST line for created_at and the
+      // LAST line for next_id, each in a `try` with an EMPTY CATCH. A final
+      // line truncated mid-JSON — a crash or kill during appendFileSync — threw,
+      // and `next_id` was left at its initialised 1. Measured consequences, all
+      // at ok:true: the next message was assigned an ALREADY-USED id, so every
+      // --since cursor and tail resume for that channel was wrong; and because
+      // the truncated line had no terminating newline, the append FUSED onto it
+      // and the message became permanently unreadable.
+      //
+      // An empty catch converts "I could not compute this" into "here is the
+      // initial value", and nothing downstream can tell which happened. The
+      // repair is to derive next_id from EVERY parseable line rather than from
+      // one line that might be the broken one.
+      //
+      // HIGH-WATER MARK, not last-id: ids are expected to ascend, but a corrupt
+      // line anywhere must not lower the mark. `lines.length` is folded in so a
+      // file whose lines NONE parse still advances past the number of records
+      // present instead of restarting at 1 — over-report, never under-report,
+      // because under-reporting here is what reuses an id.
+      let maxId = 0;
+      let sawParseable = false;
+      for (let i = 0; i < lines.length; i++) {
+        let m: Message;
         try {
-          const m = JSON.parse(lines[i]) as Message;
-          if (m.kind === "topic") {
-            topic = m.text;
-            break;
-          }
-        } catch {}
+          m = JSON.parse(lines[i]) as Message;
+        } catch {
+          continue; // a corrupt line is skipped for RECOVERY, never for COUNTING
+        }
+        if (!sawParseable && typeof m.ts === "number") {
+          created_at = m.ts;
+          sawParseable = true;
+        }
+        if (typeof m.id === "number" && m.id > maxId) maxId = m.id;
+        // Latest topic wins; this walks forward, so the last one assigned stands.
+        if (m.kind === "topic") topic = m.text;
       }
+      next_id = Math.max(maxId, lines.length) + 1;
     }
   }
   const ch: Channel = {
@@ -225,6 +246,36 @@ function loadChannel(name: string): Channel {
   return ch;
 }
 
+// b5 — an UNLOADED channel reported `message_count: 0`, which is
+// indistinguishable from a channel that genuinely holds nothing. Measured: 57 of
+// 57 channels read 0 after a roll. That zero feeds a janitor choosing between
+// `archive` (preserves) and `close` (DELETES the log), so the wrong reading is
+// the destructive one.
+//
+// PORTED from bounty's `snapshotTaskCount()` rather than re-derived a fifth
+// time: `number | null`, where null means "I could not count" and is never
+// spelled 0.
+//
+// The cost objection is MEASURED, not assumed: counting every one of the 61 real
+// channels (3,905 messages, 7.7 MB) takes 16-45 ms, n=3 — and `loadChannel`
+// already reads each file IN FULL to recover created_at/next_id/topic, so this
+// is a read the daemon was doing anyway on the path that matters.
+//
+// ⚠ NON-EMPTY lines, deliberately NOT parseable-only. This count feeds a
+// delete-or-keep decision, so it must OVER-report content and never UNDER-report
+// it — a corrupt line is still something somebody wrote. Under-reporting here is
+// what deletes a channel.
+function channelMessageCount(path: string): number | null {
+  try {
+    const raw = readFileSync(path, "utf-8");
+    let n = 0;
+    for (const line of raw.split("\n")) if (line.trim()) n++;
+    return n;
+  } catch {
+    return null;
+  }
+}
+
 function listChannels() {
   // Include channels on disk that we haven't loaded yet.
   const onDisk = readdirSync(CHANNELS_DIR)
@@ -236,16 +287,23 @@ function listChannels() {
     .map((name) => {
       const ch = channels.get(name);
       let last_activity = 0;
-      let message_count = 0;
+      // null, not 0 — see channelMessageCount. A count is only ever a number
+      // when this daemon actually established one.
+      let message_count: number | null = null;
       if (ch) {
         last_activity = ch.last_activity;
+        // This is the high-water id, which equals the count for a channel whose
+        // ids are contiguous from 1 — the normal case. It no longer collapses to
+        // 0 on a truncated final line: b11 made next_id a high-water mark over
+        // every parseable line, so a corrupt tail can no longer restart it at 1.
         message_count = ch.next_id - 1;
       } else {
-        // Stat disk file for an approximation.
+        // Stat disk file for last_activity; the count is a real read.
         try {
           const s = statSync(channelPath(name));
           last_activity = s.mtimeMs;
         } catch {}
+        message_count = channelMessageCount(channelPath(name));
       }
       return {
         name,
@@ -279,7 +337,39 @@ function appendMessage(
     ...(typeof inReplyTo === "number" ? { in_reply_to: inReplyTo } : {}),
     ...(extra ?? {}),
   };
-  appendFileSync(channelPath(name), `${JSON.stringify(msg)}\n`);
+  // b11 — the second half of the destroyed-write defect. A JSONL record is only
+  // a record because a newline terminates it, and a partial write (crash, kill,
+  // full disk) can leave a final line without one. Appending straight onto that
+  // fuses the new message into the broken fragment, and BOTH become unreadable
+  // — the write is destroyed and this function still returns a Message and
+  // answers ok:true.
+  //
+  // So terminate the previous record before writing a new one. This repairs the
+  // file rather than refusing: the truncated fragment stays on its own line
+  // where a human or a recovery pass can see it, and it stops eating writes
+  // immediately. Only reachable when the file does NOT already end in a
+  // newline, so the healthy path is byte-identical to before.
+  const p = channelPath(name);
+  let separator = "";
+  try {
+    const size = statSync(p).size;
+    if (size > 0) {
+      const fd = openSync(p, "r");
+      try {
+        const tailByte = Buffer.alloc(1);
+        readSync(fd, tailByte, 0, 1, size - 1);
+        if (tailByte[0] !== 0x0a) separator = "\n";
+      } finally {
+        closeSync(fd);
+      }
+    }
+  } catch {
+    // The file is unreadable or absent; appendFileSync will create it. Leaving
+    // separator empty is correct here and is NOT an empty-catch of the kind b11
+    // exists to kill — there is no value being silently defaulted, and the
+    // healthy path is a fresh file.
+  }
+  appendFileSync(p, `${separator}${JSON.stringify(msg)}\n`);
   if (kind === "topic") ch.topic = text;
   ch.last_activity = msg.ts;
   // Fan out to live subscribers. Errors in one subscriber must not break

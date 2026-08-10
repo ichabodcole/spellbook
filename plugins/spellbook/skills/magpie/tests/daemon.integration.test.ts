@@ -128,6 +128,20 @@ async function postCmd(s: Spawned, msg: Record<string, unknown>): Promise<void> 
   await res.text();
 }
 
+// Like postCmd but returns status + envelope instead of throwing — for asserting
+// a REFUSAL, where the non-200 is the result under test.
+async function postCmdRaw(
+  s: Spawned,
+  msg: Record<string, unknown>,
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const res = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(msg),
+  });
+  return { status: res.status, body: (await res.json()) as Record<string, unknown> };
+}
+
 async function waitForState(
   s: Spawned,
   predicate: (st: ObservedState) => boolean,
@@ -599,4 +613,35 @@ test("BLAST-RADIUS GUARD — a valid command still answers ok, and malformed JSO
     body: "{not json",
   });
   expect((await bad.json()) as { error?: string }).toMatchObject({ error: "bad json" });
+});
+
+test("b13/#87 — element.add RETURNS the element it created, and names its outcome", async () => {
+  const s = await spawnDaemon();
+  const res = await postCmdRaw(s, {
+    type: "element.add",
+    element: { name: "wing", bbox: [1, 2, 30, 40] },
+  });
+  // RED PRE-FIX: the agent path called addElement WITHOUT capturing its return,
+  // so the response was a literal ok:true and the agent could not reference the
+  // box it had just drawn. The browser path one screen away always had el.id.
+  expect(res.status).toBe(200);
+  expect(res.body.applied).toBe(true);
+  expect(typeof res.body.id).toBe("string");
+  expect(res.body.outcome).toBe("created");
+  // the id must RESOLVE — a returned id that names nothing is worse than none
+  const st = await waitForState(s, (x) => x.elements.some((e) => e.id === res.body.id));
+  expect(st.elements.some((e) => e.id === res.body.id)).toBe(true);
+});
+
+test("b13 — a malformed element.add is REFUSED, not silently ignored at ok:true", async () => {
+  const s = await spawnDaemon();
+  const before = await waitForState(s, () => true);
+  // RED PRE-FIX: the bbox guard fell through to the terminal `return true`, so
+  // "nothing was added" and "added" were the same answer.
+  const res = await postCmdRaw(s, { type: "element.add", element: { name: "no-bbox" } });
+  expect(res.status).toBe(400);
+  expect(res.body.applied).toBe(false);
+  expect(String(res.body.error)).toContain("bbox");
+  const after = await waitForState(s, () => true);
+  expect(after.elements.length).toBe(before.elements.length);
 });

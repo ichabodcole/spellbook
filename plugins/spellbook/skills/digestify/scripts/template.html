@@ -964,9 +964,13 @@
         let commentSeq = 0;
         let submitted = false;
         // Set true once the user has typed an answer or saved a comment.
-        // beforeunload only fires /cancel if dirty — refreshing a clean page
-        // shouldn't kill the session.
+        // Only an ENGAGED close fires /cancel — refreshing a clean page
+        // shouldn't kill the session. (A departure is ALWAYS reported to
+        // /left regardless; see the beforeunload handler.)
         let dirty = false;
+        // Page-load instant, for /left's elapsedMs. "How long they stayed" is
+        // the fact that separates a read-and-declined from a glance.
+        const startedAt = Date.now();
 
         // ─── Session id, timer, heartbeat, localStorage ─────────────────
         const sessionId = payload.session_id || "digestify-anon";
@@ -1458,11 +1462,37 @@
           });
 
         window.addEventListener("beforeunload", () => {
-          // Only cancel if the user actually typed something — refreshing a
-          // clean page (or accidentally hitting Cmd+W on a fresh tab) shouldn't
-          // exit the session. The script's --timeout is the failsafe for true
-          // abandons.
-          if (!submitted && dirty && navigator.sendBeacon) {
+          if (submitted || !navigator.sendBeacon) return;
+
+          // ALWAYS report the departure as a FACT, engaged or not. Measured
+          // (b4s, matched arms): without this, "a human opened it, read it and
+          // left" and "nobody ever opened it" are byte-identical to the agent —
+          // both exit 124 with empty stdout — so there is no information for the
+          // timeout payload to name. /left is RECORD-ONLY on the server (it
+          // never resolves the session), which is what lets a clean close be
+          // reported without a refresh being able to end the session.
+          // Sent BEFORE /cancel so the record is queued first.
+          navigator.sendBeacon(
+            "/left",
+            new Blob(
+              [
+                JSON.stringify({
+                  engaged: dirty,
+                  elapsedMs: Date.now() - startedAt,
+                  answered: Object.keys(answers).length,
+                  commented: comments.length,
+                }),
+              ],
+              { type: "application/json" }
+            )
+          );
+
+          // UNCHANGED: only an engaged close cancels the session. house-style's
+          // exit-code contract defines 130 as "closed tab after interacting",
+          // so this gate is canon, not an accident — refreshing a clean page
+          // (or Cmd+W on a fresh tab) must not exit. --timeout stays the
+          // failsafe for true abandons.
+          if (dirty) {
             navigator.sendBeacon(
               "/cancel",
               new Blob([], { type: "application/json" })

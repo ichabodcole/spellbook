@@ -18,6 +18,8 @@ criterion is Chesterton's fence with the builder's note nailed to it.
 
 ### Architect for the reader's context, not your own.
 
+<!-- rule-id: architect-reader-s-context -->
+
 The agent that did the work sediments its own hot context into the artifact. The
 reader (a fresh agent, a future you) shares none of it. Write for them.
 
@@ -36,6 +38,8 @@ reader (a fresh agent, a future you) shares none of it. Write for them.
 
 ### Reference, don't inline.
 
+<!-- rule-id: reference-don-t-inline -->
+
 Inlining a tool's docs duplicates a source of truth and rots when it drifts.
 
 - **Boundary check:** unless the thing is _off the route_ and small — then a
@@ -44,6 +48,8 @@ Inlining a tool's docs duplicates a source of truth and rots when it drifts.
   fetch (e.g. a tool's docs become unfetchable).
 
 ### Context is an attention budget — exclusions must earn their place.
+
+<!-- rule-id: context-attention-budget-exclusions -->
 
 What you leave out is load-bearing. Spelling out the unwanted raises its
 salience and can backfire ("don't take a shower" plants the idea). An exclusion
@@ -59,6 +65,8 @@ that introduces it.
 - **Repeal when:** —
 
 ### Start minimal; subtract before you test.
+
+<!-- rule-id: start-minimal-subtract-before -->
 
 An agent authoring a skill **over-specifies by default** — it just did the work,
 so its hot context leaks onto the page as detail that feels essential but isn't.
@@ -79,6 +87,8 @@ lens applied _after_ writing, not a constraint while writing.
 ## The craft of naming
 
 ### The name is the canonical handle — and you name at coalescence, not at genesis.
+
+<!-- rule-id: name-canonical-handle-name -->
 
 To name a thing is to be able to summon it; a clumsy name is a fumbled cast. But
 be precise about what the name _is_ and _isn't_:
@@ -115,6 +125,8 @@ the shape before you've found it.
 
 ### Match the kind to the interaction: cantrip for cast-and-resolve, conjuration for duration.
 
+<!-- rule-id: match-kind-interaction-cantrip -->
+
 A cantrip resolves in one round (cast → act → submit → exit). A conjuration
 stands until dismissed (a daemon, a board you live in) and keeps a state
 snapshot so late joiners are grounded.
@@ -126,6 +138,8 @@ snapshot so late joiners are grounded.
 
 ### Surface-fit: match the interaction to the place that fits it.
 
+<!-- rule-id: surface-fit-match-interaction -->
+
 Chat is one channel — good for negotiation and clarification. Drawing, dropping
 images, moving cards deserve their own surface. Don't force everything through
 one pane.
@@ -135,6 +149,8 @@ one pane.
 - **Repeal when:** —
 
 ### A spell is a shared workspace — design for co-presence, not a form to submit.
+
+<!-- rule-id: spell-shared-workspace-design -->
 
 A spell is a surface human and agent both work through: each **perceives** the
 shared work-object via its own channel (the human a rendered UI; the agent
@@ -150,11 +166,16 @@ keep working something together.
   affordance ask: can _both_ parties see it (each through their lens), and is
   the work-object actionable from _both_ seats? If you're building a
   prompt-box-and-submit (words in, result out, no shared surface), the pipeline
-  has reasserted itself — stop. (The agent's half of "both see it" is
-  **readback-parity**: `state` must reach surface parity, computed not raw.)
+  has reasserted itself — stop. (**Both** halves of "both see it" are the
+  parity-facts rule under _Carry the frame, not just the value_ — including the
+  agent's, historically called **readback-parity**: `state` must reach surface
+  parity, computed not raw. That name covered the agent's half only, and the
+  human's half went unwritten for as long as it stood.)
 - **Repeal when:** —
 
 ### Keep the client thin — MCP at the auth layer.
+
+<!-- rule-id: keep-client-thin-mcp -->
 
 The surface is a membrane, not an app. No database, no conventional server.
 Authentication and API access live at the MCP layer; the agent is the runtime
@@ -165,6 +186,8 @@ underneath.
 - **Repeal when:** —
 
 ### Drive a conjuration through a daemon + thin CLI: command in, state read-back, events out.
+
+<!-- rule-id: drive-conjuration-through-daemon -->
 
 For a conjuration the agent drives across a session, hold canonical state in one
 persistent daemon and give the agent a stateless `cli.ts` — one HTTP round-trip
@@ -203,6 +226,8 @@ is the _agent's_ interface.)
 
 ### Every spell ships a feedback touchpoint.
 
+<!-- rule-id: every-spell-ships-feedback -->
+
 Agents don't volunteer friction — they work around it silently, and the signal
 is lost; humans are the same unless given a place to speak. So every spell's
 `SKILL.md` includes a **feedback touchpoint**: a structured opening for the
@@ -218,11 +243,126 @@ where the signal originates.
   close, easy to skip. Don't nag, and don't manufacture friction to report.
 - **Repeal when:** never — feedback is how the system improves at all.
 
+### Carry the frame, not just the value.
+
+<!-- rule-id: carry-frame-just-value -->
+
+Three rules with one family resemblance and **three different mechanisms**. The
+family name is how you recognise a fourth one; it is **not** a derivation, and
+none of these follows from the others.
+
+> **⚠ Siblings, not a hierarchy.** A response can state its window perfectly and
+> still never carry the fact, because a response only answers questions that
+> were asked — and the missing fact is one nobody can ask for. _(The subsumption
+> was claimed, tested, and refuted at sprint 04's ratify round, by constructing
+> the case where one holds and the other fails.)_
+
+- **Boundary check:** the theme **organises** and must never **derive**. Before
+  claiming one clause subsumes another, construct the case where the first holds
+  and the second fails — a subsumption dies to a single counterexample, so
+  attempting the counterexample _is_ the test. If you cannot build one, you have
+  found a genuine overlap; if you can, they are siblings and stay separate.
+- **Repeal when:** a mechanism is found that genuinely generates all three, at
+  which point this becomes one rule with three corollaries rather than three
+  rules under a heading. **Nobody has found one; two attempts were refuted the
+  day the family was written.**
+
+#### A response states the conditions it was produced under.
+
+<!-- rule-id: carry-frame-just-value.response-states-conditions-was -->
+
+An answer that cannot say what question it answered can be misread as the answer
+to a different question — and no amount of validating the response fixes it,
+because the missing information was never in the response.
+
+- **Boundary check:** the test is whether a **consumer** can tell two different
+  questions apart from the reply alone — not whether the reply is well-formed. A
+  complete, valid, exit-0 payload passes every completeness test there is and
+  still fails this. Scope it to what the caller could plausibly have asked
+  differently (a window, a filter, a mode); a response need not restate its
+  entire input.
+- **Repeal when:** the transport carries the request alongside the reply, so the
+  pairing is structural and the echo is genuinely redundant.
+
+_Scar: `comms read --since <id>` is strictly-greater-than, so a session anchor
+card instructing "backfill from 622" returned `{"messages":[]}` at exit 0 — a
+complete answer to the wrong window, indistinguishable from an empty channel.
+Four seats hit it at join in one morning. The envelope carries
+`{channel, messages}` — no `since` echo, no head, no count — so the same command
+returned 0 and then 1 four minutes later with nothing to say which it had done._
+
+#### A noun carries the class it belongs to.
+
+<!-- rule-id: carry-frame-just-value.noun-carries-class-belongs -->
+
+An enumerated outcome tells a caller **which** state occurred; a caller that has
+never seen that particular noun still has to route. Carry the coarse class
+beside the specific noun, or an unrecognised value is indistinguishable from a
+broken one.
+
+- **Boundary check:** this applies where the vocabulary can **grow** — a set a
+  future version may extend. A closed set the consumer is compiled against does
+  not need it. It is not a licence to invent a parallel taxonomy: one coarse
+  class, alongside, not instead of.
+- **Repeal when:** the noun set is genuinely frozen and versioned, so an
+  unrecognised value is a protocol error rather than a forward-compatible one.
+
+The full contract — the two shapes, the membership rules, the falsifier and the
+three boundaries — lives in [`outcome-contract.md`](./outcome-contract.md) and
+is **not restated here**.
+
+#### The other party's channel carries the fact at all.
+
+<!-- rule-id: carry-frame-just-value.other-party-s-channel -->
+
+> A view may be asymmetric in **FORM**. It may not be asymmetric in **FACTS**.
+> The test: name the fact the party is acting on. Ask whether the other party
+> could obtain that same fact through its own channel. If not, you have found a
+> **MISSING FIELD**. **Run it in both directions or it will be enforced in
+> one.** Superset means **throughput**, never **act**. Taste and authority are
+> the human's and are not facts.
+
+- **Boundary check:** _facts_ only. Whether the agent **should** be able to
+  perform a given act is a design question ruled act by act, and it is not this
+  rule — a norm nobody can afford to satisfy gets selectively enforced, and
+  selective enforcement of a parity rule is worse than no rule.
+- **Repeal when:** never — but the **facts/acts** line is the thing to re-check,
+  because facts keep migrating out of the "human-only" column. Several supposed
+  human superpowers turned out to be missing fields.
+
+> ⛔ **This supersedes `readback-parity`**, which was the _agent's half_ of the
+> co-presence rule's "can both parties see it" test. That parenthetical
+> announced a human half existed and left it unspecified for as long as the rule
+> stood — so **the old rule could not fail in the human-ward direction, and
+> would have certified a violating spell as compliant.**
+
+_Scar: `bounty`'s `restoreSkipped` / `snapshotBackedUp` reach the agent
+present-and-null on every path; the human surface (`scripts/template.html`, 958
+lines) renders no field, badge or banner for the same fact — **still 0 of 958,
+re-measured after the fix below**. The rule was born from bounty's readback gap
+and then left bounty's opposite gap open._
+
+_The instance that produced it is FIXED and the rule is not: a keyed respawn
+**returned** `tasks: []` over a snapshot holding 35 and looked exactly like an
+empty board, with the one human-visible mention a `confirm()` string implying
+the snapshot mechanism was fine (`spellbook#97`, fixed in `fb209f1` — a keyed
+respawn now restores by default). **The disclosure asymmetry it illustrates is
+unchanged**, which is why the scar stays._
+
+> ⚠ **A scar in the PRESENT TENSE acquires an expiry the moment its instance is
+> fixed, and nothing announces it.** Write the instance in the **past tense with
+> its fix cited**, and state separately whether the rule still holds — a reader
+> who goes looking for a live case, finds none, and concludes the rule is stale
+> has been misled by grammar. _(Found by the clause's own author, hours after
+> writing it, applying a standing check she had just watched land elsewhere.)_
+
 ---
 
 ## The build (there isn't one)
 
 ### Self-contained, no build step. Bun runs `.ts` natively.
+
+<!-- rule-id: self-contained-no-build -->
 
 Zip one folder and it runs anywhere `bun` is on PATH. Protocol types at the top
 of the file; assets load CDN libs inline.
@@ -235,6 +375,8 @@ of the file; assets load CDN libs inline.
 
 ### Honor the exit-code contract.
 
+<!-- rule-id: honor-exit-code-contract -->
+
 `0` submitted · `2` bad input · `124` idle timeout · `130` user cancelled
 (closed tab after interacting). Cantrip and conjuration alike.
 
@@ -242,6 +384,8 @@ of the file; assets load CDN libs inline.
 - **Repeal when:** —
 
 ### Enumerate the roster by behaviour, never by a fixed path or a name.
+
+<!-- rule-id: enumerate-roster-behaviour-never -->
 
 Spells do not agree on where things live, and a glob written from the spell in
 front of you is a silent filter: it returns a confident, well-formed answer
@@ -268,9 +412,51 @@ the wrong set reports it more convincingly.
   needs none of this. The rule is for enumerations _derived_ by search. And
   assert the denominator alongside the finding ("223 enumerated, 223 produced a
   count"): that is a claim the failure mode cannot fake, where a count alone is.
+- **Boundary check — PUBLISH THE DATUM YOUR FAILURE MODE CANNOT FAKE, _WHERE THE
+  READER WILL REACH IT_.** This is the same move as asserting the denominator,
+  at the grain of a **message**: when you measure **shared state** — the tree,
+  the process table, the gate — put the **rows** on the wire, not your reading
+  of them. A count can be faked by a sweep that never ran; a denominator cannot.
+  A label can be faked by an assumed owner; a printed command line cannot.
+  **Both are the artifact that survives your being wrong about it.** Applies to
+  clearances and intermediate measurements, which is where nobody thinks to
+  apply it.
+  - **The `where` is not decoration and it is why this clause has two halves.**
+    Two failures of one defect were found the same afternoon: an observation
+    held **in a seat's terminal** (emitted to nobody) and an observation
+    published **below the preview fold** (transported to nobody). ⛔ **They
+    compose badly — posting the rows appends them, which puts them below the
+    fold.** So the datum goes in the headline or the first screen. A rule that
+    said only _"publish the observation"_ would ship the other half of the
+    defect it prevents.
+  - **Boundary:** shared state only. A private inference about your own lane is
+    wire noise.
+  - **Repeal when:** the shared resource is queryable by every seat on demand —
+    the rows stop needing publication once anyone can pull them.
+- **Boundary check — NAME THE QUESTION BEFORE THE BEHAVIOUR. "By behaviour, not
+  by name" is necessary and NOT sufficient.** There is often **no single set**:
+  the denominator is a function of the question, and two behaviour-shaped
+  predicates over one file can both be correct for different questions and
+  silently wrong for each other's. So state the question first, then pick the
+  unit it implies — _"does every rule have a ledger row?"_ and _"does every rule
+  have a check?"_ are different questions with different correct counts over the
+  same document. **A predicate offered as the corrected version of another is
+  the dangerous case**, because it arrives wearing the authority of a fix.
 - **Repeal when:** the roster's layout is uniform _and_ enforced by something
   that fails when it drifts. Convention alone does not repeal it — the layout
   above _was_ the convention.
+
+_Scar for the second boundary check, earned at n=2 in one hour, by two people
+who had each just read this rule. Enumerating "the rules" in **this file**:
+`^### ` returns **17** and silently drops the three `####` clauses — the most
+checkable rules in it. The proposed correction, "a rule is a heading carrying a
+`- **Boundary check:**` line," returns **18** and drops the other two: the
+family **container** (whose clauses hold the checks) and the **meta-rule about
+boundary checks**, which does not have one. **Two enumerators, two silent
+filters, opposite directions, neither complete — and the second was offered as
+the fix for the first, asserted without being run, and relayed onward as an
+instruction before anyone executed it.** The union is 20; the ledger tracks 17;
+both counts are right for their own question and wrong for the other's._
 
 _Scar: **all four seats of one team hit this single glob in one afternoon.** A
 ward put three spells' legitimate flags on a delete-list from it; three hours
@@ -282,6 +468,8 @@ message, addressed to two people, under a headline about something else — whic
 is exactly why it now lives in the tree instead._
 
 ### Carry the Bun gotchas forward.
+
+<!-- rule-id: carry-bun-gotchas-forward -->
 
 `FileSink` not `WritableStream` on piped stdin; race `server.stop(true)` against
 a timer; grant a submit-path teardown grace; swallow `EPIPE`; `*.test.ts` only.
@@ -300,6 +488,8 @@ reachable summary.
 ## The meta-rule
 
 ### A mature principle is an imperative plus its own boundary checks.
+
+<!-- rule-id: mature-principle-imperative-plus -->
 
 Every rule above has a _spatial_ boundary ("avoid X, unless on the route") and,
 where it ages, a _temporal_ one ("omit the discoverable, unless verified

@@ -148,7 +148,13 @@ export async function startDaemon(opts: StartOpts) {
   // dropped. Note the defect is NOT a missing `await`: this handler is
   // synchronous, and imago's twin IS correctly awaited and was broken anyway.
   // The fix is that a decision exists at all.
-  const handleAgentMsg = (msg: AgentCommand): boolean => {
+  // Contract 13: the verdict originates in the code owning the recognised set.
+  // b12 widens the RETURN without widening the CONTRACT — a command may answer
+  // with a result object carrying its own payload instead of the boolean. Every
+  // other command still returns a bare boolean and its response is
+  // byte-identical. Same shape as imago's context.add (5e6aacd).
+  type AgentVerdict = boolean | { recognised: true; ok: true; detail: Record<string, unknown> };
+  const handleAgentMsg = (msg: AgentCommand): AgentVerdict => {
     if (msg.type === "say") {
       addMessage(state, {
         id: `m-${randHex(4)}`,
@@ -183,8 +189,27 @@ export async function startDaemon(opts: StartOpts) {
         },
       });
       materializeItem(sessionFilesDir, it);
-      if (addItem(state, it)) broadcastState();
-      return true;
+      // b12 + #87 (third spell) — `if (addItem(state, it)) broadcastState()`
+      // dropped the mutator's outcome into control flow and answered ok:true
+      // either way. Two things were wrong and only one is what the card said:
+      //
+      //   REACHABLE, every call: the minted id was DISCARDED, so the agent that
+      //   just created an item could not reference it. That is #87's defect in a
+      //   third codebase (imago context.add, and this).
+      //
+      //   NOT REACHABLE in practice: the "silent dedupe". `id` is minted HERE
+      //   (`gen-${randHex(4)}`) and the caller cannot supply one — `buildGenCmd`
+      //   has no id field, and this line ignores any that arrived — so addItem
+      //   returns false only on a 2^32 collision. The branch was dead, not
+      //   dangerous. It is reported honestly now rather than removed, because a
+      //   collision that DID happen would otherwise be the silent case.
+      const added = addItem(state, it);
+      if (added) broadcastState();
+      return {
+        recognised: true,
+        ok: true,
+        detail: { id: it.id, outcome: added ? "created" : "already-recorded" },
+      };
     }
     if (msg.type === "style.save") {
       const canonicalItems = state.library.filter((i) => i.canonical && !i.archived);
@@ -369,7 +394,12 @@ export async function startDaemon(opts: StartOpts) {
             // #84 — propagate the handler's verdict instead of a literal
             // {ok:true}. `applied` is the field bounty already uses
             // (server.ts ApplyResult); no new vocabulary is minted here.
-            const applied = handleAgentMsg(b as AgentCommand);
+            const verdict = handleAgentMsg(b as AgentCommand);
+            // A command that answered with its own result carries its payload;
+            // the boolean path below is unchanged.
+            if (typeof verdict === "object")
+              return Response.json({ ok: true, applied: true, ...verdict.detail });
+            const applied = verdict;
             if (!applied) {
               return Response.json(
                 {

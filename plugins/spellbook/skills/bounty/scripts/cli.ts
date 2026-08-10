@@ -7,7 +7,7 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]  # spawn a daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently — #69)
 //   bun cli.ts tail [--since N] [--owner <name> | --mine] [--as <name>]  # scoped SSE → JSONL
-//   bun cli.ts state [--full] [--owner <name> | --mine] [--as <name>]    # scoped read-back
+//   bun cli.ts state [--owner <name> | --mine] [--as <name>]    # scoped read-back (full; --full accepted, it is the default)
 //     Each task carries derived `blocked` + `liveBlockers:[{id,title,status}]`
 //     (the not-done blockers), so a filtered blocked task stays actionable.
 //
@@ -19,7 +19,7 @@
 //   bun cli.ts unblock <id> --on <id>[,<id>...]             # remove blocker edges
 //   bun cli.ts remove <id>
 //   bun cli.ts message <text...> [--stdin]                  # toast
-//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board
+//   bun cli.ts init [--title ..] [--stdin-tasks]            # seed the board (each task needs id+title+status)
 //   bun cli.ts list                                        # running boards (live)
 //   bun cli.ts close | info | sessions | help              # sessions = saved snapshots
 //
@@ -278,8 +278,14 @@ function parseExpect(value: string | boolean | undefined): number | undefined {
 // and the caller is now TOLD.
 //
 // ⚠ This is the `restoreSkipped` SHAPE and deliberately not its name, because it
-// is the opposite EVENT. `restoreSkipped` means "your flag was valid and the
-// situation could not honour it" — the user did nothing wrong. This means "your
+// is the opposite EVENT. `restoreSkipped` means "your EXPLICIT `--restore` was
+// valid and the situation could not honour it" — the user did nothing wrong.
+// (EXPLICIT is load-bearing since `fb209f1`: a keyed respawn restores BY
+// DEFAULT, but that path pushes a spawn arg and never sets `flags.restore`, so
+// it can never populate this field. There is ONE trigger, not two — and a
+// default restore cannot be "skipped" in this field's sense at all, because its
+// guard condition IS the skip condition. Ruled after the trigger count was
+// found to have silently doubled underneath the old wording.) This means "your
 // value was invalid and we chose to ignore it" — the user made a typo, and what
 // they need is the legal set, not an explanation about their board.
 //
@@ -483,6 +489,24 @@ function ackOrFail(type: unknown, res: CmdResult): number {
     process.stderr.write(`bounty: ${error}\n`);
     return 1;
   }
+  // b8 — forward the daemon's drop report when there is one. `init` filters
+  // untrusted tasks and used to say nothing, so 18 tasks in / 0 seeded answered
+  // {ok:true}. The field rides the ACK because that is the response the caller
+  // reads; it is omitted rather than null-stuffed on verbs that never drop, and
+  // the daemon sends null on an init that dropped nothing (present-and-null
+  // where it is meaningful, absent where it is not applicable).
+  const dropped = (res as { tasksDropped?: unknown }).tasksDropped;
+  if (dropped !== undefined) {
+    printJson({ ok: true, sent: type, tasksDropped: dropped });
+    if (dropped && typeof dropped === "object") {
+      const d = dropped as { requested: number; dropped: { index: number; reason: string }[] };
+      process.stderr.write(
+        `bounty: ${d.dropped.length} of ${d.requested} task(s) were DROPPED and not seeded:\n`,
+      );
+      for (const item of d.dropped) process.stderr.write(`  [${item.index}] ${item.reason}\n`);
+    }
+    return 0;
+  }
   printJson({ ok: true, sent: type });
   return 0;
 }
@@ -632,6 +656,35 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   const args = ["run", SERVER_SCRIPT];
   if (flags.title) args.push("--title", String(flags.title));
   if (flags.timeout) args.push("--timeout", String(flags.timeout));
+  // b7 / spellbook#97 — A KEYED RESPAWN RESTORES BY DEFAULT.
+  //
+  // Reported by anthill with a 5-step repro: open --session-key K, add a card,
+  // close (snapshot: 1), open --session-key K again -> LIVE 0 tasks over an
+  // intact 1-task snapshot, and the next close writes 0 over it. Step 4 is the
+  // defect and step 5 is the damage.
+  //
+  // ⚠ I RULED THIS "INTENDED" AT #824 and I was wrong. My reasoning was that
+  // `--restore` is the explicit opt-in, so a fresh board is the honest default.
+  // That is right for an UNKEYED open and wrong for a keyed one: a stable key's
+  // whole promise is CONTINUITY — `open --session-key K` is documented
+  // idempotent — and discarding K's snapshot is the one moment it does not
+  // deliver it. The opt-in argument survives only where there is no key.
+  //
+  // Deliberately narrow, so this cannot resurrect a board anyone asked to be
+  // rid of:
+  //   - keyed opens only; an unkeyed open still always spawns empty;
+  //   - only when NO live board was found (an attach is untouched);
+  //   - `--fresh` still wins and still gives a clean board — that is the verb
+  //     for "I want this key, empty";
+  //   - an explicit `--restore` still wins, and is never overridden.
+  if (
+    forcedId &&
+    !flags.restore &&
+    !flags.fresh &&
+    existsSync(join(SNAPSHOTS_DIR, `${forcedId}.json`))
+  ) {
+    args.push("--restore", forcedId);
+  }
   if (flags.restore) args.push("--restore", String(flags.restore));
   if (flags["no-open"]) args.push("--no-open");
   if (forcedId) args.push("--id", forcedId); // force the daemon's id to the derived key id
@@ -691,13 +744,37 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   return die("bounty daemon failed to start within 5s");
 }
 
+// b6 — `full` is no longer a parameter. The read is always full, so there is
+// nothing for it to select. The FLAG stays declared in CLI_OPTIONS so a strict
+// parser still accepts `state --full` from existing callers (removing it would
+// exit 2 on them), and `readMode: "full"` in the response confirms they got what
+// they asked for rather than leaving it assumed.
 async function cmdState(
   session: string | undefined,
-  full: boolean,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
 ) {
   const s = requireSession(session);
-  const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
+  // b6 — DEFAULT FLIPPED. This line used to read `${full ? "" : "?lean=1"}`, so
+  // the most-used read in the toolbox asked for LEAN and `--full` asked for
+  // everything. That is a lossy read as the default, and it was harmless only by
+  // accident of the server ignoring the parameter.
+  //
+  // ⛔ A PRE-INSTALLED ABSENCE WITH A TRIGGER DATE: server.ts documents that
+  // `lean ≈ full today` and explicitly reserves the right to implement a real
+  // lean later. On the day anyone does, every existing caller would silently
+  // start receiving a TRIMMED payload with nothing saying which mode produced
+  // it. Flipping it is free and safe TODAY precisely because the flag is
+  // currently a no-op, and impossible to do safely afterwards.
+  //
+  // A LOSSY READ MUST BE OPTED INTO, NEVER DEFAULTED.
+  //
+  // `--full` is KEPT and now names the default. It is not removed: the parser is
+  // strict, so an unknown flag exits 2 — deleting it would turn every existing
+  // `state --full` caller into a hard failure to fix a flag that never did
+  // anything. It is documented as compatibility rather than left to look load-
+  // bearing (cassandra's r4: SKILL.md advertised it with no note that it was
+  // inert, and that is the contract a cold agent reads).
+  const { status, data } = await api(s.port, "GET", "/state");
   if (status !== 200) die(`state failed (HTTP ${status})`);
   // Scoped readback (mirrors `tail` semantics): --owner X = X's tasks; --mine =
   // own + claimable (unowned). Each retained task keeps its computed
@@ -709,7 +786,17 @@ async function cmdState(
       d.state.tasks = d.state.tasks.filter((t) => ownerInScope(t.owner, scope));
     }
   }
-  printJson(data);
+  // b6 — the response now STATES WHICH MODE ANSWERED IT rather than leaving the
+  // caller to assume its request was honoured. Always "full", because that is
+  // what the daemon actually serves; `readMode` is a claim about the ANSWER, not
+  // an echo of the ASK.
+  //
+  // DOMAIN, stated because a present-and-null field is only honest over one
+  // (outcome-contract Boundary 3): `readMode` ranges over what THIS CLI
+  // requested and what the daemon returned for `/state`. It says nothing about
+  // any other route, and it is not a promise that a future lean would be
+  // reported here — that would be the same fuse one level up.
+  printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
 async function cmdTail(
@@ -890,21 +977,30 @@ function cmdSessions() {
   if (!rows.length) process.stdout.write("no saved sessions\n");
 }
 
-type LiveBoard = { session_id: string; title: string; url: string; tasks: number };
+// b1 — `tasks` is `number | null`: null means the board ANSWERED but its task
+// count could not be established. Before, an unrecognised body reported 0, which
+// is indistinguishable from an empty board (b5's defect in this probe). It could
+// not simply become null at the probe, because liveBoards treats null as DEAD
+// and would have made a live-but-uncountable board VANISH from `list` — worse
+// than a wrong count. Distinguishing "not live" from "live, uncountable" needs
+// the two nulls to live at different levels, which is this type change.
+type LiveBoard = { session_id: string; title: string; url: string; tasks: number | null };
 
 // Filter discovered sessions to the LIVE ones via an injected probe (task count
 // if the board answers, null if dead/stale). Probes run in parallel. Injecting
 // the probe keeps the live-filter unit-testable without spawning real daemons.
 async function liveBoards(
   discovered: Session[],
-  probe: (s: Session) => Promise<number | null>,
+  probe: (s: Session) => Promise<{ tasks: number | null } | null>,
 ): Promise<LiveBoard[]> {
   const probed = await Promise.all(
     discovered.map(async (s) => {
-      const tasks = await probe(s);
-      return tasks === null
+      // OUTER null = the board did not answer, so it is not live and is dropped.
+      // The count INSIDE a live board may separately be null — see LiveBoard.
+      const probed = await probe(s);
+      return probed === null
         ? null
-        : { session_id: s.session_id, title: s.title, url: s.url, tasks };
+        : { session_id: s.session_id, title: s.title, url: s.url, tasks: probed.tasks };
     }),
   );
   return probed.filter((b): b is LiveBoard => b !== null);
@@ -913,12 +1009,26 @@ async function liveBoards(
 // Liveness probe: GET /state with a short timeout. Returns the task count if the
 // board answers, null if unreachable (a stale discovery file left by a daemon
 // that died without cleanup).
-async function probeBoard(s: Session): Promise<number | null> {
+async function probeBoard(s: Session): Promise<{ tasks: number | null } | null> {
   try {
+    // b6 — `?lean=1` SURVIVES HERE ON PURPOSE, and this is the deliberate
+    // opt-in the flipped default exists to make possible. b6's rule is that a
+    // LOSSY READ MUST BE OPTED INTO, NEVER DEFAULTED; a liveness probe with a
+    // 600ms budget that reads nothing but a count is exactly the caller that
+    // should opt in. Flipping cmdState and leaving this untouched is the rule
+    // applied, not the rule half-applied. (Raised by cassandra, #777 — the
+    // comment did not say, and an unexplained survivor reads as an oversight.)
     const res = await fetch(`${s.url}/state?lean=1`, { signal: AbortSignal.timeout(600) });
     if (!res.ok) return null;
     const body = (await res.json()) as { state?: { tasks?: unknown[] } };
-    return Array.isArray(body.state?.tasks) ? body.state.tasks.length : 0;
+    // b1 — TWO DIFFERENT NULLS, and keeping them apart is the whole point. The
+    // outer null (returned above and below) means NOT LIVE, and liveBoards drops
+    // that board. This inner one means LIVE BUT UNCOUNTABLE: the board answered
+    // 200 and its body was not the shape we recognise. It used to report 0,
+    // which is indistinguishable from an empty board — b5's defect in this
+    // probe — and it must NOT collapse into the dead null, or a live board
+    // disappears from `list` entirely.
+    return { tasks: Array.isArray(body.state?.tasks) ? body.state.tasks.length : null };
   } catch {
     return null;
   }
@@ -949,10 +1059,29 @@ async function cmdList() {
   }
   const live = await liveBoards(discovered, probeBoard);
   live.sort((a, b) => a.session_id.localeCompare(b.session_id));
+  // b1 / #79 — SAY WHICH QUESTION THIS ANSWERED. The reporter seeded six cards,
+  // ran `list` to confirm they were there, got nothing back, and concluded the
+  // cards had not been created — one message from filing a false defect against
+  // a working tool. `list` is the verb a caller reaches for to see what is ON a
+  // board; it enumerates BOARDS. The verb is right and the noun is a different
+  // one than the caller has in mind, and an empty set is exactly what they
+  // expect to see when their cards are missing, so it CONFIRMS the wrong
+  // hypothesis instead of raising a question.
+  //
+  // Naming the noun on every path — including the populated one — is what lets a
+  // caller notice they asked a different question than the one answered.
+  process.stdout.write(`${live.length} running board${live.length === 1 ? "" : "s"}\n`);
   for (const b of live) {
-    process.stdout.write(`${b.session_id}  ${b.tasks} tasks  ${b.url}  — ${b.title}\n`);
+    // A null count is LIVE BUT UNCOUNTABLE, never 0. Rendered as "?" so it can
+    // never be read as an empty board — the whole reason the two nulls are kept
+    // apart upstream.
+    const count = b.tasks === null ? "? (unreadable)" : `${b.tasks} tasks`;
+    process.stdout.write(`${b.session_id}  ${count}  ${b.url}  — ${b.title}\n`);
   }
-  if (!live.length) process.stdout.write("no running boards\n");
+  if (!live.length)
+    process.stdout.write(
+      "this lists BOARDS, not tasks — for the cards ON a board use `bounty state`\n",
+    );
 }
 
 // Read all of stdin as a single string. Used by --stdin so free text (titles,
@@ -964,7 +1093,8 @@ async function readStdin(): Promise<string> {
 const HELP = `bounty — an agent-driven task board.
 
   open   [--title ..] [--timeout S] [--no-open] [--restore <id>] [--pin] [--session-key <key> [--fresh]]   spawn a board daemon (--pin binds it to cwd; --session-key binds it to a caller-owned key, idempotently)
-  state  [--full] [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor }
+  state  [--mine | --owner <name>] [--as <name>]   read-back: { state, cursor, readMode }
+           (--full is accepted but redundant: the read is full by default — b6)
   tail   [--since N] [--owner <name> | --mine] [--as <name>]   SSE events → JSONL (Monitor)
   add    <title...> [--status ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--id ..] [--stdin]   add a task
   update <id> [--status ..] [--title ..] [--notes ..] [--owner ..] [--tag a,b] [--size S|M|L] [--expect <min>] [--stdin]      patch a task (--tag "" clears)
@@ -974,7 +1104,9 @@ const HELP = `bounty — an agent-driven task board.
   unblock <id> --on <id>[,<id>...]   remove blocker edge(s)
   remove <id>                        delete a task
   message <text...> [--stdin]        show a toast on the board
-  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin)
+  init   [--title ..] [--stdin-tasks]   seed the board (tasks = JSON array on stdin; each
+           task REQUIRES id + title + status. init does NOT mint ids, unlike add. Any
+           dropped task is reported per-entry in tasksDropped)
   list                               list currently-RUNNING boards (id/tasks/url/title)
   sessions                           list saved SNAPSHOTS (incl. closed boards)
   close | info | help
@@ -1023,7 +1155,7 @@ async function main(argv: string[]): Promise<number> {
     case "state": {
       const mine = flags.mine === true;
       if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
-      await cmdState(session, flags.full === true, {
+      await cmdState(session, {
         owner: typeof flags.owner === "string" ? flags.owner : undefined,
         mine,
         as,
@@ -1235,13 +1367,48 @@ async function main(argv: string[]): Promise<number> {
       // is what turns that into a visible failure.
       return ackOrFail(msg.type, await postCmd(session, msg, { as, quiet: true }));
     }
-    case "close":
+    case "close": {
       // Same explicit decision as `message`: applied:true unconditionally today,
       // so this is a regression guard rather than a fix. It earns its place
       // because `close` is the verb that WRITES THE SNAPSHOT — a close that
       // silently failed to apply, reported as success, is how a caller concludes
       // its data was persisted when it was not.
-      return ackOrFail("close", await postCmd(session, { type: "close" }, { as, quiet: true }));
+      const closeRes = await postCmd(session, { type: "close" }, { as, quiet: true });
+      // b14 — WAIT FOR IT TO ACTUALLY BE DOWN. `close` used to return as soon as
+      // the daemon ACKED the command, and the daemon acks before it finishes
+      // tearing down. Measured: `state` on the same session STILL ANSWERS with
+      // the full board immediately after a successful close, and only stops
+      // after a settle. So a caller that closed and reopened attached to the
+      // dying board instead of respawning — success reported an ACT, not its
+      // COMPLETION.
+      //
+      // The wait is not new machinery: `open --fresh` already polls
+      // `boardIfLive` for up to 3s after its own teardown POST. This applies the
+      // discipline that already existed one function away, which is also why the
+      // bound and the interval match it rather than being invented here.
+      //
+      // `down` is REPORTED rather than enforced: if the daemon outlives the
+      // bound, that is a real fact a caller may need (a wedged teardown), and
+      // exiting non-zero would turn a slow close into a failed one. Present on
+      // every close, never absent — a readable blank beats an absence.
+      const resolved = requireSession(session);
+      const deadline = Date.now() + 3000;
+      let down = false;
+      while (Date.now() < deadline) {
+        if (!(await boardIfLive(resolved.session_id))) {
+          down = true;
+          break;
+        }
+        await sleep(80);
+      }
+      if (!closeRes.applied) return ackOrFail("close", closeRes);
+      printJson({ ok: true, sent: "close", down });
+      if (!down)
+        process.stderr.write(
+          "bounty: close acked but the daemon was still answering after 3s — a reopen may attach to it\n",
+        );
+      return 0;
+    }
     case "info":
       cmdInfo(session);
       break;

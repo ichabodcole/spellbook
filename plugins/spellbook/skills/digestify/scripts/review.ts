@@ -298,6 +298,18 @@ async function main(argv: string[]): Promise<number> {
   // closure, so we keep it in a `let` populated before we open the browser.
   let pageHtml = "";
   let heartbeatAt = performance.now();
+  // b4 — what the surface told us about the human's departure, and whether the
+  // page was ever served at all. Both are RECORDS, not resolutions: neither ends
+  // the session (see POST /left).
+  type Departure = {
+    engaged: boolean;
+    elapsedMs: number | null;
+    answered: number | null;
+    commented: number | null;
+  };
+  let departure: Departure | null = null;
+  let pageServed = false;
+
   let resolveDone!: (val: DoneResult) => void;
   const done = new Promise<DoneResult>((res) => {
     resolveDone = res;
@@ -314,6 +326,10 @@ async function main(argv: string[]): Promise<number> {
         const method = req.method;
 
         if (method === "GET" && path === "/") {
+          // b4 — the ONE observable that separates "nobody ever opened it" from
+          // "opened and then went quiet". Without it those two are the same
+          // timeout, which is half of what made a cancelled review unreportable.
+          pageServed = true;
           return new Response(pageHtml, {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
@@ -350,6 +366,34 @@ async function main(argv: string[]): Promise<number> {
           }
           resolveDone({ code: 0, data: body });
           return new Response('{"ok":true}', { headers: { "Content-Type": "application/json" } });
+        }
+        // b4 — the surface beacons here on EVERY departure, engaged or not
+        // (circe's b4s, fbfe1d3). RECORD-ONLY BY CONTRACT: this route must never
+        // call resolveDone. That is the whole safety of the seam — /cancel still
+        // owns ending the session, so a refresh cannot kill one, and exit 130
+        // keeps meaning "closed the tab AFTER interacting" exactly as
+        // house-style's exit-code contract defines it.
+        //
+        // A route named for a verb must always perform that verb: this is why
+        // the seam is a separate route rather than a flag on /cancel, which
+        // would make one route sometimes resolve and sometimes not.
+        if (method === "POST" && path === "/left") {
+          try {
+            const b = (await req.json()) as Partial<Departure>;
+            departure = {
+              engaged: b.engaged === true,
+              elapsedMs: typeof b.elapsedMs === "number" ? b.elapsedMs : null,
+              answered: typeof b.answered === "number" ? b.answered : null,
+              commented: typeof b.commented === "number" ? b.commented : null,
+            };
+          } catch {
+            // A malformed beacon still means SOMEBODY LEFT — that fact is the
+            // point of the route, and discarding it would restore the very
+            // silence b4 exists to remove. Record the departure with unknown
+            // detail rather than nothing.
+            departure = { engaged: false, elapsedMs: null, answered: null, commented: null };
+          }
+          return new Response(null, { status: 204 });
         }
         if (method === "POST" && path === "/cancel") {
           resolveDone({ code: 130, data: null });
@@ -420,6 +464,42 @@ async function main(argv: string[]): Promise<number> {
       submitted_at: isoZNoMillis(new Date()),
     };
     process.stdout.write(`${JSON.stringify(response)}\n`);
+  } else {
+    // b4 — a cancelled or timed-out review used to write NOTHING to stdout, so
+    // "the human read it and declined", "nobody ever opened it", "the tab
+    // crashed" and "they walked away" were ONE observable through a pipe. Every
+    // non-submit exit now writes a line naming what was actually observed.
+    //
+    // ⚠ `observed` is a FACT, not a contract noun. This situation is one the
+    // outcome contract explicitly does NOT cover — grimoire/outcome-contract.md
+    // Boundary 2 lists "deadline expiry" and "counterparty declined" among the
+    // nine situations the two shapes do not reach — and Boundary 2 says meeting
+    // one is a FINDING, not licence to invent a third spelling. So this reports
+    // observations and deliberately does not mint an `outcome:` noun.
+    //
+    // Kept honest about its own limits: `departure: null` with `pageServed:true`
+    // genuinely cannot separate a crashed tab from a walked-away human, and
+    // `elapsedMs: null` means the beacon arrived malformed rather than
+    // instantaneous.
+    const observed = !pageServed
+      ? "never-opened"
+      : departure === null
+        ? "opened-then-silent"
+        : departure.engaged
+          ? "engaged-then-left"
+          : "read-then-left";
+    process.stdout.write(
+      `${JSON.stringify({
+        submitted: false,
+        exit: code,
+        reason: code === 124 ? "idle-timeout" : "closed-without-submitting",
+        observed,
+        pageServed,
+        departure,
+        timeoutSeconds: timeout,
+        ended_at: isoZNoMillis(new Date()),
+      })}\n`,
+    );
   }
   return code;
 }

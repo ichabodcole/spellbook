@@ -228,6 +228,33 @@ test("gen.add creates a kind:gen item with full metadata; emits no event", async
   expect(events).not.toContain('"type":"gen.add"');
 });
 
+test("b12/#87: gen.add RETURNS the id it minted, and names its outcome", async () => {
+  const res = await fetch(`${base}/cmd`, {
+    method: "POST",
+    body: JSON.stringify({
+      type: "gen.add",
+      src: "data:image/webp;base64,BBBB",
+      prompt: "b12",
+      model: "m",
+      round: 9,
+    }),
+  });
+  const body = (await res.json()) as { id?: string; outcome?: string; applied?: boolean };
+  // RED PRE-FIX: the response was a literal {ok:true,applied:true} — the id was
+  // minted, used to build state, and discarded, so the agent that had just
+  // created the item could not refer to it.
+  expect(body.applied).toBe(true);
+  expect(typeof body.id).toBe("string");
+  expect(body.outcome).toBe("created");
+  // and the id it reported is the one actually in state — a returned id that
+  // does not resolve would be worse than none.
+  await Bun.sleep(60);
+  const s = (await (await fetch(`${base}/state`)).json()) as {
+    state: { library: { id: string }[] };
+  };
+  expect(s.state.library.some((i) => i.id === body.id)).toBe(true);
+});
+
 test("gen.cost backfills an existing gen item's cost", async () => {
   const s0 = (await (await fetch(`${base}/state`)).json()) as {
     state: { library: { id: string; kind: string }[] };
