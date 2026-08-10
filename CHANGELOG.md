@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.2.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v2.1.0...spellbook-v2.2.0) (2026-08-10)
+
+
+### Features
+
+* **bounty:** document the fields 2.1.0 shipped and nobody could find ([b29bb5f](https://github.com/ichabodcole/spellbook/commit/b29bb5f5bc49ff0678e6dc8def103c4a57c89fa0))
+* **grimoire:** every rule carries a stable id, and a ward that fails four ways ([2a56e46](https://github.com/ichabodcole/spellbook/commit/2a56e460a539ac28379c60b3e9363313ecdc2343))
+* **instruments:** mechanize "change landed, no cell added" ([2b36726](https://github.com/ichabodcole/spellbook/commit/2b3672633ab3bf5976e193eb87d04d5c21204eac))
+
+
+### Bug Fixes
+
+* **astrolabe:** a benign no-op is success and names the state it found ([3d863d5](https://github.com/ichabodcole/spellbook/commit/3d863d5c7a82d94f59f21426a71a22485f15a22c))
+* **bounty:** a keyed respawn restores its snapshot instead of coming up empty ([fb209f1](https://github.com/ichabodcole/spellbook/commit/fb209f1ac527dd653c4a3b97018ebc40f4581a2b))
+* **bounty:** a restore that was attempted and FAILED says so ([9713733](https://github.com/ichabodcole/spellbook/commit/9713733a202612717314d1808e4465de1fabfd9a))
+* **bounty:** block refuses an edge to a task that does not exist ([39b4310](https://github.com/ichabodcole/spellbook/commit/39b4310f4cf18244c735900a6ffe957636202f48))
+* **bounty:** close waits for the daemon to be down, and says whether it is ([05d2591](https://github.com/ichabodcole/spellbook/commit/05d25910fcd0afda3afcca25062350a83481167c))
+* **bounty:** init reports the tasks it dropped, and names why ([cb25146](https://github.com/ichabodcole/spellbook/commit/cb25146459db0c1c315081d6ade5f103fbcbfcca))
+* **bounty:** list names the noun it enumerated, and a live board can say its count is unknown ([3e82b9a](https://github.com/ichabodcole/spellbook/commit/3e82b9a16c6b225bb44f60e0415494d486e6dccb))
+* **bounty:** state reads FULL by default and says which mode answered it ([0c19304](https://github.com/ichabodcole/spellbook/commit/0c19304eff8e4392b1a929fb5004e9a3da4953d3))
+* **digestify:** a cancelled or timed-out review says what was observed ([79257d9](https://github.com/ichabodcole/spellbook/commit/79257d94ddf11426751e62f421adc8d88d67e473))
+* **digestify:** report every departure, so a read-and-declined is distinguishable ([fbfe1d3](https://github.com/ichabodcole/spellbook/commit/fbfe1d31a6b0aabd536a3c5b687a301e4c46439a))
+* **glamour:** gen.add returns the id it minted and names its outcome ([34e8ab2](https://github.com/ichabodcole/spellbook/commit/34e8ab21a47440f554d9742a595013a25fa0f107))
+* **grapevine:** a truncated final line no longer destroys the next message ([6fdf2a6](https://github.com/ichabodcole/spellbook/commit/6fdf2a6a44802e787bc8bca1f9bcd772cb52743d))
+* **grapevine:** message_count says null when it did not count, never 0 ([44f6108](https://github.com/ichabodcole/spellbook/commit/44f6108c396730fdb6fa37b6e5d88ceccbdf1ea8))
+* **grapevine:** roll's version verify can say "unknown", and it runs on the cold path ([4b92c64](https://github.com/ichabodcole/spellbook/commit/4b92c6466fa94307294ab955704466d93b932ae5))
+* **imago:** context.add names its outcome and returns the id it minted ([5e6aacd](https://github.com/ichabodcole/spellbook/commit/5e6aacde2a2b5f18a3f3327d86b953fdfa652b9e))
+* **magpie:** element.add returns the element it created, and refuses a malformed one ([78563c6](https://github.com/ichabodcole/spellbook/commit/78563c63af946f319dfceb63eef3c68585296504))
+
 ## [2.1.0](https://github.com/ichabodcole/spellbook/compare/spellbook-v2.0.0...spellbook-v2.1.0) (2026-08-08)
 
 
