@@ -2,7 +2,12 @@
 
 **Status:** Active **Started:** 2026-08-05 **Current sprint:** **none building —
 [03 is complete and shipped in v2.1.0](./sprints/03-what-close-takes-with-it/plan.md);
-[04 is scaffolded, awaiting ratify](./sprints/04-the-shape-of-nothing/plan.md)**
+[04 is complete and merged to `develop` (`c2c00a5`), awaiting release](./sprints/04-the-shape-of-nothing/plan.md)**
+
+> **⚠ Sprint 04 has no `outcome.md`.** Sprints 01–02 have one; 03 and 04 do not.
+> What 04 delivered lives in its merge commit body (`git show c2c00a5`) and in
+> [`.anthill/retro.md`](../../../.anthill/retro.md) — **neither of which is
+> reachable from `docs/`**, which is the gap, not the record.
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
@@ -28,12 +33,12 @@ is parked. **A forecast, not a plan.**
 
 ## Sprints
 
-| #   | Sprint                                                                    | Status      | Opened     | Closed     | Outcome                                                | Decisions                                                       |
-| --- | ------------------------------------------------------------------------- | ----------- | ---------- | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete    | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                               |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete    | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
-| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete    | 2026-08-07 | 2026-08-08 | **none — see note below**                              | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
-| 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | 🟡 Scaffold | —          | —          | —                                                      | —                                                               |
+| #   | Sprint                                                                    | Status   | Opened     | Closed     | Outcome                                                | Decisions                                                       |
+| --- | ------------------------------------------------------------------------- | -------- | ---------- | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                               |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
+| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                              | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
+| 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | Complete | 2026-08-08 | 2026-08-10 | **none — merged as `c2c00a5`; see note below**         | [retro](../../../.anthill/retro.md)                             |
 
 **Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 
