@@ -141,6 +141,21 @@ async function postCmd(s: Spawned, msg: Record<string, unknown>): Promise<void> 
   await res.text();
 }
 
+// Like postCmd but returns the status + parsed envelope instead of throwing —
+// for asserting a REFUSAL, where the non-200 is the result under test rather
+// than a harness failure.
+async function postCmdRaw(
+  s: Spawned,
+  msg: Record<string, unknown>,
+): Promise<{ status: number; body: Record<string, unknown> }> {
+  const res = await fetch(`http://127.0.0.1:${s.port}/cmd`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(msg),
+  });
+  return { status: res.status, body: (await res.json()) as Record<string, unknown> };
+}
+
 // Open a WS, return a sender + a close fn. Each send is fire-and-forget; we
 // poll /state to observe the result (the daemon broadcasts state on change).
 async function openWs(s: Spawned): Promise<{ send: (m: object) => void; close: () => void }> {
@@ -847,7 +862,7 @@ describe("context library — add / link / unlink / delete", () => {
     expect(existsSync(imagePath)).toBe(false);
   });
 
-  test("agent context.add upserts a style on name and link:'active' attaches it", async () => {
+  test("agent context.add upserts a style on name LOUDLY (outcome+previous) and link:'active' attaches it", async () => {
     const s = await spawnDaemon();
     await postCmd(s, {
       type: "context.add",
@@ -863,13 +878,27 @@ describe("context library — add / link / unlink / delete", () => {
     const style = st.library.find((e) => e.kind === "style" && e.name === "ghibli");
     if (!style) throw new Error("ghibli style missing");
     expect(st.activeContextIds).toContain(style.id);
-    // re-add same name → upsert (no duplicate), updates content
-    await postCmd(s, {
+    // b9 — re-adding the same name still creates NO DUPLICATE (unchanged, and
+    // that half of the original intent is preserved), but it no longer
+    // OVERWRITES the existing entry's content. An add that would change an
+    // existing style is refused and names what it would have destroyed;
+    // context.update is the verb that modifies.
+    const up = await postCmdRaw(s, {
       type: "context.add",
       kind: "style",
       name: "ghibli",
       content: "soft painterly",
     });
+    // The upsert STILL HAPPENS — the capability is preserved deliberately.
+    expect(up.status).toBe(200);
+    expect(up.body.outcome).toBe("updated");
+    expect(up.body.id).toBe(style.id);
+    expect(up.body.changed).toEqual(["content"]);
+    // ⭐ THE RECOVERY AFFORDANCE: the overwrite returns what it replaced, so an
+    // unrecoverable write becomes a recoverable one. This is the assertion that
+    // distinguishes the fix from the bug — the old code destroyed "soft" with
+    // no way to learn it had existed.
+    expect((up.body.previous as Record<string, unknown>).content).toBe("soft");
     const st2 = await waitForState(
       s,
       (x) => x.library.find((e) => e.id === style.id)?.content === "soft painterly",
@@ -880,6 +909,41 @@ describe("context library — add / link / unlink / delete", () => {
     const leanStyle = lean.library.find((e) => e.id === style.id) as Record<string, unknown>;
     expect(leanStyle.image).toBeUndefined();
     expect(typeof leanStyle.imagePath).toBe("string");
+  });
+
+  test("b9/#87: context.add names its outcome and RETURNS THE ID it minted", async () => {
+    const s = await spawnDaemon();
+    // created — #87's whole ask: the caller learns the id it just made. Before
+    // this, the id was minted, used twice internally, and discarded.
+    const made = await postCmdRaw(s, {
+      type: "context.add",
+      kind: "prompt",
+      name: "alpha",
+      content: "one",
+    });
+    expect(made.status).toBe(200);
+    expect(made.body.outcome).toBe("created");
+    expect(typeof made.body.id).toBe("string");
+
+    // already-recorded — the name is taken and NOTHING would change, so no
+    // write happens. Distinct from `updated`, and distinguishable by the caller,
+    // which is the entire point: three paths that used to share one envelope.
+    await postCmdRaw(s, { type: "context.add", kind: "style", name: "Noir", content: "first" });
+    const again = await postCmdRaw(s, {
+      type: "context.add",
+      kind: "style",
+      name: "noir",
+      content: "first",
+    });
+    expect(again.body.outcome).toBe("already-recorded");
+    expect(again.body.previous).toBeUndefined();
+
+    // a blank name is a FAILURE, not an outcome — per the outcome contract's
+    // membership rule 1, a failed operation does not carry a noun, it fails.
+    const bad = await postCmdRaw(s, { type: "context.add", kind: "prompt", name: "   " });
+    expect(bad.status).toBe(409);
+    expect(bad.body.applied).toBe(false);
+    expect(bad.body.outcome).toBeUndefined();
   });
 
   test("context.capture emits the agent event with the focus", async () => {

@@ -221,7 +221,16 @@ async function main(argv: string[]): Promise<number> {
   // ⚠ handleBrowserMsg below is a SEPARATE function with a near-identical
   // switch. It is NOT part of this verdict — the WebSocket has no response to
   // carry one — and must not be folded in.
-  function handleAgentMsg(raw: Record<string, unknown>): boolean {
+  // Contract 13: the verdict originates in the code owning the recognised set.
+  // b13 widens the RETURN without widening the CONTRACT — a command may answer
+  // with a result object instead of the boolean, and every other command keeps
+  // the bare boolean with a byte-identical response. Third spell on this shape
+  // (imago 5e6aacd, glamour 34e8ab2), so it is a house pattern now.
+  type AgentVerdict =
+    | boolean
+    | { recognised: true; ok: true; detail: Record<string, unknown> }
+    | { recognised: true; ok: false; status: number; error: string };
+  function handleAgentMsg(raw: Record<string, unknown>): AgentVerdict {
     const msg = raw as AgentCommand;
     switch (msg.type) {
       case "init":
@@ -267,11 +276,33 @@ async function main(argv: string[]): Promise<number> {
         // The agent boxing a region incrementally. Broadcast so the surface
         // shows it; NO SSE (it's the agent's own move) and NO gesture message
         // (agent edits aren't "user gestures").
+        // b13 + #87 (fourth spell) — this called the mutator WITHOUT CAPTURING
+        // its return at all, which is the most complete drop of the family: the
+        // browser path one screen down does `const el = addElement(...)` and
+        // uses el.id/el.name, so the element's identity exists and only the
+        // agent was denied it. It could not reference the box it had just
+        // created.
+        //
+        // The guard was the second half: a malformed element fell through to the
+        // terminal `return true`, so "nothing was added" and "added" were the
+        // same answer. That one is an ambiguous absence, not a lost value.
         if (msg.element && Array.isArray(msg.element.bbox)) {
-          addElement(state, msg.element);
+          const el = addElement(state, msg.element);
           broadcastState();
+          return {
+            recognised: true,
+            ok: true,
+            detail: { id: el.id, name: el.name, outcome: "created" },
+          };
         }
-        break;
+        return {
+          recognised: true,
+          ok: false,
+          status: 400,
+          error:
+            "element.add requires `element` with a `bbox` array — nothing was added " +
+            "(the element is unchanged and no id was minted)",
+        };
       case "element.update":
         // Partial-merge of name/type/bbox/status. Version results do NOT come
         // through here — they append via element.addVersion (a list op).
@@ -648,7 +679,18 @@ async function main(argv: string[]): Promise<number> {
               touch();
               // #84 — propagate the handler's verdict rather than a literal
               // {ok:true}. `applied` is bounty's existing field; nothing new.
-              const applied = handleAgentMsg(body as Record<string, unknown>);
+              const verdict = handleAgentMsg(body as Record<string, unknown>);
+              // A command that answered with its own result carries its status
+              // and payload; the boolean path below is unchanged.
+              if (typeof verdict === "object") {
+                if (!verdict.ok)
+                  return Response.json(
+                    { ok: false, applied: false, error: verdict.error },
+                    { status: verdict.status },
+                  );
+                return Response.json({ ok: true, applied: true, ...verdict.detail });
+              }
+              const applied = verdict;
               if (!applied) {
                 return Response.json(
                   {

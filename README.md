@@ -91,6 +91,11 @@ Spells aren't written once, they're grown through use. The craft lives in
   reinforcement, so nobody has to make the frightening delete.
 - **`trigger-registry.md`** — the reserved spell names (a name is a command, so
   collisions are bugs).
+- **`outcome-contract.md`** — how a CLI says _"I did it, but not the way you'd
+  assume"_ and _"you asked and it did not happen"_. The cross-tool spelling
+  shared with anthill
+  ([`#82`](https://github.com/ichabodcole/spellbook/issues/82)), plus the three
+  boundaries the rule cannot state in one line.
 
 The governing rule under all of it: **architect for the reader's context, not
 your own.**

@@ -102,7 +102,16 @@ const PRESENCE_DEBOUNCE_MS =
   Number.parseInt(process.env.ASTROLABE_PRESENCE_DEBOUNCE_MS ?? "2500", 10) || 2500;
 
 type DoneResult = { code: number; reason: string };
-type ApplyResult = { ok: boolean; applied: boolean; error?: string; id?: string };
+// b2/#85 — `outcome` carries a benign no-op's NOUN (already-connected,
+// already-raised, …). A no-op has no `error`; the two together are what let a
+// caller tell "the state was already what I asked for" from "I was rejected".
+type ApplyResult = {
+  ok: boolean;
+  applied: boolean;
+  error?: string;
+  id?: string;
+  outcome?: string;
+};
 
 // ── pure helpers ─────────────────────────────────────────────────────
 
@@ -386,7 +395,7 @@ async function main(argv: string[]): Promise<number> {
       const project = validateProject(msg.project);
       if (!project) return { ok: true, applied: false, error: "invalid project" };
       const r = applyProjectAdd(state, project);
-      if (!r.applied) return { ok: true, applied: false, error: r.error };
+      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
       state = r.state;
       // emit the REGISTERED project (with the derived id + avatar), not the raw input
       const registered = state.projects.find((p) => p.id === r.id);
@@ -398,7 +407,7 @@ async function main(argv: string[]): Promise<number> {
     if (type === "project.remove") {
       const id = String(msg.id ?? "");
       const r = applyProjectRemove(state, id);
-      if (!r.applied) return { ok: true, applied: false, error: r.error };
+      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
       state = r.state;
       projectConns.delete(id);
       const pendingIdle = idleTimers.get(id);
@@ -416,7 +425,7 @@ async function main(argv: string[]): Promise<number> {
       const summary = typeof msg.summary === "string" ? msg.summary : "";
       const phase = typeof msg.phase === "string" ? msg.phase : undefined;
       const r = applyStatus(state, id, { summary, phase }, Date.now());
-      if (!r.applied) return { ok: true, applied: false, error: r.error };
+      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
       state = r.state;
       emitEvent({ type: "status", projectId: id, summary, phase, by });
       broadcastState();
@@ -428,7 +437,7 @@ async function main(argv: string[]): Promise<number> {
       const raised = msg.raised !== false; // default to raising
       const question = typeof msg.question === "string" ? msg.question : undefined;
       const r = applyAttention(state, id, raised, question, Date.now());
-      if (!r.applied) return { ok: true, applied: false, error: r.error };
+      if (!r.applied) return { ok: true, applied: false, error: r.error, outcome: r.outcome };
       state = r.state;
       emitEvent({ type: "attention", projectId: id, raised, question, by });
       broadcastState();

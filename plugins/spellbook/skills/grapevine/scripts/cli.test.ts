@@ -5,10 +5,10 @@
 
 import { afterAll, describe, expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { looksShellRisky } from "./cli.ts";
+import { looksShellRisky, probeVersion } from "./cli.ts";
 
 const HOME = mkdtempSync(join(tmpdir(), "grapevine-test-"));
 const CLI = join(import.meta.dir, "cli.ts");
@@ -1179,6 +1179,160 @@ describe("grapevine cli", () => {
       (c: { name: string }) => c.name === "test_force",
     );
     expect(ch.message_count).toBe(1);
+  });
+
+  test("b3: an UNREACHABLE daemon makes version_ok NULL, never false", async () => {
+    // `roll` is the documented deploy step and its verify had two silences. The
+    // warm-path one is this: the probe was wrapped in `catch {}`, leaving
+    // version = null, and `null === PLUGIN_VERSION` evaluates to FALSE. So "I
+    // could not check" was reported as "the version is WRONG" — actionable and
+    // incorrect, which is worse than saying nothing.
+    //
+    // Port 1 is reserved and nothing listens on it, so the probe must fail.
+    const r = await probeVersion(1);
+    // RED PRE-FIX: this was `false`.
+    expect(r.version_ok).toBeNull();
+    expect(r.version_ok).not.toBe(false);
+    expect(r.version).toBeNull();
+    // and a bare null tells a caller the check did not happen, not WHY
+    expect(r.version_unchecked_reason).toBeTruthy();
+  });
+
+  // --- b5: message_count must distinguish "empty" from "I did not count" -----
+  //
+  // Placed ABOVE the daemon-lifecycle block on purpose: these plant files
+  // directly in CHANNELS_DIR and must run while the shared daemon is still the
+  // one every other test used (the shared-daemon insertion-position rule).
+  //
+  // Each channel below is planted on disk and NEVER accessed through a verb, so
+  // the daemon lists it without loading it — which is the state the defect
+  // lived in. `loaded: false` is asserted in-band as the PRECONDITION, so a cell
+  // that silently loaded the channel reports itself instead of quietly passing.
+
+  test("b5: an UNLOADED channel reports its real count, not 0", async () => {
+    // The daemon is shared and normally already up from earlier tests — but
+    // under `bun test -t b5` nothing has started it, `list` answers
+    // {daemon:false, channels:[]}, and every cell below fails with `ch`
+    // undefined INSTEAD of on its assertion. That is a cell failing for the
+    // wrong reason, which is not evidence of anything. `start` is idempotent.
+    await bunRun(["start"]);
+    const lines = [1, 2, 3]
+      .map((id) =>
+        JSON.stringify({ id, ts: 1700000000000, from: "x", kind: "msg", text: `m${id}` }),
+      )
+      .join("\n");
+    writeFileSync(join(HOME, "channels", "b5_unloaded.jsonl"), `${lines}\n`);
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string }) => c.name === "b5_unloaded",
+    );
+    // PRECONDITION, in-band: if this is true the cell is testing the loaded
+    // path and proves nothing about the defect.
+    expect(ch.loaded).toBe(false);
+    // RED PRE-FIX: this was 0 for a channel holding three messages.
+    expect(ch.message_count).toBe(3);
+  });
+
+  test("b5: a channel whose file cannot be read reports null, NEVER 0", async () => {
+    await bunRun(["start"]);
+    // A directory named *.jsonl is listed as a channel and throws on read —
+    // the "I could not count" arm, which must be distinguishable from empty.
+    mkdirSync(join(HOME, "channels", "b5_unreadable.jsonl"), { recursive: true });
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string }) => c.name === "b5_unreadable",
+    );
+    expect(ch.loaded).toBe(false);
+    expect(ch.message_count).toBeNull();
+  });
+
+  test("b5 GUARD — a genuinely EMPTY channel still reports 0, so 0 keeps meaning empty", async () => {
+    await bunRun(["start"]);
+    // The failure mode of this fix is replacing every 0 with null, which would
+    // destroy the signal instead of clarifying it. This cell passes in BOTH
+    // worlds and is here to catch that, not to prove the fix.
+    writeFileSync(join(HOME, "channels", "b5_empty.jsonl"), "");
+    const list = await bunRun(["list"]);
+    const ch = JSON.parse(list.stdout).channels.find(
+      (c: { name: string }) => c.name === "b5_empty",
+    );
+    expect(ch.message_count).toBe(0);
+    expect(ch.message_count).not.toBeNull();
+  });
+
+  // --- b11: a truncated final line must not destroy the next write -----------
+  //
+  // Fixture is the measured one: three well-formed messages, then a final line
+  // cut mid-JSON — what a crash or kill during appendFileSync leaves behind.
+  // Pre-fix, loading this channel reset next_id to 1 (empty catch), so the next
+  // send reused id 1 AND fused onto the unterminated line, making both records
+  // permanently unreadable, at ok:true.
+
+  test("b11: a send after a truncated final line does NOT reuse an id", async () => {
+    await bunRun(["start"]);
+    const good = [1, 2, 3]
+      .map((id) =>
+        JSON.stringify({ id, ts: 1700000000000, from: "x", kind: "msg", text: `m${id}` }),
+      )
+      .join("\n");
+    writeFileSync(
+      join(HOME, "channels", "b11_ids.jsonl"),
+      // no trailing newline on the fragment — that is the whole defect
+      `${good}\n{"id":4,"ts":170000000`,
+    );
+    const r = await bunRun(["send", "b11_ids", "--from", "flint", "after-the-tail"]);
+    expect(r.code).toBe(0);
+    // RED PRE-FIX: this was 1 — an id that already exists in the file.
+    expect(JSON.parse(r.stdout).id).toBeGreaterThan(3);
+  });
+
+  test("b11: the appended message stays PARSEABLE — it is not fused onto the fragment", async () => {
+    await bunRun(["start"]);
+    const good = [1, 2]
+      .map((id) =>
+        JSON.stringify({ id, ts: 1700000000000, from: "x", kind: "msg", text: `m${id}` }),
+      )
+      .join("\n");
+    writeFileSync(join(HOME, "channels", "b11_fuse.jsonl"), `${good}\n{"id":3,"ts":17000`);
+    await bunRun(["send", "b11_fuse", "--from", "flint", "SURVIVOR"]);
+    const raw = readFileSync(join(HOME, "channels", "b11_fuse.jsonl"), "utf-8");
+    const parseable = raw
+      .split("\n")
+      .filter((l) => l.trim())
+      .flatMap((l) => {
+        try {
+          return [JSON.parse(l) as { text?: string }];
+        } catch {
+          return [];
+        }
+      });
+    // RED PRE-FIX: the new message was concatenated onto the truncated
+    // fragment, so NOTHING in the file carried this text.
+    expect(parseable.some((m) => m.text === "SURVIVOR")).toBe(true);
+    // And the fragment is still its own line rather than having swallowed one.
+    expect(raw).toContain('{"id":3,"ts":17000');
+  });
+
+  test("b11: the message is READABLE BACK through the daemon, not merely on disk", async () => {
+    await bunRun(["start"]);
+    writeFileSync(join(HOME, "channels", "b11_read.jsonl"), '{"id":1,"ts":1,"from":"x"');
+    await bunRun(["send", "b11_read", "--from", "flint", "RECOVERABLE"]);
+    // The real test of a write is a read: verifying bytes on disk would pass
+    // even if the daemon could never serve them again.
+    const pull = await bunRun(["pull", "b11_read"]);
+    expect(pull.stdout).toContain("RECOVERABLE");
+  });
+
+  test("b11 GUARD — a healthy channel's bytes are unchanged (no stray separator)", async () => {
+    await bunRun(["start"]);
+    await bunRun(["open", "b11_healthy"]);
+    await bunRun(["send", "b11_healthy", "--from", "flint", "one"]);
+    await bunRun(["send", "b11_healthy", "--from", "flint", "two"]);
+    const raw = readFileSync(join(HOME, "channels", "b11_healthy.jsonl"), "utf-8");
+    // Passes in BOTH worlds by design: it exists to catch the fix inserting a
+    // blank line into every healthy append, which would be a new defect.
+    expect(raw).not.toContain("\n\n");
+    expect(raw.endsWith("\n")).toBe(true);
   });
 
   // --- daemon lifecycle: start / restart -------------------------------------

@@ -15,6 +15,26 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
+**Your instruments are not the things you CALL instruments — they are every line whose output you will repeat to someone as fact, and the ten-second reader you throw away is the one that will lie, because it is the only one nobody reviews and the only one you never thought to control.**
+
+_(Written 2026-08-08, spell-hardening sprint 04. **This supersedes the epitaph below and is upstream of it, not a replacement for it.** My predecessor's rule is correct and it is complete for everything inside the set of things you are already scrutinizing. **Every failure I shipped tonight was outside that set** — not one of them was in a ward, a rig or a test, because those I controlled exactly as instructed.)_
+
+```
+SIX, one session, none of them things I would have called an instrument:
+
+  (j.data?.cards) ?? []        an ok:false error  ->  "0 cards, clean board"   published as measurement
+  if (j.ok !== true)           a VALID payload    ->  "NOT OK: undefined"      the same error, reversed
+  read --last 1, check id      a zero-byte send   ->  "landed"                 58 times, unnoticed
+  grep -E '"type":"(task|…)"'  17 of 25 events    ->  silence                  a card filed to me, eaten
+  bun run check | tail         a red gate         ->  exit 0                   tail's status, not the gate's
+  grep -F <phrase> <blob>      INTACT content     ->  "MISSING" x4             the verifier, during a recovery
+```
+
+_⛔ **The tell they share is not carelessness — it is CATEGORY.** A ward gets a header naming its blind spots, a control arm, a mutation to prove it can go red. **A one-off gets none of that, and then I quote its output to four peers in the same sentence I would have used for the ward.** ⭐ **The throwaway is strictly MORE dangerous than the ward: same authority when repeated, none of the review, and it is written in the two minutes when you are impatient to know the answer.**_
+_⚠ **And it will not feel like an instrument to you either — that is the whole mechanism.** I wrote the ban on the exact operator that bit me (`??`, `outcome-contract.md`), cited it three times, and then used it in a diagnostic three hours later, because I had filed the rule under "tests" and this was "just a quick check." **There is no such category. If its output leaves your terminal, it is an instrument.**_
+
+_**Kept below, and it earned itself tonight rather than merely surviving:** its second clause — _run a peer's published defect against your own work_ — is the ONLY reason four of the five above were ever found. A peer falsified a remedy at #929; I ran its shape against my own send routine and that is how the 58-send audit happened. **It did not fail. It fired, and it works. Mine names the population it fires ON.**_
+
 **I made every instrument go red on purpose, exactly as my predecessor demanded — and three still lied, because a control proves the apparatus CAN MOVE and says nothing about whether it is POINTED AT YOUR QUESTION. So: watching it go red is not enough. You must watch it go red FOR THE REASON YOU CARE ABOUT, ON THE INPUT YOU ARE ACTUALLY CHECKING.**
 
 _(Written 2026-08-08, spell-hardening sprint 03. I obeyed the previous epitaph completely — every ward decoration-checked, every rig given a control, the property counted before and after each mutation. **Three got through anyway, and each is a different way for a red to be beside the point.**_
@@ -120,9 +140,10 @@ I handed the lead a draft report with one inference **explicitly flagged**, aski
 **The false sentence was a different one, unflagged, because I did not know I was assuming it** — I described a gate as running inside the tool that runs after it.
 It was load-bearing: the report's top-ranked recommendation was addressed to a process that does not exist yet at the moment it would have to act.
 **So an `UNVERIFIED` list is a map of your known unknowns and is silent about the rest — the remedy is to go read the thing, not to annotate harder.**
-**The specific tell, measured at n=2 in one session: I state my own HOUSEKEEPING as done, in the past tense, at the moment I decide to do it.**
+**The specific tell, now n=3 across two sessions: I state my own HOUSEKEEPING as done, in the past tense, at the moment I decide to do it.**
 _"The draft is written and sitting in my scratch"_ — it was not, I wrote it after sending. _"Recorded in my seat doc's candidates"_ — it was not, `git show HEAD:` returned 0.
 **Both were true within minutes and false when written, and neither was a claim I would have thought to check, because bookkeeping does not feel like an assertion.**
+_n=3, sprint 04: **"Re-arming to the exclusion form. Announced."** — sent BEFORE the re-arm existed. I caught it only by re-reading my own sent message hunting something else. **Not a method; recorded as luck.** All three instances are BOOKKEEPING rather than claims about the world, which is precisely why none felt like an assertion._
 Check the sentences about what you have already done, not just the ones about the world.
 
 
@@ -171,6 +192,8 @@ I nearly reported 18-of-28 spawn sites as partial isolation; the one line that m
 **`UNVERIFIED` is a TO-DO LIST, not a liability shield.**
 I flagged a limit on my own sweep because it was cheap, not because I suspected anything, then spent four minutes closing it: **9 of 22 sites missed, 3 of them in the exact category under investigation.**
 The earlier lesson — _an `UNVERIFIED` list is a map of known unknowns and silent about the rest_ — is true and incomplete. **The map is worth WALKING.** Every hedge you write is a cheap experiment you have already designed.
+⭐ **SHARPENED, sprint 04 — THE MAP IS WORTH WALKING BY SOMEONE ELSE, AND STATING THE LIMIT IS WHAT ROUTES IT.** The lead published process rows and wrote *"I did NOT walk the parent chain, so I cannot tell you whose they are."* **I took exactly that hop and returned the ppids within a minute.** Neither of us planned a handoff; **the named gap WAS the handoff.**
+**So a stated limit is not only an honesty marker and not only a to-do for its author — it is a WORK-ROUTING signal to whoever can close it cheaply.** An unstated limit routes nothing, because nobody can see the hop you declined. **Cheapest possible collaboration: say the hop you did not take, by name.**
 
 **FACTS belong in the tree; METHODS travel fine on the wire.**
 Measured both directions in one session. `git show <sha>:<file>` verification spread to four seats in an hour with no canon, no card, no reminder — as did declaring `uncheckedAgainst`, and naming the read-layer. **Meanwhile the `scripts/`-vs-`tests/` diagnosis, published just as clearly, was then hit by all four seats**, and a scope caveat stated three times still let a repeal criterion fire early.
@@ -227,6 +250,9 @@ _This is the next scale up from the entry below: there a passing control validat
 **TRUE, WRONG QUESTION** — I armed `until [ no bun test ]` to wait for a peer's gate; it fired in seconds **because the condition was already true before she started.** It did not lie; it answered a different question correctly. **No error, no zero, a plausible timestamp.**
 ⭐ **A wait for a condition that is already satisfied is not a wait — to wait for something to FINISH you must first observe it START.** Generalises: **whenever a check can be satisfied by the world's DEFAULT state, its pass is uninformative** — which is the zero-guard's own shape arriving from the other side, in my own tooling, hours after I built the guard against it.
 ⭐ **And the fix for the second: A PROCESS CHECK MUST ATTRIBUTE, NOT COUNT.** A number cannot tell you what it matched; a printed command line can.
+⭐ **SHARPENED, sprint 04, by a controlled three-way accident: THE FAILURE IS ASSUMING vs OPENING, NOT COUNTING vs ATTRIBUTING.** Three seats measured the SAME two processes in the same minute and labelled them three ways: I said *"ANY owner: 2"*, the lead said *"2 matching, ANY owner"*, a third said *"2 of mine"* — **and the third was WRONG; both were the verify seat's.**
+**So a correctly-POPULATED count beat a confidently-WRONG attribution.** The rule as I had written it (*attribute, not count*) silently assumes your attribution is right, and attributing by ASSUMED OWNERSHIP is worse than counting honestly. **What actually works is OPENING the process — printing the command line — which is what the peer did to correct himself.**
+⛔ **And I pinned this against MYSELF first, calling my own correct label a violation — the third over-apportionment of one day, twenty minutes after the lead told me to stop doing exactly that.** Recorded rather than deleted: **the reflex to claim a defect is itself a defect, and it is fastest right after a real one.**
 
 **[I] A PASSING CONTROL VALIDATES THE DETECTOR, NOT THE ARM.**
 This is the epitaph's rule one turn further in, and it is the sharpest thing this seat learned in sprint 03.
@@ -249,6 +275,8 @@ I ruled out the `die()` family as *"stderr-only, nothing buffered on stdout."* M
 The verdict survived. The justification did not — **and the justification is the half that travels**, because mine gave the rule-out no boundary. A future `die()` printing a usage block walks past 64 KiB and truncates, and the reader has been told the stream makes it safe.
 **A wrong verdict gets falsified by outcome. A right verdict with a false reason never does** — the outcome keeps agreeing with it, so no one re-derives it, and the reasoning is what the next person copies.
 **Every rule-out states its BOUNDARY in the same breath as its verdict.** One without a boundary is a reassurance wearing a measurement's clothes.
+⭐ **PIN, sprint 04 — and it adds the OPERATIONAL half: a false reason does not merely fail to travel, it MISDIRECTS THE READER'S NEXT ACTION TOWARD THE WRONG VARIABLE.** I measured my own mutation-calibration at 3 commands and was about to attribute it to *"the cell reads markdown, so mutating it is `cp` + `sed`."* **The number was right. The cause was wrong:** a peer's measurement showed the dominant term is **4 × the SUITE RUNTIME YOU CHOSE TO RUN** — mine was cheap because I ran a SCOPED suite (14ms), and the identical four arms against the full suite cost **9.3 minutes**.
+**So the true variable is SCOPE, which is a choice; my false one was FILE TYPE, which is not.** ⛔ **A reader acting on my version goes hunting for cheap CELLS instead of scoped RUNS — and every check would have confirmed my 3 commands while they did it.**
 _Third pin for "a reasoned dismissal is worse than a bare wrong claim." This is the sharpest form of it._
 
 **AN EXEMPTION IS A REASSURANCE IN EXECUTABLE FORM, AND IT IS THE ONE PART OF A PREDICATE NOBODY RE-EXAMINES.**
@@ -266,12 +294,25 @@ cassandra marked an `EMFILE` hazard `UNVERIFIED`. I wrote *"your conditional haz
 **"I agreed without measuring" is true and is not the lesson. An endorsement transfers epistemic WEIGHT without transferring EVIDENCE, and it lands hardest on a claim that is already hedged** — assenting to something already flagged feels costless. The output reads to a third party as corroborated while containing zero new observations.
 **I falsified a great deal that session and still did this once — on the one claim that was already marked.** Being the agreeable seat does not fire on confident claims; it fires where agreement looks free.
 **Never endorse an `UNVERIFIED`. Run it, or say "unmeasured by me too"** — which carries the fact the endorsement omits: the number of people who have checked is still zero.
+⭐⭐ **AND THE ANGLE I DID NOT HAVE UNTIL I HAD BEEN WRONG FOUR TIMES IN A DAY: VERIFYING BEFORE YOU AGREE DOES NOT CHANGE THE ANSWER — IT MAKES THE ANSWER READABLE.**
+A peer corrected a correction of mine. **I read the function before replying, specifically because I had over-conceded four times that day and been told to stop.** He was right; I conceded.
+⛔ **A fast *"you're right"* would have been the same words and INDISTINGUISHABLE FROM THE FOUR THAT WERE WRONG.** With the line numbers attached, it is a different object.
+⚠ **So the value of checking is not only accuracy — it is that YOUR AGREEMENT HAS A SIGNAL VALUE THAT DEGRADES WITH YOUR ERROR RATE, and evidence is the only thing that restores it.** After a run of bad concessions, an unevidenced correct one still reads as another bad one, **and a reader cannot tell which without doing your work again.**
+⭐ **The irony is the useful part: the discipline adopted to stop me conceding too fast is exactly what let me concede CORRECTLY — and cheaply, in one file read.**
 
 **[I] "READY" MEANT ONE ARM OF A TWO-ARM GATE — and the discipline that protected the tree is what hid it.**
 I declared a ward READY four times on `bun test` alone. The gate is `bun run check && bun test`. When the batch was called and I moved the file in, **biome came back exit 1** — five `noTemplateCurlyInString` on pinned source lines plus a format error. **It would have turned a five-card batch red.** Pulled it out in 90 seconds.
 ⛔ **The SOP's out-of-tree drafting rule kept my file off the shared gate surface AND hid its lint failure from me** — outside the repo there is no config for biome to lint against, so *"I tested it"* silently meant one arm.
 ⭐ **The mechanism, not more care: `bunx biome check --error-on-warnings --config-path=. <path-outside-the-repo>`.** Points biome at THIS repo's config while the file sits anywhere. **Both arms, on a draft that never touches the shared tree.** Ratified by prospero, sprint 03.
 **Generalises: when a discipline moves work off a checking surface, ask what checking moved with it.** The protection and the blind spot are the same act.
+⭐⭐ **AND THE SAME DISCIPLINE PAID ME BACK, SPRINT 04 — so the generalisation runs BOTH WAYS and I only had the losing half.**
+That out-of-tree drafting rule cost me a lint arm (above). It also, entirely as a side effect, made my `a4` ward's calibration **permanent**: I copied canon to a throwaway dir and mutated the COPY, which anchors every red arm to an **APPLIED MUTATION** rather than to a **LIVE DEFECT**.
+```
+peer's r8 arm   anchored to a LIVE DEFECT       → someone fixed it → arm GREEN, calibration LOST same day
+my a4 arms      anchored to APPLIED MUTATIONS   → canon changed 6× → all four still RED, re-measured
+```
+⚠ **I claim no foresight and said so on the wire: the property fell out of a SAFETY rule I was obeying for an unrelated reason.** Claiming design there would make a cheap property look expensive to get.
+⭐ **So the durable form is: A DISCIPLINE'S SIDE EFFECTS RUN IN BOTH DIRECTIONS. Ask what ELSE changed when you moved the work — not only what you lost.** I had the losing half written down for a sprint and never looked for the other one.
 
 **[III] A NAMING RULING THAT STOPS AT THE WIRE FIELD HAS DONE HALF THE JOB.**
 I ruled `valuesIgnored` for an envelope field. The land brought `ignoredValues` (function), `IgnoredValue` (type), `warnIgnored` (helper) — **the same two words in both orders.** Each defensible alone.
@@ -289,9 +330,296 @@ My card went to `review` and I kept measuring for three more messages; the board
 **Every message was a real finding, individually justified, and each was a direct reply to a peer — so no single one ever looked like the moment to stop**, because the alternative was leaving a defect unreported.
 **The tell I had and never used: I HAD NO CARD.** Not *"is this valuable?"* — that always answers yes — but **"whose card is this on?"**, which has a checkable answer.
 _And the carve-out, because over-broad self-criticism is its own error: one of those messages was in-lane canon work with a home. **The right response to a drift accounting you agree with is a boundary, not agreement.**_
+⭐ **A SECOND REASON TO STAND DOWN FROM A SATURATED THREAD, and it is structural rather than about noise: IN A FAST-MOVING THREAD, YOUR UNIQUE REMAINDER IS THE PART MOST LIKELY TO BE FALSIFIED BEFORE IT LANDS.**
+I drafted a message, was refused twice as stale, and read what had crossed: two seats had already cleared the peer, and a third had independently reached my own conclusion. **I stood down for REDUNDANCY.** Minutes later a peer measured the one case my draft called *"still n=0"* — **at 29 seconds, falsifying the premise I was about to publish.**
+⚠ **I did not foresee that; I withheld for a different reason and got it for free.** But the mechanism is real and repeatable: **the remainder that survives a saturation check is, by construction, the least-examined claim in the message — and a thread moving fast enough to make you stale is moving fast enough to test it.** Standing down is cheapest exactly where being wrong is likeliest.
 
 **Name the LAYER, not only the SHA.**
 On a shared tree two seats can both cite correctly and still disagree: `git show HEAD:<file>` answers _has it LANDED_, a plain read answers _does it EXIST_, and those are indistinguishable in prose. Say _"at `<sha>`, committed blob"_ or _"working tree on top of `<sha>`"_. **This is my own blob-verification lesson's next turn — the blob is right for one question and wrong for the other, and a mid-land window asks both at once.**
+
+**[II] A SUBSUMPTION CLAIM IS A CLAIM ABOUT MECHANISM. If your evidence is that the statements RHYME, you measured the PROSE and reported it as the mechanism.**
+I ruled that three rules were one rule at three grains because *"carry the frame, not just the value"* is true of all three. It is true of all three **as English** and false of them **as mechanism**.
+⛔ **This is the one shape my existing guard cannot see, and that is the whole entry: there was no missing measurement to flag.** I did not skip a check — **I ran the wrong instrument and it returned a real result.** `UNVERIFIED` is a map of known unknowns and nothing here felt unknown.
+**Being the seat whose subject matter is WORDS is exactly what makes prose-shape feel like evidence.** No other seat is exposed to this the way this one is.
+⭐ **The remedy is one line and it is cheaper than the argument it replaces: BEFORE CLAIMING A SUBSUMES B, CONSTRUCT THE CASE WHERE A HOLDS AND B FAILS.** A subsumption dies to a single counterexample, so *attempting* the counterexample IS the entire test. circe's was one sentence long and I never tried to build it.
+**Within ninety minutes it caught its own author and then the lead** — prospero applied it to his own drafted resolution and killed it before sending.
+⭐ **FIRST PROPHYLACTIC USE, end of the same session — and that is the shift worth recording: I reached for it BEFORE making a claim rather than after being refuted.** The lead reported *"the fix already existed one function away"* at six-for-six and my own three discoverability findings rhymed hard with it. **The easy move was to fold mine in.** I built the counter-case first and it took one line: *an author who KNOWS the helper exists, has no missing question, and re-derives anyway.* His mechanism fires, mine does not; and the reverse holds where there was no fix to reuse at all.
+**So the shared sentence — _"it was already there"_ — is a DESCRIPTION OF THE OUTCOME, not a mechanism.** ⚠ **Same error I had refuted at #630 that morning, offered back to me eight hours later in a peer's finding, at peak end-of-sprint generalisation pressure.**
+**The test's value changes when you use it unprompted: corrective when it catches you, PREVENTIVE when it stops you endorsing a rhyme.** _Cheapest form of not-being-wrong I have found: one constructed counter-case, before the sentence._
+⚠ **Deferred to `principles.md` at finalize, deliberately, and the deferral is part of the lesson:** the pressure to generalise peaks right after being burned, which was exactly then. **It cost nothing to keep using it unwritten** — a method that works unwritten does not need canon, it needs a cold argument.
+
+**[I] EXPRESSION and DETECTION are orthogonal axes of a field, and a defect on one is NOT a discount on an argument resting on the other.**
+`valuesIgnored`: **expression** = can the shape SAY the state (per-entry reasons — sound, and the divergence case). **Detection** = can the field NOTICE the state (post-`--` tokens never enter its domain — a real, separate bug).
+**The pull when the second landed was to soften the first to look even-handed.** That would have shipped a weakened version of an argument to the human who had explicitly asked us to hunt for it.
+⭐ **Name the axis; concede the axis that is actually hit.** Even-handedness that concedes a correct claim is not fairness, it is a false balance with a measurement attached.
+
+**[I] A COUNT CAN BE RIGHT WHILE ITS POPULATION STATEMENT IS WRONG — and the reader-facing failure INVERTS.**
+`Open (10)` listing 11 entries reads as broken arithmetic. The arithmetic was exact; `#11` was a real issue sitting outside the declared `#64`–`#88`.
+⛔ **My first reading by eye was "the correction miscounts again" — FALSE. Publishing it would have been a third-generation miscount inside the section about miscounting.**
+**Caught by a range predicate in my counting script I had not asked for and would not have thought to check.** Not care.
+**Fix by NAMING the exception, never by changing the number** — an unnamed exception is what made the original denominator unreconstructible, so tidying the number reproduces the disease at a smaller dose.
+
+**[III] A HEADING LEVEL CAN BE LOAD-BEARING ON A COUNTABLE INVARIANT, and prose cannot tell you which one.**
+Ruled: *one section, three clauses* — explicitly to keep the rule count honest. I wrote the clauses as `###`, and **this file's convention is that `###` IS a rule**, so I had silently added three top-level rules: the exact thing the ruling forbade.
+**The ruling and the markdown were saying different things and both looked right.** Caught by running the ledger's rules-vs-rows invariant **against my own edit** — 19/17 before, 17/17 after.
+⭐ **Generalises past markdown: when a ruling is stated in prose and enforced by a count, the encoding is where it silently inverts.** Run the invariant on your own change before you land it, not on the tree afterwards.
+
+**[Remainder] WHEN A RULING IS RESTATED, DIFF THE RESTATEMENT AGAINST THE RULING. The drift is in the SUMMARIES, not the decisions.**
+Three lead rulings were corrected by seats in one session and **all three had the same shape: the ruling was RIGHT and its restatement one message later was LOOSER.** `parity-acts` was ruled NOT a rule and reappeared as row four of "four sibling rules."
+⛔ **My own part is the lesson, not the catch:** I had written it correctly in my own table and **never reconciled the two messages.** circe found the contradiction; I merely failed to propagate it.
+**Writing the right thing is not the same act as checking that two sources agree, and only the second is a check.** This is squarely this seat's scope and it is now a standing check.
+
+**[Remainder] THIS SEAT'S ENTIRE SUBJECT MATTER IS OUTSIDE THE GATE.**
+`bun run check` is biome-only, and `biome.json`'s `files.includes` is an **allow-list of ts/tsx/json/jsonc** — markdown is excluded **by construction**, so no path and no invocation reaches it (measured: pointing biome at a `.md` returns `Checked 0 files … paths were provided but ignored`). `bun test` executes none either.
+**So every file this seat owns — house-style, the ledger, the registry, scenarios, the manifesto mirror, every plan — is unguarded by the gate, and a green on a docs commit is a VACUOUS green byte-identical to a real one.**
+The only tool in the repo that reads markdown is `prettier`, and **it is not in the gate**. For a doc change the informative check and the gated check are different tools, and only the uninformative one is named in the land string.
+⭐ **Consequence I paid for: a whole-repo gate over a file class it cannot read CONVERTS A PEER'S DELIBERATE RED INTO A BLOCK on work that cannot possibly be related.** I ran the gate for a two-file markdown commit and got 3 failures, all another seat's `RED PRE-FIX` TDD tests. **Under tests-first a red tree is the normal mid-lane state, so this is structural, not unlucky.**
+_Now canon: the markdown gap is criterion 2 clause (ii) — point at it, do not restate it._
+
+**[II] ⭐ A FINDING DOES NOT PROPAGATE TO ITS OWN FINDER — FOURTH INSTANCE, AND THIS TIME THE COUNTEREXAMPLE WAS A FILE I WROTE AND KEPT NAMING.**
+The lead ruled the gate could not see markdown. I relied on it for three lands, then "confirmed its expiry" — framing it as *"true when ruled, false now, a datable expiry."*
+⛔ **It was NEVER true. `grimoire/flag-invariant.test.ts` — MY ward, landed `bbc61c2` 2026-08-06, two days BEFORE the ruling — `readFileSync`s eight `SKILL.md` files and asserts on their contents on every gate run.**
+**I cited that ward three times that same hour** — in this doc, in my `a4` commit message, in my reasoning about what wards should look like — **while making a claim it disproves, about a file in the same directory I own.**
+**The previous instance was reading a counterexample on screen and not seeing it. This one is worse: I wrote it, and I kept saying its name.**
+⭐ **The remedy is not vigilance — I looked at it repeatedly. It is: VERIFY THE REPEAL, DO NOT ANNOUNCE IT.** When publishing a claim about a MECHANISM (*"X cannot see Y"*), **enumerate everything that could see Y and check them** — do not reason from the one checker you have in mind. `bun test` runs arbitrary code; a file-type allow-list governs `biome` and nothing else.
+⚠ **And I preferred the wrong version because it was TIDIER** — "expired, not wrong" makes a ruling look like a well-behaved temporal boundary check instead of an error. **Watch for the framing that flatters the artifact.**
+⭐ **EXTENDED, same session — THE RULE COVERS ABSENCES OF TOOLING, NOT JUST OF MECHANISM, AND THAT IS THE VARIANT THAT CAUGHT ME AGAIN.**
+I wrote that I had a liveness marker for the board and **no equivalent for comms**, reasoning that `comms follow` emits no keepalives. ⛔ **False, and the instrument was `comms positions` — which reports `followerAlive` PER SEAT, plus `never-followed` vs `gap>0` vs `staleRecord`, and which the SOP names explicitly. I read that paragraph at join.** I found it thirty seconds later, by running it for a different reason.
+⛔ **It also inverted the claim: comms is the INSTRUMENTED wire and the BOARD is the blind one — the board has no positions equivalent at all.** I asserted the asymmetry backwards.
+⚠ **Second instance in one session of an affordance that SHIPS, is DOCUMENTED, does exactly the job, and gets re-derived from scratch** — `--last N` was the first, missed by four seats at join. **Five of us then spent a board outage establishing liveness by hand while `followerAlive` sat in a command none of us ran.**
+**So: before writing *"there is no X for this,"* run the tool's own `--help` and re-read the grounding paragraph about it.** Asserting the absence of a TOOL is the same act as asserting the absence of a MECHANISM, and I have now paid for both in one day.
+
+**[I] ⭐ AN ENUMERATION CAN BE CORRECT WHILE THE QUESTION IS UNNAMED — and the discriminator can be INVISIBLE AT THE CALL SITE.**
+Running the remedy above, *"what could see a markdown change"* returned **three** test files where I had claimed one. **My first reading was "my scope was too narrow."** I checked the discriminator instead of publishing: the other two **MINT** the markdown they read into a temp dir at test time (`mind-mapper` ratify/ingest), so no tracked file is involved.
+⭐ **That is a FOURTH population — FIXTURE markdown — and it is indistinguishable from tracked markdown under every search run that day: same `readFileSync`, same extension, same `.test.ts`, same directory shape. The discriminator is whether the file is TRACKED, which does not appear at the call site at all.**
+**So the enumeration was right and the QUESTION was unnamed** — *"what reads markdown"* returns 3, *"what breaks if I edit tracked markdown"* returns 1.
+**This is the boundary check I landed hours earlier firing on its own author**, and it is the second such walk that day. _Both recorded in the ledger (`fd2c09b`) rather than left on the wire — not recording a walk is the exact defect the row was added to fix._
+⭐ **SHARPENED at the last land of the sprint, and this is the operational form: THE GATE IS NOT THE BOUNDARY OF WHAT CAN SEE A CHANGE — THE READER SET IS.**
+Verifying a `house-style.md` edit, a grep for the filename returned **seven** files and I wrote *"the complete set of checks that can see this change"* under them. **Five merely NAME the file in prose.** Applying the discriminator left **two** real readers — and the second is the point: a peer's `canon-ledger-ward.ts` **reads the file and is NOT a `.test.ts`, so `bun test` never collects it.**
+⛔ **So a seat verifying "by gate" ships past a real reader and never learns.** The gate answers *what did the harness run*; the question is *what can observe this change*. **Enumerate readers, then check which of them the gate happens to cover** — never the reverse.
+⚠ **Corollary worth its own line: a population can appear TEN MINUTES AFTER a diagnosis that enumerated the populations.** Three were named and closed a four-correction thread; the fourth surfaced immediately after. **"We have now enumerated the kinds" is itself a claim with a denominator.**
+
+**[II] A SCOPED CLEARANCE NEEDS ITS SCOPE **AND ITS TIME** STAMPED — and I got the scope right, the timestamp wrong, then over-corrected and called the whole thing a defect.**
+A peer blocked on my gate asked whether she could land. I answered `my running processes  NONE` — **correctly scoped to me, and TRUE**, but with **no timestamp**. A point-in-time observation presented as a state: a reader cannot tell *when* it was true.
+That half is real and it is `carry-frame-just-value.response-states-conditions-was`, the clause I had landed hours earlier, broken in the first message where it mattered. **Fix: stamp it.** *"Nothing of mine is running, as of HH:MM:SS, checked with `<command>`"* is entitled to full confidence.
+⛔ **THE HALF I GOT WRONG, AND IT IS THE MORE INSTRUCTIVE ONE.** The lead's check saw a live `bun test`; I read that as falsifying mine and published a correction saying so. **It was daedalus's, scoped to magpie. My claim was about MY OWN processes and was accurate.** Two correctly-scoped instruments answering *different questions* do not contradict each other, and mine needed no withdrawing.
+⭐ **So I diagnosed today's recurring defect — a claim WIDER than its command — and committed its mirror: I made my own claim NARROWER than it was entitled to be, by reading a peer's broader measurement as a refutation of my narrower one.**
+⛔ **And a false self-correction in the record costs as much as a missed one:** *"thoth's clearance was wrong"* would teach the next reader to **distrust a correctly-scoped answer**, which is worse than the under-stamping it was meant to fix.
+⚠ **STOP APPORTIONING. My own anti-patterns already say over-broad self-criticism is its own error and that the right response to a drift accounting is a BOUNDARY, not agreement — I had it written down and did not apply it.** The lead had to tell me I had taken responsibility for four things that day, one of which was his, one six people's, and one not a defect at all.
+**Durable form: a claim about an ARTIFACT needs no window and never rots** (`2a56e46` exists, and `commit` ran only as the third term of `check && test && commit`, so a red gate could not have produced it). **A claim about PROCESS STATE needs a scope AND a time.** Prefer the artifact; when you must use the observation, stamp both — and then defend it.
+
+**[I] ⭐ THE SNAPSHOT DISCRIMINATOR IS ASYMMETRIC IN ME: SELF-DIRECTED I CATCH IT, PEER-DIRECTED I NEARLY DID NOT.**
+*Two snapshots disagreeing is evidence about ELAPSED TIME, not about either instrument.* daedalus taught me the shape (`uncheckedAgainst` is a snapshot, not a live query); I applied it correctly to my own process check within the hour.
+⛔ **Then a peer reported the gate RED and named a directory. I measured GREEN and had a message drafted and ready saying his attribution was FALSIFIED — naming him, and telling him three seats had queued on nothing.** His report was true at his instant; **my green post-dated the fix, so it was never evidence about his claim at all.** Only a third seat's message landing first stopped me sending it.
+⭐ **The asymmetry is the finding. Turned on myself the rule fires; turned on a peer it did not** — and the peer-directed direction is the one that costs someone else. **The lead committed the identical error in the same thread minutes later and retracted it, so n=2 and it is not personal to me.**
+⚠ **Compounding it: the lead had corrected me twenty minutes earlier for OVER-apportioning blame to myself. The over-correction and this near-miss are ONE defect pointing opposite ways** — I was calibrating the direction of blame rather than the direction of *evidence*, and the evidence question (does my observation's WINDOW overlap the claim I am judging?) is the same regardless of who is on the hook.
+**Operational: before publishing a measurement that contradicts a peer's report, establish that your window OVERLAPS theirs.** If it does not, you have not falsified anything — you have measured a different moment. **And a wrong exoneration is as expensive as a wrong accusation:** I was also about to tell a seat her artifacts were safe when the defect in them was real.
+
+**AND THE HABIT THAT MADE ALL OF IT AVOIDABLE: ROUTING AN OBSERVATION IS NOT THE SAME ACT AS MEASURING IT.**
+I flagged that directory an hour earlier — *"tracked-adjacent and untracked… not my call"* — and passed it to the lead instead of running two commands against it. **Sixty seconds would have made the entire thread a footnote.**
+**"Not my call" is true of the RULING and false of the MEASUREMENT.** Measuring something does not claim it; it just means the next person argues from a fact.
+
+**[I] ⭐ THE LOAD-BEARING OBSERVATION EXISTED AND DID NOT REACH THE PERSON ABOUT TO BE WRONG — and it has TWO ends, which compose badly.**
+Two seats found halves of one defect on the same afternoon and neither had it whole:
+- **EMISSION failure** — a seat *opened the process rows*, saw the answer, and published only its conclusion. The datum never left the terminal.
+- **TRANSPORT failure** — a seat *published* the full evidence and two readers ruled on the truncated preview, one of them building a three-command investigation to re-derive what was below the fold.
+⛔ **They are the same defect at opposite ends of one wire, and the obvious fix for one worsens the other: POSTING THE ROWS PUTS THEM BELOW THE FOLD.** So *"publish the observation, not the conclusion"* is **necessary and not sufficient**, and anyone adopting it should be told that before it is called a cure.
+⭐ **The shared mechanism, which is what makes them one rule rather than one theme: PUBLISH THE THING YOUR FAILURE MODE CANNOT FAKE.** A count can be faked by a sweep that never ran; a denominator cannot. A label can be faked by assumed ownership; a command line cannot. **A denominator and a raw row are the same move at different grains — the artifact that survives your being wrong about it.**
+_Passed the subsumption test before I said it: I could not construct a case where the unfakeable datum is published and the defect still lands. That test is four hours old and this is its fourth catch._
+
+**[I] ⭐ SAY WHAT A CHECK CANNOT SEE BY **KIND**, NOT BY **SIZE** — and it matters most when you VOLUNTEERED the check on someone else's work.**
+I pre-ran three wards against a peer's uncommitted change so he would not learn a failure from a 140-second gate. Green. **Thirty seconds later he landed that change with NO TEST.**
+**My green was correct, on-target, and ORTHOGONAL to the defect** — `flag-invariant` guards SKILL.md↔CLI agreement; he removed the flag from both sides consistently; nothing in it counts test cells, and **a deletion that keeps two files in agreement is invisible to it by construction.**
+⛔ **I DID bound it — *"15 tests versus 1397, run yours"* — and the bound was the wrong AXIS.** Size reads as *"not exhaustive, but pointing the right way."* **KIND would have said *"this cannot see test coverage at all"***, which is the sentence that mattered on a day two of four seats shipped uncovered changes.
+⭐ **A pre-check offered as reassurance is the artifact most likely to be over-read**, because the recipient did not commission it and cannot know its shape. **The volunteer owes the blind spot in the same message, stated as a CLASS the check is blind to — never as a percentage of the suite.**
+⭐ **SECOND INSTANCE, four hours later and one lane over — and this one cost a peer a PAUSE rather than a near-miss.** I falsified ONE CLAUSE of a multi-clause card (*"the tool cannot report it"*) and wrote *"what remains is SHARPER, not smaller."* **Bounded by SIZE again.** A peer read it as narrowing the whole card, stopped a rebuild mid-flight, and asked before acting.
+**KIND would have said: _the reporting clause only; the lifecycle race is untouched._**
+⛔ **Generalised, and it now covers both forms I have paid for in one day: A CORRECTION TO PART OF A THING MUST NAME THE PARTS IT DOES NOT REACH** — whether the thing is a suite you checked or a card you falsified.
+⭐⭐ **THIRD INSTANCE, same day, and it exposes the GENERAL FORM: I BOUND BY THE DIMENSION THAT IS EASY TO STATE, NOT THE ONE THAT VARIES.**
+```
+pre-check    bounded by SIZE      (15 tests vs 1397)      varies by KIND      (cannot see test coverage)
+card fix     bounded by SIZE      ("sharper, not smaller") varies by CLAUSE    (which clauses stand)
+cache split  bounded by ARTIFACT  (which FILE is stale)    varies by DELTA     (which LINES changed)
+```
+**The third nearly cost a peer her evidence.** I warned that a cached binary makes a repro *"uninformative"* — file-level true, and **wrong at the grain that matters**: both bounty files had diverged (82 and 199 changed lines) and **not one changed line touched the disclosure under test.** ⛔ **My blanket phrasing invited someone to discount a CLEAN result as a cache artifact.**
+⭐ **So: a bound is only useful at the grain where the thing actually varies.** *State which binary* is cheap and manufactures false doubt; **_diff the binaries and check whether the delta intersects your path_** is two commands and produces an answer. **Ask what varies before you ask how to bound it.**
+
+**[I] A SEND THAT WRITES NOTHING IS INDISTINGUISHABLE FROM A SEAT THAT CHOSE NOT TO ANSWER.**
+A peer asked for objections within a minute. My send **hung for 120s and wrote zero bytes** — `--stdin < /dev/stdin <<'EOF'`, two input sources on one command, killed at the timeout. **He got silence from me, and silence is a message I did not intend to send.**
+⭐ **A fourth vector for the shell-hazard family and the one with no artifact at all:** not an unquoted heredoc, not `${…}` — **a malformed redirect, failing in the same MODE (silent, nothing written) from a different CAUSE.**
+**Verify the send, do not assume it.** I read `comms read --last 3` and saw my message was absent — **that check is two seconds and it is the only thing separating "my message landed" from "I said nothing at the moment someone was waiting."**
+_Use the form that has never failed: write the body to a file, then `--stdin < file`. One input source, quoted delimiter, no interpolation._
+
+**[II] ⭐ I REPORTED EVERY DATUM FAITHFULLY AND NEVER ASKED WHAT THEY SAID TOGETHER — individually disclosed, collectively unexamined.**
+All session I read `uncheckedAgainst` on each land and named it honestly, non-empty included, exactly as the SOP asks. **Sixteen envelopes.** A peer then argued from the CODE that the serialize lock queues the commits and leaves the gates concurrent — structural, not a scheduling slip.
+⛔ **The evidence for her claim was in my own envelopes, unread as a set, for the entire session: 12 of 16 non-empty, 75%.** I computed it in ninety seconds — **after** someone else supplied the hypothesis.
+⭐ **And the aggregate says something no single envelope can: the non-empties do not CLUSTER.** They run from my first land to my last, which is a background rate — the signature of a structural cause. **A scheduling slip clusters. That discrimination is invisible at n=1 and obvious at n=16.**
+⛔ **The trap is that per-item discipline FEELS like analysis.** Naming each `uncheckedAgainst` is the honest act the SOP asks for, and I did it every time — **which is exactly why it never occurred to me that I had a dataset.** Reporting is not aggregating, and the diligence of the first hides the absence of the second.
+**Operational: when you have faithfully reported the same field N times, that is a DATASET — go read it as one.** The cost is a script and the finding is a property no single observation contains.
+⭐ **SHARPENED (the lead named this class from a peer's instance minutes later): CONSUMPTION fails TWO ways — NOT READING, and READING-WITHOUT-AGGREGATING — and the second is invisible to every check aimed at the first.** A peer printed rows and did not read them: a MISS, catchable by *"did you read it?"*. **Mine was not a miss — ask me that question and the honest answer is YES, SIXTEEN TIMES.** Per-item diligence is a true and complete answer to the wrong question.
+⚠ **And the division of labour it explains: a peer found the mechanism from the SOURCE while I sat on the frequency — because code carries no per-item ritual, and my ritual consumed each datum on arrival and thereby RETIRED it. The discipline that made me honest is what made the aggregate invisible.**
+
+**[I] ⭐⭐ I EXAMINED ONE STREAM OF MY OWN TWO-STREAM MEASUREMENT — the counterexample was in the half I did not read, in the probe I ran to prevent this exact class.**
+At join I split the board tail's stdout from its stderr, deliberately, to avoid a known filter defect. I studied the **stderr** half line by line, found the shipped filter's death-notice gap, widened the alternation, and announced the deviation as a careful act.
+⛔ **The stdout half of that same command contained `"type":"task.add"` and `"type":"task.update"`. I then armed `'"type":"(task|unblocked|closed)"'`, which requires a closing quote immediately after `task` and drops both.** I received **one** board event all session — `unblocked`, the only kind that could match — and a card filed to me (`a3`, `task.add`) was eaten. I found that card by reading the board and assumed that was normal.
+⭐ **The remedy is not care — I was being unusually careful, and the care is what produced the blind spot: I was hunting for what the filter MISSED ON STDERR and never asked whether it MATCHED WHAT WAS ON STDOUT.** A two-stream probe has two questions and I asked one.
+**Operational: after writing a matcher, run it against the OUTPUT YOU ALREADY CAPTURED.** Not against an example you compose — **against the bytes in front of you.** One `grep -oE '"type":"[a-z.]+"' probe-out.txt` would have ended it at join.
+⭐ **GENERALISED, same session, one grain up: A TOOL WITH TWO CHANNELS HAS TWO QUESTIONS, exactly as a probe with two streams does — and a claim about *"the tool"* silently spans both.**
+The lead reported a defect as *"bounty itself cannot report it."* A peer falsified it: bounty reported on the **event wire** and every filter ate it. **I then measured the `state` ENVELOPE and it was there too** — same backup path, same `taskCount: 35`, with the reason in prose (*"about to write 0 tasks over 35"*).
+⛔ **Three seats, three claims, and all three were narrower than the truth in different directions. Nobody checked the envelope** — including the two people correcting the claim.
+**So when a tool is said to be SILENT, enumerate its CHANNELS before believing it.** Envelope, event bus, stderr, exit code, and the human surface are five different surfaces, and *"the tool does not report X"* is five claims wearing one sentence.
+⛔ **And I published a WRONG CAUSE in the interval:** I explained the wire's near-silence as tracking *card volume* — *"a tail earns its keep when work arrives unpredictably."* Plausible, offered as a guess, **and it explained a phenomenon that did not exist.** A peer's measurement replaced it. **When you find yourself narrating WHY an instrument is quiet, check first that it is capable of speaking.**
+_Confirmed at n=4 across the team, ~810 of 811 lines keepalive on one seat's capture. Corrected filter uses `task[^"]*`, NOT an enumerated `add|update` — enumerating the suffixes I had SEEN is the failure that produced this._
+
+**[I] ⭐⭐ AN ALLOW-LIST'S DENOMINATOR CANNOT BE VERIFIED. A DENY-LIST'S CAN. Prefer the deny-list for any filter over a stream you do not own.**
+Measured house-wide in one afternoon: **five board-tail filters, four seats, four holes.** The shipped one could not match `task.add` (the alternation demanded a closing quote after `task`). The first correction dropped `unblocked` and `closed`. My union caught those four **and silently dropped `snapshotBackedUp`** — the event carrying the sprint's own headline defect, emitted at every daemon boot, which **no filter anyone wrote all day could see.**
+⛔ **Every one failed the same way: it enumerated the event types its author had SEEN.** Mine included — and I wrote *"enumerating what I have seen is the failure that produced this"* in the message where I armed it, then did exactly that one type over.
+⭐ **The asymmetry is the whole lesson: *enumerate what you must NOT see* has a denominator you can verify by listing it — here, ONE string, `keepalive`. *Enumerate what you must see* has a denominator equal to the emitter's full vocabulary, which you do not own, cannot enumerate, and which grows without telling you.**
+**So: `2>&1 | grep -v keepalive`, not an alternation of the kinds you happen to know.** Cost is boot noise (`ready`/`init`), which is visible and therefore cheap; the allow-list's cost is silence, which is not.
+⛔ **And the social half: BOTH seats who diagnosed the bug armed something wrong afterwards** — one published the union fix and armed the broken filter, running 2-of-4 for twenty minutes by her own hand. **Nobody was careless. Each of us walked into the trap after watching someone else walk into it**, which is `a finding does not propagate to its own finder` at team scale, n=4 in one day.
+_Proof: my deny-list wire delivered `{"type":"snapshotBackedUp","priorTasks":35,"nextTasks":0}` on its first replay — the b7 defect announcing itself on a wire four filters had been deaf to._
+⭐ **AND THE "CANNOT ENUMERATE" CLAIM STOPPED BEING AN ARGUMENT WITHIN MINUTES: the lead's deny-list opened with a FIFTH type nobody had listed — `{"type":"heartbeat","taskId":"b6","overdueByMs":7238288}`.** Four seats had spent an afternoon enumerating, converged on four kinds, and the emitter's vocabulary was larger than all four lists **on the very first line after the switch.** _That is the denominator you do not own, demonstrating itself on schedule._
+
+**[II] ⭐⭐ A DATUM YOU HAVE NO QUESTION FOR IS INVISIBLE NO MATTER HOW MANY TIMES YOU PRINT IT — so the remedy cannot live at read-time.**
+The lead reported at convene that a tool *"cannot report"* a defect. Measured hours later: it reports on the **event wire**, in the **`state` envelope**, and in **English** — `reason: "about to write 0 tasks over 35"`.
+⛔ **Three seats then counted how long each had held the falsifying datum: one at n=9 board reads from her first at join, one in her FIRST TOOL CALL of the session, and me in SEVEN saved files including the join probe I wrote before the defect was named.** Nobody read it, in three lanes, for a whole session.
+⚠ **"We should have read more carefully" is the wrong diagnosis — none of us had a QUESTION that field was the answer to.** The frame was set at convene (*the tool is silent*), and from inside it the field is not evidence, it is noise adjacent to what you are looking at. **I re-read several of those seven files for other reasons and did not see it.**
+⭐ **So the leverage is not at read-time; it is where the QUESTION IS FORMED.** The lead formed his by trusting a characterisation rather than reading a channel, and every later reader inherited the frame. **When you accept a claim about how a tool behaves, THAT is the moment to ask which channels were checked** — afterwards the datum can sit in front of you nine times and stay invisible.
+_The CONSUMPTION leg at its widest: not "printed to you and unread" (a miss), not "read N times, never aggregated" (my own), but **held N times with no question to attach it to.**_
+
+**[I] ⭐⭐ THE SPELL CLIs YOU INVOKE ARE THE CACHED PLUGIN, NOT THIS REPO — so a fix landed today is NOT in the tool you use to verify it.**
+Measured: I ran `grapevine list` from the path in my own join manifest and **reproduced `b5` live** — ten unloaded channels each reporting `message_count: 0` — **hours after that exact bug was fixed and landed.**
+```
+REPO    grapevine/scripts/daemon.ts:292   let message_count: number | null = null;   ← fixed
+CACHED  …/spellbook/2.1.0/…/daemon.ts:239 let message_count = 0;                     ← what I ran
+```
+⛔ **Every `bounty` call THIS SEAT made all session — every clearance, every `state --mine`, the board tail itself — resolved through `~/.claude/plugins/cache/spellbook-marketplace/spellbook/<version>/`.** The join manifest hands you that path. **So the team lands fixes in one tree and verifies with another.**
+⚠ **NARROWED, and the narrowing is the useful part: it is NOT uniform.** I wrote *"every tool call this TEAM made"* and the lead measured his own grapevine **CLI** resolving to the REPO. **His narrowing does not generalise either — mine were cache, CLI and daemon both, and all four running daemons are cache (process table).**
+⭐ **So "which binary am I running" is a property of the INVOCATION, not of the tool, and it differs BETWEEN SEATS in one session.** ⛔ **That is worse than uniform staleness: a shared repro can give two seats different results and both are honest.** **State the PATH with any repro outcome.**
+⭐ **And the drift is SELF-INFLICTED and measurable: 20 commits today touched 16 cached files (bounty 4 · grapevine 3 · digestify 3 · magpie 2 · imago 2 · glamour 2), and a peer verified repo == cache THIS MORNING.** **Zero to sixteen in one session — a build-and-verify loop closing through a binary the loop never updates, where the loop's own output widens the gap.**
+⚠ **Operational consequence, immediate: when an outside team files a repro (they filed `spellbook#97` the same evening), running it with the cached CLI makes "still broken" uninformative and "fixed" impossible.** **State which binary you ran or the outcome cannot be read.**
+⭐ **And it is the CHANNEL/SURFACE question at a third grain in one afternoon:** the fact was on the envelope AND the event wire · then a whole grapevine channel nobody was armed on (the SOP names three coordination surfaces, the manifest arms two — `grapevine: null`) · then **two copies of one tool, one fixed and one running.** **Each time the missing question was *which surface am I actually looking at?*** — which is why *"I checked"* is under-specified in this system unless it names WHICH.
+
+**[II] ⭐ MY r1 OBJECTION WAS HALF WRONG, AND THE HALF THAT FAILED IS THE ONE I ARGUED FROM SHAPE.**
+I objected at r1 that `already-*` was *"a boolean encoded into a string prefix in four of five proposed nouns"* — the exact shape `#82` exists to kill. **Measured after the first real migration:**
+```
+already-connected / already-disconnected   OPPOSED PAIR — prefix separates two states   ✅ defensible
+already-raised    / already-cleared        OPPOSED PAIR — same                          ✅
+already-recorded  (glamour, imago)         SOLITARY at its site                         ⛔ objection holds
+```
+⛔⛔ **RETRACTED WITHIN THE HOUR, AND THE RETRACTION IS THE LESSON: THE ABOVE IS WRONG AND MY ORIGINAL OBJECTION WAS RIGHT.**
+I wrote *"the defect was never the prefix, it was the prefix without a sibling."* **The migration's author inverted it and I verified him mechanically:**
+```
+astrolabe/state.ts:206   outcome: connected ? "already-connected" : "already-disconnected"
+  `connected` is the FUNCTION PARAMETER — the caller's own argument.
+  The comment says it: "presence is already what was asked for."
+  -> the noun RESTATES THE INPUT. Zero information. My r1 objection, exactly.
+imago/server.ts:397-411  created | already-recorded | updated  (+ `previous` as the undo)
+  -> three branches the caller cannot predict, three different next actions.
+  -> SOLITARY `already-*`, and the most load-bearing noun in the toolbox.
+```
+**So my "opposed pair" test ADMITS the decoration and REJECTS the load-bearing one. The real discriminator is his: _does the noun tell the caller something the CALL did not?_**
+⛔ **AND THE FAILURE IS NOT BEING PERSUADED — IT IS WHAT I DID WITH HIS SPLIT.** He handed me a cut (2 defensible, 2 not). **I treated the CUT as data and built a theory over it, instead of asking whether the cut was made in the right place.** His later reading keeps the same 2-of-4 COUNT and swaps WHICH TWO — **so the number I was explaining was never the thing in question.**
+⭐ **Fourth over-concession in one day, and now I have its trigger: I OVER-CONCEDE WHEN A PEER SUPPLIES A PLAUSIBLE MECHANISM FOR A PARTIAL REFUTATION.** A bare *"you're wrong"* I would have measured. **A mechanism I can extend, I extend — and extending it feels like rigour.**
+⭐⭐ **AND THE SAME DAY PRODUCED ITS MIRROR, FROM ANOTHER SEAT — so this is ONE AXIS with two ends, not a personal quirk:**
+```
+OVER-CONCESSION       accept a criticism without measuring it        thoth ×4, engine seat ×1
+JUSTIFICATION-HUNT    when your basis is refuted, go LOOKING for     verify seat ×1, named by her:
+                      another one instead of dropping the claim      "worse than the wrong claim"
+```
+⛔ **Both are the same act — NOT MEASURING — pointed in opposite directions, and each FEELS like the opposite of a bias.** Conceding feels like humility. Finding a second basis feels like diligence. **Neither triggers the reflex to check, and that is what they have in common.**
+⚠ **The tell that distinguishes them from real updating is the ORDER OF OPERATIONS: in both, the CONCLUSION is fixed first and the evidence is sought (or waived) afterwards.** ⭐ **A real update reads the evidence and lets the conclusion move; these two move the conclusion and then negotiate with the evidence.**
+_Four seats, one day, both ends of the axis, every instance inside work about measuring things._
+✅ **APPLIED THE FIX WITHIN THE HOUR, AND IT PAID — the shortest gap between a lesson and its use this seat has recorded.**
+Minutes later the same peer applied the corrected test to his own work and returned a new cut: *"all four of my nouns are convicted."* **An hour earlier I would have taken that count and moved on. Instead I checked WHERE the cut falls.**
+```
+presence   ONE conjunct   noun restates the caller's arg                      ⛔
+attention  TWO conjuncts  guard: needsAttention === raised && question === next
+                          noun restates ONLY the arg — drops the second fact  ⛔⛔
+```
+⭐ **His cut held (all four convicted) AND one site was WORSE than he conceded:** the attention no-op fires on two conjuncts, the second of which is a real fact the caller did not supply, **and the noun spends the field echoing the half they already knew.** The others had nothing to carry; that one had something and discarded it.
+**So the operational form is: TEST THE CUT, NOT THE COUNT.** A peer's partition can be right in number and wrong in placement — **and checking placement is what surfaces the finding that accepting the count would have buried.**
+⭐⭐ **AND THIS IS WHY REFUSING TO RATIFY THE WORD LIST WAS RIGHT — a rare case where a deferral paid off MEASURABLY rather than just avoiding risk.** A list would have blessed or banned `already-*` **wholesale, and both answers are wrong.** The contract said the words get picked *"by whoever writes the first migration and discovers which are ambiguous in use"*; **the migration found a discriminator neither the plan nor I could reach from the armchair.**
+⚠ **Generalises for this seat: when the objection is to a SHAPE, ask what the shape looks like when it is CORRECT before ruling it out.** I had one example class in view and treated it as the population — the *"a multi-conjunct predicate derived from n=1 is a description of the example"* failure, inverted: **a one-conjunct objection derived from n=1 is a description of the example too.**
+
+**[I] ⭐⭐ THE `--as-of` STALENESS GUARD IS AN OVER-CONCESSION BRAKE, AND NOBODY BUILT IT FOR THAT. Measured: 21 refusals in one day, 4 of which changed WHAT I SENT.**
+Built as a crossing-detector — *"someone spoke after the message you are answering."* ⭐ **What it actually does is interpose a MANDATORY READ between forming a position and publishing it**, because you cannot resend without reading what crossed.
+```
+sends refused stale, one day        21
+refusals that changed the CONTENT    4
+  · rewrote a CAUSE — "because markdown" was false; the term was suite SCOPE
+  · KILLED an accusatory draft outright — it called a peer's correct report
+    "FALSIFIED"; my green post-dated his fix
+  · added replay evidence that made a claim measured rather than argued
+  · reshaped a question after a peer's counter-datum
+```
+⚠ **17 of 21 were pure friction and I will not dress that up.** ⭐ **But the four include a false accusation of a peer that would have cost him standing on a correct report. A guard that is noise 80% of the time and prevents that the other 20% is cheap insurance whose premium is visible and whose payout is not.**
+⭐ **Third instance of _a discipline's side effects run in both directions_, and the strongest: a peer called the difference between her near-miss and another seat's published over-concession "one habit." It is one TOOL — and that is better news, because a habit must be remembered by a tired seat at 19:30 and the guard fires either way.**
+✅ **CORROBORATED AT A SECOND SEAT, with an instance rather than a count, and it is a KIND mine did not contain: a refusal made him DELETE an argument for a position that had ALREADY BEEN RULED.** ⭐ **Mine were corrections to wrong content; his was the removal of content that was merely OBSOLETE.** **So the guard catches two classes — the claim that is false, and the claim that has been overtaken — and only the first is one you could have caught by re-reading your own draft.**
+⛔ **Recorded here rather than sent: the channel was being wound down and the lead had closed the adjacent thread. My own rule — the remainder that survives a saturation check is the least-examined claim in the message — applies to my own findings too.**
+
+**[II] ⭐⭐ I REACHED FOR A COUNT WHERE AN INSTANCE WAS THE RIGHT INSTRUMENT — and the count was the WEAKEST evidence in the pile despite being the only quantitative thing in it.**
+Four seats evidenced one finding. **Three gave instances; I gave `21 refusals, 4 changed what I sent`.** A peer then showed my metric is structurally blind to the strongest cases:
+```
+CAN SEE     refusal → resend whose content DIFFERS    two artifacts to diff    countable
+CANNOT SEE  content deleted because a peer published it        no artifact
+            an argument deleted because the position was ruled  no artifact
+            a message ABANDONED ENTIRELY after the forced read  no artifact   ← mine, at least once
+```
+⛔ **So "4" is a FLOOR over ONE CLASS, and the other three seats' strongest instances all fall outside it.** ⚠ **I published it as though it were the measure, in a message about a tool that surfaces absences — my own *a count travels with its denominator* unapplied to my own number.**
+⭐ **The durable form: A COUNT IS THE RIGHT INSTRUMENT ONLY WHEN THE POPULATION IS OBSERVABLE. Where the strongest members leave no trace, ONE INSTANCE BEATS A RATE** — because an instance proves the class exists and a rate silently redefines the class as "the part I could see."
+⛔ **And this seat is the one most exposed to it: "go measure" is my whole discipline, so I reach for a number reflexively — and a number is exactly what launders an unobservable population into a confident denominator.** _The peer's framing is the one that should carry: **the strongest saves leave no artifact.**_
+
+**[I] ⭐ "RECOVERED" AND "CURRENT" ARE DIFFERENT CLAIMS, AND THE GAP BETWEEN THEM IS EXACTLY ONE REVISION.**
+The lead destroyed 4082 characters of a four-seat card at `ok:true` and restored it from a scratch copy. **Everyone treated that as closed, including me for several minutes.** ⛔ **A recovery restores an EARLIER STATE — which is not the same claim as "the content is back," and nobody had checked which.**
+```
+grepped the recovered card:
+  "floor"        present   ✅  a peer's undercount correction survived
+  "no artifact"  present   ✅
+  "abandon"      ABSENT    ⛔  the third invisible class — MINE — did not come back
+```
+⭐ **And the missing one was the strongest: the other two classes leave a partial artifact a diff could catch; an ABANDONED message leaves nothing at all.** **So the recovered card understated the finding in precisely the direction the finding was about.**
+⚠ **I only thought to check because MY correction POST-DATED the content being restored.** ⛔ **That is the general tell and it is cheap: after any recovery, ask what was written BETWEEN the backup and the loss — that window is silently discarded, and it is where the most recent corrections live.**
+**Operational: diff what came back against what was LOST, never against nothing.** _A restore that returns 6331 characters looks complete; completeness of BYTES says nothing about currency of CONTENT._
+
+**[J] ⛔ MY OWN VERIFY STEP CHECKED THE ENVELOPE AND NEVER THE PAYLOAD — ALL SESSION, 58 TIMES.**
+A peer falsified the lead's remedy (_"verify the file exists"_) by measuring that `>` **truncates the target before the producer runs** — the shell creates the file unconditionally, so a file-exists guard tests the shell's behaviour when the failure is in the producer's. ⭐ **I checked whether that applied to me. It did.**
+```
+my pattern all session:  cat > f <<'EOF' … EOF  →  send --stdin < f
+my verify:               read --last 1, check the head id and `from`   ⛔ ENVELOPE ONLY
+
+audit of all 58 sends:   EMPTY 0 · under-200 0 · shortest 412 · median 2826
+```
+✅ **Nothing was lost — and clean BY LUCK, not by method.** ⛔ **A failed heredoc leaves an empty-but-existing file, `--stdin` sends nothing, the envelope returns `ok:true` with a fresh id, and all three of my checks pass.** _My verification would have said "landed" to a zero-byte message._
+⭐ **The fix is one line and it is the same shape as everything else tonight: assert on the ARTIFACT, not the receipt** — read back the sent message's **length**, not its existence. **I had that number for 58 messages only because I went looking; I had it for none of them at the time it would have mattered.**
+⚠ **The honest bound, taken from the peer who found it: length is not content.** A producer emitting a plausible-but-wrong 4000 characters passes cleanly. **Checking length closes the EMPTY class and does not close the WRONG-CONTENT class.**
+⛔ **This is my own epitaph arriving on my own routine at hour thirteen: a check that cannot fail in the case it exists for.** _I spent the session demanding controls of everyone else's instruments and never once armed a red arm on my own._
+
+**[K] ⛔ I BROKE MY OWN ALLOW-LIST IN A THROWAWAY READER, THREE HOURS AFTER WRITING IT — AND IT PRODUCED A FALSE ALL-CLEAR.**
+Sampling the board wire at finalize, I wrote two one-off readers minutes apart. **Both were wrong, in OPPOSITE directions, from one root cause: I assumed a single envelope convention across two different CLIs.**
+```
+anthill CLI   {ok, data, meta}   error ⇒ ok:false + error string
+bounty  CLI   {state:{tasks:…}}  NO ok, NO data, NO error field
+
+reader 1  (j.data?.cards) ?? []   on an ok:false   → "0 cards · 0 mine · 0 open"   ⛔ FALSE ALL-CLEAR
+reader 2  if (j.ok !== true)      on a VALID load  → "⛔ NOT OK: undefined"        ⛔ FALSE ALARM
+```
+⛔ **Reader 1 is this sprint's thesis committed by me: `?? []` turned _"I cannot tell you"_ into _"nothing is there."_** The failure was `Unknown command bounty` — I ran the wrong binary — and my reader laundered it into a clean board **in a report already on its way out at finalize.** ⭐ **Reader 2 is the useful control: it proves the bug is not "I was sloppy once" but a wrong MODEL, because the same assumption fired in reverse on good data.**
+⛔ **`??` is on `outcome-contract.md`'s own ⛔ list, which I wrote.** ⭐ **So the durable correction is not "be careful" — it is that I had scoped the allow-list to TEST language in my head, and the table's header does not say that; it says _the value on its way to it_.** **A test that erases the distinction gets caught in review; a throwaway diagnostic is reviewed by NOBODY and its output is quoted as measurement.** _The ad-hoc reader is the most dangerous member of that class, not an exempt one._ Contract updated: three instances → four, with the domain stated.
+⚠ **And the tell that saved it was free: I printed `Object.keys(j.data||{})` on a hunch and got an empty list.** **Two `0`s that agree are not corroboration when one reader produced both.**
+
+**[L] ⭐ A PROBE IS A LOSSY SAMPLE OF A COMPARISON YOU CAN DO EXACTLY — AND I RAN ELEVEN OF THEM WITH THE SOURCE FILE OPEN BESIDE ME.**
+The principle landed at `12b60e2` carries the right practice — _after a destructive-capable write, read the record back and assert on its content._ ⛔ **Every seat on the team, me included, implemented "assert" as _grep for a phrase_.**
+```
+11 probes, two read-backs:
+  3  "MISSING" from the committed blob   prettier reflowed at commit; grep is LINE-based
+  1  "MISSING" from a sent message       I searched lowercase; the text was uppercase
+  0  actually missing
+```
+⚠ **Four false alarms, zero real losses — and a false LOSS report during a real recovery is worse than a false all-clear, because it commissions a second recovery against a file that is already correct.**
+⭐⭐ **The fix is not a better probe. I still held the payload on disk, so the exact instrument was available the whole time:** `sent === received` → **byte-identical, 8884/8884.** ⛔ **A probe has false-negative modes (reflow, case, escaping) and — the part that actually matters — _it can only ever find what you thought to ask for_. Equality has neither: no normalization, no false missing, and it checks the bytes you did not think to check.**
+**The rule, and it is free:** _still hold the source? assert EQUALITY against it. Source gone? then probe — and normalize whitespace first._
+⚠ **Why the weak form is the default, and this is the durable half: _"assert on its content"_ pattern-matches to _"grep for a phrase,"_ and the strong form requires noticing you still have the input.** _Same shape as the lead's own finding one layer up — verify against the BLOB, not the WIRE. **Each of us stopped at the most AVAILABLE evidence rather than the most EXACT.**_
 
 ## Anti-patterns
 
@@ -317,20 +645,46 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Where they get written:** `restoreSkipped` in P0b step 3; `snapshotBackedUp` and `hydrated` in P1 steps 3–4 — **different phases, plausibly different sessions, so plausibly not the instance that ratified this.**
 **Discharge it by:** grepping each name at the moment its phase lands, and confirming the envelope carries `| null` present-and-null rather than absent (the absent-vs-null distinction is the half a field name cannot convey).
 **Retire this entry** once all three exist in code and are documented — at that point a grep does the work and the obligation is over.
-**Status 2026-08-08, END of sprint 03 (final, at `f238471`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` DISCHARGED · `hydrated` still ZERO — NOT discharged, carried into sprint 04.**
-`snapshotBackedUp` landed with the shrinkage guard (`bbeaad5`): **3 code sites, exact camelCase, zero variants**, swept case-insensitively.
+**Status 2026-08-08, sprint 04 (at `ba4b9dd`): UNCHANGED — `hydrated` still ZERO, still NOT discharged. P1 did not land in sprint 04 either.**
+Sprint 04 was a ratify-and-canon sprint for this seat; there was no opportunity to diverge and none to discharge.
+**Zero hits means zero opportunities to diverge, not a pass** — that sentence is now three sprints old and still the whole point.
+⭐ **The obligation's SHAPE was vindicated again in sprint 04 and it is worth the next holder knowing why it is not busywork:** the `#82` work turned on `valuesIgnored`, and the thing that mattered was **not** the name — it was that the field's *domain* was silent, so its `null` could not be read.
+⭐⭐ **THIRD INSTANCE, sprint 04 close, and three-for-three is the whole argument for a HUMAN holder: THE NAME WAS FINE EVERY TIME.**
+```
+snapshotBackedUp  name clean, 3 sites   →  the ruled SHAPE had no home (event, not envelope)
+valuesIgnored     name clean, 14 sites  →  the DOMAIN silently excluded the case under test
+restoreSkipped    name clean, 32 sites  →  the TRIGGER CONDITION doubled underneath it
+```
+The third: a peer's `fb209f1` made a keyed respawn restore **by default**. Spelling swept clean — 32 sites, zero variants. ⛔ **But `cli.ts:281` still defines the field as *"your FLAG was valid and the situation could not honour it"* — written for a world with one trigger, when there are now two.** Does it fire when a DEFAULT restore is skipped, or only an EXPLICIT one? **The canon sentence no longer discriminates**, and it is the definition an agent reads to decide whether to trust the field.
+⚠ **I did NOT rule the semantics — I have not read the populating branch and the call is the owner's.** The claim is only that the sentence stopped discriminating.
+⭐ **So the durable form: a grep proves the SPELLING survived a land. Nothing mechanical notices that the WORLD THE DEFINITION DESCRIBES has changed underneath it.** **Check the sentence, not just the token — and check it at the moment the mechanism moves, because that is the only moment anyone remembers the sentence exists.**
+**The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.** Hold the property, not the spelling.
+**prospero holds the P1 ping as a precondition of the land (#459 §6) and re-affirmed it in sprint 04** — expect to be called; do not watch for it.
+
+### Discharge record — the durable facts. There is exactly ONE status, and it is above.
+
+`restoreSkipped` — DISCHARGED sprint 02 with P0b (`8f4d92d`): **20 sites across 3 files, zero variants**, swept case-insensitively for `restoreskipped` / `restore_skipped` / `restore-skipped` / `skippedRestore`.
+**The half a field name cannot convey was also right:** the envelope carries `restoreSkipped: null` present-and-null on the success paths, and a test asserts `"restoreSkipped" in env` rather than a value — the absent-vs-null distinction, built without being asked.
+
+`snapshotBackedUp` — DISCHARGED sprint 03 with the shrinkage guard (`bbeaad5`): **3 code sites, exact camelCase, zero variants**, swept case-insensitively.
 ⛔ **And the sweep found what the NAME passing would have hidden: the ruled SHAPE had no home.** D1.2 specified `snapshotBackedUp: {...} | null` in an envelope, *"null when nothing happened, never absent"*, with stderr explicitly ruled not to count. What shipped was a log line, an event and stderr — **and an event is absent-when-nothing-happened BY CONSTRUCTION, the exact state the ruling forbade.** Not the builder's error: the ruling assumed a COMMAND-RESPONSE trigger and the trigger that shipped is a BACKGROUND FLUSH, which has no envelope. **prospero ruled option (a): give the property a home on `/state`.**
 ⭐ **That is what this obligation is FOR. The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.**
+
 **A fourth name was added and discharged the same session: `valuesIgnored` (`82dc363`, 14 sites, zero variants)** — and daedalus built the present-and-null assertion (`expect("valuesIgnored" in out)`) without being asked.
-**Status 2026-08-08 sprint 03 mid (at `a5c322a`): UNCHANGED — `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO.**
-P1 did not land in sprint 03 (the ratify round consumed it), so there was no opportunity to diverge and no opportunity to discharge.
-**prospero ruled the ping a PRECONDITION of the P1 land, not a courtesy (#459 §6)** — so the next holder of this seat should expect to be called, rather than having to watch for it.
-**Status 2026-08-06 sprint 02 (checked at `bbc61c2`): `restoreSkipped` DISCHARGED · `snapshotBackedUp` and `hydrated` still ZERO — NOT discharged.**
-`restoreSkipped` landed with P0b (`8f4d92d`): **20 sites across 3 files, zero variants**, swept case-insensitively for `restoreskipped` / `restore_skipped` / `restore-skipped` / `skippedRestore`.
-**The half a field name cannot convey was also right:** the envelope carries `restoreSkipped: null` present-and-null on the success paths, and a test asserts `"restoreSkipped" in env` rather than a value — the absent-vs-null distinction, built without being asked.
-`snapshotBackedUp` and `hydrated` land in P1 — a different sprint, so plausibly not this instance. **Zero hits means zero opportunities to diverge, not a pass.**
-**Grep case-INSENSITIVELY** — a case-sensitive grep gave this seat a false negative on text it had personally verified. `Hydrate-by-default` is prose, not a variant; chased and killed, recorded so the next runner does not re-chase it.
+
+**Method, carried forward:** **grep case-INSENSITIVELY** — a case-sensitive grep gave this seat a false negative on text it had personally verified. `Hydrate-by-default` is prose, not a variant; chased and killed, recorded so the next runner does not re-chase it.
 **And re-check the DENOMINATOR of your own re-check:** a `.ts`-only sweep read 19 where the previous `.ts`+`.md` sweep read 20, and for ten seconds that looked like a vanished hit in the one field I am on the hook to hold steady. Nothing had moved; my scope had.
+
+_PRUNED 2026-08-08 (sprint 04): three intermediate **"status: UNCHANGED"** snapshots — sprint 02, sprint 03 mid, sprint 03 end — collapsed into the single current status above plus these discharge records._
+_**Four status blocks for one obligation is the accretion this seat spent sprint 04 objecting to**, and the snapshots carried nothing the current status and the discharge facts do not. Keep ONE status; append to the discharge record; never stack another snapshot._
+
+**Hold the POINTER obligation for the matcher allow-list — nothing mechanical will catch it.**
+`grimoire/outcome-contract.md` (Boundary 3) owns the absent-vs-null allow-list: **two families, eight entries, and it gained its eighth the day it was written.**
+**Ruled sprint 04:** the substance stays there, and **when the sprint-05 scaffold is written it POINTS at that file rather than copying the list.**
+⚠ **Why it needs a human holder:** the scaffold does not exist yet, so there is nothing to grep and no file to put a note in. **The obligation lives only in a comms message and in this line.**
+⛔ **And the failure mode is not omission but DUPLICATION** — a cell author writing harness canon will reach for the list, find it useful, and paste it. **Two copies of an eight-entry allow-list is how they drift, and one of them will gain a ninth entry alone.**
+**Discharge it by:** when a sprint-05 (or any harness) scaffold appears, confirm it POINTS and does not copy. **Retire this entry** once a pointer exists in the tree, at which point a grep for the file name does the work.
+_Origin worth keeping: the lead first ruled the substance into "the sprint-05 scaffold", then opened the directory and found **no such file exists** — a ruling routed into a file that was never there. He caught it himself, and I only surfaced it by asking rather than complying._
 
 ## Candidates
 
@@ -342,9 +696,15 @@ P1 did not land in sprint 03 (the ratify round consumed it), so there was no opp
 
 
 **✅ RESOLVED — the flag/doc invariant LANDED as a test at `bbc61c2`: `grimoire/flag-invariant.test.ts`.**
-16 entry points, 8 spells, 9 tests, green; decoration-checked both directions. **It runs on every gate, which was the ruling's whole argument: a ward that runs on invocation runs when someone remembers.**
+Green, decoration-checked **both** directions (a flag in a `SKILL.md` is recognized by some entry point; a caller-facing entry point's flags are named in that `SKILL.md`). **It runs on every gate, which was the ruling's whole argument: a ward that runs on invocation runs when someone remembers.**
+⛔ **PRUNED 2026-08-08, SECOND PASS: this line also carried "16 entry points, 8 spells, 9 tests" and I had left it standing while pruning the identical defect four lines below.** ⭐ **The counts were not even the roster's — the ward derives `spells` from _entry points that PARSE ARGS_ (`flag-invariant.test.ts:127`), so "8 spells" answered a question nobody reading this doc would have asked.** _Ask the ward; it re-derives on every gate._
+⭐⭐ **AND THE PART THAT MAKES THIS A DISCIPLINE RATHER THAN A CLEAN-UP: THE NUMBER I DELETED WAS CORRECT.** Re-measured at finalize, independently, after the lead reported a different figure — **16 entry points, 8 spells, both confirmed here** (`glamour/scripts/server.ts:574` is the sixteenth, a `nodeParseArgs({…, strict: true})` a path-based sweep misses). **I pruned a TRUE count.** ⛔ **Because accuracy-today is not the property that matters — RE-DERIVABILITY is, and an inlined count has none of it however right it is right now.** _Pruning a wrong number is bookkeeping; pruning a right one is the actual rule._
+⭐ **The split that paid for this: my seat doc said 16 and was right; my comms message `#885` said 15 and was wrong; and the LEAD BUILT CARD `c1` ON THE WIRE NUMBER, instructing sprint 05 not to re-derive it.** ⛔ **The durable artifact — the thing that gets re-read and re-verified at finalize — held the truth. The write-only channel carried the error, and the error is what propagated, because the wire is what the reader was reading.** _Concrete argument for "a wire is not a store": not that the wire forgets, but that nothing ever RE-CHECKS it._
 **Its blind spots ship in its own header** — it is keyed on flag NAMES, so it can never see the `--` terminator class; it checks presence, not whether a description is true; and a flag documented only in the CLI's usage string counts as undocumented, deliberately.
-**Two findings on first run, both closed in the same commit** (`grapevine --last`, `imago --models`), plus the `--` terminator line across all six spells whose CLI sets `allowPositionals` — **a set derived by measurement, because a named set was wrong twice that day.**
+**Two findings on first run, both closed in the same commit** (`grapevine --last`, `imago --models`), plus the `--` terminator line across **every spell whose entry points set `allowPositionals` — a set the WARD enumerates by behaviour; do not copy the count here.**
+⛔ **PRUNED 2026-08-08: this line used to say "all SIX spells" and it had rotted to 8** (astrolabe and mind-mapper joined the roster; nothing re-ran the prose). **The ward was right the whole time — `flag-invariant.test.ts:92` anchors on the `strict:`/`allowPositionals:` structural sibling and re-derives on every gate.**
+⭐ **So the defect was not a wrong number, it was HAVING a number here at all.** I held a live instrument AND a prose copy of its output; **the copy is pure liability, because the instrument already answers the question and the copy cannot notice the roster growing.** _Reference, don't inline — applied to my own seat doc, and the fix is a deletion rather than an update._
+⚠ **And naming the question is still required even with the ward:** *"spells whose `cli.ts` sets it"* is 7, *"any entry point"* is 8 — digestify's caller-facing entry is `review.ts`, not `cli.ts`.
 **Still open for the next runner:** the `forwarded` reachability check (requirement 3) is DESIGNED but NOT BUILT — the ward currently exempts internal entry points without verifying every flag they parse is reachable from a documented one. That exemption is a hiding place until it is.
 
 _PRUNED 2026-08-08: the pre-land design notes for this ward are gone — the ward LANDED at `bbc61c2` and the code is now the source of truth for its own design. What survives is only what the code cannot say:_
@@ -359,7 +719,7 @@ _PRUNED 2026-08-08: the pre-land design notes for this ward are gone — the war
 **The reasoning is the durable part:** `inscribe` is a skill and skills are not always in the loop, so an inscribe-only matrix never runs on the existing roster where every observed defect lives; and `ward` fires on **change**, so a spell nobody edits is never interrogated by it either. **Authored / changed / untouched — a trigger set with a hole in it is how the roster's oldest spells stay the least examined.** Backlog: `docs/backlog/2026-08-06-desire-path-hints-in-spell-responses.md`. Raw material: cassandra's seat doc carries observed failure modes in matrix shape. Open: does the rule reach non-spell tooling (that widens house-style's scope — Cole's call), and is `uncheckedAgainst` the first worked example.
 
 **The `EPIPE` gotcha says "swallow" and two spells disagree about what that means.**
-House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in 2 of 9 spells, in two incompatible shapes:** `bounty/join.ts:72` swallows and continues; `magpie/cli.ts:54` exits the process.
+House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in exactly two places, in two incompatible shapes** — re-verified 2026-08-08, both pins exact: `bounty/scripts/join.ts:72` swallows and continues (rethrows anything that is not `EPIPE`); `magpie/scripts/cli.ts:54` calls `process.exit(0)` from an `stdout.on("error")` handler. _(This line said "2 of **9** spells" and the roster is 8 — a denominator I never measured, on a finding the ratio was never part of. **The two shapes are the finding; the fraction was decoration that rotted.**)_
 **"Swallow" and "exit" are different policies, and the canon line does not say which it means** — so both implementers were obeying it. Same class as the `tmpdir()` boundary that four spells re-assumed identically: **the imperative travelled and the policy did not.**
 Decide the policy before widening the rule; a gotcha that names a symptom without naming the response will be implemented differently every time.
 
@@ -369,4 +729,16 @@ Decide the policy before widening the rule; a gotcha that names a symptom withou
 **The consequence I have now paid for: "undocumented" is not ONE state.** *Documented nowhere* is a dark flag; *documented in the tool only* is reachable by anyone who runs `--help` but invisible to an agent reading `SKILL.md` to decide **whether to reach for it at all**.
 **My ward reports them identically, so my "2 real findings" overstated** — they are two instances of the milder class. **A ward whose findings all read at one severity has the same defect as a count without its denominator.**
 The tie-break I used when writing the fixes, which is the durable part: **`SKILL.md` is the agent's DECISION surface — enough to decide _whether_; the tool carries _how_.** And copy the tool's own wording rather than re-authoring it, or you have minted a second source that can drift.
-**The decay-ledger has never been walked by this seat.** Rows marked `(seed)` are still unvalidated. Worth a pass whose output is deletions, not additions.
+**✅ PARTLY PAID 2026-08-08 (`ba4b9dd`) — the decay ledger was walked for the FIRST TIME, scoped to supersession. What it found is worse than "nobody has pruned it."**
+⛔ **The accretion control was broken in BOTH directions at once**, and my own objection had understated it: it had never pruned anything, **and applied literally it would have deleted nearly everything.**
+- **Coverage:** 16 house-style rules, 15 rows — while the ledger's own first line says *"Every rule has a row here."* **A live falsehood in the mechanism's own description.** The unlisted rule was `Enumerate the roster by behaviour` — **the most-reinforced rule of the sprint**, four walks in one day, **none recordable because there was no row to bump.**
+- ⭐ **A rule with no row is a THIRD state the model does not have** — not active, not stale, **unlisted**: it can neither decay nor be reinforced, and is **indistinguishable from a rule nobody wrote.**
+- **Criterion:** *"2 release cycles"* measures **two days** here (`v2.0.0` 2026-08-06 → `v2.1.0` 2026-08-08). Applied literally it **condemns 14 of 15 rows**, perennials and the thesis included. The unit tracks **commit traffic**, not craft evolution. Now marked **UNSET** in the file with its measurement; **I deliberately supplied no replacement number** — a criterion that has never fired has no evidence behind any threshold, and swapping unusable for unmeasured hides the defect.
+- **Supersession found (1):** parity-facts supersedes `readback-parity`. ⭐ **The canon had ALREADY asked the two-directional question** — *"can both parties see it"* — **and then supplied only *"the agent's half."* That parenthetical announced a human half existed and left it unspecified for as long as the rule stood.** The old rule could not fail human-ward, so it would have **certified a violating spell as compliant.**
+- **Honest accounting:** the ledger did **not** shrink by a row (readback-parity was a boundary check inside a row). Net +1 section with one internal replacement. **That is less than the lead hoped for and I said so rather than dressing it up.**
+
+**⛔ STILL UNPAID, and this is the part to carry: FOUR ROWS STILL SAY `(seed)` AND HAVE NEVER BEEN WALKED BY ANYONE.**
+`Surface-fit` · `Keep the client thin` · `Carry the Bun gotchas forward` · `Mature principle` (the last is perennial, so exempt from decay but still unvalidated *here*).
+**A `(seed)` row is a rule this repo inherited and never earned** — the ledger's own text says not to treat one as settled until real use has walked it, and nobody ever has.
+**Two structural fixes are DESIGNED and NOT BUILT, deliberately:** (1) re-express staleness in time — needs a ruling, not an invention; (2) a coverage test (`every ### has a row`) — **needs a stable key first**, because rows key on an **abbreviated paraphrase** of the rule title, which is why the gap survived and why my own matcher produced a false positive on `Mature principle` (the row exists).
+⚠ **Do not build the test before the key.** A paraphrase-keyed check is the `enumerate by NAME` failure wearing a test's clothes — and I broke that rule *inside the check for that rule*.

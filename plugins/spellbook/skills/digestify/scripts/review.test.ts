@@ -416,3 +416,124 @@ describe("P0 — a >64KiB submission survives a PIPE", () => {
     expect(payload.answers.q1).toHaveLength(120_000);
   }, 40000);
 });
+
+describe("b4 — a departure is observable through a pipe", () => {
+  const MD = "::: question id=q1\nWhy?\n:::";
+
+  // circe's matched arms (b4s, fbfe1d3) measured these two as BYTE-IDENTICAL on
+  // stdout and exit code. That is the defect: "a human read it and declined" and
+  // "nobody ever opened it" were one observable. They must now differ.
+  test("read-then-left and never-opened are DISTINGUISHABLE on stdout", async () => {
+    // ARM A — the page is served, then the human leaves without engaging.
+    const a = await spawnAndWaitForReady(["--timeout", "1"], MD);
+    await fetch(`http://127.0.0.1:${a.ready.port}/`);
+    await fetch(`http://127.0.0.1:${a.ready.port}/left`, {
+      method: "POST",
+      body: JSON.stringify({ engaged: false, elapsedMs: 32775, answered: 0, commented: 0 }),
+    });
+    const aOut = await readStdout(a.proc);
+    const aCode = await a.proc.exited;
+
+    // ARM B — nobody ever opens it.
+    const b = await spawnAndWaitForReady(["--timeout", "1"], MD);
+    const bOut = await readStdout(b.proc);
+    const bCode = await b.proc.exited;
+
+    // RED PRE-FIX: both were 0 bytes and both exit 124 — diff was empty.
+    expect(aCode).toBe(124);
+    expect(bCode).toBe(124);
+    expect(aOut).not.toBe(bOut);
+
+    const a1 = JSON.parse(aOut);
+    const b1 = JSON.parse(bOut);
+    expect(a1.observed).toBe("read-then-left");
+    expect(a1.pageServed).toBe(true);
+    expect(a1.departure.elapsedMs).toBe(32775);
+    expect(b1.observed).toBe("never-opened");
+    expect(b1.pageServed).toBe(false);
+    expect(b1.departure).toBeNull();
+    // both are honest that nothing was submitted
+    expect(a1.submitted).toBe(false);
+    expect(b1.submitted).toBe(false);
+  }, 20000);
+
+  test("opened-then-silent is its OWN observable, not folded into never-opened", async () => {
+    // The page was served and no beacon arrived — a crashed tab or a machine
+    // that slept. Deliberately NOT merged with never-opened: they are different
+    // facts and the payload says so rather than guessing between them.
+    const { proc, ready } = await spawnAndWaitForReady(["--timeout", "1"], MD);
+    await fetch(`http://127.0.0.1:${ready.port}/`);
+    const out = await readStdout(proc);
+    expect(await proc.exited).toBe(124);
+    const p = JSON.parse(out);
+    expect(p.observed).toBe("opened-then-silent");
+    expect(p.pageServed).toBe(true);
+    expect(p.departure).toBeNull();
+  }, 20000);
+
+  test("GUARD — /left is RECORD-ONLY: it must never end the session", async () => {
+    // The whole safety of the seam. If /left resolved, a refresh would kill a
+    // live review — which is why it is a separate route and not a flag on
+    // /cancel. Passes in BOTH worlds by design; it guards the clause, not the fix.
+    const { proc, ready } = await spawnAndWaitForReady(["--timeout", "10"], MD);
+    await fetch(`http://127.0.0.1:${ready.port}/`);
+    await fetch(`http://127.0.0.1:${ready.port}/left`, {
+      method: "POST",
+      body: JSON.stringify({ engaged: false, elapsedMs: 10, answered: 0, commented: 0 }),
+    });
+    // still alive after the beacon — a submit must still be accepted
+    await postSubmit(ready.port, { answers: { q1: "still here" }, comments: [] });
+    const out = await readStdout(proc);
+    expect(await proc.exited).toBe(0);
+    expect(JSON.parse(out).answers).toEqual({ q1: "still here" });
+  }, 20000);
+});
+
+// ── b4s: the surface's departure beacon ─────────────────────────────────────
+// `template.html` is invisible to `bun run check` — biome's files.includes is an
+// allow-list of ts/tsx/json/jsonc, so a syntax error in 1475 lines of inline
+// Alpine ships silently. These cells are the only mechanical guard that file has.
+// They run against the SERVED html, not the source, so the substitution pass in
+// renderPage is exercised too.
+describe("surface departure beacon (b4s)", () => {
+  async function servedAppScript(port: number): Promise<string> {
+    const html = await (await fetch(`http://127.0.0.1:${port}/`)).text();
+    const blocks = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+    expect(blocks.length).toBeGreaterThan(0);
+    return blocks[blocks.length - 1];
+  }
+
+  // FAILS IF: the pre-b4s beforeunload is restored (it beaconed /cancel only, and
+  // only when dirty). The behavioural half — a presence check, NOT proof the beacon
+  // fires. Whether beforeunload actually dispatches is browser-only and stays so.
+  test("served surface beacons /left on departure, and keeps /cancel", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "5"],
+      "::: question id=q1\nQ?\n:::",
+    );
+    const app = await servedAppScript(ready.port);
+    expect(app).toContain('"/left"');
+    expect(app).toContain("engaged: dirty");
+    // /cancel must survive unchanged — house-style pins 130 to "closed tab after
+    // interacting", so the dirty gate on /cancel is canon, not incidental.
+    expect(app).toContain('"/cancel"');
+    await postCancel(ready.port);
+    await proc.exited;
+  }, 15000);
+
+  // FAILS IF: any syntax error is introduced anywhere in template.html.
+  // This is the cell biome cannot provide for this file. Bun.Transpiler PARSES
+  // without evaluating — deliberately not `new Function`, which compiles the
+  // source into a callable and is the wrong tool for a parse assertion.
+  test("served app script parses", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "5"],
+      "::: question id=q1\nQ?\n:::",
+    );
+    const app = await servedAppScript(ready.port);
+    const transpiler = new Bun.Transpiler({ loader: "js" });
+    expect(() => transpiler.transformSync(app)).not.toThrow();
+    await postCancel(ready.port);
+    await proc.exited;
+  }, 15000);
+});

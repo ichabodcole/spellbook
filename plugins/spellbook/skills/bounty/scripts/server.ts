@@ -406,21 +406,40 @@ function cleanTags(value: unknown): string[] {
   return out;
 }
 
-function validateTask(t: unknown): Task | null {
-  if (!t || typeof t !== "object") return null;
+// b8 — WHY a task is rejected, as the SINGLE source of the rules.
+//
+// `init --stdin-tasks` filters-and-keeps-valid and reported nothing: 18
+// well-formed-LOOKING tasks were posted at convene, every one was dropped for a
+// missing caller-supplied `id`, and the envelope answered {ok:true,
+// applied:true} with a board of zero. The asymmetry is invisible from the
+// outside because `add` MINTS an id for you and `init` does not, while the help
+// said only "tasks = JSON array on stdin".
+//
+// The reason lives HERE rather than being re-derived at the call site: a second
+// copy of these conditions is the mirror-drift trap this repo has shipped twice
+// (the bounty surface mirror, and `propose-node --stdin` dropping tags). One
+// list, two readers.
+function taskRejection(t: unknown): string | null {
+  if (!t || typeof t !== "object") return "not a JSON object";
   const cand = t as Record<string, unknown>;
-  if (typeof cand.id !== "string" || typeof cand.title !== "string") return null;
-  if (typeof cand.status !== "string" || !VALID_STATUS.includes(cand.status as TaskStatus)) {
-    return null;
-  }
-  if (cand.notes !== undefined && typeof cand.notes !== "string") return null;
-  if (cand.owner !== undefined && typeof cand.owner !== "string") return null;
+  if (typeof cand.id !== "string")
+    return "missing `id` (string, REQUIRED — init does not mint ids; `add` does)";
+  if (typeof cand.title !== "string") return "missing `title` (string, required)";
+  if (typeof cand.status !== "string" || !VALID_STATUS.includes(cand.status as TaskStatus))
+    return `invalid \`status\` (required, one of ${VALID_STATUS.join(" | ")})`;
+  if (cand.notes !== undefined && typeof cand.notes !== "string") return "`notes` must be a string";
+  if (cand.owner !== undefined && typeof cand.owner !== "string") return "`owner` must be a string";
   if (
     cand.blockedBy !== undefined &&
     (!Array.isArray(cand.blockedBy) || cand.blockedBy.some((x) => typeof x !== "string"))
-  ) {
-    return null;
-  }
+  )
+    return "`blockedBy` must be an array of strings";
+  return null;
+}
+
+function validateTask(t: unknown): Task | null {
+  if (taskRejection(t) !== null) return null;
+  const cand = t as Record<string, unknown>;
   const tags = cleanTags(cand.tags);
   // Transition substrate is server-generated; on restore we preserve it
   // leniently — drop a malformed value rather than reject the whole task, so a
@@ -699,6 +718,9 @@ async function main(argv: string[]): Promise<number> {
   // tasks run through validateTask (filter-and-keep-valid) so a malformed or
   // legacy entry is dropped, not fatal.
   const state: BoardState = { title: v.title as string, tasks: [] };
+  // b15 — present-and-null on every boot: null means "no restore failed", never
+  // "this daemon does not report restore failures".
+  let restoreFailed: { path: string; reason: string } | null = null;
   if (v.restore) {
     const restoreArg = v.restore as string;
     const restorePath = existsSync(restoreArg)
@@ -712,9 +734,27 @@ async function main(argv: string[]): Promise<number> {
         ? merged.tasks.map(validateTask).filter((t): t is Task => t !== null)
         : [];
     } catch (e) {
-      process.stderr.write(
-        `bounty: restore failed (${restorePath}): ${e instanceof Error ? e.message : String(e)}\n`,
-      );
+      // b15 — A RESTORE THAT WAS ATTEMPTED AND FAILED USED TO BE INVISIBLE.
+      // This branch wrote to the DAEMON'S stderr, and cli.ts spawns the daemon
+      // with stderr pointed at a log file the caller never reads — then it
+      // CONTINUED with the empty default board. An empty board, exit 0, and
+      // nothing in any envelope saying a restore had even been tried.
+      //
+      // ⚠ MY OWN fb209f1 WIDENED THIS. Before it, only an explicit `--restore`
+      // reached here; now EVERY keyed respawn passes --restore, so a corrupt
+      // snapshot silently yields an empty board on the common path. b7's defect,
+      // recreated by b7's fix, on the error branch.
+      //
+      // Distinct from `restoreSkipped`, ruled to mean "your EXPLICIT --restore
+      // was valid and the situation could not honour it" — never attempted.
+      // This one WAS attempted and broke. Same envelope shape, opposite remedy:
+      // skipped means fix your situation, failed means your snapshot is damaged
+      // and here is the path.
+      restoreFailed = {
+        path: restorePath,
+        reason: e instanceof Error ? e.message : String(e),
+      };
+      process.stderr.write(`bounty: restore failed (${restorePath}): ${restoreFailed.reason}\n`);
     }
   }
   const sockets = new Set<ServerWebSocket<unknown>>();
@@ -1015,13 +1055,28 @@ async function main(argv: string[]): Promise<number> {
       // (the /cmd body is untrusted — `body as AgentMsg` is a cast, not a check).
       // Route through applyTaskAdd so a freshly-seeded task gets a baseline
       // transition stamp (and a restored one keeps its preserved history).
+      // b8 — COUNT AND NAME THE DROPS. Filtering is correct (the /cmd body is
+      // untrusted), but reporting nothing meant a caller could not distinguish a
+      // GOOD SEED from a TOTAL REJECTION: 18 tasks in, 0 seeded, applied:true.
+      let dropped: { index: number; reason: string }[] = [];
       if (Array.isArray(msg.tasks)) {
         state.tasks = [];
+        dropped = msg.tasks
+          .map((raw, index) => ({ index, reason: taskRejection(raw) }))
+          .filter((d): d is { index: number; reason: string } => d.reason !== null);
         for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
       }
       broadcast({ type: "init", title: state.title, tasks: state.tasks });
       emitEvent({ type: "init", title: state.title, by });
-      return { ok: true, applied: true };
+      // Present-and-null, never absent: an absent field cannot distinguish "all
+      // your tasks were seeded" from "this daemon does not report drops".
+      return {
+        ok: true,
+        applied: true,
+        tasksDropped: dropped.length
+          ? { requested: Array.isArray(msg.tasks) ? msg.tasks.length : 0, dropped }
+          : null,
+      };
     } else if (msg.type === "task.add") {
       // #83 — `applied:false` alone conflated TWO causes and named neither, so
       // the CLI could not tell the caller what went wrong even once it started
@@ -1113,6 +1168,30 @@ async function main(argv: string[]): Promise<number> {
     } else if (msg.type === "task.block") {
       const task = state.tasks.find((t) => t.id === msg.id);
       if (!task) return { ok: true, applied: false, error: `no such task ${msg.id}` };
+      // b10 — the SUBJECT's existence was checked one line up; the BLOCKERS'
+      // was not. So `block <real> --on <typo>` was accepted at ok:true and
+      // created an edge that constrains NOTHING: isBlocked and the /state
+      // liveBlockers projection both require a blocker to EXIST, so a dangling
+      // id is inert by design. The envelope answered {"blocked":"<id>"} while
+      // /state answered blocked:false — one command saying two things.
+      //
+      // ⚠ Note this is the INVERSE of how it was first reported: the risk is
+      // not a block that never resolves, it is a guard the caller believes is
+      // in place and is not. Measured before fixing.
+      //
+      // Refusal rather than a report, for the reason the card names: `add`
+      // REFUSES a missing title while this ACCEPTED a missing referent — same
+      // tool, same minute. This restores the uniformity, and the traversal that
+      // finds the referent was already being done by canReach below.
+      const unknown = msg.on.filter((b) => !state.tasks.some((t) => t.id === b));
+      if (unknown.length)
+        return {
+          ok: true,
+          applied: false,
+          error:
+            `no such task${unknown.length > 1 ? "s" : ""} ${unknown.join(", ")} — ` +
+            `nothing was blocked (a blocker that does not exist would constrain nothing)`,
+        };
       // Cycle/self-ref guard: reject the WHOLE command if any proposed edge
       // would close a loop. New edges all originate at `id` (out-edges), so a
       // back-path can only run through existing edges — a per-edge canReach
@@ -1206,7 +1285,14 @@ async function main(argv: string[]): Promise<number> {
           // rotation has happened in this daemon's life", which is a readable
           // blank rather than an absence (D1.2).
           return new Response(
-            JSON.stringify({ state: projectState(), cursor: eventSeq, snapshotBackedUp }),
+            JSON.stringify({
+              state: projectState(),
+              cursor: eventSeq,
+              snapshotBackedUp,
+              // b15 — also readable here: a boot line is missable and this fact
+              // outlives it.
+              restoreFailed,
+            }),
             { headers: { "Content-Type": "application/json" } },
           );
         }
@@ -1415,6 +1501,11 @@ async function main(argv: string[]): Promise<number> {
     port: boundPort,
     session_id: sessionId,
     title: state.title,
+    // b15 — rides the DISCOVERY payload because that is what `open` prints, and
+    // `open` is the command whose restore just failed. Reporting it only on a
+    // later /state would mean the caller learns of it, if at all, on a different
+    // command than the one that broke.
+    restoreFailed,
   });
   try {
     writeFileSync(sessionFile, sessionInfo);

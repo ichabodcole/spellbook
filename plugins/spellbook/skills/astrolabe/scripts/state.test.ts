@@ -202,6 +202,43 @@ describe("applyAttention", () => {
     expect(state.status.imago.lastUpdated).toBe(500);
   });
 
+  test("b2/#85: a benign no-op carries an outcome NOUN and no error", () => {
+    // #85: re-issuing a command whose effect is already in place exited 2 with
+    // "command 'attention' was not applied", while bounty treats the identical
+    // payload as ordinary success. The reducer returned applied:false with
+    // NOTHING else, so the CLI could not tell a no-op from a rejection.
+    let s = seeded();
+    s = applyAttention(s, "imago", true, "approve delete?", 100).state;
+    const again = applyAttention(s, "imago", true, "approve delete?", 200);
+    expect(again.applied).toBe(false); // genuinely nothing changed
+    expect(again.error).toBeUndefined(); // and it is NOT a rejection
+    // RED PRE-FIX: there was no noun at all. The noun names the STATE that made
+    // the work unnecessary, per the outcome contract's membership rule 2 — not
+    // the tool's action, and not a bare boolean.
+    expect(again.outcome).toBe("already-raised");
+  });
+
+  test("b2/#85: the clear direction names its own state", () => {
+    const s = seeded();
+    // never raised, so clearing is already-satisfied
+    const noop = applyAttention(s, "imago", false, undefined, 100);
+    expect(noop.applied).toBe(false);
+    expect(noop.error).toBeUndefined();
+    expect(noop.outcome).toBe("already-cleared");
+  });
+
+  test("b2 GUARD — a REJECTION still carries an error and NO outcome", () => {
+    // The danger of this change is turning real rejections into benign
+    // successes. An unknown project must stay a rejection: error present,
+    // outcome absent, so cli.ts still dies on it. Passes in BOTH worlds — it
+    // guards the boundary the fix must not cross, and I checked that direction
+    // against the mutation before naming it.
+    const bad = applyAttention(seeded(), "nosuchproject", true, "x", 100);
+    expect(bad.applied).toBe(false);
+    expect(bad.error).toBeDefined();
+    expect(bad.outcome).toBeUndefined();
+  });
+
   test("clearing drops the question and preserves the summary", () => {
     let s = seeded();
     s = applyStatus(s, "imago", { summary: "working", phase: "2" }, 100).state;

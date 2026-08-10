@@ -2067,6 +2067,41 @@ describe("dependencies (Phase D)", () => {
     for (const task of tasks) await cmd(url, { type: "task.add", task });
   }
 
+  test("b10: block on a NONEXISTENT task is refused — it would constrain nothing", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [{ id: "R", title: "R", status: "todo" }]);
+    // RED PRE-FIX: this answered {ok:true, applied:true} and wrote a dangling
+    // edge. The subject's existence was checked; the blocker's was not.
+    const res = await cmd(ready.url, { type: "task.block", id: "R", on: ["ghost"] });
+    expect(res.data.applied).toBe(false);
+    expect(String(res.data.error)).toContain("ghost");
+    // and nothing was written — a refused command must not half-apply
+    const s = await state(ready.url);
+    expect(find(s, "R")?.blockedBy ?? []).toEqual([]);
+    proc.kill();
+    await proc.exited;
+  }, 15000);
+
+  test("b10: a partly-unknown blocker list is refused WHOLE and names every unknown id", async () => {
+    const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
+    await seedTasks(ready.url, [
+      { id: "R", title: "R", status: "todo" },
+      { id: "REAL", title: "REAL", status: "todo" },
+    ]);
+    // All-or-nothing, mirroring the cycle guard: a 44-id cleanup must not become
+    // a bisect, and a partial apply would leave the caller's model wrong.
+    const res = await cmd(ready.url, { type: "task.block", id: "R", on: ["REAL", "g1", "g2"] });
+    expect(res.data.applied).toBe(false);
+    const err = String(res.data.error);
+    expect(err).toContain("g1");
+    expect(err).toContain("g2");
+    const s = await state(ready.url);
+    // the VALID edge was not applied either — whole-command refusal
+    expect(find(s, "R")?.blockedBy ?? []).toEqual([]);
+    proc.kill();
+    await proc.exited;
+  }, 15000);
+
   test("block adds edges; unblock removes them", async () => {
     const { proc, ready } = await spawnServerReady(["--timeout", "5"]);
     await seedTasks(ready.url, [
@@ -2235,6 +2270,305 @@ describe("dependencies (Phase D)", () => {
         (await runCli(["state", "--owner", "w2", "--session", session], { env })).stdout,
       ) as ST;
       expect(sOwner.state.tasks.map((t) => t.id)).toEqual(["other"]); // exactly w2's
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 25000);
+
+  test("b14: close waits for the daemon to be DOWN, and an immediate reopen gets a fresh board", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b14-${crypto.randomUUID().slice(0, 8)}`;
+    const open1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(open1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "one", "--session", s1], { env });
+    await runCli(["add", "two", "--session", s1], { env });
+
+    const closed = await runCli(["close", "--session", s1], { env });
+    // RED PRE-FIX: `close` acked as soon as the daemon received the command, and
+    // the daemon acks before it finishes tearing down.
+    expect((JSON.parse(closed.stdout) as { down?: boolean }).down).toBe(true);
+
+    // The board must be gone the instant close returns — previously `state`
+    // still answered here with the full board.
+    const after = await runCli(["state", "--session", s1], { env });
+    expect(after.code).not.toBe(0);
+
+    // ⛔ THE REOPEN ASSERTION WAS REMOVED, DELIBERATELY, AND THIS IS WHY.
+    //
+    // It used to read: reopen immediately, expect an EMPTY board, because
+    // attaching to the dying daemon would have shown the old two tasks. b7 makes
+    // a keyed respawn RESTORE its snapshot — so a correct reopen now shows two
+    // tasks and an incorrect one (attached to the corpse) ALSO shows two tasks.
+    // The cell can no longer tell them apart.
+    //
+    // Keeping it would have been worse than deleting it: it would still pass,
+    // and it would look like it was covering the race. The two assertions above
+    // — `down: true`, and state REFUSING immediately after close — are the ones
+    // that convict this defect, and both are RED pre-fix.
+  }, 30000);
+
+  test("b14: `down` is present on EVERY close, never absent", async () => {
+    // ⚠ NOT a guard, and I labelled it one until the mutation run said otherwise:
+    // this is RED PRE-FIX (expected true, received false) because the field does
+    // not exist before the fix, so it cannot pass in both worlds. The label was
+    // written when the assertions were, which records intent rather than
+    // behaviour — the mutation run audits LABELS, not only code.
+    //
+    // What it asserts: a field that appears only when it has something to say
+    // cannot be distinguished from a daemon that does not report it, so `down`
+    // is present on every close as a readable blank.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    const closed = await runCli(["close", "--session", session], { env });
+    const body = JSON.parse(closed.stdout) as Record<string, unknown>;
+    expect(Object.hasOwn(body, "down")).toBe(true);
+    expect(typeof body.down).toBe("boolean");
+  }, 30000);
+
+  test("b8: init REPORTS the tasks it dropped, and names why", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      // The convene case verbatim: well-formed-LOOKING tasks with no caller
+      // supplied `id`. 18 went in and 0 were seeded, at {ok:true, applied:true}.
+      const payload = JSON.stringify([
+        { title: "card-1", status: "todo" },
+        { title: "card-2", status: "todo" },
+      ]);
+      const res = await runCli(["init", "--stdin-tasks", "--session", session], {
+        env,
+        stdin: payload,
+      });
+      const body = JSON.parse(res.stdout) as {
+        tasksDropped: { requested: number; dropped: { index: number; reason: string }[] } | null;
+      };
+      // RED PRE-FIX: the field did not exist, so a total rejection and a good
+      // seed were the same envelope.
+      expect(body.tasksDropped).not.toBeNull();
+      expect(body.tasksDropped?.requested).toBe(2);
+      expect(body.tasksDropped?.dropped).toHaveLength(2);
+      // the reason must name the asymmetry that makes this invisible: `add`
+      // mints ids and `init` does not
+      expect(body.tasksDropped?.dropped[0]?.reason).toContain("id");
+      // and the board really is empty — the drop is real, not cosmetic
+      const st = await runCli(["state", "--session", session], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 30000);
+
+  test("b8: a GOOD seed reports tasksDropped null — present, not absent", async () => {
+    // RED PRE-FIX too (the field did not exist at all), and it carries the other
+    // half: a field that only appears when something went wrong cannot be
+    // distinguished from a daemon that does not report drops. Null is the
+    // readable blank that makes the populated case trustworthy.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      const payload = JSON.stringify([{ id: "x1", title: "card-1", status: "todo" }]);
+      const res = await runCli(["init", "--stdin-tasks", "--session", session], {
+        env,
+        stdin: payload,
+      });
+      const body = JSON.parse(res.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(body, "tasksDropped")).toBe(true);
+      expect(body.tasksDropped).toBeNull();
+      const st = await runCli(["state", "--session", session], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toHaveLength(
+        1,
+      );
+    } finally {
+      await runCli(["close", "--session", session], { env });
+    }
+  }, 30000);
+
+  test("b7/#97: a keyed respawn RESTORES the key's snapshot", async () => {
+    // anthill's 5-step repro verbatim (spellbook#97). Step 4 was the defect —
+    // a dead board respawned EMPTY over an intact snapshot — and step 5 was the
+    // damage, because the next close wrote 0 over it.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b7-${crypto.randomUUID().slice(0, 8)}`;
+    const open1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(open1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "MUST SURVIVE", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    const open2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(open2.stdout) as { session_id: string }).session_id;
+    try {
+      const st = await runCli(["state", "--session", s2], { env });
+      const tasks = (JSON.parse(st.stdout) as { state: { tasks: { title: string }[] } }).state
+        .tasks;
+      // RED PRE-FIX: this was []. A stable key's promise is continuity, and this
+      // is the one moment it did not deliver it.
+      expect(tasks.map((t) => t.title)).toEqual(["MUST SURVIVE"]);
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
+  test("b7 GUARD — `--fresh` STILL gives a clean board, and an UNKEYED open still spawns empty", async () => {
+    // A REAL guard this time, and I checked the direction before naming it: both
+    // arms pass pre-fix and post-fix. It exists because the danger of a
+    // default-restore is resurrecting a board somebody deliberately emptied —
+    // `--fresh` is the verb for "this key, clean", and it must keep working.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b7g-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "should not come back", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    const o2 = await runCli(
+      ["open", "--no-open", "--session-key", key, "--fresh", "--timeout", "20"],
+      { env },
+    );
+    const s2 = (JSON.parse(o2.stdout) as { session_id: string }).session_id;
+    try {
+      const st = await runCli(["state", "--session", s2], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+
+    // and an UNKEYED open is untouched — it has no key, so no continuity promise
+    const o3 = await runCli(["open", "--no-open", "--timeout", "20"], { env });
+    const s3 = (JSON.parse(o3.stdout) as { session_id: string }).session_id;
+    try {
+      const st3 = await runCli(["state", "--session", s3], { env });
+      expect((JSON.parse(st3.stdout) as { state: { tasks: unknown[] } }).state.tasks).toEqual([]);
+    } finally {
+      await runCli(["close", "--session", s3], { env });
+    }
+  }, 40000);
+
+  test("b15: a restore that was ATTEMPTED and FAILED is reported, not silent", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b15-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "will be corrupted", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    // Corrupt the snapshot mid-JSON — what a partial write leaves behind.
+    const snap = join(home, "snapshots", `${s1}.json`);
+    const raw = readFileSync(snap, "utf8");
+    writeFileSync(snap, raw.slice(0, Math.floor(raw.length / 2)));
+
+    // b7 made EVERY keyed respawn pass --restore, so this path is now the common
+    // one rather than an explicit opt-in. Pre-fix the failure went to the
+    // daemon's stderr — a log file the caller never reads — and the board came
+    // up empty at exit 0 with nothing saying a restore had been tried.
+    const o2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(o2.stdout) as { session_id: string }).session_id;
+    try {
+      const boot = JSON.parse(o2.stdout) as {
+        restoreFailed: { path: string; reason: string } | null;
+      };
+      // RED PRE-FIX: the field did not exist. `open` is the command whose
+      // restore failed, so it is the response that must carry it.
+      //
+      // ⚠ `not.toBeNull()` alone is WRONG here and the mutation run caught it:
+      // `undefined` passes that assertion, so it conflates ABSENT with
+      // PRESENT-AND-POPULATED — the exact distinction this sprint is about,
+      // written into a cell testing that distinction. Assert presence first.
+      expect(Object.hasOwn(boot, "restoreFailed")).toBe(true);
+      expect(boot.restoreFailed).not.toBeNull();
+      expect(boot.restoreFailed?.path).toContain(s1);
+      expect(boot.restoreFailed?.reason).toBeTruthy();
+
+      // and it outlives the boot line, which one refresh would otherwise lose
+      const st = await runCli(["state", "--session", s2], { env });
+      const body = JSON.parse(st.stdout) as {
+        state: { tasks: unknown[] };
+        restoreFailed: { reason: string } | null;
+      };
+      expect(body.state.tasks).toEqual([]); // still empty — but now SAID
+      expect(body.restoreFailed).not.toBeNull();
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
+  test("b15 GUARD — a HEALTHY restore reports restoreFailed null, never absent", async () => {
+    // The failure mode of this field is firing on every boot, or appearing only
+    // when something broke. Either makes it unreadable. Checked against the
+    // mutation direction before naming: this one is RED PRE-FIX too (the field
+    // did not exist), so it is NOT a guard against the fix — it guards the
+    // present-and-null property, and I am naming it accordingly rather than
+    // calling it a guard against the defect.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b15g-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "survives", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+    const o2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s2 = (JSON.parse(o2.stdout) as { session_id: string }).session_id;
+    try {
+      const body = JSON.parse(o2.stdout) as Record<string, unknown>;
+      expect(Object.hasOwn(body, "restoreFailed")).toBe(true);
+      expect(body.restoreFailed).toBeNull();
+      const st = await runCli(["state", "--session", s2], { env });
+      expect((JSON.parse(st.stdout) as { state: { tasks: unknown[] } }).state.tasks).toHaveLength(
+        1,
+      );
+    } finally {
+      await runCli(["close", "--session", s2], { env });
+    }
+  }, 30000);
+
+  test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const open = await runCli(["open", "--no-open", "--timeout", "10"], { env });
+    const session = (JSON.parse(open.stdout) as { session_id: string }).session_id;
+    try {
+      await runCli(["add", "T", "--id", "T", "--session", session], { env });
+
+      // The defect cassandra measured at r4: `state` and `state --full` returned
+      // byte-identical payloads, and NOTHING in either said which mode produced
+      // it. Zero semantic coverage is why the no-op survived, so this is the
+      // cell that was missing rather than an extra.
+      const def = await runCli(["state", "--session", session], { env });
+      expect(def.code).toBe(0);
+      const d = JSON.parse(def.stdout) as { readMode?: string };
+      expect(d.readMode).toBe("full");
+
+      // `--full` is KEPT for compatibility and now names the default: it must
+      // still be ACCEPTED (a strict parser exits 2 on an unknown flag, so
+      // removing it would break existing callers) and must answer the same.
+      const full = await runCli(["state", "--full", "--session", session], { env });
+      expect(full.code).toBe(0);
+      expect((JSON.parse(full.stdout) as { readMode?: string }).readMode).toBe("full");
     } finally {
       await runCli(["close", "--session", session], { env });
     }
@@ -2541,12 +2875,32 @@ describe("liveBoards", () => {
   });
 
   test("includes only boards the probe reports live, carrying their task counts", async () => {
+    // b1 — the probe now answers `{tasks} | null`. The OUTER null still means
+    // NOT LIVE (dropped); the shape changed so a live board can separately
+    // report an unknown count. This test's intent is unchanged.
     const probe = async (s: Session) =>
-      s.session_id === "bounty-b" ? null : s.session_id === "bounty-a" ? 3 : 0;
+      s.session_id === "bounty-b" ? null : { tasks: s.session_id === "bounty-a" ? 3 : 0 };
     const live = await liveBoards([mk("a"), mk("b"), mk("c")], probe);
     expect(live.map((l) => l.session_id).sort()).toEqual(["bounty-a", "bounty-c"]); // b stale, skipped
     expect(live.find((l) => l.session_id === "bounty-a")?.tasks).toBe(3);
     expect(live.find((l) => l.session_id === "bounty-a")?.title).toBe("Board a");
+  });
+
+  test("b1: a LIVE board with an unreadable count stays listed, with tasks null — not 0, not dropped", async () => {
+    // The two nulls must not collapse. A board that ANSWERS but whose body we do
+    // not recognise used to report 0 — indistinguishable from empty (b5's defect
+    // in this probe). Reporting the DEAD null instead would be worse: liveBoards
+    // drops those, so a live board would vanish from `list` entirely.
+    const probe = async (s: Session) =>
+      s.session_id === "bounty-b" ? null : { tasks: s.session_id === "bounty-a" ? null : 2 };
+    const live = await liveBoards([mk("a"), mk("b"), mk("c")], probe);
+    // still LISTED — the live-but-uncountable board did not disappear
+    expect(live.map((l) => l.session_id).sort()).toEqual(["bounty-a", "bounty-c"]);
+    const a = live.find((l) => l.session_id === "bounty-a");
+    expect(a?.tasks).toBeNull();
+    expect(a?.tasks).not.toBe(0);
+    // and a real count is still a real count
+    expect(live.find((l) => l.session_id === "bounty-c")?.tasks).toBe(2);
   });
 
   test("empty list when nothing is live", async () => {
@@ -3089,7 +3443,14 @@ describe("P0b — open refuses rather than discarding flags on the attach path",
     }
 
     // Step 4 — respawn EMPTY under the same key, without mutating anything.
-    const second = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    //
+    // ⚠ `--fresh` is now REQUIRED to construct this. Before b7 a keyed respawn
+    // came up empty on its own and this line relied on that; b7 makes a keyed
+    // respawn RESTORE its snapshot, so "empty board over a populated snapshot"
+    // must be asked for explicitly. The scenario under test is unchanged — only
+    // the way it is built. (This cell's own precondition guard caught the change:
+    // it printed DEGENERATE rather than passing quietly.)
+    const second = await runOpen(["--session-key", key, "--fresh", "--no-open"], { home, cwd });
     const revived = JSON.parse(second.stdout) as { session_id: string; port: number };
     expect(revived.session_id).toBe(id); // same key ⇒ same board id
 
@@ -3895,7 +4256,14 @@ describe("P1a/P1b — the shrinkage guard, end to end", () => {
     // and the cell below is measuring the RESPAWN, not the kill.
     expect(snapshotTaskCountAt(home, id)).toBe(3);
 
-    const respawn = await runOpen(["--session-key", key, "--no-open"], { home, cwd });
+    // `--fresh` for the same reason as P0b: post-b7 a keyed respawn RESTORES, so
+    // the empty-board precondition is now explicit. Worth noting what that means
+    // for THIS scenario in the real world — a SIGKILLed board's keyed respawn now
+    // comes back with its cards, so the respawned-empty-then-clobber sequence
+    // this guard was built for is substantially rarer than when it was written.
+    // The guard still earns its place: --fresh, a genuine drain, and any other
+    // route to a shrinking write all still reach it.
+    const respawn = await runOpen(["--session-key", key, "--fresh", "--no-open"], { home, cwd });
     const id2 = (JSON.parse(respawn.stdout) as { session_id: string }).session_id;
     expect(id2).toBe(id); // same key, same board id — that is what makes it a clobber
     try {
