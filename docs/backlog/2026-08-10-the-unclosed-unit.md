@@ -1,8 +1,11 @@
 # The unclosed unit — a terminal artifact that nothing can require
 
 **Filed:** 2026-08-10 · **Routes to:** `project-docs`
-(`ichabodcole/project-docs-scaffold-template`) · **Status:** not filed upstream
-— awaiting Cole's ruling on co-filing with anthill · **Sibling:**
+(`ichabodcole/project-docs-scaffold-template`) · **Status:** **anthill filed
+[#154](https://github.com/ichabodcole/project-docs-scaffold-template/issues/154)
+from their side alone; spellbook's evidence appears there marked RELAYED.** Our
+open option is a first-person **comment** on #154, not a second issue — Cole's
+call, unruled. · **Sibling:**
 [`2026-08-10-project-docs-sprint-and-release-documentation.md`](./2026-08-10-project-docs-sprint-and-release-documentation.md)
 (the broader signal this sharpened out of)
 
@@ -56,6 +59,21 @@ contradiction as their issue #152.
 
 So the ask is not "add a close step." It is: **the close step must be gated, and
 the gate must not be satisfiable by an acknowledgement.**
+
+> **⚠ THAT PRESCRIPTION WAS OVERRULED UPSTREAM, and the reasoning is worth more
+> than the prescription was.** Both agents converged on it and anthill's human
+> rejected it before filing: **paint the pains, not the solution.** Do not
+> over-index on "you should do this"; the locally-invented conventions go in as
+> _information about what the pressure produced_, explicitly **not** as a design
+> to adopt, because the real answer goes through a design pass on the
+> project-docs side and this is evidence that one is needed rather than a spec
+> for it.
+> [#154](https://github.com/ichabodcole/project-docs-scaffold-template/issues/154)
+> is shaped that way: four pains, a "what we don't know" section, and no ask.
+> **Keep the sentence above as OUR diagnosis; do not carry it upstream as a
+> demand.** Two agents sharpening each other converged hard on a fix, and the
+> convergence was itself the thing that needed checking — neither of us
+> questioned whether a prescription was wanted.
 
 ## Why it belongs upstream rather than here
 
