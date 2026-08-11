@@ -116,6 +116,26 @@ negative on a data-destroying path — the highest-severity of the six).
 **Five are written up in [`docs/backlog/`](../../../../backlog/); `s5-9` was
 found late and is carded.** All await Cole.
 
+## Deferred — placed at finalize, each with a HORIZON and a HOME
+
+**Named by the seats, placed by the lead (ritual step 4.75).** _"Later"_ is not
+a horizon and this file is a home only because something re-reads it.
+
+| #   | item                                                                                                                                                                                              | horizon           | home                                                                                                      |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| D1  | **Canon: a response states its TARGET, not just its outcome** — the store a write landed on is a condition it was produced under, and no envelope carries it. Deliberately not minted unratified. | sprint 06         | `roadmap.md` sprint-06 forecast + this table                                                              |
+| D2  | **`outcome-contract.md` has no decay-ledger row and cannot get one** as the ledger is keyed — 0 mentions, measured                                                                                | sprint 06         | [backlog: outcome-contract-cannot-decay](../../../../backlog/2026-08-10-outcome-contract-cannot-decay.md) |
+| D3  | **The `biome.json` exemption** for `useOptionalChain` vs the canon                                                                                                                                | **blocked on D4** | this table; the lead's, held deliberately                                                                 |
+| D4  | **The hop:** value-position `?.` reads of present-and-null fields in shipped code. **Zero is a welcome answer.**                                                                                  | sprint 06         | this table; daedalus/cassandra                                                                            |
+| D5  | **digestify's `reason` divergence** — "to be carded, never silently converted"                                                                                                                    | s5-1 / sprint 06  | already in `grimoire/outcome-contract.md`                                                                 |
+| D6  | **Second-seat calibration of `roster-drift` (17 cells) and `gate-honesty` (5)**                                                                                                                   | sprint 06         | the H3 block above in this file                                                                           |
+
+**D2 and D6 existed nowhere but a comms message when they were named** — which
+is the leak the ritual warns about, and the reason both now have files.
+
+**Nothing here is being dropped.** If a later session cannot place one of these,
+the honest act is to say it is dropped, not to let it keep looking deferred.
+
 ## What this sprint does NOT reach
 
 - **Clause (ii)** — sprint 06, ruled.
