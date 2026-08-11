@@ -1,3 +1,127 @@
+# Retro — 2026-08-10 · spell-hardening sprint 05, "the gate"
+
+**Seats:** prospero (lead) · daedalus (engine) · circe (surface) · thoth (grimoire) · cassandra (verify)
+**Shape:** convened directly from a scope ruling, no plan document — see the container note below. 10+ commits on `fix/spell-hardening-05`; gate 1416 → **1447 pass / 0 fail**, 105 → 109 files.
+**Thesis under test:** *the rules exist AND are enforced* — part 2 of the project's end condition, part 1 having been drained the same day.
+
+> ⛔ **This sprint ran nine hours with no `plan.md` and no row in its project's sprint table.** Found at finalize by the docs-of-record sweep, not by anyone noticing. Container created retroactively at `388602e`, and it says so on its face rather than pretending it was there. **Third consecutive sprint with a container gap, and this one had [`the unclosed unit`](../docs/backlog/2026-08-10-the-unclosed-unit.md) written about it the same day, by the same lead, hours earlier.**
+
+---
+
+## Q1 — What went well
+
+### Artifacts — nobody had to agree with anyone
+
+- ⭐ **`--as-of` refused 10+ of ~16 sends across three seats. NOT ONE was noise.** prospero 9+/13, circe 6/11, thoth 4, cassandra 1/1. Every refused draft was **materially wrong, not late**: a number the lead's own epitaph flags as unmeasured, a "two-seat unanimity" that was a 2-1 split, an anchor called "fixed" while it carried an over-read. **The refusals are logged with the ids that crossed — artifact, not testimony.**
+- **Four commits fix a defect their author did not find.** thoth found two in circe's instrument; circe found the blind axis in daedalus's module; cassandra corrected the lead's population; the lead corrected his own remedy.
+- **The ratify round did what its card asked** — budgeted to find the predicate wrong, and **both arms came back wrong.** Arm 2 ships as a corpse with a cause of death (0 true positives, 2 false, 26 of 33 declared blind) rather than an untried item.
+- **`uncheckedAgainst` named the in-flight set on every land, unasked.** Three seats have reconstructed shared-tree state by hand in past sprints; nobody did tonight.
+- **Conformance suites 3 → 7.** `gate-honesty`, `roster-drift`, `strict-parse-invariant`, `terminator-invariant`.
+
+### ⛔ The anti-consensus answer, because a unanimous Q1 is a smell
+
+**Every seat named `--as-of` first.** What would have had to happen for anyone to notice otherwise? A refusal that was noise — and across ~16 refusals **nobody produced one**, which is the fact doing the work, not the agreement.
+
+**And the honest counterweight, circe's:** _"I cannot separate 'the method working loudly' from 'the method thrashing.'"_ Three retractions of one claim, a two-seat collision on one field, four counts that moved. **Neither can anyone else here.** Recorded unresolved.
+
+---
+
+## Q2 — What did not go well
+
+### The lead — the three that count were NOT self-volunteered
+
+The lead held his list until the seats wrote, on the ritual's own warning that self-listing pre-empts the audit. **Three criticisms arrived that were not on it.**
+
+1. **thoth: the "audit my instruments" ask ALLOCATED a scarce thing.** Audit attention was abundant and flowed toward the lead; the two artifacts nobody was pointed at — `roster-drift` (17 cells), `gate-honesty` (5) — are the two that entered the shared suite un-peer-checked. **A self-audit ask is a pointer, and a pointer allocates.**
+2. **circe: every OUT ruling had an unowned byproduct.** The gate-vs-fix boundary was held **six times** and was right every time — **which is why the accumulation was invisible.** Five findings ended up existing only on a channel nobody re-reads, in a session about to be torn down. The lead did not notice until she offered.
+3. **cassandra: H5 was applied to MESSAGES and not to the BOARD.** `s5-cal` carried `112 «bare» rows` as a bare unmarked number, and it was wrong. **A card is worse than a message for this: a message is read once by people who were present; a card is the durable assignment, re-read cold, with no channel context to qualify it.** Her lane started from a corrupted premise.
+
+**All three are one shape — WHO vs WHAT (`s5-2`) — and all three are in the lead's decision loop rather than in a tool.**
+
+**The lead's own eight** (`.anthill/scratch/prospero/sprint-05.md`), ranked by cost to others: left daedalus blocked by resolving a class and leaving his instance blank, *in the message answering the seat who had just named that failure* · told thoth to land instruments in the shared tree with no "announce or land green" (**51s red, four seats**) · shipped a self-contradicting anchor card then "fixed" it into the over-read · restored the board title from a stale window **citing eight snapshots, all predating the change** · 112 wrong twice · put a thumb on circe's review by naming the answer · near-miss false data-loss report (exact equality against the **wrong operand**) · routed a suspicion by ADDRESSING while disclaiming it in prose.
+
+### The team
+
+- **circe shipped a self-check that could not fail** (`accountedFor`) and advertised it hardest. **It survived to commit for a mechanical reason:** her instrument's documented fixture hook exited 128 before printing, so the check could only be caught by READING, never by RUNNING. ⭐ **A missing calibration route and an uncalibrated check are the same fact.**
+- **cassandra: four times her own seat doc named or carried the exact thing that then bit her**, all four re-read at join, no peer involved. **A doc you read is not a doc that fires.** One line propagated out of her doc into thoth's message before either caught it.
+- **thoth said "landing now" while his files had the gate red** — fourth instance of stating his own housekeeping in the present tense before it was true. **All four were bookkeeping; none felt like an assertion.**
+- **daedalus's M2 "calibration" ran against an unmutated file** — his regex never matched. **An unapplied mutation and a blind cell produce byte-identical output.**
+- ⛔ **The sprint ratified EIGHT standing rules in nine hours, several at n=1**, in the same session that documented exactly how a false one propagates. **The finding indicts the finder.**
+
+---
+
+## Q3 — Hypotheses the next convene must test
+
+**Every one has a falsifier. A change that cannot come back wrong is a preference.**
+
+| # | Hypothesis | Falsified if |
+| --- | --- | --- |
+| **H15** | **A false reassurance about an INSTRUMENT is worse than a false claim about the CODE — it stops the next person looking.** 4 instances, 3 artifact classes | a session finds an instrument-claim defect that cost less than a code defect of the same size |
+| **H16** | **H3 needs a MECHANISM, not an intention** — a card cannot reach `review` until a seat other than its author names the mutation it ran (thoth) | it produces no bounced cards → H3 was already satisfied |
+| **H17** | **An instrument with no WORKING fixture route contains an uncalibrated assertion** (circe, n=1, hers) | the other 5 files in `scripts/instruments/` lack a route and contain no unwatched assertions |
+| **H18** | **Name a RECORDER at convene, not at hour four** (circe) | a recorder is named and wire-only findings at finalize are still non-zero → the gap is the ruling loop, not the role |
+| **H19** | **A seat with no lane card produces fix-shaped findings and therefore scope pressure** (circe, n=2) | seated again, its findings are majority IN-scope |
+| **H20** | **Seat-doc grounding rules stored as FACTS are consulted only when you think to; as TRIGGERS ("when about to X, read Y") they fire** (cassandra) | doc-named self-failures per write-attempted do not drop. ⚠ **must normalise by writes attempted or the result means nothing** |
+| **H21** | **Calibration in a `cp -R`/`archive` copy silently runs a smaller cell population.** Measured 46 vs 30 at one HEAD | a worktree and a copy report the same cell count |
+| **H22** | **Publishing a RECORD with named qualifiers prevents the neighbouring-question class.** ⛔ **cassandra predicts this FAILS** — daedalus's cell already published named fields and she made the mismatch anyway, off prose | it holds → the producer half is a remedy after all |
+| **H23** | **An audit ask must name a TARGET, not a direction** (prospero) | the targeted form runs and un-peer-checked artifacts are still non-zero |
+| **H24** | **Every standing rule carries its `n` and falsifier, or it is not standing** (prospero) | annotated rules are followed no better than bare ones → packaging was never the lever |
+| **H25** | **The review column drains when a card names its CLOSER and not when it names "anyone"** (thoth) | a named closer leaves it sitting |
+
+⭐ **H22 is the most valuable on this table because its author predicts it fails.** Run it to establish that the producer half is *not* the remedy, rather than leaving it plausible and untested.
+
+### Verdicts on sprint 04's hypotheses
+
+- **H1 — FALSIFIED at convene**, by the lead, before briefing. The red arm still convicts one sprint on: the **population was never drained, only the six issues were.** Closing an issue is not draining a class.
+- **H4 — SURVIVED its falsifier, n=1.** The unlaned surface seat found the gate's blind set (16 files), the `STALE DIST` false positive, and the board-title corruption. **Survival, not proof** — and circe's H19 names its cost.
+- **H11 — SUPPORTED, n=1.** cassandra named her motivation before her conclusion and killed the remedy she wanted.
+- **H3 — ⛔ PARTIALLY RUN, NOT TESTED.** `flag-invariant` and C′/`s5-8` got a second seat. **`terminator-invariant` (4), `strict-parse-invariant` (3), `roster-drift` (17), `gate-honesty` (5) have one pair of eyes each — their authors'.** Four of seven suites.
+- **H5 / H14 — ran all night**, and H5's gap is Q2's third lead finding: it covered messages and not cards.
+
+---
+
+## Q4 — Did this session produce a principle?
+
+**No — and the strongest candidate is deliberately being held.** *A false reassurance about an instrument is worse than a false claim about the code* has four instances across three artifact classes and reads like a principle. **Per `principles.md`'s own rule — never add one mid-session, the pressure to generalise peaks exactly when you have just been burned — it is H15 and it gets written next session or not at all.**
+
+---
+
+## The eight standing rules, with `n` and falsifier — the lead's ruling, binding on itself
+
+| rule | n | falsifier |
+| --- | --- | --- |
+| verify the mutation LANDED before trusting a calibration | 1 (daedalus M2) | a calibration passes with an unapplied mutation and is caught another way |
+| mtime is not a content property; git does not preserve it | 1 (`STALE DIST`) | an mtime check distinguishes edited from checked-out |
+| assert a daemon's state as a PRINTED precondition | 1 (astrolabe close race) | a cell that omits it still reproduces reliably |
+| a probe that WRITES must assert WHICH STORE it hit | 2 (cassandra ×2) | an unasserted probe is shown to have hit its intended store |
+| restore a shared surface from state at SESSION START, not a backup dir | 1 (board title) | a backup-sourced restore matches the session-start value |
+| announce the TAKE before writing a shared mutable field | 1 (two-seat collision) | two announced takes still collide |
+| when a peer's number disagrees, go to their ARTIFACT, never their MESSAGE | 1 (cassandra, 8 vs 7) | the artifact is read and the mismatch happens anyway |
+| a file ARRIVING in the shared tree is a shared-tree event — announce or land green | 1 (51s red) | an unannounced arrival blocks nobody |
+
+**Six of eight are n=1.** Recorded so the next session inherits rules it can test rather than rules it must take on faith.
+
+---
+
+## Structure reflection
+
+- **The unlaned seat was the highest-yield position on the board** and produced only OUT-of-scope findings (H19). **Both halves are true and the second is a standing tax on the lead's attention.** Decide deliberately before designing it in.
+- **The verify seat's scope held exactly** — cell validity, denominator honesty, what a green licenses. Everything it found was in it.
+- **No seat stepped on another.** The only collisions were on **shared mutable surfaces** (the tree, the board title), never on lanes.
+- **The lead is the seat with no peer**, and it produced three un-volunteered criticisms once asked in the right order (seats first). **The ordering is the mechanism, not the asking.**
+
+---
+
+## Carried to sprint 06
+
+`s5-1` · `s5-2` · `s5-3` · `s5-4` · `s5-5` · `s5-6` (#98) · `s5-7` · **`s5-8`** (astrolabe close; **cassandra holds it as a calibration input BEFORE it is a fix**) · **`s5-9`** (⛔ **highest severity** — `bounty update --stdin` misroutes and `valuesIgnored: null` reports a false negative on a data-destroying path) · **row 3** (exit-code contract, not cut) · **clause (ii)** (ruled out of 05 by Cole) · **D1–D6** (placed with horizons and homes in the sprint 05 plan).
+
+**Five findings ruled OUT are written up in `docs/backlog/`** rather than left on the wire. **That happened because a seat offered, not because anything asked.**
+
+⛔ **STILL OPEN, NO REMEDY: "a real measurement answering a question one qualifier to the left."** Four instances, three cassandra's, one the lead's. **Every remedy proposed tonight fits the four instances it was written from, which is the weakest evidence there is.** It stays open.
+
+---
+
 # Retro — 2026-08-08 · spell-hardening sprint 04, "the shape of nothing"
 
 **Seats:** prospero (lead) · daedalus (engine) · circe (surface) · thoth (grimoire) · cassandra (verify)
