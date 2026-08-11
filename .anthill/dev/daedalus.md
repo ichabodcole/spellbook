@@ -139,8 +139,9 @@ Pin: server.ts `sseResponse`, sse-keepalive.test.ts double-cancel test.
 **Routes bake at boot; data reads live.** Per-request reads make dataset iteration restart-free, but any ENDPOINT addition still needs a daemon bounce, and a stale daemon serving old routes presents as a *surface* bug (circe hit /doc 404s until the bounce).
 If a spell iterates on routes, a cli restart verb earns its keep; pin: spike session, vine msg 23.
 
-**Contract 4 moves the cwd pin.** With surface source at `src/<spell>/`, bunfig.toml lives there too, so the cli must pin the daemon's cwd to `src/<spell>/` — NOT the skill root as pre-re-home astrolabe does — or Tailwind is silently skipped; and the dev-only dynamic import becomes a 5-up relative specifier.
-Pin: mind-mapper cli.ts SURFACE_CWD + the green server.test.ts that boots through it.
+**The cwd pin for a `src/`-relocated surface is CONTRACT 5 — see `seams.md`, do not read it here.**
+This entry used to restate that contract almost verbatim. **I own Contract 5, so I was the one seat whose restatement could drift from the source without anyone noticing** — the owner's copy reads as authoritative. Found at finalize by grepping my own doc against the contracts I own, not by remembering.
+_What is MINE and stays here is the judgment, not the rule:_ the failure is **silent** in three different costumes (unstyled surface, a 404 on a live route, a daemon that "did not come up"), and each one presents as a bug in somebody else's layer. **When a spell's surface stops looking right, check the cwd the daemon was spawned with before you debug the surface.**
 
 **Untracked files hide from pathspec commits.** A pathspec commit shows no diff for untracked files you left out, so "my commit excluded styles.css" was invisible in the land itself; state your leave-outs explicitly in the vine announce (the announce, not the commit, carried that information).
 Pin: spike lands aad6e6e / circe's follow-up.
