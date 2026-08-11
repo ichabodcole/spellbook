@@ -16,6 +16,20 @@
 // plugins/spellbook/skills/, which can `bun run check` not read AT ALL?"); this
 // ward owns only whether the answer has moved without anyone saying so.
 //
+// ⛔ WHICH GATE THIS ACTUALLY RUNS UNDER — correcting a landed commit subject
+// FORWARD, because rewording it would rebase eight shas the project's own docs
+// cite. `ababf0b`'s subject says "`bun run check` now says what it cannot see."
+// IT DOES NOT:
+//
+//     bun run check   is biome alone  ->  "Checked 356 files", SILENT about the 16
+//     bun test        runs this ward  ->  the blind set is printed here, and only here
+//
+// So the honest statement is: the SUITE says what the LINT GATE cannot see. A
+// seat who runs only `bun run check` still gets a green that is silent about
+// 4,166 lines. **On a branch whose thesis is that an instrument must not report
+// what it did not earn, that subject line claimed a delivery that did not
+// happen** — found by a cold reader given the tree and nothing else.
+//
 // ⛔ WHAT THIS WARD CANNOT SEE:
 //   1. It inherits EVERY blind spot of the instrument it calls, including its
 //      question. "Which files are UNGATED" is a different question with a

@@ -29,6 +29,16 @@
 // instrument. Any use of tsc that would FAIL A BUILD is the typecheck gate, which
 // Cole ruled out of sprint 05. Do not grow this into one.
 //
+// ⛔ MACHINE-BOUND ON PURPOSE, AND SAYING SO RATHER THAN LEAVING IT TO BE FOUND.
+// This file hardcodes an absolute path to this checkout (the `typescript` import
+// specifier and the repo constant). IT WILL NOT RUN ON ANOTHER MACHINE.
+// That is ACCEPTED, not overlooked: this is a declared corpse kept for its
+// VERDICT and its method, not for reuse — the predicate does not work and nobody
+// should be running it in CI or on a fresh clone. Anyone who wants to re-derive
+// the result should re-point the two paths; the arms are synthetic and portable.
+// Flagged by a cold reader who could not tell "deliberate" from "broken" — which
+// is the whole reason it now says which.
+//
 // Run:  bun scripts/instruments/type-sentinel-probe.ts <file.ts> [...]
 import ts from "/Users/colereed/Projects/Spellbook/node_modules/typescript/lib/typescript.js";
 

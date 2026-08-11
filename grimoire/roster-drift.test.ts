@@ -25,18 +25,35 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-// ⛔ PINNED — known-undeclared spell folders, excluded from the assertions below
-// and PRINTED on every run. This is DEBT, not an exemption: the pin names the
-// harm it was written for, and the `pin is still required` cell below fails when
-// a pinned spell becomes declared, so the pin cannot outlive its reason.
+// ⛔ PINNED — spell folders deliberately excluded from the assertions below, and
+// PRINTED on every run. The `pin is still required` cell fails when a pinned
+// spell becomes declared everywhere, so a pin cannot outlive its reason.
 //
-// mind-mapper: shipped in v2.2.0 with no SKILL.md and no entry in any listing.
-// Whether it is meant to be published at all is Cole's product call (spellbook
-// board `s5-9`), and the two repairs are opposite: if no, its CODE should not
-// have shipped; if yes, four listings and a contract are missing. Ruled OUT of
-// sprint 05 as a fix — this ward records it rather than resolving it.
+// ⚠ THE REASON HERE IS "DELIBERATE WIP", NOT "DEBT" — corrected the day after
+// this landed, and the correction is the point. The pin originally read as debt
+// awaiting repair. **Cole then RULED the undeclared state INTENTIONAL AND
+// CORRECT** (`47238d7`): mind-mapper is unfinished, it is undeclared BECAUSE it
+// is unfinished, and there is nothing to repair in the four listings, the trigger
+// registry, or the missing `SKILL.md`. A spell that has not coalesced should not
+// claim a roster slot.
+//
+// The pin is MECHANICALLY unchanged — the folder exists and is in no listing, so
+// asserting it would fail either way. What changed is what a reader should DO
+// about it: nothing. That distinction is exactly what this ward's own "state the
+// reason" discipline exists to keep honest, and a pin whose stated reason has
+// been overturned is a false reassurance wearing a measurement's clothes.
+//
+// FULL CONTEXT, and deliberately a FILE rather than a board card: cards do not
+// survive teardown and a committed test read cold cannot resolve an id that no
+// longer exists. (This comment previously cited board card `s5-9`, which was
+// later minted for an unrelated bounty defect — a wrong id carrying the authority
+// of a green cell.)
+//   docs/backlog/2026-08-10-mind-mapper-is-undeclared-and-shipped.md
+//
+// Left OPEN by that ruling, and NOT this ward's business: whether the built
+// artifact belongs in the published package while the spell is WIP.
 const PINNED: Record<string, string> = {
-  "mind-mapper": "undeclared in all 4 listings + no SKILL.md; publish-or-not is Cole's (s5-9)",
+  "mind-mapper": "WIP by Cole's ruling (47238d7) — correctly undeclared, nothing to repair",
 };
 
 function repoRoot(): string {
