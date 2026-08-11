@@ -17,8 +17,13 @@
 // ward owns only whether the answer has moved without anyone saying so.
 //
 // ⛔ WHICH GATE THIS ACTUALLY RUNS UNDER — correcting a landed commit subject
-// FORWARD, because rewording it would rebase eight shas the project's own docs
-// cite. `ababf0b`'s subject says "`bun run check` now says what it cannot see."
+// FORWARD, because rewording it would rebase shas the project's own docs cite —
+// MEASURED at 11 of this branch's 37 commits (`git rev-list <base>..HEAD`, each
+// sha grepped across tracked *.md/*.ts), NOT the "eight" this comment first
+// claimed. That eight was inherited from a channel message and repeated here
+// without being run; the true number is higher, so the conclusion is
+// strengthened, not weakened. Recorded rather than quietly swapped, because the
+// same wrong figure is now immutable in `25f07b2`'s commit message. `ababf0b`'s subject says "`bun run check` now says what it cannot see."
 // IT DOES NOT:
 //
 //     bun run check   is biome alone  ->  "Checked 356 files", SILENT about the 16
