@@ -219,9 +219,30 @@ cassandra / circe / daedalus  this session       hasDeparted = TRUE
 ```
 
 **The stale rows are correctly excluded, and the un-scopeable case fails CLOSED
-— it blocks rather than authorises.** `s5-7` is either fixed upstream since it
-was filed or was wrong when filed; **that cannot be told from here and is not
-being guessed at.**
+— it blocks rather than authorises.**
+
+> ✅ **RESOLVED — this file previously said "either fixed upstream or wrong when
+> filed; that cannot be told from here." IT COULD BE TOLD, IT TOOK TWO
+> COMMANDS**, and the answer is decisive:
+>
+> ```
+> 1.10.0   SESSION-SCOPED     (record.at >= sessionOpenedAt)
+> 2.0.0    SESSION-SCOPED
+> 2.2.0    SESSION-SCOPED
+> 2.3.0    SESSION-SCOPED     <- what we run
+> ```
+>
+> **The scoping is in every version on this machine, back to 1.10.0. It was
+> never absent, so it was never fixed. `s5-7` was FALSE WHEN FILED**, against
+> the version the team was running at the time.
+>
+> **Its remedy is a RETRACTION, not a fix — and the retraction should say why:
+> the claim was never run.**
+>
+> ⚠ **One more inference dies with it:** that stale records are why `--force`
+> normalises at teardown. **If `--force` is in fact reached for routinely, the
+> cause is unmeasured** — which is now an open question rather than an answered
+> one, and a better one.
 
 ### What survived and what died
 
