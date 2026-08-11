@@ -85,13 +85,32 @@ already stood down"** without reading the timestamp.
 "nothing is there" from "I cannot tell you"_ — **occurring in the verb every
 session ends on.** Found by the surface seat while standing down.
 
-⭐ **CORROBORATED n=2, INDEPENDENTLY, AND THE SECOND ARM IS THE DISCRIMINATING
-ONE.** The verify seat's own stand-down ~40 minutes earlier returned
-`created: false` **with a fresh timestamp** — i.e. a genuinely successful,
-first-time write reporting the same value as a no-op. **She had that output in
-front of her and did not report it**, which is the field's whole failure mode:
+⭐ **CORROBORATED n=3, INDEPENDENTLY** — surface, verify and engine seats, three
+separate runs, all returning `created: false` on a write that **demonstrably
+happened**:
+
+```
+circe      created:false   fresh ts, prior record 46h old
+cassandra  created:false   fresh ts, ~40 min before the finding was reported
+daedalus   created:false   16-second-old record, and he had NEVER stood down this session
+```
+
+**The verify seat had that output in front of her and did not report it** —
+which is the field's own failure mode operating on its observer:
 `created: false` reads as _"nothing happened"_ and is therefore not worth
-mentioning, exactly when it means _"something did."_
+mentioning, **exactly when it means "something did."**
+
+> ⛔ **NARROWING — the headline claim rests on ONE OBSERVED ARM, and circe
+> caught that before this file reached anyone.** All three runs are
+> `created: false` on a **fresh/successful** write. **Nobody observed the other
+> arm** — a caller who had genuinely already stood down. So what is MEASURED is:
+> _a successful write reports `created: false`._ What is **INFERRED** is: _a
+> no-op reports the same, therefore they are indistinguishable._
+>
+> **TAKEN ON REPORT, not verified here.** The indistinguishability claim is the
+> stronger and less supported half, and it is the half an upstream reader would
+> act on. **State it as one arm plus an inference, or measure the second arm
+> first** — it is one command.
 
 ## 5. A departure record is not a claim the pane is inert
 
