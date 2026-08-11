@@ -122,19 +122,45 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
     });
   });
 
-  test("the pin records exposure, and reports the caller-facing subset honestly", () => {
-    // Stated as a number the gate PRINTS rather than a claim in prose: how much
-    // of the hazard set is reachable by a caller typing a command, versus
-    // sibling-spawned argv where the operands are the spell's own.
+  test("the pin PRINTS its unit — a bare count cannot say which question it answered", () => {
+    // ⛔ THE UNIT IS THE FINDING (cassandra, #1006), and it is this module's own
+    // requirement 5 arriving at the DENOMINATOR instead of the parser: "read
+    // EVERY options map, not the first — mind-mapper/cli.ts has 27."
+    //
+    // The `--` hazard bites PER parseArgs CALL SITE, not per file. A per-file
+    // count reports mind-mapper's 16 positional-accepting commands as ONE, so
+    // the file unit understates real exposure by an order of magnitude on the
+    // largest spell. Both units are defensible; a BARE number is not, because a
+    // reader cannot tell which was meant. So all three are asserted and printed.
+    //
+    // ⚠ Her headline said "your 8 is 7". Measured, both numbers are right and
+    // they are DIFFERENT UNITS: 8 counts every file, 7 counts the caller-facing
+    // subset, and the cell already published both. Same for 22 vs 23 — hers
+    // excludes magpie/discover.ts (internal), mine includes it. That two seats
+    // produced a unit mismatch inside a message ABOUT a unit mismatch is the
+    // reason this cell now prints the unit rather than the number alone.
     const callerFacing = positional.filter(isCallerFacing);
+    const callSites = (rel: string) =>
+      [...readEntryPoint(rel).matchAll(/allowPositionals\s*:\s*true/g)].length;
+    const sitesAll = positional.reduce((n, p) => n + callSites(p), 0);
+    const sitesCallerFacing = callerFacing.reduce((n, p) => n + callSites(p), 0);
+
     expect({
-      hazardBearing: positional.length,
-      callerFacing: callerFacing.length,
-      guardsVerified: 0, // UNVERIFIED BY CONSTRUCTION — see HAZARD_APPLIES.
+      filesAll: positional.length,
+      filesCallerFacing: callerFacing.length,
+      callSitesAll: sitesAll,
+      callSitesCallerFacing: sitesCallerFacing,
+      guardsVerified: 1, // bounty only — cassandra drove it, #1006 §4. 6 of 7 UNVERIFIED.
     }).toEqual({
-      hazardBearing: 8,
-      callerFacing: 7,
-      guardsVerified: 0,
+      filesAll: 8,
+      filesCallerFacing: 7,
+      callSitesAll: 23,
+      callSitesCallerFacing: 22,
+      // Driven A/B on bounty: `add -- --session-key` is byte-identical to
+      // `add -- ordinaryword`, exit 0, valuesIgnored:null, and the flag becomes
+      // the card's TITLE. No guard. The other six are not driven and this number
+      // says so rather than rounding to zero-or-all.
+      guardsVerified: 1,
     });
   });
 });

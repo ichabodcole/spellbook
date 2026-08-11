@@ -197,6 +197,30 @@ export function recognizedFlags(src: string): string[] | null {
  */
 export const allowsPositionals = (src: string) => /allowPositionals\s*:\s*true/.test(src);
 
+/**
+ * Every parseArgs INVOCATION in a source, returned as its argument-object text.
+ *
+ * ⚠ INVOCATIONS, NOT PROPERTY NAMES, and that distinction is not pedantry — it
+ * is requirement 3 restated at the call-site level, and it bit during sprint 05.
+ * A quick count keyed on `options\s*:` reported two unaccounted maps in
+ * imago/cli.ts and magpie/cli.ts. Both were `options: { type: "string" }` — a
+ * FLAG LITERALLY NAMED `options` inside the flag map — matched because a real
+ * parseArgs call sat within the lookahead window further down the file. That is
+ * the same false positive requirement 3 already records, reproduced by someone
+ * who had just read requirement 3.
+ *
+ * Anchoring on `parseArgs(` + a brace-matched argument object cannot make that
+ * mistake: a flag named `options` is not a call.
+ */
+export function parseArgsInvocations(src: string): string[] {
+  const out: string[] = [];
+  for (const m of src.matchAll(/(?:nodeParseArgs|parseArgs)\s*\(\s*\{/g)) {
+    const open = m.index + m[0].length - 1;
+    out.push(braceBlock(src, open));
+  }
+  return out;
+}
+
 /** Read an entry point's source by its SKILLS_DIR-relative path. */
 export const readEntryPoint = (rel: string) => readFileSync(join(SKILLS_DIR, rel), "utf8");
 
