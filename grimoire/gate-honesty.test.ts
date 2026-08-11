@@ -24,7 +24,14 @@
 //      file can be rewritten wholesale without this failing, as long as its line
 //      count holds.
 //   3. It cannot tell a blind file that is FINE from one that is broken. Nothing
-//      here reads those 4,182 lines; that is the point of calling them blind.
+//      here reads a single line of them; that is the point of calling them blind.
+//   4. THE `lines` UNIT IS `wc -l` (newline count), per the instrument. It was
+//      `split("\n").length` until 2026-08-10 — one higher per file, 4182 vs 4166
+//      over this set — and THIS WARD IS WHAT CAUGHT THE CHANGE: the re-declare
+//      cell went red within minutes, naming all 16 files and the direction. That
+//      is the cell working, not a defect; the declaration below is the
+//      re-declaration it demanded.
+
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -39,22 +46,22 @@ import { join } from "node:path";
 // is new unreadable surface shipping to consumers. Both fail this cell, on
 // purpose — the point is that neither happens silently.
 const DECLARED_BLIND: Record<string, number> = {
-  "plugins/spellbook/skills/digestify/scripts/template.html": 1506,
-  "plugins/spellbook/skills/bounty/scripts/template.html": 1004,
-  "plugins/spellbook/skills/grapevine/scripts/watch.html": 1001,
-  "plugins/spellbook/skills/magpie/surface/styles.css": 176,
-  "plugins/spellbook/skills/imago/surface/styles.css": 152,
-  "plugins/spellbook/skills/magpie/scripts/remove.py": 146,
-  "plugins/spellbook/skills/astrolabe/surface/styles.css": 94,
-  "plugins/spellbook/skills/astrolabe/surface/index.html": 36,
-  "plugins/spellbook/skills/glamour/surface/index.html": 14,
-  "plugins/spellbook/skills/imago/surface/index.html": 14,
-  "plugins/spellbook/skills/magpie/surface/index.html": 14,
-  "plugins/spellbook/skills/glamour/surface/styles.css": 13,
-  "plugins/spellbook/skills/astrolabe/bunfig.toml": 3,
-  "plugins/spellbook/skills/glamour/bunfig.toml": 3,
-  "plugins/spellbook/skills/imago/bunfig.toml": 3,
-  "plugins/spellbook/skills/magpie/bunfig.toml": 3,
+  "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
+  "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
+  "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
+  "plugins/spellbook/skills/magpie/surface/styles.css": 175,
+  "plugins/spellbook/skills/imago/surface/styles.css": 151,
+  "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
+  "plugins/spellbook/skills/astrolabe/surface/styles.css": 93,
+  "plugins/spellbook/skills/astrolabe/surface/index.html": 35,
+  "plugins/spellbook/skills/glamour/surface/index.html": 13,
+  "plugins/spellbook/skills/imago/surface/index.html": 13,
+  "plugins/spellbook/skills/magpie/surface/index.html": 13,
+  "plugins/spellbook/skills/glamour/surface/styles.css": 12,
+  "plugins/spellbook/skills/astrolabe/bunfig.toml": 2,
+  "plugins/spellbook/skills/glamour/bunfig.toml": 2,
+  "plugins/spellbook/skills/imago/bunfig.toml": 2,
+  "plugins/spellbook/skills/magpie/bunfig.toml": 2,
 };
 
 type BlindReport = {
@@ -203,16 +210,12 @@ describe("gate honesty ward — calibration", () => {
       commitAll(dir);
       const after = deriveIn(dir);
 
-      // ⚠ 3, not 2, for a two-line file: the instrument's `lines` unit is
-      // `split("\n").length`, which counts the empty fragment after the final
-      // newline. So its counts run ONE HIGHER PER FILE than `wc -l` — verified
-      // against the real tree (`astrolabe/bunfig.toml` reports 3, `wc -l` says 2).
-      // Pinned to ITS convention deliberately: this ward consumes that
-      // instrument's predicate and must not mint a second one. Reported to its
-      // owner as a UNIT question, not corrected here.
+      // 2 for a two-line file — `wc -l` semantics. Pinned to the INSTRUMENT's
+      // convention rather than a second one of this ward's own: two conventions
+      // for one number is the drift this ward exists to prevent.
       expect({ blind: after.blind, blindLines: after.blindLines }).toEqual({
         blind: 1,
-        blindLines: 3,
+        blindLines: 2,
       });
       expect(after.files.map((f) => f.file)).toEqual(["skills/spell/scripts/surface.html"]);
     } finally {
