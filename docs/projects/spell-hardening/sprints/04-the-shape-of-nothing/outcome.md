@@ -7,8 +7,7 @@
 
 > **⚠ WRITTEN LATE — 2026-08-10, at sprint 05's convene, not at sprint 04's
 > close.** That is the defect this document is partly about, so it is stated at
-> the top rather than buried. See _Why this file was late_ at the end; it is the
-> most transferable thing here.
+> the top rather than buried. See _Why this file was late_ at the end.
 
 ## Summary
 
@@ -51,7 +50,10 @@ denominators.
 
 ## Commits
 
-**100 commits**, `e22b281..c2c00a5`. The 18 code commits:
+**100 commits**, `e22b281..6241f3e` — the branch head, not the merge.
+(`e22b281..c2c00a5` is **101**; it includes the merge commit itself. The count
+was right and the range printed beside it was not — caught by `circe` at
+review.) The 18 code commits:
 
 ```
 44f6108  grapevine  message_count says null when it did not count, never 0
@@ -91,8 +93,15 @@ squash, correctly.
 
 ## What Was Falsified
 
-Recorded in full in [`.anthill/retro.md`](../../../../../.anthill/retro.md); the
-load-bearing ones:
+> **⚠ TAKEN ON REPORT — this whole section is relayed, not measured here.** Its
+> three items come from [`.anthill/retro.md`](../../../../../.anthill/retro.md),
+> written by the seats who found them. Everything above this heading was
+> verified against the tree; this was not. **Marked because presenting a relay
+> in the same voice as a measurement is the exact confusion this sprint existed
+> to remove — an unmarked relay here is a category error, not an omission.**
+> _(Caught by `circe` at review.)_
+
+The load-bearing ones:
 
 - **Care and agreement are a trap that implausibility does not catch.** Two
   seats, independent methods, agreeing — and inverted. The split broke only when
