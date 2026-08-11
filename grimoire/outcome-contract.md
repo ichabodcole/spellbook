@@ -209,6 +209,61 @@ domain"** — and it is read as **"nothing happened."**
 
 ---
 
+## The failure-side explanation
+
+Everything above governs the channel where **nothing went wrong**. This section
+governs the other one, and it exists because the omission was load-bearing: two
+lanes independently needed to check _"did this failure say why?"_ and neither
+could, because the contract never said what the field is called.
+
+> **A failure carries its explanation in `error`. The explanation set is
+> FAILURE-SIDE ONLY — `outcome` is NOT a member.**
+
+**Stating what the set EXCLUDES is not tidiness; the inclusive-only reading is
+measured to invert.** A predicate built as _"an explanation present ⟺ a non-zero
+exit"_, with the explanation set read as _"the fields that explain"_, convicts
+this:
+
+```
+astrolabe attention <live> --question probe   (repeat, at HEAD)
+  exit=0  {"ok":true,"applied":false,"outcome":"already-raised"}
+```
+
+That is the `#85` fix working exactly as this contract's own two shapes require
+— **convicted by a check written to enforce this contract**, because `outcome`
+had drifted into the explanation set. A rule that dispatches someone to break
+working code arrives wearing a red that looks like diligence. _(Measured by
+cassandra, sprint 05; the pre-fix world driven in a detached worktree rather
+than read off a commit message.)_
+
+- **Boundary check — "NO ENVELOPE" IS A THIRD STATE, and a check that knows only
+  two will be wrong about it.** A `die()`-style rejection writes prose to
+  **stderr** and exits non-zero with **zero bytes on stdout**. That is neither
+  _carries an explanation_ nor _carries none_: there is nothing to parse. A
+  consumer that `JSON.parse`s stdout either throws (a red for the wrong reason)
+  or catches-and-skips (a row that looks checked and is decoration). **Name the
+  third state explicitly or do not check this rule.** _Measured: astrolabe's
+  founding row for `#85` has no envelope at all — 15 `die(` sites, three probed,
+  all `exit=2` with `stdoutBytes=0`._
+- **Boundary check — THE TWO CLAUSES ARE INDEPENDENT AND ONLY ONE IS RATIFIED
+  HERE.** _"A zero exit does not carry a failure explanation"_ is ratified: it
+  is specific, and it convicts a real defect (a benign no-op emitting `error` at
+  exit 0). _"A non-zero exit carries one"_ is **NOT ratified** — on the current
+  tree it ranges over every rejection site in a spell and turns one spell red
+  fifteen times. Whether stderr-prose rejections are wrong for an agent-facing
+  tool is a **live question, deliberately unruled**, and adopting the
+  biconditional would answer it silently.
+- **Boundary check — RATIFYING A SPELLING IS NOT ADOPTING IT.** No emitted
+  envelope changes because this section landed. Where a shipped spell spells it
+  otherwise — `digestify`'s timeout/cancel envelope carries `reason`, not
+  `error` — that is a **recorded divergence to be carded, never a silent
+  conversion.** The wire belongs to whoever owns the spell.
+- **Repeal when:** the failure channel is itself enumerated by something that
+  fails when a new shape appears — at which point the spelling is enforced
+  rather than agreed, and this section is redundant.
+
+---
+
 ## A ratified divergence — `valuesIgnored`
 
 `#82`'s operative instruction: **adopt anthill's spelling unless adopting it
