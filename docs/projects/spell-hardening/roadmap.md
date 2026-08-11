@@ -1,6 +1,7 @@
 # Spell Hardening — roadmap
 
-**Updated:** 2026-08-08 · **Project:** [README](./README.md) ·
+**Updated:** 2026-08-11 (the `Now` section; **everything below "Superseded" is
+2026-08-08 text kept deliberately**) · **Project:** [README](./README.md) ·
 [proposal.md](./proposal.md)
 
 > ## ⚠ THIS DOCUMENT IS A FORECAST, NOT A PLAN
@@ -294,9 +295,37 @@ the other seven**, and reads identically.
 
 ---
 
-## Now — Sprint 04, "The shape of nothing"
+## Now — Sprint 06, "Filed is not fixed"
 
-🟡 **SCAFFOLD** · [plan.md](./sprints/04-the-shape-of-nothing/plan.md)
+🟡 **SCAFFOLD** · [plan.md](./sprints/06-filed-is-not-fixed/plan.md) · **not
+ratified, no branch cut**
+
+**Two phases, ruled by Cole 2026-08-11: drain the fix queue, then close clause
+(ii).** Phase 1 is the six defects held out of sprint 05 by explicit ruling —
+including `#98`, which is **another team's open issue** — plus `c1`, which is
+**row 2's demotion half and is not solved by `terminator-invariant`**. Phase 2
+is clause (ii) plus the sprint 05 deferrals with a 06 horizon (D1–D6), and **row
+3, the exit-code contract, which is the first thing to cut.**
+
+> ⚠ **This section is what this document warned about, arriving on schedule.**
+> The forecast below said sprint 05 would be _"a harness, not a discovery
+> round"_ and was falsified. **The sprint-06 scaffold names its own falsifiers**
+> rather than waiting for a ratify round to find them; the sharpest is that a
+> fix queue with undecided design calls in it is **a discovery round wearing a
+> fix's clothes.**
+
+_Reconciled 2026-08-11 @ `05a30d3` — "Now: sprint 04": **FALSIFIED**, 04 shipped
+in v2.2.0 and 05 merged 2026-08-10; this section stood two sprints stale, and
+**the read-it-back-at-every-convene instruction below fired at neither.** The
+sprint-05 forecast further down is **kept as written and NOT updated** — it is
+the record of a guess that was half-refuted, and rewriting it would destroy the
+evidence for that. "Nothing past the current sprint is committed": **HELD**._
+
+## Shipped — Sprint 04, "The shape of nothing"
+
+✅ **Complete**, shipped in v2.2.0 ·
+[plan.md](./sprints/04-the-shape-of-nothing/plan.md) ·
+[outcome.md](./sprints/04-the-shape-of-nothing/outcome.md)
 
 **Thesis:** a consumer must be able to distinguish _"nothing is there"_ from _"I
 cannot tell you."_
@@ -311,7 +340,16 @@ terminator, `t-2df67738`). See the plan for what it deliberately excludes.
 
 ---
 
-## Next — Sprint 05 (FORECAST), "the gate"
+## Superseded — the Sprint 05 forecast, KEPT AS WRITTEN
+
+✅ **Sprint 05 shipped** ([outcome](./sprints/05-the-gate/outcome.md)) and this
+section is **the forecast that preceded it, preserved unedited.** It is here as
+evidence about forecasting, not as guidance — **read it against the outcome, not
+instead of it.** Its headline prediction was falsified by the sprint it
+predicted, and its `(a)/(b)` split was right. Both facts are only legible while
+the original wording survives.
+
+**Everything below this line is the 2026-08-08 text. Do not update it.**
 
 **Not scaffolded. No plan.md. This is a guess with a rationale.**
 

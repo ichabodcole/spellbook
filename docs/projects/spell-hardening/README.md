@@ -1,10 +1,13 @@
 # Spell Hardening
 
-**Status:** Active · **Started:** 2026-08-05 · **Current sprint:**
-**[05, "the gate"](./roadmap.md) — convened 2026-08-10 on
-`fix/spell-hardening-05`.** [03](./sprints/03-what-close-takes-with-it/plan.md)
-shipped in v2.1.0; [04](./sprints/04-the-shape-of-nothing/plan.md) shipped in
-**v2.2.0** (`c2c00a5`).
+**Status:** Active · **Current sprint:**
+**[06, "filed is not fixed"](./sprints/06-filed-is-not-fixed/plan.md) — 🟡
+SCAFFOLD, not ratified, no branch cut.** [05](./sprints/05-the-gate/plan.md)
+merged to `develop` 2026-08-10 and is **held unreleased** so 05 and 06 ship
+together. **Started:** 2026-08-05 ·
+[03](./sprints/03-what-close-takes-with-it/plan.md) shipped in v2.1.0;
+[04](./sprints/04-the-shape-of-nothing/plan.md) shipped in **v2.2.0**
+(`c2c00a5`).
 
 > **Part 1 of the two-part end condition is now DRAINED.** Issues #79 #85 #86
 > #87 #88 #97 shipped in v2.2.0 and were **closed 2026-08-10** — they had been
@@ -48,8 +51,9 @@ project closes them.
 > closed nothing either.
 
 **The arc:** [proposal.md](./proposal.md) · **What is coming:**
-[roadmap.md](./roadmap.md) — the end condition, the sprint 05 forecast, and what
-is parked. **A forecast, not a plan.**
+[roadmap.md](./roadmap.md) — the end condition, the current sprint, and what is
+parked. **A forecast, not a plan.** _(It also keeps the sprint-05 forecast
+**unedited** under "Superseded", as evidence about forecasting.)_
 
 ## Sprints
 
@@ -60,6 +64,18 @@ is parked. **A forecast, not a plan.**
 | 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                               | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
 | 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | Complete | 2026-08-08 | 2026-08-10 | [outcome](./sprints/04-the-shape-of-nothing/outcome.md) | [retro](../../../.anthill/retro.md)                             |
 | 05  | [the-gate](./sprints/05-the-gate/plan.md)                                 | Complete | 2026-08-10 | 2026-08-10 | [outcome](./sprints/05-the-gate/outcome.md)             | [carries](./sprints/05-the-gate/carries.md)                     |
+| 06  | [filed-is-not-fixed](./sprints/06-filed-is-not-fixed/plan.md)             | Scaffold | —          | —          | —                                                       | [decision log](./sprints/06-filed-is-not-fixed/plan.md)         |
+
+_Reconciled 2026-08-11 @ `05a30d3` (sprint 06 scaffold) — "current sprint is
+05": **FALSIFIED**, 05 merged 2026-08-10; header now names sprint 06 and its
+scaffold status. "the sprint table lists every sprint": **HELD** — sprint 06's
+row was created with its scaffold, before the sprint, which is the thing sprint
+05 could not say. "sprint 03 still has no `outcome.md`": **HELD** — the folder
+holds `plan.md` and `decisions.md` only. "the issue ledger below": **FALSIFIED
+and NOT repaired here** — see the note appended to it; a re-measure is a job
+with an owner, not a line in a sweep. "14 reported defects" (opening line):
+**UNCHECKED again** — second consecutive sweep with no owner for it, and saying
+so is the point._
 
 _Reconciled 2026-08-10 @ `ea0b34b` (docs-of-record sweep, sprint 05 finalize) —
 "sprint 04 has no outcome.md": **FALSIFIED**, written at `3a0183c`, row updated.
@@ -172,6 +188,23 @@ family** and are [sprint 04](./sprints/04-the-shape-of-nothing/plan.md)'s scope
 · `#87` is arguably that family and was left out so the ratify round has to
 decide it · `#72` `#75` `#11` are features/cosmetic, not hardening · `#76` is a
 real defect, unratified.
+
+> **⛔ STALE AS OF 2026-08-11, AND ITS POPULATION STATEMENT IS THE PART THAT
+> BROKE.** Measured now with `gh issue list --state open`: **7 open — `#11`
+> `#64` `#72` `#75` `#76` `#82` `#98`.** **Five** of the ten in-range items
+> listed above have closed since — `#79` `#85` `#86` `#87` `#88`, all on
+> 2026-08-10 — leaving five in range (`#64` `#72` `#75` `#76` `#82`) plus `#11`
+> outside it. And **`#98` is outside the `#64`–`#88` range this ledger declared
+> as its population**, exactly the failure mode the two corrections above were
+> written about: the counts were fine and the POPULATION STATEMENT was not. A
+> range chosen to be derivable stops being derivable the moment another team
+> files.
+>
+> **Not repaired in this sweep, deliberately.** Re-deriving the closed column
+> means walking eleven issues and attributing each, and this ledger has been
+> wrong twice from being rewritten in a hurry at the end of a session. It needs
+> an owner and about twenty minutes. **The stale numbers are left visible under
+> this box rather than deleted, because a blank ledger reads as no claim.**
 
 **⚠ THIS PROJECT HAS FILED MORE ISSUES THAN IT STARTED WITH — 12 against 9** —
 and that is the method working, not failing. **The count is converging in SHAPE
