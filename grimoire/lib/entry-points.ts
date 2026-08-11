@@ -52,20 +52,25 @@
  * ⛔ WHAT THIS ENUMERATOR CANNOT SEE — read this before hanging a rule on it.
  *   **It is `.ts` ONLY.** `walkSpellSources` filters on `.endsWith(".ts")`, so
  *   every hand-authored `.html` / inline-script surface in the roster is outside
- *   the population. circe measured the blind set at ~4,182 shipped lines, ~1,001
- *   of them under no guard of any kind, with a hard JS syntax error passing both
- *   arms of `bun run check` green.
+ *   the population — a hard JS syntax error in a shipped surface passes both
+ *   arms of `bun run check` green (circe, #978).
  *
- *   ⚠ THOSE TWO NUMBERS ARE **TAKEN ON REPORT** — I did not re-derive them, and
- *   I am marking that rather than letting a relayed number wear this module's
- *   authority. They are a coverage set, never a defect count; nobody has
- *   classified those lines. **The derivation is a runnable script, not a
- *   literal** — but it lives in gitignored scratch, so unless a lane lands it,
- *   the number outlives the only thing that could check it. **A number in prose
- *   whose derivation has evaporated is the anchor-card defect with a longer
- *   fuse** — the reader must convert it and cannot re-run it. If you are here
- *   because the figure looks stale: do not patch it, re-derive it, and if the
- *   script is gone that fact IS the finding.
+ *   ⛔ FOR THE SIZE OF THAT BLIND SET, RUN THE DERIVATION — this comment
+ *   deliberately carries NO number:
+ *
+ *       bun scripts/instruments/gate-blind-set.ts
+ *
+ *   This block previously quoted "~4,182 lines / ~1,001 unguarded", marked TAKEN
+ *   ON REPORT. **thoth then measured that figure inflated by exactly one per
+ *   file (#1028)** — so the marking worked and the number was still wrong in a
+ *   committed file. The fix is not a better number: it is the anchor-card lesson
+ *   applied here, **state the INVOCATION, not the value**. A number in prose
+ *   must be converted by its reader and cannot be re-run; a command re-derives
+ *   itself and cannot go stale without saying so.
+ *
+ *   It is a COVERAGE set, never a defect count — nobody has classified those
+ *   files. If the instrument is missing when you look, that absence IS the
+ *   finding; do not reconstruct a figure from this comment.
  *
  *   That filter is CORRECT for the question this module asks ("which entry
  *   points parse arguments?" — those are `.ts`), and the 16/7 counts do not
