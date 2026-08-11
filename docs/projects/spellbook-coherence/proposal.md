@@ -1,8 +1,37 @@
 # Spellbook Coherence Pass — make the migrated set production-coherent
 
-**Status:** In Progress (~75% — Deliverable 3 typecheck gate blocks completion;
-bounty still needs its feedback touchpoint) **Created:** 2026-05-29 **Updated:**
-2026-06-27 **Author:** Cole Reed (with familiar)
+**Status:** In Progress — **2 of 4 deliverables** · **Created:** 2026-05-29 ·
+**Updated:** 2026-08-10 · **Author:** Cole Reed (with familiar)
+
+> **⚠ THE PREVIOUS STATUS LINE WAS WRONG IN BOTH NUMBERS**, and it stood for 44
+> days. It read _"~75% — Deliverable 3 typecheck gate **blocks** completion;
+> bounty still needs its feedback touchpoint."_
+>
+> - **Nothing was ever blocked.** `typescript` is in `peerDependencies` only,
+>   `tsc --noEmit` appears nowhere, and `check` has been `biome check` alone
+>   since init. The gate was **never started** — a wall that did not exist.
+> - **It was never ~75%.** Only D2 (magpie's thin Bun wrapper) was complete.
+>
+> **Corrected state, 2026-08-10:**
+>
+> | #   | deliverable                              | state                                                      |
+> | --- | ---------------------------------------- | ---------------------------------------------------------- |
+> | 1   | feedback touchpoints on every spell      | ✅ **complete** — bounty's landed 2026-08-10, the last one |
+> | 2   | magpie thin Bun wrapper over Python      | ✅ complete                                                |
+> | 3   | `tsc --noEmit` gate wired into `check`   | ❌ **not a small task** — see below                        |
+> | 4   | validate-or-trim the seed grimoire rules | ◐ partial — rows 47, 49, 56, 57 still pure `(seed)`        |
+>
+> **D3 was measured on 2026-08-10 and it is not a flag-flip:**
+> `bunx tsc --noEmit` exits 2 with **436 errors** across every spell, 61% of
+> them "possibly undefined" from `noUncheckedIndexedAccess`, which the config
+> also already sets. Wiring it today makes `check` permanently red and blocks
+> every commit. **Re-scoped and refiled** as
+> [`docs/backlog/2026-08-10-typecheck-gate-is-a-project-not-a-flag.md`](../../backlog/2026-08-10-typecheck-gate-is-a-project-not-a-flag.md),
+> which carries the measurement and the three-way design choice. **This project
+> should not claim D3 until that choice is made.**
+>
+> _Corrected by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md)._
 
 ---
 

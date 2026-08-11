@@ -150,12 +150,15 @@ _Five, as of the 2026-08-10 sweep
   numbers:_ the gate was never started rather than blocked (`typescript` is in
   `peerDependencies` only; `check` is `biome check` alone), and only magpie's
   thin Bun wrapper is actually complete.
-- `spell-surface-pipeline` — **hypothesis untested.** None of the mechanism
-  exists: no `dist/`, `astrolabe/scripts/server.ts:63` still imports the surface
-  statically, and `house-style.md:361` still reads _"The build (there isn't
-  one)"_. ⚠ Its `plan.md` is headed `RATIFIED` and claims a seam was
-  _"empirically built"_ — **that is design intent in the past tense, not a
-  report.** Fix the document before building from it.
+- `spell-surface-pipeline` — **hypothesis validated, on `mind-mapper` rather
+  than the astrolabe the plan names.** Mode resolution
+  (`mind-mapper/scripts/server.ts:95`), source relocated to `src/mind-mapper/`,
+  and a committed `dist/` that shipped in v2.2.0 — the real release cut the
+  proposal asked for. **Left:** Seam C's canon (`house-style.md:361` still reads
+  _"The build (there isn't one)"_) and either migrating astrolabe or dropping it
+  as the reference. ⚠ `plan.md` is wrong about **which spell**, not whether —
+  prefer `.anthill/dev/seams.md` (Contracts 1, 2, 4), which the build amended
+  and the plan did not.
 - `spellbook-rebrand` — **naming closed, visual open.** Five mechanical asset
   fixes sit behind three aesthetic decisions; doing them first means doing them
   twice. Exception: **#11** (the wordmark still renders "Tuskboard") is scoped

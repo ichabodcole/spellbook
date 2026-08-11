@@ -20,10 +20,24 @@ Acting on both cuts the visible surface roughly in half:
 | open issues     | 13     | 7     |
 
 **The health finding is not the backlog size — it is that the backlog could not
-be sized from the documents.** Four projects' status lines disagreed with the
-tree, in both directions (see _The cross-cutting finding_). The reason this
-sweep needed ten agents reading code rather than one agent reading headers is
-itself the result.
+be sized from the documents.** Five instances across four projects, in **both**
+directions (see _The cross-cutting finding_) — and one document, the pipeline
+plan, manages both at once: it claims work that never happened and omits work
+that shipped. The reason this sweep needed ten agents reading code rather than
+one agent reading headers is itself the result.
+
+> **⚠ AND THE SWEEP CAUGHT ITSELF TWICE.** Two findings here were wrong when
+> first written and are corrected in place rather than silently fixed:
+>
+> - **The typecheck gate** was called a two-line known fix by both the reviewing
+>   agent and me, from reading the config. Running it produced **436 errors**.
+> - **The surface pipeline** was called "untested, none of the mechanism
+>   exists." It is **built and shipped in v2.2.0** — on `mind-mapper`, which no
+>   project document mentions.
+>
+> Both errors have the same shape as the defect the report is about, and both
+> were caught only by **doing the work rather than reading about it**. That is
+> the finding, and it is worth more than the inventory.
 
 ## Scope
 
@@ -71,7 +85,7 @@ lose it; the archive note carries it.
 | `spell-hardening`        | NEEDS-WORK | end condition part 2 — sprint 05, "the gate"                      |
 | `mind-mapper`            | NEEDS-WORK | R13 built + gated, **awaiting testing**, then a scope call on R14 |
 | `spellbook-coherence`    | NEEDS-WORK | 1 of 4 deliverables complete                                      |
-| `spell-surface-pipeline` | NEEDS-WORK | hypothesis **untested**; none of the mechanism exists             |
+| `spell-surface-pipeline` | NEEDS-WORK | hypothesis **validated on mind-mapper**; canon + astrolabe left   |
 | `spellbook-rebrand`      | NEEDS-WORK | visual front blocked on an aesthetic decision                     |
 
 #### `spell-hardening` — not archivable, and its own roadmap says why
@@ -113,9 +127,37 @@ Nothing was ever blocked. `typescript` sits in `peerDependencies`
 (`package.json:37`) and never in devDeps; `tsc --noEmit` appears nowhere; the
 `check` script has been `biome check --error-on-warnings .` since init. The gate
 was not blocked — **it was never started**, and the status line has been
-describing a wall that does not exist. `tsconfig.json` is already
-`strict: true`, so wiring it is two lines plus whatever latent errors the first
-run surfaces.
+describing a wall that does not exist.
+
+> **⚠ CORRECTION, made while executing this report's own recommendation.** This
+> section first called the gate a two-line known fix — devDeps plus a script
+> edit — on the reasoning that `tsconfig.json` is already `strict: true`. **Then
+> I ran it.** `bunx tsc --noEmit` exits 2 with **436 errors** across every spell
+> in the roster:
+>
+> ```
+>  98  imago/tests          74  grapevine/scripts     68  bounty/scripts
+>  39  astrolabe/scripts    29  magpie/tests          27  scripts/instruments
+>  23  glamour/tests        17  imago/scripts         11  grimoire
+> ```
+>
+> **267 of the 436 are TS2532 / TS18048 — "possibly undefined"** — and the cause
+> is `noUncheckedIndexedAccess: true`, which the config also already sets. The
+> codebase was written without that flag ever being enforced, so array indexing
+> is unchecked essentially everywhere, concentrated in tests.
+>
+> **Wiring the gate today would make `bun run check` permanently red and block
+> every commit.** So this is **not** a known fix. It is a sized project with a
+> real design choice in it — fix all 436, or relax `noUncheckedIndexedAccess`,
+> or scope the gate to a subset and grow it — and it is filed as
+> [`docs/backlog/2026-08-10-typecheck-gate-is-a-project-not-a-flag.md`](../backlog/2026-08-10-typecheck-gate-is-a-project-not-a-flag.md).
+>
+> **The methodological point is the reason this correction is written here
+> rather than quietly edited out:** the estimate came from reading the config
+> and was wrong by more than two orders of magnitude. It survived a
+> `docs-curator` pass, which also called it `[known-fix]`, because that agent
+> read the config too. **Nothing found it until something ran it** — the same
+> failure this report is otherwise about, committed by the report.
 
 Deliverables: 1 of 4 complete (magpie's thin Bun wrapper over Python). Feedback
 touchpoints are 3 of 4 — **bounty's `SKILL.md` has none**, the only spell
@@ -123,25 +165,66 @@ missing one, which `ward`'s own checklist requires. Four
 `grimoire/decay-ledger.md` rows (47, 49, 56, 57) are still pure `(seed)` with no
 spell-based validation.
 
-#### `spell-surface-pipeline` — the plan reports work that was not done
+#### `spell-surface-pipeline` — the pilot moved spells and nobody updated the plan
 
-The hypothesis is **untested**, and three checks establish it:
+> **⚠ THIS SECTION WAS WRONG WHEN FIRST WRITTEN, AND THE WAY IT WAS WRONG IS THE
+> MOST INSTRUCTIVE THING IN THIS REPORT.** It originally read _"the hypothesis
+> is UNTESTED; none of the mechanism exists."_ **The mechanism exists, works,
+> and shipped in v2.2.0.** The corrected finding follows; the post-mortem on the
+> error is at the end of this section, because it indicts the method this whole
+> report is built on.
 
-| claim                        | reality                                                                               |
-| ---------------------------- | ------------------------------------------------------------------------------------- |
-| astrolabe builds to `dist/`  | no `dist/` — the skill has `surface/` only                                            |
-| dev-only dynamic import      | `astrolabe/scripts/server.ts:63` — static `import index from "../surface/index.html"` |
-| canon written to house-style | `grimoire/house-style.md:361` still reads `## The build (there isn't one)`            |
+**The hypothesis is VALIDATED — on `mind-mapper`, not on astrolabe.**
 
-v2.2.0 shipped astrolabe as surface **source**, which is precisely the state the
-success criterion said a validating release would replace.
+| seam                                      | state       | evidence                                                                                                                |
+| ----------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------- |
+| **A** — mode resolution + `dist/` serve   | ✅ built    | `mind-mapper/scripts/server.ts:95` — _release iff `dist/index.html` exists, else dev_; serves `dist/` verbatim (`:156`) |
+| **B** — source outside the plugin subtree | ✅ built    | `src/mind-mapper/{build.ts,bunfig.toml,surface/}`; `.gitignore:12–13` un-ignores that `dist/`, citing **Contract 4**    |
+| **the validating release cut**            | ✅ shipped  | `spellbook-v2.2.0` contains `mind-mapper/dist/{build.json,index-*.css,index-*.js}` — hashed assets, committed           |
+| **C** — canon into `house-style.md`       | ❌ not done | `grimoire/house-style.md:361` still reads _"The build (there isn't one)"_                                               |
+| **astrolabe migration**                   | ❌ not done | no `dist/`; `astrolabe/scripts/server.ts:63` is still a static import                                                   |
 
-**The defect here is the document, not the gap.** `plan.md` is headed
-`RATIFIED — all seams settled`, and Seam A states that circe _"empirically
-built"_ astrolabe's surface. That is design intent written in the past tense,
-and it reads as a report of completed work. The astrolabe React re-home that
-_did_ happen (`5dfa9a8`) was the **prerequisite supply** for the pilot, not the
-pilot.
+The build went **past** its own plan: a build stamp with staleness detection
+(`server.ts:98–103`) warns when `src/` is newer than `dist/` — the test suite
+prints that warning today — and Contract 2 carries a live amendment (`3b8b652`)
+after a uniform `[name]-[hash]` naming hashed the HTML entry and silently
+defeated Contract 1's release-mode check. A real defect, found by real use. That
+is a pilot doing its job.
+
+**What is genuinely left:** Seam C's canon, and either migrating astrolabe or
+formally dropping it as the reference spell. Neither is a hypothesis test.
+
+**The document defect is still real, and it is now the opposite of what this
+report first said.** `plan.md` names astrolabe throughout and Seam A claims
+circe _"empirically built"_ astrolabe's surface — astrolabe was never migrated.
+So the plan is wrong about **which spell**, not about **whether**. The ratified
+contracts in `.anthill/dev/seams.md` (1, 2, 4) were amended by what the build
+learned; the plan skeleton never was. **Prefer seams.md.**
+
+##### The post-mortem — how this section came to say the opposite of the truth
+
+The reviewing agent reported "none of the mechanism exists". I did **not** take
+that on trust: I ran three checks myself before publishing it, and all three
+came back confirming the agent. They confirmed it because **all three were about
+astrolabe** — and astrolabe is the one spell where the mechanism genuinely is
+absent.
+
+**I verified the agent's claims and inherited its frame.** The claims were true.
+The conclusion drawn from them was false. Nothing in "verify before relaying"
+protects against a verification that only looks where the source was looking,
+and I would have shipped this section as a confident, cited, triple-checked
+falsehood.
+
+What actually caught it was **unrelated**: running the full test suite for a
+different fix, and reading a stray `mind-mapper: STALE DIST` warning in the
+output — emitted by the very staleness detector this section claimed did not
+exist. **The evidence arrived as a side effect of doing the work, not from any
+of the checking.**
+
+> **The transferable rule:** when a source says _"X does not exist,"_ checking
+> the places the source names can only ever confirm it. A negative claim is only
+> tested by searching where the source **was not looking** — here, one `ls src/`
+> would have done it.
 
 #### `spellbook-rebrand` — known fixes exist but are blocked upstream of themselves
 
@@ -195,12 +278,19 @@ not by matching a commit subject:
 **The documents and the tree disagreed about what exists — in both directions —
 in four of ten projects.**
 
-| direction                      | instance                                                     |
-| ------------------------------ | ------------------------------------------------------------ |
-| done, but reads as open        | six issues fixed and shipped, never closed                   |
-| done, but reads as nothing     | `magpie-rebuild` complete with no status line at all         |
-| not done, but reads as blocked | `spellbook-coherence` — a blocker that never existed         |
-| not done, but reads as done    | `spell-surface-pipeline` — `RATIFIED`, _"empirically built"_ |
+| direction                      | instance                                                                                      |
+| ------------------------------ | --------------------------------------------------------------------------------------------- |
+| done, but reads as open        | six issues fixed and shipped, never closed                                                    |
+| done, but reads as nothing     | `magpie-rebuild` complete with no status line at all                                          |
+| not done, but reads as blocked | `spellbook-coherence` — a blocker that never existed                                          |
+| not done, but reads as done    | `spell-surface-pipeline`'s `plan.md` — `RATIFIED`, _"empirically built"_, about **astrolabe** |
+| done, but recorded nowhere     | the same pipeline, actually **built and shipped on `mind-mapper`** — no project doc says so   |
+
+**The last two are the same document.** `plan.md` simultaneously claims work
+that never happened and omits the work that did — because the pilot moved from
+astrolabe to mind-mapper and the plan was never updated. A single file wrong in
+both directions at once is the strongest form of the finding this report is
+about.
 
 This is [`the unclosed unit`](../backlog/2026-08-10-the-unclosed-unit.md) at
 project scale. There, the finding was that _documenting an omission is not
@@ -210,16 +300,23 @@ least convenient.**
 
 ### This report is itself an instance, and that is the load-bearing part
 
-`docs/reports/2026-06-27-doc-status-report.md` already named **two of the four
-known fixes below** — the typecheck gate and bounty's missing feedback
-touchpoint — under the heading _"the remaining implementation work … is still
-open."_ That was **44 days ago**. Both are still open today. They were found,
-written down, correctly categorised, and not done.
+`docs/reports/2026-06-27-doc-status-report.md` already named **two of the known
+fixes below** — the typecheck gate and bounty's missing feedback touchpoint —
+under the heading _"the remaining implementation work … is still open."_ That
+was **44 days ago**. Both are still open today. They were found, written down,
+correctly categorised, and not done.
 
 So the honest reading is that **another report changes nothing on its own.**
-That is why the four known fixes are being executed on a branch alongside this
+That is why the known fixes are being executed on a branch alongside this
 document rather than filed by it. A report that only re-files what the last
 report filed is the failure it is describing.
+
+**And executing them is what caught the report's own worst error.** The
+typecheck gate was listed here as a two-line known fix by both the reviewing
+agent and me, on identical reasoning from the config. Running it produced **436
+errors**. It has been removed from the known-fix list and refiled as a sized
+project — see the correction under `spellbook-coherence`. **Three of four
+survived contact; one did not, and only doing the work found that out.**
 
 ## Recommendations
 
@@ -228,7 +325,9 @@ report filed is the failure it is describing.
 1. Close the six issues above. _(done in this pass)_
 2. Archive the four complete projects; move `digestify-image-viewer` to
    `docs/backlog/`. _(done in this pass)_
-3. Land the four known fixes. _(branch alongside this report)_
+3. Land the **three** surviving known fixes. _(branch alongside this report)_
+   The fourth — the typecheck gate — did not survive being run; refiled as
+   [`2026-08-10-typecheck-gate-is-a-project-not-a-flag.md`](../backlog/2026-08-10-typecheck-gate-is-a-project-not-a-flag.md).
 
 **Do next (still well-defined):**
 
@@ -246,8 +345,10 @@ report filed is the failure it is describing.
 8. **Sprint 05, "the gate"** — the only thing between `spell-hardening` and its
    own end condition.
 9. **The rebrand aesthetic decision** — unblocks five mechanical items.
-10. **The pipeline's five slices** — and fix `plan.md`'s past-tense claim first,
-    so the next reader is not misled the way this sweep was.
+10. **The pipeline's Seam C** — write the canon into `house-style.md`, which
+    still says there is no build while a built spell ships. Then decide whether
+    astrolabe migrates or is dropped as the nominal reference. **Not five
+    slices** — the mechanism is built and shipped; this is the tail.
 11. **F1 frames + pin nodes** (dagre vs ELK), **#82** cross-tool spelling
     (blocked on the noun set), **#75** bounded tail.
 
@@ -258,14 +359,14 @@ request.
 2.1.0 did not fire. There is nothing to fix until it does, and that is a
 statement about evidence, not about priority.
 
-## The Four Known Fixes
+## The Known Fixes — three of four survived being attempted
 
-| #   | fix                                          | why it is well-defined                                                                                                                                                                                                                     |
-| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | bounty's board never renders `restoreFailed` | `server.ts` emits it at 5 sites; `template.html` matches **0**. The agent is told the restore failed; the human sees a silently empty board and cannot distinguish it from an empty one. Exactly the lockstep-mirror drift no test guards. |
-| 2   | bounty `SKILL.md` has no feedback touchpoint | `ward` requires one on every spell; bounty is the only miss. Copy digestify's structure.                                                                                                                                                   |
-| 3   | typecheck gate unwired                       | `typescript` → devDeps, `check` → `tsc --noEmit && biome check`. Already `strict: true`.                                                                                                                                                   |
-| 4   | stale project status lines                   | Four projects; the sweep produced the correct values.                                                                                                                                                                                      |
+| #     | fix                                          | why it is well-defined                                                                                                                                                                                                                     |
+| ----- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | bounty's board never renders `restoreFailed` | `server.ts` emits it at 5 sites; `template.html` matches **0**. The agent is told the restore failed; the human sees a silently empty board and cannot distinguish it from an empty one. Exactly the lockstep-mirror drift no test guards. |
+| 2     | bounty `SKILL.md` has no feedback touchpoint | `ward` requires one on every spell; bounty is the only miss. Copy digestify's structure.                                                                                                                                                   |
+| ~~3~~ | ~~typecheck gate unwired~~ **WITHDRAWN**     | **Not a known fix.** Estimated as two lines from the config; running it produced **436 errors** across every spell, 61% of them from `noUncheckedIndexedAccess`. Refiled as a sized project with a real design choice in it.               |
+| 4     | stale project status lines                   | Four projects; the sweep produced the correct values.                                                                                                                                                                                      |
 
 Fix 1 is a **consumer-visible defect** and the only one of the four that a user
 feels.
@@ -279,9 +380,13 @@ report's authority:
   a scope call, not a tree fact.
 - **Whether the deliberate non-writing of `scaffold/`** ("on purpose", per
   `scaffold/README.md`) is still house intent.
-- **Whether the marketplace supports a packaging-exclude mechanism** for surface
-  source (`.claudeignore` or equivalent) — Seam B asks this and it was never
-  answered. The pipeline cannot be validated without it.
+- ~~**Whether the marketplace supports a packaging-exclude mechanism**~~
+  **ANSWERED, and the question was moot.** Seam B asks for a
+  `.claudeignore`-style filter; the build sidestepped it entirely by relocating
+  surface source to `src/<spell>/`, so the published subtree is **source-free by
+  construction** and no filter is needed. `.gitignore:12–13` un-ignores the
+  built `dist/` for exactly this reason. Recorded because this report listed it
+  as a blocker on validation, and it never was.
 - **Whether `full-state broadcast vs granular diffs`** was ever decided. No
   decision is recorded either way. **Resolved after the agents reported:** the
   reviewing agent could not read `wordmark.webp` and flagged it as undetermined.
