@@ -76,7 +76,44 @@ glamour                                NO ENV VAR AT ALL                  CANNOT
 `process.env` references — a seat trying to isolate it has nothing to set and no
 way to discover that except by reading source.
 
-## 4. `comms stand-down` returns `created: false` on a SUCCESSFUL update
+## 4. `comms stand-down`'s `created` field is dead on arrival for any established team
+
+> **⛔ CONVERGED. Four layers, three measured, one booked. This section was
+> rewritten after the seats took it apart — the original framing ("the field is
+> ambiguous") was the weakest of the four.**
+
+```
+1 PERSISTENCE     departure records outlive their session       OBSERVED  (prospero 66h, thoth 48h, live)
+2 REPORTING       `created:false` on a FRESH write, n=3         OBSERVED  (circe, cassandra, daedalus)
+3 REPORTING       `created:false` on a genuine 48h UPDATE       BOOKED    (thoth, at teardown)
+4 REACHABILITY    `created:true` is UNREACHABLE for this team   OBSERVED  (5/5 handles hold a record)
+```
+
+### ⭐ Layer 4 is why this is worth fixing rather than documenting
+
+`created:true` is **not** degenerate by design — it is a real return, on a
+seat's **first-ever** stand-down. daedalus went looking for the input that would
+produce it:
+
+```
+roster handles              cassandra · circe · daedalus · prospero · thoth
+already hold a record       cassandra · circe · daedalus · prospero · thoth
+seats that could return true    NONE
+```
+
+Identity is roster-resolved, so **no caller on this team can ever again produce
+`created: true`.** The field's informative value is consumed **exactly once per
+seat, ever**, and for this team all five of those events are in the past.
+
+> **A field whose informative value is consumed on first use and never returns
+> is worse than a constant one** — early in a project's life it demonstrably
+> works, so nobody revisits it, and it decays into a permanent `false` **exactly
+> as the team starts depending on the teardown guard it feeds.**
+
+**You cannot tell a team "watch for `created: true`" when no team past its first
+session can ever see it.**
+
+## 4a. The original observation, kept because it is layer 2
 
 A caller cannot distinguish **"I recorded your departure"** from **"you had
 already stood down"** without reading the timestamp.
