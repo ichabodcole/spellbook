@@ -82,10 +82,42 @@
 //     never a defect count. Zero of them have been classified.
 //   • The blind set is NOT UNIFORM and this instrument does not say so: digestify
 //     has a real syntax-parse cell, bounty has 5 literal-string assertions and no
-//     parse, grapevine's 1,001 lines have nothing. 3 cells over 3,508 lines of
+//     parse, grapevine's 1,000 lines have nothing. 3 cells over 3,508 lines of
 //     hand-written surface. "Unseen" and "unseen AND unguarded" are different.
+//     (Both figures `wc -l`. This bullet previously read "1,001" beside "3,508" —
+//     a split-count and a `wc -l` in ONE SENTENCE, left behind when the code's
+//     unit was fixed and the prose in the same file was not. Fixing a unit means
+//     fixing every place it is QUOTED, not just where it is COMPUTED.)
 //   • Line counts, not weight. A 3-line `bunfig.toml` carries Contract 5's
 //     silent-Tailwind-skip; a 176-line stylesheet carries no logic at all.
+
+// ── WHICH ARM OF THE GATE THIS IS ABOUT ────────────────────────────────────
+// ⛔ `bun run check` and `bun test` are TWO ARMS and only one is blind. This
+// instrument's own commit subject (32d1cae) says "THE GATE cannot read 16
+// shipped files", and that is an overstatement:
+//
+//     bun run check   biome, allow-list ts/tsx/json/jsonc   -> blind to all 16
+//     bun test        spawns the daemons, reads served output
+//                     -> digestify/review.test.ts names template.html  x2
+//                        bounty/server.test.ts    names template.html  x3
+//
+// The honest claim is "the CHECK arm cannot read them"; the test arm is
+// PARTIALLY sighted. Found by a cold reader given the branch and no team context
+// (`sprints/05-the-gate/cold-read.md`, finding 5), which also convicted the same
+// overstatement in a peer's commit subject.
+//
+// Corrected FORWARD rather than by rewording the commit. The reason, with the
+// citations ACTUALLY MEASURED (`git grep 32d1cae`) rather than the two this
+// author asserted from memory and had wrong twice on the wire:
+//     .anthill/dev/circe.md:87, :208   ·   sprints/05-the-gate/cold-read.md:47
+// A rebase-to-reword changes every subsequent sha and breaks those.
+//
+// ⚠ The rule this violated was already landed in this author's own seat doc
+// ("Say which ARM of the gate is blind, never 'the gate'"), amended there after
+// making the identical error one sprint earlier. A seat re-grounds from its doc
+// at JOIN and never again, so a lesson landed mid-session is inert for the
+// session that produced it — which is why the cold reader caught it and four
+// seats did not.
 
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
