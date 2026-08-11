@@ -114,7 +114,7 @@ The lead held his list until the seats wrote, on the ritual's own warning that s
 
 ## Carried to sprint 06
 
-`s5-1` · `s5-2` · `s5-3` · `s5-4` · `s5-5` · `s5-6` (#98) · `s5-7` · **`s5-8`** (astrolabe close; **cassandra holds it as a calibration input BEFORE it is a fix**) · **`s5-9`** (⛔ **highest severity** — `bounty update --stdin` misroutes and `valuesIgnored: null` reports a false negative on a data-destroying path) · **row 3** (exit-code contract, not cut) · **clause (ii)** (ruled out of 05 by Cole) · **D1–D6** (placed with horizons and homes in the sprint 05 plan).
+`s5-1` · `s5-2` · `s5-3` · `s5-4` · `s5-5` · `s5-6` (#98) · ~~`s5-7`~~ **FALSIFIED at finalize** (the teardown guard IS session-scoped in anthill 2.3.0; stale records are correctly excluded and the un-scopeable case fails closed — `comms.ts:717,724`) · **`s5-8`** (astrolabe close; **cassandra holds it as a calibration input BEFORE it is a fix**) · **`s5-9`** (⛔ **highest severity** — `bounty update --stdin` misroutes and `valuesIgnored: null` reports a false negative on a data-destroying path) · **row 3** (exit-code contract, not cut) · **clause (ii)** (ruled out of 05 by Cole) · **D1–D6** (placed with horizons and homes in the sprint 05 plan).
 
 **Five findings ruled OUT are written up in `docs/backlog/`** rather than left on the wire. **That happened because a seat offered, not because anything asked.**
 

@@ -183,15 +183,51 @@ message rather than a scratch note; scratch is gitignored. **If teardown happens
 and no fourth arm is posted, that absence is now readable from this file** —
 which is the only reason it is not lost by default.
 
-## 5. A departure record is not a claim the pane is inert
+## 5. ⛔ WITHDRAWN — "the teardown guard is fooled by stale departure records" IS FALSE
 
-Two seats stood down and then deliberately sent again, correctly, citing the
-SOP. The teardown guard reads the departure record as _this seat is gone_; the
-seat means _this seat announced it was done_. **Both are true simultaneously and
-the guard only ever reads the first.**
+**This section originally claimed the guard treats a previous session's
+departure record as a departure, and cited `s5-7`. Measured against the
+installed anthill (2.3.0), from source: it does not.**
 
-Related to `s5-7` (departure records are not session-scoped), re-measured
-2026-08-10 and still unresolved.
+```
+comms.ts:717   if (sessionOpenedAt === null) return false;
+comms.ts:724   return typeof record?.at === "number" && record.at >= sessionOpenedAt;
+```
+
+Computed against this team's live files at this session's `openedAt`:
+
+```
+prospero   66h-old record   hasDeparted = FALSE   <- correctly EXCLUDED
+thoth      48h-old record   hasDeparted = FALSE   <- correctly EXCLUDED
+cassandra / circe / daedalus  this session       hasDeparted = TRUE
+```
+
+**The stale rows are correctly excluded, and the un-scopeable case fails CLOSED
+— it blocks rather than authorises.** `s5-7` is either fixed upstream since it
+was filed or was wrong when filed; **that cannot be told from here and is not
+being guessed at.**
+
+### What survived and what died
+
+```
+1 PERSISTENCE    records outlive their session               STILL TRUE (the files are there)
+2 REPORTING      created:false on a fresh write, n=3         STILL TRUE
+4 REACHABILITY   created:true unreachable for this team      STILL TRUE
+--
+THE INFERENCE    1 + 2 therefore the guard is fooled         ⛔ FALSE
+```
+
+**The three measurements survive. What died is the CONSEQUENCE all of us hung on
+them — and it was the only part that made the finding urgent.**
+
+What remains is genuine and much smaller: **`created` carries no information for
+an established team** (§4). That is worth filing. _"The teardown guard is fooled
+by stale records"_ is not, because it is false.
+
+⚠ **This is the whole reason the batch was drafted and not sent.** A measured
+persistence fact plus a measured reporting fact produced a confident consequence
+that four seats accepted, and **the consequence was never measured by anyone.**
+It would have gone upstream as a defect report against working code.
 
 ---
 
