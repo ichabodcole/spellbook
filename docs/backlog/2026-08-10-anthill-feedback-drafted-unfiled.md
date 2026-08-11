@@ -107,8 +107,24 @@ seat, ever**, and for this team all five of those events are in the past.
 
 > **A field whose informative value is consumed on first use and never returns
 > is worse than a constant one** — early in a project's life it demonstrably
-> works, so nobody revisits it, and it decays into a permanent `false` **exactly
-> as the team starts depending on the teardown guard it feeds.**
+> works, so nobody revisits it, and it decays into a permanent `false` while
+> still being printed as though it meant something.
+
+> ⛔ **RESIDUE OF THE WITHDRAWN CLAIM, CAUGHT ON A RE-READ OF THIS FILE.** This
+> paragraph originally ended _"exactly as the team starts depending on the
+> teardown guard it feeds."_ **`created` does not feed the guard.** The guard
+> reads `record.at` against `sessionOpenedAt` (`comms.ts:724`) and never looks
+> at `created` at all.
+>
+> **So the surviving section had inherited the dead claim's consequence** — the
+> measurement was fine and the sentence explaining why it MATTERED was carrying
+> the falsified inference. **Withdrawing §5 did not automatically clean §4, and
+> nothing would have flagged it**: it reads as ordinary motivating prose.
+>
+> **The honest scope of §4 is now smaller and stands on its own:** a reported
+> field that no established team can ever see take its informative value. It is
+> an ergonomic defect in what the CLI tells its caller. **It is not a safety
+> issue and this file no longer implies one.**
 
 **You cannot tell a team "watch for `created: true`" when no team past its first
 session can ever see it.**
