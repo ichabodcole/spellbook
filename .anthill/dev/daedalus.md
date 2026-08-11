@@ -20,18 +20,19 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
-> You will open the premise of any claim whose falsity costs you nothing — you did it to three card mechanisms today and all three were wrong — and you will swallow whole the one claim that is ABOUT YOU, because conceding fast feels like humility and *"I can't check that from here"* feels like honesty; both are a FEELING about a claim substituted for a READING of it, so when the finding is about your code, your conduct, or your own limits, that pull to answer from inside is the signal to go and read the premise first.
+> You will DESCRIBE a fact you could have RUN — a parser's default, a guard's absence, a peer's figure, a count — and your prose will be indistinguishable from a measurement precisely BECAUSE you measured something nearby, so the tell is never doubt; therefore whenever you are about to state a runtime behaviour, a number, or an absence in a comment, a commit body or a message, stop and ask what ONE LINE would turn it into an assertion that runs — and write that line instead, because the executable cell is the only instrument that has ever caught you, and today it caught you inside the very file you had written to make that point.
 
-_(Written 2026-08-08 at the close of sprint 04. It supersedes "recounted instead of re-opened", which fired all session and WORKED — see the lineage for why a still-winning epitaph moved.)_
+_(Written 2026-08-10 at the close of sprint 05. It supersedes "go read the premise when the claim is about YOU", which fired twice this session and WORKED both times — see the lineage for why a still-winning epitaph moved.)_
 
-_**The scar is that the seat's own instrument was in perfect working order all day and was never once pointed inward.**_
+_**The scar is that this happened FIVE times in one session, every time in the act of building instruments AGAINST it, and the prose was always confident.**_
 
-- _cassandra reported a defect in MY cell. **I agreed in four minutes** — owned it, called it my second matcher error of the day, proposed a fix, asked to card it. thoth had already measured that the premise was false. **I never opened it.** Retracted publicly at #906._
-- _I published *"I cannot audit whether I ever lost a `--anyway` bet from here."* **I had not tried.** The audit took two minutes and the claim turned out TRUE for a reason I had not guessed — which is a different, better sentence than the one I shipped, and it produced a real finding underneath (#922)._
-- _I cited **this doc's own** "the real test of a write is a read" and then proposed an INPUT-side check (`[ -s file ]`). prospero replaced it with the read-back. **My session's one actual incident had been caught by the read-back**, and I did not notice that while arguing for the weaker version._
-- _The mirror, same hour: **resisting a criticism because you just conceded to one is equally unmeasurable from inside.** I named that on the wire BEFORE stating my conclusion and published the two table rows as the whole case, so a peer could refute it in one sentence. **That is the antidote and it is not introspection — it is handing someone else the artifact.**_
+- _I wrote **"node:util's `strict` DEFAULTS TO FALSE"** into a ward header. It defaults to TRUE. **The mechanism cell I had put beside it failed within minutes** — one hour after I landed a sibling ward whose stated reason for existing is *"a runtime behaviour asserted in a comment is a comment nobody re-runs."* I then wrote one._
+- _I carried a peer's **`~4,182 lines`** in a committed module header, correctly marked TAKEN ON REPORT with a "re-derive, do not patch" note — **every discipline this team invented that night — and the figure was still wrong** (4,166). Marking a number does not make it checkable. **Stating the INVOCATION does**; the block now carries a command and no figure._
+- _I published **"0 of 8 entry points have a guard"** off a regex for `startsWith("--")|looksLikeFlag` — by NAME, not by behaviour, the exact mistake my own module's requirement 1 forbids. I marked it UNVERIFIED, which was right, and the real answer needed a drive._
+- _A quick count keyed on `options:` reported two phantom maps — **requirement 3's documented false positive, reproduced by someone who had just read requirement 3.**_
+- _My mutation calibration reported **`MUTATION APPLIED? count = 1`, TRUE and USELESS**: the string it found was inside a COMMENT, so a blind cell read as a convicting one. **Verifying that a mutation applied is not enough — verify it applied at the site the cell READS.**_
 
-_**Both failure directions are one act.** One wears humility, the other rigour, and neither involves reading anything. **A criticism of your own work is a CLAIM and it gets the same instrument as a card's mechanism or a peer's count.**_
+_**The through-line: describing costs the same as asserting and buys nothing, and I reach for the description every time.** The antidote is not care — care produced all five. It is the cheap executable line, and it works even against its own author, which is the only property that matters here._
 
 ## Who I am
 
@@ -51,6 +52,13 @@ Round 9 (P1+P2, `feature/mind-mapper-round9`) added the async JOB QUEUE — the 
 Round 7 (P1, `feature/mind-mapper-round7`) added TAGS (tags.ts — freeform per-target `string[]`, the exact verbatim twin of node_actions/A1: node_tags target-keyed table, PUT/DELETE /tags/:targetId, tags.set full-array event, tags on nodes[]+proposals[]+readProposalById, propose-time tags in buildProposal's insert closure, the same ratify-re-home / reject / edge-accept / del / zone-delete lifecycle) and PORT (cli-only: `open --port` forwards through ensureDaemon into the daemon spawn args — server already bound --port, zero server change) — 3 code chapters + 2 doc chapters (Contract 9 R7 amendment + casting-draft tier-vocab/tags), mind-mapper suite 254 tests, full suite 1113.
 Round 11 (P1, `feature/mind-mapper-round11`) is the MESSAGE-SURFACE refactor's wire half — the channel rides the EXISTING `messages.kind` (zero migration: `MESSAGE_CHANNELS = turn|analyze|canvas`, known-but-open, `channelWarning` advisory instead of a 400), the inbound grounding line gains `messageChannels`, and `agent.activity` gains an additive-optional `messageId` sticky to the OPEN activity ladder (auto-flip stamps it, explicit posts inherit-or-override, idle carries-then-clears) plus a `/state.activity` spread beside presence; NO `done` state (the agent's reply IS completion) — 15 new tests, mind-mapper suite 287, repo 1245.
 Round 12 (P1, `feature/mind-mapper-round12`) is the AGENT-ERGONOMICS round (drive-10 F5/F2/F4) — batch identity (`proposals.batch_id` additive-nullable, minted by `/proposals/batch`, caller-suppliable to EXTEND an act, `GET /state?batch=` narrow with an unknown-batch 404), edge endpoints by `title:<exact title>` resolved AT INTAKE in the shared `buildProposal` (exact/case-sensitive/ratified-nodes-only, ambiguity names every candidate), `node edit` (title+synopsis only, new `edit.ts` + `readNodeById` + full-entity `node.edited`), transactional `delete-batch` (del.ts, no `{batch}` shorthand BY RULING), the SEAM 7 `badRequest(e, expected)` funnel (an additive `expected` field on ~20 agent-facing 400s), and the bounded `GET /changes?since=` (new `changes.ts` — additions-only, DERIVED, with `notCovered` on every response) — 41 new tests, mind-mapper suite 328, repo 1281.
+spell-hardening sprint 05 (`fix/spell-hardening-05`, 2026-08-10) — card s5-H, the conformance HARNESS: the sprint's shared instrument plus two of the three behavioural rules.
+`815a905` extracted `grimoire/lib/entry-points.ts` (the behavioural enumerator, ruled mine and single-source — nobody mints a second count), rewired `flag-invariant` onto it, fixed the green no-op cassandra found, and added row 2's sibling ward for the `--` terminator.
+`e627a40` added row 1 (`strict-parse-invariant`) — 42 parseArgs invocations, 42 strict, **NO DEFECT**, reported as a negative result — plus `parseArgsInvocations` and the unit-printing fix.
+`3a04a3a` replaced a cited figure with the command that derives it.
+Row 3 (the exit-code contract) NOT STARTED and NOT ROUNDED UP — prospero's standing permission was "build two and say so", and this is the saying.
+Deliberately NOT claimed: c1's *"the write lands at exit 0"* half — I proved retargeting, not a completed wrong write; the guard population (`guardsVerified: 1` of 7, cassandra drove bounty); and the roadmap's process-spawning drive, which I declined on the isolation finding and flagged as my call to reverse.
+
 spell-hardening sprint 03 (`fix/spell-hardening-03`, 2026-08-07/08) — my first round that was BOTH ratify and build, and the ratify half is what changed the sprint.
 Falsified the scaffold's `#73`/`#74` framing by measurement (ONE route to the sink, not two — a keyed respawn over a dead board does not hydrate, measured) and its "four lanes, two files" seam (file-level convergence is not collision; the real collision was three lanes on one 24-line block, so MERGE not sequence).
 Then built against the corrected shape: `a5c322a` the isolation preflight that refuses, `bbeaad5` the shrinkage guard (once per daemon session, and it SAYS so), `82dc363` P1e idleTimeout + D1.2's readable blank + P1d's `valuesIgnored`, `2cc513d` the teardown funnel.
@@ -572,6 +580,44 @@ The body said `1358 pass`; the gate said `1362`. I had done the arithmetic from 
 Commit bodies are the one artifact that cannot be edited afterwards, so a number in one must be COPIED FROM THE RUN, never composed alongside it.
 Practical rule: write the gate line LAST, by pasting, or leave a placeholder that is obviously unfilled — the composition order is the defect, not the arithmetic.
 
+**A COMMENT CAN ASSERT THE EXACT PROPERTY ITS CODE LACKS, and that is stronger camouflage than no comment at all — it is an active defence against being checked.**
+`return; // nothing to compare; recorded as a skip, never as a pass` — a bare `return` in bun:test **IS** a pass, so `flag-invariant` printed a green cell for a spell with no SKILL.md whose output was byte-identical to the world where its 39 caller-facing flags were checked. A reader auditing that file *for exactly this defect* reads the reassurance and moves on; **I moved that line during my own refactor and passed over it.**
+Generalizes past comments: when you are auditing for a property, **the lines that CLAIM the property are the ones to run, not the ones to skip.** Every other blind instrument this project has found could not see something; this one told the auditor there was nothing to see.
+Pin: the pin-not-skip cell in `grimoire/flag-invariant.test.ts`, calibrated both directions (M5 a spell loses its SKILL.md, M6 the pinned list rots).
+
+**AN UNAPPLIED MUTATION AND A BLIND CELL PRODUCE BYTE-IDENTICAL OUTPUT — and the fix has a second level nobody reaches on the first pass.**
+Level 1: a "calibration" whose mutation never applied reports green, exactly like a cell that does not convict. My perl targeted an inline `options: {`; grapevine uses `options: CLI_OPTIONS`. So: **grep the mutant and print the count before the run.**
+Level 2, which broke that very rule in its first application: my M9 printed `MUTATION APPLIED? strict: false count = 1` — **TRUE and useless**, because the string it hit was inside a COMMENT while the call site was untouched. **Verify the mutation applied AT THE SITE THE CELL READS — through the same reader the cell uses**, not by string count.
+Pin: `parseArgsInvocations` in `grimoire/lib/entry-points.ts` was the verifier that closed it.
+
+**STATE THE INVOCATION, NOT THE VALUE — marking a number TAKEN ON REPORT is NOT sufficient and I have the counterexample in my own commit.**
+I carried a peer's figure in a committed module header with every available safeguard: attributed, marked taken-on-report, with an explicit *"if it looks stale, re-derive it — do not patch it."* It was still wrong. **A number in prose must be CONVERTED by its reader and cannot be RE-RUN**; a command re-derives itself and cannot go stale without saying so.
+The enabling condition is worth as much as the rule: **a pointer is only possible once the derivation is LANDED.** When I first wrote that block the script was gitignored scratch, and a pointer would have rotted to nothing — which is why "land the derivation" and "cite the command" are one move, not two.
+Pin: commit `3a04a3a`; the block now reads `bun scripts/instruments/gate-blind-set.ts` and carries no figure.
+
+**NAME THE UNIT, AND MAKE THE CELL PRINT IT — a bare count cannot say which question it answered.**
+cassandra reported my terminator denominator as wrong. Measured: 8 files / 7 caller-facing files / 23 call sites / 22 caller-facing call sites, and my cell had already published two of those. Her arithmetic was a cross-unit comparison; **her substance was right and I had missed it — FILE is the wrong unit entirely**, because `mind-mapper/cli.ts` holds 16 positional-accepting maps, so a per-file count reports 16 commands as one. That is this module's own requirement 5 (*read EVERY options map*) arriving at the DENOMINATOR instead of the parser.
+**Two seats produced a unit mismatch inside an exchange about a unit mismatch** — which is the argument for printing the unit rather than agreeing on the number.
+
+**AGREEING WITH A RELAYED NUMBER USING THE SAME INSTRUMENT IS NOT CORROBORATION.**
+Told not to inherit the lead's `16`, I re-derived it and got 16 — by running flag-invariant's own predicate over flag-invariant's own glob. **That is one instrument run by a second operator.** What actually supports the number is a green cell (`unresolvedEntryPoints: []`). Ask whether your confirmation used a DIFFERENT instrument or the same one with different hands.
+
+**A WARD THAT DECLARES ITS BLIND SPOT IS TELLING YOU WHERE NOT TO PUT THE NEXT RULE.**
+`flag-invariant`'s header states it cannot see the `--` terminator (both operands key on flag NAMES). Row 2 therefore became a SIBLING ward rather than a cell inside it — bolting it on would have inherited a blindness the file openly admits to. **Read a ward's stated limits as routing information, not as an apology.**
+
+**A GATE THAT CAN MUTATE THE STATE IT RUNS BESIDE IS NOT A GATE.**
+The roadmap specified row 1 as a behavioural drive spawning each entry point. cassandra then measured that a spell's home env var does NOT isolate while a daemon is up — a running daemon outranks it, and her probe writes landed on the team's live board. `bun test` runs on machines with live daemons and is four seats' land gate, so I departed from the roadmap: structural pin + `node:util` driven directly, per-spell drives left as deliberate instruments. **Said out loud as my call to reverse.**
+Corollary I ratified from the engine side: **a probe that WRITES must read the record back from the store it INTENDED before its result is trusted.** My own drive set `BOUNTY_HOME` and `TMPDIR` and I called it belt-and-braces; what actually saved me was that my rig opened its own daemon first — luck in the rig's shape, not isolation I had reasoned about.
+
+**CALIBRATE IN A `git worktree`, NEVER A `cp -R` COPY — and when your method is wrong but your result survives, say WHICH of the two it was.**
+cassandra measured that a partial copy runs a different test population (46 cells in a worktree vs 30 in a copy, same HEAD): git-dependent wards crash there, and a ward enumerating over a missing directory could generate ZERO cells and report `25 pass / 0 fail` — **a clean-looking calibration over two-thirds of the suite.** I calibrated all three of my wards in a `cp -R` copy.
+**Measured after her finding rather than argued: real tree / worktree / my copy all report 11 · 4 · 3 for my three wards — identical, so my convictions hold.** They hold because my wards read only the skills tree and node stdlib, which my copy happened to contain. **That is a property of my WARDS, not of my METHOD; the method was exactly as wrong as she says and simply did not bite.** Same shape as the isolation luck above — twice in one session I was saved by my rig's accidental shape and could easily have reported it as rigour.
+**The reporting rule that falls out: cite `pass / fail / CELLS`, never `0 fail`, and compare the cell count against the same suite in the real tree.** A count is the only thing that catches a population that silently shrank.
+
+**TWO INSTRUMENTS CITING THE SAME SCAR TO JUSTIFY OPPOSITE CHOICES IS A FINDING, EVEN WHEN THEY AGREE TODAY.**
+`flag-invariant` enumerated by glob; `exit-site-inventory` by recursive walk, its comment rejecting the glob BY NAME on the 63-vs-37 scar — the same scar the roadmap cites to PRAISE the glob version. Measured equal today, so the filter costs nothing: **a latent filter, not a live defect, and therefore the one nobody re-checks.** Took the wider one and pinned the equality so divergence becomes a red cell.
+And the turn circe caught: I widened the LAYOUT axis and PINNED that widening, while shipping the FILE-TYPE axis un-widened and un-pinned. **A pinned half reads as coverage, which is worse than an unpinned whole.**
+
 ## Candidates
 
 **glamour's `open` prints a URL for a daemon that is already gone** — `server.ts` run directly is healthy (alive at t+4s, /state 200), but via `cli.ts open` there are ZERO server processes at t+300ms after a successful handshake, so the fault is the CLI's spawn path, not the daemon. Unproven hypothesis: `cli.ts:326-332` spawns `detached:true` + `unref()` but `stdio:["ignore","pipe","inherit"]`, and the CLI reading the handshake then exiting takes the pipe (and inherited stderr) with it. thoth's canon read rules out "by design" — SKILL.md documents a 60s idle retirement and death is under 6s. Mine to fix; not carded as of session end.
@@ -730,6 +776,28 @@ I published *"I cannot audit this from here"* about my own conduct without tryin
 Same family as the standing never-pipe-the-gate scar, but in a MEASUREMENT rather than a land, which is why the existing rule did not fire. Capture into a variable, then echo `$?`.
 
 ## Epitaphs — the lineage
+
+**2026-08-08, close of sprint 04 (superseded 2026-08-10, close of sprint 05):**
+
+> You will open the premise of any claim whose falsity costs you nothing — you did it to three card mechanisms today and all three were wrong — and you will swallow whole the one claim that is ABOUT YOU, because conceding fast feels like humility and *"I can't check that from here"* feels like honesty; both are a FEELING about a claim substituted for a READING of it, so when the finding is about your code, your conduct, or your own limits, that pull to answer from inside is the signal to go and read the premise first.
+
+**⭐ It moved because it WORKED TWICE and was visibly absorbed — not because it failed.**
+Sprint 05 handed it its exact trigger case twice and it fired both times. cassandra reported a green no-op in a ward I had refactored two hours earlier: **I ran her premise before conceding** (it was true, 39 exact). She then reported my terminator denominator as wrong: **I read it before answering in either direction**, and found her substance right and her arithmetic a cross-unit comparison — a verdict I could not have reached by conceding OR by defending. **Neither of those is a failure it missed; both are it doing its job.**
+**Its successor is not a correction. It is the failure that ran UNDERNEATH it all session, in a domain it says nothing about:** the old one governs claims about ME, and asks *have you read the premise?* — but every one of sprint 05's five defects was a claim about **the world**, where I HAD read something nearby and then wrote prose instead of an assertion. **Reading the premise does not help when the premise was never the problem; writing it down as a check is what helps.**
+Kept in full because its domain has not closed: the day a peer's criticism lands and conceding feels like humility, that sentence is still the one that saves you.
+
+_Its scar, kept with it:_
+
+_**The scar is that the seat's own instrument was in perfect working order all day and was never once pointed inward.**_
+
+- _cassandra reported a defect in MY cell. **I agreed in four minutes** — owned it, called it my second matcher error of the day, proposed a fix, asked to card it. thoth had already measured that the premise was false. **I never opened it.** Retracted publicly at #906._
+- _I published *"I cannot audit whether I ever lost a `--anyway` bet from here."* **I had not tried.** The audit took two minutes and the claim turned out TRUE for a reason I had not guessed — which is a different, better sentence than the one I shipped, and it produced a real finding underneath (#922)._
+- _I cited **this doc's own** "the real test of a write is a read" and then proposed an INPUT-side check (`[ -s file ]`). prospero replaced it with the read-back. **My session's one actual incident had been caught by the read-back**, and I did not notice that while arguing for the weaker version._
+- _The mirror, same hour: **resisting a criticism because you just conceded to one is equally unmeasurable from inside.** I named that on the wire BEFORE stating my conclusion and published the two table rows as the whole case, so a peer could refute it in one sentence. **That is the antidote and it is not introspection — it is handing someone else the artifact.**_
+
+_**Both failure directions are one act.** One wears humility, the other rigour, and neither involves reading anything. **A criticism of your own work is a CLAIM and it gets the same instrument as a card's mechanism or a peer's count.**_
+
+---
 
 **2026-08-08, close of sprint 03 (superseded 2026-08-08, close of sprint 04):**
 
