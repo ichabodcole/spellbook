@@ -76,6 +76,21 @@ grimoire/terminator-invariant.test.ts     NEW — row 2 / c1: the `--` terminato
 Plus `grimoire/lib/entry-points.ts` — the shared behavioural enumerator, with
 **what it cannot see stated in its own header**.
 
+> **⛔ H3 IS PARTIALLY RUN, NOT DISCHARGED — and the claim above is weaker than
+> its listing looks.** Retro H3 proposed that a **second seat** mutation-checks
+> each seat's cells. `cassandra` calibrated `flag-invariant` (finding its green
+> no-op) and `s5-8`/C′ — and then spent the rest of her budget on _why the
+> mandated harness disagreed with itself_ (see the roadmap amendment).
+>
+> **Uncalibrated by a second seat:** `terminator-invariant` (4 cells) ·
+> `strict-parse-invariant` (3) · `roster-drift` (17) · `gate-honesty` (5).
+> **They carry their AUTHORS' calibrations, which is what H3 exists to
+> supplement and does not replace.**
+>
+> Four of the seven suites have **one pair of eyes each**. Recorded here rather
+> than in the retro alone, because the listing above reads as seven equally
+> warranted wards and it is not.
+
 **Not cut:** row 3 (the exit-code contract). Standing permission was given to
 **build two and say so** rather than round up to three.
 

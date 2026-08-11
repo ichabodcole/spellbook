@@ -363,9 +363,54 @@ an anonymous inline handler without naming any of them. **Intent was.**
 
 ### ⛔ A HARD CONSTRAINT ON HOW (a) IS RUN — measured 2026-08-08, not anticipated
 
-> **Mutation calibration happens in an ISOLATED COPY, never in the shared tree.
-> If a mutation must touch the shared tree, it is ANNOUNCED before and cleared
-> after — the window is the announcement, not the mutation.**
+> **Mutation calibration happens in a DETACHED GIT WORKTREE at an explicit sha,
+> never in the shared tree — and never in a plain directory copy. If a mutation
+> must touch the shared tree, it is ANNOUNCED before and cleared after — the
+> window is the announcement, not the mutation.**
+
+> **⛔ AMENDED 2026-08-10 (sprint 05 finalize, measured by `cassandra`) — "AN
+> ISOLATED COPY" WAS WRONG AND IT UNDER-CALIBRATES SILENTLY.**
+>
+> Same `HEAD`, two harnesses, different test populations:
+>
+> ```
+>                     git archive / cp -R      git worktree --detach
+> grimoire/ total     30 tests                 46 tests
+>   roster-drift      crashed                  17      <- the whole delta
+>   gate-honesty      5, ALL THREW              5
+> ```
+>
+> **Sixteen cells did not exist in the copy.** `roster-drift` generates its
+> cells from repo files outside the copied subtree, and `gate-honesty` →
+> `gate-blind-set.ts` → **`git ls-files`**, which cannot run in a non-repo:
+> `fatal: not a git repository`.
+>
+> **So a git-dependent ward CANNOT be calibrated by the method this constraint
+> mandated**, and the constraint was therefore in direct conflict with H3
+> (_every new cell is mutation-calibrated by a second seat_). Neither rule was
+> bad; they were written for different wards.
+>
+> ⚠ **THE DANGEROUS CASE IS THE COUNT, NOT THE CRASH.** Her copy failed loudly,
+> so she noticed. Had `roster-drift` enumerated over a missing directory and
+> produced **zero** cells instead of throwing, the run reads `25 pass 0 fail` —
+> **a clean calibration over two-thirds of the population, with nothing anywhere
+> saying sixteen cells did not exist.** That is this project's own thesis
+> occurring **inside the harness built to enforce it**.
+>
+> **THE REPLACEMENT, VERIFIED (46/46, matching the real tree):**
+>
+> ```
+> git worktree add --detach <path> HEAD     # a real repo; pins the world at a sha
+> git worktree remove --force <path>        # at teardown
+> ```
+>
+> **And the calibrator MUST print `pass / fail / CELLS` and reconcile the cell
+> count against the same suite in the real tree.** `0 fail` is not a calibration
+> result; it is a calibration result's shape.
+>
+> ⚠ **Known limitation, unresolved:** a bare worktree has no `node_modules`, so
+> a ward importing a dependency works in **neither** harness. No instance yet —
+> recorded so the third case is not discovered as a surprise.
 
 **Why this is a constraint and not hygiene.** Sprint 04 logged three separate
 "gate contention" incidents — a seat blocked behind a peer, a gate red on a
