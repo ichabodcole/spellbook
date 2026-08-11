@@ -1,7 +1,30 @@
 # Spell Architecture Maturity — backlog
 
-**Status:** Backlog **Created:** 2026-06-01 **Author:** Cole Reed (with
-familiar)
+**Status:** **Archived (Superseded)** — archived 2026-08-10 · **Created:**
+2026-06-01 · **Author:** Cole Reed (with familiar)
+
+> **The core question was answered on 2026-06-15.** `7719c34` wrote the
+> canonical house pattern — _drive a conjuration through a daemon + thin CLI_ —
+> into `grimoire/house-style.md:188–225`; `d097474` migrated bounty off the old
+> file-pump substrate onto it; `ef29f10` archived the `bounty-agent-usable`
+> project that carried the work. All four conjurations (bounty, grapevine,
+> glamour, magpie) now follow the pattern; digestify is a cantrip and correctly
+> exempt.
+>
+> **The rest was absorbed, not dropped:** surface complexity and build posture →
+> [`spell-surface-pipeline`](../../spell-surface-pipeline/); correctness and
+> parity defects → [`spell-hardening`](../../spell-hardening/).
+>
+> **Two things this archive does NOT resolve, recorded so they are not lost:**
+>
+> - **Full-state broadcast vs. granular diffs** — never decided, in either
+>   direction. No record exists of a choice being made.
+> - **The scaffold** (`scaffold/`) remains deliberately unwritten per
+>   `scaffold/README.md` ("not yet written, on purpose"). Whether that is still
+>   house intent is an open question for a human, not a stale artifact.
+>
+> _Archived by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../../reports/2026-08-10-project-status-sweep.md)._
 
 A place to track the question: _are our spells implemented at a consistent level
 of maturity, and should the better patterns become canonical (a guide + a real

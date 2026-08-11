@@ -1,5 +1,25 @@
 # Magpie — Phase Spine (design)
 
+> **Status: Archived (Shipped) — archived 2026-08-10.** All seven phases built
+> and dogfooded: intake (dropzone + ScanningView), phase scaffold
+> (`PhaseStepper.tsx`, `reduce.ts:184–201`), slice (`BreakdownCanvas.tsx` +
+> `ElementList`), remove (`RemoveGallery.tsx` + VersionStrip), the
+> model-agnostic retry loop, expand-in-place (`ExpandedItem`), and export
+> (`ExportView.tsx` → zip). 76 tests. Live at
+> `plugins/spellbook/skills/magpie/`.
+>
+> **This folder never carried a status line** — it read as unstarted while being
+> complete. That is one of the four doc/tree disagreements the 2026-08-10 sweep
+> was written to name.
+>
+> **Deferred, carried here so the archive does not lose it:** three slice-UI
+> paper cuts from `slice-ui-refinements.md` (canvas label chrome toggle,
+> in-canvas flag, sidebar selection sync) and **multi-image**, deliberately held
+> past V1 to avoid locking the model in.
+>
+> _Archived by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../../reports/2026-08-10-project-status-sweep.md)._
+
 _2026-06-27 · a cross-cutting scaffold that runs the whole surface, decided
 before the bg-removal gallery so the gallery lands into a phase._ _Mockup:
 `prototype/phase-stepper-mockup.html` (top-bar form is the keeper)._

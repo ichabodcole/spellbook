@@ -1,6 +1,21 @@
 # Astrolabe — a higher-level board for projects in flight
 
-**Status:** Draft **Created:** 2026-06-29 **Author:** Cole Reed (with familiar)
+**Status:** **Archived (Implemented)** — archived 2026-08-10 · **Created:**
+2026-06-29 · **Author:** Cole Reed (with familiar)
+
+> **Shipped as the `astrolabe` spell** — `5dfa9a8`, merged to develop
+> 2026-06-30, released in v2.2.0. Daemon (`scripts/{server,cli,state}.ts`) +
+> React/Bun/Tailwind-v4 surface, 827 lines of tests, marked `shipped` in
+> `grimoire/trigger-registry.md`. Live at `plugins/spellbook/skills/astrolabe/`.
+>
+> **Not carried by this archive:** the surface **build/distribution** question
+> the React re-home raised is a separate, still-open project —
+> [`spell-surface-pipeline`](../../spell-surface-pipeline/). Astrolabe was its
+> intended pilot; as of 2026-08-10 that pilot has **not** run (astrolabe still
+> ships surface source, no `dist/`). Archiving this project does not close that.
+>
+> _Archived by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../../reports/2026-08-10-project-status-sweep.md)._
 
 > **Named at coalescence: `astrolabe`** (conjuration) — reserved in
 > `grimoire/trigger-registry.md`. An astrolabe is the wizard's-study instrument

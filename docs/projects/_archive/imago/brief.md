@@ -1,10 +1,27 @@
 # Imago — project brief
 
+> **Status: Archived (Shipped) — archived 2026-08-10.** All three plans landed
+> at 100%: **context-library** (10 tasks, `fb9cdc8`→`a26ebce`), **layer-system**
+> (phases 0–3, `0735d30`→`4f23b3f`), **refs-as-assets** (3 phases,
+> `9606cde`→`776eee3`). 111 tests green. Last change `5e6aacd` (2026-08-08 —
+> `context.add` outcome reporting, issue #87). Live at
+> `plugins/spellbook/skills/imago/`.
+>
+> **Deferred, non-blocking, no branches or tracking** — carried here so the
+> archive does not lose it: masking (freeform region → inpaint mask); capture-
+> style S/M/L candidate retune against the image-px anchor; per-project scoping
+> of linked context sets; reserved kinds `skill`/`context`; and one cosmetic
+> `LibraryPicker` scroll-orphan edge case.
+>
+> _Archived by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../../reports/2026-08-10-project-status-sweep.md)._
+
 **Started:** 2026-06-11 (promoted from
 `docs/backlog/2026-06-10-imago-image-creation-spell.md`) **Spell kind:**
-conjuration (a standing canvas daemon) · **School:** conjuration **Status:**
-prototype (chat-centric surface; iterating toward MVP V1 — backend spike
-skipped)
+conjuration (a standing canvas daemon) · **School:** conjuration · **Status _as
+written in June 2026_:** prototype (chat-centric surface; iterating toward MVP
+V1 — backend spike skipped). **Superseded by the archive banner above** — kept
+because it records where the project stood when the brief was authored.
 
 > This is a **living brief**, not an upfront spec. Per `inscribe`, imago is
 > grown through iteration; this captures the framing and the open gates, and
