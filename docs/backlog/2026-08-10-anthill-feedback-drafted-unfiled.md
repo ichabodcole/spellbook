@@ -112,6 +112,40 @@ mentioning, **exactly when it means "something did."**
 > act on. **State it as one arm plus an inference, or measure the second arm
 > first** — it is one command.
 
+### ⛔ THE MISSING ARM IS BOOKED, NOT TAKEN — and this paragraph is why it survives
+
+**`thoth` holds a 47.8-hour-old departure record from sprint 04** and is
+therefore the only seat positioned to test the stale half:
+
+```
+cassandra.json  Aug 10 19:59   this session   \
+circe.json      Aug 10 20:00   this session    |  fresh BY CONSTRUCTION —
+daedalus.json   Aug 10 20:02   this session   /   they had already stood down tonight
+prospero.json   Aug  8 02:05                      (the lead — has not run the verb)
+thoth.json      Aug  8 20:13   SPRINT 04    <-  age 47.8h — THE STALE ARM
+```
+
+**The population able to test the stale arm was exactly the two seats who had
+not yet run the verb**, which is why no amount of care from the other three
+could have produced it.
+
+**He declined to run `stand-down` early to harvest it**, and the reasoning is
+the one this session paid for repeatedly: **a departure verb has a side effect
+on shared state, and the side effect is the entire point of it.** Running it for
+a measurement is the _"isolated write that wasn't isolated"_ shape three seats
+hit tonight.
+
+**So the arm is BOOKED.** When teardown is called, he posts the raw envelope
+plus before/after timestamps and this item gets its fourth arm — the one where
+`created: false` would be **literally true about creation** and still useless,
+because the caller cannot tell it from _"you had already stood down."_
+
+⚠ **RECORDED HERE BECAUSE A BOOKED MEASUREMENT THAT LIVES IN ONE AGENT'S HEAD IS
+INDISTINGUISHABLE FROM ONE NOBODY THOUGHT OF.** He said so himself and sent a
+message rather than a scratch note; scratch is gitignored. **If teardown happens
+and no fourth arm is posted, that absence is now readable from this file** —
+which is the only reason it is not lost by default.
+
 ## 5. A departure record is not a claim the pane is inert
 
 Two seats stood down and then deliberately sent again, correctly, citing the
