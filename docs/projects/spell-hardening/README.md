@@ -1,13 +1,33 @@
 # Spell Hardening
 
-**Status:** Active **Started:** 2026-08-05 **Current sprint:** **none building —
-[03 is complete and shipped in v2.1.0](./sprints/03-what-close-takes-with-it/plan.md);
-[04 is complete and merged to `develop` (`c2c00a5`), awaiting release](./sprints/04-the-shape-of-nothing/plan.md)**
+**Status:** Active · **Started:** 2026-08-05 · **Current sprint:**
+**[05, "the gate"](./roadmap.md) — convened 2026-08-10 on
+`fix/spell-hardening-05`.** [03](./sprints/03-what-close-takes-with-it/plan.md)
+shipped in v2.1.0; [04](./sprints/04-the-shape-of-nothing/plan.md) shipped in
+**v2.2.0** (`c2c00a5`).
 
-> **⚠ Sprint 04 has no `outcome.md`.** Sprints 01–02 have one; 03 and 04 do not.
-> What 04 delivered lives in its merge commit body (`git show c2c00a5`) and in
-> [`.anthill/retro.md`](../../../.anthill/retro.md) — **neither of which is
-> reachable from `docs/`**, which is the gap, not the record.
+> **Part 1 of the two-part end condition is now DRAINED.** Issues #79 #85 #86
+> #87 #88 #97 shipped in v2.2.0 and were **closed 2026-08-10** — they had been
+> fixed and left open, which is why this project's defect count read worse than
+> it was. **Sprint 05 is purely part 2: the rules exist AND are enforced.**
+>
+> Scope ruled by Cole: **clause (ii)** (the bidirectional rule↔check link) moves
+> to **sprint 06**, and the `tsc --noEmit` gate is
+> [its own project](../../backlog/2026-08-10-typecheck-gate-is-a-project-not-a-flag.md)
+> — measured at **436 errors**, 61% of them from `noUncheckedIndexedAccess`.
+
+> **✅ Sprint 04's [`outcome.md`](./sprints/04-the-shape-of-nothing/outcome.md)
+> was written 2026-08-10**, at sprint 05's convene — **four days late, and it
+> says so at the top.** It is the artifact, not another note about its absence.
+>
+> **⚠ Sprint 03 still has none.** What 03 delivered lives in its merge body
+> (`git show 88a298f`) and its
+> [decisions](./sprints/03-what-close-takes-with-it/decisions.md) — the merge
+> body is **not reachable from `docs/`**, which is the gap, not the record.
+>
+> _Two warnings stood here for four days. Writing a third would have been the
+> failure itself — see
+> [the unclosed unit](../../backlog/2026-08-10-the-unclosed-unit.md)._
 
 Fourteen reported defects across the shipped spells, all of one family: a
 command that cannot do the thing returns something shaped like success. This
@@ -33,12 +53,25 @@ is parked. **A forecast, not a plan.**
 
 ## Sprints
 
-| #   | Sprint                                                                    | Status   | Opened     | Closed     | Outcome                                                | Decisions                                                       |
-| --- | ------------------------------------------------------------------------- | -------- | ---------- | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
-| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)        | —                                                               |
-| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md) | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
-| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                              | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
-| 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | Complete | 2026-08-08 | 2026-08-10 | **none — merged as `c2c00a5`; see note below**         | [retro](../../../.anthill/retro.md)                             |
+| #   | Sprint                                                                    | Status   | Opened     | Closed     | Outcome                                                 | Decisions                                                       |
+| --- | ------------------------------------------------------------------------- | -------- | ---------- | ---------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| 01  | [drained-exit](./sprints/01-drained-exit/plan.md)                         | Complete | 2026-08-05 | 2026-08-06 | [outcome](./sprints/01-drained-exit/outcome.md)         | —                                                               |
+| 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md)  | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
+| 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                               | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
+| 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | Complete | 2026-08-08 | 2026-08-10 | [outcome](./sprints/04-the-shape-of-nothing/outcome.md) | [retro](../../../.anthill/retro.md)                             |
+| 05  | [the-gate](./sprints/05-the-gate/plan.md)                                 | Complete | 2026-08-10 | 2026-08-10 | [outcome](./sprints/05-the-gate/outcome.md)             | [carries](./sprints/05-the-gate/carries.md)                     |
+
+_Reconciled 2026-08-10 @ `ea0b34b` (docs-of-record sweep, sprint 05 finalize) —
+"sprint 04 has no outcome.md": **FALSIFIED**, written at `3a0183c`, row updated.
+"sprint 03 has no outcome.md": **HELD**, still absent, warning retained. "part 1
+of the end condition is drained": **HELD** — #79 #85 #86 #87 #88 #97 closed
+2026-08-10. "the sprint table lists every sprint": **FALSIFIED** — sprint 05 had
+run with no folder and no row; container created at finalize (`388602e`), and
+the nine-hour absence is recorded in its plan. ⚠ **This line is stamped at
+`ea0b34b`, which is TWELVE COMMITS BEFORE the fix it reports** — the sha names
+when the sweep RAN, not when the repair landed, and nothing in the format
+distinguishes those. Caught by a cold reconstruction at the merge. "14 reported
+defects" (opening line): **UNCHECKED** — nobody owned it this session._
 
 **Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 

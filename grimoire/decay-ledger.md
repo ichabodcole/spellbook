@@ -34,6 +34,34 @@ make the frightening delete.
   them (per "Start minimal; subtract before you test"). Don't treat a seed row
   as settled until real use has walked it.
 
+## ⛔ What this ledger does NOT cover — measured, not assumed
+
+**This ledger tracks `house-style.md` rules, keyed by their `rule-id`. It covers
+no other canon file, and nothing announces that.**
+
+```
+grep -c "outcome-contract" grimoire/decay-ledger.md   ->  0
+```
+
+**`outcome-contract.md` is canon** — it carries the two shapes, the membership
+rules, the falsifier, four boundaries and the failure-side spelling, and
+`house-style.md` explicitly defers to it rather than restating it. **It has no
+row here and therefore cannot decay, cannot be flagged stale, and cannot become
+a removal candidate.** Rules reached through a pointer are outside the mechanism
+that governs the rules pointing at them.
+
+**Stated rather than fixed**, and the distinction matters: adding rows for a
+file with no rule-ids would mint a second keying convention beside the first,
+and this ledger's own hazard is drift between conventions. **Whether the
+ledger's scope should widen, or `outcome-contract.md` should carry rule-ids, is
+an open question with a real trade-off — it is not a gap to paper over at the
+end of a session.**
+
+_Measured at finalize, sprint 05, closing a deferral that existed in no card and
+no doc. A ledger that is silent about its own coverage is the exact shape its
+subject matter is about: **an instrument that cannot say what it does not
+watch.**_
+
 ## Ledger
 
 | Rule (`house-style.md`)                                | Rule id                               | Status       | Last reinforced | Reinforced by                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |

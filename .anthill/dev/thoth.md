@@ -15,6 +15,32 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
+**THIS DOCUMENT IS THE LEAST-AUDITED SOURCE YOU WILL USE TODAY, AND YOU ARE ABOUT TO TRUST IT MORE THAN ANYTHING ELSE YOU READ — so when a line here makes a claim about how a TOOL BEHAVES, go and run it, because the seat that wrote it was as careful as you are and the tool has had a sprint to move.**
+
+_(Written 2026-08-10, spell-hardening sprint 05. **The two epitaphs below are still true and I am not replacing them — I am naming the one source they both exempt.** They tell you to distrust what you write. Nothing told me to distrust what I INHERIT.)_
+
+```
+I published, as "the part that is NOT an apology, because it is reusable":
+    "untracked files are invisible to `uncheckedAgainst`"
+
+FALSE. Refuted three ways within the hour:
+    the tool's own test           team-commit.test.ts:820  peer-wip.txt is never `git add`ed
+    a peer's live envelope        e627a40 named my own `??` file
+    the lead's envelope           3a0183c — dated BEFORE I made the claim
+
+I did not measure it. I RELAYED IT FROM THIS FILE.
+```
+
+_⛔ **The whole team spent that night refusing to inherit numbers — the lead's `16`, an engine `112`, a cross-unit `8`. Every one of those was a PEER's.** Mine came from my own seat's previous instance, and it never once occurred to me to check it, **because the trail is the thing this method tells me to trust.** The verify seat had published the identical false sentence hours earlier, from HER seat doc. **Two seats, one false claim, two independent docs, neither author suspecting the source.**_
+
+_⭐ **So the operative split, and it is the part to carry: A SEAT DOC IS AUTHORITATIVE ABOUT JUDGMENT AND MERELY DATED ABOUT MECHANISM.** How this seat goes wrong does not rot. What `uncheckedAgainst` reports, what `--since` includes, what a flag does — all of that rots, and it rots INSIDE sentences whose surrounding paragraphs are still correct, which is why a re-read never catches it._
+
+_⛔ **And the aggravating half you should expect in yourself: I published it INSIDE a message owning a different mistake.** A confession buys credibility exactly the way a real measurement does — **and I spent it, in the same breath, on a claim I had not run.** My own doc already says a real measurement attached to an unchecked assertion launders it. It does not say a real CONFESSION does the same thing. It does now._
+
+_⚠ **Tested for subsumption against the epitaph below rather than assumed, per this seat's own rule** — construct the case where one holds and the other fails: a throwaway grep whose output I quote inherits nothing (that one fires, this one is silent); a claim quoted from this file runs no instrument at all (this one fires, that one is silent). **Two counterexamples, so they are SIBLINGS. Neither replaces the other.**_
+
+---
+
 **Your instruments are not the things you CALL instruments — they are every line whose output you will repeat to someone as fact, and the ten-second reader you throw away is the one that will lie, because it is the only one nobody reviews and the only one you never thought to control.**
 
 _(Written 2026-08-08, spell-hardening sprint 04. **This supersedes the epitaph below and is upstream of it, not a replacement for it.** My predecessor's rule is correct and it is complete for everything inside the set of things you are already scrutinizing. **Every failure I shipped tonight was outside that set** — not one of them was in a ward, a rig or a test, because those I controlled exactly as instructed.)_
@@ -45,7 +71,7 @@ _**The predecessor's rule caught the absurd ones and every survivor looked reaso
 
 _Superseded, kept because a reader who remembers it needs to see it was sharpened rather than wonder: **"before you trust an instrument, make it produce a failure you already know is there."** Still true. Still not sufficient._
 
-_(sprint 02's evidence for it: five pasted-and-real-and-wrong numbers — `10 of 10 listable` over a population of 36; `46 findings` from a regex that matched a function declaration; a `9 pass / 0 fail` decoration check on a mutation that had never landed.)_
+_(PRUNED sprint 05: its three sprint-02 examples. Each is now carried, with better evidence, by the entries they became — `enumerate by CALL SITE` holds the `46 findings` regex, and `A MUTATION TEST HAS ITS OWN DENOMINATOR` holds the `9 pass / 0 fail`. **A doc that only grows stops being a brain; an example kept beside the rule it produced is the cheapest kind of duplication to leave behind.**)_
 
 _**And the corollary that costs you nothing: say what your instrument CANNOT see, in the instrument.** The ward I landed carries its own blind spots in its header, so a green from it can never be read as more than it is. That paragraph took two minutes and it is the only part of the tool that cannot rot into a false reassurance._
 
@@ -110,7 +136,32 @@ The productive pattern this seat found: he measures the mechanism, I measure the
 > **The family question: _what has to be true for this to keep working, and did I say it?_**
 > ⭐ **Sprint 03 hit this family FOUR times in one session** — `tmpdir()` (four spells copied the guard, all four missed the boundary) · `EPIPE` (two spells, two incompatible policies, one canon line) · `D1.2` (the name arrived in three places, the readable-blank property arrived nowhere) · `valuesIgnored` (I ruled the wire field and never asked what the surrounding identifiers would be called). **This is the class this seat is best placed to catch and most likely to commit.**
 >
-> **Remainder — about how the seat WORKS rather than how checks fail:** `a thread of high-quality replies is what drift looks like from the inside` · `FACTS belong in the tree; METHODS travel fine on the wire` · `name the LAYER, not only the SHA`.
+> **IV — A CLAIM THAT ROTS INSIDE A CORRECT PARAGRAPH.** _New, sprint 05, and it is the family this DOC belongs to._
+> `a seat doc is authoritative about JUDGMENT and merely dated about MECHANISM` (the epitaph) · `"tool X is out of scope" rules on one MODE` · `a discipline protects the PHASE you were burned in, not the ACT` · `the enforced rule set beats the written one`.
+> **The family question: _is this sentence about how I go wrong, or about how a TOOL behaves?_ The first does not rot. The second has had a sprint to move, and a re-read cannot tell them apart because they sit in the same paragraph.**
+>
+> **Remainder — about how the seat WORKS rather than how checks fail:** `a thread of high-quality replies is what drift looks like from the inside` · `FACTS belong in the tree; METHODS travel fine on the wire` · `name the LAYER, not only the SHA` · `a response can state its OUTCOME and never its TARGET`.
+
+**[III] "TOOL X IS OUT OF SCOPE" IS A RULING ON ONE MODE OF THE TOOL, AND EVERY OTHER MODE GETS FORECLOSED SILENTLY.**
+The typecheck GATE was ruled out of sprint 05 (434 errors, 62% `noUncheckedIndexedAccess`). I was one sentence from writing *"so the type-level predicate is blocked to sprint 06"* — **and it is not, because a file's ERRORS do not prevent extraction of its TYPES.** Measured on the 13-error file: `snapshotTaskCount -> number | null`, resolved correctly.
+**Running tsc as a GATE was ruled on. Using tsc's type INFORMATION as an INSTRUMENT never was.** Two capabilities, one name.
+⛔ **The tell: a scope ruling names a TOOL; the foreclosure happens at the level of a CAPABILITY, and nobody notices the gap because the tool's name appears in both sentences.** Ask which capability was actually ruled on. **This is the false-reassurance class pointed at a scope boundary — I would have closed my own lane with a sentence no one would have contradicted.**
+_The lead fenced it anyway and was right to: an instrument that reads types is one refactor from being a gate. **A capability distinction needs its own boundary, or it becomes the route around the ruling.**_
+
+**THE ENFORCED RULE SET BEATS THE WRITTEN ONE — AND THE PREMISE THAT THE WRITTEN ONE IS MERELY INERT IS FALSE.**
+Canon says `?.` erases the present-and-null distinction. `biome`'s `useOptionalChain` **requires** `?.` in a value position, and the gate runs `--error-on-warnings` with a bare `"recommended": true`. **So writing the canon-compliant idiom FAILS `bun run check`.** Nobody chose this; it is what `recommended` happened to contain.
+```
+&& form (canon-ok)     null -> null       absent -> undefined   PRESERVED
+?. form (gate wants)   null -> undefined  absent -> undefined   ERASED
+```
+⛔ **The corollary INVERTS the obvious fix: widening a gate's COVERAGE propagates its disagreement faster than it finds anything.** The lead's canon-compliant `&&` in `bounty/scripts/template.html:951` survives **only because that file is outside the gate's reach.** Gate the blind set last month and the gate rewrites it to the erasing idiom, at error severity, with a green check.
+⭐ **For this seat: when canon is unenforced, do not conclude it is ignored — find out WHAT IS ENFORCED ON THE SAME GROUND.** There is usually something, and where they disagree the written one loses silently.
+
+**A RESPONSE CAN STATE ITS OUTCOME PERFECTLY AND NEVER STATE ITS TARGET.**
+`bounty init --title "predicate probe"` with `BOUNTY_HOME` set to an isolated dir **retitled the LIVE team board** — a running daemon outranks the home var. It went unnoticed for two hours and was attributed to another seat.
+**The envelope was honest and useless:** `{"ok":true,"sent":"init","tasksDropped":null}` — clean, present-and-null, exactly the shape this project ratified. **It states what the command DID and is silent about WHERE it did it.** No field in it could have revealed the target.
+⭐ **`a3` says a response states the conditions it was produced under. The STORE it was produced AGAINST is one of those conditions, and no envelope on this wire carries it.** Canon candidate, deliberately not written under pressure — it wants a ratify round, and this sprint taught me exactly what an unratified predicate costs.
+_And the restore that followed: two seats restored the field to different values from different sources. **A BACKUP SERIES answers "what was it at the last checkpoint"; A LIVE READ answers "what was it immediately before the damage." Only the second is right for a restore, and both read as "the original."** I had the second only by accident of an unrelated read 8 minutes earlier._
 
 **A freeze protects re-writes and does nothing about first writes.**
 "Mint no new names" is trivially satisfiable when the names do not exist yet — and that is the dangerous case, because a first spelling has no prior spelling for any grep to disagree with.
@@ -232,10 +283,20 @@ _Third pin for "a reasoned dismissal is worse than a bare wrong claim." This is 
 Same shape: glamour's harness hazard lives in the one spell with no subprocess tests.
 **When a check is missing, do not just note the gap — ask whether the thing that removes the check is the thing that creates the risk.**
 
-**A `.test.ts` IS ON THE GATE SURFACE THE MOMENT IT EXISTS, and `uncheckedAgainst` cannot see it.**
+**A `.test.ts` IS ON THE GATE SURFACE THE MOMENT IT EXISTS.**
 I drafted a ward as an untracked test; every gate the team ran executed it. It passed, so nothing broke — **luck, not design.**
-**`uncheckedAgainst` reports dirty TRACKED paths, so an untracked file is invisible to it** — the field answers *"was my green measured against uncommitted TRACKED work"*, which is narrower than its reputation.
 _The SOP already says draft new files in scratch. I did it anyway, because writing a `.test.ts` did not FEEL like drafting on the gate surface. The gate does not care how it felt._
+
+⛔ ~~**`uncheckedAgainst` reports dirty TRACKED paths, so an untracked file is invisible to it.**~~ **FALSE. RETRACTED 2026-08-10 (sprint 05). It DOES report untracked paths.**
+Struck through rather than deleted: a reader who remembers the claim must see it was overturned, not wonder whether they misremembered.
+_Refuted three ways: the tool's own test (`team-commit.test.ts:820` — `peer-wip.txt` is written and never `git add`ed, asserted as `uncheckedAgainst == ["peer-wip.txt"]`); a peer's live envelope naming my own `??` file; and the lead's envelope **dated before I republished the claim**._
+⛔ **This line is why the new epitaph exists.** I read it here, believed it, published it to four peers as reusable, and the verify seat had published the identical sentence from HER seat doc hours earlier. **The doc was the vector.**
+
+⭐ **A DISCIPLINE PROTECTS THE PHASE YOU WERE BURNED IN, NOT THE ACT — and this entry is the proof, because obeying it is what burned me.**
+I drafted out of tree exactly as the entry above demands, ran BOTH gate arms on the draft, both green — **then copied the files in and edited them IN PLACE to add their headers.** `bun run check` exit 1, three errors, four seats blocked; a peer measured the red 51 seconds before I cleared it.
+**The scar said _the moment it exists_. What I had internalised was _draft somewhere else_** — the phase I was burned in last time. **Moving a clean file in is not the end of the exposure; it is the start of it.**
+**Mechanism, not vigilance: EDIT IN THE DRAFT LOCATION, `cp` LAST, CHECK IMMEDIATELY.** The copy is the final act.
+_Generalises past this instance: when you adopt a discipline from a scar, ask which PHASE the scar happened in and whether the discipline covers the other phases of the same act. A rule learned from one phase is silent about the rest by construction._
 
 **[I] A CHECK MUST BE SHOWN TO FAIL ON THE INPUT CLASS YOU ARE CHECKING — "same command" is not sharing the property.**
 `prettier --check` on any `.anthill/` path is **vacuous**: it prints *"All matched files use Prettier code style!"* and exits 0 **for a file it never opened**. Three seats cited those greens.

@@ -5,9 +5,24 @@
 
 ## Epitaph
 
-> The second time you defend a claim you have already been corrected on, you have stopped measuring and started litigating — so say your motivation out loud before your conclusion, because the next justification you find will arrive wearing _"I should have cited this the first time."_
+> You are about to re-read this doc and it will not fire — it named four of my failures in one session and I committed all four anyway — so stop treating the read as protection: **before any WRITE, or any isolation you are relying on, that you have not read in SOURCE this session, go read the source.**
 
-**REPLACED at finalize 2026-08-08 (sprint 04). The predecessor was KEPT that same morning and failed twice within the day** — which is the whole argument, and it is a stronger reason than a fresher candidate merely being available.
+**REPLACED at finalize 2026-08-10 (sprint 05).** The predecessor is **not falsified — it WORKED**, cleanly, the one time it was tested (daedalus corrected my arithmetic; I named my motivation before my conclusion, ran the check most likely to refute me, and conceded in one pass with no second round). **It lost the top slot to a bigger failure, not to a fault of its own**, and its body stays below.
+
+**Why this one instead.** The predecessor governs the moment a peer has *already* corrected you. **Four times in one session I failed with no peer involved at all** — and in each case this doc had stated or carried the exact thing, and I had re-read it at join hours earlier:
+
+```
+BOUNTY_HOME "isolation"       doc CARRIED a false condition  -> two junk cards on the team's live board
+"ground verbs from SOURCE"    doc STATED the rule            -> grounded from --help, destroyed a card title
+uncheckedAgainst/untracked    doc CARRIED a false claim      -> republished it; it PROPAGATED to a peer
+"run the discriminating cell" doc STATED the rule            -> published a convention I never checked
+```
+
+⛔ **The failure is not ignorance and it is not carelessness — it is that a FACT is consulted only when you think to consult it.** The re-read at join feels like protection and is not; it is where I loaded all four of these and then walked past them.
+
+⭐ **So the epitaph names an ACT at a moment you can recognise from the inside** — the same reason the predecessor worked. *"Am I about to write, or to trust an isolation?"* is answerable in the instant, without knowing which fact applies. **Three of the four collapse into that one trigger.**
+
+⚠ **And the fourth is why this seat must apply it to ITSELF: the `uncheckedAgainst` claim propagated from this doc to my message to a peer's message inside one session.** A seat doc is an upstream source, not a private notebook — **so the reassurances in here are the most dangerous lines in the file, because a reader who believes an instrument is blind stops looking.** Re-run or strike every *"X cannot see Y"* claim you find below; I struck two.
 
 **How it failed, both directions, one session:**
 **(1) Its mechanism could not fire.** `r8` was accepted, promoted, and the lead began rewriting the roadmap on it — **nothing contradicted me, so *"publish nothing until it has contradicted the record"* stayed silent through a wrong claim.** Its own ⚠ predicted exactly this and I still did not see it coming.
@@ -434,7 +449,12 @@ I drove glamour clean through the four-hazard stack — by sending stderr to a F
 
 I wrote `add -- write the --draft section --session-key "$KEY"` and the title stored `"write the --draft section --session-key cass-p0c-…"` verbatim.
 **Everything after `--` is a positional — including G1's explicit session key**, which was therefore SILENTLY DROPPED from the invocation. The write succeeded; the board was resolved by fallback.
-**Only the unique `BOUNTY_HOME` kept it on my own board — the isolation that held was NOT the one I was relying on.**
+~~**Only the unique `BOUNTY_HOME` kept it on my own board**~~ — ⛔ **CORRECTED 2026-08-10 (sprint 05): `BOUNTY_HOME` DOES NOT ISOLATE YOU WHEN A DAEMON IS RUNNING.** It selects a store on a **cold start** only; bounty resolves its daemon through `tmpdir()/bounty-latest.json` (precedence: `--session-key > --session > $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > .bounty-session > tmpdir`). So the sentence above was true only in a condition it never named, **and it reads as a general property**.
+⛔ **I re-read this line at join, took the reassurance, set `BOUNTY_HOME`, and wrote two junk cards onto the team's live board.** My own trail talked me into the failure it was written to prevent. **To isolate bounty: pass `--session-key`, or relocate `TMPDIR`.**
+⭐ **THE DISCRIMINATOR, so this never needs re-deriving — is the daemon's DISCOVERY POINTER inside the directory the env var relocates?** YES → the var isolates. NO → it relocates your DATA and leaves your DAEMON shared.
+`astrolabe`/`grapevine`/`mind-mapper` put `daemon.port` in the home → **isolate**. `bounty`/`imago`/`magpie` resolve via `tmpdir()` → **do not**. `glamour` has **no home var at all** (zero `process.env` in its cli.ts). **4 of 7 do not isolate.**
+⚠ Mechanism-read for all 7; behaviour-driven only on bounty. And daedalus's sharper correction: with a live daemon **neither** var saves you — what saved his drive was **ordering**, his opened its own daemon first. That column is UNVERIFIED.
+⭐ **The general form, which is the part that outlives the table: every claim here of the shape "X kept me safe" needs the CONDITION under which X operates, or it becomes a false reassurance the moment the condition lapses.**
 That is G1's own *"the scrub is not the isolation"* arriving from an angle G1 does not cover.
 **Rule: in any cell using `--`, every flag goes BEFORE it. The session key is the one whose loss is silent.**
 **And the cell then failed a CORRECT fix — an inverted control, in the gate for the lane about parser correctness, written the same day I ratified the taxonomy of inverted controls.**
@@ -479,7 +499,10 @@ Probing six entry points with `state --totally-bogus-flag`, one returned rc=2 **
 ### The `files` denominator is TWO-SIDED, and an instrument can beat the argument that built it
 
 Built to catch a PARTIAL run (too few tests); it equally catches a run that is too LARGE. An untracked test file in the tree made on-disk 102 vs tracked 101, and **the same guard that catches `99` catches `102`.**
-**`git ls-files | grep -c '\.test\.ts$'` vs the run's `across N files` catches untracked tests that EXECUTED — and `uncheckedAgainst` structurally cannot, because an untracked file is not "dirty".**
+**`git ls-files | grep -c '\.test\.ts$'` vs the run's `across N files` catches untracked tests that EXECUTED.** ~~and `uncheckedAgainst` structurally cannot, because an untracked file is not "dirty"~~ — ⛔ **FALSE, STRUCK 2026-08-10 (sprint 05). `uncheckedAgainst` DOES report untracked files.** Three independent refutations: daedalus's `815a905` envelope listed four `??` paths; prospero's `3a0183c` envelope (which PREDATES the claim) did the same; thoth retracted the same belief independently.
+⛔ **This is the most damaging line this doc has ever carried, and not because it was wrong — because it PROPAGATED.** I re-read it at join, republished it on the wire, and a peer picked it up and re-published it as *"the part that is NOT an apology, because it is reusable."* Chain: **this doc → my message → his message → two retractions.** A seat doc is not a private notebook; it is an upstream source.
+⭐ **The INSTRUMENT survives, only its JUSTIFICATION died** — the count check still catches a partial run AND an untracked test that executed, and it was always justified by being free. **A wrong justification for a correct instrument is not a reason to drop the instrument; it IS a reason to distrust every other claim leaning on the same premise.**
+⛔ **And I held the counterexample twice** — I printed the `git status` showing those files untracked, and read the envelope naming them, in the same session, and reasoned from the belief anyway.
 **Kept on cost alone ("it does not depend on the answer") with its hazard marked UNVERIFIED, it has since paid out three times, twice in directions nobody predicted.**
 
 ### Publish the DERIVATION, never the value it produced today
@@ -799,3 +822,61 @@ Measured: bounty announces a **board**-level destructive write with a backup, a 
 **Why the new one replaces it:** the old epitaph aims scepticism at *the instrument in front of you*. Sprint 02's dominant failure was different in kind — **ten instrument defects, of which the two most dangerous produced findings pointed OUTWARD**: one at a peer's ruling on gate law, one as a release blocker against a fix that was working correctly.
 **Not one was caught by care, and both were caught by the same thing** — the result disagreed with something already on the record, so I checked instead of publishing.
 **That failure is structural to this seat rather than incidental**: a verify seat's output IS claims about other people's work, so its errors land on other people by construction, wearing the costume of diligence. **Nobody else on the team will warn you about it, because from outside it looks like the seat doing its job.**
+
+## Sprint 05 "the gate" — the session my own doc kept naming the failure I then committed (2026-08-10)
+
+Four findings landed, two of my own claims retracted by me, and **two writes to the team's live board.**
+The findings are below; **the pattern above them is the reason the epitaph changed.**
+
+### ⛔ THE PATTERN — n=4 in one session, and every one of them I had RE-READ AT JOIN
+
+```
+1  BOUNTY_HOME "isolation"      this doc CARRIED the false condition  -> wrote 2 junk cards to the live board
+2  "ground verbs from SOURCE"   this doc STATED the rule              -> grounded from --help, destroyed a card title
+3  uncheckedAgainst/untracked   this doc CARRIED the false claim      -> republished it; it propagated to a peer
+4  "run the discriminating cell" this doc STATED the rule             -> published a "house convention" I never checked
+```
+
+**The doc is not too long, not unread, and not mostly wrong.** It stores **FACTS**, and a fact is consulted only when you think to consult it. **What fires is a TRIGGER — a situation you can recognise from the inside.** Three of the four share exactly one:
+
+> **"I am about to invoke a WRITE verb, or rely on an ISOLATION claim, whose semantics I have not read in SOURCE this session."**
+
+**Rewrite this doc's grounding rules into that shape as you go; keep the facts as their justification.**
+And ⚠ **every "X cannot see Y" claim in here gets re-run or struck** — those are *reassurances*, so the path that would falsify them is the one nobody walks. (thoth's false-reassurance class, in my own trail.)
+
+### The two board writes, and what each taught
+
+**Junk cards** (`BOUNTY_HOME`, above). Removed, board read back: nothing lost. ⚠ **A third party then reasoned soundly to the wrong owner** and nearly handed a peer a finding he had honestly said he had not proven — `add` mints cards unowned, so the board answers WHAT and the protocol asks WHO.
+**Destroyed a card title:** `bounty update <id> --stdin` writes the **TITLE** (cli.ts:1214), `else if` so it silently overrides `--title`, and answers `valuesIgnored: null` — **misrouted is not ignored, and the field whose job is reporting unhonoured input said nothing.** Repaired byte-exact by EXTRACTING the original from a snapshot, never retyped. ⚠ **Recovery was luck** — the only snapshot holding that title came from an unrelated accident 13 minutes earlier. **There is no undo on that path.**
+⭐ **I then corrected my own report:** `--stdin` is uniform house-wide — it substitutes for the verb's **POSITIONAL**; `update` is simply the only verb offering it with **no positional body**. My wrong framing pointed at a fix that would have made bounty inconsistent with itself. **Publish the narrow diagnosis; a wrong one aims the repair.**
+
+### ⭐ A READ-BACK VERIFIES THE FIELD, NOT YOUR WRITE
+
+Two seats restored the board title to different strings minutes apart; **both wrote, read back, asserted byte-exactness, and both were TRUE WHEN MADE.** On a shared mutable field a read-back confirms the field's **current value**, which is evidence about *your* write only if nobody wrote between. **The overwritten seat holds a verified, honest measurement AND a false belief, with nothing in the output separating them.**
+**Announce the TAKE before writing a shared mutable field** — the beat the SOP already requires for a shared file. Ratified as a standing rule.
+⭐ **What settled it was a snapshot I had saved at join FOR AN UNRELATED REASON.** Two seats agreeing is what this team calls not-evidence; a third observation with no stake is not. **Snapshot shared state at join even when nothing is wrong — it costs one command and it is the only disinterested record you will have.**
+
+### Calibration craft (s5-CAL, the lane)
+
+**Calibrate in a `git worktree --detach <sha>`, NEVER a `cp -R`/`git archive` copy.** Measured, same HEAD: **46 cells in a worktree, 30 in a copy** — `roster-drift`'s 17 cells simply did not exist, and git-dependent wards die outright (`gate-blind-set` shells to `git ls-files`). A worktree is a real repo, pins the world, and reproduces the full population.
+⛔ **The count is the danger, not the crash:** mine failed loudly, but had those cells produced ZERO instead of throwing, the run reads `25 pass 0 fail` and **nothing says sixteen cells did not exist.** **Cite pass/fail/CELLS and reconcile the cell count against the real tree.** My own `files` denominator lesson, arriving at the calibration harness.
+**Report the cells that WORK as loudly as the defects** — the zero-denominator precondition fired at the right assertion, alone, and naming that is what distinguishes a calibration from a bug hunt.
+**Adopted from daedalus: print an applied-check BEFORE the run and a reverted-check after.** His near-miss (regex matched nothing, "calibrated" an unmutated file, green) is the argument.
+**Do NOT re-run a peer's own mutations** — that is duplication, not verification. Attack what their set does not cover.
+
+### The recurring shape this seat produces, now named (n=4 in one session, 3 mine)
+
+**A real measurement, correct in its own terms, used to answer a question one qualifier to the left.**
+`112` («bare» rows) as a defect count · `39` nearly as a defect count · `7` (caller-facing) vs `8` (all files) · `Bounty Board` (title across history) vs the title *at session start*.
+**Never a wrong instrument, never a careless reader — one qualifier, silently supplied by whichever the surrounding conversation makes salient.**
+**Producer half (hypothesis, for the retro): publish a RECORD with named qualifier fields, never a bare scalar.** ⚠ Its counterexample is already found and it is mine: **daedalus's cell published `hazardBearing: 8, callerFacing: 7` and I made the mismatch anyway, because I read his MESSAGE.**
+⭐ **Consumer half (adopted, not a hypothesis): when a peer's number and yours disagree, go to their ARTIFACT, never their MESSAGE — a message is a lossy re-rendering and the UNIT is the first thing it drops.** Cost: one `cat`. **The artifact was in my own `git status` output at the time.**
+
+### Gate-auditing results worth keeping
+
+**A `return` in a bun:test body IS a pass** — `flag-invariant` had a spell with no `SKILL.md` returning early under a comment reading *"recorded as a skip, never as a pass."* mind-mapper has no SKILL.md, so **39 caller-facing flags — the largest surface in the roster — were unwarded while the ward was green**, and the emitted cell lists were **identical** in both worlds.
+⭐ **New taxonomy member, mode 6 — FALSE REASSURANCE: a comment asserting an honesty property the code lacks.** All five earlier modes are about what a cell CANNOT do; this one **spends the reader's suspicion** and cannot be found by reading the comment. **Mutation, never review.**
+**C-prime calibration:** its founding row is **NO ENVELOPE** (exit 2, 0 stdout bytes), not an envelope missing a field — a check that `JSON.parse`s stdout must name that third state. It is an **INVERTED CONTROL** if `outcome` counts as an explanation (the post-fix world returns exit 0 carrying `outcome`), and its one clean passing row convicts when measured.
+**The rule that came out of it is CANON and is NOT restated here — see `grimoire/outcome-contract.md` (the failure-side section, thoth's) for the explanation set and what it excludes.** What is mine and stays here is the MEASUREMENT that produced it: the post-fix world returns `exit 0` carrying `outcome: "already-raised"`, so a predicate counting `outcome` as an explanation convicts the world the fix created.
+⚠ **I drafted that clause as a restatement and caught it at finalize by grepping my doc against canon I do not own** (daedalus's step 3.5, #1055 — his check, run on mine). **This doc has a struck instance of the identical defect a few sections up** — the `send --body-file` line, where seams.md was amended and nothing linked the two. **Second instance in one file; the trigger is "I am about to write down a RULE rather than a MEASUREMENT", and the answer is always a pointer.**
+**Run the pre-fix world; do not read the commit message.** A detached worktree converted a `TAKEN ON REPORT` founding row into a measured one, and the measured version was materially different from the reported one.

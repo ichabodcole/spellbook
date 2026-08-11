@@ -218,13 +218,48 @@ falsehood.
 What actually caught it was **unrelated**: running the full test suite for a
 different fix, and reading a stray `mind-mapper: STALE DIST` warning in the
 output — emitted by the very staleness detector this section claimed did not
-exist. **The evidence arrived as a side effect of doing the work, not from any
-of the checking.**
+exist.
+
+> **⛔ CORRECTED THE SAME EVENING — AND THE CORRECTION IS THE POINT, SO IT IS
+> REPLACING THE SENTENCE RATHER THAN ANNOTATING IT.** This paragraph originally
+> ended _"the evidence arrived as a side effect of doing the work, not from any
+> of the checking."_ **That gave the credit to an instrument, and the instrument
+> does not work.**
+>
+> `circe` measured it hours later during sprint 05:
+> `mind-mapper/scripts/server.ts:139` computes staleness as
+> `newestMtime(src) > Date.parse(builtAt)`. **mtime is not a content property
+> and git does not preserve it** — every clone, branch switch, or checkout
+> stamps those files `now`, which is unconditionally newer than a `builtAt`
+> baked at build time. The source had not changed at all
+> (`git diff ce44228 HEAD -- src/mind-mapper/surface/` → identical, zero commits
+> in range). The remedy the warning names does not even clear it, because a
+> rebuild writes a new `builtAt` that the next checkout again precedes.
+>
+> **So the warning fires unconditionally, and the one time it was useful it was
+> useful BY ACCIDENT.** What happened was: a false positive fired, it named a
+> spell I had not thought to look at, and I inferred the pipeline's existence
+> from the bare fact that something in `mind-mapper` knew what a `dist/` was.
+> **The only informative bit was the spell name in the string.** Had that daemon
+> been correctly silent — which a working implementation would have been — this
+> report would have shipped "the surface pipeline does not exist" with three
+> verifications behind it.
+>
+> **Luck is not a method, and reporting it as one is how a team adopts a
+> practice that never worked.** The rule below stands on its own; the anecdote
+> does not support it and no longer claims to.
 
 > **The transferable rule:** when a source says _"X does not exist,"_ checking
 > the places the source names can only ever confirm it. A negative claim is only
 > tested by searching where the source **was not looking** — here, one `ls src/`
 > would have done it.
+
+> **And the sharper form of clause (i), earned the same night by the seat who
+> found the bug:** she printed past that same warning **three times** in her own
+> baseline while hunting for exactly this class of defect. **A warning that
+> always fires has already been un-read by the person looking for it.** A gate
+> that cannot say what it did not see is bad; a gate that says the same thing
+> regardless is worse, because it trains its reader to skip the line.
 
 #### `spellbook-rebrand` — known fixes exist but are blocked upstream of themselves
 

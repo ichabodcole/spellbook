@@ -23,7 +23,7 @@ locally by [Bun](https://bun.sh), and auth/API access live at the MCP layer so
 the client stays thin. Each spell ships as a self-contained skill — zip one
 folder and it runs anywhere `bun` is on PATH.
 
-The project is two things at once. It's a **product** — eight shipped spells
+The project is two things at once. It's a **product** — seven shipped spells
 spanning agent↔human and agent↔agent collaboration — and a **methodology lab**:
 an unusually developed craft system (the _grimoire_) for growing and pruning
 agent surfaces well. The guiding idea is **co-presence**: a spell is a board
@@ -53,7 +53,7 @@ in `grimoire/house-style.md`.
 ## Project Structure
 
 ```
-plugins/spellbook/skills/   the eight spells (+ READMEs); each self-contained
+plugins/spellbook/skills/   the seven declared spells + mind-mapper (WIP, undeclared)
 grimoire/                   the craft: house-style, decay-ledger, trigger-registry,
                             fresh-agent/, scenarios/
 docs/                       manifesto, projects/, backlog/, fragments/, reports/
@@ -72,16 +72,26 @@ Each spell folder holds `SKILL.md` (the contract), `scripts/` (`cli.ts` + a
 Two kinds: a **cantrip** casts and resolves (no standing state); a
 **conjuration** runs a daemon you return to.
 
-| Spell         | Kind        | What it does                                                                            | Surface        |
-| ------------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
-| `digestify`   | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
-| `grapevine`   | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | Alpine watch   |
-| `bounty`      | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | Alpine-CDN     |
-| `glamour`     | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
-| `imago`       | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                             | React 3-pane   |
-| `magpie`      | conjuration | Extracts individual assets from a composite image; phased Intake→Slice→Remove→Export    | React + Alpine |
-| `astrolabe`   | conjuration | Cross-project observatory — a higher-level board for projects in flight                 | React          |
-| `mind-mapper` | conjuration | Traceable concept graph — zones, subgraphs, ratify/promote, agent event stream          | React          |
+| Spell       | Kind        | What it does                                                                            | Surface        |
+| ----------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
+| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
+| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | Alpine watch   |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | Alpine-CDN     |
+| `glamour`   | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
+| `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                             | React 3-pane   |
+| `magpie`    | conjuration | Extracts individual assets from a composite image; phased Intake→Slice→Remove→Export    | React + Alpine |
+| `astrolabe` | conjuration | Cross-project observatory — a higher-level board for projects in flight                 | React          |
+
+> ⛔ **`mind-mapper` IS DELIBERATELY NOT IN THIS TABLE — ruled by Cole
+> 2026-08-10.** It is a **work in progress**: no `SKILL.md`, and absent from all
+> four synced listings and the trigger registry **on purpose**, because a spell
+> that has not coalesced should not claim a roster slot.
+>
+> ⚠ **This row existed for one day and it was mine.** I added it on 2026-08-10
+> while "correcting" the roster count from six to eight — astrolabe was a real
+> correction, **mind-mapper was a claim I minted**, and for a day this file was
+> the only document in the repo asserting it was a spell. Removed on the ruling.
+> _See [the sweep report](./reports/2026-08-10-project-status-sweep.md)._
 
 > **New since last summary:** `magpie` graduated from a CLI-only **cantrip**
 > into a full **conjuration** — a multi-phase daemon (`cli.ts` + `server.ts` +
