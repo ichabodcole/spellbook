@@ -1,5 +1,24 @@
 # `mind-mapper` is undeclared in every listing and shipped in v2.2.0
 
+> ## ✅ RULED BY COLE, 2026-08-10: THE UNDECLARED STATE IS INTENTIONAL AND CORRECT
+>
+> **mind-mapper is a work in progress. It is undeclared BECAUSE it is not
+> finished** — not through oversight, and not through drift. **There is nothing
+> to repair in the four synced listings, the trigger registry, or the missing
+> `SKILL.md`.** A spell that has not coalesced should not be claiming a roster
+> slot.
+>
+> **What this ruling does NOT cover, left open deliberately:** whether the built
+> artifact should be **in the published package** while the spell is WIP.
+> `spellbook-v2.2.0` ships `mind-mapper/dist/` (~54k lines of JS + CSS) and
+> `scripts/`. A consumer receives a daemon and a surface they have no contract
+> for. **That is a packaging question, not a documentation one**, and it is
+> untouched by the ruling above.
+>
+> **Everything below is preserved as the measurement that prompted the
+> question.** It was correct as a description of the tree and wrong to imply the
+> state was accidental.
+
 **Filed:** 2026-08-10 · **Status:** open — **awaiting a product ruling from
 Cole, not a fix** · **Found by:** `cassandra` (the ward's silence) and
 `prospero` (the listings) · **Verification:** the measurements below were
