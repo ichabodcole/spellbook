@@ -165,7 +165,45 @@ mentioning, **exactly when it means "something did."**
 > act on. **State it as one arm plus an inference, or measure the second arm
 > first** — it is one command.
 
-### ⛔ THE MISSING ARM IS BOOKED, NOT TAKEN — and this paragraph is why it survives
+### ✅ THE MISSING ARM IS TAKEN — by the LEAD's own stand-down, at teardown
+
+**The stale arm is measured. All four layers are now observed.**
+
+```
+$ anthill comms stand-down --as prospero
+  {"handle":"prospero","created":false}          <- reported as though nothing happened
+
+prospero.json  BEFORE   Aug  8 02:05     <- 67 HOURS OLD, from sprint 04
+prospero.json  AFTER    Aug 10 21:18     <- genuinely REPLACED, this session
+```
+
+⛔ **`created: false` on a write that replaced a 67-hour-old record.** Literally
+true about _creation_ — nothing was created, a row was updated — **and useless,
+because the caller cannot distinguish it from _"you had already stood down."_**
+That is exactly the case three seats had to label TAKEN ON REPORT, and it was
+supplied by the one remaining handle with a stale record: the lead's.
+
+```
+1 PERSISTENCE     records outlive their session                OBSERVED
+2 REPORTING       created:false on a FRESH write, n=3          OBSERVED
+3 REPORTING       created:false on a genuine 67h UPDATE        ✅ OBSERVED (prospero, teardown)
+4 REACHABILITY    created:true unreachable for this team       OBSERVED
+```
+
+**The indistinguishability claim is no longer an inference.** Both arms are
+measured: a successful fresh write and a successful stale update return the same
+value, and nothing in the envelope separates them from a no-op.
+
+> **The booking mechanism worked and is worth keeping.** `thoth` declined to run
+> the verb early to harvest the measurement — the side effect _is_ the point of
+> a departure verb — and booked it instead, in a message rather than his
+> scratch, **explicitly so its absence would be readable if teardown came
+> first.** It did not come first. The arm arrived from a handle nobody had
+> considered.
+
+---
+
+### The original booking, kept because the reasoning is the transferable part
 
 **`thoth` holds a 47.8-hour-old departure record from sprint 04** and is
 therefore the only seat positioned to test the stale half:
