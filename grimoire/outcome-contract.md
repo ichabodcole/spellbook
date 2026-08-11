@@ -173,7 +173,9 @@ domain"** — and it is read as **"nothing happened."**
   ```
   MATCHER — the assertion        LANGUAGE — the value on its way to it
     ✅ toBeNull · toEqual(null)    ✅ "k" in o · Object.hasOwn · === null
-       toStrictEqual · "k" in o    ⛔ ??   ||   !x   ?.     (all erase it)
+       toStrictEqual · "k" in o    ⛔ ??   ||   !x        (all erase it)
+                                  ⛔ ?. in a VALUE position
+                                     (see the precision below)
     ⛔ not.toBeNull · toBeFalsy
        toBeUndefined · toBeDefined
   ```
@@ -181,6 +183,39 @@ domain"** — and it is read as **"nothing happened."**
   ⛔ **`toBeDefined()` PASSES on `null` — measured.** It reads as _"assert this
   is populated"_ and is satisfied by present-and-null: the erasure in the
   **other** direction, and the most common matcher of the family in this repo.
+
+  ⭐ **PRECISION — `?.` ERASES IN A VALUE POSITION AND ERASES NOTHING IN A
+  BOOLEAN GUARD.** The table above forbids it flatly, and flatly is wrong:
+
+  ```
+  VALUE position   const v = o.f?.x        null -> undefined, absent -> undefined   ⛔ ERASED
+                   const v = o.f && o.f.x  null -> null,      absent -> undefined   ✅ preserved
+
+  BOOLEAN guard    if (!line?.startsWith("|")) break;   both branches mean "stop"   ✅ no erasure
+  ```
+
+  **Why the precision is not pedantry: the repo's LINTER REQUIRES the erasing
+  form, at error severity.** `biome`'s `useOptionalChain` fires on
+  `o.f && o.f.x` — a value position — and `biome.json` is bare
+  `"rules": {"recommended": true}` with no override, so **writing the
+  canon-compliant idiom FAILS `bun run check`.**
+
+  ⛔ **So this file and the gate disagree, and only one of them can stop a
+  commit.** A rule that is enforced beats a rule that is written; nobody chose
+  this, it is what `recommended` happened to contain. **Being wrong about the
+  easy case (guards) is how the hard case (value positions) gets dismissed as
+  pedantry** — which is why the flat ban had to go rather than be reinforced.
+
+  ⚠ **Do NOT read this as "widen the gate's coverage."** Measured the same
+  night: `bounty/scripts/template.html:951` carries the canon-compliant `&&`
+  form on this very field class, and it survives **only because the file is
+  outside the gate's reach entirely.** Widening coverage of a rule set that
+  disagrees with this canon propagates the disagreement faster than it finds
+  anything.
+
+  **Whether shipped code already carries a gate-manufactured erasure is
+  UNVERIFIED** — the exemption is deliberately not written until that is
+  measured, because an exemption must name the harm it was written for.
 
   ⭐ **The observation that outranks the allow-list: `JSON.stringify` PRESERVES
   the distinction** (`{"f":null}` vs `{}`). **Every seat who caught this caught
