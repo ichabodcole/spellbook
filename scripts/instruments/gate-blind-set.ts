@@ -9,7 +9,27 @@
 // Run it explicitly:
 //
 //     bun scripts/instruments/gate-blind-set.ts          # exits 1 ONLY if its own arithmetic breaks
-//     SKILLS_DIR=/some/fixture bun scripts/instruments/gate-blind-set.ts
+//     SKILLS_DIR=/path/to/a/git/repo bun scripts/instruments/gate-blind-set.ts
+//
+// ⛔ THE FIXTURE HOOK MUST POINT AT A GIT REPO, AND THAT IS NOT A QUIRK — IT IS
+// THE UNIT. "Shipped" means TRACKED, so the enumerator is `git ls-files` and an
+// untracked directory is not a smaller version of the question, it is a
+// different one. Mint a throwaway repo (`git init` + `git add`) to calibrate.
+// The first version of this line documented `SKILLS_DIR=/some/fixture` and the
+// hook EXITED 128 before printing (`git ls-files` refuses a path outside the
+// repo) — found by thoth, who could only find it by building a consumer and
+// insisting on calibrating it against a mutated world.
+// ⚠ **And that dead hook is why the tautological self-check below survived to be
+// committed: it was caught by READING, and could not have been caught by RUNNING,
+// because the route that would let you mutate a world and watch the check react
+// did not work.** A missing calibration route and an uncalibrated check are the
+// same fact.
+//
+// LINE COUNTS ARE `wc -l` SEMANTICS — the count of newline characters. The first
+// version used `split("\n").length`, which counts the empty fragment after the
+// final newline and so ran exactly ONE HIGH PER FILE (16 files -> a total of
+// 4,182 where `wc -l` says 4,166). No argument anywhere depended on the
+// difference; the defect was the UNIT, since "lines" to a reader means `wc -l`.
 //
 // ── THE QUESTION, STATED FIRST, BECAUSE THE QUESTION PICKS THE UNIT ─────────
 // Of the SHIPPED, HAND-AUTHORED files under `plugins/spellbook/skills/`, which
@@ -74,6 +94,9 @@ import { join } from "node:path";
 // execFileSync (argv array, no shell) rather than execSync — there is no
 // interpolation here today, and a shell-string form is the wrong thing to leave
 // where the next instrument's author will copy it.
+// Enumerate from INSIDE the target with `git -C`, so the fixture hook reaches any
+// git repo rather than only paths inside this one. Paths come back relative to
+// the target and are re-joined for reading and display.
 const SKILLS_DIR = process.env.SKILLS_DIR ?? join("plugins", "spellbook", "skills");
 
 const BINARY = /\.(webp|png|jpg|jpeg|gif|svg|ico)$/;
@@ -99,17 +122,20 @@ function biomeGatedExts(configPath: string): string[] {
     .sort();
 }
 
-const tracked = execFileSync("git", ["ls-files", SKILLS_DIR], { encoding: "utf8" })
+const tracked = execFileSync("git", ["-C", SKILLS_DIR, "ls-files"], { encoding: "utf8" })
   .trim()
   .split("\n")
-  .filter(Boolean);
+  .filter(Boolean)
+  .map((rel) => join(SKILLS_DIR, rel));
 
 const handAuthored = tracked.filter((f) => !BINARY.test(f) && !GENERATED.test(f));
 const gated = handAuthored.filter((f) => GATED.test(f));
 const docs = handAuthored.filter((f) => DOC.test(f));
 const blind = handAuthored.filter((f) => !GATED.test(f) && !DOC.test(f));
 
-const lineCount = (f: string): number => readFileSync(f, "utf8").split("\n").length;
+// `wc -l` semantics: the number of newline characters. NOT `split("\n").length`,
+// which counts the empty fragment after a trailing newline and runs one high per file.
+const lineCount = (f: string): number => readFileSync(f, "utf8").split("\n").length - 1;
 const blindLines = blind.reduce((n, f) => n + lineCount(f), 0);
 
 // The self-check that CAN fail: is our copy of biome's allow-list still the real one?
