@@ -59,6 +59,16 @@ is parked. **A forecast, not a plan.**
 | 02  | [success-shaped-lies](./sprints/02-success-shaped-lies/plan.md)           | Complete | 2026-08-06 | 2026-08-07 | [outcome](./sprints/02-success-shaped-lies/outcome.md)  | [decisions](./sprints/02-success-shaped-lies/decisions.md)      |
 | 03  | [what-close-takes-with-it](./sprints/03-what-close-takes-with-it/plan.md) | Complete | 2026-08-07 | 2026-08-08 | **none — see note below**                               | [decisions](./sprints/03-what-close-takes-with-it/decisions.md) |
 | 04  | [the-shape-of-nothing](./sprints/04-the-shape-of-nothing/plan.md)         | Complete | 2026-08-08 | 2026-08-10 | [outcome](./sprints/04-the-shape-of-nothing/outcome.md) | [retro](../../../.anthill/retro.md)                             |
+| 05  | [the-gate](./sprints/05-the-gate/plan.md)                                 | Active   | 2026-08-10 | —          | —                                                       | [retro](../../../.anthill/retro.md)                             |
+
+_Reconciled 2026-08-10 @ `ea0b34b` (docs-of-record sweep, sprint 05 finalize) —
+"sprint 04 has no outcome.md": **FALSIFIED**, written at `3a0183c`, row updated.
+"sprint 03 has no outcome.md": **HELD**, still absent, warning retained. "part 1
+of the end condition is drained": **HELD** — #79 #85 #86 #87 #88 #97 closed
+2026-08-10. "the sprint table lists every sprint": **FALSIFIED** — sprint 05 had
+run to ten commits with no folder and no row; container created at finalize, and
+the nine-hour absence is recorded in its plan. "14 reported defects" (opening
+line): **UNCHECKED** — nobody owned it this session._
 
 **Status values:** Not planned | **Scaffold** | Active | Complete | Abandoned
 
