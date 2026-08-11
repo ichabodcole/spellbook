@@ -73,7 +73,26 @@ Items 2–4 are the reason the process exists. The message is the pretext.
   wrote the code or the lead committed on its behalf is **not determinable.**
 - **Whether anything was verified beyond the automated gate.** No test plan, no
   verification record, no session doc.
-- **The `r8` RED set** — "113 rows, unclassified" — has no artifact.
+  > ⭐ **The verify seat took this one as HERS rather than the reader's, and it
+  > is the sharpest item in the reconstruction:** _a verify seat that reports on
+  > the wire has produced no evidence a month from now._ Her findings live in
+  > comms messages this same file says **resolve to nothing**, plus two seat-doc
+  > sections and one backlog file. **The remedy is not more messages — it is
+  > that every hand-verification lands as a runnable instrument or it did not
+  > happen.** `gate-blind-set.ts` and the r8 scanner are the two that got it
+  > right, and **neither was hers by default; both landed because someone
+  > insisted.**
+- **The `r8` RED set is DERIVABLE, and the cold reader's wording collapsed two
+  states.** ⛔ This line originally read _"has no artifact"_. **The SET has
+  one:** `bun scripts/instruments/r8-outcome-check-v3.ts` reproduces **113 RED /
+  11 GREEN** from `HEAD`, with its filters printed above the result and the file
+  committed. **What has no artifact is the CLASSIFICATION** — which of the 113
+  are defects was never decided, **deliberately**, because the count is inflated
+  by a by-name mutator list and nobody was permitted to turn it into a scope.
+  _"Has no artifact" sends a reader to rebuild an instrument that already
+  exists; the truth is one command and then start classifying._ **A dead end
+  versus a starting point** — corrected by `cassandra`, who declined to edit
+  this file mid-merge and handed over the wording instead.
 - **`type-sentinel-probe.ts` hardcodes an absolute path** and will not run on
   another machine. ✅ fixed.
 
