@@ -1,10 +1,11 @@
 # Sprint 05 — The gate
 
 **Created:** 2026-08-10 (retroactively, **during** the sprint — see the warning
-below) · **Status:** 🟢 ACTIVE — convened 2026-08-10 on `fix/spell-hardening-05`
-· **Base:** `e65333a` · **Project:** [Spell Hardening](../../README.md) ·
-[roadmap.md](../../roadmap.md) · **Predecessor:**
-[sprint 04 outcome](../04-the-shape-of-nothing/outcome.md)
+below) · **Status:** ✅ COMPLETE — merged to `develop` 2026-08-10 · **No release
+cut**: held deliberately so sprints 05 and 06 ship together · **Branch:**
+`fix/spell-hardening-05` · **Base:** `e65333a` · **Project:**
+[Spell Hardening](../../README.md) · [roadmap.md](../../roadmap.md) ·
+**Predecessor:** [sprint 04 outcome](../04-the-shape-of-nothing/outcome.md)
 
 > **⛔ THIS SPRINT RAN WITHOUT A PLAN DOCUMENT AND THIS FILE IS NOT ONE.**
 >
@@ -60,7 +61,7 @@ was.
 
 ## What landed
 
-Ten commits on `fix/spell-hardening-05`. **The deliverable is legible in one
+**33 commits** on `fix/spell-hardening-05`. **The deliverable is legible in one
 listing** — roster-wide conformance suites went from **3 to 7**:
 
 ```
@@ -115,6 +116,39 @@ negative on a data-destroying path — the highest-severity of the six).
 
 **Five are written up in [`docs/backlog/`](../../../../backlog/); `s5-9` was
 found late and is carded.** All await Cole.
+
+## ⛔ Corrections found by a COLD RECONSTRUCTION, at the merge
+
+A fresh agent was given the branch and the base and **nothing else**, and asked
+to write the merge message. **Judged as a cold reader, this document was a good
+scope-and-ruling record and a poor deliverable record.** Its findings, applied
+here rather than argued with:
+
+- **"Ten commits" — the tree has 33.** True when typed, never revised, **in the
+  document that claims to record what landed.** Corrected above.
+- **`s5-9` named two different defects** — this file and `retro.md` used it for
+  `bounty update --stdin`; `grimoire/roster-drift.test.ts` used it for
+  mind-mapper's packaging question. The id was minted here **hours after** the
+  test cited it. Repointed at a file rather than a card id, because files
+  survive teardown.
+- **Status said `🟢 ACTIVE`** while the sprint was merging. Corrected.
+- **What this document got WRONG about its own deliverables**, per the cold
+  read: it says "row 2 / c1: the `--` terminator" — but `terminator-invariant`
+  solves **promotion** (free text → flag name) and explicitly does **not** solve
+  **demotion** (a real flag silently swallowed as a positional), which is the
+  live half. A reader of the listing alone would think row 2 is closed. **It is
+  not.**
+- **It omits the single most consequential design decision in the sprint's
+  code:** `strict-parse-invariant` is a structural pin plus a mechanism cell and
+  deliberately **not** the per-spell behavioural drive the roadmap specified —
+  because a daemon outranks a spell's home env var, so a spawning cell in the
+  shared gate could write to a live board. **That reasoning exists only in a
+  comment in the test file.**
+- **It never says an existing ward changed.** `flag-invariant` was refactored
+  onto the shared enumerator, replacing a glob that was a latent silent filter.
+
+⚠ **The blind set is 16 files / 4,166 lines and that number is only in the ward
+and the instrument, not here.**
 
 ## Deferred — placed at finalize, each with a HORIZON and a HOME
 
