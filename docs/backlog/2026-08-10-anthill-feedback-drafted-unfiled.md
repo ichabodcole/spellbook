@@ -1,4 +1,4 @@
-# anthill feedback — five drafts, measured, DRAFTED AND UNFILED
+# anthill feedback — six drafts, measured, DRAFTED AND UNFILED
 
 **Filed:** 2026-08-10 · **Source:** spell-hardening sprint 05 finalize, step 5
 (aggregate the team's upstream feedback) · **Status:** ⛔ **NOT SENT — filing to
@@ -304,10 +304,97 @@ persistence fact plus a measured reporting fact produced a confident consequence
 that four seats accepted, and **the consequence was never measured by anyone.**
 It would have gone upstream as a defect report against working code.
 
+## 6. ⛔ anthill's own test suite leaks a REAL bounty daemon into the user's REAL `~/.bounty`, once per run
+
+**Found at teardown, on `ward`'s "confirm no zombie processes" step. Reproduced
+before it was written up.**
+
+`scripts/anthill/commands/team-support.boardbinding.test.ts` closes with a
+round-trip test that spawns a **real** `anthill convene` against the **installed
+spellbook**, deliberately — the comment says so, and the reasoning is sound: a
+green CI without spellbook installed is not evidence the derived-id round trip
+holds. **The test is right. Its cleanup is not.**
+
+```ts
+afterAll(() => rmSync(ROOT, { recursive: true, force: true })); // the tmpdir
+```
+
+`convene` spawns a **detached** bounty daemon (`--no-open`, reparented to init).
+`rmSync` removes the fixture directory and **the daemon is not in it.** Nothing
+closes the board.
+
+### Measured on this machine, at 04:23 UTC
+
+```
+live k-myproject-* daemons     31        ages 72s → 2h00m, ppid 1
+leaked snapshots               73        ~/.bounty/snapshots/, every one {"tasks":[]}
+```
+
+`myproject` is **this test's fixture channel** and appears nowhere else on the
+machine. The source repo is `~/Projects/dreamwood/anthill`, branch
+`fix/config-resolver-hygiene`, actively being worked today.
+
+### The reproduction — one run, one daemon
+
+```
+before   30 daemons
+$ bun test scripts/anthill/commands/team-support.boardbinding.test.ts
+         4 pass  0 fail  [215.00ms]
+after    31 daemons
+
+daemon.log: {"session_id":"k-myproject-0cea1f8c","pid":188,"reason":"ready",…}
+```
+
+**The suite passes. That is the problem** — the leak is invisible to the gate
+that would catch it, because a leaked process is not a failed assertion.
+
+### ⭐ Why it is bounded, and why that is the least reassuring part
+
+`server.ts:616` — `timeout` defaults to **7200s**. Every leaked daemon
+self-closes after two hours idle, which is exactly why no live one was older
+than `02:00:09`. **So the ceiling is "however many test runs fit in two
+hours"**, and today that was ~30 concurrent processes from ~73 runs.
+
+**The idle-close is the only thing standing between this and unbounded
+accumulation** — and it is the mechanism spellbook issue **#64** exists to
+question. **This is NOT evidence for #64** (an idle daemon closing at its idle
+timeout is the feature working); it is a reason #64 will be hard to debug, since
+a machine carrying 30 stranger daemons is a noisy place to reproduce an unwanted
+idle death.
+
+### And the cleanup writes MORE state than it removes
+
+Killing the 31 leaked daemons produced **31 additional snapshots** — flush-on-
+shutdown, working as designed. `73 → 104`, all empty boards. **A leak whose
+cleanup step grows the artifact it leaks** is worth naming on its own: anyone
+reaping these by hand and then counting will conclude they failed.
+
+### The fix is anthill's, and it is small
+
+Close the board in `afterAll` (the id is in the `.bounty-session` the test
+**already reads and asserts on** — nothing new needs discovering), or spawn it
+with a short `--timeout`. Either removes the leak without weakening the round
+trip, which is the part worth protecting.
+
+**⚠ There is a spellbook-side question too, and it is ours:** a caller who
+strands a board has **no reap verb**. `list` shows live boards and `close` acts
+on one resolved session; there is nothing that says _"close every board matching
+this key prefix."_ grapevine grew exactly that verb (`reap`) in V1.8. **Cleaning
+this up took `pgrep | xargs kill` and a `rm` glob** — two operations outside the
+spell, on the spell's own state. Filed here rather than as a separate item
+because it was found from the same evidence; **it is a spellbook backlog
+candidate, not anthill feedback.**
+
 ---
 
 ## What Cole is being asked
 
 **Nothing yet.** These are drafted for review. **Do not read the ordering as
-priority** — items 1 and 2 are praise for mechanisms that worked, items 3–5 are
-defects, and item 3 is the only one that cost this session real time. </content>
+priority** — items 1 and 2 are praise for mechanisms that worked, items 3–6 are
+defects, and item 3 is the only one that cost this session real time.
+
+**Item 6 is the exception to "nothing yet": its cleanup was already performed**
+— 31 daemons killed, 104 empty snapshots removed, with Cole's explicit
+authorisation that no other team was using a board. **The defect itself is
+untouched and will re-leak on the next `bun test` in the anthill repo.**
+</content>
