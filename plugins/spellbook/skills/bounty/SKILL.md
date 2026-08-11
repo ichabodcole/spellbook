@@ -773,3 +773,23 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
   session — only the human's **Close board**, your `cli.ts close`, or the idle
   timeout does. If you opened a board and the user wandered off, it sits until
   the timer fires.
+
+## Feedback touchpoint
+
+At a natural close — when the board is closed, not mid-session — surface
+friction so the tool improves:
+
+- **Agent friction** — if a verb misbehaved, an envelope or event shape fought
+  you, or the host/join split was unclear, file a GitHub issue against the
+  **Spellbook** repo (`github.com/ichabodcole/spellbook`).
+- **Human** — when the user is on the board, offer once (easy to skip):
+  "anything about bounty itself feel off or worth improving?" Route what they
+  say to the same issues.
+
+This is feedback about the **tool**, not the work on the cards.
+
+> **Worth asking about specifically:** anything the _agent_ was told that the
+> _board_ never showed, or the reverse. Bounty's surface is a hand-written
+> mirror of the daemon's state, so the two channels drift silently — a whole
+> release shipped with the daemon reporting a failed restore that the board
+> never rendered.
