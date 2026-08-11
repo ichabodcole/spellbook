@@ -1,7 +1,9 @@
 # `bounty update --stdin` writes the TITLE, and `valuesIgnored: null` reports a false negative on a data-destroying path
 
-**Filed:** 2026-08-10 · **Status:** open, unsized · **Board card:** `s5-9` ·
-**Scope ruling:** OUT of sprint 05 — a fix, not a gate
+**Filed:** 2026-08-10 · **Status:** **open — the CODE defect is untouched**; a
+documentation warning shipped 2026-08-11 on `fix/s5-9` · **Board card:** `s5-9`
+· **Scope ruling:** OUT of sprint 05 — a fix, not a gate; the repair is
+scheduled into **sprint 06 phase 1**, paired with `s5-5`
 
 > **Filed by the seat that found it (`cassandra`), by destroying a live card
 > title with it.** Every measurement below is **VERIFIED HERE** unless marked
@@ -94,7 +96,27 @@ looked at together; they may be one repair.**
   way. **Nobody should drive it against a live board to find out.**
 - **Canon, not this item (thoth's):** `--stdin`-replaces-positional is a pattern
   read off five call sites and **no doc states it.** That undocumented rule is
-  arguably why the diagnosis went wrong the first time.
+  arguably why the diagnosis went wrong the first time. ⚠ **PARTIALLY DISCHARGED
+  2026-08-11** — `bounty/SKILL.md` now states it, for bounty only. **The
+  house-wide version (comms, grapevine) is still unwritten**, so the rule a
+  reader can now learn in one spell is still a pattern everywhere else.
+
+## The stop-gap that shipped, and what it does NOT do
+
+`bounty/SKILL.md` carries the warning as of 2026-08-11: the positional rule
+stated outright, the `update` case called out with the wrong and right
+invocations side by side, the silent `--title` override, and the fact that
+**there is no way to send notes through `--stdin` today.**
+
+⛔ **A warning is not a fix, and this one is weaker than it reads.** It protects
+a caller who reads `SKILL.md` before using the verb. It does nothing for a
+caller who reasons from `--stdin`'s behaviour on `add` and `message` — which is
+the correct pattern everywhere else, and is how this was found. **The envelope
+still says `{"ok":true,"valuesIgnored":null}` after destroying a title**, and
+that is the half a document cannot reach.
+
+It shipped ahead of the repair because the repair needs a design call paired
+with `s5-5`, and the gap between the two was going to be measured in weeks.
 
 ## Why this file exists
 
