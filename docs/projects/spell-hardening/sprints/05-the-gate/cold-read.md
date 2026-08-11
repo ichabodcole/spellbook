@@ -38,16 +38,16 @@ Items 2–4 are the reason the process exists. The message is the pretext.
 
 ## The eight contradictions, and where each landed
 
-| #   | contradiction                                                                                                                                         | owner                             | resolution                                                                  |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------- |
-| 1   | `plan.md` says **"Ten commits"**; the tree has **33**                                                                                                 | prospero                          | ✅ fixed `36e20dc`                                                          |
-| 2   | **`s5-9` names two different defects** — `roster-drift.test.ts` uses it for mind-mapper, `plan.md`/`retro.md` for `bounty update --stdin`             | thoth (file) / prospero (cause)   | ✅ repointed at a **file**, not a card id                                   |
-| 3   | mind-mapper pinned as **DEBT** whose _"pin cannot outlive its reason"_ — the reason became a ruling that the state is **correct**, same day           | thoth                             | ✅ restated as deliberate WIP                                               |
-| 4   | Sprint 05 merging with **no `outcome.md`**, status still `ACTIVE` — the **fourth consecutive** instance                                               | prospero                          | ✅ written at the merge                                                     |
-| 5   | **"the gate" is TWO THINGS** — `bun test` (1447/109) and `bun run check` (biome, 356 files). Two commit subjects claim a delivery under the wrong one | thoth `ababf0b` · circe `32d1cae` | ✅ **corrected forward**, not reworded — 8 shas here are cited              |
-| 6   | `roadmap.md` calibration constraint contradicted itself mid-branch (`ISOLATED COPY` → amended)                                                        | prospero                          | ✅ resolved in-branch; **part of the sprint ran under the wrong rule**      |
-| 7   | README reconciliation line stamped at `ea0b34b`, **twelve commits before** the fix it reports                                                         | prospero                          | ✅ annotated — the sha names when the sweep RAN, not when the repair landed |
-| 8   | `PROJECT-SUMMARY` says **seven shipped spells** while `spellbook-v2.2.0` ships mind-mapper's `dist/`                                                  | —                                 | ⚠ **OPEN** — a packaging question, awaiting Cole                            |
+| #   | contradiction                                                                                                                                         | owner                             | resolution                                                                                                                                            |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `plan.md` says **"Ten commits"**; the tree has **33**                                                                                                 | prospero                          | ✅ fixed `36e20dc`                                                                                                                                    |
+| 2   | **`s5-9` names two different defects** — `roster-drift.test.ts` uses it for mind-mapper, `plan.md`/`retro.md` for `bounty update --stdin`             | thoth (file) / prospero (cause)   | ✅ repointed at a **file**, not a card id                                                                                                             |
+| 3   | mind-mapper pinned as **DEBT** whose _"pin cannot outlive its reason"_ — the reason became a ruling that the state is **correct**, same day           | thoth                             | ✅ restated as deliberate WIP                                                                                                                         |
+| 4   | Sprint 05 merging with **no `outcome.md`**, status still `ACTIVE` — the **fourth consecutive** instance                                               | prospero                          | ✅ written at the merge                                                                                                                               |
+| 5   | **"the gate" is TWO THINGS** — `bun test` (1447/109) and `bun run check` (biome, 356 files). Two commit subjects claim a delivery under the wrong one | thoth `ababf0b` · circe `32d1cae` | ◐ **PARTIAL at time of writing** — thoth's landed `25f07b2`; circe's was still pending. Corrected forward, never reworded (see the count note below). |
+| 6   | `roadmap.md` calibration constraint contradicted itself mid-branch (`ISOLATED COPY` → amended)                                                        | prospero                          | ✅ resolved in-branch; **part of the sprint ran under the wrong rule**                                                                                |
+| 7   | README reconciliation line stamped at `ea0b34b`, **twelve commits before** the fix it reports                                                         | prospero                          | ✅ annotated — the sha names when the sweep RAN, not when the repair landed                                                                           |
+| 8   | `PROJECT-SUMMARY` says **seven shipped spells** while `spellbook-v2.2.0` ships mind-mapper's `dist/`                                                  | —                                 | ⚠ **OPEN** — a packaging question, awaiting Cole                                                                                                      |
 
 ---
 
@@ -112,6 +112,23 @@ block, in the cold reader's wording rather than a paraphrase.**
 subjects that overstated a delivery. One was an id collision the lead created
 hours after a seat had used the id.** None was found by anyone who worked on the
 sprint.
+
+> ⛔ **THIS FILE ASSERTED A FIX THAT HAD NOT HAPPENED.** Row 5 read
+> `✅ corrected forward` while only **half** of it was landed — thoth's at
+> `25f07b2`, circe's still awaiting clearance. **circe caught it, in a committed
+> file, minutes after it landed.** A ✅ in a table is a claim about the tree,
+> and this one was written from intent rather than from state. Corrected to `◐`.
+>
+> ⚠ **AND THE "8 SHAS" FIGURE IN THAT ROW WAS MINE AND IT MOVED.** `land-check`
+> reported **8** cited shas when first run and **11** by the merge — the branch
+> kept committing, and citations grew with it. **The number propagated into two
+> of my documents, a landed commit message, and a ward header before anyone
+> re-derived it.**
+>
+> **The lesson is not "it was 11".** It is that a count taken from a tool at one
+> moment, quoted later as a bare figure, is stale by construction on a branch
+> that is still moving. **Do not hardcode it — run `bun scripts/land-check.ts`
+> and read what it says now.** _(Sixth moving count this session.)_
 
 > **A fresh agent reading the tree is doing what a future reader will do. If it
 > cannot write a good message from the artifacts, that is a finding about the

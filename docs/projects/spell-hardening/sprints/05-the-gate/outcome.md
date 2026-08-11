@@ -110,8 +110,11 @@ as complete is worse than one that admits a gap:
 - **The `tsc --noEmit` gate** — its own project, 436 errors measured.
 - **`bun run check` still says nothing about its blind set.** `gate-honesty` is
   a **`bun test`** suite; `bun run check` is biome alone and reports 356 files.
-  A commit subject on this branch overstates that, and is **corrected forward
-  rather than reworded** — eight shas here are cited by the project's own docs.
+  Two commit subjects on this branch overstate that, and are **corrected forward
+  rather than reworded** — this branch's shas are cited by the project's own
+  docs, so a rebase would break them. ⚠ **Do not quote a count here:**
+  `land-check` said 8 early and 11 at the merge, because the branch kept
+  committing. Run it.
 
 ## Carry-forward
 
