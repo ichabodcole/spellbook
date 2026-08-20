@@ -1867,6 +1867,21 @@ async function main(argv: string[]): Promise<number> {
     case "doctor":
       await cmdDoctor();
       return 0;
+    case "--version":
+    case "-V":
+    case "version": {
+      // The CLI can be ASKED what it is. grapevine already carries
+      // PLUGIN_VERSION to warn that a daemon is from a different cached plugin
+      // path than this CLI (checkVersionMatch, ~line 196) — but a caller that
+      // hit that warning, or that runs `roll` for its version verify, had no
+      // way to ask this side what it is holding. The value was already in
+      // memory; only the question was missing.
+      // JSON by default, matching every data command; --human for prose.
+      if (PLUGIN_VERSION === null) die("version unavailable — could not read plugin.json", 1);
+      if (flags.human === true) process.stdout.write(`grapevine v${PLUGIN_VERSION}\n`);
+      else printJson({ name: "grapevine", version: PLUGIN_VERSION });
+      return 0;
+    }
     case undefined:
     case "help":
     case "--help":
@@ -1902,6 +1917,13 @@ Usage:
   grapevine info
   grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown
   grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune
+
+  grapevine --version               # this CLI's version (alias: -V, version)
+
+Output:
+  Data commands emit JSON on stdout by DEFAULT; pass --human for prose where a
+  command offers it. Diagnostics and warnings go to stderr, never stdout.
+  Usage errors exit 2.
 
 Env:
   GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).
