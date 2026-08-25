@@ -86,6 +86,26 @@ sides expected corrections. Cole delegated session direction to acc.
 - Instrument findings are deliverables: two of the session's most valued outputs
   were defects in the OTHER side's tool.
 
+## Post-merge addendum (same day)
+
+The review pass produced two late findings acc recorded in their report:
+
+- **The declaration as a severity lens.** The reviewer's `wait --timeout` NaN
+  crash was found by ordinary probing, but the emitted declaration is what made
+  a pre-existing crash read as a broken published claim — fixed before merge
+  instead of filed as backlog. Headline sentence, now in acc's report: _"the
+  declaration didn't find the defect, it changed what the defect cost."_
+  Severity is what decides fix-today vs backlog-for-months; no instrument
+  supplies that use and no design sketch had named it.
+- **The clean hand-sweep is evidence.** The reviewer deliberately walked every
+  declared flag against `CLI_OPTIONS` hunting orphans/phantoms/type mismatches
+  and found nothing — a method that would have caught acc's DT-2 and DT-3,
+  coming up clean on a generated emission. Mild positive evidence that
+  generation does what it claims.
+
+acc's closing line for the record: the first outside application of the standard
+corrected its author more often than the author corrected the implementer.
+
 ## Follow-ups
 
 - Cole: review + land this branch (ward pass done; `land` skill for the merge).
