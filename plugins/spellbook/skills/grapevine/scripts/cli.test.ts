@@ -1959,3 +1959,117 @@ describe("P0 — a >64KiB pull survives a PIPE (#77)", () => {
     expect(data.messages.length).toBe(60);
   }, 120000);
 });
+
+// ── The declared surface (acc standard working session, standard-grapevine) ──
+//
+// grapevine emits its own interface description (`schema`, acc declaration
+// format v0), GENERATED from the same COMMANDS registry the parser and
+// dispatcher walk. These tests hold the surface to the three-part ask: the
+// emission runs and parses; it is generated (so registry facts appear in it by
+// construction); and the running tool matches it (per-verb rejection
+// enumerates, arity is enforced from the declared shape, the root routes flags
+// as flags).
+describe("declared surface (schema / root routing / per-verb flags)", () => {
+  test("bare invocation is a usage error: exit 2, stdout empty, commands enumerated on stderr", async () => {
+    const { code, stdout, stderr } = await bunRun([]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("expected a command");
+    expect(stderr).toContain("send");
+    expect(stderr).toContain("grapevine help");
+  });
+
+  test("a root --flag is rejected AS A FLAG, enumerating the root's set — not as an unknown command", async () => {
+    const { code, stdout, stderr } = await bunRun(["--nope"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).not.toContain("unknown command");
+    expect(stderr).toContain("unknown flag at the root: --nope");
+    expect(stderr).toContain("--help");
+    expect(stderr).toContain("--version");
+  });
+
+  test("an unknown verb flag is rejected with THAT verb's own set — not the global registry", async () => {
+    const { code, stderr } = await bunRun(["send", "chan", "--timeout", "5"]);
+    expect(code).toBe(2);
+    // The verb is named, and the marker phrase is the exact shape flag-set
+    // extractors read ("recognized flags:" — colon straight after the noun).
+    expect(stderr).toContain("grapevine: send:");
+    const enumeration = stderr.split("\n").find((l) => l.includes("recognized flags:"));
+    expect(enumeration).toBeDefined();
+    expect(enumeration).toContain("--in-reply-to");
+    // --timeout belongs to wait; send's enumeration must not advertise it.
+    expect(enumeration).not.toContain("--timeout");
+  });
+
+  test("identity flags are global by contract: accepted on a verb with no identity semantics", async () => {
+    // SKILL.md instructs agents to pass --as/--from on EVERY verb; the parser
+    // must not reject a caller for following the tool's own docs.
+    const { code, stderr } = await bunRun(["list", "--as", "somebody"]);
+    expect(code).toBe(0);
+    expect(stderr).not.toContain("Unknown option");
+  });
+
+  test("missing required positional errors before the verb runs", async () => {
+    const { code, stdout, stderr } = await bunRun(["read", "chan"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("missing required <id>");
+  });
+
+  test("an excess positional is rejected, not silently swallowed", async () => {
+    const { code, stderr } = await bunRun(["info", "extra"]);
+    expect(code).toBe(2);
+    expect(stderr).toContain('unexpected argument "extra"');
+  });
+
+  test("schema emits parseable acc declaration v0 on stdout at exit 0, and lists its own verb", async () => {
+    const { code, stdout, stderr } = await bunRun(["schema"]);
+    expect(code).toBe(0);
+    expect(stderr).toBe("");
+    const decl = JSON.parse(stdout) as {
+      formatVersion: string;
+      provenance: string;
+      selfDescription: { args: string[] };
+      commands: { path: string[]; args: { name: string; status: string }[] }[];
+    };
+    expect(decl.formatVersion).toBe("0");
+    expect(decl.provenance).toBe("emitted");
+    expect(decl.selfDescription.args).toEqual(["schema"]);
+    // DT-6's headline: the declaration must list the door it came through.
+    expect(decl.commands.some((c) => c.path[0] === "schema")).toBe(true);
+    // The root is declared as path [] and carries the interceptors.
+    const root = decl.commands.find((c) => c.path.length === 0);
+    expect(root).toBeDefined();
+    expect(root?.args.map((a) => a.name)).toEqual(["--help", "-h", "--version", "-V"]);
+    // Per-verb sets: send declares its own flags plus the global identity pair,
+    // and does not declare wait's.
+    const send = decl.commands.find((c) => c.path[0] === "send");
+    const sendFlags = send?.args.map((a) => a.name) ?? [];
+    expect(sendFlags).toContain("--in-reply-to");
+    expect(sendFlags).toContain("--as");
+    expect(sendFlags).toContain("--from");
+    expect(sendFlags).not.toContain("--timeout");
+  });
+
+  test("every declared command path is reachable in help — emission and help cannot drift on the verb list", async () => {
+    const schema = await bunRun(["schema"]);
+    const decl = JSON.parse(schema.stdout) as { commands: { path: string[] }[] };
+    const help = await bunRun(["--help"]);
+    expect(help.code).toBe(0);
+    for (const c of decl.commands) {
+      if (c.path.length === 0) continue;
+      // Word-boundary match — a substring check lets short verbs ride inside
+      // unrelated words ("up" in "Usage") and can never fail.
+      expect(help.stdout).toMatch(new RegExp(`\\b${c.path[0]}\\b`));
+    }
+  });
+
+  test("a declared numeric flag rejects a non-number as a usage error, not a crash", async () => {
+    const { code, stdout, stderr } = await bunRun(["wait", "chan", "--timeout", "notanumber"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("--timeout expects a non-negative number");
+    expect(stderr).not.toContain("RangeError");
+  });
+});

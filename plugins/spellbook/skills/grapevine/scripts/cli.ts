@@ -1608,276 +1608,559 @@ const CLI_OPTIONS = {
 
 class UsageError extends Error {}
 
-function parseFlags(argv: string[]): {
-  positional: string[];
-  flags: Record<string, string | boolean>;
-} {
-  try {
-    const { values, positionals } = nodeParseArgs({
-      args: argv,
-      options: CLI_OPTIONS,
-      strict: true,
-      allowPositionals: true,
-    });
+type FlagName = keyof typeof CLI_OPTIONS;
+type Flags = Record<string, string | boolean>;
+
+// Identity is contractually GLOBAL: SKILL.md tells agents to pass --as/--from
+// on EVERY verb (a fresh shell per command means GRAPEVINE_FROM never
+// persists), so every command accepts both — even where a verb has no use for
+// identity, a caller following our own docs must not be rejected for obeying
+// them. On `grep`, `--from` is an author FILTER rather than identity: different
+// semantics, same acceptance.
+const GLOBAL_FLAGS: FlagName[] = ["as", "from"];
+
+type PositionalSpec = { name: string; required: boolean; variadic?: boolean };
+
+// THE COMMAND TABLE, AS A STRUCTURE — the parser, the dispatcher, the schema
+// emitter and the root rejection all walk THIS. It replaced a bare `switch`,
+// which only the dispatcher could walk: a schema emitted from anything other
+// than the structure that routes the behaviour is a document that lies as soon
+// as anyone edits the other side (acc STANDARD.md Part 1 §2; our own #81/D4
+// lane learned the same lesson one altitude down with BOOLEAN_FLAGS).
+//
+// `flags` is the verb's OWN accepted set (GLOBAL_FLAGS are merged in by
+// `acceptedFlags`). A flag not listed here is REJECTED for this verb with the
+// verb's own set enumerated — accepted-and-ignored is the disease this table
+// exists to cure (acc DT-1: anthill accepting a root `--format` it silently
+// discards; grapevine accepting `send --dry-run` and doing nothing was the
+// same event with a different spelling).
+type CommandSpec = {
+  name: string;
+  aliases?: string[];
+  flags: FlagName[];
+  positionals: PositionalSpec[];
+  run: (positional: string[], flags: Flags) => Promise<void> | void;
+};
+
+// A declared value flag that carries a number must REJECT a non-number as a
+// usage error (exit 2), not crash on it downstream — `schema` publishes the
+// flag as valid, so the parse boundary is where a bad value gets its
+// caller-facing answer. (`wait --timeout notanumber` used to throw an
+// unhandled RangeError at exit 1, stack trace and all.)
+function numericFlag(verb: string, name: string, raw: unknown, fallback: number): number {
+  if (raw === undefined) return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0)
+    die(`${verb}: --${name} expects a non-negative number, got ${JSON.stringify(String(raw))}`);
+  return n;
+}
+
+// Body resolution shared by send/announce — first match wins: --body-file,
+// --stdin, inline positionals, default-stdin when piped. See the per-verb
+// comments at the original sites (V1.6/#60); behaviour unchanged.
+async function resolveBody(
+  verb: "send" | "announce",
+  inline: string[],
+  flags: Flags,
+): Promise<{ text: string; fromInline: boolean }> {
+  if (flags["body-file"]) {
+    const path = flags["body-file"] as string;
+    const file = Bun.file(path);
+    if (!(await file.exists())) die(`${verb}: --body-file not found: ${path}`);
+    return { text: (await file.text()).replace(/\n$/, ""), fromInline: false };
+  }
+  if (flags.stdin || (inline.length === 0 && !process.stdin.isTTY)) {
+    const buf: Buffer[] = [];
+    for await (const chunk of process.stdin) buf.push(chunk as Buffer);
     return {
-      positional: positionals,
-      flags: values as Record<string, string | boolean>,
+      text: Buffer.concat(buf).toString("utf-8").replace(/\n$/, ""),
+      fromInline: false,
     };
-  } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    throw new UsageError(
-      `${detail}\n` +
-        `  recognized flags: ${Object.keys(CLI_OPTIONS)
-          .map((k) => `--${k}`)
-          .join(" ")}\n` +
-        `  for a message body containing dashes, use --stdin or --body-file, ` +
-        `or put it after a bare --`,
+  }
+  return { text: inline.join(" "), fromInline: true };
+}
+
+// The two body guards shared by send/announce: refuse a leaked invocation
+// (fumbled heredoc) unless --force, and warn on shell metacharacters that
+// survived an inline body (#60 — warn, never block).
+function guardBody(verb: "send" | "announce", text: string, fromInline: boolean, force: boolean) {
+  if (!force && looksLikeLeakedSend(text)) {
+    die(
+      `${verb}: that body looks like a leaked grapevine invocation (a fumbled ` +
+        "heredoc?). Nothing was sent. Pipe the real body via --stdin or " +
+        "--body-file <path>, or pass --force to send it anyway.",
+    );
+  }
+  if (fromInline && looksShellRisky(text)) {
+    process.stderr.write(
+      "# ⚠ inline body contains shell metacharacters (backtick, $(), curly-brace vars). " +
+        "It was sent as-is, but the shell can command-substitute these before " +
+        "grapevine sees them — use --body-file or --stdin for code-bearing messages.\n",
     );
   }
 }
 
-async function main(argv: string[]): Promise<number> {
-  const [cmd, ...rest] = argv;
-  // Usage failures return 2 rather than exiting, so the runtime drains stdout.
-  let positional: string[];
-  let flags: Record<string, string | boolean>;
-  try {
-    ({ positional, flags } = parseFlags(rest));
-  } catch (e) {
-    if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`grapevine: ${e.message}\n`);
-    return 2;
-  }
+const identityRequired = (verb: string): never =>
+  die(`${verb}: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var`);
 
-  switch (cmd) {
-    case "open":
+const COMMANDS: CommandSpec[] = [
+  {
+    name: "open",
+    flags: ["topic", "fresh"],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional, flags) => {
       await cmdOpen(positional[0], {
         topic: flags.topic as string | undefined,
         from: resolveAlias(flags),
         fresh: flags.fresh === true,
       });
-      return 0;
-    case "topic":
+    },
+  },
+  {
+    name: "topic",
+    flags: [],
+    positionals: [
+      { name: "name", required: true },
+      { name: "text", required: false, variadic: true },
+    ],
+    run: async (positional, flags) => {
       await cmdTopic(
         positional[0],
         positional.length > 1 ? positional.slice(1).join(" ") : undefined,
         resolveAlias(flags),
       );
-      return 0;
-    case "list":
+    },
+  },
+  {
+    name: "list",
+    flags: [],
+    positionals: [],
+    run: async () => {
       await cmdList();
-      return 0;
-    case "send": {
+    },
+  },
+  {
+    name: "send",
+    flags: ["body-file", "stdin", "quiet", "verbose", "force", "in-reply-to"],
+    positionals: [
+      { name: "name", required: true },
+      { name: "text", required: false, variadic: true },
+    ],
+    run: async (positional, flags) => {
       const name = positional[0];
       const from = resolveAlias(flags);
-      const hasInlineText = positional.length > 1;
-      let text: string;
-      let fromInline = false;
-      if (flags["body-file"]) {
-        // Read the body from a file — bypasses both shell quoting and any
-        // heredoc fumble. Trailing newline stripped, matching --stdin.
-        const path = flags["body-file"] as string;
-        const file = Bun.file(path);
-        if (!(await file.exists())) die(`send: --body-file not found: ${path}`);
-        text = (await file.text()).replace(/\n$/, "");
-      } else if (flags.stdin || (!hasInlineText && !process.stdin.isTTY)) {
-        // Read stdin — explicitly via --stdin, or by DEFAULT when no inline text
-        // was given and stdin is piped. The shell never gets to eat a token, so
-        // piping is the safe path and now needs no flag. Trailing newline
-        // stripped; everything else preserved.
-        const buf: Buffer[] = [];
-        for await (const chunk of process.stdin) buf.push(chunk as Buffer);
-        text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
-      } else {
-        text = positional.slice(1).join(" ");
-        fromInline = true;
-      }
-      if (!from)
-        die("send: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
-      // A fumbled heredoc can pipe the literal send invocation in as the body;
-      // refuse to post that rather than corrupt the channel with it (--force
-      // overrides for the rare case the text genuinely contains the command).
-      if (!flags.force && looksLikeLeakedSend(text)) {
-        die(
-          "send: that body looks like a leaked grapevine invocation (a fumbled " +
-            "heredoc?). Nothing was sent. Pipe the real body via --stdin or " +
-            "--body-file <path>, or pass --force to send it anyway.",
-        );
-      }
-      // Shell-metachar footgun warning (#60): the body survived intact this
-      // time, but passing code-bearing text inline is a latent footgun. Nudge to
-      // the shell-free paths. On stderr (never blocks the send).
-      if (fromInline && looksShellRisky(text)) {
-        process.stderr.write(
-          "# ⚠ inline body contains shell metacharacters (backtick, $(), curly-brace vars). " +
-            "It was sent as-is, but the shell can command-substitute these before " +
-            "grapevine sees them — use --body-file or --stdin for code-bearing messages.\n",
-        );
-      }
-      await cmdSend(name, from, text, {
+      const { text, fromInline } = await resolveBody("send", positional.slice(1), flags);
+      if (!from) identityRequired("send");
+      guardBody("send", text, fromInline, !!flags.force);
+      await cmdSend(name, from as string, text, {
         quiet: !!flags.quiet,
         verbose: !!flags.verbose,
-        inReplyTo: flags["in-reply-to"] ? parseInt(flags["in-reply-to"] as string, 10) : undefined,
+        inReplyTo: flags["in-reply-to"]
+          ? numericFlag("send", "in-reply-to", flags["in-reply-to"], 0)
+          : undefined,
       });
-      return 0;
-    }
-    case "announce": {
+    },
+  },
+  {
+    name: "announce",
+    flags: ["body-file", "stdin", "quiet", "force", "channels"],
+    positionals: [{ name: "text", required: false, variadic: true }],
+    run: async (positional, flags) => {
       const from = resolveAlias(flags);
-      const hasInlineText = positional.length > 0;
-      let text: string;
-      let fromInline = false;
-      if (flags["body-file"]) {
-        const path = flags["body-file"] as string;
-        const file = Bun.file(path);
-        if (!(await file.exists())) die(`announce: --body-file not found: ${path}`);
-        text = (await file.text()).replace(/\n$/, "");
-      } else if (flags.stdin || (!hasInlineText && !process.stdin.isTTY)) {
-        const buf: Buffer[] = [];
-        for await (const chunk of process.stdin) buf.push(chunk as Buffer);
-        text = Buffer.concat(buf).toString("utf-8").replace(/\n$/, "");
-      } else {
-        text = positional.join(" ");
-        fromInline = true;
-      }
-      if (!from)
-        die("announce: identity required — pass --from/--as <alias> or set GRAPEVINE_FROM env var");
-      if (!flags.force && looksLikeLeakedSend(text)) {
-        die(
-          "announce: that body looks like a leaked grapevine invocation (a fumbled " +
-            "heredoc?). Nothing was sent. Pipe the real body via --stdin or " +
-            "--body-file <path>, or pass --force to send it anyway.",
-        );
-      }
-      if (fromInline && looksShellRisky(text)) {
-        process.stderr.write(
-          "# ⚠ inline body contains shell metacharacters (backtick, $(), curly-brace vars). " +
-            "It was sent as-is, but the shell can command-substitute these before " +
-            "grapevine sees them — use --body-file or --stdin for code-bearing messages.\n",
-        );
-      }
+      const { text, fromInline } = await resolveBody("announce", positional, flags);
+      if (!from) identityRequired("announce");
+      guardBody("announce", text, fromInline, !!flags.force);
       const channels = flags.channels
         ? (flags.channels as string)
             .split(",")
             .map((c) => c.trim())
             .filter(Boolean)
         : undefined;
-      await cmdAnnounce(from, text, channels, { quiet: !!flags.quiet });
-      return 0;
-    }
-    case "pull": {
-      const since = flags.since ? parseInt(flags.since as string, 10) : 0;
+      await cmdAnnounce(from as string, text, channels, { quiet: !!flags.quiet });
+    },
+  },
+  {
+    name: "pull",
+    flags: ["since", "status"],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional, flags) => {
+      const since = numericFlag("pull", "since", flags.since, 0);
       await cmdPull(positional[0], since, { status: flags.status as string | undefined });
-      return 0;
-    }
-    case "triage":
+    },
+  },
+  {
+    name: "triage",
+    flags: ["human"],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional, flags) => {
       await cmdTriage(positional[0], { human: !!flags.human });
-      return 0;
-    case "read": {
+    },
+  },
+  {
+    name: "read",
+    flags: ["text"],
+    positionals: [
+      { name: "name", required: true },
+      { name: "id", required: true },
+    ],
+    run: async (positional, flags) => {
       const id = positional[1] ? parseInt(positional[1], 10) : NaN;
       await cmdRead(positional[0], id, { text: !!flags.text });
-      return 0;
-    }
-    case "wait": {
-      const since = flags.since ? parseInt(flags.since as string, 10) : 0;
-      const timeout = flags.timeout ? parseFloat(flags.timeout as string) : 30;
-      const alias = resolveAlias(flags);
-      await cmdWait(positional[0], since, timeout, alias);
-      return 0;
-    }
-    case "who":
+    },
+  },
+  {
+    name: "wait",
+    flags: ["since", "timeout"],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional, flags) => {
+      const since = numericFlag("wait", "since", flags.since, 0);
+      const timeout = numericFlag("wait", "timeout", flags.timeout, 30);
+      await cmdWait(positional[0], since, timeout, resolveAlias(flags));
+    },
+  },
+  {
+    name: "who",
+    flags: ["all"],
+    positionals: [{ name: "name", required: false }],
+    run: async (positional, flags) => {
       if (flags.all) await cmdWhoAll();
       else await cmdWho(positional[0]);
-      return 0;
-    case "alias":
+    },
+  },
+  {
+    name: "alias",
+    flags: [],
+    positionals: [{ name: "name", required: false }],
+    run: async (positional) => {
       await cmdAlias(positional[0]);
-      return 0;
-    case "tail":
+    },
+  },
+  {
+    name: "tail",
+    flags: ["since", "from-start", "last", "human", "lurk", "max"],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional, flags) => {
       await cmdTail(positional[0], {
-        since: flags.since ? parseInt(flags.since as string, 10) : undefined,
+        since: flags.since !== undefined ? numericFlag("tail", "since", flags.since, 0) : undefined,
         fromStart: !!flags["from-start"],
-        last: flags.last !== undefined ? parseInt(flags.last as string, 10) : undefined,
+        last: flags.last !== undefined ? numericFlag("tail", "last", flags.last, 0) : undefined,
         as: resolveAlias(flags),
         human: !!flags.human,
         lurk: !!flags.lurk,
         max: resolveTailMax(flags.max),
       });
-      return 0;
-    case "grep": {
+    },
+  },
+  {
+    name: "grep",
+    flags: ["literal"],
+    positionals: [
+      { name: "name", required: true },
+      { name: "pattern", required: true, variadic: true },
+    ],
+    run: async (positional, flags) => {
       await cmdGrep(positional[0], positional.slice(1).join(" "), {
         literal: !!flags.literal,
         from: flags.from as string | undefined,
       });
-      return 0;
-    }
-    case "close":
+    },
+  },
+  {
+    name: "close",
+    flags: [],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional) => {
       await cmdClose(positional[0]);
-      return 0;
-    case "reset":
+    },
+  },
+  {
+    name: "reset",
+    flags: ["force"],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional, flags) => {
       await cmdReset(positional[0], { force: flags.force === true });
-      return 0;
-    case "mark":
+    },
+  },
+  {
+    name: "mark",
+    flags: ["note"],
+    positionals: [
+      { name: "name", required: true },
+      { name: "id", required: true },
+      { name: "disposition", required: true, variadic: true },
+    ],
+    run: async (positional, flags) => {
       await cmdMark(
         positional[0],
         parseInt(positional[1], 10),
         positional.slice(2).join(" "),
-        resolveAlias(flags) ??
-          die("mark: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var"),
+        resolveAlias(flags) ?? identityRequired("mark"),
         { note: flags.note as string | undefined },
       );
-      return 0;
-    case "reopen":
+    },
+  },
+  {
+    name: "reopen",
+    flags: ["note"],
+    positionals: [
+      { name: "name", required: true },
+      { name: "id", required: true },
+    ],
+    run: async (positional, flags) => {
       await cmdMark(
         positional[0],
         parseInt(positional[1], 10),
         "open",
-        resolveAlias(flags) ??
-          die("reopen: identity required — pass --as/--from <alias> or set GRAPEVINE_FROM env var"),
+        resolveAlias(flags) ?? identityRequired("reopen"),
         { note: flags.note as string | undefined },
       );
-      return 0;
-    case "archive":
+    },
+  },
+  {
+    name: "archive",
+    flags: [],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional) => {
       await cmdArchive(positional[0], false);
-      return 0;
-    case "unarchive":
+    },
+  },
+  {
+    name: "unarchive",
+    flags: [],
+    positionals: [{ name: "name", required: true }],
+    run: async (positional) => {
       await cmdArchive(positional[0], true);
-      return 0;
-    case "start":
-    case "up":
+    },
+  },
+  {
+    name: "start",
+    aliases: ["up"],
+    flags: [],
+    positionals: [],
+    run: async () => {
       await cmdStart();
-      return 0;
-    case "restart":
+    },
+  },
+  {
+    name: "restart",
+    flags: ["force", "yes"],
+    positionals: [],
+    run: async (_positional, flags) => {
       await cmdRestart({ force: !!flags.force || !!flags.yes });
-      return 0;
-    case "roll":
+    },
+  },
+  {
+    name: "roll",
+    flags: ["force", "yes"],
+    positionals: [],
+    run: async (_positional, flags) => {
       await cmdRoll({ force: flags.force === true || flags.yes === true });
-      return 0;
-    case "stop":
-      await cmdStop({ holdSeconds: flags.hold ? parseInt(String(flags.hold), 10) : undefined });
-      return 0;
-    case "watch":
+    },
+  },
+  {
+    name: "stop",
+    flags: ["hold"],
+    positionals: [],
+    run: async (_positional, flags) => {
+      await cmdStop({
+        holdSeconds:
+          flags.hold !== undefined ? numericFlag("stop", "hold", flags.hold, 0) : undefined,
+      });
+    },
+  },
+  {
+    name: "watch",
+    flags: [],
+    positionals: [{ name: "name", required: false }],
+    run: async (positional) => {
       await cmdWatch(positional[0]);
-      return 0;
-    case "reap":
-    case "prune":
+    },
+  },
+  {
+    name: "reap",
+    aliases: ["prune"],
+    flags: ["force", "dry-run"],
+    positionals: [],
+    run: async (_positional, flags) => {
       await cmdReap({ force: flags.force === true, dryRun: flags["dry-run"] === true });
-      return 0;
-    case "info":
+    },
+  },
+  {
+    name: "info",
+    flags: [],
+    positionals: [],
+    run: async () => {
       await cmdInfo();
-      return 0;
-    case "doctor":
+    },
+  },
+  {
+    name: "doctor",
+    flags: [],
+    positionals: [],
+    run: async () => {
       await cmdDoctor();
-      return 0;
-    case undefined:
-    case "help":
-    case "--help":
-    case "-h":
-      process.stdout.write(`grapevine — agent-to-agent walkie-talkie
+    },
+  },
+  {
+    name: "version",
+    flags: ["human"],
+    positionals: [],
+    run: (_positional, flags) => {
+      // The CLI can be ASKED what it is. grapevine already carries
+      // PLUGIN_VERSION to warn that a daemon is from a different cached plugin
+      // path than this CLI (maybeWarnOnVersionMismatch) — but a caller that hit
+      // that warning, or that runs `roll` for its version verify, had no way to
+      // ask this side what it is holding. The value was already in memory; only
+      // the question was missing.
+      // JSON by default, matching every data command; --human for prose.
+      if (PLUGIN_VERSION === null) die("version unavailable — could not read plugin.json", 1);
+      if (flags.human === true) process.stdout.write(`grapevine v${PLUGIN_VERSION}\n`);
+      else printJson({ name: "grapevine", version: PLUGIN_VERSION });
+    },
+  },
+  {
+    name: "schema",
+    flags: [],
+    positionals: [],
+    run: () => {
+      // Emit this CLI's machine-readable interface description — generated by
+      // WALKING COMMANDS and CLI_OPTIONS, the same structures the parser and
+      // dispatcher consume, at answer time. No daemon, no config, no
+      // credentials; stdout, exit 0. The shape is acc declaration format v0
+      // exactly, so the output pipes straight into
+      // `acc check <cli> --declaration <(grapevine schema)` with no adapter.
+      process.stdout.write(`${JSON.stringify(buildDeclaration(), null, 2)}\n`);
+    },
+  },
+  {
+    name: "help",
+    flags: [],
+    positionals: [],
+    run: () => {
+      printHelp();
+    },
+  },
+];
+
+function findCommand(token: string): CommandSpec | undefined {
+  return COMMANDS.find((c) => c.name === token || c.aliases?.includes(token));
+}
+
+// The verb's full accepted set: its own flags plus the contractually-global
+// identity pair, in registry order.
+function acceptedFlags(spec: CommandSpec): FlagName[] {
+  const own = new Set<FlagName>([...GLOBAL_FLAGS, ...spec.flags]);
+  return (Object.keys(CLI_OPTIONS) as FlagName[]).filter((k) => own.has(k));
+}
+
+// Root interceptors — flags the ROOT answers itself, before any verb. These are
+// not commands, which is exactly why a generator walking "the commands" walks
+// past them (acc DT-6); they are declared explicitly at `path: []`.
+const ROOT_INTERCEPTORS = [
+  { name: "--help", runs: "help" },
+  { name: "-h", runs: "help" },
+  { name: "--version", runs: "version" },
+  { name: "-V", runs: "version" },
+] as const;
+
+// acc declaration format v0 (see agent-cli-conformance src/acc/kit/declaration.ts):
+// { formatVersion, provenance, selfDescription, commands: [{ path, args, positionals }] }.
+// v0 refuses unknown keys, so nothing richer (effects, summaries, versions)
+// rides along — those wait for a v1 with slots for them.
+function buildDeclaration() {
+  // Every registry flag is accepted today; a refusal list would add
+  // status: "refused" entries here the day a verb recognises-and-declines one.
+  const arg = (k: FlagName) => ({
+    name: `--${k}`,
+    type: CLI_OPTIONS[k].type,
+    status: "valid",
+  });
+  const commands: {
+    path: string[];
+    args: { name: string; type: "string" | "boolean"; status: string }[];
+    positionals: PositionalSpec[];
+  }[] = [
+    {
+      // `path: []` IS the root. Its grammar: one required token selecting a
+      // command, or an interceptor flag the root answers itself.
+      path: [],
+      args: ROOT_INTERCEPTORS.map((i) => ({
+        name: i.name,
+        type: "boolean" as const,
+        status: "valid",
+      })),
+      positionals: [{ name: "command", required: true }],
+    },
+  ];
+  for (const spec of COMMANDS) {
+    for (const name of [spec.name, ...(spec.aliases ?? [])]) {
+      commands.push({
+        path: [name],
+        args: acceptedFlags(spec).map((k) => arg(k)),
+        positionals: spec.positionals,
+      });
+    }
+  }
+  return {
+    formatVersion: "0",
+    provenance: "emitted",
+    selfDescription: { args: ["schema"] },
+    commands,
+  };
+}
+
+function parseFlags(
+  argv: string[],
+  spec: CommandSpec,
+): {
+  positional: string[];
+  flags: Flags;
+} {
+  const accepted = acceptedFlags(spec);
+  const options = Object.fromEntries(accepted.map((k) => [k, CLI_OPTIONS[k]]));
+  try {
+    const { values, positionals } = nodeParseArgs({
+      args: argv,
+      options,
+      strict: true,
+      allowPositionals: true,
+    });
+    return {
+      positional: positionals,
+      flags: values as Flags,
+    };
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    // "recognized flags:" with the colon straight after the noun — the exact
+    // marker shape flag-set extractors match ("Valid flags: --x" and kin; acc's
+    // MARKER regex is the measured consumer). A qualifier between the noun and
+    // the colon ("recognized flags for send:") reads as prose, not a set.
+    const bodyHint =
+      spec.name === "send" || spec.name === "announce"
+        ? `\n  for a message body containing dashes, use --stdin or --body-file, ` +
+          `or put it after a bare --`
+        : "";
+    throw new UsageError(
+      `${spec.name}: ${detail}\n` +
+        `  recognized flags: ${accepted.map((k) => `--${k}`).join(" ")}${bodyHint}`,
+    );
+  }
+}
+
+function commandTokens(): string[] {
+  return COMMANDS.flatMap((c) => [c.name, ...(c.aliases ?? [])]);
+}
+
+function printHelp() {
+  process.stdout.write(`grapevine — agent-to-agent walkie-talkie
 
 Usage:
   grapevine open <name> [--topic <text>] [--fresh]   open/create (auto-unarchives; --fresh clears a dormant channel)
   grapevine list
   grapevine send <name> [--from/--as <alias>] [--quiet] [--verbose] [--stdin] [--body-file <path>] [--force] [--in-reply-to <id>] [<text...>]
                                     # body: inline text, --stdin, --body-file, or piped stdin (default when no inline text)
+  grapevine announce [--from/--as <alias>] [--channels a,b,c] [--stdin] [--body-file <path>] [--quiet] [<text...>]
+                                    # broadcast one message to every active channel (or --channels)
   grapevine tail <name> [--as/--from <alias>] [--since <id>] [--from-start] [--last <n>] [--human] [--lurk] [--max <n>]
        # --last <n>: backfill the most recent n messages then go live (bounded catch-up for a cold joiner)
   grapevine pull <name> [--since <id>] [--status <value>]   # --status = full-scan filter (open|wontfix|incorporated|…)
@@ -1903,14 +2186,120 @@ Usage:
   grapevine doctor                  # health check — labels each daemon: authoritative / orphan / unresponsive / unknown
   grapevine reap [--force] [--dry-run]  # kill orphan daemons; --force also kills unresponsive; alias: prune
 
+  grapevine schema                  # this CLI's machine-readable interface description (acc declaration v0)
+  grapevine --version               # this CLI's version (alias: -V, version)
+  grapevine help                    # this usage (alias: --help, -h)
+
+Output:
+  Data commands emit JSON on stdout by DEFAULT; pass --human for prose where a
+  command offers it. Diagnostics and warnings go to stderr, never stdout.
+  Usage errors exit 2. Each command accepts its OWN flags (plus --as/--from,
+  which are global) — an unknown flag for a verb enumerates that verb's set.
+
 Env:
   GRAPEVINE_FROM   Default identity alias (--from/--as are interchangeable).
   GRAPEVINE_HOME   Data dir (default ~/.grapevine).
 `);
-      return 0;
-    default:
-      die(`unknown command: ${cmd}`);
+}
+
+async function main(argv: string[]): Promise<number> {
+  const [cmd, ...rest] = argv;
+  // Usage failures return 2 rather than exiting, so the runtime drains stdout.
+
+  // BARE INVOCATION IS A USAGE ERROR — exit 2, usage pointer on stderr — not a
+  // help request at exit 0. grapevine's callers are agents: a bare call is an
+  // unset shell variable expanding to nothing, or a mistake, and answering it
+  // with 2.9KB of help at exit 0 reports success for a command that asked for
+  // nothing. `help` / `--help` remain one token away at exit 0 (acc D2 —
+  // conformed for that reason, not because the rule said so).
+  if (cmd === undefined) {
+    process.stderr.write(
+      `grapevine: expected a command\n` +
+        `  commands: ${commandTokens().join(" ")}\n` +
+        `  run \`grapevine help\` (or --help) for usage\n`,
+    );
+    return 2;
   }
+
+  // ROOT FLAG ROUTING. A leading --token used to be consumed as the COMMAND
+  // token and rejected as `unknown command: --nope` — a flag reaching the verb
+  // parser's error path, where the rejection could not enumerate the flag set
+  // (found via acc's root-only surface capture). The root's accepted flags are
+  // the interceptors; anything else dashed is rejected AS A FLAG, enumerating
+  // the root's own set.
+  if (cmd.startsWith("-")) {
+    const interceptor = ROOT_INTERCEPTORS.find((i) => i.name === cmd);
+    if (!interceptor) {
+      process.stderr.write(
+        `grapevine: unknown flag at the root: ${cmd}\n` +
+          // Long flags first: flag-set extractors (acc's measured) read the
+          // list left-to-right and stop at the first token that is not a
+          // `--long` flag, so a short alias mid-list truncates what they see.
+          `  recognized flags: ${[...ROOT_INTERCEPTORS.map((i) => i.name)]
+            .sort((a, b) => Number(b.startsWith("--")) - Number(a.startsWith("--")))
+            .join(" ")}\n` +
+          `  commands (each takes its own flags): ${commandTokens().join(" ")}\n`,
+      );
+      return 2;
+    }
+    return await runCommand(findCommand(interceptor.runs) as CommandSpec, rest);
+  }
+
+  const spec = findCommand(cmd);
+  if (!spec) {
+    // The unknown-verb rejection enumerates the valid set, exactly as the
+    // unknown-flag rejection does — the parser's own account of what it
+    // accepts, produced by the parser (acc STANDARD.md, "the cheapest version
+    // of checked").
+    process.stderr.write(
+      `grapevine: unknown command: ${cmd}\n  commands: ${commandTokens().join(" ")}\n`,
+    );
+    return 2;
+  }
+  return await runCommand(spec, rest);
+}
+
+async function runCommand(spec: CommandSpec, rest: string[]): Promise<number> {
+  let positional: string[];
+  let flags: Flags;
+  try {
+    ({ positional, flags } = parseFlags(rest, spec));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    process.stderr.write(`grapevine: ${e.message}\n`);
+    return 2;
+  }
+  // Arity, enforced FROM THE DECLARED SHAPE — the registry's positional spec is
+  // what `schema` publishes, so enforcing it here is what keeps the declaration
+  // true by construction: a missing required positional errors before the verb
+  // runs, and an EXCESS positional is rejected rather than silently swallowed
+  // (acc A4's shape — the defect no external check can see).
+  const required = spec.positionals.filter((p) => p.required).length;
+  const variadic = spec.positionals.some((p) => p.variadic);
+  if (positional.length < required) {
+    const missing = spec.positionals[positional.length];
+    process.stderr.write(
+      `grapevine: ${spec.name}: missing required <${missing?.name ?? "argument"}>\n` +
+        `  expects: ${spec.name} ${spec.positionals
+          .map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`))
+          .join(" ")}\n`,
+    );
+    return 2;
+  }
+  if (!variadic && positional.length > spec.positionals.length) {
+    process.stderr.write(
+      `grapevine: ${spec.name}: unexpected argument ${JSON.stringify(
+        positional[spec.positionals.length],
+      )}\n` +
+        `  expects: ${spec.name} ${
+          spec.positionals.map((p) => (p.required ? `<${p.name}>` : `[${p.name}]`)).join(" ") ||
+          "(no arguments)"
+        }\n`,
+    );
+    return 2;
+  }
+  await spec.run(positional, flags);
+  return 0;
 }
 
 if (import.meta.main) {

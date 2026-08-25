@@ -1,0 +1,26 @@
+--- /Users/colereed/Projects/Spellbook/plugins/spellbook/skills/grapevine/scripts/cli.ts	2026-08-24 18:45:48
++++ /private/tmp/claude-501/-Users-colereed-Projects-Spellbook/4f1a3e53-b48c-42cb-a010-566f351c46eb/scratchpad/drift/skills/b-phantom/scripts/cli.ts	2026-08-24 18:53:12
+@@ -2064,13 +2064,18 @@
+       // `path: []` IS the root. Its grammar: one required token selecting a
+       // command, or an interceptor flag the root answers itself.
+       path: [],
+-      args: ROOT_INTERCEPTORS.map((i) => ({
+-        name: i.name,
+-        type: "boolean" as const,
+-        status: "valid",
+-      })),
++      args: [
++        ...ROOT_INTERCEPTORS.map((i) => ({
++          name: i.name,
++          type: "boolean" as const,
++          status: "valid",
++        })),
++        { name: "--debug", type: "boolean" as const, status: "valid" },
++      ],
+       positionals: [{ name: "command", required: true }],
+     },
++    // drift-experiment scenario B: phantom flag, emission only
++
+   ];
+   for (const spec of COMMANDS) {
+     for (const name of [spec.name, ...(spec.aliases ?? [])]) {
