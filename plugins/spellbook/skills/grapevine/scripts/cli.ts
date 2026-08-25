@@ -1642,6 +1642,19 @@ type CommandSpec = {
   run: (positional: string[], flags: Flags) => Promise<void> | void;
 };
 
+// A declared value flag that carries a number must REJECT a non-number as a
+// usage error (exit 2), not crash on it downstream — `schema` publishes the
+// flag as valid, so the parse boundary is where a bad value gets its
+// caller-facing answer. (`wait --timeout notanumber` used to throw an
+// unhandled RangeError at exit 1, stack trace and all.)
+function numericFlag(verb: string, name: string, raw: unknown, fallback: number): number {
+  if (raw === undefined) return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0)
+    die(`${verb}: --${name} expects a non-negative number, got ${JSON.stringify(String(raw))}`);
+  return n;
+}
+
 // Body resolution shared by send/announce — first match wins: --body-file,
 // --stdin, inline positionals, default-stdin when piped. See the per-verb
 // comments at the original sites (V1.6/#60); behaviour unchanged.
@@ -1742,7 +1755,9 @@ const COMMANDS: CommandSpec[] = [
       await cmdSend(name, from as string, text, {
         quiet: !!flags.quiet,
         verbose: !!flags.verbose,
-        inReplyTo: flags["in-reply-to"] ? parseInt(flags["in-reply-to"] as string, 10) : undefined,
+        inReplyTo: flags["in-reply-to"]
+          ? numericFlag("send", "in-reply-to", flags["in-reply-to"], 0)
+          : undefined,
       });
     },
   },
@@ -1769,7 +1784,7 @@ const COMMANDS: CommandSpec[] = [
     flags: ["since", "status"],
     positionals: [{ name: "name", required: true }],
     run: async (positional, flags) => {
-      const since = flags.since ? parseInt(flags.since as string, 10) : 0;
+      const since = numericFlag("pull", "since", flags.since, 0);
       await cmdPull(positional[0], since, { status: flags.status as string | undefined });
     },
   },
@@ -1798,8 +1813,8 @@ const COMMANDS: CommandSpec[] = [
     flags: ["since", "timeout"],
     positionals: [{ name: "name", required: true }],
     run: async (positional, flags) => {
-      const since = flags.since ? parseInt(flags.since as string, 10) : 0;
-      const timeout = flags.timeout ? parseFloat(flags.timeout as string) : 30;
+      const since = numericFlag("wait", "since", flags.since, 0);
+      const timeout = numericFlag("wait", "timeout", flags.timeout, 30);
       await cmdWait(positional[0], since, timeout, resolveAlias(flags));
     },
   },
@@ -1826,9 +1841,9 @@ const COMMANDS: CommandSpec[] = [
     positionals: [{ name: "name", required: true }],
     run: async (positional, flags) => {
       await cmdTail(positional[0], {
-        since: flags.since ? parseInt(flags.since as string, 10) : undefined,
+        since: flags.since !== undefined ? numericFlag("tail", "since", flags.since, 0) : undefined,
         fromStart: !!flags["from-start"],
-        last: flags.last !== undefined ? parseInt(flags.last as string, 10) : undefined,
+        last: flags.last !== undefined ? numericFlag("tail", "last", flags.last, 0) : undefined,
         as: resolveAlias(flags),
         human: !!flags.human,
         lurk: !!flags.lurk,
@@ -1947,7 +1962,10 @@ const COMMANDS: CommandSpec[] = [
     flags: ["hold"],
     positionals: [],
     run: async (_positional, flags) => {
-      await cmdStop({ holdSeconds: flags.hold ? parseInt(String(flags.hold), 10) : undefined });
+      await cmdStop({
+        holdSeconds:
+          flags.hold !== undefined ? numericFlag("stop", "hold", flags.hold, 0) : undefined,
+      });
     },
   },
   {
@@ -2050,10 +2068,12 @@ const ROOT_INTERCEPTORS = [
 // v0 refuses unknown keys, so nothing richer (effects, summaries, versions)
 // rides along — those wait for a v1 with slots for them.
 function buildDeclaration() {
-  const arg = (k: FlagName, status: "valid" | "refused" = "valid") => ({
+  // Every registry flag is accepted today; a refusal list would add
+  // status: "refused" entries here the day a verb recognises-and-declines one.
+  const arg = (k: FlagName) => ({
     name: `--${k}`,
     type: CLI_OPTIONS[k].type,
-    status,
+    status: "valid",
   });
   const commands: {
     path: string[];
@@ -2115,11 +2135,14 @@ function parseFlags(
     // marker shape flag-set extractors match ("Valid flags: --x" and kin; acc's
     // MARKER regex is the measured consumer). A qualifier between the noun and
     // the colon ("recognized flags for send:") reads as prose, not a set.
+    const bodyHint =
+      spec.name === "send" || spec.name === "announce"
+        ? `\n  for a message body containing dashes, use --stdin or --body-file, ` +
+          `or put it after a bare --`
+        : "";
     throw new UsageError(
       `${spec.name}: ${detail}\n` +
-        `  recognized flags: ${accepted.map((k) => `--${k}`).join(" ")}\n` +
-        `  for a message body containing dashes, use --stdin or --body-file, ` +
-        `or put it after a bare --`,
+        `  recognized flags: ${accepted.map((k) => `--${k}`).join(" ")}${bodyHint}`,
     );
   }
 }

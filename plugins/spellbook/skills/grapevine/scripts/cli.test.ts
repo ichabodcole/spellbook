@@ -2059,7 +2059,17 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
     expect(help.code).toBe(0);
     for (const c of decl.commands) {
       if (c.path.length === 0) continue;
-      expect(help.stdout).toContain(c.path[0]);
+      // Word-boundary match — a substring check lets short verbs ride inside
+      // unrelated words ("up" in "Usage") and can never fail.
+      expect(help.stdout).toMatch(new RegExp(`\\b${c.path[0]}\\b`));
     }
+  });
+
+  test("a declared numeric flag rejects a non-number as a usage error, not a crash", async () => {
+    const { code, stdout, stderr } = await bunRun(["wait", "chan", "--timeout", "notanumber"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("--timeout expects a non-negative number");
+    expect(stderr).not.toContain("RangeError");
   });
 });
