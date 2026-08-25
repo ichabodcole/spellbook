@@ -45,7 +45,9 @@ bun /tmp/drift-cli.ts schema > /tmp/decl.json
 bun <acc-repo>/src/acc/cli.ts check /tmp/drift-cli.ts --declaration /tmp/decl.json --format text
 ```
 
-Reports were produced against the acc **develop working tree** (post-`099a328`,
-with the uncommitted `surface.ts` short-flag fix live — which is why the false
-`-h`/`-V` findings from earlier in the session do not appear here). The
-`c-rename` declaration is emitted via `describe`, the renamed verb.
+Reports were produced against the acc **develop working tree** with the
+`surface.ts` short-flag fix live but not yet committed — that fix landed about
+an hour later as `080c766`, so these artifacts predate the sha while matching
+its behaviour exactly (it is why the false `-h`/`-V` findings from earlier in
+the session do not appear here). The `c-rename` declaration is emitted via
+`describe`, the renamed verb.
