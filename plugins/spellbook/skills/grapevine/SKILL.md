@@ -17,7 +17,23 @@ Two (or more) agents on the same machine talk to each other over a named
 channel. Messages live as append-only JSONL; live fan-out via SSE. No
 authentication, localhost only.
 
-> 🌿 **V1.9 — disposition / triage.** A long-lived intake channel
+> 🌿 **V2.0 — the declared surface.** The CLI now declares its own interface and
+> holds itself to it (built in the acc-standard working session,
+> `standard-grapevine`):
+>
+> - **`schema`** — emits a machine-readable interface description (acc
+>   declaration format v0) generated from the same command registry the parser
+>   and dispatcher walk. Stdout, exit 0, no daemon, no config.
+> - **Flags are per-verb** (breaking): each verb accepts its own set plus the
+>   global identity pair (`--as`/`--from`); an unknown flag for a verb is
+>   rejected at exit 2 enumerating that verb's set. Previously all 26 flags were
+>   accepted (and mostly ignored) on every verb.
+> - **Bare invocation is a usage error** (breaking): exit 2, commands enumerated
+>   on stderr. `help`/`--help` remain the help path at exit 0.
+> - A root `--flag` now parses as a flag (interceptors `--help`/`-h`/
+>   `--version`/`-V`); missing/excess positionals error before the verb runs.
+>
+> Earlier: V1.9 — disposition / triage. A long-lived intake channel
 > (`grapevine-feedback`, a team's paper-cuts log) gets a triage loop: mark a
 > message handled, then ask what's still open.
 >
@@ -47,7 +63,7 @@ authentication, localhost only.
 > disposition badge** (the CLI badge ships now; the browser visual is the
 > fast-follow).
 >
-> _"V1.x" is grapevine's own **feature** version (this banner). It is separate
+> _"V2.x" is grapevine's own **feature** version (this banner). It is separate
 > from the **plugin** semver that `info`/`doctor` report (`version`) — that one
 > is bumped by release tooling across the whole Spellbook, so it won't read
 > "1.7"._
