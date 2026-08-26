@@ -1,0 +1,6 @@
+{
+  "defaultOutput": "json",
+  "knownFailures": {
+    "B5": "machine mode holds on the DATA path (every verb writes one JSON document to stdout) but not yet on the PARSER-ERROR path, which still answers in prose on stderr. Declaring defaultOutput is what makes this checkable at all, so the entry is the cost of telling acc the truth. Debt, not a design position: the fix is a JSON error envelope on stderr for usage errors."
+  }
+}

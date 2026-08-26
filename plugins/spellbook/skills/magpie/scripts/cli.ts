@@ -57,6 +57,21 @@ process.stdout.on("error", (e: NodeJS.ErrnoException) => {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
 
+// Our plugin version (from plugin.json) — the one number magpie can honestly
+// report as its own. D1 asks a CLI to answer `--version`; an agent that cannot
+// tell which build it is driving cannot tell a missing feature from a stale
+// install. Best-effort: null if the read fails, and `--version` says so rather
+// than inventing one. Same resolution grapevine uses.
+function readPluginVersion(): string | null {
+  try {
+    const pluginJsonPath = join(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json");
+    return JSON.parse(readFileSync(pluginJsonPath, "utf-8")).version ?? null;
+  } catch {
+    return null;
+  }
+}
+const PLUGIN_VERSION = readPluginVersion();
+
 type Session = {
   url: string;
   port: number;
@@ -831,8 +846,13 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
   element-remove <id>                 retract a boxed region
   cmd    [--stdin]                    POST a raw AgentCommand JSON body from stdin
   close | info | help
+  --version                           print magpie's version as JSON
 
-  Add --session <id> to target a specific session (default: most recent).`;
+  Add --session <id> to target a specific session (default: most recent).
+
+  Output: magpie prints JSON by default on stdout. Every verb writes exactly ONE
+  JSON document there; prose, liveness and diagnostics go to stderr. \`--full\`
+  widens the state payload; it does not switch formats.`;
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
@@ -929,9 +949,21 @@ async function main(argv: string[]): Promise<number> {
     case "help":
     case "--help":
     case "-h":
-    case undefined:
       process.stdout.write(`${HELP}\n`);
       break;
+    case "--version":
+    case "-V":
+      // Machine-first, like every other data verb: one JSON document on stdout.
+      printJson({ name: "magpie", version: PLUGIN_VERSION });
+      break;
+    case undefined:
+      // A BARE INVOCATION IS A USAGE ERROR, not a help path. magpie is driven by
+      // an agent, so an empty argv is an agent that failed to name what it
+      // wanted — answering it with exit 0 tells that agent it succeeded. Help
+      // stays one word away, on stderr, so the recovery is still in front of it.
+      // stdout is left EMPTY: it carries data, and a usage error has none.
+      process.stderr.write(`magpie: no verb given — run: cli.ts help\n\n${HELP}\n`);
+      return 2;
     default:
       die(`unknown verb "${verb}" — run: cli.ts help`);
   }
