@@ -38,6 +38,23 @@ the session is archived in the session scratch and reproduced trivially from
 help; the fix, if wanted, is grapevine's shape — a command registry the parser,
 dispatcher, help, and (eventually) a `schema` verb all walk.
 
+## Prediction outcome (2026-08-26) — HIT at substance, corrected in detail
+
+Run by acc's recorded-surface reader against the captured `state` rejection
+(`docs/investigations/2026-08-25-recorded-surface-batches/`), both registrations
+pinned in their tree before the differ existed:
+
+- **18 `accepted-not-declared` of 22 enumerated** (registration said ~17 of 21;
+  the denominator was corrected to 22 from the verbatim capture before any diff
+  ran). Substance held exactly: help declares 4, the parser accepts 22 — 5.5×.
+- **0 `declared-not-accepted`** — the modelled declaration is a strict SUBSET of
+  what the parser takes. The hand-written model understated, never misstated: a
+  better finding than the one registered.
+
+The drift is now measured, not predicted. The fix remains grapevine's shape
+(per-verb registry); grapevine's own full census on the same reader read **33 of
+33 paths compared, 0 disagreements**.
+
 ## Suggested route
 
 Fold into the spell-grooming ritual or pick up as a focused chore branch once
