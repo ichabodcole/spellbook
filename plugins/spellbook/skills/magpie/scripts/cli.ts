@@ -213,45 +213,68 @@ const CLI_OPTIONS = {
   stdin: { type: "boolean" },
 } as const;
 
-// The dispatch switch is a switch, so this cannot be derived from it the way
-// RECOGNIZED_FLAGS is derived from CLI_OPTIONS. Keep it beside the switch and in
-// step with it — an unknown-verb rejection that offers a stale set is worse than
-// one that offers none.
-const VERBS = [
-  "open",
-  "sessions",
-  "tail",
-  "state",
-  "say",
-  "ask",
-  "status",
-  "source",
-  "discover",
-  "extract",
-  "export",
-  "element-add",
-  "element-remove",
-  "cmd",
-  "close",
-  "info",
-  "help",
-] as const satisfies readonly string[];
+// WHICH FLAGS EACH VERB ACCEPTS — and the only source of the verb set.
+//
+// The parser used to enforce ONE GLOBAL registry: every verb accepted every
+// flag, so `close --alpha auto` and `say --bbox 1,2,3,4` parsed clean and did
+// nothing. A recorded-surface census counted 289 such flag/path pairs — 289
+// invocations magpie accepted at exit 0 and could not act on. That is the
+// failure this whole kit is named for: the tool does the wrong thing and reports
+// success. An unknown-flag check at the root cannot see it, because none of the
+// flags are unknown — they are just not known HERE.
+//
+// So the recognized set is per verb, and this table is it. `VERBS` is derived
+// from its keys and each verb parses against its own options, which means the
+// help text, the rejection's `choices` and the parser can no longer disagree:
+// there is one object, and adding a flag to a verb is one edit.
+export const VERB_SPEC = {
+  open: ["title", "intent", "timeout", "restore", "no-open"],
+  sessions: [],
+  tail: ["session", "since"],
+  state: ["session", "full"],
+  say: ["session", "stdin"],
+  ask: ["session", "options"],
+  status: ["session"],
+  source: ["session"],
+  discover: ["session"],
+  extract: ["session", "ids", "remove", "alpha", "pad", "model", "label"],
+  export: ["session", "ids"],
+  "element-add": ["session", "bbox", "name", "type"],
+  "element-remove": ["session"],
+  cmd: ["session", "stdin"],
+  close: ["session"],
+  info: ["session"],
+  help: [],
+} as const satisfies Record<string, readonly (keyof typeof CLI_OPTIONS)[]>;
 
-// Derived from CLI_OPTIONS so it cannot drift from what the parser enforces.
-const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS)
-  .map((k) => `--${k}`)
-  .sort();
+type Verb = keyof typeof VERB_SPEC;
+
+const VERBS = Object.keys(VERB_SPEC) as Verb[];
+
+const isVerb = (v: string): v is Verb => Object.hasOwn(VERB_SPEC, v);
+
+// The flags one verb accepts, as the caller spells them.
+const flagsFor = (verb: Verb): string[] => VERB_SPEC[verb].map((k) => `--${k}`).sort();
 
 class UsageError extends Error {}
 
-export function parseArgs(args: string[]): {
+export function parseArgs(
+  args: string[],
+  verb?: Verb,
+): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
+  // Scoped to the verb when we have one: the parser itself refuses another
+  // verb's flag, so the rejection and its `choices` describe THIS command path
+  // rather than the union of all of them.
+  const options = verb
+    ? (Object.fromEntries(VERB_SPEC[verb].map((k) => [k, CLI_OPTIONS[k]])) as typeof CLI_OPTIONS)
+    : CLI_OPTIONS;
   try {
     const { values, positionals } = nodeParseArgs({
       args,
-      options: CLI_OPTIONS,
+      options,
       strict: true,
       allowPositionals: true,
     });
@@ -927,7 +950,12 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
   close | info | help
   --version                           print magpie's version as JSON
 
-  Add --session <id> to target a specific session (default: most recent).
+  Add --session <id> to target a specific session (default: most recent). It is
+  accepted by every verb that acts on a session — not by open, sessions or help,
+  which do not have one to target.
+
+  Flags are scoped to their verb: extract's --pad is not accepted by say. A
+  rejection lists what the verb it names does accept.
 
   Output: magpie prints JSON by default on stdout. Every verb writes exactly ONE
   JSON document there; prose, liveness and diagnostics go to stderr. \`--full\`
@@ -936,17 +964,49 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
   CURRENT_COMMAND = verb ?? null;
-  // A usage failure returns 2 rather than exiting, so the runtime drains stdout.
+
+  // ROOT TOKENS FIRST, before any flag parsing. These are not verbs and they
+  // carry no flags, so resolving them here keeps them out of every verb's set.
+  if (verb === "--help" || verb === "-h") {
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  if (verb === "--version" || verb === "-V") {
+    printJson({ name: "magpie", version: PLUGIN_VERSION });
+    return 0;
+  }
+  if (verb === undefined) {
+    // A bare invocation is a usage error, not a help path — magpie is driven by
+    // an agent, and an empty argv is an agent that failed to name what it
+    // wanted. stdout stays empty; it carries data and this has none.
+    process.stderr.write(
+      errorEnvelope("usage", "no verb given", { hint: "run: cli.ts help", choices: VERBS }),
+    );
+    return 2;
+  }
+  // THE VERB IS REJECTED BEFORE ITS FLAGS ARE READ. It has to be: which flags
+  // are legal is a question about the verb, so there is no set to check against
+  // until we know it is a real one.
+  if (!isVerb(verb)) {
+    process.stderr.write(
+      errorEnvelope("usage", `unknown verb "${verb}"`, {
+        hint: "run: cli.ts help",
+        choices: VERBS,
+      }),
+    );
+    return 2;
+  }
+
   let pos: string[];
   let flags: Record<string, string | boolean>;
   try {
-    ({ pos, flags } = parseArgs(rest));
+    ({ pos, flags } = parseArgs(rest, verb));
   } catch (e) {
     if (!(e instanceof UsageError)) throw e;
     process.stderr.write(
       errorEnvelope("usage", e.message, {
-        hint: "for free text containing dashes, use --stdin, or put it after a bare --",
-        choices: RECOGNIZED_FLAGS,
+        hint: `flags are scoped to the verb — choices lists what \`${verb}\` accepts; for free text containing dashes use --stdin, or put it after a bare --`,
+        choices: flagsFor(verb),
       }),
     );
     return 2;
@@ -1032,33 +1092,8 @@ async function main(argv: string[]): Promise<number> {
       cmdSessions();
       break;
     case "help":
-    case "--help":
-    case "-h":
       process.stdout.write(`${HELP}\n`);
       break;
-    case "--version":
-    case "-V":
-      // Machine-first, like every other data verb: one JSON document on stdout.
-      printJson({ name: "magpie", version: PLUGIN_VERSION });
-      break;
-    case undefined:
-      // A BARE INVOCATION IS A USAGE ERROR, not a help path. magpie is driven by
-      // an agent, so an empty argv is an agent that failed to name what it
-      // wanted — answering it with exit 0 tells that agent it succeeded. Help
-      // stays one word away, on stderr, so the recovery is still in front of it.
-      // stdout is left EMPTY: it carries data, and a usage error has none.
-      process.stderr.write(
-        errorEnvelope("usage", "no verb given", {
-          hint: "run: cli.ts help",
-          choices: VERBS,
-        }),
-      );
-      return 2;
-    default:
-      die(`unknown verb "${verb}"`, "usage", {
-        hint: "run: cli.ts help",
-        choices: [...VERBS],
-      });
   }
   return 0;
 }
