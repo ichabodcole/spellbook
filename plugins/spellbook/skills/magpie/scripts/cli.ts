@@ -80,9 +80,59 @@ type Session = {
   files_dir?: string;
 };
 
-function die(msg: string): never {
-  process.stderr.write(`magpie: ${msg}\n`);
-  process.exit(2);
+// ── error envelope ──────────────────────────────────────────────────
+//
+// magpie declares `defaultOutput: "json"`, and that declaration is about EVERY
+// stream, not just the happy path. A caller that gets one JSON document from a
+// verb and prose from a failure has to parse two formats to use one tool — and
+// the failure is the case where it can least afford to guess. So a failure is
+// ONE JSON document on stderr, and stdout stays empty because stdout carries
+// data and a failure has none.
+//
+// `kind` is the contract; `message` is presentation. Rewording a message must
+// never break a caller, which it does the moment anyone matches on prose.
+// Exit codes follow the acc taxonomy: usage errors are the caller's to fix by
+// changing the command, internal faults are not, and collapsing them into one
+// number leaves an agent with nothing to route on.
+type ErrKind = "usage" | "internal" | "not_found" | "conflict";
+
+const EXIT_FOR: Record<ErrKind, number> = {
+  usage: 2, // the caller can fix this by changing the command
+  internal: 1, // magpie broke; the invocation may have been fine
+  not_found: 5, // the named thing does not exist
+  conflict: 6, // a precondition failed
+};
+
+// The verb under execution, so the envelope can name it. Set once by main().
+let CURRENT_COMMAND: string | null = null;
+
+function errorEnvelope(
+  kind: ErrKind,
+  message: string,
+  extra?: { hint?: string; choices?: string[] },
+): string {
+  return `${JSON.stringify({
+    ok: false,
+    error: {
+      kind,
+      exit_code: EXIT_FOR[kind],
+      // Only rate limits are worth retrying unchanged; nothing magpie raises is.
+      retryable: false,
+      message,
+      ...(extra?.hint ? { hint: extra.hint } : {}),
+      ...(extra?.choices ? { choices: extra.choices } : {}),
+    },
+    meta: { command: CURRENT_COMMAND },
+  })}\n`;
+}
+
+function die(
+  msg: string,
+  kind: ErrKind = "usage",
+  extra?: { hint?: string; choices?: string[] },
+): never {
+  process.stderr.write(errorEnvelope(kind, msg, extra));
+  process.exit(EXIT_FOR[kind]);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -107,7 +157,7 @@ function readSession(session?: string): Session | null {
 
 function requireSession(session?: string): Session {
   const s = readSession(session);
-  if (!s) die("no running magpie session — run: cli.ts open");
+  if (!s) die("no running magpie session — run: cli.ts open", "not_found");
   return s;
 }
 
@@ -163,6 +213,35 @@ const CLI_OPTIONS = {
   stdin: { type: "boolean" },
 } as const;
 
+// The dispatch switch is a switch, so this cannot be derived from it the way
+// RECOGNIZED_FLAGS is derived from CLI_OPTIONS. Keep it beside the switch and in
+// step with it — an unknown-verb rejection that offers a stale set is worse than
+// one that offers none.
+const VERBS = [
+  "open",
+  "sessions",
+  "tail",
+  "state",
+  "say",
+  "ask",
+  "status",
+  "source",
+  "discover",
+  "extract",
+  "export",
+  "element-add",
+  "element-remove",
+  "cmd",
+  "close",
+  "info",
+  "help",
+] as const satisfies readonly string[];
+
+// Derived from CLI_OPTIONS so it cannot drift from what the parser enforces.
+const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS)
+  .map((k) => `--${k}`)
+  .sort();
+
 class UsageError extends Error {}
 
 export function parseArgs(args: string[]): {
@@ -179,13 +258,11 @@ export function parseArgs(args: string[]): {
     return { pos: positionals, flags: values as Record<string, string | boolean> };
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    throw new UsageError(
-      `${detail}\n` +
-        `  recognized flags: ${Object.keys(CLI_OPTIONS)
-          .map((k) => `--${k}`)
-          .join(" ")}\n` +
-        `  for free text containing dashes, use --stdin, or put it after a bare --`,
-    );
+    // The recognized set travels as `choices` — a just-in-time slice of the
+    // surface, delivered exactly when the caller has proved it needs one. It is
+    // generated from CLI_OPTIONS, the same object the parser enforces, so the
+    // flags an error offers are by construction the flags magpie accepts.
+    throw new UsageError(detail);
   }
 }
 
@@ -198,7 +275,7 @@ async function readStdin(): Promise<string> {
 async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
   const s = requireSession(session);
   const { status } = await api(s.port, "POST", "/cmd", msg);
-  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
+  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`, "internal");
   printJson({ ok: true, sent: msg.type });
 }
 
@@ -240,13 +317,13 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
       }
     }
   }
-  die("magpie server failed to start within 5s");
+  die("magpie server failed to start within 5s", "internal");
 }
 
 async function cmdState(session?: string, full = false) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   printJson(data);
 }
 
@@ -352,7 +429,7 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
 
 function cmdInfo(session?: string) {
   const s = readSession(session);
-  if (!s) die("no running magpie session");
+  if (!s) die("no running magpie session", "not_found");
   printJson(s);
 }
 
@@ -395,7 +472,7 @@ function cmdSessions() {
 // source.set. The agent runs discover separately; this just registers the board.
 async function cmdSource(session: string | undefined, imagePath: string) {
   const file = Bun.file(imagePath);
-  if (!(await file.exists())) die(`image not found: ${imagePath}`);
+  if (!(await file.exists())) die(`image not found: ${imagePath}`, "not_found");
   const bytes = new Uint8Array(await file.arrayBuffer());
   const sha = new Bun.CryptoHasher("sha256").update(bytes).digest("hex").slice(0, 16);
   const meta = await new Bun.Image(bytes).metadata();
@@ -428,15 +505,15 @@ async function cmdElementAdd(session: string | undefined, flags: Record<string, 
 async function cmdDiscover(session?: string) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   const src = (data as { state?: { source?: { path?: string } } }).state?.source;
   const path = src?.path;
-  if (!path) die("no source set — drop a composite (or run: source <imagePath>) first");
+  if (!path) die("no source set — drop a composite (or run: source <imagePath>) first", "conflict");
   let manifest: Awaited<ReturnType<typeof discover>>;
   try {
     manifest = await discover(path);
   } catch (e) {
-    if (e instanceof DiscoverError) die(`discover failed: ${e.message}`);
+    if (e instanceof DiscoverError) die(`discover failed: ${e.message}`, "internal");
     throw e;
   }
   const elements: Element[] = manifest.elements.map((e) => ({
@@ -479,7 +556,7 @@ export function cutoutFilename(name: string, backend: string): string {
 // spinner around the loop; per-element progress → stderr, summary → stdout.
 async function cmdExtract(session: string | undefined, flags: Record<string, string | boolean>) {
   const s = requireSession(session);
-  if (!s.files_dir) die("session has no files_dir — cannot materialize cutouts");
+  if (!s.files_dir) die("session has no files_dir — cannot materialize cutouts", "conflict");
 
   // Policy: crop-only by default; --remove flips to rembg (auto); --alpha wins.
   let alpha: AlphaPolicy = flags.remove === true ? "auto" : "none";
@@ -524,10 +601,11 @@ async function cmdExtract(session: string | undefined, flags: Record<string, str
       : undefined;
 
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   const st = (data as { state?: { source?: { path?: string }; elements?: Element[] } }).state;
   const sourcePath = st?.source?.path;
-  if (!sourcePath) die("no source set — drop a composite (or run: source <imagePath>) first");
+  if (!sourcePath)
+    die("no source set — drop a composite (or run: source <imagePath>) first", "conflict");
   let elements = (st?.elements ?? []).filter((e) => e.status !== "dropped");
   if (idFilter) elements = elements.filter((e) => idFilter.has(e.id));
   // When REMOVING, never touch alpha-forbidden types (palette / screenshot /
@@ -722,7 +800,7 @@ ${cards}
 // files by BASENAME in files_dir (robust to stale absolute paths after a restore).
 async function cmdExport(session: string | undefined, flags: Record<string, string | boolean>) {
   const s = requireSession(session);
-  if (!s.files_dir) die("session has no files_dir — cannot build a bundle");
+  if (!s.files_dir) die("session has no files_dir — cannot build a bundle", "conflict");
   const idFilter =
     typeof flags.ids === "string"
       ? new Set(
@@ -734,11 +812,12 @@ async function cmdExport(session: string | undefined, flags: Record<string, stri
       : undefined;
 
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   const st = (data as { state?: { title?: string; elements?: Element[] } }).state;
   let elements = (st?.elements ?? []).filter((e) => e.status !== "dropped");
   if (idFilter) elements = elements.filter((e) => idFilter.has(e.id));
-  if (!elements.length) die(idFilter ? "no matching elements for --ids" : "no assets to export");
+  if (!elements.length)
+    die(idFilter ? "no matching elements for --ids" : "no assets to export", "conflict");
   const title = st?.title ?? "magpie";
 
   const stageDir = join(s.files_dir, "bundle-stage");
@@ -821,7 +900,7 @@ async function cmdExport(session: string | undefined, flags: Record<string, stri
     await api(s.port, "POST", "/cmd", { type: "status", busy: false });
   }
 
-  if (failure || !result) die(`export failed: ${failure ?? "unknown"}`);
+  if (failure || !result) die(`export failed: ${failure ?? "unknown"}`, "internal");
   printJson({ ok: true, bundle: zipName, count: result.count });
 }
 
@@ -856,6 +935,7 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
+  CURRENT_COMMAND = verb ?? null;
   // A usage failure returns 2 rather than exiting, so the runtime drains stdout.
   let pos: string[];
   let flags: Record<string, string | boolean>;
@@ -863,7 +943,12 @@ async function main(argv: string[]): Promise<number> {
     ({ pos, flags } = parseArgs(rest));
   } catch (e) {
     if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`magpie: ${e.message}\n`);
+    process.stderr.write(
+      errorEnvelope("usage", e.message, {
+        hint: "for free text containing dashes, use --stdin, or put it after a bare --",
+        choices: RECOGNIZED_FLAGS,
+      }),
+    );
     return 2;
   }
   const session = typeof flags.session === "string" ? flags.session : undefined;
@@ -962,10 +1047,18 @@ async function main(argv: string[]): Promise<number> {
       // wanted — answering it with exit 0 tells that agent it succeeded. Help
       // stays one word away, on stderr, so the recovery is still in front of it.
       // stdout is left EMPTY: it carries data, and a usage error has none.
-      process.stderr.write(`magpie: no verb given — run: cli.ts help\n\n${HELP}\n`);
+      process.stderr.write(
+        errorEnvelope("usage", "no verb given", {
+          hint: "run: cli.ts help",
+          choices: VERBS,
+        }),
+      );
       return 2;
     default:
-      die(`unknown verb "${verb}" — run: cli.ts help`);
+      die(`unknown verb "${verb}"`, "usage", {
+        hint: "run: cli.ts help",
+        choices: [...VERBS],
+      });
   }
   return 0;
 }
