@@ -872,3 +872,37 @@ _**So the disposition, and it is the one thing I would say if I could say nothin
 **So it is demoted only in the sense that a successor must pick ONE.** The new one wins on frequency and on blindness: clause 1's failure was loud (28 red tests), while an unenumerated total is silent, ships, and gets quoted by other people — and it happened five times in one session against clause 1's once.
 
 **Read both. The lineage is not an archive of things that stopped mattering.**
+
+## mind-mapper acc L0 retrofit (feat/mind-mapper-acc-l0, 2026-08-27) — judgments
+
+**A CLI's error surface is a wire seam, and "wrap, don't pass through" is the shape that keeps both contracts.**
+The lane B fork was envelope-vs-passthrough for daemon 409/404 bodies; carrying the server's JSON VERBATIM under `error.server` kept the typed bodies (needs-project, cited, zoned) for callers that branch on them while the process contract stayed ONE stderr doc + empty stdout.
+The consequence a consumer feels is exit-code migration (409 family 2→6, 404 reads 2→5) — name that in the commit and comms, because kind is the contract and the OLD codes were prose nobody ratified.
+Pin: cli.ts passOrThrow + cli-contract.test.ts failure table; ratified #1101.
+
+**No defaults in a shared flag registry — stage-2 stray detection is key-presence, and a registry default plants the key on every verb.**
+Magpie's registry has no defaults for this exact reason and never says so; I had to re-derive it, so now it is written: per-verb defaults move to `??` at the consumption site, and the migration deserves a pinned behavior row.
+Pin: cli.ts CLI_OPTIONS header comment; ratified #1103.
+
+**Regex surgery on a large dispatch corrupts NON-TARGET sites silently — the span between one match's start and another's terminator swallows what sits between.**
+My multi-line sed-style pass renamed writeEnvelope's own stderr write into a throw and ate node-edit's `return 2`, both far from any intended target; the suite caught both, my read-through caught neither.
+Rule: bulk-convert only patterns whose terminator is INSIDE the match's own statement (single-line, exact-string replace_all); anything multi-line gets a hand edit per site, however many there are.
+
+**A denominator pin moving is the ward WORKING — in both directions — but only if the commit says what moved it.**
+Lane A grew strict-parse 42→43, lane C shrank it to 17 and terminator call sites 23/22→9/8 (27 inline parses → one registry invocation); each pin update carries the derivation in place so the next reader sees a refactor, not a dead sweep.
+
+**Inheriting a red gate is a land-blocker for the whole session — verify pre-existence by stash-and-rerun, then fix it AHEAD of your first lane if the instrument is yours.**
+The branch base carried 2 flag-invariant failures from develop's astrolabe/grapevine acc landings (root-token `--version` in SKILL.md; a registry-subset parse the enumerator could not read); the repair (FOREIGN root-token pins + requirement 4b: a fromEntries subset resolves to its literal registry) rode as its own commit before lane A.
+Corollary now in the enumerator: the house `--version`-as-root-token pattern will hit every spell's SKILL.md ward as it adopts acc L0 — the FOREIGN pin with the magpie:version wording is the standing answer.
+
+**The two-stage parse ports to a two-token grammar by keying VERB_SPEC on PATHS, not verbs.**
+Space-joined keys ("node edit", "job claim") with a resolvePath step (sub known → two-token key; doc's OPTIONAL sub needs a registry-wide probe parse first because the sub rides positionals) kept magpie's parser/choices/help single-sourcing intact; meta.command carries the resolved path so an envelope from `node edit` says so.
+Pin: cli.ts VERB_SPEC/parseVerbArgs, cli-contract.test.ts drift ward.
+
+**tail's self-healing reconnect loop eats thrown refusals — any catch-all retry loop needs a typed-error rethrow the day errors become typed.**
+Converting the 409/404 refusal to a thrown CliError inside tail's try would have turned "exit 2" into "spin forever" silently; the reconnect catch now rethrows CliError.
+Generalizes: grep for catch-all loops BEFORE introducing typed throws into code they wrap.
+
+**An includes() over prose is a vacuous denominator waiting for token recurrence — anchor structural membership checks to line starts.** _(Attributed by prospero at finalize; found by cassandra's M3 after my own six H16 demos passed — the demo I chose exercised the class my frame suggested, hers exercised the one it hid.)_
+The help-advertises twin was green for 6 of 29 verbs whose tokens recur in other help lines (docId→doc, "zone create" prose→zone); fixed line-anchored at bb13208, convicted by three independent mutation runs.
+Generalizes: when a cell's predicate is substring-membership over a document, ask what ELSE in the document contains the token before trusting the green.
