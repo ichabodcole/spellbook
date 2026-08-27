@@ -81,7 +81,12 @@ test("the help surface advertises every verb in the roster (behavioural twin of 
   // when both code sides agree.
   const r = run(["help"]);
   expect(r.code).toBe(0);
-  const missing = VERBS.filter((v) => !r.stdout.includes(v));
+  // LINE-ANCHORED, not includes(): a bare substring match is VACUOUS for any
+  // verb whose token recurs elsewhere in the help prose (docId satisfied
+  // "doc", "zone create" prose satisfied "zone", --doc-edit satisfied "doc" —
+  // cassandra's M3 calibration removed doc's entire entry and the cell stayed
+  // green). A verb is ADVERTISED only if it opens its own help line.
+  const missing = VERBS.filter((v) => !new RegExp(`^\\s*${v}\\b`, "m").test(r.stdout));
   expect(missing).toEqual([]);
   // The alias is advertised on its target's line, per the #1097 ruling.
   expect(r.stdout).toContain("alias: message");
