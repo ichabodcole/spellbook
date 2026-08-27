@@ -155,7 +155,7 @@ The two-round shape is the safety net, not the expectation; the ratify round is 
 
 ## Candidates
 
-- **anthill feedback drafts from the acc session (composed, unfiled, awaiting Cole with the six older ones):** comms send lacks --body-file (has --stdin; the asymmetry with every other house CLI bit cassandra); a stale --as-of refusal could offer refresh-and-send (daedalus, 3 round-trips); comms read rejects --as on reads (cassandra). Plus H28's idea: anthill commit could carry gate evidence in its envelope and flag a land with no recent gate run.
+- **anthill feedback from the acc session FILED to the anthill-feedback grapevine (#24-27, 2026-08-27, on Cole's instruction; the six sprint-04 drafts remain unfiled):** comms send lacks --body-file (has --stdin; the asymmetry with every other house CLI bit cassandra); a stale --as-of refusal could offer refresh-and-send (daedalus, 3 round-trips); comms read rejects --as on reads (cassandra). Plus H28's idea: anthill commit could carry gate evidence in its envelope and flag a land with no recent gate run.
 - **Contract 15 adoption sweep (bounty first: no --version, no envelope) — H29 says one session per spell now.** Feeds the spell-grooming ritual when thoth is next seated.
 - **acc closing note to the maintainers is SENT (trial channel): friction ledger + the adoption signal.** Their declaration-skeleton generator, when it ships, is mind-mapper's schema-verb unlock.
 
