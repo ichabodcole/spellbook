@@ -136,7 +136,9 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   { file: "bounty/scripts/server.ts", text: "process.exit(code);", family: "C-signal" },
   // D — die(): one short stderr write, then exit. Safe ONLY while the payload
   // fits the 64 KiB pipe buffer — stderr truncates exactly like stdout (measured).
-  { file: "astrolabe/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  // astrolabe's die() picks its code the way magpie's does (acc taxonomy:
+  // usage 2, internal 1) rather than always 2 — same one-short-write shape.
+  { file: "astrolabe/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
   { file: "bounty/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
   { file: "glamour/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
   { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
