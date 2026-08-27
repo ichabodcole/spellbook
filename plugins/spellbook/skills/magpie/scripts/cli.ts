@@ -265,28 +265,49 @@ export function parseArgs(
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
-  // Scoped to the verb when we have one: the parser itself refuses another
-  // verb's flag, so the rejection and its `choices` describe THIS command path
-  // rather than the union of all of them.
-  const options = verb
-    ? (Object.fromEntries(VERB_SPEC[verb].map((k) => [k, CLI_OPTIONS[k]])) as typeof CLI_OPTIONS)
-    : CLI_OPTIONS;
+  // TWO STAGES, AND THE ORDER IS THE POINT.
+  //
+  // Stage 1 parses against the WHOLE registry, so a token magpie has never
+  // heard of is refused by `node:util` with its own message. Stage 2 then asks
+  // the question the parser cannot: is this flag accepted AT THIS VERB.
+  //
+  // Doing it the other way — handing parseArgs a per-verb subset — was the first
+  // shape, and it answered `say --bbox` with "Unknown option '--bbox'", which is
+  // false. `--bbox` is a perfectly good flag; it just is not `say`'s. An agent
+  // told a real flag is unknown goes looking for a typo it did not make.
+  //
+  // It also cost the grimoire's flag-invariant ward its footing: that check
+  // resolves `options: <identifier>` back to a literal declaration, and a subset
+  // computed at the call site is not one. The ward could no longer read magpie's
+  // registry at all and reported the entry point unresolved — the instrument
+  // saying "I cannot see this", exactly as designed. Keeping `CLI_OPTIONS` at
+  // the call site keeps the registry legible to it.
+  let parsed: { values: Record<string, unknown>; positionals: string[] };
   try {
-    const { values, positionals } = nodeParseArgs({
+    parsed = nodeParseArgs({
       args,
-      options,
+      options: CLI_OPTIONS,
       strict: true,
       allowPositionals: true,
     });
-    return { pos: positionals, flags: values as Record<string, string | boolean> };
   } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    // The recognized set travels as `choices` — a just-in-time slice of the
-    // surface, delivered exactly when the caller has proved it needs one. It is
-    // generated from CLI_OPTIONS, the same object the parser enforces, so the
-    // flags an error offers are by construction the flags magpie accepts.
-    throw new UsageError(detail);
+    throw new UsageError(e instanceof Error ? e.message : String(e));
   }
+
+  if (verb) {
+    const allowed = new Set<string>(VERB_SPEC[verb]);
+    const stray = Object.keys(parsed.values).find((k) => !allowed.has(k));
+    if (stray) {
+      throw new UsageError(
+        `--${stray} is not accepted by \`${verb}\` (it is a recognized magpie flag, just not this verb's)`,
+      );
+    }
+  }
+
+  return {
+    pos: parsed.positionals,
+    flags: parsed.values as Record<string, string | boolean>,
+  };
 }
 
 // Read all of stdin as text (Bun.stdin). Used by `--stdin` so NL text isn't a
