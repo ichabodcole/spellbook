@@ -167,7 +167,10 @@ function braceBlock(src: string, open: number): string {
 export function recognizedFlags(src: string): string[] | null {
   const names = new Set<string>();
   let sawMap = false;
-  for (const m of src.matchAll(/options\s*:\s*(\{|([A-Za-z_$][\w$]*))/g)) {
+  // `options: {…}`, `options: IDENT`, or the SHORTHAND `options,` inside the
+  // argument object (grapevine's acc registry refactor spells it that way —
+  // the invocation receives a per-command SUBSET local named `options`).
+  for (const m of src.matchAll(/options\s*(?::\s*(\{|([A-Za-z_$][\w$]*))|(,))/g)) {
     // Requirement 3: a real parseArgs argument object carries these siblings.
     if (!/\bstrict\s*:|\ballowPositionals\s*:/.test(src.slice(m.index, m.index + 1200))) continue;
     sawMap = true;
@@ -175,9 +178,32 @@ export function recognizedFlags(src: string): string[] | null {
     if (m[1] === "{") {
       block = braceBlock(src, src.indexOf("{", m.index));
     } else {
-      const decl = src.search(new RegExp(`(?:const|let|var)\\s+${m[2]}\\s*=\\s*\\{`));
-      if (decl < 0) return null; // Requirement 4 failed — instrument, not "clean"
-      block = braceBlock(src, src.indexOf("{", decl));
+      const ident = m[3] === "," ? "options" : (m[2] as string);
+      const declRe = new RegExp(`(?:const|let|var)\\s+${ident}\\s*=\\s*`);
+      const declMatch = declRe.exec(src);
+      if (declMatch === null) return null; // Requirement 4 failed — instrument, not "clean"
+      const after = src.slice(declMatch.index + declMatch[0].length);
+      if (after.startsWith("{")) {
+        block = braceBlock(src, declMatch.index + declMatch[0].length);
+      } else {
+        // Requirement 4b (grapevine, acc registry refactor): the declaration is
+        // a COMPUTED per-command subset — `Object.fromEntries(cmd.flags.map((k)
+        // => [k, CLI_OPTIONS[k]]))`. The subset is not a literal, but its
+        // SOURCE registry is, and the union across commands IS the recognized
+        // set (magpie's stage-1 semantics: a flag outside the registry is
+        // refused as unknown; a registry flag at the wrong command is refused
+        // as misplaced — both are "recognized" for this ward's two halves).
+        // Resolve the registry the subset indexes into, or answer null.
+        const fromEntries = /Object\.fromEntries\([\s\S]{0,200}?\b([A-Z][A-Za-z0-9_$]*)\s*\[/.exec(
+          after.slice(0, 400),
+        );
+        if (fromEntries === null) return null;
+        const regDecl = src.search(
+          new RegExp(`(?:const|let|var)\\s+${fromEntries[1]}\\s*=\\s*\\{`),
+        );
+        if (regDecl < 0) return null;
+        block = braceBlock(src, src.indexOf("{", regDecl));
+      }
     }
     for (const k of block.matchAll(/(?:"([^"]+)"|([A-Za-z_$][\w$]*))\s*:\s*\{\s*type\s*:/g))
       names.add(k[1] ?? k[2]);
