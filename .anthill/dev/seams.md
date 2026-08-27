@@ -731,3 +731,23 @@ Concretely, as built in the three co-presence spells:
 **Proof:** `digestify/scripts/review.test.ts` — two cells, mutation-calibrated (34→36, +2; each mutation reddens **only** its own cell: a syntax error fails the parse cell, reverting the pre-b4s handler fails the beacon cell). Browser-driven both arms: `engaged:false` → `/left` alone; `engaged:true` → `/left` then `/cancel`.
 
 ⚠ **HALF-PROVEN, and this stays until it is not:** the **server half is NOT BUILT**. daedalus holds `/left` + the 124 payload as b4's remainder. Until then the surface emits into a route that does not exist (harmless — `sendBeacon` is fire-and-forget), and **the `engaged:false` record-only clause is unenforced by anything except this contract.**
+
+## Contract 15 — The spell CLI process contract (error envelope + registry single-sourcing)
+
+_Owner: daedalus. Ratified 2026-08-27 (mind-mapper acc L0 session, comms #1100/#1105); single-sourced here from the seats' finalize returns — seat docs point, never restate._
+
+Every house spell CLI answers a FAILURE as **one JSON document on stderr with stdout empty**:
+
+```
+{ ok: false,
+  error: { kind, exit_code, retryable, message, hint?, choices?, server? },
+  meta:  { command } }
+```
+
+- **Kinds → exits:** `usage` 2 · `internal` 1 · `not_found` 5 · `conflict` 6. `kind` is the contract; `message` is presentation — a caller that matches on prose is out of contract, and rewording a message must never break one.
+- **`choices`** rides any rejection whose valid alternatives form a closed set (verbs, sub-verbs, per-verb flags). A real-but-misplaced flag is never called "unknown" — the two-stage parse (whole-registry strict, then verb-subset presence check) is what makes that message honest.
+- **`error.server`** (mind-mapper's extension, candidate clause for the other spells): a daemon-HTTP refusal is WRAPPED, its JSON body carried verbatim under this key — typed bodies keep their shape one level down, the process contract stays one stderr doc.
+- **Registry single-sourcing:** one flag registry (**no defaults in it** — stage-2 stray detection is key-presence; defaults live at consumption `??`) + one verb→flags spec (path-keyed where subcommands exist) drive parser, help, rejections, and the drift wards. `--version` is a **root TOKEN, never a registry flag** — registering it re-scopes it under every verb; the flag-invariant ward's FOREIGN pin is the standing answer (magpie:version precedent, astrolabe:version pinned 15513af).
+- **Delivery:** throw a typed error and let `main` RETURN the code (`process.exitCode` + natural return, never `process.exit` where stdout may hold >64KB) — and any catch-all retry loop in scope must rethrow the typed error (tail's reconnect loop, daedalus seat doc).
+
+**Proof:** `plugins/spellbook/skills/mind-mapper/scripts/cli-contract.test.ts` (11 cells: dispatch↔spec drift wards, subprocess failure table asserting `error.exit_code === process exit`, help-advertises twin line-anchored per bb13208). Adopted today by: magpie, astrolabe (minimal 2-kind form), grapevine (prose errors — predates this contract, conversion unscheduled), mind-mapper (full form). acc rule B5 holds this checked on every `acc check` run wherever `defaultOutput: json` is declared.

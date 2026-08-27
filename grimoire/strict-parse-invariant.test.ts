@@ -43,8 +43,13 @@ const invocations = entryPoints.flatMap((p) =>
 describe("ward — every parseArgs invocation refuses unknown flags", () => {
   test("the sweep actually ran (zero-denominator guard)", () => {
     // A dead sweep and a clean sweep report the same thing without this.
+    // Threshold 30 → 10: mind-mapper's acc L0 lane C consolidated ~27 inline
+    // per-verb parses into ONE registry-driven invocation (CLI_OPTIONS +
+    // VERB_SPEC, magpie's two-stage shape) — the population legitimately
+    // SHRANK because the registry pattern has one call site per CLI, and a
+    // shrinking denominator here is that refactor, not a dead sweep.
     expect(entryPoints.length).toBeGreaterThan(10);
-    expect(invocations.length).toBeGreaterThan(30);
+    expect(invocations.length).toBeGreaterThan(10);
   });
 
   test("EVERY invocation sets `strict: true` EXPLICITLY — a convention pin, not a safety net", () => {
@@ -75,10 +80,15 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
       .map(({ file, argObject }) => `${file}: ${argObject.replace(/\s+/g, " ").slice(0, 80)}`);
 
     // Report the denominator beside the verdict — a bare `[]` cannot distinguish
-    // "all 42 are strict" from "the scan matched nothing".
+    // "all 17 are strict" from "the scan matched nothing".
+    // 42 → 43 → 17: lane A added mind-mapper's strict `help` parse; lane C then
+    // consolidated mind-mapper's ~27 inline per-verb parses into the
+    // registry-driven two-stage parse (CLI_OPTIONS + VERB_SPEC), leaving that
+    // CLI with two invocations (parseVerbArgs stage 1 + the doc-path probe).
+    // The pin moves WITH the population — both directions are the ward working.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 42,
+      invocationsChecked: 17,
     });
   });
 

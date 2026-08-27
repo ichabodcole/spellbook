@@ -154,8 +154,12 @@ describe("ward — the `--` terminator silently demotes flags to free text", () 
     }).toEqual({
       filesAll: 8,
       filesCallerFacing: 7,
-      callSitesAll: 23,
-      callSitesCallerFacing: 22,
+      // 23/22 → 9/8: mind-mapper's acc L0 lane C consolidated its ~15
+      // positional-accepting inline parses into the one registry-driven
+      // invocation (plus the doc-path probe) — call sites shrank, files did
+      // not. The unit line below still names what is counted.
+      callSitesAll: 9,
+      callSitesCallerFacing: 8,
       // Driven A/B on bounty: `add -- --session-key` is byte-identical to
       // `add -- ordinaryword`, exit 0, valuesIgnored:null, and the flag becomes
       // the card's TITLE. No guard. The other six are not driven and this number

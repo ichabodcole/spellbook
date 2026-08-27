@@ -41,3 +41,11 @@ observation, not comparison" into their SKILL.md.
 - `plugins/spellbook/skills/astrolabe/scripts/cli.ts` (single global parseArgs
   options object; `die()`)
 - acc rule A3 (`choices` SHOULD), guide `how-to-record-surfaces-below-the-root`
+
+_Reconciled 2026-08-27 @ bb13208 — "magpie is the prior art": HELD, and the set
+grew: mind-mapper now carries the fuller form (path-keyed VERB_SPEC for nested
+subcommands, choices on sub-verb rejections; seams Contract 15, proof
+cli-contract.test.ts). "all four acceptance criteria unchecked": HELD for
+astrolabe — nothing here changed astrolabe's parser. Adopting: copy
+mind-mapper's two-stage parse rather than magpie's flat one if astrolabe ever
+grows subcommands._

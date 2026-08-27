@@ -1,3 +1,48 @@
+# Retro — 2026-08-27 · mind-mapper acc L0, "the census flip"
+
+**Team:** default · **shape:** `cdf9d466`
+**Seats:** prospero (lead) · daedalus (engine) · cassandra (verify) — subagent mode, first full session in it. circe/thoth not seated (no surface, no canon lane).
+**Shape of the work:** 8 commits on `feat/mind-mapper-acc-l0`; acc NOT CONFORMANT → CONFORMANT (L0); census 0/48 → 49/49; gate 1465/3 → 1480/0. Session doc: `docs/projects/spell-hardening/sessions/2026-08-27-mind-mapper-acc-l0-and-the-census.md`.
+
+## Q1 — What went well (artifacts first)
+
+- **The census before/after is a controlled result, on a two-source path list** (VERB_SPEC-derived vs dispatch-grep; the sources agreed exactly). 0/48 → 49/49 is the branch's whole claim, measured.
+- **The non-author's mutation found what the author's six demos missed** — cassandra's M3 convicted a vacuous cell after daedalus's own H16 demonstrations all passed. The demos were honest; the frame was the blind spot. This is sprint-05 H15's mechanism, observed again from the other side.
+- **`durationMs` on the commit envelope caught a skipped gate** that a written rule (in the lead's own seat doc, re-read at convene) did not. Mechanism over memory, again.
+- **Every ratification was independently re-verified by the lead before it was issued** — and one of those re-verifications was itself wrong (piped `$?`) and caught before publishing. The check on the check earned its cost.
+- **Subagent mode held**: thread→seat map kept, no misroutes, finalize-capture baked into briefs so no chase-at-teardown.
+
+## Q2 — What did not go well
+
+- **The lead self-listed mid-session (#1097, #1099), which pre-empts the audit** — the ritual's own warning, reproduced structurally: both seats' final reports contained zero criticisms of the lead they had not already seen him volunteer. In subagent mode the seats return AFTER the lead's confessions are on the wire, so the ordering guarantees pre-emption. (Testimony, but with a count: un-volunteered criticisms of the lead this session = 0, vs 3 in sprint 05 when the lead held his list.)
+- **The lead's bare `anthill commit`** (gate after, not before) — the seat doc scar reproduced verbatim despite being re-read at convene.
+- **Three actors, one week, one instrument class** ($?-after-pipeline: acc maintainer, lead twice). The class survives being written down; only unpiped measurement kills instances.
+- **H18's recorder was named at convene but dispatched four beats later** — the naming covered nothing until the seat existed. A recorder is a process, not an announcement.
+
+## Q3 — Hypotheses for the next convene (each with its falsifier)
+
+| # | Hypothesis | Falsified if |
+| --- | --- | --- |
+| **H26** | **In subagent mode the lead must WITHHOLD his self-list until both seats' reports are in** — the sprint-05 seats-first ordering, ported. (prospero) | run it and un-volunteered lead criticisms are still zero → the mode, not the ordering, suppresses them |
+| **H27** | **An author's mutation demos sample the frame that authored the cell; a reviewer's mutations sample outside it — so H16 closure requires the NON-author's mutation, not just any mutation** (n=1, M3) | a session where reviewer mutations find nothing the author's demos missed, on cells of comparable count |
+| **H28** | **A gate-skip is caught structurally if the land envelope carries the gate's own evidence** — e.g. anthill commit refusing or flagging when no gate ran within N minutes (candidate anthill feedback) | the envelope field exists and a skipped gate still ships unnoticed |
+| **H29** | **Contract 15 adoption by another spell is one session's work now that the reference is committed** (bounty is the natural next: no --version, no envelope) | the bounty retrofit runs materially over a session, or the contract needs reshaping to fit it |
+
+### Verdicts on sprint 05's hypotheses (tested this session)
+
+- **H16 — SUPPORTED, n=1, with a sharpening.** The non-author-names-the-mutation gate produced a real bounce: cassandra's own calibrations (not the author's demos) found the vacuous cell; the card closed only after her mutations. Sharpened into H27.
+- **H18 — SUPPORTED with an asterisk.** The recorder produced 7 wire-only findings routed into the session doc, and zero wire-only findings remained at finalize. The asterisk: named-at-convene ≠ operating-from-convene (Q2).
+- **H25 — SUPPORTED, n=5.** Every card named its closer; the review column drained same-session (sprint 04 baseline: cards sat up to four hours). No card sat in review after its closer's verdict existed.
+- **H23 — SUPPORTED, n=1.** The audit ask that named a target (my land envelopes, #1097) got audited; nothing else of the lead's did.
+- **H15 — promoted to a principle this session per sprint 05's own directive; see Q4.**
+- H17/H19–H22/H24 — NOT TESTED (no instrument fixtures authored, no unlaned seat, no copy-calibration, no standing-rule minting occasion).
+
+## Q4 — Did this session produce a principle?
+
+**Yes — by inheritance, and on the deadline sprint 05 set for it.** H15 ("a false reassurance about an instrument is worse than a false claim about the code") was held out of principles.md mid-session per the file's own rule, with the directive "next session or not at all." This session added its confirming instance from the other side (an honest instrument-reassurance — the author's green demos — that stopped the next person looking until a different frame ran). Landed in `principles.md` with sprint 05's four scars and today's fifth.
+
+---
+
 # Retro — 2026-08-10 · spell-hardening sprint 05, "the gate"
 
 **Seats:** prospero (lead) · daedalus (engine) · circe (surface) · thoth (grimoire) · cassandra (verify)
