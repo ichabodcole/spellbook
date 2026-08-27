@@ -201,6 +201,64 @@ function toSkeleton(state: {
   };
 }
 
+// The advertised verb set, stated once — the help surface, the root
+// rejection's usage line and (lane C) the verb registry all read from here.
+const USAGE_VERBS =
+  "open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|job|search|neighbors|ratify|lens|look-here|read|send|activity|help";
+
+const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds the graph, the casting agent does the thinking.
+
+  open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
+  state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
+  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor)
+  projects [--create <title>]                        list projects / create one
+  ingest --title <t> (--file <p> | --stdin)          add a doc
+  propose-node --stdin                               stage a node proposal (JSON {draft, evidence, ...})
+  propose-edge --stdin [--zone <id>]                 stage an edge proposal
+  propose-batch --stdin                              stage a set in one txn ({nodes, edges})
+  ratify-batch --stdin                               ratify a set in one txn ({ruling, ids, anchors?})
+  ratify <id> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <t>] [--anchor <parentId>]
+  zone   create <name> | list | delete <id> [--yes]  staging pens for proposals
+  promote <id>                                       move a zoned proposal to the main queue
+  proposal zone <id> (--to <z> | --clear) | proposal delete <id>
+  node   anchor <id> (--to <p> | --clear) | edit <id> [--title/--synopsis/--stdin] | delete <id> [--force]
+  doc    <id> | delete <id> [--force] | kind <docId> (<kind> [--author a] | --clear)
+  mark   <docId> --status <s> [--note <t>]           append a doc status mark
+  actions <targetId> (--set <json> | --stdin | --clear)   action slots on a node/pending proposal
+  tags   <targetId> (--set <json> | --stdin | --clear)    freeform tags, same targets
+  job    create|update|claim|release|subtask|list|delete  persisted units of agent work
+  search <query...>                                  FTS over nodes, docs, messages
+  neighbors <id> [--depth 1]                         local hood + edge reasons
+  lens   set (--node <id> [--depth n] | --doc <id>) | lens clear
+  look-here <nodeId>                                 fire-once attention nudge
+  read   <messageId>                                 one full message row
+  send   <text...> | --body-file <p> | --stdin       post a message ([--role] [--kind] [--ground])
+  activity <received|thinking|idle> [--message <id>] the casting-loop liveness signal
+  help | --version
+
+  --project <id> is accepted by every verb except open's spawn-time flags; omit for the default project.
+
+  Output: every verb prints JSON on stdout by default, one document per answer —
+  except tail, a stream that prints one JSON line per event. Prose, warnings and
+  diagnostics go to stderr; failures exit non-zero (2 = usage).`;
+
+// The plugin manifest is the one version source; the CLI reads it rather than
+// mirroring the number (astrolabe's pattern). Layout-dependent, so absence
+// degrades to "unknown" instead of inventing one.
+function versionInfo(): { name: string; version: string } {
+  try {
+    const raw = readFileSync(
+      join(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json"),
+      "utf8",
+    );
+    const pkg = JSON.parse(raw) as { version?: unknown };
+    if (typeof pkg.version === "string") return { name: "mind-mapper", version: pkg.version };
+  } catch {
+    /* fall through to unknown */
+  }
+  return { name: "mind-mapper", version: "unknown" };
+}
+
 // parseArgs throws (ERR_PARSE_ARGS_UNKNOWN_OPTION etc.) on an unrecognized
 // flag like a stray --help — uncaught, that's a stack-trace crash instead of
 // a usage message (cassandra's P2 gate finding). Every verb's parseArgs call
@@ -222,6 +280,27 @@ async function main(argv: string[]): Promise<number> {
 async function dispatch(argv: string[]): Promise<number> {
   const verb = argv[0];
   const rest = argv.slice(1);
+
+  // ROOT TOKENS FIRST, before any flag parsing (magpie/astrolabe pattern).
+  // --help/-h resolve at the root; `help` is ALSO a dispatchable verb below, so
+  // `help --foo` is a rejected flag, not a silently-tolerated one.
+  if (verb === "--help" || verb === "-h") {
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  // Root TOKEN, deliberately NOT a flag: no per-verb parser below the root is
+  // ever expected to accept it, and it carries no flags of its own.
+  if (verb === "--version" || verb === "-V" || verb === "version") {
+    process.stdout.write(`${JSON.stringify(versionInfo())}\n`);
+    return 0;
+  }
+  if (verb === "help") {
+    // Dispatchable verb with an EMPTY flag set — a strict parse of the rest
+    // means `help --foo` is refused instead of ignored.
+    parseArgs({ args: rest, options: {}, strict: true, allowPositionals: false });
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
 
   if (verb === "open") {
     const parsed = parseArgs({
@@ -1558,9 +1637,21 @@ async function dispatch(argv: string[]): Promise<number> {
     return res.ok ? 0 : 2;
   }
 
-  process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|job|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
-  );
+  // Root fallthrough — NAME the offending token before the usage line. A
+  // flag-shaped token gets a different diagnosis than a wrong verb: "--x is
+  // not a root flag" sends the caller to put it after a verb, "unknown verb x"
+  // sends them to the roster. A bare invocation named nothing at all.
+  if (verb === undefined) {
+    process.stderr.write(
+      `mind-mapper: no verb given — try 'help'\nusage: cli.ts <${USAGE_VERBS}>\n`,
+    );
+  } else if (verb.startsWith("-")) {
+    process.stderr.write(
+      `mind-mapper: unknown flag at the root: ${verb} (flags belong after a verb; root tokens are --help/-h and --version/-V)\nusage: cli.ts <${USAGE_VERBS}>\n`,
+    );
+  } else {
+    process.stderr.write(`mind-mapper: unknown verb: ${verb}\nusage: cli.ts <${USAGE_VERBS}>\n`);
+  }
   return 2;
 }
 

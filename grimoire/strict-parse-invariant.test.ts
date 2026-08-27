@@ -75,10 +75,13 @@ describe("ward — every parseArgs invocation refuses unknown flags", () => {
       .map(({ file, argObject }) => `${file}: ${argObject.replace(/\s+/g, " ").slice(0, 80)}`);
 
     // Report the denominator beside the verdict — a bare `[]` cannot distinguish
-    // "all 42 are strict" from "the scan matched nothing".
+    // "all 43 are strict" from "the scan matched nothing".
+    // 42 → 43: mind-mapper's `help` verb gained a strict empty-options parse
+    // (acc L0 lane A) — the pin moves WITH the population, and a bump here is
+    // the ward doing its job: a new invocation was counted and read.
     expect({ notStrict, invocationsChecked: invocations.length }).toEqual({
       notStrict: [],
-      invocationsChecked: 42,
+      invocationsChecked: 43,
     });
   });
 
