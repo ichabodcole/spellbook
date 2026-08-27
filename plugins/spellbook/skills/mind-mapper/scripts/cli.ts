@@ -294,15 +294,184 @@ function toSkeleton(state: {
   };
 }
 
-// The advertised verb set, stated once — the help surface, the root
-// rejection's usage line and (lane C) the verb registry all read from here.
-const USAGE_VERBS =
-  "open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|job|search|neighbors|ratify|lens|look-here|read|send|activity|help";
+// ── the flag registry + verb spec (magpie's two-stage parse, path-extended) ──
+//
+// THE RECOGNIZED SET, AT PARSER ALTITUDE. Stage 1 parses every invocation
+// against this whole registry (strict), so a token mind-mapper has never heard
+// of is refused by node:util with its own message; stage 2 then asks the
+// question the parser cannot: is this flag accepted AT THIS VERB. The order is
+// the point — handing parseArgs a per-verb subset would answer `state --ruling`
+// with "Unknown option '--ruling'", which is false and sends an agent hunting a
+// typo it did not make.
+//
+// NO DEFAULTS in the registry, structurally: stage 2 detects a stray flag by
+// key-presence in the parsed values, and a registry default would plant that
+// key on every verb. Per-verb defaults live at the consumption site (?? "…").
+const CLI_OPTIONS = {
+  add: { type: "string" },
+  anchor: { type: "string" },
+  author: { type: "string" },
+  batch: { type: "string" },
+  "body-file": { type: "string" },
+  check: { type: "string" },
+  clear: { type: "boolean" },
+  create: { type: "string" },
+  deliverable: { type: "string" },
+  depth: { type: "string" },
+  detail: { type: "string" },
+  doc: { type: "string" },
+  "doc-edit": { type: "string" },
+  file: { type: "string" },
+  force: { type: "boolean" },
+  // send --ground is parseArgs-`multiple` BY SEAM (Contract 9 R4: repeats
+  // accumulate, commas split) — any verb copying the pattern copies this too.
+  ground: { type: "string", multiple: true },
+  inbound: { type: "boolean" },
+  kind: { type: "string" },
+  message: { type: "string" },
+  "no-open": { type: "boolean" },
+  node: { type: "string" },
+  note: { type: "string" },
+  owner: { type: "string" },
+  port: { type: "string" },
+  project: { type: "string" },
+  role: { type: "string" },
+  ruling: { type: "string" },
+  set: { type: "string" },
+  since: { type: "string" },
+  skeleton: { type: "boolean" },
+  span: { type: "string" },
+  status: { type: "string" },
+  stdin: { type: "boolean" },
+  synopsis: { type: "string" },
+  title: { type: "string" },
+  to: { type: "string" },
+  uncheck: { type: "string" },
+  yes: { type: "boolean" },
+  zone: { type: "string" },
+} as const;
+
+// WHICH FLAGS EACH COMMAND PATH ACCEPTS — and the only source of the verb set.
+// Keys are PATHS, not bare verbs: mind-mapper's grammar is two-token for the
+// sub-commanded verbs (zone create, node edit, job claim …), so the spec
+// extends magpie's flat table with space-joined paths. `resolvePath` picks the
+// two-token key when the second token names a known sub, else the one-token
+// key. The help text, the rejections' `choices` and the parser all read this
+// one object; adding a flag to a verb is one edit.
+export const VERB_SPEC = {
+  open: ["no-open", "port", "project"],
+  state: ["skeleton", "batch", "project"],
+  changes: ["since", "project"],
+  tail: ["since", "inbound", "project"],
+  projects: ["create"],
+  ingest: ["title", "file", "stdin", "project"],
+  "propose-node": ["stdin", "zone", "project"],
+  "propose-edge": ["stdin", "zone", "project"],
+  "propose-batch": ["stdin", "project"],
+  "ratify-batch": ["stdin", "project"],
+  "delete-batch": ["stdin", "project"],
+  "node anchor": ["to", "clear", "project"],
+  "node edit": ["title", "synopsis", "stdin", "project"],
+  "node delete": ["force", "project"],
+  read: ["project"],
+  "zone create": ["project"],
+  "zone list": ["project"],
+  "zone delete": ["yes", "project"],
+  promote: ["project"],
+  "proposal zone": ["to", "clear", "project"],
+  "proposal delete": ["project"],
+  doc: ["project"],
+  "doc delete": ["force", "project"],
+  "doc kind": ["author", "clear", "project"],
+  mark: ["status", "note", "author", "project"],
+  search: ["project"],
+  neighbors: ["depth", "project"],
+  ratify: ["ruling", "doc-edit", "doc", "span", "anchor", "project"],
+  "lens set": ["node", "doc", "depth", "owner", "project"],
+  "lens clear": ["project"],
+  "look-here": ["project"],
+  actions: ["set", "stdin", "clear", "project"],
+  tags: ["set", "stdin", "clear", "project"],
+  "job create": ["title", "status", "deliverable", "detail", "stdin", "body-file", "project"],
+  "job update": ["title", "status", "deliverable", "detail", "stdin", "body-file", "project"],
+  "job claim": ["owner", "project"],
+  "job release": ["project"],
+  "job subtask": ["add", "check", "uncheck", "project"],
+  "job list": ["project"],
+  "job delete": ["project"],
+  activity: ["message", "project"],
+  send: ["role", "kind", "ground", "body-file", "stdin", "force", "project"],
+  help: [],
+} as const satisfies Record<string, readonly (keyof typeof CLI_OPTIONS)[]>;
+
+type VerbPath = keyof typeof VERB_SPEC;
+
+// `message` is an advertised ALIAS of `read` (one message-fetch verb, two
+// spellings) — an alias maps onto its target's path and never gets its own
+// spec row, so the two can not drift apart.
+export const VERB_ALIASES: Record<string, VerbPath> = { message: "read" };
+
+// The advertised verb roster, DERIVED: top-level tokens of the spec paths.
+export const VERBS = [...new Set(Object.keys(VERB_SPEC).map((p) => p.split(" ")[0] as string))];
+
+// Paths whose grammar takes NO free positionals (everything they need rides
+// flags); stage 2 refuses a stray token by name instead of silently
+// dropping it. Every other path consumes positionals (ids, queries, prose).
+const NO_POSITIONALS: ReadonlySet<VerbPath> = new Set([
+  "open",
+  "state",
+  "changes",
+  "tail",
+  "ingest",
+  "propose-node",
+  "propose-edge",
+  "propose-batch",
+  "ratify-batch",
+  "delete-batch",
+  "lens set",
+  "lens clear",
+  "help",
+] as VerbPath[]);
+
+const flagsFor = (path: VerbPath): string[] => VERB_SPEC[path].map((k) => `--${k}`).sort();
+
+const subsOf = (verb: string): string[] =>
+  Object.keys(VERB_SPEC)
+    .filter((p) => p.startsWith(`${verb} `))
+    .map((p) => p.slice(verb.length + 1));
+
+// TWO STAGES, AND THE ORDER IS THE POINT (see the registry header). Also sets
+// meta.command to the RESOLVED path so an envelope from `node edit` says so.
+function parseVerbArgs(path: VerbPath, args: string[]) {
+  CURRENT_COMMAND = path;
+  const parsed = parseArgs({
+    args,
+    options: CLI_OPTIONS,
+    strict: true,
+    allowPositionals: true,
+  });
+  const allowed = new Set<string>(VERB_SPEC[path]);
+  const stray = Object.keys(parsed.values).find((k) => !allowed.has(k));
+  if (stray) {
+    throw usageError(
+      `--${stray} is not accepted by \`${path}\` (it is a recognized mind-mapper flag, just not this verb's)`,
+      { choices: flagsFor(path) },
+    );
+  }
+  if (NO_POSITIONALS.has(path) && parsed.positionals.length > 0) {
+    throw usageError(
+      `${path} takes no positional arguments (got "${parsed.positionals[0]}")`,
+      VERB_SPEC[path].length > 0 ? { choices: flagsFor(path) } : undefined,
+    );
+  }
+  return parsed;
+}
 
 const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds the graph, the casting agent does the thinking.
 
   open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
   state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
+  changes --since <epochSeconds>                     bounded delta, ADDITIONS ONLY (notCovered names the rest)
   tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor)
   projects [--create <title>]                        list projects / create one
   ingest --title <t> (--file <p> | --stdin)          add a doc
@@ -310,6 +479,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   propose-edge --stdin [--zone <id>]                 stage an edge proposal
   propose-batch --stdin                              stage a set in one txn ({nodes, edges})
   ratify-batch --stdin                               ratify a set in one txn ({ruling, ids, anchors?})
+  delete-batch --stdin                               delete a proposal set in one txn ({ids}, all-or-nothing)
   ratify <id> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <t>] [--anchor <parentId>]
   zone   create <name> | list | delete <id> [--yes]  staging pens for proposals
   promote <id>                                       move a zoned proposal to the main queue
@@ -324,7 +494,7 @@ const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds th
   neighbors <id> [--depth 1]                         local hood + edge reasons
   lens   set (--node <id> [--depth n] | --doc <id>) | lens clear
   look-here <nodeId>                                 fire-once attention nudge
-  read   <messageId>                                 one full message row
+  read   <messageId>                                 one full message row (alias: message <id>)
   send   <text...> | --body-file <p> | --stdin       post a message ([--role] [--kind] [--ground])
   activity <received|thinking|idle> [--message <id>] the casting-loop liveness signal
   help | --version
@@ -400,22 +570,13 @@ async function dispatch(argv: string[]): Promise<number> {
   if (verb === "help") {
     // Dispatchable verb with an EMPTY flag set — a strict parse of the rest
     // means `help --foo` is refused instead of ignored.
-    parseArgs({ args: rest, options: {}, strict: true, allowPositionals: false });
+    parseVerbArgs("help", rest);
     process.stdout.write(`${HELP}\n`);
     return 0;
   }
 
   if (verb === "open") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        "no-open": { type: "boolean", default: false },
-        project: { type: "string" },
-        port: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("open", rest);
     const port = await ensureDaemon(parsed.values.port);
     // --project scopes the printed URL + spawned browser (?project= rides
     // along). Open never mints: an unknown id is a usage error pointing at
@@ -438,19 +599,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "state") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        skeleton: { type: "boolean", default: false },
-        project: { type: "string" },
-        // Round 12 (SEAM 1): narrow proposals[] to ONE staging act — "what else
-        // came from that call?" after a partial ratification. Unknown id 404s
-        // (an empty list would read as "already cleared").
-        batch: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("state", rest);
     const port = requireDaemon();
     const params = new URLSearchParams();
     if (parsed.values.project) params.set("project", parsed.values.project);
@@ -475,12 +624,7 @@ async function dispatch(argv: string[]): Promise<number> {
   // added" is NOT "nothing changed" (deletions, rejections and in-place edits
   // are invisible here by construction).
   if (verb === "changes") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { since: { type: "string" }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("changes", rest);
     if (parsed.values.since === undefined) {
       throw usageError(
         "changes requires --since <epochSeconds> (use 0 for everything, then pass back the `now` from the previous response)",
@@ -498,22 +642,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "tail") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        since: { type: "string", default: "0" },
-        project: { type: "string" },
-        // Round 10 · SEAM 1: server-side filter to human-originated events
-        // (message.posted[role=user] + proposal.added[author=user]) so a
-        // joining agent runs ONE monitor and cannot under-subscribe. The stream
-        // opens with a kind:"grounding" line naming watched/not-watched
-        // channels. Named --inbound (not --human) to avoid grapevine's
-        // presence-marker flag collision.
-        inbound: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
     // Watchdog ≈ 3 missed server keepalives (15s tick, Claim F); env
@@ -622,12 +751,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "projects") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { create: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("projects", rest);
     const port = requireDaemon();
     if (parsed.values.create) {
       const title = parsed.values.create;
@@ -648,17 +772,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "ingest") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        title: { type: "string" },
-        file: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("ingest", rest);
     if (!parsed.values.title) {
       throw usageError("ingest requires --title");
     }
@@ -679,16 +793,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "propose-node" || verb === "propose-edge") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        stdin: { type: "boolean", default: false },
-        project: { type: "string" },
-        zone: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs(verb, rest);
     if (!parsed.values.stdin) {
       throw usageError(
         `${verb} requires --stdin JSON {draft, evidence[, suggestedTier, author, tags, batchId]}`,
@@ -749,12 +854,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "propose-batch") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("propose-batch", rest);
     if (!parsed.values.stdin) {
       throw usageError(
         "propose-batch requires --stdin JSON {nodes:[{ref, draft, suggestedTier?, evidence?}], edges:[{draft:{source, target, label?}}]}",
@@ -792,12 +892,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "ratify-batch") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("ratify-batch", rest);
     if (!parsed.values.stdin) {
       throw usageError(
         'ratify-batch requires --stdin JSON {ruling: "canon|thread|story-local", ids: [proposalId], anchors?: [{node, parent}]}',
@@ -833,12 +928,7 @@ async function dispatch(argv: string[]): Promise<number> {
   // Round 12 (SEAM 5) — the inverse of ratify-batch: clear a set of proposals
   // in ONE transactional call instead of N HTTP deletes in a loop.
   if (verb === "delete-batch") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("delete-batch", rest);
     if (!parsed.values.stdin) {
       throw usageError('delete-batch requires --stdin JSON {ids: ["<proposalId>", ...]}', {
         hint:
@@ -872,21 +962,13 @@ async function dispatch(argv: string[]): Promise<number> {
 
   if (verb === "node") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        to: { type: "string" },
-        clear: { type: "boolean", default: false },
-        force: { type: "boolean", default: false },
-        project: { type: "string" },
-        // Round 12 (SEAM 4): `node edit` fields.
-        title: { type: "string" },
-        synopsis: { type: "string" },
-        stdin: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("node").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "node requires a sub-command" : `unknown node sub-command: ${sub}`,
+        { choices: subsOf("node") },
+      );
+    }
+    const parsed = parseVerbArgs(`node ${sub}` as VerbPath, rest.slice(1));
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     // Round 6 (DEL): `node delete <id> [--force]` — 409 {error:"cited",
     // citedBy:{edges, children}} when cited and unforced; --force cascades
@@ -967,12 +1049,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "read" || verb === "message") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("read", rest);
     const id = parsed.positionals[0];
     if (!id) {
       throw usageError("usage: cli.ts read <messageId>");
@@ -986,12 +1063,13 @@ async function dispatch(argv: string[]): Promise<number> {
 
   if (verb === "zone") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: { yes: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("zone").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "zone requires a sub-command" : `unknown zone sub-command: ${sub}`,
+        { choices: subsOf("zone") },
+      );
+    }
+    const parsed = parseVerbArgs(`zone ${sub}` as VerbPath, rest.slice(1));
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     if (sub === "create") {
@@ -1028,12 +1106,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "promote") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("promote", rest);
     const id = parsed.positionals[0];
     if (!id) {
       throw usageError("usage: cli.ts promote <proposalId>");
@@ -1049,16 +1122,15 @@ async function dispatch(argv: string[]): Promise<number> {
 
   if (verb === "proposal") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        to: { type: "string" },
-        clear: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("proposal").includes(sub)) {
+      throw usageError(
+        sub === undefined
+          ? "proposal requires a sub-command"
+          : `unknown proposal sub-command: ${sub}`,
+        { choices: subsOf("proposal") },
+      );
+    }
+    const parsed = parseVerbArgs(`proposal ${sub}` as VerbPath, rest.slice(1));
     const pqs = parsed.values.project
       ? `?project=${encodeURIComponent(parsed.values.project)}`
       : "";
@@ -1101,17 +1173,21 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "doc") {
-    const parsed = parseArgs({
+    // doc's sub is OPTIONAL (`doc <id>` reads) and rides the positionals, so a
+    // registry-wide probe parse resolves the path before the per-path check.
+    const probe = parseArgs({
       args: rest,
-      options: {
-        project: { type: "string" },
-        force: { type: "boolean", default: false },
-        clear: { type: "boolean", default: false },
-        author: { type: "string", default: "agent" },
-      },
+      options: CLI_OPTIONS,
       strict: true,
       allowPositionals: true,
     });
+    const docPath: VerbPath =
+      probe.positionals[0] === "kind"
+        ? "doc kind"
+        : probe.positionals[0] === "delete"
+          ? "doc delete"
+          : "doc";
+    const parsed = parseVerbArgs(docPath, rest);
     // `doc delete <id>` / `doc kind <id>` overload the positional (a doc
     // literally slugged "delete"/"kind" is unaddressable — accepted for the
     // record, plan-v1x).
@@ -1133,7 +1209,9 @@ async function dispatch(argv: string[]): Promise<number> {
       const res = await fetch(`http://127.0.0.1:${port}/doc/${docId}/kind${qs}`, {
         method: "POST",
         body: JSON.stringify(
-          parsed.values.clear ? { kind: null } : { kind: kindWords, author: parsed.values.author },
+          parsed.values.clear
+            ? { kind: null }
+            : { kind: kindWords, author: parsed.values.author ?? "agent" },
         ),
       });
       process.stdout.write(`${await passOrThrow(res)}\n`);
@@ -1159,17 +1237,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "mark") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        status: { type: "string" },
-        note: { type: "string" },
-        author: { type: "string", default: "agent" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("mark", rest);
     const docId = parsed.positionals[0];
     if (!docId || !parsed.values.status) {
       throw usageError("usage: cli.ts mark <docId> --status <s> [--note <t>]");
@@ -1179,7 +1247,7 @@ async function dispatch(argv: string[]): Promise<number> {
     const res = await fetch(`http://127.0.0.1:${port}/doc/${docId}/mark${qs}`, {
       method: "POST",
       body: JSON.stringify({
-        author: parsed.values.author,
+        author: parsed.values.author ?? "agent",
         note: parsed.values.note,
         status: parsed.values.status,
       }),
@@ -1189,12 +1257,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "search") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("search", rest);
     const query = parsed.positionals.join(" ");
     if (!query) {
       throw usageError("usage: cli.ts search <query...>");
@@ -1208,18 +1271,13 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "neighbors") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { depth: { type: "string", default: "1" }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("neighbors", rest);
     const id = parsed.positionals[0];
     if (!id) {
       throw usageError("usage: cli.ts neighbors <nodeId> [--depth 1]");
     }
     const port = requireDaemon();
-    const params = new URLSearchParams({ depth: parsed.values.depth as string });
+    const params = new URLSearchParams({ depth: parsed.values.depth ?? "1" });
     if (parsed.values.project) params.set("project", parsed.values.project);
     const res = await fetch(`http://127.0.0.1:${port}/neighbors/${id}?${params}`);
     process.stdout.write(`${await passOrThrow(res)}\n`);
@@ -1227,19 +1285,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "ratify") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        ruling: { type: "string" },
-        "doc-edit": { type: "string" },
-        doc: { type: "string" },
-        span: { type: "string" },
-        anchor: { type: "string" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("ratify", rest);
     const proposalId = parsed.positionals[0];
     if (!proposalId || !parsed.values.ruling) {
       throw usageError(
@@ -1274,18 +1320,13 @@ async function dispatch(argv: string[]): Promise<number> {
 
   if (verb === "lens") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        node: { type: "string" },
-        doc: { type: "string" },
-        depth: { type: "string" },
-        owner: { type: "string", default: "agent" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    if (sub === undefined || !subsOf("lens").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "lens requires a sub-command" : `unknown lens sub-command: ${sub}`,
+        { choices: subsOf("lens") },
+      );
+    }
+    const parsed = parseVerbArgs(`lens ${sub}` as VerbPath, rest.slice(1));
     // Round 3 (Claim V2): one lens, two modes — --node and --doc are
     // exclusive at parse time (the daemon enforces the XOR too, but the
     // common slip should fail before a round-trip).
@@ -1301,7 +1342,7 @@ async function dispatch(argv: string[]): Promise<number> {
       const res = await fetch(`http://127.0.0.1:${port}/lens${qs}`, {
         method: "POST",
         body: JSON.stringify({
-          owner: parsed.values.owner,
+          owner: parsed.values.owner ?? "agent",
           nodeId: parsed.values.node,
           docId: parsed.values.doc,
           depth: parsed.values.depth ? Number.parseInt(parsed.values.depth, 10) : undefined,
@@ -1321,12 +1362,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "look-here") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("look-here", rest);
     const id = parsed.positionals[0];
     if (!id) {
       throw usageError("usage: cli.ts look-here <nodeId>");
@@ -1339,17 +1375,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "actions") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        set: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        clear: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("actions", rest);
     const targetId = parsed.positionals[0];
     const modes = [parsed.values.set !== undefined, parsed.values.stdin, parsed.values.clear];
     if (!targetId || modes.filter(Boolean).length !== 1) {
@@ -1384,17 +1410,7 @@ async function dispatch(argv: string[]): Promise<number> {
   // Round 7 (TAGS) — twin of the actions verb: wholesale replace / clear a
   // target's freeform tags. Target is a node id or a PENDING proposal id.
   if (verb === "tags") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        set: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        clear: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("tags", rest);
     const targetId = parsed.positionals[0];
     const modes = [parsed.values.set !== undefined, parsed.values.stdin, parsed.values.clear];
     if (!targetId || modes.filter(Boolean).length !== 1) {
@@ -1425,24 +1441,13 @@ async function dispatch(argv: string[]): Promise<number> {
   // forwards op + label|subtaskId, claim forwards owner).
   if (verb === "job") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        title: { type: "string" },
-        status: { type: "string" },
-        deliverable: { type: "string" },
-        detail: { type: "string" },
-        owner: { type: "string" },
-        add: { type: "string" },
-        check: { type: "string" },
-        uncheck: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        "body-file": { type: "string" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("job").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "job requires a sub-command" : `unknown job sub-command: ${sub}`,
+        { choices: subsOf("job") },
+      );
+    }
+    const parsed = parseVerbArgs(`job ${sub}` as VerbPath, rest.slice(1));
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const base = (port: number, suffix = "") => `http://127.0.0.1:${port}/jobs${suffix}${qs}`;
     // A JSON body from --body-file > --stdin overrides the flag-built body (the
@@ -1577,16 +1582,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "activity") {
-    const parsed = parseArgs({
-      args: rest,
-      // Round 11 (SEAM 2): --message ties the activity to a specific message so
-      // the human sees "THIS one is being worked". Omitted, the daemon inherits
-      // the open ladder's message — so the ordinary `activity thinking` after a
-      // human send still lands on the right bubble.
-      options: { project: { type: "string" }, message: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("activity", rest);
     const state = parsed.positionals[0];
     if (state !== "received" && state !== "thinking" && state !== "idle") {
       throw usageError("usage: cli.ts activity <received|thinking|idle> [--message <id>]");
@@ -1602,23 +1598,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "send") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        role: { type: "string", default: "agent" },
-        kind: { type: "string", default: "turn" },
-        // Round 4 gate rework: `multiple` — a single-value --ground silently
-        // kept only the LAST repeat (parseArgs last-wins; cassandra lost 2 of
-        // 3 refs with exit 0). Repeats accumulate now; commas still split.
-        ground: { type: "string", multiple: true },
-        project: { type: "string" },
-        "body-file": { type: "string" },
-        stdin: { type: "boolean", default: false },
-        force: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("send", rest);
     // Round 3 (Claim C1): grapevine's body-resolution chain, precedence
     // --body-file > --stdin > inline positional > piped-stdin default.
     // Sharp edge (measured, house-wide): the piped-stdin default HANGS
@@ -1673,8 +1653,8 @@ async function dispatch(argv: string[]): Promise<number> {
     const res = await fetch(`http://127.0.0.1:${port}/send${qs}`, {
       method: "POST",
       body: JSON.stringify({
-        role: parsed.values.role,
-        kind: parsed.values.kind,
+        role: parsed.values.role ?? "agent",
+        kind: parsed.values.kind ?? "turn",
         text,
         // Flatten repeats, split commas, drop blank fragments — an empty
         // resolved list posts as no ground at all (never [""]).
@@ -1706,7 +1686,7 @@ async function dispatch(argv: string[]): Promise<number> {
   // verb, "unknown verb x" sends them to the roster (choices). A bare
   // invocation named nothing at all — a usage error, not a help path (this CLI
   // is agent-driven; magpie's ruling).
-  const VERB_CHOICES = USAGE_VERBS.split("|");
+  const VERB_CHOICES = VERBS;
   if (verb === undefined) {
     throw usageError("no verb given", { hint: "run: cli.ts help", choices: VERB_CHOICES });
   }
