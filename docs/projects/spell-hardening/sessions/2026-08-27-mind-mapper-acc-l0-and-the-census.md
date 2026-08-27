@@ -96,7 +96,7 @@ proof is `cli-contract.test.ts`.
   live); home: this doc's friction section; prospero sends the closing note.
 - **Backlog note for the inherited flag-invariant failures** — DROPPED: 15513af
   fixed them; there is nothing left to record beyond this line.
-- **anthill feedback drafts (3 items: comms send --body-file, --as-of
-  refresh-and-send, comms read --as rejection)** — horizon: awaiting Cole
-  (outward send is human-gated, sprint-04 precedent); home: prospero seat doc
-  Candidates.
+- **anthill feedback (3 frictions + the H28 gate-evidence idea)** — FILED to the
+  anthill-feedback grapevine channel, messages #24–27, 2026-08-27, on Cole's
+  instruction; horizon: anthill's own triage; home: that channel (the sprint-04
+  six remain unfiled, prospero seat doc Candidates).
