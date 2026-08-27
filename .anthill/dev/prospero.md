@@ -60,6 +60,16 @@ Cross-project consumer negotiation (e.g. the Operator doc-linking channel) is my
 
 ## Hard-won lessons
 
+### From the mind-mapper acc L0 session, 2026-08-27 — subagent mode's first full run
+
+- **Epitaph verdict: KEPT — it earned itself all session.** Every seam was marked VERIFIED HERE or TAKEN ON REPORT, both seats adopted the marking unprompted, and the one relayed thing (explorer file:line cites) was flagged as relayed and daedalus caught the one that was wrong.
+- **The envelope field beat the remembered rule, again: `durationMs` caught my bare-commit gate skip that my own re-read seat doc did not.** The scar was fresh (re-read at convene) and did not fire; a number that cannot be right did. When you design a discipline, put the tell in the output the actor must read anyway.
+- **In subagent mode, self-listing mid-session pre-empts the audit STRUCTURALLY** — seats return after your confessions are on the wire, so zero un-volunteered criticisms is the expected output, not a clean bill. Withhold the self-list until the seats' reports are in (H26).
+- **A recorder named at convene covers nothing until the seat is dispatched.** Name the role when its holder exists, or dispatch the holder when you name it.
+- **Ruling by precedent beats ruling by taxonomy argument: no-daemon→not_found looked debatable until magpie's no-session row settled it in one sentence.** Search the house precedent before opening a design debate.
+- **The $?-after-pipeline class now has three actors in one week (acc maintainer, me at trial, me again at ratify).** Never publish an exit code measured downstream of a pipe; the class survives being written down.
+- **Thread→seat map in the scratch, consulted before every re-dispatch, cost nothing and prevented the sprint-V1.x misroute shape.** Keep it as a convene fixture in subagent mode.
+
 ### From the spell-hardening BUILD round, 2026-08-06 — nine instrument failures, seven of them mine
 
 - **A ruling written from the WIRE is not a ruling about the WORLD.** I ruled P0e half 2 *"UNBUILT and the unblock for everything"* three hours after it landed, because the wire still had the question open. **A wire records what was ASKED; only the tree records what was DONE.** Check the tree before ruling on state.
@@ -144,6 +154,10 @@ The two-round shape is the safety net, not the expectation; the ratify round is 
 - Restating a seat's seam candidate in my own words in multiple docs — single-source in seams.md, point everywhere else.
 
 ## Candidates
+
+- **anthill feedback drafts from the acc session (composed, unfiled, awaiting Cole with the six older ones):** comms send lacks --body-file (has --stdin; the asymmetry with every other house CLI bit cassandra); a stale --as-of refusal could offer refresh-and-send (daedalus, 3 round-trips); comms read rejects --as on reads (cassandra). Plus H28's idea: anthill commit could carry gate evidence in its envelope and flag a land with no recent gate run.
+- **Contract 15 adoption sweep (bounty first: no --version, no envelope) — H29 says one session per spell now.** Feeds the spell-grooming ritual when thoth is next seated.
+- **acc closing note to the maintainers is SENT (trial channel): friction ledger + the adoption signal.** Their declaration-skeleton generator, when it ships, is mind-mapper's schema-verb unlock.
 
 - **⭐ SPRINT 04 has a coherent shape already, and it is one sentence: _an instrument must not be able to report a green it did not earn._** Five candidates found tonight, all the same family — `format:md` folded into `bun run check` (cassandra's finding, my remedy, **not thoth's** despite my mis-routing) · the out-of-tree lint (`biome check --config-path=.`, thoth) · run/view separation as a gate cell (cassandra) · match-count-as-denominator, after `prettier --check` was measured **vacuous** on any ignored path (daedalus) · and the CLI empty-vs-failed-read fix, which is the same defect in the product rather than the tooling (`docs/backlog/2026-08-08-cli-empty-vs-failed-read.md`).
 - **The `#79` house-wide fix is scoped and deferred, and it opens well:** three spells report a FAILED read and a legitimate EMPTY result with the identical sentence at exit 0; two others already carry the good shape. **Do not invent a sixth pattern.**
