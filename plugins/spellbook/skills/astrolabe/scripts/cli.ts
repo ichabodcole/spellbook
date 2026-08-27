@@ -26,9 +26,11 @@
 // Identity: --as / --from (or $ASTROLABE_AS) stamps the event `by` and drives
 // self-echo suppression. --stdin reads free text (description/summary) from
 // stdin (bypasses shell quoting). Discipline: structured JSON on stdout (one
-// line); liveness, echoes, diagnostics on stderr — never merge them. Exit 2 on
-// bad args OR a rejected command (dedupe / unknown id); 0 on success; a tail
-// exits 0 on the daemon's `closed` frame.
+// line); liveness, echoes and keepalives on stderr; failures put ONE JSON error
+// envelope on stderr with stdout left empty — never merge streams. Exit 2 on
+// bad args, a bare invocation, OR a rejected command (dedupe / unknown id);
+// 0 on success; 1 on internal faults (daemon failed to start); a tail exits 0
+// on the daemon's `closed` frame.
 
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
@@ -41,9 +43,12 @@ const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
 const ASTROLABE_HOME = process.env.ASTROLABE_HOME ?? join(homedir(), ".astrolabe");
 const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
 
-function die(msg: string): never {
-  process.stderr.write(`astrolabe: ${msg}\n`);
-  process.exit(2);
+// Failures leave stdout empty and put ONE JSON envelope on stderr — the same
+// machine shape as the data path, so a piped caller parses the error instead of
+// scraping prose. kind follows the acc exit taxonomy (usage=2, internal=1).
+function die(msg: string, kind = "usage", code = 2): never {
+  process.stderr.write(`${JSON.stringify({ ok: false, error: { kind, message: msg } })}\n`);
+  process.exit(code);
 }
 const printJson = (data: unknown) => process.stdout.write(`${JSON.stringify(data)}\n`);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -111,7 +116,7 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
     const p = await readPort();
     if (p && (await isUp(p))) return { base: `http://127.0.0.1:${p}`, port: p };
   }
-  die("astrolabe daemon failed to start within 45s");
+  die("astrolabe daemon failed to start within 45s", "internal", 1);
 }
 
 // A read-only verb requires a live daemon but must not spawn one (nothing to
@@ -398,15 +403,37 @@ const HELP = `astrolabe — a standing observatory board for projects in flight.
       read-back: project cards (each carries a derived zone: attention | active | quiet)
   tail [--since N] [--as <name>]
       unscoped event tail as JSONL (no presence)
-  list | close | info | help
+  list | close | info | help | --version
 
   Identity: --as / --from (or $ASTROLABE_AS) stamps the actor + suppresses self-echo.
-  --stdin reads a description/summary from stdin (shell-quoting-safe).`;
+  --stdin reads a description/summary from stdin (shell-quoting-safe).
+  Output: every command prints JSON on stdout by default, one line per answer;
+  failures put one JSON error envelope on stderr and exit non-zero (2 = usage).
+  There is no prose mode to switch out of.`;
+
+// The plugin manifest is the one version source; the CLI reads it rather than
+// mirroring the number. Layout-dependent, so absence degrades to "unknown".
+async function versionInfo(): Promise<{ name: string; version: string }> {
+  try {
+    const pkg = await Bun.file(join(SCRIPT_DIR, "../../../.claude-plugin/plugin.json")).json();
+    if (typeof pkg?.version === "string") return { name: "astrolabe", version: pkg.version };
+  } catch {}
+  return { name: "astrolabe", version: "unknown" };
+}
 
 async function main(argv: string[]): Promise<number> {
   const verb = argv[0];
-  if (verb === undefined || verb === "help" || verb === "--help" || verb === "-h") {
+  // A bare invocation requested nothing — that is a usage error, not a help
+  // request. help stays reachable by name (and --help/-h) on stdout at exit 0.
+  if (verb === undefined) die("no verb given — try 'help'");
+  if (verb === "help" || verb === "--help" || verb === "-h") {
     process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  // Root token, deliberately NOT a flag: dispatched alongside help in the verb
+  // switch, so no per-verb parser is expected to accept it below the root.
+  if (verb === "--version" || verb === "-V" || verb === "version") {
+    printJson(await versionInfo());
     return 0;
   }
   let parsed: ReturnType<typeof parseArgs>;
