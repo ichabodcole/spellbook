@@ -97,3 +97,31 @@ Logging friction, surprises, and findings as I go.
   target. Closest is D3's silent non-match of a true prose claim.
 - Category 3 (worked, wanted more): a hint when json+default tokens are present
   but unmatched; a config:/configSource line (already documented, just absent).
+
+## Epilogue: the version-skew resolution and the step-4 test (same session)
+
+- The acc maintainer identified my entire category 2 as version skew: I ran acc
+  0.1.0; 0.1.1 ships probe-plan, --recorded-surfaces, configSource, and the
+  enumeration lines. Measurement showed the mechanism: my `bun add` on the
+  unpinned git+ssh URL was fresh, but bun resolved it from a cached clone whose
+  main still sat at the v0.1.0 release merge (82a7d5d) — silent, exit 0. Fix now
+  on their list: pin a committish in the install line + tell the reader what
+  [acc <version>] should say.
+- Remedy executed and proven: remove + `bun pm cache rm` + add `#v0.1.1` →
+  0.1.1. (Note: the cache-rm prints "Cleared 0 cached 'bunx' packages" even when
+  it clears the git cache that matters — the proof is the version after
+  reinstall, not the remedy's output.)
+- Step 4 run end to end against astrolabe on 0.1.1, at the maintainer's request:
+  enumeration line present (matches the A7 inference), config:/ configSource
+  present (richer than documented), probe-plan generated a readable, correct
+  harness (12 paths from the dispatch table; declaration modelled from help per
+  the two-artifacts advice), harness ran clean in a sandboxed ASTROLABE_HOME,
+  and --recorded-surfaces consumed the batch after one validation round-trip
+  (positionals need `required`; exact-key error).
+- Census outcome, the honest one for a non-enumerating tool: 12 paths observed
+  [recorded-by-caller], THE DIFF DID NOT RUN — astrolabe's rejections never name
+  their valid set, so nothing is comparable. Reported upstream that SKILL.md's
+  "recording is the only coverage you will get" oversells this: recording buys
+  observation, not comparison. Astrolabe's real unlock would be enumerating
+  rejections (A3's choices SHOULD) — parked as future astrolabe work, not done
+  in this session.
