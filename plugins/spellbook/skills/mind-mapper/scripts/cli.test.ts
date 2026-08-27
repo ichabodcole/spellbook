@@ -169,6 +169,50 @@ test("tail streams events as one JSON line each (smoke: exits cleanly on empty s
   expect(true).toBe(true); // reaching here means it didn't crash on startup
 });
 
+test("tail with --since unset streams from 0 — the registry-defaults migration pin (unset ≡ 0)", async () => {
+  // Lane C moved per-verb defaults out of the parseArgs registry (a registry
+  // default would plant the key on every verb and blind stage 2) to
+  // consumption-site ??/fallbacks. This row pins the one observable that
+  // migration must not move: a bare `tail` replays from cursor 0, byte-equal
+  // in effect to an explicit `--since 0` — the seed section above guarantees
+  // events exist to replay.
+  const firstSeq = async (...args: string[]): Promise<number> => {
+    const proc = Bun.spawn([process.execPath, "run", CLI_SCRIPT, "tail", ...args], {
+      env: { ...process.env, MIND_MAPPER_HOME: home },
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const reader = proc.stdout.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    const deadline = Date.now() + 5000;
+    try {
+      while (Date.now() < deadline) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        for (const line of buf.split("\n")) {
+          if (!line.trim()) continue;
+          try {
+            const parsed = JSON.parse(line) as { seq?: number };
+            if (typeof parsed.seq === "number") return parsed.seq;
+          } catch {
+            /* partial or non-event line — keep reading */
+          }
+        }
+      }
+      throw new Error("no event line carrying a seq arrived within the deadline");
+    } finally {
+      proc.kill();
+      await proc.exited;
+    }
+  };
+  const bare = await firstSeq();
+  const explicit = await firstSeq("--since", "0");
+  expect(bare).toBeGreaterThanOrEqual(1);
+  expect(bare).toBe(explicit);
+});
+
 test("ingest --stdin stores a doc, addressable via state", async () => {
   const proc = Bun.spawn(
     [process.execPath, "run", CLI_SCRIPT, "ingest", "--title", "CLI Idea", "--stdin"],
