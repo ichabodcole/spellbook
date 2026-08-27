@@ -7,7 +7,7 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--intent ..] [--restore <id>] [--timeout S] [--no-open]
 //   bun cli.ts tail [--since N]            # SSE user events → JSONL (Monitor this)
-//   bun cli.ts state [--full|--lean]       # lean state snapshot (default lean)
+//   bun cli.ts state [--full]              # lean state snapshot (add --full for raw)
 //
 // Driving the surface (POST /cmd):
 //   bun cli.ts say [text...] [--stdin]                 # post agent dialogue (text or piped stdin)
@@ -486,7 +486,7 @@ function cmdSessions() {
   try {
     files = readdirSync(dir).filter((f) => f.endsWith(".json"));
   } catch {
-    process.stdout.write("no saved sessions\n");
+    printJson({ sessions: [] });
     return;
   }
   type Row = { id: string; title: string; elements: number; mtime: number };
@@ -506,10 +506,11 @@ function cmdSessions() {
     }
   }
   rows.sort((a, b) => b.mtime - a.mtime);
-  for (const r of rows) {
-    process.stdout.write(`${r.id}  ${r.elements} elements  — ${r.title}\n`);
-  }
-  if (!rows.length) process.stdout.write("no saved sessions\n");
+  // ONE JSON document, like every other data verb. This printed a prose table
+  // until the machine-mode declaration went in, at which point the tool was
+  // claiming `defaultOutput: "json"` while answering this verb in prose — a
+  // declaration is only worth what its least honest path makes it.
+  printJson({ sessions: rows });
 }
 
 // `source <imagePath>` — compute sha256[:16] + pixel size (Bun.Image) and post
@@ -978,8 +979,9 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
   Flags are scoped to their verb: extract's --pad is not accepted by say. A
   rejection lists what the verb it names does accept.
 
-  Output: magpie prints JSON by default on stdout. Every verb writes exactly ONE
-  JSON document there; prose, liveness and diagnostics go to stderr. \`--full\`
+  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON
+  document there — except \`tail\`, which is a stream and writes one per line
+  (JSONL). Prose, liveness and diagnostics go to stderr. \`--full\`
   widens the state payload; it does not switch formats.`;
 
 async function main(argv: string[]): Promise<number> {
@@ -1115,7 +1117,15 @@ async function main(argv: string[]): Promise<number> {
     case "help":
       process.stdout.write(`${HELP}\n`);
       break;
+    default:
+      // UNREACHABLE BY CONSTRUCTION — `verb` is narrowed to Verb above, and a
+      // test binds VERB_SPEC's keys to this switch's case labels. Kept anyway:
+      // if that binding ever breaks, the alternative is falling through to
+      // `return 0` with empty stdout, which reports success for work never done.
+      // That is the failure this branch exists to remove, and it would be silent.
+      die(`no handler for verb "${verb}"`, "internal");
   }
+
   return 0;
 }
 

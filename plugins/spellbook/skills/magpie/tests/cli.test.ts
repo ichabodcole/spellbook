@@ -53,3 +53,50 @@ test("VERB_SPEC is the dispatch switch — neither may grow a verb alone", () =>
   );
   expect([...cases].sort()).toEqual(Object.keys(VERB_SPEC).sort());
 });
+
+// ── the failure contract, end to end (#acc-B5/B1/C2) ────────────────
+//
+// The branch's whole point is a MACHINE-READABLE failure contract, and nothing
+// gated it — every check above is a unit test of the parser, and the contract
+// lives in what the PROCESS writes and exits with. Subprocess tests, so stdout
+// emptiness and the exit code are observed rather than inferred.
+
+const CLI = new URL("../scripts/cli.ts", import.meta.url).pathname;
+
+function run(args: string[]): { code: number; stdout: string; stderr: string } {
+  const p = Bun.spawnSync(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe" });
+  return {
+    code: p.exitCode,
+    stdout: new TextDecoder().decode(p.stdout),
+    stderr: new TextDecoder().decode(p.stderr),
+  };
+}
+
+test.each([
+  ["bare invocation", [] as string[], 2, "usage"],
+  ["unknown verb", ["frobnicate"], 2, "usage"],
+  ["unknown flag", ["state", "--acc-not-a-flag"], 2, "usage"],
+  ["another verb's flag", ["say", "--bbox", "1,2,3,4"], 2, "usage"],
+  ["no session to act on", ["extract", "--pad", "4"], 5, "not_found"],
+])("failure contract: %s", (_label, args, expectedCode, expectedKind) => {
+  const r = run(args);
+  // stdout carries DATA. A failure has none — a caller parsing stdout must see
+  // nothing rather than a half-answer.
+  expect(r.stdout).toBe("");
+  expect(r.code).toBe(expectedCode);
+  // Exactly ONE JSON document on stderr.
+  const doc = JSON.parse(r.stderr);
+  expect(doc.ok).toBe(false);
+  expect(doc.error.kind).toBe(expectedKind);
+  // The envelope's own exit_code must equal the code the process exited with —
+  // an envelope that disagrees with its process is two claims about one failure.
+  expect(doc.error.exit_code).toBe(r.code);
+  expect(doc.error.retryable).toBe(false);
+});
+
+test("failure contract: --version is a data path, not a failure", () => {
+  const r = run(["--version"]);
+  expect(r.code).toBe(0);
+  expect(r.stderr).toBe("");
+  expect(JSON.parse(r.stdout)).toEqual({ name: "magpie", version: expect.any(String) });
+});
