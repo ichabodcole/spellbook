@@ -74,6 +74,10 @@ const FOREIGN: Record<string, string> = {
   "magpie:format": "media-forge's flag — an external tool",
   "glamour:format": "media-forge's — `mf generate image … --format json`",
   "glamour:help": 'a positional verb (`case "help"`), not --help',
+  "magpie:version":
+    "a ROOT TOKEN dispatched beside `help` (resolved before parseArgs runs), not a parser flag — " +
+    "`magpie --version` works and `magpie state --version` is correctly refused, which is the " +
+    "behaviour a registry entry would destroy",
   "glamour:ref": "media-forge's — `mf generate image … [--ref <path|url>]`",
   "glamour:n": "media-forge's — the SKILL.md says so in as many words",
   "imago:ref": "media-forge's — `--ref <path>` on an mf call",

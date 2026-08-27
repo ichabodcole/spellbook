@@ -7,7 +7,7 @@
 // Lifecycle:
 //   bun cli.ts open [--title ..] [--intent ..] [--restore <id>] [--timeout S] [--no-open]
 //   bun cli.ts tail [--since N]            # SSE user events → JSONL (Monitor this)
-//   bun cli.ts state [--full|--lean]       # lean state snapshot (default lean)
+//   bun cli.ts state [--full]              # lean state snapshot (add --full for raw)
 //
 // Driving the surface (POST /cmd):
 //   bun cli.ts say [text...] [--stdin]                 # post agent dialogue (text or piped stdin)
@@ -57,6 +57,21 @@ process.stdout.on("error", (e: NodeJS.ErrnoException) => {
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
 
+// Our plugin version (from plugin.json) — the one number magpie can honestly
+// report as its own. D1 asks a CLI to answer `--version`; an agent that cannot
+// tell which build it is driving cannot tell a missing feature from a stale
+// install. Best-effort: null if the read fails, and `--version` says so rather
+// than inventing one. Same resolution grapevine uses.
+function readPluginVersion(): string | null {
+  try {
+    const pluginJsonPath = join(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json");
+    return JSON.parse(readFileSync(pluginJsonPath, "utf-8")).version ?? null;
+  } catch {
+    return null;
+  }
+}
+const PLUGIN_VERSION = readPluginVersion();
+
 type Session = {
   url: string;
   port: number;
@@ -65,9 +80,59 @@ type Session = {
   files_dir?: string;
 };
 
-function die(msg: string): never {
-  process.stderr.write(`magpie: ${msg}\n`);
-  process.exit(2);
+// ── error envelope ──────────────────────────────────────────────────
+//
+// magpie declares `defaultOutput: "json"`, and that declaration is about EVERY
+// stream, not just the happy path. A caller that gets one JSON document from a
+// verb and prose from a failure has to parse two formats to use one tool — and
+// the failure is the case where it can least afford to guess. So a failure is
+// ONE JSON document on stderr, and stdout stays empty because stdout carries
+// data and a failure has none.
+//
+// `kind` is the contract; `message` is presentation. Rewording a message must
+// never break a caller, which it does the moment anyone matches on prose.
+// Exit codes follow the acc taxonomy: usage errors are the caller's to fix by
+// changing the command, internal faults are not, and collapsing them into one
+// number leaves an agent with nothing to route on.
+type ErrKind = "usage" | "internal" | "not_found" | "conflict";
+
+const EXIT_FOR: Record<ErrKind, number> = {
+  usage: 2, // the caller can fix this by changing the command
+  internal: 1, // magpie broke; the invocation may have been fine
+  not_found: 5, // the named thing does not exist
+  conflict: 6, // a precondition failed
+};
+
+// The verb under execution, so the envelope can name it. Set once by main().
+let CURRENT_COMMAND: string | null = null;
+
+function errorEnvelope(
+  kind: ErrKind,
+  message: string,
+  extra?: { hint?: string; choices?: string[] },
+): string {
+  return `${JSON.stringify({
+    ok: false,
+    error: {
+      kind,
+      exit_code: EXIT_FOR[kind],
+      // Only rate limits are worth retrying unchanged; nothing magpie raises is.
+      retryable: false,
+      message,
+      ...(extra?.hint ? { hint: extra.hint } : {}),
+      ...(extra?.choices ? { choices: extra.choices } : {}),
+    },
+    meta: { command: CURRENT_COMMAND },
+  })}\n`;
+}
+
+function die(
+  msg: string,
+  kind: ErrKind = "usage",
+  extra?: { hint?: string; choices?: string[] },
+): never {
+  process.stderr.write(errorEnvelope(kind, msg, extra));
+  process.exit(EXIT_FOR[kind]);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -92,7 +157,7 @@ function readSession(session?: string): Session | null {
 
 function requireSession(session?: string): Session {
   const s = readSession(session);
-  if (!s) die("no running magpie session — run: cli.ts open");
+  if (!s) die("no running magpie session — run: cli.ts open", "not_found");
   return s;
 }
 
@@ -148,30 +213,101 @@ const CLI_OPTIONS = {
   stdin: { type: "boolean" },
 } as const;
 
+// WHICH FLAGS EACH VERB ACCEPTS — and the only source of the verb set.
+//
+// The parser used to enforce ONE GLOBAL registry: every verb accepted every
+// flag, so `close --alpha auto` and `say --bbox 1,2,3,4` parsed clean and did
+// nothing. A recorded-surface census counted 289 such flag/path pairs — 289
+// invocations magpie accepted at exit 0 and could not act on. That is the
+// failure this whole kit is named for: the tool does the wrong thing and reports
+// success. An unknown-flag check at the root cannot see it, because none of the
+// flags are unknown — they are just not known HERE.
+//
+// So the recognized set is per verb, and this table is it. `VERBS` is derived
+// from its keys and each verb parses against its own options, which means the
+// help text, the rejection's `choices` and the parser can no longer disagree:
+// there is one object, and adding a flag to a verb is one edit.
+export const VERB_SPEC = {
+  open: ["title", "intent", "timeout", "restore", "no-open"],
+  sessions: [],
+  tail: ["session", "since"],
+  state: ["session", "full"],
+  say: ["session", "stdin"],
+  ask: ["session", "options"],
+  status: ["session"],
+  source: ["session"],
+  discover: ["session"],
+  extract: ["session", "ids", "remove", "alpha", "pad", "model", "label"],
+  export: ["session", "ids"],
+  "element-add": ["session", "bbox", "name", "type"],
+  "element-remove": ["session"],
+  cmd: ["session", "stdin"],
+  close: ["session"],
+  info: ["session"],
+  help: [],
+} as const satisfies Record<string, readonly (keyof typeof CLI_OPTIONS)[]>;
+
+type Verb = keyof typeof VERB_SPEC;
+
+const VERBS = Object.keys(VERB_SPEC) as Verb[];
+
+const isVerb = (v: string): v is Verb => Object.hasOwn(VERB_SPEC, v);
+
+// The flags one verb accepts, as the caller spells them.
+const flagsFor = (verb: Verb): string[] => VERB_SPEC[verb].map((k) => `--${k}`).sort();
+
 class UsageError extends Error {}
 
-export function parseArgs(args: string[]): {
+export function parseArgs(
+  args: string[],
+  verb?: Verb,
+): {
   pos: string[];
   flags: Record<string, string | boolean>;
 } {
+  // TWO STAGES, AND THE ORDER IS THE POINT.
+  //
+  // Stage 1 parses against the WHOLE registry, so a token magpie has never
+  // heard of is refused by `node:util` with its own message. Stage 2 then asks
+  // the question the parser cannot: is this flag accepted AT THIS VERB.
+  //
+  // Doing it the other way — handing parseArgs a per-verb subset — was the first
+  // shape, and it answered `say --bbox` with "Unknown option '--bbox'", which is
+  // false. `--bbox` is a perfectly good flag; it just is not `say`'s. An agent
+  // told a real flag is unknown goes looking for a typo it did not make.
+  //
+  // It also cost the grimoire's flag-invariant ward its footing: that check
+  // resolves `options: <identifier>` back to a literal declaration, and a subset
+  // computed at the call site is not one. The ward could no longer read magpie's
+  // registry at all and reported the entry point unresolved — the instrument
+  // saying "I cannot see this", exactly as designed. Keeping `CLI_OPTIONS` at
+  // the call site keeps the registry legible to it.
+  let parsed: { values: Record<string, unknown>; positionals: string[] };
   try {
-    const { values, positionals } = nodeParseArgs({
+    parsed = nodeParseArgs({
       args,
       options: CLI_OPTIONS,
       strict: true,
       allowPositionals: true,
     });
-    return { pos: positionals, flags: values as Record<string, string | boolean> };
   } catch (e) {
-    const detail = e instanceof Error ? e.message : String(e);
-    throw new UsageError(
-      `${detail}\n` +
-        `  recognized flags: ${Object.keys(CLI_OPTIONS)
-          .map((k) => `--${k}`)
-          .join(" ")}\n` +
-        `  for free text containing dashes, use --stdin, or put it after a bare --`,
-    );
+    throw new UsageError(e instanceof Error ? e.message : String(e));
   }
+
+  if (verb) {
+    const allowed = new Set<string>(VERB_SPEC[verb]);
+    const stray = Object.keys(parsed.values).find((k) => !allowed.has(k));
+    if (stray) {
+      throw new UsageError(
+        `--${stray} is not accepted by \`${verb}\` (it is a recognized magpie flag, just not this verb's)`,
+      );
+    }
+  }
+
+  return {
+    pos: parsed.positionals,
+    flags: parsed.values as Record<string, string | boolean>,
+  };
 }
 
 // Read all of stdin as text (Bun.stdin). Used by `--stdin` so NL text isn't a
@@ -183,7 +319,7 @@ async function readStdin(): Promise<string> {
 async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
   const s = requireSession(session);
   const { status } = await api(s.port, "POST", "/cmd", msg);
-  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
+  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`, "internal");
   printJson({ ok: true, sent: msg.type });
 }
 
@@ -225,13 +361,13 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
       }
     }
   }
-  die("magpie server failed to start within 5s");
+  die("magpie server failed to start within 5s", "internal");
 }
 
 async function cmdState(session?: string, full = false) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   printJson(data);
 }
 
@@ -337,7 +473,7 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
 
 function cmdInfo(session?: string) {
   const s = readSession(session);
-  if (!s) die("no running magpie session");
+  if (!s) die("no running magpie session", "not_found");
   printJson(s);
 }
 
@@ -350,7 +486,7 @@ function cmdSessions() {
   try {
     files = readdirSync(dir).filter((f) => f.endsWith(".json"));
   } catch {
-    process.stdout.write("no saved sessions\n");
+    printJson({ sessions: [] });
     return;
   }
   type Row = { id: string; title: string; elements: number; mtime: number };
@@ -370,17 +506,18 @@ function cmdSessions() {
     }
   }
   rows.sort((a, b) => b.mtime - a.mtime);
-  for (const r of rows) {
-    process.stdout.write(`${r.id}  ${r.elements} elements  — ${r.title}\n`);
-  }
-  if (!rows.length) process.stdout.write("no saved sessions\n");
+  // ONE JSON document, like every other data verb. This printed a prose table
+  // until the machine-mode declaration went in, at which point the tool was
+  // claiming `defaultOutput: "json"` while answering this verb in prose — a
+  // declaration is only worth what its least honest path makes it.
+  printJson({ sessions: rows });
 }
 
 // `source <imagePath>` — compute sha256[:16] + pixel size (Bun.Image) and post
 // source.set. The agent runs discover separately; this just registers the board.
 async function cmdSource(session: string | undefined, imagePath: string) {
   const file = Bun.file(imagePath);
-  if (!(await file.exists())) die(`image not found: ${imagePath}`);
+  if (!(await file.exists())) die(`image not found: ${imagePath}`, "not_found");
   const bytes = new Uint8Array(await file.arrayBuffer());
   const sha = new Bun.CryptoHasher("sha256").update(bytes).digest("hex").slice(0, 16);
   const meta = await new Bun.Image(bytes).metadata();
@@ -413,15 +550,15 @@ async function cmdElementAdd(session: string | undefined, flags: Record<string, 
 async function cmdDiscover(session?: string) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   const src = (data as { state?: { source?: { path?: string } } }).state?.source;
   const path = src?.path;
-  if (!path) die("no source set — drop a composite (or run: source <imagePath>) first");
+  if (!path) die("no source set — drop a composite (or run: source <imagePath>) first", "conflict");
   let manifest: Awaited<ReturnType<typeof discover>>;
   try {
     manifest = await discover(path);
   } catch (e) {
-    if (e instanceof DiscoverError) die(`discover failed: ${e.message}`);
+    if (e instanceof DiscoverError) die(`discover failed: ${e.message}`, "internal");
     throw e;
   }
   const elements: Element[] = manifest.elements.map((e) => ({
@@ -464,7 +601,7 @@ export function cutoutFilename(name: string, backend: string): string {
 // spinner around the loop; per-element progress → stderr, summary → stdout.
 async function cmdExtract(session: string | undefined, flags: Record<string, string | boolean>) {
   const s = requireSession(session);
-  if (!s.files_dir) die("session has no files_dir — cannot materialize cutouts");
+  if (!s.files_dir) die("session has no files_dir — cannot materialize cutouts", "conflict");
 
   // Policy: crop-only by default; --remove flips to rembg (auto); --alpha wins.
   let alpha: AlphaPolicy = flags.remove === true ? "auto" : "none";
@@ -509,10 +646,11 @@ async function cmdExtract(session: string | undefined, flags: Record<string, str
       : undefined;
 
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   const st = (data as { state?: { source?: { path?: string }; elements?: Element[] } }).state;
   const sourcePath = st?.source?.path;
-  if (!sourcePath) die("no source set — drop a composite (or run: source <imagePath>) first");
+  if (!sourcePath)
+    die("no source set — drop a composite (or run: source <imagePath>) first", "conflict");
   let elements = (st?.elements ?? []).filter((e) => e.status !== "dropped");
   if (idFilter) elements = elements.filter((e) => idFilter.has(e.id));
   // When REMOVING, never touch alpha-forbidden types (palette / screenshot /
@@ -707,7 +845,7 @@ ${cards}
 // files by BASENAME in files_dir (robust to stale absolute paths after a restore).
 async function cmdExport(session: string | undefined, flags: Record<string, string | boolean>) {
   const s = requireSession(session);
-  if (!s.files_dir) die("session has no files_dir — cannot build a bundle");
+  if (!s.files_dir) die("session has no files_dir — cannot build a bundle", "conflict");
   const idFilter =
     typeof flags.ids === "string"
       ? new Set(
@@ -719,11 +857,12 @@ async function cmdExport(session: string | undefined, flags: Record<string, stri
       : undefined;
 
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal");
   const st = (data as { state?: { title?: string; elements?: Element[] } }).state;
   let elements = (st?.elements ?? []).filter((e) => e.status !== "dropped");
   if (idFilter) elements = elements.filter((e) => idFilter.has(e.id));
-  if (!elements.length) die(idFilter ? "no matching elements for --ids" : "no assets to export");
+  if (!elements.length)
+    die(idFilter ? "no matching elements for --ids" : "no assets to export", "conflict");
   const title = st?.title ?? "magpie";
 
   const stageDir = join(s.files_dir, "bundle-stage");
@@ -806,7 +945,7 @@ async function cmdExport(session: string | undefined, flags: Record<string, stri
     await api(s.port, "POST", "/cmd", { type: "status", busy: false });
   }
 
-  if (failure || !result) die(`export failed: ${failure ?? "unknown"}`);
+  if (failure || !result) die(`export failed: ${failure ?? "unknown"}`, "internal");
   printJson({ ok: true, bundle: zipName, count: result.count });
 }
 
@@ -831,19 +970,68 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
   element-remove <id>                 retract a boxed region
   cmd    [--stdin]                    POST a raw AgentCommand JSON body from stdin
   close | info | help
+  --version                           print magpie's version as JSON
 
-  Add --session <id> to target a specific session (default: most recent).`;
+  Add --session <id> to target a specific session (default: most recent). It is
+  accepted by every verb that acts on a session — not by open, sessions or help,
+  which do not have one to target.
+
+  Flags are scoped to their verb: extract's --pad is not accepted by say. A
+  rejection lists what the verb it names does accept.
+
+  Output: magpie prints JSON by default on stdout. Every verb writes ONE JSON
+  document there — except \`tail\`, which is a stream and writes one per line
+  (JSONL). Prose, liveness and diagnostics go to stderr. \`--full\`
+  widens the state payload; it does not switch formats.`;
 
 async function main(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  // A usage failure returns 2 rather than exiting, so the runtime drains stdout.
+  CURRENT_COMMAND = verb ?? null;
+
+  // ROOT TOKENS FIRST, before any flag parsing. These are not verbs and they
+  // carry no flags, so resolving them here keeps them out of every verb's set.
+  if (verb === "--help" || verb === "-h") {
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  if (verb === "--version" || verb === "-V") {
+    printJson({ name: "magpie", version: PLUGIN_VERSION });
+    return 0;
+  }
+  if (verb === undefined) {
+    // A bare invocation is a usage error, not a help path — magpie is driven by
+    // an agent, and an empty argv is an agent that failed to name what it
+    // wanted. stdout stays empty; it carries data and this has none.
+    process.stderr.write(
+      errorEnvelope("usage", "no verb given", { hint: "run: cli.ts help", choices: VERBS }),
+    );
+    return 2;
+  }
+  // THE VERB IS REJECTED BEFORE ITS FLAGS ARE READ. It has to be: which flags
+  // are legal is a question about the verb, so there is no set to check against
+  // until we know it is a real one.
+  if (!isVerb(verb)) {
+    process.stderr.write(
+      errorEnvelope("usage", `unknown verb "${verb}"`, {
+        hint: "run: cli.ts help",
+        choices: VERBS,
+      }),
+    );
+    return 2;
+  }
+
   let pos: string[];
   let flags: Record<string, string | boolean>;
   try {
-    ({ pos, flags } = parseArgs(rest));
+    ({ pos, flags } = parseArgs(rest, verb));
   } catch (e) {
     if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`magpie: ${e.message}\n`);
+    process.stderr.write(
+      errorEnvelope("usage", e.message, {
+        hint: `flags are scoped to the verb — choices lists what \`${verb}\` accepts; for free text containing dashes use --stdin, or put it after a bare --`,
+        choices: flagsFor(verb),
+      }),
+    );
     return 2;
   }
   const session = typeof flags.session === "string" ? flags.session : undefined;
@@ -927,14 +1115,17 @@ async function main(argv: string[]): Promise<number> {
       cmdSessions();
       break;
     case "help":
-    case "--help":
-    case "-h":
-    case undefined:
       process.stdout.write(`${HELP}\n`);
       break;
     default:
-      die(`unknown verb "${verb}" — run: cli.ts help`);
+      // UNREACHABLE BY CONSTRUCTION — `verb` is narrowed to Verb above, and a
+      // test binds VERB_SPEC's keys to this switch's case labels. Kept anyway:
+      // if that binding ever breaks, the alternative is falling through to
+      // `return 0` with empty stdout, which reports success for work never done.
+      // That is the failure this branch exists to remove, and it would be silent.
+      die(`no handler for verb "${verb}"`, "internal");
   }
+
   return 0;
 }
 
