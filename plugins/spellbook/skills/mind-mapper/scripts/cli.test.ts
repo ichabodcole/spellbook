@@ -46,10 +46,20 @@ test("open spawns the daemon and prints its url", async () => {
   expect(JSON.parse(stdout).url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
 });
 
-test("state on a projectless store exits 2 with the needs-project shape (no auto-mint)", async () => {
-  const { code, stdout } = await runCli("state");
-  expect(code).toBe(2);
-  expect(JSON.parse(stdout)).toEqual({ error: "needs-project", projects: [] });
+test("state on a projectless store exits 6 with the needs-project shape under error.server (no auto-mint)", async () => {
+  // acc L0 lane B: a daemon refusal is ONE JSON envelope on stderr, stdout
+  // empty; the typed daemon body rides error.server verbatim, 409 → conflict.
+  const { code, stdout, stderr } = await runCli("state");
+  expect(code).toBe(6);
+  expect(stdout).toBe("");
+  const envelope = JSON.parse(stderr) as {
+    ok: boolean;
+    error: { kind: string; exit_code: number; server: unknown };
+  };
+  expect(envelope.ok).toBe(false);
+  expect(envelope.error.kind).toBe("conflict");
+  expect(envelope.error.exit_code).toBe(6);
+  expect(envelope.error.server).toEqual({ error: "needs-project", projects: [] });
 });
 
 test("open --project refuses an unknown id — open never mints a project", async () => {
@@ -274,11 +284,16 @@ test("zone loop round-trips through the CLI: create → propose --zone → promo
   await propose.exited;
   expect(proposal.zoneId).toBe("messy-ideas");
 
-  // Ratify-of-zoned refused (R1: the typed 409 body passes through verbatim);
+  // Ratify-of-zoned refused (R1's typed 409, now under the lane B envelope's
+  // error.server on stderr — conflict, exit 6, stdout empty);
   // promote moves it to the main queue.
   const refused = await runCli("ratify", proposal.id, "--ruling", "thread");
-  expect(refused.code).toBe(2);
-  expect(JSON.parse(refused.stdout)).toEqual({ error: "zoned", zoneId: "messy-ideas" });
+  expect(refused.code).toBe(6);
+  expect(refused.stdout).toBe("");
+  expect(JSON.parse(refused.stderr)).toMatchObject({
+    ok: false,
+    error: { kind: "conflict", server: { error: "zoned", zoneId: "messy-ideas" } },
+  });
   const promoted = await runCli("promote", proposal.id);
   expect(promoted.code).toBe(0);
   expect(JSON.parse(promoted.stdout)).toEqual({ id: proposal.id });
@@ -359,7 +374,7 @@ test("mark round-trips: cli mark → state carries the mark", async () => {
   expect(parsed.docs.find((d) => d.id === "ramble-01")?.mark?.status).toBe("analyzed");
 });
 
-test("doc delete round-trips: cited exits 2 with the 409 body, --force removes the doc", async () => {
+test("doc delete round-trips: cited exits 6 with the 409 body under error.server, --force removes the doc", async () => {
   const ingest = Bun.spawn(
     [process.execPath, "run", CLI_SCRIPT, "ingest", "--title", "Doomed", "--stdin"],
     {
@@ -380,10 +395,14 @@ test("doc delete round-trips: cited exits 2 with the 409 body, --force removes t
   await propose.exited;
 
   const cited = await runCli("doc", "delete", doc.id);
-  expect(cited.code).toBe(2);
-  expect(JSON.parse(cited.stdout)).toMatchObject({
-    error: "cited",
-    citedBy: { nodes: 0, proposals: 1 },
+  expect(cited.code).toBe(6);
+  expect(cited.stdout).toBe("");
+  expect(JSON.parse(cited.stderr)).toMatchObject({
+    ok: false,
+    error: {
+      kind: "conflict",
+      server: { error: "cited", citedBy: { nodes: 0, proposals: 1 } },
+    },
   });
 
   const forced = await runCli("doc", "delete", doc.id, "--force");
@@ -405,11 +424,21 @@ test("activity posts a casting-loop state; a bad state exits 2 with usage", asyn
   expect(bad.stderr).toContain("received|thinking|idle");
 });
 
-test("an unrecognized flag exits 2 with a clean message, not a stack-trace crash", async () => {
-  const { code, stderr } = await runCli("ingest", "--help");
+test("an unrecognized flag exits 2 with a usage envelope, not a stack-trace crash", async () => {
+  const { code, stdout, stderr } = await runCli("ingest", "--help");
   expect(code).toBe(2);
-  expect(stderr).toContain("mind-mapper:");
-  expect(stderr).not.toContain("at ");
+  expect(stdout).toBe("");
+  const envelope = JSON.parse(stderr) as {
+    ok: boolean;
+    error: { kind: string; exit_code: number; message: string };
+    meta: { command: string };
+  };
+  expect(envelope.ok).toBe(false);
+  expect(envelope.error.kind).toBe("usage");
+  expect(envelope.error.exit_code).toBe(2);
+  expect(envelope.error.message).toContain("--help");
+  expect(envelope.meta.command).toBe("ingest");
+  expect(stderr).not.toContain("    at ");
 });
 
 // Round 5 (CLI1) — propose-batch mints nodes and resolves local edge refs in
@@ -456,8 +485,12 @@ test("read <id> returns the full message row; unknown id exits 2", async () => {
   expect(JSON.parse(read.stdout)).toMatchObject({ text: "a durable line", role: "agent" });
 
   const missing = await runCli("read", "no-such-message");
-  expect(missing.code).toBe(2);
-  expect(JSON.parse(missing.stdout)).toMatchObject({ error: "unknown message" });
+  expect(missing.code).toBe(5);
+  expect(missing.stdout).toBe("");
+  expect(JSON.parse(missing.stderr)).toMatchObject({
+    ok: false,
+    error: { kind: "not_found", server: { error: "unknown message" } },
+  });
 });
 
 // Round 5 (SG1) — node anchor round-trips through the CLI.
@@ -844,8 +877,13 @@ test("propose-batch returns a batchId and `state --batch` narrows to that act", 
   expect(state.proposals.every((p) => p.batchId === batchId)).toBe(true);
 
   const unknown = await runCli("state", "--batch", "no-such-batch");
-  expect(unknown.code).toBe(2);
-  expect(JSON.parse(unknown.stdout).error).toContain("DELETED");
+  expect(unknown.code).toBe(5);
+  expect(unknown.stdout).toBe("");
+  const unknownEnvelope = JSON.parse(unknown.stderr) as {
+    error: { kind: string; server: { error: string } };
+  };
+  expect(unknownEnvelope.error.kind).toBe("not_found");
+  expect(unknownEnvelope.error.server.error).toContain("DELETED");
 });
 
 test("node edit sets a synopsis on a live node — by flag and by --stdin", async () => {
@@ -892,7 +930,9 @@ test("delete-batch clears a set in one call and is all-or-nothing", async () => 
 
   const bad = await runCliBody({ ids: [...ids, "ghost"] }, "delete-batch", "--stdin");
   expect(bad.code).toBe(2);
-  expect(JSON.parse(bad.stdout).error).toContain("ghost");
+  expect(bad.stdout).toBe("");
+  const badEnvelope = JSON.parse(bad.stderr) as { error: { server: { error: string } } };
+  expect(badEnvelope.error.server.error).toContain("ghost");
 
   const ok = await runCliBody({ ids }, "delete-batch", "--stdin");
   expect(ok.code).toBe(0);

@@ -146,7 +146,10 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // internal 1, not_found 5, conflict 6) rather than always 2 — same family and
   // same one-short-write shape, variable code, as grapevine's below.
   { file: "magpie/scripts/cli.ts", text: "process.exit(EXIT_FOR[kind]);", family: "D-die" },
-  { file: "mind-mapper/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  // mind-mapper/scripts/cli.ts left this family entirely (acc L0 lane B): its
+  // requireDaemon die became a thrown CliError that main() returns as an exit
+  // code — zero live process.exit sites remain in that CLI, which is the
+  // direction this inventory exists to push.
   { file: "grapevine/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
   // E — terminal main exit: teardown already ran inside main().
   { file: "astrolabe/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
