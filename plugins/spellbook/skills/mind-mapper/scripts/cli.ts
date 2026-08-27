@@ -12,7 +12,8 @@
 //                 times out ("daemon did not come up") — pick a free port.
 //   state         GET /state → the real project snapshot on stdout
 //                 --skeleton returns ids/titles/degree only (context budgeting)
-//                 fresh store with no project → the needs-project 409, exit 2
+//                 fresh store with no project → the needs-project 409 rides
+//                 the error envelope (conflict, exit 6; body under error.server)
 //   tail          Monitor-shaped: GET /events?since=<cursor> SSE → one JSON
 //                 line per event on stdout
 //                 --inbound filters server-side to human-originated events
@@ -78,7 +79,7 @@
 //   send          body chain: --body-file <path> > --stdin > inline <text...> >
 //                 piped stdin; [--role user|agent] [--kind] [--ground a,b]
 //                 (repeatable — repeats accumulate, commas split either way)
-//                 [--force] → POST /send. Empty resolved body = exit 2. The
+//                 [--force] → POST /send. Empty resolved body = usage error. The
 //                 piped default HANGS with no pipe under agent shells — always
 //                 pass a body (--body-file preferred for prose).
 //                 R11: --kind is the CHANNEL the message arrived through
@@ -92,6 +93,16 @@
 //
 // --project <id> is accepted by every verb above except open (scopes to a
 // non-default project; omit for the default project).
+//
+// ERROR CONTRACT (acc L0, stated ONCE — per-verb prose above names HTTP
+// statuses, this table is what the PROCESS does with them): every failure is
+// ONE JSON envelope on stderr with stdout empty —
+//   {ok:false, error:{kind, exit_code, retryable, message, hint?, choices?,
+//    server?}, meta:{command}}
+//   usage → exit 2 · internal → 1 · not_found → 5 (HTTP 404) · conflict → 6
+//   (HTTP 409); HTTP 400 maps to usage. A daemon refusal carries the server's
+//   own JSON body VERBATIM under error.server (needs-project, cited, zoned,
+//   zone-not-empty, claim conflicts, …) — branch on kind/server, never prose.
 
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
