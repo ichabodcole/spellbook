@@ -11,7 +11,8 @@
     "lint:fix": "biome check --write --error-on-warnings .",
     "check": "biome check --error-on-warnings .",
     "prepare": "husky",
-    "land-check": "bun scripts/land-check.ts"
+    "land-check": "bun scripts/land-check.ts",
+    "prune-branches": "git branch --merged | grep -vE '^[*+]|main$|develop$' | xargs -r git branch -d"
   },
   "lint-staged": {
     "*.{ts,tsx,json,jsonc}": [
