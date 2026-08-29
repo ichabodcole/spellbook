@@ -1697,7 +1697,15 @@ async function dispatch(argv: string[]): Promise<number> {
   // verb, "unknown verb x" sends them to the roster (choices). A bare
   // invocation named nothing at all — a usage error, not a help path (this CLI
   // is agent-driven; magpie's ruling).
-  const VERB_CHOICES = VERBS;
+  //
+  // choices names EVERYTHING the parser accepts: the roster verbs plus the
+  // accepted alias spellings, aliases appended after the roster
+  // (deterministic). VERBS alone understated the accepted set by exactly the
+  // aliases — acc's advertised-verbs comparison flagged `message` as recorded
+  // but never advertised (grapevine's one-row-per-alias registry is the house
+  // precedent this matches). Help is NOT touched: the alias stays advertised
+  // on its target's line per the #1097 ruling.
+  const VERB_CHOICES = [...VERBS, ...Object.keys(VERB_ALIASES)];
   if (verb === undefined) {
     throw usageError("no verb given", { hint: "run: cli.ts help", choices: VERB_CHOICES });
   }

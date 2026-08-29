@@ -132,6 +132,21 @@ test("a stray real flag's rejection names the verb and lists ITS flags — never
   expect(doc.error.choices).toEqual(["--batch", "--project", "--skeleton"]);
 });
 
+test("the unknown-verb rejection's choices name every ACCEPTED spelling — aliases included", () => {
+  // acc's advertised-verbs comparison found `message` recorded-but-never-
+  // advertised: VERB_ALIASES makes the parser ACCEPT it, but choices = VERBS
+  // alone understated the accepted set by exactly the aliases. Pin the whole
+  // accepted roster into the rejection so a future alias cannot go silently
+  // missing (grapevine's one-row-per-alias registry precedent).
+  const r = run(["frobnicate"]);
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as { error: { choices: string[] } };
+  const missing = [...VERBS, ...Object.keys(VERB_ALIASES)].filter(
+    (v) => !doc.error.choices.includes(v),
+  );
+  expect(missing).toEqual([]);
+});
+
 test("failure contract: --version is a data path, not a failure", () => {
   const r = run(["--version"]);
   expect(r.code).toBe(0);
