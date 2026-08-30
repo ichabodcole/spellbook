@@ -38,6 +38,19 @@
 > drop it as the reference spell. Neither is a hypothesis test — the hypothesis
 > already passed.
 >
+> ---
+>
+> ## ✅ RULED 2026-08-30 (Cole) — astrolabe is DROPPED as the reference spell
+>
+> **imago is the reference.** The second-spell validation this plan asked for is
+> carried by [`spell-kit`](../spell-kit/proposal.md), which ports imago onto
+> this pipeline. **Seam C is also carried there**, so both of this plan's
+> outstanding items now have an owner and this plan's remaining work is zero.
+>
+> _astrolabe may still be migrated — see spell-kit's Slice 1, where it is
+> proposed as a first, mechanical port ahead of imago — but **not as the
+> reference spell**, and not as a condition of closing this plan._
+>
 > _Corrected by the 2026-08-10 sweep —
 > [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md).
 > **That sweep's first pass got this wrong in the opposite direction**, calling
