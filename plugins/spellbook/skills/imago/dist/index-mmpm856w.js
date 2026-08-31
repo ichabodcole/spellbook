@@ -19565,13 +19565,15 @@ function loadImage(url) {
   });
 }
 
+// src/imago/surface/components/LayersPanel.tsx
+var import_react9 = __toESM(require_react(), 1);
+
 // src/kit/lib/cn.ts
 function cn(...inputs) {
   return inputs.filter(Boolean).join(" ");
 }
 
 // src/imago/surface/components/LayersPanel.tsx
-var import_react9 = __toESM(require_react(), 1);
 var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function LayersPanel({
   layers,
