@@ -906,3 +906,22 @@ Generalizes: grep for catch-all loops BEFORE introducing typed throws into code 
 **An includes() over prose is a vacuous denominator waiting for token recurrence — anchor structural membership checks to line starts.** _(Attributed by prospero at finalize; found by cassandra's M3 after my own six H16 demos passed — the demo I chose exercised the class my frame suggested, hers exercised the one it hid.)_
 The help-advertises twin was green for 6 of 29 verbs whose tokens recur in other help lines (docId→doc, "zone create" prose→zone); fixed line-anchored at bb13208, convicted by three independent mutation runs.
 Generalizes: when a cell's predicate is substring-membership over a document, ask what ELSE in the document contains the token before trusting the green.
+
+## spell-kit sprint 01 (feat/spell-kit-sprint-01, 2026-08-31) — sharp → Bun.Image in imago
+
+**"Identical byte counts" is not "byte-identical", and a size-only comparison cannot tell them apart — hash the bytes.**
+The backlog item measured `sharp` vs `Bun.Image` on three inputs, found matching byte COUNTS, and the card promoted that to BYTE-IDENTICAL; I re-ran it over ten inputs with sha256 and found one case (a 1200x929 screenshot) where both encoders produced exactly 55632 bytes and DIFFERENT bytes.
+A length check is a one-in-N-thousand collision away from lying, and here it collided on the first real screenshot tried.
+
+**The three cases a codec comparison must include, because a corpus of flat synthetic fills proves nothing about resampling.**
+Byte-identity held on every input where no RESAMPLE happened (a 32x32, a 112x99 and a 280x247 webp, a 1024x1024 jpeg — all under maxDim and passed through encode-only) and on every uniform-colour synthetic (any kernel returns the same pixels); it failed on all four inputs that actually downscaled real image content, at -0.81% to +9.70% size.
+So: pick inputs that (a) exercise the operation under test, (b) carry real high-frequency content, (c) include the no-op path separately — and state the equivalence you actually measured (same dims, same container, mean abs pixel delta 0.4-1.3/255) rather than the stronger one you wish you had.
+
+**Prove an option is load-bearing with a control, not just an outcome.**
+`withoutEnlargement` on `Bun.Image.resize` is real: 32x32 resized to 9000x9000 returns 32x32 WITH the option and 9000x9000 WITHOUT it — the second half is what turns "the output was small" into "the option did it", and the first half alone would also be explained by a silently-ignored resize.
+
+**When you delete a stale library name from a comment, the REASON attached to it usually dies too — replace the reason, do not just drop the name.**
+imago's header said "Do NOT import from browser code (sharp is a native module)"; deleting `sharp` would have left a rule with no why, so the parenthetical became "(Bun.Image is a Bun runtime built-in, absent in the browser)" — same rule, currently-true reason.
+
+**A missing-package error at import time is the loudest possible failure and still shipped in a release — the boot path is not covered by any test that imports modules directly.**
+imago v2.2.0's daemon died at `bun --no-install scripts/server.ts` on `Cannot find package 'sharp'` while its unit suite was green, because the suite imports `optimizeImageBuffer` from a tree that HAS node_modules; the only instrument that catches this class is booting the artifact from a copy with no node_modules up-tree.
