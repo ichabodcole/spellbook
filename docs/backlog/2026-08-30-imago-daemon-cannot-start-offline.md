@@ -43,17 +43,46 @@ already do.**
 
 ## The options
 
-1. **`sharp` → `Bun.Image`** ⭐ — **MEASURED 2026-08-30: a drop-in replacement,
-   byte-identical output.** Same call, same encoder settings, Bun 1.4.0:
+1. **`sharp` → `Bun.Image`** ⭐ — **a behaviourally equivalent drop-in. NOT
+   byte-identical.** Same call, same encoder settings, Bun 1.4.0.
 
-   | Input                      | `sharp`                    | `Bun.Image`                    |    Δ |
-   | -------------------------- | -------------------------- | ------------------------------ | ---: |
-   | synthetic PNG 3000×2000    | 1200×800 · 1,788 B · 31 ms | 1200×800 · **1,788 B** · 28 ms | 0.0% |
-   | synthetic WebP             | 1200×800 · 1,788 B · 34 ms | 1200×800 · **1,788 B** · 30 ms | 0.0% |
-   | real `mascot.webp` 280×247 | 280×247 · 24,750 B · 18 ms | 280×247 · **24,750 B** · 14 ms | 0.0% |
+   > ### ⛔ This entry claimed "byte-identical output" and it was WRONG
+   >
+   > **Falsified 2026-08-31 by `daedalus`, on a 10-input corpus compared by
+   > sha256.** 6 of 10 byte-identical, 4 of 10 differing — and the split is not
+   > random: **identity held on every input that did not resample** (already
+   > under `maxDim`, so encode-only) **and on every uniform-colour synthetic**
+   > (any kernel yields the same pixels). It failed on **all four** inputs that
+   > actually downscaled real image content. The two encoders use different
+   > resampling kernels.
+   >
+   > **The original corpus was structurally incapable of finding this** — two
+   > synthetics and one 280×247 image below `maxDim`. Nothing in it resampled
+   > real content.
+   >
+   > **And the method could not have detected it either: this entry compared
+   > byte COUNTS and reported byte IDENTITY.** One differing case
+   > (`mm-v2-clickthrough.png`) produced **exactly 55,632 bytes from both
+   > encoders with different content** — a length comparison collides on the
+   > first real screenshot tried. _The claim was inherited verbatim by three
+   > other documents and a board card before it was checked._
 
-   Not merely equivalent dimensions — **identical byte counts**, marginally
-   faster, and both correctly declined to enlarge the undersized source.
+   **The corrected measurement** (daedalus, sha256 over bytes, 10 inputs):
+
+   | Class                                       | Result                  |
+   | ------------------------------------------- | ----------------------- |
+   | no resample (source already under `maxDim`) | **byte-identical**, 4/4 |
+   | uniform-colour synthetics                   | **byte-identical**, 2/2 |
+   | real content, downscaled                    | **differs**, 4/4        |
+
+   Decoded-pixel delta on the four differing cases: **mean 0.41–1.26 / 255**,
+   max 31–69, with 0.36–4.26 % of samples over 8. Sizes within **±1 %** except
+   one flat-shaded illustration at **+9.70 %**. Dimensions and container are
+   identical on every input.
+
+   **Why the swap is still correct:** nothing downstream depends on the bytes —
+   `optimizeSrc` re-base64s whatever comes back (`server.ts:194`). **What is
+   ruled out is a golden-file test** built on the assumption of identity.
 
    **The `withoutEnlargement` disagreement is settled: the option EXISTS.**
    Resizing a 32×32 to 9000×9000 with it set returned 32×32 (`enlarged? false`).
@@ -72,8 +101,15 @@ already do.**
 
 ## Acceptance Criteria
 
-- [ ] `bun --no-install scripts/server.ts` starts from a copy of the skill
-      folder with no `node_modules` up-tree.
+- [x] `bun --no-install scripts/server.ts` starts from a copy of the skill
+      folder with no `node_modules` up-tree — **done 2026-08-31** (daedalus,
+      VERIFIED HERE: `curl /state` → HTTP 200 from a copy with no `node_modules`
+      on any parent path). ⚠ **The daemon boots; `/` still will not render** —
+      three non-fatal bundler errors (`react-dom/client`,
+      `react/jsx-dev-runtime`, `tailwindcss`) remain, because dev-mode still
+      bundles the surface from source. **`sharp` was the only FATAL blocker, not
+      the only one.** Serving from `dist/` is what closes the rest, and that is
+      Sprint 01 proof 3.
 - [x] ~~The `withoutEnlargement` question is settled **by running it**~~ —
       **done 2026-08-30**; the option exists and works. See option 1's table.
 - [ ] A check exists that would have caught this — see the companion ward gap in
