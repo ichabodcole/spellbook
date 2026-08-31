@@ -922,3 +922,15 @@ My own first styling probe reported `styleRulesShipped: 0` while the CSS was vis
 Treat any zero that contradicts a visible fact as an instrument defect until proven otherwise — it is the round-1 lesson inverted, where a zero that would have read as a finding about the artifact was a defect in the measurement.
 A "no deps up-tree" claim is only as good as the walk, and the walk has a blind spot: check `node_modules`, `package.json`, `bunfig.toml` AND the global `~/.bunfig.toml`, because the last is invisible to a parent-directory walk entirely.
 Phase 1a is PROVEN and it is not GUARDED — the cells run every gate, this drive ran once by hand, and that asymmetry is the honest shape of every local-sim result.
+
+## spell-kit sprint 01 · 1c — driving imago, and four near-phantom findings I nearly filed (2026-08-31)
+
+THREE TIMES this session my probe reported a defect that did not exist, and every one was my frame rather than the artifact: filter chips "missing" from an `innerText` read taken mid-re-render, a context entry "absent" because I searched mixed-case against text the daemon lowercases, and annotation tools "inert" because I diffed across a transition that was not a transition (I clicked a tool that was already active).
+A fourth — `close` "leaving the daemon running" — was me checking one second too early; a clean reproduction shows it exits in ~1s in both the sim and the repo tree.
+So the rule this round earns: before filing a negative finding, prove the TRANSITION happened — a diff needs a state that actually changed, a text probe needs the case and the timing the renderer actually produces, and an exit needs the time an exit takes.
+The instrument that saved me every time was widening the frame rather than sharpening the assertion: a whole-document diff, a leaf-node scan with a case-insensitive regex, and a three-way comparison across tools instead of a two-way one.
+To test a contract that two consumers are supposed to SHARE, send the SAME input through BOTH and compare the OUTPUTS: an identical 2000x1500 source produced exactly 1200x900 from imago's daemon and from its browser bundle, which is the shared-policy claim proven by effect rather than by reading the constant in two places.
+`naturalWidth > 0` is the only thing separating "an `<img>` element exists" from "pixels arrived" — a broken image satisfies every DOM-shape assertion, keeps its `src`, and renders a node.
+The remove-it-and-diff styling control generalises, and it is SHARPER on a page with no inline `<style>`: astrolabe's pre-boot dark canvas left a floor of 6/44 changed properties under an inert decoy, imago's absence of one gives a floor of exactly 0/44.
+A decoy must be BIGGER than the real artifact to make the point land — 406KB of inert CSS against 149KB of working CSS means every size- and count-shaped measure prefers the broken one by 2.7x.
+On a shared working tree, attribute `git status` before reporting it: three files went modified DURING my drive and they were a peer's live rework, so "the tree is not clean" was true and "I left fixtures" would have been false.

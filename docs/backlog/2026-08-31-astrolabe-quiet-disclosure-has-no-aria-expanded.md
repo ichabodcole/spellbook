@@ -24,6 +24,18 @@ attribute inside that card would have been a drive-by change to a spell the card
 only reads — the same boundary that kept `astrolabe/bunfig.toml` byte-identical
 in the same phase, and for the same reason.
 
+## ⚡ Second instance, 2026-08-31 — imago's annotation tools
+
+Found in the same family, one phase later, by the same drive method: imago's
+**seven annotation tools** are named only by `title`, with no `aria-label` and
+no `aria-pressed`. **Which tool is active is invisible to assistive technology**
+— a stronger version of this file's original finding, because the state is not
+merely unannounced, it is the whole interaction.
+
+**Two instances is the threshold this file's own acceptance box named** for
+deciding whether a convention is worth having. That decision is now live, and it
+belongs to the grimoire seat rather than to either spell.
+
 ## Acceptance
 
 - [ ] The Quiet disclosure button carries `aria-expanded` reflecting its live
