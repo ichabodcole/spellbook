@@ -1,4 +1,4 @@
-// surface/state/source.server.ts
+// scripts/source.server.ts
 // Server/CLI-only: materialize a user-dropped composite (a base64 data-URL the
 // browser sent over `source.import`) onto the per-session files dir, then derive
 // the canonical Source { path, size, sha }. `path` is the ABSOLUTE on-disk file
@@ -7,7 +7,7 @@
 
 import { writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { Source } from "./types";
+import type { Source } from "../shared/types";
 
 // data:<mime>;base64,<payload> → raw bytes. Tolerates a missing prefix (treats
 // the whole string as base64). Throws on an empty/undecodable payload.

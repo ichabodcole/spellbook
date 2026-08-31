@@ -1,5 +1,8 @@
-// surface/state/versions.ts
-// Pure version helpers shared by server.ts AND the React client. No node:* — keep
+// shared/versions.ts
+// Pure version helpers shared by the backend CLI (src/magpie/backend/cli.ts,
+// which reads chosenVersion for export) AND the React client (MagpieShell,
+// ExportView, RemoveGallery). server.ts does NOT import them — the daemon-side
+// consumer is the CLI, and that is what makes this two-sided. No node:* — keep
 // browser-safe. An element's produced assets are a model-tagged list (versions[]);
 // these resolve "which one is shown" and "its cache-busted URL".
 

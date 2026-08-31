@@ -2,7 +2,7 @@
 // STUB — side-by-side comparison of candidate cutouts (one per removal model /
 // retry) for the focused element, previewed against the chosen backdrop. The
 // candidate-cutout shape is mocked out (see Element // TODO(mock) markers).
-import type { ClientToServer, MagpieState } from "../state/types";
+import type { ClientToServer, MagpieState } from "../../shared/types";
 
 export function CompareGrid({
   state,

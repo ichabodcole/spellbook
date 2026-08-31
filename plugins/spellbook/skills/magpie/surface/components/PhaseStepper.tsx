@@ -16,7 +16,7 @@ import {
   Package,
   Scissors,
 } from "lucide-react";
-import { type ClientToServer, PHASES, type PhaseKey } from "../state/types";
+import { type ClientToServer, PHASES, type PhaseKey } from "../../shared/types";
 
 type PhaseMeta = {
   key: PhaseKey;

@@ -1,4 +1,4 @@
-// surface/state/types.ts
+// shared/types.ts
 // The single shared contract for magpie's conjuration. Imported by server.ts,
 // reduce.ts, cli.ts, AND the React client.
 //

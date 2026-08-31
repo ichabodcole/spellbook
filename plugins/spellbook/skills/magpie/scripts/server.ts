@@ -17,9 +17,11 @@
 //                              per-session tmp dir, sanitized against traversal.
 //   - Server holds canonical state; full-state broadcast to browsers on change.
 //
-// The single contract is surface/state/types.ts (the AgentCommand / ClientToServer
-// unions + AGENT_EVENT_TYPES). Pure mutators live in surface/state/reduce.ts;
-// snapshot persistence in surface/state/persist.server.ts.
+// The single contract is shared/types.ts (the AgentCommand / ClientToServer
+// unions + AGENT_EVENT_TYPES) — TWO-SIDED, so it sits in the spell's own
+// shared/ rather than in either side's tree. Pure mutators live in
+// scripts/reduce.ts and snapshot persistence in scripts/persist.server.ts;
+// both are daemon-only and neither is imported by browser code.
 //
 // Exit codes: 0 submit/close, 2 bad args, 124 idle timeout, 130 cancel.
 
@@ -28,8 +30,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
+import {
+  type AgentCommand,
+  type Backdrop,
+  type ClientToServer,
+  defaultState,
+  type Element,
+  type ElementStatus,
+  type MagpieState,
+  type PhaseKey,
+} from "../shared/types";
 import index from "../surface/index.html";
-import { loadSnapshot, saveSnapshot, snapshotsDir } from "../surface/state/persist.server";
+import { loadSnapshot, saveSnapshot, snapshotsDir } from "./persist.server";
 import {
   addElement,
   addVersion,
@@ -48,18 +60,8 @@ import {
   setSource,
   setStatus,
   updateElement,
-} from "../surface/state/reduce";
-import { materializeSource } from "../surface/state/source.server";
-import {
-  type AgentCommand,
-  type Backdrop,
-  type ClientToServer,
-  defaultState,
-  type Element,
-  type ElementStatus,
-  type MagpieState,
-  type PhaseKey,
-} from "../surface/state/types";
+} from "./reduce";
+import { materializeSource } from "./source.server";
 
 type CloseReason = "submit" | "cancel" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
@@ -871,7 +873,7 @@ if (import.meta.main) {
   process.exit(exitCode);
 }
 
-export { leanState } from "../surface/state/reduce";
-export type { MagpieState } from "../surface/state/types";
-export { defaultState } from "../surface/state/types";
+export type { MagpieState } from "../shared/types";
+export { defaultState } from "../shared/types";
+export { leanState } from "./reduce";
 export { main, parsePortFromSessionId, snapshotsDir };

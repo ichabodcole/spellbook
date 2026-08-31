@@ -2,6 +2,7 @@
 // rect resize/draw helpers). No DOM — fast + deterministic.
 
 import { expect, test } from "bun:test";
+import type { Bbox } from "../shared/types";
 import {
   bboxToFrac,
   clampFrac,
@@ -12,7 +13,6 @@ import {
   MIN_FRAC,
   resizeFracBox,
 } from "../surface/components/breakdown/geometry";
-import type { Bbox } from "../surface/state/types";
 
 const SIZE: [number, number] = [1408, 768];
 

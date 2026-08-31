@@ -2,7 +2,7 @@
 // STUB — the per-element judgment strip: confirm / drop the focused element's
 // cutout. Wired to the real element.judge gesture so the skeleton is exercisable;
 // the rich judgment shape (rating, notes) is being designed in parallel.
-import type { ClientToServer, Element, MagpieState } from "../state/types";
+import type { ClientToServer, Element, MagpieState } from "../../shared/types";
 
 export function JudgeBar({
   state,

@@ -24,6 +24,8 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import type { ClientToServer, Element, MagpieState } from "../shared/types";
+import { chosenVersion, versionUrl } from "../shared/versions";
 import { ActivityBars } from "./components/ActivityBars";
 import { BreakdownCanvas } from "./components/BreakdownCanvas";
 import { TypeMenu } from "./components/breakdown/TypeMenu";
@@ -33,9 +35,7 @@ import { ExportView } from "./components/ExportView";
 import { PhaseStepper } from "./components/PhaseStepper";
 import { RemoveGallery } from "./components/RemoveGallery";
 import { importDroppedFile } from "./state/fileIntake";
-import type { ClientToServer, Element, MagpieState } from "./state/types";
 import type { ConnStatus } from "./state/useSession";
-import { chosenVersion, versionUrl } from "./state/versions";
 
 export function MagpieShell({
   state,

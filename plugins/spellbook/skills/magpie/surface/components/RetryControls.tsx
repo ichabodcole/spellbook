@@ -2,7 +2,7 @@
 // STUB — controls to re-run background removal for the focused element (pick a
 // backend, tweak settings, retry). Backends are stubbed (see scripts/backend.ts);
 // the settings surface is being designed in parallel.
-import type { ClientToServer, MagpieState } from "../state/types";
+import type { ClientToServer, MagpieState } from "../../shared/types";
 
 export function RetryControls({
   state,

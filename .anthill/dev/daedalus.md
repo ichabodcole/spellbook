@@ -1074,3 +1074,32 @@ magpie's `tests/cli.test.ts` imported its CLI's internals; after the source move
 Moving the file to `src/magpie/backend/cli.test.ts` also improved it: the unit cells import the source, while the subprocess cells now spawn the SHIPPED launcher, so one file tests the parser before bundling and the artifact after.
 Rule: when a module relocates, ask of each of its consumers whether the consumer is on the same side of a boundary — an import that merely gets longer may be an import that is no longer allowed.
 
+
+## spell-kit sprint 03 · P6a — magpie's seam, and the playbook's first run (2026-08-31)
+
+**ONCE A SPELL'S BACKEND SHIPS BUILT FROM `src/`, "the daemon's reaches into surface source" STOPS BEING A QUESTION ABOUT `scripts/`, AND EVERY SEAM CENSUS SCOPED TO ONE DIRECTORY IS BLIND TO HALF THE SEAM.**
+The card's done-when — `grep '\.\./surface/' magpie/scripts/*.ts` returns exactly one line — was satisfiable while `src/magpie/backend/cli.ts` still reached into `magpie/surface/state/` at three sites, two of them value imports.
+The grep is scoped to the directory the seam used to live in; the built backend moved out of it in sprint 02 and took a third of the seam with it.
+Rule: before trusting a seam count, enumerate the spell's execution path by ROOTS (`<spell>/scripts/` **and** `src/<spell>/backend/`), not by the directory the previous port happened to use — the same shape as extending a ward's WALK instead of loosening its predicate.
+
+**imago's sibling trap has a second form, and the second form is the one a filename sort cannot reach.**
+imago's missed file was one hop BELOW a moved file (a browser-safe policy module imported by the `.server.ts` that moved).
+magpie's was one hop SIDEWAYS into another root: `versions.ts` has no `server.ts` import site at all and is two-sided only because the BUILT CLI reads `chosenVersion` — so a sort driven by "what does server.ts import" classifies it as browser-only and leaves it behind.
+Rule: build the reverse-import map over every root that ships, then sort; the map is what makes a sideways consumer visible, and no reading of the importer can.
+
+**A rewrite script keyed on a module's OLD location is structurally incapable of fixing a MOVED file's OWN relative imports, because those resolve from the file's NEW directory.**
+`scripts/reduce.ts`, `scripts/persist.server.ts` and `scripts/source.server.ts` each imported `./types`, which after the move resolved to `scripts/types` — matching nothing in the old→new map, so the rewriter passed over all three in silence.
+The resolve-sweep is what found them, which is precisely why the playbook's "resolve-sweep every specifier afterwards; do not trust the rewrite's own list" is the load-bearing step and not a belt-and-braces one.
+Keep the sweep's known-noise list beside it: 17 synthetic fixture strings in `grimoire/` and 2 already-relocated `../surface/index.html` entries, so 19 unresolved is this tree's floor and only a 20th means anything.
+
+**`export type { X } from "…"` is a TYPE-ONLY site wearing a re-export's clothes, and an import census done by eye counts it as a value.**
+The brief said 12 sites, 9 value / 3 type-only; the repo's own scanner says 12 sites, **8 value / 4 type-only** — the difference is `server.ts:875`, counted as value because it sat in a block of "three re-exports".
+Classify by ERASURE with `scanSpecifiers`, never by whether the statement opens with `export`.
+
+**When the backend ships BUILT, rebuilding `dist/` belongs to the SEAM half, not to the relocation half.**
+Cutting the seam edits the backend source's specifiers, so the committed `dist/cli.js` stops reproducing the moment the seam lands — measured: sha `8b1e80d7` → `2833d12d`, and a second build reproduced `2833d12d` exactly.
+A seam card that says "relocate nothing, do not commit" still owes a rebuilt, STAGED artifact, or it hands the next seat a tree whose shipped artifact and source disagree under Contract 18.
+
+**Sort a two-sided candidate on evidence, and say what the evidence WAS in the file, because the next reader will re-derive it from the filename otherwise.**
+`reduce.ts` looks like surface state and is daemon-only (zero browser importers); `alpha.ts` looks like backend policy and is two-sided (`RemoveGallery.tsx` reads it); `versions.ts`'s own header claimed it was "shared by server.ts AND the React client" and server.ts has never imported it.
+All three headers now name their real consumers, and the ward pin shows the sort directly — `../shared/types` beside `./reduce` in one inventory is the three-way sort made visible in an instrument rather than in prose.

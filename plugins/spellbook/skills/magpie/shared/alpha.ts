@@ -1,4 +1,4 @@
-// surface/state/alpha.ts
+// shared/alpha.ts
 // The type-driven alpha policy — which ELEMENT TYPES get background removal.
 // Browser-safe (no node:*, no Bun): the surface reads it to show "Remove bg" vs a
 // "kept whole" note; scripts/backend.ts + remove.py mirror the same rule. This is

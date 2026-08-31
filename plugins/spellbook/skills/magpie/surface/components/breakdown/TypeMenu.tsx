@@ -8,8 +8,8 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { ElementType } from "../../state/types";
-import { ELEMENT_TYPES } from "../../state/types";
+import type { ElementType } from "../../../shared/types";
+import { ELEMENT_TYPES } from "../../../shared/types";
 
 export function TypeMenu({
   value,

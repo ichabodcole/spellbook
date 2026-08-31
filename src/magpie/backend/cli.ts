@@ -45,9 +45,9 @@ import {
   shouldRemove,
 } from "../../../plugins/spellbook/skills/magpie/scripts/backend";
 import { DiscoverError, discover } from "../../../plugins/spellbook/skills/magpie/scripts/discover";
-import { newId } from "../../../plugins/spellbook/skills/magpie/surface/state/reduce";
-import type { Element } from "../../../plugins/spellbook/skills/magpie/surface/state/types";
-import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/surface/state/versions";
+import { newId } from "../../../plugins/spellbook/skills/magpie/scripts/reduce";
+import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
+import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
 import { printJson } from "../../kit/lib/printJson";
 
 // Swallow EPIPE (a downstream `head`/Monitor closing our stdout shouldn't crash).

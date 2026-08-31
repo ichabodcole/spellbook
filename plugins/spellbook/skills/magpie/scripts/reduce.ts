@@ -1,4 +1,4 @@
-// surface/state/reduce.ts
+// scripts/reduce.ts
 // Pure, in-place mutators over MagpieState + the lean projection. The daemon
 // (server.ts) orchestrates these (it owns ids, broadcast, SSE); these functions
 // just mutate canonical state and report whether anything changed, so they're
@@ -16,7 +16,7 @@ import {
   PHASES,
   type PhaseKey,
   type Source,
-} from "./types";
+} from "../shared/types";
 
 // ── id helpers ──────────────────────────────────────────────────────────────
 function randHex(bytes: number): string {

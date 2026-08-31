@@ -1039,14 +1039,22 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // which did not exist when this cell was written. That is Phase 1b landing,
     // not drift, and it is the kind of change a line-keyed pin would have
     // reported as a mystery instead of as a specifier moving.
+    //
+    // ⚠ `magpie` moved the same way in Phase 6's seam half (sprint 03), and
+    // its three rows are the three-way sort made visible IN THE PIN: the
+    // two-sided contracts went to `../shared/` (types, alpha), while `reduce`
+    // is daemon-only — no browser file imports it — so it landed BESIDE
+    // server.ts and its specifier is `./reduce`, not `../shared/reduce`. A pin
+    // that showed only `../shared/` here would be hiding the distinction the
+    // sort exists to make.
     expect(found.sort((a, b) => key(a).localeCompare(key(b)))).toEqual([
       { file: "astrolabe/scripts/server.ts", spec: "./state.ts", erased: true },
       { file: "imago/scripts/server.ts", spec: "../shared/types", erased: false },
       { file: "imago/scripts/server.ts", spec: "../shared/types", erased: true },
-      { file: "magpie/scripts/backend.ts", spec: "../surface/state/alpha", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../surface/state/reduce", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../surface/state/types", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../surface/state/types", erased: true },
+      { file: "magpie/scripts/backend.ts", spec: "../shared/alpha", erased: false },
+      { file: "magpie/scripts/server.ts", spec: "../shared/types", erased: false },
+      { file: "magpie/scripts/server.ts", spec: "../shared/types", erased: true },
+      { file: "magpie/scripts/server.ts", spec: "./reduce", erased: false },
     ]);
   });
 

@@ -6,8 +6,8 @@
 // + drop-target pattern is kept faithful.
 import { ImagePlus, SendHorizontal, Terminal } from "lucide-react";
 import { useRef, useState } from "react";
+import type { ClientToServer, MagpieState, Message } from "../../shared/types";
 import { processFiles } from "../state/fileIntake";
-import type { ClientToServer, MagpieState, Message } from "../state/types";
 
 export function Conversation({
   state,
