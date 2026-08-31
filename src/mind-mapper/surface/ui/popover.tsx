@@ -10,7 +10,7 @@
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import type * as React from "react";
-import { cn } from "../lib/utils";
+import { cn } from "../../../kit/lib/cn";
 
 // Base UI's className props also accept state-functions; the vendored layer
 // deliberately narrows to plain strings (cn stays dependency-free).

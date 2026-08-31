@@ -19565,6 +19565,11 @@ function loadImage(url) {
   });
 }
 
+// src/kit/lib/cn.ts
+function cn(...inputs) {
+  return inputs.filter(Boolean).join(" ");
+}
+
 // src/imago/surface/components/LayersPanel.tsx
 var import_react9 = __toESM(require_react(), 1);
 var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
@@ -19703,7 +19708,7 @@ function LayersPanel({
             e.preventDefault();
             onDropRow(j);
           },
-          className: `group flex items-center gap-1.5 rounded-md px-1.5 py-1 border ${overId === layer.id ? "border-accent bg-accent/10" : "border-transparent"} ${sel ? "bg-accent/10" : "hover:bg-surface-3"} ${layer.hidden ? "opacity-55" : ""}`,
+          className: cn("group flex items-center gap-1.5 rounded-md px-1.5 py-1 border", overId === layer.id ? "border-accent bg-accent/10" : "border-transparent", sel ? "bg-accent/10" : "hover:bg-surface-3", layer.hidden && "opacity-55"),
           children: [
             layer.kind === "image" ? /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
               className: "shrink-0 w-3.5"

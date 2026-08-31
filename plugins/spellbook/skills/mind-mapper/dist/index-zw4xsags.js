@@ -41846,7 +41846,7 @@ var ContextMenuTrigger = /* @__PURE__ */ React85.forwardRef(function ContextMenu
 });
 if (true)
   ContextMenuTrigger.displayName = "ContextMenuTrigger";
-// src/mind-mapper/surface/lib/utils.ts
+// src/kit/lib/cn.ts
 function cn2(...inputs) {
   return inputs.filter(Boolean).join(" ");
 }

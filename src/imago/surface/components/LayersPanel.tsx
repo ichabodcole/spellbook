@@ -15,6 +15,7 @@
 // layer.reorder wants the absolute server index (back→front). The inversion is
 //   toIndex = (realCount - 1) - visualIndex
 // — get this right or layers stack upside-down.
+
 import {
   Eye,
   EyeOff,
@@ -36,6 +37,7 @@ import type {
   Layer,
   Mark,
 } from "../../../../plugins/spellbook/skills/imago/shared/types";
+import { cn } from "../../../kit/lib/cn";
 
 export function LayersPanel({
   layers,
@@ -184,9 +186,12 @@ export function LayersPanel({
               e.preventDefault();
               onDropRow(j);
             }}
-            className={`group flex items-center gap-1.5 rounded-md px-1.5 py-1 border ${
-              overId === layer.id ? "border-accent bg-accent/10" : "border-transparent"
-            } ${sel ? "bg-accent/10" : "hover:bg-surface-3"} ${layer.hidden ? "opacity-55" : ""}`}
+            className={cn(
+              "group flex items-center gap-1.5 rounded-md px-1.5 py-1 border",
+              overId === layer.id ? "border-accent bg-accent/10" : "border-transparent",
+              sel ? "bg-accent/10" : "hover:bg-surface-3",
+              layer.hidden && "opacity-55",
+            )}
           >
             {/* make-active target — DISTINCT from the name-click (which selects the
                 layer's marks). Image layers can't be a draw target → no dot, just a
