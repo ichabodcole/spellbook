@@ -161,13 +161,13 @@ grows a source file. Cheap by construction — the bundler erases the import —
 > there is a clean candidate it structurally could not find, added as the first
 > row below.
 
-| Candidate                                                   | What it is                                                                                                                                                                                              | Why it costs something                                                                                                                                                                                                             |
-| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`cn()` from `src/mind-mapper/surface/lib/utils.ts`** ⭐⭐ | 10 lines, **dependency-free by design**, `ClassValue` + a filter-join. **7 call sites in mind-mapper; imago has none.** Moves to `kit/lib/cn.ts`; mind-mapper re-points, imago adopts at one call site  | Nothing that matters. It is a **value** export (not type-only, so the bundler is genuinely exercised), it is boring by construction, and it is a **prerequisite for `kit/ui/` later** rather than throwaway proof scaffolding      |
-| **Fold into Phase 4**                                       | Phase 4's kit component **is** a shared surface module, imported by two surfaces                                                                                                                        | Slice 3 stops being a separate proof, and the two capabilities land tangled rather than separately — **now unnecessary, given the row above**                                                                                      |
-| `useEscape(onClose, enabled?)`                              | 3 clean sites — `imago/surface/components/Lightbox.tsx:7-13`, `ContentModal.tsx:31-37`, `astrolabe/surface/components/AddProjectModal.tsx:37-44` — plus 3 imago near-sites that add pointerdown-outside | A **hook, not a pure function**; and the consumers are imago + astrolabe, **not mind-mapper**                                                                                                                                      |
-| `ConnStatus` + the `wss:`/`ws:` derivation                  | byte-identical in `mind-mapper/…/useProjectState.ts:24,:100-101` and `imago/…/useSession.ts:4,:13-14` (magpie too)                                                                                      | **2 lines.** A 2-line module is worse than the duplication — and the type half erases entirely, so it proves nothing about the bundler                                                                                             |
-| `relTime` / `formatAge`                                     | the only genuinely **pure** pair — `astrolabe/…/board.ts:33-43` vs `mind-mapper/…/buildInfo.ts:15-24`                                                                                                   | Five substantive differences (`round` vs `floor`, seconds tier, `""` vs `null`, epoch vs ISO). Converging **changes rendered strings in both spells** and breaks `buildInfo.test.ts:10-12,22`. A rewrite wearing a share's clothes |
+| Candidate                                                                                                                                                          | What it is                                                                                                                                                                                              | Why it costs something                                                                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`cn()` from `src/mind-mapper/surface/lib/utils.ts`** ⭐⭐                                                                                                        | 10 lines, **dependency-free by design**, `ClassValue` + a filter-join. **7 call sites in mind-mapper; imago has none.** Moves to `kit/lib/cn.ts`; mind-mapper re-points, imago adopts at one call site  | Nothing that matters. It is a **value** export (not type-only, so the bundler is genuinely exercised), it is boring by construction, and it is a **prerequisite for `kit/ui/` later** rather than throwaway proof scaffolding      |
+| **Fold into Phase 4**                                                                                                                                              | Phase 4's kit component **is** a shared surface module, imported by two surfaces                                                                                                                        | Slice 3 stops being a separate proof, and the two capabilities land tangled rather than separately — **now unnecessary, given the row above**                                                                                      |
+| `useEscape(onClose, enabled?)`                                                                                                                                     | 3 clean sites — `imago/surface/components/Lightbox.tsx:7-13`, `ContentModal.tsx:31-37`, `astrolabe/surface/components/AddProjectModal.tsx:37-44` — plus 3 imago near-sites that add pointerdown-outside | A **hook, not a pure function**; and the consumers are imago + astrolabe, **not mind-mapper**                                                                                                                                      |
+| `ConnStatus` + the `wss:`/`ws:` derivation                                                                                                                         | byte-identical in `mind-mapper/…/useProjectState.ts:24,:100-101` and `imago/…/useSession.ts:4,:13-14` (magpie too)                                                                                      | **2 lines.** A 2-line module is worse than the duplication — and the type half erases entirely, so it proves nothing about the bundler                                                                                             |
+| ~~`relTime` / `formatAge`~~ **moot 2026-08-31** — `buildInfo.ts` was deleted at `fae8830`, so the pair no longer exists. Retained as the record of why `cn()` won. | the only genuinely **pure** pair — `astrolabe/…/board.ts:33-43` vs `mind-mapper/…/buildInfo.ts:15-24`                                                                                                   | Five substantive differences (`round` vs `floor`, seconds tier, `""` vs `null`, epoch vs ISO). Converging **changes rendered strings in both spells** and breaks `buildInfo.test.ts:10-12,22`. A rewrite wearing a share's clothes |
 
 **RULED (Cole, 2026-08-30): take `cn()`.** Slice 3 does **not** fold into Phase
 4 and does **not** take `useEscape`. **Do not take `relTime`** — it is exactly
@@ -205,25 +205,43 @@ instruction applies: bank the ruling, narrow the proof.
   is not — imago's and astrolabe's surfaces still ship inside the plugin
   subtree, where importing `src/kit/` would violate Ward 1. **Slice 3 therefore
   does depend on Phase 1**, unlike Slice 2.
-- **Extend the staleness walk.** `mind-mapper/scripts/server.ts:112-114` walks
-  `src/<spell>/surface` only, so **a `src/kit/` change marks no spell's `dist/`
-  stale** — the committed bundle silently diverges from its source. Both ported
-  spells inherit the same detector. Add `src/kit/` to the walked set. This is
-  gap analysis [I5](../../gap-analysis.md#finding-index) — _nothing keeps a
-  committed `dist/` honest_ — and this phase is where it becomes load-bearing.
-- **mind-mapper's `dist/` is stale at HEAD** (its own detector says so during
-  `bun test`). Rebuild and commit it as part of this phase, or the staleness
-  work lands on top of an already-false baseline.
+  > ### ⚠ Two bullets stood here and BOTH have lost their subject — reconciled 2026-08-31
+  >
+  > They said: _extend the staleness walk to `src/kit/`_ (a real work item
+  > pointing at `mind-mapper/scripts/server.ts:112-114`), and _mind-mapper's
+  > `dist/` is stale at HEAD, rebuild it before building on a false baseline_.
+  > **A seat could have picked up either.**
+  >
+  > **The detector is deleted, not extended** (`fae8830`, Cole's ruling). And
+  > mind-mapper's `dist/` was never stale — the detector was **inverted**: it
+  > compared mtimes across a git boundary, which preserves neither, so every
+  > correct dist reported STALE and the merge that landed two freshly-built ones
+  > is what made them look worst.
+  >
+  > **I5 survives and its remedy space collapsed in our favour.** _Nothing keeps
+  > a committed `dist/` honest_ is still true — but with the stamp gone, `dist/`
+  > is **byte-reproducible with no exclusion list** (proved at git level: two
+  > consecutive rebuilds write the same tree sha). So the honest check is
+  > **rebuild and diff** — no basis to rule on, no retention story, and it
+  > cannot be inverted by a checkout. **`src/kit/` needs no special handling**:
+  > a rebuild consumes whatever the build consumes, so a kit change is caught
+  > for free by the same check that catches a surface change.
+  >
+  > **Not built here.** It is the release-pipeline sprint's, whose plan is
+  > [the 2026-08-31 spike](../../../../investigations/2026-08-31-releasing-a-non-stale-build.md).
 
 **This phase is done when:**
 `grep -rl "surface/lib/utils" plugins/spellbook/skills/*/dist/` returns
 **nothing** — no _source path_ leaked into a bundle. ⚠ **Do not grep the export
 name**: the build sets no `minify`, so `cn` survives as an identifier and
 matches in every bundle regardless. The path grep is the discriminating one
-while both surfaces import it and both boards render; and touching a file in
-`src/kit/` makes both daemons print `STALE DIST` on next boot. _(If Slice 3
-folds into Phase 4, the same two checks run there against the kit component —
-the proof does not disappear, it changes address.)_
+while both surfaces import it and both boards render. ⚠ _A third clause stood
+here — "touching a file in `src/kit/` makes both daemons print `STALE DIST` on
+next boot" — and is now simply **false**: that warning was deleted at `fae8830`.
+Its replacement, if this phase wants one, is that a rebuild after a `src/kit/`
+edit leaves `git status` **dirty**, which is the same signal without a daemon in
+it._ _(If Slice 3 folds into Phase 4, the same two checks run there against the
+kit component — the proof does not disappear, it changes address.)_
 
 > ⚠ **A type-only shared module cannot satisfy this phase.** `import type` is
 > erased by the compiler before the bundler ever sees it, so the `dist/` check
@@ -236,8 +254,11 @@ _Everything above can be green while both of these are true._
 
 - Nothing in `bun test` builds, so **"the bundler erased it" is unverifiable
   from the suite** — it requires **inspecting `dist/`**.
-- A stale committed `dist/` produces a _working_ board; only the stamp
-  comparison distinguishes fresh from stale.
+- A stale committed `dist/` produces a _working_ board — and **nothing in the
+  gate distinguishes fresh from stale.** ⚠ _This bullet said "only the stamp
+  comparison distinguishes" until 2026-08-31; the stamp is gone, and it was
+  inverted anyway. What distinguishes them now is **rebuilding and diffing**,
+  which no cell does yet._
 
 ---
 

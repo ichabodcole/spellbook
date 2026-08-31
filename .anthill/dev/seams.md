@@ -237,7 +237,17 @@ Two operational corollaries:
 - **SUPERSESSION 2 — activity TTL clause (ACT1, supersedes Claim C's "non-idle arms a ~60s TTL emitting synthetic idle"):** the TTL is state-aware now — `received → (MIND_MAPPER_ACTIVITY_TTL_MS, ~60s) → agent.activity {state:"stalled"}` (daemon-synthesized, PERSISTS — no re-arm, no decay to idle/blank — until an agent write or an explicit set resolves it); `thinking → (TTL) → idle` unchanged. **`stalled` is daemon-synthesized vocabulary ONLY** — `POST /activity` rejects it (epoch.changed asymmetry). Surface rule (circe): stalled gets a STATIC attention-tinted branch, never the thinking pulse (false-liveness), and the client THINKING_TTL backstop must not clear it to blank.
 - **Automated activity (ACT1):** the daemon auto-flips `agent.activity {state:"received"}` on a `role:"user"` /send while `entry.agents >= 1` (no tail → no flip; the presence dot already says nobody's home), emitted AFTER `message.posted` — two seqs, ordered, both through the normal bus path (the ephemeral-cursor clause holds). **Resolution:** agent-authored writes resolve any AUTO state (auto-received / stalled) to idle — `send role:"agent"` (which ALSO resolves explicit `thinking`: a reply is the turn's terminal act; re-set thinking explicitly for send-then-more-work), propose with author `"agent"` (user-sketched proposals don't), mark with author `"agent"`, and ratify (no authorship on that wire — resolves unconditionally). Explicit non-idle states otherwise stand until explicit idle or TTL. `activityState`/`activitySource` live in-memory on ProjectEntry (server.ts) — a daemon restart honestly clears to no-signal. The agent no longer needs to post `activity received` manually; `thinking`/`idle` remain its own.
 
-- **Build stamp (B1):** `src/mind-mapper/build.ts` is clean → build → stamp: `rmSync(dist)` before `Bun.build` (kills hashed-chunk accumulation), then `dist/build.json {commit (git rev-parse --short, "unknown" tolerated), builtAt (ISO)}` — written AFTER success only, so a failed build leaves no stamped half-dist. Release-mode boot reads the stamp ONCE (missing/corrupt stamp tolerated — pre-stamp dists serve, no buildInfo); if the surface src tree exists next to the checkout (existsSync-guarded; source-free installs never walk, never warn) and its newest mtime > builtAt → STALE DIST stderr warning + `stale:true`. Wire: `/state` gains `buildInfo {commit, builtAt, stale}` spread AT THE HANDLER (release only; **ProjectState under-reports the wire again — presence's sibling**: grep server.ts, not state.ts). Boot stdout JSON gains `buildInfo` additively. Test knob (tests only): `MIND_MAPPER_SRC_DIR` overrides the src-tree location. **Release-cut prerequisite:** the committed dist/ predates the stamp — the next real `bun run src/mind-mapper/build.ts` (finalize/release, after circe's P2 lands) ships build.json.
+- ⛔ **Build stamp (B1) — SUPERSEDED 2026-08-31, WHOLLY. Removed, not amended** (`fae8830`,
+  Cole's ruling). The stamp, the footer it fed, the `STALE DIST` warning, the `/state`
+  `buildInfo` spread, the `MIND_MAPPER_SRC_DIR` knob and `dist/build.json` for all three
+  spells are gone. **Read the paragraph below as a record of what was ratified, not as a
+  description of the tree** — every mechanism it names has been deleted. Why: the stamp served
+  two jobs that pull opposite ways (a wall clock for a human-readable age, an identity for a
+  machine freshness check), and the check was the second job implemented on the first job's
+  data — which is why it was **inverted**, reporting STALE on three dists that were
+  byte-identical to a fresh rebuild. See **Contract 18**.
+
+  _The superseded text follows._ **Build stamp (B1):** `src/mind-mapper/build.ts` is clean → build → stamp: `rmSync(dist)` before `Bun.build` (kills hashed-chunk accumulation), then `dist/build.json {commit (git rev-parse --short, "unknown" tolerated), builtAt (ISO)}` — written AFTER success only, so a failed build leaves no stamped half-dist. Release-mode boot reads the stamp ONCE (missing/corrupt stamp tolerated — pre-stamp dists serve, no buildInfo); if the surface src tree exists next to the checkout (existsSync-guarded; source-free installs never walk, never warn) and its newest mtime > builtAt → STALE DIST stderr warning + `stale:true`. Wire: `/state` gains `buildInfo {commit, builtAt, stale}` spread AT THE HANDLER (release only; **ProjectState under-reports the wire again — presence's sibling**: grep server.ts, not state.ts). Boot stdout JSON gains `buildInfo` additively. Test knob (tests only): `MIND_MAPPER_SRC_DIR` overrides the src-tree location. **Release-cut prerequisite:** the committed dist/ predates the stamp — the next real `bun run src/mind-mapper/build.ts` (finalize/release, after circe's P2 lands) ships build.json.
 - **R1 typed refusal:** the in-zone ratify refusal is now 409 `{error:"zoned", zoneId}` (typed `ZonedError`, CitedError/ZoneNotEmptyError family) instead of the prose-400 — menus branch on `error === "zoned"` without string-matching. Semantics unchanged: promote first, ratification (reject included) stays a main-queue act.
 - **Ground-grammar footnote (G1, restated once):** a BARE id in `message.ground[]` is a node ref OR a pending-proposal ref (no `proposal:` prefix exists); `doc:<id>` is a doc ref; unknown prefixes still drop silently.
 - **CLI `--ground` repeat semantics (gate rework):** `send --ground` is parseArgs-`multiple` — repeated flags ACCUMULATE and every value still splits on commas (`--ground a,b --ground doc:x` → `["a","b","doc:x"]`); blank fragments drop, and an all-blank resolve posts NO ground (never `[""]`). The falsified prior behavior (single-value last-wins: repeats silently dropped refs at exit 0 — cassandra's gate) is the reason this is a stated seam: any spell CLI copying send's flag pattern must copy the `multiple` too.
@@ -804,3 +814,49 @@ blind set   roots       = ["plugins/spellbook/skills", "src"]
 **Any instrument scoped by a path prefix reports relocation as PROGRESS.** When mind-mapper moved to `src/`, `gate-blind-set` lost 276 blind lines and its total went **down** — the one direction that reads as good news, so nothing was going to question it. Contract 4 is the thing that relocates trees, so the warning belongs beside it: **ask of every prefix-scoped instrument what happens to its number when the subject moves.**
 
 The same shape bit a guard rather than a report: ward 1a's zero-guard was a **floor on file count**, calibrated at 206 against a tree this project exists to drain, and it fired at **149 against a floor of 150** — 206 → 192 → 149 → 101 projected. **A magnitude asserted over a population the roadmap shrinks is a countdown, not a guard**, and it cannot make the one discrimination it exists for: shrinking-by-design versus a dead walk. Replaced with **membership over a structurally-invariant subset** (`scripts/` cannot move; Contract 3 keeps backends shipping as source), derived from the same tree as the population, and calibrated by **simulating the remaining relocation and requiring green** (`5253b72`).
+
+
+## Contract 18 — the shipped artifact is verified by REPRODUCTION, never by a proxy for its inputs, and never by regenerating it
+
+_Owner: cassandra (the instrument) × daedalus (the artifact) × prospero (release ops). Ratified 2026-08-31 from the release-staleness spike; single-sourced here from the seats' returns — seat docs point, never restate._
+
+**The contract, stated once:** a committed `dist/` is current **iff a rebuild at the canonical
+checkout root — repo-root `node_modules`, `bun install --frozen-lockfile`, the pinned Bun —
+produces byte-identical files.** No stamp, no timestamp, no recorded sha, no basis to rule on.
+
+**Verified 2026-08-31:** byte-identical across a different absolute path, a separate
+`node_modules`, and a month of elapsed time (mind-mapper's `dist/` built 2026-07-27 still
+reproduces exactly). After the stamp's removal, reproducible **with no exclusion list** —
+proved at git level, two consecutive rebuilds writing the same tree sha.
+
+**Three corollaries, each paid for:**
+
+- ⛔ **The comparison is `git status --porcelain`, NEVER `git diff`.** A content change
+  **renames** the hashed chunk, so the new file is **untracked** and invisible to `diff`,
+  which sees only a deletion. _(This is the one place the industry-standard `check-dist`
+  recipe does not transfer: GitHub's artifact is a fixed `dist/index.js`; ours is
+  content-addressed.)_
+- ⛔ **The check must report the size of the set it examined; zero files is NO VERDICT, never
+  a pass.** A globbed pathspec matched nothing and reported GREEN twice on a tree with three
+  modified dists and a deliberately stale bundle.
+- ⛔ **`dist/` is gitignored by a bare `dist` rule with a hand-kept un-ignore list**, so a
+  newly relocated spell's `dist/` is **silently skipped by `git add` at exit 0** and ships
+  absent — which under Contract 1 falls to dev mode and dies importing a `src/` tree the
+  marketplace never copied.
+
+**CI verifies; it must not generate.** A `GITHUB_TOKEN` commit **triggers no further
+workflow**, so a CI-regenerated artifact would be the one thing in the repo nothing verifies —
+a false reassurance about an instrument, which this team ranks above a false claim about code.
+
+**Why a timestamp can never be the basis:** mtime records *which action ran last*, not *what
+changed*, and **git preserves neither mtime nor a build's wall clock across a checkout**. Any
+freshness check comparing a timestamp across a git boundary is unconditionally unreliable —
+and ours was worse than unreliable, it was **inverted**: the merge that landed two
+freshly-built dists is what made them report stale.
+
+**Repeal when** the artifact stops being reproducible — a non-deterministic bundler, or a
+toolchain that cannot be pinned. At that point the basis must be **re-derived, not patched**.
+
+**Proof:** `fae8830` (the stamp's removal, and the rebuild-is-a-git-no-op measurement) ·
+[the 2026-08-31 spike](../../docs/investigations/2026-08-31-releasing-a-non-stale-build.md),
+which carries the touch-point pricing and what no layer catches.
