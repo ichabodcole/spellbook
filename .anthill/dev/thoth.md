@@ -747,6 +747,40 @@ With `SKILLS_DIR`/`SRC_DIR` exported in a shell, my gate-honesty report cell pri
 ⭐ **A zero-guard proves the instrument RAN; it says nothing about WHICH WORLD it ran against.** The fix is to strip the overrides for the ward's own run and to assert the ROOTS, not just that the count is positive.
 **Every env-var calibration hook I add from now on is also an attack surface on the cell it was added to serve.**
 
+### ⭐⭐ 2026-08-31, ROUND 3 — the same defect three times in one session, at three scales, and I caused all three
+
+**THE PATTERN, STATED FIRST, BECAUSE IT IS THE ONLY THING WORTH CARRYING: I kept building a check whose POPULATION WAS EMPTY, and every one of them passed as calibrated.**
+Round 2 I wrote the finding down — *a mutation planted in an empty population proves nothing* — and then produced two more instances of it in the patch that recorded it.
+```
+F1 (round 2)   cross-check vs re-exports   population 7, my grep said 0     -> masked, ward 1a missed a real escape
+R3-a           byte-offset dedupe          population 0 in the real corpus  -> mutation invisible, 11/0
+R3-b           `typeof` type-query rule    population 0 in the real corpus  -> mutation invisible, 13/0
+```
+⛔ **The tell is identical every time and I did not learn to see it until the third: THE MUTATION PASSED.** A mutation that passes has exactly two explanations — the cell is broken, or the construct is not there — **and I reached for neither; I read it as "not applicable" and moved on.**
+⭐ **The rule: a mutation that comes back green is an UNFINISHED measurement, not a result. Count the construct before interpreting the green.**
+⭐⭐ **And the remedy when the real population is genuinely empty is not to declare the fix uncalibrated — it is to MINT A SYNTHETIC POPULATION.** Both R3-a and R3-b are now calibrated by a two-line synthetic input in the cell itself; a corpus-wide audit cannot calibrate a rule for a position the corpus does not contain.
+
+**A PARTITION ARGUMENT LICENSES A CLAIM ABOUT CLASSIFICATION AND NEVER ABOUT COVERAGE.**
+I wrote "every relative specifier lands in exactly one of the two cells." True of every ref the scanner EMITS; false of four constructs that emit no ref at all — and the fourth, `require(("./x"))`, was documented nowhere because it *looks exactly like* a form the scanner handles.
+⭐ **Before trusting a partition, ask what the classifier never sees.** The dangerous member of a blind set is never the one that looks exotic; it is the one that looks handled.
+
+**THE STRONGEST FIX FOR A HEURISTIC-DEPENDENT WARD IS TO REMOVE THE DEPENDENCY, NOT TO IMPROVE THE HEURISTIC.**
+Ward 1b skipped `dynamic`, so its coverage rode on a peephole guess about type positions, and every position the guess missed was an unseen bare dependency on the shipped execution path.
+I could have added tokens to the guess — and would have been playing whack-a-mole against a class nobody can enumerate.
+⭐ **Instead I deleted the filter: 1b now ignores `kind` entirely, so no classification error can hide anything from it.** Measured free first — the widening added exactly one ref, a builtin.
+**Generalisation: when a ward consults a classifier it does not need, its blind spots become the classifier's blind spots, and those are unbounded. Ask what the ward would lose by consulting nothing.**
+⚠ **The residual heuristic then needs a TRIPWIRE rather than perfection** — a cell asserting it agrees with a real parser corpus-wide, so the day it drifts a cell reddens instead of a number moving.
+
+**SLACK IN A COMPARISON IS CAPACITY FOR A LOSS TO HIDE IN, AND MY STATED REASON FOR IT WAS THE DEFECT.**
+I chose `>=` over `===` because "the scanner is MEANT to see more than the parser." True — and it left 16 pairs of slack, into which a mutation silently deleted 14 real value imports at 11 pass / 0 fail.
+⛔ **The slack was never necessary. It existed only because I compared a MIXED population against a value-only one.** Tagging each ref with `erased` splits them, and the comparison becomes exact: 977 pairs, 0 mismatches.
+⭐ **When a comparison needs an inequality, the usual cause is that the two sides are counting different things. Fix the populations and the inequality dissolves** — an inequality is a confession that you could not make the sides comparable, and it is worth one more attempt before accepting it.
+
+**AND THE ONE ABOUT BEING CORRECTED: MY NUMBER WAS RIGHT AND BOTH OF THEM WERE WRONG, AND I ONLY KNOW THAT BECAUSE I RE-DERIVED IT INSTEAD OF DEFERRING.**
+The lead and the verifier both reported six re-exports; I reported seven, from a fresh multi-line-aware sweep, and named the one they missed (`magpie/scripts/backend.ts:20`).
+⭐ **Two independent parties agreeing is not evidence when they share an instrument** — both had made the same single-line grep assumption I had made an hour earlier.
+**Deferring to a consensus that reproduces your own retracted method is how a corrected error comes back wearing authority.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.

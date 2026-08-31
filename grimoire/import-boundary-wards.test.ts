@@ -83,6 +83,27 @@
 //   1a dynamic pin     Same file, `import("<outside>")` in an arrow function.
 //   1b bare specifier  Same, in a NON-test file under `scripts/`:
 //                      `import sharp from "sharp";`
+//   1b TYPE POSITIONS  ⛔ THE R8 MUTATION. In a NON-test file under `scripts/`,
+//                      write the bare dependency in a position the type
+//                      heuristic does NOT recognise, so `kind` comes back
+//                      `dynamic`. Any of these, all verified to reach the ward:
+//                        let a: Record<string, import("sharp").S>;
+//                        const b: typeof import("sharp") = 0 as never;
+//                      Before the fix each of these passed 11/0 — 1b skipped
+//                      `dynamic` and so its coverage rode on the heuristic.
+//                      It now ignores `kind` entirely, so no position can hide.
+//   heuristic drift    Delete a rule from `isTypePosition`. The audit cell
+//                      reddens by DISAGREEING WITH THE PARSER, naming the file.
+//   dedupe key         Change the scanner's `seen` key from the byte offset back
+//                      to `line`. ⚠ The real corpus CANNOT show this — zero refs
+//                      collapse there — so the dedupe cell carries its own
+//                      synthetic two-statements-on-one-line population, and that
+//                      is what reddens.
+//   count slack        Mutate the scanner to drop ONE occurrence of a specifier
+//                      that also appears as a type-only import in the same file
+//                      (e.g. imago/scripts/server.ts:37). Under the old `>=`
+//                      this was silent; the comparison is now exact equality on
+//                      the value population and it reddens.
 //   1b bun exemption   Delete `|| spec === "bun"` from BUILTIN. Expect FOUR
 //                      named violations — R6's measured number, live.
 //   2  zero-guard      `KIT_DIR=/abs/path/to/an/EMPTY/dir bun test … -t ZERO-GUARD`.
@@ -158,10 +179,26 @@ type Escape = { file: string; spec: string; line: number; resolved: string };
  * Every relative specifier in `files`, of the given KINDS, resolving outside
  * `boundary`.
  *
- * ⛔ WARD 1a CHECKS `static` + `type` FOR ESCAPES AND `dynamic` AGAINST THE PIN,
- * and that partition is exhaustive on purpose: every relative specifier lands in
- * exactly one of the two cells, so no classification mistake inside the scanner
- * can make an escape invisible. It can only put it in the wrong cell.
+ * ⛔ WARD 1a CHECKS `static` + `type` FOR ESCAPES AND `dynamic` AGAINST THE PIN.
+ * Every ref THE SCANNER EMITS lands in exactly one of the two cells, so no
+ * classification mistake can make an emitted escape invisible — it can only put
+ * it in the wrong cell.
+ *
+ * ⚠ THAT IS A CLAIM ABOUT CLASSIFICATION, NEVER ABOUT COVERAGE, and an earlier
+ * wording of it ("every relative specifier lands in exactly one of the two
+ * cells") overreached into the second. A partition argument is only ever as
+ * wide as its classifier's input. FOUR CONSTRUCTS EMIT NO REF AT ALL and are
+ * therefore in NEITHER cell:
+ *     import(`./x`)          template-literal specifier
+ *     require(`./x`)         ditto
+ *     import("./x" + s)      concatenated specifier
+ *     require(("./x"))       a LITERAL argument that is merely PARENTHESISED
+ * The first three are documented as scanner blind spots in `import-graph.ts`.
+ * ⛔ THE FOURTH WAS DOCUMENTED NOWHERE until cassandra found it — and it is the
+ * one that matters most, because the other three are visibly not-a-literal
+ * while this one looks exactly like a construct the scanner handles.
+ *
+ * Before trusting a partition argument, ask what the classifier never sees.
  */
 function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[]): Escape[] {
   const out: Escape[] = [];
@@ -251,9 +288,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
   test("the sweep actually ran (zero-guard)", () => {
     expect(files.length).toBeGreaterThan(20);
     const bare = files.flatMap((f) =>
-      scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).filter(
-        (r) => r.kind !== "dynamic" && !isRelative(r.spec),
-      ),
+      scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).filter((r) => !isRelative(r.spec)),
     );
     // A population with no bare specifiers at all would make the next cell pass
     // for the wrong reason. There are 113 today across 40 files, every one of them a builtin.
@@ -266,11 +301,25 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     const out: string[] = [];
     for (const file of files) {
       for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
-        // `type` rides with `static`: 1b already governs the non-emitting
-        // `import type` form — that IS the `bun` exemption's entire population —
-        // so a type query must be governed on the same terms or the ward would
-        // exempt by syntax what it forbids by meaning.
-        if (ref.kind === "dynamic" || isRelative(ref.spec) || isBuiltin(ref.spec)) continue;
+        // ⛔ 1b DOES NOT CONSULT `kind`, AND THAT IS THE FIX FOR R8.
+        // It used to skip `dynamic`, which made its coverage depend on a
+        // POSITION HEURISTIC — so every type position the heuristic missed
+        // (`Record<string, import("x").T>`, `typeof import("x")`, …) was a
+        // bare dependency on the shipped execution path that this ward could
+        // not see. cassandra planted one and the suite passed 11/0.
+        //
+        // Patching the heuristic would have been whack-a-mole against a class
+        // nobody can enumerate. Dropping the filter removes the dependency
+        // instead: whatever `kind` says, 1b sees the specifier.
+        //
+        // ⚠ THIS IS WIDER THAN R6's LETTER, WHICH SAYS "statically imports",
+        // AND IT IS FAITHFUL TO R6's PURPOSE. A runtime `await import("sharp")`
+        // in `scripts/` breaks a deps-free destination just as hard as a static
+        // one — arguably harder, since it fails at request time rather than at
+        // boot. MEASURED BEFORE ADOPTING IT: the widening adds exactly ONE ref
+        // to the population, `magpie/scripts/discover.ts:262 -> node:util`,
+        // which is a builtin and therefore exempt. Zero new violations.
+        if (isRelative(ref.spec) || isBuiltin(ref.spec)) continue;
         out.push(`${file}:${ref.line} -> ${ref.spec}`);
       }
     }
@@ -444,26 +493,99 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     let audited = 0;
     for (const file of [...trackedSources(PLUGIN_ROOT), ...trackedSources("src")]) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
+      // Both sides are the VALUE-STATEMENT population and nothing else:
+      // non-erased `static` refs here, `import-statement` there. Dynamic refs
+      // are excluded on BOTH sides — the parser cannot see `require()` at all
+      // (measured: one disagreement corpus-wide, and that is its cause), and a
+      // lost dynamic import is already covered exactly by ward 1a's pinned
+      // inventory, which names its one entry and reddens if it disappears.
       const mine = new Map<string, number>();
-      for (const r of scanSpecifiers(source)) mine.set(r.spec, (mine.get(r.spec) ?? 0) + 1);
+      for (const r of scanSpecifiers(source)) {
+        if (r.kind !== "static" || r.erased) continue;
+        mine.set(r.spec, (mine.get(r.spec) ?? 0) + 1);
+      }
       const theirs = new Map<string, number>();
       for (const imp of transpiler.scan(source).imports) {
+        if (imp.kind !== "import-statement") continue;
         theirs.set(imp.path, (theirs.get(imp.path) ?? 0) + 1);
         audited++;
       }
       for (const [spec, n] of theirs) {
         const got = mine.get(spec) ?? 0;
-        // `>=`, never `===`: the scanner is MEANT to see more than the parser —
-        // it holds the type-only imports the transpiler erases. Only coming up
-        // SHORT is a defect. A two-way comparison would be red on arrival and
-        // would get suppressed back into this one.
-        if (got < n) short.push(`${file} -> ${spec} (parser ${n}, scanner ${got})`);
+        // ⛔ EXACT EQUALITY, AND THE `>=` IT REPLACED WAS A REAL HOLE.
+        // `>=` was chosen because the scanner sees MORE than the parser — it
+        // holds the type-only imports the parser erases. But that slack is
+        // capacity for a loss to hide in: cassandra measured 16 of 980 pairs
+        // carrying exactly 1 of slack, then mutated the scanner to lose one
+        // occurrence per slack pair and 14 REAL VALUE IMPORTS vanished with the
+        // suite at 11 pass / 0 fail — including `imago/scripts/server.ts:37`
+        // and `astrolabe/scripts/server.ts:64`, both on the shipped execution
+        // path. Same shape as the set-vs-count defect one layer down.
+        //
+        // The slack was never necessary. It existed only because a MIXED
+        // population was being compared against a value-only one. `erased`
+        // splits them, so both sides now count the same thing and there is no
+        // slack at all: 977 pairs, 0 mismatches, measured before adopting it.
+        if (got !== n) short.push(`${file} -> ${spec} (parser ${n}, scanner-value ${got})`);
       }
     }
     // Zero-guard on the auditor itself: a transpiler that threw or returned
     // nothing would report zero missing and read as perfect agreement.
-    expect(audited).toBeGreaterThan(500);
+    expect(audited).toBeGreaterThan(900);
     expect(short).toEqual([]);
+  });
+
+  test("the type/dynamic HEURISTIC agrees with the parser on every file — the tripwire for R8's class", () => {
+    // ⛔ `isTypePosition` is a peephole heuristic and cannot be exhaustive. This
+    // cell is what stops that being an UNWATCHED fact: the parser is the
+    // authority on which `import()` actually emits, and any position the
+    // heuristic gets wrong shows up here as a disagreement rather than as a
+    // silent reclassification. It is the reason `,`-position type arguments can
+    // be left unhandled rather than guessed at.
+    const transpiler = new Bun.Transpiler({ loader: "tsx" });
+    const disagreements: string[] = [];
+    let files = 0;
+    for (const file of [...trackedSources(PLUGIN_ROOT), ...trackedSources("src")]) {
+      const source = readFileSync(join(REPO_ROOT, file), "utf8");
+      const lines = source.split("\n");
+      // `require()` is excluded: the parser does not report it at all, so it is
+      // an asymmetry between the two instruments, never a classification error.
+      const mine = scanSpecifiers(source)
+        .filter((r) => r.kind === "dynamic" && !(lines[r.line - 1] ?? "").includes("require("))
+        .map((r) => r.spec)
+        .sort();
+      const theirs = transpiler
+        .scan(source)
+        .imports.filter((i) => i.kind === "dynamic-import")
+        .map((i) => i.path)
+        .sort();
+      files++;
+      if (JSON.stringify(mine) !== JSON.stringify(theirs)) {
+        disagreements.push(
+          `${file}: scanner ${JSON.stringify(mine)} vs parser ${JSON.stringify(theirs)}`,
+        );
+      }
+    }
+    expect(files).toBeGreaterThan(300);
+    expect(disagreements).toEqual([]);
+  });
+
+  test("the scanner dedupes by BYTE OFFSET, not by line — calibrated on a SYNTHETIC population", () => {
+    // ⛔ THIS CELL EXISTS BECAUSE THE FIX IT GUARDS IS UNCALIBRATABLE ON THE REAL
+    // TREE. Reverting the dedupe key from offset to line is INVISIBLE against
+    // this corpus — zero refs collapse under a line key, so the mutation passes
+    // 11/0. That is this file's own recorded finding (a mutation planted in an
+    // empty population proves nothing) landing on its author's own patch, and
+    // the honest response is not to claim the fix was calibrated but to MINT a
+    // population for it.
+    //
+    // Two statements, one line, one specifier. A line-keyed dedupe returns 1.
+    const oneLine = scanSpecifiers(`import a from "./x"; export { b } from "./x";`);
+    expect(oneLine.length).toBe(2);
+    expect(oneLine.map((r) => r.spec)).toEqual(["./x", "./x"]);
+    // The count cell upstream depends on exactly this: collapse them and the
+    // scanner's value count for "./x" falls to 1 while the parser still says 2.
+    expect(oneLine.filter((r) => !r.erased).length).toBe(2);
   });
 
   test("RE-EXPORTS are in the population and are actually scanned — the masked construct, named", () => {
@@ -519,6 +641,26 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // exemption. This is the half a literal "exempt type queries" ruling would
     // have lost: the two lines below are the same dependency written twice, and
     // a ward that catches one and not the other has a one-line bypass.
+    // ⛔ SYNTHETIC POPULATION FOR THE HEURISTIC ITSELF. The corpus-wide audit
+    // cell above cannot calibrate a rule for a position the corpus does not
+    // contain: deleting the `typeof` rule is INVISIBLE against 317 real files
+    // and passes 13/0 — the same empty-population trap as the dedupe key, found
+    // the same way, by running the mutation instead of trusting the green.
+    // Each rule therefore gets a synthetic instance here.
+    expect(scanSpecifiers(`const a: typeof import("x") = 0 as never;`)[0].kind).toBe("type");
+    expect(scanSpecifiers(`const b = new Set<import("x").S>();`)[0].kind).toBe("type");
+    expect(scanSpecifiers(`function c(p: import("x").S) {}`)[0].kind).toBe("type");
+    expect(scanSpecifiers(`interface I { m: import("x").S }`)[0].kind).toBe("type");
+
+    // ⚠ AND THE ACKNOWLEDGED LIMIT, PINNED AS THE PROPERTY THAT ACTUALLY
+    // MATTERS RATHER THAN AS A CLASSIFICATION. A type argument after a COMMA
+    // still reads `dynamic`, and that is tolerable ONLY because ward 1b no
+    // longer consults `kind`. So assert THAT: whatever this comes back as, 1b's
+    // filter keeps it. If someone re-introduces a kind filter in 1b, this
+    // reddens and names the reason.
+    const comma = scanSpecifiers(`let d: Record<string, import("sharp").S>;`)[0];
+    expect(isRelative(comma.spec) || BUILTIN(comma.spec)).toBe(false);
+
     const query = scanSpecifiers(`export type T = import("../../outside").X;`)[0];
     const stmt = scanSpecifiers(`import type { X } from "../../outside";`)[0];
     expect(query.kind).toBe("type");

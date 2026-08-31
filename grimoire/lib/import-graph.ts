@@ -79,6 +79,18 @@ export type ImportRef = {
   kind: ImportKind;
   /** 1-based line of the statement's specifier. */
   line: number;
+  /**
+   * TRUE when this reference emits NO runtime specifier — `import type` /
+   * `export type`, an all-`type` brace clause, or a type query.
+   *
+   * ⛔ THIS IS NOT A SYNONYM FOR `kind`, AND KEEPING THEM SEPARATE IS THE POINT.
+   * `kind` says WHEN the specifier resolves (load time / call time / never);
+   * `erased` says WHETHER it survives compilation. A ward picks the axis its
+   * question needs — and the cross-check needs this one, because comparing a
+   * mixed population against a parser's value-only one is what forced a
+   * `>=` and left slack for a real loss to hide in.
+   */
+  erased: boolean;
 };
 
 /**
@@ -91,7 +103,20 @@ export type ImportRef = {
  *   2. the enclosing statement opens with `type` / `interface` / `declare`
  *      (optionally `export`-prefixed) — `export type X = import("../y").Z`
  *
- * ⚠ KNOWN IMPRECISION, AND WHY IT CANNOT COST A MISS. Rule 1 also fires on a
+ * ⚠ KNOWN IMPRECISION, AND WHAT NOW AUDITS IT. `Record<string, import("x").T>`
+ * (a type argument after a COMMA) still reads as `dynamic`; `,` is not in the
+ * preceder set because a value dynamic import in an argument list wears the
+ * same costume. That misclassification is now CHEAP AND WATCHED, not merely
+ * tolerated:
+ *   • ward 1b no longer consults `kind` at all, so it cannot cause a false
+ *     green there — the defect that made this worth fixing;
+ *   • ward 1a's two cells partition every relative specifier, so it moves a
+ *     finding between cells and never removes one;
+ *   • a cell in `import-boundary-wards.test.ts` asserts this classification
+ *     against `Bun.Transpiler` across all 317 files, so the day a comma-position
+ *     type query is written, a cell reddens instead of a number drifting.
+ *
+ * ⚠ Rule 1 also fires on a
  * value dynamic import in an object-literal or ternary value position
  * (`{ mod: import("./x") }`, `c ? a : import("./x")`). That is a real
  * misclassification — and it is SAFE HERE, because ward 1a checks
@@ -106,6 +131,10 @@ function isTypePosition(src: string, idx: number): boolean {
   while (i >= 0 && /\s/.test(src[i])) i--;
   const prev = i >= 0 ? src[i] : "";
   if (prev === "<" || prev === ":" || prev === "|" || prev === "&") return true;
+  // `typeof import("x")` — the standard type-query idiom. A value-position
+  // `typeof` applied to the import()'s promise is legal and absurd; the type
+  // reading is the only one that occurs.
+  if (/\btypeof\s*$/.test(src.slice(Math.max(0, idx - 12), idx))) return true;
   const stmtStart =
     Math.max(
       src.lastIndexOf(";", idx),
@@ -251,6 +280,27 @@ export function blankComments(src: string): string {
   return out.join("");
 }
 
+/**
+ * Does this `import`/`export … from` statement erase completely?
+ *
+ * Two forms: the `type` KEYWORD (`import type X`, `export type { … }`), and a
+ * brace clause whose specifiers are ALL inline-`type`. A mixed clause
+ * (`{ type A, B }`) keeps `B` and therefore emits — getting that case wrong in
+ * the permissive direction is what would silently shrink the value population
+ * the cross-check compares.
+ */
+function isErasedClause(match: string): boolean {
+  const head = match.slice(0, match.lastIndexOf("from"));
+  if (/^\s*(?:import|export)\s+type\b/.test(head)) return true;
+  const braces = /\{([^}]*)\}/.exec(head);
+  if (!braces) return false;
+  const parts = braces[1]
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+  return parts.length > 0 && parts.every((x) => /^type\s/.test(x));
+}
+
 /** `import … from "x"`, `export … from "x"`, bare `import "x"` — type-only included. */
 const STATIC_RE = /\b(?:import|export)\b[^;()]*?\bfrom\s*(["'])([^"'\n]+)\1/g;
 const SIDE_EFFECT_RE = /(?:^|[\n;}])\s*import\s*(["'])([^"'\n]+)\1/g;
@@ -266,21 +316,23 @@ export function scanSpecifiers(source: string): ImportRef[] {
   // cross-check cell downstream compares MULTIPLICITY, so a collapse there
   // would hide exactly the drift it exists to find.
   const seen = new Set<number>();
-  const push = (spec: string, kind: ImportKind, index: number) => {
+  const push = (spec: string, kind: ImportKind, index: number, erased: boolean) => {
     if (seen.has(index)) return;
     seen.add(index);
-    refs.push({ spec, kind, line: lineOf(index) });
+    refs.push({ spec, kind, line: lineOf(index), erased });
   };
   // The keyword's own offset, not the match's: SIDE_EFFECT_RE anchors on the
   // preceding `\n`/`;`/`}`, so `m.index` sits one line EARLY and the reported
   // line would name the statement above the import.
   const at = (m: RegExpExecArray | RegExpMatchArray) =>
     (m.index ?? 0) + Math.max(0, m[0].search(/\b(?:import|export|require)\b/));
-  for (const m of src.matchAll(STATIC_RE)) push(m[2], "static", at(m));
-  for (const m of src.matchAll(SIDE_EFFECT_RE)) push(m[2], "static", at(m));
+  for (const m of src.matchAll(STATIC_RE)) push(m[2], "static", at(m), isErasedClause(m[0]));
+  // A side-effect `import "x"` has no clause and always emits.
+  for (const m of src.matchAll(SIDE_EFFECT_RE)) push(m[2], "static", at(m), false);
   for (const m of src.matchAll(DYNAMIC_RE)) {
     const idx = at(m);
-    push(m[2], isTypePosition(src, idx) ? "type" : "dynamic", idx);
+    const type = isTypePosition(src, idx);
+    push(m[2], type ? "type" : "dynamic", idx, type);
   }
   return refs.sort((a, b) => a.line - b.line || a.spec.localeCompare(b.spec));
 }
