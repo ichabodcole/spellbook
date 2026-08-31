@@ -4,7 +4,7 @@
 // transform with the viewport's pan/zoom automatically. This is the load-bearing
 // seam every tool (and, later, masking) shares.
 import type React from "react";
-import type { Layer, Mark } from "../../state/types";
+import type { Layer, Mark } from "../../../shared/types";
 
 export type Point = { x: number; y: number };
 export type Box = { x: number; y: number; w: number; h: number };

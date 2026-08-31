@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
+import type { Mark } from "../shared/types";
 import { hitTest, markBounds } from "../surface/components/annotations/coords";
-import type { Mark } from "../surface/state/types";
 
 const pin: Mark = { id: "p", tool: "pin", label: "n", x: 0.5, y: 0.5 };
 const arrow: Mark = { id: "a", tool: "arrow", x1: 0.2, y1: 0.2, x2: 0.8, y2: 0.2 };

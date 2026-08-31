@@ -7,7 +7,7 @@
 // is emitted in caller-supplied W×H units (fractions × the target width/height) —
 // the live renderer passes the image's natural px, and so does flatten, so the two
 // are pixel-congruent at 100% zoom (the resolution flatten always rasterizes at).
-import type { Mark } from "../../state/types";
+import type { Mark } from "../../../shared/types";
 import { DEFAULT_TEXT_SIZE, PIN_MAX_W_FRACTION } from "./style";
 
 export const CHAR_W = 0.6; // rough advance width as a fraction of font-size (sans-serif)

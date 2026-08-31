@@ -2,7 +2,7 @@
 // Line: a press-drag-release straight line (no arrowhead). Geometrically identical
 // to the arrow — same {x1,y1,x2,y2} drag — it just renders without a marker.
 import { Minus } from "lucide-react";
-import type { Mark } from "../../../state/types";
+import type { Mark } from "../../../../shared/types";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "../style";
 import type { ToolPlugin, ToolUpResult } from "./types";
 

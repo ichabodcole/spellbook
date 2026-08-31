@@ -8,7 +8,7 @@
 // stopPropagation keeps it off the pan path.
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import type { ClientToServer, Layer, Mark } from "../../state/types";
+import type { ClientToServer, Layer, Mark } from "../../../shared/types";
 import { frac, type PinSize, type Point } from "./coords";
 import { ERASER_RADIUS, eraseMarks } from "./erase";
 import { MarkRenderer } from "./MarkRenderer";

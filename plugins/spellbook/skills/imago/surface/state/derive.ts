@@ -1,6 +1,6 @@
 // surface/state/derive.ts
 // Pure view-helpers derived from ImagoState — no stored duplicates of these.
-import type { ImagoState, Variant } from "./types";
+import type { ImagoState, Variant } from "../../shared/types";
 
 // "a", "b", "c", … from a variant's index within its batch.
 export function variantLabel(i: number): string {

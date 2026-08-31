@@ -11,10 +11,10 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { ClientToServer, ContextEntry, ImagoState, Message } from "../../shared/types";
 import { resolveSet } from "../state/contextLibrary";
 import { variantLabel } from "../state/derive";
 import { processFiles } from "../state/fileIntake";
-import type { ClientToServer, ContextEntry, ImagoState, Message } from "../state/types";
 import { flattenMarks } from "./annotations/flatten";
 import { ContentModal } from "./ContentModal";
 import { LibraryPicker } from "./LibraryPicker";

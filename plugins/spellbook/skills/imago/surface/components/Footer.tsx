@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type { ClientToServer } from "../state/types";
+import type { ClientToServer } from "../../shared/types";
 
 interface FooterProps {
   send: (m: ClientToServer) => void;

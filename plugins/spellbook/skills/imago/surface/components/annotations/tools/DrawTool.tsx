@@ -4,7 +4,7 @@
 // points AND a non-trivial span) — a stray tap is dropped. The captured stroke
 // is the visual-handoff primitive: what you draw is what the model sees.
 import { PenLine } from "lucide-react";
-import type { Mark } from "../../../state/types";
+import type { Mark } from "../../../../shared/types";
 import { markBounds } from "../coords";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "../style";
 import type { ToolPlugin, ToolUpResult } from "./types";

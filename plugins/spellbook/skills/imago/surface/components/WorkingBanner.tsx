@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import type { ImagoState } from "../state/types";
+import type { ImagoState } from "../../shared/types";
 
 interface WorkingBannerProps {
   state: ImagoState;

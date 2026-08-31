@@ -3,7 +3,7 @@
 // Option turns the drag into an erase: points of existing `draw` strokes within
 // the eraser radius of the cursor path are removed, and a stroke SPLITS where a
 // middle section is erased. Pen-only — every other mark passes through untouched.
-import type { Mark } from "../../state/types";
+import type { Mark } from "../../../shared/types";
 import type { Point } from "./coords";
 
 // Eraser radius in fraction space (~2.5% of the image box). Tunable; could later

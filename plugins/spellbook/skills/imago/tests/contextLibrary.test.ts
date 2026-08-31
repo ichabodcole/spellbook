@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
+import type { ContextEntry } from "../shared/types";
 import { entriesByKind, isLinked, resolveSet } from "../surface/state/contextLibrary";
-import type { ContextEntry } from "../surface/state/types";
 
 const lib: ContextEntry[] = [
   { id: "p1", kind: "prompt", name: "a", content: "" },

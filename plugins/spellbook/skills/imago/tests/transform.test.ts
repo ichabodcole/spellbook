@@ -8,6 +8,7 @@
 //   - resizeBoxFor only locks on CORNER handles; edge handles stay free
 
 import { expect, test } from "bun:test";
+import type { Mark } from "../shared/types";
 import {
   type Box,
   hitTest,
@@ -19,7 +20,6 @@ import {
   resizeBoxAspect,
   resizeBoxFor,
 } from "../surface/components/annotations/SelectionOverlay";
-import type { Mark } from "../surface/state/types";
 
 const aspect = (b: Box) => b.w / b.h;
 const BOX: Box = { x: 0.2, y: 0.2, w: 0.4, h: 0.2 }; // 2:1, anchor corners at the box edges

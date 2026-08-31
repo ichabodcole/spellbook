@@ -292,7 +292,7 @@ R1's three-way sort, applied to the five sites:
 
 | Site              | Import                    | Destination                                                 |
 | ----------------- | ------------------------- | ----------------------------------------------------------- |
-| `server.ts:35`    | `../surface/index.html`   | **stays** — becomes `resolveMode()` in 1c                   |
+| `server.ts:35`    | `../surface/index.html`   | **stays** — becomes `resolveMode()` in 1c ⚠ now `:49`       |
 | `server.ts:36`    | `optimizeImageBuffer`     | → `scripts/imageOptimize.server.ts` (daemon-only, misfiled) |
 | `server.ts:37-50` | `../surface/state/types`  | → `shared/types.ts` (the two-sided contract)                |
 | `server.ts:1647`  | type-only re-export       | → `shared/types.ts`                                         |
@@ -340,7 +340,7 @@ R1's three-way sort, applied to the five sites:
   now reach `../../shared/types`.
 
 **This phase is done when:** `grep -n '\.\./surface/' imago/scripts/server.ts`
-returns exactly **one** line — `:35`, the HTML entry — **`grep -rn sharp` across
+returns exactly **one** line — the HTML entry — **`grep -rn sharp` across
 `scripts/` and `shared/` returns nothing**, `bun --no-install scripts/server.ts`
 starts from a `node_modules`-free copy, and `bun test` is green with **no file
 having moved out of `plugins/spellbook/`**.

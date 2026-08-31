@@ -15,7 +15,7 @@
 //  • CSS vars: an SVG loaded via a blob URL can't read the page's `var(--color-*)`
 //    tokens, so we resolve them to concrete values up front via getComputedStyle.
 //    (The live renderer reads the vars directly, so it skips this step.)
-import type { Layer, Mark } from "../../state/types";
+import type { Layer, Mark } from "../../../shared/types";
 import { markBounds, visibleSorted } from "./coords";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "./style";
 import { arrowHeadPoints, PIN_BG_DEFAULT, PIN_TEXT, pinLayout } from "./svgMark";

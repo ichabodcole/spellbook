@@ -1,8 +1,8 @@
 import { Heart, ImageDown, Images, Layers, Paperclip, Sparkles, X } from "lucide-react";
 import { useState } from "react";
+import type { ClientToServer, ImagoState } from "../../shared/types";
 import { focusedVariant, variantLabel } from "../state/derive";
 import { addImageLayerFromSrc, IMAGO_IMAGE_DND } from "../state/fileIntake";
-import type { ClientToServer, ImagoState } from "../state/types";
 import { MarkRenderer } from "./annotations/MarkRenderer";
 
 type Size = "s" | "m" | "l";

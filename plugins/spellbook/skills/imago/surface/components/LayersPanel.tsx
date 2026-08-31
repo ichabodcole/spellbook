@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import type { ClientToServer, Layer, Mark } from "../state/types";
+import type { ClientToServer, Layer, Mark } from "../../shared/types";
 
 export function LayersPanel({
   layers,

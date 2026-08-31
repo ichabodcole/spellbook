@@ -1,4 +1,4 @@
-import type { ContextEntry, ContextKind } from "./types";
+import type { ContextEntry, ContextKind } from "../../shared/types";
 
 // Resolve an ordered id list (a linked set) against the library, in set order,
 // dropping ids that no longer resolve (deleted entries).

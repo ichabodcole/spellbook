@@ -22,7 +22,7 @@
 // collects the conversation and gestures.
 //
 // Agent commands (POST /cmd) and user events (GET /events) are the AgentCommand
-// union and AGENT_EVENT_TYPES in surface/state/types.ts — the single contract.
+// union and AGENT_EVENT_TYPES in shared/types.ts — the single contract.
 //
 // Exit codes: 0 submit/close, 2 bad args, 124 idle timeout, 130 cancel.
 
@@ -32,8 +32,6 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
-import index from "../surface/index.html";
-import { optimizeImageBuffer } from "../surface/state/imageOptimize.server";
 import {
   type Batch,
   type ContextEntry,
@@ -47,7 +45,9 @@ import {
   type Message,
   styleId,
   type Variant,
-} from "../surface/state/types";
+} from "../shared/types";
+import index from "../surface/index.html";
+import { optimizeImageBuffer } from "./imageOptimize.server";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -1644,6 +1644,6 @@ if (import.meta.main) {
   process.exit(exitCode);
 }
 
-export type { Batch, ImagoState, Variant } from "../surface/state/types";
-export { defaultState } from "../surface/state/types";
+export type { Batch, ImagoState, Variant } from "../shared/types";
+export { defaultState } from "../shared/types";
 export { main, parsePortFromSessionId };

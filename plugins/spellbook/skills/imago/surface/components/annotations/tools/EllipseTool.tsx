@@ -4,7 +4,7 @@
 // commits {cx,cy,rx,ry} (fractions). A press with no real drag is ignored.
 // zOrder is server-assigned, so the tool omits it.
 import { Circle } from "lucide-react";
-import type { Mark } from "../../../state/types";
+import type { Mark } from "../../../../shared/types";
 import { bbox } from "../coords";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "../style";
 import type { ToolPlugin, ToolUpResult } from "./types";

@@ -1,8 +1,8 @@
 import { Search } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import type { ContextEntry, ContextKind } from "../../shared/types";
 import { entriesByKind } from "../state/contextLibrary";
-import type { ContextEntry, ContextKind } from "../state/types";
 
 // A small picker for choosing a single entry from the context library, filtered
 // by `kind`. Used by the active-context tray (drawer) and the composer

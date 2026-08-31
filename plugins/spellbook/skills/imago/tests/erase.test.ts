@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
+import type { Mark } from "../shared/types";
 import { eraseMarks, erasePolyline } from "../surface/components/annotations/erase";
-import type { Mark } from "../surface/state/types";
 
 const R = 0.025;
 // a horizontal stroke at y=0.5, x = 0.1 … 0.9 (9 evenly spaced points)

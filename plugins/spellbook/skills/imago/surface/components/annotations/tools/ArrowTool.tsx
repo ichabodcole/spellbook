@@ -3,7 +3,7 @@
 // stretches a live preview to the cursor, pointerup commits one arrow start→end.
 // A press with no real drag is ignored (no phantom zero-length arrow).
 import { MoveUpRight } from "lucide-react";
-import type { Mark } from "../../../state/types";
+import type { Mark } from "../../../../shared/types";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "../style";
 import type { ToolPlugin, ToolUpResult } from "./types";
 

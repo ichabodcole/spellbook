@@ -16,7 +16,7 @@
 import { Pencil, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import type { ClientToServer, Layer, Mark } from "../../state/types";
+import type { ClientToServer, Layer, Mark } from "../../../shared/types";
 import {
   type Box,
   boundsCenter,

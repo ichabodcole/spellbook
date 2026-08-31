@@ -3,7 +3,7 @@
 // register it in registry.ts; nothing else in the layer needs to change.
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import type { Mark } from "../../../state/types";
+import type { Mark } from "../../../../shared/types";
 import type { Point } from "../coords";
 import type { DrawStyle } from "../style";
 

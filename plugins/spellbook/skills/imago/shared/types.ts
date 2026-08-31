@@ -1,5 +1,9 @@
-// surface/state/types.ts
-// The single shared contract. Imported by server.ts AND the React client.
+// shared/types.ts
+// The single shared contract, and the reason shared/ exists: it is a PEER of
+// both sides, not backend-owned (R1). Imported by scripts/server.ts AND the
+// React client. It must live in the SHIPPED tree — the daemon runs from source
+// at a destination that never ran `install`, so anything it imports has to be
+// physically here.
 //
 // imago is a GROUNDED CONVERSATION about an image: the user and the agent talk
 // (the `conversation`), the surface holds the artifacts they're talking about

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientToServer, ImagoState, ServerToClient } from "./types";
+import type { ClientToServer, ImagoState, ServerToClient } from "../../shared/types";
 
 export type ConnStatus = "connecting" | "open" | "closed";
 

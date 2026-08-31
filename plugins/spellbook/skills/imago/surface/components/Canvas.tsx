@@ -15,6 +15,14 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  ASPECTS,
+  type ClientToServer,
+  type ImageSize,
+  type ImagoState,
+  MARK_TOOLS,
+  SIZES,
+} from "../../shared/types";
 import { resolveSet } from "../state/contextLibrary";
 import { focusedVariant, variantLabel } from "../state/derive";
 import {
@@ -25,14 +33,6 @@ import {
   readContextDrag,
   readImagoDrag,
 } from "../state/fileIntake";
-import {
-  ASPECTS,
-  type ClientToServer,
-  type ImageSize,
-  type ImagoState,
-  MARK_TOOLS,
-  SIZES,
-} from "../state/types";
 import { AnnotationLayer } from "./annotations/AnnotationLayer";
 import { AnnotationToolbar } from "./annotations/AnnotationToolbar";
 import { flattenMarks } from "./annotations/flatten";

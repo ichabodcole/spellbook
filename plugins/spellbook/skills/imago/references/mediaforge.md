@@ -309,10 +309,10 @@ linking/unlinking a style doesn't wake you, same as `focus`/`like`):
 
 - **At generation,** read the active styles: resolve `state.activeContextIds`
   against `state.library` (each entry is a `ContextEntry`; field names live in
-  `surface/state/types.ts`, the single contract). For each, put its words into
-  the prompt AND pass its canonical image as a `--ref` (a captured style's image
-  is a style reference, same as a selected content ref). Active styles +
-  selected refs stack as the conditioning set.
+  `shared/types.ts`, the single contract). For each, put its words into the
+  prompt AND pass its canonical image as a `--ref` (a captured style's image is
+  a style reference, same as a selected content ref). Active styles + selected
+  refs stack as the conditioning set.
 - **Capturing a style is a wake event (`context.capture`)** handled in SKILL.md
   — it gives the exact `context style … --link active` command and where each
   argument comes from; don't restate it here. Pick a SPECIFIC name when the look

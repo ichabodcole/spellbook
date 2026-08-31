@@ -1,6 +1,6 @@
 import { ImagePlus, LayoutGrid } from "lucide-react";
+import type { ClientToServer, ImagoState } from "../../shared/types";
 import { presence } from "../state/derive";
-import type { ClientToServer, ImagoState } from "../state/types";
 
 const PRESENCE_LABEL = {
   idle: "imago · idle",

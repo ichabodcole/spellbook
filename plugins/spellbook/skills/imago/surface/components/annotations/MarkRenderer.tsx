@@ -10,7 +10,7 @@
 // at width×scale px); pin text + arrowheads use flatten's shared geometry.
 import type { JSX } from "react";
 import { useEffect } from "react";
-import type { Layer, Mark } from "../../state/types";
+import type { Layer, Mark } from "../../../shared/types";
 import { markBounds, type PinSize, visibleSorted } from "./coords";
 import { DEFAULT_STROKE, DEFAULT_WIDTH } from "./style";
 import { arrowHeadPoints, PIN_BG_DEFAULT, PIN_TEXT, pinLayout } from "./svgMark";

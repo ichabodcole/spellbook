@@ -1,5 +1,6 @@
 // surface/ImagoShell.tsx
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { ClientToServer, ImagoState } from "../shared/types";
 import { Canvas } from "./components/Canvas";
 import { ContextLibrary } from "./components/ContextLibrary";
 import { Conversation } from "./components/Conversation";
@@ -8,7 +9,6 @@ import { GenerationsRail } from "./components/GenerationsRail";
 import { Header } from "./components/Header";
 import { type LibraryPane, LibrarySwitcher } from "./components/LibrarySwitcher";
 import { WorkingBanner } from "./components/WorkingBanner";
-import type { ClientToServer, ImagoState } from "./state/types";
 
 // A compact signature of the slices a generation changes; when it moves after a
 // "send", the optimistic spinner clears (ports glamour's auto-spinner).

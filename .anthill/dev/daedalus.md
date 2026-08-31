@@ -952,3 +952,31 @@ That is noise on top of signal, not signal: the pin earns its keep on file/spec/
 **1a proved the pipeline generalises AND measured the price of not having the seam: 42 lines of engine copied near-verbatim between two spells, plus a 211-line test that is a 46% copy.**
 `resolveMode` (5), `serveDist` (10), `daemonCwd` (5) are byte-identical after spell-name normalisation and `STATIC_CONTENT_TYPES` (8) is byte-identical verbatim.
 Doing it by hand was the RIGHT call for a phase whose purpose is proving generalisation with zero seam work — but the number is the argument for 1b, and it should be quoted rather than re-derived.
+
+## spell-kit sprint 01 · 1b — imago's seam (2026-08-31)
+
+**"The gate cannot see this class" is a claim about a POPULATION, and a population claim needs the exceptions enumerated, not sampled.**
+The brief said 38 files import `types`, most with `import type`, which the build erases — so only tsc would see the breakage.
+Measured: 35 files, 37 sites, and TWO of them are VALUE imports in files nobody had classified — `surface/state/fileIntake.ts` (imports `OPTIMIZE` as a value from the module I was moving) and `surface/components/Canvas.tsx`.
+`fileIntake` is loaded by `tests/fileIntake.test.ts`, so `bun test` went RED — 1 fail, `Cannot find module './imageOptimize'` — inside the very class I had been told the gate could not see.
+The rule: before trusting "invisible to the gate", enumerate the value imports and ask which of them a TEST loads; "most are type-only" is a frequency, and a frequency does not bound a failure.
+
+**Sort a move by what each candidate ITSELF imports, then by who imports IT — the second question is the one that reddens the gate.**
+R1's correction (the 5-line `OPTIMIZE` policy is two-sided and must go to `shared/`) was right and I verified it against the tree rather than inheriting it: `imageOptimize.server.ts:5` on the daemon side, `fileIntake.ts:2` on the browser side, both value imports.
+What R1's file-level sort did NOT say, and what bit, is that the browser-side importer is itself exercised by a test — so moving the two-sided file is a runtime break, not merely a tsc one.
+
+**When a runtime break forces you across a boundary into another seat's file, take that file WHOLE and say so — a half-migrated file is worse than either side of the line.**
+Fixing only `fileIntake.ts:2` (the value import that reddened the gate) would have left `:3`'s type-only `./types` dead in the same file.
+I rewrote both lines, crossed the lane deliberately, and named the crossing in the report instead of letting circe find a file that was half mine.
+
+**A green ward whose population just doubled is still a ward with no positive evidence — report the population, not the colour.**
+Creating `shared/` took ward 1b from 40 files / 0 in `shared/` to 43 / 2, which un-vacuums the half cassandra called out; bare specifiers stayed at 116 and violations at 0.
+That the count did NOT move is the real result — the shipped execution path grew by three files and acquired zero dependencies — and it is a better sentence than "the ward is green."
+
+**Report the narrow number AND the total it sits inside, because a filtered count hides its own cascade.**
+TS2307 went 0 → 26 (one per surface file, exactly circe's lane), but total tsc errors went 452 → 512: the other 34 are knock-on from types that no longer resolve.
+Quoting only the 26 would have understated the tree's state by more than half.
+
+**A build that never touches a spell is blind for a stronger reason than erasure, and the stronger reason is the one to state.**
+`bun run build` was said to exit 0 on imago because type imports are erased before resolution; in fact `src/build.ts:buildableSpells()` derives its list from `src/<spell>/surface/index.html`, and imago is not in `src/` until 1c — so the build does not read imago AT ALL.
+The prediction was right and its mechanism was wrong, which is the failure mode that survives a green run.

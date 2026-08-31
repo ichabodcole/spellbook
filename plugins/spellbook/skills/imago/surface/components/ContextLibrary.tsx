@@ -9,9 +9,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import type { ClientToServer, ContextEntry, ContextKind, ImagoState } from "../../shared/types";
 import { entriesByKind, isLinked } from "../state/contextLibrary";
 import { IMAGO_CONTEXT_DND } from "../state/fileIntake";
-import type { ClientToServer, ContextEntry, ContextKind, ImagoState } from "../state/types";
 import { ContentModal } from "./ContentModal";
 
 type KindFilter = "all" | "prompt" | "style";

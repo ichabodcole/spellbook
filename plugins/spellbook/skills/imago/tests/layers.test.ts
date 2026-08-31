@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { Layer, Mark } from "../shared/types";
 import {
   byEffectiveZ,
   isMarkHidden,
@@ -7,7 +8,6 @@ import {
   layerBand,
   visibleSorted,
 } from "../surface/components/annotations/coords";
-import type { Layer, Mark } from "../surface/state/types";
 
 // minimal marks (only the fields the comparator reads); cast through unknown so we
 // don't have to spell out each tool's geometry for a pure-ordering test.
