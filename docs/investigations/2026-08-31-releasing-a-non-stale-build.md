@@ -143,6 +143,34 @@ artifact would be the one thing in the repo that nothing verifies — a false
 reassurance about an instrument, which this team ranks above a false claim about
 code.
 
+## ⭐ First live instance — found the same day, on `develop`, by hand
+
+**2026-08-31, minutes after the sprint 02 merge.** Running rebuild-and-diff
+manually found **imago's committed `dist/` did not match its own committed
+source.** 1,195,951 bytes committed against 1,196,000 rebuilt — a real
+module-graph difference (a boundary comment appeared and the React import
+reordered) once `LayersPanel.tsx` began importing `cn()` from the kit in
+`475cb6a`. Stable across two rebuilds, so staleness rather than churn. Fixed in
+`fcc55d6`.
+
+**Nothing in the repo could have caught it, and this is the whole argument:**
+
+| instrument        | why it was blind                                                         |
+| ----------------- | ------------------------------------------------------------------------ |
+| `bun test`        | never builds                                                             |
+| `bun run check`   | biome resolves no modules                                                |
+| the browser drive | **a stale dist produces a working board** — it serves the previous build |
+| code review       | the artifact is 1.2 MB of generated JavaScript                           |
+
+**Four ports had been verified by hand before this, and it slipped through all
+of them.** The proposed check finds it in **0.54 s**.
+
+It also falsified a claim the lead had written into the sprint's merge commit —
+_"a rebuild is a git no-op"_ — which conflated **reproducibility** (a property
+of the build; measured, true) with **a no-op rebuild** (a property of the tree;
+false at the time of writing). The same narrower-question-than-the-claim shape
+this document is about, committed by its own author in the same hour.
+
 ## Recommendation
 
 1. **Make `build.json` reproducible** — ✅ **already done, by deletion**
