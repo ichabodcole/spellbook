@@ -907,3 +907,18 @@ An instrument whose roots come from ambient env vars has an env-dependent denomi
 I DESTROYED A CARD TITLE AGAIN, the same way, in the same session I re-read the doc that names it: bounty's `update --stdin` sets the TITLE (cli.ts:1214), I grounded the flag from a usage line in an ERROR MESSAGE instead of from source, and 2,133 bytes of report overwrote a 63-byte title at `ok:true` with `valuesIgnored: null`.
 The read-back is what saved it, and only because I asserted EQUALITY against the source I still held rather than probing for a phrase — the mismatch showed as "sent 2134, stored 1025" and the 1025 turned out to be the ORIGINAL notes, i.e. the write had landed somewhere I had not looked at all.
 So the read-back must cover every field a write could plausibly have reached, not just the field you aimed at: checking `notes` alone would have reported "notes unchanged" and I would have called that a no-op and moved on with the title destroyed.
+
+## spell-kit sprint 01 1a — the local-sim drive, and an instrument that had to be able to fail (2026-08-31)
+
+_Returned to the lead rather than written, because his brief said leave the repo alone; he landed them here and the over-constraint was his, not a lapse of mine._
+
+A size or count check on a build artifact is a PRESENCE test, not an EFFECT test, and the two come apart in the direction that favours the BROKEN artifact.
+Measured: a 288KB inert decoy stylesheet outscored the real 142KB one on every count-shaped measure — 4,002 rules shipped against 1,320 — while matching 2 live-DOM rules against 165.
+So a byte-size or rule-count assertion prefers the broken build, which is the worst possible direction for a check to be wrong in.
+The discriminating form for "is this asset actually doing anything" is REMOVE-IT-AND-DIFF against the live DOM: 16 of 44 computed properties changed for the real sheet, 6 of 44 for the decoy, and the residual 6 are the legitimate inline pre-boot style, which accounts for the floor exactly.
+That form needs no baseline, no marker convention, and no knowledge of what correct output looks like — which is why it survives being applied to a spell nobody has seen before.
+An empty-but-truthy collection (`CSSRuleList`, `NodeList`, `arguments`) turns a recursion guard into a skip, and the symptom is a CONFIDENT ZERO.
+My own first styling probe reported `styleRulesShipped: 0` while the CSS was visibly applied; I caught it only because the number contradicted something I could see.
+Treat any zero that contradicts a visible fact as an instrument defect until proven otherwise — it is the round-1 lesson inverted, where a zero that would have read as a finding about the artifact was a defect in the measurement.
+A "no deps up-tree" claim is only as good as the walk, and the walk has a blind spot: check `node_modules`, `package.json`, `bunfig.toml` AND the global `~/.bunfig.toml`, because the last is invisible to a parent-directory walk entirely.
+Phase 1a is PROVEN and it is not GUARDED — the cells run every gate, this drive ran once by hand, and that asymmetry is the honest shape of every local-sim result.
