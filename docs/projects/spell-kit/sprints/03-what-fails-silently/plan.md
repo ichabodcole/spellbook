@@ -208,3 +208,24 @@ _The sprint can be reported green while every one of these is true._
 **Related:** [proposal](../../proposal.md) ·
 [design-resolution](../../design-resolution.md) ·
 [Sprint 02](../02-the-boring-module/plan.md) · [project ledger](../../README.md)
+
+---
+
+_Reconciled 2026-08-31 @ `9b6d8e5` — swept after sprint 01 landed. **⛔ STALE
+PATH CITATION:** `imago/surface/styles.css:6` is now
+`src/imago/surface/styles.css`. astrolabe's and imago's `@source` directives
+both survived relocation intact (verified by drive: Tailwind utilities emitted
+and applied in both spells' release builds). **NEW WORK THIS SPRINT HANDED TO
+PHASE 5's CANON PASS**, none of it written yet — four instrument-design rulings
+returned by seats and deliberately not landed in `house-style.md`, because Seam
+C's wording waits on the emission ruling: (1) **an exemption must carry a cell
+that FAILS when the exemption is removed — and the cell must evaluate it, not
+describe it**; (2) **a "must not be served" cell is vacuous until the thing it
+forbids would otherwise resolve** — plant the target, then assert the refusal;
+(3) **a partition argument licenses a claim about CLASSIFICATION, never about
+COVERAGE** — ask what the classifier never sees; (4) **a pinned site's identity
+is (file, spec, resolved); the line is reported, never compared** — ruled and
+shipped in the ward at `5253b72`, but not yet canon. **Also owed here:** this
+plan's `house-style.md:396-397` arithmetic. Measured **65 / 39** at `3e00e73`,
+not the 64 / 38 recorded; with **7** tests moving (not 8 — the straddler was
+ruled to stay backend), the first figure lands at **58**, not 56._

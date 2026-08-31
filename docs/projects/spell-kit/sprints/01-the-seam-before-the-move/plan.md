@@ -487,3 +487,28 @@ carries, for the same reason: a vacuous pass now that gets trusted later.
 **Related:** [proposal](../../proposal.md) ·
 [design-resolution](../../design-resolution.md) ·
 [gap-analysis](../../gap-analysis.md) · [project ledger](../../README.md)
+
+---
+
+_Reconciled 2026-08-31 @ `9b6d8e5` — **SPRINT COMPLETE, all five proofs HELD.**
+"blind set 19 files / 4,442 lines over two roots, calibration fails in either":
+**HELD** (instrument run directly; held through \_two_ relocations). "all three
+wards fail when handed a synthetic violation; ward 2's zero-guard fails on an
+empty population": **HELD**, 13 cells / 0 fail — and ward 2's floor was
+**replaced with membership** after firing on schedule (`5253b72`). "astrolabe
+and imago each serve from `dist/` in release mode from a copy with no
+`node_modules` up-tree": **HELD**, both driven in a browser.
+"`grep '../surface/' imago/scripts/server.ts` returns exactly one line":
+**HELD** — it is `:49`, not the `:35` this plan cited; biome's import sort moved
+it. "mind-mapper's suite and typecheck stay green, 0 errors": **HELD** (0).
+**FALSIFIED and corrected in place:** the carried baseline's
+`ward 1b -> 1 after R1 moves sharp's importer` (the swap landed first, so it
+stays 0); R6's `88 bare specifiers / 34 lucide-react` (**95 / 42**, a line-bound
+scan missing 8 multi-line imports); `Bun.Image is byte-identical` (behaviourally
+equivalent, **not** byte-identical). **UNRECONCILED, deliberately:** this plan's
+`imago contributes 137 tsc errors before and after` — the **invariant held** and
+the constant is one high; measured 137 at `431fb53` and 136 at HEAD, the
+difference attributable to the `sharp` swap removing a call-overload error.
+`root typecheck <= 434` is a pre-Phase-0 figure; the tree is **433**, and the
+full ledger is 434 + 17 (new ward files) - 1 = 450, then -17 when those were
+fixed.\_

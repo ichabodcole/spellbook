@@ -108,3 +108,19 @@ digits, five different schemes.
 **Related:** [`spell-surface-pipeline`](../spell-surface-pipeline/proposal.md) —
 the standard this ratchets; its [plan](../spell-surface-pipeline/plan.md) has no
 remaining work as of R7.
+
+---
+
+_Reconciled 2026-08-31 @ `9b6d8e5` — **SPRINT 01 COMPLETE**, 10 commits on
+`feat/spell-kit-sprint-01`. Live-defects table: "imago's daemon cannot start
+offline" — **FIXED** (`e7b2ed2`), and its `Bun.Image is byte-identical` note
+**FALSIFIED** and corrected. "magpie hand-rolls scale math" — **OPEN**,
+untouched as scoped. "stale-dist fires unconditionally" — **OPEN**, and its
+mtime false positive fired on schedule all sprint as predicted. "biome already
+reads CSS and HTML" — **OPEN**; the blind set is 19 / 4,442 with the second root
+live. Vocabulary and numbering tables: **HELD**, no term changed meaning.
+**Three new backlog items** filed from the verification drives: relocated spells
+diverging on surface hygiene, imago lowercasing context-library names, and a
+second accessibility instance. **Carried to Cole, still unruled:** what a
+consumer receives per spell once built surfaces are the norm — now materially
+larger, since two spells ship committed `dist/` rather than one._
