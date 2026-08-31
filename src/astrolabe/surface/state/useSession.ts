@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { ClientToServer, ObservatoryView, ServerToClient } from "../../scripts/state";
+import type {
+  ClientToServer,
+  ObservatoryView,
+  ServerToClient,
+} from "../../../../plugins/spellbook/skills/astrolabe/scripts/state";
 
 // The browser's live link to the daemon. astrolabe pushes the full projected
 // board ({type:"state"}) over WS on connect and on every change, so the surface

@@ -1,4 +1,4 @@
-import type { ProjectCard as Card } from "../../scripts/state";
+import type { ProjectCard as Card } from "../../../../plugins/spellbook/skills/astrolabe/scripts/state";
 import { avatarRing, relTime } from "../state/board";
 import { Nudge } from "./Nudge";
 import { PresenceDot } from "./PresenceDot";

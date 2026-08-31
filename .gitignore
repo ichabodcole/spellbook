@@ -11,6 +11,8 @@ dist
 # output). Other spells un-ignore their own dist/ when they relocate too.
 !plugins/spellbook/skills/mind-mapper/dist
 !plugins/spellbook/skills/mind-mapper/dist/**
+!plugins/spellbook/skills/astrolabe/dist
+!plugins/spellbook/skills/astrolabe/dist/**
 
 # code coverage
 coverage

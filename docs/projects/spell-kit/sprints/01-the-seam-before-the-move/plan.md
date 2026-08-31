@@ -451,6 +451,37 @@ _The sprint can be reported green while every one of these is true._
 - Whether `shared/` proved to be the right third bucket, or whether glamour's
   and magpie's `.server.ts` files will need a different sort.
 
+### ⚠ `src/<spell>/` is governed by NO import ward, and this sprint moves code into it
+
+**Measured 2026-08-31, at `63a9960`:** ward 1a's root is
+`PLUGIN_ROOT = "plugins/spellbook"` (`import-boundary-wards.test.ts:161`); ward
+2's is `KIT_DIR = "src/kit"` (`:380`). **Nothing covers `src/<spell>/`.**
+
+**Sprint 01 is what fills that gap with code.** 1a moves astrolabe's surface
+there and 1c moves imago's, so the ungoverned region grows by two spells in this
+sprint alone, and by every spell thereafter.
+
+**Why it is a carry-forward and not a Phase 0 defect:** a surface is bundled, so
+a relative escape out of `src/<spell>/surface/` is absorbed into the bundle
+rather than breaking a deps-free destination — it is not ward 1a's hazard. **The
+hazard it IS: a cross-spell import** (`src/astrolabe/surface/` reaching into
+`src/mind-mapper/surface/`) **is invisible to every check we have, and that is
+precisely the coupling this project exists to control.** `src/kit/` gets a ward
+because it is the sanctioned sharing point; the unsanctioned one has none.
+
+> Returned as a `seams.md` candidate by cassandra and **not yet written** —
+> _"the wards and the blind set enumerate two different 'plugins'
+> (`plugins/spellbook` vs `plugins/spellbook/skills`), and `src/<spell>/` is
+> inside the blind set's denominator but outside every import ward's. **Contract
+> 4 moves surfaces into exactly that ungoverned gap.**"_ The blind set counts
+> those files; no ward reads their imports.
+
+**Candidate remedy for Sprint 03's Seam C pass, not for this sprint:** a ward 3
+— no file under `src/<spell>/` may make a relative import into a different
+`src/<other-spell>/`. It would be **green by construction today** (two spells,
+no cross-imports), which means it needs the same zero-guard discipline ward 2
+carries, for the same reason: a vacuous pass now that gets trusted later.
+
 ---
 
 **Related:** [proposal](../../proposal.md) ·

@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "build": "bun run src/build.ts",
     "format": "biome format --write .",
     "format:md": "prettier --write '**/*.md'",
     "lint": "biome check --error-on-warnings .",

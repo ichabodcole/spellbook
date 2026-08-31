@@ -73,6 +73,15 @@ import { join } from "node:path";
 // and the total went DOWN, which reads as progress. This declaration is the
 // RECOVERY of a loss that already happened — written by hand, per the rule
 // above, not pasted from the instrument's new output.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 1a's RELOCATION — PATHS ONLY, and the
+// total is the check. astrolabe's `surface/` + `bunfig.toml` moved to
+// `src/astrolabe/` under Contract 4, so its three entries change path and
+// nothing else: `surface/styles.css` 93, `surface/index.html` 35,
+// `bunfig.toml` 2, now rooted at `src/astrolabe/`. The set stays at 19 files /
+// 4,442 lines — a relocation between the instrument's two roots is a no-op for
+// this ward, and if the total had moved, something OTHER than the relocation
+// moved with it. Nothing entered and nothing left.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
@@ -81,15 +90,15 @@ const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/magpie/surface/styles.css": 175,
   "plugins/spellbook/skills/imago/surface/styles.css": 151,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "plugins/spellbook/skills/astrolabe/surface/styles.css": 93,
-  "plugins/spellbook/skills/astrolabe/surface/index.html": 35,
+  "src/astrolabe/surface/styles.css": 93,
+  "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
   "plugins/spellbook/skills/glamour/surface/index.html": 13,
   "plugins/spellbook/skills/imago/surface/index.html": 13,
   "plugins/spellbook/skills/magpie/surface/index.html": 13,
   "plugins/spellbook/skills/glamour/surface/styles.css": 12,
   "src/mind-mapper/bunfig.toml": 4,
-  "plugins/spellbook/skills/astrolabe/bunfig.toml": 2,
+  "src/astrolabe/bunfig.toml": 2,
   "plugins/spellbook/skills/glamour/bunfig.toml": 2,
   "plugins/spellbook/skills/imago/bunfig.toml": 2,
   "plugins/spellbook/skills/magpie/bunfig.toml": 2,

@@ -28,10 +28,10 @@
 // The exemption is not a courtesy; deleting it turns this cell red against
 // correct code, which is the same defect as the retracted Ward 1 above.
 //
-// ⛔ DYNAMIC ESCAPES ARE EXEMPT BUT PINNED — NOT ALLOWLISTED. There is one, and
-// it is Contract 1's dev-only mode resolution: a release daemon must never pull
-// the surface build graph into its load path, so that import is dynamic ON
-// PURPOSE. A ward phrased over all imports would be red against correct code.
+// ⛔ DYNAMIC ESCAPES ARE EXEMPT BUT PINNED — NOT ALLOWLISTED. There are two
+// (mind-mapper, astrolabe) and both are the same thing: Contract 1's dev-only
+// mode resolution. A release daemon must never pull the surface build graph
+// into its load path, so that import is dynamic ON PURPOSE. A ward phrased over all imports would be red against correct code.
 // The exemption is an INVENTORY on the `exit-site-inventory.test.ts` model: a
 // new escape fails this suite until a human re-declares it. An exemption nobody
 // has to look at again is how the next one arrives unnoticed.
@@ -215,13 +215,30 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
 
-// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. One entry. Read the site before you
-// add a second — the question is never "is it dynamic?" but "does it run at the
-// DESTINATION?", and static-vs-dynamic is only the mechanical stand-in for that.
-// `mind-mapper/scripts/server.ts` reaches `src/` for its dev-mode HTMLBundle;
-// release mode is chosen by `dist/` presence and the artifact always has a
-// `dist/`, so this line never executes where it cannot resolve.
+// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. TWO entries, same site in two spells.
+// Read the site before you add a third — the question is never "is it dynamic?"
+// but "does it run at the DESTINATION?", and static-vs-dynamic is only the
+// mechanical stand-in for that.
+//
+// Both entries are one spell's server.ts reaching `src/` for its DEV-mode
+// HTMLBundle. The reasoning that admits them is identical and it is about the
+// DESTINATION, not the syntax: release mode is chosen by `dist/` presence, the
+// published artifact always has a `dist/`, so the line never executes where it
+// cannot resolve. Verified for astrolabe 2026-08-31 by booting a copied tree
+// with a dist/ and NO surface/ — see astrolabe/scripts/release-serve.test.ts,
+// whose override cell shows the other direction too: forced into dev mode that
+// same tree dies at exactly this import.
+//
+// ⚠ The `line` is part of the pinned value, so an unrelated edit ABOVE one of
+// these sites fails this cell. That is noise, not signal — re-pin the number
+// and move on; the cell earns its keep on the file/spec/resolved triple.
 const PINNED_DYNAMIC_ESCAPES: Escape[] = [
+  {
+    file: "plugins/spellbook/skills/astrolabe/scripts/server.ts",
+    spec: "../../../../../src/astrolabe/surface/index.html",
+    line: 525,
+    resolved: "src/astrolabe/surface/index.html",
+  },
   {
     file: "plugins/spellbook/skills/mind-mapper/scripts/server.ts",
     spec: "../../../../../src/mind-mapper/surface/index.html",
@@ -610,7 +627,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
       }
     }
     expect(found.sort()).toEqual([
-      "astrolabe/scripts/server.ts:75",
+      "astrolabe/scripts/server.ts:70",
       "imago/scripts/server.ts:1647",
       "imago/scripts/server.ts:1648",
       "magpie/scripts/backend.ts:20",

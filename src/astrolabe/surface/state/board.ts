@@ -1,4 +1,4 @@
-import type { ProjectCard } from "../../scripts/state";
+import type { ProjectCard } from "../../../../plugins/spellbook/skills/astrolabe/scripts/state";
 
 // Surface-side board logic, ported from the t13 Alpine surface. The daemon
 // sends a coarse `zone` (attention > active > quiet) as the floor; the surface

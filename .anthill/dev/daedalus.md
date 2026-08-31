@@ -925,3 +925,30 @@ imago's header said "Do NOT import from browser code (sharp is a native module)"
 
 **A missing-package error at import time is the loudest possible failure and still shipped in a release — the boot path is not covered by any test that imports modules directly.**
 imago v2.2.0's daemon died at `bun --no-install scripts/server.ts` on `Cannot find package 'sharp'` while its unit suite was green, because the suite imports `optimizeImageBuffer` from a tree that HAS node_modules; the only instrument that catches this class is booting the artifact from a copy with no node_modules up-tree.
+
+## spell-kit sprint 01 · 1a — astrolabe's Contract 1/5 port (2026-08-31)
+
+**"X appears in no test" and "X is unasserted" are different claims, and the first silently widens into the second.**
+I measured that `SPELLBOOK_SURFACE_MODE` appears in zero test files — true — and reported "mind-mapper's release mode has zero cells asserting it" — false: `mind-mapper/scripts/release-serve.test.ts` is 231 lines asserting exactly that, and it does not mention the env var because it drives mode by dist/ PRESENCE instead.
+The grep was over the KNOB; the claim was about the BEHAVIOUR; a knob is not the only way to reach a behaviour.
+Before generalising a grep into a claim, ask what OTHER route reaches the thing you searched for — and had I asked, the 231-line template I was about to reinvent was one `ls` away.
+
+**A silent failure needs a CONTROL, and the control is what turns "it worked" into "this line is why".**
+Contract 5's cwd pin: dev mode with cwd pinned to `src/astrolabe/` served 41,344 bytes of CSS with 213 Tailwind markers and a `tailwindcss v4.1.14` banner; the SAME daemon with cwd at the skill root served HTTP 200, 25,231 bytes, ONE marker, and the content was `node_modules/tailwindcss/index.css` passed through unprocessed.
+Both are 200s and both render a board — only the pair distinguishes them, and a single green run of the correct case would have proved nothing.
+
+**Copy the template, not the idea — and when there is no template, ask whether one exists before writing the assertion.**
+Porting mind-mapper's release-serve gate gave astrolabe seven cells (dist serving, hashed assets, 404 on unknown, traversal, backend-still-works, mode on BOTH the stdout handshake and the ready event) for the cost of a one-line assertion written from scratch.
+Two of the original's cells (STALE DIST, /state buildInfo) assert a build stamp astrolabe does not have; I dropped them and said so IN THE FILE, because a silently-shortened copy is how a template's coverage erodes without anyone deciding to erode it.
+
+**Mutation-test a new gate against the SITE, one mutation per cell, and check the failure MODE and not just the colour.**
+Three mutations (serveDist always null; drop `mode` from the ready event but keep it on stdout; drop the `dev` arm of the env override) each convicted exactly the intended cell.
+The third initially failed as a 5s runner TIMEOUT rather than an assertion — correct colour, illegible reason, and a future reader files that as flake — so the wait is now bounded at 3s, under bun test's 5s, and the cell reports "still-running" in its own words.
+
+**A pinned inventory that carries LINE NUMBERS couples every ward to every unrelated edit above the pinned site.**
+Deleting a 5-line import block in astrolabe's server.ts moved a re-export fixture from :75 to :70 and reddened a cell that has no opinion about my change.
+That is noise on top of signal, not signal: the pin earns its keep on file/spec/resolved, and the line is what makes it chatty — recorded in the ward's own header so the next re-pin is read as bookkeeping.
+
+**1a proved the pipeline generalises AND measured the price of not having the seam: 42 lines of engine copied near-verbatim between two spells, plus a 211-line test that is a 46% copy.**
+`resolveMode` (5), `serveDist` (10), `daemonCwd` (5) are byte-identical after spell-name normalisation and `STATIC_CONTENT_TYPES` (8) is byte-identical verbatim.
+Doing it by hand was the RIGHT call for a phase whose purpose is proving generalisation with zero seam work — but the number is the argument for 1b, and it should be quoted rather than re-derived.
