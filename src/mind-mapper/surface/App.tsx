@@ -26,7 +26,6 @@ import { SubmapAppendModal } from "./SubmapAppendModal";
 import { SubmapBreadcrumb } from "./SubmapBreadcrumb";
 import { SubmapGroupModal } from "./SubmapGroupModal";
 import { type AgentBadge, badgeFor, badgeHasClientTtl } from "./state/activity";
-import { buildFooterText } from "./state/buildInfo";
 import {
   type CitedBy,
   type NodeCitedBy,
@@ -1775,19 +1774,6 @@ export function App() {
           }
         />
       </div>
-      {/* R4 B1 — the build-stamp footer: release mode only (buildInfo is
-          spread at the /state handler; absent = dev mode / pre-stamp dist /
-          old daemon = no footer at all). A full-width strip, not a board
-          overlay — nothing for the coverage audit to cover. */}
-      {state.buildInfo && (
-        <footer
-          className={`border-t border-edge bg-surface px-4 py-0.5 text-[9px] ${
-            state.buildInfo.stale ? "text-attention" : "text-ink-faint"
-          }`}
-        >
-          {buildFooterText(state.buildInfo)}
-        </footer>
-      )}
       {deleteTarget && (
         <AlertDialog
           open

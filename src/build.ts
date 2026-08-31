@@ -18,19 +18,23 @@
 // which only wires Bun's dev SERVE path) — same plugin, both modes, no second
 // toolchain (Contract 2).
 //
-// Round 4 (B1): clean → build → stamp. dist/ is rm'd before every build
-// (hashed chunk names otherwise ACCUMULATE stale siblings across builds), and a
-// successful build writes dist/build.json {commit, builtAt} — the stamp
-// server.ts reads once at boot in release mode to log provenance and detect a
-// stale dist against a live src tree.
+// clean → build. dist/ is rm'd before every build (hashed chunk names otherwise
+// ACCUMULATE stale siblings across builds). Nothing else is written into dist/:
+// the Round 4 (B1) build stamp (dist/build.json {commit, builtAt}) was REMOVED
+// by Cole's ruling — "when it was built" earned nothing, and its timestamp was
+// the one field that made a rebuilt dist/ differ from its committed self. With
+// it gone dist/ is byte-reproducible from source with no exclusion list, and a
+// rebuild of an unchanged tree leaves `git status --porcelain` empty.
+//
+// ⛔ DO NOT REINTRODUCE A STAMP — no commit, no timestamp, no version, no
+// content hash. Surfacing the plugin version is a separate, unresolved item.
 //
 // ⛔ THIS FILE IS THE ONLY COPY OF THE BUILD. `src/<spell>/build.ts` is a
-// two-line delegator that exists so the invocation printed by a spell's own
-// STALE DIST warning keeps working; it holds no build logic. A second spell
-// must never mean a second copy of Bun.build — that duplication is the thing
-// spell-kit exists to remove.
+// two-line delegator, the per-spell entry point named by seams Contract 4; it
+// holds no build logic. A second spell must never mean a second copy of
+// Bun.build — that duplication is the thing spell-kit exists to remove.
 
-import { existsSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import tailwind from "bun-plugin-tailwind";
 
@@ -49,18 +53,6 @@ function buildableSpells(): string[] {
     .filter((e) => e.isDirectory() && existsSync(entryFor(e.name)))
     .map((e) => e.name)
     .sort();
-}
-
-// Best-effort commit stamp — "unknown" is tolerated (a tarball build has no
-// .git; the stamp still dates the dist).
-function currentCommit(): string {
-  try {
-    const proc = Bun.spawnSync(["git", "rev-parse", "--short", "HEAD"], { cwd: SRC_DIR });
-    const out = proc.stdout.toString().trim();
-    return proc.exitCode === 0 && out !== "" ? out : "unknown";
-  } catch {
-    return "unknown";
-  }
 }
 
 /** Build one spell's surface. Returns a process exit code. */
@@ -101,17 +93,10 @@ async function buildSpell(spell: string): Promise<number> {
     return 1;
   }
 
-  // The stamp lands AFTER a successful build only — a failed build leaves no
-  // dist/ (rm'd above), so a half-built tree can never wear a fresh stamp.
-  const stamp = { commit: currentCommit(), builtAt: new Date().toISOString() };
-  writeFileSync(join(outdir, "build.json"), `${JSON.stringify(stamp, null, 2)}\n`);
-
   for (const artifact of result.outputs) {
     process.stdout.write(`${artifact.path.replace(`${outdir}/`, "")} (${artifact.kind})\n`);
   }
-  process.stdout.write(
-    `${spell}: built ${result.outputs.length} file(s) -> ${outdir} (${stamp.commit} @ ${stamp.builtAt})\n`,
-  );
+  process.stdout.write(`${spell}: built ${result.outputs.length} file(s) -> ${outdir}\n`);
   return 0;
 }
 

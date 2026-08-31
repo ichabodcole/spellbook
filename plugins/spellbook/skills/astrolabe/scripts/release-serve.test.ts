@@ -10,11 +10,13 @@
 // works" from "dev mode found what it needed". Only a tree missing the surface
 // can.
 //
-// TWO CELLS OF THE MIND-MAPPER ORIGINAL ARE DELIBERATELY ABSENT, not forgotten:
-// the STALE DIST warning and the /state buildInfo spread both assert
-// mind-mapper's Round 4 build stamp (dist/build.json), which astrolabe does not
-// have. Porting the stamp is not part of this phase; if it lands, those two
-// cells port with it.
+// TWO CELLS OF THE MIND-MAPPER ORIGINAL ARE ABSENT, and the reason CHANGED:
+// the STALE DIST warning and the /state buildInfo spread both asserted
+// mind-mapper's Round 4 build stamp (dist/build.json). astrolabe never had the
+// stamp — and now NOBODY does: it was REMOVED from the tree by Cole's ruling
+// (the mtime staleness check it fed was inverted, and the timestamp it wrote
+// was the only thing stopping dist/ from being byte-reproducible). So this is
+// no longer an unported cell awaiting a port. There is nothing to port.
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import {
   cpSync,

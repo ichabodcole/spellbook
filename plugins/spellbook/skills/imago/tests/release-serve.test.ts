@@ -9,11 +9,13 @@
 // silently dropped, because a shortened copy is how a template's coverage
 // erodes with nobody deciding to erode it.
 //
-// NOT PORTED, and why:
-//   · STALE DIST warning  — asserts mind-mapper's Round 4 build stamp
-//     (dist/build.json). imago has no stamp. astrolabe did not port it either.
+// NOT PORTED, and why — the reason CHANGED, so read it again:
+//   · STALE DIST warning  — asserted mind-mapper's Round 4 build stamp
+//     (dist/build.json). imago never had the stamp, astrolabe never ported it,
+//     and the stamp is now REMOVED FROM THE TREE ENTIRELY by Cole's ruling.
 //   · /state buildInfo     — same stamp. Same reason.
-//   If the stamp is ever ported to imago, both cells port with it.
+//   These are no longer cells awaiting a port; their subject is gone. Do not
+//   re-add them, and do not re-add a stamp for them to assert.
 //
 // PORTED UNCHANGED IN SUBSTANCE: dist entry, hashed assets, unknown-path 404,
 // traversal 404, backend-still-works, and the SPELLBOOK_SURFACE_MODE override.

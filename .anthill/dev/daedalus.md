@@ -646,7 +646,6 @@ The V1 wire (thin-ratified-events, the `{hits}` search shape, additive-column-ba
 Bun-fetch `reader.cancel()` invisibility is a latent presence leak for any client that disconnects that way (none of ours do — cli uses AbortController, browsers close sockets); if a stuck count ever shows, this is the first suspect.
 The V1.x additions kept `readState` growing positional optional params (cursor, epoch, projectRoot) — a fourth caller-supplied field should tip it to an options object.
 The new CLI parse tiers (doc kind's positional overload, actions' set/stdin/clear exclusivity) are verified by a live drive but carry no cli.test.ts rows — if either verb grows another flag, pin the parse tier first.
-The repo dist/ predates the B1 stamp — the release cut (or circe's P2 finalize) must re-run `bun run src/mind-mapper/build.ts` so build.json actually ships; until then release boots serve with no buildInfo (tolerated by design).
 Channel-based multi-agent ROUTING (the proposal's `--inbound` generalization): `isInboundEvent` is a hardcoded predicate today; routing wants `tail --inbound --channel <c>` / `--for <agent>` — a per-subscriber predicate built from query params over the same filter site. R11 deliberately built no router; the channel vocabulary + the role-keyed filter are the two pieces it needs.
 SEAM 3's honest upgrade path, if a delta ever needs to cover more: `proposals.updated_at` (one additive column, ~5 write sites) would cover REJECTIONS, and jobs are already fully timestamped in epoch-ms and could be exposed under a second, unit-explicit watermark. Neither covers DELETIONS — nothing short of tombstones does — so `notCovered` never empties and the full-refetch path stays the honest reconciliation. Don't build either without a drive that shows the miss actually costing something.
 `title:` refs deliberately do NOT resolve in `ratify-batch`'s `anchors[]` (node/parent refs) — one intake resolution site this round, and an anchor failure lands at the human's ruling act. If anchors get hand-wired as often as edges were, that's the next candidate; resolve it at the same intake-vs-ruling argument.
@@ -939,7 +938,8 @@ Both are 200s and both render a board — only the pair distinguishes them, and 
 
 **Copy the template, not the idea — and when there is no template, ask whether one exists before writing the assertion.**
 Porting mind-mapper's release-serve gate gave astrolabe seven cells (dist serving, hashed assets, 404 on unknown, traversal, backend-still-works, mode on BOTH the stdout handshake and the ready event) for the cost of a one-line assertion written from scratch.
-Two of the original's cells (STALE DIST, /state buildInfo) assert a build stamp astrolabe does not have; I dropped them and said so IN THE FILE, because a silently-shortened copy is how a template's coverage erodes without anyone deciding to erode it.
+Two of the original's cells (STALE DIST, /state buildInfo) asserted a build stamp astrolabe does not have; I dropped them and said so IN THE FILE, because a silently-shortened copy is how a template's coverage erodes without anyone deciding to erode it.
+_(2026-08-31: the stamp is now removed from the whole tree, so those two cells have no subject anywhere — the stated omission became a stated deletion, and the lesson about SAYING SO is what survives.)_
 
 **Mutation-test a new gate against the SITE, one mutation per cell, and check the failure MODE and not just the colour.**
 Three mutations (serveDist always null; drop `mode` from the ready event but keep it on stdout; drop the `dev` arm of the env override) each convicted exactly the intended cell.
@@ -1007,3 +1007,30 @@ I re-pinned and wrote the case for comparing the file/spec/resolved triple while
 **Run tsc over your own earlier work in the same sprint — it is not in the gate, so nothing else will.**
 My astrolabe release-serve gate from 1a had been carrying 2 tsc errors (a `Subprocess` generic and an unchecked `split()[0]`) since it landed at d181c88, green the whole time, because `bun run check && bun test` cannot see them.
 Found them only because 1c's done-when quotes a root typecheck number; fixed both, 452 -> 450.
+
+**Two jobs on one field is the defect, and the ONE FIELD is where you can see it before either job misbehaves.**
+The build stamp's `builtAt` was a wall clock (the footer wanted "34m ago") AND the identity a machine freshness check compared against — and that is why the mtime check was INVERTED rather than merely noisy: job B was implemented on job A's data, and a timestamp is the one datum git does not preserve.
+The tell was available for free the whole time: a field whose TYPE is chosen by one consumer's rendering needs cannot also be the other consumer's identity, and I shipped it in R4 without noticing that the second consumer was reading a display format as a key.
+When a card asks you to fix a check, first ask what DATA it is comparing and which consumer chose that data's shape — if the answer is "the other one", the repair is removal or a second field, never a smarter comparison.
+Pin: the stamp removal (sk2-drop-stamp); the whole detector deleted rather than re-based on a sha, per Cole's ruling.
+
+**Deleting a field can make an artifact REPRODUCIBLE, and reproducibility is a stronger check than the one you deleted.**
+Removing `build.json` made all three spells' `dist/` byte-identical across back-to-back rebuilds with NO exclusion list — measured as an identical git tree object (`GIT_INDEX_FILE=… git add -A <dist paths>; git write-tree`, same sha twice), which is the cheap executable form of "a rebuild is a no-op to git".
+The evidence is sharpest in the spells that changed NOTHING else: astrolabe's and imago's rebuilds moved exactly one file each — `build.json`'s deletion — so the stamp was demonstrably the only thing making a correct dist look dirty.
+Generalises: before building a freshness DETECTOR for a generated artifact, check whether the artifact can simply be made reproducible; "rebuild and diff" needs no stamp, no basis ruling, and no retention story, and it cannot be inverted by a checkout.
+
+**`git write-tree` against a throwaway index is how you prove a build is committed-clean WITHOUT committing.**
+The claim "a rebuild leaves `git status --porcelain` empty" is unprovable in a seat that does not commit — until you notice you can write the would-be-committed tree twice: `GIT_INDEX_FILE=$SCRATCH/idx git read-tree HEAD && git add -A <paths> && git write-tree`, rebuild, repeat, compare shas.
+It never touches the real index, so it is safe on a shared tree, and it answers the git-level question rather than a filename-level proxy.
+Keep it: any "the tree stays clean" done-when can be discharged this way by a report-only seat.
+
+**A `git ls-files`-driven ward turns an UNSTAGED deletion into a red gate — so "delete a file" is not a working-tree-local act here.**
+`grimoire/import-boundary-wards.test.ts` enumerates with `git ls-files` and then `readFileSync`s each path, so a file removed from disk but still in the index dies as ENOENT inside a ward with nothing to do with the change (2 fail, in cells about import specifiers).
+I hit it because a `git stash` / `git stash pop` round-trip (run to measure a tsc baseline) silently UNSTAGED my `git rm` — `stash pop` without `--index` does that, and the deletion reverted from `D ` to ` D` with no message.
+Two rules out of one red: re-check `git status --porcelain`'s FIRST column after any stash round-trip, and expect an unstaged deletion to present as a failure in an unrelated instrument rather than as "a file is missing".
+Pin: gate went 1501 pass / 2 fail → 1503 pass / 0 fail on `git rm --cached` alone, zero source change.
+
+**An identifier-scoped blast radius cannot see an instrument that enumerates the tree, and that is a whole class, not an oversight.**
+prospero's measurement (10 files, 74 refs, grepped for `buildInfo|build.json|builtAt|…`) was EXACT for every file that names the thing — I found no undercount in it.
+What it structurally could not find is the file that mentions no identifier because it derives its population: the `git ls-files` ward above, and `scripts/instruments/gate-blind-set.ts`, whose `gated`/`handAuthored` counts move when any tracked source is deleted (checked: only `DECLARED_BLIND`, the blind FILE list, is pinned, and a deleted `.ts` was never blind — so no ward moved).
+Rule: pair an identifier grep with a pass over the tree-enumerating instruments, because their coupling to your change is by EXISTENCE, not by name.

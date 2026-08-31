@@ -51846,27 +51846,6 @@ function badgeHasClientTtl(badge) {
   return badge === "thinking";
 }
 
-// src/mind-mapper/surface/state/buildInfo.ts
-function formatAge(builtAt, now2 = Date.now()) {
-  const t = Date.parse(builtAt);
-  if (Number.isNaN(t))
-    return null;
-  const mins = Math.floor((now2 - t) / 60000);
-  if (mins < 1)
-    return "just now";
-  if (mins < 60)
-    return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24)
-    return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
-function buildFooterText(info, now2 = Date.now()) {
-  const age = formatAge(info.builtAt, now2);
-  const base = `build ${info.commit}${age ? ` · ${age}` : ""}`;
-  return info.stale ? `${base} · stale — surface source is newer than this dist` : base;
-}
-
 // src/mind-mapper/surface/state/deleteFlow.ts
 function parseCitedBody(body) {
   if (typeof body !== "object" || body === null)
@@ -54051,10 +54030,6 @@ function App() {
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      state.buildInfo && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV("footer", {
-        className: `border-t border-edge bg-surface px-4 py-0.5 text-[9px] ${state.buildInfo.stale ? "text-attention" : "text-ink-faint"}`,
-        children: buildFooterText(state.buildInfo)
-      }, undefined, false, undefined, this),
       deleteTarget && /* @__PURE__ */ jsx_dev_runtime31.jsxDEV(AlertDialog, {
         open: true,
         onOpenChange: (open) => {
