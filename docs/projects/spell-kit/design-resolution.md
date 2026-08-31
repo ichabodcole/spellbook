@@ -15,16 +15,40 @@ proposal records the _shape_ of the work and this records the _rulings_. It is
 being filled incrementally; unresolved items stay in the proposal's status
 banner.
 
-| #   | Blocking question                                                                               | State                             |
-| --- | ----------------------------------------------------------------------------------------------- | --------------------------------- |
-| 1   | Where do imago's `types.ts` / `imageOptimize.server.ts` live?                                   | ✅ **RESOLVED — see R1**          |
-| 2   | `presence`/`activity`/`buildInfo` — unwired, or cross the gate?                                 | ⏸ **moot — kit breadth descoped** |
-| 3   | **Theming — does one palette replace the other?**                                               | ✅ **RESOLVED — see below**       |
-| 4   | Is there a shared context type at all?                                                          | ⏸ **moot — K2 descoped**          |
-| 5   | What happens to `DECLARED_BLIND`?                                                               | ✅ **RESOLVED — see R5**          |
-| 6   | Restate the invariant over the right denominator                                                | ✅ **RESOLVED — see R6**          |
-| 7   | Migrate or formally drop astrolabe                                                              | ✅ **RESOLVED — see R7**          |
-| —   | **RB · what building the backend would cost** _(not one of the seven, but it governs the gate)_ | ✅ **RESOLVED — see below**       |
+| #   | Blocking question                                                                               | Raised as | State                             |
+| --- | ----------------------------------------------------------------------------------------------- | --------- | --------------------------------- |
+| 1   | Where do imago's `types.ts` / `imageOptimize.server.ts` live?                                   | **B1**    | ✅ **RESOLVED — see R1**          |
+| 2   | `presence`/`activity`/`buildInfo` — unwired, or cross the gate?                                 | **B2**    | ⏸ **moot — kit breadth descoped** |
+| 3   | **Theming — does one palette replace the other?**                                               | **B3**    | ✅ **RESOLVED — see R3**          |
+| 4   | Is there a shared context type at all?                                                          | **B4**    | ⏸ **moot — K2 descoped**          |
+| 5   | What happens to `DECLARED_BLIND`?                                                               | **B5**    | ✅ **RESOLVED — see R5**          |
+| 6   | Restate the invariant over the right denominator                                                | **D3**    | ✅ **RESOLVED — see R6**          |
+| 7   | Migrate or formally drop astrolabe                                                              | **D1**    | ✅ **RESOLVED — see R7**          |
+| —   | **RB · what building the backend would cost** _(not one of the seven, but it governs the gate)_ | —         | ✅ **RESOLVED — see RB**          |
+
+### Three id series run through these documents, and they are not the same series
+
+- **`B…` / `D…` / `I…`** — [gap analysis](./gap-analysis.md) findings, cited
+  elsewhere by bare id. The **Raised as** column above is the crosswalk for the
+  seven blocking ones; the [finding index](./gap-analysis.md#finding-index) is
+  the legend for all of them. _(The letters are not section labels: `D1` and
+  `D3` are Blocking findings.)_
+- **`Q<n>`** — a blocking question **by number**, i.e. a row in the table above.
+  Each is closed by the like-numbered ruling: `Q1`→R1, `Q5`→R5. Where this
+  document says `Q1` it means the question; `R1` means the ruling that closed
+  it.
+- **`OQ<n>`** — an **open** question, a third series. In the gap analysis these
+  are the **superseded first draft's** open questions; the rewritten proposal
+  has none. R3 keeps its own [Open Questions](#open-questions-r3).
+
+**Reading order, and where corrections live.** Each ruling below is
+self-contained and can be read alone. **A correction made after a ruling was
+first written is folded into the section it corrects, marked ⚠, and placed ahead
+of the text it changes** — never appended below it. Where a later ruling
+_narrowed_ an earlier one, the ⚠ pointer sits at the claim as well as in the
+ledger it was recorded in. The rule exists because the old arrangement cost a
+defect: a reader who stopped at R6's confident ward statement got the retracted
+version and built it (Sprint 01 Phase 0, once).
 
 ---
 
@@ -125,8 +149,8 @@ src/imago/surface/                    ← authored here, bundled, never shipped
 destination that never ran `install`, so anything it imports has to be there.
 The surface reaching `src/ → plugins/` is a **build-time edge only** — bundled
 and erased — and it is unavoidable for the same reason, whichever folder name
-wins. Satisfies [R6](#r6--the-shared-import-ward-and-imagos-test-split): nothing
-under `plugins/spellbook/` imports outside it.
+wins. Satisfies [R6](#r6--the-shared-import-wards-and-imagos-test-split):
+nothing under `plugins/spellbook/` imports outside it.
 
 ### The three-way rule
 
@@ -141,6 +165,40 @@ different correct destination:
 
 > **`shared/` — what both sides legitimately need · `scripts/` — what only the
 > daemon executes · `surface/` — what only the browser needs.**
+
+#### Applied to imago: three files move, not two
+
+⚠ **Corrected on review 2026-08-30, and this is the corrected version.** The
+three-way table above sorts **import sites**, and read at that granularity it
+looks like two files move. It is three. The correction is folded in here rather
+than appended below the ruling, because the two-file reading is itself
+actionable and wrong: build from it and you re-open the seam in the other
+direction.
+
+| File                              | Used by                | Goes to             |
+| --------------------------------- | ---------------------- | ------------------- |
+| `state/types.ts` (the contract)   | daemon **and** browser | **`shared/`**       |
+| `state/imageOptimize.ts` (policy) | daemon **and** browser | **`shared/`**       |
+| `state/imageOptimize.server.ts`   | daemon only            | `scripts/`          |
+| `state/fileIntake.ts`             | browser only           | stays in `surface/` |
+
+**What the earlier reading missed.** Found by the dev-plan agent:
+`surface/state/imageOptimize.server.ts:6` imports
+`{ OPTIMIZE } from "./imageOptimize"` — a 5-line browser-safe policy module that
+`surface/state/fileIntake.ts:2` also uses. Move only the `.server` half to
+`scripts/` and you have created a **new** `scripts/` → `surface/` value import:
+exactly what R1 exists to remove, re-opened in the other direction.
+
+**The rule was not wrong — it was applied to too coarse a unit.** `OPTIMIZE` is
+used by the daemon path _and_ the browser path, so by R1's own test it is
+**two-sided** and sorts to `shared/`.
+
+**The general lesson, worth carrying into glamour and magpie:** sort at the
+level of the _module_, and check what each candidate itself imports. A
+daemon-only module that depends on a browser-safe one drags the boundary with
+it. glamour's `persist.server`/`styles.server` and magpie's
+`persist.server`/`source.server` must each be checked the same way before they
+move.
 
 ### The `.server.ts` family: the convention already marks them
 
@@ -157,17 +215,23 @@ file itself. No surface module imports it.)_
 
 ### It generalizes to the other two spells
 
-The rule resolves all three React spells' coupling, and shows a fourth category
-imago happens not to have — **genuinely shared _logic_**, not just types:
+The rule resolves all three React spells' coupling, and shows a category the
+import-site view hides — **genuinely shared _logic_**, not just types:
 
-| Spell   | → `scripts/` (daemon-only)        | → `shared/` (two-sided)                    |
-| ------- | --------------------------------- | ------------------------------------------ |
-| imago   | `imageOptimize.server`            | `types`                                    |
-| glamour | `persist.server`, `styles.server` | `types`, **`reduce`**                      |
-| magpie  | `persist.server`, `source.server` | `types`, **`reduce`**, `alpha`, `versions` |
+| Spell   | → `scripts/` (daemon-only)        | → `shared/` (two-sided)                        |
+| ------- | --------------------------------- | ---------------------------------------------- |
+| imago   | `imageOptimize.server`            | `types`, **`imageOptimize`** (the policy half) |
+| glamour | `persist.server`, `styles.server` | `types`, **`reduce`**                          |
+| magpie  | `persist.server`, `source.server` | `types`, **`reduce`**, `alpha`, `versions`     |
 
 So `shared/` holds the contract **and** shared logic — exactly as scoped: within
 an app, never across.
+
+⚠ **imago's second `shared/` entry is the correction above, carried into this
+table** — a 5-line policy module, and the smallest possible instance of the same
+category as glamour's and magpie's `reduce`. **glamour's and magpie's rows have
+not had the module-level check run against them**; per the lesson above, each
+`.server` file must be checked for a browser-safe sibling before it moves.
 
 ### Scope note
 
@@ -190,12 +254,49 @@ wrong denominator.
 **artifact** self-contained; the second keeps the **kit** app-agnostic. Neither
 implies the other, and only the first was in the original ruling.
 
-### Ward 1 — outward: the artifact is self-contained
+### Ward 1 is TWO checks — read this before building either
 
-> **No tracked file under `plugins/spellbook/` may STATICALLY import outside
-> `plugins/spellbook/`.**
+⚠ **Corrected on review 2026-08-30. A single-predicate Ward 1 is retracted, and
+this is the correction, placed ahead of the ward statements rather than after
+them.** Sprint 01 Phase 0 was drafted against the retracted version while it
+still sat further down the page — this ruling's own cautionary example, and the
+reason corrections in this document now live inside the section they correct.
 
-**Measured at HEAD before adopting it — 206 tracked `.ts`/`.tsx` files:**
+|                     | Predicate                                                                                                                                         | Why                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| **1a · structural** | no **relative** specifier under `plugins/spellbook/` resolves outside it                                                                          | the subtree is path-self-contained. Green today.                                                                                      |
+| **1b · dependency** | no file on the **shipped execution path** (`scripts/`, `shared/` — **not** `surface/`) statically imports a bare specifier outside `node:`/`bun:` | `surface/` bare imports are erased by the bundler and are fine; a `scripts/` one must resolve at a destination with no `node_modules` |
+
+#### Why one check could not do both jobs — the correction, recorded
+
+The retracted phrasing was _"may not **statically import** outside
+`plugins/spellbook/`."_ The measurement behind it counted **relative specifiers
+only** — and the two are not the same ward. Read literally, the English also
+covers **bare** specifiers, of which there are **88** today:
+
+| specifier             | count | where                                           |
+| --------------------- | ----: | ----------------------------------------------- |
+| `react` / `react-dom` |    49 | the four React spells' `surface/`               |
+| `lucide-react`        |    34 | ditto                                           |
+| `bun` (types)         |     4 | —                                               |
+| **`sharp`**           | **1** | `imago/surface/state/imageOptimize.server.ts:5` |
+
+**Neither reading is the ward the project needs.** As measured it is green on
+arrival and **structurally blind to the one escape that actually breaks a
+deps-free destination** — `sharp`, which stops the shipped imago daemon booting
+at all ([filed](../../backlog/2026-08-30-imago-daemon-cannot-start-offline.md)).
+As stated it is red on arrival with 88 violations, against correct code — the
+exact failure this ruling already anticipated on the dynamic axis and then
+reproduced on the static one.
+
+### Ward 1a — outward: the artifact is self-contained
+
+> **No tracked file under `plugins/spellbook/` may STATICALLY resolve a RELATIVE
+> specifier outside `plugins/spellbook/`.**
+
+**Measured at HEAD before adopting it — 206 tracked `.ts`/`.tsx` files**
+(relative specifiers, which is what 1a governs; the bare-specifier population is
+1b's, and is counted in the correction above):
 
 |                                              | count |
 | -------------------------------------------- | ----: |
@@ -236,6 +337,30 @@ Deliberate, and worth stating because it is the looser of the two boundaries:
   1). **The ward does not prejudge the gate** — it enforces "the artifact
   works," not "which sharing mechanism won."
 
+### Ward 1b — outward: the shipped execution path carries no dependencies
+
+> **No file on the shipped execution path (`scripts/`, `shared/` — never
+> `surface/`) may statically import a bare specifier outside `node:`, `bun:`, or
+> the bare `bun` types package.**
+
+> **⚠ `bun` must be in the exemption, and it was missing here.** Written as
+> `node:`/`bun:` alone, this predicate is **red today on four files** —
+> `astrolabe`, `bounty`, `imago` and `magpie` each carry
+> `import type { ServerWebSocket } from "bun"`, which is type-only and erased.
+> Measured: **4 violations without the exemption, 0 with it.** Sprint 01's Phase
+> 0 bullet already had it right; this section did not. _(Found by the on-ramp
+> pass, which flagged the drift rather than reconciling it — correctly, since
+> only running it says which side was wrong.)_
+
+`surface/` is excluded on purpose: its bare imports are erased by the bundler
+and never reach a destination. A `scripts/` one must resolve where nobody ran
+`install`.
+
+**1b is green today and R1 turns it red** — R1 moves the `sharp` importer into
+`scripts/`. That is the correct behaviour: the ward should fire on exactly the
+change that makes the dependency load-bearing, and it forces the
+`sharp`→`Bun.Image` decision the proposal already scheduled.
+
 ### Ward 2 — downward: the kit is a leaf (the one-way street)
 
 > **No file under `src/kit/` may make a relative import outside `src/kit/`.**
@@ -258,7 +383,7 @@ depend on app-specific ones.** Our structure maps almost one-to-one:
 | `@nx/enforce-module-boundaries`   | these two wards                                   |
 | `type:` (ui / util / data-access) | `kit/ui`, `kit/theme`, `kit/state` — half-present |
 
-**Ward 1 does not catch this.** It guards `plugins/spellbook/` looking
+**Ward 1a does not catch this.** It guards `plugins/spellbook/` looking
 _outward_; nothing in it would stop `src/kit/theme/` importing
 `src/imago/surface/state/types`. **That single import is how the kit quietly
 becomes imago-shaped**, and it is the mechanical enforcement of what
@@ -275,15 +400,15 @@ once three modules depend on it.
 
 mind-mapper's precedent: **38 surface tests** under `src/mind-mapper/surface/`,
 **32 backend tests** under `plugins/.../scripts/`. imago's 11 sit in one
-`tests/` dir; classified by what they import, the split is clean — **and Q1 is
+`tests/` dir; classified by what they import, the split is clean — **and R1 is
 what makes it clean**, because the two backend tests that look like surface
 tests only touch the misfiled contract:
 
-| Stays backend (`plugins/…/imago/`) | Why                                                 |
-| ---------------------------------- | --------------------------------------------------- |
-| `cli.test.ts`                      | `scripts/` only                                     |
-| `server.integration.test.ts`       | imports **only the contract** → `scripts/` after R1 |
-| `state.test.ts`                    | contract + `scripts/`                               |
+| Stays backend (`plugins/…/imago/`) | Why                                                    |
+| ---------------------------------- | ------------------------------------------------------ |
+| `cli.test.ts`                      | `scripts/` only                                        |
+| `server.integration.test.ts`       | imports **only the contract** → **`shared/`** after R1 |
+| `state.test.ts`                    | contract + `scripts/`                                  |
 
 | Moves to `src/imago/surface/`                                                             |
 | ----------------------------------------------------------------------------------------- |
@@ -291,14 +416,17 @@ tests only touch the misfiled contract:
 
 **3 backend / 8 surface.** One straddler to decide during implementation:
 `imageOptimize.test.ts` covers both the browser-safe policy (`imageOptimize.ts`,
-surface) and the sharp-based implementation (`imageOptimize.server.ts`, which R1
-moves to `scripts/`). It splits, or it picks a side and imports across. Not a
-design question — an implementer's call.
+which the corrected sort moves to **`shared/`**) and the sharp-based
+implementation (`imageOptimize.server.ts`, which R1 moves to `scripts/`). It
+splits, or it picks a side and imports across. Not a design question — an
+implementer's call.
 
-> **Note the coupling:** R1 moves exactly **two** files —
-> `surface/state/types.ts` and `surface/state/imageOptimize.server.ts`. Those
-> two are why three of imago's tests currently look like surface tests and are
-> not.
+> **Note the coupling:** R1 moves **three** files — `surface/state/types.ts`,
+> `surface/state/imageOptimize.server.ts` and `surface/state/imageOptimize.ts`
+> _(the third was added when R1's unit was corrected on review; see
+> [R1's file-level sort](#applied-to-imago-three-files-move-not-two))_. The
+> first two are why three of imago's tests currently look like surface tests and
+> are not.
 
 ---
 
@@ -323,9 +451,9 @@ in the roster, by a wide margin.**
 | `server.ts` → `surface/` | **1** (just `index.html`)                | **5** (3 runtime value imports) |
 | `surface/` → `scripts/`  | 2 files, **both `import type`** (erased) | none                            |
 | test files touched       | **0**                                    | 10 of 11                        |
-| the wire contract        | **already in `scripts/state.ts`**        | misfiled in `surface/` (Q1)     |
+| the wire contract        | **already in `scripts/state.ts`**        | misfiled in `surface/` (R1)     |
 
-**astrolabe is already in the target state Q1 moves imago toward** — contract in
+**astrolabe is already in the target state R1 moves imago toward** — contract in
 `scripts/`, surface consuming it type-only. That is the exact arrangement R1
 prescribes.
 
@@ -338,7 +466,7 @@ reshaped scope is built on.
 **Cost of adding it:** one more relocation, one more committed `dist/`. It
 introduces **no new decisions** — its three `gate-honesty` entries
 (`surface/styles.css` 93, `surface/index.html` 35, `bunfig.toml` 2) are the same
-kinds as imago's, so Q5's ruling covers both. Its 39 backend typecheck errors
+kinds as imago's, so R5's ruling covers both. Its 39 backend typecheck errors
 sit under the same Tier 3 carve-out as imago's 137.
 
 > **Not a fourth slice.** astrolabe rides inside Slice 1 as its first,
@@ -498,10 +626,11 @@ relocation plus a naming decision — not invention.
 
 ### The `--color-accent` collision is a namespace bug, not a palette conflict
 
-The gap analysis (B3) correctly measured that `--color-accent` is `#7c3aed`
-(brand violet) in imago and `var(--color-edge)` (a border grey) in mind-mapper,
-and concluded the palettes conflict. **The measurement is right; the diagnosis
-was wrong.**
+The gap analysis ([B3](./gap-analysis.md#finding-index) — _`kit/ui/` cannot
+render in imago; the Phase-2 order is backwards_) correctly measured that
+`--color-accent` is `#7c3aed` (brand violet) in imago and `var(--color-edge)` (a
+border grey) in mind-mapper, and concluded the palettes conflict. **The
+measurement is right; the diagnosis was wrong.**
 
 The two surfaces share **six token names** — `bg`, `surface`, `ink`, `edge`,
 `attention`, `accent` — and **five agree in meaning.** Only `accent` diverges,
@@ -654,24 +783,45 @@ owns all four pieces:
 - **imago's light mode is real design work, not a mechanical fill.** Its 24
   tokens are tuned for violet-on-near-black; mind-mapper's light ground is warm
   paper (`#f7f6f3`). What imago's brand violet becomes on warm paper is a
-  decision someone has to make.
+  decision someone has to make. **⚠ It is deferred, not cancelled** — the
+  rewritten proposal puts it out of scope; the reconciliation is
+  [Open Question 2](#open-questions-r3), and it narrows the probe below.
 
 > ### This replaces the paper probe — and it is a better test
 >
+> ⚠ **Narrowed on review 2026-08-30, and the narrowing is not optional: the
+> switcher is NOT what this project builds.** With imago's light palette out of
+> scope, a switcher cannot be proven in a one-palette spell, so Slice 4's kit
+> component is **something smaller that still uses a kit token** — the part that
+> exercises the `@source` hazard. **R3's architecture ruling is unchanged; only
+> the probe is.** Recorded in full at [Open Question 2](#open-questions-r3). The
+> paragraph below is why the theme slice was the right _kind_ of probe, and that
+> reasoning still holds.
+>
 > The [gap analysis](./gap-analysis.md) called the proposal's paper probe
-> theatre (D4) and countered with "build one real shared component." **The theme
-> slice is a better candidate than its suggested `MessageBubble`**: it is small,
-> it is real, and it exercises **every** mechanical constraint in one pass — L0
-> tokens, a kit hook, a kit component, the `@source` scan hazard, and the
-> pre-paint script. Critically, it carries **no domain model**, which is exactly
-> what makes `MessageBubble` hard (the four chat implementations are four
-> architectures, not four copies). **A switcher that renders correctly in both
-> spells, in both modes, proves the structure end to end.**
+> theatre ([D4](./gap-analysis.md#finding-index)) and countered with "build one
+> real shared component." **The theme slice is a better candidate than its
+> suggested `MessageBubble`**: it is small, it is real, and it exercises
+> **every** mechanical constraint in one pass — L0 tokens, a kit hook, a kit
+> component, the `@source` scan hazard, and the pre-paint script. Critically, it
+> carries **no domain model**, which is exactly what makes `MessageBubble` hard
+> (the four chat implementations are four architectures, not four copies). **A
+> switcher that renders correctly in both spells, in both modes, proves the
+> structure end to end.**
 
 ## Boundaries (R3)
 
 **In scope:** `kit/theme/` with L0 + L1; imago's 95-site brand rename;
 reconciling the L0 names; a light palette for imago, which has none today.
+
+⚠ **These are R3's boundaries, and the rewritten proposal narrows what gets
+BUILT inside them.** Slice 4 ships **a handful of L0 tokens, not the full
+~16-token reconciliation**, and puts **imago's light palette** and the **95-site
+rename** outside the work — the rename conditionally, on the kit component
+touching no L1 alias. Both narrowings are recorded at
+[Open Questions 2 and 3](#open-questions-r3). **R3 rules the architecture; the
+proposal rules what gets built.** Read both before treating this list as a work
+order.
 
 **Out of scope:** re-skinning either spell; L3 domain tokens; any component
 work. Theming lands _before_ `kit/ui/` (see below) and is independent of it.
@@ -718,11 +868,28 @@ foundation, not one of its modules.**
 ## Open Questions (R3)
 
 1. ~~L0 granularity~~ ✅ **RULED — small and growing;** L0 v1 listed above.
-2. ~~Does imago gain a light mode in this project, or later?~~ ✅ **RESOLVED —
-   in this project.** Light+dark is a baseline for every app. What remains is a
-   _design_ question, not a scope one: what imago's violet becomes on a light
-   ground.
-3. **Where does `styles.css` live once the surface relocates?** Entangled with
+2. ~~Does imago gain a light mode in this project, or later?~~ **⚠ NARROWED
+   2026-08-30 — the proposal supersedes this.** R3 was written **before** the
+   scope correction; the rewritten proposal's Slice-4 table puts imago's light
+   palette **out of scope**, and it is later and reflects the standing rule
+   (_spend effort only where it proves a capability_). **The reconciliation: R3
+   rules the ARCHITECTURE — the base ships both palettes and mind-mapper
+   exercises mode-override for free. The proposal rules WHAT GETS BUILT — imago
+   proves app-override in dark only.** Light+dark remains the house baseline for
+   every app; imago's own light palette is deferred, not cancelled.
+
+   _Consequence, named by the dev-plan agent:_ R3's preferred probe was the
+   **theme switcher**, and a switcher cannot be proven in a one-palette spell.
+   **Slice 4's kit component becomes something smaller** — it still must use a
+   kit token, which is the part that exercises the `@source` hazard.
+
+3. **The 95-site `accent`→`brand` rename is out of scope, and stays out on one
+   condition.** R3 rules the rename; the proposal excludes it. Both hold **iff
+   the Slice-4 kit component references L0 tokens ONLY.** A single shadcn alias
+   (`bg-accent`, `bg-popover`…) pulls all 95 sites onto the critical path.
+   **This is a governing constraint on the component's design, not a
+   preference.**
+4. **Where does `styles.css` live once the surface relocates?** Entangled with
    blocking question 1 (the backend↔surface seam) and with `DECLARED_BLIND`
    (blocking question 5), which pins `imago/surface/styles.css` by path.
 
@@ -766,6 +933,124 @@ EOF
 grep -rohE "\b(bg|text|border|ring)-(slate|zinc|violet|amber|emerald|rose)-[0-9]{2,3}" \
   plugins/spellbook/skills/glamour/surface --include='*.tsx' | wc -l
 ```
+
+---
+
+## RC — mind-mapper's standing as the kit's source (D2)
+
+**Ruled: D2's facts are correct, its inference was already overturned before it
+was written, and one word of the proposal needs narrowing.** D2 does not block.
+
+**What D2 claimed.** mind-mapper is pinned by `roster-drift.test.ts`, has no
+`SKILL.md`, and appears in none of the four listings — so it is an undeclared
+WIP spell, and it is the entire source of the pipeline this project borrows.
+What shipped in v2.2.0 was that spell's `dist/` riding along in the subtree, and
+nobody consumed it. D2 closes: _"it is the thing that makes the donor not a
+spell."_
+
+**Every fact is verified** (2026-08-31): no `SKILL.md` (7 of 8 spell folders
+have one), the pin is present, no listing carries it.
+
+### ⛔ The closing inference is already ruled, and the other way
+
+**Cole ruled the undeclared state intentional and correct on 2026-08-10**
+(`47238d7`), and the ruling is quoted in two live artifacts —
+`grimoire/roster-drift.test.ts:32-38` and
+[`docs/backlog/2026-08-10-mind-mapper-is-undeclared-and-shipped.md`](../../backlog/2026-08-10-mind-mapper-is-undeclared-and-shipped.md):
+
+> **mind-mapper is undeclared BECAUSE it is not finished** — not through
+> oversight, and not through drift. **There is nothing to repair** in the four
+> synced listings, the trigger registry, or the missing `SKILL.md`. A spell that
+> has not coalesced should not be claiming a roster slot.
+
+So _undeclared_ is not a defect here and is not evidence of neglect — **it is
+the correct state for a spell in mind-mapper's condition**, and the ward pins it
+with that reason printed on every run. D2 read a deliberate state as a broken
+one.
+
+> **⚠ This nearly cost a duplicate.** The first draft of this ruling filed
+> mind-mapper's missing `SKILL.md` to the backlog as "a real defect, and it is
+> mind-mapper's." **It is neither** — a file recording that exact question has
+> been open since 2026-08-10 with a human ruling already at the top of it. The
+> ward comment names that file by path, which is how it surfaced. **Before
+> filing a finding, grep the backlog for its subject** — this set has now
+> produced one near-duplicate and one finding aimed at deleted text (below).
+
+### ⚠ Two of D2's three complaints target the pre-rewrite proposal
+
+D2 quotes the proposal saying _"validated through a real distribution channel"_
+and objects to the missing `SKILL.md` sitting under _"Future Considerations,"_
+as if cosmetic. **Neither string exists in `proposal.md` any more** (`grep`,
+2026-08-31); both went when the proposal was rewritten around the four
+capability slices.
+
+> **Check a finding's target before acting on it.** This document set was
+> rewritten _under_ its own gap analysis, so a finding can outlive the sentence
+> it quotes. The ids stay stable; the text does not.
+
+### What survives is one word, and it is worth fixing
+
+The proposal used to port imago onto _"the pipeline mind-mapper already
+proved."_ **Narrowed in `proposal.md` on 2026-08-31** to what the evidence
+supports — the edit is made, not pending:
+
+| mind-mapper DID establish                                     | mind-mapper did NOT establish                |
+| ------------------------------------------------------------- | -------------------------------------------- |
+| the relocate → `bun build` → committed `dist/` mechanism runs | that any consumer ever invoked it            |
+| a built bundle survives the subtree and the plugin cache      | that the pipeline serves a spell anyone uses |
+
+A bundle that shipped unconsumed proves the **packaging**, not the **product**.
+
+> **⚠ Scope of this narrowing: the DISTRIBUTION claim only.** It does not reach
+> [R3](#r3--theming-a-base-layer-with-per-app-override)'s _"proven four-layer
+> mechanism,"_ which is a claim about CSS layering rendering in a browser and is
+> established by mind-mapper's own dev runs. Different claim, different evidence
+> — do not re-litigate R3 with this ruling.
+
+### Why the donor question does not block Sprint 01
+
+What Sprint 01 borrows is a **mechanism** — `resolveMode()`, the dev-only
+dynamic import, the committed `dist/`. Whether the spell that first exercised it
+holds a roster slot is a fact about **that spell's declaration**, not about
+whether `bun build --target=bun` emits a bundle imago can serve.
+
+**And the mechanism is not being taken on the donor's word.** Sprint 01's proof
+is that **imago itself builds and serves** — so the donor's credibility is not
+load-bearing; the sprint re-derives the result on the spell we care about. The
+precedent was already explicitly limited: mind-mapper's `server.ts` makes
+**zero** `../surface/` imports and imago's makes **five**, so the hard half of
+Slice 1 was never covered by it.
+
+**"imago would be the first declared, in-use spell whose surface leaves the
+shipped tree" is the thesis, not an exposure.** D2 states it as a risk. It is
+what the project is _for_.
+
+### ⚑ What this DID surface — for Cole, not for a seat
+
+The 2026-08-10 ruling **deliberately left one thing open**, and it names it as
+out of scope for the ward that pins it:
+
+> **What this ruling does NOT cover, left open deliberately:** whether the built
+> artifact should be **in the published package** while the spell is WIP.
+> `spellbook-v2.2.0` ships `mind-mapper/dist/` (~54k lines of JS + CSS) and
+> `scripts/`. A consumer receives a daemon and a surface they have no contract
+> for. **That is a packaging question, not a documentation one.**
+
+**Spell-kit generalizes exactly that question.** Slice 1 commits imago's `dist/`
+and `build.ts` learns to serve both spells; the endpoint of the project is every
+spell shipping a built bundle. The open question stops being "should one WIP
+spell's dist ride along" and becomes **"what does a consumer receive, per spell,
+once built surfaces are the norm"** — and a consumer feels that as download size
+and as a daemon they did not ask for.
+
+**This is Cole's call, not a seat's** — it is product and cost, and it is
+carried over here rather than resolved, because it was open before this project
+started and nothing in these three sprints forces it. **Sprints 01–03 proceed
+without it**; committing imago's `dist/` matches what the tree already does.
+
+**Repeal criterion:** if Sprint 01 finds the pipeline depends on something only
+an _undeclared_ spell can do — a build step a rostered spell's checks would
+reject — this ruling is wrong and the donor question reopens.
 
 ---
 

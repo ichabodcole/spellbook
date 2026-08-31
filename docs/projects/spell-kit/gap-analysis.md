@@ -10,6 +10,44 @@
 > recorded inline as ✅ **re-verified**. The remaining findings are reported as
 > the agent returned them and are marked as such.
 
+> **This document reviews the SUPERSEDED first draft, and is still live.** The
+> proposal was rewritten around it rather than annotated onto it, so the
+> findings are not archival: the rulings and the sprint plans cite them **by
+> bare id** and sometimes argue against them. The index below is the legend.
+
+---
+
+## Finding index
+
+**The letters are not section labels.** `D1` and `D3` sit under _Blocking_;
+`D2`, `D4`, `D5` and `D6` under _Does-not-fit_. The **Minor** list carries no
+ids at all — cite it by phrase.
+
+| id     | In one line                                                                                    | Section      | Where it went                                                                                 |
+| ------ | ---------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------- |
+| **B1** | imago's shipped `server.ts` imports its surface at runtime — 5 imports, 3 of them values       | Blocking     | ✅ blocking Q1 → **R1**; cut in Sprint 01 Phase 1b                                            |
+| **B2** | three of the old Phase 2's six kit modules are client halves of daemon wire protocols          | Blocking     | ⏸ blocking Q2 → **moot, kit breadth descoped**                                                |
+| **B3** | `kit/ui/` cannot render in imago; the Phase-2 order is backwards                               | Blocking     | ✅ blocking Q3 → **R3** (measurement stood, diagnosis refined — see the note under B3 itself) |
+| **B4** | the K2 vocabulary evidence is inverted — `LibraryItem` is glamour's, not imago's               | Blocking     | ⏸ blocking Q4 → **moot, K2 descoped**; corrected in the proposal                              |
+| **B5** | Phase 1 turns `gate-honesty.test.ts` red, and relocation makes 166 blind lines **uncounted**   | Blocking     | ✅ blocking Q5 → **R5**; built in Sprint 01 Phase 0                                           |
+| **D3** | the shared-import invariant is unenforceable as stated, and over the wrong denominator         | Blocking     | ✅ blocking Q6 → **R6**, which became **two** wards                                           |
+| **D1** | astrolabe is never mentioned; the pipeline plan's own outstanding ruling is skipped            | Blocking     | ✅ blocking Q7 → **R7**; astrolabe ports first, in Sprint 01 Phase 1a                         |
+| **I1** | imago's test tree is unplanned — 17 `../surface/` sites across 10 of 11 files                  | Important    | R6's test split; executed in Sprint 01 Phase 1c                                               |
+| **I2** | Seam C is canon with three mechanical dependents, and the `ward` skill was not invoked         | Important    | Sprint 03 Phase 5 — all three dependents and the `ward` run                                   |
+| **I3** | the CPR retirement contradicts the proposal's own cross-harness scope                          | Important    | descoped — the 2 sites go back to the 21-site backlog item                                    |
+| **I4** | the `useSession` row promises imago something it already has                                   | Important    | descoped with the kit's breadth                                                               |
+| **I5** | nothing keeps a committed `dist/` honest; a `src/kit/` change marks no spell stale             | Important    | Sprint 02 Phase 3 extends the staleness walk to `src/kit/`                                    |
+| **I6** | the proposal states no invocations, in a repo whose canon requires them                        | Important    | design-resolution's [Appendix — invocation](./design-resolution.md)                           |
+| **D2** | mind-mapper is a WIP, undeclared spell — and it is the kit's entire source                     | Does-not-fit | → **RC** — facts hold; the closing inference was ruled the other way in `47238d7`             |
+| **D4** | the paper probe is theatre as specified; a probe that can fail is a real component             | Does-not-fit | ✅ adopted — R3 replaces the probe with a real kit component                                  |
+| **D5** | sections contradict each other                                                                 | Does-not-fit | aimed at the first draft; the rewrite removed the sections it names                           |
+| **D6** | unbudgeted certain work no section owns — test rewrites, `DECLARED_BLIND`, cwd pin, `seams.md` | Does-not-fit | picked up across Sprint 01 (Phases 0 · 1a · 1c) and Sprint 03 Phase 5                         |
+
+**`OQ<n>` below means the SUPERSEDED first draft's Open Questions** (OQ1, OQ2,
+OQ4, OQ7) — the rewritten proposal has none. R3's own Open Questions are a
+separate series, and `Q3` in the Minor list is the **census investigation's**
+Q3, a third one again.
+
 ---
 
 ## Summary
@@ -186,6 +224,13 @@ would be the first kit-consuming spell to face the census's Q3 #4 · pipeline §
   declared, in-use spell whose surface leaves the shipped tree.** The proposal
   files mind-mapper's missing `SKILL.md` under "Future Considerations," as if
   cosmetic; it is the thing that makes the donor not a spell.
+  - **→ Ruled: [RC](./design-resolution.md). Does not block.** The facts are
+    verified, but **Cole ruled the undeclared state intentional and correct on
+    2026-08-10** (`47238d7`) — undeclared _because_ unfinished, "nothing to
+    repair." And both quoted strings were **deleted from `proposal.md` in the
+    rewrite**, so two of the three complaints have no target. What survived was
+    the word _"proved."_ RC also carries forward the packaging question that
+    ruling left open, which this project generalizes.
 - **D4 — the paper probe is theatre as specified.** You can always write an
   interface. The four chat implementations are four _architectures_: glamour is
   presentational (6 props); imago and magpie take `(state, send)` — the whole

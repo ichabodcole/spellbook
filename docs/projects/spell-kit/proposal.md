@@ -67,9 +67,11 @@ not, bank the ruling and move on.**
 
 ### Slice 1 — Both spells build
 
-imago is ported onto the pipeline mind-mapper already proved: surface relocated
-to `src/imago/surface/`, `resolveMode()` + dev-only dynamic import, committed
-`dist/`, `build.ts` generalized to serve both spells.
+imago is ported onto the pipeline mind-mapper built and shipped — which
+establishes the mechanism and the packaging, **not** that any consumer ran it
+([RC](./design-resolution.md)): surface relocated to `src/imago/surface/`,
+`resolveMode()` + dev-only dynamic import, committed `dist/`, `build.ts`
+generalized to serve both spells.
 
 **This slice contains the one genuinely hard structural problem, and it is
 platform work, not design work.** imago's shipped `server.ts` makes **five**
