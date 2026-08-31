@@ -682,6 +682,129 @@ The principle landed at `12b60e2` carries the right practice — _after a destru
 **The rule, and it is free:** _still hold the source? assert EQUALITY against it. Source gone? then probe — and normalize whitespace first._
 ⚠ **Why the weak form is the default, and this is the durable half: _"assert on its content"_ pattern-matches to _"grep for a phrase,"_ and the strong form requires noticing you still have the input.** _Same shape as the lead's own finding one layer up — verify against the BLOB, not the WIRE. **Each of us stopped at the most AVAILABLE evidence rather than the most EXACT.**_
 
+### ⭐ 2026-08-31, spell-kit sprint 01 Phase 0 — FOUR judgments, and the first is family I with a new costume
+
+**A CALIBRATION HOOK THAT SILENTLY NO-OPS IS INDISTINGUISHABLE FROM A CALIBRATED CHECK, AND I SHIPPED ONE ONE DIRECTORY AWAY FROM THE COMMENT DESCRIBING IT.**
+I gave ward 2 a `KIT_DIR` env hook so a non-author could point it at a fixture, resolved it with `join(REPO_ROOT, KIT_DIR)`, and ran both planted mutations: **both passed green.**
+Node's `join` does **not** reset on an absolute second argument, so `KIT_DIR=/tmp/fixture` became `<repo>/tmp/fixture`, which does not exist — the ward reported ABSENT and the planted violations were never examined.
+`resolve` is the fix; **running the mutation is the only thing that found it, because the hook and the check both looked right.**
+⛔ **`gate-blind-set.ts`'s own header records this exact defect about its own `SKILLS_DIR` hook** (`git ls-files` exiting 128 on an out-of-repo path) — I had read that file top to bottom that same hour and reproduced its lesson anyway.
+**That is principles.md's first entry operating on me, and the operative detail is that the hook was there, was documented, and was dead.**
+⭐ **So: after wiring a calibration hook, the FIRST run must be a mutation you expect to FAIL. A green first run against a fixture is not reassurance — it is the ambiguous case, and it is the one that ships.**
+
+**A MUTATION PLANTED IN AN EMPTY POPULATION PROVES NOTHING, AND ITS GREEN IS INDISTINGUISHABLE FROM A WORKING CELL.**
+To calibrate a scanner-vs-parser cross-check I broke the scanner's `export … from` handling and the cell stayed green — which reads as "the auditor is blind."
+It is not: **the repo contains ZERO re-export statements**, so the mutation was a no-op on the real tree.
+The working mutation was to make the matcher line-bound, which drops every multi-line import — a construct the population actually has, and the cell went red naming 30+ sites.
+⭐ **Before believing a mutation demo either way, count the population of the construct you mutated.** A red proves the cell; a green proves nothing until you know the construct was there to be broken.
+
+**A REAL PARSER IS NOT AUTOMATICALLY THE BETTER INSTRUMENT — IT IS BETTER AT THE THING IT PARSES.**
+`Bun.Transpiler().scan()` is the obvious enumerator for an import ward and it **unconditionally erases `import type`** — measured across `import type {}`, `import type X`, inline `{ type A }`, `export type {}`, and all of `trimUnusedImports:false` / `deadCodeElimination:false` / loader `ts` vs `tsx`.
+A ward built on it would have been structurally blind to the four `import type { ServerWebSocket } from "bun"` sites that R6's whole exemption was measured against — **the exemption would have become a dead clause guarding nothing, and the next author deletes a dead clause.**
+⭐ **The move when you are forced onto the weaker instrument: keep the stronger one as an AUDITOR.** The text scanner enumerates; the transpiler cross-checks that no value import went missing — a frame the scanner's author did not choose, running over the whole real population, for free.
+⚠ **And say out loud that the audit is ONE-DIRECTIONAL** (only "parser saw it, scanner did not" is a failure), because the reverse is the normal state and a two-way version would be red on arrival and get suppressed back into the one-way one.
+
+**AN EXEMPTION WHOSE EFFECT IS INVISIBLE WILL BE DELETED BY THE NEXT AUTHOR, SO PIN ITS DENOMINATOR.**
+Ward 1b exempts the bare `bun` types package; with the exemption the ward is green, without it red on four files — but a reader of the green cell cannot see that.
+I added a cell that asserts the exemption's own coverage **by file name**, so deleting `|| spec === "bun"` fails a cell that SAYS the exemption is load-bearing rather than four cells that merely say "violation."
+⭐ **This is `an exemption is a reassurance in executable form` (family III) with its remedy attached: an exemption should carry a cell that fails when it is removed AND names why it exists.**
+
+**AN INSTRUMENT THAT LOSES SIGHT OF FILES WHEN THEY MOVE REPORTS THE LOSS AS PROGRESS — and this is the shape to hunt for, not just remember.**
+`gate-blind-set` enumerated one root; when mind-mapper relocated to `src/` under Contract 4, **3 files / 276 blind lines left the report and the total went DOWN.**
+A shrinking blind set is the only direction that reads as good news, so nothing was ever going to question it.
+⭐ **Any instrument scoped by a PATH PREFIX has this failure mode latent in it, and a repo that is actively relocating trees is the condition that fires it.** Ask of every prefix-scoped instrument: what happens to its number when the subject moves?
+
+### ⛔ 2026-08-31, same session, ROUND 2 — the non-author found three, and the worst one was a WARNING I wrote
+
+**cassandra made all 15 cells fail, none for the wrong reason — and still found three defects, because she did not run my routes.**
+She rsync'd the `git ls-files` set into a throwaway repo and pointed `SPELLBOOK_REPO_ROOT` at it, so every population cell ran at full denominator against a tree I did not choose.
+⭐ **My calibration routes were read as COVERAGE, not as CALIBRATION** — a route the author supplies tells you what the author thought to test, and running it faithfully still samples his frame.
+**That is the operative upgrade to H27: it is not enough for the calibrator to be a different person; the FRAME has to be different, and a supplied route hands them mine.**
+
+**THE WORST DEFECT WAS A FALSE WARNING IN A HEADER, NOT A FALSE FACT IN A CELL.**
+I wrote "do NOT calibrate by breaking `export … from`: the population contains ZERO re-export statements."
+**It contains SEVEN.** My grep was anchored to a single line and could not see a multi-line `export { … } from`, so "no matches" got read as "no such construct."
+⛔ **And the green that convinced me was MASKING, not emptiness:** my cross-check compared per-file SETS of specifier strings, and every re-exported specifier is ALSO imported normally in the same file, so the set was identical whether or not re-exports were handled at all.
+**With that handling broken, a real relative escape written `export type {} from "<outside>"` passed ward 1a and the suite printed 9 pass / 0 fail** — the cell whose entire job is catching a scanner that misses imports could not catch that one.
+⭐⭐ **A wrong FACT is corrected by the next person who looks; a wrong WARNING stops them looking.** I did not merely fail to test a construct — **I wrote the instruction that would stop the next person testing it, and I sourced that instruction from a measurement I had already used and trusted.**
+**The fix that generalises: a SET comparison silently absorbs duplicates, so any cross-check over a population where one item can appear twice must compare COUNTS.** Sets are the default reach and they are lossy in exactly the direction that hides a dropped construct.
+
+**MY OWN RETURNED SEAMS CANDIDATE FAILED ON MY OWN IMPLEMENTATION, AND THAT IS THE STRONGEST EVIDENCE FOR IT.**
+Last round I returned: *"an exemption must carry a cell that fails when the exemption is removed."*
+My cell titled "the `bun` exemption is LIVE" **never referenced the predicate** — it counted `bun` imports — so deleting the exemption reddened the violation cell while the cell named for the exemption **passed silently**. It also false-positived, pushing one entry per REF while labelling them per FILE.
+⭐ **The candidate survives and gains its missing clause: the cell must EVALUATE the exemption, not describe it.** The mechanical form is to make the exemption DATA and have the cell run the ward twice — once with it, once without — and assert the difference.
+**A cell that merely re-derives the exemption's population is a restatement wearing an assertion's clothes, and its title is what makes it dangerous: the title is what the next author trusts.**
+
+**A RULING CAN ARRIVE WITH A FALSE PREMISE ABOUT MY OWN CODE, AND IMPLEMENTING IT LITERALLY WOULD HAVE OPENED A BYPASS.**
+prospero ruled type queries exempt from ward 1a "on exactly the reasoning that exempts `import type`" — but **`import type` is not exempt in my ward; including it is the entire reason I rejected `Bun.Transpiler`.**
+Implemented literally, `export type T = import("../../out").X` would have become invisible while `import type { X } from "../../out"` stayed a violation — **the same dependency written two ways, one of them a one-line bypass.**
+⭐ **I honoured the ruling's demonstrated defect (a type query is not a RUNTIME escape and does not belong in a runtime-escape inventory) by RECLASSIFYING rather than exempting**, and reported the divergence with the measurement instead of silently complying or silently refusing.
+**The durable half: when a ruling's REASON is false about your code but its FINDING is real, fix the finding and escalate the reason — obeying the stated reason is how a correct instruction installs an incorrect invariant.**
+⚠ **And the reclassification paid immediately: governing type queries on the same terms revealed the `bun` exemption covers FIVE files, not R6's four** — glamour writes the dependency as `new Set<import("bun").ServerWebSocket<…>>()`, which a statement-shaped measurement cannot see.
+
+**A CALIBRATION HOOK IS AMBIENT ENVIRONMENT, AND A TEST PROCESS INHERITS IT.**
+With `SKILLS_DIR`/`SRC_DIR` exported in a shell, my gate-honesty report cell printed *"reads 2 of 2 hand-authored files … BLIND to 0 files / 0 lines"* **and passed** — its `> 0` guards cannot tell a 352-file world from a 2-file one.
+⭐ **A zero-guard proves the instrument RAN; it says nothing about WHICH WORLD it ran against.** The fix is to strip the overrides for the ward's own run and to assert the ROOTS, not just that the count is positive.
+**Every env-var calibration hook I add from now on is also an attack surface on the cell it was added to serve.**
+
+### ⭐⭐ 2026-08-31, ROUND 3 — the same defect three times in one session, at three scales, and I caused all three
+
+**THE PATTERN, STATED FIRST, BECAUSE IT IS THE ONLY THING WORTH CARRYING: I kept building a check whose POPULATION WAS EMPTY, and every one of them passed as calibrated.**
+Round 2 I wrote the finding down — *a mutation planted in an empty population proves nothing* — and then produced two more instances of it in the patch that recorded it.
+```
+F1 (round 2)   cross-check vs re-exports   population 7, my grep said 0     -> masked, ward 1a missed a real escape
+R3-a           byte-offset dedupe          population 0 in the real corpus  -> mutation invisible, 11/0
+R3-b           `typeof` type-query rule    population 0 in the real corpus  -> mutation invisible, 13/0
+```
+⛔ **The tell is identical every time and I did not learn to see it until the third: THE MUTATION PASSED.** A mutation that passes has exactly two explanations — the cell is broken, or the construct is not there — **and I reached for neither; I read it as "not applicable" and moved on.**
+⭐ **The rule: a mutation that comes back green is an UNFINISHED measurement, not a result. Count the construct before interpreting the green.**
+⭐⭐ **And the remedy when the real population is genuinely empty is not to declare the fix uncalibrated — it is to MINT A SYNTHETIC POPULATION.** Both R3-a and R3-b are now calibrated by a two-line synthetic input in the cell itself; a corpus-wide audit cannot calibrate a rule for a position the corpus does not contain.
+
+**A PARTITION ARGUMENT LICENSES A CLAIM ABOUT CLASSIFICATION AND NEVER ABOUT COVERAGE.**
+I wrote "every relative specifier lands in exactly one of the two cells." True of every ref the scanner EMITS; false of four constructs that emit no ref at all — and the fourth, `require(("./x"))`, was documented nowhere because it *looks exactly like* a form the scanner handles.
+⭐ **Before trusting a partition, ask what the classifier never sees.** The dangerous member of a blind set is never the one that looks exotic; it is the one that looks handled.
+
+**THE STRONGEST FIX FOR A HEURISTIC-DEPENDENT WARD IS TO REMOVE THE DEPENDENCY, NOT TO IMPROVE THE HEURISTIC.**
+Ward 1b skipped `dynamic`, so its coverage rode on a peephole guess about type positions, and every position the guess missed was an unseen bare dependency on the shipped execution path.
+I could have added tokens to the guess — and would have been playing whack-a-mole against a class nobody can enumerate.
+⭐ **Instead I deleted the filter: 1b now ignores `kind` entirely, so no classification error can hide anything from it.** Measured free first — the widening added exactly one ref, a builtin.
+**Generalisation: when a ward consults a classifier it does not need, its blind spots become the classifier's blind spots, and those are unbounded. Ask what the ward would lose by consulting nothing.**
+⚠ **The residual heuristic then needs a TRIPWIRE rather than perfection** — a cell asserting it agrees with a real parser corpus-wide, so the day it drifts a cell reddens instead of a number moving.
+
+**SLACK IN A COMPARISON IS CAPACITY FOR A LOSS TO HIDE IN, AND MY STATED REASON FOR IT WAS THE DEFECT.**
+I chose `>=` over `===` because "the scanner is MEANT to see more than the parser." True — and it left 16 pairs of slack, into which a mutation silently deleted 14 real value imports at 11 pass / 0 fail.
+⛔ **The slack was never necessary. It existed only because I compared a MIXED population against a value-only one.** Tagging each ref with `erased` splits them, and the comparison becomes exact: 977 pairs, 0 mismatches.
+⭐ **When a comparison needs an inequality, the usual cause is that the two sides are counting different things. Fix the populations and the inequality dissolves** — an inequality is a confession that you could not make the sides comparable, and it is worth one more attempt before accepting it.
+
+**AND THE ONE ABOUT BEING CORRECTED: MY NUMBER WAS RIGHT AND BOTH OF THEM WERE WRONG, AND I ONLY KNOW THAT BECAUSE I RE-DERIVED IT INSTEAD OF DEFERRING.**
+The lead and the verifier both reported six re-exports; I reported seven, from a fresh multi-line-aware sweep, and named the one they missed (`magpie/scripts/backend.ts:20`).
+⭐ **Two independent parties agreeing is not evidence when they share an instrument** — both had made the same single-line grep assumption I had made an hour earlier.
+**Deferring to a consensus that reproduces your own retracted method is how a corrected error comes back wearing authority.**
+
+### ⭐⭐ 2026-08-31, ROUND 4 (Phase 0 canon) — a guard that decays on YOUR OWN roadmap is not a guard, it is a countdown
+
+**THE RULING I MADE, AND IT IS THE ONE TO CARRY: a guard's denominator must be something the project is NOT changing.**
+Ward 1a's zero-guard was a floor on file count, calibrated at 206 when every surface still lived under `plugins/spellbook/`.
+**The project's entire purpose is to move those files out.** It tripped at 149 against a floor of 150 — by ONE, which reads as noise and was structure — and recalibrating 150 → 80 only reset the clock, because full relocation lands the population near 101.
+⛔ **A magnitude cannot distinguish SHRINKING-BY-DESIGN from a DEAD WALK, and those are the two things the guard exists to tell apart.**
+⭐ **The replacement is MEMBERSHIP, not magnitude: every spell on the roster must contribute to the population, with the roster DERIVED from the same tree.** Contract 4 relocates `surface/` and nothing else and Contract 3 keeps backends shipping as source, so `scripts/` is the part that cannot move — and a retired spell leaves both sides of the comparison at once, which is why membership cannot decay the way a count does.
+**Calibrated three ways: dead walk → red, dead scanner → red, FULL RELOCATION SIMULATED → green.** The last one is the cell that matters; the old floor failed exactly there, twice.
+⚠ **Residual, stated rather than hidden: a structurally-faithful FAKE repo still passes.** I did not close that, and the reason is a real design tension — cassandra calibrates by rsync'ing the tree into a throwaway repo and pointing `SPELLBOOK_REPO_ROOT` at it, so **pinning world-identity here would break the non-author calibration harness.** `gate-honesty` can assert `r.roots` because its instrument is a subprocess with its own env hook; this ward has no such seam. Membership is the right trade for this population, and that asymmetry is worth knowing before someone "fixes" it.
+
+**CANON RULING: A LINE NUMBER IS CONTEXT, NOT ASSERTION. The identity of a pinned site is `(file, spec, resolved)`.**
+Four false reds in one sprint from line-keyed pins — `astrolabe:75→:70`, `imago:1647→:1723`, and the re-export fixture twice — plus circe's variant from the other side, where **biome reflowed an import past its 100-char `lineWidth` and moved a pre-existing error four lines.**
+⛔ **What settled it was not the false-red rate but that the line BUYS NOTHING.** The thing a line could tell you — *this site moved somewhere semantically different* — is not distinguishable by a line number from *someone added an import above it*. It has no discriminating power for the only question that would justify it.
+⭐ **Insertions above a site are the most common edit in a growing file, so a line-keyed pin has a false-red rate proportional to UNRELATED activity** — it is a tax on everyone else's work, collected by a cell with no opinion about it.
+⚠ **The one job the line did do was distinguishing two otherwise-identical sites in one file, and dropping it re-opens `exit-site-inventory:130`'s collision** (its `:673` and `:860` are byte-identical and a comment is the only thing telling them apart).
+**So the ruling ships with its own clause: assert identities are UNIQUE before comparing them.** Otherwise two sites collapse into one and a second escape hides behind the first while the cell stays green.
+**For the re-export cell the identity needed a third field — `erased` — because imago and magpie each re-export ONE specifier twice, as a type and as a value.** A ruling that drops a discriminator has to name what replaces it.
+
+**I TOOK THE tsc DEBT RATHER THAN DECLINING IT, AND THE REASON IS THE FILES' OWN SUBJECT.**
+17 of the repo's 450 errors were mine, all `noUncheckedIndexedAccess`-family, in the two files whose entire purpose is rigor about what a check can and cannot see.
+⛔ **"The gate cannot see tsc" is a true statement that becomes a licence the moment it is used as one** — and my own Phase 0 ⛔ block is where that statement lives, which makes these files the worst possible place to leave the debt.
+⭐ **The fix that generalises beyond the types: where a value was `T | undefined` I made the ABSENCE loud rather than coercing it away.** `push` now DROPS an undefined specifier instead of `?? ""`-ing a phantom empty path into the population every ward downstream trusts, and the synthetic assertions go through a `firstRef` that THROWS when the scanner finds nothing — so a scanner that stops seeing a construct fails as *"found NO specifier"* rather than as an ordinary assertion miss comparing `undefined` to a string.
+**Ledger closed exactly: 450 − 17 = 433.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.

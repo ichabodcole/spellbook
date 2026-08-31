@@ -38,7 +38,7 @@
 //
 // Event log — GET /events frames (server → agent), each with a monotonic `id`
 // (the resume cursor) and an actor `by`:
-//   {id, type:"ready",        url, port, session_id, by:"system"}
+//   {id, type:"ready",        url, port, session_id, mode, by:"system"}   // mode: dev|release
 //   {id, type:"connected" | "disconnected", by:"user"}                // browser watch presence
 //   {id, type:"project.add",  project, by}
 //   {id, type:"project.remove", projectId, by}
@@ -56,11 +56,6 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
-// The bundled React surface. Bun bundles the .tsx graph + Tailwind (via
-// bunfig.toml) at RUNTIME on first request — no build step, nothing committed.
-// REQUIRES the daemon's cwd = skill root so Bun finds bunfig.toml (cli.ts pins
-// it); launched elsewhere, Tailwind is silently skipped → unstyled board.
-import index from "../surface/index.html";
 import {
   applyAttention,
   applyProjectAdd,
@@ -73,6 +68,55 @@ import {
 } from "./state.ts";
 
 export type { ObservatoryState, Project } from "./state.ts";
+
+// ── surface mode (seams Contract 1) ─────────────────────────────────────────
+//
+// The surface reaches the daemon two ways and ONLY ONE of them may sit on the
+// module load path. `import index from "../surface/index.html"` used to be a
+// top-level STATIC import here: that forces Bun to resolve the whole .tsx +
+// Tailwind build graph when the module LOADS, so a destination that ships
+// `dist/` and no `surface/` — the published artifact — dies before it can serve
+// the dist it does have. The dev import below is therefore dynamic and inside
+// the release branch's `else`, exactly as mind-mapper/scripts/server.ts does it.
+//
+// Paths are anchored at the SKILL ROOT, never at cwd: cli.ts pins the daemon's
+// cwd for bunfig.toml's sake (Contract 5), so cwd is not a stable base for
+// dist/.
+const SCRIPT_DIR = import.meta.dir;
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root, else dev; the env
+// override wins either way (seams Contract 1). Release: zero reads of surface/
+// or bunfig.toml — static files only.
+function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
+// (Contract 2's flat, relative-href layout). Path traversal guarded (a static
+// asset request is always a bare filename, never nested).
+function serveDist(path: string): Response | null {
+  const rel = path === "/" ? "index.html" : path.slice(1);
+  if (rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 // Persistence + discovery root. cli.ts derives the same path, so overriding
 // ASTROLABE_HOME relocates both the registry snapshot and the daemon.* files.
@@ -463,17 +507,33 @@ async function main(argv: string[]): Promise<number> {
     return { ok: true, applied: false, error: `unknown command '${String(type)}'` };
   }
 
+  const mode = resolveMode();
+
+  // dev: the dynamic string-literal import keeps the surface graph off the
+  // module load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at
+  // serve time on the first GET "/" (lazy; a cold build can take seconds), and
+  // reads bunfig.toml from cwd, which cli.ts pins to src/astrolabe/ (Contract
+  // 5). hmr on for circe's iteration loop.
+  // release: dist/ is static and pre-built (Contract 2) — "/" is answered by
+  // serveDist() in the fetch fall-through below, so this branch never touches
+  // surface/ or bunfig.toml and never needs either to exist.
+  // Bun's Routes type ties the "/" value's type to the literal object shape, so
+  // a mode-ternary union confuses its overload resolution — the runtime
+  // behavior (HTMLBundle in dev, absent in release) is correct either way.
+  const devIndex =
+    mode === "dev"
+      ? (await import("../../../../../src/astrolabe/surface/index.html")).default
+      : undefined;
+  const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
+
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
       hostname: host,
       idleTimeout: IDLE_TIMEOUT_SEC, // keep held SSE/WS connections alive (see SSE_HEARTBEAT_MS)
-      // "/" serves the bundled React surface — Bun bundles the .tsx graph +
-      // Tailwind on first request (lazy; cold build can take seconds). Every
-      // other path falls through to fetch() below.
-      routes: { "/": index },
-      development: { hmr: true },
+      routes,
+      development: { hmr: mode === "dev" },
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
@@ -508,6 +568,12 @@ async function main(argv: string[]): Promise<number> {
                   headers: { "Content-Type": "application/json" },
                 }),
             );
+        }
+        // release: "/" and the hashed chunk-*.js/css are static dist reads. Dev
+        // never reaches here for "/" — the routes table above answers it first.
+        if (mode === "release") {
+          const asset = serveDist(path);
+          if (asset) return asset;
         }
         return new Response('{"error":"not found"}', {
           status: 404,
@@ -559,7 +625,17 @@ async function main(argv: string[]): Promise<number> {
 
   const boundPort = server.port;
   const url = `http://${host}:${boundPort}`;
-  emitEvent({ type: "ready", url, port: boundPort, session_id: "astrolabe", by: "system" });
+  // `mode` on the ready frame is the ONLY thing that discriminates a release
+  // daemon from a dev one: with root deps present a dev daemon renders an
+  // identical-looking board, so "it looks right" cannot verify Contract 1.
+  emitEvent({
+    type: "ready",
+    url,
+    port: boundPort,
+    session_id: "astrolabe",
+    mode,
+    by: "system",
+  });
 
   // Discovery: a singleton daemon writes its port + pid so cli.ts can find (or
   // skip auto-spawning) it. Cleaned up on close only if they still name us.
@@ -584,7 +660,12 @@ async function main(argv: string[]): Promise<number> {
   };
 
   // Print the bound URL on stdout so a foreground launch is discoverable.
-  process.stdout.write(`${JSON.stringify({ url, port: boundPort, session_id: "astrolabe" })}\n`);
+  // `mode` rides this line as well as the ready EVENT above: mind-mapper's
+  // release-serve gate reads the handshake line, and a foreground launch that
+  // never opens a tail still needs to be able to say which mode it got.
+  process.stdout.write(
+    `${JSON.stringify({ url, port: boundPort, session_id: "astrolabe", mode })}\n`,
+  );
 
   if (!v["no-open"]) openBrowser(url);
 

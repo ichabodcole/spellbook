@@ -751,3 +751,56 @@ Every house spell CLI answers a FAILURE as **one JSON document on stderr with st
 - **Delivery:** throw a typed error and let `main` RETURN the code (`process.exitCode` + natural return, never `process.exit` where stdout may hold >64KB) — and any catch-all retry loop in scope must rethrow the typed error (tail's reconnect loop, daedalus seat doc).
 
 **Proof:** `plugins/spellbook/skills/mind-mapper/scripts/cli-contract.test.ts` (11 cells: dispatch↔spec drift wards, subprocess failure table asserting `error.exit_code === process exit`, help-advertises twin line-anchored per bb13208). Adopted today by: magpie, astrolabe (minimal 2-kind form), grapevine (prose errors — predates this contract, conversion unscheduled), mind-mapper (full form). acc rule B5 holds this checked on every `acc check` run wherever `defaultOutput: json` is declared.
+
+## Contract 16 — A relocation's fallout has three classes, and none of the three instruments is the gate
+
+_Owner: daedalus (classes) × circe (instruments) × cassandra (the effect proof). Ratified 2026-08-31, spell-kit sprint 01; single-sourced here from the seats' finalize returns — seat docs point, never restate._
+
+**The contract, stated once:** when a module moves, every importer must be re-specified, and the fallout sorts into **three classes that fail differently and are found by different instruments**:
+
+| class                                    | what breaks                        | the ONLY instrument that sees it        |
+| ---------------------------------------- | ---------------------------------- | ---------------------------------------- |
+| **(a)** value import **a test loads**    | the gate, immediately              | `bun test`                              |
+| **(b)** value import **nothing loads**   | the real artifact, silently        | **`Bun.build` on the surface entry**    |
+| **(c)** type-only                        | nothing at runtime; `tsc` only     | `tsc --noEmit \| grep -c TS2307`        |
+
+**Class (b) is the dangerous one — it is the only class where a green gate and a broken artifact coexist.**
+
+**Why it bites:** `import type` is **erased before resolution**, so a wrong specifier survives the build; biome resolves no modules; and the suite never loads a surface it does not import. **The gate is structurally blind to (b) and (c).** Measured on imago: 37 sites across 35 files, **35 type-only, 2 value**, and only the one a test loaded went red. **A frequency does not bound a failure** — "most of these are type-only" was true and did not make the exception safe.
+
+**Two corollaries, both paid for:**
+
+- **A phase that creates edges sets the next phase's blast radius.** 1b created `shared/` and 1c moved one end of every edge 1b had made: astrolabe had **4** cross-tree edges, imago had **33**. A card written before those edges existed **cannot enumerate them**, and this one enumerated 5.
+- **Never rewrite by string.** `"./types"` meant **two different modules** in imago — 3 files meant the moved contract, 8 meant their own `tools/types.ts` which did not move, and `tools/types.ts` was itself broken, so it appeared in both lists. A blanket `sed` fixes 3 and destroys 8. **Rewrite by directory class**, computing `relpath(target, dirname(file))` so the depth table is _output_ rather than input, then **resolve-sweep every specifier in the tree**.
+
+**Proving neutrality — a count coming back is not the proof.** An unresolved module degrades to `any`, which **suppresses** the strict-null and implicit-any diagnostics beneath it: imago's tree went 452 → 512 → 452, but that was **78 errors leaving and 18 arriving**, not 60 breaking and 60 healing. **The proof is a detached worktree at the pre-move commit with `node_modules` symlinked, diffed by error LINES.** (`git worktree add --detach <path> <sha>`; 383 tuples identical, zero differences.)
+
+**Proof:** `feat/spell-kit-sprint-01` — `3e00e73` (the seam), `5d918e2` (the relocation). TS2307 0 → 26 → 0 and 0 → 33 → 0 across the two phases, each returning to a measured baseline rather than an assumed one.
+
+## Contract 17 — `src/<spell>/` is inside the blind set's denominator and outside every import ward
+
+_Owner: prospero (repo layout, Contract 4) × thoth (the wards). Raised by cassandra 2026-08-31; ratified as a KNOWN GAP, not a solved one._
+
+**The contract, stated once:** two instruments enumerate two different worlds and the names collide.
+
+```
+ward 1a     PLUGIN_ROOT = "plugins/spellbook"          the shipped artifact
+ward 2      KIT_DIR     = "src/kit"                    the sanctioned sharing point
+blind set   roots       = ["plugins/spellbook/skills", "src"]
+```
+
+**`src/<spell>/` is counted by the blind set and read by no import ward.** Contract 4 relocates surfaces into exactly that gap, and **the gap grows as this project succeeds** — two spells are in it today, and every relocation adds one.
+
+**Why it bites, and why it is NOT ward 1a's hazard:** a surface is **bundled**, so a relative escape out of `src/<spell>/surface/` is absorbed into the bundle rather than breaking a deps-free destination. **The hazard is a cross-spell import** — `src/astrolabe/surface/` reaching into `src/mind-mapper/surface/` — which is invisible to every check the house has, and is **precisely the coupling this project exists to control**. `src/kit/` has a ward because it is the sanctioned sharing point; the unsanctioned one has none.
+
+**Also unequal, and measured:** the blind set's root 1 is `plugins/spellbook/skills`, one level **below** ward 1a's `plugins/spellbook`. The difference is exactly `.claude-plugin/plugin.json` — gated, so `blind` is unaffected, but `tracked`/`handAuthored` are off by one. **Priced, not missed** (thoth, `5253b72`).
+
+**Candidate remedy, deliberately NOT built this sprint:** a ward 3 — no file under `src/<spell>/` may make a relative import into a different `src/<other-spell>/`. It would be **green by construction today** (no cross-imports exist), so it needs the same zero-guard discipline ward 2 carries. **A vacuous pass now is a cell that gets trusted later.** Scheduled: sprint 03's canon pass.
+
+**Proof:** `grimoire/import-boundary-wards.test.ts:161,:380` and `scripts/instruments/gate-blind-set.ts` roots, at `5253b72`.
+
+### Contract 4 — amendment, 2026-08-31: what relocation does to a prefix-scoped instrument
+
+**Any instrument scoped by a path prefix reports relocation as PROGRESS.** When mind-mapper moved to `src/`, `gate-blind-set` lost 276 blind lines and its total went **down** — the one direction that reads as good news, so nothing was going to question it. Contract 4 is the thing that relocates trees, so the warning belongs beside it: **ask of every prefix-scoped instrument what happens to its number when the subject moves.**
+
+The same shape bit a guard rather than a report: ward 1a's zero-guard was a **floor on file count**, calibrated at 206 against a tree this project exists to drain, and it fired at **149 against a floor of 150** — 206 → 192 → 149 → 101 projected. **A magnitude asserted over a population the roadmap shrinks is a countdown, not a guard**, and it cannot make the one discrimination it exists for: shrinking-by-design versus a dead walk. Replaced with **membership over a structurally-invariant subset** (`scripts/` cannot move; Contract 3 keeps backends shipping as source), derived from the same tree as the population, and calibrated by **simulating the remaining relocation and requiring green** (`5253b72`).

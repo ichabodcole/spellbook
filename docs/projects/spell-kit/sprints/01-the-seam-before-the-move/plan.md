@@ -21,7 +21,9 @@
 This plan _applies_ the rulings; it does not restate them, and the phases below
 are unsafe to execute from alone. **This has already cost a defect:** Phase 0
 was drafted against a version of Ward 1 that R6 had corrected, and produced a
-ward that is red on arrival against 88 correct files.
+ward that is red on arrival with **95 violations across 65 correct files**.
+_(That figure read "88 correct files" until 2026-08-31 — wrong on the number and
+on the unit; see R6.)_
 
 | Read this                                                                                                                  | Before      | Because                                                                                                                                                                                                |
 | -------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -68,7 +70,7 @@ an earlier draft's header claimed they could.
 | ▸ blind set (one root)                                    | 16 files / 4,166 lines                                                                        |
 | ◦ blind set (two roots)                                   | **19 files / 4,442 lines** — root 2 recovers what mind-mapper's own relocation made invisible |
 | ◦ ward 1a (relative escapes)                              | 0                                                                                             |
-| ◦ ward 1b (bare specifiers on the shipped execution path) | 0 today · **1 after R1 moves `sharp`'s importer**                                             |
+| ◦ ward 1b (bare specifiers on the shipped execution path) | **0, and it now stays 0** — see the ⚠ below                                                   |
 | ◦ ward 2 (`src/kit/` is a leaf)                           | green by construction — `src/kit/` does not exist                                             |
 
 > ⚠ **`sharp` is a live defect, not a risk this sprint discovers.** imago's
@@ -77,8 +79,10 @@ an earlier draft's header claimed they could.
 > from the installed plugin. Proof 3 above **cannot pass** until it is fixed.
 > Measured and scoped in
 > [the backlog item](../../../../backlog/2026-08-30-imago-daemon-cannot-start-offline.md):
-> `Bun.Image` is a **byte-identical** drop-in, one function, 12 lines, one call
-> site. **Do it inside Phase 1b**, with the seam work, not as a follow-up.
+> `Bun.Image` is a **behaviourally equivalent** drop-in, one function, 12 lines,
+> one call site. ⚠ **Not byte-identical** — that claim was falsified 2026-08-31
+> on a 10-input sha256 corpus; identity holds only where nothing resamples. **Do
+> it inside Phase 1b**, with the seam work, not as a follow-up.
 
 ## Phases
 
@@ -137,14 +141,22 @@ HEAD**, before any file moves.
 - **R6 Ward 1 — outward. TWO checks, not one**
   ([R6 states why](../../design-resolution.md#ward-1-is-two-checks--read-this-before-building-either)
   — an earlier draft of this bullet specified the retracted single-predicate
-  version, which is **red on arrival against 88 correct files**; that is this
-  project's cautionary example):
+  version, which is **red on arrival with 95 violations across 65 correct
+  files**; that is this project's cautionary example):
   - **1a · structural** — no tracked file under `plugins/spellbook/` resolves a
     **relative** specifier outside it. **0 today.**
   - **1b · dependency** — no file on the **shipped execution path** (`scripts/`,
     `shared/` — **not** `surface/`) statically imports a bare specifier outside
-    `node:` / `bun:` / `bun`. **0 today; Phase 1b turns it red on `sharp`, which
-    is correct** — see that phase.
+    `node:` / `bun:` / `bun`. **0 today, and it now stays 0.**
+    - ⚠ **This changed on 2026-08-31 and it costs you a proof.** An earlier
+      draft said Phase 1b would turn this ward red on `sharp` and that the red
+      was correct. **`sharp` is gone** — daedalus swapped it for `Bun.Image`
+      before the file moves, precisely so the ward never goes red rather than
+      going red and being waited out. **So ward 1b will never fire on a real
+      violation during this sprint.** Its only evidence is a planted one. **That
+      makes the non-author's synthetic mutation the whole proof of this cell,
+      not a formality** — treat a green 1b as unearned until it has been made to
+      fail.
 
   In both, dynamic escapes are **exempt but pinned**, on the
   `grimoire/exit-site-inventory.test.ts` model — one declared inventory, one
@@ -178,6 +190,18 @@ _Everything above can be green while every one of these is true._
 - Ward 2 cannot see a kit that becomes imago-shaped by having a spell's types
   **copied into** it rather than imported. Only review catches that.
 - **None of the three wards sees `bunx tsc`.** The gate is `check && test`.
+- **No ward sees a relative escape inside a non-`.ts` file** — a
+  `<script src="../../x.js">` in hand-authored HTML is an escape and is
+  invisible to all three. That population **is** the blind set, so this hole and
+  the blind set's are one hole seen from two sides: the set **declares** those
+  files, it does not **inspect** them. Ruled out of scope 2026-08-31 (see R6);
+  the remedy rides on the biome backlog item, not on a ward.
+- **Ward 1b's population is half-empty and will stay that way this sprint** —
+  `shared/` does not exist until Phase 1b creates it, and `sharp` was retired
+  before its file moved. `scripts/` alone, 40 non-test files, 113 bare
+  specifiers, **all builtins**. `*.test.ts` under `scripts/` is ruled out of the
+  population (R6); those files still ship, which is a packaging question, not
+  this ward's.
 
 **Dependencies:** none. Start here.
 
@@ -255,8 +279,10 @@ _Everything above can be green while both of these are true._
 > move means the ward never goes red, rather than going red and being waited
 > out.
 >
-> **Measured drop-in, byte-identical output** — one function, 12 lines, one call
-> site (`server.ts:194`), plus the test's own fixture. Proof in
+> **Measured drop-in, behaviourally equivalent output — NOT byte-identical**
+> (the original claim, falsified 2026-08-31 on a 10-input sha256 corpus; the
+> first corpus had nothing in it that resampled real content). One function, 12
+> lines, one call site (`server.ts:194`), plus the test's own fixture. Proof in
 > [the backlog item](../../../../backlog/2026-08-30-imago-daemon-cannot-start-offline.md).
 
 **Goal:** `plugins/spellbook/skills/imago/scripts/server.ts` has **zero** value
@@ -266,7 +292,7 @@ R1's three-way sort, applied to the five sites:
 
 | Site              | Import                    | Destination                                                 |
 | ----------------- | ------------------------- | ----------------------------------------------------------- |
-| `server.ts:35`    | `../surface/index.html`   | **stays** — becomes `resolveMode()` in 1c                   |
+| `server.ts:35`    | `../surface/index.html`   | **stays** — becomes `resolveMode()` in 1c ⚠ now `:49`       |
 | `server.ts:36`    | `optimizeImageBuffer`     | → `scripts/imageOptimize.server.ts` (daemon-only, misfiled) |
 | `server.ts:37-50` | `../surface/state/types`  | → `shared/types.ts` (the two-sided contract)                |
 | `server.ts:1647`  | type-only re-export       | → `shared/types.ts`                                         |
@@ -314,7 +340,7 @@ R1's three-way sort, applied to the five sites:
   now reach `../../shared/types`.
 
 **This phase is done when:** `grep -n '\.\./surface/' imago/scripts/server.ts`
-returns exactly **one** line — `:35`, the HTML entry — **`grep -rn sharp` across
+returns exactly **one** line — the HTML entry — **`grep -rn sharp` across
 `scripts/` and `shared/` returns nothing**, `bun --no-install scripts/server.ts`
 starts from a `node_modules`-free copy, and `bun test` is green with **no file
 having moved out of `plugins/spellbook/`**.
@@ -425,8 +451,64 @@ _The sprint can be reported green while every one of these is true._
 - Whether `shared/` proved to be the right third bucket, or whether glamour's
   and magpie's `.server.ts` files will need a different sort.
 
+### ⚠ `src/<spell>/` is governed by NO import ward, and this sprint moves code into it
+
+**Measured 2026-08-31, at `63a9960`:** ward 1a's root is
+`PLUGIN_ROOT = "plugins/spellbook"` (`import-boundary-wards.test.ts:161`); ward
+2's is `KIT_DIR = "src/kit"` (`:380`). **Nothing covers `src/<spell>/`.**
+
+**Sprint 01 is what fills that gap with code.** 1a moves astrolabe's surface
+there and 1c moves imago's, so the ungoverned region grows by two spells in this
+sprint alone, and by every spell thereafter.
+
+**Why it is a carry-forward and not a Phase 0 defect:** a surface is bundled, so
+a relative escape out of `src/<spell>/surface/` is absorbed into the bundle
+rather than breaking a deps-free destination — it is not ward 1a's hazard. **The
+hazard it IS: a cross-spell import** (`src/astrolabe/surface/` reaching into
+`src/mind-mapper/surface/`) **is invisible to every check we have, and that is
+precisely the coupling this project exists to control.** `src/kit/` gets a ward
+because it is the sanctioned sharing point; the unsanctioned one has none.
+
+> Returned as a `seams.md` candidate by cassandra and **not yet written** —
+> _"the wards and the blind set enumerate two different 'plugins'
+> (`plugins/spellbook` vs `plugins/spellbook/skills`), and `src/<spell>/` is
+> inside the blind set's denominator but outside every import ward's. **Contract
+> 4 moves surfaces into exactly that ungoverned gap.**"_ The blind set counts
+> those files; no ward reads their imports.
+
+**Candidate remedy for Sprint 03's Seam C pass, not for this sprint:** a ward 3
+— no file under `src/<spell>/` may make a relative import into a different
+`src/<other-spell>/`. It would be **green by construction today** (two spells,
+no cross-imports), which means it needs the same zero-guard discipline ward 2
+carries, for the same reason: a vacuous pass now that gets trusted later.
+
 ---
 
 **Related:** [proposal](../../proposal.md) ·
 [design-resolution](../../design-resolution.md) ·
 [gap-analysis](../../gap-analysis.md) · [project ledger](../../README.md)
+
+---
+
+_Reconciled 2026-08-31 @ `9b6d8e5` — **SPRINT COMPLETE, all five proofs HELD.**
+"blind set 19 files / 4,442 lines over two roots, calibration fails in either":
+**HELD** (instrument run directly; held through \_two_ relocations). "all three
+wards fail when handed a synthetic violation; ward 2's zero-guard fails on an
+empty population": **HELD**, 13 cells / 0 fail — and ward 2's floor was
+**replaced with membership** after firing on schedule (`5253b72`). "astrolabe
+and imago each serve from `dist/` in release mode from a copy with no
+`node_modules` up-tree": **HELD**, both driven in a browser.
+"`grep '../surface/' imago/scripts/server.ts` returns exactly one line":
+**HELD** — it is `:49`, not the `:35` this plan cited; biome's import sort moved
+it. "mind-mapper's suite and typecheck stay green, 0 errors": **HELD** (0).
+**FALSIFIED and corrected in place:** the carried baseline's
+`ward 1b -> 1 after R1 moves sharp's importer` (the swap landed first, so it
+stays 0); R6's `88 bare specifiers / 34 lucide-react` (**95 / 42**, a line-bound
+scan missing 8 multi-line imports); `Bun.Image is byte-identical` (behaviourally
+equivalent, **not** byte-identical). **UNRECONCILED, deliberately:** this plan's
+`imago contributes 137 tsc errors before and after` — the **invariant held** and
+the constant is one high; measured 137 at `431fb53` and 136 at HEAD, the
+difference attributable to the `sharp` swap removing a call-overload error.
+`root typecheck <= 434` is a pre-Phase-0 figure; the tree is **433**, and the
+full ledger is 434 + 17 (new ward files) - 1 = 450, then -17 when those were
+fixed.\_

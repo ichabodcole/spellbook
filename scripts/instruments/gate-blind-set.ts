@@ -9,7 +9,31 @@
 // Run it explicitly:
 //
 //     bun scripts/instruments/gate-blind-set.ts          # exits 1 ONLY if its own arithmetic breaks
-//     SKILLS_DIR=/path/to/a/git/repo bun scripts/instruments/gate-blind-set.ts
+//     SKILLS_DIR=/path/to/a/git/repo SRC_DIR=/path/to/another bun scripts/instruments/gate-blind-set.ts
+//
+// ── TWO ROOTS, AND WHY THE SECOND ONE IS NOT OPTIONAL (R5) ─────────────────
+// It enumerates `plugins/spellbook/skills/` AND `src/`, merged into ONE flat
+// `files[]`. The second root is not a bridge for a migration in progress — it is
+// the steady state. Contract 4 relocates every buildable surface to
+// `src/<spell>/`, where CSS and HTML stay outside biome's reach exactly as they
+// were before they moved. Root 1 can never empty either (`magpie/scripts/remove.py`
+// is a permanent resident: backend Python, in the shipped tree, that no surface
+// migration relocates).
+//
+// ⛔ THE REASON THIS EXISTS IS RETROACTIVE, AND IT IS THE FINDING: when
+// mind-mapper relocated to `src/`, 3 files / 276 lines LEFT THIS REPORT AND
+// NOTHING SAID SO. The blind set did not shrink; it moved somewhere the
+// instrument was not looking, and the number went DOWN — which reads as
+// progress. An instrument that loses sight of files when they move is the
+// silent filter this repo keeps scarring on, and this one exists specifically
+// to stop blindness going unnoticed.
+//
+// ⛔ A MISSING ROOT IS A HARD FAILURE, ON PURPOSE. `git -C <root> ls-files`
+// throws if the root is not there, this script does not catch it, and the exit
+// is non-zero with nothing on stdout. Do NOT "improve" that into a skip: a root
+// that silently contributes zero is the same defect as the one above, wearing a
+// tolerance for a missing directory as its costume. A calibration fixture must
+// therefore mint BOTH roots — see `gate-honesty.test.ts`'s `mintFixture`.
 //
 // ⛔ THE FIXTURE HOOK MUST POINT AT A GIT REPO, AND THAT IS NOT A QUIRK — IT IS
 // THE UNIT. "Shipped" means TRACKED, so the enumerator is `git ls-files` and an
@@ -32,8 +56,14 @@
 // difference; the defect was the UNIT, since "lines" to a reader means `wc -l`.
 //
 // ── THE QUESTION, STATED FIRST, BECAUSE THE QUESTION PICKS THE UNIT ─────────
-// Of the SHIPPED, HAND-AUTHORED files under `plugins/spellbook/skills/`, which
-// can `bun run check` not read AT ALL?
+// Of the SHIPPED-OR-SHIPPED-FROM, HAND-AUTHORED files under
+// `plugins/spellbook/skills/` and `src/`, which can `bun run check` not read AT ALL?
+//
+// ⚠ "SHIPPED" GOT ONE WORD WIDER WHEN THE SECOND ROOT ARRIVED, and pretending
+// otherwise is how the union quietly becomes two questions. A `src/<spell>/`
+// stylesheet does not ship — its BUILD OUTPUT does. It is in the population
+// because it is hand-authored, unreadable by the check arm, and the artifact is
+// derived from it, so a syntax error in it is a syntax error in what ships.
 //
 // It is NOT "which files are ungated" — a different question with a different
 // correct answer (it would pull in the 10 `.md`, and the four `bunfig.toml`
@@ -74,8 +104,28 @@
 // never an error to raise.
 //
 // ── WHAT THIS INSTRUMENT CANNOT SEE ────────────────────────────────────────
-//   • `src/<spell>/` — Contract 4 build-input, outside the skills tree. A further
-//     3 files / 276 lines, blind on the same axis and not counted here.
+//   • ⚠ ROOT 1 IS `plugins/spellbook/skills/`, ONE LEVEL BELOW THE BOUNDARY THE
+//     IMPORT WARDS USE (`plugins/spellbook/`). Two instruments in this repo
+//     enumerate two different things and both call it "the plugin". MEASURED
+//     2026-08-31: the difference is exactly one file,
+//     `plugins/spellbook/.claude-plugin/plugin.json` — 255 tracked vs 254 — so
+//     `tracked` and `handAuthored` here are ONE LOW against the artifact the
+//     marketplace actually copies. `blind` is UNAFFECTED, because that file is
+//     `.json` and therefore gated.
+//     ⛔ LEFT AS IS DELIBERATELY, NOT OVERLOOKED. Widening root 1 would move
+//     `tracked`/`handAuthored` for no gain to this instrument's question, and
+//     those scalars are read by `gate-honesty.test.ts`. Recorded so the next
+//     person to reconcile the two denominators knows the size of the gap and
+//     that it was priced, not missed. (Raised by cassandra, calibration round 2.)
+//   • ANY THIRD ROOT. The two are named literally below; a future build-input
+//     tree outside both is invisible until someone adds it here. The blind spot
+//     is now "a root nobody declared" rather than "a directory nobody looked in".
+//   • ROOT 2 GOING EMPTY. The zero-guard in `gate-honesty.test.ts` is on the
+//     UNION (`handAuthored > 0`), and root 1 alone satisfies it, so an emptied
+//     `src/` would not trip it. That is deliberate and it is covered elsewhere:
+//     the DECLARED_BLIND pin names root-2 files by path, so losing them fails
+//     the re-declare cell. The zero-guard's job is only "the instrument
+//     enumerated nothing at all"; the pin is what guards each root's contents.
 //   • The generated `dist/` (54,185 lines of JS + 7,691 CSS in mind-mapper).
 //     Excluded as GENERATED, not as gated — nothing checks it either.
 //   • Whether any of these files is actually WRONG. This is a COVERAGE set and
@@ -129,7 +179,14 @@ import { join } from "node:path";
 // Enumerate from INSIDE the target with `git -C`, so the fixture hook reaches any
 // git repo rather than only paths inside this one. Paths come back relative to
 // the target and are re-joined for reading and display.
+// TWO named roots rather than one delimited list (R5). A list read from one env
+// var has a trap this shape does not: `"".split(",")` is `[""]`, and
+// `git -C "" ls-files` silently enumerates the CURRENT directory — a wrong
+// answer that looks like a right one. Each root gets its own override so a
+// fixture names what it is replacing.
 const SKILLS_DIR = process.env.SKILLS_DIR ?? join("plugins", "spellbook", "skills");
+const SRC_DIR = process.env.SRC_DIR ?? "src";
+const ROOTS = [SKILLS_DIR, SRC_DIR];
 
 const BINARY = /\.(webp|png|jpg|jpeg|gif|svg|ico)$/;
 const GENERATED = /(^|\/)dist\//;
@@ -154,11 +211,19 @@ function biomeGatedExts(configPath: string): string[] {
     .sort();
 }
 
-const tracked = execFileSync("git", ["-C", SKILLS_DIR, "ls-files"], { encoding: "utf8" })
-  .trim()
-  .split("\n")
-  .filter(Boolean)
-  .map((rel) => join(SKILLS_DIR, rel));
+/** Every tracked path under one root, re-joined to the root for reading and display. */
+function trackedIn(root: string): string[] {
+  return execFileSync("git", ["-C", root, "ls-files"], { encoding: "utf8" })
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((rel) => join(root, rel));
+}
+
+// ONE FLAT UNION, not a per-root breakdown. `gate-honesty.test.ts` pins the
+// union and the scalars below are sums across roots; splitting the report would
+// be a different envelope for the same question.
+const tracked = ROOTS.flatMap(trackedIn);
 
 const handAuthored = tracked.filter((f) => !BINARY.test(f) && !GENERATED.test(f));
 const gated = handAuthored.filter((f) => GATED.test(f));
@@ -180,7 +245,7 @@ const allowListMatches =
 console.log(
   JSON.stringify(
     {
-      skillsDir: SKILLS_DIR,
+      roots: ROOTS,
       tracked: tracked.length,
       handAuthored: handAuthored.length,
       gated: gated.length,

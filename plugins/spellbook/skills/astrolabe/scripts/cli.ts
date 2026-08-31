@@ -33,6 +33,7 @@
 // on the daemon's `closed` frame.
 
 import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,6 +41,22 @@ import { parseArgs } from "node:util";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// dev: the daemon serves a Bun-bundled React surface, and Bun reads bunfig.toml
+// (the Tailwind plugin) from cwd ONLY, so the daemon's cwd MUST be
+// src/astrolabe/ (seams Contract 5 cwd-pin) — launched anywhere else, Tailwind
+// is SILENTLY skipped and the board renders unstyled. release: dist/ is
+// pre-built and static — no bunfig read, so this path need not exist at all (a
+// source-free marketplace clone has no top-level src/), and pinning cwd there
+// anyway would break the spawn.
+const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "astrolabe");
+
+function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
 const ASTROLABE_HOME = process.env.ASTROLABE_HOME ?? join(homedir(), ".astrolabe");
 const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
 
@@ -100,10 +117,10 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
-    // cwd MUST be the skill root: the daemon serves a Bun-bundled React surface,
-    // and Bun reads bunfig.toml (the Tailwind plugin) from cwd ONLY — launched
-    // from anywhere else, Tailwind is silently skipped and the board is unstyled.
-    cwd: join(SCRIPT_DIR, ".."),
+    // Contract 5 — see daemonCwd(). THE FAILURE IS SILENT: a wrong cwd skips
+    // bunfig.toml's Tailwind plugin and the board renders unstyled rather than
+    // erroring, so nothing downstream of here will tell you it was wrong.
+    cwd: daemonCwd(),
   });
   proc.unref();
   // The daemon BINDS fast and answers /state as soon as it's listening (the

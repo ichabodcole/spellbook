@@ -90,12 +90,12 @@ digits, five different schemes.
 
 ## Known live defects this project must not inherit
 
-| Item                                                                                                      | Bearing                                                                                                                                                                             |
-| --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [imago's daemon cannot start offline](../../backlog/2026-08-30-imago-daemon-cannot-start-offline.md)      | **Blocks Sprint 01's proof 3.** Fix inside Phase 1b. `Bun.Image` is byte-identical.                                                                                                 |
-| [magpie hand-rolls scale math](../../backlog/2026-08-30-magpie-hand-rolls-scale-math-it-does-not-need.md) | Not in scope; same root cause, filed so the false comment does not spread.                                                                                                          |
-| [stale-dist fires unconditionally](../../backlog/2026-08-10-stale-dist-fires-unconditionally.md)          | The `STALE DIST` warning is an **mtime false positive**. Do not act on it.                                                                                                          |
-| [biome already reads CSS and HTML](../../backlog/2026-08-30-biome-already-reads-css-and-html.md)          | Would shrink the blind set to ~153 lines (Python + TOML). **Sprint 01 does not wait on it** — note the denominator moves: 4,166 today, **4,442** once Phase 0 adds the second root. |
+| Item                                                                                                      | Bearing                                                                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [imago's daemon cannot start offline](../../backlog/2026-08-30-imago-daemon-cannot-start-offline.md)      | **Fixed 2026-08-31 (daedalus); the swap is landed, proof 3 is not.** `Bun.Image` is a behaviourally equivalent drop-in — **NOT byte-identical**, that claim was falsified on a 10-input sha256 corpus. Booting offline still leaves three non-fatal bundler errors; serving from `dist/` closes those. |
+| [magpie hand-rolls scale math](../../backlog/2026-08-30-magpie-hand-rolls-scale-math-it-does-not-need.md) | Not in scope; same root cause, filed so the false comment does not spread.                                                                                                                                                                                                                             |
+| [stale-dist fires unconditionally](../../backlog/2026-08-10-stale-dist-fires-unconditionally.md)          | The `STALE DIST` warning is an **mtime false positive**. Do not act on it.                                                                                                                                                                                                                             |
+| [biome already reads CSS and HTML](../../backlog/2026-08-30-biome-already-reads-css-and-html.md)          | Would shrink the blind set to ~153 lines (Python + TOML). **Sprint 01 does not wait on it** — note the denominator moves: 4,166 today, **4,442** once Phase 0 adds the second root.                                                                                                                    |
 
 ## Carried over, and Cole's to rule
 
@@ -108,3 +108,19 @@ digits, five different schemes.
 **Related:** [`spell-surface-pipeline`](../spell-surface-pipeline/proposal.md) —
 the standard this ratchets; its [plan](../spell-surface-pipeline/plan.md) has no
 remaining work as of R7.
+
+---
+
+_Reconciled 2026-08-31 @ `9b6d8e5` — **SPRINT 01 COMPLETE**, 10 commits on
+`feat/spell-kit-sprint-01`. Live-defects table: "imago's daemon cannot start
+offline" — **FIXED** (`e7b2ed2`), and its `Bun.Image is byte-identical` note
+**FALSIFIED** and corrected. "magpie hand-rolls scale math" — **OPEN**,
+untouched as scoped. "stale-dist fires unconditionally" — **OPEN**, and its
+mtime false positive fired on schedule all sprint as predicted. "biome already
+reads CSS and HTML" — **OPEN**; the blind set is 19 / 4,442 with the second root
+live. Vocabulary and numbering tables: **HELD**, no term changed meaning.
+**Three new backlog items** filed from the verification drives: relocated spells
+diverging on surface hygiene, imago lowercasing context-library names, and a
+second accessibility instance. **Carried to Cole, still unruled:** what a
+consumer receives per spell once built surfaces are the norm — now materially
+larger, since two spells ship committed `dist/` rather than one._

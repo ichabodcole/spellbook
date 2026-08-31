@@ -64,26 +64,56 @@ import { join } from "node:path";
 // A file LEAVING this set is good news (it became gateable). A file ENTERING it
 // is new unreadable surface shipping to consumers. Both fail this cell, on
 // purpose — the point is that neither happens silently.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR R5's SECOND ROOT — 16 files / 4,166 lines →
+// 19 / 4,442. The three additions are NOT new blindness and the direction is the
+// opposite of what an entering file usually means: `src/mind-mapper/`'s
+// stylesheet, entry HTML and bunfig were ALREADY blind and already shipped-from
+// when mind-mapper relocated under Contract 4. They left the report silently,
+// and the total went DOWN, which reads as progress. This declaration is the
+// RECOVERY of a loss that already happened — written by hand, per the rule
+// above, not pasted from the instrument's new output.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 1a's RELOCATION — PATHS ONLY, and the
+// total is the check. astrolabe's `surface/` + `bunfig.toml` moved to
+// `src/astrolabe/` under Contract 4, so its three entries change path and
+// nothing else: `surface/styles.css` 93, `surface/index.html` 35,
+// `bunfig.toml` 2, now rooted at `src/astrolabe/`. The set stays at 19 files /
+// 4,442 lines — a relocation between the instrument's two roots is a no-op for
+// this ward, and if the total had moved, something OTHER than the relocation
+// moved with it. Nothing entered and nothing left.
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 1c's RELOCATION — PATHS ONLY, second
+// instance of the same no-op. imago's `surface/` + `bunfig.toml` moved to
+// `src/imago/` under Contract 4, so its three entries change path and nothing
+// else: `surface/styles.css` 151, `surface/index.html` 13, `bunfig.toml` 2, now
+// rooted at `src/imago/`. The set stays at 19 files / 4,442 lines, for the same
+// reason astrolabe's move did: both paths are inside this instrument's two
+// roots, so a relocation between them moves no file in or out. If the total had
+// changed, something OTHER than the relocation moved with it.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
   "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
+  "src/mind-mapper/surface/styles.css": 220,
   "plugins/spellbook/skills/magpie/surface/styles.css": 175,
-  "plugins/spellbook/skills/imago/surface/styles.css": 151,
+  "src/imago/surface/styles.css": 151,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "plugins/spellbook/skills/astrolabe/surface/styles.css": 93,
-  "plugins/spellbook/skills/astrolabe/surface/index.html": 35,
+  "src/astrolabe/surface/styles.css": 93,
+  "src/astrolabe/surface/index.html": 35,
+  "src/mind-mapper/surface/index.html": 52,
   "plugins/spellbook/skills/glamour/surface/index.html": 13,
-  "plugins/spellbook/skills/imago/surface/index.html": 13,
+  "src/imago/surface/index.html": 13,
   "plugins/spellbook/skills/magpie/surface/index.html": 13,
   "plugins/spellbook/skills/glamour/surface/styles.css": 12,
-  "plugins/spellbook/skills/astrolabe/bunfig.toml": 2,
+  "src/mind-mapper/bunfig.toml": 4,
+  "src/astrolabe/bunfig.toml": 2,
   "plugins/spellbook/skills/glamour/bunfig.toml": 2,
-  "plugins/spellbook/skills/imago/bunfig.toml": 2,
+  "src/imago/bunfig.toml": 2,
   "plugins/spellbook/skills/magpie/bunfig.toml": 2,
 };
 
 type BlindReport = {
+  roots: string[];
   tracked: number;
   handAuthored: number;
   gated: number;
@@ -93,8 +123,25 @@ type BlindReport = {
   files: { file: string; lines: number }[];
 };
 
+/** The roots this ward is ABOUT. Named here so the report cell can assert that
+ *  the instrument measured them, rather than measuring whatever it was pointed at. */
+const REAL_ROOTS = ["plugins/spellbook/skills", "src"];
+
 async function deriveBlindSet(): Promise<BlindReport> {
+  // ⛔ THE ROOT OVERRIDES ARE STRIPPED, AND THAT IS A DEFECT FIX, NOT HYGIENE.
+  // `SKILLS_DIR` / `SRC_DIR` are calibration hooks, and a test process inherits
+  // the ambient environment — so a seat with either exported in their shell
+  // STEERED THIS WARD'S POPULATION. Measured before the fix: with both pointed
+  // at a two-file throwaway repo, this ward printed
+  //     "reads 2 of 2 hand-authored files … BLIND to 0 files / 0 lines"
+  // and the report cell PASSED. Its `> 0` guards cannot tell a 352-file world
+  // from a 2-file one, and only the pin noticed. That is a green this ward did
+  // not earn, in the file whose entire subject is a gate reporting what it has
+  // not earned. The calibration route is unaffected — it uses `deriveIn`, which
+  // sets the hooks deliberately.
+  const { SKILLS_DIR: _s, SRC_DIR: _r, ...cleanEnv } = process.env;
   const proc = Bun.spawn(["bun", "scripts/instruments/gate-blind-set.ts"], {
+    env: cleanEnv,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -121,7 +168,7 @@ describe("gate honesty ward", () => {
     console.warn(
       [
         "",
-        `  GATE HONESTY — \`bun run check\` reads ${r.gated} of ${r.handAuthored} shipped hand-authored files.`,
+        `  GATE HONESTY — \`bun run check\` reads ${r.gated} of ${r.handAuthored} hand-authored files across two roots (skills + src).`,
         `  ⛔ BLIND to ${r.blind} files / ${r.blindLines} lines — not linted, not type-checked, not parsed.`,
         `     largest: ${r.files
           .slice(0, 3)
@@ -136,6 +183,10 @@ describe("gate honesty ward", () => {
     // coverage.
     expect(r.handAuthored).toBeGreaterThan(0);
     expect(r.gated).toBeGreaterThan(0);
+    // ⛔ AND A GUARD ON WHICH WORLD WAS MEASURED. `> 0` cannot distinguish this
+    // repo from a two-file fixture; the roots can. Asserting them is what makes
+    // a steered population impossible to not notice.
+    expect(r.roots).toEqual(REAL_ROOTS);
   });
 
   test("the blind set has not moved without being re-declared", async () => {
@@ -179,10 +230,28 @@ describe("gate honesty ward — calibration", () => {
   const INSTRUMENT = join(process.cwd(), "scripts/instruments/gate-blind-set.ts");
   const BIOME = join(process.cwd(), "biome.json");
 
+  // ⛔ THE FIXTURE MINTS BOTH ROOTS, AND THAT IS NOT TIDINESS (R5).
+  // The instrument enumerates each root with `git -C <root> ls-files` and does
+  // not catch a missing directory — a fixture with only root 1 makes it exit
+  // non-zero with an empty stdout, which arrives here as `fixture derive failed`
+  // and turns BOTH calibration arms red for a reason that has nothing to do with
+  // what they test.
+  //
+  // ⛔ AND THE OTHER WAY OUT IS WORSE: making root 2 optional under the test
+  // hook would ship root 2 UNCALIBRATED — a guard exempted from the only thing
+  // that proves it works. That is verbatim the "check that cannot fail in the
+  // failing case" the instrument's own header records having shipped once, in
+  // this same file's subject matter. Both roots are minted, and both roots get a
+  // mutation arm.
   function mintFixture(): string {
     const dir = mkdtempSync(join(tmpdir(), "gate-honesty-cal-"));
     mkdirSync(join(dir, "skills", "spell", "scripts"), { recursive: true });
     writeFileSync(join(dir, "skills", "spell", "scripts", "cli.ts"), "export const a = 1;\n");
+    // Root 2 — the `src/` analogue. A DIFFERENT shape from root 1 on purpose
+    // (a surface dir, not a scripts dir), so an arm that plants here cannot be
+    // satisfied by root 1's tree by accident.
+    mkdirSync(join(dir, "buildsrc", "spell", "surface"), { recursive: true });
+    writeFileSync(join(dir, "buildsrc", "spell", "surface", "main.ts"), "export const b = 2;\n");
     return dir;
   }
 
@@ -197,7 +266,10 @@ describe("gate honesty ward — calibration", () => {
   function deriveIn(dir: string): BlindReport {
     const proc = Bun.spawnSync(["bun", INSTRUMENT], {
       cwd: dir,
-      env: { ...process.env, SKILLS_DIR: "skills", BIOME_CONFIG: BIOME },
+      // BOTH root hooks are overridden. Leaving SRC_DIR at its default would
+      // point root 2 at a `src/` that does not exist in the fixture — the
+      // failure mintFixture's comment describes.
+      env: { ...process.env, SKILLS_DIR: "skills", SRC_DIR: "buildsrc", BIOME_CONFIG: BIOME },
       stdout: "pipe",
       stderr: "pipe",
     });
@@ -210,7 +282,7 @@ describe("gate honesty ward — calibration", () => {
     return JSON.parse(out) as BlindReport;
   }
 
-  test("MUTATION — a new unreadable file in the world is detected, and the control arm is empty", () => {
+  test("MUTATION — ROOT 1: a new unreadable file in the world is detected, and the control arm is empty", () => {
     const dir = mintFixture();
     try {
       commitAll(dir);
@@ -242,6 +314,47 @@ describe("gate honesty ward — calibration", () => {
     }
   });
 
+  // ⛔ THE SECOND ARM IS THE POINT OF R5, NOT A COPY OF THE FIRST. The defect it
+  // exists to catch is an instrument that enumerates root 1 and merely CLAIMS
+  // root 2 — which is what the report looked like for the whole time
+  // `src/mind-mapper/`'s 276 blind lines were missing from it. Arm 1 passing is
+  // no evidence at all about root 2: the two roots share no code path below
+  // `trackedIn`, and the union hides a root that contributes nothing.
+  //
+  // It plants a `.css` where arm 1 plants an `.html`, so a scanner that somehow
+  // matched only the first arm's extension cannot pass this one by accident.
+  test("MUTATION — ROOT 2: a blind file planted in the SECOND root is detected, and the control arm is empty", () => {
+    const dir = mintFixture();
+    try {
+      commitAll(dir);
+      const before = deriveIn(dir);
+      // The control also proves root 2 is REACHED, not just tolerated: its
+      // gated `main.ts` is in the denominator before anything is planted.
+      expect({ blind: before.blind, blindLines: before.blindLines, gated: before.gated }).toEqual({
+        blind: 0,
+        blindLines: 0,
+        gated: 2,
+      });
+
+      writeFileSync(
+        join(dir, "buildsrc", "spell", "surface", "styles.css"),
+        ":root {\n  --a: 1;\n}\n",
+      );
+      commitAll(dir);
+      const after = deriveIn(dir);
+
+      expect({ blind: after.blind, blindLines: after.blindLines }).toEqual({
+        blind: 1,
+        blindLines: 3,
+      });
+      // Named by its ROOT-2 path. A merged report that dropped the root prefix
+      // would pass the scalar assertions above and be wrong here.
+      expect(after.files.map((f) => f.file)).toEqual(["buildsrc/spell/surface/styles.css"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test("MUTATION — a second GATED file is not counted as blind (the false-positive direction)", () => {
     const dir = mintFixture();
     try {
@@ -250,7 +363,10 @@ describe("gate honesty ward — calibration", () => {
       // A ward that called EVERYTHING blind would pass the arm above and be
       // useless.
       const r = deriveIn(dir);
-      expect({ blind: r.blind, gated: r.gated }).toEqual({ blind: 0, gated: 2 });
+      // gated 3, not 2: root 1's `cli.ts` + the planted `more.ts` + ROOT 2's
+      // `main.ts`. The scalars are sums across roots (R5), and this number is
+      // the cheapest place that fact is asserted rather than described.
+      expect({ blind: r.blind, gated: r.gated }).toEqual({ blind: 0, gated: 3 });
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

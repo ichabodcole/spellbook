@@ -1,3 +1,76 @@
+# Retro — 2026-08-31 · spell-kit sprint 01, "the seam before the move"
+
+**Team:** default · **shape:** `cdf9d466`
+**Seats:** prospero (lead) · daedalus (engine) · circe (surface) · thoth (grimoire) · cassandra (verify) — subagent mode, all five seated, first session with the full roster in it.
+**Shape of the work:** 10 commits on `feat/spell-kit-sprint-01`. Phase 0 + 1a/1b/1c. Two spells relocated and shipping source-free with committed `dist/`; three import-boundary wards; blind set gained a second root. Gate 1481/0 → **1510/0**. `bunx tsc` **434 → 433** — the sprint ended below the baseline it started from, having added two relocations, three wards, an instrument root and two release-serve gates.
+
+## Q1 — What went well (artifacts first)
+
+- **Every one of the sprint's five stated proofs HELD**, verified at HEAD rather than reported: blind set 19 / 4,442 across two roots (through *two* relocations), 13 ward cells / 0 fail, both spells serving `dist/` deps-free and **driven in a browser**, imago's daemon 5 → 1 surface imports, mind-mapper 0 tsc errors.
+- **The `shared/` split was proven BY EFFECT, which is the project's actual thesis.** An identical 2000×1500 source through both consumers — daemon 1200×900 / 2,410 B, browser 1200×900 / 2,908 B. Same dimensions from both sides; byte sizes differ because the encoders do. **No arm of the gate can make that claim.**
+- **1a was free AND it priced the seam.** Zero seam work, exactly as R7 required — and the copying it forced was measured rather than argued: 42 lines of engine byte-identical modulo the spell name, plus a 46%-copied gate. Sprint 02 inherits a number instead of a debate.
+- **Neutrality was proved, not inferred.** Both relocations returned tsc to a measured baseline, and the second was checked by a **detached worktree at the pre-move commit diffed by error LINES** — 383 tuples identical. The count coming back was explicitly refused as evidence, and correctly: 452 → 512 → 452 was **78 errors leaving and 18 arriving**, not 60 breaking and 60 healing.
+- **A guard that had become a countdown was replaced with membership** and calibrated by *simulating the remaining relocation and requiring green* — the cell the old floor failed twice.
+
+### ⛔ The anti-consensus answer, because a unanimous Q1 is a smell
+
+**What would have had to happen for anyone to notice the sprint going badly?** Almost nothing, and that is the finding. **The gate was green at every single checkpoint, including at the moments things were most broken** — a wrong `import type` specifier passes build, biome and the suite; a vacuous refusal cell passes its own mutation; a 288KB inert stylesheet outscores the working one on every count-shaped measure. **Nine of the ten defects this sprint found were invisible to `bun run check && bun test`.** The gate is not what caught this sprint's problems and a retro that credits it is mis-reading its own evidence.
+
+## Q2 — What did not go well
+
+### The lead — and per H26 I withheld my list until all four seats had reported
+
+- **Three wrong numbers, all mine, all the same line-shaped mechanism**, and **two of them AFTER that mechanism was known and turned into a cell**: "byte-identical" (I compared byte *counts* and reported *identity*, on a corpus containing nothing that resampled real content); R6's "88 bare specifiers / 34 lucide-react" (95 / 42 — a line-anchored regex cannot see an import spanning lines, and 8 lucide imports do); a re-export count of 6 that was **7**. I used a line-anchored grep to verify a correction *about* line-anchored greps.
+- **I ruled on a ward from a false premise about it.** "Exempt type queries, like `import type`" — `import type` is not exempt in that ward, and obeying my *reason* rather than fixing my *finding* would have opened a one-line bypass. thoth refused it and escalated.
+- **I damaged the verifier's independence and she had to tell me.** I handed cassandra thoth's safety argument *including its conclusion*; she anchored on classification when the gap was in emission, and reached it "second, by habit rather than design."
+- **I told her not to re-calibrate 15 cells that had been EDITED, not merely added to** — an instruction that was not available to follow. She re-exercised them anyway.
+- **I suppressed stderr on a board write** and lost the failure signal when the board daemon died; only the byte-equality read-back caught it.
+- **My 1c card enumerated 5 broken edges. There were 33.**
+
+### The team
+
+- **A card written before a phase's edges exist cannot enumerate them**, and nothing in the process caught that — 1b created `shared/`, 1c moved one end of every edge 1b had made, and the plan's own words were "all exactly as 1a."
+- **Two of daedalus's release-serve cells were vacuous** — refusal cells asserting a property of the URL space while claiming a property of route order. He found them himself, by mutation, and reported unprompted.
+- **thoth's ward header stated a false reason** ("the population contains zero re-export statements"; it contains seven), and the green it explained came from **masking**, not emptiness.
+- **Five false reds from one design choice** — pinning a line alongside file/spec/resolved. Two builders hit it, both correctly refused to fix it, and it took until the last round to be ruled.
+- **The bounty board daemon died mid-session**, silently no-oping two writes.
+
+## Q3 — Hypotheses the next convene must test
+
+| # | Hypothesis | Falsified if |
+| --- | --- | --- |
+| **H30** | **Naming the attack is safe; supplying the defence is not.** A brief that hands a verifier the target *and* the author's argument for why it is safe anchors them on that argument's frame. Brief the target alone. (prospero, from cassandra's unprompted report) | A round briefed target-only returns a report that misses something a defence-supplied brief would have caught — i.e. the argument was load-bearing context, not contamination |
+| **H31** | **A phase that creates edges sets the next phase's blast radius, so the radius must be RE-DERIVED at phase start, never inherited from plan time.** (circe) | A phase whose plan-time enumeration matches the measured radius on first contact |
+| **H32** | **Contract 16's three classes predict the next relocation's fallout** (glamour or magpie) with no fourth class, and class (b) is again the only one where a green gate and a broken artifact coexist. | A fourth class appears, or (b) is empty, or (b) turns out to be caught by something already in the gate |
+| **H33** | **H26's effect is confounded and the ACTIVE ingredient is the explicit invitation, not the withholding.** This session's briefs said "I have been wrong three times, verify against the tree" — and got six un-volunteered corrections. | A session that withholds the self-list but does NOT invite correction still produces un-volunteered lead criticisms |
+
+### Verdicts on 2026-08-27's hypotheses
+
+- **H26 — SUPPORTED, and by a wide margin, but READ H33 BEFORE INHERITING IT.** Un-volunteered criticisms of the lead: **six**, against zero last session (daedalus twice, circe twice, thoth twice, cassandra once). The falsifier was "still zero → the mode suppresses them"; it did not fire. **The confound is real and is H33**: this session also *invited* correction explicitly, which last session did not, so the ordering and the invitation are not separated.
+- **H27 — SUPPORTED, n=2, WITH A SHARPENING THAT MATTERS.** Every defect in Phase 0 was found by the non-author, and the authors' own demonstrations were honest every time. **But daedalus found two vacuous cells of his OWN, by mutation, in 1c** — so "requires the non-author" is too strong. **The required ingredient is a mutation that can actually fail**; a different frame is the most reliable way to get one, not the only way. The sharper form is H32's sibling: *plant the target, then assert the refusal.*
+- **H28 — NOT TESTED**, and adjacent evidence only: `anthill commit` printed `uncheckedAgainst` on every land and the lead read it each time, which is the envelope-carries-its-own-evidence shape but not the gate-timing claim.
+- **H29 — NOT TESTED.** No Contract 15 adoption ran.
+
+## Q4 — Did this session produce a principle?
+
+**No — and H30 is deliberately held as a hypothesis rather than promoted.**
+
+It is the strongest candidate the session produced and it fails this file's own bar: **a principle needs a scar, not a case.** cassandra's report is a **near-miss** — she reached the finding second, by habit, rather than not at all. There is one confirming instance (a target-only brief produced daedalus's unprompted vacuous-cell report) and no realised loss.
+
+**That is the same disposition sprint 05 took with H15**, which was held with "next session or not at all" and promoted the following session once a confirming instance arrived from the other direction. **If H30 survives its falsifier next session, it earns the file.**
+
+Nothing else came close: this session's three lead measurement errors are `principles.md` entry #1 (*knowing a failure mode does not immunise you*) firing again, on the person enforcing it. **A principle re-earned is not a new principle.**
+
+## Structure reflection
+
+- **Where we stepped on each other: almost nowhere, and the two crossings were both correct.** daedalus fixed a surface file in 1b (`fileIntake.ts`, both lines) because fixing only the line that reddened the gate would have left a dead specifier in the same file; and he recalibrated a ward floor in thoth's file rather than hand the lead a red gate. **Both disclosed at the moment of crossing.** The pattern to keep: cross a boundary when a half-migrated file is worse than either side of the line, and say so in the same breath.
+- **The natural seam was not the one the roster predicts.** The roster splits engine/surface; this sprint's real seam was **"who owns the specifier"**, which cuts across both — a relocation's fallout lands in surface files but is *caused* by an engine move. Contract 16 is that seam written down, and it is co-owned by three seats rather than one.
+- **Composition fit, with one deliberate idle.** circe was benched through Phase 0 on purpose (her lane adds files to the blind set's new root while it was being calibrated). That was the right call and it cost nothing — but **it is the first time this team has idled a seat for instrument reasons**, and it is worth naming as a legitimate move rather than a scheduling failure.
+- **No scope redraw proposed.** cassandra's redrawn 2026-08-08 scope (*the gate as an instrument*) was exercised harder than it has ever been and held exactly. thoth's canon scope correctly absorbed three items two builders refused to take.
+- **Upstream-vs-local routing:** one finding is about anthill's model rather than this team — **a subagent seat cannot receive a mid-flight coordination ping**, so "seat A pings seat B when X lands" is unimplementable in subagent mode and the lead must sequence instead. daedalus planned around a channel that could not carry it, correctly, and the brief was the defect. Filed upstream (step 5).
+
+---
+
 # Retro — 2026-08-27 · mind-mapper acc L0, "the census flip"
 
 **Team:** default · **shape:** `cdf9d466`

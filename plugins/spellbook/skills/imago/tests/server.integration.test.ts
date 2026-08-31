@@ -30,7 +30,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AgentEventPayload, ImagoState, Mark } from "../surface/state/types";
+import type { AgentEventPayload, ImagoState, Mark } from "../shared/types";
 
 // The state as observed over /state: ImagoState, but the lean projection drops
 // some blob fields and a restored snapshot may temporarily carry a legacy

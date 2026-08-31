@@ -891,3 +891,46 @@ An extraction ward built on `indexOf` + slice degrades SAFELY only if you prove 
 A mutation that silently fails to APPLY reads as a passing suite: my M7 replace mismatched on template-literal escaping, produced an empty diff and a green run, and only the diff-before-trusting-the-green habit caught it — the mutation's own diff is part of the calibration record, not scaffolding.
 When a peer proposes a test row and offers to build it, the reviewer adding it themselves is sometimes the cheaper H16 shape: I both ruled the tail-since default row daemon-rigged and landed it calibrated (green as written, red under a mutated default), so the review and the build were never by the same author for the same claim.
 zsh bit me AGAIN with a multi-word command in a variable (bounty CLI path) — the seat doc's own scar, recommitted within hours of re-reading it; the function-wrapper form `f() { bun path "$@"; }` is the only spelling my hands should ever type.
+
+## spell-kit sprint 01 P0 — calibrating a peer's instruments as the non-author (2026-08-31)
+
+A green CONTROL never proves a calibration hook is live; the only proof is a change made ONLY in the fixture world producing a red in the real cell, because a dead hook (the `join` vs `resolve` KIT_DIR bug) yields a perfect-looking control and passes every planted violation.
+Mint the mutation lab by rsyncing the `git ls-files` set into a throwaway `git init` repo and pointing the root-override env at it: every population-level cell then runs at FULL denominator, the pinned real-repo paths still resolve, and no peer ever sees a mutated shared tree.
+Before believing a header that says "this mutation is a no-op because the population is empty", COUNT the population yourself — the claim "the population contains ZERO re-export statements" was wrong (6 statements, 3 of them value re-exports) and the mutation's real green came from a different mechanism entirely.
+A cross-check that compares per-file SETS of specifier strings can only detect a scanner defect that removes a string from a file completely, so any dropped statement whose specifier is co-imported in the same file is invisible — barrel re-export files are precisely that case, and the ward it protects then misses a real escape at 0 failures.
+Ask WHICH cell a mutation reddens, never only whether the suite went red: deleting ward 1b's bare-`bun` exemption reddened the violation cell and left the cell TITLED "the exemption is LIVE" silently green, because that cell never references the predicate it claims to guard.
+A cell that pins a denominator as a per-REF list while labelling it per-FILE goes red against correct code as soon as one file carries two matching statements — dedupe it, or rename it to what it actually counts.
+The single most informative run of a calibration is the EMPTY-SWEEP: point the root at a world with no matching files and record which cells fail and which pass vacuously, because that partition IS the answer to "what does a green license".
+Always run the control where the population is non-empty and the answer is legitimately clean, or "red on my planted violation" cannot be told apart from "red on everything".
+Audit the direction a one-directional cross-check deliberately does not run and CLASSIFY the residue: 229 of 231 scanner-only specifiers were type-only as designed, and the 2 that were not are TypeScript inline `import("x")` type queries — a construct that emits nothing at runtime and is a live false-positive route into a ward that must never be red against correct code.
+An instrument whose roots come from ambient env vars has an env-dependent denominator: a `> 0` zero-guard cannot tell a 352-file world from a 2-file one, so the PIN is doing the entire job and the printed report cell licenses nothing about the population it just described.
+I DESTROYED A CARD TITLE AGAIN, the same way, in the same session I re-read the doc that names it: bounty's `update --stdin` sets the TITLE (cli.ts:1214), I grounded the flag from a usage line in an ERROR MESSAGE instead of from source, and 2,133 bytes of report overwrote a 63-byte title at `ok:true` with `valuesIgnored: null`.
+The read-back is what saved it, and only because I asserted EQUALITY against the source I still held rather than probing for a phrase — the mismatch showed as "sent 2134, stored 1025" and the 1025 turned out to be the ORIGINAL notes, i.e. the write had landed somewhere I had not looked at all.
+So the read-back must cover every field a write could plausibly have reached, not just the field you aimed at: checking `notes` alone would have reported "notes unchanged" and I would have called that a no-op and moved on with the title destroyed.
+
+## spell-kit sprint 01 1a — the local-sim drive, and an instrument that had to be able to fail (2026-08-31)
+
+_Returned to the lead rather than written, because his brief said leave the repo alone; he landed them here and the over-constraint was his, not a lapse of mine._
+
+A size or count check on a build artifact is a PRESENCE test, not an EFFECT test, and the two come apart in the direction that favours the BROKEN artifact.
+Measured: a 288KB inert decoy stylesheet outscored the real 142KB one on every count-shaped measure — 4,002 rules shipped against 1,320 — while matching 2 live-DOM rules against 165.
+So a byte-size or rule-count assertion prefers the broken build, which is the worst possible direction for a check to be wrong in.
+The discriminating form for "is this asset actually doing anything" is REMOVE-IT-AND-DIFF against the live DOM: 16 of 44 computed properties changed for the real sheet, 6 of 44 for the decoy, and the residual 6 are the legitimate inline pre-boot style, which accounts for the floor exactly.
+That form needs no baseline, no marker convention, and no knowledge of what correct output looks like — which is why it survives being applied to a spell nobody has seen before.
+An empty-but-truthy collection (`CSSRuleList`, `NodeList`, `arguments`) turns a recursion guard into a skip, and the symptom is a CONFIDENT ZERO.
+My own first styling probe reported `styleRulesShipped: 0` while the CSS was visibly applied; I caught it only because the number contradicted something I could see.
+Treat any zero that contradicts a visible fact as an instrument defect until proven otherwise — it is the round-1 lesson inverted, where a zero that would have read as a finding about the artifact was a defect in the measurement.
+A "no deps up-tree" claim is only as good as the walk, and the walk has a blind spot: check `node_modules`, `package.json`, `bunfig.toml` AND the global `~/.bunfig.toml`, because the last is invisible to a parent-directory walk entirely.
+Phase 1a is PROVEN and it is not GUARDED — the cells run every gate, this drive ran once by hand, and that asymmetry is the honest shape of every local-sim result.
+
+## spell-kit sprint 01 · 1c — driving imago, and four near-phantom findings I nearly filed (2026-08-31)
+
+THREE TIMES this session my probe reported a defect that did not exist, and every one was my frame rather than the artifact: filter chips "missing" from an `innerText` read taken mid-re-render, a context entry "absent" because I searched mixed-case against text the daemon lowercases, and annotation tools "inert" because I diffed across a transition that was not a transition (I clicked a tool that was already active).
+A fourth — `close` "leaving the daemon running" — was me checking one second too early; a clean reproduction shows it exits in ~1s in both the sim and the repo tree.
+So the rule this round earns: before filing a negative finding, prove the TRANSITION happened — a diff needs a state that actually changed, a text probe needs the case and the timing the renderer actually produces, and an exit needs the time an exit takes.
+The instrument that saved me every time was widening the frame rather than sharpening the assertion: a whole-document diff, a leaf-node scan with a case-insensitive regex, and a three-way comparison across tools instead of a two-way one.
+To test a contract that two consumers are supposed to SHARE, send the SAME input through BOTH and compare the OUTPUTS: an identical 2000x1500 source produced exactly 1200x900 from imago's daemon and from its browser bundle, which is the shared-policy claim proven by effect rather than by reading the constant in two places.
+`naturalWidth > 0` is the only thing separating "an `<img>` element exists" from "pixels arrived" — a broken image satisfies every DOM-shape assertion, keeps its `src`, and renders a node.
+The remove-it-and-diff styling control generalises, and it is SHARPER on a page with no inline `<style>`: astrolabe's pre-boot dark canvas left a floor of 6/44 changed properties under an inert decoy, imago's absence of one gives a floor of exactly 0/44.
+A decoy must be BIGGER than the real artifact to make the point land — 406KB of inert CSS against 149KB of working CSS means every size- and count-shaped measure prefers the broken one by 2.7x.
+On a shared working tree, attribute `git status` before reporting it: three files went modified DURING my drive and they were a peer's live rework, so "the tree is not clean" was true and "I left fixtures" would have been false.

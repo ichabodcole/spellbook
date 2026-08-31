@@ -906,3 +906,104 @@ Generalizes: grep for catch-all loops BEFORE introducing typed throws into code 
 **An includes() over prose is a vacuous denominator waiting for token recurrence — anchor structural membership checks to line starts.** _(Attributed by prospero at finalize; found by cassandra's M3 after my own six H16 demos passed — the demo I chose exercised the class my frame suggested, hers exercised the one it hid.)_
 The help-advertises twin was green for 6 of 29 verbs whose tokens recur in other help lines (docId→doc, "zone create" prose→zone); fixed line-anchored at bb13208, convicted by three independent mutation runs.
 Generalizes: when a cell's predicate is substring-membership over a document, ask what ELSE in the document contains the token before trusting the green.
+
+## spell-kit sprint 01 (feat/spell-kit-sprint-01, 2026-08-31) — sharp → Bun.Image in imago
+
+**"Identical byte counts" is not "byte-identical", and a size-only comparison cannot tell them apart — hash the bytes.**
+The backlog item measured `sharp` vs `Bun.Image` on three inputs, found matching byte COUNTS, and the card promoted that to BYTE-IDENTICAL; I re-ran it over ten inputs with sha256 and found one case (a 1200x929 screenshot) where both encoders produced exactly 55632 bytes and DIFFERENT bytes.
+A length check is a one-in-N-thousand collision away from lying, and here it collided on the first real screenshot tried.
+
+**The three cases a codec comparison must include, because a corpus of flat synthetic fills proves nothing about resampling.**
+Byte-identity held on every input where no RESAMPLE happened (a 32x32, a 112x99 and a 280x247 webp, a 1024x1024 jpeg — all under maxDim and passed through encode-only) and on every uniform-colour synthetic (any kernel returns the same pixels); it failed on all four inputs that actually downscaled real image content, at -0.81% to +9.70% size.
+So: pick inputs that (a) exercise the operation under test, (b) carry real high-frequency content, (c) include the no-op path separately — and state the equivalence you actually measured (same dims, same container, mean abs pixel delta 0.4-1.3/255) rather than the stronger one you wish you had.
+
+**Prove an option is load-bearing with a control, not just an outcome.**
+`withoutEnlargement` on `Bun.Image.resize` is real: 32x32 resized to 9000x9000 returns 32x32 WITH the option and 9000x9000 WITHOUT it — the second half is what turns "the output was small" into "the option did it", and the first half alone would also be explained by a silently-ignored resize.
+
+**When you delete a stale library name from a comment, the REASON attached to it usually dies too — replace the reason, do not just drop the name.**
+imago's header said "Do NOT import from browser code (sharp is a native module)"; deleting `sharp` would have left a rule with no why, so the parenthetical became "(Bun.Image is a Bun runtime built-in, absent in the browser)" — same rule, currently-true reason.
+
+**A missing-package error at import time is the loudest possible failure and still shipped in a release — the boot path is not covered by any test that imports modules directly.**
+imago v2.2.0's daemon died at `bun --no-install scripts/server.ts` on `Cannot find package 'sharp'` while its unit suite was green, because the suite imports `optimizeImageBuffer` from a tree that HAS node_modules; the only instrument that catches this class is booting the artifact from a copy with no node_modules up-tree.
+
+## spell-kit sprint 01 · 1a — astrolabe's Contract 1/5 port (2026-08-31)
+
+**"X appears in no test" and "X is unasserted" are different claims, and the first silently widens into the second.**
+I measured that `SPELLBOOK_SURFACE_MODE` appears in zero test files — true — and reported "mind-mapper's release mode has zero cells asserting it" — false: `mind-mapper/scripts/release-serve.test.ts` is 231 lines asserting exactly that, and it does not mention the env var because it drives mode by dist/ PRESENCE instead.
+The grep was over the KNOB; the claim was about the BEHAVIOUR; a knob is not the only way to reach a behaviour.
+Before generalising a grep into a claim, ask what OTHER route reaches the thing you searched for — and had I asked, the 231-line template I was about to reinvent was one `ls` away.
+
+**A silent failure needs a CONTROL, and the control is what turns "it worked" into "this line is why".**
+Contract 5's cwd pin: dev mode with cwd pinned to `src/astrolabe/` served 41,344 bytes of CSS with 213 Tailwind markers and a `tailwindcss v4.1.14` banner; the SAME daemon with cwd at the skill root served HTTP 200, 25,231 bytes, ONE marker, and the content was `node_modules/tailwindcss/index.css` passed through unprocessed.
+Both are 200s and both render a board — only the pair distinguishes them, and a single green run of the correct case would have proved nothing.
+
+**Copy the template, not the idea — and when there is no template, ask whether one exists before writing the assertion.**
+Porting mind-mapper's release-serve gate gave astrolabe seven cells (dist serving, hashed assets, 404 on unknown, traversal, backend-still-works, mode on BOTH the stdout handshake and the ready event) for the cost of a one-line assertion written from scratch.
+Two of the original's cells (STALE DIST, /state buildInfo) assert a build stamp astrolabe does not have; I dropped them and said so IN THE FILE, because a silently-shortened copy is how a template's coverage erodes without anyone deciding to erode it.
+
+**Mutation-test a new gate against the SITE, one mutation per cell, and check the failure MODE and not just the colour.**
+Three mutations (serveDist always null; drop `mode` from the ready event but keep it on stdout; drop the `dev` arm of the env override) each convicted exactly the intended cell.
+The third initially failed as a 5s runner TIMEOUT rather than an assertion — correct colour, illegible reason, and a future reader files that as flake — so the wait is now bounded at 3s, under bun test's 5s, and the cell reports "still-running" in its own words.
+
+**A pinned inventory that carries LINE NUMBERS couples every ward to every unrelated edit above the pinned site.**
+Deleting a 5-line import block in astrolabe's server.ts moved a re-export fixture from :75 to :70 and reddened a cell that has no opinion about my change.
+That is noise on top of signal, not signal: the pin earns its keep on file/spec/resolved, and the line is what makes it chatty — recorded in the ward's own header so the next re-pin is read as bookkeeping.
+
+**1a proved the pipeline generalises AND measured the price of not having the seam: 42 lines of engine copied near-verbatim between two spells, plus a 211-line test that is a 46% copy.**
+`resolveMode` (5), `serveDist` (10), `daemonCwd` (5) are byte-identical after spell-name normalisation and `STATIC_CONTENT_TYPES` (8) is byte-identical verbatim.
+Doing it by hand was the RIGHT call for a phase whose purpose is proving generalisation with zero seam work — but the number is the argument for 1b, and it should be quoted rather than re-derived.
+
+## spell-kit sprint 01 · 1b — imago's seam (2026-08-31)
+
+**"The gate cannot see this class" is a claim about a POPULATION, and a population claim needs the exceptions enumerated, not sampled.**
+The brief said 38 files import `types`, most with `import type`, which the build erases — so only tsc would see the breakage.
+Measured: 35 files, 37 sites, and TWO of them are VALUE imports in files nobody had classified — `surface/state/fileIntake.ts` (imports `OPTIMIZE` as a value from the module I was moving) and `surface/components/Canvas.tsx`.
+`fileIntake` is loaded by `tests/fileIntake.test.ts`, so `bun test` went RED — 1 fail, `Cannot find module './imageOptimize'` — inside the very class I had been told the gate could not see.
+The rule: before trusting "invisible to the gate", enumerate the value imports and ask which of them a TEST loads; "most are type-only" is a frequency, and a frequency does not bound a failure.
+
+**Sort a move by what each candidate ITSELF imports, then by who imports IT — the second question is the one that reddens the gate.**
+R1's correction (the 5-line `OPTIMIZE` policy is two-sided and must go to `shared/`) was right and I verified it against the tree rather than inheriting it: `imageOptimize.server.ts:5` on the daemon side, `fileIntake.ts:2` on the browser side, both value imports.
+What R1's file-level sort did NOT say, and what bit, is that the browser-side importer is itself exercised by a test — so moving the two-sided file is a runtime break, not merely a tsc one.
+
+**When a runtime break forces you across a boundary into another seat's file, take that file WHOLE and say so — a half-migrated file is worse than either side of the line.**
+Fixing only `fileIntake.ts:2` (the value import that reddened the gate) would have left `:3`'s type-only `./types` dead in the same file.
+I rewrote both lines, crossed the lane deliberately, and named the crossing in the report instead of letting circe find a file that was half mine.
+
+**A green ward whose population just doubled is still a ward with no positive evidence — report the population, not the colour.**
+Creating `shared/` took ward 1b from 40 files / 0 in `shared/` to 43 / 2, which un-vacuums the half cassandra called out; bare specifiers stayed at 116 and violations at 0.
+That the count did NOT move is the real result — the shipped execution path grew by three files and acquired zero dependencies — and it is a better sentence than "the ward is green."
+
+**Report the narrow number AND the total it sits inside, because a filtered count hides its own cascade.**
+TS2307 went 0 → 26 (one per surface file, exactly circe's lane), but total tsc errors went 452 → 512: the other 34 are knock-on from types that no longer resolve.
+Quoting only the 26 would have understated the tree's state by more than half.
+
+**A build that never touches a spell is blind for a stronger reason than erasure, and the stronger reason is the one to state.**
+`bun run build` was said to exit 0 on imago because type imports are erased before resolution; in fact `src/build.ts:buildableSpells()` derives its list from `src/<spell>/surface/index.html`, and imago is not in `src/` until 1c — so the build does not read imago AT ALL.
+The prediction was right and its mechanism was wrong, which is the failure mode that survives a green run.
+
+## spell-kit sprint 01 · 1c — imago's Contract 1/5 port, and a green cell I had to kill (2026-08-31)
+
+**MUTATION CAUGHT ME AGAIN, IN A CELL I WROTE SPECIFICALLY AS THE CAREFUL, SPELL-SPECIFIC ONE.**
+I wrote "serveDist does NOT widen /assets/" — imago's own earned cell, the one I was proudest of — and the two-part mutation that genuinely widens it (hoist serveDist above /assets/ AND drop the nesting guard) left the cell GREEN, 8 pass 0 fail.
+The cell asserted `/assets/index.html` 404s, which is true under EVERY variant of serveDist, because serveDist keys on the whole path and `/assets/index.html` never maps to `dist/index.html`: I had asserted a property of the URL space and called it a property of the route order.
+The same audit killed my "nested paths 404" cell for the same reason — every nested request 404s anyway when nothing resolves there, so the traversal guard could be DELETED and the cell stayed green.
+The fix in both cases was to make the target EXIST: plant `dist/sub/nested.js` and `dist/assets/leak.js` in the rig, and only then does deleting the guard turn them red.
+**Generalises past this file: a "must not be served" cell is vacuous until the thing it forbids would otherwise resolve.** Assert refusals against present targets, never absent ones.
+
+**Copy the precedent's SUBSTANCE, not its location — the roster rule applies to your own prior work.**
+astrolabe's release-serve gate lives in `scripts/` because astrolabe keeps tests there; imago's belongs in `tests/`, and putting it beside astrolabe's would have made `house-style.md`'s enumerate-roster-behaviour-never example false in the same sprint that ruled it must stay true.
+Same class: astrolabe and mind-mapper print a stdout handshake carrying `mode`, and imago prints NOTHING to stdout — its handshake is the discovery file, so `mode` rides that plus the ready event and there is no stdout cell to port.
+A third port is where "copy the template" quietly becomes "assume the template's environment".
+
+**A guard calibrated against a tree that the project exists to reshape will fire on schedule, and re-pinning it is the wrong repair.**
+Ward 1a's zero-guard floor (`files.length > 150`) went red at 149 because relocating astrolabe and imago took the population 206 -> 149 — nothing to do with a dead walk, which is what the guard is for.
+I recalibrated to 80 rather than to 149, deriving the target: 48 of the remaining 149 are glamour's and magpie's surface trees, so full relocation lands at 101 and any floor above that trips again for the same non-reason.
+The distinction worth keeping: a RE-PIN preserves what the cell asserts, a RECALIBRATION changes what it tolerates — say which one you did, and why, in place.
+
+**Three false reds in one sprint from ONE design choice is evidence, and evidence is worth escalating rather than absorbing.**
+The `line` field inside `PINNED_DYNAMIC_ESCAPES`'s compared value cost astrolabe :75->:70, imago :1647->:1723, and the re-export fixture twice — every one an edit ABOVE the site with no opinion about the escape.
+I re-pinned and wrote the case for comparing the file/spec/resolved triple while reporting the line, but did NOT apply it: it changes what the ward asserts, and that is the canon seat's call, not the engine seat's.
+
+**Run tsc over your own earlier work in the same sprint — it is not in the gate, so nothing else will.**
+My astrolabe release-serve gate from 1a had been carrying 2 tsc errors (a `Subprocess` generic and an unchecked `split()[0]`) since it landed at d181c88, green the whole time, because `bun run check && bun test` cannot see them.
+Found them only because 1c's done-when quotes a root typecheck number; fixed both, 452 -> 450.

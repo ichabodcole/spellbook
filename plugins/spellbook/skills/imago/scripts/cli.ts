@@ -29,7 +29,7 @@
 // to target a specific one.
 
 import { spawn } from "node:child_process";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,6 +37,22 @@ import { parseArgs as nodeParseArgs } from "node:util";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// dev: the daemon serves a Bun-bundled React surface, and Bun reads bunfig.toml
+// (the Tailwind plugin) from cwd ONLY, so the daemon's cwd MUST be src/imago/
+// (seams Contract 5 cwd-pin) — launched anywhere else, Tailwind is SILENTLY
+// skipped and the surface renders unstyled. release: dist/ is pre-built and
+// static — no bunfig read, so this path need not exist at all (a source-free
+// marketplace clone has no top-level src/), and pinning cwd there anyway would
+// break the spawn.
+const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "imago");
+
+function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
 const SNAPSHOTS_DIR = join(process.env.IMAGO_HOME ?? join(homedir(), ".imago"), "snapshots");
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -54,6 +70,10 @@ type Session = {
   session_id: string;
   title: string;
   files_dir?: string;
+  /** The daemon's resolved surface mode (Contract 1). Additive-optional: a
+   *  session file written by an older daemon has no `mode`, and absent means
+   *  "unknown", never "dev". */
+  mode?: "dev" | "release";
 };
 
 function die(msg: string): never {
@@ -196,11 +216,10 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
-    // Pin cwd to the imago root so Bun finds bunfig.toml (which registers
-    // bun-plugin-tailwind for the dev server). Bun reads bunfig.toml from the
-    // cwd only — without this, launching from any other directory silently
-    // skips Tailwind and serves an unstyled surface.
-    cwd: join(SCRIPT_DIR, ".."),
+    // Contract 5 — see daemonCwd(). THE FAILURE IS SILENT: a wrong cwd skips
+    // bunfig.toml's Tailwind plugin and the surface renders unstyled rather
+    // than erroring, so nothing downstream of here will tell you it was wrong.
+    cwd: daemonCwd(),
   });
   proc.unref();
 

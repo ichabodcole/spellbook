@@ -267,3 +267,25 @@ _The sprint can be reported green while both of these are true._
 [design-resolution](../../design-resolution.md) ·
 [Sprint 01](../01-the-seam-before-the-move/plan.md) ·
 [project ledger](../../README.md)
+
+---
+
+_Reconciled 2026-08-31 @ `9b6d8e5` — swept after sprint 01 landed. **"After
+Phase 1, all three surfaces live under `src/`" — HELD, and the PRECONDITION IS
+NOW MET.** astrolabe and imago both relocated;
+`plugins/spellbook/skills/{astrolabe,imago}/surface/` no longer exist. **Slice
+3's stated dependency on Phase 1 is discharged** — `src/kit/` is now reachable
+by all three surfaces and Ward 2 governs the direction. **"imago does not have
+an `acc.config.json`" — UNCHECKED**, nobody owned it this sprint. **⛔ STALE
+PATH CITATIONS — every `<spell>/surface/...` reference in this plan now needs a
+`src/` prefix**, and the line numbers are unverified:
+`imago/surface/components/Lightbox.tsx:7-13`,
+`astrolabe/surface/components/AddProjectModal.tsx:37-44`,
+`imago/.../useSession.ts`, `astrolabe/.../board.ts:33-43`. **Not silently
+rewritten** — re-derive them when the phase runs rather than trusting a line
+number nobody re-measured. **NEW INPUT this sprint owes its emission ruling:**
+Contract 1's release/dev split is now duplicated verbatim across two spells —
+**42 lines of engine byte-identical modulo the spell name** (`resolveMode` 5,
+`serveDist` 10, `daemonCwd` 5, `STATIC_CONTENT_TYPES` 8) plus a release-serve
+gate that is a 46% copy. That number is this sprint's argument; quote it rather
+than re-deriving it._

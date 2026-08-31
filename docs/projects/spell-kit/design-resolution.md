@@ -272,22 +272,134 @@ reason corrections in this document now live inside the section they correct.
 The retracted phrasing was _"may not **statically import** outside
 `plugins/spellbook/`."_ The measurement behind it counted **relative specifiers
 only** — and the two are not the same ward. Read literally, the English also
-covers **bare** specifiers, of which there are **88** today:
+covers **bare** specifiers, of which there are **95** today, across **65
+files**:
 
-| specifier             | count | where                                           |
-| --------------------- | ----: | ----------------------------------------------- |
-| `react` / `react-dom` |    49 | the four React spells' `surface/`               |
-| `lucide-react`        |    34 | ditto                                           |
-| `bun` (types)         |     4 | —                                               |
-| **`sharp`**           | **1** | `imago/surface/state/imageOptimize.server.ts:5` |
+| specifier             |   count | where                                                    |
+| --------------------- | ------: | -------------------------------------------------------- |
+| `react` / `react-dom` |      49 | the four React spells' `surface/`                        |
+| `lucide-react`        |      42 | ditto                                                    |
+| `bun` (types)         |       4 | the exemption R6 measures below                          |
+| ~~`sharp`~~           | ~~1~~ 0 | retired 2026-08-31 — swapped for `Bun.Image` in Phase 1b |
+
+> ### ⚠ This table said 88 / 34 lucide-react, and it was undercounted by a LINE-BOUND SCAN
+>
+> **Corrected 2026-08-31.** thoth re-measured while authoring the ward and got
+> 95; the lead re-measured to check him, got 34 lucide-react again, and **was
+> reproducing the original defect** — a regex requiring `import` and `from` on
+> one line cannot see a statement that spans lines. **Exactly 8 `lucide-react`
+> imports span lines**, and lucide imports span lines because their symbol lists
+> are long. A multi-line-aware scan returns 42, matching thoth's independent
+> count on every specifier.
+>
+> **Two methods converging is not the check — the unit is.** Both counts are of
+> **import _sites_**, not files. The sprint plan said _"88 correct **files**"_;
+> that was wrong on the number and on the unit, and is corrected there too.
+>
+> **The mechanism is now a ward cell**, not a note: making `STATIC_RE`
+> line-bound turns thoth's cross-check red with 30+ missing.
 
 **Neither reading is the ward the project needs.** As measured it is green on
 arrival and **structurally blind to the one escape that actually breaks a
 deps-free destination** — `sharp`, which stops the shipped imago daemon booting
 at all ([filed](../../backlog/2026-08-30-imago-daemon-cannot-start-offline.md)).
-As stated it is red on arrival with 88 violations, against correct code — the
-exact failure this ruling already anticipated on the dynamic axis and then
+As stated it is red on arrival with **95** violations, against correct code —
+the exact failure this ruling already anticipated on the dynamic axis and then
 reproduced on the static one.
+
+### Ruled at 1b, 2026-08-31 — the straddler is no longer a straddler
+
+R6 left `tests/imageOptimize.test.ts` as _"an implementer's call"_ — split it,
+or pick a side and import across — and listed it among the 8 tests moving to
+`src/imago/surface/`. **1b answered it mechanically and no judgement is
+needed.**
+
+At `3e00e73` the file imports:
+
+```
+import { optimizeImageBuffer } from "../scripts/imageOptimize.server";
+import { OPTIMIZE }            from "../shared/imageOptimize";
+```
+
+**Neither is in `surface/` any more.** Both live in the shipped tree, so the
+test has no surface dependency left to follow. **Ruled: it STAYS BACKEND, in
+`tests/`, and does not split.** R6's listing of it among the 8 predates the
+corrected three-file sort and is superseded here.
+
+> **The general shape, worth keeping:** an "implementer's call" that depends on
+> where files end up **stops being a judgement once they are there.** Deferring
+> it was right; deciding it early would have been guessing at a fact.
+
+---
+
+### Ruled during Phase 0, 2026-08-31 — two population questions R6 did not answer
+
+thoth hit both while authoring the wards and correctly refused to settle them
+in-lane.
+
+**`*.test.ts` under `scripts/` is OUT of ward 1b's population.** 38 of the 78
+files there are tests. Ward 1b's subject is the **shipped execution path** —
+what a daemon or CLI actually loads at a destination that never ran `install`. A
+test file ships but is never executed by a consumer; it is inert cargo, not an
+execution path. Measured both ways at ruling time: **0 violations either way**,
+so the ruling costs nothing today and can be revisited the moment it does not.
+
+> **⚠ The hole this leaves is real and is NOT a ward gap.** A `*.test.ts` under
+> `scripts/` still **ships** to a consumer who cannot resolve its imports. That
+> is a **packaging** question — the same family as _"what does a consumer
+> receive, per spell"_ already carried to Cole (see
+> [RC](#rc--mind-mappers-standing-as-the-kits-source-d2)). It routes there, not
+> into ward 1b, and widening 1b to cover it would answer a packaging question
+> with a dependency instrument.
+
+**Inline type queries are RECLASSIFIED, not exempted — and this overrides the
+lead's first ruling on it.** `export type X = import("../../outside").Y` emits
+nothing at runtime, and cassandra measured it failing ward 1a's **dynamic**
+pinned inventory against correct code. The lead ruled: _"exempt it, on exactly
+the reasoning that exempts `import type`."_
+
+> **⛔ That ruling carried a false premise about the ward it was ruling on.**
+> **`import type` is not exempt in this ward** — including it is the entire
+> reason the scanner is a text scan rather than `Bun.Transpiler`, which
+> unconditionally erases it. Applied literally the ruling would have exempted
+> `import type` too and collapsed the scanner into the parser it exists to
+> avoid, opening a **one-line bypass**: a type query invisible while the
+> identical dependency written as `import type { X } from "../../out"` stays a
+> violation. Same dependency, same `tsc` breakage, same nothing-at-runtime.
+>
+> **thoth fixed the finding and escalated the reason rather than obeying it** —
+> the correct move, and the one this team's SOP asks for. Type queries get their
+> own `kind: "type"`, which **rides with `static`** for ward 1a's escape check
+> and is **excluded from the dynamic pin**, whose subject is imports deferred to
+> a call — which a type query never is.
+>
+> **What makes the heuristic safe is a partition, not a judgement:** ward 1a
+> checks `static` + `type` for escapes and `dynamic` against the pin, and the
+> three are exhaustive. **A misclassification moves a finding between cells; it
+> can never remove one.**
+>
+> _The general lesson, recorded because it will recur: **a ruling can carry a
+> false premise about the code it rules on**, and obeying its reason rather than
+> fixing its finding is how a correct instruction installs an incorrect
+> invariant. The finding was real; the reason attached to it was not._
+
+**Non-`.ts` surfaces are OUT of ward 1a's scope for this project.** A
+`<script src="../../x.js">` in a hand-authored `.html` is an escape by any
+reasonable reading and is invisible to all three wards. **thoth's observation is
+the right one: that population IS the blind set, so the two holes are one hole
+seen from two sides.** It already has a declared instrument — `DECLARED_BLIND`,
+which R5 just extended to a second root — and teaching ward 1a to parse HTML
+would build a second, weaker instrument over a population that already has one.
+
+> **⚠ But the blind set DECLARES those files; it does not INSPECT them.** A
+> declared-blind `.html` carrying a relative escape is counted and unread. The
+> remedy is
+> [the biome backlog item](../../backlog/2026-08-30-biome-already-reads-css-and-html.md)
+> — biome 2.4.16 already parses CSS and HTML including inline `<script>`, which
+> would shrink the blind set to ~153 lines — **not** a ward. Recorded in Phase
+> 0's "what its gate cannot see" block.
+
+---
 
 ### Ward 1a — outward: the artifact is self-contained
 
@@ -351,6 +463,26 @@ Deliberate, and worth stating because it is the looser of the two boundaries:
 > 0 bullet already had it right; this section did not. _(Found by the on-ramp
 > pass, which flagged the drift rather than reconciling it — correctly, since
 > only running it says which side was wrong.)_
+>
+> ### ⚠ The population is FIVE files, not four — and the 4 was not wrong, it was narrower
+>
+> **Amended 2026-08-31.** The ward as built asserts **five**. The fifth is
+> `glamour/scripts/server.ts:77`, which writes the same dependency as a **type
+> query** rather than a statement:
+> `new Set<import("bun").ServerWebSocket<unknown>>()`. A statement-shaped count
+> — which is what produced the 4, twice, by two people — cannot see it.
+>
+> **Both numbers are correct in their own frame and the frames are stated so
+> neither reads as a mistake:** 4 is the count of `import … from "bun"`
+> statements; **5 is the count of files depending on `bun` by any construct**,
+> which is the population the ward actually governs. **Prefer 5** — the ward is
+> the thing that will be run.
+>
+> _Found by thoth while implementing the type-query reclassification below. It
+> is the third line-shaped miss in this document set: the 88/34 census, the
+> lead's re-check of it, and a re-export count of 6 that was 7. **The mechanism
+> is now a cell rather than a warning** — the scanner compares counts, not sets,
+> and dedupes on byte offset rather than line._
 
 `surface/` is excluded on purpose: its bare imports are erased by the bundler
 and never reach a destination. A `scripts/` one must resolve where nobody ran
