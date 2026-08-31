@@ -993,7 +993,37 @@ blind set   roots       = ["plugins/spellbook/skills", "src"]
 
 **Also unequal, and measured:** the blind set's root 1 is `plugins/spellbook/skills`, one level **below** ward 1a's `plugins/spellbook`. The difference is exactly `.claude-plugin/plugin.json` — gated, so `blind` is unaffected, but `tracked`/`handAuthored` are off by one. **Priced, not missed** (thoth, `5253b72`).
 
-**Candidate remedy, deliberately NOT built this sprint:** a ward 3 — no file under `src/<spell>/` may make a relative import into a different `src/<other-spell>/`. It would be **green by construction today** (no cross-imports exist), so it needs the same zero-guard discipline ward 2 carries. **A vacuous pass now is a cell that gets trusted later.** Scheduled: sprint 03's canon pass.
+> ### ⛔ THE REMEDY SHIPPED. This paragraph said it had not — corrected 2026-08-31
+>
+> It read: _"Candidate remedy, **deliberately NOT built this sprint**: a ward 3 … **Scheduled:**
+> sprint 03's canon pass."_ **Ward 3 landed in `3c88275`**, pulled forward into Slice 2 on
+> daedalus's argument that a backend bundle inlines a cross-spell import *completely* and the
+> result is a shipping artifact rather than a dev-tree mistake.
+>
+> **A contract's own "not done yet" line is as load-bearing as its proof line**, and a
+> supersession sweep has to reach both. thoth caught this after catching the identical class in
+> Contract 9's proof line — same author, same sprint, second instance. The gap this contract
+> describes is **closed on the `src/<spell>/` axis**; what remains open is stated below.
+
+**Ward 3, as built** (`grimoire/import-boundary-wards.test.ts`): no file under `src/<spell>/`
+may relatively import a different `src/<other-spell>/`. **It is stated by OWNER, not by path
+prefix** — because a spell can reach another spell **through `plugins/`**, where the specifier
+resolves outside `src/` and a prefix ward never looks. **36 such routes are live today**
+(astrolabe 4, imago 32), every one same-spell and correct, which is what made the narrow form
+dangerous: proven, ergonomic, one directory name from being cross-spell.
+
+Ownership is **derived** — a name is a spell iff `plugins/spellbook/skills/<name>/` exists.
+That is what correctly classifies `src/build.ts` as not-a-spell, and what lets `src/kit/` be
+imported freely without a special case: there is no `skills/kit/`, so the sanctioned sharing
+point is not a spell and importing into it is not cross-spell. **Measured before adopting:
+narrow 0, wide 0, across 170+ files.** Zero-guard asserts membership **and** `owners.length > 1`
+— with one spell, "cross-spell" is inexpressible and a pass would be a statement about the
+tree's shape rather than anyone's discipline.
+
+**What is STILL open, and is what this contract now exists to say:** the two instruments still
+enumerate two different worlds (`plugins/spellbook` vs `plugins/spellbook/skills`), and
+`src/<spell>/` remains inside the blind set's denominator. Ward 3 closes the cross-spell
+*import* hazard; it does not merge the denominators.
 
 **Proof:** `grimoire/import-boundary-wards.test.ts:161,:380` and `scripts/instruments/gate-blind-set.ts` roots, at `5253b72`.
 
