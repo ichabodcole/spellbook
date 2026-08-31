@@ -150,6 +150,7 @@
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { builtinModules } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type ImportKind, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
@@ -406,17 +407,112 @@ const BUILTIN_PREFIXES = ["node:", "bun:"] as const;
 /** The bare `bun` types package — type-only, erased, resolvable with no install. */
 const BUILTIN_EXACT = ["bun"] as const;
 
-const isBuiltinUnder = (exact: readonly string[]) => (spec: string) =>
-  BUILTIN_PREFIXES.some((p) => spec.startsWith(p)) || exact.includes(spec);
+/**
+ * ⛔ THE EMITTED-FILE EXEMPTION (P2) — WHY IT EXISTS, AND WHY IT IS SCOPED.
+ *
+ * **Bun's bundler STRIPS the `node:` prefix.** MEASURED 2026-08-31, twice
+ * independently (prospero, and again here):
+ *
+ *     import { join } from "node:path"   --bundle-->   from "path"
+ *     node:fs -> "fs" · node:child_process -> "child_process"
+ *
+ * So the moment a backend ships BUILT (Option 3), its shipped `scripts/` carry
+ * bare `path` / `fs` / `child_process`, and this ward's `node:`/`bun:` predicate
+ * reads every one as a shipped dependency. **REPRODUCED against a real bundled
+ * tree via `SPELLBOOK_REPO_ROOT`: 17 violations — 6 astrolabe, 11 magpie.** It is
+ * a PREDICATE MISMATCH, not a runtime defect; Bun resolves a bare builtin fine.
+ *
+ * ⚠ **daedalus's hazard, and it is the whole design.** Widening the predicate
+ * globally would weaken this ward for HAND-AUTHORED files — where a bare `path`
+ * is a genuine finding, because nothing stripped it. So the exemption is scoped
+ * to files THE BUILD EMITS, and nowhere else.
+ *
+ * ⛔ **AND IT IS AN EXEMPTION TO A NAMED BUILTIN SET, NOT TO "ANY BARE
+ * SPECIFIER IN AN EMITTED FILE."** That distinction is load-bearing: an emitted
+ * artifact that still reaches for a REAL dependency (a `sharp` the bundler failed
+ * to inline) is the exact failure this ward exists to catch, and it is at its
+ * most dangerous in precisely the file class the exemption covers. Exempting the
+ * file wholesale would blind the ward where it matters most.
+ *
+ * ⛔ **THE ROOT LIST IS DECLARED AND CURRENTLY EMPTY, ON PURPOSE.** The emission
+ * ruling has not landed, so nothing is emitted yet and this exemption applies to
+ * nothing. It is NOT hardcoded to `dist/`: the emission's output location is
+ * daedalus's unmade call, and a guard's denominator must not be a value the
+ * project is about to change (the same ruling that took ward 1a's floor out).
+ * When the emission lands, ONE line here turns the exemption on for exactly the
+ * root it names.
+ */
+const DECLARED_EMITTED_ROOTS: string[] = [];
 
-const BUILTIN = isBuiltinUnder(BUILTIN_EXACT);
+/** Env override for calibration. `filter(Boolean)` closes the `"".split(",")`
+ *  → `[""]` trap — an empty var would otherwise declare a root matching every
+ *  file, which is the widest possible exemption arriving by accident. */
+const EMITTED_ROOTS: string[] = process.env.WARD_EMITTED_ROOTS
+  ? process.env.WARD_EMITTED_ROOTS.split(",")
+      .map((r) => r.trim())
+      .filter(Boolean)
+  : DECLARED_EMITTED_ROOTS;
 
-/** The shipped execution path: what actually runs at a destination with no node_modules. */
+/** Node/Bun builtins, DERIVED from the runtime rather than hand-listed — a
+ *  hand-kept copy of this set is exactly the drift `gate-blind-set` records
+ *  having shipped once. These are the bare names a bundler leaves behind. */
+const BARE_BUILTINS = new Set(builtinModules);
+
+/**
+ * The ward's predicate, as a FACTORY over its two exemptions, so a cell can
+ * evaluate it with each one removed and assert the difference. An exemption
+ * whose effect a cell cannot evaluate is one the next author deletes.
+ */
+const makeIsBuiltin =
+  (exact: readonly string[], emittedRoots: readonly string[]) =>
+  (spec: string, file: string): boolean => {
+    if (BUILTIN_PREFIXES.some((p) => spec.startsWith(p)) || exact.includes(spec)) return true;
+    const emitted = emittedRoots.some((r) => file.startsWith(r.endsWith("/") ? r : `${r}/`));
+    return emitted && BARE_BUILTINS.has(spec);
+  };
+
+const BUILTIN = makeIsBuiltin(BUILTIN_EXACT, EMITTED_ROOTS);
+
+/** The hand-authored shipped execution path. */
 const onShippedExecutionPath = (file: string): boolean =>
   /\/(scripts|shared)\//.test(file) && !/\.test\.tsx?$/.test(file);
 
+/**
+ * ⛔ THE POPULATION FOLLOWS THE EXECUTION PATH TO WHEREVER THE EMISSION PUTS IT,
+ * AND THIS IS THE HALF NOBODY ASKED FOR.
+ *
+ * The card framed P2 as "widen the builtin predicate." That is necessary and it
+ * is NOT the dangerous half. Contract 4's amendment rules the emitted bundle to
+ * `plugins/spellbook/skills/<spell>/dist/cli.js`, and **ward 1b would not see it
+ * at all** — MEASURED: that path fails BOTH of 1b's filters, the `.ts`/`.tsx`
+ * extension filter and the `scripts|shared` path filter.
+ *
+ * So on the day the backend ships built, the code that actually executes at a
+ * deps-free destination leaves this ward's population entirely, and the ward
+ * goes green because it stopped looking — while its title still claims to
+ * govern "the shipped execution path". **A shrunk population is not a red cell**
+ * (Contract 4's amendment says exactly this about `walkSpellSources`), and this
+ * is the same failure one ward over.
+ *
+ * The predicate widening alone would have shipped that. Both halves are here:
+ * the population extends into the declared emitted roots, AND the bare-builtin
+ * exemption applies there.
+ */
+function emittedSources(roots: readonly string[]): string[] {
+  if (roots.length === 0) return [];
+  return roots.flatMap((root) =>
+    execFileSync("git", ["-C", REPO_ROOT, "ls-files", root], { encoding: "utf8" })
+      .trim()
+      .split("\n")
+      .filter((f) => /\.(js|mjs|cjs|ts|tsx)$/.test(f)),
+  );
+}
+
 describe("R6 ward 1b — the shipped execution path carries no dependencies", () => {
-  const files = trackedSources(PLUGIN_ROOT).filter(onShippedExecutionPath);
+  const files = [
+    ...trackedSources(PLUGIN_ROOT).filter(onShippedExecutionPath),
+    ...emittedSources(EMITTED_ROOTS),
+  ];
 
   test("the sweep actually ran (zero-guard)", () => {
     expect(files.length).toBeGreaterThan(20);
@@ -430,7 +526,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
 
   /** Ward 1b evaluated under a SUPPLIED exemption, so the cell below can run it
    *  with and without `bun` and assert that the difference is the exemption. */
-  function violationsUnder(isBuiltin: (spec: string) => boolean): string[] {
+  function violationsUnder(isBuiltin: (spec: string, file: string) => boolean): string[] {
     const out: string[] = [];
     for (const file of files) {
       for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
@@ -452,7 +548,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
         // boot. MEASURED BEFORE ADOPTING IT: the widening adds exactly ONE ref
         // to the population, `magpie/scripts/discover.ts:262 -> node:util`,
         // which is a builtin and therefore exempt. Zero new violations.
-        if (isRelative(ref.spec) || isBuiltin(ref.spec)) continue;
+        if (isRelative(ref.spec) || isBuiltin(ref.spec, file)) continue;
         out.push(`${file}:${ref.line} -> ${ref.spec}`);
       }
     }
@@ -461,6 +557,67 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
 
   test("no bare specifier outside node: / bun: / bun", () => {
     expect(violationsUnder(BUILTIN)).toEqual([]);
+  });
+
+  test("ZERO-GUARD — the emitted-root list is DECLARED EMPTY, and says so rather than passing quietly", () => {
+    // ⛔ ward 2's discipline, applied to an exemption instead of a population.
+    // An exemption that currently covers NOTHING is green for a reason that has
+    // nothing to do with the invariant, and this seat has now been bitten twice
+    // by a cell trusted later because its vacuity was silent at the time.
+    if (EMITTED_ROOTS.length === 0) {
+      console.warn(
+        [
+          "",
+          "  R6 WARD 1b — the EMITTED-FILE exemption covers NOTHING: no emitted roots are declared.",
+          "  Expected until the emission ruling lands (Slice 2, Option 3). Until then this ward's",
+          "  predicate is exactly `node:` / `bun:` / `bun`, and the exemption below is inert.",
+          "  The cell after this one is what proves the mechanism works, on a SYNTHETIC root.",
+          "",
+        ].join("\n"),
+      );
+      expect(DECLARED_EMITTED_ROOTS).toEqual([]);
+      return;
+    }
+    // A root is declared. Then it must actually match something, or it is a
+    // typo that reads as a working exemption.
+    // ⛔ Checked with `emittedSources` — THE SAME ENUMERATOR THE POPULATION USES.
+    // A first draft checked against `trackedSources`, which is `.ts`/`.tsx` only,
+    // so a root holding exactly what this exemption exists for (a `.js` bundle)
+    // reported as an empty typo. A guard that does not share its subject's
+    // enumerator is measuring a different set.
+    for (const root of EMITTED_ROOTS) {
+      expect(emittedSources([root]).length).toBeGreaterThan(0);
+    }
+  });
+
+  test("the emitted exemption is SCOPED — it does not reach hand-authored files, and never covers a real dependency", () => {
+    // ⛔ SYNTHETIC POPULATION, because the real one is empty by design. The
+    // corpus cannot calibrate an exemption for a file class that does not exist
+    // yet, and declaring the mechanism "correct but uncalibrated" is the weaker
+    // option — this seat ruled that last round and mints the population instead.
+    const emitted = "plugins/spellbook/skills/zzz/emitted";
+    const probe = makeIsBuiltin(BUILTIN_EXACT, [emitted]);
+
+    // 1. A stripped builtin IS exempt inside an emitted root — the bug P2 fixes.
+    expect(probe("path", `${emitted}/cli.ts`)).toBe(true);
+    expect(probe("child_process", `${emitted}/cli.ts`)).toBe(true);
+
+    // 2. ⛔ THE HAZARD daedalus NAMED. The SAME specifier in a hand-authored
+    // file is NOT exempt. If this ever returns true, the widening has weakened
+    // the ward everywhere and the whole scoping was theatre.
+    expect(probe("path", "plugins/spellbook/skills/zzz/scripts/cli.ts")).toBe(false);
+    expect(probe("child_process", "plugins/spellbook/skills/zzz/scripts/cli.ts")).toBe(false);
+
+    // 3. A REAL dependency is still caught INSIDE an emitted root. This is the
+    // clause that keeps the exemption a builtin-set exemption rather than a
+    // file-class blindfold — a bundled artifact still reaching for `sharp` is
+    // the failure this ward exists for, at its most dangerous.
+    expect(probe("sharp", `${emitted}/cli.ts`)).toBe(false);
+    expect(probe("react", `${emitted}/cli.ts`)).toBe(false);
+
+    // 4. The prefix match is on a PATH SEGMENT, not a string prefix — a sibling
+    // directory whose name merely starts with the root must not inherit it.
+    expect(probe("path", `${emitted}-notmine/cli.ts`)).toBe(false);
   });
 
   test("the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it", () => {
@@ -487,7 +644,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // governs on the same terms. Re-derived here, never quoted: the number the
     // ruling carries and the number this cell asserts came from two different
     // frames, and this is the wider one.
-    const withoutBun = violationsUnder(isBuiltinUnder([]));
+    const withoutBun = violationsUnder(makeIsBuiltin([], EMITTED_ROOTS));
     expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([
       "plugins/spellbook/skills/astrolabe/scripts/server.ts",
       "plugins/spellbook/skills/bounty/scripts/server.ts",
@@ -587,6 +744,121 @@ describe("R6 ward 2 — the kit is a leaf (the one-way street)", () => {
     // importing each other is the point.
     expect(kitEscapes(KIT_ABS, sources ?? [], ["static", "type"])).toEqual([]);
     expect(kitEscapes(KIT_ABS, sources ?? [], ["dynamic"])).toEqual([]);
+  });
+});
+
+// ── WARD 3 ──────────────────────────────────────────────────────────────────
+//
+// ⛔ NO SPELL'S BUILD INPUT MAY REACH ANOTHER SPELL.
+//
+// **Scheduled into Sprint 02, not 03, and daedalus's argument for the move is
+// the right one:** Contract 17 records that a cross-spell reach inside `src/` is
+// "absorbed into the bundle" — and **that absorption is STRONGER for a backend
+// and therefore worse.** A bundled backend inlines the other spell's code
+// completely: nothing left for 1a (no relative path survives), nothing for 1b
+// (no bare specifier survives), nothing for 2. What ships is a spell carrying a
+// silent copy of another spell — a SHIPPING ARTIFACT, not a dev-tree mistake.
+// And backends are where shared logic actually wants to live, so this is the
+// direction the pressure comes from.
+//
+// ⚠ WIDER THAN THE STATEMENT I WAS HANDED, DELIBERATELY, AND HERE IS THE
+// MEASUREMENT. The card says "no file under `src/<spell>/` may relatively import
+// a different `src/<other-spell>/`". That is green today — and it has a live
+// bypass, because a spell can reach another spell **through `plugins/`** instead:
+//
+//     src/imago/surface/… -> ../../../plugins/spellbook/skills/imago/shared/types
+//
+// **36 instances of that route exist today** (astrolabe 4, imago 32), every one
+// of them SAME-spell and correct under R1 — which is exactly what makes it
+// dangerous: the route is proven, ergonomic, and one directory-name away from
+// being cross-spell, and the narrow ward would not see it because the specifier
+// resolves into `plugins/`, not `src/`.
+//
+// So the predicate is stated by **OWNER**, not by path prefix: a file owned by
+// spell A may not relatively import anything owned by spell B, wherever B's file
+// physically lives. MEASURED BEFORE ADOPTING IT: narrow 0, wide 0, over 170
+// tracked files — the wider ward costs nothing today.
+//
+// ⛔ OWNERSHIP IS DERIVED, NEVER A LIST. A name is a spell iff
+// `plugins/spellbook/skills/<name>/` exists. That is what correctly classifies
+// `src/build.ts` — circe's shared build delegator, which three spells import as
+// `../build` — as NOT a spell, so those three imports are not violations. A
+// hand-written spell list would have had to remember that, and a first draft of
+// this ward (written as a throwaway script) flagged all three.
+
+/** A directory name is a SPELL iff it has a deployed skill folder. Derived. */
+function spellNames(): Set<string> {
+  const names = new Set<string>();
+  for (const f of execFileSync("git", ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills"], {
+    encoding: "utf8",
+  })
+    .trim()
+    .split("\n")) {
+    const name = f.split("/")[3];
+    if (name) names.add(name);
+  }
+  return names;
+}
+
+/** Which spell owns this repo-relative path — `src/<spell>/…` or the deployed
+ *  `plugins/spellbook/skills/<spell>/…`. `null` for anything spell-agnostic
+ *  (`src/build.ts`, a future `src/kit/`, repo tooling). */
+function ownerSpell(path: string, spells: Set<string>): string | null {
+  const seg = path.split("/");
+  if (seg[0] === "src" && seg[1] && spells.has(seg[1])) return seg[1];
+  if (path.startsWith("plugins/spellbook/skills/") && seg[3] && spells.has(seg[3])) return seg[3];
+  return null;
+}
+
+describe("R6 ward 3 — a spell's build input may not reach another spell", () => {
+  const spells = spellNames();
+  const files = trackedSources("src").filter((f) => ownerSpell(f, spells) !== null);
+
+  test("ZERO-GUARD — the population was walked, and cross-spell is structurally POSSIBLE", () => {
+    // ⛔ Ward 2's discipline, and this ward needs BOTH halves of it. A ward over
+    // `src/` could be green because nothing was walked, OR because only one
+    // spell lives there — and with one spell, "cross-spell" cannot be expressed
+    // at all, so a pass is a statement about the tree's shape, not about
+    // anyone's discipline. Both must be said out loud, not inferred from green.
+    const owners = [...new Set(files.map((f) => ownerSpell(f, spells)))].sort();
+    console.warn(
+      `\n  R6 WARD 3 — ${files.length} build-input files across ${owners.length} spell(s): ${owners.join(", ")}\n`,
+    );
+    expect(spells.size).toBeGreaterThan(0);
+    // Every spell WITH build input under src/ contributed files — membership,
+    // not a magnitude, because this project's whole job is moving files INTO
+    // `src/` and any floor here would decay on that schedule.
+    for (const owner of owners)
+      expect(files.some((f) => ownerSpell(f, spells) === owner)).toBe(true);
+    // The one that makes a green meaningful rather than structural.
+    expect(owners.length).toBeGreaterThan(1);
+  });
+
+  test("no relative import crosses from one spell to another", () => {
+    const violations: string[] = [];
+    for (const file of files) {
+      const owner = ownerSpell(file, spells);
+      for (const ref of scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8"))) {
+        if (!isRelative(ref.spec)) continue;
+        const target = ownerSpell(resolveFrom(file, ref.spec), spells);
+        if (target === null || target === owner) continue;
+        violations.push(`${file}:${ref.line} -> ${ref.spec} (${owner} reaches ${target})`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test("the OWNER rule classifies the spell-agnostic files correctly — `src/build.ts` is not a spell", () => {
+    // ⛔ A SYNTHETIC-ADJACENT CELL over the real discriminator, because getting
+    // this wrong is red-on-arrival against three correct imports and the first
+    // draft did exactly that.
+    expect(ownerSpell("src/build.ts", spells)).toBeNull();
+    expect(ownerSpell("src/kit/theme/tokens.ts", spells)).toBeNull();
+    expect(ownerSpell("src/imago/surface/App.tsx", spells)).toBe("imago");
+    expect(ownerSpell("plugins/spellbook/skills/magpie/shared/types.ts", spells)).toBe("magpie");
+    // And the reach the WIDE predicate exists for: same-spell through plugins/
+    // is legal, cross-spell through plugins/ is not.
+    expect(ownerSpell("plugins/spellbook/skills/imago/shared/types", spells)).toBe("imago");
   });
 });
 
@@ -822,7 +1094,12 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // filter keeps it. If someone re-introduces a kind filter in 1b, this
     // reddens and names the reason.
     const comma = firstRef(`let d: Record<string, import("sharp").S>;`);
-    expect(isRelative(comma.spec) || BUILTIN(comma.spec)).toBe(false);
+    // ⛔ The file argument is REQUIRED and it is not decoration: `BUILTIN` is
+    // now file-aware (the emitted-root exemption), and the answer differs by
+    // file class. A hand-authored path is the right one to assert here.
+    expect(
+      isRelative(comma.spec) || BUILTIN(comma.spec, "plugins/spellbook/skills/z/scripts/c.ts"),
+    ).toBe(false);
 
     const query = firstRef(`export type T = import("../../outside").X;`);
     const stmt = firstRef(`import type { X } from "../../outside";`);

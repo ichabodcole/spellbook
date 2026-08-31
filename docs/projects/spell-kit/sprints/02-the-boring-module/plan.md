@@ -55,11 +55,21 @@ question that has already been half-answered, without the evidence.
 > in the backend's dev loop**, which is what the pipeline proposal's §5
 > dependency-smell guardrail exists to resist.
 >
-> Make it **knowing what Sprint 01 learned**. Two facts already bear on it:
-> imago has **no `acc.config.json`** (RB's conformance prerequisite), and
-> imago's `sharp` dependency **trips Contract 3's native-addon repeal trigger by
-> itself** — an argument for option 3 that is independent of anything about
-> sharing.
+> Make it **knowing what Sprint 01 learned**. One fact bears on it: imago has
+> **no `acc.config.json`** (RB's conformance prerequisite).
+>
+> ⛔ **CORRECTED 2026-08-31 — the second fact is dead, and it was the
+> load-bearing one.** This passage said imago's `sharp` dependency _"trips
+> Contract 3's native-addon repeal trigger by itself — an argument for option 3
+> that is independent of anything about sharing."_ **`sharp` is gone.**
+> daedalus's `Bun.Image` swap removed it from every shipped path in Sprint 01;
+> only a test fixture and one comment mention it (verified twice). **Contract
+> 3's original native-addon trigger now has ZERO live instances**, so option 3
+> has **no** argument independent of sharing — the whole case rests on the
+> six-copy `printJson`, which is code organisation and does not fire that
+> trigger at all. Contract 3 is therefore **amended**, not repealed; see
+> [its amendment](../../../../../.anthill/dev/seams.md) (Contract 3,
+> 2026-08-31).
 
 ## Phases
 

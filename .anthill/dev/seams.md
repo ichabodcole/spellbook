@@ -111,6 +111,88 @@ repeal phrasings, drifts the canon. Merge into one.
 **Proof:** every daemon-backed spell runs `bun run server.ts` directly today (astrolabe
 `cli.ts` spawns `process.execPath "run" SERVER_SCRIPT`). Canon: thoth's `house-style.md` amendment.
 
+### Contract 3 — amendment, 2026-08-31: the trigger gains a second clause, and a STAGED repeal for astrolabe + magpie
+
+_Owner: thoth (canon wording) with daedalus (backends). **PERMISSION half only. EVIDENCE: PENDING — see the box below.**_
+
+> ### ⛔ THIS IS AN AMENDMENT TO THE TRIGGER, NOT AN INVOCATION OF IT
+>
+> **Contract 3's repeal criterion never fired, and Option 3 is not repealing under it.** The
+> original trigger is a **conjunction**:
+>
+> > _Repeal when_ a backend dependency genuinely **requires a build** (native addon, codegen'd
+> > client, no runnable source dist) **AND** the cost of hand-working around source-only exceeds
+> > owning a backend build
+>
+> **The first conjunct is simply absent.** No dependency requires a build. The driver is a
+> `printJson` copied six times — **code organisation**, not a dependency that cannot run from
+> source. A shared local `.ts` module is Bun-native `.ts`, which is precisely what this contract
+> says ships. The AND fails, so the trigger does not fire.
+>
+> _Reached independently from two directions and recorded because the agreement is the evidence:
+> **thoth** by reading the conjunction during the Slice 2 ratify round, **daedalus** by measuring
+> the actual driver — neither having seen the other's work._
+>
+> ⚠ **And the trigger currently has ZERO live instances.** Sprint 02's plan cited imago's `sharp`
+> as tripping the native-addon clause "by itself". **`sharp` is gone** — daedalus's `Bun.Image`
+> swap removed it from every shipped path in Sprint 01; only a test fixture and one comment
+> mention it. Verified by thoth and re-verified by prospero. **Opening a repeal under a criterion
+> with no live instances is how a contract gets repealed for a reason it never contemplated**, and
+> naming the act correctly is the whole point of this box.
+
+**So the trigger gains a second, independent clause** — stated separately rather than folded into
+the first, because they justify a build for different reasons and must be able to fire alone:
+
+> **Repeal ALSO when** a spell's backend must share an implementation with another spell's backend,
+> **and** every non-build emission option has been ruled against on its own merits. _(Slice 2's
+> ruling: Option 1 breaks the skill-directory unit the Agent Skills standard requires; Option 2 is
+> N copies plus a mandatory staleness ward.)_
+
+### SCOPE and EVIDENCE are two axes, and the original wording conflated them
+
+The old sentence — _"repeal narrowly for that spell first, promote to a default only on a second
+independent signal"_ — reads as a **cardinality** rule and is doing **scope** work. That misreading
+was live: Slice 2 needs **two spells simultaneously**, because one spell cannot demonstrate sharing,
+and the criterion appeared to forbid it.
+
+| axis | rule |
+| --- | --- |
+| **SCOPE** | **"Narrow" means ENUMERATED, not singular.** A repeal naming N spells is narrow; a repeal naming *all* spells is a default. Cardinality is not the axis — `for that spell` was an example of narrowness, never a limit. **Two spells at once is a narrow repeal and always was.** |
+| **EVIDENCE** | **A signal is an INDEPENDENTLY MOTIVATED case.** Spells conscripted into one proof are **one signal with N participants** — neither is evidence about the other, because one decision put both there. |
+
+⛔ **And the clause that closes the live hazard: A REPEAL'S OWN PROOF CAN NEVER BE ITS OWN PROMOTION
+EVIDENCE.** A successful Slice 2 will *look* like two signals — two spells, two working backends —
+and counting it as such would promote a backend build to the house default on **n=1**. Promotion
+requires a signal from outside the permission this amendment grants.
+
+### The permission, and it is deliberately legible as INCOMPLETE
+
+**PERMITTED — narrow, enumerated:** `astrolabe` and `magpie` may build their backends for Slice 2.
+_(The pair is forced: Option 3 requires acc conformance, and imago has no `acc.config.json`.)_
+
+**EVIDENCE: ⏳ PENDING.** Nothing has been built yet. This half lands when Slice 2 produces it.
+
+> **Why the pending state is written down rather than left as an absence** — the precedent is
+> **ward 2's zero-guard**, which is green because `src/kit/` does not exist and **prints that it
+> examined nothing on every run** rather than passing quietly. A permission whose evidence has not
+> arrived is the same object: correct, incomplete, and dangerous precisely because it reads as
+> settled. This seat has twice shipped a check that was trusted later because its vacuity was
+> silent at the time. **A permission that lands ahead of its evidence must say so in the place
+> someone would cite it.**
+
+**Why permission lands FIRST at all** (the C6 ruling): a contract landed at finalize put five seat
+docs in violation of _point, never restate_ — they held a truth with no home to point at. That is
+not a docs-hygiene cost; **it is the coordination artifact arriving after the coordination.**
+Splitting a repeal into permission → evidence → promotion is what makes "before" possible: the
+scope is available to point at from day one, and the proof fills in behind it.
+
+**Repeal this amendment when** the shared implementation is retired, or an emission option that
+needs no build is adopted after all. **Promotion to a house default requires a signal independent of
+astrolabe and magpie** — and per the clause above, Slice 2's own success is not one.
+
+**Proof:** ⏳ PENDING (Slice 2). The *reasoning* is proven: the conjunction reading (thoth) and the
+driver measurement (daedalus), independently; `sharp`'s absence, verified twice.
+
 ## Contract 4 — Surface source lives outside the plugin subtree (source-free by construction)
 
 **Owner:** prospero (repo layout / release) · **Pointed at from:** circe, daedalus, cassandra, thoth
@@ -130,6 +212,112 @@ and no release-branch; the wrong files simply aren't in the subtree.
 consumer cache — anything tracked under it ships. Keeping surface source *inside* the spell folder
 cannot be filtered out. Relocation is the mechanism. Corollary: `dist/` must be un-ignored +
 committed, or release mode has nothing to serve.
+
+### Contract 4 — amendment, 2026-08-31: what a BUILT BACKEND does to "source-free", and where it goes
+
+_Ruled by Cole (the identity half) and by the Slice 2 ratify round (the location half). Owner: prospero._
+
+**"Source-free by construction" now means: no source FILES — nothing a consumer edits, nothing the
+bundler reads, nothing that requires an install.** It does **not** mean "no source bytes".
+
+**Why the distinction was forced.** The emission ruling is **build the backend** (Cole, 2026-08-31),
+and RB's argument for it rests on `--sourcemap=inline` keeping the artifact self-describing. Measured:
+an inline map embeds the **complete original TypeScript** — astrolabe's CLI goes **13,733 → 60,074
+bytes (4.4×)**, and the source is fully recoverable. Read literally, "source-free" would forbid the
+mechanism that makes a built backend acceptable at all.
+
+**Cole ruled: keep the maps, redefine the phrase.** The redefinition is principled rather than a
+fudge, and the test is the contract's own purpose — the sentence exists because the marketplace
+copies the entire tracked subtree, so *the wrong files simply are not in it*. Embedded debug bytes
+inside a generated artifact are not a file: a consumer cannot edit them, no resolver reads them, and
+nothing about them needs `install`. **Contract 4's own proof passes unchanged** — clone the branch,
+inspect the subtree, `surface/` and `bunfig.toml` absent.
+
+> ⚠ **What this amendment does NOT license.** It is not a general permission to ship source under a
+> different name. The exemption is scoped to **debug metadata inside an artifact the build emits**.
+> A `.ts` file placed in the subtree is still source, and still forbidden.
+
+**And where a built backend goes — ruled by measurement, not by taste:**
+
+```
+src/<spell>/backend/*.ts                          the source (Contract 4's "additively", now used)
+plugins/spellbook/skills/<spell>/dist/cli.js      the emitted bundle
+plugins/spellbook/skills/<spell>/scripts/cli.ts   a ~3-line launcher that imports it
+```
+
+**The deciding variable is LOCATION, not the emitted filename** — the ratify round falsified the
+filename framing outright. Every instrument in this repo already defines "generated" as **"under
+`dist/`"**: biome excludes `!!**/dist`, `gate-blind-set` uses `GENERATED = /(^|\/)dist\//`. Emitting
+anywhere else means teaching three instruments a new address; emitting to `dist/` costs **zero
+instrument changes**.
+
+**Both alternatives were built and measured, and both break something:**
+
+- **Emit `scripts/cli.ts`** (bundle keeping the source name) → `bun run check` **exits 1 with 5
+  errors**: bundling erases type annotations (`let x: string` → `var x;`, `noImplicitAnyLet` ×3) and
+  Bun's bundler **strips the `node:` prefix** (`useNodejsImportProtocol` ×6). Worse, **lint-staged
+  rewrites the generated file on every commit** — 60,074 → 60,068 bytes — so committed ≠ emitted,
+  which breaks **Contract 18** on its first day.
+- **Emit `scripts/cli.js`** → green, and **blind**: `walkSpellSources` drops 63 → 61 files and the
+  flag-invariant, terminator-invariant and strict-parse-invariant wards stop seeing both CLIs
+  entirely. **A shrunk population is not a red cell** — the same run shows the greenness and the
+  blindness.
+
+> ### ⛔ THIS LOCATION RULING BLINDS WARD 1b UNLESS ITS POPULATION MOVES WITH IT — corrected 2026-08-31
+>
+> **`dist/cli.js` fails BOTH of ward 1b's filters** — the `.ts`/`.tsx` extension filter and the
+> `scripts|shared` path filter (`import-boundary-wards.test.ts:477`). So on the day a backend ships
+> built, **the code that actually executes at a deps-free destination leaves 1b's population
+> entirely, and the ward goes green because it stopped looking** — while its title still claims to
+> govern the shipped execution path.
+>
+> **This is the failure this very amendment names two paragraphs above** — _a shrunk population is
+> not a red cell_ — reproduced by the person who wrote the sentence, in the ruling it sits inside.
+> Caught by thoth, who was handed "widen 1b's predicate" and answered that **the predicate was the
+> safe half**: widening only the predicate would have shipped exactly this, and it would have looked
+> like diligence.
+>
+> **So the location ruling is INSEPARABLE from the ward change, and neither lands alone:**
+>
+> - 1b's population extends into **declared emitted roots**, which are **declared and currently
+>   EMPTY** — deliberately not hardcoded to `dist/`, because a guard's denominator must not be a
+>   value the project is about to change. **Turning them on is part of landing this location, not a
+>   follow-up.**
+> - The exemption there is scoped to **`builtinModules`, derived from the runtime — never to the file
+>   class.** Exempting emitted files wholesale would blind the ward exactly where it matters most: a
+>   bundled artifact still reaching for a real `sharp` is **the** failure 1b exists for.
+
+**The launcher is what keeps the wards honest**: a real `.ts` stays at `scripts/cli.ts` where the
+three behavioural wards look, all 27 prose invocation sites (astrolabe 23, magpie 4) stay true, and
+both grimoire tests keep their launch path.
+
+> **A bundle emitted as `.ts` is not merely mislabelled — it is FALSE TYPESCRIPT.** It is by
+> construction worse TypeScript than its own source, and the house linter says so in five places. A
+> `.ts` extension is a claim to *tools* that the file is type-checkable source. That is a category
+> error with a measurement under it, not a matter of taste — the file runs fine under Bun.
+
+> ### ⚠ What "build the backend" can and cannot mean TODAY — measured 2026-08-31
+>
+> **A spell's `cli.ts` bundles cleanly.** Verified for astrolabe and magpie.
+>
+> **A spell's `server.ts` bundles too — but drags the entire SURFACE graph into the backend
+> artifact.** `bun build server.ts --outdir …` emits `server.js` **plus** `index-<hash>.js` and
+> `index-<hash>.css`, because the dev-only HTML import pulls the surface build graph in. Bundling a
+> server without externalising that import would put the surface inside the backend bundle, which
+> defeats Contract 1's whole release/dev split.
+>
+> **So Slice 2 is scoped to CLIs, and that is a bound on the Contract 3 amendment, not a delay.**
+> `printJson` is a CLI concern; the proof needs no server bundled. **Servers keep shipping as
+> source until someone rules on externalising the dev-only import.**
+>
+> _Two wrong mechanisms were reported before this measurement, and both are recorded because the
+> conclusion happened to be right twice: thoth reported "the dev-only surface import cannot
+> resolve" (it resolves), and prospero's first probe reported a hard failure that was
+> `--outfile` being unable to hold multiple chunks (an invocation error). **Servers bundle. The
+> objection is what comes with them.**_
+
+**Proof:** the Slice 2 ratify round (daedalus), re-verified independently by prospero — `node:`
+stripping, annotation erasure, ward 1b's predicate, and both instruments' existing `dist/` exclusions.
 
 **Identity reframe:** "self-contained / zip one folder" now describes the **deployed** spell folder
 (dist + backend = everything needed to run), not the dev layout — authoring is split across two
@@ -237,7 +425,7 @@ Two operational corollaries:
 - **SUPERSESSION 2 — activity TTL clause (ACT1, supersedes Claim C's "non-idle arms a ~60s TTL emitting synthetic idle"):** the TTL is state-aware now — `received → (MIND_MAPPER_ACTIVITY_TTL_MS, ~60s) → agent.activity {state:"stalled"}` (daemon-synthesized, PERSISTS — no re-arm, no decay to idle/blank — until an agent write or an explicit set resolves it); `thinking → (TTL) → idle` unchanged. **`stalled` is daemon-synthesized vocabulary ONLY** — `POST /activity` rejects it (epoch.changed asymmetry). Surface rule (circe): stalled gets a STATIC attention-tinted branch, never the thinking pulse (false-liveness), and the client THINKING_TTL backstop must not clear it to blank.
 - **Automated activity (ACT1):** the daemon auto-flips `agent.activity {state:"received"}` on a `role:"user"` /send while `entry.agents >= 1` (no tail → no flip; the presence dot already says nobody's home), emitted AFTER `message.posted` — two seqs, ordered, both through the normal bus path (the ephemeral-cursor clause holds). **Resolution:** agent-authored writes resolve any AUTO state (auto-received / stalled) to idle — `send role:"agent"` (which ALSO resolves explicit `thinking`: a reply is the turn's terminal act; re-set thinking explicitly for send-then-more-work), propose with author `"agent"` (user-sketched proposals don't), mark with author `"agent"`, and ratify (no authorship on that wire — resolves unconditionally). Explicit non-idle states otherwise stand until explicit idle or TTL. `activityState`/`activitySource` live in-memory on ProjectEntry (server.ts) — a daemon restart honestly clears to no-signal. The agent no longer needs to post `activity received` manually; `thinking`/`idle` remain its own.
 
-- ⛔ **Build stamp (B1) — SUPERSEDED 2026-08-31, WHOLLY. Removed, not amended** (`fae8830`,
+- ⛔ **SUPERSESSION 4 — Build stamp (B1), SUPERSEDED 2026-08-31 WHOLLY. Removed, not amended** (`fae8830`,
   Cole's ruling). The stamp, the footer it fed, the `STALE DIST` warning, the `/state`
   `buildInfo` spread, the `MIND_MAPPER_SRC_DIR` knob and `dist/build.json` for all three
   spells are gone. **Read the paragraph below as a record of what was ratified, not as a
@@ -252,7 +440,7 @@ Two operational corollaries:
 - **Ground-grammar footnote (G1, restated once):** a BARE id in `message.ground[]` is a node ref OR a pending-proposal ref (no `proposal:` prefix exists); `doc:<id>` is a doc ref; unknown prefixes still drop silently.
 - **CLI `--ground` repeat semantics (gate rework):** `send --ground` is parseArgs-`multiple` — repeated flags ACCUMULATE and every value still splits on commas (`--ground a,b --ground doc:x` → `["a","b","doc:x"]`); blank fragments drop, and an all-blank resolve posts NO ground (never `[""]`). The falsified prior behavior (single-value last-wins: repeats silently dropped refs at exit 0 — cassandra's gate) is the reason this is a stated seam: any spell CLI copying send's flag pattern must copy the `multiple` too.
 
-**Proof (accreting):** db.test.ts kind_author pinning test (fresh-equals-migrated), docs.test.ts setDocKind round-trips, server.test.ts K1/A1 wire tests, actions.test.ts lifecycle suite, presence.test.ts ACT1 rig (received→stalled persistence, ordered auto-flip seqs, terminal-act resolve), release-serve.test.ts build.json fixture + stale-dist rig, zones.test.ts/ratify.test.ts zoned-409 assertions.
+**Proof (accreting):** db.test.ts kind_author pinning test (fresh-equals-migrated), docs.test.ts setDocKind round-trips, server.test.ts K1/A1 wire tests, actions.test.ts lifecycle suite, presence.test.ts ACT1 rig (received→stalled persistence, ordered auto-flip seqs, terminal-act resolve), ~~release-serve.test.ts build.json fixture + stale-dist rig~~ **(DELETED — see SUPERSESSION 4; the fixture and the rig no longer exist, and all three release-serve.test.ts files carry comments recording their removal)**, zones.test.ts/ratify.test.ts zoned-409 assertions.
 
 ### Contract 9 — Round 5 amendments (additive-optional; ratified per plan-round5 rulings, built 2026-07-21)
 
