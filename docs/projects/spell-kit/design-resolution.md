@@ -307,6 +307,31 @@ As stated it is red on arrival with **95** violations, against correct code —
 the exact failure this ruling already anticipated on the dynamic axis and then
 reproduced on the static one.
 
+### Ruled at 1b, 2026-08-31 — the straddler is no longer a straddler
+
+R6 left `tests/imageOptimize.test.ts` as _"an implementer's call"_ — split it,
+or pick a side and import across — and listed it among the 8 tests moving to
+`src/imago/surface/`. **1b answered it mechanically and no judgement is
+needed.**
+
+At `3e00e73` the file imports:
+
+```
+import { optimizeImageBuffer } from "../scripts/imageOptimize.server";
+import { OPTIMIZE }            from "../shared/imageOptimize";
+```
+
+**Neither is in `surface/` any more.** Both live in the shipped tree, so the
+test has no surface dependency left to follow. **Ruled: it STAYS BACKEND, in
+`tests/`, and does not split.** R6's listing of it among the 8 predates the
+corrected three-file sort and is superseded here.
+
+> **The general shape, worth keeping:** an "implementer's call" that depends on
+> where files end up **stops being a judgement once they are there.** Deferring
+> it was right; deciding it early would have been guessing at a fact.
+
+---
+
 ### Ruled during Phase 0, 2026-08-31 — two population questions R6 did not answer
 
 thoth hit both while authoring the wards and correctly refused to settle them

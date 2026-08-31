@@ -13,6 +13,8 @@ dist
 !plugins/spellbook/skills/mind-mapper/dist/**
 !plugins/spellbook/skills/astrolabe/dist
 !plugins/spellbook/skills/astrolabe/dist/**
+!plugins/spellbook/skills/imago/dist
+!plugins/spellbook/skills/imago/dist/**
 
 # code coverage
 coverage

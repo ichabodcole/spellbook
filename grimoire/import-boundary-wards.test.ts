@@ -215,29 +215,42 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
 
-// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. TWO entries, same site in two spells.
-// Read the site before you add a third — the question is never "is it dynamic?"
-// but "does it run at the DESTINATION?", and static-vs-dynamic is only the
-// mechanical stand-in for that.
+// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. THREE entries, the same site in three
+// spells. Read the site before you add a fourth — the question is never "is it
+// dynamic?" but "does it run at the DESTINATION?", and static-vs-dynamic is
+// only the mechanical stand-in for that.
 //
-// Both entries are one spell's server.ts reaching `src/` for its DEV-mode
+// All three are one spell's server.ts reaching `src/` for its DEV-mode
 // HTMLBundle. The reasoning that admits them is identical and it is about the
 // DESTINATION, not the syntax: release mode is chosen by `dist/` presence, the
 // published artifact always has a `dist/`, so the line never executes where it
-// cannot resolve. Verified for astrolabe 2026-08-31 by booting a copied tree
-// with a dist/ and NO surface/ — see astrolabe/scripts/release-serve.test.ts,
-// whose override cell shows the other direction too: forced into dev mode that
-// same tree dies at exactly this import.
+// cannot resolve. Verified INDEPENDENTLY for astrolabe and for imago
+// (2026-08-31), each by booting a copied tree with a dist/ and NO surface/ —
+// see their release-serve gates (astrolabe/scripts/, imago/tests/), whose
+// override cells show the other direction too: forced into dev mode, those same
+// trees die at exactly this import. Neither was admitted on mind-mapper's
+// say-so.
 //
-// ⚠ The `line` is part of the pinned value, so an unrelated edit ABOVE one of
-// these sites fails this cell. That is noise, not signal — re-pin the number
-// and move on; the cell earns its keep on the file/spec/resolved triple.
+// ⚠ THE `line` FIELD IS PART OF THE PINNED VALUE AND IT HAS NOW COST THREE
+// FALSE REDS IN ONE SPRINT — astrolabe :75→:70, imago :1647→:1723, and the
+// re-export fixture below twice — every one of them an edit ABOVE the site with
+// no opinion about the escape. The cell earns its keep on the
+// file/spec/resolved triple; `line` is a reader's pointer riding inside an
+// assertion, which is why it fires. Re-pin it and move on. A structural fix
+// (compare the triple, report the line) is proposed and NOT applied here — it
+// changes what this ward asserts, and that is the canon seat's call.
 const PINNED_DYNAMIC_ESCAPES: Escape[] = [
   {
     file: "plugins/spellbook/skills/astrolabe/scripts/server.ts",
     spec: "../../../../../src/astrolabe/surface/index.html",
     line: 525,
     resolved: "src/astrolabe/surface/index.html",
+  },
+  {
+    file: "plugins/spellbook/skills/imago/scripts/server.ts",
+    spec: "../../../../../src/imago/surface/index.html",
+    line: 1349,
+    resolved: "src/imago/surface/index.html",
   },
   {
     file: "plugins/spellbook/skills/mind-mapper/scripts/server.ts",
@@ -251,10 +264,21 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
   const files = trackedSources(PLUGIN_ROOT);
 
   test("the sweep actually ran (zero-guard: a dead walk and a clean walk look identical)", () => {
-    // 206 at the measurement R6 was ruled on. Asserted as a floor, not a pin —
-    // a pin here would fail on every new source file for no invariant reason,
-    // and the defect this guards is a sweep that enumerated NOTHING.
-    expect(files.length).toBeGreaterThan(150);
+    // ⛔ RECALIBRATED 2026-08-31 (1c), 150 -> 80. This is NOT a re-pin: the
+    // floor was calibrated at 206 against a tree where every spell's surface
+    // still lived under plugins/spellbook/, and THIS PROJECT EXISTS TO MOVE
+    // THEM OUT. astrolabe and imago relocating took the count 206 -> 149, which
+    // tripped a floor of 150 for a reason that has nothing to do with a dead
+    // walk. Measured at the recalibration: 149 tracked .ts/.tsx, of which 48
+    // are the surface trees of the two spells NOT yet relocated (glamour 23,
+    // magpie 25) — so full relocation lands this population at 101 and any
+    // floor above that will trip again, on schedule, for the same non-reason.
+    // 80 keeps a real margin under 101 while still convicting the defect this
+    // actually guards, which is a walk that enumerated NOTHING.
+    // Derivation, re-runnable:
+    //   git ls-files plugins/spellbook | grep -cE '\.(ts|tsx)$'          -> 149
+    //   git ls-files plugins/spellbook | grep -E '\.(ts|tsx)$' | grep -c /surface/ -> 48
+    expect(files.length).toBeGreaterThan(80);
     const specifiers = files.flatMap((f) =>
       scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")),
     );
@@ -628,8 +652,8 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     }
     expect(found.sort()).toEqual([
       "astrolabe/scripts/server.ts:70",
-      "imago/scripts/server.ts:1647",
-      "imago/scripts/server.ts:1648",
+      "imago/scripts/server.ts:1722",
+      "imago/scripts/server.ts:1723",
       "magpie/scripts/backend.ts:20",
       "magpie/scripts/server.ts:874",
       "magpie/scripts/server.ts:875",

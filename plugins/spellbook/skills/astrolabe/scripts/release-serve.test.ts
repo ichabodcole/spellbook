@@ -37,7 +37,9 @@ const SOURCE_FILES = readdirSync(SCRIPT_DIR).filter(
 );
 
 // Read the daemon's one-line stdout handshake, which carries the resolved mode.
-async function readReadyLine(proc: Bun.Subprocess<"ignore", "pipe", unknown>): Promise<string> {
+async function readReadyLine(
+  proc: Bun.Subprocess<"ignore", "pipe", "inherit" | "pipe">,
+): Promise<string> {
   return await new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("daemon did not print ready line")), 10_000);
     (async () => {
@@ -115,7 +117,7 @@ test("the ready EVENT carries the resolved mode, not just the stdout handshake",
   const reader = (res.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0];
+  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
   const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
   expect(ready.type).toBe("ready");
   expect(ready.mode).toBe("release");

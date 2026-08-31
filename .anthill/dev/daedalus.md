@@ -980,3 +980,30 @@ Quoting only the 26 would have understated the tree's state by more than half.
 **A build that never touches a spell is blind for a stronger reason than erasure, and the stronger reason is the one to state.**
 `bun run build` was said to exit 0 on imago because type imports are erased before resolution; in fact `src/build.ts:buildableSpells()` derives its list from `src/<spell>/surface/index.html`, and imago is not in `src/` until 1c — so the build does not read imago AT ALL.
 The prediction was right and its mechanism was wrong, which is the failure mode that survives a green run.
+
+## spell-kit sprint 01 · 1c — imago's Contract 1/5 port, and a green cell I had to kill (2026-08-31)
+
+**MUTATION CAUGHT ME AGAIN, IN A CELL I WROTE SPECIFICALLY AS THE CAREFUL, SPELL-SPECIFIC ONE.**
+I wrote "serveDist does NOT widen /assets/" — imago's own earned cell, the one I was proudest of — and the two-part mutation that genuinely widens it (hoist serveDist above /assets/ AND drop the nesting guard) left the cell GREEN, 8 pass 0 fail.
+The cell asserted `/assets/index.html` 404s, which is true under EVERY variant of serveDist, because serveDist keys on the whole path and `/assets/index.html` never maps to `dist/index.html`: I had asserted a property of the URL space and called it a property of the route order.
+The same audit killed my "nested paths 404" cell for the same reason — every nested request 404s anyway when nothing resolves there, so the traversal guard could be DELETED and the cell stayed green.
+The fix in both cases was to make the target EXIST: plant `dist/sub/nested.js` and `dist/assets/leak.js` in the rig, and only then does deleting the guard turn them red.
+**Generalises past this file: a "must not be served" cell is vacuous until the thing it forbids would otherwise resolve.** Assert refusals against present targets, never absent ones.
+
+**Copy the precedent's SUBSTANCE, not its location — the roster rule applies to your own prior work.**
+astrolabe's release-serve gate lives in `scripts/` because astrolabe keeps tests there; imago's belongs in `tests/`, and putting it beside astrolabe's would have made `house-style.md`'s enumerate-roster-behaviour-never example false in the same sprint that ruled it must stay true.
+Same class: astrolabe and mind-mapper print a stdout handshake carrying `mode`, and imago prints NOTHING to stdout — its handshake is the discovery file, so `mode` rides that plus the ready event and there is no stdout cell to port.
+A third port is where "copy the template" quietly becomes "assume the template's environment".
+
+**A guard calibrated against a tree that the project exists to reshape will fire on schedule, and re-pinning it is the wrong repair.**
+Ward 1a's zero-guard floor (`files.length > 150`) went red at 149 because relocating astrolabe and imago took the population 206 -> 149 — nothing to do with a dead walk, which is what the guard is for.
+I recalibrated to 80 rather than to 149, deriving the target: 48 of the remaining 149 are glamour's and magpie's surface trees, so full relocation lands at 101 and any floor above that trips again for the same non-reason.
+The distinction worth keeping: a RE-PIN preserves what the cell asserts, a RECALIBRATION changes what it tolerates — say which one you did, and why, in place.
+
+**Three false reds in one sprint from ONE design choice is evidence, and evidence is worth escalating rather than absorbing.**
+The `line` field inside `PINNED_DYNAMIC_ESCAPES`'s compared value cost astrolabe :75->:70, imago :1647->:1723, and the re-export fixture twice — every one an edit ABOVE the site with no opinion about the escape.
+I re-pinned and wrote the case for comparing the file/spec/resolved triple while reporting the line, but did NOT apply it: it changes what the ward asserts, and that is the canon seat's call, not the engine seat's.
+
+**Run tsc over your own earlier work in the same sprint — it is not in the gate, so nothing else will.**
+My astrolabe release-serve gate from 1a had been carrying 2 tsc errors (a `Subprocess` generic and an unchecked `split()[0]`) since it landed at d181c88, green the whole time, because `bun run check && bun test` cannot see them.
+Found them only because 1c's done-when quotes a root typecheck number; fixed both, 452 -> 450.
