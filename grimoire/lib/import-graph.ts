@@ -128,7 +128,10 @@ export type ImportRef = {
  */
 function isTypePosition(src: string, idx: number): boolean {
   let i = idx - 1;
-  while (i >= 0 && /\s/.test(src[i])) i--;
+  // `?? ""` rather than `!`: `i >= 0` already proves the index is in range, so
+  // this is a TYPE obligation, not a runtime one, and an empty string exits the
+  // loop the same way a non-space would.
+  while (i >= 0 && /\s/.test(src[i] ?? "")) i--;
   const prev = i >= 0 ? src[i] : "";
   if (prev === "<" || prev === ":" || prev === "|" || prev === "&") return true;
   // `typeof import("x")` — the standard type-query idiom. A value-position
@@ -191,7 +194,7 @@ export function blankComments(src: string): string {
   };
 
   while (i < n) {
-    const c = src[i];
+    const c = src[i] ?? "";
     const next = src[i + 1];
     const inTemplate = stack[stack.length - 1] === "template";
 
@@ -294,7 +297,7 @@ function isErasedClause(match: string): boolean {
   if (/^\s*(?:import|export)\s+type\b/.test(head)) return true;
   const braces = /\{([^}]*)\}/.exec(head);
   if (!braces) return false;
-  const parts = braces[1]
+  const parts = (braces[1] ?? "")
     .split(",")
     .map((x) => x.trim())
     .filter(Boolean);
@@ -316,7 +319,13 @@ export function scanSpecifiers(source: string): ImportRef[] {
   // cross-check cell downstream compares MULTIPLICITY, so a collapse there
   // would hide exactly the drift it exists to find.
   const seen = new Set<number>();
-  const push = (spec: string, kind: ImportKind, index: number, erased: boolean) => {
+  // `spec` is `string | undefined` because a regex capture group is only
+  // provably present at runtime, not to the type checker. Dropping an
+  // undefined one is correct AND honest: a match without its capture group is
+  // not a specifier, and silently coercing it to "" would put a phantom empty
+  // path into the population every ward downstream trusts.
+  const push = (spec: string | undefined, kind: ImportKind, index: number, erased: boolean) => {
+    if (spec === undefined) return;
     if (seen.has(index)) return;
     seen.add(index);
     refs.push({ spec, kind, line: lineOf(index), erased });

@@ -176,6 +176,42 @@ function resolveFrom(importer: string, spec: string): string {
 type Escape = { file: string; spec: string; line: number; resolved: string };
 
 /**
+ * ⛔ CANON RULING (thoth, 2026-08-31) — A LINE NUMBER IS CONTEXT, NOT ASSERTION.
+ *
+ * **A pinned site's IDENTITY is `(file, spec, resolved)`. The line is REPORTED
+ * and never COMPARED.**
+ *
+ * The evidence, all inside one sprint: `astrolabe:75 -> :70`,
+ * `imago:1647 -> :1723`, and the re-export fixture twice — four false reds, every
+ * one from a cell that had no opinion about the change that moved it. circe hit a
+ * fifth variant from the opposite direction: biome reflowed an import past its
+ * 100-char `lineWidth` and moved a pre-existing error four lines. Insertions
+ * above a site are the single most common edit in a growing file, so a
+ * line-keyed pin has a false-red rate proportional to unrelated activity.
+ *
+ * **And it buys nothing, which is what settles it.** The thing a line COULD tell
+ * you — "this site moved somewhere semantically different" — is not something a
+ * line number can distinguish from "someone added an import above it." It has no
+ * discriminating power for the only question that would justify the cost.
+ *
+ * ⚠ THE ONE THING THE LINE WAS DOING, AND HOW IT IS REPLACED. A line made two
+ * otherwise-identical sites in one file distinguishable.
+ * `exit-site-inventory.test.ts:130` records exactly this problem going the other
+ * way — its `:673` and `:860` are byte-identical, the `(file, text)` key cannot
+ * tell them apart, and a comment is the only thing that does. So dropping the
+ * line REINTRODUCES that collision risk, and it is closed explicitly: every cell
+ * below asserts its identities are UNIQUE before comparing them, so two sites
+ * can never silently collapse into one and hide an addition.
+ */
+type EscapeIdentity = { file: string; spec: string; resolved: string };
+const identityOf = ({ file, spec, resolved }: Escape): EscapeIdentity => ({
+  file,
+  spec,
+  resolved,
+});
+const keyOf = (e: EscapeIdentity): string => `${e.file}\t${e.spec}\t${e.resolved}`;
+
+/**
  * Every relative specifier in `files`, of the given KINDS, resolving outside
  * `boundary`.
  *
@@ -239,23 +275,20 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 // assertion, which is why it fires. Re-pin it and move on. A structural fix
 // (compare the triple, report the line) is proposed and NOT applied here — it
 // changes what this ward asserts, and that is the canon seat's call.
-const PINNED_DYNAMIC_ESCAPES: Escape[] = [
+const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   {
     file: "plugins/spellbook/skills/astrolabe/scripts/server.ts",
     spec: "../../../../../src/astrolabe/surface/index.html",
-    line: 525,
     resolved: "src/astrolabe/surface/index.html",
   },
   {
     file: "plugins/spellbook/skills/imago/scripts/server.ts",
     spec: "../../../../../src/imago/surface/index.html",
-    line: 1349,
     resolved: "src/imago/surface/index.html",
   },
   {
     file: "plugins/spellbook/skills/mind-mapper/scripts/server.ts",
     spec: "../../../../../src/mind-mapper/surface/index.html",
-    line: 552,
     resolved: "src/mind-mapper/surface/index.html",
   },
 ];
@@ -264,25 +297,66 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
   const files = trackedSources(PLUGIN_ROOT);
 
   test("the sweep actually ran (zero-guard: a dead walk and a clean walk look identical)", () => {
-    // ⛔ RECALIBRATED 2026-08-31 (1c), 150 -> 80. This is NOT a re-pin: the
-    // floor was calibrated at 206 against a tree where every spell's surface
-    // still lived under plugins/spellbook/, and THIS PROJECT EXISTS TO MOVE
-    // THEM OUT. astrolabe and imago relocating took the count 206 -> 149, which
-    // tripped a floor of 150 for a reason that has nothing to do with a dead
-    // walk. Measured at the recalibration: 149 tracked .ts/.tsx, of which 48
-    // are the surface trees of the two spells NOT yet relocated (glamour 23,
-    // magpie 25) — so full relocation lands this population at 101 and any
-    // floor above that will trip again, on schedule, for the same non-reason.
-    // 80 keeps a real margin under 101 while still convicting the defect this
-    // actually guards, which is a walk that enumerated NOTHING.
-    // Derivation, re-runnable:
-    //   git ls-files plugins/spellbook | grep -cE '\.(ts|tsx)$'          -> 149
-    //   git ls-files plugins/spellbook | grep -E '\.(ts|tsx)$' | grep -c /surface/ -> 48
-    expect(files.length).toBeGreaterThan(80);
-    const specifiers = files.flatMap((f) =>
-      scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")),
+    // ⛔ THIS GUARD NO LONGER COUNTS ANYTHING, AND THAT IS THE POINT.
+    //
+    // It was a floor on file count, and it had already decayed twice: calibrated
+    // at 206 when every spell's surface still lived under `plugins/spellbook/`,
+    // it tripped at 149 against a floor of 150 after astrolabe and imago
+    // relocated — by ONE, which reads as noise and was structure. Recalibrating
+    // 150 -> 80 bought time and nothing else: full relocation lands this
+    // population near 101, and the sibling floor (specifiers > 500) sits at 670
+    // heading for 541. Both were clocks. THIS PROJECT EXISTS TO SHRINK THIS
+    // POPULATION, so any magnitude asserted over it is measuring the work.
+    //
+    // ⭐ A GUARD'S DENOMINATOR MUST BE SOMETHING THE PROJECT IS NOT CHANGING.
+    // The defect a zero-guard actually catches is a walk that enumerated the
+    // WRONG WORLD — a dead glob, a steered `SPELLBOOK_REPO_ROOT`, a `git` that
+    // returned nothing. A magnitude cannot tell that from shrinking-by-design;
+    // MEMBERSHIP can. `gate-honesty.test.ts` already solved this by asserting
+    // `r.roots` — WHICH WORLD, not how big — and this is that same guard ported
+    // to a population that has no roots field to assert.
+    //
+    // What cannot shrink: Contract 4 relocates `surface/` and NOTHING ELSE, and
+    // Contract 3 keeps every backend shipping as source in the deployed folder.
+    // So every spell on the roster contributes `scripts/*.ts` to this population
+    // for as long as it exists — and a spell that is retired leaves BOTH sides
+    // of the comparison at once, which is why this cannot decay the way a count
+    // does.
+    const spellOf = (f: string) => /skills\/([^/]+)\//.exec(f)?.[1];
+
+    // The roster, DERIVED from the same tree — never a hand-written list, which
+    // would be a second denominator free to drift from the first.
+    const roster = [
+      ...new Set(
+        execFileSync("git", ["-C", REPO_ROOT, "ls-files", "plugins/spellbook/skills"], {
+          encoding: "utf8",
+        })
+          .trim()
+          .split("\n")
+          .filter((f) => /\/scripts\/[^/]+\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+          .map(spellOf)
+          .filter((x): x is string => Boolean(x)),
+      ),
+    ].sort();
+
+    // The only magnitude left, and it has no clock: a roster of zero means git
+    // returned nothing at all.
+    expect(roster.length).toBeGreaterThan(0);
+
+    // Every spell reached the ward's population. A dead walk fails this with the
+    // whole roster named; relocation cannot, because relocation does not move
+    // `scripts/`.
+    const enumerated = new Set(files.map(spellOf));
+    expect(roster.filter((spell) => !enumerated.has(spell))).toEqual([]);
+
+    // And the SCANNER ran over every spell, not merely the enumerator. This
+    // replaces the `specifiers > 500` floor with the same membership shape.
+    const scanned = new Set(
+      files
+        .filter((f) => scanSpecifiers(readFileSync(join(REPO_ROOT, f), "utf8")).length > 0)
+        .map(spellOf),
     );
-    expect(specifiers.length).toBeGreaterThan(500);
+    expect(roster.filter((spell) => !scanned.has(spell))).toEqual([]);
   });
 
   test("no LOAD-TIME relative import escapes plugins/spellbook/ (statements + type queries)", () => {
@@ -294,11 +368,29 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
   });
 
   test("the DYNAMIC escapes are exactly the pinned inventory — a new one fails until re-declared", () => {
-    // Compared whole, both directions, so the failure names WHICH site and
-    // WHICH direction. A count cannot distinguish a new escape from a moved one.
     // `dynamic` ONLY. A type query is not deferred to a call and has no business
     // in an inventory of runtime escapes — it is checked by the cell above.
-    expect(relativeEscapes(files, PLUGIN_ROOT, ["dynamic"])).toEqual(PINNED_DYNAMIC_ESCAPES);
+    const found = relativeEscapes(files, PLUGIN_ROOT, ["dynamic"]);
+
+    // The line is CONTEXT — printed so a human can navigate straight to the
+    // site, never compared. See the ruling beside `EscapeIdentity`.
+    console.warn(
+      `\n  R6 WARD 1a — pinned dynamic escapes, as found today:\n${found
+        .map((e) => `    ${e.file}:${e.line}  ->  ${e.spec}`)
+        .join("\n")}\n`,
+    );
+
+    // ⛔ UNIQUENESS BEFORE COMPARISON. Dropping the line means two escapes with
+    // the same (file, spec, resolved) would collapse into one entry, and a
+    // SECOND escape could then hide behind the first while this cell stayed
+    // green. That is the `exit-site-inventory:130` collision, and this is the
+    // clause that closes it rather than documenting it.
+    const keys = found.map((e) => keyOf(identityOf(e)));
+    expect(new Set(keys).size).toBe(keys.length);
+
+    // Compared whole, both directions, so the failure names WHICH site and
+    // WHICH direction. A count cannot distinguish a new escape from a moved one.
+    expect(found.map(identityOf)).toEqual(PINNED_DYNAMIC_ESCAPES);
   });
 });
 
@@ -635,29 +727,51 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // header of this file once told the next author that re-exports did not
     // occur in this tree. THEY OCCUR SEVEN TIMES. A cell naming them is what
     // stops that claim being made again from memory.
-    const found: string[] = [];
+    //
+    // ⛔ KEYED ON (file, spec, erased) — NOT ON THE LINE. This cell produced TWO
+    // of the sprint's false reds on its own (`astrolabe:75 -> :70`,
+    // `imago:1647 -> :1723`), which makes it the ruling's own worked example.
+    // `erased` is what keeps the two sibling re-exports of ONE specifier
+    // distinguishable (`imago` re-exports `../surface/state/types` twice, once
+    // as `export type` and once as a value; so does `magpie`), so the identity
+    // survives dropping the line without collapsing.
+    const found: { file: string; spec: string; erased: boolean }[] = [];
+    const context: string[] = [];
     for (const file of trackedSources(PLUGIN_ROOT)) {
       const source = readFileSync(join(REPO_ROOT, file), "utf8");
+      const lines = source.split("\n");
       for (const ref of scanSpecifiers(source)) {
         if (ref.kind !== "static") continue;
-        // A re-export is a static ref whose line opens with `export`.
-        // Keyed on the line the scanner REPORTS, which for a re-export is the
-        // `export` keyword — `magpie/scripts/backend.ts:20` opens a five-line
-        // statement whose `from` sits on line 25. Do not additionally require
-        // `from` on that line; that is what made this cell's first draft miss it.
-        if (/^\s*export\b/.test(source.split("\n")[ref.line - 1] ?? "")) {
-          found.push(`${file.replace("plugins/spellbook/skills/", "")}:${ref.line}`);
-        }
+        // A re-export is a static ref whose statement opens with `export`.
+        // The scanner reports the `export` KEYWORD's line, which for a
+        // multi-line clause is not the `from` line — `magpie/scripts/backend.ts`
+        // opens a five-line statement. Do not additionally require `from` here;
+        // that is what made this cell's first draft miss it.
+        if (!/^\s*export\b/.test(lines[ref.line - 1] ?? "")) continue;
+        const short = file.replace("plugins/spellbook/skills/", "");
+        found.push({ file: short, spec: ref.spec, erased: ref.erased });
+        context.push(`    ${short}:${ref.line}  ${ref.erased ? "type" : "value"}  ${ref.spec}`);
       }
     }
-    expect(found.sort()).toEqual([
-      "astrolabe/scripts/server.ts:70",
-      "imago/scripts/server.ts:1722",
-      "imago/scripts/server.ts:1723",
-      "magpie/scripts/backend.ts:20",
-      "magpie/scripts/server.ts:874",
-      "magpie/scripts/server.ts:875",
-      "magpie/scripts/server.ts:876",
+    console.warn(`\n  RE-EXPORTS, as found today:\n${context.join("\n")}\n`);
+
+    const key = (r: { file: string; spec: string; erased: boolean }) =>
+      `${r.file}\t${r.spec}\t${r.erased}`;
+    const keys = found.map(key);
+    expect(new Set(keys).size).toBe(keys.length);
+
+    // ⚠ `imago` re-exports from `../shared/` — R1's per-spell shared folder,
+    // which did not exist when this cell was written. That is Phase 1b landing,
+    // not drift, and it is the kind of change a line-keyed pin would have
+    // reported as a mystery instead of as a specifier moving.
+    expect(found.sort((a, b) => key(a).localeCompare(key(b)))).toEqual([
+      { file: "astrolabe/scripts/server.ts", spec: "./state.ts", erased: true },
+      { file: "imago/scripts/server.ts", spec: "../shared/types", erased: false },
+      { file: "imago/scripts/server.ts", spec: "../shared/types", erased: true },
+      { file: "magpie/scripts/backend.ts", spec: "../surface/state/alpha", erased: false },
+      { file: "magpie/scripts/server.ts", spec: "../surface/state/reduce", erased: false },
+      { file: "magpie/scripts/server.ts", spec: "../surface/state/types", erased: false },
+      { file: "magpie/scripts/server.ts", spec: "../surface/state/types", erased: true },
     ]);
   });
 
@@ -688,10 +802,18 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // and passes 13/0 — the same empty-population trap as the dedupe key, found
     // the same way, by running the mutation instead of trusting the green.
     // Each rule therefore gets a synthetic instance here.
-    expect(scanSpecifiers(`const a: typeof import("x") = 0 as never;`)[0].kind).toBe("type");
-    expect(scanSpecifiers(`const b = new Set<import("x").S>();`)[0].kind).toBe("type");
-    expect(scanSpecifiers(`function c(p: import("x").S) {}`)[0].kind).toBe("type");
-    expect(scanSpecifiers(`interface I { m: import("x").S }`)[0].kind).toBe("type");
+    // `firstRef` throws rather than returning undefined, so a synthetic input
+    // the scanner fails to see AT ALL fails loudly here instead of comparing
+    // `undefined` against a string and reading as an ordinary assertion miss.
+    const firstRef = (source: string) => {
+      const ref = scanSpecifiers(source)[0];
+      if (!ref) throw new Error(`the scanner found NO specifier in: ${source}`);
+      return ref;
+    };
+    expect(firstRef(`const a: typeof import("x") = 0 as never;`).kind).toBe("type");
+    expect(firstRef(`const b = new Set<import("x").S>();`).kind).toBe("type");
+    expect(firstRef(`function c(p: import("x").S) {}`).kind).toBe("type");
+    expect(firstRef(`interface I { m: import("x").S }`).kind).toBe("type");
 
     // ⚠ AND THE ACKNOWLEDGED LIMIT, PINNED AS THE PROPERTY THAT ACTUALLY
     // MATTERS RATHER THAN AS A CLASSIFICATION. A type argument after a COMMA
@@ -699,11 +821,11 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // longer consults `kind`. So assert THAT: whatever this comes back as, 1b's
     // filter keeps it. If someone re-introduces a kind filter in 1b, this
     // reddens and names the reason.
-    const comma = scanSpecifiers(`let d: Record<string, import("sharp").S>;`)[0];
+    const comma = firstRef(`let d: Record<string, import("sharp").S>;`);
     expect(isRelative(comma.spec) || BUILTIN(comma.spec)).toBe(false);
 
-    const query = scanSpecifiers(`export type T = import("../../outside").X;`)[0];
-    const stmt = scanSpecifiers(`import type { X } from "../../outside";`)[0];
+    const query = firstRef(`export type T = import("../../outside").X;`);
+    const stmt = firstRef(`import type { X } from "../../outside";`);
     expect(query.kind).toBe("type");
     expect(stmt.kind).toBe("static");
     // Both kinds are checked by ward 1a's escape cell — see `relativeEscapes`.

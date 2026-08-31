@@ -781,6 +781,30 @@ The lead and the verifier both reported six re-exports; I reported seven, from a
 ⭐ **Two independent parties agreeing is not evidence when they share an instrument** — both had made the same single-line grep assumption I had made an hour earlier.
 **Deferring to a consensus that reproduces your own retracted method is how a corrected error comes back wearing authority.**
 
+### ⭐⭐ 2026-08-31, ROUND 4 (Phase 0 canon) — a guard that decays on YOUR OWN roadmap is not a guard, it is a countdown
+
+**THE RULING I MADE, AND IT IS THE ONE TO CARRY: a guard's denominator must be something the project is NOT changing.**
+Ward 1a's zero-guard was a floor on file count, calibrated at 206 when every surface still lived under `plugins/spellbook/`.
+**The project's entire purpose is to move those files out.** It tripped at 149 against a floor of 150 — by ONE, which reads as noise and was structure — and recalibrating 150 → 80 only reset the clock, because full relocation lands the population near 101.
+⛔ **A magnitude cannot distinguish SHRINKING-BY-DESIGN from a DEAD WALK, and those are the two things the guard exists to tell apart.**
+⭐ **The replacement is MEMBERSHIP, not magnitude: every spell on the roster must contribute to the population, with the roster DERIVED from the same tree.** Contract 4 relocates `surface/` and nothing else and Contract 3 keeps backends shipping as source, so `scripts/` is the part that cannot move — and a retired spell leaves both sides of the comparison at once, which is why membership cannot decay the way a count does.
+**Calibrated three ways: dead walk → red, dead scanner → red, FULL RELOCATION SIMULATED → green.** The last one is the cell that matters; the old floor failed exactly there, twice.
+⚠ **Residual, stated rather than hidden: a structurally-faithful FAKE repo still passes.** I did not close that, and the reason is a real design tension — cassandra calibrates by rsync'ing the tree into a throwaway repo and pointing `SPELLBOOK_REPO_ROOT` at it, so **pinning world-identity here would break the non-author calibration harness.** `gate-honesty` can assert `r.roots` because its instrument is a subprocess with its own env hook; this ward has no such seam. Membership is the right trade for this population, and that asymmetry is worth knowing before someone "fixes" it.
+
+**CANON RULING: A LINE NUMBER IS CONTEXT, NOT ASSERTION. The identity of a pinned site is `(file, spec, resolved)`.**
+Four false reds in one sprint from line-keyed pins — `astrolabe:75→:70`, `imago:1647→:1723`, and the re-export fixture twice — plus circe's variant from the other side, where **biome reflowed an import past its 100-char `lineWidth` and moved a pre-existing error four lines.**
+⛔ **What settled it was not the false-red rate but that the line BUYS NOTHING.** The thing a line could tell you — *this site moved somewhere semantically different* — is not distinguishable by a line number from *someone added an import above it*. It has no discriminating power for the only question that would justify it.
+⭐ **Insertions above a site are the most common edit in a growing file, so a line-keyed pin has a false-red rate proportional to UNRELATED activity** — it is a tax on everyone else's work, collected by a cell with no opinion about it.
+⚠ **The one job the line did do was distinguishing two otherwise-identical sites in one file, and dropping it re-opens `exit-site-inventory:130`'s collision** (its `:673` and `:860` are byte-identical and a comment is the only thing telling them apart).
+**So the ruling ships with its own clause: assert identities are UNIQUE before comparing them.** Otherwise two sites collapse into one and a second escape hides behind the first while the cell stays green.
+**For the re-export cell the identity needed a third field — `erased` — because imago and magpie each re-export ONE specifier twice, as a type and as a value.** A ruling that drops a discriminator has to name what replaces it.
+
+**I TOOK THE tsc DEBT RATHER THAN DECLINING IT, AND THE REASON IS THE FILES' OWN SUBJECT.**
+17 of the repo's 450 errors were mine, all `noUncheckedIndexedAccess`-family, in the two files whose entire purpose is rigor about what a check can and cannot see.
+⛔ **"The gate cannot see tsc" is a true statement that becomes a licence the moment it is used as one** — and my own Phase 0 ⛔ block is where that statement lives, which makes these files the worst possible place to leave the debt.
+⭐ **The fix that generalises beyond the types: where a value was `T | undefined` I made the ABSENCE loud rather than coercing it away.** `push` now DROPS an undefined specifier instead of `?? ""`-ing a phantom empty path into the population every ward downstream trusts, and the synthetic assertions go through a `firstRef` that THROWS when the scanner finds nothing — so a scanner that stops seeing a construct fails as *"found NO specifier"* rather than as an ordinary assertion miss comparing `undefined` to a string.
+**Ledger closed exactly: 450 − 17 = 433.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
