@@ -112,6 +112,71 @@ manifest is unnecessary today is reachability, and reachability is a property of
 the bundler. If the build strategy changes, this document's whole argument must
 be re-measured rather than inherited.
 
+## Would adopting manifests remove the need for the wards?
+
+**No — and for two different reasons, which is why the question is worth
+answering once rather than re-litigating.**
+
+### Wards 2 and 3: a manifest is structurally blind to the form these reaches take
+
+Every one of the cross-tree reaches ward 3 governs is a **relative filesystem
+path**:
+
+```
+from "../../../../plugins/spellbook/skills/imago/shared/types"
+from "../../../../../../plugins/spellbook/skills/imago/shared/types"
+from "../../../../plugins/spellbook/skills/astrolabe/scripts/state"
+```
+
+**Not `from "@spellbook/imago"`.** A resolver never consults a manifest for a
+relative specifier — that is the filesystem. **Package boundaries constrain
+package-NAME imports; a relative reach walks straight past them.** So the
+imports these wards were built for are precisely the ones a manifest cannot see.
+
+### Wards 1a and 1b: a manifest would ACTIVELY HIDE the defect
+
+The constraint is not _"this dependency is undeclared."_ It is **"this must
+resolve at a machine where nobody ran `install`."**
+
+There is no manifest field for that — and declaring the dependency would make an
+unresolvable import look **sanctioned**. The manifest would assert the
+dependency is legitimate while the consumer still crashes. **That is the
+imago-`sharp` failure with a paper trail saying it was fine.**
+
+### The reframe
+
+> **Manifests describe INTENT. Wards check REACH.**
+
+The gap between those two is where this project's defects have actually lived: a
+declared thing that could not resolve, a population that no longer contained its
+subject, a bundle that inlined an import so nothing was left to declare.
+
+### And workspaces do not enforce boundaries by existing
+
+You would still need a check — nx's `enforce-module-boundaries`,
+`dependency-cruiser`, `eslint-plugin-boundaries`. **Those are wards.** Written
+by someone else, configured by manifest tags.
+
+So the real trade is not _wards vs manifests_. It is **our wards vs someone
+else's wards driven by manifest metadata**, and it is a genuine trade:
+
+|                                            |          an off-the-shelf tool           | ours |
+| ------------------------------------------ | :--------------------------------------: | :--: |
+| battle-tested, less to own                 |                    ✅                    |  ❌  |
+| models _"no installer at the destination"_ | ❌ **no standard tool has that concept** |  ✅  |
+
+### Where manifests genuinely would help
+
+**If** spells became real workspace packages **and** cross-tree imports were
+converted to package names, then nx tags or `dependency-cruiser` could plausibly
+replace **wards 2 and 3** — that is the prior art this project already noted,
+and nx's scope/type tags are the closest analogue to what ward 3 does.
+
+**Wards 1a and 1b survive either way**, because they are about the
+**destination**, not about the module graph. And the swap trades a ward you can
+read for a config you would have to trust, against a constraint the tool was not
+designed for.
+
 ## Important gotchas
 
 - **A native addon is not covered by any of this.** It bundles without error and
@@ -137,4 +202,5 @@ be re-measured rather than inherited.
 
 | Date       | Change                                                                                                                                                                |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-31 | Added _"would manifests remove the need for the wards?"_ — no; they are blind to relative reaches and would sanction unresolvable ones.                               |
 | 2026-08-31 | Created after spell-kit sprint 02 made backend bundling real, which is what raised the question of whether per-app manifests were now needed. Measured: they are not. |
