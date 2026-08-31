@@ -646,7 +646,6 @@ The V1 wire (thin-ratified-events, the `{hits}` search shape, additive-column-ba
 Bun-fetch `reader.cancel()` invisibility is a latent presence leak for any client that disconnects that way (none of ours do — cli uses AbortController, browsers close sockets); if a stuck count ever shows, this is the first suspect.
 The V1.x additions kept `readState` growing positional optional params (cursor, epoch, projectRoot) — a fourth caller-supplied field should tip it to an options object.
 The new CLI parse tiers (doc kind's positional overload, actions' set/stdin/clear exclusivity) are verified by a live drive but carry no cli.test.ts rows — if either verb grows another flag, pin the parse tier first.
-The repo dist/ predates the B1 stamp — the release cut (or circe's P2 finalize) must re-run `bun run src/mind-mapper/build.ts` so build.json actually ships; until then release boots serve with no buildInfo (tolerated by design).
 Channel-based multi-agent ROUTING (the proposal's `--inbound` generalization): `isInboundEvent` is a hardcoded predicate today; routing wants `tail --inbound --channel <c>` / `--for <agent>` — a per-subscriber predicate built from query params over the same filter site. R11 deliberately built no router; the channel vocabulary + the role-keyed filter are the two pieces it needs.
 SEAM 3's honest upgrade path, if a delta ever needs to cover more: `proposals.updated_at` (one additive column, ~5 write sites) would cover REJECTIONS, and jobs are already fully timestamped in epoch-ms and could be exposed under a second, unit-explicit watermark. Neither covers DELETIONS — nothing short of tombstones does — so `notCovered` never empties and the full-refetch path stays the honest reconciliation. Don't build either without a drive that shows the miss actually costing something.
 `title:` refs deliberately do NOT resolve in `ratify-batch`'s `anchors[]` (node/parent refs) — one intake resolution site this round, and an anchor failure lands at the human's ruling act. If anchors get hand-wired as often as edges were, that's the next candidate; resolve it at the same intake-vs-ruling argument.
@@ -939,7 +938,8 @@ Both are 200s and both render a board — only the pair distinguishes them, and 
 
 **Copy the template, not the idea — and when there is no template, ask whether one exists before writing the assertion.**
 Porting mind-mapper's release-serve gate gave astrolabe seven cells (dist serving, hashed assets, 404 on unknown, traversal, backend-still-works, mode on BOTH the stdout handshake and the ready event) for the cost of a one-line assertion written from scratch.
-Two of the original's cells (STALE DIST, /state buildInfo) assert a build stamp astrolabe does not have; I dropped them and said so IN THE FILE, because a silently-shortened copy is how a template's coverage erodes without anyone deciding to erode it.
+Two of the original's cells (STALE DIST, /state buildInfo) asserted a build stamp astrolabe does not have; I dropped them and said so IN THE FILE, because a silently-shortened copy is how a template's coverage erodes without anyone deciding to erode it.
+_(2026-08-31: the stamp is now removed from the whole tree, so those two cells have no subject anywhere — the stated omission became a stated deletion, and the lesson about SAYING SO is what survives.)_
 
 **Mutation-test a new gate against the SITE, one mutation per cell, and check the failure MODE and not just the colour.**
 Three mutations (serveDist always null; drop `mode` from the ready event but keep it on stdout; drop the `dev` arm of the env override) each convicted exactly the intended cell.
@@ -1007,3 +1007,70 @@ I re-pinned and wrote the case for comparing the file/spec/resolved triple while
 **Run tsc over your own earlier work in the same sprint — it is not in the gate, so nothing else will.**
 My astrolabe release-serve gate from 1a had been carrying 2 tsc errors (a `Subprocess` generic and an unchecked `split()[0]`) since it landed at d181c88, green the whole time, because `bun run check && bun test` cannot see them.
 Found them only because 1c's done-when quotes a root typecheck number; fixed both, 452 -> 450.
+
+**Two jobs on one field is the defect, and the ONE FIELD is where you can see it before either job misbehaves.**
+The build stamp's `builtAt` was a wall clock (the footer wanted "34m ago") AND the identity a machine freshness check compared against — and that is why the mtime check was INVERTED rather than merely noisy: job B was implemented on job A's data, and a timestamp is the one datum git does not preserve.
+The tell was available for free the whole time: a field whose TYPE is chosen by one consumer's rendering needs cannot also be the other consumer's identity, and I shipped it in R4 without noticing that the second consumer was reading a display format as a key.
+When a card asks you to fix a check, first ask what DATA it is comparing and which consumer chose that data's shape — if the answer is "the other one", the repair is removal or a second field, never a smarter comparison.
+Pin: the stamp removal (sk2-drop-stamp); the whole detector deleted rather than re-based on a sha, per Cole's ruling.
+
+**Deleting a field can make an artifact REPRODUCIBLE, and reproducibility is a stronger check than the one you deleted.**
+Removing `build.json` made all three spells' `dist/` byte-identical across back-to-back rebuilds with NO exclusion list — measured as an identical git tree object (`GIT_INDEX_FILE=… git add -A <dist paths>; git write-tree`, same sha twice), which is the cheap executable form of "a rebuild is a no-op to git".
+The evidence is sharpest in the spells that changed NOTHING else: astrolabe's and imago's rebuilds moved exactly one file each — `build.json`'s deletion — so the stamp was demonstrably the only thing making a correct dist look dirty.
+Generalises: before building a freshness DETECTOR for a generated artifact, check whether the artifact can simply be made reproducible; "rebuild and diff" needs no stamp, no basis ruling, and no retention story, and it cannot be inverted by a checkout.
+
+**`git write-tree` against a throwaway index is how you prove a build is committed-clean WITHOUT committing.**
+The claim "a rebuild leaves `git status --porcelain` empty" is unprovable in a seat that does not commit — until you notice you can write the would-be-committed tree twice: `GIT_INDEX_FILE=$SCRATCH/idx git read-tree HEAD && git add -A <paths> && git write-tree`, rebuild, repeat, compare shas.
+It never touches the real index, so it is safe on a shared tree, and it answers the git-level question rather than a filename-level proxy.
+Keep it: any "the tree stays clean" done-when can be discharged this way by a report-only seat.
+
+**A `git ls-files`-driven ward turns an UNSTAGED deletion into a red gate — so "delete a file" is not a working-tree-local act here.**
+`grimoire/import-boundary-wards.test.ts` enumerates with `git ls-files` and then `readFileSync`s each path, so a file removed from disk but still in the index dies as ENOENT inside a ward with nothing to do with the change (2 fail, in cells about import specifiers).
+I hit it because a `git stash` / `git stash pop` round-trip (run to measure a tsc baseline) silently UNSTAGED my `git rm` — `stash pop` without `--index` does that, and the deletion reverted from `D ` to ` D` with no message.
+Two rules out of one red: re-check `git status --porcelain`'s FIRST column after any stash round-trip, and expect an unstaged deletion to present as a failure in an unrelated instrument rather than as "a file is missing".
+Pin: gate went 1501 pass / 2 fail → 1503 pass / 0 fail on `git rm --cached` alone, zero source change.
+
+**An identifier-scoped blast radius cannot see an instrument that enumerates the tree, and that is a whole class, not an oversight.**
+prospero's measurement (10 files, 74 refs, grepped for `buildInfo|build.json|builtAt|…`) was EXACT for every file that names the thing — I found no undercount in it.
+What it structurally could not find is the file that mentions no identifier because it derives its population: the `git ls-files` ward above, and `scripts/instruments/gate-blind-set.ts`, whose `gated`/`handAuthored` counts move when any tracked source is deleted (checked: only `DECLARED_BLIND`, the blind FILE list, is pinned, and a deleted `.ts` was never blind — so no ward moved).
+Rule: pair an identifier grep with a pass over the tree-enumerating instruments, because their coupling to your change is by EXISTENCE, not by name.
+
+**A relocation breaks SIBLING-relative paths and leaves ANCESTOR-relative ones alone — and knowing which is which is the whole risk assessment.**
+Moving a CLI's execution from `<spell>/scripts/` to `<spell>/dist/cli.js` looked like it would break every path derived from `dirname(fileURLToPath(import.meta.url))`; measured, `dist/` and `scripts/` are the SAME DEPTH, so `SKILL_ROOT`, `DIST_DIR`, `SURFACE_CWD` and the `../../../.claude-plugin/plugin.json` read were all unaffected.
+Exactly one expression broke: `join(SCRIPT_DIR, "server.ts")`, because it names a SIBLING rather than an ancestor — and the failure would have been the daemon never spawning, from a CLI whose every other path was fine.
+`join(SCRIPT_DIR, "..", "scripts", "server.ts")` is correct from BOTH locations, which is the shape to reach for: go up to the shared ancestor and back down, so one expression survives the move.
+Rule: before relocating an executing file, sort its path derivations into ancestor-relative and sibling-relative; only the second list can hurt you, and it is usually short.
+Pin: sk2-build, `src/<spell>/backend/cli.ts` SERVER_SCRIPT; the daemon-spawn was driven in the deps-free local-sim, not inferred.
+
+**When a ward's population loses its subject, extend the WALK — do not loosen the PREDICATE.**
+Slice 2 moved two CLIs out of `<spell>/scripts/`, and five instruments went red at once: `flag-invariant` (documented flags UNRESOLVED), `strict-parse-invariant` (17 → 15 invocations), `terminator-invariant` (8 → 6 files, two stale pins), and the exit-site inventory (12 rows adrift).
+Every one of them was fixable two ways, and only one way is honest: teach the shared enumerator the second root (`src/<spell>/backend/`), or relax each ward until the absence stopped mattering.
+The tell that the walk is the right fix: after extending it the population returned to the SAME COUNT (16 entry points before, 16 after) with two members at new addresses — a predicate loosening would have changed the count and quietly widened what passes.
+Pin: `grimoire/lib/entry-points.ts` BACKEND_SRC_DIR + backendSources(); the four wards' pins moved with it.
+
+**A ward keyed on a path segment needs its NEW key chosen for the ATTRIBUTION function, not for the filesystem.**
+The obvious key for a relocated entry point is its repo-relative path, `src/magpie/backend/cli.ts` — and `spellsOf` reads `p.split("/")[0]`, so every such entry point would have been attributed to a spell named "src", silently, inside the one helper every ward trusts to say who owns what.
+Keying them `<spell>/backend/cli.ts` keeps the first segment meaning what it has always meant and cannot collide with `<spell>/scripts/...`.
+Generalizes: when adding a second root to a keyed enumerator, look at what CONSUMES the key before choosing its shape — the filesystem's answer and the consumer's answer are different questions.
+
+**A text-scanning predicate cannot tell prose from code, so a comment explaining the predicate can trip it.**
+I made the launcher stop matching `PARSES_ARGS` by moving argv ownership into the backend — then wrote a comment explaining the rule that SPELLED the identifier, and the launcher matched again, from inside the paragraph warning against it.
+This is the epitaph's family with a new costume: not a described fact that should have been run, but a described RULE landing inside the instrument's own input.
+Rule: when a file's classification depends on a text scan, the file's comments are part of its input — say the token's name only where the scan does not look, or describe it without spelling it.
+Pin: both launchers' `run()` paragraph, reworded; entry points went 18 → 16 on the wording alone, with zero code change.
+
+**`git ls-files`-driven wards need the artifact STAGED, and this is now twice in two cards.**
+Ward 1b's emitted-root zero-guard read 0 tracked files under a root that visibly held a fresh `dist/cli.js`, for the same reason the import ward died on an unstaged deletion last card: `git ls-files` reports the INDEX, not the disk.
+The remedy is not a ward change — it is that a report-only seat must stage generated artifacts before running the gate, and say so when handing over.
+Treat "the enumerator sees the working tree" as a claim to check, not an assumption, in any instrument that shells out to git.
+
+**Emitting a second artifact kind into one `dist/` makes the CLEAN step a correctness question, not hygiene.**
+`src/build.ts` rm'd `dist/` per aspect; astrolabe is the first spell with BOTH a surface and a backend landing there, so a per-aspect clean would have had the second build delete the first's output.
+The failure mode is silent and asymmetric: a `dist/` holding `index.html` but no `cli.js` still serves a working board, so the surface looks healthy and only the CLI disappears.
+Clean once per spell, then build each aspect present — and state the ordering in the function, because the next person adding an aspect will reach for the familiar per-aspect rm.
+
+**A test that imports a relocated module must move WITH it, or it becomes a ward violation rather than a broken import.**
+magpie's `tests/cli.test.ts` imported its CLI's internals; after the source moved to `src/`, re-pointing the import in place would have been a relative escape out of `plugins/spellbook/` — precisely what ward 1a forbids, so the "small fix" was the illegal one.
+Moving the file to `src/magpie/backend/cli.test.ts` also improved it: the unit cells import the source, while the subprocess cells now spawn the SHIPPED launcher, so one file tests the parser before bundling and the artifact after.
+Rule: when a module relocates, ask of each of its consumers whether the consumer is on the same side of a boundary — an import that merely gets longer may be an import that is no longer allowed.
+

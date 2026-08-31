@@ -1,8 +1,51 @@
 # `STALE DIST` fires unconditionally, because mtime is not a content property
 
-**Filed:** 2026-08-10 · **Status:** open, unsized · **Source:** measured during
-sprint 05 by `circe` · **Verification:** VERIFIED HERE (circe) except where
-marked · **Scope ruling:** OUT of sprint 05 — a fix, not a gate
+**Filed:** 2026-08-10 · **Status:** **CLOSED 2026-08-31 — RESOLVED BY DELETION,
+NOT BY FIX** · **Source:** measured during sprint 05 by `circe` ·
+**Verification:** VERIFIED HERE (circe) except where marked · **Scope ruling:**
+OUT of sprint 05 — a fix, not a gate
+
+## CLOSED — the detector was removed, not repaired (spell-kit sprint 02, `sk2-drop-stamp`)
+
+**Nothing in this file was fixed. The subject of the complaint was deleted.**
+Cole ruled the build stamp and `mind-mapper`'s build footer out of the tree
+entirely — his reasoning was about the FOOTER, not about this defect: _"I don't
+get a lot of value out of having when it was built … knowing it was built
+recently only means something once you go look up when your last commit was."_
+
+The staleness check died as a consequence, because it had no data left to run
+on. `dist/build.json` is no longer written by `src/build.ts`; `readBuildInfo`,
+`newestMtimeMs`, `SRC_SURFACE_DIR`, the `MIND_MAPPER_SRC_DIR` test knob, the
+`STALE DIST` stderr warning and the `/state.buildInfo` spread are all gone from
+`plugins/spellbook/skills/mind-mapper/scripts/server.ts`, and the two gate cells
+that asserted them are removed from `release-serve.test.ts` with the removal
+stated in the file's header.
+
+**So the two open questions this file raised are moot rather than answered:**
+
+- _"What is the right basis for a freshness check — mtime, sha, content hash?"_
+  → **No basis. There is no freshness check.** The stamp was doing two jobs that
+  pull opposite ways — a wall clock for a human-readable age, and an identity
+  for a machine freshness check — and `builtAt` was a timestamp precisely
+  because the footer wanted _"34m ago"_. Job B was implemented on job A's data,
+  which is why this defect was INVERTED rather than merely noisy. Removing the
+  stamp removed the conflict; `dist/` is now byte-reproducible from source with
+  no exclusion list.
+- _"Should house-style's `carry-frame-just-value.other-party-s-channel` clause
+  cover a PRESENT-AND-WRONG field, not just a missing one?"_ → **still a live
+  canon question, and it outlives this file.** The instance is gone; the clause
+  gap is not. That question belongs to `thoth`, not to this backlog item.
+
+⛔ **Do not reopen this by adding a replacement stamp.** No version field, no
+content hash, no rebuilt timestamp. Surfacing the plugin version is a separate
+item with an unresolved design question. _(Where a "never release a stale build"
+check belongs is a different question again, carried by the `sk2-spike-release`
+spike — and it is a RELEASE-TIME question, not a daemon-boot one.)_
+
+---
+
+_Everything below is the original filing, preserved as measured. It describes
+code that no longer exists._
 
 ## The measurement
 

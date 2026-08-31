@@ -1,3 +1,69 @@
+# Retro — 2026-08-31 · spell-kit sprint 02, "the boring module"
+
+**Team:** default · **shape:** `cdf9d466`
+**Seats:** prospero (lead) · daedalus (engine) · circe (surface) · thoth (grimoire) · cassandra (verify) — subagent mode, second full session in it, same day as sprint 01.
+**Shape of the work:** 8 commits on `feat/spell-kit-sprint-02`. Gate 1510 → **1514/0**; `tsc` 433 → **433**. All four proofs held. The emission ruling — this project's only irreversible decision — was made by Cole, then **re-founded** by the team on an honest basis after a ratify round found the stated one was false.
+
+## Q1 — What went well (artifacts first)
+
+- **The ratify round changed WHAT was built, which is the only reason to run one.** Slice 2 as carded was "move source, emit a bundle, keep the name." It became: pick the emit *location*, extend a ward's population, land a third ward first, record an amendment rather than a repeal. **Three of those four were not in the card.**
+- **Two seats independently falsified the same premise from opposite directions.** thoth read Contract 3's trigger and found the first conjunct absent; daedalus read the *driver* and found no dependency requires a build. Neither had seen the other's report. The emission ruling now rests on an honest basis instead of a dead example.
+- **`src/kit/` went from vacuous to live in one commit**, and was *proved able to fail* rather than merely populated.
+- **The port playbook was written from the artifacts**, with every count re-verified against a file, and its own evidentiary limit stated in it: the four phases were exercised end-to-end on imago alone.
+- **`dist/` became byte-reproducible with no exclusion list** — a rebuild is now a git no-op, proved at tree-sha level. First time true here.
+
+### ⛔ The anti-consensus answer
+
+**What would have had to happen for anyone to notice this sprint going wrong?** Twice, nothing — and both times a seat refused a green rather than an instrument catching one. Slice 3's done-when **returned the right answer for two independent wrong reasons** and would have been reported as a pass by anyone who ran it. Ward 1b's population would have gone blind behind a correctly-widened predicate that **looked like diligence**. **The gate was green through both.** This sprint's saves came from seats declining to accept a green, not from any check.
+
+## Q2 — What did not go well
+
+### The lead — withheld until all four seats reported, per H26
+
+- **I put a defect in canon that would have blinded a ward.** My Contract 4 location ruling sent the bundle to `dist/cli.js`, which fails both of ward 1b's filters — **and the amendment names "a shrunk population is not a red cell" two paragraphs above the ruling that would have caused one.**
+- **I left a live falsehood in Contract 17** — it said ward 3 was unbuilt and scheduled for sprint 03; ward 3 had shipped in a commit I dispatched. **Second instance of that class in one sprint, same author**, both caught by the same seat.
+- **I gave circe a done-when that was worthless twice over**, and the half I *had* checked was not the load-bearing half. She said so rather than passing through it.
+- **My card for ward 3 specified it narrowly enough to be bypassable**; thoth built it wider and measured 36 live instances of the route I had left open.
+- **Two of my measurements were wrong**: the violation count (16, actually 17, and not a constant at all), and whether servers bundle — where I reported a mechanism I had not isolated.
+- **I left six cards open across the sprint**, landing without closing. That is sprint 04's review-column finding, reproduced.
+
+### The team
+
+- **A seat's audit contained two items that were themselves wrong** — servers *do* bundle, and the finding *was* captured, in `.anthill/` rather than `docs/`. **Capture gap and findability gap have opposite remedies**, and the report would have sent us to fix the wrong one.
+- **The `ward` skill still routes an un-rebuilt edit to `chore(`**, and this sprint gave that bug a second surface without fixing it.
+
+## Q3 — Hypotheses the next convene must test
+
+| # | Hypothesis | Falsified if |
+| --- | --- | --- |
+| **H34** | **At finalize, each seat should list what it learned THAT PRODUCED NO FILE — not what it did.** A finding is captured when it produces an artifact and evaporates when it only produces a decision; an input to a design leaves no file. That list is the capture gap, invisible to every other review because everything else reviews artifacts. (thoth) | The lists come back empty or duplicate what the artifacts already hold |
+| **H35** | **"Widen the predicate" is a reliable tell that the POPULATION is the half at risk.** Three instances this sprint. Next time a check is asked to loosen, check the subject's membership first. (thoth, now Contract 19) | A loosening request arrives where the population is fine and the predicate really was the defect |
+| **H36** | **A ratify round pays whenever a phase's card contains a prescribed MECHANISM rather than only a goal.** Both rounds this sprint falsified the mechanism and kept the goal. | A ratify round over a mechanism-bearing card returns everything ratified |
+| **H37** | **The lead's own rulings need the same non-author treatment as a seat's cells.** Three of my four canon edits this sprint carried a defect a seat then caught; none was caught by me re-reading. | A sprint where the lead's canon edits survive seat review unamended |
+
+### Verdicts on sprint 01's hypotheses
+
+- **H30 — SUPPORTED, and it is now my epitaph.** Every brief this sprint named the attack and withheld the defence, and the two ratify rounds returned four falsifications between them. Not yet promoted to `principles.md`: still no *realised* loss, only near-misses and successes. **Its own falsifier has not fired**, which is the argument for keeping it one more session rather than promoting on enthusiasm.
+- **H31 — SUPPORTED, n=2.** Slice 3's blast radius was one class where my card said several; Slice 2's was 33 edges where the card said 5. **Both times the card was written before the edges existed.**
+- **H32 — SUPPORTED.** Contract 16's three classes predicted Slice 3's fallout with no fourth class.
+- **H33 — NOT TESTED.** The confound stands: this sprint also invited correction explicitly.
+
+## Q4 — Did this session produce a principle?
+
+**No, and the candidate is deliberately held for a third session.**
+
+H30 (*name the attack, withhold the defence*) has now run a full sprint as the lead's operating rule and produced four falsifications. **It still has no realised loss behind it** — every instance is a near-miss or a success, and `principles.md`'s bar is a scar, not a case. Promoting it now would be promoting on a winning streak.
+
+**The stronger structural finding is H34**, and it is one session old.
+
+## Structure reflection
+
+- **The ratify round is the highest-yield beat this team has**, and it is not in the roster or the SOP as a standing move — it happened because the lead's seat doc remembered it. Two rounds, two rewritten sprints. Worth promoting from a lead's reflex to a phase the plan schedules.
+- **The seams file is now doing two jobs**: 21 contracts, some of which are *inter-seat interfaces* and some of which are *how instruments lie*. The second class has outgrown the file. No redraw proposed this sprint, but it is the next structural question.
+- **Composition: no seat idled and no seat was overloaded.** cassandra ran one spike and no calibration round — the first sprint where her scope was exercised as *judgement about mechanization* rather than as cell calibration, which is exactly the 2026-08-08 redraw working as intended.
+
+---
+
 # Retro — 2026-08-31 · spell-kit sprint 01, "the seam before the move"
 
 **Team:** default · **shape:** `cdf9d466`

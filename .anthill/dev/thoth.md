@@ -805,6 +805,40 @@ Four false reds in one sprint from line-keyed pins — `astrolabe:75→:70`, `im
 ⭐ **The fix that generalises beyond the types: where a value was `T | undefined` I made the ABSENCE loud rather than coercing it away.** `push` now DROPS an undefined specifier instead of `?? ""`-ing a phantom empty path into the population every ward downstream trusts, and the synthetic assertions go through a `firstRef` that THROWS when the scanner finds nothing — so a scanner that stops seeing a construct fails as *"found NO specifier"* rather than as an ordinary assertion miss comparing `undefined` to a string.
 **Ledger closed exactly: 450 − 17 = 433.**
 
+### ⭐⭐ 2026-08-31, ROUND 5 (Slice 2 prerequisites) — the widening I was asked for was the safe half; the dangerous half was that the POPULATION was about to leave
+
+**I was handed "widen ward 1b's builtin predicate — Bun strips `node:`, 17 violations against a bundled tree." That is real, and it is not the defect that would have shipped.**
+Contract 4's amendment rules the emitted bundle to `plugins/spellbook/skills/<spell>/dist/cli.js`, and **that path fails BOTH of ward 1b's filters** — the `.ts`/`.tsx` extension filter and the `scripts|shared` path filter.
+⛔ **So on the day the backend ships built, the code that actually executes at a deps-free destination leaves the ward's population entirely, and the ward goes green because it stopped looking — while its title still says "the shipped execution path".**
+**Fixing only the predicate would have shipped exactly that**, and it would have looked like diligence: a measured problem, a measured fix, a green suite.
+⭐ **The question to ask of any request to loosen a check: is the thing being loosened still IN the set the check examines, and will it be tomorrow?** A predicate change assumes the population is stable; here the population was the thing moving.
+
+**AN EXEMPTION MUST BE TO A NAMED SET, NEVER TO A FILE CLASS.**
+The easy shape was "bare specifiers are fine in emitted files." That blinds the ward precisely where it matters most: **an emitted artifact still reaching for a real dependency — a `sharp` the bundler failed to inline — is the exact failure 1b exists to catch**, and it is most likely in the file class the exemption would cover.
+⭐ **So the exemption is to `builtinModules`, derived from the runtime rather than hand-listed, and a non-builtin inside an emitted root is still a violation.** Calibrated: `path` in an emitted root passes, `sharp` in the same file reddens, `path` in a hand-authored file reddens.
+
+**A CALIBRATION HOOK IS ALSO A TEST OF THE CODE PATH THE DEFAULT NEVER TAKES, AND IT FOUND TWO BUGS THE CONTROL RUN STRUCTURALLY COULD NOT.**
+With the declared root list EMPTY, `roots.some(...)` short-circuits and never evaluates its body — so the whole exemption branch was dead in every green run I did.
+The moment I pointed the env hook at a real root, two failures appeared: a predicate called with the wrong arity (**which `tsc` did not catch either**), and a guard using the wrong enumerator.
+⭐ **An empty declared list is not a neutral default — it is a code path that SKIPS the code path**, and a suite that is green with it empty has tested nothing about the feature.
+**Run the hook before believing the green, every time, not just when the feature is live.**
+
+**A GUARD MUST SHARE ITS SUBJECT'S ENUMERATOR.**
+My "this declared root actually matches something" check used `trackedSources` (`.ts`/`.tsx` only) while the population it guarded used `emittedSources` (`.js` too).
+**So a root holding exactly what the exemption exists for — a `.js` bundle — reported as an empty typo.**
+⭐ A guard built on a different enumerator than its subject is measuring a different set, and it fails in the direction that looks like a correct rejection.
+
+**A WARD STATED BY PATH PREFIX HAS A BYPASS THAT THE SAME WARD STATED BY OWNER DOES NOT.**
+Ward 3 as handed to me was "no file under `src/<spell>/` may relatively import a different `src/<other-spell>/`" — green, and bypassable by reaching the other spell **through `plugins/`** instead, where the specifier resolves outside `src/` and the ward never looks.
+⚠ **The bypass is not hypothetical: 36 instances of that exact route are live today**, every one same-spell and correct under R1 — which is what makes it dangerous, because the route is proven, ergonomic, and one directory name away from being cross-spell.
+⭐ **Restating the predicate over OWNERSHIP instead of location closed both routes with one cell and cost nothing** (narrow 0, wide 0, over 170 files, measured before adopting).
+**And ownership had to be DERIVED — a name is a spell iff `plugins/spellbook/skills/<name>/` exists** — which is what correctly classifies `src/build.ts`, the shared delegator three spells import as `../build`, as not-a-spell. My first throwaway version used `path.split("/")[1]` and flagged all three.
+
+**A TEST-COUNT DISCREPANCY IS A CLAIM, NOT NOISE.**
+The lead reported 1510; I measured 1508 having ADDED five cells, which implies seven vanished.
+They did: `fae8830` removed exactly seven cells with the build stamp, and his figure predated it. **1510 − 7 + 5 = 1508, reconciled exactly.**
+⭐ Chasing a two-count gap took one command and converted "my number disagrees with the lead's" into "both numbers are right and here is the commit between them" — the alternative was reporting a number I could not account for.
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.

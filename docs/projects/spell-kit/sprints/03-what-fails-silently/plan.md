@@ -229,3 +229,26 @@ shipped in the ward at `5253b72`, but not yet canon. **Also owed here:** this
 plan's `house-style.md:396-397` arithmetic. Measured **65 / 39** at `3e00e73`,
 not the 64 / 38 recorded; with **7** tests moving (not 8 — the straddler was
 ruled to stay backend), the first figure lands at **58**, not 56._
+
+---
+
+_Reconciled 2026-08-31 @ `5d32bfa` — swept after sprint 02 landed. **INHERITED,
+and larger than when this plan was written.** `src/kit/` now exists with two
+inhabitants (`printJson`, `cn`), so Phase 4's kit component has a home and Ward
+2 is **live rather than vacuous** — it has been made to fail. **⛔ NEW SCOPE,
+ruled into this sprint by Cole 2026-08-31: magpie's SURFACE is still
+unrelocated.** Slice 2 relocated magpie's *backend* and left its surface in the
+spell folder — the only spell in a split state. 27 files, ~3,235 lines. It is
+safe today because Contract 1 keys release mode on `dist/index.html`
+specifically rather than on `dist/` existing, so magpie correctly stays in dev
+mode. **A relocated surface is a precondition for magpie consuming
+`src/kit/theme/`, which is this sprint's subject.** **STILL OWED to Phase 5's
+canon pass** (unchanged, none written): the four instrument-design rulings, and
+the `house-style.md:396-397` arithmetic — measured **65 / 39**, not the recorded
+64 / 38, and with **7** tests having moved the first figure lands at **58**.
+**NEW for Phase 5:**
+`docs/backlog/2026-08-31-ward-routes-an-unbuilt-surface-edit-to-chore.md` now
+has a **second surface** — a backend edit in `src/<spell>/backend/` also changes
+nothing under `plugins/spellbook/` until built. The fix must be written over a
+**derived** set of build-input→output pairs, never a hardcoded surface→dist
+pair._

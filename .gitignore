@@ -15,6 +15,8 @@ dist
 !plugins/spellbook/skills/astrolabe/dist/**
 !plugins/spellbook/skills/imago/dist
 !plugins/spellbook/skills/imago/dist/**
+!plugins/spellbook/skills/magpie/dist
+!plugins/spellbook/skills/magpie/dist/**
 
 # code coverage
 coverage

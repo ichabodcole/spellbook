@@ -65,12 +65,15 @@ const positional = entryPoints.filter((p) => allowsPositionals(readEntryPoint(p)
  * trusted and is not recorded here.
  */
 const HAZARD_APPLIES: Record<string, string> = {
-  "astrolabe/scripts/cli.ts": "caller-facing; verbs take free-text operands",
+  // Relocated by Slice 2: the CLI SOURCE moved to `src/<spell>/backend/` and a
+  // launcher took its old address. The hazard travels with the PARSER, not
+  // with the filename a consumer invokes.
+  "astrolabe/backend/cli.ts": "caller-facing; verbs take free-text operands",
   "bounty/scripts/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
   "glamour/scripts/cli.ts": "caller-facing; prompt text is a positional",
   "grapevine/scripts/cli.ts": "caller-facing; message bodies are prose positionals",
   "imago/scripts/cli.ts": "caller-facing; prompt text is a positional",
-  "magpie/scripts/cli.ts": "caller-facing",
+  "magpie/backend/cli.ts": "caller-facing",
   "magpie/scripts/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/scripts/cli.ts": "caller-facing; send bodies are prose positionals",
 };
