@@ -84,8 +84,11 @@ code — it is the daemon's wire protocol, misfiled. It moves into the shipped
 folder, and the surface becomes a consumer. **astrolabe already does exactly
 this** (`surface/components/*.tsx` →
 `import type … from "../../scripts/state"`), so the pattern is in-house and
-proven. This is not an imago quirk: **glamour has 5 such imports and magpie 8**,
-so solving it once is platform work for three spells.
+proven. This is not an imago quirk: **glamour has 5 such imports and magpie
+12**, so solving it once is platform work for three spells. _(magpie's figure
+was **8** here until 2026-08-31; re-measured at `df545a2` it is **12** across
+three files, nine of them value imports — larger than imago's five. Sprint 03's
+Phase 6 carries the current count.)_
 
 > **Proof:** both spells build; both daemons serve `dist/` in release mode; the
 > installed artifact runs with no surface source present.

@@ -64,6 +64,85 @@ fails **silently and visually** in every spell but one.
 
 ## Phases
 
+### Phase 6 — magpie's surface port ⟵ **RUNS FIRST IN THIS SPRINT**
+
+_Added 2026-08-31 by Cole's ruling, after Slice 2 relocated magpie's **backend**
+and left its surface behind. Numbered 6 because phase numbers are mint-order;
+**sequenced first** for the reason below._
+
+**Goal:** magpie stops being the only spell in a split state — backend in
+`src/`, surface in the shipped folder — and its deployed folder becomes
+source-free like the other three.
+
+**Why it runs before Phases 4 and 5, rather than after:**
+
+- **Phase 5's canon pass must write against the final shape.** It has to correct
+  `house-style.md`'s worked example, whose numbers move again when magpie's
+  tests and surface move. Correcting them before the port means correcting them
+  twice.
+- **The `ward`-routing fix (Phase 5) must enumerate build-input → output
+  pairs.** magpie's port mints one. Writing that enumeration against a set the
+  sprint is about to change is the exact decaying-denominator failure this
+  project has now hit three times.
+- It is **not** a prerequisite for Phase 4. Phase 4's proof is mind-mapper +
+  imago; magpie is not required for it, and this phase does not block it.
+
+> ### ⭐ This is the port playbook's first use by someone who did not write it
+>
+> [`docs/playbooks/porting-a-spell-playbook.md`](../../../../playbooks/porting-a-spell-playbook.md)
+> was extracted from four ports. **This is the fifth, and the first run against
+> the written procedure rather than from memory.** Treat a step that turns out
+> to be missing, wrong or unusable as a **finding about the playbook**, and
+> report it as one — that is worth more than a clean run, and it is the only way
+> to learn whether the extraction actually worked.
+
+**Measured at `df545a2` — and the plan's inherited figure is wrong:**
+
+The proposal says _"magpie 8"_ `../surface/` imports. **It is 12, across three
+files** — `server.ts` 7 (including the `index.html` static import at `:31`,
+which is Contract 1's deps-free crash), `backend.ts` 3, `discover.ts` 1. **Nine
+are VALUE imports and three are type-only**, so by Contract 16 the fallout is
+mostly class (a)/(b) rather than the type-only class that dominated imago's
+move.
+
+**⚠ For scale: imago's seam — the one this project called "the whole difficulty"
+— was FIVE sites, three of them value. magpie's is twelve, nine of them value.**
+Do not inherit "1a was mechanical" as the expectation.
+
+**And R1's three-way sort applies again, for the same reason it applied to
+imago:** magpie has **two `.server.ts` files misfiled inside `surface/`** —
+`persist.server` and `source.server`, both imported by `server.ts`. These are
+daemon-only code living in the browser tree, exactly imago's
+`imageOptimize.server.ts` case. `reduce.ts` and `alpha.ts` are two-sided
+candidates and need the module-level sort, not a guess.
+
+**What is already in place, so it does not need re-doing:** magpie has a
+committed `dist/` and its `.gitignore` un-ignore pair (both from Slice 2), so
+the silent-`git add` trap the playbook warns about does not apply here. Its
+`@source` is `"./"` — one of the three spellings in the roster — and must
+survive relocation.
+
+**This phase is done when:** magpie's deployed folder carries no `surface/` and
+no `bunfig.toml`; its daemon serves `dist/` in release mode and emits
+`mode==="release"`; `grep '\.\./surface/' magpie/scripts/*.ts` returns **exactly
+one line** (the HTML entry, which becomes `resolveMode()`); and the local-sim
+drives magpie's board from a copy with no `node_modules` up-tree.
+
+#### ⛔ What Phase 6's gate cannot see
+
+_The playbook's Phase 3 block applies verbatim; two things are specific to
+magpie._
+
+- **magpie's `dist/` currently holds `cli.js` and no `index.html`**, which is
+  why its daemon correctly stays in dev mode today. **The moment a surface build
+  lands there, `resolveMode()` flips.** Nothing warns on the transition; the
+  first `index.html` in that directory changes the daemon's behaviour.
+- **magpie is acc-conformant and that will stay green regardless.** `acc` is
+  indifferent to the emit form and to where the surface lives, so an `acc check`
+  pass says nothing about this phase.
+
+---
+
 ### Phase 4 — Shared styling, with override (Slice 4)
 
 **Goal:** one kit component renders with mind-mapper's value for an L0 token in

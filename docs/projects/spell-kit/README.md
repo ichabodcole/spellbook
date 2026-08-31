@@ -61,14 +61,15 @@ third column is the misreading to avoid.
 
 Nine schemes coexist and several reuse small integers. This is the crosswalk.
 
-| Slice | Capability                | Phase        | Sprint | Ruling |
-| ----- | ------------------------- | ------------ | ------ | ------ |
-| —     | instruments and wards     | 0            | 01     | R5, R6 |
-| 1     | both spells build         | 1a · 1b · 1c | 01     | R1, R7 |
-| 2     | shared backend code       | 2            | 02     | RB     |
-| 3     | shared surface code       | 3            | 02     | —      |
-| 4     | shared styling + override | 4            | 03     | R3     |
-| —     | canon (Seam C)            | 5            | 03     | —      |
+| Slice     | Capability                | Phase        | Sprint | Ruling                                                                                            |
+| --------- | ------------------------- | ------------ | ------ | ------------------------------------------------------------------------------------------------- |
+| —         | instruments and wards     | 0            | 01     | R5, R6                                                                                            |
+| 1         | both spells build         | 1a · 1b · 1c | 01     | R1, R7                                                                                            |
+| 2         | shared backend code       | 2            | 02     | RB                                                                                                |
+| 3         | shared surface code       | 3            | 02     | —                                                                                                 |
+| 4         | shared styling + override | 4            | 03     | R3                                                                                                |
+| 1 _again_ | magpie's surface port     | 6            | 03     | R1, R7, the [playbook](../../playbooks/porting-a-spell-playbook.md) — **runs FIRST in sprint 03** |
+| —         | canon (Seam C)            | 5            | 03     | —                                                                                                 |
 
 ⚠ **Do not confuse:** Phase 1b · Ward 1b · Contract 1 · L1 · Slice 1. Same
 digits, five different schemes.
