@@ -89,10 +89,27 @@
  *   questions and silently wrong for each other's.*
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export const SKILLS_DIR = join(import.meta.dir, "..", "..", "plugins", "spellbook", "skills");
+
+/**
+ * The SECOND root, added in spell-kit Slice 2 (2026-08-31).
+ *
+ * ⛔ THE POPULATION FOLLOWS ITS SUBJECT, OR THE WARDS GO QUIET. Contract 4's
+ * built-backend amendment moves a spell's CLI SOURCE to `src/<spell>/backend/`
+ * and ships a launcher at `<spell>/scripts/cli.ts`. The launcher parses no
+ * arguments, so on the day a backend ships built, every ward built on this
+ * module loses that spell's real entry point — and a shrunk population is not
+ * a red cell. Measured when it happened: `strict-parse-invariant` went 17 -> 15
+ * invocations, `terminator-invariant` 8 -> 6 files, and `flag-invariant`
+ * reported astrolabe's and magpie's documented flags as UNRESOLVED.
+ *
+ * Those pins failing is the ward working. This root is what makes them pass
+ * again for the right reason: the entry point moved, so the walk moved with it.
+ */
+export const BACKEND_SRC_DIR = join(import.meta.dir, "..", "..", "src");
 
 /**
  * Requirement 1, as a single named regex so every cell shares one definition of
@@ -113,20 +130,52 @@ export function walkSpellSources(dir: string = SKILLS_DIR, out: string[] = []): 
   return out;
 }
 
-/** Every arg-parsing entry point in the roster, as paths relative to SKILLS_DIR. */
+/**
+ * Non-test `.ts` under `src/<spell>/backend/`, keyed as `<spell>/backend/...`.
+ *
+ * ⛔ THE KEY IS DELIBERATELY NOT REPO-RELATIVE. `spellsOf` and
+ * `INTERNAL_ENTRY_POINTS` both read the FIRST path segment as the spell name, so
+ * a `src/magpie/backend/cli.ts` key would attribute the entry point to a spell
+ * called "src" — silently, and in the one function every ward trusts for
+ * attribution. `<spell>/backend/cli.ts` keeps that read correct and cannot
+ * collide with `<spell>/scripts/...`.
+ */
+export function backendSources(): string[] {
+  if (!existsSync(BACKEND_SRC_DIR)) return [];
+  const out: string[] = [];
+  for (const spell of readdirSync(BACKEND_SRC_DIR)) {
+    const dir = join(BACKEND_SRC_DIR, spell, "backend");
+    if (!existsSync(dir) || !statSync(dir).isDirectory()) continue;
+    for (const abs of walkSpellSources(dir))
+      out.push(`${spell}/backend/${abs.slice(dir.length + 1)}`);
+  }
+  return out.sort();
+}
+
+/** Every arg-parsing entry point in the roster, across BOTH roots. */
 export function argParsingEntryPoints(): string[] {
-  return walkSpellSources()
+  const shipped = walkSpellSources()
     .filter((abs) => PARSES_ARGS.test(readFileSync(abs, "utf8")))
-    .map((abs) => abs.slice(SKILLS_DIR.length + 1))
-    .sort();
+    .map((abs) => abs.slice(SKILLS_DIR.length + 1));
+  const built = backendSources().filter((rel) => PARSES_ARGS.test(readEntryPoint(rel)));
+  return [...shipped, ...built].sort();
 }
 
 /** The `<spell>/scripts/*.ts` glob `flag-invariant` used, kept ONLY so the two
  *  strategies can be asserted equal. Not for enumeration — use the walk. */
 export function globEntryPointsForComparison(): string[] {
-  return [...new Bun.Glob("*/scripts/*.ts").scanSync({ cwd: SKILLS_DIR })]
-    .filter((p) => !p.endsWith(".test.ts"))
-    .filter((p) => PARSES_ARGS.test(readFileSync(join(SKILLS_DIR, p), "utf8")))
+  return [
+    ...[...new Bun.Glob("*/scripts/*.ts").scanSync({ cwd: SKILLS_DIR })].filter(
+      (p) => !p.endsWith(".test.ts"),
+    ),
+    // The second root's glob twin — without it the two strategies disagree by
+    // exactly the files Slice 2 moved, and the comparison cell would report a
+    // drift that is really just one strategy having been taught the new root.
+    ...[...new Bun.Glob("*/backend/*.ts").scanSync({ cwd: BACKEND_SRC_DIR })].filter(
+      (p) => !p.endsWith(".test.ts"),
+    ),
+  ]
+    .filter((p) => PARSES_ARGS.test(readEntryPoint(p)))
     .sort();
 }
 
@@ -253,7 +302,16 @@ export function parseArgsInvocations(src: string): string[] {
 }
 
 /** Read an entry point's source by its SKILLS_DIR-relative path. */
-export const readEntryPoint = (rel: string) => readFileSync(join(SKILLS_DIR, rel), "utf8");
+export const readEntryPoint = (rel: string) =>
+  readFileSync(
+    // `<spell>/backend/...` resolves against `src/`, everything else against the
+    // shipped skills tree. Keyed on the SECOND segment because the first is the
+    // spell name in both shapes.
+    rel.split("/")[1] === "backend"
+      ? join(BACKEND_SRC_DIR, rel.replace("/backend/", "/backend/"))
+      : join(SKILLS_DIR, rel),
+    "utf8",
+  );
 
 /** The spells that own at least one arg-parsing entry point. */
 export const spellsOf = (entryPoints: string[]) =>

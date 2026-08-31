@@ -1,8 +1,16 @@
-// Pure unit tests for cli.ts helpers that don't need a running daemon.
+// Unit tests for cli.ts helpers that don't need a running daemon, plus the
+// end-to-end failure contract driven as a subprocess.
+//
+// ⛔ MOVED HERE FROM `plugins/spellbook/skills/magpie/tests/` IN SLICE 2, and it
+// had to move: it imports the CLI's internals, and after the backend source
+// relocated to `src/magpie/backend/` that import would have been a RELATIVE
+// ESCAPE out of `plugins/spellbook/` — exactly what ward 1a forbids. A test
+// lives with the source it imports; what it SPAWNS is a separate question,
+// answered at `CLI` below.
 
 import { expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
-import { cutoutFilename, parseArgs, VERB_SPEC } from "../scripts/cli";
+import { cutoutFilename, parseArgs, VERB_SPEC } from "./cli";
 
 test("cutoutFilename: the raw crop keeps the bare name; each model gets its own file", () => {
   // crop = the bare name (back-compat with existing slice-phase files)
@@ -46,7 +54,7 @@ test("VERB_SPEC is the dispatch switch — neither may grow a verb alone", () =>
   // Nothing in the type system ties them together, so a verb added to one and
   // not the other is exactly the drift the census was built to find — magpie
   // would advertise a verb it cannot run, or run one it will not name.
-  const src = readFileSync(new URL("../scripts/cli.ts", import.meta.url), "utf8");
+  const src = readFileSync(new URL("./cli.ts", import.meta.url), "utf8");
   const dispatch = src.slice(src.indexOf("switch (verb) {"));
   const cases = new Set(
     [...dispatch.matchAll(/^\s{4}case "([a-z-]+)":/gm)].map((m) => m[1] as string),
@@ -61,7 +69,15 @@ test("VERB_SPEC is the dispatch switch — neither may grow a verb alone", () =>
 // lives in what the PROCESS writes and exits with. Subprocess tests, so stdout
 // emptiness and the exit code are observed rather than inferred.
 
-const CLI = new URL("../scripts/cli.ts", import.meta.url).pathname;
+// ⛔ THE SUBPROCESS CELLS DRIVE THE SHIPPED LAUNCHER, NOT THIS SOURCE, AND THAT
+// IS THE POINT. The failure contract is what the installed PROCESS writes and
+// exits with, so after Slice 2 the honest target is the path a consumer
+// actually invokes: `scripts/cli.ts` -> `dist/cli.js` -> this module, bundled.
+// Pointing these at the source here would test code that never ships alone.
+// (The unit cells above import this source directly — deliberately the other
+// half: parser behaviour is cheaper to pin before bundling than after.)
+const CLI = new URL("../../../plugins/spellbook/skills/magpie/scripts/cli.ts", import.meta.url)
+  .pathname;
 
 function run(args: string[]): { code: number; stdout: string; stderr: string } {
   const p = Bun.spawnSync(["bun", CLI, ...args], { stdout: "pipe", stderr: "pipe" });

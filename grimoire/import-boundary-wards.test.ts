@@ -442,7 +442,10 @@ const BUILTIN_EXACT = ["bun"] as const;
  * When the emission lands, ONE line here turns the exemption on for exactly the
  * root it names.
  */
-const DECLARED_EMITTED_ROOTS: string[] = [];
+const DECLARED_EMITTED_ROOTS: string[] = [
+  "plugins/spellbook/skills/astrolabe/dist",
+  "plugins/spellbook/skills/magpie/dist",
+];
 
 /** Env override for calibration. `filter(Boolean)` closes the `"".split(",")`
  *  → `[""]` trap — an empty var would otherwise declare a root matching every

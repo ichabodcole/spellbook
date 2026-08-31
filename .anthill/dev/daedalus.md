@@ -1034,3 +1034,43 @@ Pin: gate went 1501 pass / 2 fail → 1503 pass / 0 fail on `git rm --cached` al
 prospero's measurement (10 files, 74 refs, grepped for `buildInfo|build.json|builtAt|…`) was EXACT for every file that names the thing — I found no undercount in it.
 What it structurally could not find is the file that mentions no identifier because it derives its population: the `git ls-files` ward above, and `scripts/instruments/gate-blind-set.ts`, whose `gated`/`handAuthored` counts move when any tracked source is deleted (checked: only `DECLARED_BLIND`, the blind FILE list, is pinned, and a deleted `.ts` was never blind — so no ward moved).
 Rule: pair an identifier grep with a pass over the tree-enumerating instruments, because their coupling to your change is by EXISTENCE, not by name.
+
+**A relocation breaks SIBLING-relative paths and leaves ANCESTOR-relative ones alone — and knowing which is which is the whole risk assessment.**
+Moving a CLI's execution from `<spell>/scripts/` to `<spell>/dist/cli.js` looked like it would break every path derived from `dirname(fileURLToPath(import.meta.url))`; measured, `dist/` and `scripts/` are the SAME DEPTH, so `SKILL_ROOT`, `DIST_DIR`, `SURFACE_CWD` and the `../../../.claude-plugin/plugin.json` read were all unaffected.
+Exactly one expression broke: `join(SCRIPT_DIR, "server.ts")`, because it names a SIBLING rather than an ancestor — and the failure would have been the daemon never spawning, from a CLI whose every other path was fine.
+`join(SCRIPT_DIR, "..", "scripts", "server.ts")` is correct from BOTH locations, which is the shape to reach for: go up to the shared ancestor and back down, so one expression survives the move.
+Rule: before relocating an executing file, sort its path derivations into ancestor-relative and sibling-relative; only the second list can hurt you, and it is usually short.
+Pin: sk2-build, `src/<spell>/backend/cli.ts` SERVER_SCRIPT; the daemon-spawn was driven in the deps-free local-sim, not inferred.
+
+**When a ward's population loses its subject, extend the WALK — do not loosen the PREDICATE.**
+Slice 2 moved two CLIs out of `<spell>/scripts/`, and five instruments went red at once: `flag-invariant` (documented flags UNRESOLVED), `strict-parse-invariant` (17 → 15 invocations), `terminator-invariant` (8 → 6 files, two stale pins), and the exit-site inventory (12 rows adrift).
+Every one of them was fixable two ways, and only one way is honest: teach the shared enumerator the second root (`src/<spell>/backend/`), or relax each ward until the absence stopped mattering.
+The tell that the walk is the right fix: after extending it the population returned to the SAME COUNT (16 entry points before, 16 after) with two members at new addresses — a predicate loosening would have changed the count and quietly widened what passes.
+Pin: `grimoire/lib/entry-points.ts` BACKEND_SRC_DIR + backendSources(); the four wards' pins moved with it.
+
+**A ward keyed on a path segment needs its NEW key chosen for the ATTRIBUTION function, not for the filesystem.**
+The obvious key for a relocated entry point is its repo-relative path, `src/magpie/backend/cli.ts` — and `spellsOf` reads `p.split("/")[0]`, so every such entry point would have been attributed to a spell named "src", silently, inside the one helper every ward trusts to say who owns what.
+Keying them `<spell>/backend/cli.ts` keeps the first segment meaning what it has always meant and cannot collide with `<spell>/scripts/...`.
+Generalizes: when adding a second root to a keyed enumerator, look at what CONSUMES the key before choosing its shape — the filesystem's answer and the consumer's answer are different questions.
+
+**A text-scanning predicate cannot tell prose from code, so a comment explaining the predicate can trip it.**
+I made the launcher stop matching `PARSES_ARGS` by moving argv ownership into the backend — then wrote a comment explaining the rule that SPELLED the identifier, and the launcher matched again, from inside the paragraph warning against it.
+This is the epitaph's family with a new costume: not a described fact that should have been run, but a described RULE landing inside the instrument's own input.
+Rule: when a file's classification depends on a text scan, the file's comments are part of its input — say the token's name only where the scan does not look, or describe it without spelling it.
+Pin: both launchers' `run()` paragraph, reworded; entry points went 18 → 16 on the wording alone, with zero code change.
+
+**`git ls-files`-driven wards need the artifact STAGED, and this is now twice in two cards.**
+Ward 1b's emitted-root zero-guard read 0 tracked files under a root that visibly held a fresh `dist/cli.js`, for the same reason the import ward died on an unstaged deletion last card: `git ls-files` reports the INDEX, not the disk.
+The remedy is not a ward change — it is that a report-only seat must stage generated artifacts before running the gate, and say so when handing over.
+Treat "the enumerator sees the working tree" as a claim to check, not an assumption, in any instrument that shells out to git.
+
+**Emitting a second artifact kind into one `dist/` makes the CLEAN step a correctness question, not hygiene.**
+`src/build.ts` rm'd `dist/` per aspect; astrolabe is the first spell with BOTH a surface and a backend landing there, so a per-aspect clean would have had the second build delete the first's output.
+The failure mode is silent and asymmetric: a `dist/` holding `index.html` but no `cli.js` still serves a working board, so the surface looks healthy and only the CLI disappears.
+Clean once per spell, then build each aspect present — and state the ordering in the function, because the next person adding an aspect will reach for the familiar per-aspect rm.
+
+**A test that imports a relocated module must move WITH it, or it becomes a ward violation rather than a broken import.**
+magpie's `tests/cli.test.ts` imported its CLI's internals; after the source moved to `src/`, re-pointing the import in place would have been a relative escape out of `plugins/spellbook/` — precisely what ward 1a forbids, so the "small fix" was the illegal one.
+Moving the file to `src/magpie/backend/cli.test.ts` also improved it: the unit cells import the source, while the subprocess cells now spawn the SHIPPED launcher, so one file tests the parser before bundling and the artifact after.
+Rule: when a module relocates, ask of each of its consumers whether the consumer is on the same side of a boundary — an import that merely gets longer may be an import that is no longer allowed.
+

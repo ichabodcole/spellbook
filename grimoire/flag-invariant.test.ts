@@ -4,6 +4,7 @@ import {
   argParsingEntryPoints,
   globEntryPointsForComparison,
   isCallerFacing,
+  readEntryPoint,
   recognizedFlags as recognizedSet,
   SKILLS_DIR as SKILLS,
   spellsOf,
@@ -183,7 +184,14 @@ describe("ward — every SKILL.md flag is recognized, and every recognized flag 
       const all = new Set<string>();
       const unresolved: string[] = [];
       for (const p of mine) {
-        const set = recognizedSet(fs.readFileSync(join(SKILLS, p), "utf8"));
+        // ⛔ `readEntryPoint`, NOT a second `join(SKILLS, p)`. Entry points now
+        // live under TWO roots — `<spell>/scripts/` and, for a built backend,
+        // `<spell>/backend/` under `src/` (Contract 4). The shared enumerator
+        // owns that resolution; a local join is a second reader that cannot
+        // see the second root, and it failed loudly here rather than quietly
+        // only because a missing file throws. The module exists so one
+        // definition answers "where does this entry point live".
+        const set = recognizedSet(readEntryPoint(p));
         if (set === null) unresolved.push(p);
         else {
           for (const f of set) all.add(f);
