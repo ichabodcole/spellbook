@@ -124,3 +124,22 @@ diverging on surface hygiene, imago lowercasing context-library names, and a
 second accessibility instance. **Carried to Cole, still unruled:** what a
 consumer receives per spell once built surfaces are the norm — now materially
 larger, since two spells ship committed `dist/` rather than one._
+
+---
+
+_Reconciled 2026-08-31 @ `5d32bfa` — **SPRINT 02 COMPLETE**, 8 commits. **All
+three sharing capabilities the proposal named now exist and are proven.** Shared
+surface code (`cn()`, two surfaces, bundler exercised); shared backend code
+(`printJson`, two shipped CLIs, verified at a destination with no `node_modules`
+up-tree); the emission path they travel on, ruled and warded. **Shared styling
+is Sprint 03's** and is the only slice left. **Live-defects table:** "stale-dist
+fires unconditionally" — **CLOSED by deletion** (`fae8830`), not by fix. The
+others stand. **New this sprint:** a
+[port playbook](../../playbooks/porting-a-spell-playbook.md) — four phases,
+eight gotchas each carrying its instance count — written **from the artifacts**,
+with a separate audit of what could only be supplied from memory. That audit
+found a live falsehood in Contract 17 and is the reason this project now knows
+that \_a finding gets captured when it produces an artifact and evaporates when
+it only produces a decision_. **Carried to Cole, still unruled:** what a
+consumer receives per spell once built surfaces are the norm — now larger again,
+since a built **backend** ships too.\_

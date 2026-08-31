@@ -320,3 +320,28 @@ Contract 1's release/dev split is now duplicated verbatim across two spells —
 `serveDist` 10, `daemonCwd` 5, `STATIC_CONTENT_TYPES` 8) plus a release-serve
 gate that is a 46% copy. That number is this sprint's argument; quote it rather
 than re-deriving it._
+
+---
+
+_Reconciled 2026-08-31 @ `5d32bfa` — **SPRINT COMPLETE, all four proofs HELD.**
+"two spells' shipped `scripts/` import one implementation, and the installed
+artifact still runs": **HELD** — astrolabe and magpie, zero local `printJson`,
+one kit import each, local-sim re-run by the lead. "two surfaces import `cn()`
+from `src/kit/`, neither artifact gains a source file": **HELD** — 7 mind-mapper
+importers + 1 imago adoption, 0 `.ts` in either `dist/`. "Ward 2 goes from
+vacuously green to meaningfully green": **HELD** — `src/kit/` population 0 → 2,
+and proved able to fail by a planted escaping import. "the emission ruling is
+made, recorded, and warded": **HELD** — Cole ruled option 3; recorded as an
+**amendment** to Contract 3's trigger rather than an invocation of its
+criterion, staged with evidence marked PENDING. **FALSIFIED and corrected in
+place:** this plan's `sharp` example (the native-addon trigger has **zero** live
+instances since sprint 01); the Phase 3 done-when (**worthless twice over** — it
+greps a path the change deletes, and surface bundles carry readable paths as
+boundary comments regardless); the "extend the staleness walk" work item and
+three sibling passages (their subject was deleted at `fae8830`). **RULED, not in
+this plan when written:** the emit location is `dist/cli.js` + a launcher,
+decided by measurement — every instrument already defines *generated* as *under
+`dist/`*. The pair was **forced** to astrolabe + magpie by acc conformance.
+**UNCHECKED:** whether the four remaining `printJson` copies should ever
+converge. Deliberately out of scope — this phase proved a mechanism, not a
+cleanup._

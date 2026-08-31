@@ -1078,3 +1078,44 @@ toolchain that cannot be pinned. At that point the basis must be **re-derived, n
 **Proof:** `fae8830` (the stamp's removal, and the rebuild-is-a-git-no-op measurement) ·
 [the 2026-08-31 spike](../../docs/investigations/2026-08-31-releasing-a-non-stale-build.md),
 which carries the touch-point pricing and what no layer catches.
+
+## Contract 19 — a ward's population must follow its subject, and "loosen the predicate" is the moment to check that it has
+
+_Owner: thoth. Ratified 2026-08-31, spell-kit sprint 02 — **three instances in one sprint**, which is what made it a contract rather than three findings._
+
+**The contract, stated once:** when the project moves what a check is about, **the check's POPULATION is the half that silently stops covering it.** A predicate can be perfectly correct over a set that no longer contains the subject, and the result is **green because it stopped looking** — while the cell's title still claims the old coverage.
+
+**Three instances, all this sprint, all different-looking:**
+
+| | the move | what went blind |
+| --- | --- | --- |
+| ward 1a | surfaces relocated to `src/` | a **magnitude floor** calibrated at 206 against a population Contract 4 drains — 206 → 192 → 149 → 101 projected. Fired at 149 against a floor of 150, **by one**, which reads as noise and is structure. |
+| ward 1b | the CLI became `dist/cli.js` | `dist/cli.js` fails **both** filters (`.ts`/`.tsx`, and `scripts\|shared`), so the code that actually executes at a deps-free destination left the population entirely |
+| 4 entry-point instruments | the CLIs moved to `src/<spell>/backend/` | `flag-invariant`, `strict-parse-invariant`, `terminator-invariant` and the exit-site inventory all lost both CLIs at once |
+
+**⛔ The request that arrives is always "widen the predicate", and the predicate is the SAFE half.** Ward 1b's card said exactly that. Widening only the predicate would have shipped a ward that had stopped looking — **and it would have looked like diligence.**
+
+**Two rules, both paid for:**
+
+- **Extend the WALK; never loosen a predicate to make a population fit.** The tell that the repair is honest: the entry-point population came back to **16 — exactly what it was before** — with two members at new addresses. A loosened predicate moves the count and widens what passes.
+- **A guard's denominator must be something the project is not changing.** Where the roadmap moves a population, assert **membership over a structurally-invariant subset** (`scripts/` cannot move; Contract 3 keeps backends shipping as source), never a magnitude. Calibrate by **simulating the remaining moves and requiring green**.
+
+**And the corollary that decides whether a shrink is even visible:** a shrunk population is **not** a red cell — **unless the instrument carries an explicit pinned inventory.** Ward 1b shrank silently; the four entry-point instruments failed loudly, because each pins what it expects to find. **The pin is what converts a silent shrink into a loud failure**, and it is the transferable part.
+
+**Proof:** `3c88275` (roots declared and empty, deliberately), `7bb0f4a` (turned on, four instruments repaired by extending the walk).
+
+## Contract 20 — a generated artifact is source-free by FILES, not by strings; and a migration's done-when must be keyed on the NEW name
+
+_Owner: circe. Ratified 2026-08-31 from Slice 3, where the phase's own exit criterion turned out to carry zero information._
+
+**Half one — you cannot establish "no source reached the artifact" by grepping the artifact's text.** Un-minified bundles embed their module paths as **per-module boundary comments** — measured: **82** in one mind-mapper chunk, and `// src/kit/lib/cn.ts` is in both shipped surface bundles right now. Surface bundles carry **no sourcemap at all**; backend bundles carry an inline one, base64, whose plaintext is unsearchable. **So the text of `dist/` proves nothing either way.**
+
+**The invariant lives in the deployed folder's FILE LIST**, which is what Contract 4's identity sentence means post-amendment: no `surface/`, no stray sources, nothing a consumer edits or a bundler reads.
+
+**Half two — an exit criterion keyed on the identifier a migration DELETES is green by construction.** Slice 3's done-when grepped `dist/` for `surface/lib/utils`. The `git mv` removes that string from the tree, so after the change it **cannot** appear regardless of whether paths leak. It returned nothing and carried **zero information**.
+
+> **A migration's done-when must name the SUCCESSOR.** Keyed on the predecessor, the very act being audited guarantees the pass — the same _"check that cannot fail"_ shape as a vacuous refusal cell, relocated from a test into a plan.
+
+**Corollary on adoption proofs:** where a shared helper *changes its output* (`cn` collapses whitespace), define equivalence and test it across the input space rather than eyeballing one render — **8 of 8 boolean combinations**, with the only raw delta being the thing the helper exists to remove. And check what a green gate would hide: Tailwind's `@source` scans **literal text**, so moving a class from a ternary into an `&&` can vanish it at runtime while everything stays green. **Count the class in the built CSS.**
+
+**Proof:** `475cb6a`.
