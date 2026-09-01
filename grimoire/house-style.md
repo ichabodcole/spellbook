@@ -358,20 +358,68 @@ unchanged**, which is why the scar stays._
 
 ---
 
-## The build (there isn't one)
+## The build
 
-### Self-contained, no build step. Bun runs `.ts` natively.
+### Four spells build. The rest are queued, at three different distances.
 
-<!-- rule-id: self-contained-no-build -->
+<!-- rule-id: spells-are-porting-to-the-build -->
 
-Zip one folder and it runs anywhere `bun` is on PATH. Protocol types at the top
-of the file; assets load CDN libs inline.
+`bun run build` (`src/build.ts`) bundles a spell's surface from
+`src/<spell>/surface/` into `plugins/spellbook/skills/<spell>/dist/`, which is
+**committed**. Today **astrolabe, imago, magpie, mind-mapper** build; two of
+them (astrolabe, magpie) also ship a **built backend** at `dist/cli.js` behind a
+three-line launcher.
 
-- **Boundary check:** a heavy UI framework _may_ take a `bun build` step inside
-  the spell's own setup — but the moment it feels like erecting a building,
-  stop.
-- **Repeal when:** the runtime makes a build step free (then it's no longer a
-  cost to weigh).
+**The direction is that everything ports.** The remaining four are _not yet_,
+not _correctly not_ — but they are not one queue, and treating them as one is
+how a port gets estimated wrong:
+
+| spell         | surface today           | distance                                             |
+| ------------- | ----------------------- | ---------------------------------------------------- |
+| **glamour**   | 15 `.tsx` + its own CSS | **a relocation** — same move as the four that landed |
+| **bounty**    | Alpine in one HTML file | a surface **rewrite** first                          |
+| **grapevine** | Alpine in one HTML file | a surface **rewrite** first                          |
+| **digestify** | one HTML file + CDN     | **conditional** — see the trigger below              |
+
+**glamour is the cheap one and should not be lumped with the other three.** It
+is already React and Tailwind; what stands between it and a build is moving the
+files. bounty and grapevine are Alpine single-pagers — porting them means
+rewriting the surface, which is a different project with a different budget.
+
+> **⏳ DIGESTIFY'S TRIGGER, stated because an unnamed one does not fire.**
+> digestify ports **when it becomes dynamic enough to want a build** — that is
+> the condition, and it is real rather than a placeholder: the plan to make it
+> more dynamic exists and the port is expected to follow it. **Cole owns this
+> trigger and checks it when that work starts.** Until then digestify staying
+> put is the correct state, not debt.
+
+**What a built spell must satisfy** — the contracts, not this page, are
+authoritative:
+
+- the deployed folder is **source-free by FILES** (Contracts 4, 20)
+- `dist/` is verified by **reproduction**, never regenerated in CI (Contract 18)
+  — reproduction now holds from a clean _or_ a dirty `dist/`
+- release gates on `dist/index.html` existing (Contract 1)
+- a built surface's Tailwind scan is **scoped to its own surface**, and the kit
+  is adopted by importing its **stylesheet**, not by importing a component
+  (Contract 21) — **a porting spell must add `source(none)` or it re-opens the
+  cross-spell leak**
+
+- **Boundary check:** the dev loop is the cost. If a change to a built spell
+  needs a rebuild to see, that is the tax — weigh it before porting the next.
+- **Repeal when:** the last spell ports. Then this rule becomes "spells build."
+
+> **⚠ THIS SECTION READ "The build (there isn't one)" UNTIL 2026-08-31, THROUGH
+> THREE SPRINTS THAT BUILT THINGS.** v2.2.0 shipped a build; the page went on
+> denying it. Nothing failed — canon has no gate — and the cost landed on every
+> fresh agent who read the tree through a description that contradicted it.
+>
+> **The old rule carried a repeal condition and it had FIRED:** _"repeal when
+> the runtime makes a build step free."_ Bun's HTML imports and
+> `bun-plugin-tailwind` did approximately that. **A repeal condition nobody is
+> scheduled to re-read is a comment, not a trigger** — the same shape as an
+> untested backup. The digestify trigger above names an owner and an occasion
+> for exactly this reason.
 
 ### Honor the exit-code contract.
 
