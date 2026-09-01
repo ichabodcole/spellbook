@@ -441,8 +441,8 @@ about a set it never looked at. **Tests are the live instance — five spells ke
 them in `scripts/`, three (`glamour`, `imago`, `magpie`) in `tests/`:**
 
 ```
-find plugins/spellbook/skills -name "*.test.ts"      ✅ 63
-ls   plugins/spellbook/skills/*/scripts/*.test.ts    ❌ 37 — blind to three whole spells
+find plugins/spellbook/skills -name "*.test.ts"      ✅ 57
+ls   plugins/spellbook/skills/*/scripts/*.test.ts    ❌ 39 — blind to three whole spells
 ```
 
 The same shape bites lexically as well as structurally. Measured across one
