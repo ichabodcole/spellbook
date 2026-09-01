@@ -41,10 +41,39 @@
    rebuilding imago — Dot's three utilities (the ward's sentinel, its pulse and
    its default L0 tone) all vanished from the shipped stylesheet, with a green
    build and no error.
-   ⛔ AND THAT SENTENCE MUST NOT NAME THEM. This file is INSIDE the directory
-   its own @source scans, so a class written here in prose stays emitted after
-   the component stops using it — which is precisely how the ward that guards
-   this mechanism becomes unfalsifiable. Caught by that ward, on this comment.
+   ⛔ AND THAT SENTENCE MUST NOT NAME THEM — THOUGH NOT FOR THE REASON THIS
+   PARAGRAPH USED TO GIVE. It said this file is INSIDE the directory its own
+   @source scans, "so a class written here in prose stays emitted". The first
+   clause is true. The second is FALSE, and the sentence it justified — that
+   the ward guarding this mechanism was caught by itself on this comment —
+   never happened: kit-styling-ward's discrimination cell skips src/kit/
+   outright. Re-measured 2026-09-01 by a seat that did not write this file, one
+   probe class per `bun run build`, counted in imago's and mind-mapper's
+   shipped CSS, with a live control in EVERY run (the same probe in Dot.tsx's
+   className: 1 in imago, 1 in mind-mapper, 0 in the two spells that do not
+   import this file). Byte-identical one-line bodies, siblings of this file:
+       .css 0 · .scss 0 · .less 0 · .styl 0 · .log 0 · .lock 0
+       .md 1 · .html 1 · .txt 1 · .json 1 · .yaml 1
+   Extension is the ONLY variable, and CSS is not special-cased — oxide's
+   auto_source_detection ignores a stylesheet/lockfile/log GROUP, so the real
+   rule is a blocklist, not the four-extension allowlist it reads like. Naming
+   the file explicitly changes nothing either: an @source giving the .css by
+   path, by star glob, and by a brace glob that literally spells css all emit
+   NOTHING from it, while the .md reached by that same brace glob emits. So
+   this file sits inside the scanned directory and is not scanned, and
+   kit-prose-ward's .css exemption is CORRECT rather than a hole.
+
+   ⛔ THE PROHIBITION STANDS ANYWAY, AND NOTHING ENFORCES IT HERE. Two
+   stock-palette classes planted in this very comment leave every grimoire ward
+   green: kit-prose-ward exempts .css because the leak is genuinely absent, and
+   `bun run check` never reads this file at all — it is a declared entry in
+   gate-honesty's blind set. This is the ONE file in src/kit/ where the
+   directory's "prose does not spell class names" rule is on your honour.
+   Keep it, because PROSE MIGRATES: the identical sentence in a .tsx comment,
+   a README.md or a .txt note in this directory is a LIVE RULE in both
+   consumers' shipped stylesheets — which is how Dot.tsx's header came to ship
+   eight utilities, three of them live, before it was rewritten. Say it in
+   words, not in the class's own spelling.
 
    ⛔ AND THIS IS WHY IT CANNOT BE REPLACED BY "the bundler will find it".
    Under source(none) Bun's Tailwind plugin DISCARDS the module graph outright

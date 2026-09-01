@@ -144,6 +144,20 @@ import { join } from "node:path";
 // two others is what a substitution looks like, not what a no-op looks like.
 // The removed guard was measured LIVE before it was deleted and measured DEAD
 // after; grimoire/spell-css-scope-ward.test.ts carries the reproduction.
+//
+// ⛔ RE-DECLARED 2026-09-01 — 20/4,582 -> 20/4,611. MEMBERSHIP DID NOT MOVE
+// (same 20 files); ONE existing entry grew, and all of it is PROSE:
+//     +29  src/kit/theme/base.css                 84 -> 113
+// 4,582 + 29 = 4,611 exactly, with nothing left over.
+//
+// ⚠ AND THE PIN IS THE ONLY THING THAT NOTICED THE EDIT, WHICH IS THE POINT —
+// AND ALSO A TRAP THIS RE-DECLARATION EXISTS TO NAME. That file carried a ⛔
+// warning asserting `.css` prose is a Tailwind content source; it is not, and
+// the correction is what grew it. While benching that, a probe planted in
+// base.css reded THIS cell — and it looked like a class guard. It is not: this
+// cell counts LINES, so it fires identically on a blank line and stays green on
+// a class name added to an existing line. Verified both directions. A red here
+// licenses "the blind set moved", never "the blind file is wrong".
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
@@ -152,7 +166,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 84,
+  "src/kit/theme/base.css": 113,
   "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
