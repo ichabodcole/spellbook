@@ -102,14 +102,36 @@ import { join } from "node:path";
 // `dist/` is GENERATED, so neither touches this population. A total that holds
 // through a relocation PLUS a deletion PLUS a new artifact is the pin working,
 // not the pin sleeping.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 4 — AND THIS ONE GENUINELY MOVED, 19/4,442
+// -> 20/4,540. Unlike the three relocations above (which were path-only no-ops)
+// this is real growth, and it is ACCOUNTED FOR RATHER THAN ACCEPTED:
+//     +68  src/kit/theme/base.css — a NEW hand-authored stylesheet; CSS is a
+//          file class `bun run check` cannot read at all, so every line of the
+//          kit's token layer is blind by construction.
+//     +15  src/mind-mapper/surface/styles.css  220 -> 235
+//     +15  src/imago/surface/styles.css        151 -> 166
+//          both from PROSE I added: the kit @import note and the `@source not`
+//          block explaining why a build must never scan its own output.
+// 4,442 + 68 + 15 + 15 = 4,540 exactly, with nothing left over. The arithmetic
+// closing is the point — a total that moved and cannot be decomposed means
+// something ELSE moved too, and this pin exists to make that impossible to miss.
+//
+// ⚠ AND THE COST IS REAL, NOT BOOKKEEPING. 30 of these 98 lines are comments,
+// and they buy documentation for a mechanism nothing else records — at the
+// price of living where no linter, type checker or parser will ever read them.
+// Sprint 01 declined a helpful bunfig comment for exactly this reason, because
+// there the movement bought nothing. Here it does. Stated so the next person
+// can disagree with the trade rather than discover it.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
   "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
-  "src/mind-mapper/surface/styles.css": 220,
+  "src/mind-mapper/surface/styles.css": 235,
   "src/magpie/surface/styles.css": 175,
-  "src/imago/surface/styles.css": 151,
+  "src/imago/surface/styles.css": 166,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
+  "src/kit/theme/base.css": 68,
   "src/astrolabe/surface/styles.css": 93,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,

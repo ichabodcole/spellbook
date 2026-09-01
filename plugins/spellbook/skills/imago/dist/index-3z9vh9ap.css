@@ -147,16 +147,17 @@
     --default-font-family: var(--font-sans);
     --default-mono-font-family: var(--font-mono);
     --color-bg: #120e18;
-    --color-bg-elev: #1a1422;
     --color-surface: #1b1626;
+    --color-ink: #e2e8f0;
+    --color-edge: #2e2640;
+    --color-ink-faint: #64748b;
+    --color-bg-elev: #1a1422;
     --color-surface-2: #140f1d;
     --color-surface-3: #241d33;
     --color-divider: #241d33;
-    --color-edge: #2e2640;
     --color-edge-2: #2a2238;
     --color-edge-strong: #3a3050;
     --color-edge-hover: #4a3f63;
-    --color-ink: #e2e8f0;
     --color-ink-strong: #f5f3ff;
     --color-muted: #94a3b8;
     --color-faint: #64748b;
@@ -1056,6 +1057,11 @@
 
   .aspect-square {
     aspect-ratio: 1;
+  }
+
+  .size-2 {
+    width: calc(var(--spacing) * 2);
+    height: calc(var(--spacing) * 2);
   }
 
   .\!h-5 {
@@ -3208,6 +3214,14 @@
     background-color: var(--color-ink);
   }
 
+  .bg-ink-faint {
+    background-color: var(--color-ink-faint);
+  }
+
+  .bg-muted {
+    background-color: var(--color-muted);
+  }
+
   .bg-neutral-400 {
     background-color: var(--color-neutral-400);
   }
@@ -4713,6 +4727,10 @@
     color: var(--color-ink);
   }
 
+  .text-ink-faint {
+    color: var(--color-ink-faint);
+  }
+
   .text-ink-strong {
     color: var(--color-ink-strong);
   }
@@ -5486,6 +5504,10 @@
     color: var(--color-faint);
   }
 
+  .placeholder\:text-ink-faint::placeholder {
+    color: var(--color-ink-faint);
+  }
+
   .placeholder\:text-slate-600::placeholder {
     color: var(--color-slate-600);
   }
@@ -5539,6 +5561,12 @@
       .hover\:border-fuchsia-500\/40:hover {
         border-color: color-mix(in oklab, var(--color-fuchsia-500) 40%, transparent);
       }
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:border-ink-faint:hover {
+      border-color: var(--color-ink-faint);
     }
   }
 
@@ -6100,6 +6128,14 @@
   .\[\&_svg\]\:shrink-0 svg {
     flex-shrink: 0;
   }
+}
+
+[data-theme="light"] {
+  --color-bg: #f7f6f3;
+  --color-surface: #fdfcfa;
+  --color-ink: #1e293b;
+  --color-edge: #ddd8cf;
+  --color-ink-faint: #8b93a1;
 }
 
 :root {

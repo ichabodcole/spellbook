@@ -1,7 +1,22 @@
 @import "tailwindcss";
+/* L0 shared tokens (src/kit/theme/base.css). Imported BEFORE this surface's own
+   @theme, so every token below OVERRIDES the kit default — mind-mapper keeps
+   all of its own values and inherits nothing but the vocabulary. */
+@import "../../kit/theme/base.css";
 /* Tailwind only emits utilities it finds as literal text — keep the @source
    glob so classes referenced from .ts (not just .tsx) survive. */
 @source "./**/*.{ts,tsx}";
+/* ⛔ NEVER SCAN A BUILT ARTIFACT. Tailwind's automatic content root for
+   `bun run build` is the REPO ROOT, and the committed `dist/` trees are
+   un-ignored in .gitignore so they ARE scanned — which means every build reads
+   the PREVIOUS build's output as source. A utility with no token dependency is
+   then self-sustaining: once emitted it reappears forever, because last build's
+   CSS keeps this build's scan finding it. Measured 2026-08-31 — a class deleted
+   from its only component stayed in the shipped stylesheet until the dists were
+   removed by hand, which silently makes any built-CSS assertion unfalsifiable
+   (grimoire/kit-styling-ward.test.ts depends on this line being here). */
+@source not "../../../plugins/spellbook/skills/*/dist";
+
 
 /* Semantic tokens (house convention: no raw palette in markup). Names follow
    the imago/glamour taxonomy; tier/provenance tokens are this surface's own

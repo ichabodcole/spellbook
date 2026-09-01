@@ -1,0 +1,68 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   src/kit/theme/base.css — L0 BASE TOKENS for the shared kit.
+
+   THE LAYERS (R3's four-layer mechanism, proven in src/mind-mapper/surface):
+     L0  these tokens — the shared vocabulary, with a default value each
+     L1  a spell's shadcn aliases (--color-accent, --color-popover, …)
+     L2  a spell's own @theme, which OVERRIDES any L0 token by redeclaring it
+     L3  a mode override ([data-theme="light"]) on the same names
+
+   A spell imports this file AFTER `@import "tailwindcss"` and BEFORE its own
+   @theme. Later declarations win, so a spell that redeclares --color-surface
+   keeps its own value and one that does not inherits the kit's.
+
+   ⛔ THE L0 SET IS THE INTERSECTION OF NAMES THE ROSTER ALREADY USES, NOT AN
+   INVENTION. Every token here is spelled the same way in at least two shipped
+   surfaces today. Where the roster DISAGREES on a name for one role
+   (mind-mapper's `ink-dim`/`ink-faint` vs imago's `muted`/`faint`;
+   `surface-raised` vs `surface-3`) the token is DELIBERATELY ABSENT — picking a
+   winner there is a rename across two surfaces, and this phase is relocation
+   plus a naming decision, not a migration. Add one when a second signal asks.
+
+   ⛔ NO L1 SHADCN ALIAS BELONGS HERE. `--color-accent` is imago's BRAND slot
+   and simultaneously mind-mapper's shadcn alias (`var(--color-edge)`) — the two
+   meanings collide, and R3 resolves it by renaming imago's brand out of the
+   shadcn namespace across 95 sites. A kit component that touched `bg-accent`
+   would drag that rename onto this phase's critical path. It does not.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* ⛔ THIS @source IS LOAD-BEARING AND ITS ABSENCE FAILS ONLY IN DEV.
+   Tailwind v4's automatic content detection roots at the PROCESS CWD (measured
+   2026-08-31, this file's phase). `bun run build` runs from the repo root, so
+   src/kit/ is scanned there by accident and every kit utility is emitted. The
+   DEV daemon is different: seams Contract 5 pins its cwd to src/<spell>/, so
+   automatic detection cannot see a sibling src/kit/ at all, and Tailwind's
+   response to a component it cannot see is to emit ZERO utilities with no
+   error. Without this line the kit renders styled in release and UNSTYLED in
+   dev — one board, two behaviours, and the green build is the misleading half.
+   Resolved relative to THIS FILE, not to the importer — verified empirically,
+   not assumed (an @import-ed sheet's @source is self-relative). */
+@source "../";
+
+@theme {
+  --color-bg: #020617;
+  --color-surface: #0f172a;
+  --color-ink: #e2e8f0;
+  --color-edge: #1e293b;
+  /* Tertiary ink. THIS IS THE NAMING DECISION the phase called for, and it is
+     the one token here that a consumer does NOT already define: the roster
+     spells this role two ways — mind-mapper `ink-faint`, imago `faint`. The kit
+     takes mind-mapper's spelling because it is the `ink-*` family's third
+     member and the family already reads as a scale. imago keeps its own
+     `--color-faint` untouched (renaming 
+     it is a migration, not this phase) and simply INHERITS this one.
+     ⛔ That inheritance is what makes this file load-bearing rather than
+     decorative: every other token here is overridden by both consumers, so
+     this is the only one whose absence a consumer would feel. */
+  --color-ink-faint: #64748b;
+}
+
+/* L3 — the mode override, on the same names. A spell that redeclares a token
+   in its OWN [data-theme="light"] block wins here too, by the same rule. */
+[data-theme="light"] {
+  --color-bg: #f7f6f3;
+  --color-surface: #fdfcfa;
+  --color-ink: #1e293b;
+  --color-edge: #ddd8cf;
+  --color-ink-faint: #8b93a1;
+}

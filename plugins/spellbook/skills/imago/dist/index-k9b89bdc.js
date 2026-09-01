@@ -22162,8 +22162,23 @@ function GenerationsRail({
   }, undefined, true, undefined, this);
 }
 
-// src/imago/surface/components/Header.tsx
+// src/kit/ui/Dot.tsx
 var jsx_dev_runtime19 = __toESM(require_jsx_dev_runtime(), 1);
+function Dot({
+  tone = "bg-ink-faint",
+  pulse = false,
+  className,
+  title
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+    "aria-hidden": true,
+    title,
+    className: cn("size-2 shrink-0 rounded-full", tone, pulse && "animate-pulse", className)
+  }, undefined, false, undefined, this);
+}
+
+// src/imago/surface/components/Header.tsx
+var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
 var PRESENCE_LABEL = {
   idle: "imago · idle",
   working: "imago working…",
@@ -22186,61 +22201,61 @@ function Header({
 }) {
   const p = presence(state);
   const gens = state.batches.reduce((n, b) => n + b.variants.length, 0);
-  return /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("header", {
+  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("header", {
     className: "px-5 py-2.5 flex items-center gap-3 border-b border-divider",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
         className: "text-xl",
         "aria-hidden": true,
         children: "\uD83D\uDF1B"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
         className: "flex-1 min-w-0",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
             className: "page-title leading-tight truncate",
             children: state.title || "imago"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
             className: "text-faint",
             children: "a grounded image canvas"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
         className: `flex items-center gap-2 px-2.5 py-1 rounded-full border ${PRESENCE_RING[p]}`,
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
-            className: `w-2 h-2 rounded-full ${PRESENCE_DOT[p]}`
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Dot, {
+            tone: PRESENCE_DOT[p]
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
             className: `text-xs ${p === "asking" ? "text-attention-ink" : p === "working" ? "text-accent-ink" : "text-muted"}`,
             children: PRESENCE_LABEL[p]
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
         type: "button",
         className: "btn-primary !px-3 !py-1.5 text-xs",
         title: "New image — clear the canvas, pick a size",
         onClick: () => send({ type: "focus.clear" }),
         children: [
-          /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(ImagePlus, {
+          /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(ImagePlus, {
             className: "w-3.5 h-3.5"
           }, undefined, false, undefined, this),
           " New"
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("button", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
         type: "button",
         className: "btn-ghost !p-2",
         title: "Gallery (later)",
         disabled: true,
-        children: /* @__PURE__ */ jsx_dev_runtime19.jsxDEV(LayoutGrid, {
+        children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(LayoutGrid, {
           className: "w-4 h-4"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("span", {
         className: "text-faint tabular-nums",
         children: [
           state.cost || "$0.00",
@@ -22250,8 +22265,8 @@ function Header({
           gens === 1 ? "generation" : "generations"
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime19.jsxDEV("span", {
-        className: `w-2 h-2 rounded-full ${connectionStatus === "open" ? "bg-positive" : "bg-attention"}`,
+      /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(Dot, {
+        tone: connectionStatus === "open" ? "bg-positive" : "bg-attention",
         title: connectionStatus === "open" ? "connected" : connectionStatus
       }, undefined, false, undefined, this)
     ]
@@ -22259,7 +22274,7 @@ function Header({
 }
 
 // src/imago/surface/components/LibrarySwitcher.tsx
-var jsx_dev_runtime20 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
 var PANES = [
   { id: "images", label: "Images", Icon: Images },
   { id: "context", label: "Context Library", Icon: Library }
@@ -22268,15 +22283,15 @@ function LibrarySwitcher({
   pane,
   onChange
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
     className: "flex flex-col items-center gap-1 py-2",
-    children: PANES.map((p) => /* @__PURE__ */ jsx_dev_runtime20.jsxDEV("button", {
+    children: PANES.map((p) => /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("button", {
       type: "button",
       title: p.label,
       "aria-label": p.label,
       onClick: () => onChange(p.id),
       className: `p-1.5 rounded ${pane === p.id ? "bg-accent text-accent-ink" : "text-faint hover:text-ink hover:bg-surface-3"}`,
-      children: /* @__PURE__ */ jsx_dev_runtime20.jsxDEV(p.Icon, {
+      children: /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(p.Icon, {
         className: "w-4 h-4"
       }, undefined, false, undefined, this)
     }, p.id, false, undefined, this))
@@ -22284,18 +22299,18 @@ function LibrarySwitcher({
 }
 
 // src/imago/surface/components/WorkingBanner.tsx
-var jsx_dev_runtime21 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
 function WorkingBanner({ state, working, workingText }) {
   if (!working && !state.status.busy) {
     return null;
   }
-  return /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
     className: "px-6 py-2 flex items-center gap-2 bg-accent/10 border-b border-accent/20 text-sm text-accent-ink",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV(LoaderCircle, {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(LoaderCircle, {
         className: "w-4 h-4 animate-spin"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime21.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("span", {
         children: workingText || state.status.text || "the agent is working…"
       }, undefined, false, undefined, this)
     ]
@@ -22303,7 +22318,7 @@ function WorkingBanner({ state, working, workingText }) {
 }
 
 // src/imago/surface/ImagoShell.tsx
-var jsx_dev_runtime22 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
 function sig(s) {
   const vars = s.batches.reduce((n, b) => n + b.variants.length, 0);
   return [s.batches.length, vars, s.conversation.length].join("|");
@@ -22343,39 +22358,39 @@ function ImagoShell({
     send(m);
   };
   if (ended)
-    return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(EndedOverlay, {}, undefined, false, undefined, this);
-  return /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+    return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(EndedOverlay, {}, undefined, false, undefined, this);
+  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
     className: "h-screen flex flex-col overflow-hidden",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Header, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Header, {
         state,
         connectionStatus: status,
         send
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(WorkingBanner, {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(WorkingBanner, {
         state,
         working,
         workingText
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime22.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
         className: "flex-1 grid grid-cols-[auto_270px_1fr_360px] gap-3 p-3 min-h-0",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(LibrarySwitcher, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(LibrarySwitcher, {
             pane,
             onChange: setPane
           }, undefined, false, undefined, this),
-          pane === "images" ? /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(GenerationsRail, {
+          pane === "images" ? /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(GenerationsRail, {
             state,
             send: sendW
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(ContextLibrary, {
-            state,
-            send: sendW
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Canvas, {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ContextLibrary, {
             state,
             send: sendW
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime22.jsxDEV(Conversation, {
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Canvas, {
+            state,
+            send: sendW
+          }, undefined, false, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(Conversation, {
             state,
             send: sendW
           }, undefined, false, undefined, this)
@@ -22435,15 +22450,15 @@ function useSession() {
 }
 
 // src/imago/surface/main.tsx
-var jsx_dev_runtime23 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime24 = __toESM(require_jsx_dev_runtime(), 1);
 function App() {
   const { state, send, status, ended } = useSession();
   if (!state)
-    return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV("div", {
+    return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV("div", {
       className: "p-6 text-slate-400",
       children: "connecting…"
     }, undefined, false, undefined, this);
-  return /* @__PURE__ */ jsx_dev_runtime23.jsxDEV(ImagoShell, {
+  return /* @__PURE__ */ jsx_dev_runtime24.jsxDEV(ImagoShell, {
     state,
     send,
     status,
@@ -22452,4 +22467,4 @@ function App() {
 }
 var rootEl = document.getElementById("root");
 if (rootEl)
-  import_client.createRoot(rootEl).render(/* @__PURE__ */ jsx_dev_runtime23.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(rootEl).render(/* @__PURE__ */ jsx_dev_runtime24.jsxDEV(App, {}, undefined, false, undefined, this));

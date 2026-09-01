@@ -1057,6 +1057,11 @@
     aspect-ratio: 1;
   }
 
+  .size-2 {
+    width: calc(var(--spacing) * 2);
+    height: calc(var(--spacing) * 2);
+  }
+
   .\!h-5 {
     height: calc(var(--spacing) * 5) !important;
   }
@@ -3205,6 +3210,10 @@
 
   .bg-ink {
     background-color: var(--color-ink);
+  }
+
+  .bg-muted {
+    background-color: var(--color-muted);
   }
 
   .bg-neutral-400 {

@@ -3,6 +3,7 @@ import type {
   ClientToServer,
   ImagoState,
 } from "../../../../plugins/spellbook/skills/imago/shared/types";
+import { Dot } from "../../../kit/ui/Dot";
 import { presence } from "../state/derive";
 
 const PRESENCE_LABEL = {
@@ -46,7 +47,7 @@ export function Header({
       <div
         className={`flex items-center gap-2 px-2.5 py-1 rounded-full border ${PRESENCE_RING[p]}`}
       >
-        <span className={`w-2 h-2 rounded-full ${PRESENCE_DOT[p]}`} />
+        <Dot tone={PRESENCE_DOT[p]} />
         <span
           className={`text-xs ${
             p === "asking"
@@ -75,8 +76,8 @@ export function Header({
       <span className="text-faint tabular-nums">
         {state.cost || "$0.00"} · {gens} {gens === 1 ? "generation" : "generations"}
       </span>
-      <span
-        className={`w-2 h-2 rounded-full ${connectionStatus === "open" ? "bg-positive" : "bg-attention"}`}
+      <Dot
+        tone={connectionStatus === "open" ? "bg-positive" : "bg-attention"}
         title={connectionStatus === "open" ? "connected" : connectionStatus}
       />
     </header>

@@ -8,6 +8,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Dot } from "../../kit/ui/Dot";
 import { CardGrid } from "./CardGrid";
 import { ContextRail } from "./ContextRail";
 import { type ComposerSeed, ConversationPanel, type ScrollRequest } from "./ConversationPanel";
@@ -1378,7 +1379,7 @@ export function App() {
         )}
         <span className="ml-auto flex items-center gap-2 text-xs text-ink-faint">
           <span className="flex items-center gap-1.5" role="status" title={DOT_TITLE[dot]}>
-            <span className={`h-2 w-2 rounded-full ${DOT_CLASS[dot]}`} aria-hidden />
+            <Dot tone={DOT_CLASS[dot]} />
             <span className="sr-only">{DOT_TITLE[dot]}</span>
           </span>
           {state.docs.length} docs · {state.nodes.length} ideas · {state.edges.length} relations

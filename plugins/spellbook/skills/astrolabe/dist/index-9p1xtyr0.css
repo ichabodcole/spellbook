@@ -1,4 +1,4 @@
-/* src/mind-mapper/surface/styles.css */
+/* src/astrolabe/surface/styles.css */
 /*! tailwindcss v4.1.14 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer theme, base, components, utilities;
@@ -148,28 +148,42 @@
     --default-mono-font-family: var(--font-mono);
     --color-bg: #020617;
     --color-surface: #0f172a;
-    --color-surface-raised: #16213b;
-    --color-ink: #e2e8f0;
-    --color-ink-dim: #94a3b8;
-    --color-ink-faint: #64748b;
+    --color-surface-2: #020617;
+    --color-surface-3: #1e293b;
     --color-edge: #1e293b;
+    --color-edge-strong: #334155;
+    --color-divider: #1e293b;
+    --color-ink-strong: #f1f5f9;
+    --color-ink: #e2e8f0;
+    --color-ink-2: #cbd5e1;
+    --color-muted: #94a3b8;
+    --color-faint: #64748b;
+    --color-faint-2: #475569;
+    --color-accent: #7c3aed;
+    --color-accent-hover: #8b5cf6;
+    --color-accent-ink: #c4b5fd;
+    --color-accent-ink-2: #ddd6fe;
+    --color-accent-fg: #fff;
     --color-attention: #f59e0b;
-    --color-canon: #d9a94e;
-    --color-thread-tier: #a78bfa;
-    --color-story-local: #5eead4;
-    --color-background-tier: #64748b;
-    --color-pending: #f59e0b;
-    --color-popover: var(--color-surface-raised);
-    --color-popover-foreground: var(--color-ink);
-    --color-accent: var(--color-edge);
-    --color-accent-foreground: var(--color-ink);
-    --color-border: var(--color-edge);
-    --color-muted-foreground: var(--color-ink-dim);
-    --color-background: var(--color-bg);
-    --color-foreground: var(--color-ink);
-    --color-secondary: var(--color-surface-raised);
-    --color-ring: var(--color-ink-faint);
-    --font-story: "Iowan Old Style", Palatino, Georgia, "Times New Roman", serif;
+    --color-attention-icon: #fbbf24;
+    --color-attention-ink: #fde68a;
+    --color-attention-ink-2: #fcd34d;
+    --color-attention-strong: #d97706;
+    --color-attention-surface: #451a03;
+    --color-attention-surface-ink: #fef3c7;
+    --color-positive: #34d399;
+    --color-positive-surface: #10b981;
+    --color-positive-ink: #6ee7b7;
+    --color-idle: #64748b;
+    --color-idle-strong: #475569;
+    --color-danger-strong: #e11d48;
+    --color-danger-ink: #fecdd3;
+    --color-danger-surface: #4c0519;
+    --radius-chip: 9999px;
+    --radius-control-sm: .375rem;
+    --radius-control: .5rem;
+    --radius-card: .75rem;
+    --radius-card-lg: 1rem;
   }
 }
 
@@ -1059,6 +1073,11 @@
     aspect-ratio: 1;
   }
 
+  .size-2 {
+    width: calc(var(--spacing) * 2);
+    height: calc(var(--spacing) * 2);
+  }
+
   .\!h-5 {
     height: calc(var(--spacing) * 5) !important;
   }
@@ -1547,7 +1566,7 @@
     flex-shrink: 0;
   }
 
-  .flex-grow, .grow {
+  .grow {
     flex-grow: 1;
   }
 
@@ -1959,6 +1978,26 @@
     border-radius: 2px;
   }
 
+  .rounded-card {
+    border-radius: var(--radius-card);
+  }
+
+  .rounded-card-lg {
+    border-radius: var(--radius-card-lg);
+  }
+
+  .rounded-chip {
+    border-radius: var(--radius-chip);
+  }
+
+  .rounded-control {
+    border-radius: var(--radius-control);
+  }
+
+  .rounded-control-sm {
+    border-radius: var(--radius-control-sm);
+  }
+
   .rounded-full {
     border-radius: 3.40282e38px;
   }
@@ -2116,7 +2155,7 @@
   }
 
   .border-accent\/20 {
-    border-color: #1e293b33;
+    border-color: #7c3aed33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2126,7 +2165,7 @@
   }
 
   .border-accent\/30 {
-    border-color: #1e293b4d;
+    border-color: #7c3aed4d;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2136,7 +2175,7 @@
   }
 
   .border-accent\/40 {
-    border-color: #1e293b66;
+    border-color: #7c3aed66;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2146,7 +2185,7 @@
   }
 
   .border-accent\/50 {
-    border-color: #1e293b80;
+    border-color: #7c3aed80;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2156,7 +2195,7 @@
   }
 
   .border-accent\/60 {
-    border-color: #1e293b99;
+    border-color: #7c3aed99;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2166,7 +2205,7 @@
   }
 
   .border-accent\/70 {
-    border-color: #1e293bb3;
+    border-color: #7c3aedb3;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2297,6 +2336,26 @@
     }
   }
 
+  .border-attention-strong\/30 {
+    border-color: #d977064d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-attention-strong\/30 {
+      border-color: color-mix(in oklab, var(--color-attention-strong) 30%, transparent);
+    }
+  }
+
+  .border-attention-strong\/60 {
+    border-color: #d9770699;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-attention-strong\/60 {
+      border-color: color-mix(in oklab, var(--color-attention-strong) 60%, transparent);
+    }
+  }
+
   .border-attention\/40 {
     border-color: #f59e0b66;
   }
@@ -2317,20 +2376,6 @@
     }
   }
 
-  .border-background-tier {
-    border-color: var(--color-background-tier);
-  }
-
-  .border-background-tier\/60 {
-    border-color: #64748b99;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-background-tier\/60 {
-      border-color: color-mix(in oklab, var(--color-background-tier) 60%, transparent);
-    }
-  }
-
   .border-black\/30 {
     border-color: #0000004d;
   }
@@ -2338,44 +2383,6 @@
   @supports (color: color-mix(in lab, red, red)) {
     .border-black\/30 {
       border-color: color-mix(in oklab, var(--color-black) 30%, transparent);
-    }
-  }
-
-  .border-border {
-    border-color: var(--color-border);
-  }
-
-  .border-canon {
-    border-color: var(--color-canon);
-  }
-
-  .border-canon\/40 {
-    border-color: #d9a94e66;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-canon\/40 {
-      border-color: color-mix(in oklab, var(--color-canon) 40%, transparent);
-    }
-  }
-
-  .border-canon\/50 {
-    border-color: #d9a94e80;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-canon\/50 {
-      border-color: color-mix(in oklab, var(--color-canon) 50%, transparent);
-    }
-  }
-
-  .border-canon\/60 {
-    border-color: #d9a94e99;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-canon\/60 {
-      border-color: color-mix(in oklab, var(--color-canon) 60%, transparent);
     }
   }
 
@@ -2389,8 +2396,26 @@
     }
   }
 
+  .border-danger-strong\/40 {
+    border-color: #e11d4866;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .border-danger-strong\/40 {
+      border-color: color-mix(in oklab, var(--color-danger-strong) 40%, transparent);
+    }
+  }
+
+  .border-divider {
+    border-color: var(--color-divider);
+  }
+
   .border-edge {
     border-color: var(--color-edge);
+  }
+
+  .border-edge-strong {
+    border-color: var(--color-edge-strong);
   }
 
   .border-edge\/60 {
@@ -2411,6 +2436,10 @@
     .border-emerald-700\/40 {
       border-color: color-mix(in oklab, var(--color-emerald-700) 40%, transparent);
     }
+  }
+
+  .border-faint-2 {
+    border-color: var(--color-faint-2);
   }
 
   .border-fuchsia-400 {
@@ -2449,34 +2478,6 @@
 
   .border-ink {
     border-color: var(--color-ink);
-  }
-
-  .border-pending {
-    border-color: var(--color-pending);
-  }
-
-  .border-pending\/50 {
-    border-color: #f59e0b80;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-pending\/50 {
-      border-color: color-mix(in oklab, var(--color-pending) 50%, transparent);
-    }
-  }
-
-  .border-pending\/60 {
-    border-color: #f59e0b99;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-pending\/60 {
-      border-color: color-mix(in oklab, var(--color-pending) 60%, transparent);
-    }
-  }
-
-  .border-ring {
-    border-color: var(--color-ring);
   }
 
   .border-rose-500\/50 {
@@ -2552,54 +2553,6 @@
   @supports (color: color-mix(in lab, red, red)) {
     .border-slate-800\/60 {
       border-color: color-mix(in oklab, var(--color-slate-800) 60%, transparent);
-    }
-  }
-
-  .border-story-local {
-    border-color: var(--color-story-local);
-  }
-
-  .border-story-local\/50 {
-    border-color: #5eead480;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-story-local\/50 {
-      border-color: color-mix(in oklab, var(--color-story-local) 50%, transparent);
-    }
-  }
-
-  .border-story-local\/60 {
-    border-color: #5eead499;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-story-local\/60 {
-      border-color: color-mix(in oklab, var(--color-story-local) 60%, transparent);
-    }
-  }
-
-  .border-thread-tier {
-    border-color: var(--color-thread-tier);
-  }
-
-  .border-thread-tier\/40 {
-    border-color: #a78bfa66;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-thread-tier\/40 {
-      border-color: color-mix(in oklab, var(--color-thread-tier) 40%, transparent);
-    }
-  }
-
-  .border-thread-tier\/60 {
-    border-color: #a78bfa99;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-thread-tier\/60 {
-      border-color: color-mix(in oklab, var(--color-thread-tier) 60%, transparent);
     }
   }
 
@@ -2729,6 +2682,10 @@
     background-color: var(--color-edge) !important;
   }
 
+  .\!bg-surface-2 {
+    background-color: var(--color-surface-2) !important;
+  }
+
   .bg-\[\#0f0b17\]\/95 {
     background-color: #0f0b17f2;
     background-color: color(display-p3 .0562619 .0437151 .0870211 / .95);
@@ -2768,7 +2725,7 @@
   }
 
   .bg-accent\/5 {
-    background-color: #1e293b0d;
+    background-color: #7c3aed0d;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2778,7 +2735,7 @@
   }
 
   .bg-accent\/10 {
-    background-color: #1e293b1a;
+    background-color: #7c3aed1a;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2788,7 +2745,7 @@
   }
 
   .bg-accent\/15 {
-    background-color: #1e293b26;
+    background-color: #7c3aed26;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2798,7 +2755,7 @@
   }
 
   .bg-accent\/20 {
-    background-color: #1e293b33;
+    background-color: #7c3aed33;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2808,7 +2765,7 @@
   }
 
   .bg-accent\/25 {
-    background-color: #1e293b40;
+    background-color: #7c3aed40;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -2997,6 +2954,26 @@
     background-color: var(--color-attention);
   }
 
+  .bg-attention-strong\/10 {
+    background-color: #d977061a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-attention-strong\/10 {
+      background-color: color-mix(in oklab, var(--color-attention-strong) 10%, transparent);
+    }
+  }
+
+  .bg-attention-surface\/30 {
+    background-color: #451a034d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-attention-surface\/30 {
+      background-color: color-mix(in oklab, var(--color-attention-surface) 30%, transparent);
+    }
+  }
+
   .bg-attention\/10 {
     background-color: #f59e0b1a;
   }
@@ -3034,20 +3011,6 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-attention\/\[0\.05\] {
       background-color: color-mix(in oklab, var(--color-attention) 5%, transparent);
-    }
-  }
-
-  .bg-background {
-    background-color: var(--color-background);
-  }
-
-  .bg-background\/70 {
-    background-color: #020617b3;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-background\/70 {
-      background-color: color-mix(in oklab, var(--color-background) 70%, transparent);
     }
   }
 
@@ -3179,50 +3142,6 @@
     }
   }
 
-  .bg-border {
-    background-color: var(--color-border);
-  }
-
-  .bg-canon\/10 {
-    background-color: #d9a94e1a;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-canon\/10 {
-      background-color: color-mix(in oklab, var(--color-canon) 10%, transparent);
-    }
-  }
-
-  .bg-canon\/15 {
-    background-color: #d9a94e26;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-canon\/15 {
-      background-color: color-mix(in oklab, var(--color-canon) 15%, transparent);
-    }
-  }
-
-  .bg-canon\/20 {
-    background-color: #d9a94e33;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-canon\/20 {
-      background-color: color-mix(in oklab, var(--color-canon) 20%, transparent);
-    }
-  }
-
-  .bg-canon\/25 {
-    background-color: #d9a94e40;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-canon\/25 {
-      background-color: color-mix(in oklab, var(--color-canon) 25%, transparent);
-    }
-  }
-
   .bg-cyan-500\/20 {
     background-color: #00b7d733;
   }
@@ -3231,6 +3150,20 @@
     .bg-cyan-500\/20 {
       background-color: color-mix(in oklab, var(--color-cyan-500) 20%, transparent);
     }
+  }
+
+  .bg-danger-surface\/30 {
+    background-color: #4c05194d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-danger-surface\/30 {
+      background-color: color-mix(in oklab, var(--color-danger-surface) 30%, transparent);
+    }
+  }
+
+  .bg-divider {
+    background-color: var(--color-divider);
   }
 
   .bg-edge {
@@ -3277,6 +3210,14 @@
 
   .bg-emerald-600 {
     background-color: var(--color-emerald-600);
+  }
+
+  .bg-faint {
+    background-color: var(--color-faint);
+  }
+
+  .bg-faint-2 {
+    background-color: var(--color-faint-2);
   }
 
   .bg-fuchsia-400 {
@@ -3357,6 +3298,26 @@
     }
   }
 
+  .bg-idle-strong\/10 {
+    background-color: #4755691a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-idle-strong\/10 {
+      background-color: color-mix(in oklab, var(--color-idle-strong) 10%, transparent);
+    }
+  }
+
+  .bg-idle\/10 {
+    background-color: #64748b1a;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-idle\/10 {
+      background-color: color-mix(in oklab, var(--color-idle) 10%, transparent);
+    }
+  }
+
   .bg-indigo-500\/20 {
     background-color: #625fff33;
   }
@@ -3371,45 +3332,25 @@
     background-color: var(--color-ink);
   }
 
-  .bg-ink-faint {
-    background-color: var(--color-ink-faint);
+  .bg-muted {
+    background-color: var(--color-muted);
   }
 
   .bg-neutral-400 {
     background-color: var(--color-neutral-400);
   }
 
-  .bg-pending\/15 {
-    background-color: #f59e0b26;
+  .bg-positive {
+    background-color: var(--color-positive);
+  }
+
+  .bg-positive-surface\/10 {
+    background-color: #10b9811a;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
-    .bg-pending\/15 {
-      background-color: color-mix(in oklab, var(--color-pending) 15%, transparent);
-    }
-  }
-
-  .bg-pending\/20 {
-    background-color: #f59e0b33;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-pending\/20 {
-      background-color: color-mix(in oklab, var(--color-pending) 20%, transparent);
-    }
-  }
-
-  .bg-popover {
-    background-color: var(--color-popover);
-  }
-
-  .bg-popover\/95 {
-    background-color: #16213bf2;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-popover\/95 {
-      background-color: color-mix(in oklab, var(--color-popover) 95%, transparent);
+    .bg-positive-surface\/10 {
+      background-color: color-mix(in oklab, var(--color-positive-surface) 10%, transparent);
     }
   }
 
@@ -3449,10 +3390,6 @@
 
   .bg-rose-600 {
     background-color: var(--color-rose-600);
-  }
-
-  .bg-secondary {
-    background-color: var(--color-secondary);
   }
 
   .bg-sky-400 {
@@ -3713,26 +3650,36 @@
     }
   }
 
-  .bg-story-local {
-    background-color: var(--color-story-local);
-  }
-
-  .bg-story-local\/20 {
-    background-color: #5eead433;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-story-local\/20 {
-      background-color: color-mix(in oklab, var(--color-story-local) 20%, transparent);
-    }
-  }
-
   .bg-surface {
     background-color: var(--color-surface);
   }
 
-  .bg-surface-raised {
-    background-color: var(--color-surface-raised);
+  .bg-surface-2 {
+    background-color: var(--color-surface-2);
+  }
+
+  .bg-surface-2\/50 {
+    background-color: #02061780;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-surface-2\/50 {
+      background-color: color-mix(in oklab, var(--color-surface-2) 50%, transparent);
+    }
+  }
+
+  .bg-surface-3 {
+    background-color: var(--color-surface-3);
+  }
+
+  .bg-surface-3\/60 {
+    background-color: #1e293b99;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .bg-surface-3\/60 {
+      background-color: color-mix(in oklab, var(--color-surface-3) 60%, transparent);
+    }
   }
 
   .bg-surface\/30 {
@@ -3792,20 +3739,6 @@
   @supports (color: color-mix(in lab, red, red)) {
     .bg-surface\/95 {
       background-color: color-mix(in oklab, var(--color-surface) 95%, transparent);
-    }
-  }
-
-  .bg-thread-tier {
-    background-color: var(--color-thread-tier);
-  }
-
-  .bg-thread-tier\/15 {
-    background-color: #a78bfa26;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .bg-thread-tier\/15 {
-      background-color: color-mix(in oklab, var(--color-thread-tier) 15%, transparent);
     }
   }
 
@@ -4487,10 +4420,6 @@
     font-family: var(--font-mono);
   }
 
-  .font-story {
-    font-family: var(--font-story);
-  }
-
   .\!text-sm {
     font-size: var(--text-sm) !important;
     line-height: var(--tw-leading, var(--text-sm--line-height)) !important;
@@ -4722,8 +4651,22 @@
     color: var(--color-accent);
   }
 
-  .text-accent-foreground {
-    color: var(--color-accent-foreground);
+  .text-accent-fg {
+    color: var(--color-accent-fg);
+  }
+
+  .text-accent-ink {
+    color: var(--color-accent-ink);
+  }
+
+  .text-accent-ink\/80 {
+    color: #c4b5fdcc;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .text-accent-ink\/80 {
+      color: color-mix(in oklab, var(--color-accent-ink) 80%, transparent);
+    }
   }
 
   .text-amber-50 {
@@ -4818,30 +4761,38 @@
     color: var(--color-attention);
   }
 
-  .text-background-tier {
-    color: var(--color-background-tier);
+  .text-attention-icon {
+    color: var(--color-attention-icon);
+  }
+
+  .text-attention-ink {
+    color: var(--color-attention-ink);
+  }
+
+  .text-attention-ink-2\/80 {
+    color: #fcd34dcc;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .text-attention-ink-2\/80 {
+      color: color-mix(in oklab, var(--color-attention-ink-2) 80%, transparent);
+    }
+  }
+
+  .text-attention-surface-ink {
+    color: var(--color-attention-surface-ink);
   }
 
   .text-bg {
     color: var(--color-bg);
   }
 
-  .text-canon {
-    color: var(--color-canon);
-  }
-
-  .text-canon\/90 {
-    color: #d9a94ee6;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .text-canon\/90 {
-      color: color-mix(in oklab, var(--color-canon) 90%, transparent);
-    }
-  }
-
   .text-cyan-200 {
     color: var(--color-cyan-200);
+  }
+
+  .text-danger-ink {
+    color: var(--color-danger-ink);
   }
 
   .text-emerald-200 {
@@ -4856,8 +4807,12 @@
     color: var(--color-emerald-400);
   }
 
-  .text-foreground {
-    color: var(--color-foreground);
+  .text-faint {
+    color: var(--color-faint);
+  }
+
+  .text-faint-2 {
+    color: var(--color-faint-2);
   }
 
   .text-fuchsia-50 {
@@ -4918,24 +4873,24 @@
     color: var(--color-ink);
   }
 
-  .text-ink-dim {
-    color: var(--color-ink-dim);
+  .text-ink-2 {
+    color: var(--color-ink-2);
   }
 
-  .text-ink-faint {
-    color: var(--color-ink-faint);
+  .text-ink-strong {
+    color: var(--color-ink-strong);
   }
 
-  .text-muted-foreground {
-    color: var(--color-muted-foreground);
+  .text-muted {
+    color: var(--color-muted);
   }
 
-  .text-pending {
-    color: var(--color-pending);
+  .text-positive {
+    color: var(--color-positive);
   }
 
-  .text-popover-foreground {
-    color: var(--color-popover-foreground);
+  .text-positive-ink {
+    color: var(--color-positive-ink);
   }
 
   .text-red-400 {
@@ -5002,14 +4957,6 @@
 
   .text-slate-900 {
     color: var(--color-slate-900);
-  }
-
-  .text-story-local {
-    color: var(--color-story-local);
-  }
-
-  .text-thread-tier {
-    color: var(--color-thread-tier);
   }
 
   .text-violet-50 {
@@ -5150,6 +5097,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  .placeholder-faint::placeholder {
+    color: var(--color-faint);
+  }
+
   .placeholder-slate-600::placeholder {
     color: var(--color-slate-600);
   }
@@ -5274,8 +5225,32 @@
     --tw-ring-color: var(--color-accent);
   }
 
+  .ring-accent-fg {
+    --tw-ring-color: var(--color-accent-fg);
+  }
+
+  .ring-accent-fg\/40 {
+    --tw-ring-color: #fff6;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-accent-fg\/40 {
+      --tw-ring-color: color-mix(in oklab, var(--color-accent-fg) 40%, transparent);
+    }
+  }
+
+  .ring-accent-hover\/40 {
+    --tw-ring-color: #8b5cf666;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-accent-hover\/40 {
+      --tw-ring-color: color-mix(in oklab, var(--color-accent-hover) 40%, transparent);
+    }
+  }
+
   .ring-accent\/60 {
-    --tw-ring-color: #1e293b99;
+    --tw-ring-color: #7c3aed99;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -5368,6 +5343,10 @@
     --tw-ring-color: var(--color-edge);
   }
 
+  .ring-edge-strong {
+    --tw-ring-color: var(--color-edge-strong);
+  }
+
   .ring-emerald-500\/30 {
     --tw-ring-color: #00bb7f4d;
   }
@@ -5422,6 +5401,26 @@
     }
   }
 
+  .ring-idle-strong\/30 {
+    --tw-ring-color: #4755694d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-idle-strong\/30 {
+      --tw-ring-color: color-mix(in oklab, var(--color-idle-strong) 30%, transparent);
+    }
+  }
+
+  .ring-idle\/30 {
+    --tw-ring-color: #64748b4d;
+  }
+
+  @supports (color: color-mix(in lab, red, red)) {
+    .ring-idle\/30 {
+      --tw-ring-color: color-mix(in oklab, var(--color-idle) 30%, transparent);
+    }
+  }
+
   .ring-indigo-500\/40 {
     --tw-ring-color: #625fff66;
   }
@@ -5436,23 +5435,13 @@
     --tw-ring-color: var(--color-ink);
   }
 
-  .ring-ring\/40 {
-    --tw-ring-color: #64748b66;
+  .ring-positive-surface\/30 {
+    --tw-ring-color: #10b9814d;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
-    .ring-ring\/40 {
-      --tw-ring-color: color-mix(in oklab, var(--color-ring) 40%, transparent);
-    }
-  }
-
-  .ring-ring\/60 {
-    --tw-ring-color: #64748b99;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .ring-ring\/60 {
-      --tw-ring-color: color-mix(in oklab, var(--color-ring) 60%, transparent);
+    .ring-positive-surface\/30 {
+      --tw-ring-color: color-mix(in oklab, var(--color-positive-surface) 30%, transparent);
     }
   }
 
@@ -5508,16 +5497,6 @@
 
   .ring-slate-700 {
     --tw-ring-color: var(--color-slate-700);
-  }
-
-  .ring-thread-tier\/60 {
-    --tw-ring-color: #a78bfa99;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .ring-thread-tier\/60 {
-      --tw-ring-color: color-mix(in oklab, var(--color-thread-tier) 60%, transparent);
-    }
   }
 
   .ring-violet-500 {
@@ -5697,12 +5676,12 @@
     }
   }
 
-  .placeholder\:text-ink-faint::placeholder {
-    color: var(--color-ink-faint);
+  .placeholder\:text-faint::placeholder {
+    color: var(--color-faint);
   }
 
-  .placeholder\:text-muted-foreground::placeholder {
-    color: var(--color-muted-foreground);
+  .placeholder\:text-faint-2::placeholder {
+    color: var(--color-faint-2);
   }
 
   .placeholder\:text-slate-600::placeholder {
@@ -5727,7 +5706,7 @@
 
   @media (hover: hover) {
     .hover\:border-accent\/60:hover {
-      border-color: #1e293b99;
+      border-color: #7c3aed99;
     }
 
     @supports (color: color-mix(in lab, red, red)) {
@@ -5752,18 +5731,6 @@
       .hover\:border-fuchsia-500\/40:hover {
         border-color: color-mix(in oklab, var(--color-fuchsia-500) 40%, transparent);
       }
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:border-ink-faint:hover {
-      border-color: var(--color-ink-faint);
-    }
-  }
-
-  @media (hover: hover) {
-    .hover\:border-ring:hover {
-      border-color: var(--color-ring);
     }
   }
 
@@ -5840,8 +5807,14 @@
   }
 
   @media (hover: hover) {
+    .hover\:bg-accent-hover:hover {
+      background-color: var(--color-accent-hover);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:bg-accent\/10:hover {
-      background-color: #1e293b1a;
+      background-color: #7c3aed1a;
     }
 
     @supports (color: color-mix(in lab, red, red)) {
@@ -5942,12 +5915,6 @@
   }
 
   @media (hover: hover) {
-    .hover\:bg-secondary:hover {
-      background-color: var(--color-secondary);
-    }
-  }
-
-  @media (hover: hover) {
     .hover\:bg-slate-700:hover {
       background-color: var(--color-slate-700);
     }
@@ -5966,8 +5933,8 @@
   }
 
   @media (hover: hover) {
-    .hover\:bg-surface-raised:hover {
-      background-color: var(--color-surface-raised);
+    .hover\:bg-surface-3:hover {
+      background-color: var(--color-surface-3);
     }
   }
 
@@ -6044,6 +6011,18 @@
   }
 
   @media (hover: hover) {
+    .hover\:text-accent-ink:hover {
+      color: var(--color-accent-ink);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:text-accent-ink-2:hover {
+      color: var(--color-accent-ink-2);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:text-amber-100:hover {
       color: var(--color-amber-100);
     }
@@ -6062,14 +6041,20 @@
   }
 
   @media (hover: hover) {
-    .hover\:text-foreground:hover {
-      color: var(--color-foreground);
+    .hover\:text-ink:hover {
+      color: var(--color-ink);
     }
   }
 
   @media (hover: hover) {
-    .hover\:text-ink:hover {
-      color: var(--color-ink);
+    .hover\:text-ink-2:hover {
+      color: var(--color-ink-2);
+    }
+  }
+
+  @media (hover: hover) {
+    .hover\:text-muted:hover {
+      color: var(--color-muted);
     }
   }
 
@@ -6138,7 +6123,7 @@
   }
 
   .focus\:border-accent\/60:focus {
-    border-color: #1e293b99;
+    border-color: #7c3aed99;
   }
 
   @supports (color: color-mix(in lab, red, red)) {
@@ -6149,10 +6134,6 @@
 
   .focus\:border-fuchsia-500:focus {
     border-color: var(--color-fuchsia-500);
-  }
-
-  .focus\:border-ring:focus {
-    border-color: var(--color-ring);
   }
 
   .focus\:border-violet-500:focus {
@@ -6192,10 +6173,6 @@
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
   }
 
-  .focus-visible\:ring-ring:focus-visible {
-    --tw-ring-color: var(--color-ring);
-  }
-
   .focus-visible\:outline-none:focus-visible {
     --tw-outline-style: none;
     outline-style: none;
@@ -6229,12 +6206,14 @@
     opacity: .6;
   }
 
-  .data-\[highlighted\]\:bg-accent[data-highlighted] {
-    background-color: var(--color-accent);
+  @media (hover: hover) {
+    .disabled\:hover\:text-faint:disabled:hover {
+      color: var(--color-faint);
+    }
   }
 
-  .data-\[highlighted\]\:text-accent-foreground[data-highlighted] {
-    color: var(--color-accent-foreground);
+  .data-\[highlighted\]\:bg-accent[data-highlighted] {
+    background-color: var(--color-accent);
   }
 
   .data-\[popup-open\]\:bg-accent[data-popup-open] {
@@ -6321,235 +6300,19 @@
   }
 }
 
-[data-theme="light"] {
-  --buncss-light: initial;
-  --buncss-dark: ;
-  color-scheme: light;
-  --color-bg: #f7f6f3;
-  --color-surface: #fdfcfa;
-  --color-surface-raised: #efece6;
-  --color-ink: #1e293b;
-  --color-ink-dim: #475569;
-  --color-ink-faint: #8b93a1;
-  --color-edge: #ddd8cf;
-  --color-attention: #b45309;
-  --color-canon: #a16207;
-  --color-thread-tier: #7c3aed;
-  --color-story-local: #0f766e;
-  --color-background-tier: #64748b;
-  --color-pending: #b45309;
-}
-
-@keyframes equalize {
-  0%, 100% {
-    transform: scaleY(.35);
+@layer base {
+  html {
+    --buncss-light: ;
+    --buncss-dark: initial;
+    color-scheme: dark;
   }
 
-  50% {
-    transform: scaleY(1);
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-ink);
+    min-height: 100vh;
+    margin: 0;
   }
-}
-
-@keyframes mm-flash {
-  100% {
-    background-color: #0000;
-  }
-}
-
-.mm-message-flash {
-  animation: mm-flash 1.6s ease-out;
-  border-radius: 8px;
-}
-
-.mm-span-mark {
-  color: var(--color-ink);
-  background-color: #d9a94e40;
-  border-radius: 2px;
-  padding: 0 2px;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .mm-span-mark {
-    background-color: color-mix(in srgb, var(--color-canon) 25%, transparent);
-  }
-}
-
-.mm-markdown :-webkit-any(p, ul, ol, pre, blockquote, h1, h2, h3, h4, h5, h6) {
-  margin: 0 0 .55em;
-}
-
-.mm-markdown :-moz-any(p, ul, ol, pre, blockquote, h1, h2, h3, h4, h5, h6) {
-  margin: 0 0 .55em;
-}
-
-.mm-markdown :is(p, ul, ol, pre, blockquote, h1, h2, h3, h4, h5, h6) {
-  margin: 0 0 .55em;
-}
-
-.mm-markdown > :last-child {
-  margin-bottom: 0;
-}
-
-.mm-markdown :-webkit-any(h1, h2, h3, h4, h5, h6) {
-  font-family: var(--font-story);
-  color: var(--color-ink);
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.mm-markdown :-moz-any(h1, h2, h3, h4, h5, h6) {
-  font-family: var(--font-story);
-  color: var(--color-ink);
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.mm-markdown :is(h1, h2, h3, h4, h5, h6) {
-  font-family: var(--font-story);
-  color: var(--color-ink);
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.mm-markdown h1 {
-  font-size: 1.25em;
-}
-
-.mm-markdown h2 {
-  font-size: 1.15em;
-}
-
-.mm-markdown :-webkit-any(h3, h4, h5, h6) {
-  font-size: 1.05em;
-}
-
-.mm-markdown :-moz-any(h3, h4, h5, h6) {
-  font-size: 1.05em;
-}
-
-.mm-markdown :is(h3, h4, h5, h6) {
-  font-size: 1.05em;
-}
-
-.mm-markdown :-webkit-any(ul, ol) {
-  padding-left: 1.25em;
-}
-
-.mm-markdown :-moz-any(ul, ol) {
-  padding-left: 1.25em;
-}
-
-.mm-markdown :is(ul, ol) {
-  padding-left: 1.25em;
-}
-
-.mm-markdown ul {
-  list-style: disc;
-}
-
-.mm-markdown ol {
-  list-style: decimal;
-}
-
-.mm-markdown li {
-  margin: .15em 0;
-}
-
-.mm-markdown code {
-  background-color: #020617a6;
-  border-radius: 3px;
-  padding: .1em .3em;
-  font-size: .95em;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .mm-markdown code {
-    background-color: color-mix(in srgb, var(--color-bg) 65%, transparent);
-  }
-}
-
-.mm-markdown pre {
-  border: 1px solid var(--color-edge);
-  overflow-x: auto;
-  background-color: #020617a6;
-  border-radius: 6px;
-  padding: .5em .65em;
-}
-
-@supports (color: color-mix(in lab, red, red)) {
-  .mm-markdown pre {
-    background-color: color-mix(in srgb, var(--color-bg) 65%, transparent);
-  }
-}
-
-.mm-markdown pre code {
-  background: none;
-  padding: 0;
-}
-
-.mm-markdown blockquote {
-  border-left: 2px solid var(--color-edge);
-  color: var(--color-ink-dim);
-  padding-left: .65em;
-}
-
-.mm-markdown a {
-  color: var(--color-canon);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.mm-markdown hr {
-  border: 0;
-  border-top: 1px solid var(--color-edge);
-  margin: .6em 0;
-}
-
-.react-flow {
-  background: var(--color-bg);
-}
-
-.react-flow__attribution.react-flow__attribution {
-  color: var(--color-ink-faint);
-  background: none;
-}
-
-.react-flow__attribution a {
-  color: var(--color-ink-faint);
-}
-
-.react-flow__edge-text {
-  fill: var(--color-ink-dim);
-  font-size: 10px;
-}
-
-.react-flow__edge-textbg {
-  fill: var(--color-bg);
-}
-
-.mm-edge-derived .react-flow__edge-text {
-  fill: var(--color-ink-faint);
-  font-style: italic;
-}
-
-.react-flow__controls {
-  box-shadow: none;
-  border: 1px solid var(--color-edge);
-  overflow: hidden;
-  border-radius: 6px;
-}
-
-.react-flow__controls-button {
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-edge);
-}
-
-.react-flow__controls-button svg {
-  fill: var(--color-ink-dim);
-}
-
-.react-flow__controls-button:hover {
-  background: var(--color-surface-raised);
 }
 
 @property --tw-translate-x {
@@ -7022,670 +6785,4 @@
       --tw-ease: initial;
     }
   }
-}
-
-/* node_modules/@xyflow/react/dist/style.css */
-.react-flow {
-  direction: ltr;
-  --xy-edge-stroke-default: #b1b1b7;
-  --xy-edge-stroke-width-default: 1;
-  --xy-edge-stroke-selected-default: #555;
-  --xy-connectionline-stroke-default: #b1b1b7;
-  --xy-connectionline-stroke-width-default: 1;
-  --xy-attribution-background-color-default: #ffffff80;
-  --xy-minimap-background-color-default: #fff;
-  --xy-minimap-mask-background-color-default: #f0f0f099;
-  --xy-minimap-mask-stroke-color-default: transparent;
-  --xy-minimap-mask-stroke-width-default: 1;
-  --xy-minimap-node-background-color-default: #e2e2e2;
-  --xy-minimap-node-stroke-color-default: transparent;
-  --xy-minimap-node-stroke-width-default: 2;
-  --xy-background-color-default: transparent;
-  --xy-background-pattern-dots-color-default: #91919a;
-  --xy-background-pattern-lines-color-default: #eee;
-  --xy-background-pattern-cross-color-default: #e2e2e2;
-  background-color: var(--xy-background-color, var(--xy-background-color-default));
-  --xy-node-color-default: inherit;
-  --xy-node-border-default: 1px solid #1a192b;
-  --xy-node-background-color-default: #fff;
-  --xy-node-group-background-color-default: #f0f0f040;
-  --xy-node-boxshadow-hover-default: 0 1px 4px 1px #00000014;
-  --xy-node-boxshadow-selected-default: 0 0 0 .5px #1a192b;
-  --xy-node-border-radius-default: 3px;
-  --xy-handle-background-color-default: #1a192b;
-  --xy-handle-border-color-default: #fff;
-  --xy-selection-background-color-default: #0059dc14;
-  --xy-selection-border-default: 1px dotted #0059dccc;
-  --xy-controls-button-background-color-default: #fefefe;
-  --xy-controls-button-background-color-hover-default: #f4f4f4;
-  --xy-controls-button-color-default: inherit;
-  --xy-controls-button-color-hover-default: inherit;
-  --xy-controls-button-border-color-default: #eee;
-  --xy-controls-box-shadow-default: 0 0 2px 1px #00000014;
-  --xy-edge-label-background-color-default: #fff;
-  --xy-edge-label-color-default: inherit;
-  --xy-resize-background-color-default: #3367d9;
-}
-
-.react-flow.dark {
-  --xy-edge-stroke-default: #3e3e3e;
-  --xy-edge-stroke-width-default: 1;
-  --xy-edge-stroke-selected-default: #727272;
-  --xy-connectionline-stroke-default: #b1b1b7;
-  --xy-connectionline-stroke-width-default: 1;
-  --xy-attribution-background-color-default: #96969640;
-  --xy-minimap-background-color-default: #141414;
-  --xy-minimap-mask-background-color-default: #3c3c3c99;
-  --xy-minimap-mask-stroke-color-default: transparent;
-  --xy-minimap-mask-stroke-width-default: 1;
-  --xy-minimap-node-background-color-default: #2b2b2b;
-  --xy-minimap-node-stroke-color-default: transparent;
-  --xy-minimap-node-stroke-width-default: 2;
-  --xy-background-color-default: #141414;
-  --xy-background-pattern-dots-color-default: #555;
-  --xy-background-pattern-lines-color-default: #333;
-  --xy-background-pattern-cross-color-default: #333;
-  --xy-node-color-default: #f8f8f8;
-  --xy-node-border-default: 1px solid #3c3c3c;
-  --xy-node-background-color-default: #1e1e1e;
-  --xy-node-group-background-color-default: #f0f0f040;
-  --xy-node-boxshadow-hover-default: 0 1px 4px 1px #ffffff14;
-  --xy-node-boxshadow-selected-default: 0 0 0 .5px #999;
-  --xy-handle-background-color-default: #bebebe;
-  --xy-handle-border-color-default: #1e1e1e;
-  --xy-selection-background-color-default: #c8c8dc14;
-  --xy-selection-border-default: 1px dotted #c8c8dccc;
-  --xy-controls-button-background-color-default: #2b2b2b;
-  --xy-controls-button-background-color-hover-default: #3e3e3e;
-  --xy-controls-button-color-default: #f8f8f8;
-  --xy-controls-button-color-hover-default: #fff;
-  --xy-controls-button-border-color-default: #5b5b5b;
-  --xy-controls-box-shadow-default: 0 0 2px 1px #00000014;
-  --xy-edge-label-background-color-default: #141414;
-  --xy-edge-label-color-default: #f8f8f8;
-}
-
-.react-flow__background {
-  background-color: var(--xy-background-color-props, var(--xy-background-color, var(--xy-background-color-default)));
-  pointer-events: none;
-  z-index: -1;
-}
-
-.react-flow__container {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-}
-
-.react-flow__pane {
-  z-index: 1;
-  touch-action: none;
-}
-
-.react-flow__pane.draggable {
-  cursor: grab;
-}
-
-.react-flow__pane.dragging {
-  cursor: grabbing;
-}
-
-.react-flow__pane.selection {
-  cursor: pointer;
-}
-
-.react-flow__viewport {
-  transform-origin: 0 0;
-  z-index: 2;
-  pointer-events: none;
-}
-
-.react-flow__renderer {
-  z-index: 4;
-}
-
-.react-flow__selection {
-  z-index: 6;
-}
-
-.react-flow__nodesselection-rect:focus {
-  outline: none;
-}
-
-.react-flow__nodesselection-rect:focus-visible {
-  outline: none;
-}
-
-.react-flow__edge-path {
-  stroke: var(--xy-edge-stroke, var(--xy-edge-stroke-default));
-  stroke-width: var(--xy-edge-stroke-width, var(--xy-edge-stroke-width-default));
-  fill: none;
-}
-
-.react-flow__connection-path {
-  stroke: var(--xy-connectionline-stroke, var(--xy-connectionline-stroke-default));
-  stroke-width: var(--xy-connectionline-stroke-width, var(--xy-connectionline-stroke-width-default));
-  fill: none;
-}
-
-.react-flow .react-flow__edges {
-  position: absolute;
-}
-
-.react-flow .react-flow__edges svg {
-  overflow: visible;
-  position: absolute;
-  pointer-events: none;
-}
-
-.react-flow__edge {
-  pointer-events: visibleStroke;
-}
-
-.react-flow__edge.selectable {
-  cursor: pointer;
-}
-
-.react-flow__edge.animated path {
-  stroke-dasharray: 5;
-  animation: dashdraw .5s linear infinite;
-}
-
-.react-flow__edge.animated path.react-flow__edge-interaction {
-  stroke-dasharray: none;
-  animation: none;
-}
-
-.react-flow__edge.inactive {
-  pointer-events: none;
-}
-
-.react-flow__edge.selected, .react-flow__edge:focus {
-  outline: none;
-}
-
-.react-flow__edge:focus-visible {
-  outline: none;
-}
-
-.react-flow__edge.selected .react-flow__edge-path, .react-flow__edge.selectable:focus .react-flow__edge-path {
-  stroke: var(--xy-edge-stroke-selected, var(--xy-edge-stroke-selected-default));
-}
-
-.react-flow__edge.selectable:focus-visible .react-flow__edge-path {
-  stroke: var(--xy-edge-stroke-selected, var(--xy-edge-stroke-selected-default));
-}
-
-.react-flow__edge-textwrapper {
-  pointer-events: all;
-}
-
-.react-flow__edge .react-flow__edge-text {
-  pointer-events: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-}
-
-.react-flow__arrowhead polyline {
-  stroke: var(--xy-edge-stroke, var(--xy-edge-stroke-default));
-}
-
-.react-flow__arrowhead polyline.arrowclosed {
-  fill: var(--xy-edge-stroke, var(--xy-edge-stroke-default));
-}
-
-.react-flow__connection {
-  pointer-events: none;
-}
-
-.react-flow__connection .animated {
-  stroke-dasharray: 5;
-  animation: dashdraw .5s linear infinite;
-}
-
-svg.react-flow__connectionline {
-  z-index: 1001;
-  overflow: visible;
-  position: absolute;
-}
-
-.react-flow__nodes {
-  pointer-events: none;
-  transform-origin: 0 0;
-}
-
-.react-flow__node {
-  position: absolute;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  pointer-events: all;
-  transform-origin: 0 0;
-  box-sizing: border-box;
-  cursor: default;
-}
-
-.react-flow__node.selectable {
-  cursor: pointer;
-}
-
-.react-flow__node.draggable {
-  cursor: grab;
-  pointer-events: all;
-}
-
-.react-flow__node.draggable.dragging {
-  cursor: grabbing;
-}
-
-.react-flow__nodesselection {
-  z-index: 3;
-  transform-origin: left top;
-  pointer-events: none;
-}
-
-.react-flow__nodesselection-rect {
-  position: absolute;
-  pointer-events: all;
-  cursor: grab;
-}
-
-.react-flow__handle {
-  position: absolute;
-  pointer-events: none;
-  background-color: var(--xy-handle-background-color, var(--xy-handle-background-color-default));
-  border: 1px solid var(--xy-handle-border-color, var(--xy-handle-border-color-default));
-  border-radius: 100%;
-  width: 6px;
-  min-width: 5px;
-  height: 6px;
-  min-height: 5px;
-}
-
-.react-flow__handle.connectingfrom {
-  pointer-events: all;
-}
-
-.react-flow__handle.connectionindicator {
-  pointer-events: all;
-  cursor: crosshair;
-}
-
-.react-flow__handle-bottom {
-  top: auto;
-  bottom: 0;
-  left: 50%;
-  transform: translate(-50%, 50%);
-}
-
-.react-flow__handle-top {
-  top: 0;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.react-flow__handle-left {
-  top: 50%;
-  left: 0;
-  transform: translate(-50%, -50%);
-}
-
-.react-flow__handle-right {
-  top: 50%;
-  right: 0;
-  transform: translate(50%, -50%);
-}
-
-.react-flow__edgeupdater {
-  cursor: move;
-  pointer-events: all;
-}
-
-.react-flow__pane.selection .react-flow__panel {
-  pointer-events: none;
-}
-
-.react-flow__panel {
-  position: absolute;
-  z-index: 5;
-  margin: 15px;
-}
-
-.react-flow__panel.top {
-  top: 0;
-}
-
-.react-flow__panel.bottom {
-  bottom: 0;
-}
-
-.react-flow__panel.top.center, .react-flow__panel.bottom.center {
-  left: 50%;
-  transform: translateX(-15px)translateX(-50%);
-}
-
-.react-flow__panel.left {
-  left: 0;
-}
-
-.react-flow__panel.right {
-  right: 0;
-}
-
-.react-flow__panel.left.center, .react-flow__panel.right.center {
-  top: 50%;
-  transform: translateY(-15px)translateY(-50%);
-}
-
-.react-flow__attribution {
-  background: var(--xy-attribution-background-color, var(--xy-attribution-background-color-default));
-  margin: 0;
-  padding: 2px 3px;
-  font-size: 10px;
-}
-
-.react-flow__attribution a {
-  text-decoration: none;
-  color: #999;
-}
-
-@keyframes dashdraw {
-  from {
-    stroke-dashoffset: 10;
-  }
-}
-
-.react-flow__edgelabel-renderer {
-  position: absolute;
-  pointer-events: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-}
-
-.react-flow__viewport-portal {
-  position: absolute;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-}
-
-.react-flow__minimap {
-  background: var(--xy-minimap-background-color-props, var(--xy-minimap-background-color, var(--xy-minimap-background-color-default)));
-}
-
-.react-flow__minimap-svg {
-  display: block;
-}
-
-.react-flow__minimap-mask {
-  fill: var(--xy-minimap-mask-background-color-props, var(--xy-minimap-mask-background-color, var(--xy-minimap-mask-background-color-default)));
-  stroke: var(--xy-minimap-mask-stroke-color-props, var(--xy-minimap-mask-stroke-color, var(--xy-minimap-mask-stroke-color-default)));
-  stroke-width: var(--xy-minimap-mask-stroke-width-props, var(--xy-minimap-mask-stroke-width, var(--xy-minimap-mask-stroke-width-default)));
-}
-
-.react-flow__minimap-node {
-  fill: var(--xy-minimap-node-background-color-props, var(--xy-minimap-node-background-color, var(--xy-minimap-node-background-color-default)));
-  stroke: var(--xy-minimap-node-stroke-color-props, var(--xy-minimap-node-stroke-color, var(--xy-minimap-node-stroke-color-default)));
-  stroke-width: var(--xy-minimap-node-stroke-width-props, var(--xy-minimap-node-stroke-width, var(--xy-minimap-node-stroke-width-default)));
-}
-
-.react-flow__background-pattern.dots {
-  fill: var(--xy-background-pattern-color-props, var(--xy-background-pattern-color, var(--xy-background-pattern-dots-color-default)));
-}
-
-.react-flow__background-pattern.lines {
-  stroke: var(--xy-background-pattern-color-props, var(--xy-background-pattern-color, var(--xy-background-pattern-lines-color-default)));
-}
-
-.react-flow__background-pattern.cross {
-  stroke: var(--xy-background-pattern-color-props, var(--xy-background-pattern-color, var(--xy-background-pattern-cross-color-default)));
-}
-
-.react-flow__controls {
-  display: flex;
-  box-shadow: var(--xy-controls-box-shadow, var(--xy-controls-box-shadow-default));
-  flex-direction: column;
-}
-
-.react-flow__controls.horizontal {
-  flex-direction: row;
-}
-
-.react-flow__controls-button {
-  display: flex;
-  background: var(--xy-controls-button-background-color, var(--xy-controls-button-background-color-default));
-  border: none;
-  border-bottom: 1px solid var(--xy-controls-button-border-color-props, var(--xy-controls-button-border-color, var(--xy-controls-button-border-color-default)));
-  color: var(--xy-controls-button-color-props, var(--xy-controls-button-color, var(--xy-controls-button-color-default)));
-  cursor: pointer;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  user-select: none;
-  justify-content: center;
-  align-items:  center;
-  width: 26px;
-  height: 26px;
-  padding: 4px;
-}
-
-.react-flow__controls-button svg {
-  fill: currentColor;
-  width: 100%;
-  max-width: 12px;
-  max-height: 12px;
-}
-
-.react-flow__edge.updating .react-flow__edge-path {
-  stroke: #777;
-}
-
-.react-flow__edge-text {
-  font-size: 10px;
-}
-
-.react-flow__node.selectable:focus {
-  outline: none;
-}
-
-.react-flow__node.selectable:focus-visible {
-  outline: none;
-}
-
-.react-flow__node-input, .react-flow__node-default, .react-flow__node-output, .react-flow__node-group {
-  border-radius: var(--xy-node-border-radius, var(--xy-node-border-radius-default));
-  color: var(--xy-node-color, var(--xy-node-color-default));
-  text-align: center;
-  border: var(--xy-node-border, var(--xy-node-border-default));
-  background-color: var(--xy-node-background-color, var(--xy-node-background-color-default));
-  width: 150px;
-  padding: 10px;
-  font-size: 12px;
-}
-
-.react-flow__node-input.selectable:hover, .react-flow__node-default.selectable:hover, .react-flow__node-output.selectable:hover, .react-flow__node-group.selectable:hover {
-  box-shadow: var(--xy-node-boxshadow-hover, var(--xy-node-boxshadow-hover-default));
-}
-
-.react-flow__node-input.selectable.selected, .react-flow__node-input.selectable:focus, .react-flow__node-default.selectable.selected, .react-flow__node-default.selectable:focus, .react-flow__node-output.selectable.selected, .react-flow__node-output.selectable:focus, .react-flow__node-group.selectable.selected, .react-flow__node-group.selectable:focus {
-  box-shadow: var(--xy-node-boxshadow-selected, var(--xy-node-boxshadow-selected-default));
-}
-
-.react-flow__node-input.selectable:focus-visible {
-  box-shadow: var(--xy-node-boxshadow-selected, var(--xy-node-boxshadow-selected-default));
-}
-
-.react-flow__node-default.selectable:focus-visible {
-  box-shadow: var(--xy-node-boxshadow-selected, var(--xy-node-boxshadow-selected-default));
-}
-
-.react-flow__node-output.selectable:focus-visible {
-  box-shadow: var(--xy-node-boxshadow-selected, var(--xy-node-boxshadow-selected-default));
-}
-
-.react-flow__node-group.selectable:focus-visible {
-  box-shadow: var(--xy-node-boxshadow-selected, var(--xy-node-boxshadow-selected-default));
-}
-
-.react-flow__node-group {
-  background-color: var(--xy-node-group-background-color, var(--xy-node-group-background-color-default));
-}
-
-.react-flow__nodesselection-rect, .react-flow__selection {
-  background: var(--xy-selection-background-color, var(--xy-selection-background-color-default));
-  border: var(--xy-selection-border, var(--xy-selection-border-default));
-}
-
-.react-flow__nodesselection-rect:focus, .react-flow__selection:focus {
-  outline: none;
-}
-
-.react-flow__nodesselection-rect:focus-visible {
-  outline: none;
-}
-
-.react-flow__selection:focus-visible {
-  outline: none;
-}
-
-.react-flow__controls-button:hover {
-  background: var(--xy-controls-button-background-color-hover-props, var(--xy-controls-button-background-color-hover, var(--xy-controls-button-background-color-hover-default)));
-  color: var(--xy-controls-button-color-hover-props, var(--xy-controls-button-color-hover, var(--xy-controls-button-color-hover-default)));
-}
-
-.react-flow__controls-button:disabled {
-  pointer-events: none;
-}
-
-.react-flow__controls-button:disabled svg {
-  fill-opacity: .4;
-}
-
-.react-flow__controls-button:last-child {
-  border-bottom: none;
-}
-
-.react-flow__controls.horizontal .react-flow__controls-button {
-  border-bottom: none;
-  border-right: 1px solid var(--xy-controls-button-border-color-props, var(--xy-controls-button-border-color, var(--xy-controls-button-border-color-default)));
-}
-
-.react-flow__controls.horizontal .react-flow__controls-button:last-child {
-  border-right: none;
-}
-
-.react-flow__resize-control {
-  position: absolute;
-}
-
-.react-flow__resize-control.left, .react-flow__resize-control.right {
-  cursor: ew-resize;
-}
-
-.react-flow__resize-control.top, .react-flow__resize-control.bottom {
-  cursor: ns-resize;
-}
-
-.react-flow__resize-control.top.left, .react-flow__resize-control.bottom.right {
-  cursor: nwse-resize;
-}
-
-.react-flow__resize-control.bottom.left, .react-flow__resize-control.top.right {
-  cursor: nesw-resize;
-}
-
-.react-flow__resize-control.handle {
-  background-color: var(--xy-resize-background-color, var(--xy-resize-background-color-default));
-  border: 1px solid #fff;
-  border-radius: 1px;
-  width: 5px;
-  height: 5px;
-  translate: -50% -50%;
-}
-
-.react-flow__resize-control.handle.left {
-  top: 50%;
-  left: 0;
-}
-
-.react-flow__resize-control.handle.right {
-  top: 50%;
-  left: 100%;
-}
-
-.react-flow__resize-control.handle.top {
-  top: 0;
-  left: 50%;
-}
-
-.react-flow__resize-control.handle.bottom {
-  top: 100%;
-  left: 50%;
-}
-
-.react-flow__resize-control.handle.top.left, .react-flow__resize-control.handle.bottom.left {
-  left: 0;
-}
-
-.react-flow__resize-control.handle.top.right, .react-flow__resize-control.handle.bottom.right {
-  left: 100%;
-}
-
-.react-flow__resize-control.line {
-  border-color: var(--xy-resize-background-color, var(--xy-resize-background-color-default));
-  border-style: solid;
-  border-width: 0;
-}
-
-.react-flow__resize-control.line.left, .react-flow__resize-control.line.right {
-  width: 1px;
-  height: 100%;
-  top: 0;
-  transform: translate(-50%);
-}
-
-.react-flow__resize-control.line.left {
-  border-left-width: 1px;
-  left: 0;
-}
-
-.react-flow__resize-control.line.right {
-  border-right-width: 1px;
-  left: 100%;
-}
-
-.react-flow__resize-control.line.top, .react-flow__resize-control.line.bottom {
-  width: 100%;
-  height: 1px;
-  left: 0;
-  transform: translate(0, -50%);
-}
-
-.react-flow__resize-control.line.top {
-  border-top-width: 1px;
-  top: 0;
-}
-
-.react-flow__resize-control.line.bottom {
-  border-bottom-width: 1px;
-  top: 100%;
-}
-
-.react-flow__edge-textbg {
-  fill: var(--xy-edge-label-background-color, var(--xy-edge-label-background-color-default));
-}
-
-.react-flow__edge-text {
-  fill: var(--xy-edge-label-color, var(--xy-edge-label-color-default));
 }
