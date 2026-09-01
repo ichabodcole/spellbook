@@ -13,7 +13,8 @@
     "check": "biome check --error-on-warnings .",
     "prepare": "husky",
     "land-check": "bun scripts/land-check.ts",
-    "prune-branches": "git branch --merged | grep -vE '^[*+]|main$|develop$' | xargs -r git branch -d"
+    "prune-branches": "git branch --merged | grep -vE '^[*+]|main$|develop$' | xargs -r git branch -d",
+    "gate": "bun run build && bun run check && bun test"
   },
   "lint-staged": {
     "*.{ts,tsx,json,jsonc}": [

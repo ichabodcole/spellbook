@@ -2,7 +2,7 @@
   "version": 2,
   "channel": "spellbook",
   "lead": "prospero",
-  "gate": "bun run check && bun test",
+  "gate": "bun run gate",
   "seats": [
     {
       "handle": "prospero",
@@ -13,25 +13,25 @@
     {
       "handle": "daedalus",
       "role": "engine",
-      "scope": "the conjuration backends — server.ts / daemon.ts / backend.ts state authority — plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests; AND the command-verdict path wherever it physically lives, including a surface reducer that owns a /cmd case list (seams Contract 13)",
+      "scope": "the conjuration backends \u2014 server.ts / daemon.ts / backend.ts state authority \u2014 plus each spell's thin cli.ts wire (command in / state read-back / events out) and its tests; AND the command-verdict path wherever it physically lives, including a surface reducer that owns a /cmd case list (seams Contract 13)",
       "spawn": true
     },
     {
       "handle": "circe",
       "role": "surface",
-      "scope": "the spell surfaces — React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) — plus theming/semantic tokens (imago/glamour convention); NOT the command-verdict path when it lives in a reducer she owns the file for (that is daedalus, seams Contract 13, ruled 2026-08-07)",
+      "scope": "the spell surfaces \u2014 React studios (glamour, imago, magpie, astrolabe) and Alpine surfaces (bounty, digestify, grapevine watch) \u2014 plus theming/semantic tokens (imago/glamour convention); NOT the command-verdict path when it lives in a reducer she owns the file for (that is daedalus, seams Contract 13, ruled 2026-08-07)",
       "spawn": true
     },
     {
       "handle": "thoth",
       "role": "grimoire",
-      "scope": "the craft canon and its tooling — grimoire/house-style.md, decay-ledger, trigger-registry, manifesto sync, naming/coalescence — and the inscribe / ward authoring rituals they must stay in lockstep with",
+      "scope": "the craft canon and its tooling \u2014 grimoire/house-style.md, decay-ledger, trigger-registry, manifesto sync, naming/coalescence \u2014 and the inscribe / ward authoring rituals they must stay in lockstep with",
       "spawn": true
     },
     {
       "handle": "cassandra",
       "role": "verify",
-      "scope": "cold-agent usability (fresh-agent reports) and integration — drives the assembled spell end-to-end in a realistic environment and calls the failures; AND (redrawn 2026-08-08, durable) THE GATE AS AN INSTRUMENT — owns whether a measurement supports the claim hung on it, never whether the claim is true: cell validity (can it fail), what a green licenses, denominator honesty, and whether a ratified rule can be mechanized. Invoked when a gate result is CITED as evidence, when a cell is authored or edited, or when a rule is proposed for mechanization — NOT on ordinary gate runs, which are the lead's serialization. Explicitly NOT the gate command's composition (prospero) nor gate scheduling/contention (prospero)",
+      "scope": "cold-agent usability (fresh-agent reports) and integration \u2014 drives the assembled spell end-to-end in a realistic environment and calls the failures; AND (redrawn 2026-08-08, durable) THE GATE AS AN INSTRUMENT \u2014 owns whether a measurement supports the claim hung on it, never whether the claim is true: cell validity (can it fail), what a green licenses, denominator honesty, and whether a ratified rule can be mechanized. Invoked when a gate result is CITED as evidence, when a cell is authored or edited, or when a rule is proposed for mechanization \u2014 NOT on ordinary gate runs, which are the lead's serialization. Explicitly NOT the gate command's composition (prospero) nor gate scheduling/contention (prospero)",
       "spawn": true
     }
   ],
