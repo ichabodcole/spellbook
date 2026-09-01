@@ -1308,10 +1308,6 @@
     background-color: var(--color-ink-faint);
   }
 
-  .bg-muted {
-    background-color: var(--color-muted);
-  }
-
   .bg-positive {
     background-color: var(--color-positive);
   }

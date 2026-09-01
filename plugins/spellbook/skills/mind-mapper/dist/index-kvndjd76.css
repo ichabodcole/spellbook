@@ -619,10 +619,6 @@
     height: calc(var(--spacing) * 2);
   }
 
-  .h-2 {
-    height: calc(var(--spacing) * 2);
-  }
-
   .h-2\.5 {
     height: calc(var(--spacing) * 2.5);
   }
@@ -685,10 +681,6 @@
 
   .w-0\.5 {
     width: calc(var(--spacing) * .5);
-  }
-
-  .w-2 {
-    width: calc(var(--spacing) * 2);
   }
 
   .w-2\.5 {
