@@ -1158,3 +1158,32 @@ _Owner: circe. Ratified 2026-08-31 from Slice 3, where the phase's own exit crit
 **Corollary on adoption proofs:** where a shared helper *changes its output* (`cn` collapses whitespace), define equivalence and test it across the input space rather than eyeballing one render — **8 of 8 boolean combinations**, with the only raw delta being the thing the helper exists to remove. And check what a green gate would hide: Tailwind's `@source` scans **literal text**, so moving a class from a ternary into an `&&` can vanish it at runtime while everything stays green. **Count the class in the built CSS.**
 
 **Proof:** `475cb6a`.
+
+## Contract 21 — a spell's Tailwind content scan is scoped to its own surface, and the kit is adopted by importing its STYLESHEET
+
+_Owner: circe. Ratified 2026-08-31 from Sprint 03 Phase 4b. Two of the lead's three framing claims were falsified in the course of ratifying it; the surviving statement is below, not the one that was dispatched._
+
+**Every spell's `styles.css` opens `@import "tailwindcss" source(none);` followed by a bare `@source "./";`.**
+
+**What a bare `@import "tailwindcss"` does instead:** it roots the content scan at the **process CWD** — the repo root under `bun run build` — so each spell's stylesheet is compiled out of **every other spell's text** and out of the committed `dist/` trees. Measured at `4808ff0`: astrolabe shipped **142,977 B / 1,028 class selectors** against **199** of its own; **969 selectors were common to all four spells**; all four totalled **605,785 B**, and scoping brings that to **196,480 B**. It is not a literal union — a foreign class lands only if it is **also valid under the receiving spell's theme** — and text-matching compiles prose: astrolabe shipped `.32` (from `c.width = 32`) and `.outline` (from a JSX comment) as real rules.
+
+> **This coupling has NO IMPORT TO FOLLOW.** No import ward, bundler pass or dependency manifest can see it, because there is nothing referential to see — the mechanism is text. **A build with two emission mechanisms needs its shipping guarantee re-derived per mechanism**; inheriting the JS half's reachability argument is exactly how this survived unnoticed. (See `docs/architecture/dependency-and-package-boundaries.md`, whose reachability claim this corrected.)
+
+**⛔ The adoption unit is the stylesheet, not the component — and the obvious belief is wrong.** Under `source(none)` Bun's Tailwind plugin **discards the module graph outright** (`getModuleGraphCandidates` returns empty when the content root is `none` — readable in `node_modules/bun-plugin-tailwind/index.mjs`). Sharing survives **only** because of the `@source "../"` inside **`src/kit/theme/base.css`**. So:
+
+- **a spell adopts `src/kit/` by importing `src/kit/theme/base.css`**;
+- **importing a kit component alone yields markup with no utilities** — a silent, green failure.
+
+That one `@source` covers all of `src/kit/` as it grows, so a growing kit — including shadcn primitives and a shared `Button` — needs **no hand-maintained per-component list** in any consumer. That property is the reason this shape was chosen over the ecosystem's per-component `@source` enumeration.
+
+**Two paths reach a spell's CSS, and anything reasoning about it must model both:** (1) **scanned text**, and (2) **stylesheets the bundle imports** — mind-mapper's 163 React Flow rules arrive that way, untouched by candidate scanning. A ward that models only the first false-reds on the second.
+
+**Use a bare `@source "./"`, not a `**/*.{ts,tsx}` glob** — the glob does not scan `index.html` and silently drops astrolabe's `antialiased`.
+
+**The retired guard:** `@source not ".../plugins/spellbook/skills/*/dist"` was **live, not dead** — the build `rm`s each spell's own `dist/` first, so its subject is a stale class in **another** spell's output, and a constructed case proved unguarded spells emitted it. **Scoping retires it**, so it was removed from imago and mind-mapper rather than added to astrolabe and magpie: four dead guards are worse than two live ones.
+
+**Proof:** `grimoire/spell-css-scope-ward.test.ts` — both failure routes verified red before landing (drop `source(none)` → declaration cell reds unrebuilt; rebuild → cross-spell cell reds naming counts).
+
+### Amendment to Contract 18 — reproduction was history-dependent, and now is not
+
+Contract 18 says the shipped artifact is verified by **reproduction**. Pre-scoping, `bun run build` **was not reproducible**: a stale class sitting in another spell's `dist/` changed this build's output, so reproduction only matched if every `dist/` was cleared first. **Post-scoping, clean-dist and dirty-dist rebuilds agree.** Contract 18's check was sound in form and resting on a property the tree did not have.
