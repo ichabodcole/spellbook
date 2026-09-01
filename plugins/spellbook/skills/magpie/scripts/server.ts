@@ -25,9 +25,10 @@
 //
 // Exit codes: 0 submit/close, 2 bad args, 124 idle timeout, 130 cancel.
 
-import { mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
 import {
@@ -40,7 +41,6 @@ import {
   type MagpieState,
   type PhaseKey,
 } from "../shared/types";
-import index from "../surface/index.html";
 import { loadSnapshot, saveSnapshot, snapshotsDir } from "./persist.server";
 import {
   addElement,
@@ -62,6 +62,61 @@ import {
   updateElement,
 } from "./reduce";
 import { materializeSource } from "./source.server";
+
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+
+// ── surface mode (seams Contract 1) ─────────────────────────────────────────
+//
+// `import index from "../surface/index.html"` used to sit at the top of this
+// file. A top-level STATIC import forces Bun to resolve the whole .tsx +
+// Tailwind build graph when the module LOADS, so a destination that ships
+// dist/ and no surface/ — the published artifact — dies before it can serve
+// the dist it does have. The dev import is therefore dynamic and reached only
+// on the dev branch, as astrolabe, imago and mind-mapper all do it.
+//
+// ⛔ MAGPIE'S dist/ ALREADY EXISTED, HOLDING cli.js AND NO index.html — which
+// is precisely why this daemon stayed correctly in DEV mode through all of
+// Slice 2. The FIRST surface build to land an index.html here FLIPS
+// resolveMode(), and nothing announces the transition. `dist/` existing is not
+// the discriminator; `dist/index.html` is.
+//
+// Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd
+// for bunfig.toml's sake (Contract 5), so cwd is not a stable base for dist/.
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root, else dev; the env
+// override wins either way (seams Contract 1). Release: zero reads of surface/
+// or bunfig.toml — static files only.
+function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
+// (Contract 2's flat, relative-href layout). Path traversal guarded (a static
+// asset request is always a bare filename, never nested), which is also what
+// keeps this clear of magpie's own /assets/<name> route above it.
+function serveDist(path: string): Response | null {
+  const rel = path === "/" ? "index.html" : path.slice(1);
+  if (rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 type CloseReason = "submit" | "cancel" | "timeout" | "close";
 type DoneResult = { code: number; reason: CloseReason };
@@ -649,13 +704,31 @@ async function main(argv: string[]): Promise<number> {
 
   let sessionFilesDir = ""; // set once sessionId is known (after bind)
 
+  const mode = resolveMode();
+
+  // dev: the dynamic string-literal import keeps the surface graph off the
+  // module load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at
+  // serve time, reading bunfig.toml from cwd, which cli.ts pins to src/magpie/
+  // (Contract 5). hmr on for the surface iteration loop.
+  // release: dist/ is static and pre-built (Contract 2) — "/" is answered by
+  // serveDist() in the fetch fall-through below, so this branch never touches
+  // surface/ or bunfig.toml and never needs either to exist.
+  // Bun's Routes type ties the "/" value's type to the literal object shape, so
+  // a mode-ternary union confuses its overload resolution — the runtime
+  // behavior (HTMLBundle in dev, absent in release) is correct either way.
+  const devIndex =
+    mode === "dev"
+      ? (await import("../../../../../src/magpie/surface/index.html")).default
+      : undefined;
+  const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
+
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
       hostname: host,
-      routes: { "/": index },
-      development: { hmr: true },
+      routes,
+      development: { hmr: mode === "dev" },
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
@@ -736,6 +809,13 @@ async function main(argv: string[]): Promise<number> {
                 }),
           );
         }
+        // release: "/" and the hashed chunk-*.js/css are static dist reads. Dev
+        // never reaches here for "/" — the routes table above answers it first.
+        // This sits AFTER /assets/, which serves session files, not dist ones.
+        if (mode === "release") {
+          const asset = serveDist(path);
+          if (asset) return asset;
+        }
         return new Response('{"error":"not found"}', {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -792,7 +872,10 @@ async function main(argv: string[]): Promise<number> {
   if (restored) saveSnapshot(sessionId, state);
 
   const url = `http://${host}:${boundPort}`;
-  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId });
+  // `mode` is the ONLY thing that discriminates a release daemon from a dev
+  // one: with root deps present a dev daemon renders an identical-looking
+  // surface, so "it looks right" cannot verify Contract 1.
+  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, mode });
 
   // Discovery files — cli.ts reads the port from here.
   const sessionFile = join(tmpdir(), `magpie-${sessionId}.json`);
@@ -803,6 +886,10 @@ async function main(argv: string[]): Promise<number> {
     session_id: sessionId,
     title: state.title,
     files_dir: sessionFilesDir,
+    // magpie writes NO stdout handshake (mind-mapper and astrolabe do) — its
+    // handshake is this discovery file, so `mode` rides BOTH it and the SSE
+    // `ready` event: same role, different transport, as imago does it.
+    mode,
   });
   try {
     writeFileSync(sessionFile, sessionInfo);

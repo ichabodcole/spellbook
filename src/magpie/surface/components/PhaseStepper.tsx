@@ -16,7 +16,11 @@ import {
   Package,
   Scissors,
 } from "lucide-react";
-import { type ClientToServer, PHASES, type PhaseKey } from "../../shared/types";
+import {
+  type ClientToServer,
+  PHASES,
+  type PhaseKey,
+} from "../../../../plugins/spellbook/skills/magpie/shared/types";
 
 type PhaseMeta = {
   key: PhaseKey;

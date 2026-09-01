@@ -24,8 +24,15 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { ClientToServer, Element, MagpieState } from "../shared/types";
-import { chosenVersion, versionUrl } from "../shared/versions";
+import type {
+  ClientToServer,
+  Element,
+  MagpieState,
+} from "../../../plugins/spellbook/skills/magpie/shared/types";
+import {
+  chosenVersion,
+  versionUrl,
+} from "../../../plugins/spellbook/skills/magpie/shared/versions";
 import { ActivityBars } from "./components/ActivityBars";
 import { BreakdownCanvas } from "./components/BreakdownCanvas";
 import { TypeMenu } from "./components/breakdown/TypeMenu";

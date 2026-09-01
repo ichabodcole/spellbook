@@ -287,6 +287,14 @@ instrument changes**.
 >   class.** Exempting emitted files wholesale would blind the ward exactly where it matters most: a
 >   bundled artifact still reaching for a real `sharp` is **the** failure 1b exists for.
 
+> **⚠ And what the two roots do to anyone MEASURING across them.** Once a backend ships built,
+> a spell's backend↔surface seam lives in **two roots** — `plugins/spellbook/skills/<spell>/scripts/`
+> and `src/<spell>/backend/`. **Any census, done-when, ward or brief scoped to one of them goes
+> GREEN while the seam is open.** Measured on magpie: **12 sites visible to a `scripts/`-scoped
+> grep, 15 actually present**, the missing three sitting in the backend that a previous sprint had
+> already relocated. See **Contract 19** — this is that contract, applied to a command rather than
+> to a ward.
+
 **The launcher is what keeps the wards honest**: a real `.ts` stays at `scripts/cli.ts` where the
 three behavioural wards look, all 27 prose invocation sites (astrolabe 23, magpie 4) stay true, and
 both grimoire tests keep their launch path.
@@ -1092,6 +1100,16 @@ _Owner: thoth. Ratified 2026-08-31, spell-kit sprint 02 — **three instances in
 | ward 1a | surfaces relocated to `src/` | a **magnitude floor** calibrated at 206 against a population Contract 4 drains — 206 → 192 → 149 → 101 projected. Fired at 149 against a floor of 150, **by one**, which reads as noise and is structure. |
 | ward 1b | the CLI became `dist/cli.js` | `dist/cli.js` fails **both** filters (`.ts`/`.tsx`, and `scripts\|shared`), so the code that actually executes at a deps-free destination left the population entirely |
 | 4 entry-point instruments | the CLIs moved to `src/<spell>/backend/` | `flag-invariant`, `strict-parse-invariant`, `terminator-invariant` and the exit-site inventory all lost both CLIs at once |
+
+**⚑ A fourth instance, 2026-08-31, and it is a DIFFERENT DISCOVERY MODE — the first found by a
+non-author running someone else's document.** The three above are wards. This one is a **brief and
+its done-when**: magpie's seam census was scoped to `<spell>/scripts/`, measured **12 sites**, and
+**15 were present** — three living in `src/<spell>/backend/`, which a previous sprint had relocated.
+**The done-when would have reported green over an open seam.** Written by the lead, one sprint after
+this contract was ruled from the three ward instances. **The rule is not about wards; it is about
+anything that measures a moving population** — and a command in a card is exactly as exposed as a
+cell in a test, with less to warn you. See Contract 4's amendment for the layout that creates the
+second root.
 
 **⛔ The request that arrives is always "widen the predicate", and the predicate is the SAFE half.** Ward 1b's card said exactly that. Widening only the predicate would have shipped a ward that had stopped looking — **and it would have looked like diligence.**
 

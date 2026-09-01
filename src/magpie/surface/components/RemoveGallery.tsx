@@ -20,15 +20,21 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
-import { isAlphaEligible, isKeptWhole } from "../../shared/alpha";
+import {
+  isAlphaEligible,
+  isKeptWhole,
+} from "../../../../plugins/spellbook/skills/magpie/shared/alpha";
 import type {
   Backdrop,
   ClientToServer,
   Element,
   ElementVersion,
   MagpieState,
-} from "../../shared/types";
-import { chosenVersion, versionUrl } from "../../shared/versions";
+} from "../../../../plugins/spellbook/skills/magpie/shared/types";
+import {
+  chosenVersion,
+  versionUrl,
+} from "../../../../plugins/spellbook/skills/magpie/shared/versions";
 import { ActivityBars } from "./ActivityBars";
 import { typeColor } from "./breakdown/typeColor";
 

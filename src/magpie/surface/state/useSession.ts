@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ClientToServer, MagpieState, ServerToClient } from "../../shared/types";
+import type {
+  ClientToServer,
+  MagpieState,
+  ServerToClient,
+} from "../../../../plugins/spellbook/skills/magpie/shared/types";
 
 export type ConnStatus = "connecting" | "open" | "closed";
 

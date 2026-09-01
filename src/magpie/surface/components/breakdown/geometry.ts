@@ -5,7 +5,7 @@
 // `source.size`. Rect-only — no rotation/ellipse/draw (much simpler than imago's
 // SelectionOverlay geometry, which this adapts).
 
-import type { Bbox } from "../../../shared/types";
+import type { Bbox } from "../../../../../plugins/spellbook/skills/magpie/shared/types";
 
 // A box in fraction space (0..1 of the image box): top-left origin + size.
 export type FracBox = { x: number; y: number; w: number; h: number };

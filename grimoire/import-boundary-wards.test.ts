@@ -252,21 +252,30 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
 
-// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. THREE entries, the same site in three
-// spells. Read the site before you add a fourth — the question is never "is it
+// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. FOUR entries, the same site in four
+// spells. Read the site before you add a fifth — the question is never "is it
 // dynamic?" but "does it run at the DESTINATION?", and static-vs-dynamic is
 // only the mechanical stand-in for that.
 //
-// All three are one spell's server.ts reaching `src/` for its DEV-mode
+// All four are one spell's server.ts reaching `src/` for its DEV-mode
 // HTMLBundle. The reasoning that admits them is identical and it is about the
-// DESTINATION, not the syntax: release mode is chosen by `dist/` presence, the
-// published artifact always has a `dist/`, so the line never executes where it
+// DESTINATION, not the syntax: release mode is chosen by `dist/index.html`, the
+// published artifact always has one, so the line never executes where it
 // cannot resolve. Verified INDEPENDENTLY for astrolabe and for imago
 // (2026-08-31), each by booting a copied tree with a dist/ and NO surface/ —
 // see their release-serve gates (astrolabe/scripts/, imago/tests/), whose
 // override cells show the other direction too: forced into dev mode, those same
 // trees die at exactly this import. Neither was admitted on mind-mapper's
 // say-so.
+//
+// ⚠ MAGPIE (2026-08-31, Phase 6) IS THE ONE ENTRY WHERE `dist/` PRESENCE WOULD
+// HAVE BEEN THE WRONG DISCRIMINATOR, AND IT IS WHY THE SENTENCE ABOVE NOW SAYS
+// `dist/index.html`. magpie has shipped a `dist/` since Slice 2 holding only
+// `cli.js` — so "the published artifact always has a dist/" was already true of
+// magpie while its daemon correctly resolved to DEV. Its admission was verified
+// the same way as the other two: a copy of the tracked subtree with no
+// node_modules up-tree and no surface/, daemon reporting mode "release" on both
+// transports, the board driven in a browser and rendering styled.
 //
 // ⚠ THE `line` FIELD IS PART OF THE PINNED VALUE AND IT HAS NOW COST THREE
 // FALSE REDS IN ONE SPRINT — astrolabe :75→:70, imago :1647→:1723, and the
@@ -286,6 +295,11 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     file: "plugins/spellbook/skills/imago/scripts/server.ts",
     spec: "../../../../../src/imago/surface/index.html",
     resolved: "src/imago/surface/index.html",
+  },
+  {
+    file: "plugins/spellbook/skills/magpie/scripts/server.ts",
+    spec: "../../../../../src/magpie/surface/index.html",
+    resolved: "src/magpie/surface/index.html",
   },
   {
     file: "plugins/spellbook/skills/mind-mapper/scripts/server.ts",

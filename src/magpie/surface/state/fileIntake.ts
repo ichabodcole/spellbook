@@ -7,7 +7,7 @@
 //
 // NOTE: unlike the conversation image-attach path, we do NOT downscale here — the
 // source must stay full-res so per-element crops are pixel-accurate.
-import type { ClientToServer } from "../../shared/types";
+import type { ClientToServer } from "../../../../plugins/spellbook/skills/magpie/shared/types";
 
 const IMG = /^image\//;
 

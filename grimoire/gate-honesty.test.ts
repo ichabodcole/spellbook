@@ -90,12 +90,24 @@ import { join } from "node:path";
 // reason astrolabe's move did: both paths are inside this instrument's two
 // roots, so a relocation between them moves no file in or out. If the total had
 // changed, something OTHER than the relocation moved with it.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 6's RELOCATION — PATHS ONLY, THIRD
+// instance of the same no-op. magpie's `surface/` + `bunfig.toml` moved to
+// `src/magpie/` under Contract 4: `surface/styles.css` 175,
+// `surface/index.html` 13, `bunfig.toml` 2, now rooted at `src/magpie/`. The
+// set stays at 19 files / 4,442 lines. RE-DERIVED, NOT ASSUMED: this
+// relocation ALSO deleted two files (`surface/state/imageOptimize{,.server}.ts`,
+// zero importers repo-wide) and landed a surface build into magpie's `dist/`,
+// and the total held anyway — the deletions were `.ts` (gated, never blind) and
+// `dist/` is GENERATED, so neither touches this population. A total that holds
+// through a relocation PLUS a deletion PLUS a new artifact is the pin working,
+// not the pin sleeping.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
   "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
   "src/mind-mapper/surface/styles.css": 220,
-  "plugins/spellbook/skills/magpie/surface/styles.css": 175,
+  "src/magpie/surface/styles.css": 175,
   "src/imago/surface/styles.css": 151,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
   "src/astrolabe/surface/styles.css": 93,
@@ -103,13 +115,13 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/mind-mapper/surface/index.html": 52,
   "plugins/spellbook/skills/glamour/surface/index.html": 13,
   "src/imago/surface/index.html": 13,
-  "plugins/spellbook/skills/magpie/surface/index.html": 13,
+  "src/magpie/surface/index.html": 13,
   "plugins/spellbook/skills/glamour/surface/styles.css": 12,
   "src/mind-mapper/bunfig.toml": 4,
   "src/astrolabe/bunfig.toml": 2,
   "plugins/spellbook/skills/glamour/bunfig.toml": 2,
   "src/imago/bunfig.toml": 2,
-  "plugins/spellbook/skills/magpie/bunfig.toml": 2,
+  "src/magpie/bunfig.toml": 2,
 };
 
 type BlindReport = {

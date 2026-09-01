@@ -56,6 +56,11 @@ then neither is wrong.
   Gotcha 5.
 - **acc conformance** if the backend will ship built — a spell goes conformant
   before its backend goes opaque.
+- ⛔ **Answer this before anything else: does this spell ALREADY have a built
+  backend?** `ls src/<spell>/backend/`. If it exists, the spell's backend lives
+  in **two roots**, and every census, sweep and done-when below must run over
+  both. A previously-ported spell is not a simpler starting point — it is a
+  spell whose seam is already half somewhere else.
 
 ## Approach Summary
 
@@ -115,23 +120,74 @@ HEAD**.
 
 ### Phase 1: Cut the seam, before anything moves
 
-**Goal:** the daemon stops reaching into build-input source, proven while the
+**Goal:** the backend stops reaching into build-input source, proven while the
 tree is still shippable.
+
+> ⛔ **THE SEAM HAS TWO ROOTS ONCE THE BACKEND SHIPS BUILT.** If
+> `src/<spell>/backend/` exists, a census scoped to `<spell>/scripts/` is
+> **structurally blind to the half that ships built** — and it goes green while
+> the seam is open. Measured on magpie: **12 sites visible to the scoped grep,
+> 15 actually present**, the missing three in `src/magpie/backend/cli.ts`,
+> because an earlier sprint relocated that file and took a third of the seam
+> with it. This is [Contract 19](../../.anthill/dev/seams.md) — a population
+> that stopped following its subject — landing on a brief's own command, one
+> sprint after the contract was written from three instances of it.
 
 **Actions:**
 
-1. Count the reaches first (`grep '\.\./surface/' <spell>/scripts/server.ts`)
-   and write the target number down.
-2. Move the two-sided contract into the spell's own `shared/` — two-sided within
-   **one** spell, never across spells.
-3. Make the daemon's surface import **dev-only and dynamic**, so a release
-   daemon never pulls the surface build graph into its load path (Contract 1).
-4. Re-run the count. It should be exactly the entry import.
+1. **Census BOTH roots, and every backend file — not just `server.ts`.** The
+   single-file form generalised from a spell where `server.ts` happened to hold
+   every site; the next spell's seam spanned three files.
+
+   ```sh
+   grep -rn '\.\./surface/' \
+     plugins/spellbook/skills/<spell>/scripts/ \
+     src/<spell>/backend/ 2>/dev/null
+   ```
+
+   Write the total down, **split value vs type-only** — the two fail differently
+   (Gotcha 1), and the split is what tells you which sites the gate will catch
+   at all. **Take the split from the repo's scanner, not by eye:** magpie's was
+   8 value / 4 type-only, not the 9/3 its own brief asserted.
+
+2. **Sort every module by its CONSUMER SET, never by its filename.** R1's
+   three-way sort: **two-sided** → the spell's own `shared/`; **daemon-only** →
+   `scripts/` or `src/<spell>/backend/`; **surface-only** → stays. There is
+   rarely exactly one contract — magpie had **three** two-sided modules and
+   **three** daemon-only files moving the other way.
+
+   ⚠ **The counterexamples run in both directions and both are real.**
+   `reduce.ts` reads as surface state and is daemon-only; `alpha.ts` reads as
+   backend policy and is two-sided. Worse, a module can be two-sided **through
+   the built CLI while having zero `server.ts` imports** — so a sort driven by
+   "what does `server.ts` import" leaves it in `surface/`. **Resolve the
+   consumers; never infer them from a name or a header.** magpie's `versions.ts`
+   header named a consumer that had never imported it, and the header was wrong
+   for as long as it stood.
+
+3. **Resolve-sweep now — the sweep belongs to whatever phase moved specifiers**,
+   and this one does. Measure your noise floor first; see Gotcha 9.
+
+4. **If the backend ships built, rebuild and stage `dist/` IN THIS COMMIT.** The
+   seam edits `src/<spell>/backend/cli.ts`, so the committed bundle stops
+   reproducing the instant you touch it. Contract 18 does not permit a commit
+   that hands over an artifact disagreeing with its source, and "the relocation
+   phase owns `dist/`" is not a licence to leave it stale for a commit.
+
+5. Re-run the census over both roots.
 
 **Validation:**
 
-- [ ] The reach count dropped to its target **before** anything relocates.
+- [ ] Census re-run **over both roots**; the count dropped to its target.
+- [ ] `dist/` rebuilt and staged, if the backend ships built.
 - [ ] Gate green. The tree is still shippable at this commit.
+
+> ⚠ **What Phase 1 deliberately does NOT do — and an earlier draft of this
+> playbook got this wrong.** It does **not** make the surface import dev-only
+> and dynamic. `resolveMode()` needs the `dist/` that Phase 2 produces, so every
+> spell that has done this **deferred it**. The surviving entry import is the
+> _expected end state_ of Phase 1, not a leftover — which is what the validation
+> step above has always said, while the action list contradicted it.
 
 ### Phase 2: Relocate
 
@@ -144,7 +200,8 @@ source plus a committed `dist/` and no build-input source.
 2. **Rewrite every importer by computing `relpath(target, dirname(file))`** — a
    short script whose _output_ is the depth-class table. Never a blanket `sed`.
 3. **Resolve-sweep every specifier in the tree** afterwards; do not trust the
-   rewrite's own list.
+   rewrite's own list. Compare against the floor you measured in Phase 1 (Gotcha
+   9).
 4. Pin the daemon's spawned cwd to `src/<spell>/`, or the Tailwind plugin is
    silently skipped (Contract 5).
 5. Build, and **un-ignore and commit `dist/`** — a bare `dist` ignore rule with
@@ -230,9 +287,15 @@ source plus a committed `dist/` and no build-input source.
 - **Root cause:** an unresolved module degrades to `any`, which **suppresses**
   diagnostics beneath it — so errors leaving and arriving can cancel. One tree
   went 452 → 512 → 452, which was 78 leaving and 18 arriving.
-- **Mitigation:** diff by error **lines** against a detached worktree at the
-  pre-move commit with `node_modules` symlinked
-  (`git worktree add --detach <path> <sha>`).
+- **Mitigation, cheap version — do this one:** capture the baseline **as error
+  lines** before you move anything, in the checkout you are already in, and diff
+  against the file afterwards.
+- **Mitigation, recovery version:** if you did not capture it first, reconstruct
+  it from a detached worktree at the pre-move commit with `node_modules`
+  symlinked (`git worktree add --detach <path> <sha>`). ⚠ **This is the most
+  expensive step in this document and it is NOT mandatory** — it is what the
+  first version of this playbook implied. It buys back exactly one thing: a
+  baseline you failed to take.
 
 ### Gotcha 6: The small fix can be the illegal one
 
@@ -266,10 +329,59 @@ source plus a committed `dist/` and no build-input source.
   [known defect in the `ward` skill](../backlog/2026-08-31-ward-routes-an-unbuilt-surface-edit-to-chore.md)
   — check it is fixed before trusting the checklist.
 
+### Gotcha 9: The resolve-sweep has a noise floor, and an inherited floor is worse than none
+
+- **Symptom:** the sweep reports N unresolved specifiers and you cannot tell
+  which are yours. A first-timer sees the total and reads all of it as damage.
+- **Root cause:** synthetic fixture strings inside ward files, already-relocated
+  paths, and anything your resolver's extension list does not cover all read as
+  unresolved on a perfectly clean tree.
+- **Mitigation:** **run the sweep before you move anything and record your
+  floor.** Contract 18's _"zero files is NO VERDICT"_ has a mirror: **a nonzero
+  floor you do not know is a verdict you cannot read.**
+- ⚠ **Do not inherit someone else's number.** Two seats measured this repo's
+  floor on the same day and got **4** and **19** — the entire difference is the
+  sweep's own extension list and scanner. **The floor is a property of your
+  instrument, not of the tree**, so it must be re-measured per sweep and never
+  quoted from a document. (Including this one: the numbers above are examples of
+  the spread, not a value to check against.)
+
+### Gotcha 10: Moving a specifier reddens a pinned inventory in someone else's file
+
+- **Symptom:** a ward you have never opened goes red, in cells about import
+  specifiers, naming files you did touch.
+- **Root cause:** pinned inventories record specifier **values**. Gotcha 3 is a
+  ward's _population_ losing its subject; this is the same family's _values_
+  going stale — and this is **the loud, working version of it.**
+- **Mitigation:** expect it, read the diff, and **re-declare by hand — never
+  regenerate.** A regenerated pin agrees with the tree by construction and
+  discards the human reading it exists to preserve. **A red pin after a move is
+  the pin doing its job**, not breakage you caused.
+
+### Gotcha 11: Relocation lengthens specifiers, and the formatter fails the gate before you notice
+
+- **Symptom:** `bun run check` exits 1 across every relocated file, on
+  **formatting alone**, with no logic touched.
+- **Root cause:** the move makes relative specifiers longer — a surface file
+  that imported `../shared/types` now imports
+  `../../../../plugins/spellbook/skills/<spell>/shared/types` — which pushes the
+  import past the formatter's line width, so it must be split across lines. This
+  is a **mechanical consequence of the move**, not a mistake in it, and it
+  scales with how deep the relocated tree is.
+- **Mitigation:** run the formatter as the **last action of the relocation
+  phase**, before the gate — the same way the rebuild is (Gotcha 8). If the gate
+  is red on formatting in exactly the files you moved and nowhere else, that is
+  this, and it is a one-command fix rather than a signal to go looking.
+- ⚠ Its sibling is worth knowing: the same reflow can **move a pre-existing
+  error to a new line number**, which is why pinned inventories key on
+  `(file, spec)` and never on the line.
+
 ## Validation & Acceptance
 
 **Acceptance Criteria:**
 
+- [ ] Seam census re-run **over both roots** (`scripts/` AND
+      `src/<spell>/backend/`) — not the scoped form.
 - [ ] Build input at `src/<spell>/`; skill folder has **no** build-input source.
 - [ ] `dist/` committed, and reproducible — a rebuild is a
       `git status     --porcelain` no-op (Contract 18; the comparison is
@@ -338,3 +450,20 @@ usually different architectures. **Reference:** `475cb6a`.
 - **2026-08-31** — Initial version. Extracted from four ports (astrolabe
   surface, imago seam, imago surface, magpie backend) and two sharing operations
   (`printJson`, `cn()`) across spell-kit sprints 01–02.
+- **2026-08-31** — **Repaired after its first non-author use** (daedalus, on
+  magpie's seam), which found eight defects. The two structural ones: **Phase 1
+  had no concept of the second root**, so its census went green over an open
+  seam (12 visible / 15 present); and **R1's three-way consumer-set sort was
+  missing entirely**, so Phase 1 read as though each spell has exactly one
+  two-sided contract. Also: the census now covers every backend file rather than
+  `server.ts` alone; the dev-only/dynamic import is marked **deferred to Phase
+  2**, matching the validation step it used to contradict; Phase 1 gains a
+  rebuild-and-stage step for a built backend; the resolve-sweep moves to the
+  phase that moves specifiers and gains a noise-floor rule; the detached
+  worktree is demoted from mandatory to a recovery path; and a pinned inventory
+  going red after a move is documented as expected behaviour rather than
+  breakage.
+
+  _The defects were exactly the ones a memory-sourced document leaves. This was
+  written from artifacts with memory-only claims reported separately — and what
+  it could not know is what no artifact recorded._

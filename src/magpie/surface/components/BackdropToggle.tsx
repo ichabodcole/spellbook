@@ -2,7 +2,11 @@
 // The preview-backdrop switcher (white / gray / black / transparent) cutouts are
 // previewed against. Wired to the real backdrop.set gesture — this one is small
 // enough to land real; the visual treatment may evolve with the mock track.
-import type { Backdrop, ClientToServer, MagpieState } from "../../shared/types";
+import type {
+  Backdrop,
+  ClientToServer,
+  MagpieState,
+} from "../../../../plugins/spellbook/skills/magpie/shared/types";
 
 const BACKDROPS: readonly Backdrop[] = ["white", "gray", "black", "transparent"];
 

@@ -2,7 +2,7 @@
 // rect resize/draw helpers). No DOM — fast + deterministic.
 
 import { expect, test } from "bun:test";
-import type { Bbox } from "../shared/types";
+import type { Bbox } from "../../../../../plugins/spellbook/skills/magpie/shared/types";
 import {
   bboxToFrac,
   clampFrac,
@@ -12,7 +12,7 @@ import {
   isDrawable,
   MIN_FRAC,
   resizeFracBox,
-} from "../surface/components/breakdown/geometry";
+} from "./geometry";
 
 const SIZE: [number, number] = [1408, 768];
 

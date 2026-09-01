@@ -7,8 +7,15 @@
 // appears. The project is reopenable from its snapshot (the session-id hint).
 import { Check, Download, Package } from "lucide-react";
 import { useState } from "react";
-import type { ClientToServer, Element, MagpieState } from "../../shared/types";
-import { chosenVersion, versionUrl } from "../../shared/versions";
+import type {
+  ClientToServer,
+  Element,
+  MagpieState,
+} from "../../../../plugins/spellbook/skills/magpie/shared/types";
+import {
+  chosenVersion,
+  versionUrl,
+} from "../../../../plugins/spellbook/skills/magpie/shared/versions";
 import { ActivityBars } from "./ActivityBars";
 import { typeColor } from "./breakdown/typeColor";
 

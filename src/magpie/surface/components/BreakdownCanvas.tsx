@@ -14,7 +14,11 @@
 import { Plus, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import type { ClientToServer, Element, Source } from "../../shared/types";
+import type {
+  ClientToServer,
+  Element,
+  Source,
+} from "../../../../plugins/spellbook/skills/magpie/shared/types";
 import {
   bboxToFrac,
   clampFrac,

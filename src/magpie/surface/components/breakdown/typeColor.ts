@@ -3,7 +3,7 @@
 // three identity bands (the magpie palette lives as CSS tokens in styles.css, so
 // the eventual identity re-skin is a one-file swap — no hex literals in
 // components). Returns a CSS `var(...)` so it themes through the token layer.
-import type { ElementType } from "../../../shared/types";
+import type { ElementType } from "../../../../../plugins/spellbook/skills/magpie/shared/types";
 
 type TypeBand = "mark" | "pictorial" | "meta";
 
