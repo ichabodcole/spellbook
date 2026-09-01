@@ -123,16 +123,37 @@ import { join } from "node:path";
 // Sprint 01 declined a helpful bunfig comment for exactly this reason, because
 // there the movement bought nothing. Here it does. Stated so the next person
 // can disagree with the trade rather than discover it.
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 4b — 20/4,540 -> 20/4,582. MEMBERSHIP DID
+// NOT MOVE (same 20 files, no arrivals, no departures); five existing entries
+// grew, all of them stylesheets, all of them PROSE. The change under it is one
+// directive per spell — `@import "tailwindcss"` gaining `source(none)` — which
+// scoped each spell's content scan to its own surface and cut the four shipped
+// stylesheets from 605,785 bytes to 196,480 with zero classes lost.
+//     +11  src/astrolabe/surface/styles.css       93 -> 104
+//     +11  src/magpie/surface/styles.css         175 -> 186
+//     +16  src/kit/theme/base.css                 68 -> 84
+//      +3  src/mind-mapper/surface/styles.css    235 -> 238
+//      +1  src/imago/surface/styles.css          166 -> 167
+// 4,540 + 11 + 11 + 16 + 3 + 1 = 4,582 exactly, with nothing left over.
+//
+// ⚠ imago's +1 and mind-mapper's +3 are SMALL FOR A REASON, and the reason is
+// worth reading rather than rounding off: both files LOST a 12-line
+// `@source not ".../dist"` block in the same edit that gained the new one, so
+// their totals net out while astrolabe's and magpie's — which never had that
+// block — grow by the full amount. A near-zero delta on two files and +11 on
+// two others is what a substitution looks like, not what a no-op looks like.
+// The removed guard was measured LIVE before it was deleted and measured DEAD
+// after; grimoire/spell-css-scope-ward.test.ts carries the reproduction.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
   "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
-  "src/mind-mapper/surface/styles.css": 235,
-  "src/magpie/surface/styles.css": 175,
-  "src/imago/surface/styles.css": 166,
+  "src/mind-mapper/surface/styles.css": 238,
+  "src/magpie/surface/styles.css": 186,
+  "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/kit/theme/base.css": 68,
-  "src/astrolabe/surface/styles.css": 93,
+  "src/kit/theme/base.css": 84,
+  "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
   "plugins/spellbook/skills/glamour/surface/index.html": 13,

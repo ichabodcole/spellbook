@@ -1,8 +1,19 @@
-@import "tailwindcss";
-/* Scan this surface's components for class names regardless of the daemon's
-   launch cwd (cli.ts spawns the server from arbitrary directories). Without
-   this, Tailwind v4's auto content-detection roots at cwd and emits zero
-   utilities → an unstyled surface. */
+@import "tailwindcss" source(none);
+/* ⛔ `source(none)` ON THE `@import "tailwindcss"` LINE IS LOAD-BEARING. It
+   turns OFF Tailwind's automatic content detection, which roots at the PROCESS
+   CWD — the repo root under `bun run build` — and therefore compiled THIS
+   spell's stylesheet out of EVERY spell's text, plus the committed dist/ trees
+   that .gitignore un-ignores.
+   The @source below is now this surface's ONLY content source: a utility is
+   emitted iff it appears as literal text under it, or an @import-ed stylesheet
+   contributes it through that sheet's own @source. The measured numbers, the
+   reason the old `@source not ".../dist"` line is gone, and the routes that run
+   each claim red live in grimoire/spell-css-scope-ward.test.ts. */
+/* Scan this surface's components regardless of the daemon's launch cwd (cli.ts
+   spawns the server from arbitrary directories). magpie's backend cli.ts is
+   deliberately OUTSIDE this scan: the gallery page it prints is a standalone
+   document with its own inline <style>, so its class names were never served by
+   this stylesheet and it has nothing to lose here. */
 @source "./";
 
 /* ─────────────────────────────────────────────────────────────────────────

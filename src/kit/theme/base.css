@@ -26,17 +26,33 @@
    would drag that rename onto this phase's critical path. It does not.
    ────────────────────────────────────────────────────────────────────────── */
 
-/* ⛔ THIS @source IS LOAD-BEARING AND ITS ABSENCE FAILS ONLY IN DEV.
-   Tailwind v4's automatic content detection roots at the PROCESS CWD (measured
-   2026-08-31, this file's phase). `bun run build` runs from the repo root, so
-   src/kit/ is scanned there by accident and every kit utility is emitted. The
-   DEV daemon is different: seams Contract 5 pins its cwd to src/<spell>/, so
-   automatic detection cannot see a sibling src/kit/ at all, and Tailwind's
-   response to a component it cannot see is to emit ZERO utilities with no
-   error. Without this line the kit renders styled in release and UNSTYLED in
-   dev — one board, two behaviours, and the green build is the misleading half.
+/* ⛔ THIS @source IS THE ONLY THING THAT PUTS src/kit/ IN FRONT OF TAILWIND.
    Resolved relative to THIS FILE, not to the importer — verified empirically,
-   not assumed (an @import-ed sheet's @source is self-relative). */
+   not assumed (an @import-ed sheet's @source is self-relative).
+
+   ⚠ AMENDED 2026-08-31 (Sprint 03 Phase 4b), AND THE OLD WORDING WAS THE
+   DANGEROUS HALF. It said "its absence FAILS ONLY IN DEV", on the reasoning
+   that Tailwind's automatic content detection roots at the process CWD, that
+   `bun run build` runs from the repo root, and that src/kit/ was therefore
+   scanned by accident in release. All three were true. None of them are now:
+   every spell's styles.css opens `@import "tailwindcss" source(none)`, which
+   turns automatic detection OFF, so there is no accident left to rely on and
+   this line is load-bearing in BOTH modes. Measured by deleting it and
+   rebuilding imago — Dot's three utilities (the ward's sentinel, its pulse and
+   its default L0 tone) all vanished from the shipped stylesheet, with a green
+   build and no error.
+   ⛔ AND THAT SENTENCE MUST NOT NAME THEM. This file is INSIDE the directory
+   its own @source scans, so a class written here in prose stays emitted after
+   the component stops using it — which is precisely how the ward that guards
+   this mechanism becomes unfalsifiable. Caught by that ward, on this comment.
+
+   ⛔ AND THIS IS WHY IT CANNOT BE REPLACED BY "the bundler will find it".
+   Under source(none) Bun's Tailwind plugin DISCARDS the module graph outright
+   (`getModuleGraphCandidates` returns an empty set when the content root is
+   `none`), so importing a kit COMPONENT brings its markup and none of its
+   utilities. A spell adopts the kit by importing THIS STYLESHEET; importing
+   Dot.tsx alone is not adoption. grimoire/kit-styling-ward.test.ts fails on
+   both halves of that now — see its amendment. */
 @source "../";
 
 @theme {

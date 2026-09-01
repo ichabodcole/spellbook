@@ -31,6 +31,30 @@
 // this sprint's whole subject, and it very nearly shipped inside the ward
 // written to prevent it.
 //
+// ⚠ AMENDED LATER THE SAME DAY (Sprint 03 Phase 4b): MEASUREMENTS 1 AND 3 NO
+// LONGER HOLD, AND THE PARAGRAPH ABOVE IS NOW BACKWARDS. Every spell's
+// styles.css now opens `@import "tailwindcss" source(none)`, which turns
+// automatic content detection off. So (1) the repo-root accident that scanned
+// src/kit/ is gone, and (3) the module graph is no longer a content source at
+// all — Bun's Tailwind plugin discards it outright when the content root is
+// `none`. What reaches src/kit/ now is exactly one thing: the `@source "../"`
+// inside src/kit/theme/base.css, which only a spell that IMPORTS that
+// stylesheet gets.
+//
+// The consequence for this ward is that it got STRONGER without being edited.
+// Route 1 below used to red one cell (TOKEN RESOLUTION); it now reds two,
+// because removing imago's kit stylesheet import removes the kit from the scan
+// as well as the tokens from the cascade. Re-calibrated 2026-08-31: routes 1
+// and 2 were both run red under the new scan scope before this note landed.
+//
+// ⛔ THE HAZARD THIS WARD STILL DOES NOT COVER, and it is new: a spell that
+// imports a kit COMPONENT without importing the kit STYLESHEET now renders that
+// component unstyled, silently. Today no such spell exists — astrolabe and
+// magpie reach src/kit only from their BACKENDS, for printJson, which has no
+// classes — so the cell would be vacuous and is deliberately not written. When
+// the shadcn set lands and a third spell adopts a kit component, that is the
+// cell to add, and the membership cell below is where it belongs.
+//
 // ── WHAT THE HAZARD ACTUALLY IS ─────────────────────────────────────────────
 //
 // TOKENS, not utilities. A kit component names L0 tokens (`border-edge`,
