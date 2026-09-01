@@ -183,7 +183,13 @@ describe("kit styling ward", () => {
       if (!dir.isDirectory()) continue;
       const styles = join(REPO_ROOT, "src", dir.name, "surface", "styles.css");
       if (!existsSync(styles)) continue;
-      if ((await Bun.file(styles).text()).includes("kit/theme/base.css")) importing.push(dir.name);
+      // ⛔ COMMENT-STRIPPED, and the strip is the assertion. Unstripped, this
+      // predicate reads PROSE: a spell that merely MENTIONS the path in a
+      // comment reports as a consumer, and a spell that deletes its @import
+      // while keeping the prose stays "governed". Both were demonstrated on the
+      // bench by this ward's non-author calibrator (cassandra, 2026-08-31).
+      const declared = (await Bun.file(styles).text()).replace(/\/\*[\s\S]*?\*\//g, "");
+      if (declared.includes("kit/theme/base.css")) importing.push(dir.name);
     }
     expect(importing.sort()).toEqual([...KIT_CONSUMERS].sort());
   });

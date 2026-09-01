@@ -180,7 +180,10 @@ function walkText(dir: string, out: string[] = []): string[] {
  *  content root is `none`. */
 async function scannedText(spell: string): Promise<string> {
   const dirs = [join(SRC, spell, "surface")];
-  const styles = await Bun.file(stylesFor(spell)).text();
+  // ⛔ STRIP BEFORE TESTING — a prose mention of the path would otherwise widen
+  // this spell's allowed scan scope to all of src/kit/, silently raising the
+  // leak detector's tolerance for a spell that imports nothing.
+  const styles = (await Bun.file(stylesFor(spell)).text()).replace(/\/\*[\s\S]*?\*\//g, "");
   if (styles.includes("kit/theme/base.css")) dirs.push(join(SRC, "kit"));
   const files = dirs.flatMap((d) => walkText(d));
   expect(files.length).toBeGreaterThan(0);

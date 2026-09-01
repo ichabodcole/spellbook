@@ -92,8 +92,9 @@ Don't grind through the whole casting doc silently and dump every friction point
 
 ## Candidates
 
-Untested: whether a resumed `tail --since <n>` CLI call against a restarted daemon (mismatched epoch) actually behaves the way the design intends (detect + full resnapshot) — worth a dedicated drive once an agent workflow actually depends on long-lived `tail` sessions surviving a restart (P4/dogfooding likely surfaces this naturally).
-Worth proposing to prospero: a light "verify checklist" template for future gate assignments (steps / PASS-FAIL format / friction-list format) now that P2 and P3 both used the same two-layer report shape successfully — codifying it would save re-deriving the format each time, though it's not yet clear if that's premature (only two gates run so far).
+_(Empty. The two V1-era entries that lived here — a `tail --since` resume drive and a
+proposal for a verify-checklist template — were both answered downstream: the resume drive
+by the acc L0 lane E section, the template by anthill's SOP. Pruned 2026-08-31.)_
 
 ## P3 gate lessons (V1.x, 2026-07-17)
 
@@ -949,3 +950,37 @@ When a build embeds MODULE PATHS in its output, the comparison is only sound if 
 Prospero had already retracted one determinism claim on this card for a related reason, and I reproduced the same class of error from the other direction within the hour — a build comparison is contaminated by the ENVIRONMENT of the comparison far more easily than by the code.
 The instrument that settled it was the boring one: rebuild in the CANONICAL checkout, diff, then `git checkout --` and assert byte-equality against a copy taken before the experiment.
 Price the option before arguing about where it belongs: `bun run build` for all three spells is 0.54s against a 149s suite — 0.36% — and every "where should this fire" debate I was about to have was predicated on a cost I had not measured.
+
+## spell-kit sprint 03 · P4 styling — calibrating a peer's two CSS wards as the named non-author (2026-08-31)
+
+_Card `sk3-p4-styling`, author circe. Every number below is mine, each with the positive control
+it was believed on. Tree restored to `e9f5856` / 0 dirty; `bun test` 1528/1528, `bun run check`
+green, `bun run build` reproducible from a clean, a wiped and a junk-seeded `dist/`._
+
+A card whose central premise has INVERTED TWICE is a card whose conclusion and whose reasoning must be checked separately: `sk3-p4-styling` asserted "`src/kit/` is outside every `@source`", which was FALSE when written (a repo-root CWD accident) and is TRUE AGAIN now for an unrelated reason (`source(none)` retired the accident) — the right answer standing on a dead mechanism reads exactly like a verified one.
+
+⛔ A TEXT PREDICATE THAT DECIDES MEMBERSHIP MUST STRIP COMMENTS, and it fails silently in BOTH directions. `kit-styling-ward.test.ts`'s membership cell asks `styles.includes("kit/theme/base.css")` against raw text: deleting imago's actual `@import` while leaving the prose `(src/kit/theme/base.css)` kept imago listed as a consumer (so the author's own route 1 reds TWO cells where it should red THREE), and pasting that string into astrolabe's comments — a spell that imports nothing — reported astrolabe as a consumer. Its sibling `spell-css-scope-ward.test.ts` strips comments twelve lines away and its header states the exact hazard; the two cells were written the same day.
+The same unstripped predicate also decides `scannedText()`'s SCOPE in the sibling ward, so a prose mention silently widens which text a spell's shipped CSS is allowed to be explained by — a membership bug that leaks into a leak detector's tolerance.
+
+⛔ A DIRECTORY UNDER AN `@source` INCLUDES THAT DIRECTORY'S PROSE, AND PROSE SHIPS. `src/kit/ui/Dot.tsx`'s "NO L1 SHADCN ALIAS" paragraph names `bg-accent`, `bg-popover`, `bg-muted`; replacing those three words with placeholders and rebuilding dropped `.bg-muted` out of imago's shipped stylesheet — imago's own source never spells it, so that rule was in a shipped artifact solely because a comment forbade the class by name. The kit's own header states this rule about one sentinel and the component file next door breaks it four times.
+And no cell can see it: the cross-spell ward counts all of `src/kit/` as legitimate text for every consumer, so kit prose LAUNDERS classes between the spells that import it.
+
+TAILWIND v4 EMITS ONLY THE THEME VARIABLES SOMETHING USES, so a cell titled "every kit L0 token is DEFINED in the shipped css" is really asserting "every L0 token is USED by this spell and resolves". Adding one unused `--color-*` to the kit's `@theme` reds that cell for both consumers with no defect present — and the kit's own header says "add one when a second signal asks", i.e. the brittleness is scheduled.
+
+⛔ A WARD THAT READS A COMMITTED BUILD ARTIFACT IS REBUILD-GATED, and that is a different guarantee from the one its title states. Deleting the single load-bearing `@source "../"` from `src/kit/theme/base.css` reds two cells AFTER `bun run build` — and leaves the whole gate 14/14 green and `bun run check` green without one. Nothing in this repo asserts that a committed `dist/` corresponds to current source, so every artifact-reading cell is armed only by the next person who happens to rebuild.
+
+IMPORTING A SHARED COMPONENT IS NOT ADOPTING ITS STYLES, and nothing enforces it. A spell that imports `src/kit/ui/Dot.tsx` without importing `src/kit/theme/base.css` ships the component's markup in its JS bundle (4/4 class strings present — the control) and NONE of its utilities in its CSS, at `bun run check` green and `bun test` 1528/1528 green. Measured twice, on a minted fifth spell and on shipped astrolabe; astrolabe's presence dot became a zero-size invisible span with the entire gate green.
+
+⭐ THREE OF MY OWN INSTRUMENTS RETURNED A CONFIDENT ZERO WITH NO FAILURE MODE IN ONE SESSION, and every one looked like a clean negative:
+`grep 'mb-\[7px\]'` against built CSS — Tailwind escapes the brackets, so the literal text is `mb-\[7px\]` and my pattern could never match;
+`grep -c '^\.'` against built CSS — 0 on all three arms of a comparison whose arms genuinely differed;
+a module-graph probe whose component was TREE-SHAKEN out because the entry only `export`ed it — the bundle was 53KB and contained none of the thing under test.
+Each was caught by the same move and only that move: run the control that must return NON-zero, in the same call, before reading the zero.
+
+`.at(0)` ON A `readdir` FILTER IS AN ARBITRARY PICK, NOT AN ASSERTION. Both wards' `shippedCss()` take the first `.css` in a `dist/`; a stale sibling left by an aborted experiment steered a run to a different verdict, and the cell has a zero-guard (`length > 0`) but no more-than-one guard. `build.ts` `rm`s `dist/` first, so it is correct today by an invariant living in a different file.
+
+AN AMENDMENT THAT NAMES WHICH OF ITS OWN MEASUREMENTS DIED IS ALSO A CLAIM ABOUT THE ONE IT LEFT STANDING — check that one. circe's amendment retires measurements 1 and 3; measurement 2 (dev-vs-release cwd divergence) is moot too — building imago from the repo root, from `src/imago/` and from `/tmp` produces CSS identical but for a leading path comment — and `scripts/instruments/kit-utility-probe.ts`, written for that divergence, now has no consumer anywhere in the tree.
+
+A HISTORICAL CLAIM ("this cell would have caught the original defect") IS CHEAP TO RUN AND WORTH RUNNING: reverting all four spells to the pre-fix bare `@import "tailwindcss"` and rebuilding reds the CROSS-SPELL cell on all 12 ordered pairs, 71–238 classes each. That is the difference between a ward that is well argued and a ward that is demonstrated against its own origin story.
+
+Break each cell by a route the AUTHOR DID NOT LIST, and check what ELSE goes red: widening imago's `@source` to mind-mapper's surface reds CROSS-SPELL alone (DECLARATION stays green) — which is what proves the two cells are independent rather than one cell reported twice. Two mutations of the shared matcher red the instrument self-test AND cross-spell together, which is the self-test doing its job: it names the broken property so the leak report is not read as a finding.
