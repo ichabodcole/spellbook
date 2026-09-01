@@ -869,6 +869,42 @@ Two seats measured this repo's unresolved-specifier floor on the same day and go
 ⭐ This is the third number this sprint that turned out to be instrument-dependent rather than tree-dependent (the ward-1b violation count, the re-export count, now this). **Before quoting any count in a durable document, ask whether a second implementation of the same question would return it.**
 **I did not put either number in the playbook, and named the spread instead — the first time I have written a range where I would previously have written a measurement.**
 
+### ⭐⭐ 2026-08-31, ROUND 7 — a true, measured finding can still be the wrong thing to file, and the reason is the SET
+
+**My Gotcha 11 was real, confirmed, and correctly removed, and the argument that removed it is one I should have made myself.**
+I observed 11 formatter failures across relocated files, verified the mechanism (relocation lengthens specifiers past the line width), and filed it beside eight gotchas.
+⛔ **It was the INVERSE of the set's subject.** The playbook's stated subject is *a green suite and a broken installed artifact coexisting* — eight failures that are **silent** and each need a **different instrument**. A formatter failure is **loud, first gate arm, cannot ship**.
+⭐ **A set of gotchas makes a CLAIM ABOUT ITS MEMBERS — "these are the ones you cannot see" — and one visible member weakens the claim for all nine.** Coherence is a property of the set, not of any entry, so an entry can be individually true and collectively wrong.
+⚠ **And the finding survived, relocated, in better form:** the real lesson was never line width, it was **ORDERING** — the formatter is the one step that rewrites files after your computed rewrite, so anything measured or re-pinned before it gets done twice.
+**I had filed the symptom I could see instead of the mechanism underneath it, which is the same error as reporting a count instead of what generates it.**
+
+**A PROCEDURE CAN CONTRADICT ITSELF ACROSS PHASES WHILE EACH HALF READS CORRECT — AND THIS IS NOW TWICE IN ONE DOCUMENT.**
+Phase 3 said copy `SKILL.md` + `scripts/` + `dist/` *"and nothing else"*; Phase 1 of the same document tells you to create `shared/`, which the daemon then cannot resolve.
+Earlier, Phase 1's action list said *make the import dev-only and dynamic* while Phase 1's own validation said the entry import is the expected survivor.
+⛔ **Both times the two halves were written at different moments against different mental models, and both times every individual sentence was true**, so no single-section review could catch it.
+⭐ **And both times the repair was the same shape: replace an ENUMERATED list with a DERIVED one** — the tracked subtree instead of a file list, the consumer set instead of a filename. **An enumerated list in a procedure is a second denominator, and it drifts from the layout exactly like a hand-copied allow-list drifts from its config.**
+
+**A NOISE FLOOR CAN BE RAISED MONOTONICALLY BY THE VERY PROCEDURE THAT ASKS YOU TO TRUST IT — AND BY PROSE.**
+Each ported spell's `server.ts` carries a comment quoting the static import that port removed, and a text-scanning sweep reads the quotation as a specifier.
+**So a correct port raises the sweep's floor by one, and the new entry is a paragraph the porter just wrote.**
+⛔ Astrolabe, imago and magpie now carry it; glamour still has the live import, so the floor will rise again on the next port and again on the one after.
+⭐ **A remediation that documents itself inside the scanned text is self-inflating, and the direction is always up** — which means "baseline once at the start" is wrong and "re-measure after each phase" is right.
+
+**I WAS RIGHT FOR A WEAKER REASON THAN THE TRUTH, AND THAT IS ITS OWN FRAGILITY.**
+I could not reproduce the floor of 19 (I measured 4) and ruled *the floor is a property of your instrument — re-measure per sweep, never quote it*.
+That ruling is correct and it survived, but the **mechanism** — comments quoting removed imports, rising monotonically — was found by someone else and is stronger, more specific, and actionable in a way my framing was not.
+⭐ **A correct conclusion reached from a partial mechanism can be argued away without anyone touching the truth**, because the framing is the part under attack. When a number will not reproduce, finding out WHY beats ruling on what to do about it — and I stopped at the ruling.
+
+**A MOOT CLOSURE AND A FIX POINT IN DIFFERENT DIRECTIONS, SO THE VERB MATTERS MORE THAN THE STATUS.**
+magpie's scale-math item closed because `circe` deleted a file with zero importers, not because anyone corrected the false comment.
+⭐ *"We fixed it"* sends the next agent to a correction to learn from; *"the subject was deleted"* sends them nowhere — and **the measurement inside the closed report can still be live and worth keeping** (`withoutEnlargement` does exist), which is why a moot closure has to say which parts survived it.
+**Recorded the re-file rule explicitly: if a third copy of the false comment appears, file a NEW item — do not reopen one whose subject is not coming back.**
+
+**AN AMBIGUITY BETWEEN TWO CONTRACTS CAN SIT DORMANT UNTIL A THIRD THING CHANGES.**
+Contract 1 says release mode is resolved by **`dist/` presence**; Contract 2's amendment keys the check on the **unhashed `dist/index.html`**.
+Those disagreed harmlessly for months — every `dist/` held an `index.html` — and the moment backends began shipping `cli.js` into `dist/`, a spell could hold a `dist/` and still correctly run in dev.
+⭐ **Two contracts that agree on every case the tree currently produces are not consistent; they are untested against each other**, and the thing that tests them is a new kind of member in the set they both describe.
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.

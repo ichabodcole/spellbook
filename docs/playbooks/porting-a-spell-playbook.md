@@ -202,9 +202,14 @@ source plus a committed `dist/` and no build-input source.
 3. **Resolve-sweep every specifier in the tree** afterwards; do not trust the
    rewrite's own list. Compare against the floor you measured in Phase 1 (Gotcha
    9).
-4. Pin the daemon's spawned cwd to `src/<spell>/`, or the Tailwind plugin is
+4. **Run the formatter BEFORE you re-pin and BEFORE you diff `tsc` by lines.**
+   It is the one step that rewrites files _after_ your computed rewrite —
+   including import order, and including splitting an import the move made too
+   long — so anything you measure or re-declare ahead of it, you do twice. (Hit
+   for real: a `tsc` run taken pre-format had to be re-run and re-diffed.)
+5. Pin the daemon's spawned cwd to `src/<spell>/`, or the Tailwind plugin is
    silently skipped (Contract 5).
-5. Build, and **un-ignore and commit `dist/`** — a bare `dist` ignore rule with
+6. Build, and **un-ignore and commit `dist/`** — a bare `dist` ignore rule with
    a hand-kept un-ignore list will otherwise skip a newly relocated spell's
    `dist/` at exit 0, and the spell ships with no surface (Contract 18).
 
@@ -220,13 +225,29 @@ source plus a committed `dist/` and no build-input source.
 
 **Actions:**
 
-1. Copy `SKILL.md` + `scripts/` + `dist/` — **and nothing else** — to a path
-   with **no up-tree `node_modules`**.
+1. **Copy the spell's TRACKED SUBTREE** —
+   `git ls-files plugins/spellbook/skills/<spell>` — to a path with **no up-tree
+   `node_modules`**.
+
+   ⛔ **Not a hand-written file list.** An earlier version of this step said
+   `SKILL.md` + `scripts/` + `dist/` _"and nothing else"_, which **contradicted
+   Phase 1 of this same document**: Phase 1 tells you to create `shared/`, and a
+   daemon that imports `../shared/types` then cannot resolve it. Copy what the
+   marketplace copies — the tracked subtree — and the list can never drift from
+   the layout again.
+
 2. Start the daemon there. Drive the board in a browser.
 3. Exercise the CLI's contract surface: `--version`, `--help`, and a bogus verb
    returning the error envelope at exit 2.
 4. Assert the daemon **emits** `mode === "release"`; a dev-mode daemon with root
    deps present renders an identical-looking board.
+
+   ⚠ **The discriminator is `dist/index.html`, never the presence of `dist/`.**
+   A backend that ships built puts `cli.js` in `dist/` — so a spell can have a
+   `dist/` and still correctly resolve to **dev** mode because its surface has
+   not been ported. Contract 2's amendment already keys on the **unhashed**
+   `index.html` for exactly this reason; "the artifact always has a `dist/`" is
+   a claim that stopped being true the moment backends started shipping built.
 
 **Validation:**
 
@@ -258,6 +279,14 @@ source plus a committed `dist/` and no build-input source.
   table as **output**. It cannot make the error, it is re-runnable as the check,
   and it **contradicts a wrong brief out loud** rather than accommodating it
   ([circe.md](../../.anthill/dev/circe.md)).
+- ⛔ **The string trap has TWO forms and the computed rewrite is immune to
+  both.** Contract 16 records the first: **one string meaning two modules**, so
+  a blanket `sed` fixes some importers and destroys others. The mirror image is
+  **one string with two different correct rewrites** — the same specifier text,
+  in files at different depths, needing different replacements, so a `sed` is
+  wrong for one of them whichever way you run it. The property that matters is
+  not that the technique catches these; it is that **it makes the collision
+  unrepresentable — you never have to notice it to be safe from it.**
 
 ### Gotcha 3: A ward's population stops following its subject (3 instances)
 
@@ -297,7 +326,7 @@ source plus a committed `dist/` and no build-input source.
   first version of this playbook implied. It buys back exactly one thing: a
   baseline you failed to take.
 
-### Gotcha 6: The small fix can be the illegal one
+### Gotcha 6: The small fix can be the illegal one (2 instances, 2 sprints)
 
 - **Symptom:** a test breaks after the move; re-pointing its import in place is
   one line and obviously right.
@@ -305,7 +334,10 @@ source plus a committed `dist/` and no build-input source.
   boundary** — precisely what the artifact ward forbids. The minimal edit and
   the legal edit are different edits.
 - **Mitigation:** before taking the small fix, resolve the new specifier and ask
-  which side of the boundary it lands on. Move the test instead.
+  which side of the boundary it lands on. **Move the test instead** — a test
+  whose subject relocated relocates with it. This has now happened on two
+  separate spells in two sprints, which makes it the default expectation for a
+  relocating test rather than a surprise.
 
 ### Gotcha 7: A file's comments are part of a text-scanning predicate's input
 
@@ -339,12 +371,21 @@ source plus a committed `dist/` and no build-input source.
 - **Mitigation:** **run the sweep before you move anything and record your
   floor.** Contract 18's _"zero files is NO VERDICT"_ has a mirror: **a nonzero
   floor you do not know is a verdict you cannot read.**
-- ⚠ **Do not inherit someone else's number.** Two seats measured this repo's
-  floor on the same day and got **4** and **19** — the entire difference is the
-  sweep's own extension list and scanner. **The floor is a property of your
-  instrument, not of the tree**, so it must be re-measured per sweep and never
-  quoted from a document. (Including this one: the numbers above are examples of
-  the spread, not a value to check against.)
+- ⚠ **Do not inherit someone else's number.** Three seats measured this repo's
+  floor and got **4**, **18** and **19** — the entire difference is the sweep's
+  own extension list and scanner. **The floor is a property of your instrument,
+  not of the tree**, so re-measure per sweep and never quote it from a document.
+  (Including this one: those are the spread, not a value to check against.)
+- ⛔ **AND THE FLOOR RISES AS YOU SUCCEED — MONOTONICALLY.** Part of it is not
+  specifiers at all: it is **prose**. Each ported spell's `server.ts` carries a
+  comment quoting the static import that was removed
+  (`import index from "../surface/index.html"`), and a text-scanning sweep reads
+  the quotation. So **a correct port raises the floor by one, and the new entry
+  is a comment you just wrote.** A first-timer who baselines correctly and then
+  measures floor+1 goes hunting a defect that is their own paragraph. This is
+  Gotcha 7 — a file's comments are part of a text-scanning predicate's input —
+  **living inside the floor this procedure asks you to trust.** **Re-measure the
+  floor after each phase, not once at the start.**
 
 ### Gotcha 10: Moving a specifier reddens a pinned inventory in someone else's file
 
@@ -357,24 +398,6 @@ source plus a committed `dist/` and no build-input source.
   regenerate.** A regenerated pin agrees with the tree by construction and
   discards the human reading it exists to preserve. **A red pin after a move is
   the pin doing its job**, not breakage you caused.
-
-### Gotcha 11: Relocation lengthens specifiers, and the formatter fails the gate before you notice
-
-- **Symptom:** `bun run check` exits 1 across every relocated file, on
-  **formatting alone**, with no logic touched.
-- **Root cause:** the move makes relative specifiers longer — a surface file
-  that imported `../shared/types` now imports
-  `../../../../plugins/spellbook/skills/<spell>/shared/types` — which pushes the
-  import past the formatter's line width, so it must be split across lines. This
-  is a **mechanical consequence of the move**, not a mistake in it, and it
-  scales with how deep the relocated tree is.
-- **Mitigation:** run the formatter as the **last action of the relocation
-  phase**, before the gate — the same way the rebuild is (Gotcha 8). If the gate
-  is red on formatting in exactly the files you moved and nowhere else, that is
-  this, and it is a one-command fix rather than a signal to go looking.
-- ⚠ Its sibling is worth knowing: the same reflow can **move a pre-existing
-  error to a new line number**, which is why pinned inventories key on
-  `(file, spec)` and never on the line.
 
 ## Validation & Acceptance
 
@@ -463,6 +486,26 @@ usually different architectures. **Reference:** `475cb6a`.
   worktree is demoted from mandatory to a recovery path; and a pinned inventory
   going red after a move is documented as expected behaviour rather than
   breakage.
+- **2026-08-31** — **Round 2, after the port's second half** (circe, magpie's
+  surface). Five findings. **Phase 3's copy list was self-inconsistent** — it
+  said `SKILL.md` + `scripts/` + `dist/` _"and nothing else"_ while Phase 1 of
+  the same document creates `shared/`; it now copies the **tracked subtree**,
+  which is what the marketplace does and cannot drift from the layout. **The
+  release discriminator is `dist/index.html`, never `dist/` presence** — a built
+  backend puts `cli.js` there, so a spell can hold a `dist/` and still correctly
+  run in dev. Gotcha 2 gains the **mirror-image string trap** (one string, two
+  different correct rewrites) and the reason the computed rewrite wins: it makes
+  the collision _unrepresentable_. Gotcha 6 is now **2 instances in 2 sprints**,
+  so a relocating test moving with its subject is the default expectation.
+  Gotcha 9 gains the **mechanism and the direction** of its own noise floor:
+  each ported spell's `server.ts` carries a comment quoting the static import it
+  removed, so **a correct port raises the floor by one and the new entry is a
+  paragraph you just wrote.** A Gotcha 11 added in round 1 (the formatter
+  reflowing relocated imports) was **removed and demoted to a one-clause
+  ordering note in Phase 2** — a formatter failure is loud, first-gate-arm and
+  unshippable, which is the exact inverse of this set's subject, and the real
+  lesson was ordering: **format before you re-pin and before you diff `tsc`, or
+  you do both twice.**
 
   _The defects were exactly the ones a memory-sourced document leaves. This was
   written from artifacts with memory-only claims reported separately — and what

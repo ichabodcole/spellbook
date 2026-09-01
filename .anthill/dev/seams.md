@@ -50,8 +50,29 @@ _First contracts accreted during the Spell Surface Pipeline plan-ratify (session
 **Owner:** daedalus (server.ts) · **Pointed at from:** circe, prospero, cassandra
 
 **The contract, stated once:** a conjuration's daemon serves its surface in one of two modes,
-resolved at startup: **release** iff a `dist/` dir exists at the skill root (override via env
+resolved at startup: **release** iff **`dist/index.html`** exists at the skill root (override via env
 `SPELLBOOK_SURFACE_MODE=dev|release`), else **dev**.
+
+> ### ⛔ This said "iff a `dist/` DIR exists" until 2026-08-31, and it was WRONG FROM THE START
+>
+> **The code has always checked `dist/index.html`** — `existsSync(join(DIST_DIR, "index.html"))`,
+> verified identical in all four ported spells. The contract's sentence never matched it.
+>
+> **It was harmlessly wrong for a year, and that is the interesting part.** Until a backend
+> shipped built, a `dist/` existed *only* if a surface build had put an `index.html` in it — so
+> the two predicates were **extensionally equal on every case the tree could produce**, and
+> nothing could tell them apart.
+>
+> **Slice 2 broke the equality by putting `cli.js` in `dist/`.** Between Slice 2 and Phase 6,
+> magpie shipped a `dist/` holding **only** `cli.js` — and correctly resolved to **dev**, because
+> the code reads the file and the contract read the directory. **The code was right and the
+> contract was wrong, and only a new kind of member in the set could show it.**
+>
+> **The rule this earns** _(thoth, and it generalises past this pair)_: **two contracts that agree
+> on every case the tree currently produces are not consistent — they are UNTESTED AGAINST EACH
+> OTHER**, and what tests them is a new kind of member in the set they both describe. Contract 2's
+> amendment already keyed on the unhashed `dist/index.html`; the two only stopped agreeing when
+> `dist/` gained a second kind of inhabitant.
 
 - **dev:** the surface HTML entry is imported via a **dynamic, dev-only** `await import("../surface/index.html")` (string-literal specifier) reached only on the dev branch; Bun bundles the `.tsx` + Tailwind graph at serve time; `development.hmr` on.
 - **release:** serve static files from `dist/` (entry `dist/index.html` + hashed assets by path); `hmr` off; zero reads of `surface/` or `bunfig.toml`.
