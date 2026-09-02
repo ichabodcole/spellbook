@@ -5,9 +5,24 @@
 
 ## Epitaph
 
-> The second time you defend a claim you have already been corrected on, you have stopped measuring and started litigating — so say your motivation out loud before your conclusion, because the next justification you find will arrive wearing _"I should have cited this the first time."_
+> You are about to re-read this doc and it will not fire — it named four of my failures in one session and I committed all four anyway — so stop treating the read as protection: **before any WRITE, or any isolation you are relying on, that you have not read in SOURCE this session, go read the source.**
 
-**REPLACED at finalize 2026-08-08 (sprint 04). The predecessor was KEPT that same morning and failed twice within the day** — which is the whole argument, and it is a stronger reason than a fresher candidate merely being available.
+**REPLACED at finalize 2026-08-10 (sprint 05).** The predecessor is **not falsified — it WORKED**, cleanly, the one time it was tested (daedalus corrected my arithmetic; I named my motivation before my conclusion, ran the check most likely to refute me, and conceded in one pass with no second round). **It lost the top slot to a bigger failure, not to a fault of its own**, and its body stays below.
+
+**Why this one instead.** The predecessor governs the moment a peer has *already* corrected you. **Four times in one session I failed with no peer involved at all** — and in each case this doc had stated or carried the exact thing, and I had re-read it at join hours earlier:
+
+```
+BOUNTY_HOME "isolation"       doc CARRIED a false condition  -> two junk cards on the team's live board
+"ground verbs from SOURCE"    doc STATED the rule            -> grounded from --help, destroyed a card title
+uncheckedAgainst/untracked    doc CARRIED a false claim      -> republished it; it PROPAGATED to a peer
+"run the discriminating cell" doc STATED the rule            -> published a convention I never checked
+```
+
+⛔ **The failure is not ignorance and it is not carelessness — it is that a FACT is consulted only when you think to consult it.** The re-read at join feels like protection and is not; it is where I loaded all four of these and then walked past them.
+
+⭐ **So the epitaph names an ACT at a moment you can recognise from the inside** — the same reason the predecessor worked. *"Am I about to write, or to trust an isolation?"* is answerable in the instant, without knowing which fact applies. **Three of the four collapse into that one trigger.**
+
+⚠ **And the fourth is why this seat must apply it to ITSELF: the `uncheckedAgainst` claim propagated from this doc to my message to a peer's message inside one session.** A seat doc is an upstream source, not a private notebook — **so the reassurances in here are the most dangerous lines in the file, because a reader who believes an instrument is blind stops looking.** Re-run or strike every *"X cannot see Y"* claim you find below; I struck two.
 
 **How it failed, both directions, one session:**
 **(1) Its mechanism could not fire.** `r8` was accepted, promoted, and the lead began rewriting the roadmap on it — **nothing contradicted me, so *"publish nothing until it has contradicted the record"* stayed silent through a wrong claim.** Its own ⚠ predicted exactly this and I still did not see it coming.
@@ -77,45 +92,33 @@ Don't grind through the whole casting doc silently and dump every friction point
 
 ## Candidates
 
-Untested: whether a resumed `tail --since <n>` CLI call against a restarted daemon (mismatched epoch) actually behaves the way the design intends (detect + full resnapshot) — worth a dedicated drive once an agent workflow actually depends on long-lived `tail` sessions surviving a restart (P4/dogfooding likely surfaces this naturally).
-Worth proposing to prospero: a light "verify checklist" template for future gate assignments (steps / PASS-FAIL format / friction-list format) now that P2 and P3 both used the same two-layer report shape successfully — codifying it would save re-deriving the format each time, though it's not yet clear if that's premature (only two gates run so far).
+_(Empty. The two V1-era entries that lived here — a `tail --since` resume drive and a
+proposal for a verify-checklist template — were both answered downstream: the resume drive
+by the acc L0 lane E section, the template by anthill's SOP. Pruned 2026-08-31.)_
 
-## P3 gate lessons (V1.x, 2026-07-17)
+## P3 gate lessons (V1.x rounds 1–3 + two re-gates, 2026-07-17/18)
 
-The propose-node stdin shape is `{draft:{title,synopsis,docEdit?}, suggestedTier?, evidence:{docId|messageId, span}}` — `suggestedTier` is TOP-LEVEL, a `tier` key inside `draft` is silently ignored, and a flat (no `draft` wrapper) body dies with a raw SQLite "NOT NULL constraint failed: proposals.draft_json" instead of a shape hint.
-Ratify's `--ruling` vocabulary is the tier itself (`canon|thread|story-local|reject`), not accept/reject — the casting draft never states this and a cold agent guesses wrong on the first try.
-The human-sketched (author:"user", evidence-less) doc-home flow the draft describes is impossible as written: `ratify --doc-edit` hard-requires the proposal's own `evidence_doc_id` and there is no evidence-attach route, so the only working path is plain ratify → node with empty `sources[]`.
-The HTTP proposal route is `POST /proposals` (not /propose); a probing POST that 200s HAS side effects — my endpoint probe minted a real pending proposal, so probe with invalid bodies or clean up after.
-Tail resilience is stronger than the spec asks: on daemon death it re-reads daemon.port and reconnects across a PORT CHANGE, synthesizing `epoch.changed` — but `open` has no port knob, so "restart on the same port" is not actually drivable from the CLI.
-Presence decrement on tail kill is effectively immediate (socket close), not keepalive-bounded — no need to wait out the 15s tick when verifying.
-~~`send` takes positional text (no `--stdin`)~~ — **FALSE since Round 3 (C1), corrected at finalize 2026-08-05.** `send` now resolves `--body-file` > `--stdin` > inline positional > piped-stdin default. **Do not restate the body chain here — it is Contract 9's R3 amendment in `seams.md` and that is the authority.** Kept as a struck line rather than deleted because the drift is the lesson: this doc restated a shared truth, `seams.md` was amended when the truth moved, and nothing linked the two.
-zsh note that keeps biting: `$CLI ...` with a multi-word command string fails (no word splitting) — define a `cli() { bun ...cli.ts "$@"; }` function at the top of every drive block, and env does not persist between Bash calls, so re-export MIND_MAPPER_HOME every time.
-[re-gate round 2, executed by daedalus — coordinator routed the brief to the engine seat's thread; note the gate was NOT cold, the builder drove it] Ratify-time attach guards are enforced at BOTH layers (cli usage error AND daemon 400) — probe the daemon directly with curl for guard gates, the cli's local check can mask a missing engine guard. Also: `draft.tier` really is silently swallowed (suggestedTier comes back null, no warning) — a proposer who nests the tier gets a null-tier queue row with no signal; worth a watch item if it bites a real casting.
+_**PRUNED 2026-09-01.** These four sections were mostly mind-mapper V1 wire shapes (propose/ratify
+stdin keys, verb-first flag placement, zone/lens field names), and that CLI has since been through
+the acc L0 pass — the shapes are stale and `seams.md` is their authority anyway. What generalized,
+kept:_
 
-## P3 re-gate lessons (items 7+10 rework, 2026-07-17)
-
-The ratify-time attach (`--doc <docId> --doc-edit <file> [--span]`) closed the inversion gap cleanly: node gets a real `{docId, span}` sources row, the doc-edit is written and search-reindexed, and all three guards (evidenced proposal, missing --doc-edit, edge proposal) fail loud on BOTH the cli and the raw wire — probe the wire separately, because the cli's local flag check can mask whether the daemon enforces the same rule.
-When probing a wire guard, mind guard ordering: my docId-without-docEdit probe first bounced off the "already carries evidence" guard because I reused an evidenced proposal — mint a fresh fixture per guard or the error you get isn't the guard you're testing.
-A re-gate should re-verify draft text AND live behavior in the same drive — two of the five draft corrections (send `--kind turn`, "--doc must already exist") carried implicit claims the original findings never tested, and both held; the draft-example flags are themselves testable claims.
-Routing note for future gates: if the re-gate request arrives via a slip, confirm the assignee isn't the feature's builder before treating a prior "pass" as cold evidence (daedalus correctly bounced it this time).
-
-## P3 gate lessons (Round 3 zones, 2026-07-18)
-
-The edge propose stdin shape is `{draft:{source,target,label}, suggestedTier}` — endpoints by PROPOSAL id (or real node id), keys are `source`/`target` NOT `from`/`to`. The casting draft documents only the node shape, and because the draft is opaque to the daemon a wrong-keyed edge draft is ACCEPTED silently, then (a) dodges promote's endpoint-order guard (unknown refs "resolve to nothing yet" and pass, by design) and (b) would die at ratify with a dangling-ref. My cold from/to guess produced exactly this — a false "guard missing" alarm. Gate reflex: when a guard doesn't fire, first suspect your own fixture's wire shape before the engine; re-read the ratify/promote source key names only after a failure, then re-drive with a clean fixture.
-Verb-first flag ordering: `cli.ts --project X zone create` dies with usage; the project flag goes AFTER the verb. Draft says "pass --project on ALL of them" but never shows placement.
-The lens POST validates in order owner → XOR, so a both-keys probe without `owner` returns the wrong error ("owner required") — include all required keys when probing a specific validation, or the 400 you get isn't the guard you're testing (same lesson-shape as the re-gate's guard-ordering note; it generalizes).
-Conversation wire field is `text`, not `body`, and send strips exactly one trailing newline — byte-diff against `printf '%s'` of the file minus final newline.
-Empty-body send (`< /dev/null`) exits 2 in ~150ms — the measured-hang regression is fixed at the empty-pipe edge; the bare-send-under-agent-shell hang remains documented-not-tested (per gate brief, deliberately).
-Background-process bookkeeping for teardown: `lsof -t <capture-file>` pins the tail PID exactly (a bare pgrep on cli.ts would have swept other sessions' tails); zsh multi-line kill needs the PIDs space-separated, not a captured multi-line var.
-Legacy no-migration promise holds via directory shape alone: any store whose `projects/default/` dir exists resolves unscoped verbs (200 board, mutations included); `projects --create "Default"` mints that shape, so a legacy fixture is one command.
-
-## P3 re-gate lessons (item 9 rework, Round 3, 2026-07-18)
-
-The rework (75abf96) closed all three draft gaps AND added the advisory intake warning I flagged as a seam — verify the seam suggestion too when re-gating, not just the named corrections: the `warning` field is additive on a 200 (row still inserts, opacity preserved), the CLI mirrors it to stderr prefixed `# warning:` with exit 0, and a clean source/target edge carries no warning key — so the negative case (no-warning-on-clean) is as load-bearing as the positive and costs one grep of the earlier stdout.
-Cold re-drive from the amended draft ran zero wire-guess: the edge stdin block, verb-first example, and `state.conversation[].text` parenthetical each map one-to-one onto a failure from my first drive — a good rework reads like an answer key to the gate report, which is itself a check: any correction that does NOT trace to a drive finding deserves suspicion.
-The warning text names the EXPECTED keys ("source"/"target"), not the offending ones — sufficient for fix-and-re-propose, worth knowing when asserting on its wording in future gates.
-Wrong-keyed probes leave real pending rows behind (by design); in a teardown store that's fine, but in a live board a warning-probed edge must be zone-deleted or rejected, or it lingers rulable-but-doomed in the queue.
-
+**When a guard does not fire, suspect your own fixture's wire shape before the engine.** A cold
+`from`/`to` guess on an edge draft produced a false "guard missing" alarm; the draft was opaque to
+the daemon, so a wrong-keyed body was accepted silently and died two steps later.
+**Validators run in an order, so a probe missing an unrelated required key returns the WRONG
+error** — include every required key when probing one specific guard, or the 400 you read is not
+the guard you tested. (Same shape as the guard-ordering note above; it generalizes.)
+**Probe the WIRE separately from the CLI** — a CLI-local flag check masks whether the daemon
+enforces the same rule; both layers, or the finding is about the CLI only.
+**A rework should read like an answer key to the gate report** — any correction that does not trace
+to a drive finding deserves suspicion, and any correction that adds an untested implicit claim is a
+new claim, not a fix.
+**Confirm the re-gate assignee is not the feature's builder** before treating a prior pass as cold
+evidence.
+**A doc that restates a shared truth drifts silently when the truth moves.** One line here restated
+a `send` body-chain that `seams.md` later amended, and nothing linked the two. Point at the
+contract; do not copy it.
 ## P3 gate lessons (Round 4, 2026-07-19)
 
 The R4 casting draft drove near zero-wire-guess on every R4 FEATURE (doc kind, action slots, activity automation, zoned typed refusal, build stamp) — the doc has caught up with the wire; every residual gap this round was a CLI-FORM gap, not a semantics gap, which suggests future drafts need a one-line usage string per verb more than more prose.
@@ -434,7 +437,12 @@ I drove glamour clean through the four-hazard stack — by sending stderr to a F
 
 I wrote `add -- write the --draft section --session-key "$KEY"` and the title stored `"write the --draft section --session-key cass-p0c-…"` verbatim.
 **Everything after `--` is a positional — including G1's explicit session key**, which was therefore SILENTLY DROPPED from the invocation. The write succeeded; the board was resolved by fallback.
-**Only the unique `BOUNTY_HOME` kept it on my own board — the isolation that held was NOT the one I was relying on.**
+~~**Only the unique `BOUNTY_HOME` kept it on my own board**~~ — ⛔ **CORRECTED 2026-08-10 (sprint 05): `BOUNTY_HOME` DOES NOT ISOLATE YOU WHEN A DAEMON IS RUNNING.** It selects a store on a **cold start** only; bounty resolves its daemon through `tmpdir()/bounty-latest.json` (precedence: `--session-key > --session > $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > .bounty-session > tmpdir`). So the sentence above was true only in a condition it never named, **and it reads as a general property**.
+⛔ **I re-read this line at join, took the reassurance, set `BOUNTY_HOME`, and wrote two junk cards onto the team's live board.** My own trail talked me into the failure it was written to prevent. **To isolate bounty: pass `--session-key`, or relocate `TMPDIR`.**
+⭐ **THE DISCRIMINATOR, so this never needs re-deriving — is the daemon's DISCOVERY POINTER inside the directory the env var relocates?** YES → the var isolates. NO → it relocates your DATA and leaves your DAEMON shared.
+`astrolabe`/`grapevine`/`mind-mapper` put `daemon.port` in the home → **isolate**. `bounty`/`imago`/`magpie` resolve via `tmpdir()` → **do not**. `glamour` has **no home var at all** (zero `process.env` in its cli.ts). **4 of 7 do not isolate.**
+⚠ Mechanism-read for all 7; behaviour-driven only on bounty. And daedalus's sharper correction: with a live daemon **neither** var saves you — what saved his drive was **ordering**, his opened its own daemon first. That column is UNVERIFIED.
+⭐ **The general form, which is the part that outlives the table: every claim here of the shape "X kept me safe" needs the CONDITION under which X operates, or it becomes a false reassurance the moment the condition lapses.**
 That is G1's own *"the scrub is not the isolation"* arriving from an angle G1 does not cover.
 **Rule: in any cell using `--`, every flag goes BEFORE it. The session key is the one whose loss is silent.**
 **And the cell then failed a CORRECT fix — an inverted control, in the gate for the lane about parser correctness, written the same day I ratified the taxonomy of inverted controls.**
@@ -479,7 +487,10 @@ Probing six entry points with `state --totally-bogus-flag`, one returned rc=2 **
 ### The `files` denominator is TWO-SIDED, and an instrument can beat the argument that built it
 
 Built to catch a PARTIAL run (too few tests); it equally catches a run that is too LARGE. An untracked test file in the tree made on-disk 102 vs tracked 101, and **the same guard that catches `99` catches `102`.**
-**`git ls-files | grep -c '\.test\.ts$'` vs the run's `across N files` catches untracked tests that EXECUTED — and `uncheckedAgainst` structurally cannot, because an untracked file is not "dirty".**
+**`git ls-files | grep -c '\.test\.ts$'` vs the run's `across N files` catches untracked tests that EXECUTED.** ~~and `uncheckedAgainst` structurally cannot, because an untracked file is not "dirty"~~ — ⛔ **FALSE, STRUCK 2026-08-10 (sprint 05). `uncheckedAgainst` DOES report untracked files.** Three independent refutations: daedalus's `815a905` envelope listed four `??` paths; prospero's `3a0183c` envelope (which PREDATES the claim) did the same; thoth retracted the same belief independently.
+⛔ **This is the most damaging line this doc has ever carried, and not because it was wrong — because it PROPAGATED.** I re-read it at join, republished it on the wire, and a peer picked it up and re-published it as *"the part that is NOT an apology, because it is reusable."* Chain: **this doc → my message → his message → two retractions.** A seat doc is not a private notebook; it is an upstream source.
+⭐ **The INSTRUMENT survives, only its JUSTIFICATION died** — the count check still catches a partial run AND an untracked test that executed, and it was always justified by being free. **A wrong justification for a correct instrument is not a reason to drop the instrument; it IS a reason to distrust every other claim leaning on the same premise.**
+⛔ **And I held the counterexample twice** — I printed the `git status` showing those files untracked, and read the envelope naming them, in the same session, and reasoned from the belief anyway.
 **Kept on cost alone ("it does not depend on the answer") with its hazard marked UNVERIFIED, it has since paid out three times, twice in directions nobody predicted.**
 
 ### Publish the DERIVATION, never the value it produced today
@@ -799,3 +810,237 @@ Measured: bounty announces a **board**-level destructive write with a backup, a 
 **Why the new one replaces it:** the old epitaph aims scepticism at *the instrument in front of you*. Sprint 02's dominant failure was different in kind — **ten instrument defects, of which the two most dangerous produced findings pointed OUTWARD**: one at a peer's ruling on gate law, one as a release blocker against a fix that was working correctly.
 **Not one was caught by care, and both were caught by the same thing** — the result disagreed with something already on the record, so I checked instead of publishing.
 **That failure is structural to this seat rather than incidental**: a verify seat's output IS claims about other people's work, so its errors land on other people by construction, wearing the costume of diligence. **Nobody else on the team will warn you about it, because from outside it looks like the seat doing its job.**
+
+## Sprint 05 "the gate" — the session my own doc kept naming the failure I then committed (2026-08-10)
+
+Four findings landed, two of my own claims retracted by me, and **two writes to the team's live board.**
+The findings are below; **the pattern above them is the reason the epitaph changed.**
+
+### ⛔ THE PATTERN — n=4 in one session, and every one of them I had RE-READ AT JOIN
+
+```
+1  BOUNTY_HOME "isolation"      this doc CARRIED the false condition  -> wrote 2 junk cards to the live board
+2  "ground verbs from SOURCE"   this doc STATED the rule              -> grounded from --help, destroyed a card title
+3  uncheckedAgainst/untracked   this doc CARRIED the false claim      -> republished it; it propagated to a peer
+4  "run the discriminating cell" this doc STATED the rule             -> published a "house convention" I never checked
+```
+
+**The doc is not too long, not unread, and not mostly wrong.** It stores **FACTS**, and a fact is consulted only when you think to consult it. **What fires is a TRIGGER — a situation you can recognise from the inside.** Three of the four share exactly one:
+
+> **"I am about to invoke a WRITE verb, or rely on an ISOLATION claim, whose semantics I have not read in SOURCE this session."**
+
+**Rewrite this doc's grounding rules into that shape as you go; keep the facts as their justification.**
+And ⚠ **every "X cannot see Y" claim in here gets re-run or struck** — those are *reassurances*, so the path that would falsify them is the one nobody walks. (thoth's false-reassurance class, in my own trail.)
+
+### The two board writes, and what each taught
+
+**Junk cards** (`BOUNTY_HOME`, above). Removed, board read back: nothing lost. ⚠ **A third party then reasoned soundly to the wrong owner** and nearly handed a peer a finding he had honestly said he had not proven — `add` mints cards unowned, so the board answers WHAT and the protocol asks WHO.
+**Destroyed a card title:** `bounty update <id> --stdin` writes the **TITLE** (cli.ts:1214), `else if` so it silently overrides `--title`, and answers `valuesIgnored: null` — **misrouted is not ignored, and the field whose job is reporting unhonoured input said nothing.** Repaired byte-exact by EXTRACTING the original from a snapshot, never retyped. ⚠ **Recovery was luck** — the only snapshot holding that title came from an unrelated accident 13 minutes earlier. **There is no undo on that path.**
+⭐ **I then corrected my own report:** `--stdin` is uniform house-wide — it substitutes for the verb's **POSITIONAL**; `update` is simply the only verb offering it with **no positional body**. My wrong framing pointed at a fix that would have made bounty inconsistent with itself. **Publish the narrow diagnosis; a wrong one aims the repair.**
+
+### ⭐ A READ-BACK VERIFIES THE FIELD, NOT YOUR WRITE
+
+Two seats restored the board title to different strings minutes apart; **both wrote, read back, asserted byte-exactness, and both were TRUE WHEN MADE.** On a shared mutable field a read-back confirms the field's **current value**, which is evidence about *your* write only if nobody wrote between. **The overwritten seat holds a verified, honest measurement AND a false belief, with nothing in the output separating them.**
+**Announce the TAKE before writing a shared mutable field** — the beat the SOP already requires for a shared file. Ratified as a standing rule.
+⭐ **What settled it was a snapshot I had saved at join FOR AN UNRELATED REASON.** Two seats agreeing is what this team calls not-evidence; a third observation with no stake is not. **Snapshot shared state at join even when nothing is wrong — it costs one command and it is the only disinterested record you will have.**
+
+### Calibration craft (s5-CAL, the lane)
+
+**Calibrate in a `git worktree --detach <sha>`, NEVER a `cp -R`/`git archive` copy.** Measured, same HEAD: **46 cells in a worktree, 30 in a copy** — `roster-drift`'s 17 cells simply did not exist, and git-dependent wards die outright (`gate-blind-set` shells to `git ls-files`). A worktree is a real repo, pins the world, and reproduces the full population.
+⛔ **The count is the danger, not the crash:** mine failed loudly, but had those cells produced ZERO instead of throwing, the run reads `25 pass 0 fail` and **nothing says sixteen cells did not exist.** **Cite pass/fail/CELLS and reconcile the cell count against the real tree.** My own `files` denominator lesson, arriving at the calibration harness.
+**Report the cells that WORK as loudly as the defects** — the zero-denominator precondition fired at the right assertion, alone, and naming that is what distinguishes a calibration from a bug hunt.
+**Adopted from daedalus: print an applied-check BEFORE the run and a reverted-check after.** His near-miss (regex matched nothing, "calibrated" an unmutated file, green) is the argument.
+**Do NOT re-run a peer's own mutations** — that is duplication, not verification. Attack what their set does not cover.
+
+### The recurring shape this seat produces, now named (n=4 in one session, 3 mine)
+
+**A real measurement, correct in its own terms, used to answer a question one qualifier to the left.**
+`112` («bare» rows) as a defect count · `39` nearly as a defect count · `7` (caller-facing) vs `8` (all files) · `Bounty Board` (title across history) vs the title *at session start*.
+**Never a wrong instrument, never a careless reader — one qualifier, silently supplied by whichever the surrounding conversation makes salient.**
+**Producer half (hypothesis, for the retro): publish a RECORD with named qualifier fields, never a bare scalar.** ⚠ Its counterexample is already found and it is mine: **daedalus's cell published `hazardBearing: 8, callerFacing: 7` and I made the mismatch anyway, because I read his MESSAGE.**
+⭐ **Consumer half (adopted, not a hypothesis): when a peer's number and yours disagree, go to their ARTIFACT, never their MESSAGE — a message is a lossy re-rendering and the UNIT is the first thing it drops.** Cost: one `cat`. **The artifact was in my own `git status` output at the time.**
+
+### Gate-auditing results worth keeping
+
+**A `return` in a bun:test body IS a pass** — `flag-invariant` had a spell with no `SKILL.md` returning early under a comment reading *"recorded as a skip, never as a pass."* mind-mapper has no SKILL.md, so **39 caller-facing flags — the largest surface in the roster — were unwarded while the ward was green**, and the emitted cell lists were **identical** in both worlds.
+⭐ **New taxonomy member, mode 6 — FALSE REASSURANCE: a comment asserting an honesty property the code lacks.** All five earlier modes are about what a cell CANNOT do; this one **spends the reader's suspicion** and cannot be found by reading the comment. **Mutation, never review.**
+**C-prime calibration:** its founding row is **NO ENVELOPE** (exit 2, 0 stdout bytes), not an envelope missing a field — a check that `JSON.parse`s stdout must name that third state. It is an **INVERTED CONTROL** if `outcome` counts as an explanation (the post-fix world returns exit 0 carrying `outcome`), and its one clean passing row convicts when measured.
+**The rule that came out of it is CANON and is NOT restated here — see `grimoire/outcome-contract.md` (the failure-side section, thoth's) for the explanation set and what it excludes.** What is mine and stays here is the MEASUREMENT that produced it: the post-fix world returns `exit 0` carrying `outcome: "already-raised"`, so a predicate counting `outcome` as an explanation convicts the world the fix created.
+⚠ **I drafted that clause as a restatement and caught it at finalize by grepping my doc against canon I do not own** (daedalus's step 3.5, #1055 — his check, run on mine). **This doc has a struck instance of the identical defect a few sections up** — the `send --body-file` line, where seams.md was amended and nothing linked the two. **Second instance in one file; the trigger is "I am about to write down a RULE rather than a MEASUREMENT", and the answer is always a pointer.**
+**Run the pre-fix world; do not read the commit message.** A detached worktree converted a `TAKEN ON REPORT` founding row into a measured one, and the measured version was materially different from the reported one.
+
+## mind-mapper acc L0 lane E — cold re-run + census + cell audit (2026-08-27)
+
+The census's headline number can stay flat while the census's BYTES carry the whole result: acc's "did not enumerate" line read identically before and after, but the recorded stderr went from 0/48 to 49/49 envelope — grade a recorded-surface delta on the record bodies, never on the extractor's summary line.
+A sentinel probe measures only the rejection class it can reach: an unknown-to-the-whole-registry flag is refused at stage 1 by design, so "zero choices sets at the sentinel" is the CORRECT post-two-stage behavior, and the enumerated sets live on the stage-2 paths (bare parents, misplaced real flags) the sentinel cannot touch.
+Derive a census path list from the machine-readable registry AND cross-check it against the dispatch text — the two sources agreeing (49 = 43 spec paths + alias + 5 bare parents) is itself the drift measurement, and importing the registry from the module under test is the cold derivation, not a shortcut.
+Substring `includes()` is a vacuous denominator for any token that recurs in surrounding prose: the help-advertises twin was decoration for 6 of 29 verbs (node/zone/proposal/doc/open/tail), proven by removing doc's entire entry and watching the cell stay green while delete-batch's removal went red in the SAME run — pack the discriminating and the vacuous case into one mutation so the diff names both.
+An extraction ward built on `indexOf` + slice degrades SAFELY only if you prove it: renaming the dispatch anchor sent both source wards red (empty match set ≠ full roster), which is the fail-loud property my P0-round taxonomy asks of every text-reading denominator — run that arm, don't reason it.
+A mutation that silently fails to APPLY reads as a passing suite: my M7 replace mismatched on template-literal escaping, produced an empty diff and a green run, and only the diff-before-trusting-the-green habit caught it — the mutation's own diff is part of the calibration record, not scaffolding.
+When a peer proposes a test row and offers to build it, the reviewer adding it themselves is sometimes the cheaper H16 shape: I both ruled the tail-since default row daemon-rigged and landed it calibrated (green as written, red under a mutated default), so the review and the build were never by the same author for the same claim.
+zsh bit me AGAIN with a multi-word command in a variable (bounty CLI path) — the seat doc's own scar, recommitted within hours of re-reading it; the function-wrapper form `f() { bun path "$@"; }` is the only spelling my hands should ever type.
+
+## spell-kit sprint 01 P0 — calibrating a peer's instruments as the non-author (2026-08-31)
+
+A green CONTROL never proves a calibration hook is live; the only proof is a change made ONLY in the fixture world producing a red in the real cell, because a dead hook (the `join` vs `resolve` KIT_DIR bug) yields a perfect-looking control and passes every planted violation.
+Mint the mutation lab by rsyncing the `git ls-files` set into a throwaway `git init` repo and pointing the root-override env at it: every population-level cell then runs at FULL denominator, the pinned real-repo paths still resolve, and no peer ever sees a mutated shared tree.
+Before believing a header that says "this mutation is a no-op because the population is empty", COUNT the population yourself — the claim "the population contains ZERO re-export statements" was wrong (6 statements, 3 of them value re-exports) and the mutation's real green came from a different mechanism entirely.
+A cross-check that compares per-file SETS of specifier strings can only detect a scanner defect that removes a string from a file completely, so any dropped statement whose specifier is co-imported in the same file is invisible — barrel re-export files are precisely that case, and the ward it protects then misses a real escape at 0 failures.
+Ask WHICH cell a mutation reddens, never only whether the suite went red: deleting ward 1b's bare-`bun` exemption reddened the violation cell and left the cell TITLED "the exemption is LIVE" silently green, because that cell never references the predicate it claims to guard.
+A cell that pins a denominator as a per-REF list while labelling it per-FILE goes red against correct code as soon as one file carries two matching statements — dedupe it, or rename it to what it actually counts.
+The single most informative run of a calibration is the EMPTY-SWEEP: point the root at a world with no matching files and record which cells fail and which pass vacuously, because that partition IS the answer to "what does a green license".
+Always run the control where the population is non-empty and the answer is legitimately clean, or "red on my planted violation" cannot be told apart from "red on everything".
+Audit the direction a one-directional cross-check deliberately does not run and CLASSIFY the residue: 229 of 231 scanner-only specifiers were type-only as designed, and the 2 that were not are TypeScript inline `import("x")` type queries — a construct that emits nothing at runtime and is a live false-positive route into a ward that must never be red against correct code.
+An instrument whose roots come from ambient env vars has an env-dependent denominator: a `> 0` zero-guard cannot tell a 352-file world from a 2-file one, so the PIN is doing the entire job and the printed report cell licenses nothing about the population it just described.
+I DESTROYED A CARD TITLE AGAIN, the same way, in the same session I re-read the doc that names it: bounty's `update --stdin` sets the TITLE (cli.ts:1214), I grounded the flag from a usage line in an ERROR MESSAGE instead of from source, and 2,133 bytes of report overwrote a 63-byte title at `ok:true` with `valuesIgnored: null`.
+The read-back is what saved it, and only because I asserted EQUALITY against the source I still held rather than probing for a phrase — the mismatch showed as "sent 2134, stored 1025" and the 1025 turned out to be the ORIGINAL notes, i.e. the write had landed somewhere I had not looked at all.
+So the read-back must cover every field a write could plausibly have reached, not just the field you aimed at: checking `notes` alone would have reported "notes unchanged" and I would have called that a no-op and moved on with the title destroyed.
+
+## spell-kit sprint 01 1a — the local-sim drive, and an instrument that had to be able to fail (2026-08-31)
+
+_Returned to the lead rather than written, because his brief said leave the repo alone; he landed them here and the over-constraint was his, not a lapse of mine._
+
+A size or count check on a build artifact is a PRESENCE test, not an EFFECT test, and the two come apart in the direction that favours the BROKEN artifact.
+Measured: a 288KB inert decoy stylesheet outscored the real 142KB one on every count-shaped measure — 4,002 rules shipped against 1,320 — while matching 2 live-DOM rules against 165.
+So a byte-size or rule-count assertion prefers the broken build, which is the worst possible direction for a check to be wrong in.
+The discriminating form for "is this asset actually doing anything" is REMOVE-IT-AND-DIFF against the live DOM: 16 of 44 computed properties changed for the real sheet, 6 of 44 for the decoy, and the residual 6 are the legitimate inline pre-boot style, which accounts for the floor exactly.
+That form needs no baseline, no marker convention, and no knowledge of what correct output looks like — which is why it survives being applied to a spell nobody has seen before.
+An empty-but-truthy collection (`CSSRuleList`, `NodeList`, `arguments`) turns a recursion guard into a skip, and the symptom is a CONFIDENT ZERO.
+My own first styling probe reported `styleRulesShipped: 0` while the CSS was visibly applied; I caught it only because the number contradicted something I could see.
+Treat any zero that contradicts a visible fact as an instrument defect until proven otherwise — it is the round-1 lesson inverted, where a zero that would have read as a finding about the artifact was a defect in the measurement.
+A "no deps up-tree" claim is only as good as the walk, and the walk has a blind spot: check `node_modules`, `package.json`, `bunfig.toml` AND the global `~/.bunfig.toml`, because the last is invisible to a parent-directory walk entirely.
+Phase 1a is PROVEN and it is not GUARDED — the cells run every gate, this drive ran once by hand, and that asymmetry is the honest shape of every local-sim result.
+
+## spell-kit sprint 01 · 1c — driving imago, and four near-phantom findings I nearly filed (2026-08-31)
+
+THREE TIMES this session my probe reported a defect that did not exist, and every one was my frame rather than the artifact: filter chips "missing" from an `innerText` read taken mid-re-render, a context entry "absent" because I searched mixed-case against text the daemon lowercases, and annotation tools "inert" because I diffed across a transition that was not a transition (I clicked a tool that was already active).
+A fourth — `close` "leaving the daemon running" — was me checking one second too early; a clean reproduction shows it exits in ~1s in both the sim and the repo tree.
+So the rule this round earns: before filing a negative finding, prove the TRANSITION happened — a diff needs a state that actually changed, a text probe needs the case and the timing the renderer actually produces, and an exit needs the time an exit takes.
+The instrument that saved me every time was widening the frame rather than sharpening the assertion: a whole-document diff, a leaf-node scan with a case-insensitive regex, and a three-way comparison across tools instead of a two-way one.
+To test a contract that two consumers are supposed to SHARE, send the SAME input through BOTH and compare the OUTPUTS: an identical 2000x1500 source produced exactly 1200x900 from imago's daemon and from its browser bundle, which is the shared-policy claim proven by effect rather than by reading the constant in two places.
+`naturalWidth > 0` is the only thing separating "an `<img>` element exists" from "pixels arrived" — a broken image satisfies every DOM-shape assertion, keeps its `src`, and renders a node.
+The remove-it-and-diff styling control generalises, and it is SHARPER on a page with no inline `<style>`: astrolabe's pre-boot dark canvas left a floor of 6/44 changed properties under an inert decoy, imago's absence of one gives a floor of exactly 0/44.
+A decoy must be BIGGER than the real artifact to make the point land — 406KB of inert CSS against 149KB of working CSS means every size- and count-shaped measure prefers the broken one by 2.7x.
+On a shared working tree, attribute `git status` before reporting it: three files went modified DURING my drive and they were a peer's live rework, so "the tree is not clean" was true and "I left fixtures" would have been false.
+
+## spell-kit sprint 02 · release-staleness spike — the check I wrote reported GREEN twice on the artifact it existed to catch (2026-08-31)
+
+A git PATHSPEC WITH A GLOB matches nothing and says nothing about it: `git diff --name-only -- 'plugins/spellbook/skills/*/dist'` returned empty over three genuinely-changed dist trees, and my check printed GREEN twice on a deliberately stale artifact before I noticed.
+I found it only because I also counted the paths a restore had to clean and got 1 where I expected 0 — the discrepancy that convicted the instrument was a side-effect of tidying up, not of any assertion I had written.
+So a check that filters a set must PRINT THE SIZE OF THE SET IT EXAMINED, and a zero-size set is NO VERDICT, never a pass — an empty filter and a clean tree are the same output otherwise.
+`git diff` is BLIND to a content-addressed rebuild: a changed chunk gets a NEW hashed filename, so the new file is UNTRACKED and only `git status --porcelain` sees the `??`; a check built on `git diff --exit-code` reads a rename-shaped change as a bare deletion and can miss it entirely.
+My first calibration mutation was also vacuous and green was CORRECT: an unused `export const` is tree-shaken out, so the artifact was genuinely unchanged — a source edit that does not change the artifact is not staleness, and the useful lesson is that a mutation must be OBSERVABLE IN THE THING BEING COMPARED, not merely present in the input.
+BYTE-EQUALITY AGAINST A REBUILD is a strictly better basis than any proxy for "did the source change": it is a claim about the artifact rather than about the inputs, so it is immune to formatting-only edits, tree-shaken edits and mtime, and it catches dependency drift that no source-hash or timestamp basis can see.
+An MTIME basis measures WHICH ACTION RAN LAST, not what changed: all three committed dists reported STALE in the main tree and FRESH in a worktree of the identical commit, because the merge rewrote source mtimes after the build and the worktree checkout rewrote them before it.
+The merge commit that landed the two fresh dists made both of them report STALE at the same second it was written — the instrument's worst reading is produced by the correct action.
+When a build embeds MODULE PATHS in its output, the comparison is only sound if the rebuild happens at the same relative layout: my first reproducibility run symlinked `node_modules` out of a worktree, and the resulting `../../../../../../../Users/...` path comments changed every chunk hash and looked exactly like a non-reproducible build.
+Prospero had already retracted one determinism claim on this card for a related reason, and I reproduced the same class of error from the other direction within the hour — a build comparison is contaminated by the ENVIRONMENT of the comparison far more easily than by the code.
+The instrument that settled it was the boring one: rebuild in the CANONICAL checkout, diff, then `git checkout --` and assert byte-equality against a copy taken before the experiment.
+Price the option before arguing about where it belongs: `bun run build` for all three spells is 0.54s against a 149s suite — 0.36% — and every "where should this fire" debate I was about to have was predicated on a cost I had not measured.
+
+## spell-kit sprint 03 · P4 styling — calibrating a peer's two CSS wards as the named non-author (2026-08-31)
+
+_Card `sk3-p4-styling`, author circe. Every number below is mine, each with the positive control
+it was believed on. Tree restored to `e9f5856` / 0 dirty; `bun test` 1528/1528, `bun run check`
+green, `bun run build` reproducible from a clean, a wiped and a junk-seeded `dist/`._
+
+A card whose central premise has INVERTED TWICE is a card whose conclusion and whose reasoning must be checked separately: `sk3-p4-styling` asserted "`src/kit/` is outside every `@source`", which was FALSE when written (a repo-root CWD accident) and is TRUE AGAIN now for an unrelated reason (`source(none)` retired the accident) — the right answer standing on a dead mechanism reads exactly like a verified one.
+
+⛔ A TEXT PREDICATE THAT DECIDES MEMBERSHIP MUST STRIP COMMENTS, and it fails silently in BOTH directions. `kit-styling-ward.test.ts`'s membership cell asks `styles.includes("kit/theme/base.css")` against raw text: deleting imago's actual `@import` while leaving the prose `(src/kit/theme/base.css)` kept imago listed as a consumer (so the author's own route 1 reds TWO cells where it should red THREE), and pasting that string into astrolabe's comments — a spell that imports nothing — reported astrolabe as a consumer. Its sibling `spell-css-scope-ward.test.ts` strips comments twelve lines away and its header states the exact hazard; the two cells were written the same day.
+The same unstripped predicate also decides `scannedText()`'s SCOPE in the sibling ward, so a prose mention silently widens which text a spell's shipped CSS is allowed to be explained by — a membership bug that leaks into a leak detector's tolerance.
+
+⛔ A DIRECTORY UNDER AN `@source` INCLUDES THAT DIRECTORY'S PROSE, AND PROSE SHIPS. `src/kit/ui/Dot.tsx`'s "NO L1 SHADCN ALIAS" paragraph names `bg-accent`, `bg-popover`, `bg-muted`; replacing those three words with placeholders and rebuilding dropped `.bg-muted` out of imago's shipped stylesheet — imago's own source never spells it, so that rule was in a shipped artifact solely because a comment forbade the class by name. The kit's own header states this rule about one sentinel and the component file next door breaks it four times.
+And no cell can see it: the cross-spell ward counts all of `src/kit/` as legitimate text for every consumer, so kit prose LAUNDERS classes between the spells that import it.
+
+TAILWIND v4 EMITS ONLY THE THEME VARIABLES SOMETHING USES, so a cell titled "every kit L0 token is DEFINED in the shipped css" is really asserting "every L0 token is USED by this spell and resolves". Adding one unused `--color-*` to the kit's `@theme` reds that cell for both consumers with no defect present — and the kit's own header says "add one when a second signal asks", i.e. the brittleness is scheduled.
+
+⛔ A WARD THAT READS A COMMITTED BUILD ARTIFACT IS REBUILD-GATED, and that is a different guarantee from the one its title states. Deleting the single load-bearing `@source "../"` from `src/kit/theme/base.css` reds two cells AFTER `bun run build` — and leaves the whole gate 14/14 green and `bun run check` green without one. Nothing in this repo asserts that a committed `dist/` corresponds to current source, so every artifact-reading cell is armed only by the next person who happens to rebuild.
+
+IMPORTING A SHARED COMPONENT IS NOT ADOPTING ITS STYLES, and nothing enforces it. A spell that imports `src/kit/ui/Dot.tsx` without importing `src/kit/theme/base.css` ships the component's markup in its JS bundle (4/4 class strings present — the control) and NONE of its utilities in its CSS, at `bun run check` green and `bun test` 1528/1528 green. Measured twice, on a minted fifth spell and on shipped astrolabe; astrolabe's presence dot became a zero-size invisible span with the entire gate green.
+
+⭐ THREE OF MY OWN INSTRUMENTS RETURNED A CONFIDENT ZERO WITH NO FAILURE MODE IN ONE SESSION, and every one looked like a clean negative:
+`grep 'mb-\[7px\]'` against built CSS — Tailwind escapes the brackets, so the literal text is `mb-\[7px\]` and my pattern could never match;
+`grep -c '^\.'` against built CSS — 0 on all three arms of a comparison whose arms genuinely differed;
+a module-graph probe whose component was TREE-SHAKEN out because the entry only `export`ed it — the bundle was 53KB and contained none of the thing under test.
+Each was caught by the same move and only that move: run the control that must return NON-zero, in the same call, before reading the zero.
+
+`.at(0)` ON A `readdir` FILTER IS AN ARBITRARY PICK, NOT AN ASSERTION. Both wards' `shippedCss()` take the first `.css` in a `dist/`; a stale sibling left by an aborted experiment steered a run to a different verdict, and the cell has a zero-guard (`length > 0`) but no more-than-one guard. `build.ts` `rm`s `dist/` first, so it is correct today by an invariant living in a different file.
+
+AN AMENDMENT THAT NAMES WHICH OF ITS OWN MEASUREMENTS DIED IS ALSO A CLAIM ABOUT THE ONE IT LEFT STANDING — check that one. circe's amendment retires measurements 1 and 3; measurement 2 (dev-vs-release cwd divergence) is moot too — building imago from the repo root, from `src/imago/` and from `/tmp` produces CSS identical but for a leading path comment — and `scripts/instruments/kit-utility-probe.ts`, written for that divergence, now has no consumer anywhere in the tree.
+
+A HISTORICAL CLAIM ("this cell would have caught the original defect") IS CHEAP TO RUN AND WORTH RUNNING: reverting all four spells to the pre-fix bare `@import "tailwindcss"` and rebuilding reds the CROSS-SPELL cell on all 12 ordered pairs, 71–238 classes each. That is the difference between a ward that is well argued and a ward that is demonstrated against its own origin story.
+
+Break each cell by a route the AUTHOR DID NOT LIST, and check what ELSE goes red: widening imago's `@source` to mind-mapper's surface reds CROSS-SPELL alone (DECLARATION stays green) — which is what proves the two cells are independent rather than one cell reported twice. Two mutations of the shared matcher red the instrument self-test AND cross-spell together, which is the self-test doing its job: it names the broken property so the leak report is not read as a finding.
+
+## spell-kit sprint 03 · 4d — re-measuring a peer's negative result, and correcting the sentence it contradicts (2026-09-01)
+
+_Card: re-measure circe's `.css`-is-not-a-content-source finding as the non-author, then correct
+`src/kit/theme/base.css`'s ⛔ warning. Every number below is mine, taken with a control that
+returned NON-ZERO in the SAME build. Harness restored the tree after each run and asserted
+`git status --porcelain` = 0 between experiments. Gate after the correction: `bun run gate`
+1536 pass / 0 fail, exit 0._
+
+**⭐ THE SHAPE OF THIS CARD IS THE LESSON: a series of negative results is the exact output a broken
+instrument gives away for free.** The whole finding was "this extension does not emit" — five
+times. So the harness was built control-first: every run plants a known-good probe in `Dot.tsx`'s
+`className` and reports its count beside each negative, in the same build, in the same table.
+`grimoire/kit-prose-ward.test.ts` is where the finding now lives; the probe design is reproducible
+from its header's table.
+
+**VERDICT: the sentence is FALSE and circe is right.** `.css` is not a Tailwind content source.
+A probe in a `base.css` comment, in an unimported sibling `.css`, and in a spell's own
+`surface/styles.css` comment all emitted zero, each against a live control. `56a1b79` stands.
+
+**⛔ BUT THE AMENDMENT'S FRAMING IS BACKWARDS, AND THAT IS WORTH MORE THAN THE CONFIRMATION.**
+It reads as an ALLOWLIST — "the content-source set is `.ts`/`.tsx`/`.md`/`.html`". The mechanism is
+a BLOCKLIST. Byte-identical one-line bodies, siblings in `src/kit/theme/`, one `bun run build` each:
+`.css` 0 · `.scss` 0 · `.less` 0 · `.styl` 0 · `.log` 0 · `.lock` 0, and `.md` 1 · `.txt` 1 ·
+`.json` 1 · `.yaml` 1 (`.html` 1, measured in `src/kit/ui/`). Everything under an `@source`
+directory scans EXCEPT a small ignore group; the oxide binary's string table around
+`crates/oxide/src/scanner/auto_source_detection.rs` holds that group verbatim. An allowlist of four
+licenses "I dropped a `.json` fixture in, it is inert" — which is false. **A closed set stated where
+an open one holds is a different error from a wrong set, and it fails in the direction of permission.**
+
+**AN EXTENSION CLAIM NEEDS THE EXTENSION AS THE ONLY VARIABLE.** The decisive run was three files in
+ONE directory with IDENTICAL bytes differing only in suffix. Everything before it (different files,
+different directories, different comment syntax) was consistent with "`.css` is excluded" and
+equally consistent with "that directory or that file is excluded" — and circe's original table has that
+confound in it. Same move settled the exemption's soundness: an `@source` naming the `.css` by path,
+by `./*.css`, and by `./*.{css,md}` emitted nothing from it, while the `.md` reached by that SAME
+brace glob emitted. The exemption survives someone deliberately trying to defeat it.
+
+**⛔ MY OWN PROBE PRODUCED A RED THAT LOOKED LIKE A GUARD AND WAS AN ARTIFACT.** Planting a class in
+`base.css` reded `gate honesty ward > the blind set has not moved` — which reads exactly like "the
+gate protects this file". It does not: that cell counts LINES. Re-run with the class appended to an
+EXISTING line (count unchanged) and the whole grimoire suite is green with two stock-palette classes
+sitting in kit prose. **A red is evidence for its own predicate, never for the one you were hoping
+for — read WHICH cell fired and what it asserts before you let it answer your question.** This is
+the fourth instrument failure of this sprint and the first that failed by succeeding.
+
+**WHAT THE CORRECTION HAD TO KEEP.** The prohibition survives its false mechanism, for reasons that
+are measured rather than inherited: `base.css` is the ONE file in `src/kit/` where the directory's
+"prose does not spell class names" rule is unenforced — `kit-prose-ward` exempts it (correctly) and
+`bun run check` never reads it at all (it is a declared entry in gate-honesty's blind set). And
+prose MIGRATES: the same sentence in a `.tsx` comment, a `README.md` or a `.txt` note in that
+directory IS a live rule in both consumers' stylesheets. **When you falsify the WHY, re-derive the
+WHAT before deleting it.**
+
+**A CORRECTION IS ALSO A CHANCE TO CHECK THE CLAIMS TRAVELLING WITH IT.** The paragraph asserted
+"Caught by that ward, on this comment." `kit-styling-ward`'s discrimination cell filters
+`!f.startsWith("src/kit/")`, so it cannot see that file. The false sentence had a false provenance
+attached, and only one of the two was flagged.
+
+**THE FALSE CLAIM HAD PROPAGATED INTO A LEAK DETECTOR'S TOLERANCE.**
+`spell-css-scope-ward.test.ts`'s `walkText` counts `.css` as scanned text, so a class named in ANY
+`.css` COMMENT is accepted as legitimately explaining a shipped rule. `classSelectors()` strips
+comments; `scannedText()`/`usedIn` do not. Direction is permissive — a false NEGATIVE — and the
+ward's own header warns about exactly this hazard twelve lines from the code that has it. **Measured
+rather than feared, which is the whole difference between a finding and an alarm: 0 of 199 / 346 /
+262 / 388 shipped class selectors are accounted for ONLY by `.css`-comment text. Latent, cost zero
+today, unbounded tomorrow** — imago's `styles.css` header already names five real utilities in prose.
+Reported, not patched: not my file.
+
+**GATE-HONESTY'S PIN IS A LINE BUDGET, AND EDITING A BLIND FILE IS A DECLARATION.** 84 → 113 forced a
+re-declaration with decomposed arithmetic that closes (`4,582 + 29 = 4,611`, and the ward's own
+report line then prints 4,611). Worth knowing before you touch any stylesheet: the cost of a comment
+in `src/**/*.css` is a second edit in `grimoire/gate-honesty.test.ts`, by design.

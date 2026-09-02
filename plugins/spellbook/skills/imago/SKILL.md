@@ -127,13 +127,13 @@ which refs) a request is about without a separate read: `say` and `marks.commit`
 ride the focused variant + `selectedRefIds`; `context.capture` rides the focus.
 
 **Where the shapes live:** an event's full payload and the `state` snapshot are
-the `AgentEventPayload` and `ImagoState` types in `surface/state/types.ts` (the
-single contract). That's where field names come from — and where you read the
-ambient board state (`state.focus`, `state.batches[].variants[].refSelected`
-(selected refs are variants where `refSelected` is true), `state.library`
-(unified Context Library of `ContextEntry`), `state.activeContextIds` (styles
-linked to the active-context tray), `state.quickPromptIds` (quick-prompts linked
-to the composer), `state.aspect`/`size`) plus ids: `state.batches[].id`,
+the `AgentEventPayload` and `ImagoState` types in `shared/types.ts` (the single
+contract). That's where field names come from — and where you read the ambient
+board state (`state.focus`, `state.batches[].variants[].refSelected` (selected
+refs are variants where `refSelected` is true), `state.library` (unified Context
+Library of `ContextEntry`), `state.activeContextIds` (styles linked to the
+active-context tray), `state.quickPromptIds` (quick-prompts linked to the
+composer), `state.aspect`/`size`) plus ids: `state.batches[].id`,
 `state.batches[].variants[].id` (+ `.path` for the on-disk image). Notifications
 truncate; read the full payload from the tail line or from `state`. Polling only
 when you happen to check leaves the user waiting.

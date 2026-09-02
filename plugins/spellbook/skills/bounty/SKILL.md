@@ -181,7 +181,15 @@ session by default; pass `--session <id>` to target a specific one.
 >   rather than attaching and discarding them, and every `open` envelope carries
 >   `restoreSkipped` — `null` when nothing was skipped, `{requested, reason}`
 >   when an **explicit** `--restore` could not be honoured (a keyed respawn
->   restores by default and never populates this field) when the refusal fired.
+>   restores by default and never populates this field).
+> - **`restoreSkipped` and `restoreFailed` are different situations and call for
+>   different fixes.** `restoreSkipped` means the restore was **never
+>   attempted** — fix your invocation. `restoreFailed` —
+>   `{path, reason} | null`, on the `open` envelope and on the daemon's boot log
+>   — means it **was** attempted and the snapshot could not be read; the board
+>   comes up **empty** and your snapshot is the damaged thing. A restore that
+>   fails is not a restore that was skipped, and a caller that treats them alike
+>   will "fix" a healthy command line and leave a corrupt snapshot in place.
 >
 > A team coordinator (e.g. anthill) can therefore run
 > `open --session-key <team-channel>` at start and pass
@@ -225,13 +233,41 @@ session by default; pass `--session <id>` to target a specific one.
 | `close` / `info` / `sessions` / `help`                                                                                 | end session / show session / list snapshots / usage                                                                                                                                            |
 
 **`--stdin` defeats shell quoting.** For any free text with apostrophes, quotes,
-`&`, `<`, `>`, or `$`, pipe it through `--stdin` (which reads the title
-verbatim) instead of putting it on the command line — the shell will otherwise
-mangle it:
+`&`, `<`, `>`, or `$`, pipe it through `--stdin` instead of putting it on the
+command line — the shell will otherwise mangle it:
 
 ```bash
 printf "it's a \"quoted\" & <urgent> task" | bun $CLI add --stdin --status doing
 ```
+
+**The rule: `--stdin` REPLACES THE VERB'S POSITIONAL ARGUMENT.** It is not a
+"body" flag — it stands in for whatever that verb takes on the command line.
+`add <title…>` → the **title**. `message <text…>` → the **text**.
+
+> ⛔ **AND ON `update` THAT MEANS THE TITLE, WHICH IS ALMOST NEVER WHAT A CALLER
+> WANTS.** `update`'s only positional is `<id>`, so `--stdin` has no natural
+> referent and resolves to `--title`:
+>
+> ```bash
+> bun $CLI update t-abc --stdin < notes.md   # ⛔ OVERWRITES THE TITLE with the file
+> bun $CLI update t-abc --notes "$(cat notes.md)"   # ✅ what you meant
+> ```
+>
+> **The previous title is gone, the envelope says `{"ok":true}`, and
+> `valuesIgnored` reports `null` — nothing was ignored, by its own reckoning,
+> because the bytes were faithfully written to a field you never named.** Found
+> by destroying a live card's title with it (`s5-9`); the card was recoverable
+> only because a snapshot existed.
+>
+> **`--stdin` also silently BEATS an explicit `--title`** — pass both and you
+> get stdin's, unwarned.
+>
+> **There is no way to send notes through `--stdin` today.** Use `--notes`, and
+> if the prose has metacharacters, build it in a variable or a quoted heredoc
+> rather than reaching for `--stdin`. _(Tracked as a defect; the repair will
+> either refuse `--stdin` on `update` outright or require it to name its
+> destination field explicitly. Neither is built — do not write either spelling
+> yet.)_
 
 `init --stdin-tasks` seeds a whole board the same way — pipe a JSON array of
 tasks on stdin (no shell-escaping, no inline-script seed dance):
@@ -741,11 +777,14 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
 
 ## Common Pitfalls
 
-- **Use `--stdin` for any free text with shell metacharacters.** Titles or notes
-  containing apostrophes, quotes, `&`, `<`, `>`, or `$` get mangled (or refused)
-  by the shell if passed as a positional argument. Pipe them through `--stdin`
-  instead — it reads the body verbatim, defeating the quoting problem that used
-  to require an inline-script seed dance.
+- **Use `--stdin` for any free text with shell metacharacters** — but know which
+  field it lands on. Text containing apostrophes, quotes, `&`, `<`, `>`, or `$`
+  gets mangled (or refused) by the shell if passed as a positional argument.
+  `--stdin` reads it verbatim, defeating the quoting problem that used to
+  require an inline-script seed dance. ⛔ **It replaces the verb's POSITIONAL
+  argument, not its "body"** — so on `update`, whose only positional is `<id>`,
+  it overwrites the **title** at `ok:true`. See the `--stdin` note under Verbs
+  before using it on `update`.
 - **A write verb tells you whether it took.** Every write (`add`, `update`,
   `claim`, `block`/`unblock`, `remove`, `message`, `close`) reports the daemon's
   `applied` verdict: on success it exits `0`; on a refusal it exits non-zero and
@@ -765,3 +804,23 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
   session — only the human's **Close board**, your `cli.ts close`, or the idle
   timeout does. If you opened a board and the user wandered off, it sits until
   the timer fires.
+
+## Feedback touchpoint
+
+At a natural close — when the board is closed, not mid-session — surface
+friction so the tool improves:
+
+- **Agent friction** — if a verb misbehaved, an envelope or event shape fought
+  you, or the host/join split was unclear, file a GitHub issue against the
+  **Spellbook** repo (`github.com/ichabodcole/spellbook`).
+- **Human** — when the user is on the board, offer once (easy to skip):
+  "anything about bounty itself feel off or worth improving?" Route what they
+  say to the same issues.
+
+This is feedback about the **tool**, not the work on the cards.
+
+> **Worth asking about specifically:** anything the _agent_ was told that the
+> _board_ never showed, or the reverse. Bounty's surface is a hand-written
+> mirror of the daemon's state, so the two channels drift silently — a whole
+> release shipped with the daemon reporting a failed restore that the board
+> never rendered.

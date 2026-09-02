@@ -1,8 +1,60 @@
 # Spell Surface Pipeline — dev plan (skeleton)
 
-**Status:** RATIFIED — all seams settled (A/C/D ratified, B resolved: `src/`
-relocation, Option A). Ready for lane-authoring + build. **Lead:** prospero
-**Proposal:** [proposal.md](./proposal.md) (`7701a07`)
+**Status:** **BUILT AND SHIPPED — on `mind-mapper`, not on astrolabe** ·
+**Lead:** prospero · **Proposal:** [proposal.md](./proposal.md) (`7701a07`) ·
+**Status corrected:** 2026-08-10
+
+> **✅ THE HYPOTHESIS IS VALIDATED. The pilot changed spells, and this plan was
+> never updated to say so.**
+>
+> This plan names **astrolabe** as the reference spell throughout. The mechanism
+> was actually built on **mind-mapper**, and it shipped in **v2.2.0** through a
+> real release cut — which is precisely the validation the proposal asked for.
+>
+> | seam                                      | state           | evidence                                                                                                                   |
+> | ----------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+> | **A** — mode resolution + dist serve      | ✅ built        | `mind-mapper/scripts/server.ts:95` — _release iff `dist/index.html` exists, else dev_; serves `dist/` verbatim (`:156`)    |
+> | **B** — source outside the plugin subtree | ✅ built        | `src/mind-mapper/{build.ts,bunfig.toml,surface/}`; `.gitignore:12–13` un-ignores `mind-mapper/dist`, citing **Contract 4** |
+> | **the release cut**                       | ✅ shipped      | `spellbook-v2.2.0` contains `mind-mapper/dist/{build.json,index-*.css,index-*.js}` — hashed assets, committed              |
+> | **C** — canon into `house-style.md`       | ❌ **not done** | `grimoire/house-style.md:361` still reads _"The build (there isn't one)"_, unamended                                       |
+> | **astrolabe migration**                   | ❌ not done     | no `dist/`; `astrolabe/scripts/server.ts:63` is still a **static** `import index from "../surface/index.html"`             |
+>
+> It went **further** than this skeleton: there is a build stamp with staleness
+> detection (`server.ts:98–103`) that warns when `src/` is newer than `dist/`,
+> and Contract 2 carries a live amendment (`3b8b652`) — a uniform
+> `[name]-[hash]` naming hashed the HTML entry and silently defeated Contract
+> 1's release-mode check, so the entry must stay **unhashed**. A real defect
+> found by real use, which is what a pilot is for.
+>
+> **⚠ PREFER `.anthill/dev/seams.md` (Contracts 1, 2, 4) OVER THIS FILE.** Those
+> were amended by what the build learned. This skeleton was not.
+>
+> **Seam A's claim that circe "empirically built" astrolabe's surface is still
+> wrong**, and it is why this document misleads: astrolabe was never migrated.
+> Read it as design intent, not as a report.
+>
+> **The remaining work is therefore narrower than this plan implies:** write
+> Seam C's canon into `house-style.md`, and either migrate astrolabe or formally
+> drop it as the reference spell. Neither is a hypothesis test — the hypothesis
+> already passed.
+>
+> ---
+>
+> ## ✅ RULED 2026-08-30 (Cole) — astrolabe is DROPPED as the reference spell
+>
+> **imago is the reference.** The second-spell validation this plan asked for is
+> carried by [`spell-kit`](../spell-kit/proposal.md), which ports imago onto
+> this pipeline. **Seam C is also carried there**, so both of this plan's
+> outstanding items now have an owner and this plan's remaining work is zero.
+>
+> _astrolabe may still be migrated — see spell-kit's Slice 1, where it is
+> proposed as a first, mechanical port ahead of imago — but **not as the
+> reference spell**, and not as a condition of closing this plan._
+>
+> _Corrected by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md).
+> **That sweep's first pass got this wrong in the opposite direction**, calling
+> the mechanism nonexistent because it looked only where this plan pointed._
 
 This is the **thin lead-authored skeleton** — the integration order and the
 cross-seam contracts as _claims_. Each owner **ratifies or falsifies the seams

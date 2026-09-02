@@ -1,8 +1,40 @@
 # Spellbook Rebrand — unify the spells under one cute-occult aesthetic
 
-**Status:** In Progress (Naming Complete — tuskboard → bounty shipped; Visual
-Cohesion Deferred) **Created:** 2026-05-29 **Updated:** 2026-06-27 **Author:**
-Cole Reed (with familiar)
+**Status:** In Progress — naming complete, visual front open · **Created:**
+2026-05-29 · **Updated:** 2026-08-10 · **Author:** Cole Reed (with familiar)
+
+> **The 2026-08-10 sweep confirmed this status line and sharpened the
+> sequencing** — the one status line in the repo that turned out to be right.
+>
+> **Naming: closed.** `51dd7b5`; tuskboard retired in
+> `grimoire/trigger-registry.md`; marketplace tag correct.
+>
+> **Every stale reference left is the _mammoth_, not the name:**
+> `bounty/SKILL.md:23–24`, `bounty/scripts/template.html:35`
+> (`/* mammoth gold */`), `bounty/assets/README.md:38,42–44`, and the binaries
+> `assets/{wordmark,mascot,mascot-large}.webp` + `favicon.png`, all untouched
+> since the rename.
+>
+> **⚠ The five mechanical fixes are BLOCKED UPSTREAM OF THEMSELVES.** They sit
+> behind three unmade decisions — reuse the mascots restyled vs. retheme; the
+> shared palette / type / sigil; codifying the cute-occult direction.
+> **Regenerating assets before the aesthetic is settled means regenerating them
+> twice.** This project looks like a pile of quick wins and is not one.
+>
+> **One exception, genuinely actionable now:**
+> [#11](https://github.com/ichabodcole/spellbook/issues/11) — `wordmark.webp`
+> still literally renders **"Tuskboard"**, and the issue scopes the fix to the
+> _current_ surface palette. That is correcting a wrong name, not restyling, so
+> it does not wait on the aesthetic call.
+>
+> **Keep the reason #11 slipped — it is a reusable lesson.** The migration's
+> branding check was `grep -rni tuskboard`, which returned **clean** because
+> grep cannot see inside a binary `.webp`. A green check that structurally could
+> not observe the thing it verified. Compare clause (i) of `spell-hardening`'s
+> end condition: _a gate must state what it cannot see._
+>
+> _Reviewed by the 2026-08-10 sweep —
+> [`docs/reports/2026-08-10-project-status-sweep.md`](../../reports/2026-08-10-project-status-sweep.md)._
 
 ---
 

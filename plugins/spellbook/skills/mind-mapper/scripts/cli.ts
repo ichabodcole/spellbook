@@ -12,7 +12,8 @@
 //                 times out ("daemon did not come up") — pick a free port.
 //   state         GET /state → the real project snapshot on stdout
 //                 --skeleton returns ids/titles/degree only (context budgeting)
-//                 fresh store with no project → the needs-project 409, exit 2
+//                 fresh store with no project → the needs-project 409 rides
+//                 the error envelope (conflict, exit 6; body under error.server)
 //   tail          Monitor-shaped: GET /events?since=<cursor> SSE → one JSON
 //                 line per event on stdout
 //                 --inbound filters server-side to human-originated events
@@ -78,7 +79,7 @@
 //   send          body chain: --body-file <path> > --stdin > inline <text...> >
 //                 piped stdin; [--role user|agent] [--kind] [--ground a,b]
 //                 (repeatable — repeats accumulate, commas split either way)
-//                 [--force] → POST /send. Empty resolved body = exit 2. The
+//                 [--force] → POST /send. Empty resolved body = usage error. The
 //                 piped default HANGS with no pipe under agent shells — always
 //                 pass a body (--body-file preferred for prose).
 //                 R11: --kind is the CHANNEL the message arrived through
@@ -92,6 +93,16 @@
 //
 // --project <id> is accepted by every verb above except open (scopes to a
 // non-default project; omit for the default project).
+//
+// ERROR CONTRACT (acc L0, stated ONCE — per-verb prose above names HTTP
+// statuses, this table is what the PROCESS does with them): every failure is
+// ONE JSON envelope on stderr with stdout empty —
+//   {ok:false, error:{kind, exit_code, retryable, message, hint?, choices?,
+//    server?}, meta:{command}}
+//   usage → exit 2 · internal → 1 · not_found → 5 (HTTP 404) · conflict → 6
+//   (HTTP 409); HTTP 400 maps to usage. A daemon refusal carries the server's
+//   own JSON body VERBATIM under error.server (needs-project, cited, zoned,
+//   zone-not-empty, claim conflicts, …) — branch on kind/server, never prose.
 
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -155,7 +166,7 @@ async function ensureDaemon(port?: string): Promise<number> {
     const port = livePort();
     if (port !== null) return port;
   }
-  throw new Error("daemon did not come up within 10s");
+  throw new CliError("internal", "daemon did not come up within 10s");
 }
 
 function openBrowser(url: string): void {
@@ -169,11 +180,104 @@ function envMs(name: string, fallback: number): number {
   return Number.isFinite(v) && v > 0 ? v : fallback;
 }
 
+// ── error envelope (magpie's taxonomy, bounty's delivery) ───────────
+//
+// mind-mapper declares `defaultOutput: "json"`, and that declaration is about
+// EVERY stream, not just the happy path. A failure is ONE JSON document on
+// stderr; stdout stays empty because stdout carries data and a failure has
+// none. `kind` is the contract; `message` is presentation — rewording a
+// message must never break a caller, which it does the moment anyone matches
+// on prose. Delivery is bounty's, not magpie's: THROW and let main() catch and
+// RETURN the code — this CLI ships large stdout payloads, and a process.exit
+// inside a die() would truncate them at 65,536 bytes (see the drain idiom at
+// the bottom of this file).
+type ErrKind = "usage" | "internal" | "not_found" | "conflict";
+
+const EXIT_FOR: Record<ErrKind, number> = {
+  usage: 2, // the caller can fix this by changing the command
+  internal: 1, // mind-mapper (or its daemon transport) broke; the invocation may have been fine
+  not_found: 5, // the named thing does not exist
+  conflict: 6, // a precondition failed (cited, zoned, needs-project, claim held, …)
+};
+
+// The verb under execution, so the envelope can name it. Set once by dispatch.
+let CURRENT_COMMAND: string | null = null;
+
+class CliError extends Error {
+  kind: ErrKind;
+  hint?: string;
+  choices?: string[];
+  // A daemon-refused request carries the server's own JSON body here VERBATIM
+  // (deliberate wrap-not-passthrough decision: the typed daemon errors —
+  // needs-project, cited, zoned, zone-not-empty, claim conflicts — keep their
+  // shape for callers that branch on them, while the process-level contract
+  // stays ONE envelope on stderr with an empty stdout).
+  server?: unknown;
+  constructor(
+    kind: ErrKind,
+    message: string,
+    extra?: { hint?: string; choices?: string[]; server?: unknown },
+  ) {
+    super(message);
+    this.kind = kind;
+    this.hint = extra?.hint;
+    this.choices = extra?.choices;
+    this.server = extra?.server;
+  }
+}
+
+const usageError = (message: string, extra?: { hint?: string; choices?: string[] }) =>
+  new CliError("usage", message, extra);
+
+function writeEnvelope(e: CliError): number {
+  process.stderr.write(
+    `${JSON.stringify({
+      ok: false,
+      error: {
+        kind: e.kind,
+        exit_code: EXIT_FOR[e.kind],
+        // Nothing mind-mapper raises is worth retrying unchanged.
+        retryable: false,
+        message: e.message,
+        ...(e.hint !== undefined ? { hint: e.hint } : {}),
+        ...(e.choices !== undefined ? { choices: e.choices } : {}),
+        ...(e.server !== undefined ? { server: e.server } : {}),
+      },
+      meta: { command: CURRENT_COMMAND },
+    })}\n`,
+  );
+  return EXIT_FOR[e.kind];
+}
+
+// The one exit for every daemon round-trip: ok → the body text (caller prints
+// it on stdout), refused → a typed CliError whose kind maps off the HTTP
+// status and whose `server` field carries the daemon's own JSON body.
+async function passOrThrow(res: Response): Promise<string> {
+  const text = await res.text();
+  if (res.ok) return text;
+  let server: unknown = text;
+  try {
+    server = JSON.parse(text);
+  } catch {
+    /* non-JSON daemon body rides as the raw string */
+  }
+  const kind: ErrKind =
+    res.status === 404
+      ? "not_found"
+      : res.status === 409
+        ? "conflict"
+        : res.status === 400
+          ? "usage"
+          : "internal";
+  throw new CliError(kind, `${CURRENT_COMMAND ?? "request"} refused (HTTP ${res.status})`, {
+    server,
+  });
+}
+
 function requireDaemon(): number {
   const port = livePort();
   if (port === null) {
-    process.stderr.write("mind-mapper: no daemon running (use `open` first)\n");
-    process.exit(2);
+    throw new CliError("not_found", "no daemon running (use `open` first)");
   }
   return port;
 }
@@ -201,6 +305,234 @@ function toSkeleton(state: {
   };
 }
 
+// ── the flag registry + verb spec (magpie's two-stage parse, path-extended) ──
+//
+// THE RECOGNIZED SET, AT PARSER ALTITUDE. Stage 1 parses every invocation
+// against this whole registry (strict), so a token mind-mapper has never heard
+// of is refused by node:util with its own message; stage 2 then asks the
+// question the parser cannot: is this flag accepted AT THIS VERB. The order is
+// the point — handing parseArgs a per-verb subset would answer `state --ruling`
+// with "Unknown option '--ruling'", which is false and sends an agent hunting a
+// typo it did not make.
+//
+// NO DEFAULTS in the registry, structurally: stage 2 detects a stray flag by
+// key-presence in the parsed values, and a registry default would plant that
+// key on every verb. Per-verb defaults live at the consumption site (?? "…").
+const CLI_OPTIONS = {
+  add: { type: "string" },
+  anchor: { type: "string" },
+  author: { type: "string" },
+  batch: { type: "string" },
+  "body-file": { type: "string" },
+  check: { type: "string" },
+  clear: { type: "boolean" },
+  create: { type: "string" },
+  deliverable: { type: "string" },
+  depth: { type: "string" },
+  detail: { type: "string" },
+  doc: { type: "string" },
+  "doc-edit": { type: "string" },
+  file: { type: "string" },
+  force: { type: "boolean" },
+  // send --ground is parseArgs-`multiple` BY SEAM (Contract 9 R4: repeats
+  // accumulate, commas split) — any verb copying the pattern copies this too.
+  ground: { type: "string", multiple: true },
+  inbound: { type: "boolean" },
+  kind: { type: "string" },
+  message: { type: "string" },
+  "no-open": { type: "boolean" },
+  node: { type: "string" },
+  note: { type: "string" },
+  owner: { type: "string" },
+  port: { type: "string" },
+  project: { type: "string" },
+  role: { type: "string" },
+  ruling: { type: "string" },
+  set: { type: "string" },
+  since: { type: "string" },
+  skeleton: { type: "boolean" },
+  span: { type: "string" },
+  status: { type: "string" },
+  stdin: { type: "boolean" },
+  synopsis: { type: "string" },
+  title: { type: "string" },
+  to: { type: "string" },
+  uncheck: { type: "string" },
+  yes: { type: "boolean" },
+  zone: { type: "string" },
+} as const;
+
+// WHICH FLAGS EACH COMMAND PATH ACCEPTS — and the only source of the verb set.
+// Keys are PATHS, not bare verbs: mind-mapper's grammar is two-token for the
+// sub-commanded verbs (zone create, node edit, job claim …), so the spec
+// extends magpie's flat table with space-joined paths. `resolvePath` picks the
+// two-token key when the second token names a known sub, else the one-token
+// key. The help text, the rejections' `choices` and the parser all read this
+// one object; adding a flag to a verb is one edit.
+export const VERB_SPEC = {
+  open: ["no-open", "port", "project"],
+  state: ["skeleton", "batch", "project"],
+  changes: ["since", "project"],
+  tail: ["since", "inbound", "project"],
+  projects: ["create"],
+  ingest: ["title", "file", "stdin", "project"],
+  "propose-node": ["stdin", "zone", "project"],
+  "propose-edge": ["stdin", "zone", "project"],
+  "propose-batch": ["stdin", "project"],
+  "ratify-batch": ["stdin", "project"],
+  "delete-batch": ["stdin", "project"],
+  "node anchor": ["to", "clear", "project"],
+  "node edit": ["title", "synopsis", "stdin", "project"],
+  "node delete": ["force", "project"],
+  read: ["project"],
+  "zone create": ["project"],
+  "zone list": ["project"],
+  "zone delete": ["yes", "project"],
+  promote: ["project"],
+  "proposal zone": ["to", "clear", "project"],
+  "proposal delete": ["project"],
+  doc: ["project"],
+  "doc delete": ["force", "project"],
+  "doc kind": ["author", "clear", "project"],
+  mark: ["status", "note", "author", "project"],
+  search: ["project"],
+  neighbors: ["depth", "project"],
+  ratify: ["ruling", "doc-edit", "doc", "span", "anchor", "project"],
+  "lens set": ["node", "doc", "depth", "owner", "project"],
+  "lens clear": ["project"],
+  "look-here": ["project"],
+  actions: ["set", "stdin", "clear", "project"],
+  tags: ["set", "stdin", "clear", "project"],
+  "job create": ["title", "status", "deliverable", "detail", "stdin", "body-file", "project"],
+  "job update": ["title", "status", "deliverable", "detail", "stdin", "body-file", "project"],
+  "job claim": ["owner", "project"],
+  "job release": ["project"],
+  "job subtask": ["add", "check", "uncheck", "project"],
+  "job list": ["project"],
+  "job delete": ["project"],
+  activity: ["message", "project"],
+  send: ["role", "kind", "ground", "body-file", "stdin", "force", "project"],
+  help: [],
+} as const satisfies Record<string, readonly (keyof typeof CLI_OPTIONS)[]>;
+
+type VerbPath = keyof typeof VERB_SPEC;
+
+// `message` is an advertised ALIAS of `read` (one message-fetch verb, two
+// spellings) — an alias maps onto its target's path and never gets its own
+// spec row, so the two can not drift apart.
+export const VERB_ALIASES: Record<string, VerbPath> = { message: "read" };
+
+// The advertised verb roster, DERIVED: top-level tokens of the spec paths.
+export const VERBS = [...new Set(Object.keys(VERB_SPEC).map((p) => p.split(" ")[0] as string))];
+
+// Paths whose grammar takes NO free positionals (everything they need rides
+// flags); stage 2 refuses a stray token by name instead of silently
+// dropping it. Every other path consumes positionals (ids, queries, prose).
+const NO_POSITIONALS: ReadonlySet<VerbPath> = new Set([
+  "open",
+  "state",
+  "changes",
+  "tail",
+  "ingest",
+  "propose-node",
+  "propose-edge",
+  "propose-batch",
+  "ratify-batch",
+  "delete-batch",
+  "lens set",
+  "lens clear",
+  "help",
+] as VerbPath[]);
+
+const flagsFor = (path: VerbPath): string[] => VERB_SPEC[path].map((k) => `--${k}`).sort();
+
+const subsOf = (verb: string): string[] =>
+  Object.keys(VERB_SPEC)
+    .filter((p) => p.startsWith(`${verb} `))
+    .map((p) => p.slice(verb.length + 1));
+
+// TWO STAGES, AND THE ORDER IS THE POINT (see the registry header). Also sets
+// meta.command to the RESOLVED path so an envelope from `node edit` says so.
+function parseVerbArgs(path: VerbPath, args: string[]) {
+  CURRENT_COMMAND = path;
+  const parsed = parseArgs({
+    args,
+    options: CLI_OPTIONS,
+    strict: true,
+    allowPositionals: true,
+  });
+  const allowed = new Set<string>(VERB_SPEC[path]);
+  const stray = Object.keys(parsed.values).find((k) => !allowed.has(k));
+  if (stray) {
+    throw usageError(
+      `--${stray} is not accepted by \`${path}\` (it is a recognized mind-mapper flag, just not this verb's)`,
+      { choices: flagsFor(path) },
+    );
+  }
+  if (NO_POSITIONALS.has(path) && parsed.positionals.length > 0) {
+    throw usageError(
+      `${path} takes no positional arguments (got "${parsed.positionals[0]}")`,
+      VERB_SPEC[path].length > 0 ? { choices: flagsFor(path) } : undefined,
+    );
+  }
+  return parsed;
+}
+
+const HELP = `mind-mapper — a co-present knowledge map: a dumb daemon holds the graph, the casting agent does the thinking.
+
+  open   [--project <id>] [--port <n>] [--no-open]   spawn (or find) the daemon, print its url
+  state  [--skeleton] [--batch <id>]                 the project snapshot (skeleton = ids/titles/degree)
+  changes --since <epochSeconds>                     bounded delta, ADDITIONS ONLY (notCovered names the rest)
+  tail   [--since N] [--inbound]                     SSE events as JSONL (wrap with Monitor)
+  projects [--create <title>]                        list projects / create one
+  ingest --title <t> (--file <p> | --stdin)          add a doc
+  propose-node --stdin                               stage a node proposal (JSON {draft, evidence, ...})
+  propose-edge --stdin [--zone <id>]                 stage an edge proposal
+  propose-batch --stdin                              stage a set in one txn ({nodes, edges})
+  ratify-batch --stdin                               ratify a set in one txn ({ruling, ids, anchors?})
+  delete-batch --stdin                               delete a proposal set in one txn ({ids}, all-or-nothing)
+  ratify <id> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <t>] [--anchor <parentId>]
+  zone   create <name> | list | delete <id> [--yes]  staging pens for proposals
+  promote <id>                                       move a zoned proposal to the main queue
+  proposal zone <id> (--to <z> | --clear) | proposal delete <id>
+  node   anchor <id> (--to <p> | --clear) | edit <id> [--title/--synopsis/--stdin] | delete <id> [--force]
+  doc    <id> | delete <id> [--force] | kind <docId> (<kind> [--author a] | --clear)
+  mark   <docId> --status <s> [--note <t>]           append a doc status mark
+  actions <targetId> (--set <json> | --stdin | --clear)   action slots on a node/pending proposal
+  tags   <targetId> (--set <json> | --stdin | --clear)    freeform tags, same targets
+  job    create|update|claim|release|subtask|list|delete  persisted units of agent work
+  search <query...>                                  FTS over nodes, docs, messages
+  neighbors <id> [--depth 1]                         local hood + edge reasons
+  lens   set (--node <id> [--depth n] | --doc <id>) | lens clear
+  look-here <nodeId>                                 fire-once attention nudge
+  read   <messageId>                                 one full message row (alias: message <id>)
+  send   <text...> | --body-file <p> | --stdin       post a message ([--role] [--kind] [--ground])
+  activity <received|thinking|idle> [--message <id>] the casting-loop liveness signal
+  help | --version
+
+  --project <id> is accepted by every verb except open's spawn-time flags; omit for the default project.
+
+  Output: every verb prints JSON on stdout by default, one document per answer —
+  except tail, a stream that prints one JSON line per event. Prose, warnings and
+  diagnostics go to stderr; failures exit non-zero (2 = usage).`;
+
+// The plugin manifest is the one version source; the CLI reads it rather than
+// mirroring the number (astrolabe's pattern). Layout-dependent, so absence
+// degrades to "unknown" instead of inventing one.
+function versionInfo(): { name: string; version: string } {
+  try {
+    const raw = readFileSync(
+      join(SCRIPT_DIR, "..", "..", "..", ".claude-plugin", "plugin.json"),
+      "utf8",
+    );
+    const pkg = JSON.parse(raw) as { version?: unknown };
+    if (typeof pkg.version === "string") return { name: "mind-mapper", version: pkg.version };
+  } catch {
+    /* fall through to unknown */
+  }
+  return { name: "mind-mapper", version: "unknown" };
+}
+
 // parseArgs throws (ERR_PARSE_ARGS_UNKNOWN_OPTION etc.) on an unrecognized
 // flag like a stray --help — uncaught, that's a stack-trace crash instead of
 // a usage message (cassandra's P2 gate finding). Every verb's parseArgs call
@@ -209,31 +541,53 @@ async function main(argv: string[]): Promise<number> {
   try {
     return await dispatch(argv);
   } catch (e) {
+    if (e instanceof CliError) return writeEnvelope(e);
     const code =
       e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
-    if (code.startsWith("ERR_PARSE_ARGS")) {
-      process.stderr.write(`mind-mapper: ${e instanceof Error ? e.message : String(e)}\n`);
-      return 2;
-    }
-    throw e;
+    const msg = e instanceof Error ? e.message : String(e);
+    // A stray/unknown flag (node:util strict) is the CALLER's to fix.
+    if (code.startsWith("ERR_PARSE_ARGS")) return writeEnvelope(usageError(msg));
+    // A body that failed to parse (stdin/--body-file JSON) — also the caller's.
+    if (e instanceof SyntaxError) return writeEnvelope(usageError(`invalid JSON: ${msg}`));
+    // A named file that is not there (--file/--doc-edit paths) — the caller's.
+    if (code === "ENOENT") return writeEnvelope(usageError(msg));
+    // Everything else is mind-mapper's own fault: one INTERNAL envelope, never
+    // a stack trace — the process contract is JSON on stderr for EVERY failure.
+    return writeEnvelope(new CliError("internal", msg));
   }
 }
 
 async function dispatch(argv: string[]): Promise<number> {
   const verb = argv[0];
   const rest = argv.slice(1);
+  // The envelope names the verb under execution (meta.command); root tokens
+  // and the fallthrough leave it as the raw first token, which is the honest
+  // answer to "what was being run when this failed".
+  CURRENT_COMMAND = verb ?? null;
+
+  // ROOT TOKENS FIRST, before any flag parsing (magpie/astrolabe pattern).
+  // --help/-h resolve at the root; `help` is ALSO a dispatchable verb below, so
+  // `help --foo` is a rejected flag, not a silently-tolerated one.
+  if (verb === "--help" || verb === "-h") {
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  // Root TOKEN, deliberately NOT a flag: no per-verb parser below the root is
+  // ever expected to accept it, and it carries no flags of its own.
+  if (verb === "--version" || verb === "-V" || verb === "version") {
+    process.stdout.write(`${JSON.stringify(versionInfo())}\n`);
+    return 0;
+  }
+  if (verb === "help") {
+    // Dispatchable verb with an EMPTY flag set — a strict parse of the rest
+    // means `help --foo` is refused instead of ignored.
+    parseVerbArgs("help", rest);
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
 
   if (verb === "open") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        "no-open": { type: "boolean", default: false },
-        project: { type: "string" },
-        port: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("open", rest);
     const port = await ensureDaemon(parsed.values.port);
     // --project scopes the printed URL + spawned browser (?project= rides
     // along). Open never mints: an unknown id is a usage error pointing at
@@ -243,10 +597,10 @@ async function dispatch(argv: string[]): Promise<number> {
       const res = await fetch(`http://127.0.0.1:${port}/projects`);
       const body = (await res.json()) as { projects: Array<{ id: string }> };
       if (!body.projects.some((p) => p.id === project)) {
-        process.stderr.write(
-          `mind-mapper: unknown project: ${project} (open never creates one — use \`projects --create <title>\` first)\n`,
+        throw usageError(
+          `unknown project: ${project} (open never creates one — use \`projects --create <title>\` first)`,
+          { choices: body.projects.map((p) => p.id) },
         );
-        return 2;
       }
     }
     const url = `http://127.0.0.1:${port}${project ? `/?project=${encodeURIComponent(project)}` : ""}`;
@@ -256,19 +610,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "state") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        skeleton: { type: "boolean", default: false },
-        project: { type: "string" },
-        // Round 12 (SEAM 1): narrow proposals[] to ONE staging act — "what else
-        // came from that call?" after a partial ratification. Unknown id 404s
-        // (an empty list would read as "already cleared").
-        batch: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("state", rest);
     const port = requireDaemon();
     const params = new URLSearchParams();
     if (parsed.values.project) params.set("project", parsed.values.project);
@@ -276,15 +618,16 @@ async function dispatch(argv: string[]): Promise<number> {
     const qs = params.size > 0 ? `?${params}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/state${qs}`);
     // A non-ok /state (409 needs-project on a fresh store, 404 unknown
-    // project) passes its JSON body through and exits 2 — the skeleton
-    // transform only runs on a real snapshot.
-    if (parsed.values.skeleton && res.ok) {
-      const state = (await res.json()) as Parameters<typeof toSkeleton>[0];
+    // project) rides the error envelope with the daemon body under
+    // error.server — the skeleton transform only runs on a real snapshot.
+    const stateText = await passOrThrow(res);
+    if (parsed.values.skeleton) {
+      const state = JSON.parse(stateText) as Parameters<typeof toSkeleton>[0];
       process.stdout.write(`${JSON.stringify(toSkeleton(state))}\n`);
     } else {
-      process.stdout.write(`${await res.text()}\n`);
+      process.stdout.write(`${stateText}\n`);
     }
-    return res.ok ? 0 : 2;
+    return 0;
   }
 
   // Round 12 (SEAM 3): `changes --since <epochSeconds>` — the bounded delta.
@@ -292,46 +635,25 @@ async function dispatch(argv: string[]): Promise<number> {
   // added" is NOT "nothing changed" (deletions, rejections and in-place edits
   // are invisible here by construction).
   if (verb === "changes") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { since: { type: "string" }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("changes", rest);
     if (parsed.values.since === undefined) {
-      process.stderr.write(
-        "mind-mapper: changes requires --since <epochSeconds> (use 0 for everything, then pass\n" +
-          "  back the `now` from the previous response). ADDITIONS ONLY — the response's\n" +
-          "  notCovered names what it cannot see; a full `state` read is still the only\n" +
-          "  way to reconcile deletions, rejections and in-place edits.\n",
+      throw usageError(
+        "changes requires --since <epochSeconds> (use 0 for everything, then pass back the `now` from the previous response)",
+        {
+          hint: "ADDITIONS ONLY — the response's notCovered names what it cannot see; a full `state` read is still the only way to reconcile deletions, rejections and in-place edits",
+        },
       );
-      return 2;
     }
     const port = requireDaemon();
     const params = new URLSearchParams({ since: parsed.values.since });
     if (parsed.values.project) params.set("project", parsed.values.project);
     const res = await fetch(`http://127.0.0.1:${port}/changes?${params}`);
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "tail") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        since: { type: "string", default: "0" },
-        project: { type: "string" },
-        // Round 10 · SEAM 1: server-side filter to human-originated events
-        // (message.posted[role=user] + proposal.added[author=user]) so a
-        // joining agent runs ONE monitor and cannot under-subscribe. The stream
-        // opens with a kind:"grounding" line naming watched/not-watched
-        // channels. Named --inbound (not --human) to avoid grapevine's
-        // presence-marker flag collision.
-        inbound: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("tail", rest);
     const inbound = parsed.values.inbound === true;
     requireDaemon(); // no daemon at start is a usage error; mid-tail death is self-healed below
     // Watchdog ≈ 3 missed server keepalives (15s tick, Claim F); env
@@ -378,9 +700,9 @@ async function dispatch(argv: string[]): Promise<number> {
         // 404 unknown project) is a usage error, not a transport blip —
         // retrying it forever would just spin silently.
         if (res.status === 409 || res.status === 404) {
-          process.stderr.write(`mind-mapper: tail refused: ${await res.text()}\n`);
           if (watchdog !== null) clearTimeout(watchdog);
-          return 2;
+          // Reuse the one status→kind mapping: passOrThrow always throws here.
+          await passOrThrow(res);
         }
         if (!res.body) throw new Error("no body");
         resetWatchdog();
@@ -427,7 +749,10 @@ async function dispatch(argv: string[]): Promise<number> {
             process.stdout.write(`${line}\n`);
           }
         }
-      } catch {
+      } catch (e) {
+        // A typed refusal (409/404 via passOrThrow) is a usage-class exit, not
+        // a transport blip — retrying it forever would just spin silently.
+        if (e instanceof CliError) throw e;
         /* watchdog abort or transport error — reconnect below */
       } finally {
         if (watchdog !== null) clearTimeout(watchdog);
@@ -437,12 +762,7 @@ async function dispatch(argv: string[]): Promise<number> {
   }
 
   if (verb === "projects") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { create: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("projects", rest);
     const port = requireDaemon();
     if (parsed.values.create) {
       const title = parsed.values.create;
@@ -454,68 +774,47 @@ async function dispatch(argv: string[]): Promise<number> {
         method: "POST",
         body: JSON.stringify({ id, title }),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     const res = await fetch(`http://127.0.0.1:${port}/projects`);
-    process.stdout.write(`${await res.text()}\n`);
+    process.stdout.write(`${await passOrThrow(res)}\n`);
     return 0;
   }
 
   if (verb === "ingest") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        title: { type: "string" },
-        file: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("ingest", rest);
     if (!parsed.values.title) {
-      process.stderr.write("mind-mapper: ingest requires --title\n");
-      return 2;
+      throw usageError("ingest requires --title");
+    }
+    if (!parsed.values.file && !parsed.values.stdin) {
+      throw usageError("ingest requires --file <path> or --stdin");
     }
     const text = parsed.values.file
       ? readFileSync(parsed.values.file, "utf8")
-      : parsed.values.stdin
-        ? await Bun.stdin.text()
-        : (() => {
-            process.stderr.write("mind-mapper: ingest requires --file <path> or --stdin\n");
-            return null;
-          })();
-    if (text === null) return 2;
+      : await Bun.stdin.text();
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/ingest${qs}`, {
       method: "POST",
       body: JSON.stringify({ title: parsed.values.title, text }),
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "propose-node" || verb === "propose-edge") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        stdin: { type: "boolean", default: false },
-        project: { type: "string" },
-        zone: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs(verb, rest);
     if (!parsed.values.stdin) {
-      process.stderr.write(
-        `mind-mapper: ${verb} requires --stdin JSON {draft, evidence[, suggestedTier, author, tags, batchId]}\n` +
-          '  propose-edge endpoints: a node id, a pending node-proposal id, or "title:<exact node title>"\n' +
-          "  (title refs resolve at INTAKE against ratified nodes only, exact + case-sensitive;\n" +
-          "   an ambiguous title errors and names every candidate id)\n",
+      throw usageError(
+        `${verb} requires --stdin JSON {draft, evidence[, suggestedTier, author, tags, batchId]}`,
+        {
+          hint:
+            'propose-edge endpoints: a node id, a pending node-proposal id, or "title:<exact node title>" ' +
+            "(title refs resolve at INTAKE against ratified nodes only, exact + case-sensitive; " +
+            "an ambiguous title errors and names every candidate id)",
+        },
       );
-      return 2;
     }
     const input = JSON.parse(await Bun.stdin.text()) as {
       draft: unknown;
@@ -550,11 +849,11 @@ async function dispatch(argv: string[]): Promise<number> {
         batchId: input.batchId,
       }),
     });
-    const responseText = await res.text();
+    const responseText = await passOrThrow(res);
     process.stdout.write(`${responseText}\n`);
     // Mirror the daemon's additive edge-draft warning to stderr — a cold
     // agent scanning for problems sees it even if it doesn't parse stdout.
-    if (res.ok && verb === "propose-edge") {
+    if (verb === "propose-edge") {
       try {
         const { warning } = JSON.parse(responseText) as { warning?: string };
         if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
@@ -562,26 +861,22 @@ async function dispatch(argv: string[]): Promise<number> {
         /* body is what it is */
       }
     }
-    return res.ok ? 0 : 2;
+    return 0;
   }
 
   if (verb === "propose-batch") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("propose-batch", rest);
     if (!parsed.values.stdin) {
-      process.stderr.write(
-        "mind-mapper: propose-batch requires --stdin JSON " +
-          "{nodes:[{ref, draft, suggestedTier?, evidence?}], edges:[{draft:{source, target, label?}}]}\n" +
-          "  an edge endpoint may be a node LOCAL REF (matches a node's ref in this batch),\n" +
-          '  a real node id, a pending proposal id, or "title:<exact node title>" — local refs\n' +
-          "  resolve to minted ids and title refs to ratified node ids, both server-side\n" +
-          "  optional batchId: omit and one is MINTED + returned; supply one to extend that act\n",
+      throw usageError(
+        "propose-batch requires --stdin JSON {nodes:[{ref, draft, suggestedTier?, evidence?}], edges:[{draft:{source, target, label?}}]}",
+        {
+          hint:
+            "an edge endpoint may be a node LOCAL REF (matches a node's ref in this batch), " +
+            'a real node id, a pending proposal id, or "title:<exact node title>" — local refs ' +
+            "resolve to minted ids and title refs to ratified node ids, both server-side; " +
+            "optional batchId: omit and one is MINTED + returned; supply one to extend that act",
+        },
       );
-      return 2;
     }
     const input = JSON.parse(await Bun.stdin.text()) as {
       nodes?: unknown;
@@ -603,26 +898,22 @@ async function dispatch(argv: string[]): Promise<number> {
     // Response carries {batchId, refToId: {<ref>: <mintedId>}, proposals: [...]}
     // — the ref→id map is the point for THIS call, and batchId is the point for
     // every later one (`state --batch <id>` reconciles a partial ratification).
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "ratify-batch") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("ratify-batch", rest);
     if (!parsed.values.stdin) {
-      process.stderr.write(
-        "mind-mapper: ratify-batch requires --stdin JSON " +
-          '{ruling: "canon|thread|story-local", ids: [proposalId], anchors?: [{node, parent}]}\n' +
-          "  ratifies the set in ONE call/txn; nodes ratify before edges (auto-partitioned),\n" +
-          "  edge endpoints + anchor refs resolve old proposal ids → minted node ids via the\n" +
-          "  returned idMap. NO auto-include of unlisted edges; reject is not a batch act.\n",
+      throw usageError(
+        'ratify-batch requires --stdin JSON {ruling: "canon|thread|story-local", ids: [proposalId], anchors?: [{node, parent}]}',
+        {
+          hint:
+            "ratifies the set in ONE call/txn; nodes ratify before edges (auto-partitioned), " +
+            "edge endpoints + anchor refs resolve old proposal ids → minted node ids via the " +
+            "returned idMap. NO auto-include of unlisted edges; reject is not a batch act",
+        },
       );
-      return 2;
     }
     const input = JSON.parse(await Bun.stdin.text()) as {
       ruling?: unknown;
@@ -641,28 +932,22 @@ async function dispatch(argv: string[]): Promise<number> {
     });
     // Response carries {idMap: {<oldProposalId>: <mintedNodeId>}, ratified:[...]}
     // — the idMap is the point (reconnect an edge/anchor to the real node).
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   // Round 12 (SEAM 5) — the inverse of ratify-batch: clear a set of proposals
   // in ONE transactional call instead of N HTTP deletes in a loop.
   if (verb === "delete-batch") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { stdin: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: false,
-    });
+    const parsed = parseVerbArgs("delete-batch", rest);
     if (!parsed.values.stdin) {
-      process.stderr.write(
-        'mind-mapper: delete-batch requires --stdin JSON {ids: ["<proposalId>", ...]}\n' +
-          "  deletes the set in ONE txn — all-or-nothing: if any id is unknown, NOTHING is\n" +
-          "  deleted and the error names every unknown id. There is deliberately no\n" +
-          "  {batch: <id>} shorthand — run `state --batch <id>` and look before you sweep\n" +
-          "  (drive #10's bug was an over-broad cleanup that took the edges with it).\n",
-      );
-      return 2;
+      throw usageError('delete-batch requires --stdin JSON {ids: ["<proposalId>", ...]}', {
+        hint:
+          "deletes the set in ONE txn — all-or-nothing: if any id is unknown, NOTHING is " +
+          "deleted and the error names every unknown id. There is deliberately no " +
+          "{batch: <id>} shorthand — run `state --batch <id>` and look before you sweep " +
+          "(drive #10's bug was an over-broad cleanup that took the edges with it)",
+      });
     }
     const input = JSON.parse(await Bun.stdin.text()) as { ids?: unknown };
     const port = requireDaemon();
@@ -671,40 +956,30 @@ async function dispatch(argv: string[]): Promise<number> {
       method: "POST",
       body: JSON.stringify({ ids: input.ids ?? [] }),
     });
-    const deleteBatchBody = await res.text();
+    const deleteBatchBody = await passOrThrow(res);
     process.stdout.write(`${deleteBatchBody}\n`);
     // R12 gate finding 1: mirror the stranded-node advisory to stderr, the same
     // way propose-edge mirrors edgeDraftWarning — a cold agent scanning for
     // problems sees it even if it never parses stdout. Advisory, not a failure:
     // the exit code is unchanged.
-    if (res.ok) {
-      try {
-        const { warning } = JSON.parse(deleteBatchBody) as { warning?: string };
-        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
-      } catch {
-        /* body is what it is */
-      }
+    try {
+      const { warning } = JSON.parse(deleteBatchBody) as { warning?: string };
+      if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+    } catch {
+      /* body is what it is */
     }
-    return res.ok ? 0 : 2;
+    return 0;
   }
 
   if (verb === "node") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        to: { type: "string" },
-        clear: { type: "boolean", default: false },
-        force: { type: "boolean", default: false },
-        project: { type: "string" },
-        // Round 12 (SEAM 4): `node edit` fields.
-        title: { type: "string" },
-        synopsis: { type: "string" },
-        stdin: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("node").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "node requires a sub-command" : `unknown node sub-command: ${sub}`,
+        { choices: subsOf("node") },
+      );
+    }
+    const parsed = parseVerbArgs(`node ${sub}` as VerbPath, rest.slice(1));
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     // Round 6 (DEL): `node delete <id> [--force]` — 409 {error:"cited",
     // citedBy:{edges, children}} when cited and unforced; --force cascades
@@ -712,8 +987,7 @@ async function dispatch(argv: string[]): Promise<number> {
     if (sub === "delete") {
       const id = parsed.positionals[0];
       if (!id) {
-        process.stderr.write("usage: cli.ts node delete <nodeId> [--force]\n");
-        return 2;
+        throw usageError("usage: cli.ts node delete <nodeId> [--force]");
       }
       const port = requireDaemon();
       const params = new URLSearchParams();
@@ -721,8 +995,8 @@ async function dispatch(argv: string[]): Promise<number> {
       if (parsed.values.force) params.set("force", "1");
       const dqs = params.size > 0 ? `?${params}` : "";
       const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}${dqs}`, { method: "DELETE" });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     // Round 12 (SEAM 4): `node edit <id> [--title T] [--synopsis S] | --stdin`
     // — a ratified node can finally gain a synopsis (F2). Writes exactly what
@@ -740,12 +1014,14 @@ async function dispatch(argv: string[]): Promise<number> {
       if (parsed.values.title !== undefined) patch.title = parsed.values.title;
       if (parsed.values.synopsis !== undefined) patch.synopsis = parsed.values.synopsis;
       if (!id || (patch.title === undefined && patch.synopsis === undefined)) {
-        process.stderr.write(
-          'usage: cli.ts node edit <nodeId> (--title <t> | --synopsis <s> | --stdin \'{"synopsis": "..."}\')\n' +
-            "  writes exactly what it is given (no inference); only title/synopsis are editable —\n" +
-            "  tier is the human's ruling and kind is a ratification-time classification\n",
+        throw usageError(
+          'usage: cli.ts node edit <nodeId> (--title <t> | --synopsis <s> | --stdin \'{"synopsis": "..."}\')',
+          {
+            hint:
+              "writes exactly what it is given (no inference); only title/synopsis are editable — " +
+              "tier is the human's ruling and kind is a ratification-time classification",
+          },
         );
-        return 2;
       }
       const port = requireDaemon();
       const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}${qs}`, {
@@ -758,131 +1034,114 @@ async function dispatch(argv: string[]): Promise<number> {
           ...(patch.synopsis !== undefined ? { synopsis: patch.synopsis } : {}),
         }),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub !== "anchor") {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear) | node edit <nodeId> (--title <t> | --synopsis <s> | --stdin) | node delete <nodeId> [--force]\n",
       );
-      return 2;
     }
     const id = parsed.positionals[0];
     const hasTo = parsed.values.to !== undefined;
     if (!id || (hasTo && parsed.values.clear) || (!hasTo && !parsed.values.clear)) {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts node anchor <nodeId> (--to <parentId> | --clear)\n" +
           "  --to anchors the node under <parentId> (a real node id); --clear moves it to top-level\n",
       );
-      return 2;
     }
     const port = requireDaemon();
     const res = await fetch(`http://127.0.0.1:${port}/nodes/${id}/anchor${qs}`, {
       method: "POST",
       body: JSON.stringify({ parentId: parsed.values.clear ? null : parsed.values.to }),
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "read" || verb === "message") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("read", rest);
     const id = parsed.positionals[0];
     if (!id) {
-      process.stderr.write("usage: cli.ts read <messageId>\n");
-      return 2;
+      throw usageError("usage: cli.ts read <messageId>");
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/message/${id}${qs}`);
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "zone") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: { yes: { type: "boolean", default: false }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("zone").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "zone requires a sub-command" : `unknown zone sub-command: ${sub}`,
+        { choices: subsOf("zone") },
+      );
+    }
+    const parsed = parseVerbArgs(`zone ${sub}` as VerbPath, rest.slice(1));
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     if (sub === "create") {
       const name = parsed.positionals.join(" ");
       if (!name) {
-        process.stderr.write("usage: cli.ts zone create <name>\n");
-        return 2;
+        throw usageError("usage: cli.ts zone create <name>");
       }
       const res = await fetch(`http://127.0.0.1:${port}/zones${qs}`, {
         method: "POST",
         body: JSON.stringify({ name }),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "list") {
       const res = await fetch(`http://127.0.0.1:${port}/zones${qs}`);
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "delete") {
       const id = parsed.positionals[0];
       if (!id) {
-        process.stderr.write("usage: cli.ts zone delete <id> [--yes]\n");
-        return 2;
+        throw usageError("usage: cli.ts zone delete <id> [--yes]");
       }
       const params = new URLSearchParams();
       if (parsed.values.project) params.set("project", parsed.values.project);
       if (parsed.values.yes) params.set("yes", "1");
       const dqs = params.size > 0 ? `?${params}` : "";
       const res = await fetch(`http://127.0.0.1:${port}/zones/${id}${dqs}`, { method: "DELETE" });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
-    process.stderr.write("usage: cli.ts zone <create <name> | list | delete <id> [--yes]>\n");
-    return 2;
+    throw usageError("usage: cli.ts zone <create <name> | list | delete <id> [--yes]>");
   }
 
   if (verb === "promote") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("promote", rest);
     const id = parsed.positionals[0];
     if (!id) {
-      process.stderr.write("usage: cli.ts promote <proposalId>\n");
-      return 2;
+      throw usageError("usage: cli.ts promote <proposalId>");
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/proposals/${id}/promote${qs}`, {
       method: "POST",
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "proposal") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        to: { type: "string" },
-        clear: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("proposal").includes(sub)) {
+      throw usageError(
+        sub === undefined
+          ? "proposal requires a sub-command"
+          : `unknown proposal sub-command: ${sub}`,
+        { choices: subsOf("proposal") },
+      );
+    }
+    const parsed = parseVerbArgs(`proposal ${sub}` as VerbPath, rest.slice(1));
     const pqs = parsed.values.project
       ? `?project=${encodeURIComponent(parsed.values.project)}`
       : "";
@@ -892,30 +1151,27 @@ async function dispatch(argv: string[]): Promise<number> {
     if (sub === "delete") {
       const id = parsed.positionals[0];
       if (!id) {
-        process.stderr.write("usage: cli.ts proposal delete <proposalId>\n");
-        return 2;
+        throw usageError("usage: cli.ts proposal delete <proposalId>");
       }
       const port = requireDaemon();
       const res = await fetch(`http://127.0.0.1:${port}/proposals/${id}${pqs}`, {
         method: "DELETE",
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub !== "zone") {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts proposal zone <id> (--to <zoneId> | --clear) | proposal delete <id>\n",
       );
-      return 2;
     }
     const id = parsed.positionals[0];
     const hasTo = parsed.values.to !== undefined;
     if (!id || (hasTo && parsed.values.clear) || (!hasTo && !parsed.values.clear)) {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts proposal zone <proposalId> (--to <zoneId> | --clear)\n" +
           "  --to moves a PENDING proposal INTO <zoneId>; --clear moves it back to the main queue\n",
       );
-      return 2;
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -923,22 +1179,26 @@ async function dispatch(argv: string[]): Promise<number> {
       method: "POST",
       body: JSON.stringify({ zoneId: parsed.values.clear ? null : parsed.values.to }),
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "doc") {
-    const parsed = parseArgs({
+    // doc's sub is OPTIONAL (`doc <id>` reads) and rides the positionals, so a
+    // registry-wide probe parse resolves the path before the per-path check.
+    const probe = parseArgs({
       args: rest,
-      options: {
-        project: { type: "string" },
-        force: { type: "boolean", default: false },
-        clear: { type: "boolean", default: false },
-        author: { type: "string", default: "agent" },
-      },
+      options: CLI_OPTIONS,
       strict: true,
       allowPositionals: true,
     });
+    const docPath: VerbPath =
+      probe.positionals[0] === "kind"
+        ? "doc kind"
+        : probe.positionals[0] === "delete"
+          ? "doc delete"
+          : "doc";
+    const parsed = parseVerbArgs(docPath, rest);
     // `doc delete <id>` / `doc kind <id>` overload the positional (a doc
     // literally slugged "delete"/"kind" is unaddressable — accepted for the
     // record, plan-v1x).
@@ -949,10 +1209,9 @@ async function dispatch(argv: string[]): Promise<number> {
       const docId = parsed.positionals[1];
       const kindWords = parsed.positionals.slice(2).join(" ");
       if (!docId || (kindWords === "" && !parsed.values.clear)) {
-        process.stderr.write(
+        throw usageError(
           "usage: cli.ts doc kind <docId> <kind> [--author user|agent] | doc kind <docId> --clear\n",
         );
-        return 2;
       }
       const port = requireDaemon();
       const qs = parsed.values.project
@@ -961,19 +1220,20 @@ async function dispatch(argv: string[]): Promise<number> {
       const res = await fetch(`http://127.0.0.1:${port}/doc/${docId}/kind${qs}`, {
         method: "POST",
         body: JSON.stringify(
-          parsed.values.clear ? { kind: null } : { kind: kindWords, author: parsed.values.author },
+          parsed.values.clear
+            ? { kind: null }
+            : { kind: kindWords, author: parsed.values.author ?? "agent" },
         ),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     const isDelete = parsed.positionals[0] === "delete";
     const id = isDelete ? parsed.positionals[1] : parsed.positionals[0];
     if (!id) {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts doc <id> | doc delete <id> [--force] | doc kind <docId> <kind|--clear> [--project <id>]\n",
       );
-      return 2;
     }
     const port = requireDaemon();
     const params = new URLSearchParams();
@@ -983,107 +1243,70 @@ async function dispatch(argv: string[]): Promise<number> {
     const res = await fetch(`http://127.0.0.1:${port}/doc/${id}${qs}`, {
       method: isDelete ? "DELETE" : "GET",
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "mark") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        status: { type: "string" },
-        note: { type: "string" },
-        author: { type: "string", default: "agent" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("mark", rest);
     const docId = parsed.positionals[0];
     if (!docId || !parsed.values.status) {
-      process.stderr.write("usage: cli.ts mark <docId> --status <s> [--note <t>]\n");
-      return 2;
+      throw usageError("usage: cli.ts mark <docId> --status <s> [--note <t>]");
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/doc/${docId}/mark${qs}`, {
       method: "POST",
       body: JSON.stringify({
-        author: parsed.values.author,
+        author: parsed.values.author ?? "agent",
         note: parsed.values.note,
         status: parsed.values.status,
       }),
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "search") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("search", rest);
     const query = parsed.positionals.join(" ");
     if (!query) {
-      process.stderr.write("usage: cli.ts search <query...>\n");
-      return 2;
+      throw usageError("usage: cli.ts search <query...>");
     }
     const port = requireDaemon();
     const params = new URLSearchParams({ q: query });
     if (parsed.values.project) params.set("project", parsed.values.project);
     const res = await fetch(`http://127.0.0.1:${port}/search?${params}`);
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "neighbors") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { depth: { type: "string", default: "1" }, project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("neighbors", rest);
     const id = parsed.positionals[0];
     if (!id) {
-      process.stderr.write("usage: cli.ts neighbors <nodeId> [--depth 1]\n");
-      return 2;
+      throw usageError("usage: cli.ts neighbors <nodeId> [--depth 1]");
     }
     const port = requireDaemon();
-    const params = new URLSearchParams({ depth: parsed.values.depth as string });
+    const params = new URLSearchParams({ depth: parsed.values.depth ?? "1" });
     if (parsed.values.project) params.set("project", parsed.values.project);
     const res = await fetch(`http://127.0.0.1:${port}/neighbors/${id}?${params}`);
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "ratify") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        ruling: { type: "string" },
-        "doc-edit": { type: "string" },
-        doc: { type: "string" },
-        span: { type: "string" },
-        anchor: { type: "string" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("ratify", rest);
     const proposalId = parsed.positionals[0];
     if (!proposalId || !parsed.values.ruling) {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts ratify <proposalId> --ruling <r> [--doc-edit <file>] [--doc <docId> --span <text>] [--anchor <parentId>]\n",
       );
-      return 2;
     }
     // --doc requires --doc-edit — the daemon enforces it too, but a local
     // usage error beats a round-trip for the common slip.
     if (parsed.values.doc && !parsed.values["doc-edit"]) {
-      process.stderr.write("mind-mapper: --doc requires --doc-edit (the drafted doc home)\n");
-      return 2;
+      throw usageError("--doc requires --doc-edit (the drafted doc home)");
     }
     const docEdit = parsed.values["doc-edit"]
       ? readFileSync(parsed.values["doc-edit"], "utf8")
@@ -1102,34 +1325,27 @@ async function dispatch(argv: string[]): Promise<number> {
         anchor: parsed.values.anchor,
       }),
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "lens") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        node: { type: "string" },
-        doc: { type: "string" },
-        depth: { type: "string" },
-        owner: { type: "string", default: "agent" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: false,
-    });
+    if (sub === undefined || !subsOf("lens").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "lens requires a sub-command" : `unknown lens sub-command: ${sub}`,
+        { choices: subsOf("lens") },
+      );
+    }
+    const parsed = parseVerbArgs(`lens ${sub}` as VerbPath, rest.slice(1));
     // Round 3 (Claim V2): one lens, two modes — --node and --doc are
     // exclusive at parse time (the daemon enforces the XOR too, but the
     // common slip should fail before a round-trip).
     if (parsed.values.node !== undefined && parsed.values.doc !== undefined) {
-      process.stderr.write("mind-mapper: lens set takes --node OR --doc, not both\n");
-      return 2;
+      throw usageError("lens set takes --node OR --doc, not both");
     }
     if (parsed.values.doc !== undefined && parsed.values.depth !== undefined) {
-      process.stderr.write("mind-mapper: --depth applies to a node lens only\n");
-      return 2;
+      throw usageError("--depth applies to a node lens only");
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -1137,66 +1353,48 @@ async function dispatch(argv: string[]): Promise<number> {
       const res = await fetch(`http://127.0.0.1:${port}/lens${qs}`, {
         method: "POST",
         body: JSON.stringify({
-          owner: parsed.values.owner,
+          owner: parsed.values.owner ?? "agent",
           nodeId: parsed.values.node,
           docId: parsed.values.doc,
           depth: parsed.values.depth ? Number.parseInt(parsed.values.depth, 10) : undefined,
         }),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "clear") {
       const res = await fetch(`http://127.0.0.1:${port}/lens${qs}`, { method: "DELETE" });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
-    process.stderr.write(
+    throw usageError(
       "usage: cli.ts lens <set (--node <id> [--depth n] | --doc <docId>) | clear>\n",
     );
-    return 2;
   }
 
   if (verb === "look-here") {
-    const parsed = parseArgs({
-      args: rest,
-      options: { project: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("look-here", rest);
     const id = parsed.positionals[0];
     if (!id) {
-      process.stderr.write("usage: cli.ts look-here <nodeId>\n");
-      return 2;
+      throw usageError("usage: cli.ts look-here <nodeId>");
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const res = await fetch(`http://127.0.0.1:${port}/look-here/${id}${qs}`, { method: "POST" });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "actions") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        set: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        clear: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("actions", rest);
     const targetId = parsed.positionals[0];
     const modes = [parsed.values.set !== undefined, parsed.values.stdin, parsed.values.clear];
     if (!targetId || modes.filter(Boolean).length !== 1) {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts actions <targetId> (--set <json> | --stdin | --clear)\n" +
           "  target is a node id or a PENDING proposal id; json is an array of\n" +
           '  {"id", "label", "seed"} — empty array (or --clear) removes the slots\n',
       );
-      return 2;
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -1207,44 +1405,31 @@ async function dispatch(argv: string[]): Promise<number> {
           method: "PUT",
           body: parsed.values.stdin ? await Bun.stdin.text() : (parsed.values.set as string),
         });
-    const responseText = await res.text();
+    const responseText = await passOrThrow(res);
     process.stdout.write(`${responseText}\n`);
     // Mirror the daemon's additive soft-cap warning to stderr (the
     // edgeDraftWarning pattern — a cold agent scanning for problems sees it).
-    if (res.ok) {
-      try {
-        const { warning } = JSON.parse(responseText) as { warning?: string };
-        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
-      } catch {
-        /* body is what it is */
-      }
+    try {
+      const { warning } = JSON.parse(responseText) as { warning?: string };
+      if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+    } catch {
+      /* body is what it is */
     }
-    return res.ok ? 0 : 2;
+    return 0;
   }
 
   // Round 7 (TAGS) — twin of the actions verb: wholesale replace / clear a
   // target's freeform tags. Target is a node id or a PENDING proposal id.
   if (verb === "tags") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        set: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        clear: { type: "boolean", default: false },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("tags", rest);
     const targetId = parsed.positionals[0];
     const modes = [parsed.values.set !== undefined, parsed.values.stdin, parsed.values.clear];
     if (!targetId || modes.filter(Boolean).length !== 1) {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts tags <targetId> (--set <json> | --stdin | --clear)\n" +
           "  target is a node id or a PENDING proposal id; json is an array of\n" +
           "  freeform strings — empty array (or --clear) removes the tags\n",
       );
-      return 2;
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -1255,8 +1440,8 @@ async function dispatch(argv: string[]): Promise<number> {
           method: "PUT",
           body: parsed.values.stdin ? await Bun.stdin.text() : (parsed.values.set as string),
         });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   // Round 9 (Job Queue) — the `job` verb: create/update/claim/release/subtask/
@@ -1267,24 +1452,13 @@ async function dispatch(argv: string[]): Promise<number> {
   // forwards op + label|subtaskId, claim forwards owner).
   if (verb === "job") {
     const sub = rest[0];
-    const parsed = parseArgs({
-      args: rest.slice(1),
-      options: {
-        title: { type: "string" },
-        status: { type: "string" },
-        deliverable: { type: "string" },
-        detail: { type: "string" },
-        owner: { type: "string" },
-        add: { type: "string" },
-        check: { type: "string" },
-        uncheck: { type: "string" },
-        stdin: { type: "boolean", default: false },
-        "body-file": { type: "string" },
-        project: { type: "string" },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    if (sub === undefined || !subsOf("job").includes(sub)) {
+      throw usageError(
+        sub === undefined ? "job requires a sub-command" : `unknown job sub-command: ${sub}`,
+        { choices: subsOf("job") },
+      );
+    }
+    const parsed = parseVerbArgs(`job ${sub}` as VerbPath, rest.slice(1));
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
     const base = (port: number, suffix = "") => `http://127.0.0.1:${port}/jobs${suffix}${qs}`;
     // A JSON body from --body-file > --stdin overrides the flag-built body (the
@@ -1293,8 +1467,7 @@ async function dispatch(argv: string[]): Promise<number> {
       if (parsed.values["body-file"] !== undefined) {
         const p = parsed.values["body-file"];
         if (!existsSync(p)) {
-          process.stderr.write(`mind-mapper: job: --body-file not found: ${p}\n`);
-          return null;
+          throw usageError(`job: --body-file not found: ${p}`);
         }
         return JSON.parse(readFileSync(p, "utf8")) as Record<string, unknown>;
       }
@@ -1305,8 +1478,8 @@ async function dispatch(argv: string[]): Promise<number> {
     if (sub === "list") {
       const port = requireDaemon();
       const res = await fetch(base(port));
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "create") {
       const override = await bodyFromSource();
@@ -1317,24 +1490,22 @@ async function dispatch(argv: string[]): Promise<number> {
         detail: parsed.values.detail,
       };
       if (typeof body.title !== "string" || body.title === "") {
-        process.stderr.write(
+        throw usageError(
           "usage: cli.ts job create --title <t> [--status <s>] [--deliverable <ref>] [--detail <x>]\n" +
             "  or: cli.ts job create (--stdin | --body-file <path>) with JSON {title, status?, deliverable?, detail?}\n",
         );
-        return 2;
       }
       const port = requireDaemon();
       const res = await fetch(base(port), { method: "POST", body: JSON.stringify(body) });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "update") {
       const id = parsed.positionals[0];
       if (!id) {
-        process.stderr.write(
+        throw usageError(
           "usage: cli.ts job update <id> [--title <t>] [--status <s>] [--deliverable <ref>] [--detail <x>]\n",
         );
-        return 2;
       }
       const override = await bodyFromSource();
       // Forward only the flags that were PROVIDED (thread every field — the R7
@@ -1348,40 +1519,37 @@ async function dispatch(argv: string[]): Promise<number> {
             .map((k) => [k, parsed.values[k]]),
         );
       if (Object.keys(body).length === 0) {
-        process.stderr.write(
+        throw usageError(
           "usage: cli.ts job update <id> (at least one of --title|--status|--deliverable|--detail)\n",
         );
-        return 2;
       }
       const port = requireDaemon();
       const res = await fetch(base(port, `/${id}`), { method: "POST", body: JSON.stringify(body) });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "claim") {
       const id = parsed.positionals[0];
       if (!id || parsed.values.owner === undefined) {
-        process.stderr.write("usage: cli.ts job claim <id> --owner <who>\n");
-        return 2;
+        throw usageError("usage: cli.ts job claim <id> --owner <who>");
       }
       const port = requireDaemon();
       const res = await fetch(base(port, `/${id}/claim`), {
         method: "POST",
         body: JSON.stringify({ owner: parsed.values.owner }),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "release") {
       const id = parsed.positionals[0];
       if (!id) {
-        process.stderr.write("usage: cli.ts job release <id>\n");
-        return 2;
+        throw usageError("usage: cli.ts job release <id>");
       }
       const port = requireDaemon();
       const res = await fetch(base(port, `/${id}/release`), { method: "POST" });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "subtask") {
       const id = parsed.positionals[0];
@@ -1391,10 +1559,9 @@ async function dispatch(argv: string[]): Promise<number> {
         parsed.values.uncheck !== undefined,
       ];
       if (!id || modes.filter(Boolean).length !== 1) {
-        process.stderr.write(
+        throw usageError(
           "usage: cli.ts job subtask <id> (--add <label> | --check <subtaskId> | --uncheck <subtaskId>)\n",
         );
-        return 2;
       }
       const jobBody =
         parsed.values.add !== undefined
@@ -1407,41 +1574,29 @@ async function dispatch(argv: string[]): Promise<number> {
         method: "POST",
         body: JSON.stringify(jobBody),
       });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
     if (sub === "delete") {
       const id = parsed.positionals[0];
       if (!id) {
-        process.stderr.write("usage: cli.ts job delete <id>\n");
-        return 2;
+        throw usageError("usage: cli.ts job delete <id>");
       }
       const port = requireDaemon();
       const res = await fetch(base(port, `/${id}`), { method: "DELETE" });
-      process.stdout.write(`${await res.text()}\n`);
-      return res.ok ? 0 : 2;
+      process.stdout.write(`${await passOrThrow(res)}\n`);
+      return 0;
     }
-    process.stderr.write(
+    throw usageError(
       "usage: cli.ts job <create|update <id>|claim <id> --owner <who>|release <id>|subtask <id> ...|list|delete <id>>\n",
     );
-    return 2;
   }
 
   if (verb === "activity") {
-    const parsed = parseArgs({
-      args: rest,
-      // Round 11 (SEAM 2): --message ties the activity to a specific message so
-      // the human sees "THIS one is being worked". Omitted, the daemon inherits
-      // the open ladder's message — so the ordinary `activity thinking` after a
-      // human send still lands on the right bubble.
-      options: { project: { type: "string" }, message: { type: "string" } },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("activity", rest);
     const state = parsed.positionals[0];
     if (state !== "received" && state !== "thinking" && state !== "idle") {
-      process.stderr.write("usage: cli.ts activity <received|thinking|idle> [--message <id>]\n");
-      return 2;
+      throw usageError("usage: cli.ts activity <received|thinking|idle> [--message <id>]");
     }
     const port = requireDaemon();
     const qs = parsed.values.project ? `?project=${encodeURIComponent(parsed.values.project)}` : "";
@@ -1449,28 +1604,12 @@ async function dispatch(argv: string[]): Promise<number> {
       method: "POST",
       body: JSON.stringify({ state, messageId: parsed.values.message }),
     });
-    process.stdout.write(`${await res.text()}\n`);
-    return res.ok ? 0 : 2;
+    process.stdout.write(`${await passOrThrow(res)}\n`);
+    return 0;
   }
 
   if (verb === "send") {
-    const parsed = parseArgs({
-      args: rest,
-      options: {
-        role: { type: "string", default: "agent" },
-        kind: { type: "string", default: "turn" },
-        // Round 4 gate rework: `multiple` — a single-value --ground silently
-        // kept only the LAST repeat (parseArgs last-wins; cassandra lost 2 of
-        // 3 refs with exit 0). Repeats accumulate now; commas still split.
-        ground: { type: "string", multiple: true },
-        project: { type: "string" },
-        "body-file": { type: "string" },
-        stdin: { type: "boolean", default: false },
-        force: { type: "boolean", default: false },
-      },
-      strict: true,
-      allowPositionals: true,
-    });
+    const parsed = parseVerbArgs("send", rest);
     // Round 3 (Claim C1): grapevine's body-resolution chain, precedence
     // --body-file > --stdin > inline positional > piped-stdin default.
     // Sharp edge (measured, house-wide): the piped-stdin default HANGS
@@ -1482,8 +1621,7 @@ async function dispatch(argv: string[]): Promise<number> {
     if (parsed.values["body-file"] !== undefined) {
       const path = parsed.values["body-file"];
       if (!existsSync(path)) {
-        process.stderr.write(`mind-mapper: send: --body-file not found: ${path}\n`);
-        return 2;
+        throw usageError(`send: --body-file not found: ${path}`);
       }
       // Trailing newline stripped (files and heredocs end with one; the
       // message shouldn't) — matching --stdin, and grapevine.
@@ -1497,22 +1635,20 @@ async function dispatch(argv: string[]): Promise<number> {
     // An EMPTY resolved body is a usage error (exit 2), whatever path
     // produced it — a blank message helps nobody and usually means a fumble.
     if (text === "") {
-      process.stderr.write(
+      throw usageError(
         "usage: cli.ts send <text...> | --body-file <path> | --stdin\n" +
           "mind-mapper: send resolved an empty body — nothing sent\n",
       );
-      return 2;
     }
     // A fumbled heredoc pipes the literal send invocation in as the body —
     // refuse to post that (narrowed to the send verb; --force overrides for
     // a body that genuinely quotes the command).
     if (!parsed.values.force && /(?:^|\n)[ \t]*bun\b[^\n]*\bcli\.ts\b[^\n]*\bsend\b/.test(text)) {
-      process.stderr.write(
+      throw usageError(
         "mind-mapper: that body looks like a leaked cli invocation (a fumbled heredoc?). " +
           "Nothing was sent. Pipe the real body via --stdin or --body-file <path>, " +
           "or pass --force to send it anyway.\n",
       );
-      return 2;
     }
     // Inline bodies with surviving shell metacharacters made it through THIS
     // time — warn (stderr, never blocks) and steer to the shell-free paths.
@@ -1528,8 +1664,8 @@ async function dispatch(argv: string[]): Promise<number> {
     const res = await fetch(`http://127.0.0.1:${port}/send${qs}`, {
       method: "POST",
       body: JSON.stringify({
-        role: parsed.values.role,
-        kind: parsed.values.kind,
+        role: parsed.values.role ?? "agent",
+        kind: parsed.values.kind ?? "turn",
         text,
         // Flatten repeats, split commas, drop blank fragments — an empty
         // resolved list posts as no ground at all (never [""]).
@@ -1542,26 +1678,44 @@ async function dispatch(argv: string[]): Promise<number> {
         })(),
       }),
     });
-    const responseText = await res.text();
+    const responseText = await passOrThrow(res);
     process.stdout.write(`${responseText}\n`);
     // Round 11 (SEAM 1): mirror the daemon's unknown-channel advisory to stderr,
     // same as propose-edge's draft warning — a typo'd `--kind` is otherwise a
     // message that silently renders as a plain chat turn.
-    if (res.ok) {
-      try {
-        const { warning } = JSON.parse(responseText) as { warning?: string };
-        if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
-      } catch {
-        /* body is what it is */
-      }
+    try {
+      const { warning } = JSON.parse(responseText) as { warning?: string };
+      if (typeof warning === "string") process.stderr.write(`# warning: ${warning}\n`);
+    } catch {
+      /* body is what it is */
     }
-    return res.ok ? 0 : 2;
+    return 0;
   }
 
-  process.stderr.write(
-    "usage: cli.ts <open|state|tail|projects|ingest|propose-node|propose-edge|propose-batch|ratify-batch|zone|promote|proposal|node|doc|mark|actions|tags|job|search|neighbors|ratify|lens|look-here|read|send|activity>\n",
-  );
-  return 2;
+  // Root fallthrough — NAME the offending token, and distinguish flag-shaped
+  // from verb-shaped: "--x at the root" sends the caller to put it after a
+  // verb, "unknown verb x" sends them to the roster (choices). A bare
+  // invocation named nothing at all — a usage error, not a help path (this CLI
+  // is agent-driven; magpie's ruling).
+  //
+  // choices names EVERYTHING the parser accepts: the roster verbs plus the
+  // accepted alias spellings, aliases appended after the roster
+  // (deterministic). VERBS alone understated the accepted set by exactly the
+  // aliases — acc's advertised-verbs comparison flagged `message` as recorded
+  // but never advertised (grapevine's one-row-per-alias registry is the house
+  // precedent this matches). Help is NOT touched: the alias stays advertised
+  // on its target's line per the #1097 ruling.
+  const VERB_CHOICES = [...VERBS, ...Object.keys(VERB_ALIASES)];
+  if (verb === undefined) {
+    throw usageError("no verb given", { hint: "run: cli.ts help", choices: VERB_CHOICES });
+  }
+  if (verb.startsWith("-")) {
+    throw usageError(
+      `unknown flag at the root: ${verb} (flags belong after a verb; root tokens are --help/-h and --version/-V)`,
+      { hint: "run: cli.ts help", choices: VERB_CHOICES },
+    );
+  }
+  throw usageError(`unknown verb: ${verb}`, { hint: "run: cli.ts help", choices: VERB_CHOICES });
 }
 
 if (import.meta.main) {

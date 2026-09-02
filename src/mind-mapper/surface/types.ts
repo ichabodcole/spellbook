@@ -280,11 +280,6 @@ export type ProjectState = {
   // Claim C: agents-only standing presence (agent = open SSE tail; the
   // browser WS is the human side and deliberately never counts).
   presence: { agents: number };
-  // R4 B1: release mode only, spread AT THE HANDLER like presence (the
-  // engine's exported ProjectState under-reports the wire — grep server.ts,
-  // not state.ts). Absent in dev mode / on a pre-stamp dist / from an old
-  // daemon = render NO footer.
-  buildInfo?: { commit: string; builtAt: string; stale: boolean };
 };
 
 // GET /search wire hit (search.ts; prospero's one-endpoint ruling, vine msg

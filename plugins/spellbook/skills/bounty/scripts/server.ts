@@ -11,7 +11,10 @@
 //                      GET  /events?since=<id>  (SSE event tail, resumable)
 //   - Browser ↔ daemon: WebSocket /ws     (same task.* events both ways)
 //   - The daemon holds canonical state; late-joining browsers receive a
-//     synthetic init on connect.
+//     synthetic init on connect. That init carries `restoreFailed` (b16) so the
+//     human channel can report a broken restore — the agent already had it on
+//     the `open` payload and GET /state, and the browser is the only channel
+//     where an unexplained empty board is what a person actually SEES.
 //
 // AgentCommand — POST /cmd body (one of). All carry an optional `as` (caller
 // identity → event `by`); /cmd returns {ok, applied?, error?}:
@@ -1066,7 +1069,7 @@ async function main(argv: string[]): Promise<number> {
           .filter((d): d is { index: number; reason: string } => d.reason !== null);
         for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
       }
-      broadcast({ type: "init", title: state.title, tasks: state.tasks });
+      broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed });
       emitEvent({ type: "init", title: state.title, by });
       // Present-and-null, never absent: an absent field cannot distinguish "all
       // your tasks were seeded" from "this daemon does not report drops".
@@ -1351,7 +1354,20 @@ async function main(argv: string[]): Promise<number> {
           sockets.add(ws);
           touch();
           emitEvent({ type: "connected", by: "user" });
-          ws.send(JSON.stringify({ type: "init", title: state.title, tasks: state.tasks }));
+          // b16 — CHANNEL PARITY. `restoreFailed` reached the agent (the `open`
+          // discovery payload and GET /state) and NOT the human, whose only
+          // channel is this socket. So the board came up empty and the person
+          // looking at it had no way to tell "the restore broke" from "there is
+          // nothing here" — the exact distinction b15 was built to make, missing
+          // on the one channel that renders it to a human.
+          //
+          // Rides `init` rather than a new message type because it is a boot
+          // fact, and `init` is the only frame that carries boot facts. Sent on
+          // EVERY connect, not just the first: a reload or reconnect must not be
+          // the thing that loses the warning.
+          ws.send(
+            JSON.stringify({ type: "init", title: state.title, tasks: state.tasks, restoreFailed }),
+          );
         },
         message(_ws, raw) {
           touch();
@@ -1388,7 +1404,7 @@ async function main(argv: string[]): Promise<number> {
             if (applyTaskMove(state, msg.id, msg.status, msg.index) !== -1) {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
-              broadcast({ type: "init", title: state.title, tasks: state.tasks });
+              broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed });
               emitEvent({
                 type: "task.move",
                 taskId: msg.id,

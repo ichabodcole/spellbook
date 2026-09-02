@@ -49,6 +49,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { backendSources, readEntryPoint } from "./lib/entry-points";
 
 const REPO_ROOT =
   process.env.SPELLBOOK_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -68,7 +69,7 @@ type Family = "A-drain" | "B-noemit" | "C-signal" | "D-die" | "E-terminal" | "F-
 const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // A — remediated: the exit is the callback of the write it drains (sprint 02).
   {
-    file: "astrolabe/scripts/cli.ts",
+    file: "astrolabe/backend/cli.ts",
     text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
@@ -88,26 +89,26 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     family: "A-drain",
   },
   {
-    file: "magpie/scripts/cli.ts",
+    file: "magpie/backend/cli.ts",
     text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
   // B — the no-emit sibling of an A site: nothing was written, so nothing can be undrained.
-  { file: "astrolabe/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
+  { file: "astrolabe/backend/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   { file: "bounty/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   // C — signal / shutdown. As of 2cc513d, ZERO of these are defects: the two
   // that were (SIGTERM/SIGINT pre-empting the teardown) were fixed by the funnel
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
   {
-    file: "astrolabe/scripts/cli.ts",
+    file: "astrolabe/backend/cli.ts",
     text: "const stop = () => process.exit(0);",
     family: "C-signal",
   },
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "glamour/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "magpie/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
+  { file: "magpie/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
@@ -136,12 +137,20 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   { file: "bounty/scripts/server.ts", text: "process.exit(code);", family: "C-signal" },
   // D — die(): one short stderr write, then exit. Safe ONLY while the payload
   // fits the 64 KiB pipe buffer — stderr truncates exactly like stdout (measured).
-  { file: "astrolabe/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  // astrolabe's die() picks its code the way magpie's does (acc taxonomy:
+  // usage 2, internal 1) rather than always 2 — same one-short-write shape.
+  { file: "astrolabe/backend/cli.ts", text: "process.exit(code);", family: "D-die" },
   { file: "bounty/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
   { file: "glamour/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
   { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "magpie/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "mind-mapper/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  // magpie's die() picks its code from the acc exit-code taxonomy (usage 2,
+  // internal 1, not_found 5, conflict 6) rather than always 2 — same family and
+  // same one-short-write shape, variable code, as grapevine's below.
+  { file: "magpie/backend/cli.ts", text: "process.exit(EXIT_FOR[kind]);", family: "D-die" },
+  // mind-mapper/scripts/cli.ts left this family entirely (acc L0 lane B): its
+  // requireDaemon die became a thrown CliError that main() returns as an exit
+  // code — zero live process.exit sites remain in that CLI, which is the
+  // direction this inventory exists to push.
   { file: "grapevine/scripts/cli.ts", text: "process.exit(code);", family: "D-die" },
   // E — terminal main exit: teardown already ran inside main().
   { file: "astrolabe/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
@@ -167,12 +176,12 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     family: "F-live",
   },
   {
-    file: "magpie/scripts/cli.ts",
+    file: "magpie/backend/cli.ts",
     text: "if (grounded) process.exit(0); // our pinned session went away → done",
     family: "F-live",
   },
   {
-    file: "magpie/scripts/cli.ts",
+    file: "magpie/backend/cli.ts",
     text: 'if (e.code === "EPIPE") process.exit(0);',
     family: "F-live",
   },
@@ -197,12 +206,34 @@ function isCommentLine(line: string): boolean {
   return t.startsWith("//") || t.startsWith("*") || t.startsWith("/*");
 }
 
+/**
+ * The inventory's population, across BOTH roots.
+ *
+ * ⛔ THE SECOND ROOT IS `src/<spell>/backend/`, AND IT IS NOT OPTIONAL. Slice 2
+ * moved two spells' CLI SOURCE out of `<spell>/scripts/` and left a launcher at
+ * that address. Every exit site in those CLIs would otherwise leave this
+ * inventory silently — and this map is the whole record of where the drained-exit
+ * discipline is and is not applied.
+ *
+ * ⛔ AND IT MUST NOT COUNT THE EMITTED BUNDLE. `walk` skips `dist/`, so the
+ * inlined copy of each exit site in `dist/cli.js` is not a second row. Counting
+ * both would double every site and make the map unmaintainable by construction —
+ * the pin would have to be edited on every rebuild.
+ *
+ * `backendSources` and `readEntryPoint` come from the shared enumerator so the
+ * second root has ONE definition, not one per ward.
+ */
 function enumerate(): Array<{ file: string; text: string }> {
   const found: Array<{ file: string; text: string }> = [];
-  for (const abs of walk(SKILLS)) {
-    const rel = abs.slice(SKILLS.length + 1);
-    const lines = readFileSync(abs, "utf8").split("\n");
-    for (const line of lines) {
+  const sources: Array<{ rel: string; text: string }> = [
+    ...walk(SKILLS).map((abs) => ({
+      rel: abs.slice(SKILLS.length + 1),
+      text: readFileSync(abs, "utf8"),
+    })),
+    ...backendSources().map((rel) => ({ rel, text: readEntryPoint(rel) })),
+  ];
+  for (const { rel, text } of sources) {
+    for (const line of text.split("\n")) {
       if (!line.includes("process.exit(")) continue;
       if (isCommentLine(line)) continue;
       found.push({ file: rel, text: line.trim().replace(/\s+/g, " ") });
@@ -215,8 +246,11 @@ const key = (s: { file: string; text: string }) => `${s.file}\t${s.text}`;
 
 describe("P0f — the exit-site inventory is pinned", () => {
   test("the sweep actually ran (zero-guard: a dead sweep and a clean sweep look identical)", () => {
-    const files = walk(SKILLS);
+    const files = [...walk(SKILLS), ...backendSources()];
     expect(files.length).toBeGreaterThan(20);
+    // The second root contributed — a zero here means Slice 2's relocated CLIs
+    // left the inventory and nothing said so.
+    expect(backendSources().length).toBeGreaterThan(0);
     expect(enumerate().length).toBeGreaterThan(0);
   });
 

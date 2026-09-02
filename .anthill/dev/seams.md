@@ -50,8 +50,29 @@ _First contracts accreted during the Spell Surface Pipeline plan-ratify (session
 **Owner:** daedalus (server.ts) · **Pointed at from:** circe, prospero, cassandra
 
 **The contract, stated once:** a conjuration's daemon serves its surface in one of two modes,
-resolved at startup: **release** iff a `dist/` dir exists at the skill root (override via env
+resolved at startup: **release** iff **`dist/index.html`** exists at the skill root (override via env
 `SPELLBOOK_SURFACE_MODE=dev|release`), else **dev**.
+
+> ### ⛔ This said "iff a `dist/` DIR exists" until 2026-08-31, and it was WRONG FROM THE START
+>
+> **The code has always checked `dist/index.html`** — `existsSync(join(DIST_DIR, "index.html"))`,
+> verified identical in all four ported spells. The contract's sentence never matched it.
+>
+> **It was harmlessly wrong for a year, and that is the interesting part.** Until a backend
+> shipped built, a `dist/` existed *only* if a surface build had put an `index.html` in it — so
+> the two predicates were **extensionally equal on every case the tree could produce**, and
+> nothing could tell them apart.
+>
+> **Slice 2 broke the equality by putting `cli.js` in `dist/`.** Between Slice 2 and Phase 6,
+> magpie shipped a `dist/` holding **only** `cli.js` — and correctly resolved to **dev**, because
+> the code reads the file and the contract read the directory. **The code was right and the
+> contract was wrong, and only a new kind of member in the set could show it.**
+>
+> **The rule this earns** _(thoth, and it generalises past this pair)_: **two contracts that agree
+> on every case the tree currently produces are not consistent — they are UNTESTED AGAINST EACH
+> OTHER**, and what tests them is a new kind of member in the set they both describe. Contract 2's
+> amendment already keyed on the unhashed `dist/index.html`; the two only stopped agreeing when
+> `dist/` gained a second kind of inhabitant.
 
 - **dev:** the surface HTML entry is imported via a **dynamic, dev-only** `await import("../surface/index.html")` (string-literal specifier) reached only on the dev branch; Bun bundles the `.tsx` + Tailwind graph at serve time; `development.hmr` on.
 - **release:** serve static files from `dist/` (entry `dist/index.html` + hashed assets by path); `hmr` off; zero reads of `surface/` or `bunfig.toml`.
@@ -111,6 +132,88 @@ repeal phrasings, drifts the canon. Merge into one.
 **Proof:** every daemon-backed spell runs `bun run server.ts` directly today (astrolabe
 `cli.ts` spawns `process.execPath "run" SERVER_SCRIPT`). Canon: thoth's `house-style.md` amendment.
 
+### Contract 3 — amendment, 2026-08-31: the trigger gains a second clause, and a STAGED repeal for astrolabe + magpie
+
+_Owner: thoth (canon wording) with daedalus (backends). **PERMISSION half only. EVIDENCE: PENDING — see the box below.**_
+
+> ### ⛔ THIS IS AN AMENDMENT TO THE TRIGGER, NOT AN INVOCATION OF IT
+>
+> **Contract 3's repeal criterion never fired, and Option 3 is not repealing under it.** The
+> original trigger is a **conjunction**:
+>
+> > _Repeal when_ a backend dependency genuinely **requires a build** (native addon, codegen'd
+> > client, no runnable source dist) **AND** the cost of hand-working around source-only exceeds
+> > owning a backend build
+>
+> **The first conjunct is simply absent.** No dependency requires a build. The driver is a
+> `printJson` copied six times — **code organisation**, not a dependency that cannot run from
+> source. A shared local `.ts` module is Bun-native `.ts`, which is precisely what this contract
+> says ships. The AND fails, so the trigger does not fire.
+>
+> _Reached independently from two directions and recorded because the agreement is the evidence:
+> **thoth** by reading the conjunction during the Slice 2 ratify round, **daedalus** by measuring
+> the actual driver — neither having seen the other's work._
+>
+> ⚠ **And the trigger currently has ZERO live instances.** Sprint 02's plan cited imago's `sharp`
+> as tripping the native-addon clause "by itself". **`sharp` is gone** — daedalus's `Bun.Image`
+> swap removed it from every shipped path in Sprint 01; only a test fixture and one comment
+> mention it. Verified by thoth and re-verified by prospero. **Opening a repeal under a criterion
+> with no live instances is how a contract gets repealed for a reason it never contemplated**, and
+> naming the act correctly is the whole point of this box.
+
+**So the trigger gains a second, independent clause** — stated separately rather than folded into
+the first, because they justify a build for different reasons and must be able to fire alone:
+
+> **Repeal ALSO when** a spell's backend must share an implementation with another spell's backend,
+> **and** every non-build emission option has been ruled against on its own merits. _(Slice 2's
+> ruling: Option 1 breaks the skill-directory unit the Agent Skills standard requires; Option 2 is
+> N copies plus a mandatory staleness ward.)_
+
+### SCOPE and EVIDENCE are two axes, and the original wording conflated them
+
+The old sentence — _"repeal narrowly for that spell first, promote to a default only on a second
+independent signal"_ — reads as a **cardinality** rule and is doing **scope** work. That misreading
+was live: Slice 2 needs **two spells simultaneously**, because one spell cannot demonstrate sharing,
+and the criterion appeared to forbid it.
+
+| axis | rule |
+| --- | --- |
+| **SCOPE** | **"Narrow" means ENUMERATED, not singular.** A repeal naming N spells is narrow; a repeal naming *all* spells is a default. Cardinality is not the axis — `for that spell` was an example of narrowness, never a limit. **Two spells at once is a narrow repeal and always was.** |
+| **EVIDENCE** | **A signal is an INDEPENDENTLY MOTIVATED case.** Spells conscripted into one proof are **one signal with N participants** — neither is evidence about the other, because one decision put both there. |
+
+⛔ **And the clause that closes the live hazard: A REPEAL'S OWN PROOF CAN NEVER BE ITS OWN PROMOTION
+EVIDENCE.** A successful Slice 2 will *look* like two signals — two spells, two working backends —
+and counting it as such would promote a backend build to the house default on **n=1**. Promotion
+requires a signal from outside the permission this amendment grants.
+
+### The permission, and it is deliberately legible as INCOMPLETE
+
+**PERMITTED — narrow, enumerated:** `astrolabe` and `magpie` may build their backends for Slice 2.
+_(The pair is forced: Option 3 requires acc conformance, and imago has no `acc.config.json`.)_
+
+**EVIDENCE: ⏳ PENDING.** Nothing has been built yet. This half lands when Slice 2 produces it.
+
+> **Why the pending state is written down rather than left as an absence** — the precedent is
+> **ward 2's zero-guard**, which is green because `src/kit/` does not exist and **prints that it
+> examined nothing on every run** rather than passing quietly. A permission whose evidence has not
+> arrived is the same object: correct, incomplete, and dangerous precisely because it reads as
+> settled. This seat has twice shipped a check that was trusted later because its vacuity was
+> silent at the time. **A permission that lands ahead of its evidence must say so in the place
+> someone would cite it.**
+
+**Why permission lands FIRST at all** (the C6 ruling): a contract landed at finalize put five seat
+docs in violation of _point, never restate_ — they held a truth with no home to point at. That is
+not a docs-hygiene cost; **it is the coordination artifact arriving after the coordination.**
+Splitting a repeal into permission → evidence → promotion is what makes "before" possible: the
+scope is available to point at from day one, and the proof fills in behind it.
+
+**Repeal this amendment when** the shared implementation is retired, or an emission option that
+needs no build is adopted after all. **Promotion to a house default requires a signal independent of
+astrolabe and magpie** — and per the clause above, Slice 2's own success is not one.
+
+**Proof:** ⏳ PENDING (Slice 2). The *reasoning* is proven: the conjunction reading (thoth) and the
+driver measurement (daedalus), independently; `sharp`'s absence, verified twice.
+
 ## Contract 4 — Surface source lives outside the plugin subtree (source-free by construction)
 
 **Owner:** prospero (repo layout / release) · **Pointed at from:** circe, daedalus, cassandra, thoth
@@ -130,6 +233,120 @@ and no release-branch; the wrong files simply aren't in the subtree.
 consumer cache — anything tracked under it ships. Keeping surface source *inside* the spell folder
 cannot be filtered out. Relocation is the mechanism. Corollary: `dist/` must be un-ignored +
 committed, or release mode has nothing to serve.
+
+### Contract 4 — amendment, 2026-08-31: what a BUILT BACKEND does to "source-free", and where it goes
+
+_Ruled by Cole (the identity half) and by the Slice 2 ratify round (the location half). Owner: prospero._
+
+**"Source-free by construction" now means: no source FILES — nothing a consumer edits, nothing the
+bundler reads, nothing that requires an install.** It does **not** mean "no source bytes".
+
+**Why the distinction was forced.** The emission ruling is **build the backend** (Cole, 2026-08-31),
+and RB's argument for it rests on `--sourcemap=inline` keeping the artifact self-describing. Measured:
+an inline map embeds the **complete original TypeScript** — astrolabe's CLI goes **13,733 → 60,074
+bytes (4.4×)**, and the source is fully recoverable. Read literally, "source-free" would forbid the
+mechanism that makes a built backend acceptable at all.
+
+**Cole ruled: keep the maps, redefine the phrase.** The redefinition is principled rather than a
+fudge, and the test is the contract's own purpose — the sentence exists because the marketplace
+copies the entire tracked subtree, so *the wrong files simply are not in it*. Embedded debug bytes
+inside a generated artifact are not a file: a consumer cannot edit them, no resolver reads them, and
+nothing about them needs `install`. **Contract 4's own proof passes unchanged** — clone the branch,
+inspect the subtree, `surface/` and `bunfig.toml` absent.
+
+> ⚠ **What this amendment does NOT license.** It is not a general permission to ship source under a
+> different name. The exemption is scoped to **debug metadata inside an artifact the build emits**.
+> A `.ts` file placed in the subtree is still source, and still forbidden.
+
+**And where a built backend goes — ruled by measurement, not by taste:**
+
+```
+src/<spell>/backend/*.ts                          the source (Contract 4's "additively", now used)
+plugins/spellbook/skills/<spell>/dist/cli.js      the emitted bundle
+plugins/spellbook/skills/<spell>/scripts/cli.ts   a ~3-line launcher that imports it
+```
+
+**The deciding variable is LOCATION, not the emitted filename** — the ratify round falsified the
+filename framing outright. Every instrument in this repo already defines "generated" as **"under
+`dist/`"**: biome excludes `!!**/dist`, `gate-blind-set` uses `GENERATED = /(^|\/)dist\//`. Emitting
+anywhere else means teaching three instruments a new address; emitting to `dist/` costs **zero
+instrument changes**.
+
+**Both alternatives were built and measured, and both break something:**
+
+- **Emit `scripts/cli.ts`** (bundle keeping the source name) → `bun run check` **exits 1 with 5
+  errors**: bundling erases type annotations (`let x: string` → `var x;`, `noImplicitAnyLet` ×3) and
+  Bun's bundler **strips the `node:` prefix** (`useNodejsImportProtocol` ×6). Worse, **lint-staged
+  rewrites the generated file on every commit** — 60,074 → 60,068 bytes — so committed ≠ emitted,
+  which breaks **Contract 18** on its first day.
+- **Emit `scripts/cli.js`** → green, and **blind**: `walkSpellSources` drops 63 → 61 files and the
+  flag-invariant, terminator-invariant and strict-parse-invariant wards stop seeing both CLIs
+  entirely. **A shrunk population is not a red cell** — the same run shows the greenness and the
+  blindness.
+
+> ### ⛔ THIS LOCATION RULING BLINDS WARD 1b UNLESS ITS POPULATION MOVES WITH IT — corrected 2026-08-31
+>
+> **`dist/cli.js` fails BOTH of ward 1b's filters** — the `.ts`/`.tsx` extension filter and the
+> `scripts|shared` path filter (`import-boundary-wards.test.ts:477`). So on the day a backend ships
+> built, **the code that actually executes at a deps-free destination leaves 1b's population
+> entirely, and the ward goes green because it stopped looking** — while its title still claims to
+> govern the shipped execution path.
+>
+> **This is the failure this very amendment names two paragraphs above** — _a shrunk population is
+> not a red cell_ — reproduced by the person who wrote the sentence, in the ruling it sits inside.
+> Caught by thoth, who was handed "widen 1b's predicate" and answered that **the predicate was the
+> safe half**: widening only the predicate would have shipped exactly this, and it would have looked
+> like diligence.
+>
+> **So the location ruling is INSEPARABLE from the ward change, and neither lands alone:**
+>
+> - 1b's population extends into **declared emitted roots**, which are **declared and currently
+>   EMPTY** — deliberately not hardcoded to `dist/`, because a guard's denominator must not be a
+>   value the project is about to change. **Turning them on is part of landing this location, not a
+>   follow-up.**
+> - The exemption there is scoped to **`builtinModules`, derived from the runtime — never to the file
+>   class.** Exempting emitted files wholesale would blind the ward exactly where it matters most: a
+>   bundled artifact still reaching for a real `sharp` is **the** failure 1b exists for.
+
+> **⚠ And what the two roots do to anyone MEASURING across them.** Once a backend ships built,
+> a spell's backend↔surface seam lives in **two roots** — `plugins/spellbook/skills/<spell>/scripts/`
+> and `src/<spell>/backend/`. **Any census, done-when, ward or brief scoped to one of them goes
+> GREEN while the seam is open.** Measured on magpie: **12 sites visible to a `scripts/`-scoped
+> grep, 15 actually present**, the missing three sitting in the backend that a previous sprint had
+> already relocated. See **Contract 19** — this is that contract, applied to a command rather than
+> to a ward.
+
+**The launcher is what keeps the wards honest**: a real `.ts` stays at `scripts/cli.ts` where the
+three behavioural wards look, all 27 prose invocation sites (astrolabe 23, magpie 4) stay true, and
+both grimoire tests keep their launch path.
+
+> **A bundle emitted as `.ts` is not merely mislabelled — it is FALSE TYPESCRIPT.** It is by
+> construction worse TypeScript than its own source, and the house linter says so in five places. A
+> `.ts` extension is a claim to *tools* that the file is type-checkable source. That is a category
+> error with a measurement under it, not a matter of taste — the file runs fine under Bun.
+
+> ### ⚠ What "build the backend" can and cannot mean TODAY — measured 2026-08-31
+>
+> **A spell's `cli.ts` bundles cleanly.** Verified for astrolabe and magpie.
+>
+> **A spell's `server.ts` bundles too — but drags the entire SURFACE graph into the backend
+> artifact.** `bun build server.ts --outdir …` emits `server.js` **plus** `index-<hash>.js` and
+> `index-<hash>.css`, because the dev-only HTML import pulls the surface build graph in. Bundling a
+> server without externalising that import would put the surface inside the backend bundle, which
+> defeats Contract 1's whole release/dev split.
+>
+> **So Slice 2 is scoped to CLIs, and that is a bound on the Contract 3 amendment, not a delay.**
+> `printJson` is a CLI concern; the proof needs no server bundled. **Servers keep shipping as
+> source until someone rules on externalising the dev-only import.**
+>
+> _Two wrong mechanisms were reported before this measurement, and both are recorded because the
+> conclusion happened to be right twice: thoth reported "the dev-only surface import cannot
+> resolve" (it resolves), and prospero's first probe reported a hard failure that was
+> `--outfile` being unable to hold multiple chunks (an invocation error). **Servers bundle. The
+> objection is what comes with them.**_
+
+**Proof:** the Slice 2 ratify round (daedalus), re-verified independently by prospero — `node:`
+stripping, annotation erasure, ward 1b's predicate, and both instruments' existing `dist/` exclusions.
 
 **Identity reframe:** "self-contained / zip one folder" now describes the **deployed** spell folder
 (dist + backend = everything needed to run), not the dev layout — authoring is split across two
@@ -237,12 +454,22 @@ Two operational corollaries:
 - **SUPERSESSION 2 — activity TTL clause (ACT1, supersedes Claim C's "non-idle arms a ~60s TTL emitting synthetic idle"):** the TTL is state-aware now — `received → (MIND_MAPPER_ACTIVITY_TTL_MS, ~60s) → agent.activity {state:"stalled"}` (daemon-synthesized, PERSISTS — no re-arm, no decay to idle/blank — until an agent write or an explicit set resolves it); `thinking → (TTL) → idle` unchanged. **`stalled` is daemon-synthesized vocabulary ONLY** — `POST /activity` rejects it (epoch.changed asymmetry). Surface rule (circe): stalled gets a STATIC attention-tinted branch, never the thinking pulse (false-liveness), and the client THINKING_TTL backstop must not clear it to blank.
 - **Automated activity (ACT1):** the daemon auto-flips `agent.activity {state:"received"}` on a `role:"user"` /send while `entry.agents >= 1` (no tail → no flip; the presence dot already says nobody's home), emitted AFTER `message.posted` — two seqs, ordered, both through the normal bus path (the ephemeral-cursor clause holds). **Resolution:** agent-authored writes resolve any AUTO state (auto-received / stalled) to idle — `send role:"agent"` (which ALSO resolves explicit `thinking`: a reply is the turn's terminal act; re-set thinking explicitly for send-then-more-work), propose with author `"agent"` (user-sketched proposals don't), mark with author `"agent"`, and ratify (no authorship on that wire — resolves unconditionally). Explicit non-idle states otherwise stand until explicit idle or TTL. `activityState`/`activitySource` live in-memory on ProjectEntry (server.ts) — a daemon restart honestly clears to no-signal. The agent no longer needs to post `activity received` manually; `thinking`/`idle` remain its own.
 
-- **Build stamp (B1):** `src/mind-mapper/build.ts` is clean → build → stamp: `rmSync(dist)` before `Bun.build` (kills hashed-chunk accumulation), then `dist/build.json {commit (git rev-parse --short, "unknown" tolerated), builtAt (ISO)}` — written AFTER success only, so a failed build leaves no stamped half-dist. Release-mode boot reads the stamp ONCE (missing/corrupt stamp tolerated — pre-stamp dists serve, no buildInfo); if the surface src tree exists next to the checkout (existsSync-guarded; source-free installs never walk, never warn) and its newest mtime > builtAt → STALE DIST stderr warning + `stale:true`. Wire: `/state` gains `buildInfo {commit, builtAt, stale}` spread AT THE HANDLER (release only; **ProjectState under-reports the wire again — presence's sibling**: grep server.ts, not state.ts). Boot stdout JSON gains `buildInfo` additively. Test knob (tests only): `MIND_MAPPER_SRC_DIR` overrides the src-tree location. **Release-cut prerequisite:** the committed dist/ predates the stamp — the next real `bun run src/mind-mapper/build.ts` (finalize/release, after circe's P2 lands) ships build.json.
+- ⛔ **SUPERSESSION 4 — Build stamp (B1), SUPERSEDED 2026-08-31 WHOLLY. Removed, not amended** (`fae8830`,
+  Cole's ruling). The stamp, the footer it fed, the `STALE DIST` warning, the `/state`
+  `buildInfo` spread, the `MIND_MAPPER_SRC_DIR` knob and `dist/build.json` for all three
+  spells are gone. **Read the paragraph below as a record of what was ratified, not as a
+  description of the tree** — every mechanism it names has been deleted. Why: the stamp served
+  two jobs that pull opposite ways (a wall clock for a human-readable age, an identity for a
+  machine freshness check), and the check was the second job implemented on the first job's
+  data — which is why it was **inverted**, reporting STALE on three dists that were
+  byte-identical to a fresh rebuild. See **Contract 18**.
+
+  _The superseded text follows._ **Build stamp (B1):** `src/mind-mapper/build.ts` is clean → build → stamp: `rmSync(dist)` before `Bun.build` (kills hashed-chunk accumulation), then `dist/build.json {commit (git rev-parse --short, "unknown" tolerated), builtAt (ISO)}` — written AFTER success only, so a failed build leaves no stamped half-dist. Release-mode boot reads the stamp ONCE (missing/corrupt stamp tolerated — pre-stamp dists serve, no buildInfo); if the surface src tree exists next to the checkout (existsSync-guarded; source-free installs never walk, never warn) and its newest mtime > builtAt → STALE DIST stderr warning + `stale:true`. Wire: `/state` gains `buildInfo {commit, builtAt, stale}` spread AT THE HANDLER (release only; **ProjectState under-reports the wire again — presence's sibling**: grep server.ts, not state.ts). Boot stdout JSON gains `buildInfo` additively. Test knob (tests only): `MIND_MAPPER_SRC_DIR` overrides the src-tree location. **Release-cut prerequisite:** the committed dist/ predates the stamp — the next real `bun run src/mind-mapper/build.ts` (finalize/release, after circe's P2 lands) ships build.json.
 - **R1 typed refusal:** the in-zone ratify refusal is now 409 `{error:"zoned", zoneId}` (typed `ZonedError`, CitedError/ZoneNotEmptyError family) instead of the prose-400 — menus branch on `error === "zoned"` without string-matching. Semantics unchanged: promote first, ratification (reject included) stays a main-queue act.
 - **Ground-grammar footnote (G1, restated once):** a BARE id in `message.ground[]` is a node ref OR a pending-proposal ref (no `proposal:` prefix exists); `doc:<id>` is a doc ref; unknown prefixes still drop silently.
 - **CLI `--ground` repeat semantics (gate rework):** `send --ground` is parseArgs-`multiple` — repeated flags ACCUMULATE and every value still splits on commas (`--ground a,b --ground doc:x` → `["a","b","doc:x"]`); blank fragments drop, and an all-blank resolve posts NO ground (never `[""]`). The falsified prior behavior (single-value last-wins: repeats silently dropped refs at exit 0 — cassandra's gate) is the reason this is a stated seam: any spell CLI copying send's flag pattern must copy the `multiple` too.
 
-**Proof (accreting):** db.test.ts kind_author pinning test (fresh-equals-migrated), docs.test.ts setDocKind round-trips, server.test.ts K1/A1 wire tests, actions.test.ts lifecycle suite, presence.test.ts ACT1 rig (received→stalled persistence, ordered auto-flip seqs, terminal-act resolve), release-serve.test.ts build.json fixture + stale-dist rig, zones.test.ts/ratify.test.ts zoned-409 assertions.
+**Proof (accreting):** db.test.ts kind_author pinning test (fresh-equals-migrated), docs.test.ts setDocKind round-trips, server.test.ts K1/A1 wire tests, actions.test.ts lifecycle suite, presence.test.ts ACT1 rig (received→stalled persistence, ordered auto-flip seqs, terminal-act resolve), ~~release-serve.test.ts build.json fixture + stale-dist rig~~ **(DELETED — see SUPERSESSION 4; the fixture and the rig no longer exist, and all three release-serve.test.ts files carry comments recording their removal)**, zones.test.ts/ratify.test.ts zoned-409 assertions.
 
 ### Contract 9 — Round 5 amendments (additive-optional; ratified per plan-round5 rulings, built 2026-07-21)
 
@@ -731,3 +958,292 @@ Concretely, as built in the three co-presence spells:
 **Proof:** `digestify/scripts/review.test.ts` — two cells, mutation-calibrated (34→36, +2; each mutation reddens **only** its own cell: a syntax error fails the parse cell, reverting the pre-b4s handler fails the beacon cell). Browser-driven both arms: `engaged:false` → `/left` alone; `engaged:true` → `/left` then `/cancel`.
 
 ⚠ **HALF-PROVEN, and this stays until it is not:** the **server half is NOT BUILT**. daedalus holds `/left` + the 124 payload as b4's remainder. Until then the surface emits into a route that does not exist (harmless — `sendBeacon` is fire-and-forget), and **the `engaged:false` record-only clause is unenforced by anything except this contract.**
+
+## Contract 15 — The spell CLI process contract (error envelope + registry single-sourcing)
+
+_Owner: daedalus. Ratified 2026-08-27 (mind-mapper acc L0 session, comms #1100/#1105); single-sourced here from the seats' finalize returns — seat docs point, never restate._
+
+Every house spell CLI answers a FAILURE as **one JSON document on stderr with stdout empty**:
+
+```
+{ ok: false,
+  error: { kind, exit_code, retryable, message, hint?, choices?, server? },
+  meta:  { command } }
+```
+
+- **Kinds → exits:** `usage` 2 · `internal` 1 · `not_found` 5 · `conflict` 6. `kind` is the contract; `message` is presentation — a caller that matches on prose is out of contract, and rewording a message must never break one.
+- **`choices`** rides any rejection whose valid alternatives form a closed set (verbs, sub-verbs, per-verb flags). A real-but-misplaced flag is never called "unknown" — the two-stage parse (whole-registry strict, then verb-subset presence check) is what makes that message honest.
+- **`error.server`** (mind-mapper's extension, candidate clause for the other spells): a daemon-HTTP refusal is WRAPPED, its JSON body carried verbatim under this key — typed bodies keep their shape one level down, the process contract stays one stderr doc.
+- **Registry single-sourcing:** one flag registry (**no defaults in it** — stage-2 stray detection is key-presence; defaults live at consumption `??`) + one verb→flags spec (path-keyed where subcommands exist) drive parser, help, rejections, and the drift wards. `--version` is a **root TOKEN, never a registry flag** — registering it re-scopes it under every verb; the flag-invariant ward's FOREIGN pin is the standing answer (magpie:version precedent, astrolabe:version pinned 15513af).
+- **Delivery:** throw a typed error and let `main` RETURN the code (`process.exitCode` + natural return, never `process.exit` where stdout may hold >64KB) — and any catch-all retry loop in scope must rethrow the typed error (tail's reconnect loop, daedalus seat doc).
+
+**Proof:** `plugins/spellbook/skills/mind-mapper/scripts/cli-contract.test.ts` (11 cells: dispatch↔spec drift wards, subprocess failure table asserting `error.exit_code === process exit`, help-advertises twin line-anchored per bb13208). Adopted today by: magpie, astrolabe (minimal 2-kind form), grapevine (prose errors — predates this contract, conversion unscheduled), mind-mapper (full form). acc rule B5 holds this checked on every `acc check` run wherever `defaultOutput: json` is declared.
+
+## Contract 16 — A relocation's fallout has three classes, and none of the three instruments is the gate
+
+_Owner: daedalus (classes) × circe (instruments) × cassandra (the effect proof). Ratified 2026-08-31, spell-kit sprint 01; single-sourced here from the seats' finalize returns — seat docs point, never restate._
+
+**The contract, stated once:** when a module moves, every importer must be re-specified, and the fallout sorts into **three classes that fail differently and are found by different instruments**:
+
+| class                                    | what breaks                        | the ONLY instrument that sees it        |
+| ---------------------------------------- | ---------------------------------- | ---------------------------------------- |
+| **(a)** value import **a test loads**    | the gate, immediately              | `bun test`                              |
+| **(b)** value import **nothing loads**   | the real artifact, silently        | **`Bun.build` on the surface entry**    |
+| **(c)** type-only                        | nothing at runtime; `tsc` only     | `tsc --noEmit \| grep -c TS2307`        |
+
+**Class (b) is the dangerous one — it is the only class where a green gate and a broken artifact coexist.**
+
+**Why it bites:** `import type` is **erased before resolution**, so a wrong specifier survives the build; biome resolves no modules; and the suite never loads a surface it does not import. **The gate is structurally blind to (b) and (c).** Measured on imago: 37 sites across 35 files, **35 type-only, 2 value**, and only the one a test loaded went red. **A frequency does not bound a failure** — "most of these are type-only" was true and did not make the exception safe.
+
+**Two corollaries, both paid for:**
+
+- **A phase that creates edges sets the next phase's blast radius.** 1b created `shared/` and 1c moved one end of every edge 1b had made: astrolabe had **4** cross-tree edges, imago had **33**. A card written before those edges existed **cannot enumerate them**, and this one enumerated 5.
+- **Never rewrite by string.** `"./types"` meant **two different modules** in imago — 3 files meant the moved contract, 8 meant their own `tools/types.ts` which did not move, and `tools/types.ts` was itself broken, so it appeared in both lists. A blanket `sed` fixes 3 and destroys 8. **Rewrite by directory class**, computing `relpath(target, dirname(file))` so the depth table is _output_ rather than input, then **resolve-sweep every specifier in the tree**.
+
+**Proving neutrality — a count coming back is not the proof.** An unresolved module degrades to `any`, which **suppresses** the strict-null and implicit-any diagnostics beneath it: imago's tree went 452 → 512 → 452, but that was **78 errors leaving and 18 arriving**, not 60 breaking and 60 healing. **The proof is a detached worktree at the pre-move commit with `node_modules` symlinked, diffed by error LINES.** (`git worktree add --detach <path> <sha>`; 383 tuples identical, zero differences.)
+
+**Proof:** `feat/spell-kit-sprint-01` — `3e00e73` (the seam), `5d918e2` (the relocation). TS2307 0 → 26 → 0 and 0 → 33 → 0 across the two phases, each returning to a measured baseline rather than an assumed one.
+
+## Contract 17 — `src/<spell>/` is inside the blind set's denominator and outside every import ward
+
+_Owner: prospero (repo layout, Contract 4) × thoth (the wards). Raised by cassandra 2026-08-31; ratified as a KNOWN GAP, not a solved one._
+
+**The contract, stated once:** two instruments enumerate two different worlds and the names collide.
+
+```
+ward 1a     PLUGIN_ROOT = "plugins/spellbook"          the shipped artifact
+ward 2      KIT_DIR     = "src/kit"                    the sanctioned sharing point
+blind set   roots       = ["plugins/spellbook/skills", "src"]
+```
+
+**`src/<spell>/` is counted by the blind set and read by no import ward.** Contract 4 relocates surfaces into exactly that gap, and **the gap grows as this project succeeds** — two spells are in it today, and every relocation adds one.
+
+**Why it bites, and why it is NOT ward 1a's hazard:** a surface is **bundled**, so a relative escape out of `src/<spell>/surface/` is absorbed into the bundle rather than breaking a deps-free destination. **The hazard is a cross-spell import** — `src/astrolabe/surface/` reaching into `src/mind-mapper/surface/` — which is invisible to every check the house has, and is **precisely the coupling this project exists to control**. `src/kit/` has a ward because it is the sanctioned sharing point; the unsanctioned one has none.
+
+**Also unequal, and measured:** the blind set's root 1 is `plugins/spellbook/skills`, one level **below** ward 1a's `plugins/spellbook`. The difference is exactly `.claude-plugin/plugin.json` — gated, so `blind` is unaffected, but `tracked`/`handAuthored` are off by one. **Priced, not missed** (thoth, `5253b72`).
+
+> ### ⛔ THE REMEDY SHIPPED. This paragraph said it had not — corrected 2026-08-31
+>
+> It read: _"Candidate remedy, **deliberately NOT built this sprint**: a ward 3 … **Scheduled:**
+> sprint 03's canon pass."_ **Ward 3 landed in `3c88275`**, pulled forward into Slice 2 on
+> daedalus's argument that a backend bundle inlines a cross-spell import *completely* and the
+> result is a shipping artifact rather than a dev-tree mistake.
+>
+> **A contract's own "not done yet" line is as load-bearing as its proof line**, and a
+> supersession sweep has to reach both. thoth caught this after catching the identical class in
+> Contract 9's proof line — same author, same sprint, second instance. The gap this contract
+> describes is **closed on the `src/<spell>/` axis**; what remains open is stated below.
+
+**Ward 3, as built** (`grimoire/import-boundary-wards.test.ts`): no file under `src/<spell>/`
+may relatively import a different `src/<other-spell>/`. **It is stated by OWNER, not by path
+prefix** — because a spell can reach another spell **through `plugins/`**, where the specifier
+resolves outside `src/` and a prefix ward never looks. **36 such routes are live today**
+(astrolabe 4, imago 32), every one same-spell and correct, which is what made the narrow form
+dangerous: proven, ergonomic, one directory name from being cross-spell.
+
+Ownership is **derived** — a name is a spell iff `plugins/spellbook/skills/<name>/` exists.
+That is what correctly classifies `src/build.ts` as not-a-spell, and what lets `src/kit/` be
+imported freely without a special case: there is no `skills/kit/`, so the sanctioned sharing
+point is not a spell and importing into it is not cross-spell. **Measured before adopting:
+narrow 0, wide 0, across 170+ files.** Zero-guard asserts membership **and** `owners.length > 1`
+— with one spell, "cross-spell" is inexpressible and a pass would be a statement about the
+tree's shape rather than anyone's discipline.
+
+**What is STILL open, and is what this contract now exists to say:** the two instruments still
+enumerate two different worlds (`plugins/spellbook` vs `plugins/spellbook/skills`), and
+`src/<spell>/` remains inside the blind set's denominator. Ward 3 closes the cross-spell
+*import* hazard; it does not merge the denominators.
+
+**Proof:** `grimoire/import-boundary-wards.test.ts:161,:380` and `scripts/instruments/gate-blind-set.ts` roots, at `5253b72`.
+
+### Contract 4 — amendment, 2026-08-31: what relocation does to a prefix-scoped instrument
+
+**Any instrument scoped by a path prefix reports relocation as PROGRESS.** When mind-mapper moved to `src/`, `gate-blind-set` lost 276 blind lines and its total went **down** — the one direction that reads as good news, so nothing was going to question it. Contract 4 is the thing that relocates trees, so the warning belongs beside it: **ask of every prefix-scoped instrument what happens to its number when the subject moves.**
+
+The same shape bit a guard rather than a report: ward 1a's zero-guard was a **floor on file count**, calibrated at 206 against a tree this project exists to drain, and it fired at **149 against a floor of 150** — 206 → 192 → 149 → 101 projected. **A magnitude asserted over a population the roadmap shrinks is a countdown, not a guard**, and it cannot make the one discrimination it exists for: shrinking-by-design versus a dead walk. Replaced with **membership over a structurally-invariant subset** (`scripts/` cannot move; Contract 3 keeps backends shipping as source), derived from the same tree as the population, and calibrated by **simulating the remaining relocation and requiring green** (`5253b72`).
+
+
+## Contract 18 — the shipped artifact is verified by REPRODUCTION, never by a proxy for its inputs, and never by regenerating it
+
+_Owner: cassandra (the instrument) × daedalus (the artifact) × prospero (release ops). Ratified 2026-08-31 from the release-staleness spike; single-sourced here from the seats' returns — seat docs point, never restate._
+
+**The contract, stated once:** a committed `dist/` is current **iff a rebuild at the canonical
+checkout root — repo-root `node_modules`, `bun install --frozen-lockfile`, the pinned Bun —
+produces byte-identical files.** No stamp, no timestamp, no recorded sha, no basis to rule on.
+
+**Verified 2026-08-31:** byte-identical across a different absolute path, a separate
+`node_modules`, and a month of elapsed time (mind-mapper's `dist/` built 2026-07-27 still
+reproduces exactly). After the stamp's removal, reproducible **with no exclusion list** —
+proved at git level, two consecutive rebuilds writing the same tree sha.
+
+**Three corollaries, each paid for:**
+
+- ⛔ **The comparison is `git status --porcelain`, NEVER `git diff`.** A content change
+  **renames** the hashed chunk, so the new file is **untracked** and invisible to `diff`,
+  which sees only a deletion. _(This is the one place the industry-standard `check-dist`
+  recipe does not transfer: GitHub's artifact is a fixed `dist/index.js`; ours is
+  content-addressed.)_
+- ⛔ **The check must report the size of the set it examined; zero files is NO VERDICT, never
+  a pass.** A globbed pathspec matched nothing and reported GREEN twice on a tree with three
+  modified dists and a deliberately stale bundle.
+- ⛔ **`dist/` is gitignored by a bare `dist` rule with a hand-kept un-ignore list**, so a
+  newly relocated spell's `dist/` is **silently skipped by `git add` at exit 0** and ships
+  absent — which under Contract 1 falls to dev mode and dies importing a `src/` tree the
+  marketplace never copied.
+
+**CI verifies; it must not generate.** A `GITHUB_TOKEN` commit **triggers no further
+workflow**, so a CI-regenerated artifact would be the one thing in the repo nothing verifies —
+a false reassurance about an instrument, which this team ranks above a false claim about code.
+
+**Why a timestamp can never be the basis:** mtime records *which action ran last*, not *what
+changed*, and **git preserves neither mtime nor a build's wall clock across a checkout**. Any
+freshness check comparing a timestamp across a git boundary is unconditionally unreliable —
+and ours was worse than unreliable, it was **inverted**: the merge that landed two
+freshly-built dists is what made them report stale.
+
+**Repeal when** the artifact stops being reproducible — a non-deterministic bundler, or a
+toolchain that cannot be pinned. At that point the basis must be **re-derived, not patched**.
+
+**Proof:** `fae8830` (the stamp's removal, and the rebuild-is-a-git-no-op measurement) ·
+[the 2026-08-31 spike](../../docs/investigations/2026-08-31-releasing-a-non-stale-build.md),
+which carries the touch-point pricing and what no layer catches.
+
+## Contract 19 — a ward's population must follow its subject, and "loosen the predicate" is the moment to check that it has
+
+_Owner: thoth. Ratified 2026-08-31, spell-kit sprint 02 — **three instances in one sprint**, which is what made it a contract rather than three findings._
+
+**The contract, stated once:** when the project moves what a check is about, **the check's POPULATION is the half that silently stops covering it.** A predicate can be perfectly correct over a set that no longer contains the subject, and the result is **green because it stopped looking** — while the cell's title still claims the old coverage.
+
+**Three instances, all this sprint, all different-looking:**
+
+| | the move | what went blind |
+| --- | --- | --- |
+| ward 1a | surfaces relocated to `src/` | a **magnitude floor** calibrated at 206 against a population Contract 4 drains — 206 → 192 → 149 → 101 projected. Fired at 149 against a floor of 150, **by one**, which reads as noise and is structure. |
+| ward 1b | the CLI became `dist/cli.js` | `dist/cli.js` fails **both** filters (`.ts`/`.tsx`, and `scripts\|shared`), so the code that actually executes at a deps-free destination left the population entirely |
+| 4 entry-point instruments | the CLIs moved to `src/<spell>/backend/` | `flag-invariant`, `strict-parse-invariant`, `terminator-invariant` and the exit-site inventory all lost both CLIs at once |
+
+**⚑ A fourth instance, 2026-08-31, and it is a DIFFERENT DISCOVERY MODE — the first found by a
+non-author running someone else's document.** The three above are wards. This one is a **brief and
+its done-when**: magpie's seam census was scoped to `<spell>/scripts/`, measured **12 sites**, and
+**15 were present** — three living in `src/<spell>/backend/`, which a previous sprint had relocated.
+**The done-when would have reported green over an open seam.** Written by the lead, one sprint after
+this contract was ruled from the three ward instances. **The rule is not about wards; it is about
+anything that measures a moving population** — and a command in a card is exactly as exposed as a
+cell in a test, with less to warn you. See Contract 4's amendment for the layout that creates the
+second root.
+
+**⛔ The request that arrives is always "widen the predicate", and the predicate is the SAFE half.** Ward 1b's card said exactly that. Widening only the predicate would have shipped a ward that had stopped looking — **and it would have looked like diligence.**
+
+**Two rules, both paid for:**
+
+- **Extend the WALK; never loosen a predicate to make a population fit.** The tell that the repair is honest: the entry-point population came back to **16 — exactly what it was before** — with two members at new addresses. A loosened predicate moves the count and widens what passes.
+- **A guard's denominator must be something the project is not changing.** Where the roadmap moves a population, assert **membership over a structurally-invariant subset** (`scripts/` cannot move; Contract 3 keeps backends shipping as source), never a magnitude. Calibrate by **simulating the remaining moves and requiring green**.
+
+**And the corollary that decides whether a shrink is even visible:** a shrunk population is **not** a red cell — **unless the instrument carries an explicit pinned inventory.** Ward 1b shrank silently; the four entry-point instruments failed loudly, because each pins what it expects to find. **The pin is what converts a silent shrink into a loud failure**, and it is the transferable part.
+
+**Proof:** `3c88275` (roots declared and empty, deliberately), `7bb0f4a` (turned on, four instruments repaired by extending the walk).
+
+## Contract 20 — a generated artifact is source-free by FILES, not by strings; and a migration's done-when must be keyed on the NEW name
+
+_Owner: circe. Ratified 2026-08-31 from Slice 3, where the phase's own exit criterion turned out to carry zero information._
+
+**Half one — you cannot establish "no source reached the artifact" by grepping the artifact's text.** Un-minified bundles embed their module paths as **per-module boundary comments** — measured: **82** in one mind-mapper chunk, and `// src/kit/lib/cn.ts` is in both shipped surface bundles right now. Surface bundles carry **no sourcemap at all**; backend bundles carry an inline one, base64, whose plaintext is unsearchable. **So the text of `dist/` proves nothing either way.**
+
+**The invariant lives in the deployed folder's FILE LIST**, which is what Contract 4's identity sentence means post-amendment: no `surface/`, no stray sources, nothing a consumer edits or a bundler reads.
+
+**Half two — an exit criterion keyed on the identifier a migration DELETES is green by construction.** Slice 3's done-when grepped `dist/` for `surface/lib/utils`. The `git mv` removes that string from the tree, so after the change it **cannot** appear regardless of whether paths leak. It returned nothing and carried **zero information**.
+
+> **A migration's done-when must name the SUCCESSOR.** Keyed on the predecessor, the very act being audited guarantees the pass — the same _"check that cannot fail"_ shape as a vacuous refusal cell, relocated from a test into a plan.
+
+**Corollary on adoption proofs:** where a shared helper *changes its output* (`cn` collapses whitespace), define equivalence and test it across the input space rather than eyeballing one render — **8 of 8 boolean combinations**, with the only raw delta being the thing the helper exists to remove. And check what a green gate would hide: Tailwind's `@source` scans **literal text**, so moving a class from a ternary into an `&&` can vanish it at runtime while everything stays green. **Count the class in the built CSS.**
+
+**Proof:** `475cb6a`.
+
+## Contract 21 — a spell's Tailwind content scan is scoped to its own surface, and the kit is adopted by importing its STYLESHEET
+
+_Owner: circe. Ratified 2026-08-31 from Sprint 03 Phase 4b. Two of the lead's three framing claims were falsified in the course of ratifying it; the surviving statement is below, not the one that was dispatched._
+
+**Every spell's `styles.css` opens `@import "tailwindcss" source(none);` followed by a bare `@source "./";`.**
+
+**What a bare `@import "tailwindcss"` does instead:** it roots the content scan at the **process CWD** — the repo root under `bun run build` — so each spell's stylesheet is compiled out of **every other spell's text** and out of the committed `dist/` trees. Measured at `4808ff0`: astrolabe shipped **142,977 B / 1,028 class selectors** against **199** of its own; **969 selectors were common to all four spells**; all four totalled **~606 KB**, and scoping brings that to **~196 KB**. It is not a literal union — a foreign class lands only if it is **also valid under the receiving spell's theme** — and text-matching compiles prose: astrolabe shipped `.32` (from `c.width = 32`) and `.outline` (from a JSX comment) as real rules.
+
+> **This coupling has NO IMPORT TO FOLLOW.** No import ward, bundler pass or dependency manifest can see it, because there is nothing referential to see — the mechanism is text. **A build with two emission mechanisms needs its shipping guarantee re-derived per mechanism**; inheriting the JS half's reachability argument is exactly how this survived unnoticed. (See `docs/architecture/dependency-and-package-boundaries.md`, whose reachability claim this corrected.)
+
+**⛔ The adoption unit is the stylesheet, not the component — and the obvious belief is wrong.** Under `source(none)` Bun's Tailwind plugin **discards the module graph outright** (`getModuleGraphCandidates` returns empty when the content root is `none` — readable in `node_modules/bun-plugin-tailwind/index.mjs`). Sharing survives **only** because of the `@source "../"` inside **`src/kit/theme/base.css`**. So:
+
+- **a spell adopts `src/kit/` by importing `src/kit/theme/base.css`**;
+- **importing a kit component alone yields markup with no utilities** — a silent, green failure.
+
+That one `@source` covers all of `src/kit/` as it grows, so a growing kit — including shadcn primitives and a shared `Button` — needs **no hand-maintained per-component list** in any consumer. That property is the reason this shape was chosen over the ecosystem's per-component `@source` enumeration.
+
+**Two paths reach a spell's CSS, and anything reasoning about it must model both:** (1) **scanned text**, and (2) **stylesheets the bundle imports** — mind-mapper's 163 React Flow rules arrive that way, untouched by candidate scanning. A ward that models only the first false-reds on the second.
+
+**Use a bare `@source "./"`, not a `**/*.{ts,tsx}` glob** — the glob does not scan `index.html` and silently drops astrolabe's `antialiased`.
+
+**The retired guard:** `@source not ".../plugins/spellbook/skills/*/dist"` was **live, not dead** — the build `rm`s each spell's own `dist/` first, so its subject is a stale class in **another** spell's output, and a constructed case proved unguarded spells emitted it. **Scoping retires it**, so it was removed from imago and mind-mapper rather than added to astrolabe and magpie: four dead guards are worse than two live ones.
+
+**Proof:** `grimoire/spell-css-scope-ward.test.ts` — both failure routes verified red before landing (drop `source(none)` → declaration cell reds unrebuilt; rebuild → cross-spell cell reds naming counts).
+
+### Amendment to Contract 18 — reproduction was history-dependent, and now is not
+
+Contract 18 says the shipped artifact is verified by **reproduction**. Pre-scoping, `bun run build` **was not reproducible**: a stale class sitting in another spell's `dist/` changed this build's output, so reproduction only matched if every `dist/` was cleared first. **Post-scoping, clean-dist and dirty-dist rebuilds agree.** Contract 18's check was sound in form and resting on a property the tree did not have.
+
+### Amendment to Contract 21 — the adoption rule is STATED, NOT ENFORCED, and a predicate that tests it must read stripped text
+
+_Returned by cassandra 2026-08-31 as the card's non-author calibrator; landed by the lead. Every number below carried a positive control that returned non-zero — three of cassandra's own instruments returned a confident zero first._
+
+**1. The silent failure is measured, not argued.** A shipped, registered spell (astrolabe) made to import `src/kit/ui/Dot.tsx` **without** `base.css` ships the component in its JS bundle (4/4 class strings present) and **zero** of its utilities, with `bun run check` green and `bun test` **1528 pass / 0 fail**. **No cell in the gate reds.** The rendered result is a zero-size, unrounded, uncoloured span. A minted 5th spell reproduced it: emitted CSS **byte-identical** to the pre-adoption build.
+
+> **Contract 21's adoption rule is prose with nothing behind it.** The ward it needs is one cell, needs no build, and is specified: for every spell with a `surface/`, derive from the tree the set of `src/kit/**` modules it imports transitively; if that set is non-empty, its `styles.css` must import `src/kit/theme/base.css` — **predicate applied to comment-stripped text**, zero-guard on the population.
+
+**2. A predicate deciding kit adoption MUST read comment-stripped text.** Demonstrated in both directions against `kit-styling-ward.test.ts`'s membership cell and `spell-css-scope-ward.test.ts`'s `scannedText()`: a spell that deletes its `@import` but keeps the prose stays "governed" (false negative), and a spell that merely mentions the path in a comment is admitted to the kit's scan scope (false positive — which **silently widens the leak detector's tolerance**). imago's `styles.css` already carries such a prose mention on line 2, so the false negative was live. **Both fixed 2026-08-31**; the strip is now the assertion, and the sibling ward had been stripping correctly twelve lines away since the day both were written.
+
+**3. `src/kit/` PROSE is a content source for every consumer.** Removing three class names from a **comment** in `Dot.tsx` removed `.bg-muted` from imago's shipped CSS — imago's own source never spells it. The rule `base.css` states for its own sentinel (_"a class written here in prose stays emitted"_) **binds every comment in the directory**, and the cross-spell ward structurally cannot see it, because it counts all of `src/kit/` as legitimate text for every consumer. **Kit prose launders classes between adopting spells.** This costs one dead rule today and will cost more as the kit takes the shadcn set.
+
+**4. Companion amendment to Contract 18 — every artifact-reading cell is REBUILD-GATED.** Reproduction is now history-independent (clean, wiped and junk-seeded `dist/` all rebuild to 0 dirty). But **nothing in this repo asserts that a committed `dist/` corresponds to current source** — the gate, `scripts/` and `.husky/` were searched; pre-commit is `bunx lint-staged` only. Delete the load-bearing `@source "../"` from `base.css` and **rebuild** and two cells red; delete it and **do not** rebuild — the realistic case, an agent edits CSS and runs the gate — and both wards are **14/14 green**. So every cell reading a shipped artifact states a property of **the last build, not of the tree**.
+
+### Amendment to Contract 21 — the content-source set is `.ts`/`.tsx`/`.md`/`.html`, NOT `.css`, and kit prose is now enforced
+
+_Returned by circe 2026-09-01 from Phase 4d; landed by the lead._
+
+**Finding 3 of the previous amendment (kit prose launders classes into every adopting consumer) is CLOSED** by `grimoire/kit-prose-ward.test.ts` — source-only, no build, so Contract 18's rebuild-gating does not apply to it. **The leak was 8 classes, not the 3 named in the warning, and 3 of the 8 were live:** remediating `Dot.tsx`'s header removed `.bg-muted` from imago and `.w-2` + `.h-2` from mind-mapper, each verified present at `da15c9c` and absent after, with `.bg-accent` unchanged as the control and astrolabe + magpie byte-identical.
+
+> ⛔ **THE SET OF FILES A DIRECTORY-SCOPED `@source` ACTUALLY SCANS WAS MEASURED, AND IT IS NOT WHAT THE TREE SAYS IT IS.** `.ts`/`.tsx` comments emit; **`.md` and `.html` emit**; **`.css` does not — imported or not.**
+>
+> ⛔ **CORRECTION 2026-09-01 — THE SENTENCE ABOVE IS AN ALLOWLIST STATED WHERE A BLOCKLIST HOLDS.** It is right about every extension it names and **wrong about the shape of the rule**, which is the more dangerous half. Byte-identical one-line bodies, siblings in one directory, extension the only variable: `.css` `.scss` `.less` `.styl` `.log` `.lock` → **0**; `.md` `.html` `.txt` `.json` `.yaml` → **1**. **Everything under an `@source` directory scans except a small ignore group** (oxide, `crates/oxide/src/scanner/auto_source_detection.rs`).
+>
+> **A closed set stated where an open one holds fails in the direction of permission** — it licenses _"my `.json` fixture in `src/kit/` is inert"_, which is false. Confirmed independently by the lead: a `p-77` probe (0 occurrences tree-wide, 0 in all four shipped stylesheets at baseline) placed in a `src/kit/*.json` emitted in **both adopters** and in **neither non-adopter**. `kit-prose-ward`'s POPULATION cell is the guard here; this sentence never was.
+>
+> **So a directory-scoped `@source` governs DOCUMENTATION.** A `README.md` added to `src/kit/` is a content source for every adopting spell — which no reachability argument, import ward or dependency manifest can see, because there is no import and it is not even code. The ward's population cell reds when an unmodelled scannable file lands in `src/kit/`, which is the guard for it.
+>
+> **`src/kit/theme/base.css`'s own ⛔ warning asserts the opposite of the measurement and is FALSE** (_"a class written here in prose stays emitted"_ — a probe in a `base.css` comment emits nothing). circe found this while building the ward, **deliberately did not correct it**, and keyed the ward's `.css` exemption on the measurement rather than on the sentence — so a non-author (cassandra) can re-measure before the sentence is rewritten. **Open.**
+
+**Corollary for any future instrument over Tailwind candidates.** Measured against the extractor itself, one probe class per rebuild with a same-run control: **Tailwind restarts a candidate after `.` and `>` and after nothing else in its charset**, and a trailing `.`/`,`/`)` kills a candidate while a trailing `:` does not. **A boundary-only tokenizer is blind to the SELECTOR spelling of a class** (`.bg-teal-500`) — which is exactly the form prose reaches for when explaining a CSS rule, and is how this ward's own remediation text re-created the defect it had just removed. Be stricter than the extractor on sentence punctuation, never looser, and say which you are.
+
+**And the vocabulary must be derived by SEGMENT, not by token.** `bg-muted` is spelled nowhere in the roster, so a token-level vocabulary classifies the one class the ward exists for as English. Leading segment ∈ known leading segments, last segment ∈ known following segments, both read from the tree. Known false positive, asserted rather than hidden: English whose every segment is also Tailwind vocabulary (`left-to-right`, `top-left`) — ~5 tokens over 1,463 across `src/`, **zero inside `src/kit/`**.
+
+### Amendment to Contract 21 — the `.css` exemption is confirmed sound, and the false claim had already reached a leak detector
+
+_Re-measured 2026-09-01 by cassandra as the non-author of `base.css`; every number carried a positive control returning non-zero in the SAME build. Closes the item left open by `56a1b79`._
+
+**`base.css`'s ⛔ warning is corrected and the item is CLOSED.** `.css` is not a Tailwind content source under any condition tested, including adversarial ones: an `@source` naming the file by path, by `./*.css`, and by `./*.{css,md}` all emit nothing from the `.css`, while the `.md` reached by that same brace glob emits.
+
+⚠ **THE FALSE CLAIM HAD ALREADY PROPAGATED INTO A LEAK DETECTOR.** `grimoire/spell-css-scope-ward.test.ts`'s `walkText` counts `.css` as scanned text, so a class named in any `.css` **comment** is accepted as legitimately explaining a shipped rule. `classSelectors()` strips comments; `scannedText()`/`usedIn` do not. **The error is PERMISSIVE** — it widens the leak detector's tolerance, which is the exact hazard that ward's own header warns about twelve lines from the code that has it. Cost measured rather than feared: **0** of 199 / 346 / 262 / 388 shipped selectors are excused only by `.css`-comment text. Latent — but imago's `styles.css` header already names five real utilities in prose, so it is one deletion away from live. **Open, unowned.**
+
+**Corollary — an extension claim needs the extension as the ONLY variable.** Different files in different directories with different comment syntax are consistent with _"`.css` is excluded"_ **and** with _"that file is excluded"_. Only same-directory byte-identical siblings separate them. The first table on this question had that confound; its conclusion happened to be right.
+
+**Corollary — a red is evidence for its own predicate, not for the one you hoped it was testing.** Planting a class in `base.css` reds gate-honesty's _"the blind set has not moved"_ cell, which **reads as a class guard and is a line count**. Append the class to an existing line and the whole grimoire suite is **87 pass / 0 fail with two stock-palette classes sitting in kit prose**. This is the sprint's fifth instrument failure and the first where the misleading signal was a **red**: a green that lies gets checked, a red that lies gets believed.
+
+### Amendment to Contract 18 — the corollary's CAUSE was wrong, and placement is part of the contract
+
+_Returned by daedalus 2026-09-01 from the check-dist build, having run `diff` beside `status` rather than taking the corollary on report._
+
+**Half one — the stated reason for "`git status`, never `git diff`" is not the reason.** Contract 18 explains it by content-hash renames: a change renames the chunk, so the new file is untracked and `diff` sees only a deletion. **Measured on a genuinely stale tree, `git diff --name-only` over LITERAL roots returned 2, not 0** — it misses the renamed chunk but catches `index.html`, which any chunk rename must also change.
+
+> **The sufficient cause of the spike's v1 false green was the GLOBBED PATHSPEC**, which returns **0 under both `diff` and `status`**. Two independent errors were present and only one was sufficient; the corollary named the insufficient one. **As written it licenses the conclusion that the glob was harmless.**
+>
+> `git status` is still correct, for a different reason: **it is `diff` that is blind to a purely ADDITIVE change.** Decisive case — an untracked file in a dist root: `status` **1**, `diff` **0**. So the rule is **two** requirements, not one: the pathspec must be **literal**, *and* the comparison must be `status`.
+
+**Half two — placement is part of the contract, not a deployment detail.** A reproduction check is **undefined in a tree with work in progress**: _"this commit shipped a stale artifact"_ and _"I am editing a surface right now"_ produce the **identical `git status`**, and no refinement of the check separates them. What separates them is the **absence** of work in progress, which only a CI checkout has.
+
+Hence the arms split by well-definedness rather than by convenience: **presence/trackedness** (`git ls-files`, no build) is well-defined in a working tree and lives in the suite as `grimoire/dist-roster-ward.test.ts`; **reproduction** (ARM 2) is not, and lives only in `.github/workflows/ci.yml`. A green from the roster ward says **nothing** about staleness, and its header says so.

@@ -4,7 +4,7 @@
 
 import { expect, test } from "bun:test";
 import { type AlphaPolicy, shouldRemove } from "../scripts/backend";
-import { ELEMENT_TYPES } from "../surface/state/types";
+import { ELEMENT_TYPES } from "../shared/types";
 
 // The 9 element types from the taxonomy, plus the policy axis.
 const TYPES = ELEMENT_TYPES; // wordmark, tagline, icon, illustration, sticker, palette, typography, screenshot, other

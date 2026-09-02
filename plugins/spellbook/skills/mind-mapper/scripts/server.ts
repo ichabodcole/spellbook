@@ -11,15 +11,7 @@
 // without the surface build graph present (Contract 1's "why it bites").
 
 import type { Database } from "bun:sqlite";
-import {
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -93,55 +85,6 @@ function resolveMode(): "dev" | "release" {
   const override = process.env.SPELLBOOK_SURFACE_MODE;
   if (override === "dev" || override === "release") return override;
   return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
-}
-
-// Round 4 (B1) — the build stamp. Release mode reads dist/build.json ONCE at
-// boot (boot-time staleness is honest — routes bake at boot anyway); a
-// missing/corrupt stamp is tolerated (pre-stamp dists keep serving, no
-// buildInfo). Staleness: iff the surface SOURCE tree exists next to this
-// checkout (existsSync-guarded — a source-free marketplace install never
-// walks, never warns) and its newest file mtime postdates builtAt, the dist
-// is stale — stderr warning + stale:true on the wire. MIND_MAPPER_SRC_DIR is
-// a test-only override for the src-tree location.
-interface BuildInfo {
-  commit: string;
-  builtAt: string;
-  stale: boolean;
-}
-
-const SRC_SURFACE_DIR =
-  process.env.MIND_MAPPER_SRC_DIR ??
-  join(SKILL_ROOT, "..", "..", "..", "..", "src", "mind-mapper", "surface");
-
-function newestMtimeMs(dir: string): number {
-  let newest = 0;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const path = join(dir, entry.name);
-    const mtime = entry.isDirectory() ? newestMtimeMs(path) : statSync(path).mtimeMs;
-    if (mtime > newest) newest = mtime;
-  }
-  return newest;
-}
-
-function readBuildInfo(): BuildInfo | null {
-  const stampPath = join(DIST_DIR, "build.json");
-  if (!existsSync(stampPath)) return null;
-  let stamp: { commit?: unknown; builtAt?: unknown };
-  try {
-    stamp = JSON.parse(readFileSync(stampPath, "utf8")) as typeof stamp;
-  } catch {
-    return null;
-  }
-  if (typeof stamp.commit !== "string" || typeof stamp.builtAt !== "string") return null;
-  let stale = false;
-  if (existsSync(SRC_SURFACE_DIR)) {
-    try {
-      stale = newestMtimeMs(SRC_SURFACE_DIR) > Date.parse(stamp.builtAt);
-    } catch {
-      stale = false; // an unreadable src tree proves nothing
-    }
-  }
-  return { commit: stamp.commit, builtAt: stamp.builtAt, stale };
 }
 
 const STATIC_CONTENT_TYPES: Record<string, string> = {
@@ -521,21 +464,6 @@ async function main(argv: string[]): Promise<number> {
 
   const mode = resolveMode();
 
-  // B1: read the stamp once at boot (release only). Boot-time staleness is
-  // honest — routes bake at boot, so what was true at boot stays the served
-  // truth until a restart anyway.
-  const buildInfo = mode === "release" ? readBuildInfo() : null;
-  if (buildInfo) {
-    process.stderr.write(
-      `mind-mapper: serving dist built at ${buildInfo.builtAt} (${buildInfo.commit})\n`,
-    );
-    if (buildInfo.stale) {
-      process.stderr.write(
-        "mind-mapper: STALE DIST — src/mind-mapper/surface/ has files newer than the dist build; run `bun run src/mind-mapper/build.ts` and restart\n",
-      );
-    }
-  }
-
   // dev: the dynamic string-literal import keeps the surface graph off the
   // module load path (Contract 1's "why it bites" — a top-level static
   // import would force Bun to resolve it at daemon LOAD, crashing a
@@ -673,10 +601,6 @@ async function main(argv: string[]): Promise<number> {
                 (e) => visible.has(e.source) && visible.has(e.target),
               );
             }
-            // buildInfo spreads AT THE HANDLER, not through readState — a
-            // daemon-level fact like presence (the exported ProjectState
-            // type under-reports the wire here too; Contract 9 as-built
-            // note). Release mode only; absent otherwise.
             // Round 11 (SEAM 2): the LIVE activity rides /state beside presence
             // — same daemon-level-fact reason, and without it a browser reload
             // mid-think loses the "working on this" badge entirely (F3 wants it
@@ -692,7 +616,6 @@ async function main(argv: string[]): Promise<number> {
               ...state,
               presence: { agents: entry.agents },
               activity,
-              ...(buildInfo ? { buildInfo } : {}),
             });
           }
 
@@ -1756,9 +1679,7 @@ async function main(argv: string[]): Promise<number> {
       `mind-mapper: could not write discovery files: ${e instanceof Error ? e.message : String(e)}\n`,
     );
   }
-  process.stdout.write(
-    `${JSON.stringify({ url, port: server.port, mode, ...(buildInfo ? { buildInfo } : {}) })}\n`,
-  );
+  process.stdout.write(`${JSON.stringify({ url, port: server.port, mode })}\n`);
   if (!parsed.values["no-open"]) openBrowser(url);
 
   // Standing until killed (SIGTERM/SIGINT) — no idle timeout in V1.

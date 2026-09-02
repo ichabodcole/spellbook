@@ -2546,6 +2546,108 @@ describe("dependencies (Phase D)", () => {
     }
   }, 30000);
 
+  test("b16: the BROWSER init carries restoreFailed — the human channel, not just the agent's", async () => {
+    // b15 gave `restoreFailed` to the agent on the `open` payload and on
+    // GET /state. It never reached the WebSocket, which is the human's ONLY
+    // channel. So the board came up empty and the person looking at it could
+    // not tell "the restore broke" from "there is nothing here" — the exact
+    // distinction b15 exists to make, absent on the one channel that renders
+    // it to a person.
+    const home = uniqHome();
+    const env = { BOUNTY_HOME: home };
+    const key = `b16-${crypto.randomUUID().slice(0, 8)}`;
+    const o1 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const s1 = (JSON.parse(o1.stdout) as { session_id: string }).session_id;
+    await runCli(["add", "will be corrupted", "--session", s1], { env });
+    await runCli(["close", "--session", s1], { env });
+
+    const snap = join(home, "snapshots", `${s1}.json`);
+    const raw = readFileSync(snap, "utf8");
+    writeFileSync(snap, raw.slice(0, Math.floor(raw.length / 2)));
+
+    const o2 = await runCli(["open", "--no-open", "--session-key", key, "--timeout", "20"], {
+      env,
+    });
+    const boot = JSON.parse(o2.stdout) as { session_id: string; url: string };
+    try {
+      const ws = new WebSocket(`${boot.url.replace(/^http/, "ws")}/ws`);
+      const init = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("no init frame")), 5000);
+        ws.addEventListener("message", (e) => {
+          const m = JSON.parse(String(e.data)) as Record<string, unknown>;
+          if (m.type !== "init") return;
+          clearTimeout(timer);
+          resolve(m);
+        });
+      });
+
+      // RED PRE-FIX: the init frame carried only {type, title, tasks}.
+      // Presence first, for the same reason the b15 cell asserts it first —
+      // `undefined` satisfies `not.toBeNull()`, which would conflate ABSENT
+      // with PRESENT-AND-POPULATED inside a test about that very distinction.
+      expect(Object.hasOwn(init, "restoreFailed")).toBe(true);
+      expect(init.restoreFailed).not.toBeNull();
+      const rf = init.restoreFailed as { path: string; reason: string };
+      expect(rf.path).toContain(s1);
+      expect(rf.reason).toBeTruthy();
+      // The board really is empty — the banner is the only thing that explains it.
+      expect(init.tasks).toEqual([]);
+      ws.close();
+    } finally {
+      await runCli(["close", "--session", boot.session_id], { env });
+    }
+  }, 30000);
+
+  test("b16 GUARD — a HEALTHY boot sends restoreFailed null on the socket, never absent", async () => {
+    // Same failure shape as b15's guard: a field that appears only when
+    // something broke is unreadable, because its absence then means two
+    // different things. RED PRE-FIX as well (the field did not exist on this
+    // frame at all), so this guards the present-and-null property rather than
+    // guarding against the fix.
+    const { proc, ready } = await spawnServerReady(["--timeout", "10"]);
+    try {
+      const ws = new WebSocket(`${ready.url.replace(/^http/, "ws")}/ws`);
+      const init = await new Promise<Record<string, unknown>>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("no init frame")), 5000);
+        ws.addEventListener("message", (e) => {
+          const m = JSON.parse(String(e.data)) as Record<string, unknown>;
+          if (m.type !== "init") return;
+          clearTimeout(timer);
+          resolve(m);
+        });
+      });
+      expect(Object.hasOwn(init, "restoreFailed")).toBe(true);
+      expect(init.restoreFailed).toBeNull();
+      ws.close();
+    } finally {
+      proc.kill();
+    }
+  }, 15000);
+
+  test("b16 LOCKSTEP — template.html actually RENDERS restoreFailed, not just receives it", async () => {
+    // THE DRIFT THIS WHOLE FIX IS AN INSTANCE OF. bounty's surface features pair
+    // logic in server.ts with a HAND-WRITTEN Alpine mirror in template.html, and
+    // nothing has ever guarded the pair. That is precisely how `restoreFailed`
+    // shipped emitted-at-5-sites and rendered-at-0 for a full release.
+    //
+    // A wire test alone would NOT have caught the original defect: the field was
+    // on GET /state the whole time. Only the surface was blind. So this cell
+    // reads the template as text and asserts the mirror exists — crude, but it
+    // fails loudly the moment someone adds a field to the wire and forgets the
+    // human, which is the failure that actually happened.
+    const template = readFileSync(join(import.meta.dir, "template.html"), "utf8");
+    // it is in the component's state
+    expect(template).toContain("restoreFailed: null");
+    // it is populated from the init frame
+    expect(template).toContain("msg.restoreFailed");
+    // and it is actually put on screen, with BOTH fields the agent gets
+    expect(template).toContain('x-if="restoreFailed"');
+    expect(template).toContain('x-text="restoreFailed.path"');
+    expect(template).toContain('x-text="restoreFailed.reason"');
+  });
+
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };

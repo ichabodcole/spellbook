@@ -5,7 +5,7 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { materializeSource } from "../surface/state/source.server";
+import { materializeSource } from "../scripts/source.server";
 
 // a real 1×1 PNG (so Bun.Image.metadata() reads a genuine size)
 const PNG_1x1 =

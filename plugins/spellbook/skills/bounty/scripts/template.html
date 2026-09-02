@@ -79,6 +79,22 @@
          Clicking toggles a filter; non-matching cards are HIDDEN (not dimmed —
          dim is card-aging's language) and the column counts track what's left.
          View-only Alpine state; no server/WS. */
+      /* b16 — the boot restore failed. Deliberately loud and undismissable:
+         it is the explanation for an otherwise inexplicable empty board. */
+      .restore-failed {
+        display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.6rem;
+        max-width: 1200px; margin-bottom: 1rem;
+        padding: 0.6rem 0.8rem; border-radius: 6px;
+        background: var(--danger-bg); border: 1px solid var(--danger);
+        color: var(--danger); font-size: 0.78rem; line-height: 1.5;
+      }
+      .restore-failed strong { font-size: 0.82rem; }
+      .restore-failed code {
+        font-size: 0.7rem; opacity: 0.9; word-break: break-all;
+      }
+      .restore-failed .reason {
+        font-size: 0.7rem; opacity: 0.75; font-style: italic; word-break: break-word;
+      }
       .filter-bar {
         display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
         max-width: 1200px; margin-bottom: 1rem;
@@ -359,6 +375,25 @@
       </div>
     </header>
 
+    <!-- b16: the restore broke at boot. WITHOUT THIS the board simply came up
+         empty and the human had no way to tell that from "there is nothing
+         here" — the agent got `restoreFailed` on the open payload and GET
+         /state, the person looking at the board got nothing. Not dismissible:
+         it explains why the board is empty, so it must outlive a glance. Both
+         values are x-text (untrusted path/reason strings — same XSS guard as
+         the card rendering). -->
+    <template x-if="restoreFailed">
+      <div class="restore-failed" role="alert">
+        <strong>The saved board could not be restored.</strong>
+        <span
+          >This board is empty because the snapshot failed to load — not because
+          it has no cards.</span
+        >
+        <code x-text="restoreFailed.path"></code>
+        <span class="reason" x-text="restoreFailed.reason"></span>
+      </div>
+    </template>
+
     <!-- surface-filter: view-narrowing bar. Only renders when the board has
          tags or owners to filter on. Chips/pills are x-text only (untrusted
          strings — XSS guard, same as the card rendering). Active filters live in
@@ -567,6 +602,7 @@
           closedByServer: false,
           toastSeq: 0,
           dragId: null, // id of the task currently being dragged
+          restoreFailed: null, // b16 — {path, reason} if the boot restore broke
           detail: null, // task open in the detail modal, or null (#19)
           detailNotes: "", // editable description buffer (separate from the task)
           now: Date.now(), // ticked every 30s so card-aging cues update live (#2)
@@ -906,6 +942,15 @@
             this.title = msg.title || "";
             this.tasks = Array.isArray(msg.tasks) ? msg.tasks.slice() : [];
             if (this.title) document.title = this.title;
+            // b16 — a boot fact, not board state: it survives task traffic and
+            // re-inits because the restore either broke at boot or it didn't.
+            // Read defensively: an older daemon serving a newer surface omits
+            // the field entirely, and `undefined` must read as "not reported",
+            // never as "the restore succeeded".
+            this.restoreFailed =
+              msg.restoreFailed && typeof msg.restoreFailed === "object"
+                ? msg.restoreFailed
+                : null;
           },
           applyAdd(msg) {
             if (this.tasks.some((t) => t.id === msg.task.id)) return;

@@ -9,7 +9,7 @@
 
 import { expect, test } from "bun:test";
 import { leanState, optimizeSrc } from "../scripts/server.ts";
-import { defaultState, type ImagoState } from "../surface/state/types";
+import { defaultState, type ImagoState } from "../shared/types";
 
 // ── defaultState shape ─────────────────────────────────────────────────────
 
