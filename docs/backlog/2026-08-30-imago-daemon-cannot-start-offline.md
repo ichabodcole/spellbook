@@ -124,9 +124,9 @@ already do.**
 - [x] ~~The `withoutEnlargement` question is settled **by running it**~~ —
       **done 2026-08-30**; the option exists and works. See option 1's table.
 - [ ] A check exists that would have caught this — see the companion ward gap in
-      [`spell-kit` R6 Ward 1](../projects/spell-kit/design-resolution.md), whose
-      first phrasing measured relative specifiers only and was structurally
-      blind to exactly this import.
+      [`spell-kit` R6 Ward 1](../projects/_archive/spell-kit/design-resolution.md),
+      whose first phrasing measured relative specifiers only and was
+      structurally blind to exactly this import.
 
 ## Notes
 

@@ -7,11 +7,11 @@ A dev platform for sharing code between spells — surface, backend, and styling
 proven by the smallest thing that proves each. **The deliverable is the
 capability, not the extraction.**
 
-| #                                                   | Sprint                   | Delivers                                                           | Status  |
-| --------------------------------------------------- | ------------------------ | ------------------------------------------------------------------ | ------- |
-| [01](./sprints/01-the-seam-before-the-move/plan.md) | The seam before the move | astrolabe + imago build; the instruments that stay honest about it | Planned |
-| [02](./sprints/02-the-boring-module/plan.md)        | The boring module        | code shared on both sides — **and the emission ruling**            | Planned |
-| [03](./sprints/03-what-fails-silently/plan.md)      | What fails silently      | shared styling with per-app override; Seam C canon                 | Planned |
+| #                                                   | Sprint                   | Delivers                                                           | Status             |
+| --------------------------------------------------- | ------------------------ | ------------------------------------------------------------------ | ------------------ |
+| [01](./sprints/01-the-seam-before-the-move/plan.md) | The seam before the move | astrolabe + imago build; the instruments that stay honest about it | **DONE** `4ee9ca4` |
+| [02](./sprints/02-the-boring-module/plan.md)        | The boring module        | code shared on both sides — **and the emission ruling**            | **DONE** `8e07cb6` |
+| [03](./sprints/03-what-fails-silently/plan.md)      | What fails silently      | shared styling with per-app override; Seam C canon                 | **DONE** `13c8102` |
 
 ## Documents
 

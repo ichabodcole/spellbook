@@ -1,8 +1,8 @@
 # The gate's blind set is 96% self-inflicted: biome already reads CSS and HTML
 
 **Added:** 2026-08-30 · **Found by:** measuring the checker question raised
-while ruling [spell-kit R5](../projects/spell-kit/design-resolution.md) ·
-**Scope:** repo tooling (`biome.json`), house-wide
+while ruling [spell-kit R5](../projects/_archive/spell-kit/design-resolution.md)
+· **Scope:** repo tooling (`biome.json`), house-wide
 
 > ## The exact failure `gate-honesty.test.ts` documents is closable by a config change
 

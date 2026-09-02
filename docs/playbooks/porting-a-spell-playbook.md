@@ -459,9 +459,9 @@ usually different architectures. **Reference:** `475cb6a`.
 - [`seams.md`](../../.anthill/dev/seams.md) — Contracts 1–5 (serve, `dist/`
   layout, backend-as-source, the `src/` split, cwd pinning), 16 (relocation
   fallout), 17 (the `src/<spell>/` ward gap), 18 (reproduction).
-- [spell-kit project ledger](../projects/spell-kit/README.md) — vocabulary; note
-  that `shared/`, `ward`, `pinned` and _the gate_ each mean something narrower
-  there, and several numbering schemes reuse the same digits.
+- [spell-kit project ledger](../projects/_archive/spell-kit/README.md) —
+  vocabulary; note that `shared/`, `ward`, `pinned` and _the gate_ each mean
+  something narrower there, and several numbering schemes reuse the same digits.
 - [`grimoire/house-style.md`](../../grimoire/house-style.md) — the
   `self-contained-no-build` rule the port re-scopes.
 - [the `ward` skill](../../.claude/skills/ward/SKILL.md) — commit-type routing.

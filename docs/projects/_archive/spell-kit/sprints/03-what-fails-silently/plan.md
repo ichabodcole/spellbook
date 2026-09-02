@@ -1,7 +1,7 @@
 # Sprint 03 — What fails silently
 
-**Status:** Planned (depends on Sprint 02's ruling) **Created:** 2026-08-30
-**Project:** [spell-kit](../../proposal.md)
+**Status:** **COMPLETE** — merged `13c8102` **Created:** 2026-08-30 **Project:**
+[spell-kit](../../proposal.md)
 
 > **What this sprint delivers:** shared styling with per-app override — the
 > third and last capability — and canon that finally describes the build that
@@ -331,3 +331,35 @@ has a **second surface** — a backend edit in `src/<spell>/backend/` also chang
 nothing under `plugins/spellbook/` until built. The fix must be written over a
 **derived** set of build-input→output pairs, never a hardcoded surface→dist
 pair._
+
+---
+
+_**Reconciled 2026-09-02 @ `9111c4a` — SPRINT COMPLETE, merged `13c8102`.**
+Written late, by the lead, after a **non-author audit** found this sprint had
+never been reconciled at all while 01 and 02 both were. The ritual ran two times
+out of three, and the miss was invisible because a missing footer is an absence
+— the exact shape this project spent three sprints learning to distrust._
+
+_**Phases 4, 4b, 5, 6 HELD.** Verified independently against the tree:
+cross-spell CSS scoping (605 KB → ~196 KB across four spells, zero classes
+lost); four wards that each red by a non-author route (`kit-adoption`,
+`kit-prose`, `spell-css-scope`, `dist-roster`); the gate builds before it
+checks; `house-style.md` describes the build that exists and its arithmetic
+reproduces (57 / 39)._
+
+_**The four instrument-design rulings owed to Phase 5's canon pass did NOT reach
+`house-style.md`, and that is a DELIVERY CHANGE THAT WAS NEVER RECORDED** — not
+a loss. They live as: two comments in `grimoire/import-boundary-wards.test.ts`
+(exemption, vacuity) and two in the `thoth` and `daedalus` seat docs (partition,
+classification). Nothing wrote down that the decision moved from canon to
+seat-local, so it read as dropped. **Recording where a deliverable actually
+landed is part of delivering it.**_
+
+_**UNCHECKED, and named rather than closed:**
+`scripts/instruments/canon-ledger-ward.ts` — this sprint's own primary done-when
+— is still run by nothing. Not `package.json`, not `ci.yml`, not collected by
+`bun test`. The exclusion is deliberate (a `.test.ts` is collected the moment it
+exists, so an in-progress ward reds a peer's gate) and the hole is recorded in
+`.anthill/dev/thoth.md`, but it is a hand-run check with no owner and no
+schedule, guarding the canon this sprint rewrote. **This sprint added CI and did
+not add it.**_

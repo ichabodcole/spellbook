@@ -134,7 +134,7 @@ repeal phrasings, drifts the canon. Merge into one.
 
 ### Contract 3 — amendment, 2026-08-31: the trigger gains a second clause, and a STAGED repeal for astrolabe + magpie
 
-_Owner: thoth (canon wording) with daedalus (backends). **PERMISSION half only. EVIDENCE: PENDING — see the box below.**_
+_Owner: thoth (canon wording) with daedalus (backends). **PERMISSION half + EVIDENCE — both halves closed 2026-09-02.**_
 
 > ### ⛔ THIS IS AN AMENDMENT TO THE TRIGGER, NOT AN INVOCATION OF IT
 >
@@ -191,7 +191,23 @@ requires a signal from outside the permission this amendment grants.
 **PERMITTED — narrow, enumerated:** `astrolabe` and `magpie` may build their backends for Slice 2.
 _(The pair is forced: Option 3 requires acc conformance, and imago has no `acc.config.json`.)_
 
-**EVIDENCE: ⏳ PENDING.** Nothing has been built yet. This half lands when Slice 2 produces it.
+**EVIDENCE: ✅ ARRIVED — `7bb0f4a`, shipped in the Sprint 02 merge `8e07cb6`.** Both permitted
+backends build: `plugins/spellbook/skills/{astrolabe,magpie}/dist/cli.js`, each behind a 37-line
+launcher whose `scripts/cli.ts` does `import { run } from "../dist/cli.js"`. Verified deps-free —
+the whole shipped folder copied to a path with no `node_modules` and no `package.json` up-tree, and
+both CLIs run. Control: deleting `dist/cli.js` from the copy yields
+`Cannot find module '../dist/cli.js'`, so the probe can report failure.
+
+> ⛔ **THIS MARKER READ "Nothing has been built yet" FOR TWO SPRINTS AFTER THE THING WAS BUILT** —
+> from `8e07cb6` (2026-08-31) to 2026-09-02, in canon every seat is pointed at. **The guard inverted:**
+> written to stop a permission being read as settled before its evidence, it ended up denying evidence
+> that had arrived. A pending marker is a claim about the tree and **decays like any other**; nothing
+> re-read it because a `PENDING` reads as inert rather than as false.
+>
+> **The repair that generalises:** a pending marker needs a **named closer and an occasion**, exactly
+> as digestify's port trigger does in `house-style.md`. "This half lands when Slice 2 produces it"
+> names an event and no one to notice it. Found by a non-author auditing whether this project could be
+> archived — not by anyone who worked on it.
 
 > **Why the pending state is written down rather than left as an absence** — the precedent is
 > **ward 2's zero-guard**, which is green because `src/kit/` does not exist and **prints that it
@@ -211,8 +227,13 @@ scope is available to point at from day one, and the proof fills in behind it.
 needs no build is adopted after all. **Promotion to a house default requires a signal independent of
 astrolabe and magpie** — and per the clause above, Slice 2's own success is not one.
 
-**Proof:** ⏳ PENDING (Slice 2). The *reasoning* is proven: the conjunction reading (thoth) and the
-driver measurement (daedalus), independently; `sharp`'s absence, verified twice.
+**Proof:** `7bb0f4a` (the two built backends), `8e07cb6` (the merge that shipped them), and the
+deps-free run above. The *reasoning* was proven earlier and independently: the conjunction reading
+(thoth) and the driver measurement (daedalus); `sharp`'s absence, verified twice.
+
+**Promotion still NOT granted.** The permission remains narrow and enumerated. Slice 2's success is
+explicitly not the independent signal the clause above requires, and glamour — the next port, whose
+backend also builds — is the first candidate to supply one.
 
 ## Contract 4 — Surface source lives outside the plugin subtree (source-free by construction)
 

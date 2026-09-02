@@ -1,6 +1,6 @@
 # Sprint 01 — The seam before the move
 
-**Status:** Planned **Created:** 2026-08-30 **Project:**
+**Status:** **COMPLETE** — merged `4ee9ca4` **Created:** 2026-08-30 **Project:**
 [spell-kit](../../proposal.md) · **Rulings:**
 [design-resolution](../../design-resolution.md)
 

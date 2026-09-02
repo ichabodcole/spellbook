@@ -1,6 +1,6 @@
 # Sprint 02 — The boring module
 
-**Status:** Planned (depends on Sprint 01) **Created:** 2026-08-30 **Project:**
+**Status:** **COMPLETE** — merged `8e07cb6` **Created:** 2026-08-30 **Project:**
 [spell-kit](../../proposal.md)
 
 > **What this sprint delivers:** code actually shared, on **both** sides of the

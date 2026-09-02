@@ -90,8 +90,8 @@ Even `lucide-react` is tree-shaken **per icon**.
 > distinction is worth keeping straight: a per-spell manifest would not have
 > caught this either — manifests describe package-name intent, and this leak has
 > no import to declare. What bounds it is **telling the scanner where to look**.
-> _(Fix under validation at the time of writing; see `docs/projects/spell-kit/`
-> Sprint 03 Phase 4b for what landed.)_
+> _(Fix under validation at the time of writing; see
+> `docs/projects/_archive/spell-kit/` Sprint 03 Phase 4b for what landed.)_
 
 ## What we give up, and what it costs
 
