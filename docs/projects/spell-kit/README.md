@@ -1,6 +1,7 @@
 # Spell Kit — project ledger
 
-**Status:** Planned · **Created:** 2026-08-30 · **Sprints:** 3 planned, 0 closed
+**Status:** **Built, unreleased** · **Created:** 2026-08-30 · **Sprints:** 3
+planned, **3 closed** (merged to `develop` 2026-08-31 / 09-01)
 
 A dev platform for sharing code between spells — surface, backend, and styling —
 proven by the smallest thing that proves each. **The deliverable is the

@@ -1,6 +1,11 @@
+<!-- CLOSED 2026-09-02. Both acceptance criteria are met: grimoire/flag-invariant.test.ts
+     exits 0 and the suite is 1539 pass / 0 fail. a89e17a's merge message records
+     fixing the two failures develop carried. The boxes below were never ticked —
+     the fix landed and the file was not revisited. -->
+
 # Grapevine fails the flag-invariant ward on develop (unresolved entry point)
 
-**Added:** 2026-08-27
+**Added:** 2026-08-27 · **Status:** **CLOSED 2026-09-02 — FIXED**
 
 Pre-existing failure, found while running the full suite before landing
 `chore/acc-astrolabe` (verified present on clean `develop`):

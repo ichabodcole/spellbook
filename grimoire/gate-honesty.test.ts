@@ -128,7 +128,7 @@ import { join } from "node:path";
 // grew, all of them stylesheets, all of them PROSE. The change under it is one
 // directive per spell — `@import "tailwindcss"` gaining `source(none)` — which
 // scoped each spell's content scan to its own surface and cut the four shipped
-// stylesheets from 605,785 bytes to 196,480 with zero classes lost.
+// stylesheets from 605,785 bytes to ~196 KB with zero classes lost.
 //     +11  src/astrolabe/surface/styles.css       93 -> 104
 //     +11  src/magpie/surface/styles.css         175 -> 186
 //     +16  src/kit/theme/base.css                 68 -> 84

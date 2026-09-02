@@ -1,8 +1,19 @@
+<!-- CLOSED 2026-09-02. `sharp` no longer appears on ANY shipped imago path
+     (measured: 0 files under plugins/spellbook/skills/imago/ import it; the one
+     remaining consumer is tests/imageOptimize.test.ts). The daemon boots at an
+     installed destination, offline.
+
+     ⚠ The severity line said "live defect in the RELEASED v2.2.0 plugin". That
+     was true of v2.2.0 and is no longer true of develop — which is exactly how
+     a fixed item keeps reading as urgent. Found by a fresh agent reconstructing
+     a release note from the tree, not by anyone working on imago. -->
+
 # imago's shipped daemon cannot start without a network: `sharp` is not in the artifact
 
-**Filed:** 2026-08-30 · **Status:** open · **Severity:** live defect in the
-**released** v2.2.0 plugin, not a plan concern · **Found by:** the gap analysis
-of `spell-kit`'s dev plan, then reproduced against the installed artifact
+**Filed:** 2026-08-30 · **Status:** **CLOSED 2026-09-02 — FIXED** ·
+**Severity:** was a live defect in the **released** v2.2.0 plugin, not a plan
+concern · **Found by:** the gap analysis of `spell-kit`'s dev plan, then
+reproduced against the installed artifact
 
 ## The measurement
 
