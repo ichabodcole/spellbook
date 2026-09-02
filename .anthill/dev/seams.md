@@ -1233,3 +1233,17 @@ _Re-measured 2026-09-01 by cassandra as the non-author of `base.css`; every numb
 **Corollary — an extension claim needs the extension as the ONLY variable.** Different files in different directories with different comment syntax are consistent with _"`.css` is excluded"_ **and** with _"that file is excluded"_. Only same-directory byte-identical siblings separate them. The first table on this question had that confound; its conclusion happened to be right.
 
 **Corollary — a red is evidence for its own predicate, not for the one you hoped it was testing.** Planting a class in `base.css` reds gate-honesty's _"the blind set has not moved"_ cell, which **reads as a class guard and is a line count**. Append the class to an existing line and the whole grimoire suite is **87 pass / 0 fail with two stock-palette classes sitting in kit prose**. This is the sprint's fifth instrument failure and the first where the misleading signal was a **red**: a green that lies gets checked, a red that lies gets believed.
+
+### Amendment to Contract 18 — the corollary's CAUSE was wrong, and placement is part of the contract
+
+_Returned by daedalus 2026-09-01 from the check-dist build, having run `diff` beside `status` rather than taking the corollary on report._
+
+**Half one — the stated reason for "`git status`, never `git diff`" is not the reason.** Contract 18 explains it by content-hash renames: a change renames the chunk, so the new file is untracked and `diff` sees only a deletion. **Measured on a genuinely stale tree, `git diff --name-only` over LITERAL roots returned 2, not 0** — it misses the renamed chunk but catches `index.html`, which any chunk rename must also change.
+
+> **The sufficient cause of the spike's v1 false green was the GLOBBED PATHSPEC**, which returns **0 under both `diff` and `status`**. Two independent errors were present and only one was sufficient; the corollary named the insufficient one. **As written it licenses the conclusion that the glob was harmless.**
+>
+> `git status` is still correct, for a different reason: **it is `diff` that is blind to a purely ADDITIVE change.** Decisive case — an untracked file in a dist root: `status` **1**, `diff` **0**. So the rule is **two** requirements, not one: the pathspec must be **literal**, *and* the comparison must be `status`.
+
+**Half two — placement is part of the contract, not a deployment detail.** A reproduction check is **undefined in a tree with work in progress**: _"this commit shipped a stale artifact"_ and _"I am editing a surface right now"_ produce the **identical `git status`**, and no refinement of the check separates them. What separates them is the **absence** of work in progress, which only a CI checkout has.
+
+Hence the arms split by well-definedness rather than by convenience: **presence/trackedness** (`git ls-files`, no build) is well-defined in a working tree and lives in the suite as `grimoire/dist-roster-ward.test.ts`; **reproduction** (ARM 2) is not, and lives only in `.github/workflows/ci.yml`. A green from the roster ward says **nothing** about staleness, and its header says so.
