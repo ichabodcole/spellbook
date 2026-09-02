@@ -22,8 +22,8 @@ import {
   setSource,
   setStatus,
   updateElement,
-} from "../surface/state/reduce";
-import { defaultState, type Element, type MagpieState } from "../surface/state/types";
+} from "../scripts/reduce";
+import { defaultState, type Element, type MagpieState } from "../shared/types";
 
 function el(id: string, status: Element["status"] = "proposed"): Element {
   return { id, name: id, type: "icon", bbox: [0, 0, 10, 10], status };

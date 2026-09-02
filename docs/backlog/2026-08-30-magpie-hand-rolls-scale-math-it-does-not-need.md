@@ -1,9 +1,44 @@
 # magpie hand-rolls scale math around a `Bun.Image` option that does exist
 
-**Added:** 2026-08-30 · **Found by:** settling the census's image-optimize
-contradiction by running it · **Scope:** magpie, ~10 lines · **Severity:** low —
-**no behavioural defect**, the code is correct; it is just unnecessary, and the
+**Added:** 2026-08-30 · **Status:** **CLOSED 2026-08-31 — RESOLVED BY DELETION,
+NOT BY FIX** · **Found by:** settling the census's image-optimize contradiction
+by running it · **Scope:** magpie, ~10 lines · **Severity:** low — **no
+behavioural defect**, the code is correct; it is just unnecessary, and the
 comment justifying it is false
+
+## CLOSED — the file was deleted, not corrected (spell-kit sprint 03, magpie's surface port)
+
+**Nothing in this file was fixed. The subject of the complaint no longer
+exists.** During magpie's surface relocation (`c6a6e9a`), `circe` found that
+`magpie/surface/state/imageOptimize.ts` and `imageOptimize.server.ts` had **zero
+importers repo-wide** and deleted them rather than relocating dead code. The
+false comment went with them.
+
+**VERIFIED HERE (thoth, 2026-08-31):** `git ls-files` returns no
+`magpie/**/imageOptimize*`, and a repo-wide grep for `imageOptimize` across
+`plugins/spellbook/skills/magpie/` and `src/magpie/` returns zero hits.
+
+⛔ **This is a MOOT closure, not a fix, and the difference is where it sends the
+next agent.** "We fixed it" points at a corrected comment to learn from; "the
+subject was deleted" points nowhere, and saying so is the whole value of the
+distinction. Specifically:
+
+- **The measurement in this file is still true and still useful.**
+  `withoutEnlargement` **does** exist on `Bun.Image` resize — measured on Bun
+  1.4.0, a 32×32 source resized to 9000×9000 with
+  `{ fit: "inside", withoutEnlargement: true }` returns 32×32. Anyone writing
+  new downscale code should use it. That fact did not die with the file.
+- **The filed defect — a comment asserting the option does not exist — is gone
+  from the tree**, so there is nothing left to correct and no fix to review.
+- **The reason it was filed still stands:** it was filed _"so the false comment
+  does not spread"_, and the identical false claim had already been removed from
+  imago's header during the `sharp` → `Bun.Image` swap. Deleting magpie's copy
+  closes the last known instance. **If a third copy appears, re-file — do not
+  reopen this**, because the file it described is not coming back.
+
+_The original report follows, unedited, as the record of what was measured._
+
+---
 
 ## The comment is wrong
 

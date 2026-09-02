@@ -11,18 +11,20 @@
 
 import { join } from "node:path";
 // ── alpha policy ─────────────────────────────────────────────────────────────
-// The type-driven alpha policy lives in surface/state/alpha.ts (browser-safe, so
-// the surface shares one source of truth). Re-exported here for the agent-side
-// consumers (cli.ts, backend tests) that import it from this module.
-import type { AlphaPolicy } from "../surface/state/alpha";
-import type { Bbox } from "../surface/state/types";
+// The type-driven alpha policy lives in shared/alpha.ts (browser-safe, so
+// the surface shares one source of truth — RemoveGallery.tsx reads it too,
+// which is what makes it two-sided rather than daemon-only). Re-exported here
+// for the agent-side consumers (cli.ts, backend tests) that import it from
+// this module.
+import type { AlphaPolicy } from "../shared/alpha";
+import type { Bbox } from "../shared/types";
 
 export {
   ALPHA_AUTO_TYPES,
   ALPHA_FORBIDDEN_TYPES,
   type AlphaPolicy,
   shouldRemove,
-} from "../surface/state/alpha";
+} from "../shared/alpha";
 
 // A region of the source to cut a transparent asset from.
 export type Crop = {

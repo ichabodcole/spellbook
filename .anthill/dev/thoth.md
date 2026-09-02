@@ -839,6 +839,72 @@ The lead reported 1510; I measured 1508 having ADDED five cells, which implies s
 They did: `fae8830` removed exactly seven cells with the build stamp, and his figure predated it. **1510 − 7 + 5 = 1508, reconciled exactly.**
 ⭐ Chasing a two-count gap took one command and converted "my number disagrees with the lead's" into "both numbers are right and here is the commit between them" — the alternative was reporting a number I could not account for.
 
+### ⭐⭐ 2026-08-31, ROUND 6 — I wrote a document from the artifacts, and its defects landed exactly where the artifacts were silent
+
+**The extraction test worked, and the useful part is that its YIELD WAS PROPORTIONAL TO THE CAPTURE GAP.**
+I wrote the porting playbook from files only, and reported separately the five things I could supply solely from memory.
+A non-author then ran it on a real port and found eight defects — and **every structural one sat where no artifact existed**: the second root (a layout fact one sprint old), and R1's three-way sort (a ruling that lived in a design-resolution nobody re-reads mid-port).
+⭐ **So "write it from the artifacts" does not produce a correct document — it produces a document whose defects are a MAP OF WHAT THE TREE DOES NOT HOLD.** That map is the deliverable, and it only appears if someone else runs the thing.
+**The corollary I want next time: publish the memory-only list BEFORE the first use, so the first user knows which sections are load-bearing on nobody's notes.**
+
+**A DOCUMENT GENERALISES FROM ITS FIRST INSTANCE AND THE PROSE DOES NOT SHOW IT.**
+Phase 1's census grepped ONE file because imago's seam happened to live entirely in `server.ts`; magpie's spans three.
+⛔ **A step written from n=1 reads identically to a step written from n=4** — same imperative, same confidence, same formatting — and the reader has no way to tell which they are holding.
+⭐ **So a playbook should mark the arity of its own evidence where it is thin.** I did this once, for the four-phase ORDER, and it was the single most useful sentence in the document; I did not do it for any individual step, and that is precisely where it broke.
+
+**MY OWN RATIFIED CONTRACT LANDED ON MY OWN DOCUMENT, AND CITING IT WAS NOT APPLYING IT.**
+Contract 19 — *a ward's population must follow its subject* — was written from three instances I found, ratified, and then **cited in that same playbook's Gotcha 3**.
+Four sections later I wrote a census scoped to one root, which is the identical defect, in the same file, under my own name.
+⛔ **Quoting a rule in a document is not the same act as running it against the document**, and the quotation makes the omission harder to see, not easier — the file reads as though the rule has been handled.
+⭐ **New habit: after writing any check or command into a document, re-read it against every gotcha the SAME document lists.** The nearest rule is the one you are least likely to apply.
+
+**AN ACTION LIST AND ITS VALIDATION LIST CAN CONTRADICT EACH OTHER WHILE BOTH ARE INDIVIDUALLY CORRECT.**
+Phase 1's action said *make the surface import dev-only and dynamic*; Phase 1's validation said the entry import is the expected survivor.
+Both sentences are true of the project — they are true of DIFFERENT PHASES — and neither is wrong on its own, so a top-to-bottom read does not catch it.
+⭐ **Check a procedure's done-when against its actions as a separate pass**, because the failure is a relationship between two correct statements and no single-statement review can see it.
+
+**A NOISE FLOOR IS A PROPERTY OF THE INSTRUMENT, NOT OF THE TREE.**
+Two seats measured this repo's unresolved-specifier floor on the same day and got **4** and **19**; the whole difference is the sweep's extension list and scanner.
+⛔ **So an inherited floor is worse than no floor** — no floor makes you measure, a wrong floor makes you subtract.
+⭐ This is the third number this sprint that turned out to be instrument-dependent rather than tree-dependent (the ward-1b violation count, the re-export count, now this). **Before quoting any count in a durable document, ask whether a second implementation of the same question would return it.**
+**I did not put either number in the playbook, and named the spread instead — the first time I have written a range where I would previously have written a measurement.**
+
+### ⭐⭐ 2026-08-31, ROUND 7 — a true, measured finding can still be the wrong thing to file, and the reason is the SET
+
+**My Gotcha 11 was real, confirmed, and correctly removed, and the argument that removed it is one I should have made myself.**
+I observed 11 formatter failures across relocated files, verified the mechanism (relocation lengthens specifiers past the line width), and filed it beside eight gotchas.
+⛔ **It was the INVERSE of the set's subject.** The playbook's stated subject is *a green suite and a broken installed artifact coexisting* — eight failures that are **silent** and each need a **different instrument**. A formatter failure is **loud, first gate arm, cannot ship**.
+⭐ **A set of gotchas makes a CLAIM ABOUT ITS MEMBERS — "these are the ones you cannot see" — and one visible member weakens the claim for all nine.** Coherence is a property of the set, not of any entry, so an entry can be individually true and collectively wrong.
+⚠ **And the finding survived, relocated, in better form:** the real lesson was never line width, it was **ORDERING** — the formatter is the one step that rewrites files after your computed rewrite, so anything measured or re-pinned before it gets done twice.
+**I had filed the symptom I could see instead of the mechanism underneath it, which is the same error as reporting a count instead of what generates it.**
+
+**A PROCEDURE CAN CONTRADICT ITSELF ACROSS PHASES WHILE EACH HALF READS CORRECT — AND THIS IS NOW TWICE IN ONE DOCUMENT.**
+Phase 3 said copy `SKILL.md` + `scripts/` + `dist/` *"and nothing else"*; Phase 1 of the same document tells you to create `shared/`, which the daemon then cannot resolve.
+Earlier, Phase 1's action list said *make the import dev-only and dynamic* while Phase 1's own validation said the entry import is the expected survivor.
+⛔ **Both times the two halves were written at different moments against different mental models, and both times every individual sentence was true**, so no single-section review could catch it.
+⭐ **And both times the repair was the same shape: replace an ENUMERATED list with a DERIVED one** — the tracked subtree instead of a file list, the consumer set instead of a filename. **An enumerated list in a procedure is a second denominator, and it drifts from the layout exactly like a hand-copied allow-list drifts from its config.**
+
+**A NOISE FLOOR CAN BE RAISED MONOTONICALLY BY THE VERY PROCEDURE THAT ASKS YOU TO TRUST IT — AND BY PROSE.**
+Each ported spell's `server.ts` carries a comment quoting the static import that port removed, and a text-scanning sweep reads the quotation as a specifier.
+**So a correct port raises the sweep's floor by one, and the new entry is a paragraph the porter just wrote.**
+⛔ Astrolabe, imago and magpie now carry it; glamour still has the live import, so the floor will rise again on the next port and again on the one after.
+⭐ **A remediation that documents itself inside the scanned text is self-inflating, and the direction is always up** — which means "baseline once at the start" is wrong and "re-measure after each phase" is right.
+
+**I WAS RIGHT FOR A WEAKER REASON THAN THE TRUTH, AND THAT IS ITS OWN FRAGILITY.**
+I could not reproduce the floor of 19 (I measured 4) and ruled *the floor is a property of your instrument — re-measure per sweep, never quote it*.
+That ruling is correct and it survived, but the **mechanism** — comments quoting removed imports, rising monotonically — was found by someone else and is stronger, more specific, and actionable in a way my framing was not.
+⭐ **A correct conclusion reached from a partial mechanism can be argued away without anyone touching the truth**, because the framing is the part under attack. When a number will not reproduce, finding out WHY beats ruling on what to do about it — and I stopped at the ruling.
+
+**A MOOT CLOSURE AND A FIX POINT IN DIFFERENT DIRECTIONS, SO THE VERB MATTERS MORE THAN THE STATUS.**
+magpie's scale-math item closed because `circe` deleted a file with zero importers, not because anyone corrected the false comment.
+⭐ *"We fixed it"* sends the next agent to a correction to learn from; *"the subject was deleted"* sends them nowhere — and **the measurement inside the closed report can still be live and worth keeping** (`withoutEnlargement` does exist), which is why a moot closure has to say which parts survived it.
+**Recorded the re-file rule explicitly: if a third copy of the false comment appears, file a NEW item — do not reopen one whose subject is not coming back.**
+
+**AN AMBIGUITY BETWEEN TWO CONTRACTS CAN SIT DORMANT UNTIL A THIRD THING CHANGES.**
+Contract 1 says release mode is resolved by **`dist/` presence**; Contract 2's amendment keys the check on the **unhashed `dist/index.html`**.
+Those disagreed harmlessly for months — every `dist/` held an `index.html` — and the moment backends began shipping `cli.js` into `dist/`, a spell could hold a `dist/` and still correctly run in dev.
+⭐ **Two contracts that agree on every case the tree currently produces are not consistent; they are untested against each other**, and the thing that tests them is a new kind of member in the set they both describe.
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.

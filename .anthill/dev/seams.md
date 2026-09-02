@@ -50,8 +50,29 @@ _First contracts accreted during the Spell Surface Pipeline plan-ratify (session
 **Owner:** daedalus (server.ts) · **Pointed at from:** circe, prospero, cassandra
 
 **The contract, stated once:** a conjuration's daemon serves its surface in one of two modes,
-resolved at startup: **release** iff a `dist/` dir exists at the skill root (override via env
+resolved at startup: **release** iff **`dist/index.html`** exists at the skill root (override via env
 `SPELLBOOK_SURFACE_MODE=dev|release`), else **dev**.
+
+> ### ⛔ This said "iff a `dist/` DIR exists" until 2026-08-31, and it was WRONG FROM THE START
+>
+> **The code has always checked `dist/index.html`** — `existsSync(join(DIST_DIR, "index.html"))`,
+> verified identical in all four ported spells. The contract's sentence never matched it.
+>
+> **It was harmlessly wrong for a year, and that is the interesting part.** Until a backend
+> shipped built, a `dist/` existed *only* if a surface build had put an `index.html` in it — so
+> the two predicates were **extensionally equal on every case the tree could produce**, and
+> nothing could tell them apart.
+>
+> **Slice 2 broke the equality by putting `cli.js` in `dist/`.** Between Slice 2 and Phase 6,
+> magpie shipped a `dist/` holding **only** `cli.js` — and correctly resolved to **dev**, because
+> the code reads the file and the contract read the directory. **The code was right and the
+> contract was wrong, and only a new kind of member in the set could show it.**
+>
+> **The rule this earns** _(thoth, and it generalises past this pair)_: **two contracts that agree
+> on every case the tree currently produces are not consistent — they are UNTESTED AGAINST EACH
+> OTHER**, and what tests them is a new kind of member in the set they both describe. Contract 2's
+> amendment already keyed on the unhashed `dist/index.html`; the two only stopped agreeing when
+> `dist/` gained a second kind of inhabitant.
 
 - **dev:** the surface HTML entry is imported via a **dynamic, dev-only** `await import("../surface/index.html")` (string-literal specifier) reached only on the dev branch; Bun bundles the `.tsx` + Tailwind graph at serve time; `development.hmr` on.
 - **release:** serve static files from `dist/` (entry `dist/index.html` + hashed assets by path); `hmr` off; zero reads of `surface/` or `bunfig.toml`.
@@ -286,6 +307,14 @@ instrument changes**.
 > - The exemption there is scoped to **`builtinModules`, derived from the runtime — never to the file
 >   class.** Exempting emitted files wholesale would blind the ward exactly where it matters most: a
 >   bundled artifact still reaching for a real `sharp` is **the** failure 1b exists for.
+
+> **⚠ And what the two roots do to anyone MEASURING across them.** Once a backend ships built,
+> a spell's backend↔surface seam lives in **two roots** — `plugins/spellbook/skills/<spell>/scripts/`
+> and `src/<spell>/backend/`. **Any census, done-when, ward or brief scoped to one of them goes
+> GREEN while the seam is open.** Measured on magpie: **12 sites visible to a `scripts/`-scoped
+> grep, 15 actually present**, the missing three sitting in the backend that a previous sprint had
+> already relocated. See **Contract 19** — this is that contract, applied to a command rather than
+> to a ward.
 
 **The launcher is what keeps the wards honest**: a real `.ts` stays at `scripts/cli.ts` where the
 three behavioural wards look, all 27 prose invocation sites (astrolabe 23, magpie 4) stay true, and
@@ -1093,6 +1122,16 @@ _Owner: thoth. Ratified 2026-08-31, spell-kit sprint 02 — **three instances in
 | ward 1b | the CLI became `dist/cli.js` | `dist/cli.js` fails **both** filters (`.ts`/`.tsx`, and `scripts\|shared`), so the code that actually executes at a deps-free destination left the population entirely |
 | 4 entry-point instruments | the CLIs moved to `src/<spell>/backend/` | `flag-invariant`, `strict-parse-invariant`, `terminator-invariant` and the exit-site inventory all lost both CLIs at once |
 
+**⚑ A fourth instance, 2026-08-31, and it is a DIFFERENT DISCOVERY MODE — the first found by a
+non-author running someone else's document.** The three above are wards. This one is a **brief and
+its done-when**: magpie's seam census was scoped to `<spell>/scripts/`, measured **12 sites**, and
+**15 were present** — three living in `src/<spell>/backend/`, which a previous sprint had relocated.
+**The done-when would have reported green over an open seam.** Written by the lead, one sprint after
+this contract was ruled from the three ward instances. **The rule is not about wards; it is about
+anything that measures a moving population** — and a command in a card is exactly as exposed as a
+cell in a test, with less to warn you. See Contract 4's amendment for the layout that creates the
+second root.
+
 **⛔ The request that arrives is always "widen the predicate", and the predicate is the SAFE half.** Ward 1b's card said exactly that. Widening only the predicate would have shipped a ward that had stopped looking — **and it would have looked like diligence.**
 
 **Two rules, both paid for:**
@@ -1119,3 +1158,92 @@ _Owner: circe. Ratified 2026-08-31 from Slice 3, where the phase's own exit crit
 **Corollary on adoption proofs:** where a shared helper *changes its output* (`cn` collapses whitespace), define equivalence and test it across the input space rather than eyeballing one render — **8 of 8 boolean combinations**, with the only raw delta being the thing the helper exists to remove. And check what a green gate would hide: Tailwind's `@source` scans **literal text**, so moving a class from a ternary into an `&&` can vanish it at runtime while everything stays green. **Count the class in the built CSS.**
 
 **Proof:** `475cb6a`.
+
+## Contract 21 — a spell's Tailwind content scan is scoped to its own surface, and the kit is adopted by importing its STYLESHEET
+
+_Owner: circe. Ratified 2026-08-31 from Sprint 03 Phase 4b. Two of the lead's three framing claims were falsified in the course of ratifying it; the surviving statement is below, not the one that was dispatched._
+
+**Every spell's `styles.css` opens `@import "tailwindcss" source(none);` followed by a bare `@source "./";`.**
+
+**What a bare `@import "tailwindcss"` does instead:** it roots the content scan at the **process CWD** — the repo root under `bun run build` — so each spell's stylesheet is compiled out of **every other spell's text** and out of the committed `dist/` trees. Measured at `4808ff0`: astrolabe shipped **142,977 B / 1,028 class selectors** against **199** of its own; **969 selectors were common to all four spells**; all four totalled **605,785 B**, and scoping brings that to **196,480 B**. It is not a literal union — a foreign class lands only if it is **also valid under the receiving spell's theme** — and text-matching compiles prose: astrolabe shipped `.32` (from `c.width = 32`) and `.outline` (from a JSX comment) as real rules.
+
+> **This coupling has NO IMPORT TO FOLLOW.** No import ward, bundler pass or dependency manifest can see it, because there is nothing referential to see — the mechanism is text. **A build with two emission mechanisms needs its shipping guarantee re-derived per mechanism**; inheriting the JS half's reachability argument is exactly how this survived unnoticed. (See `docs/architecture/dependency-and-package-boundaries.md`, whose reachability claim this corrected.)
+
+**⛔ The adoption unit is the stylesheet, not the component — and the obvious belief is wrong.** Under `source(none)` Bun's Tailwind plugin **discards the module graph outright** (`getModuleGraphCandidates` returns empty when the content root is `none` — readable in `node_modules/bun-plugin-tailwind/index.mjs`). Sharing survives **only** because of the `@source "../"` inside **`src/kit/theme/base.css`**. So:
+
+- **a spell adopts `src/kit/` by importing `src/kit/theme/base.css`**;
+- **importing a kit component alone yields markup with no utilities** — a silent, green failure.
+
+That one `@source` covers all of `src/kit/` as it grows, so a growing kit — including shadcn primitives and a shared `Button` — needs **no hand-maintained per-component list** in any consumer. That property is the reason this shape was chosen over the ecosystem's per-component `@source` enumeration.
+
+**Two paths reach a spell's CSS, and anything reasoning about it must model both:** (1) **scanned text**, and (2) **stylesheets the bundle imports** — mind-mapper's 163 React Flow rules arrive that way, untouched by candidate scanning. A ward that models only the first false-reds on the second.
+
+**Use a bare `@source "./"`, not a `**/*.{ts,tsx}` glob** — the glob does not scan `index.html` and silently drops astrolabe's `antialiased`.
+
+**The retired guard:** `@source not ".../plugins/spellbook/skills/*/dist"` was **live, not dead** — the build `rm`s each spell's own `dist/` first, so its subject is a stale class in **another** spell's output, and a constructed case proved unguarded spells emitted it. **Scoping retires it**, so it was removed from imago and mind-mapper rather than added to astrolabe and magpie: four dead guards are worse than two live ones.
+
+**Proof:** `grimoire/spell-css-scope-ward.test.ts` — both failure routes verified red before landing (drop `source(none)` → declaration cell reds unrebuilt; rebuild → cross-spell cell reds naming counts).
+
+### Amendment to Contract 18 — reproduction was history-dependent, and now is not
+
+Contract 18 says the shipped artifact is verified by **reproduction**. Pre-scoping, `bun run build` **was not reproducible**: a stale class sitting in another spell's `dist/` changed this build's output, so reproduction only matched if every `dist/` was cleared first. **Post-scoping, clean-dist and dirty-dist rebuilds agree.** Contract 18's check was sound in form and resting on a property the tree did not have.
+
+### Amendment to Contract 21 — the adoption rule is STATED, NOT ENFORCED, and a predicate that tests it must read stripped text
+
+_Returned by cassandra 2026-08-31 as the card's non-author calibrator; landed by the lead. Every number below carried a positive control that returned non-zero — three of cassandra's own instruments returned a confident zero first._
+
+**1. The silent failure is measured, not argued.** A shipped, registered spell (astrolabe) made to import `src/kit/ui/Dot.tsx` **without** `base.css` ships the component in its JS bundle (4/4 class strings present) and **zero** of its utilities, with `bun run check` green and `bun test` **1528 pass / 0 fail**. **No cell in the gate reds.** The rendered result is a zero-size, unrounded, uncoloured span. A minted 5th spell reproduced it: emitted CSS **byte-identical** to the pre-adoption build.
+
+> **Contract 21's adoption rule is prose with nothing behind it.** The ward it needs is one cell, needs no build, and is specified: for every spell with a `surface/`, derive from the tree the set of `src/kit/**` modules it imports transitively; if that set is non-empty, its `styles.css` must import `src/kit/theme/base.css` — **predicate applied to comment-stripped text**, zero-guard on the population.
+
+**2. A predicate deciding kit adoption MUST read comment-stripped text.** Demonstrated in both directions against `kit-styling-ward.test.ts`'s membership cell and `spell-css-scope-ward.test.ts`'s `scannedText()`: a spell that deletes its `@import` but keeps the prose stays "governed" (false negative), and a spell that merely mentions the path in a comment is admitted to the kit's scan scope (false positive — which **silently widens the leak detector's tolerance**). imago's `styles.css` already carries such a prose mention on line 2, so the false negative was live. **Both fixed 2026-08-31**; the strip is now the assertion, and the sibling ward had been stripping correctly twelve lines away since the day both were written.
+
+**3. `src/kit/` PROSE is a content source for every consumer.** Removing three class names from a **comment** in `Dot.tsx` removed `.bg-muted` from imago's shipped CSS — imago's own source never spells it. The rule `base.css` states for its own sentinel (_"a class written here in prose stays emitted"_) **binds every comment in the directory**, and the cross-spell ward structurally cannot see it, because it counts all of `src/kit/` as legitimate text for every consumer. **Kit prose launders classes between adopting spells.** This costs one dead rule today and will cost more as the kit takes the shadcn set.
+
+**4. Companion amendment to Contract 18 — every artifact-reading cell is REBUILD-GATED.** Reproduction is now history-independent (clean, wiped and junk-seeded `dist/` all rebuild to 0 dirty). But **nothing in this repo asserts that a committed `dist/` corresponds to current source** — the gate, `scripts/` and `.husky/` were searched; pre-commit is `bunx lint-staged` only. Delete the load-bearing `@source "../"` from `base.css` and **rebuild** and two cells red; delete it and **do not** rebuild — the realistic case, an agent edits CSS and runs the gate — and both wards are **14/14 green**. So every cell reading a shipped artifact states a property of **the last build, not of the tree**.
+
+### Amendment to Contract 21 — the content-source set is `.ts`/`.tsx`/`.md`/`.html`, NOT `.css`, and kit prose is now enforced
+
+_Returned by circe 2026-09-01 from Phase 4d; landed by the lead._
+
+**Finding 3 of the previous amendment (kit prose launders classes into every adopting consumer) is CLOSED** by `grimoire/kit-prose-ward.test.ts` — source-only, no build, so Contract 18's rebuild-gating does not apply to it. **The leak was 8 classes, not the 3 named in the warning, and 3 of the 8 were live:** remediating `Dot.tsx`'s header removed `.bg-muted` from imago and `.w-2` + `.h-2` from mind-mapper, each verified present at `da15c9c` and absent after, with `.bg-accent` unchanged as the control and astrolabe + magpie byte-identical.
+
+> ⛔ **THE SET OF FILES A DIRECTORY-SCOPED `@source` ACTUALLY SCANS WAS MEASURED, AND IT IS NOT WHAT THE TREE SAYS IT IS.** `.ts`/`.tsx` comments emit; **`.md` and `.html` emit**; **`.css` does not — imported or not.**
+>
+> ⛔ **CORRECTION 2026-09-01 — THE SENTENCE ABOVE IS AN ALLOWLIST STATED WHERE A BLOCKLIST HOLDS.** It is right about every extension it names and **wrong about the shape of the rule**, which is the more dangerous half. Byte-identical one-line bodies, siblings in one directory, extension the only variable: `.css` `.scss` `.less` `.styl` `.log` `.lock` → **0**; `.md` `.html` `.txt` `.json` `.yaml` → **1**. **Everything under an `@source` directory scans except a small ignore group** (oxide, `crates/oxide/src/scanner/auto_source_detection.rs`).
+>
+> **A closed set stated where an open one holds fails in the direction of permission** — it licenses _"my `.json` fixture in `src/kit/` is inert"_, which is false. Confirmed independently by the lead: a `p-77` probe (0 occurrences tree-wide, 0 in all four shipped stylesheets at baseline) placed in a `src/kit/*.json` emitted in **both adopters** and in **neither non-adopter**. `kit-prose-ward`'s POPULATION cell is the guard here; this sentence never was.
+>
+> **So a directory-scoped `@source` governs DOCUMENTATION.** A `README.md` added to `src/kit/` is a content source for every adopting spell — which no reachability argument, import ward or dependency manifest can see, because there is no import and it is not even code. The ward's population cell reds when an unmodelled scannable file lands in `src/kit/`, which is the guard for it.
+>
+> **`src/kit/theme/base.css`'s own ⛔ warning asserts the opposite of the measurement and is FALSE** (_"a class written here in prose stays emitted"_ — a probe in a `base.css` comment emits nothing). circe found this while building the ward, **deliberately did not correct it**, and keyed the ward's `.css` exemption on the measurement rather than on the sentence — so a non-author (cassandra) can re-measure before the sentence is rewritten. **Open.**
+
+**Corollary for any future instrument over Tailwind candidates.** Measured against the extractor itself, one probe class per rebuild with a same-run control: **Tailwind restarts a candidate after `.` and `>` and after nothing else in its charset**, and a trailing `.`/`,`/`)` kills a candidate while a trailing `:` does not. **A boundary-only tokenizer is blind to the SELECTOR spelling of a class** (`.bg-teal-500`) — which is exactly the form prose reaches for when explaining a CSS rule, and is how this ward's own remediation text re-created the defect it had just removed. Be stricter than the extractor on sentence punctuation, never looser, and say which you are.
+
+**And the vocabulary must be derived by SEGMENT, not by token.** `bg-muted` is spelled nowhere in the roster, so a token-level vocabulary classifies the one class the ward exists for as English. Leading segment ∈ known leading segments, last segment ∈ known following segments, both read from the tree. Known false positive, asserted rather than hidden: English whose every segment is also Tailwind vocabulary (`left-to-right`, `top-left`) — ~5 tokens over 1,463 across `src/`, **zero inside `src/kit/`**.
+
+### Amendment to Contract 21 — the `.css` exemption is confirmed sound, and the false claim had already reached a leak detector
+
+_Re-measured 2026-09-01 by cassandra as the non-author of `base.css`; every number carried a positive control returning non-zero in the SAME build. Closes the item left open by `56a1b79`._
+
+**`base.css`'s ⛔ warning is corrected and the item is CLOSED.** `.css` is not a Tailwind content source under any condition tested, including adversarial ones: an `@source` naming the file by path, by `./*.css`, and by `./*.{css,md}` all emit nothing from the `.css`, while the `.md` reached by that same brace glob emits.
+
+⚠ **THE FALSE CLAIM HAD ALREADY PROPAGATED INTO A LEAK DETECTOR.** `grimoire/spell-css-scope-ward.test.ts`'s `walkText` counts `.css` as scanned text, so a class named in any `.css` **comment** is accepted as legitimately explaining a shipped rule. `classSelectors()` strips comments; `scannedText()`/`usedIn` do not. **The error is PERMISSIVE** — it widens the leak detector's tolerance, which is the exact hazard that ward's own header warns about twelve lines from the code that has it. Cost measured rather than feared: **0** of 199 / 346 / 262 / 388 shipped selectors are excused only by `.css`-comment text. Latent — but imago's `styles.css` header already names five real utilities in prose, so it is one deletion away from live. **Open, unowned.**
+
+**Corollary — an extension claim needs the extension as the ONLY variable.** Different files in different directories with different comment syntax are consistent with _"`.css` is excluded"_ **and** with _"that file is excluded"_. Only same-directory byte-identical siblings separate them. The first table on this question had that confound; its conclusion happened to be right.
+
+**Corollary — a red is evidence for its own predicate, not for the one you hoped it was testing.** Planting a class in `base.css` reds gate-honesty's _"the blind set has not moved"_ cell, which **reads as a class guard and is a line count**. Append the class to an existing line and the whole grimoire suite is **87 pass / 0 fail with two stock-palette classes sitting in kit prose**. This is the sprint's fifth instrument failure and the first where the misleading signal was a **red**: a green that lies gets checked, a red that lies gets believed.
+
+### Amendment to Contract 18 — the corollary's CAUSE was wrong, and placement is part of the contract
+
+_Returned by daedalus 2026-09-01 from the check-dist build, having run `diff` beside `status` rather than taking the corollary on report._
+
+**Half one — the stated reason for "`git status`, never `git diff`" is not the reason.** Contract 18 explains it by content-hash renames: a change renames the chunk, so the new file is untracked and `diff` sees only a deletion. **Measured on a genuinely stale tree, `git diff --name-only` over LITERAL roots returned 2, not 0** — it misses the renamed chunk but catches `index.html`, which any chunk rename must also change.
+
+> **The sufficient cause of the spike's v1 false green was the GLOBBED PATHSPEC**, which returns **0 under both `diff` and `status`**. Two independent errors were present and only one was sufficient; the corollary named the insufficient one. **As written it licenses the conclusion that the glob was harmless.**
+>
+> `git status` is still correct, for a different reason: **it is `diff` that is blind to a purely ADDITIVE change.** Decisive case — an untracked file in a dist root: `status` **1**, `diff` **0**. So the rule is **two** requirements, not one: the pathspec must be **literal**, *and* the comparison must be `status`.
+
+**Half two — placement is part of the contract, not a deployment detail.** A reproduction check is **undefined in a tree with work in progress**: _"this commit shipped a stale artifact"_ and _"I am editing a surface right now"_ produce the **identical `git status`**, and no refinement of the check separates them. What separates them is the **absence** of work in progress, which only a CI checkout has.
+
+Hence the arms split by well-definedness rather than by convenience: **presence/trackedness** (`git ls-files`, no build) is well-defined in a working tree and lives in the suite as `grimoire/dist-roster-ward.test.ts`; **reproduction** (ARM 2) is not, and lives only in `.github/workflows/ci.yml`. A green from the roster ward says **nothing** about staleness, and its header says so.

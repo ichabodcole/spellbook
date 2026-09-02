@@ -149,12 +149,20 @@ function isTypePosition(src: string, idx: number): boolean {
 }
 
 /**
- * Blank out comments so a specifier-looking string inside one cannot be read as
- * code, while leaving every other character (and so every offset) in place.
- * Offsets are preserved because line numbers are computed from them afterwards.
+ * The byte ranges every `//` and every block comment occupies, delimiters
+ * INCLUDED, in source order and non-overlapping.
+ *
+ * ⛔ ONE WALK, TWO ANSWERS — do not grow a second scanner for the other half.
+ * `blankComments` (code kept) and `blankCode` (comments kept) are the SAME
+ * partition read from opposite sides, and the only way they can be trusted to
+ * be complementary is to come from one traversal. A ward that strips comments
+ * with this and then re-finds them with a private `/\/\*[\s\S]*?\*\//g` has two
+ * denominators: that regex knows nothing of strings, templates or regex
+ * literals, so `const s = "/* not a comment *\/"` moves between the halves
+ * depending on which instrument is asked.
  */
-export function blankComments(src: string): string {
-  const out = src.split("");
+function commentRanges(src: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = [];
   let i = 0;
   const n = src.length;
   // The last non-whitespace character seen in CODE context. It is what
@@ -189,10 +197,6 @@ export function blankComments(src: string): string {
   // stack so `}` only closes what `${` opened.
   const stack: Array<"template" | "expr"> = [];
 
-  const blank = (from: number, to: number) => {
-    for (let k = from; k < to; k++) if (out[k] !== "\n") out[k] = " ";
-  };
-
   while (i < n) {
     const c = src[i] ?? "";
     const next = src[i + 1];
@@ -221,14 +225,14 @@ export function blankComments(src: string): string {
     if (c === "/" && next === "/") {
       let j = i;
       while (j < n && src[j] !== "\n") j++;
-      blank(i, j);
+      ranges.push([i, j]);
       i = j;
       continue;
     }
     if (c === "/" && next === "*") {
       let j = i + 2;
       while (j < n && !(src[j] === "*" && src[j + 1] === "/")) j++;
-      blank(i, Math.min(j + 2, n));
+      ranges.push([i, Math.min(j + 2, n)]);
       i = j + 2;
       continue;
     }
@@ -280,7 +284,54 @@ export function blankComments(src: string): string {
     else if (c === "\n") lastSignificant = "\n";
     i++;
   }
+  return ranges;
+}
+
+/**
+ * Replace every character inside `ranges` with a space, keeping `\n` so byte
+ * offsets AND line numbers survive.
+ */
+function blankRanges(src: string, ranges: Array<[number, number]>): string {
+  const out = src.split("");
+  for (const [from, to] of ranges) {
+    for (let k = from; k < to; k++) if (out[k] !== "\n") out[k] = " ";
+  }
   return out.join("");
+}
+
+/**
+ * Blank out comments so a specifier-looking string inside one cannot be read as
+ * code, while leaving every other character (and so every offset) in place.
+ * Offsets are preserved because line numbers are computed from them afterwards.
+ */
+export function blankComments(src: string): string {
+  return blankRanges(src, commentRanges(src));
+}
+
+/**
+ * The INVERSE: keep the comments, blank the code. Offsets and line numbers are
+ * preserved the same way, so a finding can name the line it was read from.
+ *
+ * ⛔ THIS EXISTS BECAUSE ONE HOUSE RULE RUNS THE OTHER WAY. Every other ward
+ * strips comments so prose cannot satisfy an assertion about code. Tailwind
+ * makes prose LOAD-BEARING in the opposite direction — it scans source as
+ * literal text and never parses it, so a class name written in a comment inside
+ * a scanned directory becomes a real CSS rule in every consuming spell
+ * (measured, `grimoire/kit-prose-ward.test.ts`). Asking "what is ONLY in the
+ * prose" needs the complement of `blankComments`, and taking it from the same
+ * walk is what makes the two halves provably a partition rather than two
+ * scanners that agree until they don't.
+ */
+export function blankCode(src: string): string {
+  const comments = commentRanges(src);
+  const gaps: Array<[number, number]> = [];
+  let cursor = 0;
+  for (const [from, to] of comments) {
+    if (from > cursor) gaps.push([cursor, from]);
+    cursor = to;
+  }
+  if (cursor < src.length) gaps.push([cursor, src.length]);
+  return blankRanges(src, gaps);
 }
 
 /**

@@ -8,7 +8,7 @@
 // bottom. (Ported from an earlier Python original, since removed.)
 
 import { dirname, extname, join, resolve } from "node:path";
-import type { Bbox, ElementType } from "../surface/state/types";
+import type { Bbox, ElementType } from "../shared/types";
 
 export const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 export const DEFAULT_MODEL = "google/gemini-3.5-flash";

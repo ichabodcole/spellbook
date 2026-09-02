@@ -90,26 +90,95 @@ import { join } from "node:path";
 // reason astrolabe's move did: both paths are inside this instrument's two
 // roots, so a relocation between them moves no file in or out. If the total had
 // changed, something OTHER than the relocation moved with it.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 6's RELOCATION — PATHS ONLY, THIRD
+// instance of the same no-op. magpie's `surface/` + `bunfig.toml` moved to
+// `src/magpie/` under Contract 4: `surface/styles.css` 175,
+// `surface/index.html` 13, `bunfig.toml` 2, now rooted at `src/magpie/`. The
+// set stays at 19 files / 4,442 lines. RE-DERIVED, NOT ASSUMED: this
+// relocation ALSO deleted two files (`surface/state/imageOptimize{,.server}.ts`,
+// zero importers repo-wide) and landed a surface build into magpie's `dist/`,
+// and the total held anyway — the deletions were `.ts` (gated, never blind) and
+// `dist/` is GENERATED, so neither touches this population. A total that holds
+// through a relocation PLUS a deletion PLUS a new artifact is the pin working,
+// not the pin sleeping.
+//
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 4 — AND THIS ONE GENUINELY MOVED, 19/4,442
+// -> 20/4,540. Unlike the three relocations above (which were path-only no-ops)
+// this is real growth, and it is ACCOUNTED FOR RATHER THAN ACCEPTED:
+//     +68  src/kit/theme/base.css — a NEW hand-authored stylesheet; CSS is a
+//          file class `bun run check` cannot read at all, so every line of the
+//          kit's token layer is blind by construction.
+//     +15  src/mind-mapper/surface/styles.css  220 -> 235
+//     +15  src/imago/surface/styles.css        151 -> 166
+//          both from PROSE I added: the kit @import note and the `@source not`
+//          block explaining why a build must never scan its own output.
+// 4,442 + 68 + 15 + 15 = 4,540 exactly, with nothing left over. The arithmetic
+// closing is the point — a total that moved and cannot be decomposed means
+// something ELSE moved too, and this pin exists to make that impossible to miss.
+//
+// ⚠ AND THE COST IS REAL, NOT BOOKKEEPING. 30 of these 98 lines are comments,
+// and they buy documentation for a mechanism nothing else records — at the
+// price of living where no linter, type checker or parser will ever read them.
+// Sprint 01 declined a helpful bunfig comment for exactly this reason, because
+// there the movement bought nothing. Here it does. Stated so the next person
+// can disagree with the trade rather than discover it.
+// ⛔ RE-DECLARED 2026-08-31 FOR PHASE 4b — 20/4,540 -> 20/4,582. MEMBERSHIP DID
+// NOT MOVE (same 20 files, no arrivals, no departures); five existing entries
+// grew, all of them stylesheets, all of them PROSE. The change under it is one
+// directive per spell — `@import "tailwindcss"` gaining `source(none)` — which
+// scoped each spell's content scan to its own surface and cut the four shipped
+// stylesheets from 605,785 bytes to 196,480 with zero classes lost.
+//     +11  src/astrolabe/surface/styles.css       93 -> 104
+//     +11  src/magpie/surface/styles.css         175 -> 186
+//     +16  src/kit/theme/base.css                 68 -> 84
+//      +3  src/mind-mapper/surface/styles.css    235 -> 238
+//      +1  src/imago/surface/styles.css          166 -> 167
+// 4,540 + 11 + 11 + 16 + 3 + 1 = 4,582 exactly, with nothing left over.
+//
+// ⚠ imago's +1 and mind-mapper's +3 are SMALL FOR A REASON, and the reason is
+// worth reading rather than rounding off: both files LOST a 12-line
+// `@source not ".../dist"` block in the same edit that gained the new one, so
+// their totals net out while astrolabe's and magpie's — which never had that
+// block — grow by the full amount. A near-zero delta on two files and +11 on
+// two others is what a substitution looks like, not what a no-op looks like.
+// The removed guard was measured LIVE before it was deleted and measured DEAD
+// after; grimoire/spell-css-scope-ward.test.ts carries the reproduction.
+//
+// ⛔ RE-DECLARED 2026-09-01 — 20/4,582 -> 20/4,611. MEMBERSHIP DID NOT MOVE
+// (same 20 files); ONE existing entry grew, and all of it is PROSE:
+//     +29  src/kit/theme/base.css                 84 -> 113
+// 4,582 + 29 = 4,611 exactly, with nothing left over.
+//
+// ⚠ AND THE PIN IS THE ONLY THING THAT NOTICED THE EDIT, WHICH IS THE POINT —
+// AND ALSO A TRAP THIS RE-DECLARATION EXISTS TO NAME. That file carried a ⛔
+// warning asserting `.css` prose is a Tailwind content source; it is not, and
+// the correction is what grew it. While benching that, a probe planted in
+// base.css reded THIS cell — and it looked like a class guard. It is not: this
+// cell counts LINES, so it fires identically on a blank line and stays green on
+// a class name added to an existing line. Verified both directions. A red here
+// licenses "the blind set moved", never "the blind file is wrong".
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
   "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
-  "src/mind-mapper/surface/styles.css": 220,
-  "plugins/spellbook/skills/magpie/surface/styles.css": 175,
-  "src/imago/surface/styles.css": 151,
+  "src/mind-mapper/surface/styles.css": 238,
+  "src/magpie/surface/styles.css": 186,
+  "src/imago/surface/styles.css": 167,
   "plugins/spellbook/skills/magpie/scripts/remove.py": 145,
-  "src/astrolabe/surface/styles.css": 93,
+  "src/kit/theme/base.css": 113,
+  "src/astrolabe/surface/styles.css": 104,
   "src/astrolabe/surface/index.html": 35,
   "src/mind-mapper/surface/index.html": 52,
   "plugins/spellbook/skills/glamour/surface/index.html": 13,
   "src/imago/surface/index.html": 13,
-  "plugins/spellbook/skills/magpie/surface/index.html": 13,
+  "src/magpie/surface/index.html": 13,
   "plugins/spellbook/skills/glamour/surface/styles.css": 12,
   "src/mind-mapper/bunfig.toml": 4,
   "src/astrolabe/bunfig.toml": 2,
   "plugins/spellbook/skills/glamour/bunfig.toml": 2,
   "src/imago/bunfig.toml": 2,
-  "plugins/spellbook/skills/magpie/bunfig.toml": 2,
+  "src/magpie/bunfig.toml": 2,
 };
 
 type BlindReport = {

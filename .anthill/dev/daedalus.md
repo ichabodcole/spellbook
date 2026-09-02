@@ -45,7 +45,7 @@ Conjuration backends (server.ts / daemon.ts / backend.ts), each spell's thin cli
 Currently live: mind-mapper's full V1 engine — db.ts (sqlite schema + additive backfill), project.ts, state.ts, events.ts, seed.ts, ingest.ts, propose.ts, send.ts, ratify.ts, search.ts, neighbors.ts, lens.ts, server.ts, cli.ts — built P1→P4 in one session on `feature/mind-mapper-v1` (V1 acceptance passed, release mode verified against circe's real dist).
 V1.x Track A (P1e, `feature/mind-mapper-v1x`) added marks.ts (doc marks + read-time staleness), docs.ts (delete + CitedError), tail hardening (server keepalive + cli watchdog/epoch resync), presence + activity at the SSE site, proposal author, and message evidence (message_sources sibling table) — 7 chapter commits, suite 122 tests.
 Round 3 (P1e, `feature/mind-mapper-zones`) added zones.ts (staging pens + move-not-duplicate promote), the no-auto-mint project lifecycle (NeedsProjectError → 409 needs-project, demo seed deleted), kind:"proposal" search hits, grapevine's send body chain, and doc-lens — 8 chapter commits, mind-mapper suite 174 tests.
-Round 4 (P1, `feature/mind-mapper-round4`) added actions.ts (target-keyed slots, ratify re-homes), doc-kind honesty ('' sentinel at rest / null on the wire, kind_author), the ACT1 activity automation (auto-received, stalled TTL escalation, agent-write resolution), the B1 build stamp + stale-dist guard, and the typed zoned 409 — 5 chapter commits, mind-mapper suite 197 tests; all Contract 9 R4 amendments in seams.md.
+Round 4 (P1, `feature/mind-mapper-round4`) added actions.ts (target-keyed slots, ratify re-homes), doc-kind honesty ('' sentinel at rest / null on the wire, kind_author), the ACT1 activity automation (auto-received, stalled TTL escalation, agent-write resolution), the B1 build stamp + stale-dist guard (BOTH DELETED at `fae8830` — the stamp was the one non-reproducible byte in `dist/`, and the guard it fed was inverted; the replacement is `scripts/dist-check.ts`), and the typed zoned 409 — 5 chapter commits, mind-mapper suite 197 tests; all Contract 9 R4 amendments in seams.md.
 Round 6 (P1, `feature/mind-mapper-round6`) extracted `buildRatify` from ratify (the buildProposal factoring, now with three deferred lanes — db apply / fs writeDoc / changelogLine + emit), added ratify-batch (RB: one-txn node+edge set with an old→new idMap, auto-partition, no-auto-include, atomic) + `ratify --anchor` (the single ratify-then-nest twin, implemented AS a one-id ratifyBatch), del.ts (DEL: node delete with NodeCitedError + force-cascade-that-re-parents-children, thin proposal delete), and the thin `proposal.rejected` event (finding #4 — reject emitted nothing) — 4 chapter commits, mind-mapper suite 251 tests (was 224), all Contract 9 R6 amendments in seams.md.
 Round 5 (P1, `feature/mind-mapper-round5`) added the split stall TTL (SW1: MIND_MAPPER_STALL_TTL_MS governs received→stalled, activity knob keeps thinking→idle), batch-propose + message-read (CLI1: POST /proposals/batch with local-ref resolution in one txn + GET /message/:id), node-anchored submaps (SG1: anchor.ts cycle guard, nodes.anchor_node_id, inclusive snapshot + submapChildCount + ?anchor narrow, node.anchored thin event), and the zone in-door (IC-c: POST /proposals/:id/zone move-in) — 4 code chapters + 1 casting-draft chapter, mind-mapper suite 224 tests; all Contract 9 R5 amendments in seams.md.
 Round 9 (P1+P2, `feature/mind-mapper-round9`) added the async JOB QUEUE — the first FIRST-CLASS new entity since V1 (jobs.ts): a `jobs` table (CREATE TABLE IF NOT EXISTS, additive-by-construction — NO ADDITIVE_COLUMNS, the zones/node_tags precedent), `buildJob` pure-builder + create/update/claim/release/subtask/delete mutators, atomic claim (SEAM C), `readJobs`/`readJob` merged into state.ts, four `job.*` events, `/jobs*` routes, the `job` CLI verb — 11 new tests (suite 254→265), all Contract 9 R9 amendments in seams.md; NOT a target-keyed metadata twin (jobs are standalone state, no re-home lifecycle). Built+verified live (isolated store port 60733), uncommitted for prospero's atomic land.
@@ -1074,3 +1074,63 @@ magpie's `tests/cli.test.ts` imported its CLI's internals; after the source move
 Moving the file to `src/magpie/backend/cli.test.ts` also improved it: the unit cells import the source, while the subprocess cells now spawn the SHIPPED launcher, so one file tests the parser before bundling and the artifact after.
 Rule: when a module relocates, ask of each of its consumers whether the consumer is on the same side of a boundary — an import that merely gets longer may be an import that is no longer allowed.
 
+
+## spell-kit sprint 03 · P6a — magpie's seam, and the playbook's first run (2026-08-31)
+
+**ONCE A SPELL'S BACKEND SHIPS BUILT FROM `src/`, "the daemon's reaches into surface source" STOPS BEING A QUESTION ABOUT `scripts/`, AND EVERY SEAM CENSUS SCOPED TO ONE DIRECTORY IS BLIND TO HALF THE SEAM.**
+The card's done-when — `grep '\.\./surface/' magpie/scripts/*.ts` returns exactly one line — was satisfiable while `src/magpie/backend/cli.ts` still reached into `magpie/surface/state/` at three sites, two of them value imports.
+The grep is scoped to the directory the seam used to live in; the built backend moved out of it in sprint 02 and took a third of the seam with it.
+Rule: before trusting a seam count, enumerate the spell's execution path by ROOTS (`<spell>/scripts/` **and** `src/<spell>/backend/`), not by the directory the previous port happened to use — the same shape as extending a ward's WALK instead of loosening its predicate.
+
+**imago's sibling trap has a second form, and the second form is the one a filename sort cannot reach.**
+imago's missed file was one hop BELOW a moved file (a browser-safe policy module imported by the `.server.ts` that moved).
+magpie's was one hop SIDEWAYS into another root: `versions.ts` has no `server.ts` import site at all and is two-sided only because the BUILT CLI reads `chosenVersion` — so a sort driven by "what does server.ts import" classifies it as browser-only and leaves it behind.
+Rule: build the reverse-import map over every root that ships, then sort; the map is what makes a sideways consumer visible, and no reading of the importer can.
+
+**A rewrite script keyed on a module's OLD location is structurally incapable of fixing a MOVED file's OWN relative imports, because those resolve from the file's NEW directory.**
+`scripts/reduce.ts`, `scripts/persist.server.ts` and `scripts/source.server.ts` each imported `./types`, which after the move resolved to `scripts/types` — matching nothing in the old→new map, so the rewriter passed over all three in silence.
+The resolve-sweep is what found them, which is precisely why the playbook's "resolve-sweep every specifier afterwards; do not trust the rewrite's own list" is the load-bearing step and not a belt-and-braces one.
+Keep the sweep's known-noise list beside it: 17 synthetic fixture strings in `grimoire/` and 2 already-relocated `../surface/index.html` entries, so 19 unresolved is this tree's floor and only a 20th means anything.
+
+**`export type { X } from "…"` is a TYPE-ONLY site wearing a re-export's clothes, and an import census done by eye counts it as a value.**
+The brief said 12 sites, 9 value / 3 type-only; the repo's own scanner says 12 sites, **8 value / 4 type-only** — the difference is `server.ts:875`, counted as value because it sat in a block of "three re-exports".
+Classify by ERASURE with `scanSpecifiers`, never by whether the statement opens with `export`.
+
+**When the backend ships BUILT, rebuilding `dist/` belongs to the SEAM half, not to the relocation half.**
+Cutting the seam edits the backend source's specifiers, so the committed `dist/cli.js` stops reproducing the moment the seam lands — measured: sha `8b1e80d7` → `2833d12d`, and a second build reproduced `2833d12d` exactly.
+A seam card that says "relocate nothing, do not commit" still owes a rebuilt, STAGED artifact, or it hands the next seat a tree whose shipped artifact and source disagree under Contract 18.
+
+**Sort a two-sided candidate on evidence, and say what the evidence WAS in the file, because the next reader will re-derive it from the filename otherwise.**
+`reduce.ts` looks like surface state and is daemon-only (zero browser importers); `alpha.ts` looks like backend policy and is two-sided (`RemoveGallery.tsx` reads it); `versions.ts`'s own header claimed it was "shared by server.ts AND the React client" and server.ts has never imported it.
+All three headers now name their real consumers, and the ward pin shows the sort directly — `../shared/types` beside `./reduce` in one inventory is the three-way sort made visible in an instrument rather than in prose.
+
+## release-staleness CI (2026-09-01) — judgments
+
+**A REPRODUCTION CHECK HAS NO MEANING IN A TREE WITH WORK IN PROGRESS, AND THAT IS A PLACEMENT RULING RATHER THAN A TUNING PROBLEM.**
+The spike priced "one cell in `bun test`" as the primary placement and CI as its unskippable copy. That recommendation was written before `0757e55` made `bun run gate` BUILD before it checks and tests — after which the reproduction arm reds on every un-committed surface edit, because rebuilding is exactly what the seat's own gate just did.
+The failure is not noise you calibrate away: *"this commit shipped a stale artifact"* and *"I am editing a surface right now"* produce the identical `git status`, and no cleverness in the check separates them.
+**What separates them is the ABSENCE of work in progress, which only a CI checkout has.** So the arm's home is a property of the tree it runs against, not of the check.
+The corollary is why the check is ARMS rather than one boolean: presence-and-trackedness (ARMs 0/1) IS well-defined in a working tree and belongs in the suite; reproduction (ARM 2) is not and does not.
+Pin: `grimoire/dist-roster-ward.test.ts` runs ARMs 0/1 and says in its header that ARM 2's absence is a ruling; `.github/workflows/ci.yml` runs all three.
+
+**A WARNING CAN BE RIGHT ABOUT THE VERDICT AND WRONG ABOUT THE CAUSE, AND THE WRONG CAUSE IS WHAT A READER GENERALISES FROM.**
+Contract 18's corollary says use `git status --porcelain`, never `git diff`, and attributes the spike's v1 false green to hashed chunks: a content change RENAMES the file, so the new chunk is untracked and diff sees only a deletion.
+I ran both instruments on one deliberately-stale tree instead of taking it on report. `git status` → 3 paths (`D` the old chunk, `M index.html`, `??` the new chunk). **`git diff --name-only` over the same LITERAL roots → 2 paths, NOT zero** — it misses the new chunk but catches `index.html`, which any chunk rename must also change, because the entry references the chunk by name.
+The v1 green came from the other error in the same command: the **globbed pathspec**, which returns **0 under `diff` AND under `status`**. The two mistakes are independent and only one of them is sufficient.
+`status` is still the right tool and the decisive case is trivial once you look for it — an untracked file in a dist root: `status` 1, `diff` 0 — but the reason is *"diff cannot see a purely additive change"*, not *"diff cannot see a rename"*.
+**It matters because the corollary as written lets a reader conclude the glob was harmless.** Same shape as my own epitaph, arriving from the other side: this time the confident prose was ratified team truth, and the one line that fixed it was running the rejected instrument beside the chosen one.
+
+**A CALIBRATION MUTATION THAT DOES NOT REACH THE ARTIFACT IS NOT A WEAK PROBE — IT IS THE ABSENCE OF ONE, AND THE GREEN IT PRODUCES IS CORRECT.**
+I ran the spike's invalid probe on purpose before the valid one: `export const __distCheckUnused = "…"` appended to a live component. Bun tree-shook it, **0 of the built chunks contained the string**, and `dist-check` reported GREEN — which is the truth, because a source edit that does not change the artifact is not staleness.
+Changing a rendered string literal in the same file instead produced 3 dirty paths and exit 1.
+**Run the invalid probe deliberately and keep it.** It was the more informative of the two runs: it is the only one that distinguishes *"the instrument is live"* from *"the instrument fires on anything I touch"*, and without it a red proves only that I edited a file.
+
+**PROVE A DERIVED DENOMINATOR BY MINTING A MEMBER, NOT BY READING THE WALK.**
+`dist-check` imports `buildableSpells` from `src/build.ts` so it cannot keep a second roster. Reading that code proves nothing about whether the number on screen came from it.
+`mkdir -p src/probe/surface && touch index.html` took the printed denominator 4 → 5 with no edit to the check, put `probe: 0 tracked` in the roster, and reded ARM 1 naming the exact two `.gitignore` lines to add.
+Same act proved the empty-denominator branch, which cannot be reached from this tree at all: the real script plus a stub `src/build.ts` returning `[]`, run from a scratch dir → **exit 3, NO VERDICT**, no git call.
+**The branch you cannot reach from the repo is the branch that is never exercised** — a temp dir and a stub module is the whole cost of exercising it, and exit 3 exists precisely because zero examined things must never print a pass.
+
+**THE EXIT CODE IS PART OF THE CONTRACT AND THE SHELL WILL LAUNDER IT.**
+`dist-check` returns 0 / 1 / **3**, and 3 is NO VERDICT. Every consumer had to be written so that non-zero stops it: CI runs it as a bare step with no `|| true`, no `continue-on-error` and no pipe; the suite asserts the roster is non-empty rather than iterating an empty array to a green.
+A pipe would report the FILTER's status, which is always 0 — the same trap the land command exists to keep out of the gate, arriving here as a CI step instead of a shell line.

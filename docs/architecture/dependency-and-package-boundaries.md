@@ -55,6 +55,44 @@ Even `lucide-react` is tree-shaken **per icon**.
 > bundler gives a **stronger** guarantee than a manifest would, at finer
 > granularity.
 
+> **⛔ THAT CLAIM IS TRUE OF JAVASCRIPT AND FALSE OF CSS, AND THE SENTENCE ABOVE
+> DOES NOT SAY SO.** It was written from the JS table above it and silently
+> generalised to "the artifact". **Tailwind does not emit by reachability — it
+> emits by TEXT MATCH over a content scan**, and the scan's root is the process
+> CWD, which for this repo is the tree root. So every spell's stylesheet is
+> built from the text of _every_ spell.
+>
+> **Measured 2026-08-31 @ `4808ff0`:** astrolabe's shipped CSS is **142,977 B /
+> 1,028 class selectors** while astrolabe's own surface accounts for **199**.
+> **969 selectors are common to all four spells.** Roughly **three quarters of
+> each spell's CSS is other spells' utilities**, and no import, ward or bundler
+> pass can see it, because **no import exists**: the coupling is textual, not
+> referential. It is not a literal union — a foreign class lands only if it is
+> also **valid under the receiving spell's theme**, so mind-mapper's
+> `text-canon` never reached astrolabe (no `--color-canon`) while stock-palette
+> classes reached everywhere. Text-matching also compiled **prose** into CSS:
+> astrolabe shipped `.32` from `c.width = 32` and `.outline` from a JSX comment
+> as real rules.
+>
+> _(An earlier draft of this block said astrolabe ships amber/violet/fuchsia
+> palettes it never references. **That was wrong** — astrolabe's eight-hue
+> project-identity rings in `surface/state/board.ts` use them deliberately, and
+> all 24 survive the scoping fix. The leak is real and the ~75% figure holds;
+> the example chosen to illustrate it was not a leak.)_
+>
+> **The correct general statement:** reachability governs what the _module
+> graph_ ships. It says nothing about any artifact assembled by scanning source
+> text. **A build with two emission mechanisms needs the guarantee re-derived
+> per mechanism** — inheriting it from the JS half is exactly how this went
+> unnoticed.
+>
+> **This strengthens rather than weakens the no-manifest argument**, and the
+> distinction is worth keeping straight: a per-spell manifest would not have
+> caught this either — manifests describe package-name intent, and this leak has
+> no import to declare. What bounds it is **telling the scanner where to look**.
+> _(Fix under validation at the time of writing; see `docs/projects/spell-kit/`
+> Sprint 03 Phase 4b for what landed.)_
+
 ## What we give up, and what it costs
 
 **Phantom-dependency detection.** The root `dependencies` is a **flat union with
@@ -111,6 +149,13 @@ destination.
 manifest is unnecessary today is reachability, and reachability is a property of
 the bundler. If the build strategy changes, this document's whole argument must
 be re-measured rather than inherited.
+
+**Re-derive it once per emission mechanism, not once per build.** This document
+asserted the guarantee for the whole artifact on JS evidence, and the CSS half
+had been violating it the entire time (see the ⛔ block above). The question to
+ask of any new mechanism is **"what decides whether a byte is included?"** — if
+the answer is anything other than the module graph, nothing on this page
+transfers to it.
 
 ## Would adopting manifests remove the need for the wards?
 

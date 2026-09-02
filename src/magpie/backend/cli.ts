@@ -45,9 +45,9 @@ import {
   shouldRemove,
 } from "../../../plugins/spellbook/skills/magpie/scripts/backend";
 import { DiscoverError, discover } from "../../../plugins/spellbook/skills/magpie/scripts/discover";
-import { newId } from "../../../plugins/spellbook/skills/magpie/surface/state/reduce";
-import type { Element } from "../../../plugins/spellbook/skills/magpie/surface/state/types";
-import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/surface/state/versions";
+import { newId } from "../../../plugins/spellbook/skills/magpie/scripts/reduce";
+import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
+import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
 import { printJson } from "../../kit/lib/printJson";
 
 // Swallow EPIPE (a downstream `head`/Monitor closing our stdout shouldn't crash).
@@ -59,6 +59,26 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // See the astrolabe twin: `dist/` and `scripts/` are the same depth, so only
 // a SIBLING-relative path breaks when this executes as `../dist/cli.js`.
 const SERVER_SCRIPT = join(SCRIPT_DIR, "..", "scripts", "server.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// dev: the daemon serves a Bun-bundled React surface, and Bun reads bunfig.toml
+// (the Tailwind plugin) from cwd ONLY, so the daemon's cwd MUST be src/magpie/
+// (seams Contract 5 cwd-pin) — launched anywhere else, Tailwind is SILENTLY
+// skipped and the surface renders unstyled. release: dist/ is pre-built and
+// static — no bunfig read, so this path need not exist at all (a source-free
+// marketplace clone has no top-level src/), and pinning cwd there anyway would
+// break the spawn.
+//
+// ⛔ THE DISCRIMINATOR IS dist/index.html, NOT dist/. magpie's dist/ has held
+// cli.js since Slice 2 with no index.html, which is exactly why this daemon
+// stayed correctly in dev mode; the first surface build to land here flips it.
+const SURFACE_CWD = join(SKILL_ROOT, "..", "..", "..", "..", "src", "magpie");
+
+function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
 
 // Our plugin version (from plugin.json) — the one number magpie can honestly
 // report as its own. D1 asks a CLI to answer `--version`; an agent that cannot
@@ -340,7 +360,9 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
-    cwd: join(SCRIPT_DIR, ".."),
+    // Contract 5 — see daemonCwd(). THE FAILURE IS SILENT: a wrong cwd skips
+    // the Tailwind plugin and the board renders unstyled at HTTP 200.
+    cwd: daemonCwd(),
   });
   proc.unref();
 

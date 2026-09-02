@@ -75,7 +75,14 @@ Then confirm that exact set appears in each listing above.
 
 ### Revising an existing spell
 
-- [ ] Change made in `plugins/spellbook/skills/<name>/`
+- [ ] Change made in `plugins/spellbook/skills/<name>/` — **or in
+      `src/<spell>/`**, which is the same spell's surface/backend source living
+      outside the plugin subtree by seams Contract 4. Both are spell revisions.
+- [ ] **If `src/<spell>/` changed: `bun run build`, and commit the rebuilt
+      `dist/` in the SAME change.** The artifact is what a consumer receives;
+      source without it ships nothing, and an un-rebuilt tree then answers every
+      "does this reach a consumer?" question wrongly.
+      `bun scripts/dist-check.ts` is the check.
 - [ ] `bun test` still green; new behavior has a test
 - [ ] Fresh-agent test re-run if ergonomics/SKILL.md changed; findings logged
 - [ ] Any judgment the mage supplied captured in `grimoire/scenarios/`
@@ -147,24 +154,65 @@ anything that pointed at it, and leave the historical record intact.
       trigger-registry retirement record (and any intentional history).
 - [ ] Drift check passes: the spell-folder roster matches every synced listing.
 
-### Changing repo tooling (nothing ships)
+### Changing repo tooling (does anything ship? — the first box decides)
 
 **Scripts, repo-local skills under `.claude/skills/`, CI, hooks, `package.json`,
 `AGENTS.md`, docs-about-process.** The distinguishing fact: **a consumer who
 installs the plugin gets nothing different.**
 
+> ### ⛔ ASK THE DISCRIMINATOR OF A **REBUILT** TREE. IT ROUTED SURFACE WORK HERE FOR MONTHS.
+>
+> `src/<spell>/` — surface and backend source — lives **outside**
+> `plugins/spellbook/` by seams Contract 4, and reaches a consumer only as the
+> **built `dist/`** inside the spell folder. So in a tree where the artifact has
+> not been rebuilt, _"a consumer gets nothing different"_ is **literally true of
+> a real spell change**, and this checklist claims it: no version bump, no
+> `dist/`, `chore(`, never shipped. **Staleness made the wrong answer LOOK
+> correct.**
+>
+> Nothing about the wording was fixable while the tree could be stale, because
+> the discriminator was reading a fact the tree had not caught up to. **That
+> precondition is now met** — `bun run gate` builds before it checks and tests,
+> so by the time you evaluate the question the artifact is current.
+>
+> **`src/<spell>/` IS SPELL SOURCE, NOT REPO TOOLING.** An edit there is a spell
+> revision — use that checklist, bump the version, and commit the rebuilt
+> `dist/` in the same change. This checklist is for things with **no**
+> `src/<spell>/` and **no** `plugins/spellbook/` in the diff at all.
+
 **None of the spell checklists above apply** — no roster changed, so the synced
 listings cannot drift, and the drift check is not the thing to run.
 
-- [ ] **Confirm nothing under `plugins/spellbook/` changed.** If something did,
-      this is the wrong checklist — it is a spell revision as well.
+- [ ] **Run `bun run build` FIRST, then confirm nothing under
+      `plugins/spellbook/` changed** — `git status --porcelain -- plugins/`.
+      Building first is the whole correction: an un-rebuilt tree answers "no
+      consumer impact" for a change that has plenty. If anything did change,
+      **first ask whose change it is.** If your edit caused it, this is the
+      wrong checklist — it is a spell revision as well. **If you INHERITED it**
+      (the build is catching up to a stale `dist/` someone else landed) that is
+      not yours to claim: land the rebuilt `dist/` as its own commit first, then
+      re-run this box on a clean tree. **Do not let inherited staleness re-type
+      your tooling commit as a feature** — that is this section's failure in
+      mirror image.
+- [ ] **Confirm nothing under `src/` changed** —
+      `git status --porcelain -- src/`. A `src/<spell>/` edit is spell source
+      (Contract 4) even though it ships from a different directory; `src/kit/`
+      is shared spell source and reaches every adopting spell.
 - [ ] **Commit as `chore(...)`.** ⚠ **This is the whole point of the
-      change-type.** release-please has **no path filter**, so _every_
-      conventional commit on `main` bumps the shipped plugin: a `feat(` here
-      ships a **byte-identical plugin under a new version number**, and a `fix(`
-      here claims a fix nobody receives. **Ask: does a CONSUMER get anything
-      different? If no, it is a `chore`.** _(Caught for real — a `feat(land):`
-      on a repo-local skill, amended before it reached `main`.)_
+      change-type.** release-please has **no PATH filter** — it does not care
+      _where_ in the tree a commit lands, only what TYPE it is. So a `feat(`
+      here ships a **byte-identical plugin under a new version number**, and a
+      `fix(` here claims a fix nobody receives. **`chore(` bumps nothing** — it
+      is the escape hatch, which is why it is the answer here and not merely a
+      tidy label. _(Verified in `CHANGELOG.md`: Features and Bug Fixes only; no
+      `chore` has ever cut a version.)_ ⛔ **Do not read "no path filter" as
+      "every commit type bumps"** — the filter that is missing is the PATH one;
+      the TYPE one works. **Ask: does a CONSUMER get anything different — of a
+      tree you have just REBUILT? If no, it is a `chore`.** _(Caught for real —
+      a `feat(land):` on a repo-local skill, amended before it reached `main`.
+      And caught in the other direction by the 2026-08-31 release-staleness
+      spike: asked of a stale tree, this question sent a real surface change to
+      `chore(`.)_
 - [ ] **`bun run check && bun test` still green**, and **run the gate unpiped**
       — `bun test | tail` reports `tail`'s exit code, which is always 0.
 - [ ] If it adds or changes a **repo-local skill** (`.claude/skills/<name>/`),
@@ -225,8 +273,27 @@ be smoke-tested from the dev tree before merging.
 
 ## Final checks
 
+> **Scope: these apply to SPELL changes.** For a **repo-tooling** change, run
+> prettier, `dist-check`, and the grep — but **skip the drift check**: no roster
+> moved, so it cannot have drifted, and running it anyway surfaces unrelated
+> pre-existing state that you will be tempted to "fix" inside a tooling commit.
+> _(Recorded because it happened: a tooling change ran the drift check, found an
+> unlisted spell that was unlisted on purpose, and nearly edited three listings
+> that were correct.)_
+
 - [ ] `npx prettier --write` on changed `.md` / `.json` / `.ts` (pre-commit hook
       will block otherwise)
+- [ ] **`bun scripts/dist-check.ts`** — every buildable spell has a tracked
+      `dist/`, and a rebuild is a git no-op. Exit `0` pass · `1` **an arm went
+      red** · **`3` NO VERDICT (empty denominator — not a pass)**. **On `1`:**
+      read which arm. Roster red ⇒ a buildable spell ships no tracked `dist/`
+      (suspect `.gitignore`'s bare `dist` rule). Reproduction red ⇒ the
+      committed `dist/` is not the build of the committed source:
+      `bun run build` and commit it. **On `3`:** it found no buildable spells
+      and proved nothing — do not merge on it; the roster derivation is broken.
+      Run it unpiped; a pipe reports the filter's exit status, which is
+      always 0. It also runs in CI as the `gate` check on every PR
+      (`.github/workflows/ci.yml`), against the Bun pinned in `.bun-version`.
 - [ ] The drift check passes: the spell-folder roster matches every synced
       listing
 - [ ] Grepped for any old state you changed (name, version string, path)
