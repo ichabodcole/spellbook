@@ -249,10 +249,13 @@ uses **imago** and the identical prompt above.
   pointer-sized fix for B3:** (1) the **resolve-sweep** is named four times
   (`:168`, `:202`, `:364`, `:484`) and **exists as no tool** — each seat wrote
   its own, which is _why_ Gotcha 9 records three floors; (2) the blind-set
-  instrument is `scripts/gate-blind-set.ts` and is never named; (3) the build is
-  `bun run build` (`src/build.ts`) and is never named; (4) the `shared/` path is
-  never stated — Phase 3's `../shared/types` is the only clue; (5) "R1" is
-  spell-kit vocabulary with no expansion.
+  instrument is `scripts/instruments/gate-blind-set.ts` and is never named
+  _(first written here as `scripts/gate-blind-set.ts` — a listing of two
+  directories printed without prefixes, and I wrote the wrong one into the
+  draft; the after-read caught it)_; (3) the build is `bun run build`
+  (`src/build.ts`) and is never named; (4) the `shared/` path is never stated —
+  Phase 3's `../shared/types` is the only clue; (5) "R1" is spell-kit vocabulary
+  with no expansion.
 - `W_before = 1` is command 14: a bare `bun build` on the surface entry instead
   of `bun run build`, which skips the Tailwind plugin (Contract 5). Not a wrong
   population — a wrong instrument, and the playbook could have named the right
@@ -328,6 +331,29 @@ Predictions to test, written before the build so they can be wrong:
 
 - **Done-when:** every row has a verdict with the comms id or SHA it came from.
   A row with no evidence stays SILENT and the section stays untouched.
+
+**✅ VERDICTS as of `9f2cbd4` (Phase 1 down; Phase 2 pending). Full ledger in
+scratch; this is the durable copy.**
+
+| row                                          | verdict                                                                                                                                                 | evidence          |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| honesty box                                  | CONFIRMED — second real seam cut; shorter                                                                                                               | `9f2cbd4`         |
+| Phase 1 step 2 consumer set                  | CONFIRMED (held) **and** the ratify count of 16 was the server import list read as the backend half — the step's own warning, on its author             | `#1120` `#1148`   |
+| Phase 1 symbol-grain split                   | NEW — a module two-sided by file, disjoint by symbol; `git -M` keeps history                                                                            | `#1183`           |
+| Phase 1 misfiled `.server`                   | CONFIRMED, third instance → one rule                                                                                                                    | `9f2cbd4`         |
+| Phase 1 census end state                     | CONFIRMED — exactly one surviving static import                                                                                                         | `#1183`           |
+| Phase 2 formatter-before-pin                 | CONFIRMED in Phase 1 already                                                                                                                            | `#1183`           |
+| Gotcha 2                                     | CONFIRMED, mirror form live (`./types`, three rewrites) → 4 instances, philosophy out                                                                   | `#1183`           |
+| Gotcha 3 + 10                                | MERGED (one family, two faces); 10's predicted false red did NOT fire — line pin stayed green through a real change                                     | `#1183`           |
+| Gotcha 5                                     | CONFIRMED + sharpened — two tsconfigs, two baselines (7 vs 33)                                                                                          | `#1162` `#1177`   |
+| Gotcha 6                                     | AVOIDED by construction — test co-located from Phase 1; mitigation gains the placement rule                                                             | `#1159` `#1190`   |
+| Gotcha 7 → into 9                            | MERGED                                                                                                                                                  | —                 |
+| Gotcha 8                                     | STALE — defect fixed at `ward/SKILL.md:163`; dissolves into Phase 2 checklist                                                                           | measured          |
+| Gotcha 9                                     | CONFIRMED — fourth and fifth instruments, fourth and fifth floors; the sweep exists as no tool (filed)                                                  | `#1162` `#1236`   |
+| css-scope phantom class                      | prediction WRONG for a good reason — the red would have fired (old harvester reds glamour) and did not (fix landed first) → "wards in a worktree first" | `#1222` `1131558` |
+| acc criterion 2                              | HELD at Phase 1 — rule-by-rule diff empty                                                                                                               | `#1219`           |
+| Prereq acc-if-built                          | CONFIRMED — fifth cross-tab row                                                                                                                         | `#1119`           |
+| G1, G4, cwd pin, un-ignore, three transports | SILENT until Phase 2                                                                                                                                    | —                 |
 
 ### B3 · The edit — after Phases 1–2 land
 

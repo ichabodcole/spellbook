@@ -905,6 +905,40 @@ Contract 1 says release mode is resolved by **`dist/` presence**; Contract 2's a
 Those disagreed harmlessly for months — every `dist/` held an `index.html` — and the moment backends began shipping `cli.js` into `dist/`, a spell could hold a `dist/` and still correctly run in dev.
 ⭐ **Two contracts that agree on every case the tree currently produces are not consistent; they are untested against each other**, and the thing that tests them is a new kind of member in the set they both describe.
 
+### ⭐⭐ 2026-09-03, glamour conversion BUILD phase — the cold read convicted my own compression, and every wrong path was one I had repeated from a listing
+
+_Session shape: lane authored against ratified S6/S7; A1 proposal reconciliation; A3 Contract 13 amendment drafted, landed by daedalus in the Phase 1 atomic commit (`9f2cbd4`); B1 cold-read baseline; B3 playbook draft; B4 after-read first pass. Phase 2 held on Cole at session time, so A2/A4/B5 were prepared in scratch, not landed. Written early as insurance, not at finalize._
+
+**⭐ A POINTER THAT NAMES A THING WITHOUT ITS SHAPE MOVES THE READER FROM ASKING TO GUESSING — and guessing is the worse state, because it produces a confident wrong command where there used to be a question.**
+Measured with the S7 cold read (a blank-context reader, the playbook alone, exported outside the repo, scored as Q = questions the document could have answered and W = wrong commands): the baseline read asked about the scanner and the tsconfig; my edit named `scanSpecifiers` and `-p <spell>/tsconfig.json`; the after-read then wrote `scanSpecifiers(filePath)` (it takes source text) and `-p src/imago/tsconfig.json` (no such file — three spells carry one, imago does not).
+Q fell 10→7 and W rose 1→2, and both W were caused by the edit.
+⛔ **Word count cannot see this transition; only a reader who runs the claims can.** Name the shape with the name, or leave the question standing.
+
+**⭐ THE WRONG PATH I SHIPPED INTO A DRAFT CAME FROM MY OWN THROWAWAY LISTING.** `ls scripts/ scripts/instruments/ | grep blind` printed `gate-blind-set.ts` without its directory; I wrote `scripts/gate-blind-set.ts` into the playbook draft and the lane, and it is `scripts/instruments/gate-blind-set.ts`.
+Caught only by running `bun scripts/gate-blind-set.ts` while scoring the after-read — the epitaph above, live, in a two-directory `ls`.
+**A listing that spans two directories drops the one fact that distinguishes them.** Print paths, not names.
+
+**⭐ A CONTRACT THAT HELD AND A PREDICTION THAT FAILED IN THE SAME MEASUREMENT ARE TWO FACTS — report them as two.** S7's two clauses held per section (every confirmed section ≤0 words; growth only where glamour taught); my `−120 lines` prediction failed (actual −32 lines / −392 words, −9%), because I predicted the compression half and not the NEW half — three lessons landed in Phase 2 alone.
+I scored it against the original bar and said so; prospero named that the whole discipline.
+⛔ **A prediction made under a premise that later becomes conditional is not falsified, it is UNSCORED, and unscored looks settled.** Say what the prediction was predicting before you score it.
+
+**⭐ A FINDING ABOUT A POPULATION IS A FINDING ABOUT TWO DOCUMENTS — check the other home before calling it a gap.** The cold read's digestify run showed every unported spell (bounty, grapevine, digestify) has no `surface/` and is outside the playbook's Applicability; that read as a gap until I checked `house-style.md`'s queue table, which already says rewrite-first for two and a Cole-owned trigger for the third.
+**The playbook and house-style are two homes for one population, and they agreed.** I published the null result; a null nobody publishes is indistinguishable from a check nobody ran.
+Corollary ruled that night: the acceptance test SPLITS — the cold read measures legibility and is re-runnable; a real port by seats who did not write the playbook is one-shot per port and the next is after a rewrite lands. Name which half you are running.
+
+**⭐ KEEP THE NULL RUN.** The digestify cold read was a design error (wrong subject); I kept it as a recorded error rather than deleting it, and it is the only reason the population finding exists. The one earned sentence in Applicability came from a run I could have thrown away.
+
+**⛔ I RATIFIED A QUOTATION AND CALLED IT THE ARTIFACT.** Asked to confirm a sentence in a commit-message FILE, I confirmed it from the lead's wire quotation; the file did not exist at the announced path. circe caught it by going to read the file and finding none.
+My own seat's rule — hand the reader the artifact, never the framing — violated from the reader's side, the same night cassandra did the identical thing an hour after enforcing it on a peer.
+**When asked to ratify text in a file, open the file; if it is absent, say absent, not correct.** And re-ratify the BYTES being committed, not the version you read: the file changed twice after my first read (4687 → 4771 → 4801 bytes) and each time the delta was someone else's line — verify that, do not assume it.
+
+**⭐ TWO OF MY OWN RATIFY-TIME CLAIMS WERE FALSE BY BUILD TIME, and re-checking them was the most valuable act in the lane (prospero's words, not mine).** `#1119` said the archive's three inbound playbook links and the proposal's `_archive/spell-kit` link were broken; at `95dc287` all four resolved — the lead had repaired them on another branch after I filed them.
+True when made, false when built on. **Before building on your own earlier finding, run it again; the tree moved and nothing told you.**
+
+**⚠ AN AMENDMENT THAT NAMES A FUTURE PATH AS IF ALREADY TRUE IS FALSE BETWEEN LANDS.** My Contract 13 draft named `src/glamour/surface/state/derive.ts`; daedalus's landed wording names the Phase 1 location and says it relocates in Phase 2. Between the Phase 1 and Phase 2 lands mine would have been a false sentence in canon — the pending-marker defect seams.md already paid for, in a fresh costume. **Write canon for the tree it lands in, not the tree it expects.**
+
+**⚠ A `cd` INSIDE A COMPOUND BASH CALL PERSISTS INTO THE NEXT CALL.** I minted my scratch under `docs/projects/glamour-conversion/.anthill/` because a listing had `cd`'d there one call earlier; the join manifest had printed the resolved teamDir and I built the path from where I was standing. Untracked, in the shared tree, found on `git status` before any commit. **Absolute paths for every write; the manifest's resolved paths are the source, not your cwd.**
+
 ## Anti-patterns
 
 **Drafting canon against an unratified seam.** Writing the doc sentence before the mechanism is ratified means minting the wrong words authoritatively; park it and say you parked it. Tonight the parked sentence would have documented a verb that destroys data.
@@ -929,7 +963,8 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Where they get written:** `restoreSkipped` in P0b step 3; `snapshotBackedUp` and `hydrated` in P1 steps 3–4 — **different phases, plausibly different sessions, so plausibly not the instance that ratified this.**
 **Discharge it by:** grepping each name at the moment its phase lands, and confirming the envelope carries `| null` present-and-null rather than absent (the absent-vs-null distinction is the half a field name cannot convey).
 **Retire this entry** once all three exist in code and are documented — at that point a grep does the work and the obligation is over.
-**Status 2026-08-08, sprint 04 (at `ba4b9dd`): UNCHANGED — `hydrated` still ZERO, still NOT discharged. P1 did not land in sprint 04 either.**
+**Status 2026-09-03, glamour conversion (at `a6378a4`): UNCHANGED — `hydrated` still ZERO code hits (11 hits, all in `docs/`), still NOT discharged. spell-hardening P1 has not landed in any session since.**
+_Previous status line (sprint 04 at `ba4b9dd`) said the same; kept as one line per the one-status rule._
 Sprint 04 was a ratify-and-canon sprint for this seat; there was no opportunity to diverge and none to discharge.
 **Zero hits means zero opportunities to diverge, not a pass** — that sentence is now three sprints old and still the whole point.
 ⭐ **The obligation's SHAPE was vindicated again in sprint 04 and it is worth the next holder knowing why it is not busywork:** the `#82` work turned on `valuesIgnored`, and the thing that mattered was **not** the name — it was that the field's *domain* was silent, so its `null` could not be read.
@@ -944,6 +979,12 @@ The third: a peer's `fb209f1` made a keyed respawn restore **by default**. Spell
 ⭐ **So the durable form: a grep proves the SPELLING survived a land. Nothing mechanical notices that the WORLD THE DEFINITION DESCRIBES has changed underneath it.** **Check the sentence, not just the token — and check it at the moment the mechanism moves, because that is the only moment anyone remembers the sentence exists.**
 **The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.** Hold the property, not the spelling.
 **prospero holds the P1 ping as a precondition of the land (#459 §6) and re-affirmed it in sprint 04** — expect to be called; do not watch for it.
+
+**Hold the glamour-conversion canon close-out until A2 and B3 have LANDED — retire this entry when they have.**
+As of 2026-09-03 the port's Phase 1 is down (`9f2cbd4`) and Phase 2 is held on Cole; my A2 (house-style `spells-are-porting-to-the-build` de-enumerated + ledger row reinforced) and B3 (the playbook synthesis, ten gotchas → seven, +Applicability sentence, +header status line) exist only as scratch patches, and scratch does not travel.
+**Re-derive from tracked files if scratch is gone:** `docs/projects/glamour-conversion/plan/thoth.md` carries A2's edit spec (section A2), the B2 verdict table (section B2), the Gate 1 result, and the B4 bar; the playbook is `docs/playbooks/porting-a-spell-playbook.md` at `3fc6d62`.
+**Discharge by:** applying A2 after `bun scripts/dist-check.ts` counts five, running the rule-id test and `scripts/instruments/canon-ledger-ward.ts`, landing B3 with a per-section delta in the commit body, and re-running the cold read on the final bytes (Q≤10 / W≤1; a rise means it does not land).
+**Do not land A2 before Phase 2 is down** — that is precedent-as-promotion in miniature (prospero `#1135`).
 
 ### Discharge record — the durable facts. There is exactly ONE status, and it is above.
 
