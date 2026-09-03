@@ -12,7 +12,7 @@
 //      spawn it.
 
 import { expect, test } from "bun:test";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS } from "../scripts/cli";
@@ -53,13 +53,27 @@ type Envelope = {
 
 // ── 1. the drift ward ───────────────────────────────────────────────
 
-test("the dispatch switch and VERBS name the same verbs — neither may grow one alone", () => {
-  // VERBS drives the rejections' choices and the help ward; the switch drives
-  // what runs. Nothing in the type system ties them together.
-  const src = readFileSync(CLI, "utf8");
-  const dispatchSrc = src.slice(src.indexOf("async function dispatch"));
-  const dispatched = [...dispatchSrc.matchAll(/case "([a-z-]+)":/g)].map((m) => m[1]).sort();
-  expect(dispatched).toEqual([...VERBS].sort());
+test("the emitted declaration walks the same table dispatch does: one row per verb, plus the root", () => {
+  // There is no switch to drift from any more — COMMANDS is the dispatcher —
+  // so the ward binds the PUBLISHED surface to it: schema's paths are exactly
+  // the roster, and its root row declares the interceptors.
+  const r = run(["schema"]);
+  expect(r.code).toBe(0);
+  const decl = JSON.parse(r.stdout) as {
+    formatVersion: string;
+    provenance: string;
+    selfDescription: { args: string[] };
+    commands: { path: string[]; args: { name: string }[] }[];
+  };
+  expect(decl.formatVersion).toBe("0");
+  expect(decl.provenance).toBe("emitted");
+  expect(decl.selfDescription).toEqual({ args: ["schema"] });
+  const paths = decl.commands.map((c) => c.path.join(" "));
+  expect(paths).toEqual(["", ...VERBS]);
+  expect(decl.commands[0]?.args.map((a) => a.name)).toEqual(["--help", "-h", "--version", "-V"]);
+  for (const c of decl.commands.slice(1)) {
+    expect(c.args.map((a) => a.name).sort()).toEqual(flagsFor(c.path[0] as string));
+  }
 });
 
 test("the help surface advertises every verb in the roster (behavioural twin of the ward)", () => {
@@ -123,9 +137,11 @@ test("the unknown-flag rejection names the set AT THAT PATH: the verb's flags, o
   expect(atSay.error.choices).toEqual(flagsFor("say"));
   expect(atSay.error.hint).toContain("--");
   expect(atSay.meta.command).toBe("say");
-  // At the root there is no flag to offer: the next act is picking a verb.
+  // At the root the accepted flags are the interceptors — the same array the
+  // declaration publishes at path [] — and the verb roster rides the hint.
   const atRoot = JSON.parse(run(["--acc-not-a-flag"]).stderr) as Envelope;
-  expect(atRoot.error.choices).toEqual([...VERBS]);
+  expect(atRoot.error.choices).toEqual(["--help", "-h", "--version", "-V"]);
+  expect(atRoot.error.hint).toContain("verbs: open tail");
   expect(atRoot.meta.command).toBeNull();
   // The registry is still the parser's truth, and every flag in it is owned.
   expect(RECOGNIZED_FLAGS.length).toBe(26);
@@ -197,4 +213,66 @@ test("help takes no flags, and says so rather than listing an empty set", () => 
 test("an unknown verb outranks a misplaced flag", () => {
   const doc = JSON.parse(run(["frobnicate", "--seed", "3"]).stderr) as Envelope;
   expect(doc.error.message).toContain("unknown verb");
+});
+
+// ── 4. the round trip: the declaration against the running parser ───
+
+test("acc check against the emitted declaration finds zero disagreements (the ratchet)", () => {
+  // Both sides come from one table, so the census below the root can only
+  // disagree if someone added a second source of truth — which is the event
+  // worth failing a build over. ~15s: one acc sweep.
+  const dir = mkdtempSync(join(tmpdir(), "glamour-schema-"));
+  const declPath = join(dir, "declaration.json");
+  Bun.write(declPath, run(["schema"]).stdout);
+  const glamourDir = new URL("..", import.meta.url).pathname;
+  const p = Bun.spawnSync(
+    ["bunx", "acc", "check", CLI, "--declaration", declPath, "--config-dir", glamourDir],
+    {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: new Uint8Array(0),
+      env: { ...process.env, TMPDIR: EMPTY_TMP },
+    },
+  );
+  const report = JSON.parse(new TextDecoder().decode(p.stdout)) as {
+    data: {
+      conformant: boolean;
+      declaration: {
+        status: string;
+        findings: unknown[];
+        checkedCommands: number;
+        declaredCommands: number;
+      };
+    };
+  };
+  expect(p.exitCode).toBe(0);
+  expect(report.data.conformant).toBe(true);
+  // "checked", not "not-checked": the root enumerates (the interceptors), so
+  // the diff RAN. Without a recorded batch only the root is reachable, which
+  // is why the per-verb half of this ratchet is the in-process census below.
+  expect(report.data.declaration.status).toBe("checked");
+  expect(report.data.declaration.checkedCommands).toBeGreaterThanOrEqual(1);
+  expect(report.data.declaration.declaredCommands).toBe(VERBS.length + 1);
+  expect(report.data.declaration.findings).toEqual([]);
+}, 60_000);
+
+test("the in-process census: every verb's unknown-flag rejection names exactly what schema declares there", () => {
+  // What `acc check --recorded-surfaces` compares, done here without a batch:
+  // provoke one rejection per path and diff its `choices` against the
+  // declaration's args at that path. Both come from COMMANDS, so a non-empty
+  // diff means a second source of truth appeared.
+  const decl = JSON.parse(run(["schema"]).stdout) as {
+    commands: { path: string[]; args: { name: string }[] }[];
+  };
+  const mismatches: string[] = [];
+  for (const c of decl.commands) {
+    const doc = JSON.parse(run([...c.path, "--acc-not-a-flag"]).stderr) as Envelope;
+    const accepted = [...(doc.error.choices ?? [])].sort();
+    const declared = c.args.map((a) => a.name).sort();
+    if (JSON.stringify(accepted) !== JSON.stringify(declared))
+      mismatches.push(
+        `${c.path.join(" ") || "(root)"}: accepted ${accepted} vs declared ${declared}`,
+      );
+  }
+  expect(mismatches).toEqual([]);
 });

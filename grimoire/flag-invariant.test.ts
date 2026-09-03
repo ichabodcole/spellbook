@@ -81,6 +81,9 @@ const FOREIGN: Record<string, string> = {
     "registry parse runs (cli.ts INTERCEPTORS) — same family as magpie/astrolabe `version` pins",
   "magpie:format": "media-forge's flag — an external tool",
   "glamour:format": "media-forge's — `mf generate image … --format json`",
+  "glamour:declaration":
+    "acc's flag, quoted in the schema row — `acc check <cli.ts> --declaration <(cli.ts schema)` " +
+    "(grapevine's row, same reason)",
   "glamour:help":
     'a positional verb (`case "help"`) AND a root token (`--help`/`-h` resolve before parseArgs ' +
     "runs), never a registry flag",
