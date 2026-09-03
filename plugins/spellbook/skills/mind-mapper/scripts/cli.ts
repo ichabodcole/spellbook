@@ -116,8 +116,9 @@ const SKILL_ROOT = join(SCRIPT_DIR, "..");
 const DIST_DIR = join(SKILL_ROOT, "dist");
 // dev: the daemon serves a Bun-bundled React surface; Bun reads bunfig.toml
 // (the Tailwind plugin) from cwd ONLY, so the daemon's cwd MUST be
-// src/mind-mapper/ (seams Contract 5 cwd-pin) — launched elsewhere, Tailwind
-// is silently skipped. release: dist/ is pre-built and static — no bunfig
+// src/mind-mapper/ (seams Contract 5 cwd-pin) — launched elsewhere the dev
+// bundler cannot compile the stylesheet (measured on glamour: the page 500s;
+// mind-mapper's own failure shape is unmeasured). release: dist/ is pre-built and static — no bunfig
 // read, so this path need not exist at all (a source-free marketplace clone
 // has no top-level src/), and pinning cwd there anyway would break spawn.
 const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "mind-mapper");

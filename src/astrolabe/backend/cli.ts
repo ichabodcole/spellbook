@@ -53,8 +53,9 @@ const SKILL_ROOT = join(SCRIPT_DIR, "..");
 const DIST_DIR = join(SKILL_ROOT, "dist");
 // dev: the daemon serves a Bun-bundled React surface, and Bun reads bunfig.toml
 // (the Tailwind plugin) from cwd ONLY, so the daemon's cwd MUST be
-// src/astrolabe/ (seams Contract 5 cwd-pin) — launched anywhere else, Tailwind
-// is SILENTLY skipped and the board renders unstyled. release: dist/ is
+// src/astrolabe/ (seams Contract 5 cwd-pin) — launched anywhere else the dev
+// bundler cannot compile the stylesheet (measured on glamour: the page 500s
+// with no stylesheet link; astrolabe's own failure shape is unmeasured). release: dist/ is
 // pre-built and static — no bunfig read, so this path need not exist at all (a
 // source-free marketplace clone has no top-level src/), and pinning cwd there
 // anyway would break the spawn.
@@ -124,9 +125,9 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
-    // Contract 5 — see daemonCwd(). THE FAILURE IS SILENT: a wrong cwd skips
-    // bunfig.toml's Tailwind plugin and the board renders unstyled rather than
-    // erroring, so nothing downstream of here will tell you it was wrong.
+    // Contract 5 — see daemonCwd(). A wrong cwd skips bunfig.toml's Tailwind
+    // plugin; on glamour that fails the page outright (500). Assert the invariant,
+    // not the status: the utility never reaches the browser when cwd is wrong.
     cwd: daemonCwd(),
   });
   proc.unref();
