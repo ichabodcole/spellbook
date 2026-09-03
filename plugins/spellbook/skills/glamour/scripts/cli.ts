@@ -15,10 +15,19 @@
 //   bun cli.ts say <text...>
 //   bun cli.ts status on [text...] | status off
 //   bun cli.ts close
-//   bun cli.ts info | help
+//   bun cli.ts info | help | --version
 //
 // All verbs target the most recent session by default; pass --session <id>
 // to target a specific one.
+//
+// ERROR CONTRACT (acc L0 — the house taxonomy magpie set and mind-mapper
+// adopted): every failure is ONE JSON envelope on stderr with stdout empty —
+//   {ok:false, error:{kind, exit_code, retryable, message, hint?, choices?,
+//    server?}, meta:{command}}
+//   usage → exit 2 · internal → 1 · not_found → 5 · conflict → 6
+// A daemon refusal maps off its HTTP status (400 usage, 404 not_found,
+// 409 conflict, else internal) and carries the daemon's own body VERBATIM
+// under error.server. Branch on `kind`, never on `message` prose.
 
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -39,10 +48,91 @@ type Session = {
   files_dir?: string;
 };
 
-function die(msg: string): never {
-  process.stderr.write(`glamour: ${msg}\n`);
-  process.exit(2);
+// ── error envelope ───────────────────────────────────────────────────
+//
+// THROW and let main() catch and RETURN the code — never process.exit inside a
+// helper. This CLI ships large stdout payloads (`state --full`), and Bun's
+// stdout is asynchronous on a pipe, so an explicit exit truncates whatever has
+// not drained (measured at 65,536 bytes; see the drain idiom at the bottom).
+type ErrKind = "usage" | "internal" | "not_found" | "conflict";
+
+const EXIT_FOR: Record<ErrKind, number> = {
+  usage: 2, // the caller can fix this by changing the command
+  internal: 1, // glamour (or its daemon transport) broke; the invocation may have been fine
+  not_found: 5, // the named thing does not exist (no session, no item)
+  conflict: 6, // a precondition failed
+};
+
+// The verb under execution, so the envelope can name it. Set once by dispatch.
+let CURRENT_COMMAND: string | null = null;
+
+export class CliError extends Error {
+  kind: ErrKind;
+  hint?: string;
+  choices?: string[];
+  server?: unknown;
+  constructor(
+    kind: ErrKind,
+    message: string,
+    extra?: { hint?: string; choices?: string[]; server?: unknown },
+  ) {
+    super(message);
+    this.kind = kind;
+    this.hint = extra?.hint;
+    this.choices = extra?.choices;
+    this.server = extra?.server;
+  }
 }
+
+// `UsageError` is the name the tests and the older call sites know; a usage
+// failure is a CliError of kind "usage".
+export class UsageError extends CliError {
+  constructor(message: string, extra?: { hint?: string; choices?: string[] }) {
+    super("usage", message, extra);
+  }
+}
+
+function die(msg: string, kind: ErrKind = "usage", extra?: { hint?: string }): never {
+  throw new CliError(kind, msg, extra);
+}
+
+function writeEnvelope(e: CliError): number {
+  process.stderr.write(
+    `${JSON.stringify({
+      ok: false,
+      error: {
+        kind: e.kind,
+        exit_code: EXIT_FOR[e.kind],
+        // Nothing glamour raises is worth retrying unchanged.
+        retryable: false,
+        message: e.message,
+        ...(e.hint !== undefined ? { hint: e.hint } : {}),
+        ...(e.choices !== undefined ? { choices: e.choices } : {}),
+        ...(e.server !== undefined ? { server: e.server } : {}),
+      },
+      meta: { command: CURRENT_COMMAND },
+    })}\n`,
+  );
+  return EXIT_FOR[e.kind];
+}
+
+// A daemon refusal: the kind maps off the HTTP status, the daemon's own body
+// rides verbatim under error.server so a caller can branch on it.
+function daemonRefused(what: string, status: number, data: unknown): never {
+  const kind: ErrKind =
+    status === 400
+      ? "usage"
+      : status === 404
+        ? "not_found"
+        : status === 409
+          ? "conflict"
+          : "internal";
+  throw new CliError(kind, `${what} failed (HTTP ${status})`, {
+    ...(data !== null && data !== undefined ? { server: data } : {}),
+  });
+}
+
+const NO_SESSION_HINT = { hint: "run: cli.ts open (or pass --session <id>)" };
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -68,7 +158,7 @@ function readSession(session?: string): Session | null {
 
 function requireSession(session?: string): Session {
   const s = readSession(session);
-  if (!s) die("no running glamour session — run: cli.ts open");
+  if (!s) die("no running glamour session", "not_found", NO_SESSION_HINT);
   return s;
 }
 
@@ -144,7 +234,7 @@ const CLI_OPTIONS = {
   unarchive: { type: "boolean" },
 } as const;
 
-export class UsageError extends Error {}
+export const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS).map((k) => `--${k}`);
 
 export function parseArgs(args: string[]): {
   pos: string[];
@@ -160,13 +250,12 @@ export function parseArgs(args: string[]): {
     return { pos: positionals, flags: values as Record<string, string | boolean> };
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    throw new UsageError(
-      `${detail}\n` +
-        `  recognized flags: ${Object.keys(CLI_OPTIONS)
-          .map((k) => `--${k}`)
-          .join(" ")}\n` +
-        `  for free text containing dashes, put it after a bare --`,
-    );
+    // The rejection NAMES its valid set (acc A3's SHOULD): `choices` is the
+    // recognized flag registry, so an agent self-corrects without a lookup.
+    throw new UsageError(detail, {
+      hint: "for free text containing dashes, put it after a bare --",
+      choices: RECOGNIZED_FLAGS,
+    });
   }
 }
 
@@ -318,7 +407,7 @@ export function buildFocusCmd(
 async function resolveGenSrc(flags: Record<string, string | boolean>): Promise<string> {
   if (typeof flags.url === "string") {
     const res = await fetch(flags.url);
-    if (!res.ok) die(`gen: failed to fetch --url (HTTP ${res.status})`);
+    if (!res.ok) die(`gen: failed to fetch --url (HTTP ${res.status})`, "internal");
     const bytes = new Uint8Array(await res.arrayBuffer());
     let bin = "";
     for (const b of bytes) bin += String.fromCharCode(b);
@@ -338,8 +427,9 @@ async function resolveGenSrc(flags: Record<string, string | boolean>): Promise<s
 async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
   const s = requireSession(session);
   let status: number;
+  let data: unknown;
   try {
-    ({ status } = await api(s.port, "POST", "/cmd", msg));
+    ({ status, data } = await api(s.port, "POST", "/cmd", msg));
   } catch (err) {
     // `close` causes Bun.serve to stop immediately — the connection resets
     // before the 200 response is flushed. Treat ECONNRESET on close as success.
@@ -349,7 +439,7 @@ async function postCmd(session: string | undefined, msg: Record<string, unknown>
     }
     throw err;
   }
-  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
+  if (status !== 200) daemonRefused("cmd", status, data);
   printJson({ ok: true, sent: msg.type });
 }
 
@@ -417,7 +507,7 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
     });
   }).catch((err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
-    die(`glamour server failed to start: ${msg}`);
+    die(`glamour server failed to start: ${msg}`, "internal");
   });
 
   // ⚠ RELEASE THE DAEMON'S STDOUT PIPE, or this CLI never exits.
@@ -443,7 +533,7 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   try {
     parsed = JSON.parse(info) as typeof parsed;
   } catch {
-    die(`unexpected output from daemon: ${info}`);
+    die(`unexpected output from daemon: ${info}`, "internal");
   }
 
   printJson(parsed);
@@ -459,7 +549,7 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
 async function cmdState(session?: string, full = false) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) daemonRefused("state", status, data);
   printJson(data);
 }
 
@@ -573,14 +663,14 @@ async function cmdTail(session: string | undefined, sinceArg: number) {
 
 function cmdInfo(session?: string) {
   const s = readSession(session);
-  if (!s) die("no running glamour session");
+  if (!s) die("no running glamour session", "not_found", NO_SESSION_HINT);
   printJson(s);
 }
 
 const HELP = `glamour — a grounded visual conversation surface.
 
-  open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--restore <id|path>]
-  tail   [--since N]                 SSE user events → JSONL (wrap with Monitor)
+  open   [--title ..] [--intent ..] [--no-open] [--timeout S] [--start-timeout S] [--restore <id|path>]
+  tail   [--since N]                 SSE user events → JSONL (wrap with Monitor; waits for a session, never exits 5)
   state  [--full]                    lean state snapshot (add --full for raw)
   intent <text...>                   update the session intent
   annotate <id> <text...>            write agent annotation onto a library item
@@ -595,29 +685,103 @@ const HELP = `glamour — a grounded visual conversation surface.
                                      backfill the real prompt / refs onto a gen
   focus  <id...> [--note ..]         scope the focus lens to these items + ask
   style-save <label...>              codify the current style → project tray
-  style-archive <id> [--restore]     archive (or --restore) a saved style
+  style-archive <id> [--unarchive]   archive (or --unarchive) a saved style
   tray                               list the project's saved styles
   close                              shut down the session
   info                               print the resolved discovery JSON
-  help                               show this message
+  help | --version                   show this message / print {name, version}
 
-  Add --session <id> to target a specific session (default: most recent).`;
+  Add --session <id> to target a specific session (default: most recent).
 
-async function main(argv: string[]): Promise<number> {
-  const [verb, ...rest] = argv;
-  // A usage failure returns 2 rather than exiting, so the runtime drains stdout
-  // — an explicit process.exit is the drained-exit defect the sibling lanes of
-  // this sprint exist to remove. Uncaught, it would also surface as a raw stack
-  // trace at exit 1, which is not a usage error to anyone reading it.
-  let pos: string[];
-  let flags: Record<string, string | boolean>;
+  Output: every verb prints JSON on stdout by default, one document per answer —
+  except tail, a stream that prints one JSON line per event, and help, which is
+  prose. Failures are one JSON envelope on stderr and exit non-zero (2 = usage,
+  1 = internal, 5 = not found, 6 = conflict) — except tail, which waits for a
+  session instead of failing and writes its retry/keepalive notes to stderr as
+  '#'-prefixed prose.`;
+
+// The verb roster — what the unknown-verb and bare rejections name as
+// `choices`, and what the help-surface ward checks is advertised.
+export const VERBS = [
+  "open",
+  "tail",
+  "state",
+  "intent",
+  "annotate",
+  "say",
+  "section",
+  "status",
+  "gen",
+  "gen-cost",
+  "gen-meta",
+  "focus",
+  "style-save",
+  "style-archive",
+  "tray",
+  "close",
+  "info",
+  "help",
+] as const;
+
+// The plugin manifest is the one version source; the CLI reads it rather than
+// mirroring the number (astrolabe's pattern, via mind-mapper). Layout-dependent,
+// so absence degrades to "unknown" instead of inventing one.
+function versionInfo(): { name: string; version: string } {
   try {
-    ({ pos, flags } = parseArgs(rest));
-  } catch (e) {
-    if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`glamour: ${e.message}\n`);
-    return 2;
+    const raw = readFileSync(join(SKILL_ROOT, "..", "..", ".claude-plugin", "plugin.json"), "utf8");
+    const pkg = JSON.parse(raw) as { version?: unknown };
+    if (typeof pkg.version === "string") return { name: "glamour", version: pkg.version };
+  } catch {
+    /* fall through to unknown */
   }
+  return { name: "glamour", version: "unknown" };
+}
+
+// Every failure funnels through here and RETURNS its code, so the runtime
+// drains stdout. Uncaught, a failure would surface as a raw stack trace at exit
+// 1, which is not a usage error to anyone reading it.
+async function main(argv: string[]): Promise<number> {
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    if (e instanceof CliError) return writeEnvelope(e);
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
+    const msg = e instanceof Error ? e.message : String(e);
+    // A named file that is not there (--file paths) — the caller's.
+    if (code === "ENOENT") return writeEnvelope(new UsageError(msg));
+    // Everything else is glamour's own fault: one INTERNAL envelope, never a
+    // stack trace — the process contract is JSON on stderr for EVERY failure.
+    return writeEnvelope(new CliError("internal", msg));
+  }
+}
+
+async function dispatch(argv: string[]): Promise<number> {
+  // ROOT TOKENS FIRST, before any flag parsing (magpie/astrolabe pattern).
+  // --help/-h resolve here; `help` is ALSO a dispatchable verb below, so
+  // `help --foo` is a rejected flag, not a silently-tolerated one. --version is
+  // a root TOKEN, deliberately NOT a registry flag: no verb is expected to
+  // accept it, and `glamour state --version` stays refused.
+  if (argv[0] === "--help" || argv[0] === "-h") {
+    process.stdout.write(`${HELP}\n`);
+    return 0;
+  }
+  if (argv[0] === "--version" || argv[0] === "-V" || argv[0] === "version") {
+    process.stdout.write(`${JSON.stringify(versionInfo())}\n`);
+    return 0;
+  }
+
+  // The WHOLE argv is parsed, verb included, so a bare `--` is honoured at
+  // the root (acc A6): `-- --x` yields the positional "--x", which is then an
+  // unknown verb — not an unknown option.
+  // Name the verb BEFORE parsing, so a parser rejection's envelope still says
+  // what was being run (the first non-dash token is the verb under every
+  // grammar this parser accepts).
+  CURRENT_COMMAND = argv.find((a) => !a.startsWith("-")) ?? null;
+  const parsed = parseArgs(argv);
+  const [verb, ...pos] = parsed.pos;
+  const flags = parsed.flags;
+  CURRENT_COMMAND = verb ?? null;
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
   switch (verb) {
@@ -689,12 +853,13 @@ async function main(argv: string[]): Promise<number> {
       await postCmd(session, buildStyleSaveCmd(pos));
       break;
     case "style-archive":
-      if (!pos.length) die("usage: style-archive <id> [--restore]");
+      if (!pos.length) die("usage: style-archive <id> [--unarchive]");
       await postCmd(session, buildStyleArchiveCmd(pos, flags));
       break;
     case "tray": {
       const s = requireSession(session);
-      const { data } = await api(s.port, "GET", "/state?lean=1");
+      const { status, data } = await api(s.port, "GET", "/state?lean=1");
+      if (status !== 200) daemonRefused("tray", status, data);
       const tray = (data as { state?: { tray?: unknown[] } })?.state?.tray ?? [];
       printJson(tray);
       break;
@@ -706,13 +871,17 @@ async function main(argv: string[]): Promise<number> {
       cmdInfo(session);
       break;
     case "help":
-    case "--help":
-    case "-h":
-    case undefined:
       process.stdout.write(`${HELP}\n`);
       break;
+    case undefined:
+      // Bare invocation is a usage error (acc D2), and the rejection names
+      // the roster so the caller's next command can be right.
+      throw new UsageError("no verb given", { hint: "run: cli.ts help", choices: [...VERBS] });
     default:
-      die(`unknown verb "${verb}" — run: cli.ts help`);
+      throw new UsageError(`unknown verb "${verb}"`, {
+        hint: "run: cli.ts help",
+        choices: [...VERBS],
+      });
   }
   return 0;
 }

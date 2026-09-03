@@ -151,17 +151,19 @@ references an image or you inspect an item closely.
 > **`--` ends flag parsing — and every flag must come BEFORE it.** Use it when
 > free text would otherwise be read as a flag. **Anything after `--` is a
 > positional, including something that looks like a flag** — it is consumed
-> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`.
+> silently, at exit 0, with no warning. Put every flag to the LEFT of `--`. (A
+> `--` as the very first argument is honoured too, but `bun` itself eats one
+> bare `--` placed right after the script path — pass two if you mean it.)
 >
 > **⚠ If the eaten flag is `--session`, glamour does not fail — it retargets.**
 > It falls back to the machine-global `glamour-latest.json` pointer, so the
 > command lands on **the most recently opened glamour session on this machine**,
 > which may not be yours.
 
-All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`.
-Verb must be the first argument; pass `--session <id>` **after the verb** to
-target a specific session (default: most recent). `help` prints the full
-surface.
+All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`. The
+verb is the first positional; flags may sit on either side of it (the whole argv
+is one parse), so `--session <id>` targets a specific session wherever it
+appears (default: most recent). `help` prints the full surface.
 
 > **`${CLAUDE_PLUGIN_ROOT}` unset?** Some harnesses leave it empty, silently
 > turning `${VAR}/skills/…` into `/skills/…` so bun fails with "module not
@@ -191,7 +193,20 @@ surface.
 | `tray`                                                                                                             | List the project's saved styles                                                                                                                                                                                                                                                                                                                  |
 | `close`                                                                                                            | Shut down the session (writes the snapshot)                                                                                                                                                                                                                                                                                                      |
 | `info`                                                                                                             | Print the resolved session discovery JSON                                                                                                                                                                                                                                                                                                        |
-| `help`                                                                                                             | Show the full verb list                                                                                                                                                                                                                                                                                                                          |
+| `help`                                                                                                             | Show the full verb list (`--help` / `-h` at the root do the same)                                                                                                                                                                                                                                                                                |
+| `--version`                                                                                                        | Print `{name, version}` (also `-V`, `version`); a root token, not a flag — `state --version` is refused                                                                                                                                                                                                                                          |
+
+**Errors are one JSON envelope on stderr, stdout empty** — branch on
+`error.kind`, never on message prose:
+`{ok:false, error:{kind, exit_code, retryable, message, hint?, choices?, server?}, meta:{command}}`.
+Exit codes: `2` usage (unknown verb/flag, missing operand, a `--file` that does
+not exist — `choices` names the valid set), `1` internal (daemon failed to
+start, transport broke), `5` not found (no running session), `6` conflict. A
+daemon refusal maps off its HTTP status and carries the daemon's own body
+verbatim under `error.server`. **`tail` is the one exception:** with no session
+it waits and retries rather than exiting `5`, and its retry/keepalive notes on
+stderr are `#`-prefixed prose, not envelopes. Root tokens (`--version`, `-h`)
+ignore anything after them; `help` as a verb refuses flags.
 
 ## Operating rule: Monitor the tail (push-based)
 
