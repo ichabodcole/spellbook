@@ -121,6 +121,18 @@ The control is what makes the green mean something.
 
 ## Phase 1 — the seam: the daemon stops reaching into the surface (ONE ATOMIC commit)
 
+**LANDED `9f2cbd4` (2026-09-03):** 30 files, 6 renames, gate 1571 / 0 / 4552 /
+120 on the assembled tree; census exactly one static entry import at
+`server.ts:11`; tsc 435 → 435 by lines (worktree and assembled tree identical);
+sweep 35 / 59 / 0. Built whole in a detached worktree and measured there before
+any byte entered the shared tree (the shared tree never held a half-assembled
+Phase 1); prospero ran the one gate and the one commit over both seats' paths. ⚠
+Worktree caveat learned here: a worktree with a **symlinked `node_modules` is
+not Contract 18's canonical checkout** — `bun run build` embeds the
+`node_modules` path relative to the build root in module-boundary comments, so
+every chunk hash moves and ward 1b reds on ENOENT. Tests in a worktree are
+sound; builds are not.
+
 **Ruled R1 `#1142`: one `refactor(glamour):` commit carrying BOTH seats' paths,
 landed by prospero** (precedent `5d918e2`, two seat trailers). A two-step
 (derive.ts first, the move after) would put the four selectors in two files
@@ -197,15 +209,20 @@ verdict's reducer is now `scripts/reduce.ts`, not a surface file. thoth DRAFTS
 the seams.md amendment; **I land or ratify it** in the Phase 1 commit, after
 circe's filename is ruled. This is the first thing the port changes in canon.
 
-**Test split (tests/ are the backend half → mine):** the cells that exercise the
-surface half — `tests/reduce.test.ts` lines 84, 110, 165, 265 at authoring
-(`itemsByKind` ×2, `matchesMarks`, `agentRepliedSince`) — move to a new
-`tests/reduce.surface.test.ts` importing `../surface/state/derive`. That file is
-**labelled in its header as relocating with the surface half in Phase 2**: once
-the surface lives under `src/glamour/`, a test in `plugins/…/tests/` importing
-it is a relative escape ward 1a forbids (Gotcha 6) — the test moves with its
-subject, as magpie's `cli.test.ts` did. The remaining cells stay in
-`tests/reduce.test.ts` importing `../scripts/reduce` and `../shared/types`.
+**Test split — RULED `#1190`, circe's placement:** the cells that exercise the
+surface half (`itemsByKind` ×2, `matchesMarks`, `agentRepliedSince`) move to
+**`surface/state/derive.test.ts`, co-located beside `derive.ts`**, with their
+fixtures as `LibraryItem` literals — a surface test must never build values
+through the backend's mutators (circe `#1159`, `#1188`). Co-location means no
+`plugins/ → src/` edge ever exists and nothing relocates twice in Phase 2. My
+first patch shipped `tests/reduce.surface.test.ts` importing
+`makeItem`/`addItem` from the backend — falsified by circe, who had answered my
+ask 2 at `#1159` and whose answer I read only as a truncated notification. The
+remaining 24 cells stay in `tests/reduce.test.ts` importing `../scripts/reduce`
+and `../shared/types`. **And check both sides of a symbol split:** the verdict
+comment that sat above `applyAgentMsg` travelled with the wrong half (cut at the
+block boundary) and had to be put back — a file whose header says "no verdicts"
+must not end in prose about the verdict (circe `#1188`).
 
 Red → green: before touching source, run
 `bun test plugins/spellbook/skills/glamour/tests/reduce.test.ts` (green, 28
@@ -620,9 +637,9 @@ the commit message because nothing automates it.
    whole tree + class table posted; you review the surface rows pre-land, or
    apply them yourself from the table. The `derive.ts` cut-and-paste: I do the
    mechanical cut inside the Phase 1 commit and you review the file, or you
-   create it from the `comm` output — say which. Also: the 4 selector cells
-   carved to `tests/reduce.surface.test.ts` (importing `derive.ts`), relocating
-   with your half in Phase 2.
+   create it from the `comm` output — say which. **Settled `#1188`/`#1190`:** I
+   did the cut, circe reviewed (one comment moved back); the 4 selector cells
+   are hers at `surface/state/derive.test.ts`, co-located, not my proposed name.
 2. **circe** — `src/glamour/build.ts` delegator: yours by Contract 2; I write it
    if you would rather (12 lines, content-free).
 3. **prospero** — RULED R3 `#1142`: his hand writes both; I name the bunfig
