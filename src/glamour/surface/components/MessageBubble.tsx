@@ -1,5 +1,8 @@
 import { CheckSquare } from "lucide-react";
-import type { LibraryItem, Message } from "../../shared/types";
+import type {
+  LibraryItem,
+  Message,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 const KIND_TINT: Record<Message["kind"], string> = {
   info: "text-slate-200",

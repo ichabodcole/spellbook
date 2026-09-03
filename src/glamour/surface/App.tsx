@@ -11,7 +11,7 @@ import {
   Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { ItemKind } from "../shared/types";
+import type { ItemKind } from "../../../plugins/spellbook/skills/glamour/shared/types";
 import { Conversation } from "./components/Conversation";
 import { DetailsFlyout } from "./components/DetailsFlyout";
 import { FacetBar } from "./components/FacetBar";

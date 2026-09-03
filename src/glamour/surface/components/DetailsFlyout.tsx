@@ -1,6 +1,6 @@
 import { Archive, ArchiveRestore, Heart, Maximize2, Pin, Star, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { LibraryItem } from "../../shared/types";
+import type { LibraryItem } from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function DetailsFlyout({
   item,

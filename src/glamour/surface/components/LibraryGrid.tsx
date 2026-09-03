@@ -1,5 +1,9 @@
 import { Archive, ArchiveRestore, Maximize2 } from "lucide-react";
-import type { FocusScope, ItemKind, LibraryItem } from "../../shared/types";
+import type {
+  FocusScope,
+  ItemKind,
+  LibraryItem,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 import { itemsByKind, type MarkFilter, matchesMarks } from "../state/derive";
 import { LibraryTile } from "./LibraryTile";
 

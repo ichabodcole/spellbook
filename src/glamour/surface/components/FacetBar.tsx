@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
-import type { ItemKind, LibraryItem } from "../../shared/types";
-import { VALID_KIND } from "../../shared/types";
+import type {
+  ItemKind,
+  LibraryItem,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
+import { VALID_KIND } from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 const LABEL: Record<ItemKind, string> = {
   ref: "References",

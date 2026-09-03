@@ -1,14 +1,14 @@
 # `spell-css-scope-ward` invents a phantom class from a CSS hex escape, and blames the wrong spell
 
-**Filed:** 2026-09-02 · **Status:** FIX LANDED 2026-09-03 on
-`feat/glamour-conversion` — parser + detector calibrated (cassandra, non-author,
-5 routes: unit cell, terminator pin, tolerance control, a real hex-escaped leak
-caught BY NAME while the old harvester stays blind). **⚠ ARRIVAL CASE NOT YET
-RUN** — the original symptom (glamour arrives, the ward names
-astrolabe/mind-mapper for a phantom `32`) needs glamour in the ward's
-population, which happens at Phase 2. **Closer: the arrival run at the assembled
-sha.** · **Found by:** circe, rehearsing glamour's relocation · **Latent since
-the ward was written**
+**Filed:** 2026-09-02 · **Status:** FIXED 2026-09-03 — fix landed at `1131558`
+(parser + detector, cassandra non-author, 5 routes) and **the arrival case RAN
+at `9f2cbd4` + the Phase 2 surface patch (sha256 8d49f9ff…)**: with glamour in
+the ward's population and four hex escapes in its shipped CSS, the fixed ward is
+9 / 0 and the pre-fix ward file swapped into the same tree reds CROSS-SPELL with
+exactly the filed message (_glamour carries 1 class(es) only astrolabe uses:
+32_). The original symptom reproduced and closed in one tree; the arrival run is
+repeated at the Phase 2 sha by the non-author. · **Found by:** circe, rehearsing
+glamour's relocation · **Latent since the ward was written**
 
 ## The failure
 

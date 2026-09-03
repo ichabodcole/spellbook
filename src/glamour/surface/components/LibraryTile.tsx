@@ -1,5 +1,5 @@
 import { FileText, Heart, Palette, Star } from "lucide-react";
-import type { LibraryItem } from "../../shared/types";
+import type { LibraryItem } from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function LibraryTile({
   item,

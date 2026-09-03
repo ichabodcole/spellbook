@@ -1,0 +1,205 @@
+// Release-mode serve (seams Contract 1). FOURTH port of this gate — after
+// mind-mapper, astrolabe (scripts/release-serve.test.ts) and imago
+// (tests/release-serve.test.ts). cassandra's Seam D recipe: boot the daemon
+// from a COPIED tree that has a dist/ but NO surface/ and NO bunfig.toml, so
+// the code path provably never reads surface source in release mode.
+//
+// ⛔ WHICH CELLS GLAMOUR EARNS, AND WHICH IT DOES NOT — stated so a shortened
+// copy is a decision, not erosion.
+//
+// PORTED UNCHANGED IN SUBSTANCE: dist entry, hashed assets, unknown-path 404,
+// nesting-guard 404 (with a REAL nested file, or the cell is vacuous), the
+// backend-still-works cell, and the SPELLBOOK_SURFACE_MODE=dev forced-dev
+// cell — S4's ratified deliverable: force dev over a dist-present tree and the
+// daemon must DIE naming src/glamour/surface/index.html, before it writes a
+// discovery file.
+//
+// EARNED BY GLAMOUR ALONE — THREE mode transports, not two. glamour prints a
+// stdout handshake (mind-mapper/astrolabe shape) AND writes a discovery file
+// (imago shape) AND emits the ready event. A cell that reads one certifies a
+// third of the contract, so `mode` is asserted on all three (comms #1142 R5).
+//
+// NOT PORTED: imago's /assets-disjointness cell — glamour has no /assets route
+// (its session files live under files_dir, served by no static route). The
+// STALE DIST / buildInfo cells — their subject was removed from the tree.
+//
+// ⛔ TMPDIR IS SCOPED, NOT ONLY GLAMOUR_HOME. The daemon writes
+// $TMPDIR/glamour-latest.json unconditionally at boot and unlinks it at close
+// iff the id is its own — an unscoped test daemon DELETED a live user's pointer
+// (comms #1166). Every spawn here gets its own TMPDIR.
+import { afterAll, beforeAll, expect, test } from "bun:test";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const TESTS_DIR = import.meta.dir;
+const SKILL_SRC = join(TESTS_DIR, "..");
+// Every non-test module under scripts/ and shared/ ships — a glob, never a
+// hand-kept mirror.
+const shipping = (dir: string) =>
+  readdirSync(join(SKILL_SRC, dir)).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+
+let skillRoot: string;
+let home: string;
+let tmp: string;
+let proc: Bun.Subprocess<"ignore", "pipe", "pipe">;
+let url = "";
+let sessionId = "";
+
+function buildReleaseTree(): string {
+  const root = mkdtempSync(join(tmpdir(), "glamour-release-test-"));
+  for (const dir of ["scripts", "shared"] as const) {
+    mkdirSync(join(root, dir), { recursive: true });
+    for (const f of shipping(dir)) cpSync(join(SKILL_SRC, dir, f), join(root, dir, f));
+  }
+  mkdirSync(join(root, "dist"), { recursive: true });
+  writeFileSync(
+    join(root, "dist", "index.html"),
+    '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
+  );
+  writeFileSync(join(root, "dist", "chunk-abc123.js"), "console.log('release mode');");
+  writeFileSync(join(root, "dist", "chunk-abc123.css"), "body { margin: 0; }");
+  // A REAL nested file, or the nesting-guard cell passes with the guard deleted.
+  mkdirSync(join(root, "dist", "sub"), { recursive: true });
+  writeFileSync(join(root, "dist", "sub", "nested.js"), "console.log('must not be served');");
+  return root;
+}
+
+/** The stdout handshake is glamour's first transport: ONE JSON line. */
+async function firstLine(stream: ReadableStream<Uint8Array>): Promise<string> {
+  const reader = stream.getReader();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (value) buf += new TextDecoder().decode(value);
+    const nl = buf.indexOf("\n");
+    if (nl >= 0) {
+      reader.releaseLock();
+      return buf.slice(0, nl);
+    }
+    if (done) throw new Error(`daemon exited before its handshake: ${buf}`);
+  }
+}
+
+function spawnDaemon(env: Record<string, string>) {
+  return Bun.spawn(
+    [process.execPath, "run", join(skillRoot, "scripts", "server.ts"), "--port", "0"],
+    {
+      cwd: skillRoot,
+      env: { ...process.env, GLAMOUR_HOME: home, TMPDIR: tmp, ...env },
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+  );
+}
+
+beforeAll(async () => {
+  skillRoot = buildReleaseTree();
+  home = mkdtempSync(join(tmpdir(), "glamour-release-home-"));
+  tmp = mkdtempSync(join(tmpdir(), "glamour-release-tmp-"));
+  expect(existsSync(join(skillRoot, "surface"))).toBe(false);
+  expect(existsSync(join(skillRoot, "bunfig.toml"))).toBe(false);
+  expect(existsSync(join(skillRoot, "shared", "types.ts"))).toBe(true);
+  expect(existsSync(join(skillRoot, "shared", "imageOptimize.ts"))).toBe(true);
+
+  proc = spawnDaemon({});
+  const handshake = JSON.parse(await firstLine(proc.stdout as ReadableStream<Uint8Array>)) as {
+    url: string;
+    session_id: string;
+    mode?: string;
+  };
+  // Transport 1 of 3: the stdout handshake carries the resolved mode.
+  expect(handshake.mode).toBe("release");
+  url = handshake.url;
+  sessionId = handshake.session_id;
+});
+
+afterAll(() => {
+  proc.kill();
+  rmSync(skillRoot, { recursive: true, force: true });
+  rmSync(home, { recursive: true, force: true });
+  rmSync(tmp, { recursive: true, force: true });
+});
+
+test("transport 2 of 3: the discovery file carries the resolved mode", () => {
+  const file = join(tmp, `glamour-${sessionId}.json`);
+  expect(existsSync(file)).toBe(true);
+  const info = JSON.parse(readFileSync(file, "utf8")) as { mode?: string; url: string };
+  expect(info.mode).toBe("release");
+  expect(info.url).toBe(url);
+});
+
+test("transport 3 of 3: the ready EVENT carries the resolved mode", async () => {
+  const res = await fetch(`${url}/events?since=0`);
+  const reader = (res.body as ReadableStream<Uint8Array>).getReader();
+  const { value } = await reader.read();
+  await reader.cancel();
+  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode?: string };
+  expect(ready.type).toBe("ready");
+  expect(ready.mode).toBe("release");
+});
+
+test("GET / serves dist/index.html verbatim", async () => {
+  const res = await fetch(`${url}/`);
+  expect(res.status).toBe(200);
+  expect(res.headers.get("content-type")).toContain("text/html");
+  expect(await res.text()).toContain("chunk-abc123.js");
+});
+
+test("GET /chunk-*.js and .css serve the hashed assets with the right content type", async () => {
+  const js = await fetch(`${url}/chunk-abc123.js`);
+  expect(js.status).toBe(200);
+  expect(js.headers.get("content-type")).toContain("text/javascript");
+  expect(await js.text()).toContain("release mode");
+  const css = await fetch(`${url}/chunk-abc123.css`);
+  expect(css.status).toBe(200);
+  expect(css.headers.get("content-type")).toContain("text/css");
+});
+
+test("an unknown static path 404s (not a silent fallthrough)", async () => {
+  expect((await fetch(`${url}/nope.js`)).status).toBe(404);
+});
+
+test("the nesting guard REFUSES a nested dist file that would otherwise resolve", async () => {
+  expect((await fetch(`${url}/sub/nested.js`)).status).toBe(404);
+  expect((await fetch(`${url}/chunk-abc123.js`)).status).toBe(200);
+});
+
+test("the backend still works in release mode — /state reads back", async () => {
+  const fresh = (await (await fetch(`${url}/state`)).json()) as {
+    state: { title: string; library: unknown[] };
+  };
+  expect(typeof fresh.state.title).toBe("string");
+  expect(fresh.state.library).toEqual([]);
+});
+
+test("SPELLBOOK_SURFACE_MODE=dev OVERRIDES dist/ presence — dev genuinely needs surface source, and dies BEFORE the discovery write", async () => {
+  const devTmp = mkdtempSync(join(tmpdir(), "glamour-release-devtmp-"));
+  const devProc = spawnDaemon({ SPELLBOOK_SURFACE_MODE: "dev", TMPDIR: devTmp });
+  try {
+    const exitCode = await Promise.race([
+      devProc.exited,
+      Bun.sleep(3000).then(() => "still-running" as const),
+    ]);
+    expect(exitCode).not.toBe("still-running");
+    expect(exitCode).not.toBe(0);
+    expect(await new Response(devProc.stderr).text()).toContain("src/glamour/surface/index.html");
+    // Died at the import, BEFORE any discovery file — so nothing downstream can
+    // mistake it for a booted daemon (cassandra M7: moving the write above the
+    // import reds exactly this assertion).
+    expect(readdirSync(devTmp).filter((f) => f.startsWith("glamour-"))).toEqual([]);
+  } finally {
+    devProc.kill();
+    rmSync(devTmp, { recursive: true, force: true });
+  }
+});

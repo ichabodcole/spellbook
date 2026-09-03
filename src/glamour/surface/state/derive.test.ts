@@ -4,7 +4,11 @@
 // makeItem()/addItem() — those are backend mutators (scripts/reduce.ts after
 // the split) and a surface test must never import the backend to build a value.
 import { expect, test } from "bun:test";
-import type { ItemKind, LibraryItem, Message } from "../../shared/types";
+import type {
+  ItemKind,
+  LibraryItem,
+  Message,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 import { agentRepliedSince, itemsByKind, matchesMarks } from "./derive";
 
 const item = (id: string, kind: ItemKind, extra: Partial<LibraryItem> = {}): LibraryItem => ({
@@ -33,6 +37,9 @@ test("itemsByKind filters and excludes archived", () => {
     item("c", "context", { title: "brief.md", text: "x", createdAt: 2 }),
     item("d", "ref", { title: "old", createdAt: 3, archived: true }),
   ];
+  // PRECONDITION, not decoration: with no archived row in the fixture the
+  // assertions below pass whether or not the filter exists (cassandra D4).
+  expect(library.some((i) => i.archived)).toBe(true);
   expect(itemsByKind(library, "all").map((i) => i.id)).toEqual(["a", "c"]);
   expect(itemsByKind(library, "ref").map((i) => i.id)).toEqual(["a"]);
   expect(itemsByKind(library, "context").map((i) => i.id)).toEqual(["c"]);
@@ -60,6 +67,9 @@ test("itemsByKind still excludes archived items by default", () => {
     item("a", "ref"),
     item("b", "ref", { title: "b.webp", createdAt: 2, archived: true }),
   ];
+  // PRECONDITION, not decoration: with no archived row in the fixture the
+  // assertions below pass whether or not the filter exists (cassandra D4).
+  expect(library.some((i) => i.archived)).toBe(true);
   expect(itemsByKind(library, "all").map((i) => i.id)).toEqual(["a"]);
   expect(itemsByKind(library, "ref").map((i) => i.id)).toEqual(["a"]);
 });

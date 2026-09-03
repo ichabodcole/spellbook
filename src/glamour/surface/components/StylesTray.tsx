@@ -1,5 +1,5 @@
 import { ArrowRightToLine, Check, Library, Palette, X } from "lucide-react";
-import type { SavedStyle } from "../../shared/types";
+import type { SavedStyle } from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function StylesTray({
   tray,

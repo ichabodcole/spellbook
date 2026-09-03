@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { existsSync, readFileSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
 import {
   buildFocusCmd,
   buildGenCmd,
@@ -7,8 +9,10 @@ import {
   buildSectionCmd,
   buildStyleArchiveCmd,
   buildStyleSaveCmd,
+  daemonCwd,
   parseArgs,
   parseCustom,
+  SKILL_ROOT_FOR_TEST,
 } from "../scripts/cli";
 
 describe("cli command construction", () => {
@@ -173,5 +177,53 @@ describe("slice 4 cli builders", () => {
     expect(buildStyleArchiveCmd(["s1"], { unarchive: true }).archived).toBe(false);
     // and the old spelling is simply not recognised any more
     expect(buildStyleArchiveCmd(["s1"], { restore: "foo" }).archived).toBe(true);
+  });
+});
+
+describe("Contract 5 — the daemon's cwd pin (daemonCwd)", () => {
+  // The failure this guards is SILENT on the surface side (an unstyled board,
+  // every request 200) and is circe's cell to red; this one proves only that the
+  // pin points where Contract 5 says, in both modes, and that the dev target is
+  // a directory that exists in this repo — the five `..` turned into a line that
+  // runs instead of a count in a comment.
+  const saved = process.env.SPELLBOOK_SURFACE_MODE;
+  const restore = () => {
+    if (saved === undefined) delete process.env.SPELLBOOK_SURFACE_MODE;
+    else process.env.SPELLBOOK_SURFACE_MODE = saved;
+  };
+  test("forced dev → src/glamour/, and it exists", () => {
+    process.env.SPELLBOOK_SURFACE_MODE = "dev";
+    try {
+      const cwd = daemonCwd();
+      expect(basename(cwd)).toBe("glamour");
+      expect(basename(dirname(cwd))).toBe("src");
+      expect(existsSync(cwd)).toBe(true);
+      expect(existsSync(join(cwd, "bunfig.toml"))).toBe(true); // ruling 3: bunfig moved WITH the pin
+    } finally {
+      restore();
+    }
+  });
+  test("forced release → the skill root (dist/ is absolute, no bunfig needed)", () => {
+    process.env.SPELLBOOK_SURFACE_MODE = "release";
+    try {
+      expect(daemonCwd()).toBe(SKILL_ROOT_FOR_TEST);
+      expect(existsSync(join(daemonCwd(), "SKILL.md"))).toBe(true);
+    } finally {
+      restore();
+    }
+  });
+});
+
+describe("S2 — the one src/-naming specifier resolves (ask 6's by-hand check, as a cell)", () => {
+  test("server.ts's dev-branch dynamic import points at a file that exists", () => {
+    // Ward 1a's pinned inventory compares STRINGS and calls no existsSync, so a
+    // broken specifier launders straight into the pin (cassandra, ratify). This
+    // cell is the check the ruling said a human must run before pinning.
+    const src = readFileSync(join(import.meta.dir, "..", "scripts", "server.ts"), "utf8");
+    const specs = [...src.matchAll(/await import\("([^"]+src\/glamour[^"]+)"\)/g)].map((m) => m[1]);
+    expect(specs).toHaveLength(1); // S2: EXACTLY one src/-naming specifier
+    const resolved = resolve(join(import.meta.dir, "..", "scripts"), specs[0] as string);
+    expect(existsSync(resolved)).toBe(true);
+    expect(basename(resolved)).toBe("index.html");
   });
 });

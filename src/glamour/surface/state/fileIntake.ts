@@ -1,5 +1,5 @@
-import { OPTIMIZE } from "../../shared/imageOptimize";
-import type { ClientToServer } from "../../shared/types";
+import { OPTIMIZE } from "../../../../plugins/spellbook/skills/glamour/shared/imageOptimize";
+import type { ClientToServer } from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 const IMG = /^image\//;
 const TEXTY = /\.(md|markdown|mdx|txt|json|ya?ml)$/i;

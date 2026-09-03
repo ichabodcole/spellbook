@@ -1,4 +1,7 @@
-import type { SectionStatus, StyleSection } from "../../shared/types";
+import type {
+  SectionStatus,
+  StyleSection,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 const DOT: Record<SectionStatus, string> = {
   agreed: "bg-emerald-400",

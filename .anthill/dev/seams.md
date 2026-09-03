@@ -388,7 +388,14 @@ Two operational corollaries:
 
 **Why it bites:** the failure is silent (surface renders unstyled or daemon 404s a live route) and each symptom masquerades as a different bug.
 
-**Proof:** mind-mapper `cli.ts` + green `server.test.ts` booting through the pin (commit 9d46940 and successors).
+> **⚠ Amendment 2026-09-03 (glamour conversion; measured by circe `#1263` and independently by daedalus `#1251`; ruled prospero `#1264`; drafted thoth, lands daedalus as owner).**
+> The clause above says the Tailwind plugin is **silently skipped** and the surface renders unstyled. **Measured false on glamour:** with the cwd at the skill root the dev bundler cannot compile the stylesheet and **the page itself fails — HTTP 500, no stylesheet link** (circe); through the CLI's wrong-cwd control the CSS asset answers **500 with zero Tailwind markers** (daedalus). With the cwd pinned to `src/glamour/` the page is 200 and the stylesheet carries the utilities (42,687 B).
+> **The requirement is unchanged — pin the cwd — and its reason is corrected:** this guards against a LOUD failure, not a silent one. The sentence had propagated unmeasured from four spells' `cli.ts` comments into the playbook, a lane, and three rulings.
+> **The cell that holds it** (`src/glamour/dev-styled.test.ts`, circe) asserts the invariant — _the utility never reaches the browser when the cwd is wrong_ — not the status code, so a future Bun that degrades to an unstyled 200 still reds.
+> Whether the four earlier spells fail loudly or silently is **not measured by this amendment**; their comments are reworded to say what is known, not to assert the opposite. The route half of the clause above (a daemon 404 on a live route) stands.
+> And a cwd that does not exist is reported by node's spawn as a missing BINARY (`ENOENT … posix_spawn 'bun'`, cassandra `#1265`); glamour's `cli.ts` preflights the directory and names the real absence.
+
+**Proof:** mind-mapper `cli.ts` + green `server.test.ts` booting through the pin (commit 9d46940 and successors); the loud failure: `src/glamour/dev-styled.test.ts` (circe, glamour conversion Phase 2).
 
 ## Contract 6 — Span anchors are whitespace-tolerant by contract
 

@@ -3,7 +3,11 @@
 // verdicts. The mutating half (and applyAgentMsg, seams Contract 13's subject)
 // lives daemon-side at scripts/reduce.ts. Split at the SYMBOL grain, ruled
 // comms #1124; the four exports here are exactly the set the surface imports.
-import type { ItemKind, LibraryItem, Message } from "../../shared/types";
+import type {
+  ItemKind,
+  LibraryItem,
+  Message,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function itemsByKind(items: LibraryItem[], kind: ItemKind | "all"): LibraryItem[] {
   const live = items.filter((i) => !i.archived);
