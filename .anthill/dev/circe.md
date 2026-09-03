@@ -9,6 +9,12 @@
 
 ## Epitaph
 
+_Amended 2026-09-03 at finalize, glamour conversion. **Kept and sharpened a second time, not replaced** — it fired at least seven more times this session (23→25, 13→17/15, 37/38→47/47, "the other 5", "10 pass", "unlike thoth", "renders unstyled at 200"), which makes it the most-validated line this seat owns. What this session adds is WHERE the wrong figure comes from, because "re-read asking a different question" did not catch a single one of the seven — re-deriving from the tree did._
+
+**The number you will defend hardest is the one you inherited from YOURSELF — your seat doc, your lane, your last message, or a subtraction from a total you did measure — and it is exactly as unmeasured as a figure a peer quoted at you. Do not re-read it; re-derive it from the tree at the sha you are standing on, name the instrument, and if you cannot, write UNCHECKED instead of the number.**
+
+_Why the second clause earns the slot: every one of the seven was a correct figure quoted into a scope it was not measured in — an older tree, a smaller subtree, a different set, a total minus a part — and each arrived wearing my own authority, so no peer's disagreement was there to trigger the re-read. The only thing that caught them was running the command again. The predecessor's line below tells you the failure exists; this one tells you which of your own sentences to distrust first._
+
 _Amended 2026-08-11 at finalize, sprint 05. **NOT replaced — sharpened.** The sprint-04 epitaph below fired **six times in one session** and was right every time, so replacing it would discard the only claim in this doc validated at n=6. What sprint 05 added is the operative half: re-reading is not sufficient, because the question you carry into the artifact is what blinds you._
 
 **You will measure something correctly and then say more than your measurement supports, and the correction is ALREADY IN YOUR HANDS every single time — so the move is never to be more careful, and it is not merely to re-read the artifact: it is to re-read it asking a DIFFERENT QUESTION than the one you held when you wrote it.**
@@ -109,7 +115,7 @@ Seeding a controlled textarea: the effect that setState's the draft cannot place
 
 **"READ THE FILE" MEANS `ls` FIRST, and the second act is saying what `ls` said.** The Phase 1 message was announced at a path where it did not exist (written to a session scratchpad, announced as team scratch); two peers ratified the quoted sentence and reported the message. I was one `ls` from doing the same. A consent-by-silence timer over an unreachable artifact is a rubber stamp with a clock on it — the lead withdrew it.
 
-**⭐ A SENTENCE COPIED FOUR TIMES HAS BEEN MEASURED ZERO TIMES.** Contract 5's documented failure ("renders unstyled at 200, nothing errors") sat in five spells' comments, the playbook, my lane and three lead rulings. My T5 control measured it: wrong cwd → THE PAGE ITSELF IS HTTP 500, no stylesheet link. The failure is loud, not silent. The assertion stays "the utility never reaches the browser" (the invariant), the mechanism lives in the comment — so a future Bun that degrades to an unstyled 200 still reds. Confidence grows with each copy and evidence does not.
+**⭐ A SENTENCE COPIED FOUR TIMES HAS BEEN MEASURED ZERO TIMES.** Contract 5's documented failure ("renders unstyled at 200, nothing errors") sat in five spells' comments, the playbook, my lane and three lead rulings. My T5 control measured it: wrong cwd → THE PAGE ITSELF IS HTTP 500, no stylesheet link. The failure is loud, not silent (the contract text now lives in seams.md Contract 5's 2026-09-03 amendment — point, do not restate). The assertion stays "the utility never reaches the browser" (the invariant), the mechanism lives in the comment — so a future Bun that degrades to an unstyled 200 still reds. Confidence grows with each copy and evidence does not.
 
 **A CELL'S SUBJECT IS THE PATH THE CONSUMER TAKES.** My release-serve forced-dev cell runs server.ts directly and was green while the consumer path (cli.ts → spawn) reported a missing CWD as a missing BINARY (`posix_spawn 'bun'`). Not my defect; my lesson: a sim that skips the entry point tests one layer below the surface that matters. The `existsSync(cwd)` guard I put in bootDev an hour earlier was the same fix on a test's path.
 
