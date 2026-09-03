@@ -1,12 +1,65 @@
 # Glamour conversion — plan SKELETON
 
-**Status:** skeleton · seams **awaiting ratification** **Lead:** prospero
-**Created:** 2026-09-02 **Proposal:** [`proposal.md`](./proposal.md)
+**Status:** **RATIFIED 2026-09-02** — 5 of 7 seams falsified or materially
+corrected **Lead:** prospero **Created:** 2026-09-02 **Proposal:**
+[`proposal.md`](./proposal.md)
 
-> **This is a hypothesis, not an instruction.** Every seam below is a **CLAIM**
-> written by someone who does not own it. **Falsifying one is the point of the
-> exercise, not a setback** — a single author is most often wrong exactly at the
-> boundaries between owners.
+> **This WAS a hypothesis. It has been ratified, and it did not survive
+> intact.** Four seats returned verdicts (comms `#1119`–`#1123`). **Five of
+> seven seams were falsified or materially corrected**, including two premises
+> the lead asserted as fact. That is the method working, not a failure of it — a
+> single author is most often wrong exactly at the boundaries between owners,
+> and every correction below came from the owner who could see it.
+>
+> **Verdicts are recorded per seam. Where a seam was falsified, the correction
+> is the contract now** — build to the correction, not to the original claim.
+
+## ⛔ RULINGS (prospero, 2026-09-02) — what this pass settled, and what it did not
+
+**PHASE 3 (build the backend) IS DROPPED.** Three seats reached it
+independently. The benefit is structurally zero: a backend build exists to
+**inline code that will not be at the destination**, and glamour's shipped path
+imports only `node:` builtins — there is nothing to inline. astrolabe and magpie
+build for one reason, measured: their backends import `printJson` from
+`src/kit/lib/`, outside the copied subtree. imago and glamour each define a
+**local** `printJson` instead. daedalus ran the post-Phase-1 layout deps-free as
+plain `.ts` — exit 0, correct envelopes, with a positive control — so **Contract
+3's default already delivers Phase 3's success criterion.**
+
+> **Phase 3 is not cancelled; it is ordered behind a named condition.** glamour
+> builds its backend the moment it **starts sharing** — if it ever drops its
+> local `printJson` for the kit's. That is exactly the question spell-kit banked
+> (_"whether the four remaining `printJson` copies should ever converge"_).
+> **Owner of the trigger: whoever rules that convergence.** Recorded with an
+> owner and an occasion rather than as an event nobody watches.
+
+**S1 — reduce.ts is SPLIT, not moved whole** (contested; ruled once). daedalus
+measured the two halves disjoint — server imports 16 symbols, the surface 4,
+**intersection zero**. circe preferred `shared/reduce.ts` whole, calling the
+split a refactor "no surface rewrite" does not license. **Ruled: split.** The
+scope objection is answered by daedalus's own argument — shipping it wholesale
+hands the surface **22 backend mutators it must never call**, which is the
+misfiled-`.server` defect mirror-imaged. Not splitting reproduces the exact bug
+this port exists to fix, so it is not gold-plating.
+
+**acc L0 moves AHEAD of the port**, into its own project
+([`../glamour-acc-l0/`](../glamour-acc-l0/proposal.md)), as the port's
+**characterization harness** — `acc` is black-box and layout-blind, so
+conformance established before survives the relocation and gives the port
+before/after evidence it otherwise lacks. Blocked on an external acc release.
+
+**WHAT THESE RULINGS DO NOT SETTLE** — named, because a long ruling that
+silently omits an item is indistinguishable from one that resolved it:
+
+- whether the **move-vs-copy** check is built here or filed
+  (`docs/backlog/2026-09-02-nothing-can-tell-a-move-from-a-copy.md`)
+- whether **ward 1a's `existsSync` guard** is in scope
+  (`docs/backlog/2026-09-02-ward-1a-accepts-a-pinned-target-that-does-not-exist.md`)
+- the **Bun-pin defect**, which is repo-wide and release-shaped
+  (`docs/backlog/2026-09-02-the-bun-pin-does-not-govern-the-build.md`)
+- whether **`acc` is wired into the gate** or stays a hand-run check
+- the **surface-half selectors' filename and home** after the reduce split —
+  circe's, unruled
 
 ## How this plan is authored
 
@@ -37,7 +90,7 @@ S5 (scan scope on arrival) rides with the relocation.  S6 (acc) is severable at 
 
 ## Shared interfaces — ratify on comms, then fill
 
-### S1 — a module consumed by BOTH sides `(CLAIM — awaiting daedalus × circe)`
+### S1 — a module consumed by BOTH sides · **RATIFIED at the SYMBOL grain; PREMISE FALSIFIED**
 
 `reduce.ts` and `types.ts` under `surface/state/` are imported by `scripts/` and
 by the surface. They are **not** simply backend files in the wrong folder.
@@ -50,9 +103,9 @@ lead:** where does a module both sides consume actually live, and **who owns
 it** — the daemon, the surface, or neither? _(Note the third option is real:
 `src/kit/` exists now and did not when imago and magpie faced this.)_
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
-### S2 — what the daemon serves, and in which mode `(CLAIM — awaiting daedalus)`
+### S2 — what the daemon serves · **RATIFIED at the SPECIFIER grain; INCOMPLETE in three ways**
 
 `server.ts` currently does `import index from "../surface/index.html"` — a
 bundler entry, not an ordinary import, and the one reference that survives S1.
@@ -60,18 +113,18 @@ bundler entry, not an ordinary import, and the one reference that survives S1.
 > **CLAIM:** the daemon serves the **built artifact** where one exists and the
 > live surface otherwise, and **the release path imports nothing from `src/`**.
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
-### S3 — what the deployed folder is `(CLAIM — awaiting daedalus × cassandra)`
+### S3 — what the deployed folder is · **FALSIFIED AS WRITTEN**
 
 > **CLAIM:** glamour's shipped folder contains **no source a consumer could edit
 > and no source a bundler would read** (Contract 4, source-free by FILES not by
 > strings), and `bun scripts/dist-check.ts` counts **five** buildable spells and
 > stays green.
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
-### S4 — the tests survive the move MEANING what they meant `(CLAIM — awaiting cassandra × circe)`
+### S4 — the tests survive the move · **FALSIFIED — the stated hazard is the wrong one**
 
 glamour keeps **7 tests in `tests/`**, not `scripts/` — one of the three spells
 with that layout, so a glob written from a `scripts/`-shaped spell is blind to
@@ -85,9 +138,9 @@ all of them.
 **⚠ The done-when for this seam must be keyed on the SUCCESSOR**, never on the
 identifier the move deletes — that shape is green by construction.
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
-### S5 — glamour arrives conforming `(CLAIM — awaiting circe)`
+### S5 — glamour arrives conforming · **HALF ONE FALSIFIED · HALF TWO RATIFIED at the byte**
 
 glamour's `styles.css` uses `@source "./**/*.tsx"` today.
 
@@ -97,18 +150,18 @@ glamour's `styles.css` uses `@source "./**/*.tsx"` today.
 
 The second half is the testable one: the four existing spells are the control.
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
-### S6 — acc is severable `(CLAIM — awaiting cassandra × thoth)`
+### S6 — acc is severable · **SPLIT: ratified for Phases 1–2, FALSIFIED for Phase 3**
 
 > **CLAIM:** the port completes and ships **without** acc, and adding acc L0
 > later costs no rework of the earlier phases.
 
 **If this is FALSE, say so early** — it changes the phase order, not the scope.
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
-### S7 — the playbook is a SYNTHESIS, and confirmation must COMPRESS it `(CLAIM — awaiting thoth)`
+### S7 — the playbook COMPRESSES on confirmation · **RATIFIED at a per-section delta + cold-read test**
 
 `docs/playbooks/porting-a-spell-playbook.md` is **512 lines / 4,270 words / 10
 gotchas** after **one** real port (magpie) and two rounds of repair. At that
@@ -130,7 +183,7 @@ not do this port** reads the playbook alone and says whether they could run one.
 That read is the acceptance test. **A gotcha nobody can act on is bloat wearing
 evidence's clothes.**
 
-**Ratified at:** ⟨grain — awaiting⟩
+**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
 
 ---
 
