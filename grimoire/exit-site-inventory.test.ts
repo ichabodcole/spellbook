@@ -141,7 +141,9 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // usage 2, internal 1) rather than always 2 — same one-short-write shape.
   { file: "astrolabe/backend/cli.ts", text: "process.exit(code);", family: "D-die" },
   { file: "bounty/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  { file: "glamour/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  // glamour/scripts/cli.ts left this family at its acc L0 pass: die() now THROWS a
+  // CliError and main() returns the taxonomy code (usage 2, internal 1,
+  // not_found 5, conflict 6), so the drained-exit defect has no site to live in.
   { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
   // magpie's die() picks its code from the acc exit-code taxonomy (usage 2,
   // internal 1, not_found 5, conflict 6) rather than always 2 — same family and

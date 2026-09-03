@@ -81,7 +81,16 @@ const FOREIGN: Record<string, string> = {
     "registry parse runs (cli.ts INTERCEPTORS) — same family as magpie/astrolabe `version` pins",
   "magpie:format": "media-forge's flag — an external tool",
   "glamour:format": "media-forge's — `mf generate image … --format json`",
-  "glamour:help": 'a positional verb (`case "help"`), not --help',
+  "glamour:declaration":
+    "acc's flag, quoted in the schema row — `acc check <cli.ts> --declaration <(cli.ts schema)` " +
+    "(grapevine's row, same reason)",
+  "glamour:help":
+    'a positional verb (`case "help"`) AND a root token (`--help`/`-h` resolve before parseArgs ' +
+    "runs), never a registry flag",
+  "glamour:version":
+    "the same ROOT TOKEN as magpie's and astrolabe's, landed with glamour's acc L0 pass — " +
+    "dispatched by literal comparison before parseArgs runs, deliberately not a registry flag, " +
+    "so `glamour state --version` stays refused",
   "magpie:version":
     "a ROOT TOKEN dispatched beside `help` (resolved before parseArgs runs), not a parser flag — " +
     "`magpie --version` works and `magpie state --version` is correctly refused, which is the " +
