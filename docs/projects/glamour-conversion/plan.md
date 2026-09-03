@@ -61,6 +61,55 @@ silently omits an item is indistinguishable from one that resolved it:
 - the **surface-half selectors' filename and home** after the reduce split —
   circe's, unruled
 
+## 🔄 Reconciled 2026-09-03 @ `9964926` — against the landed acc L0 pass
+
+`feat/glamour-acc-l0` merged to `develop` (`389d088`, 10 commits) and `develop`
+is merged in here. The acc pass rewrote `scripts/cli.ts` (+712) and added
+`tests/cli-contract.test.ts` (+363); it touched **no** file this plan relocates.
+Claims re-checked below — the verdict is written even where nothing moved,
+because an unchecked claim and a confirmed one are indistinguishable in silence.
+
+- **"Phase 3 is ordered behind the `printJson` convergence trigger"** —
+  **HELD.** The acc session's own deferred list records the trigger as _"still
+  not pulled"_; the new command table is local to glamour and imports nothing
+  from `src/kit/`. thoth's canon argument (Contract 3 enumerates astrolabe and
+  magpie only) is untouched. Phase 3 stays dropped.
+- **S1's three dual-consumer modules** (`types.ts`, `imageOptimize.ts`,
+  `reduce.ts` SPLIT) — **HELD.** acc changed `scripts/cli.ts` only;
+  `surface/state/` is byte-unchanged, so the symbol-grain measurement behind the
+  split ruling still stands.
+- **S4's "glamour keeps 7 tests in `tests/`"** — **STALE. It is 8.**
+  `cli-contract.test.ts` landed with the acc pass.
+- **⚠ S4's real deliverable — "glamour needs an 8th test, a
+  `release-serve.test.ts` with the forced-dev cell"** (cassandra and circe,
+  independently) — **STILL OPEN, and now easy to misread as closed.** An 8th
+  test did arrive, and it is not that test. `cli-contract.test.ts` characterises
+  the **CLI's wire**; the uncovered subject is the **surface-serving path**,
+  which `daemon.integration.test.ts` still never fetches (`/` is never requested
+  — cassandra deleted the board route outright and the file stayed 16 pass / 0
+  fail). **Counting to eight satisfies nothing here.** glamour still has no
+  `release-serve.test.ts`; astrolabe and imago have the cell, mind-mapper and
+  magpie do not.
+- **NEW OBLIGATION, and it lands on this branch.** The acc charter's second
+  success criterion is explicitly the port's to close: re-run `acc check` after
+  the relocation and it must **still pass, or the port must name what it
+  changed**. That is the characterization payoff the whole ordering was for.
+  Added to the verification gate below.
+- **cassandra's line-number trap** — **HELD.**
+  `import-boundary-wards.test.ts:1089` still pins `glamour/scripts/server.ts`
+  **line 77** by number; acc did not touch `server.ts`. Expect the false red
+  during Phase 1.
+- **circe's Phase-3 specifier hazard** (`tests/cli.test.ts` imports ten named
+  exports from `../scripts/cli`, which Phase 3 would turn into a launcher) —
+  **MOOT.** Phase 3 is dropped, so `cli.ts` stays authored in place. Her related
+  note that Phase 3 moves `exit-site-inventory.test.ts`'s hard-coded entries is
+  moot for the same reason; acc has already revised those entries and the
+  flag-invariant ward for its own change.
+- **S6 — "acc is severable"** — **DISCHARGED, not pending.** It ran ahead of the
+  port and passed at kit 0.1.11. What is still unruled is whether `acc` is wired
+  into `bun run gate` at all; the acc session recommends it and names **Cole**
+  as the owner, since it is a gate-cost decision.
+
 ## How this plan is authored
 
 - **The lead owns** this skeleton, the seams, and the verification gate.
@@ -103,7 +152,32 @@ lead:** where does a module both sides consume actually live, and **who owns
 it** — the daemon, the surface, or neither? _(Note the third option is real:
 `src/kit/` exists now and did not when imago and magpie faced this.)_
 
-**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
+**CORRECTION — RATIFIED CONTRACT (daedalus #1120, circe #1123; ruled #1124).
+Build to this, not to the claim above.**
+
+- **The set is THREE modules, not two.** `surface/state/imageOptimize.ts` is the
+  third — surface via `fileIntake.ts`, backend transitively via
+  `imageOptimize.server.ts`. **Phase 1's stated grep proof cannot see it**:
+  after Phase 1 the edge originates in the relocated backend file, not in
+  `scripts/`.
+- **Destination: `plugins/spellbook/skills/glamour/shared/`**, owned by neither
+  seat — a peer of both, and imago's and magpie's built-twice answer.
+  `import-boundary-wards.test.ts:496` already defines the shipped execution path
+  as `/\/(scripts|shared)\//`.
+- **`reduce.ts` SPLITS** — backend half (22 exports) → `scripts/reduce.ts`;
+  surface half (4 pure selectors: `itemsByKind`, `MarkFilter`, `matchesMarks`,
+  `agentRepliedSince`) stays in the surface. **Filename and home are circe's and
+  are NOT ruled.** `types.ts` goes to `shared/` **whole** — the split criterion
+  is **runtime reach**, and types erase at runtime.
+- **`src/kit/` is REJECTED on measurement**: a source-shipped backend cannot
+  import from `src/` (outside the copied subtree — the specifier dangles at a
+  consumer install), and `src/kit/` is a Tailwind content source for every
+  adopting spell.
+
+**Grain:** the **symbol** boundary for `reduce.ts`, the **module** boundary for
+`types.ts` / `imageOptimize.ts`. Nothing finer.
+
+_Full verdicts: comms `#1119`–`#1123`; rulings `#1124`._
 
 ### S2 — what the daemon serves · **RATIFIED at the SPECIFIER grain; INCOMPLETE in three ways**
 
@@ -113,7 +187,29 @@ bundler entry, not an ordinary import, and the one reference that survives S1.
 > **CLAIM:** the daemon serves the **built artifact** where one exists and the
 > live surface otherwise, and **the release path imports nothing from `src/`**.
 
-**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
+**CORRECTION — RATIFIED CONTRACT (daedalus #1120), with a measured repro.**
+
+The invariant, at the grain it will be built to: **exactly one `src/`-naming
+specifier per deployed spell**, in `scripts/server.ts`, inside the
+`mode === "dev"` ternary. Measured across four arms with positive controls — a
+top-level static import dies at **load**, a branch-guarded dynamic one dies at
+the **await**; that distinction is the whole mechanism.
+
+**Three things the claim omits and a builder needs:**
+
+1. **glamour has no `resolveMode()`, no `DIST_DIR`, no mode at all.** Contract 1
+   requires the daemon to **emit its resolved mode**, on both transports (ready
+   event _and_ discovery JSON, as imago does) — or the verification gate has
+   nothing to assert and a dev daemon renders an identical-looking board.
+2. **The dev half of this seam is not in `server.ts`.** `scripts/cli.ts:372`
+   spawns the daemon with `cwd: SKILL_ROOT`; under Contract 5 that pin must
+   become `src/glamour/` when the surface moves, **and `bunfig.toml` must move
+   with it or Tailwind is silently skipped** and the board renders unstyled.
+   **This seam spans `server.ts` AND `cli.ts`.**
+3. **`bunfig.toml` must leave the deployed folder** — 0 of 4 landed spells have
+   one; glamour does.
+
+_Full verdicts: comms `#1119`–`#1123`; rulings `#1124`._
 
 ### S3 — what the deployed folder is · **FALSIFIED AS WRITTEN**
 
@@ -122,7 +218,33 @@ bundler entry, not an ordinary import, and the one reference that survives S1.
 > strings), and `bun scripts/dist-check.ts` counts **five** buildable spells and
 > stays green.
 
-**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
+**CORRECTION — RATIFIED CONTRACT (daedalus #1120, cassandra #1122).**
+
+The face-value claim is **false of all four already-landed spells** — every one
+ships hand-authored `.ts`. The operable invariant is Contract 4's own proof:
+**the deployed folder contains no `surface/` and no `bunfig.toml`, and nothing
+in it resolves anything under `src/` on the release path.** Source-free by the
+**file list**, not the file class.
+
+**⚠ A THIRD CLAUSE THE PLAN DID NOT HAVE — successor present is HALF a check.**
+`git ls-files plugins/spellbook/skills/glamour` must contain **no path under
+`surface/`**, asserted over the tracked subtree. cassandra planted a 34-byte
+`src/glamour/surface/index.html` with the predecessor **fully intact** and
+`dist-check` reported `buildable spells 5`. **A copy-not-move passes both
+halves, and it was literally true of this tree while she measured it.**
+
+**⚠ Prerequisite, not consequence:** `.gitignore` is a bare `dist` rule plus a
+hand-kept un-ignore list. Without the two `!plugins/.../glamour/dist` lines,
+`git add` stages nothing **at exit 0**, glamour ships with no `dist/`, falls to
+dev mode, and dies importing a `src/` tree the marketplace never copied.
+
+Post-port deployed folder, stated so it can be checked rather than inferred:
+`SKILL.md` ·
+`scripts/{cli,server,persist.server,styles.server,imageOptimize.server,reduce}.ts`
+· `shared/{types,imageOptimize}.ts` · `tests/` (backend half) · `dist/`. **GONE:
+`surface/`, `bunfig.toml`.**
+
+_Full verdicts: comms `#1119`–`#1123`; rulings `#1124`._
 
 ### S4 — the tests survive the move · **FALSIFIED — the stated hazard is the wrong one**
 
@@ -138,7 +260,37 @@ all of them.
 **⚠ The done-when for this seam must be keyed on the SUCCESSOR**, never on the
 identifier the move deletes — that shape is green by construction.
 
-**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
+**CORRECTION — RATIFIED CONTRACT (cassandra #1122, circe #1123).**
+
+**The stated hazard cannot happen to 6 of the 7.** All reach their subjects by
+static ESM **value** import; a vanished path is a hard load error, measured
+(`mv reduce.ts` away → 31 pass / 3 fail / 3 errors). **S4 as written sails
+through, and that is the suspicious outcome.**
+
+**The real gap is a live, already-green test that never covered the subject.**
+`daemon.integration.test.ts` fetches only `/state`, `/cmd`, `/events` across all
+16 cells — **never `/`**. cassandra deleted the board route outright and it
+stayed **16 pass / 0 fail**. The relocation then converts `server.ts`'s
+load-time `import index from "../surface/index.html"` into an unreachable dev
+branch: pointed at a file that does not exist, the full suite still reports the
+**exact baseline, 1539 pass / 0 fail**. No wording detects absence.
+
+**THE DELIVERABLE:** glamour gains a **`release-serve.test.ts` with the
+`SPELLBOOK_SURFACE_MODE=dev` forced-dev cell** — force dev, assert the daemon
+dies naming `src/glamour/surface/index.html`. astrolabe and imago have this
+cell; mind-mapper and magpie do not.
+
+**⚠ Operational, for Phase 1:** `import-boundary-wards.test.ts:1089` pins
+`glamour/scripts/server.ts` **line 77 by line number**. Any insert above it
+false-reds. It cost cassandra one red already.
+
+**⚠ THE POPULATION IS NOW 8, AND THE 8TH IS NOT THIS TEST** (2026-09-03).
+`tests/cli-contract.test.ts` arrived with the acc pass. It characterises the
+**CLI's wire**; the subject named above — the **surface-serving path** — is
+still uncovered, and `release-serve.test.ts` still does not exist. **Counting to
+eight satisfies nothing here.**
+
+_Full verdicts: comms `#1119`–`#1123`; rulings `#1124`._
 
 ### S5 — glamour arrives conforming · **HALF ONE FALSIFIED · HALF TWO RATIFIED at the byte**
 
@@ -150,7 +302,28 @@ glamour's `styles.css` uses `@source "./**/*.tsx"` today.
 
 The second half is the testable one: the four existing spells are the control.
 
-**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
+**CORRECTION — RATIFIED CONTRACT (circe #1123).**
+
+**Half one is FALSIFIED: `source(none)` + `@source "./"` is necessary and NOT
+sufficient.** With glamour arriving **fully conforming**,
+`grimoire/spell-css-scope-ward.test.ts` **reds** —
+`"glamour carries 1 class(es) only astrolabe uses: 32"`. glamour is the roster's
+first spell using a leading-digit variant (`2xl:`), CSS escapes it as `\32 `
+(space-terminated), and the ward's `harvest()` regex stops at the space and
+invents a phantom class `32`. **The correction is in the ward, not in glamour**
+— and it will name the WRONG SPELL. Filed:
+`docs/backlog/2026-09-02-css-scope-ward-invents-a-phantom-class-from-escapes.md`.
+
+**⚠ Half two is RATIFIED at the byte but is NOT a test of half one.** All four
+control stylesheets stay byte-identical **even when glamour arrives
+non-conforming** — reading "controls unchanged" as evidence glamour conformed is
+a false green.
+
+Also measured: `@source "./**/*.tsx"` vs `@source "./"` differ by exactly one
+rule — the `<body>` background from `index.html`. **The glob silently drops the
+page background.** Cost of not conforming: **124,639 B → 41,048 B, 3.04x.**
+
+_Full verdicts: comms `#1119`–`#1123`; rulings `#1124`._
 
 ### S6 — acc is severable · **SPLIT: ratified for Phases 1–2, FALSIFIED for Phase 3**
 
@@ -159,7 +332,25 @@ The second half is the testable one: the four existing spells are the control.
 
 **If this is FALSE, say so early** — it changes the phase order, not the scope.
 
-**Verdict + grain, and the corrections, are in comms `#1119`–`#1123`.**
+**CORRECTION — DISCHARGED, and the canon half is a RULING, not a phase (thoth
+#1119, cassandra #1122).**
+
+acc L0 ran **ahead** of the port and passed at kit **0.1.11**
+([`../glamour-acc-l0/`](../glamour-acc-l0/proposal.md)), so the severability
+question is settled by event rather than by argument.
+
+**The canon half outweighs the seam.** thoth's cross-tab: `ported ⇒ acc` is
+**3/4 and FALSE** (imago falsifies it); `built backend ⇒ acc` is 2/2 with no
+counterexample. **acc travels the agent-legibility axis independently of the
+port axis.** And Contract 3's repeal is **narrow and enumerated — astrolabe and
+magpie only**; glamour is named in canon as the spell that would _earn_
+promotion, which is precisely the statement that it does not have it. Neither
+repeal clause fires. **So Phase 3 was never an implementation phase: it is a
+canon act — an amendment or a promotion — that must be WRITTEN BEFORE a build
+lands.** That is a further reason it is dropped, independent of the
+measured-zero-benefit one.
+
+_Full verdicts: comms `#1119`–`#1123`; rulings `#1124`._
 
 ### S7 — the playbook COMPRESSES on confirmation · **RATIFIED at a per-section delta + cold-read test**
 
@@ -205,6 +396,21 @@ evidence's clothes.**
 `bun scripts/dist-check.ts` exit 0 counting **five** spells; the installed
 artifact runs with **no surface source present** at a destination that never ran
 `install`.
+
+**And the characterization arm, which is this port's alone** (added 2026-09-03 —
+the acc charter's criterion 2, left open for the port to close):
+
+```
+bunx acc check plugins/spellbook/skills/glamour/scripts/cli.ts \
+  --config-dir plugins/spellbook/skills/glamour
+```
+
+must still pass at kit **0.1.11**, run from the spell directory. **Exit 9 is the
+only "not conformant" code — anything else is the kit failing**, and a kit
+failure read as a pass is the one outcome that makes the whole
+harness-before-the-port ordering worthless. If the port does move conformance,
+that is a legitimate result and the port **names what it changed**; a silent
+delta is not.
 
 ## ⛔ Assert what is ABSENT
 
