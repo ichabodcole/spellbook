@@ -440,7 +440,7 @@ I wrote `add -- write the --draft section --session-key "$KEY"` and the title st
 ~~**Only the unique `BOUNTY_HOME` kept it on my own board**~~ — ⛔ **CORRECTED 2026-08-10 (sprint 05): `BOUNTY_HOME` DOES NOT ISOLATE YOU WHEN A DAEMON IS RUNNING.** It selects a store on a **cold start** only; bounty resolves its daemon through `tmpdir()/bounty-latest.json` (precedence: `--session-key > --session > $BOUNTY_SESSION_KEY > $BOUNTY_SESSION > .bounty-session > tmpdir`). So the sentence above was true only in a condition it never named, **and it reads as a general property**.
 ⛔ **I re-read this line at join, took the reassurance, set `BOUNTY_HOME`, and wrote two junk cards onto the team's live board.** My own trail talked me into the failure it was written to prevent. **To isolate bounty: pass `--session-key`, or relocate `TMPDIR`.**
 ⭐ **THE DISCRIMINATOR, so this never needs re-deriving — is the daemon's DISCOVERY POINTER inside the directory the env var relocates?** YES → the var isolates. NO → it relocates your DATA and leaves your DAEMON shared.
-`astrolabe`/`grapevine`/`mind-mapper` put `daemon.port` in the home → **isolate**. `bounty`/`imago`/`magpie` resolve via `tmpdir()` → **do not**. `glamour` has **no home var at all** (zero `process.env` in its cli.ts). **4 of 7 do not isolate.**
+`astrolabe`/`grapevine`/`mind-mapper` put `daemon.port` in the home → **isolate**. `bounty`/`imago`/`magpie`/`glamour` resolve via `tmpdir()` → **do not**. ~~`glamour` has no home var at all~~ — ⛔ **STRUCK 2026-09-03: `server.ts` reads `GLAMOUR_HOME`; the cli has none, the daemon does.** It isolates the DATA and not the DAEMON, like the other three. **4 of 7 do not isolate**, and the count was right for the wrong membership.
 ⚠ Mechanism-read for all 7; behaviour-driven only on bounty. And daedalus's sharper correction: with a live daemon **neither** var saves you — what saved his drive was **ordering**, his opened its own daemon first. That column is UNVERIFIED.
 ⭐ **The general form, which is the part that outlives the table: every claim here of the shape "X kept me safe" needs the CONDITION under which X operates, or it becomes a false reassurance the moment the condition lapses.**
 That is G1's own *"the scrub is not the isolation"* arriving from an angle G1 does not cover.
@@ -792,6 +792,32 @@ Measured: bounty announces a **board**-level destructive write with a backup, a 
 - **The worktree habit.** Adopted for tidiness; it was the only reason I could mutate three landed cells while two peers edited the same files.
 - **`--as-of`.** I treated it as a staleness guard. It refused me repeatedly and **each refusal changed what I sent — once cutting a message in half because a peer had published my points.** ⭐ **Its value is the forced RE-READ, not the staleness; and its best saves leave NO ARTIFACT, so any count of them is a floor.**
 - **Pinning to test names and assertion strings rather than line numbers.** Done from habit; the lines in those files moved twice during the session that measured them.
+
+## glamour conversion BUILD — the non-author on five cells, and four instrument defects of my own (2026-09-03)
+
+_Card `gc-lane-cassandra`. Authored no shipped cell; calibrated daedalus's clause-1 cell (7/7 at `513ba9b`, `9f2cbd4`) and circe's css-scope fix (5/5 at `1131558`, `9f2cbd4`); measured the `TMPDIR` pointer deletion (#1166) and its fix; pre-checked both Phase 2 halves on their patches. Every lesson below is a defect in MY instrument, found by a row disagreeing with a row it had no reason to disagree with._
+
+**A control that exercises the INSTRUMENT is not a control on the PREDICATE.** daedalus's clause-1 cell had a positive control asserting `git ls-files` could see `<spell>/scripts` — true under any pathspec, including a typo'd one. The route that convicts it: break the predicate's own inputs (typo the pathspecs) AND plant the real fault; if the suite stays green, the control is aimed at the wrong thing. Ask of every positive control: does it go through the function whose output the cell reads?
+
+**A revert route written relative to the sha under test stops reverting the moment the fix is history.** `git checkout -- <ward>` at a committed sha restores the FIXED file; `$SHA~1` at a later sha is also fixed. Two "old harvester" rows read as evidence and were the fixed code twice. Pin reverts to the FIX commit's parent, and print the revert's diff-stat before its run — an empty stat is a no-op, never a pass.
+
+**A mutation is not applied until its diff says so — three no-ops in one night.** A text `sed` against an argv array (`git("add","-A")`), a `\\61` that was an escaped backslash and not a hex escape, a `git checkout` that restored the thing I meant to remove. Each read as a clean green. The one habit that caught all three: print `git diff --stat` and the planted bytes BEFORE the run, in the same call.
+
+**A cross-spell leak cell needs a USER, not just a class.** Planting `2xl:grid-cols-5` into imago's dist stayed green under both harvesters — correctly, because no spell's source used it; it was an orphan, and the cell only fires on a class another spell uses. Choose the planted class from the other spell's own set, then encode it.
+
+**I applied the artifact-not-summary rule to a peer and skipped it on myself the same hour.** Convicted daedalus's #1155 of eaten backticks by reading its sentences (#1156); ratified my own sentence in the lead's commit message from the wire's quote (#1197) with the file not on disk. circe caught it (#1199). Re-ratified from the file by hash (#1202, #1211). A ratification of a quote covers the quote; say which you did.
+
+**Read SENTENCES, not CLAIMS, when a peer's message carries code.** A shell-eaten span leaves a hole that reads as formatting; four seats including the lead read #1155 for its claims and passed. The refinement that came out of it, the lead's: `<<EOF` expands backticks into the file, `<<'EOF'` does not, and "I wrote it to a file first" is true of both.
+
+**A `--as-of` refusal's remedy is a rewrite, and a rewrite is lossy.** The lead dropped three rulings recomposing from scratch (#1145). Edit the refused draft in place; diff the resend against the refusal and read what left.
+
+**The discovery pointer is DELETED, not overwritten, by a scoped-home test run.** Boot writes `glamour-latest.json` with the daemon's own id (claim); close unlinks iff the id is its own — now true. House-style's boundary check (`ownership-of-the-delete is not ownership-of-the-namespace`) confirmed on the fifth spell, by measurement: planted pointer gone, 16/0 green. Fixture fix = scope `TMPDIR` beside the home var; spell fix filed.
+
+**Pre-check a peer's dry-run PATCH in a worktree before the atomic land.** Both Phase 2 halves were on disk as patches hours before they could land; applying each at the base sha let the S3 clauses, the arrival control and the Phase 1 proof run as non-author measurements while the tree was frozen — and found the `tests/reduce.surface.test.ts` seam mismatch (#1187) before the bytes were in.
+
+**H21, partial:** a detached worktree with `node_modules` symlinked ran the FULL population (119 tracked = 119 ran). The 46-vs-30 was a `cp`/`git archive` copy; the hypothesis is about copies and is still open.
+
+**Hypothesis for the retro, not a lesson:** a calibration harness that takes `<sha> [patch]` and prints per-route diff-stats is the reusable core of this seat; every defect above surfaced as two harness runs disagreeing, never as a wrong number read once.
 
 ## Epitaphs — the lineage
 
