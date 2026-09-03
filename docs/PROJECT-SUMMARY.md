@@ -166,14 +166,29 @@ _Five, as of the 2026-08-10 sweep
   and a committed `dist/` that shipped in v2.2.0 — the real release cut the
   proposal asked for. **Left: NOTHING — closed 2026-09-01.** Seam C's canon
   landed (`house-style.md` now opens `## The build` with a per-spell port
-  queue), and astrolabe was **migrated** rather than dropped. **Four spells
-  build** — astrolabe, imago, magpie, mind-mapper — two of them with built
-  backends, via `spell-kit`. _(This bullet told readers the build did not exist
-  for two days after Seam C killed that claim, in the repo's front-door summary.
-  Found by a non-author audit of a project being archived, not by anyone who did
-  the work.)_ ⚠ `plan.md` is wrong about **which spell**, not whether — prefer
+  queue), and astrolabe was **migrated** rather than dropped. **Five spells
+  build** — astrolabe, glamour, imago, magpie, mind-mapper — two of them with
+  built backends, via `spell-kit`; glamour joined 2026-09-03 (`cae26f8`). _Do
+  not hand-keep this roster: `buildableSpells()` in `src/build.ts` counts it,
+  `dist-roster-ward` prints it, and house-style now points there rather than
+  naming spells. This line has gone stale twice._
+
+  _Reconciled 2026-09-03 @ `cae26f8` — "Four spells build": **FALSIFIED** by the
+  glamour port; corrected to five and pointed at `buildableSpells()`. "two of
+  them with built backends": **HELD** (astrolabe, magpie — glamour's backend
+  ships as source; Phase 3 dropped and re-affirmed post-acc). "spell-surface-
+  pipeline closed 2026-09-01": **HELD**. "Two deliberate surface tiers (glamour,
+  imago, magpie / bounty, digestify, grapevine)": **HELD**. Found by the
+  docs-of-record sweep, which ranges over docs NO SEAT OWNS — the same reason
+  this bullet went stale before._
+
+  _(This bullet told readers the build did not exist for two days after Seam C
+  killed that claim, in the repo's front-door summary. Found by a non-author
+  audit of a project being archived, not by anyone who did the work.)_ ⚠
+  `plan.md` is wrong about **which spell**, not whether — prefer
   `.anthill/dev/seams.md` (Contracts 1, 2, 4), which the build amended and the
   plan did not.
+
 - `spellbook-rebrand` — **naming closed, visual open.** Five mechanical asset
   fixes sit behind three aesthetic decisions; doing them first means doing them
   twice. Exception: **#11** (the wordmark still renders "Tuskboard") is scoped

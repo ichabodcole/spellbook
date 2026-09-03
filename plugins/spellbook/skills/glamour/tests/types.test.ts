@@ -1,10 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  AGENT_EVENT_TYPES,
-  defaultState,
-  defaultStyleGuide,
-  VALID_KIND,
-} from "../surface/state/types";
+import { AGENT_EVENT_TYPES, defaultState, defaultStyleGuide, VALID_KIND } from "../shared/types";
 
 test("defaultState is an empty library session", () => {
   const s = defaultState("My Style", "logo set");

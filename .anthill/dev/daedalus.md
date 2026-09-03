@@ -22,6 +22,8 @@ When something's no longer true, fix it.
 
 > You will DESCRIBE a fact you could have RUN — a parser's default, a guard's absence, a peer's figure, a count — and your prose will be indistinguishable from a measurement precisely BECAUSE you measured something nearby, so the tell is never doubt; therefore whenever you are about to state a runtime behaviour, a number, or an absence in a comment, a commit body or a message, stop and ask what ONE LINE would turn it into an assertion that runs — and write that line instead, because the executable cell is the only instrument that has ever caught you, and today it caught you inside the very file you had written to make that point.
 
+_(**KEPT 2026-09-03 at the close of the glamour conversion — it is still true, and it fired in a new costume.** Five numbers of mine moved tonight (23→15, R085→R089, :5→:11, 60→59, "one line"→three), every one composed in the same breath as the measurement it cited; the seat that reads this will do it too. The sharper practice, added this session: never compose a claim in the same tool call as the measurement — measure, read the output, then write. A contract I own carried a false sentence for a year for the same reason.)_
+
 _(Written 2026-08-10 at the close of sprint 05. It supersedes "go read the premise when the claim is about YOU", which fired twice this session and WORKED both times — see the lineage for why a still-winning epitaph moved.)_
 
 _**The scar is that this happened FIVE times in one session, every time in the act of building instruments AGAINST it, and the prose was always confident.**_
@@ -141,7 +143,7 @@ If a spell iterates on routes, a cli restart verb earns its keep; pin: spike ses
 
 **The cwd pin for a `src/`-relocated surface is CONTRACT 5 — see `seams.md`, do not read it here.**
 This entry used to restate that contract almost verbatim. **I own Contract 5, so I was the one seat whose restatement could drift from the source without anyone noticing** — the owner's copy reads as authoritative. Found at finalize by grepping my own doc against the contracts I own, not by remembering.
-_What is MINE and stays here is the judgment, not the rule:_ the failure is **silent** in three different costumes (unstyled surface, a 404 on a live route, a daemon that "did not come up"), and each one presents as a bug in somebody else's layer. **When a spell's surface stops looking right, check the cwd the daemon was spawned with before you debug the surface.**
+_What is MINE and stays here is the judgment, not the rule:_ the failure wears three costumes (a page that 500s with no stylesheet — **measured 2026-09-03, it is LOUD, not the "unstyled at 200" I wrote here and four spells' comments still say**; a 404 on a live route; a daemon that "did not come up"), and each one presents as a bug in somebody else's layer. **When a spell's surface stops coming up in dev, check the cwd the daemon was spawned with before you debug the surface.** And a `cwd` that does not exist is reported by node as a missing BINARY (`posix_spawn 'bun'`) — preflight it and name the directory (cassandra `#1265`).
 
 **Untracked files hide from pathspec commits.** A pathspec commit shows no diff for untracked files you left out, so "my commit excluded styles.css" was invisible in the land itself; state your leave-outs explicitly in the vine announce (the announce, not the commit, carried that information).
 Pin: spike lands aad6e6e / circe's follow-up.
@@ -1103,6 +1105,90 @@ A seam card that says "relocate nothing, do not commit" still owes a rebuilt, ST
 **Sort a two-sided candidate on evidence, and say what the evidence WAS in the file, because the next reader will re-derive it from the filename otherwise.**
 `reduce.ts` looks like surface state and is daemon-only (zero browser importers); `alpha.ts` looks like backend policy and is two-sided (`RemoveGallery.tsx` reads it); `versions.ts`'s own header claimed it was "shared by server.ts AND the React client" and server.ts has never imported it.
 All three headers now name their real consumers, and the ward pin shows the sort directly — `../shared/types` beside `./reduce` in one inventory is the three-way sort made visible in an instrument rather than in prose.
+
+## glamour conversion (feat/glamour-conversion, 2026-09-03) — judgments (promoted early; Phase 2 held on Cole)
+
+**A POSITIVE CONTROL MUST GO THROUGH THE FUNCTION UNDER TEST, NOT THROUGH A DEPENDENCY OF IT — a control that stays green under any predicate licenses nothing.**
+The clause-1 cell's first control proved `git ls-files` could see a tracked `<spell>/scripts`; cassandra typo'd both of `trackedBuildInputs`'s pathspecs, planted a leak, and the ward stayed 5/0 (#1160, route R4).
+I stopped the land mid-gate rather than ship a green with an unlicensed control, and the fix was a `root` parameter so the control mints a git repo with a known leak and asserts the predicate NAMES it.
+The question to ask of every control: if I typo the predicate's own constants, does THIS control red?
+Pin: `grimoire/dist-roster-ward.test.ts` "trackedBuildInputs NAMES a known leak", 513ba9b.
+
+**A CONTROL KEYED ON THE THING THE PROJECT REMOVES IS A COUNTDOWN — Contract 19's shape applied to a control.**
+Remedy (b) — assert glamour's own tracked `surface/` is non-empty — was cheaper and expired the moment Phase 2 landed, going vacuous in silence.
+Choose the control whose subject the roadmap does not drain.
+
+**A SYMLINKED-`node_modules` WORKTREE IS NOT CONTRACT 18's CANONICAL CHECKOUT — the mechanism and the measurement are in `seams.md` Contract 18's 2026-09-03 amendment; do not re-read them here.**
+What is mine: I nearly read three ward reds as my own change's, and went to the bytes instead of concluding "worktree builds are flaky" — the diff found the embedded path; the story would not have.
+
+**THE `$(…)` CAPTURE OF A SPAWNING VERB HANGS FOREVER — the detached GRANDCHILD inherits stderr and the substitution waits for every writer.**
+`O=$(bun cli.ts open …)` sat five minutes; the daemon was healthy.
+The piped-long-lived-child scar in a new costume, one process further down; redirect a spawning verb's streams to files, never capture it.
+
+**"DIES BEFORE X" MUST BE CHECKED FOR EVERY SIDE EFFECT BEFORE X, NOT THE ONE THE CELL NAMES.**
+The forced-dev death wrote no discovery JSON — true — and left `$TMPDIR/glamour-<id>-files/` behind on every failed boot, because the session-files `mkdirSync` ran before my `await import`.
+Moved mode resolution above the first filesystem write; measured TMPDIR and HOME empty after the death.
+Generalises: enumerate the writes that precede the failure point, not the one the assertion happens to read.
+
+**AN INTERPOLATED COUNT IN A MESSAGE ABOUT COUNTS — the epitaph's clause, fired inside a correction.**
+I posted "server.ts imports 23 symbols" from `$((E-S-1))` where S was the FIRST `import {` in the file; biome had sorted another multi-line block ahead, the range spanned two blocks, the true number was 15.
+The list the number summarised was one `sed -n` away and I never printed it beside the number.
+Rule: a count goes on the wire only next to the enumeration it counts.
+
+**AN UNQUOTED HEREDOC IS A PARSER YOU DID NOT CHOOSE, AND "I WROTE IT TO A FILE" DOES NOT SAVE YOU.**
+`<<EOF` to interpolate `$PASS` executed every backticked span while WRITING the file; four numbers and four field names left #1155 with no marker, and a byte-identical readback would have been true.
+`<<'EOF'` always; interpolate by a separate step. Sibling the same night: `gate && commit > log` redirects the LAST command only.
+Both are principles.md's second entry; prospero is proposing the quote-character refinement as an amendment in my words.
+
+**READ THE FULL MESSAGE THAT ANSWERS YOUR ASK BEFORE BUILDING ON YOUR OWN PROPOSAL.**
+circe answered ask 2 at #1159 (`derive.test.ts`, co-located); I read the truncated notification and shipped `tests/reduce.surface.test.ts` importing backend mutators as fixtures — falsified, correctly, with the answer already on the wire.
+An ask you posted has an answer somewhere; a notification preview is not it.
+
+**A SYMBOL SPLIT CUTS AT BLOCK BOUNDARIES AND THE COMMENT ABOVE THE NEXT FUNCTION TRAVELS WITH THE WRONG HALF.**
+The verdict paragraph above `applyAgentMsg` left with the four selectors; a file whose header said "no verdicts" ended in prose about the verdict.
+After any symbol-grain split, read BOTH files' tails and heads.
+
+**A PINNED INVENTORY COMPARED WITH `toEqual` IS ORDER-SENSITIVE — insert in WALK order, not at the end.**
+The fifth ward-1a escape appended last reds; between astrolabe and imago it passes.
+And a line-number pin moved twice in one dry run (77 → 125 → 146) as my block moved — chatty by construction, re-lined by hand each time with the reason in the comment.
+
+**`ps` MATCHES COMMAND TEXT, NOT PROCESS IDENTITY OR TREE — a raw count is not evidence of a free shared tree.**
+Five instances in one hour across four seats, both directions; mine was a parent-keyed waiter that could report "finished" with `bun test` children live.
+Prospero's form: anchor at command start, resolve each pid's cwd, say "0 on the shared tree"; and announce worktree test bursts before starting them.
+And I stated "those two processes were mine" from a plausible story rather than a measurement — say "probably mine, running X".
+
+**zsh DOES NOT WORD-SPLIT `$LIST`; a `git diff -- $LIST` produced a 0-line patch at exit 0.**
+Use an array (`"${MINE[@]}"`) or `${=LIST}`; the size of the result was the only tell.
+
+**A DRY RUN OF THE WHOLE PHASE IN A WORKTREE, MEASURED THERE, IS WHAT MADE "ONE COMMIT" TRUE OF THE TREE AND NOT ONLY OF THE HISTORY.**
+Phase 1: 30 files, six renames, census/tsc/sweep/build/suite all green before a byte entered the shared tree; prospero ran one gate and one commit over both seats' paths.
+The playbook's Phase 1 has no step for a SYMBOL-grain split (only whole-file moves) and git's rename detection on the 89%-similar half is what keeps history — thoth is adding the sentence.
+
+**A SENTENCE IN A CONTRACT YOU OWN, CONTRADICTED BY YOUR OWN MEASUREMENT, IS THE CONTRACT'S TO AMEND — not the message's to caveat.**
+My wrong-cwd drive showed the CSS asset at 500 with zero Tailwind markers, and I wrote "louder than unstyled" into a READY post while Contract 5 — mine — still said "silently skipped, renders unstyled"; an hour later I copied that false sentence into my own Phase 2 comment from imago's.
+circe measured the page at 500 and the sentence fell; five spells, eight comment sites, a playbook line, a lane and three rulings had carried it unrun.
+When a measurement disagrees with a contract you own, open the contract that day.
+Pin: seams.md Contract 5 amendment 2026-09-03; `src/glamour/dev-styled.test.ts` asserts the invariant, not the status code.
+
+**THE ONLY PATH A CONSUMER HAS IS THE ENTRY POINT — a sim that boots the daemon directly tests a path nobody takes.**
+My local-sim ran `server.ts` and got the right death message; cassandra's ran `cli.ts open` and got `ENOENT … posix_spawn 'bun'`, because node reports a missing cwd as a missing binary.
+Fix: `existsSync(daemonCwd())` before the spawn, naming the directory and why dev was resolved; the cell asserts "names the directory, not bun", never the literal path (which is `/src/glamour` at a /tmp destination — true and odd).
+Pin: `glamour/tests/cli-open-envelope.test.ts` (cassandra's, calibrated by circe).
+
+**NEVER COMPOSE A CLAIM IN THE SAME TOOL CALL AS THE MEASUREMENT IT CITES — measure, READ, then write.**
+Twice tonight: "server.ts imports 23 symbols" from an interpolated range spanning two import blocks (true: 15), and "exactly one src/-naming line" beside a grep that printed three (one specifier, two lines of my own hint prose).
+Both were the epitaph's clause, and both were composed before the output existed; the fix is ordering, not care.
+
+**A FILE PLACED BY `cp` SKIPS EVERY CHECK A NORMAL EDIT MEETS, AND `bunx` OUTSIDE THE REPO IS NOT THE REPO'S TOOL.**
+The Phase 2 gate went red on format in exactly the three hand-placed cells; two had been checked with `bunx biome` in a mktemp copy, where bunx downloaded a different biome than the pin.
+Corollary to the symlinked-worktree finding: a symlinked worktree is WRONG for builds (module-comment paths) and RIGHT for tool pinning (biome, tsc, bun test) — say which axis a rig is faithful on.
+
+**AN INSTRUMENT'S PRECONDITION MUST BE CAPTURED BEFORE THE EVENT IT GUARDS AGAINST CAN HAPPEN.**
+Three seats "held the old bytes" for a byte-diff of the commit message; all three copied after the file had moved, and a diff of a file against itself exits 0 for any change.
+The design was right and nobody ran it — circe's rule: copy BEFORE you announce the hash.
+
+**A GENERATED CELL IS A MEMBER OF THE SUITE NOBODY WROTE, AND IT IS WHERE A PARTITION FAILS BY ONE.**
+The Phase 2 delta of +16 partitioned as 11 placed + 4 mine + 1 the css-scope ward MINTED when glamour joined its roster; without naming it someone would have hunted a phantom cell — and the next roster addition moves it again.
 
 ## release-staleness CI (2026-09-01) — judgments
 

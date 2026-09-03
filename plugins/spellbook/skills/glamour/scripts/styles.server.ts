@@ -3,7 +3,13 @@
 // keyed to the checkout where the spell was cast.
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import type { CanonImg, CanonicalRef, LibraryItem, SavedStyle, StyleSection } from "./types";
+import type {
+  CanonImg,
+  CanonicalRef,
+  LibraryItem,
+  SavedStyle,
+  StyleSection,
+} from "../shared/types";
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",

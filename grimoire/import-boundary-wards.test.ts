@@ -291,6 +291,16 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     spec: "../../../../../src/astrolabe/surface/index.html",
     resolved: "src/astrolabe/surface/index.html",
   },
+  // glamour, the fifth (glamour conversion Phase 2, 2026-09-03). Pinned by the
+  // seat that wrote the specifier, after running existsSync on the resolved
+  // path — this ward compares strings and would launder a broken spec into the
+  // pin (measured at the glamour ratify, cassandra); the check is a human's
+  // until the filed existsSync guard is built.
+  {
+    file: "plugins/spellbook/skills/glamour/scripts/server.ts",
+    spec: "../../../../../src/glamour/surface/index.html",
+    resolved: "src/glamour/surface/index.html",
+  },
   {
     file: "plugins/spellbook/skills/imago/scripts/server.ts",
     spec: "../../../../../src/imago/surface/index.html",
@@ -1086,7 +1096,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const at = (file: string, line: number) =>
       scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8")).find((r) => r.line === line)
         ?.kind;
-    expect(at("plugins/spellbook/skills/glamour/scripts/server.ts", 77)).toBe("type");
+    expect(at("plugins/spellbook/skills/glamour/scripts/server.ts", 146)).toBe("type"); // was 77; the Phase 2 mode block above it moved the line (bookkeeping, not a change to the escape)
     expect(at("plugins/spellbook/skills/mind-mapper/scripts/propose.test.ts", 463)).toBe("type");
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an

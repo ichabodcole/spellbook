@@ -83,10 +83,23 @@ per Contract 4 and the astrolabe/magpie precedent.
 
 > **Proof:** the CLI runs at a destination that never ran `install`.
 
-**Phase 4 — agent-legibility (SEPARATE, and optional).** glamour has **no
-`acc.config.json`** — it is the only relocated-or-relocating spell without one.
-This is a different axis from the port and should not be smuggled into it; it is
-listed so the decision is explicit rather than forgotten.
+**Phase 4 — agent-legibility (SEPARATE, and DISCHARGED ahead of the port).**
+glamour is acc-conformant at kit 0.1.11 as of `389d088`
+([`../glamour-acc-l0/`](../glamour-acc-l0/proposal.md)), which ran **before**
+the port so that conformance established on the old layout characterises the
+relocation. The axis is independent of porting in both directions — measured at
+ratify (comms `#1119`): imago is relocated and ships `dist/` with **no**
+`acc.config.json`; mind-mapper and grapevine took acc with no port at all.
+
+> **Reconciled 2026-09-03 @ `95dc287` (thoth, lane A1; ruled prospero
+> `#1135`).** CLAIM as written: _"glamour has **no `acc.config.json`** — it is
+> the only relocated-or-relocating spell without one."_ **FALSIFIED, twice:**
+> imago is relocated, ships `dist/`, and has no `acc.config.json`
+> (`ls plugins/spellbook/skills/imago/acc.config.json` → no such file; seams
+> Contract 3's amendment names the absence); and glamour **has** one as of
+> `389d088`. The first half was called at ratify (`#1119`) and the sentence was
+> carried anyway. Kept struck so a reader who remembers the old claim sees it
+> was overturned, not misremembered.\_
 
 ## Scope
 

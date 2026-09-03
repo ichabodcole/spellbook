@@ -7,9 +7,9 @@ import {
   materializeItem,
   saveDataUrl,
   saveSnapshot,
-} from "../surface/state/persist.server";
-import { makeItem } from "../surface/state/reduce";
-import { defaultState } from "../surface/state/types";
+} from "../scripts/persist.server";
+import { makeItem } from "../scripts/reduce";
+import { defaultState } from "../shared/types";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "glamour-persist-"));
 

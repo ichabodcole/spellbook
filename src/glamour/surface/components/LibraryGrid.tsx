@@ -1,6 +1,10 @@
 import { Archive, ArchiveRestore, Maximize2 } from "lucide-react";
-import { itemsByKind, type MarkFilter, matchesMarks } from "../state/reduce";
-import type { FocusScope, ItemKind, LibraryItem } from "../state/types";
+import type {
+  FocusScope,
+  ItemKind,
+  LibraryItem,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
+import { itemsByKind, type MarkFilter, matchesMarks } from "../state/derive";
 import { LibraryTile } from "./LibraryTile";
 
 export function LibraryGrid({

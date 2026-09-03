@@ -1,5 +1,8 @@
 import { useState } from "react";
-import type { LibraryItem, Message } from "../state/types";
+import type {
+  LibraryItem,
+  Message,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 import { ActivityIndicator } from "./ActivityIndicator";
 import { MessageBubble } from "./MessageBubble";
 

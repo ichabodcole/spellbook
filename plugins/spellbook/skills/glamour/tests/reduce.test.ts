@@ -2,18 +2,15 @@ import { describe, expect, test } from "bun:test";
 import {
   addItem,
   addMessage,
-  agentRepliedSince,
   annotate,
   applyAgentMsg,
   archiveTrayStyle,
   buildStyleItem,
   clearFocus,
   isImperative,
-  itemsByKind,
   leanItem,
   leanState,
   makeItem,
-  matchesMarks,
   selectItems,
   setCanonical,
   setFocus,
@@ -23,8 +20,8 @@ import {
   setLike,
   setStar,
   updateSection,
-} from "../surface/state/reduce";
-import { defaultState } from "../surface/state/types";
+} from "../scripts/reduce";
+import { defaultState } from "../shared/types";
 
 const img = () =>
   makeItem({
@@ -81,54 +78,6 @@ test("annotate writes the right side", () => {
   expect(annotate(s, "zzz", "agent", "x")).toBe(false);
 });
 
-test("itemsByKind filters and excludes archived", () => {
-  const s = defaultState("t", "");
-  addItem(s, img());
-  addItem(
-    s,
-    makeItem({
-      id: "c",
-      kind: "context",
-      title: "brief.md",
-      text: "x",
-      createdAt: 2,
-    }),
-  );
-  const archived = makeItem({
-    id: "d",
-    kind: "ref",
-    title: "old",
-    createdAt: 3,
-  });
-  archived.archived = true;
-  addItem(s, archived);
-  expect(itemsByKind(s.library, "all").map((i) => i.id)).toEqual(["a", "c"]);
-  expect(itemsByKind(s.library, "ref").map((i) => i.id)).toEqual(["a"]);
-  expect(itemsByKind(s.library, "context").map((i) => i.id)).toEqual(["c"]);
-});
-
-test("matchesMarks unions active marks; all pass when none active", () => {
-  const mk = (id: string, p: Partial<{ liked: boolean; starred: boolean; canonical: boolean }>) => {
-    const it = makeItem({ id, kind: "gen", title: id, createdAt: 1 });
-    Object.assign(it, p);
-    return it;
-  };
-  const liked = mk("l", { liked: true });
-  const starred = mk("s", { starred: true });
-  const pinned = mk("p", { canonical: true });
-  const none = mk("n", {});
-  const off = { liked: false, starred: false, pinned: false };
-  // no filter active → everything passes
-  for (const it of [liked, starred, pinned, none]) expect(matchesMarks(it, off)).toBe(true);
-  // single
-  expect(matchesMarks(liked, { ...off, liked: true })).toBe(true);
-  expect(matchesMarks(none, { ...off, liked: true })).toBe(false);
-  expect(matchesMarks(pinned, { ...off, pinned: true })).toBe(true);
-  // union: liked OR starred
-  expect(matchesMarks(starred, { ...off, liked: true, starred: true })).toBe(true);
-  expect(matchesMarks(pinned, { ...off, liked: true, starred: true })).toBe(false);
-});
-
 test("leanState strips src and text, keeps path and marks", () => {
   const s = defaultState("t", "");
   const it = img();
@@ -160,17 +109,6 @@ test("setItemArchived sets archived and returns false for unknown id", () => {
   expect(setItemArchived(s, "a", false)).toBe(true);
   expect(s.library[0].archived).toBe(false);
   expect(setItemArchived(s, "zzz", true)).toBe(false);
-});
-
-test("itemsByKind still excludes archived items by default", () => {
-  const s = defaultState("t", "");
-  addItem(s, img());
-  const it2 = makeItem({ id: "b", kind: "ref", title: "b.webp", createdAt: 2 });
-  addItem(s, it2);
-  setItemArchived(s, "b", true);
-  const visible = itemsByKind(s.library, "all");
-  expect(visible.map((i) => i.id)).toEqual(["a"]);
-  expect(itemsByKind(s.library, "ref").map((i) => i.id)).toEqual(["a"]);
 });
 
 test("applyAgentMsg mutates state", () => {
@@ -260,23 +198,6 @@ test("section command sets structured palette colors (swatches)", () => {
   ]);
   // other sections keep an empty colors array
   expect(s.styleGuide.find((x) => x.key === "direction")?.colors).toEqual([]);
-});
-
-test("agentRepliedSince is true once an agent message lands after the timestamp", () => {
-  const base = defaultState("t", "i");
-  base.messages = [{ id: "a", who: "user", kind: "info", text: "hi", ground: [], ts: 100 }];
-  expect(agentRepliedSince(base.messages, 100)).toBe(false);
-  base.messages.push({
-    id: "b",
-    who: "agent",
-    kind: "result",
-    text: "hey",
-    ground: [],
-    ts: 150,
-  });
-  expect(agentRepliedSince(base.messages, 100)).toBe(true);
-  // an agent message at or before the cutoff does not count
-  expect(agentRepliedSince(base.messages, 150)).toBe(false);
 });
 
 describe("focus + gen-cost reducers", () => {

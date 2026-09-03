@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startDaemon } from "../scripts/server";
@@ -9,6 +9,12 @@ let base: string;
 
 beforeAll(async () => {
   process.env.GLAMOUR_HOME = mkdtempSync(join(tmpdir(), "glamour-home-"));
+  // The daemon writes its discovery pointer to $TMPDIR/glamour-latest.json
+  // UNCONDITIONALLY at boot and unlinks it at close iff the id is its own — so
+  // this suite, run while a real glamour session is open, DELETED the user's
+  // pointer at 16 pass / 0 fail (cassandra, comms #1166). Scope TMPDIR too.
+  // Fixture-side only; the pointer's home is a filed spell-wide item.
+  process.env.TMPDIR = mkdtempSync(join(tmpdir(), "glamour-tmp-"));
   d = await startDaemon({ port: 0, title: "Test", intent: "logos" });
   base = `http://127.0.0.1:${d.port}`;
 });
@@ -411,4 +417,28 @@ test("BLAST-RADIUS GUARD — malformed JSON is still refused at the PARSE layer"
     body: "{not json",
   });
   expect((await r.json()) as { error?: string }).toMatchObject({ error: "bad json" });
+});
+
+// Appended AFTER the state-sensitive cells: this shared-daemon rig is
+// order-coupled through daemon-global state, and a new cell goes at the end or
+// scopes itself — never mid-file.
+test("mode rides the ready event AND the discovery file AND startDaemon's return — one value, three transports", async () => {
+  // RED PRE-FIX (no `mode` anywhere), so it is a result cell, not a guard.
+  // Contract 1 names the ready event; glamour additionally publishes a discovery
+  // file that cli.ts reads and (in import.meta.main) a stdout handshake — the
+  // handshake is a process concern and release-serve.test.ts asserts it by
+  // spawning; here the in-process daemon exposes the same value on its return.
+  const r = await fetch(`${base}/events?since=0`);
+  const reader = (r.body as ReadableStream<Uint8Array>).getReader();
+  const { value } = await reader.read();
+  await reader.cancel();
+  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
+  expect(ready.type).toBe("ready");
+  expect(["dev", "release"]).toContain(ready.mode);
+  const discovery = JSON.parse(
+    readFileSync(join(tmpdir(), `glamour-${d.sessionId}.json`), "utf8"),
+  ) as { mode: string };
+  expect(discovery.mode).toBe(ready.mode);
+  expect(ready.mode).toBe(d.mode);
 });

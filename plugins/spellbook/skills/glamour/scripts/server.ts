@@ -1,9 +1,15 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
-import index from "../surface/index.html";
-import { loadSnapshot, materializeItem, saveSnapshot } from "../surface/state/persist.server";
+import {
+  type AgentCommand,
+  type ClientToServer,
+  defaultState,
+  type GlamourState,
+} from "../shared/types";
+import { loadSnapshot, materializeItem, saveSnapshot } from "./persist.server";
 import {
   addItem,
   addMessage,
@@ -20,20 +26,62 @@ import {
   setItemArchived,
   setLike,
   setStar,
-} from "../surface/state/reduce";
+} from "./reduce";
 import {
   loadTray,
   materializeCanon,
   projectKey,
   saveStyle,
   setStyleArchived,
-} from "../surface/state/styles.server";
-import {
-  type AgentCommand,
-  type ClientToServer,
-  defaultState,
-  type GlamourState,
-} from "../surface/state/types";
+} from "./styles.server";
+
+// The surface's HTML entry used to be a top-level static import here. A static
+// import forces Bun to resolve the whole .tsx + Tailwind graph when this module
+// LOADS, so a destination that ships dist/ and no surface source — the published
+// artifact — dies before it can serve the dist it does have. The dev import is
+// therefore dynamic and reached only on the dev branch below (seams Contract 1),
+// as astrolabe, imago and mind-mapper do it.
+//
+// Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd for
+// bunfig.toml's sake in dev (Contract 5), so cwd is not a stable base for dist/.
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root — the FILE, never the
+// directory (a built backend can put cli.js in dist/ with no surface there) —
+// else dev; the env override wins either way (Contract 1). Release: zero reads
+// of surface source or bunfig.toml — static files only.
+export function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
+// (Contract 2's flat, relative-href layout). A static asset request is always a
+// bare filename, never nested: the guard is what keeps this one level deep and
+// disjoint from glamour's own GET /assets/<name> session-files route above it
+// (every /assets/ path is nested, so it is refused here and falls through).
+function serveDist(path: string): Response | null {
+  const rel = path === "/" ? "index.html" : path.slice(1);
+  if (rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 const enc = new TextEncoder();
 const randHex = (n: number) =>
@@ -68,6 +116,27 @@ export async function startDaemon(opts: StartOpts) {
     }
   }
   const PROJECT_KEY = projectKey(opts.project ?? process.cwd());
+  // --- mode, resolved BEFORE any filesystem write -----------------------------
+  // A forced-dev boot at a surface-free destination must die HERE, at the import,
+  // having written nothing: no session-files dir, no discovery pointer. Measured
+  // in the local-sim: with this block placed after the session-files mkdir, a
+  // dying daemon left `$TMPDIR/glamour-<id>-files/` behind on every failed boot.
+  const mode = resolveMode();
+  // dev: the dynamic string-literal import keeps the surface graph off the module
+  // load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at serve time,
+  // reading bunfig.toml from cwd, which cli.ts pins to src/glamour/ (Contract 5).
+  // release: dist/ is static and pre-built (Contract 2) — "/" is answered by
+  // serveDist() in the fetch fall-through, so this branch never touches surface
+  // source or bunfig.toml and never needs either to exist. Bun's Routes type ties
+  // the "/" value's type to the literal object shape, so the mode-ternary union
+  // is cast; the runtime behaviour (HTMLBundle in dev, absent in release) is
+  // correct either way. This is the ONE src/-naming specifier in the deployed
+  // spell (plan S2, ratified at the specifier grain).
+  const devIndex =
+    mode === "dev"
+      ? (await import("../../../../../src/glamour/surface/index.html")).default
+      : undefined;
+  const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
   // Load the project's saved styles into the tray (metadata only — NOT the
   // library). Do this after restore so a restored snapshot's stale tray is
   // replaced by the authoritative on-disk set.
@@ -370,8 +439,8 @@ export async function startDaemon(opts: StartOpts) {
   const server = Bun.serve({
     port: opts.port ?? 0,
     hostname: opts.host ?? "127.0.0.1",
-    routes: { "/": index },
-    development: { hmr: true },
+    routes,
+    development: { hmr: mode === "dev" },
     fetch(req, srv) {
       const url = new URL(req.url);
       const path = url.pathname;
@@ -426,6 +495,13 @@ export async function startDaemon(opts: StartOpts) {
             ok ? new Response(f) : Response.json({ error: "not found" }, { status: 404 }),
           );
       }
+      // release: "/" and the hashed chunk-*.js/css are static dist reads. Dev
+      // never reaches here for "/" — the routes table above answers it first.
+      // This sits AFTER /assets/, which serves session files, not dist ones.
+      if (mode === "release") {
+        const asset = serveDist(path);
+        if (asset) return asset;
+      }
       return Response.json({ error: "not found" }, { status: 404 });
     },
     websocket: {
@@ -464,6 +540,7 @@ export async function startDaemon(opts: StartOpts) {
     session_id: sessionId,
     title: state.title,
     files_dir: sessionFilesDir,
+    mode,
   });
   try {
     writeFileSync(sessionFile, info);
@@ -472,7 +549,12 @@ export async function startDaemon(opts: StartOpts) {
     /* discovery is best-effort */
   }
 
-  emitEvent({ type: "ready" });
+  // Contract 1: the daemon EMITS its resolved mode — a dev daemon with root deps
+  // present renders an identical-looking board, so `mode` is the only thing that
+  // tells a verifier which path served it. glamour has THREE transports (imago
+  // has two): this event, the discovery file above, and the stdout handshake in
+  // import.meta.main below. All three carry it.
+  emitEvent({ type: "ready", mode });
 
   // --- snapshot debounce + idle timeout --------------------------------------
   const saveNow = () => saveSnapshot(SNAPSHOTS_DIR, sessionId, state);
@@ -535,7 +617,7 @@ export async function startDaemon(opts: StartOpts) {
   };
   done.then(() => close());
 
-  return { port: boundPort, sessionId, close, done, shutdown };
+  return { port: boundPort, sessionId, mode, close, done, shutdown };
 }
 
 // #81 / D4 — THE RECOGNIZED SET, AT PARSER ALTITUDE. The SIXTH entry point.
@@ -593,7 +675,7 @@ if (import.meta.main) {
       project: flags.project,
     });
     process.stdout.write(
-      `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId })}\n`,
+      `${JSON.stringify({ url: `http://127.0.0.1:${d.port}`, port: d.port, session_id: d.sessionId, mode: d.mode })}\n`,
     );
     const res = await d.done;
     // Wait for the closed SSE event to flush before exiting.

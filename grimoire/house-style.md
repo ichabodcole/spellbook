@@ -360,31 +360,34 @@ unchanged**, which is why the scar stays._
 
 ## The build
 
-### Four spells build. The rest are queued, at three different distances.
+### Spells port to the build. The rest are queued, at two different distances.
 
 <!-- rule-id: spells-are-porting-to-the-build -->
 
 `bun run build` (`src/build.ts`) bundles a spell's surface from
 `src/<spell>/surface/` into `plugins/spellbook/skills/<spell>/dist/`, which is
-**committed**. Today **astrolabe, imago, magpie, mind-mapper** build; two of
-them (astrolabe, magpie) also ship a **built backend** at `dist/cli.js` behind a
-three-line launcher.
+**committed**. **The spells that build are the ones `bun scripts/dist-check.ts`
+counts** (`buildableSpells()` in `src/build.ts`) — ask it, do not copy its
+answer here. Two of them (astrolabe, magpie) also ship a **built backend** at
+`dist/cli.js` behind a three-line launcher (Contract 3's enumerated permission).
 
-**The direction is that everything ports.** The remaining four are _not yet_,
+**The direction is that everything ports.** The remaining three are _not yet_,
 not _correctly not_ — but they are not one queue, and treating them as one is
 how a port gets estimated wrong:
 
-| spell         | surface today           | distance                                             |
-| ------------- | ----------------------- | ---------------------------------------------------- |
-| **glamour**   | 15 `.tsx` + its own CSS | **a relocation** — same move as the four that landed |
-| **bounty**    | Alpine in one HTML file | a surface **rewrite** first                          |
-| **grapevine** | Alpine in one HTML file | a surface **rewrite** first                          |
-| **digestify** | one HTML file + CDN     | **conditional** — see the trigger below              |
+| spell         | surface today           | distance                                |
+| ------------- | ----------------------- | --------------------------------------- |
+| **bounty**    | Alpine in one HTML file | a surface **rewrite** first             |
+| **grapevine** | Alpine in one HTML file | a surface **rewrite** first             |
+| **digestify** | one HTML file + CDN     | **conditional** — see the trigger below |
 
-**glamour is the cheap one and should not be lumped with the other three.** It
-is already React and Tailwind; what stands between it and a build is moving the
-files. bounty and grapevine are Alpine single-pagers — porting them means
-rewriting the surface, which is a different project with a different budget.
+bounty and grapevine are Alpine single-pagers — porting them means rewriting the
+surface, which is a different project with a different budget. **A spell with no
+`surface/` is not yet a port subject**; the porting playbook's Applicability
+says the same thing from its side. is already React and Tailwind; what stands
+between it and a build is moving the files. bounty and grapevine are Alpine
+single-pagers — porting them means rewriting the surface, which is a different
+project with a different budget.
 
 > **⏳ DIGESTIFY'S TRIGGER, stated because an unnamed one does not fire.**
 > digestify ports **when it becomes dynamic enough to want a build** — that is

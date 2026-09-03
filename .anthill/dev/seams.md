@@ -74,20 +74,19 @@ resolved at startup: **release** iff **`dist/index.html`** exists at the skill r
 > amendment already keyed on the unhashed `dist/index.html`; the two only stopped agreeing when
 > `dist/` gained a second kind of inhabitant.
 
-- **dev:** the surface HTML entry is imported via a **dynamic, dev-only** `await import("../surface/index.html")` (string-literal specifier) reached only on the dev branch; Bun bundles the `.tsx` + Tailwind graph at serve time; `development.hmr` on.
+- **dev:** the surface HTML entry is imported via a **dynamic, dev-only** `await import("../../../../../src/<spell>/surface/index.html")` (string-literal specifier; the `../surface/index.html` form was the pre-relocation spelling and no ported spell carries it — re-read 2026-09-03 at the glamour finalize, five of five use the `src/` form) reached only on the dev branch; Bun bundles the `.tsx` + Tailwind graph at serve time; `development.hmr` on.
 - **release:** serve static files from `dist/` (entry `dist/index.html` + hashed assets by path); `hmr` off; zero reads of `surface/` or `bunfig.toml`.
 - The daemon **emits its resolved mode** on the `ready` event so the verifier can assert `mode==="release"`.
 - Release mode resolves `dist/` from an **absolute skill-root path** (not cwd).
 
-**Why it bites:** a **top-level static** `import index from "../surface/index.html"` (astrolabe
-`server.ts:63` today) forces Bun to resolve the surface build graph at daemon **load** — which
+**Why it bites:** a **top-level static** `import index from "../surface/index.html"` (what every spell had before its port — the `astrolabe server.ts:63` this line used to cite is gone; the shape lives on only in unported spells) forces Bun to resolve the surface build graph at daemon **load** — which
 **crashes a surface-source-free / deps-free destination** before it can serve `dist/`. The dev-only
 dynamic import is what makes a deps-free daemon boot. A dev-mode daemon with root deps present
 renders an identical-looking board, so "looks right" ≠ "release mode" — assert the emitted mode.
 
 **Proof:** cassandra's Seam D gate — daemon starts and serves the board with `surface/` +
 `bunfig.toml` + `node_modules` all absent (the local-sim recipe in the project plan). Ratified by
-daedalus × circe against astrolabe `server.ts`.
+daedalus × circe against astrolabe `server.ts`. Pinned per spell by a `release-serve.test.ts` (astrolabe, mind-mapper under `scripts/`; imago, glamour under `tests/`; **magpie has none** — re-read 2026-09-03), each asserting the emitted `mode` and the forced-dev death.
 
 ## Contract 2 — Pre-built `dist/` layout
 
@@ -388,7 +387,14 @@ Two operational corollaries:
 
 **Why it bites:** the failure is silent (surface renders unstyled or daemon 404s a live route) and each symptom masquerades as a different bug.
 
-**Proof:** mind-mapper `cli.ts` + green `server.test.ts` booting through the pin (commit 9d46940 and successors).
+> **⚠ Amendment 2026-09-03 (glamour conversion; measured by circe `#1263` and independently by daedalus `#1251`; ruled prospero `#1264`; drafted thoth, lands daedalus as owner).**
+> The clause above says the Tailwind plugin is **silently skipped** and the surface renders unstyled. **Measured false on glamour:** with the cwd at the skill root the dev bundler cannot compile the stylesheet and **the page itself fails — HTTP 500, no stylesheet link** (circe); through the CLI's wrong-cwd control the CSS asset answers **500 with zero Tailwind markers** (daedalus). With the cwd pinned to `src/glamour/` the page is 200 and the stylesheet carries the utilities (42,687 B).
+> **The requirement is unchanged — pin the cwd — and its reason is corrected:** this guards against a LOUD failure, not a silent one. The sentence had propagated unmeasured from four spells' `cli.ts` comments into the playbook, a lane, and three rulings.
+> **The cell that holds it** (`src/glamour/dev-styled.test.ts`, circe) asserts the invariant — _the utility never reaches the browser when the cwd is wrong_ — not the status code, so a future Bun that degrades to an unstyled 200 still reds.
+> Whether the four earlier spells fail loudly or silently is **not measured by this amendment**; their comments are reworded to say what is known, not to assert the opposite. The route half of the clause above (a daemon 404 on a live route) stands.
+> And a cwd that does not exist is reported by node's spawn as a missing BINARY (`ENOENT … posix_spawn 'bun'`, cassandra `#1265`); glamour's `cli.ts` preflights the directory and names the real absence.
+
+**Proof:** mind-mapper `cli.ts` + green `server.test.ts` booting through the pin (commit 9d46940 and successors); the loud failure: `src/glamour/dev-styled.test.ts` (circe, glamour conversion Phase 2).
 
 ## Contract 6 — Span anchors are whitespace-tolerant by contract
 
@@ -939,6 +945,12 @@ could not have called it).
 
 > **⚠ Authorship note, stated so a future reader does not infer a scope grab.** This contract's surface half lives in `glamour/surface/state/reduce.ts`, which is **circe's** file. She is unseated (third round running), and prospero ruled that the seat which made the reducer return the verdict holds the contract. **If circe is re-seated, this entry is hers to amend or falsify.**
 
+> **⚠ Amendment 2026-09-03 (glamour conversion, S1 split; drafted thoth, landed daedalus as owner).**
+> The authorship note above says the surface half lives in `glamour/surface/state/reduce.ts`. **That file no longer exists after the S1 split:** `reduce.ts` was two disjoint halves at the symbol grain — backend 21 exports (15 imported by `server.ts`, 6 consumed only by tests), surface 4, intersection zero; derived by command, `plan/daedalus.md` T1.3; the ratify-time figure of 16/22 (`#1120`, carried into the plan) counted the server's import list and called it the backend half, and is overturned, not misremembered — and the port separated them (ruled `#1124`).
+> The **verdict-returning reducer** (`applyAgentMsg`, the subject of this contract) now lives on the **daemon side** at `plugins/spellbook/skills/glamour/scripts/reduce.ts` (moved with `git mv`, so history follows it).
+> The **surface half** — pure view-side derivations, no mutators — lives at `glamour/surface/state/derive.ts`, relocating to `src/glamour/surface/state/derive.ts` in Phase 2 (circe `#1137`, ratified prospero `#1142` R2), and it is **not** this contract's subject: it returns no verdict.
+> **The contract is unchanged.** The verdict still originates in the code that owns the recognised set; `applied` is still the field; only the file the note points at moved. The "as built" sentence above (bare boolean) is still accurate for glamour and was not re-measured by this amendment.
+
 **The contract, stated once:** a spell daemon's `POST /cmd` route must answer with a **verdict it received from the code that owns the recognised set**, never with a literal `ok:true` and never with a verdict derived from a second enumeration of command types maintained beside the dispatch.
 
 Concretely, as built in the three co-presence spells:
@@ -998,7 +1010,7 @@ Every house spell CLI answers a FAILURE as **one JSON document on stderr with st
 - **Registry single-sourcing:** one flag registry (**no defaults in it** — stage-2 stray detection is key-presence; defaults live at consumption `??`) + one verb→flags spec (path-keyed where subcommands exist) drive parser, help, rejections, and the drift wards. `--version` is a **root TOKEN, never a registry flag** — registering it re-scopes it under every verb; the flag-invariant ward's FOREIGN pin is the standing answer (magpie:version precedent, astrolabe:version pinned 15513af).
 - **Delivery:** throw a typed error and let `main` RETURN the code (`process.exitCode` + natural return, never `process.exit` where stdout may hold >64KB) — and any catch-all retry loop in scope must rethrow the typed error (tail's reconnect loop, daedalus seat doc).
 
-**Proof:** `plugins/spellbook/skills/mind-mapper/scripts/cli-contract.test.ts` (11 cells: dispatch↔spec drift wards, subprocess failure table asserting `error.exit_code === process exit`, help-advertises twin line-anchored per bb13208). Adopted today by: magpie, astrolabe (minimal 2-kind form), grapevine (prose errors — predates this contract, conversion unscheduled), mind-mapper (full form). acc rule B5 holds this checked on every `acc check` run wherever `defaultOutput: json` is declared.
+**Proof:** `plugins/spellbook/skills/mind-mapper/scripts/cli-contract.test.ts` (11 cells: dispatch↔spec drift wards, subprocess failure table asserting `error.exit_code === process exit`, help-advertises twin line-anchored per bb13208). Adopted today by: magpie, astrolabe (minimal 2-kind form), grapevine (prose errors — predates this contract, conversion unscheduled), mind-mapper (full form), glamour (full form, acc L0 pass `389d088`, `glamour/tests/cli-contract.test.ts` — re-read 2026-09-03). acc rule B5 holds this checked on every `acc check` run wherever `defaultOutput: json` is declared.
 
 ## Contract 16 — A relocation's fallout has three classes, and none of the three instruments is the gate
 
@@ -1122,6 +1134,8 @@ freshness check comparing a timestamp across a git boundary is unconditionally u
 and ours was worse than unreliable, it was **inverted**: the merge that landed two
 freshly-built dists is what made them report stale.
 
+> **⚠ Amendment 2026-09-03 (glamour conversion; measured daedalus `#1192`, ruled prospero `#1195`) — "canonical checkout root — repo-root `node_modules`" is a PRECONDITION, not a setting, and a worktree violates it SILENTLY.** `bun run build` in a `git worktree` whose `node_modules` is a **symlink** to the main tree's rewrote every spell's chunk hash: the bundle's module-boundary comments embed the `node_modules` path **relative to the build root**, so `// node_modules/react/…` became `// ../../../../../../../Users/…/node_modules/react/…` — different bytes, different hash, ward 1b ENOENT ×3 wearing the port's face. **Tests in such a worktree are sound; builds are not.** (The inverse holds for tool pinning: a symlinked worktree runs the repo's pinned biome/tsc, while `bunx` in a bare mktemp copy downloads its own — circe `#1301`.) A reproduction claim travels with WHERE it was built or it does not travel.
+
 **Repeal when** the artifact stops being reproducible — a non-deterministic bundler, or a
 toolchain that cannot be pinned. At that point the basis must be **re-derived, not patched**.
 
@@ -1242,6 +1256,16 @@ _Returned by circe 2026-09-01 from Phase 4d; landed by the lead._
 **Corollary for any future instrument over Tailwind candidates.** Measured against the extractor itself, one probe class per rebuild with a same-run control: **Tailwind restarts a candidate after `.` and `>` and after nothing else in its charset**, and a trailing `.`/`,`/`)` kills a candidate while a trailing `:` does not. **A boundary-only tokenizer is blind to the SELECTOR spelling of a class** (`.bg-teal-500`) — which is exactly the form prose reaches for when explaining a CSS rule, and is how this ward's own remediation text re-created the defect it had just removed. Be stricter than the extractor on sentence punctuation, never looser, and say which you are.
 
 **And the vocabulary must be derived by SEGMENT, not by token.** `bg-muted` is spelled nowhere in the roster, so a token-level vocabulary classifies the one class the ward exists for as English. Leading segment ∈ known leading segments, last segment ∈ known following segments, both read from the tree. Known false positive, asserted rather than hidden: English whose every segment is also Tailwind vocabulary (`left-to-right`, `top-left`) — ~5 tokens over 1,463 across `src/`, **zero inside `src/kit/`**.
+
+### Amendment to Contract 21 — the ward's harvester reads a hex-escaped leading digit as one class, and the first non-adopting relocated spell is in
+
+_Owner circe, 2026-09-03 (glamour conversion). Fix landed `1131558`; arrival case run at `cae26f8`; calibrated by cassandra on five routes as the non-author._
+
+**`spell-css-scope-ward`'s `harvest()` consumes a CSS hex escape (`\\<1–6 hex digits>` plus its optional whitespace terminator) as ONE identifier unit and unescapes it to its code point.** An identifier cannot start with a digit, so Tailwind emits a leading-digit variant as `.\\32 xl\\:grid-cols-5` — measured through `bun-plugin-tailwind` under `Bun.build`, the call `src/build.ts` makes. The pre-fix harvester stopped at the space, yielded the phantom class `32`, and the CROSS-SPELL cell blamed whichever spell writes a bare `32` in its source (astrolabe and mind-mapper both do). **glamour is the roster's first spell with a leading-digit variant** (four `2xl:` selectors ship in its stylesheet); the four earlier spells ship zero hex escapes, so their selector sets are identical under both harvesters (astrolabe 199 · imago 346 · magpie 262 · mind-mapper 388) and the defect was latent from the ward's first run until glamour arrived. Reproduced then closed in one tree: the pre-fix ward file swapped into the assembled worktree reds with exactly the filed message; the landed one is 9/0 with glamour in the population.
+
+**Contract 21's adoption clause is now exercised in BOTH directions.** glamour relocated **without** importing `src/kit/theme/base.css` and without any kit module — the first relocated spell that adopts nothing — and `kit-adoption-ward` / `kit-styling-ward` take their green branch for it (`KIT_CONSUMERS` unchanged). The clause is therefore a statement about adopters, not a requirement to adopt.
+
+**A generated cell counts.** The ward emits one DECLARATION cell per spell in `relocatedSpells()`, so a spell joining the roster adds a test nobody wrote (8 → 9 at `cae26f8`). Partition suite deltas with that source named, or the sixteenth cell reads as a phantom.
 
 ### Amendment to Contract 21 — the `.css` exemption is confirmed sound, and the false claim had already reached a leak detector
 

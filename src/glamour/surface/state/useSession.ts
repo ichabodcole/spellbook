@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import type { ClientToServer, GlamourState, ServerToClient } from "./types";
+import type {
+  ClientToServer,
+  GlamourState,
+  ServerToClient,
+} from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function useSession() {
   const [state, setState] = useState<GlamourState | null>(null);

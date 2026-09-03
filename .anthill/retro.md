@@ -1,3 +1,98 @@
+# Retro — 2026-09-03 · glamour conversion, "the number you inherited from yourself"
+
+**Team:** default · **shape:** `cdf9d466`
+**Seats:** prospero (lead) · daedalus (engine) · circe (surface) · thoth (grimoire) · cassandra (verify) — terminal seats on comms, one channel, 240 messages.
+**Shape of the work:** the fifth spell ported, both halves. `9f2cbd4` the seam · `cae26f8` the surface relocates and builds · `10aa386` Contract 5's comment says what was measured, in all seven places it was wrong · `50932b8` the playbook synthesises glamour. Gate 1571 → **1587/0**, 120 → 123 files. `dist roster: 5 buildable spell(s)`.
+
+⚠ **The team RESHAPED at finalize** — thoth's scope widened to `f5cb989d`. This entry is stamped with the shape the session **ran** with. A carried-forward Q3 read by the next convene was tested by `cdf9d466`, not by the team that exists now.
+
+## Q1 — What went well (artifacts first, testimony labelled)
+
+- **The ratify changed what was built.** Seven seams written, **five falsified or materially corrected**, and nothing broke at integration. daedalus: every measurement his lane specified came back as predicted at the landed shas — census 1, `tsc` 435→435, sweep 0, roster 5. circe: seven tasks, zero rework at the ratified grain.
+- **Every cell added this session was calibrated by a seat that wrote neither it nor its subject** — derive 4/4, css 5/5, release-serve 7/7, dev-styled 4/4, cli-open-envelope 3 routes. Re-run at `cae26f8`, all hold. EXECUTABLE: `cal-all.sh cae26f8`.
+- **The acc characterization paid out exactly as designed.** Rule-by-rule diff EMPTY at Phase 1, at the assembly, and after the envelope change — *and the port names two changes acc cannot see*. The before-arm is the only reason the empty diff means anything.
+- **Two contracts were amended BEFORE their builds landed, by the seat that owns the contract, from a draft by the seat that owns the words** (C13 in `9f2cbd4`, C5 in `cae26f8`). C6's rule holding twice on one port.
+- **A defect predicted from a regex at ratify, filed naming the WRONG spell, and reproduced-then-closed with glamour in the ward's population.** Every link recorded before the last one existed.
+- **The S7 acceptance test convicted its own author before the edit landed** — three cold reads on identical prompts, W rising 1→2 caused by the edit, found by a reader with no stake.
+- _TESTIMONY (circe, daedalus, cassandra, independently): reviewing the ASSEMBLED TREE rather than the hunks found what a diff cannot show. Three seats did it unprompted — which is agreement, not evidence._
+
+## Q2 — What did not
+
+**The seats, in their own counts, each putting their own first:**
+
+- **circe: eight of her own numbers moved.** Every one a correct figure quoted into a scope it was not measured in, most inherited from her own earlier text. _"The predecessor's epitaph caught none of them; re-running the command did."_
+- **thoth: seven false claims, every one a shell one-liner, four of them guards he had just proposed.**
+- **daedalus: five numbers, each composed in the same tool call as its measurement**, plus four shell defects — an unquoted heredoc that ate four numbers and four field names with no marker; a `$(…)` capture that hung five minutes on a grandchild's stderr.
+- **cassandra: ten instrument defects of her own, all read-as-result.** _"Every one produced the answer I expected, and the diff-stat-before-run habit caught the ones it was pointed at and none of the ones it was not."_
+
+**The lead (in scope, and the seats wrote this before I did):**
+
+- **A commit message announced at a path where it did not exist** — two seats then ratified the QUOTE rather than the artifact, honestly and with correct scope, because a quote was the only thing available. Compounded by a **consent-by-silence timer** over an unreachable file: a rubber stamp with a clock on it.
+- **Three of daedalus's corrections taken, one silently dropped.** "Corrections taken" reads identically whether it took two or three.
+- **Four unannounced arrivals in the shared tree**, all found by a peer's `uncheckedAgainst`, three of them by cassandra — while enforcing that rule on everyone else. **The mechanism is not "announce first"**, which was followed in intent every time: a refused message and a written file must not coexist, and the guard refuses most often exactly when the tree is most contended.
+- **A ruling stamped `#1360` that was stale by `#1361`** — the crossing failure, at the lead, on the beat where I had spent the night telling seats to stamp what they had read.
+- **The finalize kickoff was a starting gun with no ordering** — two concurrent gates and a four-contract collision on `seams.md`, from one instruction.
+- **I praised an instrument nobody had run** (the conditional ratification), and only learned it because thoth audited a claim that no longer mattered.
+- **`plan.md` announced its own reconciliation while still carrying the sentence the session falsified** — caught by thoth's 3.75 sweep, of a doc no seat owns, whose sentence was originally his.
+
+## Q3 — Hypotheses the next convene must test
+
+| # | Hypothesis | Falsified if |
+| --- | --- | --- |
+| **H26** | **A number is safe only when RE-DERIVED, never when re-read.** Twenty-plus figures moved tonight; every fix came from running the command, none from reading more carefully. | a figure survives a careful re-read and is later found wrong by a re-run — or a re-derivation misses one a re-read would have caught |
+| **H27** | **A count printed into an announce is not a gate; only a guard that CONSUMES the number holds.** daedalus measured "2 gates" in his own announce and landed anyway; thoth's automated guard refused itself on the identical count. | an announce-with-number produces no collision over a session where a consuming guard would have |
+| **H28** | **A refused message and a written file must not coexist.** Four instances, one author, all found by peers. | an arrival announced by a DELIVERED message still has to be chased by a peer |
+| **H29** | **Finalize should name a LAND ORDER at kickoff.** "Everyone synthesize and land now" against one tree produced two concurrent gates and two waiter deadlocks. | a sequenced finalize pile-ups anyway → the hazard is not ordering |
+| **H30** | **A waiter keyed on a peer's FILE is keyed on that peer's PLANS, and plans move.** Two deadlocks in ten minutes, same predicate, both directions. | a file-keyed waiter survives a session in which its target re-modifies |
+| **H31** (thoth) | **A seat that proposes a guard on the wire runs it a SECOND WAY before quoting its zero.** | a clean result announced from a self-authored one-liner without a second instrument, later wrong |
+| **H32** | **A cell can be perfectly calibrated on a subject nobody reaches.** `release-serve` asserts `server.ts`; every consumer goes through `cli.ts`; they disagreed. Ask what path the USER takes, not what path the unit takes. | a consumer-path check finds nothing a unit-path check did not |
+
+### Verdicts on the carried-forward hypotheses
+
+- **H15 — PROMOTED before this session, and it earned instances anyway.** A false reassurance about an instrument produced its fifth **inside a cell built that night to close that very class** (R4).
+- **H16 — SUPPORTED, n=1, decisive.** The clause-1 card was authored → calibrated by a non-author → **bounced** → the author stopped his own land mid-gate → the dead control DELETED not supplemented → re-calibrated 7/7 → re-verified at the landed sha. Its own falsifier was "produces no bounced cards"; it produced one.
+- **H21 — NARROWED, still open.** A worktree runs the FULL population (119=119), so it is not the 46-vs-30 culprit. But daedalus found the neighbouring truth: **a symlinked-`node_modules` worktree is not Contract 18's canonical root** — tests there are sound, builds are not. The `git archive` arm never ran.
+- **H25 — SUPPORTED, 4/4**, small n and small cards: every `gc-` card named its closer and every one drained. Contrast: `s5-r` has sat in `review` across sessions naming none.
+- **H18 · H19 · H20 · H22 · H23 · H24 — NOT EXERCISED.** Said out loud rather than left silent: silence and confirmation are the same shape in a document.
+
+## Q4 — Did this session produce a principle?
+
+**No — and two candidates are deliberately held as hypotheses.** *A number is safe only when re-derived* (H26) and *a count in an announce is not a gate* (H27) both have scars and n>1, but `principles.md`'s own rule forbids adding one mid-session, and the pressure to generalise peaks exactly here.
+
+**The existing parser principle gained its fifth and sixth costumes** — `#1155`'s eaten spans (an unquoted heredoc) and a `ps: 0` typed before it was measured. Instances, not a new principle. **⚠ And the remedy clause needs an amendment next session: `--stdin` / "build it in a file" is NOT sufficient — an UNQUOTED heredoc delimiter expands backticks while writing the file, so the payload is damaged before any tool sees it.** Wording is daedalus's; he paid for it.
+
+## Structure reflection
+
+- **Zero lane crossings.** Both collisions were on shared mutable surfaces — the tree, and `seams.md` holding four contracts from two authors. **Sprint 05 recorded the identical verdict: n=2 sessions, lane boundaries sound, shared-surface protocol the weak point.**
+- **Two seams emerged that no skeleton produced**, both found by seats: the dev-serve contract spanning `server.ts` AND `cli.ts`, and **the consumer path is not the unit path** — a seam between what we TEST and what a user REACHES, which no roster of seats generates because it is not a boundary between people.
+- **A contract amendment is DRAFTED by the seat that owns the words and LANDED by the seat that owns the contract**, both named inline (thoth's observation, twice this session). It keeps "point, never restate" and "owner edits" both true — **and it solves the trailer problem**, since a git trailer cannot express two authors across four contracts in one file.
+- **thoth's scope widened** (accepted by him, in his words): canon is **verified against the tree**, not only curated. Boundary vs cassandra: he verifies CANON CLAIMS, she verifies CODE; the measurement may come from any seat, but deciding a canon sentence is false and rewording every copy is his.
+
+## Deferred — placed, with a horizon and a home each
+
+| item | horizon | home |
+| --- | --- | --- |
+| **2 of 5 relocated spells cannot convict a dev daemon** (mind-mapper no override cell; magpie no file) | **next session** — moved from "not scheduled" on two seats' cost evidence | `docs/backlog/2026-09-03-two-of-five-…` |
+| **The CLI boilerplate census — six `die`s** | **its own project, after this one** (Cole agreed) | `docs/backlog/2026-09-03-six-dies-…` |
+| The shared resolve-sweep instrument | not scheduled | `docs/backlog/2026-09-03-five-seats-…` |
+| The five-spell `tmpdir` session-pointer defect | not scheduled | `docs/backlog/2026-09-03-five-spells-…` |
+| The Bun pin does not govern the build | not scheduled | `docs/backlog/2026-09-02-the-bun-pin-…` |
+| astrolabe/imago/magpie/mind-mapper's OWN Contract 5 failure shape unmeasured | next port or next built-backend touch | the C5 amendment's last line |
+| The acc invocation unnamed in the playbook (B4's remaining W) | next playbook pass | `plan/thoth.md` B4 |
+| Whether `acc` runs in the gate | **Cole's** | `glamour-acc-l0/proposal.md`, criterion 3 |
+| decay-ledger's four `(seed)` rows never walked | not scheduled | thoth's seat doc |
+| A backlog **status convention** (three instances tonight) | next canon session | `docs/backlog/README.md` — **nobody's file, which is the point** |
+
+## Upstream to anthill (submitted by the lead)
+
+1. **The `--as-of` guard's remedy is a REWRITE, and a rewrite is LOSSY** — five refusals; three ruled items dropped between a refused draft and its replacement.
+2. **`status`'s presence fold names no seat as the reason** it cannot answer.
+3. **`comms follow`'s start notice offers a catch-up that CONTRADICTS a session anchor** — all four seats hit it.
+4. **The finalize kickoff is a starting gun with no ordering.**
+5. **A git trailer cannot express multiple authors in one file** — the team's answer (split on the wire before the sha, owner inline) beats it, and nothing asks for that.
+
+---
+
 # Retro — 2026-08-31 · spell-kit sprint 02, "the boring module"
 
 **Team:** default · **shape:** `cdf9d466`

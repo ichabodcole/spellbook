@@ -15,6 +15,27 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
+**THE GUARD YOU BUILD FOR A HAZARD YOU DO NOT BELIEVE YOU HAVE IS THE ONE YOU WILL RUN LEAST CAREFULLY, AND ITS ZERO IS THE ONE YOU WILL REPEAT AS FACT — so when your own check comes back clean, treat that as the moment to run it a second way, because authoring a guard feels exactly like having run it.**
+
+_(Written 2026-09-03, glamour conversion. **The two epitaphs below stand and I am not replacing them — this is their sibling, tested for subsumption rather than assumed.** The first says every throwaway you quote is an instrument; the second says distrust what you inherit. Tonight's failures were neither: they were guards I AUTHORED, for hazards I NAMED, whose clean result I announced.)_
+
+```
+seven false claims, one session, all mine:
+  "ps: 0 gates"                 typed into the body BEFORE the ps ran            -> 2
+  grep -c '[b]un run gate'      counted zsh wrappers, incl. my own wait loop     -> false 2 (held forever)
+  N=$(… | grep -c) && …         grep -c exits 1 on ZERO -> guard failed CLOSED   -> land never started
+  git status -- 'skills/*/dist' quoted glob, unexpanded -> 0 over nothing        -> "no bundle moved" (2 had)
+  cp msg.txt copy; diff         copy taken AFTER the file moved -> diff of self  -> "identical", for any change
+  ls a/ b/ | grep blind         name without its directory                       -> wrong path in a shipped draft
+  "my sentence is correct"      ratified the lead's QUOTE, not the file          -> the file did not exist
+```
+
+_⛔ **Four of the seven were checks I had just proposed on the wire, for a hazard I did not believe applied to me** — the reproduction check, the gate-count guard, the kept-copy diff, the disclosure-list rule. Each was right as a rule and wrong as I ran it, and each failed in the direction that let me proceed (one failed closed, which is the only reason I noticed it at all). **Building the guard discharged the vigilance the guard was for.**_
+_⭐ **The operative form: a clean result from a check you wrote minutes ago has NOT been reviewed by anyone, including you.** Run it a second way before you repeat its zero — explicit paths instead of a glob, a hash at the moment of the copy, a number interpolated rather than typed. **The cold reader did this to my playbook edit and convicted it; nothing did it to my shell one-liners, and those are where the seven lived.**_
+_⚠ **Subsumption tested:** epitaph #1 fires on a throwaway whose output you quote — it covers the ls and the ps grep, and is silent on a guard you designed on purpose. Epitaph #2 fires on an inherited claim — it covers the Contract 5 sentence and is silent on a claim you minted from your own instrument. This one fires on the authored guard and is silent on both of theirs. **Three siblings, none subsumed.**_
+
+---
+
 **THIS DOCUMENT IS THE LEAST-AUDITED SOURCE YOU WILL USE TODAY, AND YOU ARE ABOUT TO TRUST IT MORE THAN ANYTHING ELSE YOU READ — so when a line here makes a claim about how a TOOL BEHAVES, go and run it, because the seat that wrote it was as careful as you are and the tool has had a sprint to move.**
 
 _(Written 2026-08-10, spell-hardening sprint 05. **The two epitaphs below are still true and I am not replacing them — I am naming the one source they both exempt.** They tell you to distrust what you write. Nothing told me to distrust what I INHERIT.)_
@@ -901,9 +922,48 @@ magpie's scale-math item closed because `circe` deleted a file with zero importe
 **Recorded the re-file rule explicitly: if a third copy of the false comment appears, file a NEW item — do not reopen one whose subject is not coming back.**
 
 **AN AMBIGUITY BETWEEN TWO CONTRACTS CAN SIT DORMANT UNTIL A THIRD THING CHANGES.**
-Contract 1 says release mode is resolved by **`dist/` presence**; Contract 2's amendment keys the check on the **unhashed `dist/index.html`**.
+Contract 1 _said_ release mode is resolved by **`dist/` presence** while Contract 2's amendment keyed the check on the **unhashed `dist/index.html`** — Contract 1 has since been amended to say `dist/index.html` too, with a note that the code always checked it (see `seams.md` Contract 1; **reconciled 2026-09-03 at the finalize 3.5 beat**, this sentence was restating a contract that had moved).
 Those disagreed harmlessly for months — every `dist/` held an `index.html` — and the moment backends began shipping `cli.js` into `dist/`, a spell could hold a `dist/` and still correctly run in dev.
 ⭐ **Two contracts that agree on every case the tree currently produces are not consistent; they are untested against each other**, and the thing that tests them is a new kind of member in the set they both describe.
+
+### ⭐⭐ 2026-09-03, glamour conversion BUILD phase — the cold read convicted my own compression, and every wrong path was one I had repeated from a listing
+
+_Session shape: lane authored against ratified S6/S7; A1 proposal reconciliation; A3 Contract 13 amendment drafted, landed by daedalus in the Phase 1 atomic commit (`9f2cbd4`); B1 cold-read baseline; B3 playbook draft; B4 after-read first pass. Phase 2 held on Cole at session time, so A2/A4/B5 were prepared in scratch, not landed. Written early as insurance, not at finalize._
+
+**⭐ A POINTER THAT NAMES A THING WITHOUT ITS SHAPE MOVES THE READER FROM ASKING TO GUESSING — and guessing is the worse state, because it produces a confident wrong command where there used to be a question.**
+Measured with the S7 cold read (a blank-context reader, the playbook alone, exported outside the repo, scored as Q = questions the document could have answered and W = wrong commands): the baseline read asked about the scanner and the tsconfig; my edit named `scanSpecifiers` and `-p <spell>/tsconfig.json`; the after-read then wrote `scanSpecifiers(filePath)` (it takes source text) and `-p src/imago/tsconfig.json` (no such file — three spells carry one, imago does not).
+Q fell 10→7 and W rose 1→2, and both W were caused by the edit.
+⛔ **Word count cannot see this transition; only a reader who runs the claims can.** Name the shape with the name, or leave the question standing.
+
+**⭐ THE WRONG PATH I SHIPPED INTO A DRAFT CAME FROM MY OWN THROWAWAY LISTING.** `ls scripts/ scripts/instruments/ | grep blind` printed `gate-blind-set.ts` without its directory; I wrote `scripts/gate-blind-set.ts` into the playbook draft and the lane, and it is `scripts/instruments/gate-blind-set.ts`.
+Caught only by running `bun scripts/gate-blind-set.ts` while scoring the after-read — the epitaph above, live, in a two-directory `ls`.
+**A listing that spans two directories drops the one fact that distinguishes them.** Print paths, not names.
+
+**⭐ A CONTRACT THAT HELD AND A PREDICTION THAT FAILED IN THE SAME MEASUREMENT ARE TWO FACTS — report them as two.** S7's two clauses held per section (every confirmed section ≤0 words; growth only where glamour taught); my `−120 lines` prediction failed (actual −32 lines / −392 words, −9%), because I predicted the compression half and not the NEW half — three lessons landed in Phase 2 alone.
+I scored it against the original bar and said so; prospero named that the whole discipline.
+⛔ **A prediction made under a premise that later becomes conditional is not falsified, it is UNSCORED, and unscored looks settled.** Say what the prediction was predicting before you score it.
+
+**⭐ A FINDING ABOUT A POPULATION IS A FINDING ABOUT TWO DOCUMENTS — check the other home before calling it a gap.** The cold read's digestify run showed every unported spell (bounty, grapevine, digestify) has no `surface/` and is outside the playbook's Applicability; that read as a gap until I checked `house-style.md`'s queue table, which already says rewrite-first for two and a Cole-owned trigger for the third.
+**The playbook and house-style are two homes for one population, and they agreed.** I published the null result; a null nobody publishes is indistinguishable from a check nobody ran.
+Corollary ruled that night: the acceptance test SPLITS — the cold read measures legibility and is re-runnable; a real port by seats who did not write the playbook is one-shot per port and the next is after a rewrite lands. Name which half you are running.
+
+**⭐ KEEP THE NULL RUN.** The digestify cold read was a design error (wrong subject); I kept it as a recorded error rather than deleting it, and it is the only reason the population finding exists. The one earned sentence in Applicability came from a run I could have thrown away.
+
+**⛔ I RATIFIED A QUOTATION AND CALLED IT THE ARTIFACT.** Asked to confirm a sentence in a commit-message FILE, I confirmed it from the lead's wire quotation; the file did not exist at the announced path. circe caught it by going to read the file and finding none.
+My own seat's rule — hand the reader the artifact, never the framing — violated from the reader's side, the same night cassandra did the identical thing an hour after enforcing it on a peer.
+**When asked to ratify text in a file, open the file; if it is absent, say absent, not correct.** And re-ratify the BYTES being committed, not the version you read: the file changed twice after my first read (4687 → 4771 → 4801 bytes) and each time the delta was someone else's line — verify that, do not assume it.
+
+**⭐ TWO OF MY OWN RATIFY-TIME CLAIMS WERE FALSE BY BUILD TIME, and re-checking them was the most valuable act in the lane (prospero's words, not mine).** `#1119` said the archive's three inbound playbook links and the proposal's `_archive/spell-kit` link were broken; at `95dc287` all four resolved — the lead had repaired them on another branch after I filed them.
+True when made, false when built on. **Before building on your own earlier finding, run it again; the tree moved and nothing told you.**
+
+**⚠ AN AMENDMENT THAT NAMES A FUTURE PATH AS IF ALREADY TRUE IS FALSE BETWEEN LANDS.** My Contract 13 draft named `src/glamour/surface/state/derive.ts`; daedalus's landed wording names the Phase 1 location and says it relocates in Phase 2. Between the Phase 1 and Phase 2 lands mine would have been a false sentence in canon — the pending-marker defect seams.md already paid for, in a fresh costume. **Write canon for the tree it lands in, not the tree it expects.**
+
+**⛔ A QUOTED GLOB IN A GIT PATHSPEC MATCHES NOTHING, AND ZERO OVER NOTHING READS AS CLEAN.** `git status --porcelain -- 'plugins/spellbook/skills/*/dist'` printed 0 after a rebuild; the explicit-path form printed 2 — both built backends' `dist/cli.js` had moved, because the inline sourcemap embeds the source text and a COMMENT changes it. I announced "no bundle moved" on the zero and corrected it four messages later.
+**A comment in a built backend is a shipping change** (Contract 18: source and dist land together), which is why "a comment that moves the bundle is a finding, not a fix" was the right rule and I still had to walk into it to see the mechanism.
+
+**⛔ A COPY TAKEN "FOR THE DIFF" AFTER THE FILE HAS ALREADY MOVED IS A COPY OF THE NEW BYTES, and the diff exits 0 for any change.** I announced I held the pre-revision commit message; my `cp` had run after the lead rewrote it; my diff was a file against itself. Three seats did the same thing in the same minute. **Hash the copy at the moment you take it and post the hash; a diff against an unhashed copy is decoration.**
+
+**⚠ A `cd` INSIDE A COMPOUND BASH CALL PERSISTS INTO THE NEXT CALL.** I minted my scratch under `docs/projects/glamour-conversion/.anthill/` because a listing had `cd`'d there one call earlier; the join manifest had printed the resolved teamDir and I built the path from where I was standing. Untracked, in the shared tree, found on `git status` before any commit. **Absolute paths for every write; the manifest's resolved paths are the source, not your cwd.**
 
 ## Anti-patterns
 
@@ -929,7 +989,8 @@ Ratified as a standing requirement of that project (`docs/projects/spell-hardeni
 **Where they get written:** `restoreSkipped` in P0b step 3; `snapshotBackedUp` and `hydrated` in P1 steps 3–4 — **different phases, plausibly different sessions, so plausibly not the instance that ratified this.**
 **Discharge it by:** grepping each name at the moment its phase lands, and confirming the envelope carries `| null` present-and-null rather than absent (the absent-vs-null distinction is the half a field name cannot convey).
 **Retire this entry** once all three exist in code and are documented — at that point a grep does the work and the obligation is over.
-**Status 2026-08-08, sprint 04 (at `ba4b9dd`): UNCHANGED — `hydrated` still ZERO, still NOT discharged. P1 did not land in sprint 04 either.**
+**Status 2026-09-03, glamour conversion (at `a6378a4`): UNCHANGED — `hydrated` still ZERO code hits (11 hits, all in `docs/`), still NOT discharged. spell-hardening P1 has not landed in any session since.**
+_Previous status line (sprint 04 at `ba4b9dd`) said the same; kept as one line per the one-status rule._
 Sprint 04 was a ratify-and-canon sprint for this seat; there was no opportunity to diverge and none to discharge.
 **Zero hits means zero opportunities to diverge, not a pass** — that sentence is now three sprints old and still the whole point.
 ⭐ **The obligation's SHAPE was vindicated again in sprint 04 and it is worth the next holder knowing why it is not busywork:** the `#82` work turned on `valuesIgnored`, and the thing that mattered was **not** the name — it was that the field's *domain* was silent, so its `null` could not be read.
@@ -944,6 +1005,8 @@ The third: a peer's `fb209f1` made a keyed respawn restore **by default**. Spell
 ⭐ **So the durable form: a grep proves the SPELLING survived a land. Nothing mechanical notices that the WORLD THE DEFINITION DESCRIBES has changed underneath it.** **Check the sentence, not just the token — and check it at the moment the mechanism moves, because that is the only moment anyone remembers the sentence exists.**
 **The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.** Hold the property, not the spelling.
 **prospero holds the P1 ping as a precondition of the land (#459 §6) and re-affirmed it in sprint 04** — expect to be called; do not watch for it.
+
+**✅ RETIRED 2026-09-03 — the glamour-conversion canon close-out is discharged:** A2 (house-style de-enumerated, ledger reinforced) and B3 (the playbook synthesis) landed at `50932b8`; A4 asserted at `cae26f8`; the seven Contract 5 comment sites at `10aa386`. Nothing of this port remains in scratch that a successor must re-derive.
 
 ### Discharge record — the durable facts. There is exactly ONE status, and it is above.
 
@@ -1003,7 +1066,7 @@ _PRUNED 2026-08-08: the pre-land design notes for this ward are gone — the war
 **The reasoning is the durable part:** `inscribe` is a skill and skills are not always in the loop, so an inscribe-only matrix never runs on the existing roster where every observed defect lives; and `ward` fires on **change**, so a spell nobody edits is never interrogated by it either. **Authored / changed / untouched — a trigger set with a hole in it is how the roster's oldest spells stay the least examined.** Backlog: `docs/backlog/2026-08-06-desire-path-hints-in-spell-responses.md`. Raw material: cassandra's seat doc carries observed failure modes in matrix shape. Open: does the rule reach non-spell tooling (that widens house-style's scope — Cole's call), and is `uncheckedAgainst` the first worked example.
 
 **The `EPIPE` gotcha says "swallow" and two spells disagree about what that means.**
-House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in exactly two places, in two incompatible shapes** — re-verified 2026-08-08, both pins exact: `bounty/scripts/join.ts:72` swallows and continues (rethrows anything that is not `EPIPE`); `magpie/scripts/cli.ts:54` calls `process.exit(0)` from an `stdout.on("error")` handler. _(This line said "2 of **9** spells" and the roster is 8 — a denominator I never measured, on a finding the ratio was never part of. **The two shapes are the finding; the fraction was decoration that rotted.**)_
+House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in exactly two places, in two incompatible shapes** — re-verified 2026-08-08, both pins exact: `bounty/scripts/join.ts:72` swallows and continues (rethrows anything that is not `EPIPE`); `src/magpie/backend/cli.ts:55` calls `process.exit(0)` from an `stdout.on("error")` handler _(re-pinned 2026-09-03: it was `magpie/scripts/cli.ts:54` before magpie's backend relocated; `bounty/scripts/join.ts:72` still holds)_. _(This line said "2 of **9** spells" and the roster is 8 — a denominator I never measured, on a finding the ratio was never part of. **The two shapes are the finding; the fraction was decoration that rotted.**)_
 **"Swallow" and "exit" are different policies, and the canon line does not say which it means** — so both implementers were obeying it. Same class as the `tmpdir()` boundary that four spells re-assumed identically: **the imperative travelled and the policy did not.**
 Decide the policy before widening the rule; a gotcha that names a symptom without naming the response will be implemented differently every time.
 

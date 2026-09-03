@@ -1,5 +1,5 @@
 import { Crosshair, X } from "lucide-react";
-import type { FocusOwner } from "../state/types";
+import type { FocusOwner } from "../../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function FocusBar({
   owner,

@@ -98,3 +98,23 @@ them declares `knownFailures`** — each contains only
 
 **Related:** [`glamour-conversion`](../glamour-conversion/proposal.md) · the acc
 kit's own `STANDARD.md` · seams Contract 3 amendment
+
+---
+
+_Reconciled 2026-09-03 @ `cae26f8` — **criterion 1** ("`acc check` passes,
+recorded with the kit version"): **HELD**, exit 0, conformant, L0, kit 0.1.11.
+**criterion 2** ("re-run after the port and still pass, or name what the port
+changed"): **HELD, AND THE PORT NAMES TWO CHANGES.** The rule-by-rule diff is
+EMPTY at Phase 1, at the Phase 2 assembly, and after the envelope change — which
+means nothing acc WATCHES moved, **not** that nothing moved. Both real changes
+are invisible to acc's rules and are disclosed by hand: (1) the additive `mode`
+field on `open`/`info`; (2) the missing-cwd envelope, ENOENT → named directory
+plus hint. **A verdict without this disclosure list is the misquote.**
+**criterion 3** ("whether acc runs automatically is unruled"): **STILL UNRULED**
+— Cole deferred it deliberately until after the port, so that this port's own
+re-runs would be the cost datapoint. Owner: Cole. Nothing in `package.json`, CI
+or the hooks re-runs acc today; three spells' conformance remains a claim about
+a moment. **The characterization worked as designed:** the before-arm is the
+only reason the empty diff means anything. Run acc only after a relocation and a
+pass cannot distinguish "the port changed nothing" from "the port changed
+something acc never saw."_

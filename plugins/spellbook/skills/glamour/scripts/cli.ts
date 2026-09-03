@@ -30,15 +30,32 @@
 // under error.server. Branch on `kind`, never on `message` prose.
 
 import { spawn } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
-import { optimizeImageDataUrl } from "../surface/state/imageOptimize.server";
+import { optimizeImageDataUrl } from "./imageOptimize.server";
 
 const SCRIPT_DIR = dirname(Bun.fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
-const SKILL_ROOT = join(SCRIPT_DIR, ".."); // glamour root — pin as cwd for Tailwind/bunfig
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// Bun reads bunfig.toml (the Tailwind plugin) from cwd ONLY, so the daemon's cwd
+// MUST be src/glamour/ in dev (seams Contract 5). Launched elsewhere the dev
+// bundler cannot compile the stylesheet — measured on glamour the PAGE 500s with
+// no stylesheet link (not "unstyled at 200"; that sentence was never run). Assert
+// the invariant: the utility never reaches the browser when the cwd is wrong.
+// release: dist/ is pre-built and static — no bunfig read, so src/glamour/ need
+// not exist at all (a source-free marketplace clone has no top-level src/), and
+// pinning cwd there anyway would break the spawn. Exported for the test.
+const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "glamour");
+
+export function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
+export const SKILL_ROOT_FOR_TEST = SKILL_ROOT;
 
 type Session = {
   url: string;
@@ -456,16 +473,32 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
   if (flags.intent) daemonArgs.push("--intent", String(flags.intent));
   if (flags.timeout) daemonArgs.push("--timeout", String(flags.timeout));
   if (flags.restore) daemonArgs.push("--restore", String(flags.restore));
-  // The user's project dir — captured here because the daemon spawns with
-  // cwd pinned to SKILL_ROOT (Tailwind), so it can't read the real cwd itself.
+  // The user's project dir — captured here because the daemon spawns with a
+  // pinned cwd (daemonCwd()), so it can't read the real cwd itself.
   daemonArgs.push("--project", process.cwd());
 
   // node:child_process (not Bun.spawn) is deliberate: the daemon must SURVIVE
   // this CLI process exiting, which needs `detached: true` + `unref()`.
-  // cwd: SKILL_ROOT is mandatory — Bun reads bunfig.toml (Tailwind plugin) from
-  // the cwd only; launching from any other directory silently skips Tailwind.
+  // Contract 5 — see daemonCwd(). And check the cwd EXISTS before spawning:
+  // node reports a missing cwd as `ENOENT … posix_spawn 'bun'`, which names the
+  // one thing that is fine. Measured by cassandra at a deps-free destination
+  // with dist/index.html removed (comms #1265): a cold agent reads that and
+  // reinstalls bun. Name the real absence instead.
+  const cwd = daemonCwd();
+  if (!existsSync(cwd)) {
+    die(
+      `glamour cannot start its daemon: the working directory it needs is missing — ${cwd}`,
+      "internal",
+      {
+        hint:
+          "dev mode was resolved (no dist/index.html at the skill root and no SPELLBOOK_SURFACE_MODE=release), " +
+          "so the daemon must run from src/glamour/, which a source-free install does not have. " +
+          "Either the shipped dist/ is missing (reinstall the spell) or you are in a checkout without src/glamour/.",
+      },
+    );
+  }
   const child = spawn("bun", daemonArgs, {
-    cwd: SKILL_ROOT,
+    cwd,
     detached: true,
     stdio: ["ignore", "pipe", "inherit"],
     env: process.env,
