@@ -107,6 +107,39 @@ What acc's own report now reads back from the tool: **26 flags enumerated at the
 root, 18 verbs advertised** (envelope-`choices` shape), so a recorded surface
 batch has something to compare against.
 
+## Chapter two, same day: per-verb sets and the census
+
+Cole asked whether "beyond L0" — enumeration below the root — was quick or a
+project. Quick: glamour already had one parser and one registry.
+
+- **`VERB_SPEC`**: each verb's accepted flags (`--session` on every verb that
+  talks to a daemon; `open` refuses it because it spawns one; `help` takes
+  nothing). A second stage after the strict parse rejects a **recognized** flag
+  at the wrong verb as _misplaced_, with `choices` = that verb's row. Before,
+  `say hi --seed 3` parsed cleanly and `--seed` was silently ignored.
+- **The census** (acc step 5): `acc probe-plan` generated the harness from the
+  18 verb paths; a modelled declaration was emitted from `VERB_SPEC`; both were
+  handed to `acc check`. Artifacts live in the session scratchpad, as
+  mind-mapper's did — the record is here.
+
+**The first census run returned 450 disagreements, all one cause**, and it is
+the finding of the chapter: an _unknown_ flag is rejected at stage 1, before the
+verb's set is consulted, so the rejection named all 26 registry flags at every
+one of the 18 paths and at the root. The sets were right; the _rejection_ was
+not path-aware. Fixed: an unknown-flag rejection now names the verb's own set
+below the root, and the verb roster at the root (the root accepts no flags; the
+next act there is picking a verb).
+
+Second run: **18 of 19 declared paths compared, 0 disagreements**; the root
+`NOT COMPARED` because its `choices` are verbs, not flags — deliberate, and the
+report says so rather than reading silence. `help` reads "stated an empty set",
+which is its honest answer. L0 verdict unchanged.
+
+Note the guide's own caveat: paths and declaration here share a source
+(`VERB_SPEC`), so the census proves the _wire enforces the table_, not that the
+table is complete. The dispatch↔`VERBS` ward and the registry-ownership cell are
+what bind the table to the code.
+
 ## Success criteria, against the charter
 
 1. ✅ `acc check` passes, recorded with the kit version (0.1.11).
@@ -122,12 +155,9 @@ batch has something to compare against.
 
 ## Deferred
 
-- The recorded-surface census for glamour's verbs (acc step 5). Prerequisite
-  worth knowing: glamour has ONE flag registry, so an unknown-flag rejection
-  names all 26 flags at every verb; a per-verb comparison needs per-verb sets
-  (mind-mapper's `VERB_SPEC` two-stage parse), and that is also what would let
-  one table drive help, parser and rejections (acc step 6) — the HELP drift the
-  verifier found is the symptom of not having it.
+- ~~The recorded-surface census (acc step 5) and per-verb sets~~ — done in
+  chapter two. Still open: one table driving HELP as well (acc step 6); the HELP
+  drift the verifier found is the symptom of not having it.
 - `close`'s swallow-all catch: idempotent by decision, or ECONNRESET-only as the
   comment claims.
 - The four remaining `printJson`/envelope copies converging into shared backend
