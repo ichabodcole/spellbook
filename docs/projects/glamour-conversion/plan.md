@@ -112,6 +112,79 @@ because an unchecked claim and a confirmed one are indistinguishable in silence.
   into `bun run gate` at all; the acc session recommends it and names **Cole**
   as the owner, since it is a gate-cost decision.
 
+## 🔄 Reconciled 2026-09-03 @ `cae26f8` — the port is COMPLETE
+
+**Both phases landed.** `9f2cbd4` the seam · `cae26f8` the surface relocation
+and build · `10aa386` the Contract 5 comments with their rebuilt bundles ·
+`50932b8` the playbook and house-style synthesis. Gate 1587 pass / 0 fail / 123
+files. `dist roster: 5 buildable spell(s)`.
+
+**Claim by claim, verdicts written even where nothing moved:**
+
+- **S1 — reduce.ts SPLITS, three dual-consumer modules** — **HELD, and measured
+  true at the sha** by daedalus: 21 backend exports to `scripts/`, 4 selectors
+  to `derive.ts`, `types.ts` and `imageOptimize.ts` to `shared/`.
+- **S2 — exactly one `src/`-naming SPECIFIER on the shipped path** — **FALSIFIED
+  AS WRITTEN at the ratify, HELD as corrected.** Measured at `cae26f8`: one, in
+  `server.ts`'s dev ternary. ⚠ A naive `grep -rn "src/glamour" scripts/` now
+  returns **six** — the other five are prose, including the preflight hint that
+  names the path deliberately. **Count specifiers via the scanner, never text.**
+- **S3 — the deployed folder is source-free** — **FALSIFIED AS WRITTEN, HELD as
+  corrected.** `plugins/…/glamour/` is exactly
+  `SKILL.md · acc.config.json · dist · scripts · shared · tests · tsconfig.json`.
+  No `surface/`, no `bunfig.toml`.
+- **S4 — the tests survive the move** — **HELD as corrected.** The real
+  deliverable was the eighth test, and it exists: `release-serve.test.ts`, 7/7
+  mutation arms, calibrated by its non-author.
+- **S5 — glamour arrives conforming** — **HELD.** The css-scope ward is 9/0 with
+  glamour in its population; the arrival case reproduces under the pre-fix ward
+  and clears under the landed one. Shipped stylesheet 41,048 B, the figure
+  predicted from a scan before glamour was in the roster.
+- **S6 — acc is severable** — **DISCHARGED.**
+- **S7 — the playbook compresses on confirmation** — **CONTRACT HELD, THESIS
+  FALSIFIED, and they are separable.** Every confirmed section shrank; every
+  increase named a lesson. And the file went **513 → 522 lines**, against a −120
+  prediction its author scored rather than re-baselined. A playbook documenting
+  a fifth spell's worth of distinct mechanisms is not compressible by being
+  confident.
+
+## ⛔ PHASE 3 RE-ANSWERED 2026-09-03 (Cole asked, post-acc) — VERDICT UNCHANGED
+
+**The question:** does the acc work on glamour's _backend_ change the ruling,
+given a build would enable cross-CLI sharing?
+
+**Both original grounds re-measured at `cae26f8` and both HOLD.** Structural
+benefit is still zero — glamour's shipped backend imports only `../shared/*`,
+`./*.server`, `./reduce` and `node:` builtins; a build inlines what will not be
+at the destination and there is nothing. Canon still excludes it: Contract 3's
+repeal is enumerated (astrolabe, magpie) and neither clause fires.
+
+**⚠ BUT ONE INPUT FLIPPED AND WAS NEVER RE-CHECKED UNTIL ASKED.** thoth's ratify
+finding was that Phase 3 needed TWO gates and acc was the second — _"a spell
+goes conformant before its backend goes opaque."_ At the ratify glamour had no
+`acc.config.json`, the same fact that excludes imago. **It has one now, L0 at
+kit 0.1.11. Gate 2 is satisfied.** glamour did not become permitted; it became
+**eligible**.
+
+**And the sharing pressure is measurably higher:** 6 spells now carry a command
+table, 4 define a local `printJson` against the kit's one, 2 carry the CliError
+taxonomy. Census:
+`docs/backlog/2026-09-03-six-dies-the-cli-boilerplate-census.md`.
+
+**Why it stays dropped — the causation runs the wrong way.** Building glamour
+does not create sharing; sharing would REQUIRE a build. The live question is
+whether those helpers converge into `src/kit`, and that is roster-wide: **bounty
+and grapevine are not in `src/` at all.** Plus a hazard that stayed dead only
+because Phase 3 dropped — glamour is the first spell where the file that becomes
+the launcher is also a file a test imports names from (`tests/cli.test.ts` → 10
+named exports from `../scripts/cli`).
+
+**⛔ THE TRIGGER'S WORDING WAS WRONG AND IS HEREBY CORRECTED.** It read
+_"glamour builds if it ever drops its local printJson for the kit's"_, which
+implies glamour decides. It now reads: **glamour builds when the ROSTER rules on
+convergence; it is PRE-QUALIFIED, having cleared the acc gate.** Owner: whoever
+takes the boilerplate-census project, which Cole has agreed to run next.
+
 ## How this plan is authored
 
 - **The lead owns** this skeleton, the seams, and the verification gate.
@@ -207,9 +280,16 @@ the **await**; that distinction is the whole mechanism.
    nothing to assert and a dev daemon renders an identical-looking board.
 2. **The dev half of this seam is not in `server.ts`.** `scripts/cli.ts:372`
    spawns the daemon with `cwd: SKILL_ROOT`; under Contract 5 that pin must
-   become `src/glamour/` when the surface moves, **and `bunfig.toml` must move
-   with it or Tailwind is silently skipped** and the board renders unstyled.
-   **This seam spans `server.ts` AND `cli.ts`.**
+   become `src/glamour/` when the surface moves, and `bunfig.toml` must move
+   with it. **This seam spans `server.ts` AND `cli.ts`.** ⛔ _FALSIFIED
+   2026-09-03 (circe's measurement, `#1263`; ruled `#1264`): this clause read
+   "**Tailwind is silently skipped** and the board renders unstyled". It is not
+   silent. Without the pin the dev bundler cannot compile the stylesheet and the
+   **PAGE fails — 500, no stylesheet link**. The requirement stands; its REASON
+   is corrected. The sentence had propagated unmeasured through five spells'
+   comments, the playbook, a lane and three of this session's rulings — see
+   `.anthill/dev/seams.md`, the Contract 5 amendment. Found by thoth's 3.75
+   sweep of a doc no seat owns._
 3. **`bunfig.toml` must leave the deployed folder** — 0 of 4 landed spells have
    one; glamour does.
 
