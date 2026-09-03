@@ -120,6 +120,17 @@ sentence's subject moves, not just its path.
   `grep -n 'glamour/surface/state/reduce.ts' .anthill/dev/seams.md` finds only
   the struck original inside the amendment.
 
+**✅ LANDED in Phase 1 at `9f2cbd4` (daedalus as owner; wording ratified
+`#1185`, figures corrected `#1148`).** The grep finds two hits: the original
+authorship note at `:940`, **unstruck**, and the amendment at `:943` quoting it.
+That is this seams file's own convention — the original stands, the dated
+amendment sits beneath — so the done-when above was stricter than the house and
+is satisfied by convention, not by the letter. daedalus's wording is better than
+my draft in one place (it names `derive.ts` at its Phase 1 location and says it
+relocates in Phase 2; mine named the Phase 2 path as if already true), and it
+carries the clause I asked back: the ratify-time `16/22` is recorded as
+overturned, not misremembered.
+
 ### A4 · Contract 3 is NOT moved — assert it, do not assume it
 
 **After Phase 2 lands. This is the canon half of S6's correction turned into a
@@ -246,6 +257,52 @@ uses **imago** and the identical prompt above.
   of `bun run build`, which skips the Tailwind plugin (Contract 5). Not a wrong
   population — a wrong instrument, and the playbook could have named the right
   one.
+
+### B1a · The POPULATION — named, measured, ratified (`#1150` → `#1151` → `#1152`)
+
+**The exclusion is real, and canon already says it.** Measured at `c8730ec`:
+bounty ships `scripts/template.html`, grapevine `scripts/watch.html`, digestify
+`scripts/template.html` — one HTML file each, no `surface/`, no build input. The
+playbook's Applicability excludes all three, and
+`grimoire/house-style.md:376-383` — the same rule A2 edits — says the same thing
+in its own words: bounty and grapevine are _"a surface rewrite first"_;
+digestify is conditional on Cole's trigger. **Two documents, one population,
+checked for drift, none found.** The null result is recorded because a null
+nobody publishes is indistinguishable from a check nobody ran.
+
+**Ruled: COMPRESS, not retire, not generalise.** The population is closed today
+and conditionally reopens when a rewrite creates a `surface/` — a scoped project
+of its own. Generalising would document a port canon says not to run; retiring
+would delete the document the post-rewrite port consumes. S7 stands.
+
+**The acceptance test splits, and only one half is one-shot:**
+
+- **(a) the cold read** as built here — file alone, exported, a ported spell's
+  name — measures **legibility**, is re-runnable any time, and cannot see
+  applicability. Q/W before-after is this test.
+- **(b) a real port running on the playbook** by seats who did not write it
+  measures whether it _is_ a playbook. glamour is the last such run until a
+  rewrite lands. **That is a MEASUREMENT this session can permanently lose**,
+  and losing it looks exactly like a successful port. prospero's obligation
+  (`#1152`): daedalus, circe and cassandra say **at the moment**, tagged
+  `PLAYBOOK`, each step the playbook covers wrong, missing, or unusable. I
+  cannot run this test; I wrote the document.
+
+**Two ratified consequences for B3:**
+
+- header status line, named-closer-and-occasion form: _"second real run; next
+  real run after bounty or grapevine is rewritten."_
+- one earned addition to Applicability, pointer-sized: _"a spell with no
+  `surface/` is not yet a subject — the rewrite comes first; see house-style's
+  queue table."_ It exists because the digestify null run was kept.
+
+**The `−120` prediction stays scorable against its original bar.** It was made
+before the population was known to be conditional; recorded so a hit is not read
+as foresight.
+
+**The resolve-sweep is a missing instrument, not a doc gap** — named four times,
+existing nowhere, rewritten per seat. B3 names it; it goes to the board as a
+card (owner is prospero's call), not into the playbook as a fifth paraphrase.
 
 ### B2 · The confirmation ledger — running, during the build
 
