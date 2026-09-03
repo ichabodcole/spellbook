@@ -175,6 +175,62 @@ flag-invariant ward binds its flags to the registry, not its rows to
 `COMMANDS`); `status: "valid"` is hardcoded in the emitter; numeric flags
 declare `string` because `parseArgs` has no number kind.
 
+## Review (finalize-branch, Step 2)
+
+**Census.** Roster read from the session's "Available agent types" listing (the
+dispatchable set, not `plugins/*/agents/`). Checked: `feature-dev:code-reviewer`
+— explicit tool list with `KillShell` and `BashOutput` but **no `Bash`**, so
+read-only (the exact trap the skill names); rejected as review of record, used
+as a labelled second opinion. `codex:codex-rescue` — `Bash` only, but a
+rescue/implementation pass, not a reviewer; rejected on shape.
+`project-docs:docs-curator` — all tools, one document at a time; rejected on
+shape. **Chosen: `general-purpose` (`*`, shell access), briefed for this
+branch** as the review of record. Dual review, dispatched in parallel, the
+read-only one handed the net diff as a file.
+
+**What each executed.** The review of record's log, quoted:
+`git diff develop..HEAD --stat` · `git show develop:…cli.ts` ·
+`bun test plugins/spellbook/skills/glamour grimoire` (191 pass) ·
+`bunx acc check ./scripts/cli.ts --format text` (CONFORMANT, 0.5s) ·
+`bunx biome check` on the four changed `.ts` · ~30 CLI invocations under an
+empty `TMPDIR` (arity, root tokens, `--` at the root, flag-before-verb) · a
+stale pointer at port 1 (`state | close | tray | info`) · **two fake daemons**
+via `Bun.serve` (one answering 409/500-non-JSON, one echoing posted bodies with
+`status→400`) driven through seven verbs · `diff` + `shasum` of the copied acc
+skill against the pinned kit. `open` was not run. The second opinion: "Execution
+log: none (static read)" — labelled as such.
+
+**Findings and resolutions.** Both reviewers independently found the same
+MEDIUM: with a string flag before the verb (`--session abc say --bogus`), the
+pre-parse verb finder took the flag's _value_ as the verb, so the rejection said
+"no verb given" with the root's `choices` and `meta.command: "abc"`. **Fixed** —
+`verbToken()` walks argv the way the parser consumes it (a string flag eats the
+next token, `--k=v` eats nothing, `--` ends flags); pinned by a cell. Review of
+record, MEDIUM: an unawaited `Bun.write` before a sync spawn in the round-trip
+cell — **fixed** (`writeFileSync`). LOW, all **fixed**: `close` reported
+`{ok:true}` against a dead port because the ECONNRESET catch was a catch-all —
+narrowed to ECONNRESET, pinned; the help ward's `\b` let `gen-cost` satisfy
+`gen` — anchored on `(\s|$)`; the copied-in acc skill had been reflowed by
+prettier — restored byte-identical and `.prettierignore`d; stale "switch"
+comment and a magic `26` pin in the test; SKILL.md's `open` row said
+`{port, session_id, files_dir}` where the daemon prints
+`{url, port, session_id}` (pre-existing). Second opinion: `daemonRefused`'s
+status→kind mapping had no test — **added**, against a real `Bun.serve` stub for
+400/404/409/500 with `error.server` verbatim (async spawn: a sync one blocks the
+loop the stub answers on, which the first attempt found the hard way). **Not
+fixed, noted:** `usageOf` renders required flags as optional
+(`gen-cost <id> [--cost ..]`); `status maybe` still sends `busy:false`
+(pre-existing); `resolveGenSrc` fetches a caller URL with no allowlist
+(pre-existing, unchanged). Both verdicts were "With fixes"; every concrete
+finding is closed.
+
+Behaviour changes versus `develop` the review of record listed as intentional
+and documented: bare invocation exits 2 (was help at 0); `status` with no
+operand is usage 2 (was `busy:false`); extra positionals on fixed-arity verbs
+are refused (were ignored); `open --session` refused (was ignored); `tray`
+checks HTTP status (printed `[]` on any error); a missing `--file` is a usage
+envelope (was a stack trace); no-session is exit 5 (was 2).
+
 ## Success criteria, against the charter
 
 1. ✅ `acc check` passes, recorded with the kit version (0.1.11).
