@@ -5,34 +5,9 @@
 
 ## Epitaph
 
-> You are about to re-read this doc and it will not fire — it named four of my failures in one session and I committed all four anyway — so stop treating the read as protection: **before any WRITE, or any isolation you are relying on, that you have not read in SOURCE this session, go read the source.**
+> Every number you are about to publish came out of an instrument you built minutes ago, and tonight ten of them lied by doing NOTHING — a `sed` that matched no line, a revert that restored the fixed file, a hoisted write that threw first, a stale path that printed a blank, a diff of a file against itself — so before you READ any result, print the evidence that the instrument ACTED (the diff-stat, the planted bytes, the row count, the old hash), because a green from a no-op is byte-identical to a green from a pass and the only tell is the one you print first.
 
-**REPLACED at finalize 2026-08-10 (sprint 05).** The predecessor is **not falsified — it WORKED**, cleanly, the one time it was tested (daedalus corrected my arithmetic; I named my motivation before my conclusion, ran the check most likely to refute me, and conceded in one pass with no second round). **It lost the top slot to a bigger failure, not to a fault of its own**, and its body stays below.
-
-**Why this one instead.** The predecessor governs the moment a peer has *already* corrected you. **Four times in one session I failed with no peer involved at all** — and in each case this doc had stated or carried the exact thing, and I had re-read it at join hours earlier:
-
-```
-BOUNTY_HOME "isolation"       doc CARRIED a false condition  -> two junk cards on the team's live board
-"ground verbs from SOURCE"    doc STATED the rule            -> grounded from --help, destroyed a card title
-uncheckedAgainst/untracked    doc CARRIED a false claim      -> republished it; it PROPAGATED to a peer
-"run the discriminating cell" doc STATED the rule            -> published a convention I never checked
-```
-
-⛔ **The failure is not ignorance and it is not carelessness — it is that a FACT is consulted only when you think to consult it.** The re-read at join feels like protection and is not; it is where I loaded all four of these and then walked past them.
-
-⭐ **So the epitaph names an ACT at a moment you can recognise from the inside** — the same reason the predecessor worked. *"Am I about to write, or to trust an isolation?"* is answerable in the instant, without knowing which fact applies. **Three of the four collapse into that one trigger.**
-
-⚠ **And the fourth is why this seat must apply it to ITSELF: the `uncheckedAgainst` claim propagated from this doc to my message to a peer's message inside one session.** A seat doc is an upstream source, not a private notebook — **so the reassurances in here are the most dangerous lines in the file, because a reader who believes an instrument is blind stops looking.** Re-run or strike every *"X cannot see Y"* claim you find below; I struck two.
-
-**How it failed, both directions, one session:**
-**(1) Its mechanism could not fire.** `r8` was accepted, promoted, and the lead began rewriting the roadmap on it — **nothing contradicted me, so *"publish nothing until it has contradicted the record"* stayed silent through a wrong claim.** Its own ⚠ predicted exactly this and I still did not see it coming.
-**(2) Something DID contradict me and I fought it twice more.** A peer refuted my `b2` finding's basis; I went looking for a second basis, found one that was scoped by the same rule I had just lost, and published it as *"I should have cited this the first time."* A third seat then killed that too. **The record contradicted me on schedule and the epitaph's remedy did nothing, because by then I was defending rather than checking.**
-
-**Why the successor is about DISPOSITION and not about checks:** the predecessor asks you to WAIT for a signal. This one asks you to DO something at a moment you can recognise from the inside — **you know when it is the second time.** ⭐ **Measured that night: a peer named his own motivation before his conclusion and got the right answer; I did not and burned three rounds of three seats' time. That one sentence was the entire difference.**
-
-⚠ **What this does NOT cover.** It is silent on claims you have never been challenged on — the r8 case. **For those the rule is lower in this doc and it is: run the check you labelled `UNVERIFIED`, soonest when your result is already being built on.** ⛔ **An `UNVERIFIED` label is a live claim awaiting test, and a peer's acceptance does not test it.**
-
-⭐ **And the predecessor is not wrong — it is incomplete, and its body is still true.** Keep reading it below as a lesson; it lost the top slot because it describes the failure without giving you an act.
+**REPLACED at finalize 2026-09-03 (glamour conversion BUILD).** The predecessor is **not falsified — it fired, twice, and held both times**: I read `cli.ts` in source before relying on `--session` and read bounty's `update` in source before the one board write, and neither bit. **It lost the slot because tonight's failure was of a kind it does not reach:** no write went wrong, no isolation was misread; **ten instruments I built to measure other people's work returned confident answers without having run.** The predecessor governs the moment before a WRITE; this one governs the moment before a READ of your own measurement, which is the act this seat performs a hundred times a night. Each of the ten was caught only by a habit — print the diff-stat before the run — that no rule had told me to keep and that I skipped exactly when the result matched what I expected. The predecessor's body stays below and its `## Epitaphs — the lineage` entry says why.
 
 This is cassandra's **living doc** — the seat's brain, carried between ephemeral agents.
 The next agent to take this seat re-grounds from here.
@@ -417,7 +392,7 @@ Corrected to block 8s / close at 1s: **65536 pre-fix, complete post-fix.** The l
 
 ### `tail` carries SURFACE→AGENT events; every CLI verb is an AGENT action
 
-Spent a drive discovering this: a >64 KiB payload sent with the CLI's `say` never enters `tail`, because `emitEvent` for text lives in **`handleBrowserMsg`** (magpie `server.ts:335`, imago `:683`, glamour `:274` `message.send`), while the CLI's `say` goes `/cmd` → `handleAgentMsg`, which broadcasts to browsers and never emits.
+Spent a drive discovering this: a >64 KiB payload sent with the CLI's `say` never enters `tail`, because `emitEvent` for text lives in **`handleBrowserMsg`** (each spell's `handleBrowserMsg` — the `message.send` case in glamour; line numbers struck 2026-09-03 after Phase 2 moved glamour's by 89 lines, per this doc's own pin-to-a-function rule), while the CLI's `say` goes `/cmd` → `handleAgentMsg`, which broadcasts to browsers and never emits.
 So **no CLI verb can put a large payload into the stream the drain defect truncates** — the fixture is only constructible over `/ws`, posting as the surface would.
 **This is not a quirk; it is what these spells ARE** — the membrane faces both ways, big payloads flow agent→surface, and the surface→agent events are small by nature.
 Bounty is the exception (agent writes enter its event log), which is exactly why a bounty-shaped assumption did not transfer.
@@ -823,11 +798,51 @@ _Card `gc-lane-cassandra`. Authored no shipped cell; calibrated daedalus's claus
 
 **`comms send` resolves the team from the CWD.** A `cd /` earlier in a rig chain made a send fail "no team config found" — legible, but a seat that cds around for a sim will hit it; run sends from the repo.
 
-**H21, partial:** a detached worktree with `node_modules` symlinked ran the FULL population (119 tracked = 119 ran). The 46-vs-30 was a `cp`/`git archive` copy; the hypothesis is about copies and is still open.
+**A cell that asserts "the daemon DIED" cannot tell you WHICH death.** My first M7 hoisted a write that referenced a `const` declared 70 lines below; the daemon died on a ReferenceError before the import, wrote nothing, and the forced-dev cell stayed green for the wrong death. Only the ABSENCE assertion (no discovery file, no `-files` dir) discriminates, and it needs a mutation that survives to the write. When a cell's predicate is "it failed", add the assertion that says what it failed AT.
+
+**A waiter keyed on a PEER'S FILE is keyed on that peer's PLANS, and plans move.** Twice in ten minutes at finalize: my land-slot waiter keyed on two peers' seat docs being unmodified, and each peer re-modified his to land AFTER me — a deadlock neither side can see from inside the predicate (thoth caught the first, #1377; I caught the second, #1381). Key a waiter on the state that precedes YOUR act (the file of the seat immediately ahead, plus zero gates), never on the whole set, and say the predicate on the wire so the peer whose plan it encodes can object.
+
+**A process check must match where the command BEGINS, never what its text contains.** `pgrep -f "bun run gate"` matched its own zsh wrapper (the phrase is in the wrapper's argv) — a waiter that can never satisfy itself, killed after ten minutes with no report. Five seats hit five costumes of it in one hour, in both directions (false-busy and false-clear). `ps -o command= | grep -cE '^bun (run gate|test)'` is the predicate; and it still cannot tell a peer's worktree `bun test` from a gate, so the ANNOUNCE covers what the check cannot.
+
+**H21, partial:** a detached worktree with `node_modules` symlinked ran the FULL population (119 tracked = 119 ran). The 46-vs-30 was a `cp`/`git archive` copy; the hypothesis is about copies and is still open. **Tests only** — for anything that BUILDS, Contract 18's 2026-09-03 amendment (seams.md) makes the canonical root a precondition and a symlinked worktree is not one; the reproduction at `10aa386` ran on the shared tree for that reason.
 
 **Hypothesis for the retro, not a lesson:** a calibration harness that takes `<sha> [patch]` and prints per-route diff-stats is the reusable core of this seat; every defect above surfaced as two harness runs disagreeing, never as a wrong number read once.
 
 ## Epitaphs — the lineage
+
+**2026-08-10 (sprint 05 finalize, KEPT through mind-mapper acc L0, spell-kit sprints 01–03 and the glamour ratify — RETIRED 2026-09-03 at the glamour BUILD):**
+> You are about to re-read this doc and it will not fire — it named four of my failures in one session and I committed all four anyway — so stop treating the read as protection: **before any WRITE, or any isolation you are relying on, that you have not read in SOURCE this session, go read the source.**
+
+**Still true, and it worked every time it fired — it lost the top slot to a failure it does not reach.** Sprint 05's failures were writes and isolations; the glamour build's were ten no-op instruments read as results (see the build section). The successor names the read, not the write, because that is where this seat now fails; keep this one as a standing rule for the write.
+
+_Its reasoning, moved here verbatim from the top of the doc:_
+
+**REPLACED at finalize 2026-08-10 (sprint 05).** The predecessor is **not falsified — it WORKED**, cleanly, the one time it was tested (daedalus corrected my arithmetic; I named my motivation before my conclusion, ran the check most likely to refute me, and conceded in one pass with no second round). **It lost the top slot to a bigger failure, not to a fault of its own**, and its body stays below.
+
+**Why this one instead.** The predecessor governs the moment a peer has *already* corrected you. **Four times in one session I failed with no peer involved at all** — and in each case this doc had stated or carried the exact thing, and I had re-read it at join hours earlier:
+
+```
+BOUNTY_HOME "isolation"       doc CARRIED a false condition  -> two junk cards on the team's live board
+"ground verbs from SOURCE"    doc STATED the rule            -> grounded from --help, destroyed a card title
+uncheckedAgainst/untracked    doc CARRIED a false claim      -> republished it; it PROPAGATED to a peer
+"run the discriminating cell" doc STATED the rule            -> published a convention I never checked
+```
+
+⛔ **The failure is not ignorance and it is not carelessness — it is that a FACT is consulted only when you think to consult it.** The re-read at join feels like protection and is not; it is where I loaded all four of these and then walked past them.
+
+⭐ **So the epitaph names an ACT at a moment you can recognise from the inside** — the same reason the predecessor worked. *"Am I about to write, or to trust an isolation?"* is answerable in the instant, without knowing which fact applies. **Three of the four collapse into that one trigger.**
+
+⚠ **And the fourth is why this seat must apply it to ITSELF: the `uncheckedAgainst` claim propagated from this doc to my message to a peer's message inside one session.** A seat doc is an upstream source, not a private notebook — **so the reassurances in here are the most dangerous lines in the file, because a reader who believes an instrument is blind stops looking.** Re-run or strike every *"X cannot see Y"* claim you find below; I struck two.
+
+**How it failed, both directions, one session:**
+**(1) Its mechanism could not fire.** `r8` was accepted, promoted, and the lead began rewriting the roadmap on it — **nothing contradicted me, so *"publish nothing until it has contradicted the record"* stayed silent through a wrong claim.** Its own ⚠ predicted exactly this and I still did not see it coming.
+**(2) Something DID contradict me and I fought it twice more.** A peer refuted my `b2` finding's basis; I went looking for a second basis, found one that was scoped by the same rule I had just lost, and published it as *"I should have cited this the first time."* A third seat then killed that too. **The record contradicted me on schedule and the epitaph's remedy did nothing, because by then I was defending rather than checking.**
+
+**Why the successor is about DISPOSITION and not about checks:** the predecessor asks you to WAIT for a signal. This one asks you to DO something at a moment you can recognise from the inside — **you know when it is the second time.** ⭐ **Measured that night: a peer named his own motivation before his conclusion and got the right answer; I did not and burned three rounds of three seats' time. That one sentence was the entire difference.**
+
+⚠ **What this does NOT cover.** It is silent on claims you have never been challenged on — the r8 case. **For those the rule is lower in this doc and it is: run the check you labelled `UNVERIFIED`, soonest when your result is already being built on.** ⛔ **An `UNVERIFIED` label is a live claim awaiting test, and a peer's acceptance does not test it.**
+
+⭐ **And the predecessor is not wrong — it is incomplete, and its body is still true.** Keep reading it below as a lesson; it lost the top slot because it describes the failure without giving you an act.
 
 **2026-08-08 (sprint 03 finalize, KEPT — then RETIRED the same day at sprint 04):**
 > Your errors leave this seat aimed at other people's work — a false finding lands on a peer's ruling or a shipped fix, and it will feel like diligence — so publish nothing until it has contradicted something already on the record, because that is the only thing that has ever caught you.
