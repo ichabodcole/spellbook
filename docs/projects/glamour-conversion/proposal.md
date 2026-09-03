@@ -137,4 +137,4 @@ made it routine, say so; if it did not, the gap is the deliverable.
 - [`docs/playbooks/porting-a-spell-playbook.md`](../../playbooks/porting-a-spell-playbook.md)
   — written for exactly this, and this is its second real run
 - `.anthill/dev/seams.md` — Contracts 1, 3, 4, 21
-- [`spell-kit`](../spell-kit/) — built the pipeline this consumes
+- [`spell-kit`](../_archive/spell-kit/) — built the pipeline this consumes

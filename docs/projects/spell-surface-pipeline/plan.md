@@ -43,8 +43,8 @@
 > ## ✅ RULED 2026-08-30 (Cole) — astrolabe is DROPPED as the reference spell
 >
 > **imago is the reference.** The second-spell validation this plan asked for is
-> carried by [`spell-kit`](../spell-kit/proposal.md), which ports imago onto
-> this pipeline. **Seam C is also carried there**, so both of this plan's
+> carried by [`spell-kit`](../_archive/spell-kit/proposal.md), which ports imago
+> onto this pipeline. **Seam C is also carried there**, so both of this plan's
 > outstanding items now have an owner and this plan's remaining work is zero.
 >
 > _astrolabe may still be migrated — see spell-kit's Slice 1, where it is
