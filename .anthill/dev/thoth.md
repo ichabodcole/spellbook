@@ -922,7 +922,7 @@ magpie's scale-math item closed because `circe` deleted a file with zero importe
 **Recorded the re-file rule explicitly: if a third copy of the false comment appears, file a NEW item — do not reopen one whose subject is not coming back.**
 
 **AN AMBIGUITY BETWEEN TWO CONTRACTS CAN SIT DORMANT UNTIL A THIRD THING CHANGES.**
-Contract 1 says release mode is resolved by **`dist/` presence**; Contract 2's amendment keys the check on the **unhashed `dist/index.html`**.
+Contract 1 _said_ release mode is resolved by **`dist/` presence** while Contract 2's amendment keyed the check on the **unhashed `dist/index.html`** — Contract 1 has since been amended to say `dist/index.html` too, with a note that the code always checked it (see `seams.md` Contract 1; **reconciled 2026-09-03 at the finalize 3.5 beat**, this sentence was restating a contract that had moved).
 Those disagreed harmlessly for months — every `dist/` held an `index.html` — and the moment backends began shipping `cli.js` into `dist/`, a spell could hold a `dist/` and still correctly run in dev.
 ⭐ **Two contracts that agree on every case the tree currently produces are not consistent; they are untested against each other**, and the thing that tests them is a new kind of member in the set they both describe.
 
