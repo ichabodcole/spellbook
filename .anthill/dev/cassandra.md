@@ -815,6 +815,14 @@ _Card `gc-lane-cassandra`. Authored no shipped cell; calibrated daedalus's claus
 
 **Pre-check a peer's dry-run PATCH in a worktree before the atomic land.** Both Phase 2 halves were on disk as patches hours before they could land; applying each at the base sha let the S3 clauses, the arrival control and the Phase 1 proof run as non-author measurements while the tree was frozen — and found the `tests/reduce.surface.test.ts` seam mismatch (#1187) before the bytes were in.
 
+**A stale PATH in a one-pass script prints a BLANK, and a blank reads as green.** cal-all ran dev-styled at its pre-land `tests/` path after it landed under `src/glamour/`; the row printed nothing. The one instrument defect of the night that produced silence instead of a wrong number. A harness row must print its denominator or fail loudly when the file is absent.
+
+**`bunx <tool>` outside the repo is not the repo's tool.** circe's format check ran in a mktemp copy and bunx downloaded its own biome; the green certified a formatter the gate does not run. From the repo root bunx resolves `node_modules/.bin`; in a tmp cwd run the binary by path. Hand-placed files skip every check a normal edit meets, including your own — run the pinned formatter on a draft before you hand it over.
+
+**Copy the bytes BEFORE you announce the hash.** Three seats promised a diff against a ratified version and all three copied after the file had moved; one diffed a file against itself and got "identical" (a check that cannot fail, wearing a diff's clothes). If you cannot diff, say the basis is a re-read.
+
+**`comms send` resolves the team from the CWD.** A `cd /` earlier in a rig chain made a send fail "no team config found" — legible, but a seat that cds around for a sim will hit it; run sends from the repo.
+
 **H21, partial:** a detached worktree with `node_modules` symlinked ran the FULL population (119 tracked = 119 ran). The 46-vs-30 was a `cp`/`git archive` copy; the hypothesis is about copies and is still open.
 
 **Hypothesis for the retro, not a lesson:** a calibration harness that takes `<sha> [patch]` and prints per-route diff-stats is the reusable core of this seat; every defect above surfaced as two harness runs disagreeing, never as a wrong number read once.
