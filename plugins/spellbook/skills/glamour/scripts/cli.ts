@@ -236,6 +236,54 @@ const CLI_OPTIONS = {
 
 export const RECOGNIZED_FLAGS = Object.keys(CLI_OPTIONS).map((k) => `--${k}`);
 
+// ── the per-verb flag sets ─────────────────────────────────────────
+//
+// CLI_OPTIONS is the registry: what the parser can READ. VERB_SPEC is what each
+// verb ACCEPTS. Two stages, and the order is the point: stage 1 (node:util
+// strict) rejects a flag nobody knows; stage 2 rejects a flag this verb does
+// not take, and says so as MISPLACED rather than unknown — an agent told a
+// real flag is unknown goes hunting a typo it did not make. `session` rides
+// every verb that talks to a daemon; `open` does not (it spawns one) and
+// `help` takes nothing. A verb with no positionals is enforced by its own
+// usage line, not here.
+type Flag = keyof typeof CLI_OPTIONS;
+const SESSION: Flag[] = ["session"];
+export const VERB_SPEC = {
+  open: ["title", "intent", "no-open", "timeout", "start-timeout", "restore"],
+  tail: [...SESSION, "since"],
+  state: [...SESSION, "full"],
+  intent: SESSION,
+  annotate: SESSION,
+  say: [...SESSION, "kind"],
+  section: [...SESSION, "status", "content", "prompts", "colors"],
+  status: SESSION,
+  gen: [
+    ...SESSION,
+    "url",
+    "file",
+    "src",
+    "prompt",
+    "model",
+    "round",
+    "seed",
+    "cost",
+    "label",
+    "custom",
+  ],
+  "gen-cost": [...SESSION, "cost"],
+  "gen-meta": [...SESSION, "prompt", "custom"],
+  focus: [...SESSION, "note"],
+  "style-save": SESSION,
+  "style-archive": [...SESSION, "unarchive"],
+  tray: SESSION,
+  close: SESSION,
+  info: SESSION,
+  help: [],
+} as const satisfies Record<string, readonly Flag[]>;
+
+export const flagsFor = (verb: keyof typeof VERB_SPEC): string[] =>
+  [...VERB_SPEC[verb]].map((k) => `--${k}`).sort();
+
 export function parseArgs(args: string[]): {
   pos: string[];
   flags: Record<string, string | boolean>;
@@ -778,10 +826,44 @@ async function dispatch(argv: string[]): Promise<number> {
   // what was being run (the first non-dash token is the verb under every
   // grammar this parser accepts).
   CURRENT_COMMAND = argv.find((a) => !a.startsWith("-")) ?? null;
-  const parsed = parseArgs(argv);
+  let parsed: ReturnType<typeof parseArgs>;
+  try {
+    parsed = parseArgs(argv);
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    // An unknown flag's rejection names the set AT THIS PATH, not the whole
+    // registry: the verb's own flags when the verb is one of ours, the verb
+    // roster when there is no verb yet (the root accepts no flags of its own).
+    // This is what a recorded-surface census reads, path by path.
+    const verb = CURRENT_COMMAND;
+    if (verb !== null && verb in VERB_SPEC) {
+      const accepted = flagsFor(verb as keyof typeof VERB_SPEC);
+      throw new UsageError(e.message, {
+        hint: e.hint,
+        choices: accepted,
+      });
+    }
+    throw new UsageError(e.message, {
+      hint: "no verb given; run: cli.ts help",
+      choices: [...VERBS],
+    });
+  }
   const [verb, ...pos] = parsed.pos;
   const flags = parsed.flags;
   CURRENT_COMMAND = verb ?? null;
+  // Stage 2: a recognized flag this verb does not take. Only once the verb is
+  // known to be one of ours — an unknown verb is the earlier, larger error.
+  if (verb !== undefined && verb in VERB_SPEC) {
+    const allowed = new Set<string>(VERB_SPEC[verb as keyof typeof VERB_SPEC]);
+    const stray = Object.keys(flags).find((k) => !allowed.has(k));
+    if (stray !== undefined) {
+      const accepted = flagsFor(verb as keyof typeof VERB_SPEC);
+      throw new UsageError(
+        `--${stray} is not accepted by \`${verb}\` (it is a recognized glamour flag, just not this verb's)`,
+        accepted.length > 0 ? { choices: accepted } : { hint: `${verb} takes no flags` },
+      );
+    }
+  }
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
   switch (verb) {

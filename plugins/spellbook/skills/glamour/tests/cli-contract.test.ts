@@ -15,7 +15,7 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { RECOGNIZED_FLAGS, VERBS } from "../scripts/cli";
+import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS } from "../scripts/cli";
 
 const CLI = new URL("../scripts/cli.ts", import.meta.url).pathname;
 
@@ -114,11 +114,21 @@ test("the bare and unknown-verb rejections name the whole roster as choices", ()
   expect((JSON.parse(run(["state"]).stderr) as Envelope).meta.command).toBe("state");
 });
 
-test("the unknown-flag rejection names the recognized flag set as choices", () => {
-  const doc = JSON.parse(run(["say", "hi", "--acc-not-a-flag"]).stderr) as Envelope;
-  expect(doc.error.message).toContain("--acc-not-a-flag");
-  expect(doc.error.choices).toEqual(RECOGNIZED_FLAGS);
-  expect(doc.error.hint).toContain("--");
+test("the unknown-flag rejection names the set AT THAT PATH: the verb's flags, or the roster at the root", () => {
+  // Below the root: the verb's own set, never the whole registry — this is
+  // what the recorded-surface census compares, and the registry answer put
+  // 450 disagreements on the first census run.
+  const atSay = JSON.parse(run(["say", "hi", "--acc-not-a-flag"]).stderr) as Envelope;
+  expect(atSay.error.message).toContain("--acc-not-a-flag");
+  expect(atSay.error.choices).toEqual(flagsFor("say"));
+  expect(atSay.error.hint).toContain("--");
+  expect(atSay.meta.command).toBe("say");
+  // At the root there is no flag to offer: the next act is picking a verb.
+  const atRoot = JSON.parse(run(["--acc-not-a-flag"]).stderr) as Envelope;
+  expect(atRoot.error.choices).toEqual([...VERBS]);
+  expect(atRoot.meta.command).toBeNull();
+  // The registry is still the parser's truth, and every flag in it is owned.
+  expect(RECOGNIZED_FLAGS.length).toBe(26);
 });
 
 test("`--` at the root ends flag parsing: what follows is a verb, not an option", () => {
@@ -150,4 +160,41 @@ test("a parser rejection's envelope still names the verb that was being run", ()
   const before = JSON.parse(run(["--session", "abc", "state"]).stderr) as Envelope;
   expect(before.meta.command).toBe("state");
   expect(before.error.kind).toBe("not_found");
+});
+
+// ── 3. the per-verb sets ────────────────────────────────────────────
+
+test("VERB_SPEC and VERBS name the same verbs, and every registry flag belongs to some verb", () => {
+  expect(Object.keys(VERB_SPEC).sort()).toEqual([...VERBS].sort());
+  // A registry flag no verb accepts is dead surface the parser still reads.
+  const owned = new Set(Object.values(VERB_SPEC).flatMap((row) => [...row]));
+  const orphans = RECOGNIZED_FLAGS.filter((f) => !owned.has(f.slice(2)));
+  expect(orphans).toEqual([]);
+});
+
+test.each([
+  ["say --seed", ["say", "hi", "--seed", "3"], "say"],
+  ["open --session", ["open", "--no-open", "--session", "abc"], "open"],
+  ["state --kind", ["state", "--kind", "x"], "state"],
+])("a recognized flag at the wrong verb is MISPLACED, and the rejection lists the verb's own flags: %s", (_l, args, verb) => {
+  const r = run(args);
+  expect(r.stdout).toBe("");
+  expect(r.code).toBe(2);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("usage");
+  expect(doc.error.message).toContain(`is not accepted by \`${verb}\``);
+  expect(doc.error.message).toContain("recognized glamour flag");
+  expect(doc.error.choices).toEqual(flagsFor(verb as keyof typeof VERB_SPEC));
+  expect(doc.meta.command).toBe(verb);
+});
+
+test("help takes no flags, and says so rather than listing an empty set", () => {
+  const doc = JSON.parse(run(["help", "--session", "abc"]).stderr) as Envelope;
+  expect(doc.error.hint).toBe("help takes no flags");
+  expect(doc.error.choices).toBeUndefined();
+});
+
+test("an unknown verb outranks a misplaced flag", () => {
+  const doc = JSON.parse(run(["frobnicate", "--seed", "3"]).stderr) as Envelope;
+  expect(doc.error.message).toContain("unknown verb");
 });

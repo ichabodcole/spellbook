@@ -163,7 +163,11 @@ references an image or you inspect an item closely.
 All verbs: `bun ${CLAUDE_PLUGIN_ROOT}/skills/glamour/scripts/cli.ts <verb>`. The
 verb is the first positional; flags may sit on either side of it (the whole argv
 is one parse), so `--session <id>` targets a specific session wherever it
-appears (default: most recent). `help` prints the full surface.
+appears (default: most recent). **Each verb accepts only its own flags** — the
+sets are the table below; a real flag given to the wrong verb is refused as
+_misplaced_, and the rejection's `choices` lists that verb's flags. `open`
+spawns a session rather than targeting one, so it refuses `--session`. `help`
+prints the full surface and takes no flags.
 
 > **`${CLAUDE_PLUGIN_ROOT}` unset?** Some harnesses leave it empty, silently
 > turning `${VAR}/skills/…` into `/skills/…` so bun fails with "module not
