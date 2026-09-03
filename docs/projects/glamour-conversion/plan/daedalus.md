@@ -370,6 +370,19 @@ day `src/glamour/surface/index.html` puts it in the roster.
 
 ## Phase 2 — my half of the relocation (inside the atomic land)
 
+**LANDED `cae26f8` (2026-09-03):** 39 files, 21 renames, four seat trailers,
+gate 1587 / 0 / 4617 / 123 on the assembled shared tree;
+`plugins/spellbook/skills/glamour/` =
+`SKILL.md · acc.config.json · dist · scripts · shared · tests · tsconfig.json`,
+no `surface/`, no `bunfig.toml`; dist roster reads five. My six files entered by
+patch (sha256 9a64f9b6), byte-identical in the index. Built and driven first in
+a worktree over circe's real patch; the engine half added `resolveMode`,
+`serveDist`, `mode` on three transports, `daemonCwd`, a cwd preflight (cassandra
+`#1265`), the fifth ward-1a pin, the Contract 5 amendment, and the ordering fix
+that stops a forced-dev death leaking the session-files directory. The +16 cells
+partition as 11 placed + 4 mine + 1 generated (the css-scope ward's per-spell
+cell, glamour joining its roster).
+
 **Ruled `#1158`: Phase 2 is ONE atomic commit** — `src/glamour/surface/` arrives
 and `plugins/…/glamour/surface/` + `bunfig.toml` leave in the same commit. **The
 Phase 1.5 cell is the mechanical trigger:** glamour joins `roster()` the moment

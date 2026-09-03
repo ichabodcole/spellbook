@@ -22,6 +22,8 @@ When something's no longer true, fix it.
 
 > You will DESCRIBE a fact you could have RUN — a parser's default, a guard's absence, a peer's figure, a count — and your prose will be indistinguishable from a measurement precisely BECAUSE you measured something nearby, so the tell is never doubt; therefore whenever you are about to state a runtime behaviour, a number, or an absence in a comment, a commit body or a message, stop and ask what ONE LINE would turn it into an assertion that runs — and write that line instead, because the executable cell is the only instrument that has ever caught you, and today it caught you inside the very file you had written to make that point.
 
+_(**KEPT 2026-09-03 at the close of the glamour conversion — it is still true, and it fired in a new costume.** Five numbers of mine moved tonight (23→15, R085→R089, :5→:11, 60→59, "one line"→three), every one composed in the same breath as the measurement it cited; the seat that reads this will do it too. The sharper practice, added this session: never compose a claim in the same tool call as the measurement — measure, read the output, then write. A contract I own carried a false sentence for a year for the same reason.)_
+
 _(Written 2026-08-10 at the close of sprint 05. It supersedes "go read the premise when the claim is about YOU", which fired twice this session and WORKED both times — see the lineage for why a still-winning epitaph moved.)_
 
 _**The scar is that this happened FIVE times in one session, every time in the act of building instruments AGAINST it, and the prose was always confident.**_
@@ -1162,6 +1164,32 @@ Use an array (`"${MINE[@]}"`) or `${=LIST}`; the size of the result was the only
 **A DRY RUN OF THE WHOLE PHASE IN A WORKTREE, MEASURED THERE, IS WHAT MADE "ONE COMMIT" TRUE OF THE TREE AND NOT ONLY OF THE HISTORY.**
 Phase 1: 30 files, six renames, census/tsc/sweep/build/suite all green before a byte entered the shared tree; prospero ran one gate and one commit over both seats' paths.
 The playbook's Phase 1 has no step for a SYMBOL-grain split (only whole-file moves) and git's rename detection on the 89%-similar half is what keeps history — thoth is adding the sentence.
+
+**A SENTENCE IN A CONTRACT YOU OWN, CONTRADICTED BY YOUR OWN MEASUREMENT, IS THE CONTRACT'S TO AMEND — not the message's to caveat.**
+My wrong-cwd drive showed the CSS asset at 500 with zero Tailwind markers, and I wrote "louder than unstyled" into a READY post while Contract 5 — mine — still said "silently skipped, renders unstyled"; an hour later I copied that false sentence into my own Phase 2 comment from imago's.
+circe measured the page at 500 and the sentence fell; five spells, eight comment sites, a playbook line, a lane and three rulings had carried it unrun.
+When a measurement disagrees with a contract you own, open the contract that day.
+Pin: seams.md Contract 5 amendment 2026-09-03; `src/glamour/dev-styled.test.ts` asserts the invariant, not the status code.
+
+**THE ONLY PATH A CONSUMER HAS IS THE ENTRY POINT — a sim that boots the daemon directly tests a path nobody takes.**
+My local-sim ran `server.ts` and got the right death message; cassandra's ran `cli.ts open` and got `ENOENT … posix_spawn 'bun'`, because node reports a missing cwd as a missing binary.
+Fix: `existsSync(daemonCwd())` before the spawn, naming the directory and why dev was resolved; the cell asserts "names the directory, not bun", never the literal path (which is `/src/glamour` at a /tmp destination — true and odd).
+Pin: `glamour/tests/cli-open-envelope.test.ts` (cassandra's, calibrated by circe).
+
+**NEVER COMPOSE A CLAIM IN THE SAME TOOL CALL AS THE MEASUREMENT IT CITES — measure, READ, then write.**
+Twice tonight: "server.ts imports 23 symbols" from an interpolated range spanning two import blocks (true: 15), and "exactly one src/-naming line" beside a grep that printed three (one specifier, two lines of my own hint prose).
+Both were the epitaph's clause, and both were composed before the output existed; the fix is ordering, not care.
+
+**A FILE PLACED BY `cp` SKIPS EVERY CHECK A NORMAL EDIT MEETS, AND `bunx` OUTSIDE THE REPO IS NOT THE REPO'S TOOL.**
+The Phase 2 gate went red on format in exactly the three hand-placed cells; two had been checked with `bunx biome` in a mktemp copy, where bunx downloaded a different biome than the pin.
+Corollary to the symlinked-worktree finding: a symlinked worktree is WRONG for builds (module-comment paths) and RIGHT for tool pinning (biome, tsc, bun test) — say which axis a rig is faithful on.
+
+**AN INSTRUMENT'S PRECONDITION MUST BE CAPTURED BEFORE THE EVENT IT GUARDS AGAINST CAN HAPPEN.**
+Three seats "held the old bytes" for a byte-diff of the commit message; all three copied after the file had moved, and a diff of a file against itself exits 0 for any change.
+The design was right and nobody ran it — circe's rule: copy BEFORE you announce the hash.
+
+**A GENERATED CELL IS A MEMBER OF THE SUITE NOBODY WROTE, AND IT IS WHERE A PARTITION FAILS BY ONE.**
+The Phase 2 delta of +16 partitioned as 11 placed + 4 mine + 1 the css-scope ward MINTED when glamour joined its roster; without naming it someone would have hunted a phantom cell — and the next roster addition moves it again.
 
 ## release-staleness CI (2026-09-01) — judgments
 
