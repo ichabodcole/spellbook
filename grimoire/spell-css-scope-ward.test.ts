@@ -140,9 +140,27 @@ function classSelectors(css: string): Set<string> {
 function harvest(prelude: string, out: Set<string>): void {
   const p = prelude.trim();
   if (p.startsWith("@")) return; // at-rule preludes hold no class selectors
-  for (const m of p.matchAll(/\.((?:\\.|[A-Za-z0-9_-])+)/g)) {
+  // A CSS HEX ESCAPE IS ONE IDENTIFIER UNIT, AND ITS TERMINATOR IS A SPACE.
+  // An identifier cannot start with a digit, so a leading-digit variant is
+  // emitted as `\\3<digit> ` — up to six hex digits, then one optional
+  // whitespace that belongs to the escape, not to the selector. Measured
+  // (2026-09-03, bun-plugin-tailwind through the real build): `2xl:grid-cols-5`
+  // ships as `.\\32 xl\\:grid-cols-5`. A harvester that stops at the space
+  // yields `\\32`, unescapes it to the phantom class `32`, and the cross-spell
+  // cell then blames whichever spell happens to write a bare `32` in source —
+  // astrolabe and mind-mapper both do. The four landed spells ship ZERO hex
+  // escapes, so this branch is exercised by glamour first (the roster's first
+  // leading-digit variant) and by the instrument cell below on every run.
+  for (const m of p.matchAll(/\.((?:\\[0-9a-fA-F]{1,6}\s?|\\.|[A-Za-z0-9_-])+)/g)) {
     const raw = m[1];
-    if (raw !== undefined) out.add(raw.replace(/\\(.)/g, "$1"));
+    if (raw === undefined) continue;
+    out.add(
+      raw
+        .replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_, h: string) =>
+          String.fromCodePoint(Number.parseInt(h, 16)),
+        )
+        .replace(/\\(.)/g, "$1"),
+    );
   }
 }
 
@@ -258,6 +276,19 @@ describe("spell css scope ward", () => {
     expect(usedIn(".react-flow__node.draggable{}", "draggable")).toBe(true);
     const css = classSelectors(".a .b\\:c{color:red}@media x{.d{margin:.5rem}}");
     expect([...css].sort()).toEqual(["a", "b:c", "d"]);
+  });
+
+  test("the instrument reads a leading-digit variant as ONE class, not a phantom", () => {
+    // The selector is spelled the way Tailwind EMITS it (measured through the
+    // real plugin, 2026-09-03): a hex escape for the digit, space-terminated.
+    // Before the fix this returned "32" — a class no spell defines — and the
+    // cross-spell cell blamed a spell that writes a bare 32 in its source.
+    // The plain neighbours are the control: they must come out unchanged.
+    const css = classSelectors(
+      ".\\32 xl\\:grid-cols-5{a:b}.\\32 xl\\:w-\\[26rem\\]{a:b}.p-4{a:b}.bg-\\[\\#140f1d\\]{a:b}",
+    );
+    expect([...css].sort()).toEqual(["2xl:grid-cols-5", "2xl:w-[26rem]", "bg-[#140f1d]", "p-4"]);
+    expect(css.has("32")).toBe(false);
   });
 
   for (const spell of spells) {
