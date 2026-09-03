@@ -89,7 +89,7 @@ source-free like the other three.
 
 > ### ⭐ This is the port playbook's first use by someone who did not write it
 >
-> [`docs/playbooks/porting-a-spell-playbook.md`](../../../../playbooks/porting-a-spell-playbook.md)
+> [`docs/playbooks/porting-a-spell-playbook.md`](../../../../../playbooks/porting-a-spell-playbook.md)
 > was extracted from four ports. **This is the fifth, and the first run against
 > the written procedure rather than from memory.** Treat a step that turns out
 > to be missing, wrong or unusable as a **finding about the playbook**, and
