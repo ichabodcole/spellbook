@@ -1118,9 +1118,8 @@ Pin: `grimoire/dist-roster-ward.test.ts` "trackedBuildInputs NAMES a known leak"
 Remedy (b) — assert glamour's own tracked `surface/` is non-empty — was cheaper and expired the moment Phase 2 landed, going vacuous in silence.
 Choose the control whose subject the roadmap does not drain.
 
-**A WORKTREE WITH A SYMLINKED `node_modules` IS NOT CONTRACT 18's CANONICAL CHECKOUT — tests there are sound, BUILDS are not.**
-`bun run build` in such a worktree rewrote every spell's chunk hash: the bundle's module-boundary comments embed the `node_modules` path RELATIVE TO THE BUILD ROOT, so `// node_modules/react/…` became `// ../../../../../../../Users/…/node_modules/react/…`, different bytes, different hash, ward 1b ENOENT ×3 wearing my change's face.
-Diffed to the bytes rather than concluding "worktree builds are flaky"; Contract 18 amendment candidate (thoth drafts, I land).
+**A SYMLINKED-`node_modules` WORKTREE IS NOT CONTRACT 18's CANONICAL CHECKOUT — the mechanism and the measurement are in `seams.md` Contract 18's 2026-09-03 amendment; do not re-read them here.**
+What is mine: I nearly read three ward reds as my own change's, and went to the bytes instead of concluding "worktree builds are flaky" — the diff found the embedded path; the story would not have.
 
 **THE `$(…)` CAPTURE OF A SPAWNING VERB HANGS FOREVER — the detached GRANDCHILD inherits stderr and the substitution waits for every writer.**
 `O=$(bun cli.ts open …)` sat five minutes; the daemon was healthy.
