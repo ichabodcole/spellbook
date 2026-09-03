@@ -59,6 +59,7 @@ Cole drives verification: the phase gate is a human actually driving the surface
 
 ## Taste & reflexes
 
+Re-derive every count PER PHASE and name the instrument and the sha beside it; a figure correct in its own scope, carried into a later one, is the mechanism behind six of six numbers that moved in the glamour port (1539→1568, 22→21, 37/38→47/47, 23→25, 13→17/15, a peer's 23→15) — and a number carried from your own past self is inherited exactly as blindly as one from a peer.
 Mine sibling spells' idiom BEFORE building a new surface piece — adapt, never import across spells; shapes, naming (e.g. glamour's `FocusOwner`), microcopy register, and token usage should read as one house.
 Semantic tokens only in markup; shadcn class vocabulary enters via `@theme` aliases onto house tokens, grown strictly as consumed.
 Tailwind class strings live in literal lookup objects, never string-built — `@source` only sees literal text.
@@ -92,6 +93,30 @@ A control that switches views must never be coverable by what it controls — wh
 Seeding a controlled textarea: the effect that setState's the draft cannot place the caret in the same tick — the DOM value hasn't committed — so focus+setSelectionRange ride a requestAnimationFrame (R3 C3).
 
 ## Hard-won lessons
+
+### Glamour conversion (2026-09-03) — the port where every number that moved was inherited across a seam
+
+**⛔ SIX NUMBERS MOVED IN ONE SESSION AND NOT ONE WAS A MISCOUNT — each was a correct figure quoted into a scope it was not measured in.** 1539 → 1568 (a true baseline of a tree that then changed); 22/16 → 21/15 (a correct count of a different SET, relabelled); 37/38 → 47/47 (MY seat doc's mind-mapper-only figure, quoted as src-wide); 23 → 25 files (recalled, not run); 13 → 17/15 (a pre-Phase-1 count carried into Phase 2 after a prior phase added two files); and a peer's 23 → 15 (an instrument keyed on the wrong anchor line). **A number ages the moment a phase adds files, and a number carried from your own past self is inherited exactly as blindly as one carried from a peer.** Re-derive per phase, name the instrument, name the sha; never carry.
+
+**⭐ REVIEW THE ASSEMBLED TREE, NEVER THE HUNKS.** I reviewed daedalus's Phase 1 patch by `git worktree add --detach` + `git apply` + reading the FILES, and found an orphaned verdict comment at the tail of derive.ts that a hunk-grep structurally could not show (the comment moved with the block; the diff shows only additions). cassandra found the test-file seam the same hour by a different instrument. The lead named it: reviewing a change and reviewing a description of a change are different acts.
+
+**⛔ "READ THE FILE" MEANS `ls` FIRST, AND THE SECOND ACT IS SAYING WHAT `ls` SAID.** The lead announced a commit message at a path where it did not exist and set a five-minute consent-by-silence timer; two peers ratified their sentences FROM THE QUOTE and reported "ratified". I nearly did the same — my draft pre-corrected my half from the summary and was one send from going out as "correct". The only reason it went out as "the file does not exist" is that I ran `ls` before typing the word ratified. **A consent-by-silence timer over an unreachable artifact is a rubber stamp with a clock on it**, and the remedy on the seat side is to name the sha256 of what you ratify — the asymmetry (a sentence can be confirmed from a quote; a message cannot) disappears when the hash is in the verdict. Ratified the same message three times as it moved (4687 → 4771 → 4801 bytes), by hash each time.
+
+**⭐ A DOC'S STATUS LINE MUST SAY WHAT WAS PROVEN AND NAME THE OCCASION THAT CLOSES THE REST.** I wrote "Status: FIXED" for the css-scope ward with the parser and the detector calibrated on five routes — and the ORIGINAL SYMPTOM (glamour arrives, the ward blames astrolabe) had not run, because glamour was not yet in the ward's population. The lead held the land ten seconds before the commit. The corrected shape — FIX LANDED · ⚠ ARRIVAL CASE NOT YET RUN · closer = the run at the assembled sha — is the false-instrument-reassurance principle applied to a document: a reader who meets "FIXED" stops looking. The arrival case ran four hours later in my Phase 2 worktree and reproduced the filed message byte-for-byte under the pre-fix file. **Kill your own gate if the doc it is about to commit claims more than the evidence reaches.**
+
+**⭐ MEASURE THE EMITTED BYTES BEFORE WRITING THE REGEX.** The hex-escape fix was written against `.\32 xl\:grid-cols-5` compiled through the REAL plugin (bun-plugin-tailwind under Bun.build, the call src/build.ts makes), not against the CSS spec's description of escapes. The probe cost three attempts — a temp dir outside the repo cannot resolve tailwindcss (import resolves relative to the CSS file), and an HTML entry with no stylesheet link emits no CSS at exit 0 — and each failure was silent. **A "built true" with nothing to inspect is the vacuous-green shape in a probe.**
+
+**⛔ THE PARSER PRINCIPLE, FIFTH COSTUME, MINE: an apostrophe inside a single-quoted `bun -e` body.** "doc's" closed the shell quote and the rest of the script ran as shell commands (exit 127, "command not found: blames astrolabe"). I had carried the quoted-heredoc-to-file discipline for SENDS for two sprints and never once for SCRIPTS. Same principle, different verb; the rule now says scripts go in a file too, always.
+
+**A CELL THAT EVERY SPELL DOCUMENTS AND NONE TESTS IS A HAZARD MEASURED ZERO TIMES.** Contract 5's silent-unstyled-board failure is a comment in four spells' cli.ts and a test in none. T5 (dev-styled cell, two arms: cwd pinned → utilities present; cwd wrong → HTTP 200 and no utilities) is the first. The positive control is the whole cell: without the second arm a green cannot distinguish "styled" from "the check cannot see styling".
+
+**glamour has THREE mode transports** (stdout handshake server.ts:595, discovery file :459, ready event :475); imago has two, mind-mapper/astrolabe one. "Both transports" in S2 was imago's count. A cell that reads one certifies a third of the contract — T7 asserts all three. Found independently by daedalus the same hour (n=2 again).
+
+**A `bun run gate` parent can be gone while its `bun test` stage still runs.** A wait loop keyed on the parent's command line reported "no gate running" against two live gates. Key on the test process, or better on the peer's "down" message — the wire is the record, `ps` is a proxy.
+
+**`--as-of` refused my sends nine times this session and lost me nothing**, because I re-sent by editing the same file each time (the lead's practice from #1145). The guard protects the READER; the writer's protection is not re-authoring.
+
+**Tailwind scanning `.css`? No — but a stale `dist/` in the content root can make a class SELF-SUSTAINING** (SK3 P4). Not new; re-confirmed why `source(none)` + `@source "./"` is the only shape, and why the S5 comment that explains it is worth losing rename history on a 12-line file (ruled: D+A over R).
 
 ### Sprint 03 (spell-kit) — Phase 4d: the ward for kit PROSE
 
@@ -323,6 +348,10 @@ R12 observation (NOT my seam, unreproduced on retry) — ratifying the FIRST edg
 
 ## Anti-patterns
 
+Writing "Status: FIXED" on a doc whose original symptom has not been demonstrated — say what was PROVEN and name the OCCASION that closes the rest, or the next reader stops looking.
+Ratifying a message from the sentence quoted on the wire when the ask was the FILE — `ls` first, then say what `ls` said, and put the sha256 of what you ratified in the verdict.
+A single-quoted `bun -e` body carrying prose — an apostrophe closes the quote and the remainder runs as shell; scripts go in a quoted-heredoc FILE, same as sends.
+A wait loop keyed on `bun run gate` in the process table — the parent can be gone while its `bun test` stage runs; key on the test process or on the peer's down message.
 Claiming a card from a board listing held in context — after the lead batch-adds, RE-PULL state and claim by id; a card remembered by title is not a card (mis-claimed t-806ff9da for t-9a4bd7b2).
 Dropping Playwright/verification artifacts at the repo root — they default to CWD; move them to `.anthill/scratch/` immediately (the gate-safe home) and delete `.playwright-mcp/`.
 Trusting a peer's land to be whole — untracked NEW files hide from pathspec commits (a skeleton commit shipped without its styles.css); check `git status` before building on it.

@@ -441,6 +441,24 @@ Every differing element must be explicable (a clock, an animation frame). Posted
 with the boot command as the what-to-try for Cole; the pixels are his, the diff
 is mine.
 
+## Corrections after Phase 1 landed (9f2cbd4)
+
+- **The Phase 2 repoint is 17 statements over 15 files, not "13 files":** the 13
+  was measured before Phase 1 added `derive.ts` and `derive.test.ts`, each of
+  which imports `shared/types`. Measured in the Phase 2 dry-run worktree: 1
+  statement at `../../../plugins/…` (App.tsx), 15 at `../../../../plugins/…` (11
+  component statements incl. FacetBar×2, fileIntake, useSession, derive.ts,
+  derive.test.ts), 1 for `shared/imageOptimize` (fileIntake). Sixth moved number
+  of the session; same mechanism.
+- **T4 is landed** (1131558) and its arrival case ran at 9f2cbd4 + the surface
+  patch: css-scope 9/0 with glamour in the population, pre-fix file → the filed
+  message. The backlog status line closes in the Phase 2 commit.
+- **`styles.css` lands as D+A, not R** (ruled #1224): the S5 comment is worth
+  the rename history.
+- **bunfig.toml**: bytes ride in my patch, ownership daedalus's; his S2 must
+  show `daemonCwd()` and bunfig's landed path equal, side by side (#1230
+  done-when).
+
 ## Answers to daedalus's cross-lane asks (#1140), so the blanks are filled
 
 | ask                                                  | answer                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
