@@ -3,8 +3,9 @@
 // after (mind-mapper cli-contract.test.ts precedent, with its rationale).
 //
 // Two instruments:
-//   1. a DRIFT WARD binding the dispatch switch to VERBS, plus a behavioural
-//      twin asserting the help surface advertises every verb on its own line;
+//   1. a DRIFT WARD binding the published surface (schema) to the COMMANDS
+//      table that dispatches, plus a behavioural twin asserting the help
+//      surface advertises every verb on its own line;
 //   2. a SUBPROCESS failure table: stdout empty on failure, exactly one JSON
 //      document on stderr, envelope exit_code === the actual process exit
 //      code, --version as a data path, `--` honoured at the root. The failure
@@ -12,10 +13,10 @@
 //      spawn it.
 
 import { expect, test } from "bun:test";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS } from "../scripts/cli";
+import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS, verbToken } from "../scripts/cli";
 
 const CLI = new URL("../scripts/cli.ts", import.meta.url).pathname;
 
@@ -82,7 +83,9 @@ test("the help surface advertises every verb in the roster (behavioural twin of 
   // LINE-ANCHORED, not includes(): a bare substring match is vacuous for any
   // verb whose token recurs in prose. A verb is ADVERTISED only if it opens
   // its own help line.
-  const missing = VERBS.filter((v) => !new RegExp(`^\\s*${v}\\b`, "m").test(r.stdout));
+  // `(\s|$)` rather than `\b`: `-` is a word boundary, so `^\s*gen\b` would be
+  // satisfied by the gen-cost line if the gen row vanished (review finding).
+  const missing = VERBS.filter((v) => !new RegExp(`^\\s*${v}(\\s|$)`, "m").test(r.stdout));
   expect(missing).toEqual([]);
   // --help and -h are the same surface.
   expect(run(["--help"]).stdout).toBe(r.stdout);
@@ -143,8 +146,9 @@ test("the unknown-flag rejection names the set AT THAT PATH: the verb's flags, o
   expect(atRoot.error.choices).toEqual(["--help", "-h", "--version", "-V"]);
   expect(atRoot.error.hint).toContain("verbs: open tail");
   expect(atRoot.meta.command).toBeNull();
-  // The registry is still the parser's truth, and every flag in it is owned.
-  expect(RECOGNIZED_FLAGS.length).toBe(26);
+  // The registry is still the parser's truth, and every flag in it is owned
+  // (the ownership cell above); this only pins that the registry is non-trivial.
+  expect(RECOGNIZED_FLAGS.length).toBeGreaterThan(20);
 });
 
 test("`--` at the root ends flag parsing: what follows is a verb, not an option", () => {
@@ -220,10 +224,10 @@ test("an unknown verb outranks a misplaced flag", () => {
 test("acc check against the emitted declaration finds zero disagreements (the ratchet)", () => {
   // Both sides come from one table, so the census below the root can only
   // disagree if someone added a second source of truth — which is the event
-  // worth failing a build over. ~15s: one acc sweep.
+  // worth failing a build over. One acc sweep, about a second.
   const dir = mkdtempSync(join(tmpdir(), "glamour-schema-"));
   const declPath = join(dir, "declaration.json");
-  Bun.write(declPath, run(["schema"]).stdout);
+  writeFileSync(declPath, run(["schema"]).stdout);
   const glamourDir = new URL("..", import.meta.url).pathname;
   const p = Bun.spawnSync(
     ["bunx", "acc", "check", CLI, "--declaration", declPath, "--config-dir", glamourDir],
@@ -275,4 +279,85 @@ test("the in-process census: every verb's unknown-flag rejection names exactly w
       );
   }
   expect(mismatches).toEqual([]);
+});
+
+// ── 5. the review's findings, pinned ────────────────────────────────
+
+test("a string flag before the verb does not get its VALUE mistaken for the verb on a parse failure", () => {
+  // Review finding: `--session abc say --bogus` named "abc" as the verb, so
+  // the rejection said "no verb given" with the root's choices. The verb is
+  // found the way the parser consumes tokens.
+  expect(verbToken(["--session", "abc", "say", "--bogus"])).toBe("say");
+  expect(verbToken(["--session=abc", "say"])).toBe("say");
+  expect(verbToken(["--full", "state"])).toBe("state");
+  expect(verbToken(["--", "--x"])).toBe("--x");
+  expect(verbToken(["--session", "abc"])).toBeNull();
+  const doc = JSON.parse(run(["--session", "abc", "say", "hi", "--bogus"]).stderr) as Envelope;
+  expect(doc.meta.command).toBe("say");
+  expect(doc.error.choices).toEqual(flagsFor("say"));
+});
+
+test.each([
+  [400, "usage", 2],
+  [404, "not_found", 5],
+  [409, "conflict", 6],
+  [500, "internal", 1],
+])("a daemon refusal with HTTP %i maps to kind %s / exit %i, body verbatim under error.server", async (status, kind, code) => {
+  // A stub daemon answering every /cmd and /state with one status, and a
+  // session pointer in an isolated TMPDIR aimed at it — so the mapping runs
+  // against a real HTTP round trip. Async spawn, because a sync one blocks the
+  // loop the stub answers on.
+  const body = { error: "stubbed", status };
+  const server = Bun.serve({ port: 0, fetch: () => Response.json(body, { status }) });
+  const dir = mkdtempSync(join(tmpdir(), "glamour-daemon-"));
+  writeFileSync(
+    join(dir, "glamour-latest.json"),
+    JSON.stringify({
+      url: `http://127.0.0.1:${server.port}`,
+      port: server.port,
+      session_id: "s1",
+      title: "t",
+    }),
+  );
+  try {
+    for (const args of [["state"], ["say", "hi"]]) {
+      const p = Bun.spawn(["bun", CLI, ...args], {
+        stdout: "pipe",
+        stderr: "pipe",
+        stdin: "ignore",
+        env: { ...process.env, TMPDIR: dir },
+      });
+      const [out, err, exit] = await Promise.all([
+        new Response(p.stdout).text(),
+        new Response(p.stderr).text(),
+        p.exited,
+      ]);
+      expect(out).toBe("");
+      expect(exit).toBe(code);
+      const doc = JSON.parse(err) as Envelope & { error: { server?: unknown } };
+      expect(doc.error.kind).toBe(kind);
+      expect(doc.error.exit_code).toBe(code);
+      expect(doc.error.server).toEqual(body);
+    }
+  } finally {
+    server.stop(true);
+  }
+});
+
+test("close against a dead port is a transport failure, not a success (review finding)", () => {
+  // Only ECONNRESET — the daemon stopping mid-response — is success for close.
+  const dir = mkdtempSync(join(tmpdir(), "glamour-dead-"));
+  writeFileSync(
+    join(dir, "glamour-latest.json"),
+    JSON.stringify({ url: "http://127.0.0.1:1", port: 1, session_id: "s1", title: "t" }),
+  );
+  const p = Bun.spawnSync(["bun", CLI, "close"], {
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: new Uint8Array(0),
+    env: { ...process.env, TMPDIR: dir },
+  });
+  expect(new TextDecoder().decode(p.stdout)).toBe("");
+  expect(p.exitCode).toBe(1);
+  expect((JSON.parse(new TextDecoder().decode(p.stderr)) as Envelope).error.kind).toBe("internal");
 });

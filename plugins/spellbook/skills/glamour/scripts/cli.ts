@@ -433,7 +433,12 @@ async function postCmd(session: string | undefined, msg: Record<string, unknown>
   } catch (err) {
     // `close` causes Bun.serve to stop immediately — the connection resets
     // before the 200 response is flushed. Treat ECONNRESET on close as success.
-    if (msg.type === "close") {
+    // ONLY a reset: a refused connection (stale pointer, daemon already gone)
+    // is a transport failure like any other and rides the internal envelope —
+    // the review found the old catch-all reporting {ok:true} against a dead port.
+    const code = err && typeof err === "object" && "code" in err ? String(err.code) : "";
+    const message = err instanceof Error ? err.message : String(err);
+    if (msg.type === "close" && (code === "ECONNRESET" || message.includes("ECONNRESET"))) {
       printJson({ ok: true, sent: "close" });
       return;
     }
@@ -918,6 +923,29 @@ const ROOT_INTERCEPTORS = [
 const findCommand = (token: string): CommandSpec | undefined =>
   COMMANDS.find((c) => c.name === token);
 
+// The verb token in a raw argv, found the way the parser will find it: a
+// string flag CONSUMES the next token (`--session abc say` → "say", not
+// "abc"), `--key=value` consumes nothing, a bare `--` ends flag parsing, and
+// the first token left standing is the verb. Used only to name the verb on a
+// rejection raised BEFORE the parse succeeds (a stray flag) — the parse's own
+// positionals are the truth afterwards. A naive "first non-dash token" was
+// the review's finding: it named a flag's value as the verb.
+export function verbToken(argv: string[]): string | null {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i] as string;
+    if (a === "--") return argv[i + 1] ?? null;
+    if (a.startsWith("--")) {
+      if (a.includes("=")) continue;
+      const key = a.slice(2) as keyof typeof CLI_OPTIONS;
+      if (key in CLI_OPTIONS && CLI_OPTIONS[key].type === "string") i++;
+      continue;
+    }
+    if (a.startsWith("-")) continue;
+    return a;
+  }
+  return null;
+}
+
 // The derived views the tests and the rejections read. VERBS is the roster;
 // VERB_SPEC is each verb's accepted flags; flagsFor renders one row as the
 // `choices` a rejection carries.
@@ -1050,9 +1078,8 @@ async function dispatch(argv: string[]): Promise<number> {
   // the root (acc A6): `-- --x` yields the positional "--x", which is then an
   // unknown verb — not an unknown option.
   // Name the verb BEFORE parsing, so a parser rejection's envelope still says
-  // what was being run (the first non-dash token is the verb under every
-  // grammar this parser accepts).
-  CURRENT_COMMAND = argv.find((a) => !a.startsWith("-")) ?? null;
+  // what was being run.
+  CURRENT_COMMAND = verbToken(argv);
   let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs(argv);
