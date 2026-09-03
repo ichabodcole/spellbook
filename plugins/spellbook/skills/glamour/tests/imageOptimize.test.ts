@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { OPTIMIZE } from "../surface/state/imageOptimize";
-import { optimizeImageBuffer, optimizeImageDataUrl } from "../surface/state/imageOptimize.server";
+import { optimizeImageBuffer, optimizeImageDataUrl } from "../scripts/imageOptimize.server";
+import { OPTIMIZE } from "../shared/imageOptimize";
 
 // A valid 1×1 transparent PNG.
 const PNG_1x1 =

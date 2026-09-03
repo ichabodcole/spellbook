@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import type { ItemKind, LibraryItem } from "../state/types";
-import { VALID_KIND } from "../state/types";
+import type { ItemKind, LibraryItem } from "../../shared/types";
+import { VALID_KIND } from "../../shared/types";
 
 const LABEL: Record<ItemKind, string> = {
   ref: "References",

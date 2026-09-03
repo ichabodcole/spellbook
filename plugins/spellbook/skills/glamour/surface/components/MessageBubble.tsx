@@ -1,5 +1,5 @@
 import { CheckSquare } from "lucide-react";
-import type { LibraryItem, Message } from "../state/types";
+import type { LibraryItem, Message } from "../../shared/types";
 
 const KIND_TINT: Record<Message["kind"], string> = {
   info: "text-slate-200",

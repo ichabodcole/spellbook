@@ -2,8 +2,14 @@ import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync 
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
+import {
+  type AgentCommand,
+  type ClientToServer,
+  defaultState,
+  type GlamourState,
+} from "../shared/types";
 import index from "../surface/index.html";
-import { loadSnapshot, materializeItem, saveSnapshot } from "../surface/state/persist.server";
+import { loadSnapshot, materializeItem, saveSnapshot } from "./persist.server";
 import {
   addItem,
   addMessage,
@@ -20,20 +26,14 @@ import {
   setItemArchived,
   setLike,
   setStar,
-} from "../surface/state/reduce";
+} from "./reduce";
 import {
   loadTray,
   materializeCanon,
   projectKey,
   saveStyle,
   setStyleArchived,
-} from "../surface/state/styles.server";
-import {
-  type AgentCommand,
-  type ClientToServer,
-  defaultState,
-  type GlamourState,
-} from "../surface/state/types";
+} from "./styles.server";
 
 const enc = new TextEncoder();
 const randHex = (n: number) =>

@@ -1,4 +1,4 @@
-import type { SectionStatus, StyleSection } from "../state/types";
+import type { SectionStatus, StyleSection } from "../../shared/types";
 
 const DOT: Record<SectionStatus, string> = {
   agreed: "bg-emerald-400",

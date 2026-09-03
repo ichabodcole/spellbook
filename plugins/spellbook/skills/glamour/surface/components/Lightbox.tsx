@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useEffect } from "react";
-import type { LibraryItem } from "../state/types";
+import type { LibraryItem } from "../../shared/types";
 
 export function Lightbox({
   items,

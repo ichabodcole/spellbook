@@ -1,5 +1,5 @@
 import { FileText, Heart, Palette, Star } from "lucide-react";
-import type { LibraryItem } from "../state/types";
+import type { LibraryItem } from "../../shared/types";
 
 export function LibraryTile({
   item,

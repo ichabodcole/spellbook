@@ -1,5 +1,5 @@
 import { Crosshair, X } from "lucide-react";
-import type { FocusOwner } from "../state/types";
+import type { FocusOwner } from "../../shared/types";
 
 export function FocusBar({
   owner,

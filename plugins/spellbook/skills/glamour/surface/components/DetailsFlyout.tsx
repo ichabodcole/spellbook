@@ -1,6 +1,6 @@
 import { Archive, ArchiveRestore, Heart, Maximize2, Pin, Star, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import type { LibraryItem } from "../state/types";
+import type { LibraryItem } from "../../shared/types";
 
 export function DetailsFlyout({
   item,

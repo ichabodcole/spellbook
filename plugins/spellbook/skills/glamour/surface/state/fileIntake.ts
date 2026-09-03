@@ -1,5 +1,5 @@
-import { OPTIMIZE } from "./imageOptimize";
-import type { ClientToServer } from "./types";
+import { OPTIMIZE } from "../../shared/imageOptimize";
+import type { ClientToServer } from "../../shared/types";
 
 const IMG = /^image\//;
 const TEXTY = /\.(md|markdown|mdx|txt|json|ya?ml)$/i;

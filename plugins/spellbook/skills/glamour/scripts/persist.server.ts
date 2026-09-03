@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { defaultState, type GlamourState, type LibraryItem } from "./types";
+import { defaultState, type GlamourState, type LibraryItem } from "../shared/types";
 
 const EXT_BY_MIME: Record<string, string> = {
   "image/webp": "webp",

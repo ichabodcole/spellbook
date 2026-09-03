@@ -11,6 +11,7 @@ import {
   Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import type { ItemKind } from "../shared/types";
 import { Conversation } from "./components/Conversation";
 import { DetailsFlyout } from "./components/DetailsFlyout";
 import { FacetBar } from "./components/FacetBar";
@@ -21,9 +22,8 @@ import { LibraryGrid } from "./components/LibraryGrid";
 import { Lightbox } from "./components/Lightbox";
 import { StyleGuide } from "./components/StyleGuide";
 import { StylesTray } from "./components/StylesTray";
+import { agentRepliedSince } from "./state/derive";
 import { processFiles } from "./state/fileIntake";
-import { agentRepliedSince } from "./state/reduce";
-import type { ItemKind } from "./state/types";
 import { useSession } from "./state/useSession";
 
 export function App() {

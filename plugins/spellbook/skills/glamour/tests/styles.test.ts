@@ -8,7 +8,7 @@ import {
   projectKey,
   saveStyle,
   setStyleArchived,
-} from "../surface/state/styles.server";
+} from "../scripts/styles.server";
 
 let HOME: string;
 beforeAll(() => {

@@ -34,7 +34,7 @@ import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { parseArgs as nodeParseArgs } from "node:util";
-import { optimizeImageDataUrl } from "../surface/state/imageOptimize.server";
+import { optimizeImageDataUrl } from "./imageOptimize.server";
 
 const SCRIPT_DIR = dirname(Bun.fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");

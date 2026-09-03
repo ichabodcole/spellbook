@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { LibraryItem, Message } from "../state/types";
+import type { LibraryItem, Message } from "../../shared/types";
 import { ActivityIndicator } from "./ActivityIndicator";
 import { MessageBubble } from "./MessageBubble";
 

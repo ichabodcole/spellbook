@@ -9,6 +9,12 @@ let base: string;
 
 beforeAll(async () => {
   process.env.GLAMOUR_HOME = mkdtempSync(join(tmpdir(), "glamour-home-"));
+  // The daemon writes its discovery pointer to $TMPDIR/glamour-latest.json
+  // UNCONDITIONALLY at boot and unlinks it at close iff the id is its own — so
+  // this suite, run while a real glamour session is open, DELETED the user's
+  // pointer at 16 pass / 0 fail (cassandra, comms #1166). Scope TMPDIR too.
+  // Fixture-side only; the pointer's home is a filed spell-wide item.
+  process.env.TMPDIR = mkdtempSync(join(tmpdir(), "glamour-tmp-"));
   d = await startDaemon({ port: 0, title: "Test", intent: "logos" });
   base = `http://127.0.0.1:${d.port}`;
 });

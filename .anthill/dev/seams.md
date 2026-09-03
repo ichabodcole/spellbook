@@ -939,6 +939,12 @@ could not have called it).
 
 > **⚠ Authorship note, stated so a future reader does not infer a scope grab.** This contract's surface half lives in `glamour/surface/state/reduce.ts`, which is **circe's** file. She is unseated (third round running), and prospero ruled that the seat which made the reducer return the verdict holds the contract. **If circe is re-seated, this entry is hers to amend or falsify.**
 
+> **⚠ Amendment 2026-09-03 (glamour conversion, S1 split; drafted thoth, landed daedalus as owner).**
+> The authorship note above says the surface half lives in `glamour/surface/state/reduce.ts`. **That file no longer exists after the S1 split:** `reduce.ts` was two disjoint halves at the symbol grain — backend 21 exports (15 imported by `server.ts`, 6 consumed only by tests), surface 4, intersection zero; derived by command, `plan/daedalus.md` T1.3; the ratify-time figure of 16/22 (`#1120`, carried into the plan) counted the server's import list and called it the backend half, and is overturned, not misremembered — and the port separated them (ruled `#1124`).
+> The **verdict-returning reducer** (`applyAgentMsg`, the subject of this contract) now lives on the **daemon side** at `plugins/spellbook/skills/glamour/scripts/reduce.ts` (moved with `git mv`, so history follows it).
+> The **surface half** — pure view-side derivations, no mutators — lives at `glamour/surface/state/derive.ts`, relocating to `src/glamour/surface/state/derive.ts` in Phase 2 (circe `#1137`, ratified prospero `#1142` R2), and it is **not** this contract's subject: it returns no verdict.
+> **The contract is unchanged.** The verdict still originates in the code that owns the recognised set; `applied` is still the field; only the file the note points at moved. The "as built" sentence above (bare boolean) is still accurate for glamour and was not re-measured by this amendment.
+
 **The contract, stated once:** a spell daemon's `POST /cmd` route must answer with a **verdict it received from the code that owns the recognised set**, never with a literal `ok:true` and never with a verdict derived from a second enumeration of command types maintained beside the dispatch.
 
 Concretely, as built in the three co-presence spells:
