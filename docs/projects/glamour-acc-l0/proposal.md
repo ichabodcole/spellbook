@@ -1,7 +1,10 @@
 # glamour acc L0 — the characterization harness for the port
 
-**Status:** Draft · **BLOCKED on an external release** **Created:** 2026-09-02
-**Author:** Cole Reed + Claude Code
+**Status:** **CONFORMANT (L0) as of 2026-09-03, acc 0.1.11** — the before-run
+and the fix are in
+[`sessions/2026-09-03-glamour-acc-l0.md`](./sessions/2026-09-03-glamour-acc-l0.md);
+criterion 2 (the after-port re-run) and criterion 3 (the gate ruling) remain
+open · **Created:** 2026-09-02 **Author:** Cole Reed + Claude Code
 
 > **Deliberately thin, and deliberately has no `plan.md`.** The `acc` kit
 > carries the instructions — `STANDARD.md`, `CHARTER.md`, and `acc check`
@@ -48,7 +51,10 @@ means the option needs no second visit if glamour ever starts **sharing**
 backend code — which is the real trigger, and is the question spell-kit banked
 as _"whether the four remaining `printJson` copies should ever converge."_
 
-## ⛔ Blocked, and by what
+## ⛔ Blocked, and by what — RESOLVED 2026-09-03
+
+> The release landed (v0.1.11) and Cole pulled the trigger the same day. Kept
+> below as the record of what the wait was for.
 
 **A new `acc` kit release is in progress** (documentation, features, bug fixes).
 This work waits for it — running the check against `v0.1.7` and then re-running
