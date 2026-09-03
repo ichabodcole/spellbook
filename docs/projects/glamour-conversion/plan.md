@@ -34,13 +34,15 @@ plain `.ts` — exit 0, correct envelopes, with a positive control — so **Cont
 > owner and an occasion rather than as an event nobody watches.
 
 **S1 — reduce.ts is SPLIT, not moved whole** (contested; ruled once). daedalus
-measured the two halves disjoint — server imports 16 symbols, the surface 4,
-**intersection zero**. circe preferred `shared/reduce.ts` whole, calling the
-split a refactor "no surface rewrite" does not license. **Ruled: split.** The
-scope objection is answered by daedalus's own argument — shipping it wholesale
-hands the surface **22 backend mutators it must never call**, which is the
-misfiled-`.server` defect mirror-imaged. Not splitting reproduces the exact bug
-this port exists to fix, so it is not gold-plating.
+measured the two halves disjoint — server imports 15 symbols, the surface 4,
+**intersection zero**. _(Corrected 2026-09-03 from 16: daedalus re-derived it by
+command at `c8730ec` — plan/daedalus.md T1.3. The ratify counted the server's
+import list and called it the backend half.)_ circe preferred `shared/reduce.ts`
+whole, calling the split a refactor "no surface rewrite" does not license.
+**Ruled: split.** The scope objection is answered by daedalus's own argument —
+shipping it wholesale hands the surface **21 backend exports it must never
+call**, which is the misfiled-`.server` defect mirror-imaged. Not splitting
+reproduces the exact bug this port exists to fix, so it is not gold-plating.
 
 **acc L0 moves AHEAD of the port**, into its own project
 ([`../glamour-acc-l0/`](../glamour-acc-l0/proposal.md)), as the port's
@@ -164,11 +166,13 @@ Build to this, not to the claim above.**
   seat — a peer of both, and imago's and magpie's built-twice answer.
   `import-boundary-wards.test.ts:496` already defines the shipped execution path
   as `/\/(scripts|shared)\//`.
-- **`reduce.ts` SPLITS** — backend half (22 exports) → `scripts/reduce.ts`;
-  surface half (4 pure selectors: `itemsByKind`, `MarkFilter`, `matchesMarks`,
-  `agentRepliedSince`) stays in the surface. **Filename and home are circe's and
-  are NOT ruled.** `types.ts` goes to `shared/` **whole** — the split criterion
-  is **runtime reach**, and types erase at runtime.
+- **`reduce.ts` SPLITS** — backend half (**21 exports: 15 imported by
+  `server.ts`, 6 consumed only by `tests/reduce.test.ts`**) →
+  `scripts/reduce.ts`; surface half (4 pure selectors: `itemsByKind`,
+  `MarkFilter`, `matchesMarks`, `agentRepliedSince`) stays in the surface.
+  **Filename and home are circe's and are NOT ruled.** `types.ts` goes to
+  `shared/` **whole** — the split criterion is **runtime reach**, and types
+  erase at runtime.
 - **`src/kit/` is REJECTED on measurement**: a source-shipped backend cannot
   import from `src/` (outside the copied subtree — the specifier dangles at a
   consumer install), and `src/kit/` is a Tailwind content source for every
