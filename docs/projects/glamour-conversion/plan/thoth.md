@@ -100,6 +100,12 @@ recorded for its own pending marker).
   heading, and if it is a third distance the heading says three and the row
   stays.
 
+**✅ APPLIED at `cae26f8`** from a patch dry-run in a worktree first: rule-id
+test 4/0, `canon-ledger-ward` PASS (0 orphan / 0 ambiguous), prettier clean,
+`dist-check` counting five. digestify's trigger read: it is its own distance
+(conditional), so the heading says **two** for the rewrites plus the conditional
+row — checked, not assumed. Lands with B3.
+
 ### A3 · Contract 13's authorship note names a file the split moves
 
 **After circe rules the surface half's filename** (`#1130`: unruled, hers to
@@ -152,6 +158,16 @@ ls src/glamour/
 - Also re-read Contract 4's amendment table (`seams.md:372-392`) for a glamour
   row; if one exists and now describes the past, append one dated line. Not
   pre-written because I have not measured whether there is one.
+
+**✅ ASSERTED at `cae26f8` (Phase 2 down).** `glamour/dist` =
+`{index-39c5b79f.js, index-ek8hd2gz.css, index.html}`, no `cli.js`;
+`grep 'dist/cli' scripts/cli.ts` = 0; `src/glamour` =
+`{build.ts, bunfig.toml, dev-styled.test.ts, surface}`, no `backend/`. Contract
+3 is not moved. The lane's "surface/ only" expectation for `src/glamour` was
+over-narrow — the landed layout carries the delegator, the bunfig and a
+co-located cell — and the assertion that matters held. Contract 4's amendment
+table has no glamour row to date (measured: the row was in `house-style.md`, and
+A2 removes it).
 
 ### A5 · The four `(seed)` ledger rows — NOT this port
 
@@ -390,6 +406,27 @@ from the **edited** file. Score `Q_after`, `W_after`.
   natural non-author for the cold read's design if she wants it; I will not
   score my own read as the only reader if she is available (H16's shape).
 - **Done-when:** four numbers in this file, dated, and the verdict.
+
+**✅ MEASURED 2026-09-03, final playbook bytes at `cae26f8` (sha256
+`941d7aff…`), same prompt, same subject (imago), file alone:**
+
+| read                   | Q     | W     |
+| ---------------------- | ----- | ----- |
+| before (baseline)      | 10    | 1     |
+| after, first pass      | 7     | 2     |
+| **after, final bytes** | **7** | **1** |
+
+**PASS: Q 10→7, W 1→1.** The first pass rose to W=2 on two pointers I had
+written without their shape (`scanSpecifiers` takes text; not every spell has a
+tsconfig); on the final bytes both commands are correct. The remaining W is the
+`acc check` invocation, which the playbook never spells out — a pointer-sized
+gap recorded here for the next pass, **not** edited after the acceptance read.
+Raw outputs:
+`.anthill/scratch/thoth/coldread-{before,after,final}-imago-raw.md`. Of the
+seven questions, two are subject-induced (Example 2 says imago is ported), one
+is the scanner's type-only field name, and one is new and real: a prerequisite
+link to a backlog item (imago's offline daemon) cannot tell the reader whether
+the defect is fixed — the Gotcha 8 class, one more instance.
 
 ### B5 · Land
 

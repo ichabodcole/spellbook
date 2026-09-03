@@ -937,6 +937,11 @@ True when made, false when built on. **Before building on your own earlier findi
 
 **⚠ AN AMENDMENT THAT NAMES A FUTURE PATH AS IF ALREADY TRUE IS FALSE BETWEEN LANDS.** My Contract 13 draft named `src/glamour/surface/state/derive.ts`; daedalus's landed wording names the Phase 1 location and says it relocates in Phase 2. Between the Phase 1 and Phase 2 lands mine would have been a false sentence in canon — the pending-marker defect seams.md already paid for, in a fresh costume. **Write canon for the tree it lands in, not the tree it expects.**
 
+**⛔ A QUOTED GLOB IN A GIT PATHSPEC MATCHES NOTHING, AND ZERO OVER NOTHING READS AS CLEAN.** `git status --porcelain -- 'plugins/spellbook/skills/*/dist'` printed 0 after a rebuild; the explicit-path form printed 2 — both built backends' `dist/cli.js` had moved, because the inline sourcemap embeds the source text and a COMMENT changes it. I announced "no bundle moved" on the zero and corrected it four messages later.
+**A comment in a built backend is a shipping change** (Contract 18: source and dist land together), which is why "a comment that moves the bundle is a finding, not a fix" was the right rule and I still had to walk into it to see the mechanism.
+
+**⛔ A COPY TAKEN "FOR THE DIFF" AFTER THE FILE HAS ALREADY MOVED IS A COPY OF THE NEW BYTES, and the diff exits 0 for any change.** I announced I held the pre-revision commit message; my `cp` had run after the lead rewrote it; my diff was a file against itself. Three seats did the same thing in the same minute. **Hash the copy at the moment you take it and post the hash; a diff against an unhashed copy is decoration.**
+
 **⚠ A `cd` INSIDE A COMPOUND BASH CALL PERSISTS INTO THE NEXT CALL.** I minted my scratch under `docs/projects/glamour-conversion/.anthill/` because a listing had `cd`'d there one call earlier; the join manifest had printed the resolved teamDir and I built the path from where I was standing. Untracked, in the shared tree, found on `git status` before any commit. **Absolute paths for every write; the manifest's resolved paths are the source, not your cwd.**
 
 ## Anti-patterns
