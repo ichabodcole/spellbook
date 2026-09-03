@@ -59,6 +59,9 @@ Cole drives verification: the phase gate is a human actually driving the surface
 
 ## Taste & reflexes
 
+Never derive a member of a partition by subtraction from the total — every member is measured or the partition is not one (16 − 11 gave "5"; the tree said 4 + 1 GENERATED).
+Copy the old bytes BEFORE you announce the hash you ratify, and hash the copy at the moment of copying — a copy taken when you want to compare is of the next version, and a diff against it is a file against itself.
+Run checks with the repo's pinned tool from the repo root (`./node_modules/.bin/biome`), never `bunx` in a temp dir — bunx resolves and downloads its own copy there.
 Re-derive every count PER PHASE and name the instrument and the sha beside it; a figure correct in its own scope, carried into a later one, is the mechanism behind six of six numbers that moved in the glamour port (1539→1568, 22→21, 37/38→47/47, 23→25, 13→17/15, a peer's 23→15) — and a number carried from your own past self is inherited exactly as blindly as one from a peer.
 Mine sibling spells' idiom BEFORE building a new surface piece — adapt, never import across spells; shapes, naming (e.g. glamour's `FocusOwner`), microcopy register, and token usage should read as one house.
 Semantic tokens only in markup; shadcn class vocabulary enters via `@theme` aliases onto house tokens, grown strictly as consumed.
@@ -93,6 +96,32 @@ A control that switches views must never be coverable by what it controls — wh
 Seeding a controlled textarea: the effect that setState's the draft cannot place the caret in the same tick — the DOM value hasn't committed — so focus+setSelectionRange ride a requestAnimationFrame (R3 C3).
 
 ## Hard-won lessons
+
+### Glamour conversion (2026-09-03) — Phase 2 and the assembly, promoted after dc4008c
+
+**⛔ NEVER DERIVE A MEMBER OF A PARTITION BY SUBTRACTION FROM THE TOTAL.** "The other 5 are daedalus's" was 16 − 11; his were 4 and the 16th was a cell NOBODY WROTE — `spell-css-scope-ward` emits one DECLARATION cell per spell in `relocatedSpells()`, and glamour had just joined (8 at 1131558 → 9 at cae26f8). A ward whose population is tree-derived adds a test when a spell arrives; count it as a source. And the correction nearly carried a ninth ("10 pass"): the `--as-of` refusal forced a re-read of the run before the re-send. Every member measured, or the partition is not one.
+
+**⛔ A CHECK WHOSE TOOL IS NOT THE REPO'S TOOL IS A CHECK OF SOMETHING ELSE.** My cell drafts passed `bunx biome check` in a mktemp copy — where bunx RESOLVED AND DOWNLOADED ITS OWN biome, not the repo's pinned 2.4.16. The gate then went red on exactly the three hand-placed files. Run `./node_modules/.bin/biome` from the repo root, on a copy at a real path inside a worktree (scratch is excluded from the lint set by design). And the general form: files that reach an assembly by `cp` have skipped every check a normal edit meets — gate them yourself in a worktree before the hand-off.
+
+**⭐ PUBLISH THE EXPECTED BYTES BEFORE THE OTHER SIDE PRODUCES THEM.** After the format red I formatted my two cells with the pinned biome, posted their sha256s, and prospero's `--write` reproduced them byte-for-byte: a prediction confirmed, not a comparison defined afterwards. Same move as the 41,048 B stylesheet predicted at ratify (#1123) and fetched over HTTP six hours later by another seat — the shipped sheet at cae26f8 is exactly 41,048 B. The trailing-comma delta was counted by CHARACTER CLASS (+45 spaces, +17 newlines, +3 commas, +1 semicolon), because "whitespace-only" is false under `diff -w` when lines are re-wrapped and true under strip-and-compare.
+
+**⛔ COPY THE OLD BYTES BEFORE YOU ANNOUNCE THE HASH YOU RATIFY, OR THE COPY IS OF THE NEXT VERSION.** Three seats "kept a copy of fe604ca0" after the file had already moved; one diffed the file against itself — exit 0, empty, and it would have said identical about ANY change. The design (conditional ratification with a byte-level falsifier) is right and had never been run by anyone. I said "unlike thoth" and struck it within the hour; the honest basis was four independent re-reads.
+
+**"READ THE FILE" MEANS `ls` FIRST, and the second act is saying what `ls` said.** The Phase 1 message was announced at a path where it did not exist (written to a session scratchpad, announced as team scratch); two peers ratified the quoted sentence and reported the message. I was one `ls` from doing the same. A consent-by-silence timer over an unreachable artifact is a rubber stamp with a clock on it — the lead withdrew it.
+
+**⭐ A SENTENCE COPIED FOUR TIMES HAS BEEN MEASURED ZERO TIMES.** Contract 5's documented failure ("renders unstyled at 200, nothing errors") sat in five spells' comments, the playbook, my lane and three lead rulings. My T5 control measured it: wrong cwd → THE PAGE ITSELF IS HTTP 500, no stylesheet link. The failure is loud, not silent. The assertion stays "the utility never reaches the browser" (the invariant), the mechanism lives in the comment — so a future Bun that degrades to an unstyled 200 still reds. Confidence grows with each copy and evidence does not.
+
+**A CELL'S SUBJECT IS THE PATH THE CONSUMER TAKES.** My release-serve forced-dev cell runs server.ts directly and was green while the consumer path (cli.ts → spawn) reported a missing CWD as a missing BINARY (`posix_spawn 'bun'`). Not my defect; my lesson: a sim that skips the entry point tests one layer below the surface that matters. The `existsSync(cwd)` guard I put in bootDev an hour earlier was the same fix on a test's path.
+
+**CALIBRATING A PEER'S CELL: RUN THEIR LIST, THEN ONE ROUTE THEY DID NOT LIST.** cassandra's cli-open-envelope: her two routes red at the assertion and at the precondition; my third (right directory AND blames bun) proved the belt assertion is live. A non-author who only executes the author's list has verified the list, not the cell.
+
+**A ps SWEEP THAT GREPS FOR A PATH + "server.ts" MATCHES THE SHELL RUNNING THE SWEEP** and kills it (exit 144, no output). Exclude `$` and its parent. Sibling of the wrapper-count defect (five seats, one hour): `ps aux | grep "bun run gate"` counts zsh wrappers whose text contains the phrase; match on the process's own args, or key on the peer's DOWN message — the wire is the record, ps is a proxy.
+
+**A SHARED WORKTREE WITH A PEER'S PATCH APPLIED MAKES `git diff --cached` INCLUDE THEIR PATHS.** My second patch cut silently carried daedalus's five files (336 → 732 lines) until the line count said so. Cut with explicit `:(exclude)` pathspecs, grep the diff for peer paths, and `git apply --check` the cut at a fresh detached base before posting a hash.
+
+**REVIEW THE ASSEMBLED TREE, NEVER THE HUNKS** (re-confirmed): `git worktree add --detach` + `git apply --index` + the FILES found the orphaned verdict comment a hunk-grep structurally cannot show.
+
+**T6, mechanism half:** release and dev serve the same 273 class selectors (sets identical both ways, hex-escape-aware harvest); the browser-level computed-style diff dev-vs-release was left unrun on purpose — it was Cole's pixels, and cassandra's release render (126 of 320 sampled properties change without the sheet) covers the release arm.
 
 ### Glamour conversion (2026-09-03) — the port where every number that moved was inherited across a seam
 

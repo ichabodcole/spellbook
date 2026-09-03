@@ -441,6 +441,31 @@ Every differing element must be explicable (a clock, an animation frame). Posted
 with the boot command as the what-to-try for Cole; the pixels are his, the diff
 is mine.
 
+## Status after Phase 2 landed (cae26f8) — the lane is complete
+
+- **T0 ✓ T1 ✓ T2 ✓ T3 ✓ T4 ✓ T5 ✓ T7 ✓; T6 mechanism ✓, browser diff left to
+  Cole.** Landed at 380713c (lane), 1131558 (css-scope ward fix), 9f2cbd4 (Phase
+  1), dc4008c (seat doc), cae26f8 (Phase 2). Every cell calibrated by a
+  non-author before landing (cassandra: derive 4/4, css 5/5, release-serve 7/7,
+  dev-styled 4/4); I calibrated cassandra's cli-open-envelope as hers.
+- **⛔ THIS LANE'S CONTRACT 5 SENTENCE WAS FALSE AND IS CORRECTED HERE, not
+  silently.** T5 and the "not own" bullet said the wrong-cwd failure "renders
+  unstyled at 200, nothing errors" — copied from four spells' comments and the
+  playbook. Measured by T5's control at cae26f8: **the page itself is HTTP 500
+  with no stylesheet link.** The failure is loud. The cell asserts the invariant
+  ("the utility never reaches the browser"), the mechanism lives in its comment;
+  seams.md Contract 5 is amended (thoth's wording, daedalus landed it in
+  cae26f8).
+- **The repoint was 17 statements / 15 files** (corrected above); the assembled
+  counts: glamour suite 111 → 122 with the three placed cells, full suite 1571 →
+  1587 = 11 placed + 4 daedalus + 1 GENERATED (the css-scope ward's per-spell
+  declaration cell, minted when glamour joined its population).
+- **Shipped stylesheet 41,048 B** — the number predicted at ratify (#1123) from
+  a scan, before glamour was in the roster; 273 class selectors, identical in
+  dev and release; four leading-digit variants harvested by their real names.
+- **Deployed folder at cae26f8:** SKILL.md · acc.config.json · dist · scripts ·
+  shared · tests · tsconfig.json. No surface/, no bunfig.toml.
+
 ## Corrections after Phase 1 landed (9f2cbd4)
 
 - **The Phase 2 repoint is 17 statements over 15 files, not "13 files":** the 13
