@@ -61,13 +61,18 @@ import { scanSpecifiers } from "./grimoire/lib/import-graph.ts";
 import { readFileSync } from "node:fs";
 for (const f of ["plugins/spellbook/skills/glamour/scripts/server.ts","plugins/spellbook/skills/glamour/scripts/cli.ts"])
   for (const r of scanSpecifiers(readFileSync(f,"utf8")))
-    if (r.spec.includes("../surface/")) console.log(f, r.line, r.kind, r.spec);
+    if (r.spec.includes("../surface/")) console.log(f, r.line, r.kind, r.erased ? "TYPE-ONLY" : "VALUE", r.spec);
 '
 ```
 
-Record: N sites / value / type-only / dynamic. The Phase 1 target is **exactly
-one line**, kind `static`, specifier `../surface/index.html` — the deferred
-entry import the playbook names as Phase 1's expected end state.
+`erased` is the erasure axis (Contract 16's value / type-only split); `kind` is
+the resolution-time axis and **includes** `import type` under `static` — the
+scanner's own header says the two are deliberately not synonyms, and my first
+draft of this snippet printed the wrong one. Measured at `c8730ec`: **6 sites, 6
+static, 6 VALUE** (every statement carries at least one runtime binding). The
+Phase 1 target is **exactly one line**, kind `static`, specifier
+`../surface/index.html` — the deferred entry import the playbook names as Phase
+1's expected end state.
 
 ### T0.2 — tsc baseline as ERROR LINES (Gotcha 5)
 
@@ -261,14 +266,15 @@ expected end state, made dynamic only in Phase 2 when `resolveMode()` has a
 
 ### T1.6 — tests re-point (backend half, mine)
 
-| file                                                                      | old                                                        | new                                                                 |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------- |
-| `tests/persist.test.ts`                                                   | `../surface/state/persist.server`, `…/reduce`, `…/types`   | `../scripts/persist.server`, `../scripts/reduce`, `../shared/types` |
-| `tests/styles.test.ts`                                                    | `../surface/state/styles.server`                           | `../scripts/styles.server`                                          |
-| `tests/imageOptimize.test.ts`                                             | `../surface/state/imageOptimize`, `…/imageOptimize.server` | `../shared/imageOptimize`, `../scripts/imageOptimize.server`        |
-| `tests/types.test.ts`                                                     | `../surface/state/types`                                   | `../shared/types`                                                   |
-| `tests/reduce.test.ts`                                                    | `../surface/state/reduce`, `…/types`                       | `../scripts/reduce`, `../shared/types` (+ T1.3 split)               |
-| `tests/daemon.integration.test.ts`, `cli.test.ts`, `cli-contract.test.ts` | `../scripts/*`                                             | unchanged                                                           |
+| file                                        | old                                                        | new                                                                                                                                                                                                                                                                                                                                                                       |
+| ------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tests/persist.test.ts`                     | `../surface/state/persist.server`, `…/reduce`, `…/types`   | `../scripts/persist.server`, `../scripts/reduce`, `../shared/types`                                                                                                                                                                                                                                                                                                       |
+| `tests/styles.test.ts`                      | `../surface/state/styles.server`                           | `../scripts/styles.server`                                                                                                                                                                                                                                                                                                                                                |
+| `tests/imageOptimize.test.ts`               | `../surface/state/imageOptimize`, `…/imageOptimize.server` | `../shared/imageOptimize`, `../scripts/imageOptimize.server`                                                                                                                                                                                                                                                                                                              |
+| `tests/types.test.ts`                       | `../surface/state/types`                                   | `../shared/types`                                                                                                                                                                                                                                                                                                                                                         |
+| `tests/reduce.test.ts`                      | `../surface/state/reduce`, `…/types`                       | `../scripts/reduce`, `../shared/types` (+ T1.3 split)                                                                                                                                                                                                                                                                                                                     |
+| `tests/daemon.integration.test.ts`          | `../scripts/server`                                        | import unchanged; **+1 line** (cassandra `#1166`/`#1167`, prospero `#1168`): `process.env.TMPDIR = mkdtempSync(join(tmpdir(), "glamour-tmp-"))` beside the `GLAMOUR_HOME` line — measured: the suite as-is DELETES a live user's `glamour-latest.json` at 16/0 green (claim at boot, own-id unlink at close). Fixture-side only; the spell-side pointer move stays filed. |
+| `tests/cli.test.ts`, `cli-contract.test.ts` | `../scripts/cli`                                           | unchanged                                                                                                                                                                                                                                                                                                                                                                 |
 
 All written by the T1.4 script; the table is what I check its output against.
 
@@ -312,7 +318,49 @@ exit 0 at `0.1.11` · deps-free CLI control green **and** its control red.
 
 ---
 
+## Phase 1.5 — S3 clause 1, mechanised (ask 1, ruled `#1145`; lands on its own, before Phase 2)
+
+**Ruled by prospero `#1145`:** one **tree-only** cell in
+`grimoire/dist-roster-ward.test.ts` asserting S3 clause 1 over every spell in
+`roster()` — no tracked path under `<spell>/surface/`, no tracked
+`<spell>/bunfig.toml`. **I author; cassandra calibrates as the non-author and
+names the mutation she ran** (H16 with a real card). Built for the four spells
+already shipped, which have never had this asserted; it turns on for glamour the
+day `src/glamour/surface/index.html` puts it in the roster.
+
+- `scripts/dist-check.ts` gains `trackedFiles(...pathspecs)` (generic index
+  read, so a control can point it at a known-tracked path) and
+  `trackedBuildInputs(spell)` (`<spell>/surface` + `<spell>/bunfig.toml`,
+  tracked, **named per path** — the remedy is `git rm` of exactly those).
+- The cell: `rows.flatMap((r) => trackedBuildInputs(r.spell))` deep-equals `[]`.
+- Positive control — **routed THROUGH the predicate** (cassandra's R4 bounce,
+  `#1160`; prospero `#1165`): the first draft asserted `<spell>/scripts` was
+  tracked, which proves `git ls-files` works and nothing about the pathspecs;
+  with both pathspecs typo'd and a real leak planted it stayed `5 / 0`. Now
+  `trackedFiles`/`trackedBuildInputs` take an optional `root`, and the control
+  mints a throwaway git repo (`probe/surface/state/x.tsx` + `probe/bunfig.toml`
+  staged; `probe-clean/scripts/cli.ts` beside it) and asserts
+  `trackedBuildInputs("probe", root)` returns **exactly** those two paths and
+  the clean sibling returns `[]`. Not keyed on glamour's own `surface/` — the
+  port drains that, and a control the roadmap drains goes vacuous in silence
+  (Contract 19's shape, applied to a control).
+- Author-side mutations, worktree, **not evidence**: C `5 / 0 / 9`; R4 (typo'd
+  pathspecs + planted leak) `4 / 1` — the **control** reds by name; R1 (leak,
+  pathspecs correct) `4 / 1` — the **clause-1 cell** reds by name; unstaged
+  plant `5 / 0` (the cell reads the index, which is what ships).
+- Commit type `test(grimoire):`; no CI ARM added to `dist-check`'s `main()` —
+  one cell was the ruling, an ARM is a follow-up if wanted.
+
 ## Phase 2 — my half of the relocation (inside the atomic land)
+
+**Ruled `#1158`: Phase 2 is ONE atomic commit** — `src/glamour/surface/` arrives
+and `plugins/…/glamour/surface/` + `bunfig.toml` leave in the same commit. **The
+Phase 1.5 cell is the mechanical trigger:** glamour joins `roster()` the moment
+`src/glamour/surface/index.html` exists, so a two-commit Phase 2 reds the
+clause-1 cell at its first commit. Its inverse is the failure to watch for:
+until the successor arrives, glamour's 25 tracked `surface/` paths are **not
+accused** — the cell is green on glamour today for a reason that has nothing to
+do with glamour being clean.
 
 circe moves `surface/` → `src/glamour/surface/` and builds. **Nothing below is
 green until her half lands and nothing of hers boots until mine does**, so these
@@ -498,8 +546,13 @@ dying → her cell reds) in a **detached worktree**, never the shared checkout
   again (imports change at the top). Re-pin by hand, say so.
 - `import-boundary-wards` ward 1a pinned inventory gains **one** dynamic escape:
   `glamour/scripts/server.ts` → `../../../../../src/glamour/surface/index.html`,
-  beside astrolabe's, imago's, mind-mapper's and magpie's entries. Declared by
-  hand with the file/spec/resolved triple.
+  beside astrolabe's, imago's, mind-mapper's and magpie's entries. **My hand
+  (ask 6, `#1165`), and it carries a CHECK BY HAND:** the ward compares strings
+  and calls no `existsSync`, so a broken spec launders straight into the pin
+  (cassandra measured it at ratify). Before pinning I run
+  `existsSync(resolve(dirname(server.ts), spec))` and the land message says
+  "pinned, resolved path exists, checked" — never "pinned". Declared with the
+  file/spec/resolved triple.
 - `grimoire/spell-css-scope-ward.test.ts` **REDS ON ARRIVAL AND BLAMES
   ASTROLABE** — glamour's `2xl:` escapes to `\32 ` and the ward's regex invents
   a phantom class `32`. **Ward defect, not glamour's**:

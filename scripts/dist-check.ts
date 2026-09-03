@@ -50,9 +50,9 @@ type Git = { code: number; out: string; err: string };
 /** git, via an explicit argv — no shell, so no quoting or word-splitting to get
  * wrong. (zsh does not word-split unquoted variables; a `$`-template that joined
  * a roster into one argument would silently examine one nonexistent path.) */
-function git(args: string[]): Git {
+function git(args: string[], cwd: string = REPO_ROOT): Git {
   const r = Bun.spawnSync(["git", ...args], {
-    cwd: REPO_ROOT,
+    cwd,
     stdout: "pipe",
     stderr: "pipe",
   });
@@ -75,6 +75,31 @@ const lines = (s: string): string[] => s.split("\n").filter(Boolean);
  * `src/` tree the marketplace never copied. On disk it looks perfect. */
 export function trackedDistFiles(spell: string): string[] {
   return lines(git(["ls-files", "--", distRoot(spell)]).out);
+}
+
+/** TRACKED files under a set of root-relative pathspecs — the index, not the
+ * disk, for the same reason as `trackedDistFiles`. `root` defaults to this repo;
+ * a control passes a throwaway git repo so the PREDICATE below can be driven
+ * against a tree whose contents the control chose. */
+export function trackedFiles(pathspecs: string[], root: string = REPO_ROOT): string[] {
+  return lines(git(["ls-files", "--", ...pathspecs], root).out);
+}
+
+/** S3 clause 1 / seams Contract 4: a buildable spell's deployed folder ships NO
+ * build-input source — no path under `surface/` and no `bunfig.toml`. Source-free
+ * by the FILE LIST (Contract 20), asserted over the tracked subtree, because a
+ * successor present at `src/<spell>/` is only HALF a check: a copy-not-move
+ * passes both halves (`docs/backlog/2026-09-02-nothing-can-tell-a-move-from-a-copy.md`).
+ * Returns the offending tracked paths, named, so the remedy is per-path.
+ *
+ * ⛔ THE CONTROL FOR THIS FUNCTION MUST GO THROUGH THIS FUNCTION. A control that
+ * only proves `git ls-files` can see a tracked path stays green when these two
+ * pathspecs are typo'd — measured by cassandra (comms #1160, route R4): a real
+ * leak in the tree, 5 pass / 0 fail. Hence `root`: the ward's control mints a
+ * git repo with a known leak and asserts this function NAMES it. */
+export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): string[] {
+  const base = relative(root, join(root, "plugins", "spellbook", "skills", spell));
+  return trackedFiles([`${base}/surface`, `${base}/bunfig.toml`], root);
 }
 
 export type Roster = { spell: string; root: string; tracked: number }[];

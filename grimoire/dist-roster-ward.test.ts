@@ -29,7 +29,10 @@
 // The arms are imported rather than re-derived, so this cell and CI cannot
 // disagree about what the roster is.
 import { describe, expect, test } from "bun:test";
-import { roster, trackedDistFiles } from "../scripts/dist-check.ts";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { roster, trackedBuildInputs, trackedDistFiles } from "../scripts/dist-check.ts";
 
 describe("dist roster ward", () => {
   const rows = roster();
@@ -50,6 +53,56 @@ describe("dist roster ward", () => {
     // Named, not counted: the remedy is per-spell (two `!` lines in .gitignore),
     // so the failure message has to say which spell and which path.
     expect(absent).toEqual([]);
+  });
+
+  test("S3 clause 1 — no roster spell ships build-input source: zero tracked surface/ paths, no bunfig.toml", () => {
+    // The OTHER half of source-free (seams Contract 4, Contract 20): ARM 1 says
+    // the artifact is present; this says the INPUT is absent. Over the TRACKED
+    // subtree, because that is what the marketplace copies — a `surface/` still
+    // on disk but untracked does not ship, and one tracked but deleted from
+    // disk does. Named per path: a copy-not-move leaves the predecessor fully
+    // intact beside a working successor, so "dist-check says 5" is not evidence
+    // the move happened, and the remedy is `git rm` of exactly these paths.
+    // Population = roster(), so a spell relocated into the build is covered the
+    // day it arrives, and a spell not yet in the build is not falsely accused.
+    const leaks = rows.flatMap((r) => trackedBuildInputs(r.spell));
+    expect(leaks).toEqual([]);
+  });
+
+  test("positive control — trackedBuildInputs NAMES a known leak in a repo the control built", () => {
+    // ⛔ THE CONTROL GOES THROUGH THE PREDICATE, NOT AROUND IT. The first draft
+    // asserted `git ls-files <spell>/scripts` was non-empty — which proves the
+    // instrument can read an index and says NOTHING about whether
+    // trackedBuildInputs points at surface/ and bunfig.toml. cassandra typo'd
+    // both pathspecs, planted a tracked leak, and the ward stayed 5/0 (comms
+    // #1160, R4). A control that stays green under any pathspec licenses
+    // nothing. So: a throwaway git repo with one leaking spell and one clean
+    // one, and the assertion is on the exact paths this function returns.
+    // Deliberately NOT keyed on glamour's own tracked surface/ — the port
+    // removes that, and a control the roadmap drains goes vacuous in silence.
+    const root = mkdtempSync(join(tmpdir(), "dist-roster-control-"));
+    try {
+      const skills = join(root, "plugins", "spellbook", "skills");
+      mkdirSync(join(skills, "probe", "surface", "state"), { recursive: true });
+      mkdirSync(join(skills, "probe-clean", "scripts"), { recursive: true });
+      writeFileSync(join(skills, "probe", "surface", "state", "x.tsx"), "export {};\n");
+      writeFileSync(join(skills, "probe", "bunfig.toml"), "[serve.static]\n");
+      writeFileSync(join(skills, "probe-clean", "scripts", "cli.ts"), "export {};\n");
+      const git = (...a: string[]) =>
+        Bun.spawnSync(["git", ...a], { cwd: root, stdout: "pipe", stderr: "pipe" });
+      expect(git("init", "-q").exitCode).toBe(0);
+      expect(git("add", "-A").exitCode).toBe(0); // the INDEX is what ships; no commit needed
+      expect(trackedBuildInputs("probe", root).sort()).toEqual([
+        "plugins/spellbook/skills/probe/bunfig.toml",
+        "plugins/spellbook/skills/probe/surface/state/x.tsx",
+      ]);
+      // …and the clean sibling, in the SAME repo, measures empty — so the two
+      // paths above came from the predicate discriminating, not from a
+      // function that returns the whole index.
+      expect(trackedBuildInputs("probe-clean", root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   test("positive control — the tracked-file count CAN be zero", () => {
