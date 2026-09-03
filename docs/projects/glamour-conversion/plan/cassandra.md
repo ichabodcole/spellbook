@@ -36,17 +36,17 @@ The pre-fix arm of every S3 clause has to be taken **while the predecessor still
 exists**, or the post-port "absent" reads as vacuous. Taken in a detached
 worktree at `95dc287` with `node_modules` symlinked in.
 
-| reading                                                                           | value at `95dc287`                                                                       | why it matters                                                                 |
-| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `git ls-files plugins/spellbook/skills/glamour \| grep -c '/surface/'`            | **25**                                                                                   | S3 clause 3's pre-fix arm — the count that must go to 0                        |
-| `git ls-files plugins/spellbook/skills/glamour \| grep -c bunfig.toml`            | **1**                                                                                    | same clause, the second file that must leave                                   |
-| `git ls-files plugins/spellbook/skills/glamour/dist \| wc -l`                     | **0**                                                                                    | dist-roster-ward's pre-fix arm; the `.gitignore` un-ignore lines do not exist  |
-| `bun scripts/dist-check.ts --no-build`                                            | exit 0, **4** buildable spells, 14 tracked                                               | must become **5**, and 5 alone is half a check (S3 correction)                 |
-| `grep -rn 'src/' plugins/spellbook/skills/glamour/scripts/`                       | **0** hits                                                                               | S2's invariant is _exactly one_ post-port; today there are none                |
-| ward 1a pinned inventory, glamour entries                                         | **0** (`import-boundary-wards.test.ts:288` list)                                         | post-port it gains exactly one, and I `existsSync` it by hand (ratify finding) |
-| `import-boundary-wards.test.ts:1089` pins `glamour/scripts/server.ts` **line 77** | still line 77 (acc did not touch `server.ts`)                                            | any insert above it false-reds; expect this during Phase 1                     |
-| `acc check scripts/cli.ts --config-dir .` from the spell dir, kit **0.1.11**      | exit **0**, `conformant:true`, L0, core 16/17 passed, 1 unverified (D3), knownFailures 0 | the characterization **before** arm; saved as `acc-before.json` in scratch     |
-| full suite in the worktree                                                        | running to a file at authoring time; pass/fail/**files** posted on comms when it lands   | the `files` denominator is two-sided (seat doc)                                |
+| reading                                                                           | value at `95dc287`                                                                                                                 | why it matters                                                                    |
+| --------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `git ls-files plugins/spellbook/skills/glamour \| grep -c '/surface/'`            | **25**                                                                                                                             | S3 clause 3's pre-fix arm — the count that must go to 0                           |
+| `git ls-files plugins/spellbook/skills/glamour \| grep -c bunfig.toml`            | **1**                                                                                                                              | same clause, the second file that must leave                                      |
+| `git ls-files plugins/spellbook/skills/glamour/dist \| wc -l`                     | **0**                                                                                                                              | dist-roster-ward's pre-fix arm; the `.gitignore` un-ignore lines do not exist     |
+| `bun scripts/dist-check.ts --no-build`                                            | exit 0, **4** buildable spells, 14 tracked                                                                                         | must become **5**, and 5 alone is half a check (S3 correction)                    |
+| `grep -rn 'src/' plugins/spellbook/skills/glamour/scripts/`                       | **0** hits                                                                                                                         | S2's invariant is _exactly one_ post-port; today there are none                   |
+| ward 1a pinned inventory, glamour entries                                         | **0** (`import-boundary-wards.test.ts:288` list)                                                                                   | post-port it gains exactly one, and I `existsSync` it by hand (ratify finding)    |
+| `import-boundary-wards.test.ts:1089` pins `glamour/scripts/server.ts` **line 77** | still line 77 (acc did not touch `server.ts`)                                                                                      | any insert above it false-reds; expect this during Phase 1                        |
+| `acc check scripts/cli.ts --config-dir .` from the spell dir, kit **0.1.11**      | exit **0**, `conformant:true`, L0, core 16/17 passed, 1 unverified (D3), knownFailures 0                                           | the characterization **before** arm; saved as `acc-before.json` in scratch        |
+| full suite in the worktree                                                        | **1568 pass / 0 fail / 4545 expect / 119 files**, 148.6s (#1133); 119 tracked `*.test.ts` = 119 ran; matches circe's main-tree run | the `files` denominator is two-sided (seat doc); 1539 (#1122) is the pre-acc tree |
 
 ---
 
@@ -68,15 +68,16 @@ applied diff **before** each run and a reverted-check after; cite
 count is the denominator and I also run one arm in a `git archive` copy and
 report both numbers).
 
-| arm | mutation (applied in the worktree only)                                           | expected                                                                                                                                                                  |
-| --- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| C   | none (control)                                                                    | green; every cell name listed                                                                                                                                             |
-| M1  | `resolveMode()`: drop the `dev` arm of the `SPELLBOOK_SURFACE_MODE` override      | **forced-dev cell red** as `still-running` or exit 0 — the astrolabe cell's own stated mutation                                                                           |
-| M2  | make the daemon serve `dist/` regardless of mode (bypass the dev branch entirely) | **forced-dev cell red**; `GET /` cells stay green — proves the cell tests the branch, not the serve                                                                       |
-| M3  | delete the board route (`/` → fall through)                                       | **"GET / serves dist/index.html" red** — the exact absence `daemon.integration.test.ts` was blind to at ratify (16/0 with the route deleted)                              |
-| M4  | rig fixture: remove `dist/index.html` from the copied tree                        | `mode === "release"` precondition fails **first and alone**, naming the mode — not a cascade of 404s                                                                      |
-| M5  | rig fixture: leave `surface/` present in the copied tree                          | the `existsSync(surface) === false` precondition reds — the cell must refuse to measure a tree that still has the predecessor                                             |
-| M6  | change the dev-branch specifier to a **different** nonexistent path               | forced-dev cell **still red** but the `toContain("src/glamour/surface/index.html")` assertion is what fails — proves the cell names the real successor, not "any failure" |
+| arm | mutation (applied in the worktree only)                                                                                    | expected                                                                                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C   | none (control)                                                                                                             | green; every cell name listed                                                                                                                                             |
+| M1  | `resolveMode()`: drop the `dev` arm of the `SPELLBOOK_SURFACE_MODE` override                                               | **forced-dev cell red** as `still-running` or exit 0 — the astrolabe cell's own stated mutation                                                                           |
+| M2  | make the daemon serve `dist/` regardless of mode (bypass the dev branch entirely)                                          | **forced-dev cell red**; `GET /` cells stay green — proves the cell tests the branch, not the serve                                                                       |
+| M3  | delete the board route (`/` → fall through)                                                                                | **"GET / serves dist/index.html" red** — the exact absence `daemon.integration.test.ts` was blind to at ratify (16/0 with the route deleted)                              |
+| M4  | rig fixture: remove `dist/index.html` from the copied tree                                                                 | `mode === "release"` precondition fails **first and alone**, naming the mode — not a cascade of 404s                                                                      |
+| M5  | rig fixture: leave `surface/` present in the copied tree                                                                   | the `existsSync(surface) === false` precondition reds — the cell must refuse to measure a tree that still has the predecessor                                             |
+| M7  | move the discovery-file write ABOVE the dev-branch import (daedalus #1140: the daemon dies at the await, before the write) | only the `discovery file absent after the forced-dev death` assertion reds — proves that assertion is that one and not a side effect                                      |
+| M6  | change the dev-branch specifier to a **different** nonexistent path                                                        | forced-dev cell **still red** but the `toContain("src/glamour/surface/index.html")` assertion is what fails — proves the cell names the real successor, not "any failure" |
 
 **Ask which cell reddens, never only whether the suite went red** (seat doc,
 sprint 01). A mutation that reddens the wrong cell is a finding about the cell's
@@ -96,6 +97,16 @@ measured by bounced cards, so a quiet repair would also destroy the
 measurement).
 
 ---
+
+## T1b — the `TMPDIR` pointer finding (measured, closed at `9f2cbd4`)
+
+circe's cold read said the integration test scopes only `GLAMOUR_HOME`. Measured
+(#1166): a planted live `glamour-latest.json` was **deleted**, not overwritten —
+the daemon claims the pointer at boot with its own id, so the close-time
+ownership check matches and unlinks. Fixture line folded into Phase 1 by
+daedalus; at `9f2cbd4` the planted pointer is byte-identical after a 16/0 run
+(`tools/obs3-pointer.sh`). The spell-side fix (pointer under `GLAMOUR_HOME`,
+five spells) is filed with this as its evidence line.
 
 ## T2 — S3 non-author: the three-clause done-when, run by hand at the assembled sha
 
@@ -130,6 +141,11 @@ states —
 — plus `acc.config.json` and `tsconfig.json`, which are tracked today and the
 correction does not mention. **If the diff is non-empty, the list is wrong or
 the tree is; either way it is reported as a diff, not a count.**
+
+Clause 1 is now **also a cell** — `dist-roster-ward`'s "S3 clause 1" (daedalus,
+`513ba9b`), population `roster()`, so it turns on for glamour when
+`src/glamour/surface/index.html` exists. The hand-run stays as the arrival check
+with the pre-fix arm.
 
 Then the two instruments the plan names, each with its exit printed unpiped:
 
@@ -270,7 +286,8 @@ worktree vs in a `git archive` copy, side by side.
 
 ## Open items for prospero (asks, not decisions)
 
-1. **Mechanise S3 clause 1 or file it?** Recommendation: one cell in
+1. ~~**Mechanise S3 clause 1 or file it?**~~ **RULED BUILD (#1145), built
+   (`513ba9b`), calibrated.** Recommendation: one cell in
    `grimoire/dist-roster-ward.test.ts` — for every spell in `roster()`,
    `git ls-files plugins/spellbook/skills/<spell>` contains no `/surface/` path
    and no `bunfig.toml`. Population-derived, tree-only, no build, and it is the
@@ -279,7 +296,5 @@ worktree vs in a `git archive` copy, side by side.
    thoth wards). If filed, T2's hand-run is the record.
 2. **Ward 1a `existsSync`** stays filed unless you rule otherwise; T2
    hand-checks it for glamour's one entry.
-3. **`s5-cal` sits in `doing` under me from sprint 05.** Ruling 2 says s5-\* is
-   carried backlog; I am leaving its status alone rather than moving it to
-   `todo`, and flagging that a stale `doing` reads as a working seat on every
-   status sweep.
+3. ~~**`s5-cal` sits in `doing`**~~ **RULED move (#1145); moved to `todo` with a
+   dated PARKED prefix, title and notes read back byte-identical (#1147).**
