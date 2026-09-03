@@ -212,6 +212,41 @@ not a comparison.
 - **Done-when:** two numbers here, dated, with the dispatch prompt quoted so the
   after-read is the same experiment.
 
+**✅ MEASURED 2026-09-03 at `95dc287`, playbook unchanged since `3fc6d62`.**
+
+| subject           | Q   | W   | verdict                                                                                                  |
+| ----------------- | --- | --- | -------------------------------------------------------------------------------------------------------- |
+| digestify (run 1) | 8   | 5   | **DESIGN ERROR, kept as record.** digestify has no `surface/`; the playbook's Applicability excludes it. |
+| **imago (run 2)** | 10  | 1   | **BASELINE OF RECORD.** `Q_before = 10`, `W_before = 1`.                                                 |
+
+Raw outputs: `.anthill/scratch/thoth/coldread-before-raw.md` (digestify),
+`.anthill/scratch/thoth/coldread-before-imago-raw.md` (imago). The after-read
+uses **imago** and the identical prompt above.
+
+- **The subject choice was itself the first finding.** Every unported spell —
+  bounty, digestify, grapevine — is outside the playbook's Applicability (no
+  `surface/` build input). **After glamour the roster has no valid cold-read
+  subject**, so the "different spell" rule from `#1119` is replaced: the reader
+  gets the file alone, exported outside the repo, so the spell name is only a
+  string to it and a ported spell serves. Two of imago's ten questions are
+  induced by that choice (Example 2 tells the reader imago is already ported);
+  eight are playbook gaps and are spell-independent.
+- **The measurement has a noise floor of its own — subject choice** (Q 8 vs 10,
+  W 5 vs 1 across the two runs). Same shape as Gotcha 9. Hence one subject, one
+  prompt, before and after.
+- **Five real gaps the reader found, each verified against the tree, each a
+  pointer-sized fix for B3:** (1) the **resolve-sweep** is named four times
+  (`:168`, `:202`, `:364`, `:484`) and **exists as no tool** — each seat wrote
+  its own, which is _why_ Gotcha 9 records three floors; (2) the blind-set
+  instrument is `scripts/gate-blind-set.ts` and is never named; (3) the build is
+  `bun run build` (`src/build.ts`) and is never named; (4) the `shared/` path is
+  never stated — Phase 3's `../shared/types` is the only clue; (5) "R1" is
+  spell-kit vocabulary with no expansion.
+- `W_before = 1` is command 14: a bare `bun build` on the surface entry instead
+  of `bun run build`, which skips the Tailwind plugin (Contract 5). Not a wrong
+  population — a wrong instrument, and the playbook could have named the right
+  one.
+
 ### B2 · The confirmation ledger — running, during the build
 
 **During Phases 1–2, from the other seats' comms and land messages.** One
