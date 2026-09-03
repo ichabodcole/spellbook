@@ -140,6 +140,41 @@ Note the guide's own caveat: paths and declaration here share a source
 table is complete. The dispatch↔`VERBS` ward and the registry-ownership cell are
 what bind the table to the code.
 
+## Chapter three, same day: one table drives everything
+
+Cole: "let's do that as well." acc step 6 — one structure read by the
+dispatcher, the parser's stage-2 check, the rejections' `choices`, help, and an
+emitted declaration.
+
+- **`COMMANDS` replaced the `switch`.** Each row: name, its own flags (typed
+  against the registry, so a verb cannot name a flag the parser does not
+  define), a positional spec, a one-line description, and the handler. `VERBS`,
+  `VERB_SPEC` and `flagsFor` are now derived views of it.
+- **Help is rendered from the table**, usage and flags per row; the `open` row
+  that had drifted cannot drift again because there is no second place for it to
+  live. Arity is enforced from the declared positional shape, so
+  `annotate onlyone` and `status` (no operand) are usage errors naming the same
+  line help prints.
+- **`schema` emits the acc declaration** (format v0, `provenance: emitted`, root
+  row = the four interceptors, one row per verb) by walking `COMMANDS` at answer
+  time. The root's unknown-flag rejection names the interceptors — the same
+  array the declaration publishes at path `[]` — with the verb roster moved to
+  the `hint`; that is what makes the root diffable at all.
+
+**The round trip, measured:** `acc check --declaration <(cli.ts schema)` alone
+compares the root (1 of 20 paths, 0 disagreements — the kit probes the root
+only); with the recorded batch re-run against the emitted declaration, **20 of
+20 declared command paths compared, 0 disagreements**. The contract test now
+carries both halves of the ratchet: the acc round trip (status `checked`,
+findings empty), and an in-process census that provokes one rejection per
+declared path and diffs its `choices` against the declaration's args — the same
+comparison, without a batch, in six seconds.
+
+Not derived, and said so: SKILL.md's verb table is still hand-written prose (the
+flag-invariant ward binds its flags to the registry, not its rows to
+`COMMANDS`); `status: "valid"` is hardcoded in the emitter; numeric flags
+declare `string` because `parseArgs` has no number kind.
+
 ## Success criteria, against the charter
 
 1. ✅ `acc check` passes, recorded with the kit version (0.1.11).
@@ -155,9 +190,10 @@ what bind the table to the code.
 
 ## Deferred
 
-- ~~The recorded-surface census (acc step 5) and per-verb sets~~ — done in
-  chapter two. Still open: one table driving HELP as well (acc step 6); the HELP
-  drift the verifier found is the symptom of not having it.
+- ~~Census, per-verb sets, and one table driving help/schema (acc steps 5–6)~~ —
+  done in chapters two and three. Still open: SKILL.md's verb table is prose a
+  human maintains; a ward binding its rows to `COMMANDS` would close the last
+  parallel document.
 - `close`'s swallow-all catch: idempotent by decision, or ECONNRESET-only as the
   comment claims.
 - The four remaining `printJson`/envelope copies converging into shared backend
