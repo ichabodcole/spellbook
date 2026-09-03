@@ -15,6 +15,27 @@ When something's no longer true, fix it.
 
 ## Epitaph
 
+**THE GUARD YOU BUILD FOR A HAZARD YOU DO NOT BELIEVE YOU HAVE IS THE ONE YOU WILL RUN LEAST CAREFULLY, AND ITS ZERO IS THE ONE YOU WILL REPEAT AS FACT — so when your own check comes back clean, treat that as the moment to run it a second way, because authoring a guard feels exactly like having run it.**
+
+_(Written 2026-09-03, glamour conversion. **The two epitaphs below stand and I am not replacing them — this is their sibling, tested for subsumption rather than assumed.** The first says every throwaway you quote is an instrument; the second says distrust what you inherit. Tonight's failures were neither: they were guards I AUTHORED, for hazards I NAMED, whose clean result I announced.)_
+
+```
+seven false claims, one session, all mine:
+  "ps: 0 gates"                 typed into the body BEFORE the ps ran            -> 2
+  grep -c '[b]un run gate'      counted zsh wrappers, incl. my own wait loop     -> false 2 (held forever)
+  N=$(… | grep -c) && …         grep -c exits 1 on ZERO -> guard failed CLOSED   -> land never started
+  git status -- 'skills/*/dist' quoted glob, unexpanded -> 0 over nothing        -> "no bundle moved" (2 had)
+  cp msg.txt copy; diff         copy taken AFTER the file moved -> diff of self  -> "identical", for any change
+  ls a/ b/ | grep blind         name without its directory                       -> wrong path in a shipped draft
+  "my sentence is correct"      ratified the lead's QUOTE, not the file          -> the file did not exist
+```
+
+_⛔ **Four of the seven were checks I had just proposed on the wire, for a hazard I did not believe applied to me** — the reproduction check, the gate-count guard, the kept-copy diff, the disclosure-list rule. Each was right as a rule and wrong as I ran it, and each failed in the direction that let me proceed (one failed closed, which is the only reason I noticed it at all). **Building the guard discharged the vigilance the guard was for.**_
+_⭐ **The operative form: a clean result from a check you wrote minutes ago has NOT been reviewed by anyone, including you.** Run it a second way before you repeat its zero — explicit paths instead of a glob, a hash at the moment of the copy, a number interpolated rather than typed. **The cold reader did this to my playbook edit and convicted it; nothing did it to my shell one-liners, and those are where the seven lived.**_
+_⚠ **Subsumption tested:** epitaph #1 fires on a throwaway whose output you quote — it covers the ls and the ps grep, and is silent on a guard you designed on purpose. Epitaph #2 fires on an inherited claim — it covers the Contract 5 sentence and is silent on a claim you minted from your own instrument. This one fires on the authored guard and is silent on both of theirs. **Three siblings, none subsumed.**_
+
+---
+
 **THIS DOCUMENT IS THE LEAST-AUDITED SOURCE YOU WILL USE TODAY, AND YOU ARE ABOUT TO TRUST IT MORE THAN ANYTHING ELSE YOU READ — so when a line here makes a claim about how a TOOL BEHAVES, go and run it, because the seat that wrote it was as careful as you are and the tool has had a sprint to move.**
 
 _(Written 2026-08-10, spell-hardening sprint 05. **The two epitaphs below are still true and I am not replacing them — I am naming the one source they both exempt.** They tell you to distrust what you write. Nothing told me to distrust what I INHERIT.)_
@@ -985,11 +1006,7 @@ The third: a peer's `fb209f1` made a keyed respawn restore **by default**. Spell
 **The name is the cheap half; the property the name was chosen to carry is the half that goes missing silently.** Hold the property, not the spelling.
 **prospero holds the P1 ping as a precondition of the land (#459 §6) and re-affirmed it in sprint 04** — expect to be called; do not watch for it.
 
-**Hold the glamour-conversion canon close-out until A2 and B3 have LANDED — retire this entry when they have.**
-As of 2026-09-03 the port's Phase 1 is down (`9f2cbd4`) and Phase 2 is held on Cole; my A2 (house-style `spells-are-porting-to-the-build` de-enumerated + ledger row reinforced) and B3 (the playbook synthesis, ten gotchas → seven, +Applicability sentence, +header status line) exist only as scratch patches, and scratch does not travel.
-**Re-derive from tracked files if scratch is gone:** `docs/projects/glamour-conversion/plan/thoth.md` carries A2's edit spec (section A2), the B2 verdict table (section B2), the Gate 1 result, and the B4 bar; the playbook is `docs/playbooks/porting-a-spell-playbook.md` at `3fc6d62`.
-**Discharge by:** applying A2 after `bun scripts/dist-check.ts` counts five, running the rule-id test and `scripts/instruments/canon-ledger-ward.ts`, landing B3 with a per-section delta in the commit body, and re-running the cold read on the final bytes (Q≤10 / W≤1; a rise means it does not land).
-**Do not land A2 before Phase 2 is down** — that is precedent-as-promotion in miniature (prospero `#1135`).
+**✅ RETIRED 2026-09-03 — the glamour-conversion canon close-out is discharged:** A2 (house-style de-enumerated, ledger reinforced) and B3 (the playbook synthesis) landed at `50932b8`; A4 asserted at `cae26f8`; the seven Contract 5 comment sites at `10aa386`. Nothing of this port remains in scratch that a successor must re-derive.
 
 ### Discharge record — the durable facts. There is exactly ONE status, and it is above.
 
@@ -1049,7 +1066,7 @@ _PRUNED 2026-08-08: the pre-land design notes for this ward are gone — the war
 **The reasoning is the durable part:** `inscribe` is a skill and skills are not always in the loop, so an inscribe-only matrix never runs on the existing roster where every observed defect lives; and `ward` fires on **change**, so a spell nobody edits is never interrogated by it either. **Authored / changed / untouched — a trigger set with a hole in it is how the roster's oldest spells stay the least examined.** Backlog: `docs/backlog/2026-08-06-desire-path-hints-in-spell-responses.md`. Raw material: cassandra's seat doc carries observed failure modes in matrix shape. Open: does the rule reach non-spell tooling (that widens house-style's scope — Cole's call), and is `uncheckedAgainst` the first worked example.
 
 **The `EPIPE` gotcha says "swallow" and two spells disagree about what that means.**
-House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in exactly two places, in two incompatible shapes** — re-verified 2026-08-08, both pins exact: `bounty/scripts/join.ts:72` swallows and continues (rethrows anything that is not `EPIPE`); `magpie/scripts/cli.ts:54` calls `process.exit(0)` from an `stdout.on("error")` handler. _(This line said "2 of **9** spells" and the roster is 8 — a denominator I never measured, on a finding the ratio was never part of. **The two shapes are the finding; the fraction was decoration that rotted.**)_
+House-style lists *"swallow `EPIPE`"* among the Bun gotchas. **Implemented in exactly two places, in two incompatible shapes** — re-verified 2026-08-08, both pins exact: `bounty/scripts/join.ts:72` swallows and continues (rethrows anything that is not `EPIPE`); `src/magpie/backend/cli.ts:55` calls `process.exit(0)` from an `stdout.on("error")` handler _(re-pinned 2026-09-03: it was `magpie/scripts/cli.ts:54` before magpie's backend relocated; `bounty/scripts/join.ts:72` still holds)_. _(This line said "2 of **9** spells" and the roster is 8 — a denominator I never measured, on a finding the ratio was never part of. **The two shapes are the finding; the fraction was decoration that rotted.**)_
 **"Swallow" and "exit" are different policies, and the canon line does not say which it means** — so both implementers were obeying it. Same class as the `tmpdir()` boundary that four spells re-assumed identically: **the imperative travelled and the policy did not.**
 Decide the policy before widening the rule; a gotcha that names a symptom without naming the response will be implemented differently every time.
 
