@@ -341,12 +341,23 @@ describe("R6 ward 1a — the published artifact resolves no relative path outsid
     // `r.roots` — WHICH WORLD, not how big — and this is that same guard ported
     // to a population that has no roots field to assert.
     //
-    // What cannot shrink: Contract 4 relocates `surface/` and NOTHING ELSE, and
-    // Contract 3 keeps every backend shipping as source in the deployed folder.
-    // So every spell on the roster contributes `scripts/*.ts` to this population
+    // What cannot shrink: Contract 4 relocates `surface/` and NOTHING ELSE, so
+    // every spell on the roster contributes `scripts/*.ts` to this population
     // for as long as it exists — and a spell that is retired leaves BOTH sides
     // of the comparison at once, which is why this cannot decay the way a count
     // does.
+    //
+    // ⚠ THE SECOND HALF OF THAT REASON DIED ON 2026-09-04 AND THE CONCLUSION
+    // SURVIVED IT, which is the more dangerous shape. This read "and Contract 3
+    // keeps every backend shipping as source in the deployed folder" — no longer
+    // true: a backend that imports shared code now BUILDS to `dist/cli.js` and
+    // leaves a 37-line launcher at `scripts/cli.ts` (astrolabe, magpie today).
+    // Membership still holds, but on a WEAKER guarantee than the one written
+    // here: not "backends are source" but "every spell keeps an entry-point
+    // launcher under scripts/". Nothing asserts that weaker guarantee, so a
+    // future spell shipping a pure `dist/` with no `scripts/*.ts` would drop out
+    // of this roster silently. Filed rather than fixed here — see
+    // docs/backlog/2026-09-04-the-membership-guard-rests-on-an-unasserted-launcher.md
     const spellOf = (f: string) => /skills\/([^/]+)\//.exec(f)?.[1];
 
     // The roster, DERIVED from the same tree — never a hand-written list, which

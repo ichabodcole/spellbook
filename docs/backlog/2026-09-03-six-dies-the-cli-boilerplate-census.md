@@ -1,8 +1,9 @@
 # Six `die`s — the CLI boilerplate census
 
 **Filed:** 2026-09-03 · **Asked by:** Cole, at the end of the glamour port ·
-**Scope:** repo-wide · **Status:** AGREED AS ITS OWN PROJECT, to start after
-glamour-conversion completes
+**Scope:** repo-wide · **Status:** AGREED AS ITS OWN PROJECT —
+glamour-conversion completed and merged at `e3d80dc` (2026-09-04), so this is
+**next up**, and its structural blocker has been ruled (see below)
 
 ## The question that produced this
 
@@ -65,6 +66,26 @@ install. Only astrolabe and magpie build. Any extraction must choose:
 2. **vendor into each spell's `shared/`** — duplication with a blessing, but
    single-sourced upstream
 3. something nobody has proposed
+
+> ### ✅ RULED 2026-09-03 (Cole) — OPTION 1, and the amendment has LANDED
+>
+> _"If we're sharing code between apps, there's going to be a build process …
+> skills sort of need to deploy self-contained, which means everything in the
+> skill folder has to be in that skills folder."_
+>
+> **Option 2 is dead**, on the ground it was always weakest: a vendored copy is
+> only as good as the ward that keeps it fresh, and the ruling is about what a
+> consumer receives, not about how tidy the source is.
+>
+> Contract 3 was amended on 2026-09-04 accordingly — **the enumeration became a
+> criterion**: _a backend that imports from outside its own deployed skill
+> folder MUST build._ So this project no longer needs to argue for permission;
+> it inherits it. What it still owns is the **consequence**: bounty and
+> grapevine have no `src/` at all, so adopting the kit means relocating them
+> first, and that is a surface-rewrite-sized bill this census has not priced.
+>
+> **Do not re-litigate the blocker.** Start from: which helpers go in, and what
+> does it cost the two unrelocated spells to reach them?
 
 ## Why this is not the glamour port's question
 

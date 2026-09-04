@@ -44,6 +44,14 @@ Prerequisites: _"a spell goes conformant before its backend goes opaque"_, and
 seams Contract 3's amendment records the same rule as the reason its permission
 excluded imago. glamour is in imago's exact position.
 
+> _Reconciled 2026-09-04 @ `e3d80dc` — "canon requires acc conformance before a
+> backend ships built": **HELD**, and **sharpened**. Contract 3's 2026-09-04
+> amendment turns the "if" below into a mechanical trigger: a backend builds the
+> moment it imports from outside its own deployed skill folder, so acc
+> conformance is now a prerequisite of **sharing**, not of a per-spell
+> permission someone has to grant. Doing glamour's acc pass early bought exactly
+> the option this section predicted it would._
+
 The glamour port **drops its backend build** (no npm dependency reaches
 glamour's shipped path — there is nothing to inline, and the CLI already runs
 deps-free as plain `.ts`). So this is not a blocker today. Doing acc now simply

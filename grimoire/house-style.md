@@ -369,11 +369,22 @@ unchanged**, which is why the scar stays._
 **committed**. **The spells that build are the ones `bun scripts/dist-check.ts`
 counts** (`buildableSpells()` in `src/build.ts`) — ask it, do not copy its
 answer here. Two of them (astrolabe, magpie) also ship a **built backend** at
-`dist/cli.js` behind a three-line launcher (Contract 3's enumerated permission).
+`dist/cli.js` behind a 37-line launcher. **That is no longer an enumerated
+permission — it is a criterion firing:** a backend that imports from outside its
+own deployed skill folder must build, because a skill installs as one folder and
+an import reaching out of it fails on the consumer's machine. Both of them
+import `src/kit/lib/printJson`; the other five backends import nothing shared
+and so still ship as source. (Contract 3, amended 2026-09-04 by Cole's ruling.)
 
-**The direction is that everything ports.** The remaining three are _not yet_,
-not _correctly not_ — but they are not one queue, and treating them as one is
-how a port gets estimated wrong:
+**The direction is that everything ports** — and as of 2026-09-04 that direction
+covers **backends too, not just surfaces**: the house is moving to one
+development path, with a build, for every spell. A new spell may start without
+one while it is genuinely small, and Contract 3's criterion is what ends that
+exemption automatically. **Direction is not permission**, though — the queue
+below still governs _when_ a spell ports, and nothing about the backend ruling
+moves a spell up it. The remaining three are _not yet_, not _correctly not_ —
+but they are not one queue, and treating them as one is how a port gets
+estimated wrong:
 
 | spell         | surface today           | distance                                |
 | ------------- | ----------------------- | --------------------------------------- |
@@ -384,10 +395,15 @@ how a port gets estimated wrong:
 bounty and grapevine are Alpine single-pagers — porting them means rewriting the
 surface, which is a different project with a different budget. **A spell with no
 `surface/` is not yet a port subject**; the porting playbook's Applicability
-says the same thing from its side. is already React and Tailwind; what stands
-between it and a build is moving the files. bounty and grapevine are Alpine
-single-pagers — porting them means rewriting the surface, which is a different
-project with a different budget.
+says the same thing from its side.
+
+> _Repaired 2026-09-04: this paragraph carried a sentence with **no subject** —
+> "is already React and Tailwind; what stands between it and a build is moving
+> the files" — followed by a verbatim duplicate of the bounty/grapevine sentence
+> above it. The missing subject was a spell that has since ported, so the clause
+> described nobody by the time anyone read it. Removed rather than
+> reconstructed: all five React surfaces build today, and the three that remain
+> are Alpine or static._
 
 > **⏳ DIGESTIFY'S TRIGGER, stated because an unnamed one does not fire.**
 > digestify ports **when it becomes dynamic enough to want a build** — that is

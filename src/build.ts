@@ -11,8 +11,16 @@
 // `dist/` at the DEPLOYED spell folder
 // (plugins/spellbook/skills/<spell>/dist/), so the published plugin can serve a
 // working board with no surface/ source, no bunfig.toml, and no node_modules
-// present (Contract 4's "source-free by construction"). Backend ships as source
-// (Contract 3) — this script only ever touches the surface.
+// present (Contract 4's "source-free by construction").
+//
+// ⚠ CORRECTED 2026-09-04. This header read "Backend ships as source (Contract
+// 3) — this script only ever touches the surface" while `buildBackend()` sat 75
+// lines below it emitting `dist/cli.js`. It described the file before Slice 2
+// and nothing re-read it after. **This script builds BOTH:** a spell's surface
+// always, and its backend when `src/<spell>/backend/cli.ts` exists. Under
+// Contract 3 as amended 2026-09-04, a backend builds when it imports from
+// outside its own deployed skill folder; source remains the default for a
+// backend that shares nothing.
 //
 // The Tailwind plugin is passed explicitly here (not read off bunfig.toml,
 // which only wires Bun's dev SERVE path) — same plugin, both modes, no second

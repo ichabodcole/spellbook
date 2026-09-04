@@ -236,9 +236,10 @@ designed for.
 
 ## Related documentation
 
-- Seams **Contract 3** (backend ships as source — amended, staged), **Contract
-  4** (source-free by construction), **Contract 17** (`src/<spell>/` is
-  ungoverned), **Contract 18** (verified by reproduction)
+- Seams **Contract 3** (backend ships as source **until it shares code, then it
+  builds** — the enumeration became a criterion on 2026-09-04), **Contract 4**
+  (source-free by construction), **Contract 17** (`src/<spell>/` is ungoverned),
+  **Contract 18** (verified by reproduction)
 - [Cross-harness spell distribution](../investigations/2026-08-30-cross-harness-spell-distribution.md)
   — where triggers 2 and 3 come from
 - [Porting a spell](../playbooks/porting-a-spell-playbook.md)
@@ -248,4 +249,5 @@ designed for.
 | Date       | Change                                                                                                                                                                |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-08-31 | Added _"would manifests remove the need for the wards?"_ — no; they are blind to relative reaches and would sanction unresolvable ones.                               |
+| 2026-09-04 | Contract 3 reference updated: the staged/enumerated permission became a criterion — a backend that imports outside its own deployed skill folder must build.          |
 | 2026-08-31 | Created after spell-kit sprint 02 made backend bundling real, which is what raised the question of whether per-app manifests were now needed. Measured: they are not. |

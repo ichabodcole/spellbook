@@ -66,7 +66,11 @@ then neither is wrong.
   returns one ref per import with its specifier and line — calibrate it red on
   one planted break, then record its floor. See Gotcha 7.
 - **acc conformance** if the backend will ship built — a spell goes conformant
-  before its backend goes opaque.
+  before its backend goes opaque. **Since 2026-09-04 that "if" has a test rather
+  than a permission behind it:** a backend builds when it imports from outside
+  its own deployed skill folder (Contract 3's criterion). So the question to ask
+  during planning is _will this port make the backend import shared code?_ — if
+  yes, acc conformance is a prerequisite of the port, not a later phase.
 - ⛔ **Answer this before anything else: does this spell ALREADY have a built
   backend?** `ls src/<spell>/backend/`. If it exists, the spell's backend lives
   in **two roots**, and every census, sweep and done-when below must run over
@@ -213,8 +217,20 @@ tree is still shippable.
 
 ### Phase 2: Relocate
 
-**Goal:** build input lives at `src/<spell>/`; the skill folder carries backend
-source plus a committed `dist/` and no build-input source.
+**Goal:** build input lives at `src/<spell>/`; the skill folder carries a
+committed `dist/` and no build-input source.
+
+**There are two legal end states for the backend, and the port picks one up
+front** (Contract 3, amended 2026-09-04):
+
+| the backend imports…              | ships as                  | the skill folder holds              |
+| --------------------------------- | ------------------------- | ----------------------------------- |
+| nothing outside its own folder    | Bun-native `.ts` source   | `scripts/` source + `dist/` surface |
+| anything shared (e.g. `src/kit/`) | a **built** `dist/cli.js` | a 37-line launcher + `dist/`        |
+
+The second is not an upgrade to aspire to mid-port — **it is forced by the first
+shared import** and drags acc conformance in front of it. Decide which one this
+port is before Phase 1, because they have different done-whens below.
 
 **Actions:**
 

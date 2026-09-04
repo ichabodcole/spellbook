@@ -114,7 +114,7 @@ must agree on entry name + asset rooting.
 0.1.2) — success, tokens + `@source` utilities present. dist-un-ignore + commit is a hard
 prerequisite (circe lane).
 
-## Contract 3 — Backend ships as source (no build)
+## Contract 3 — Backend ships as source UNTIL it shares code; then it builds
 
 **Owner:** daedalus (backends) / thoth (canon wording) · **Pointed at from:** all seats
 
@@ -123,6 +123,12 @@ runs directly under Bun; no compile/bundle/transpile step. Only the surface ever
 when_ a backend dependency genuinely requires a build (native addon, codegen'd client, no runnable
 source dist) **and** the cost of hand-working around source-only exceeds owning a backend build —
 repeal narrowly for that spell first, promote to a default only on a second independent signal.
+
+> ⛔ **THE SENTENCE ABOVE IS SUPERSEDED — see the 2026-09-04 amendment at the end of this contract.**
+> _"Only the surface ever builds"_ has been false since `7bb0f4a` and the narrow/enumerated scoping
+> machinery was retired by ruling. **A backend that imports from outside its own deployed skill
+> folder MUST build.** The original text is kept because it is what was ratified, and because two
+> amendments below argue against its exact wording — but do not act on it.
 
 **Why it bites:** this is the **re-scoped surviving half** of house-style's existing "Self-contained,
 no build step" rule — not a new rule. Shipping a duplicate rule beside the old one, or stacking two
@@ -230,9 +236,113 @@ astrolabe and magpie** — and per the clause above, Slice 2's own success is no
 deps-free run above. The *reasoning* was proven earlier and independently: the conjunction reading
 (thoth) and the driver measurement (daedalus); `sharp`'s absence, verified twice.
 
-**Promotion still NOT granted.** The permission remains narrow and enumerated. Slice 2's success is
-explicitly not the independent signal the clause above requires, and glamour — the next port, whose
-backend also builds — is the first candidate to supply one.
+**Promotion still NOT granted _under this amendment_.** The permission stayed narrow and enumerated
+for as long as this section was the last word, and Slice 2's success was explicitly not the
+independent signal the clause above required.
+
+> ⚠ **CORRECTED 2026-09-04 — the nominee falsified the clause.** This paragraph read _"and glamour —
+> the next port, whose backend also builds — is the first candidate to supply one."_ **Glamour's
+> backend does not build:** Phase 3 was dropped from the port, and `glamour/dist/` holds a surface
+> and no `cli.js` (checked at `e3d80dc`). The sentence predicted a spell's shape one phase before that
+> phase was cut, and nothing re-read it when the cut happened. **Promotion arrived anyway, by ruling
+> and on a different axis** — see the 2026-09-04 amendment below, which is careful not to claim this
+> clause was satisfied.
+
+### Contract 3 — amendment, 2026-09-04: the ENUMERATION becomes a CRITERION
+
+_Owner: thoth (canon wording) with daedalus (backends). **Ruled by Cole, 2026-09-03**, at the close
+of the glamour port. No team was convened for it: single pen, recorded as a ruling rather than as a
+ratification, because that is what it was._
+
+> ### ⛔ THIS IS THE PROMOTION THE 2026-08-31 AMENDMENT WITHHELD — AND IT DID NOT ARRIVE THE WAY THAT CLAUSE SPECIFIED
+>
+> That amendment granted a **narrow, enumerated** permission (astrolabe + magpie) and said promotion
+> to a house default **"requires a signal independent of astrolabe and magpie"** — meaning a third
+> spell, independently motivated, choosing a built backend on its own merits.
+>
+> **No such signal exists, and this amendment does not claim one.** Glamour — named in that clause
+> as the first candidate to supply it — ported **without** a built backend: Phase 3 was dropped, and
+> `plugins/spellbook/skills/glamour/dist/` holds a surface and no `cli.js` (verified at `e3d80dc`).
+> **The clause's own nominee falsified it**, and the sentence naming glamour has been corrected
+> where it stood rather than left to be read as still pending.
+>
+> **What arrived instead was a RULING, from the owner, on a different axis.** The clause
+> contemplated an _engineering_ signal — evidence that building earns its cost. Cole ruled on
+> **deployment**, which is his lane under the escalation contract (he rules product and cost; the
+> team rules the wire): a skill has to install self-contained, so an import reaching outside the
+> deployed folder is a defect on the consumer's machine no matter how the engineering feels about
+> it. In his words — _"skills sort of need to deploy self-contained, which means everything in the
+> skill folder has to be in that skills folder … it doesn't work if you just have somebody install
+> the skill and it doesn't have this outside dependency, it's just going to fail."_
+>
+> **Naming the route honestly is the whole point of this box.** A default reached by ruling is not
+> the same object as a default reached by accumulating independent signals, and a later reader has
+> to be able to tell which one this was. The evidence bar in the clause above was not met, cleared,
+> or lowered — **it was made moot by a decision from outside the axis it measured.**
+
+**The contract, restated — this SUPERSEDES the statement at the head of Contract 3:**
+
+> A spell's backend ships as Bun-native `.ts` and runs directly under Bun **until it shares an
+> implementation with another spell.** From that point it **builds**, and the build's one job is to
+> **inline** the shared module into the emitted artifact so the deployed folder stays whole.
+
+**The criterion, stated so it fires without anyone's permission:**
+
+> ⛔ **A backend that imports from outside its own deployed skill folder MUST build.**
+
+That is the entire test. It needs no enumeration, no per-spell grant, and no second signal, because
+it is not a judgment about whether building is worth it — **it is a statement about what a consumer
+receives.** An import that reaches out of the folder resolves in this repo and fails on the machine
+of anyone who installed the skill, and no amount of local green can see that.
+
+**It describes the tree exactly as it already stands.** At `e3d80dc`, the criterion is a
+**biconditional** — the set of backends that import `src/kit/` and the set that build to `dist/cli.js`
+are the same two spells:
+
+| backend            | imports `src/kit/`         | builds `dist/cli.js` |
+| ------------------ | -------------------------- | -------------------- |
+| `astrolabe`        | ✅ `kit/lib/printJson`     | ✅                   |
+| `magpie`           | ✅ `kit/lib/printJson`     | ✅                   |
+| `glamour`          | ❌                         | ❌                   |
+| `imago`            | ❌                         | ❌                   |
+| `mind-mapper`      | ❌                         | ❌                   |
+| `bounty`           | ❌ (no `src/` at all)      | ❌                   |
+| `grapevine`        | ❌ (no `src/` at all)      | ❌                   |
+
+**So this amendment commissions no work.** It renames a permission that was already being exercised
+correctly, and the renaming is the deliverable: the enumeration could not tell the next spell what to
+do, and the criterion can.
+
+**The DIRECTION, which is broader than the criterion and is not the same claim:** the house is moving
+to **one development path, with a build, for every spell.** A new spell may start without one while it
+is genuinely small — but the criterion is what ends that exemption, and it ends it automatically. The
+cost being avoided is the conversion: _"when an app starts growing, all of a sudden now you're back
+into this situation of I've got to convert it to have a build process"_ (Cole, 2026-09-03).
+**Direction is not permission** — nothing here licenses porting bounty or grapevine; house-style's
+queue table still governs when a spell ports, and both of those need a surface rewrite first.
+
+**What this does NOT change — four things, because each has been misread before:**
+
+1. **The shipped folder still has no build step to RUN.** `bun` executes what is in the folder. The
+   build happens upstream, in this repo, and exists precisely so the zip stays whole.
+2. **Surfaces are unaffected.** Their rule is house-style's, and it already says everything ports.
+3. **A backend that shares nothing may still ship as source.** The criterion is a trigger, not a
+   deadline; the _direction_ is the thing that eventually retires it.
+4. **The two earlier triggers survive as independent routes.** The original conjunction (a dependency
+   that genuinely requires a build **and** a hand-working-around cost that exceeds owning one) and the
+   2026-08-31 sharing clause both still fire on their own. This criterion is the one that no longer
+   needs a ruling to invoke. _(The original conjunction still has **zero** live instances, unchanged
+   since `sharp` left the tree.)_
+
+**Repeal when** the last backend builds — at which point this rule becomes _"backends build,"_ the
+criterion retires with it, and the exemption for small new spells is the only survivor. That mirrors
+house-style's surface rule, which carries the same shape and the same ending.
+
+**Proof:** the biconditional table above, measured at `e3d80dc` — `src/astrolabe/backend/cli.ts:41`
+and `src/magpie/backend/cli.ts:51` both `import { printJson } from "../../kit/lib/printJson"`, and
+`plugins/spellbook/skills/{astrolabe,magpie}/dist/cli.js` are the only two built backends in the
+roster. The deps-free run recorded in the 2026-08-31 amendment is unchanged and still the evidence
+that inlining works.
 
 ## Contract 4 — Surface source lives outside the plugin subtree (source-free by construction)
 
