@@ -22,13 +22,22 @@
 //   POST   /channels/:name/archive   — mark read-only (sidecar marker) [V1.7]
 //   POST   /channels/:name/unarchive — clear read-only [V1.7]
 //   POST   /channels/:name/messages — { from, text, in_reply_to? } append + broadcast (409 if archived)
-//   GET    /channels/:name/messages — backlog (?since=<id>)
+//   GET    /channels/:name/messages — backlog (?since=<id>) [404 if no such channel]
 //   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
-//   GET    /channels/:name/topic    — { channel, topic }
+//   GET    /channels/:name/topic    — { channel, topic } [404 if no such channel]
 //   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message)
+//   GET    /channels/:name/wait     — long-poll for new messages [404 if no such channel]
 //   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
 //                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
 //                                    subscribed event includes the current topic.
+//
+// READS DO NOT CREATE (2026-09-06). Only an act declaring intent that the
+// channel exist may bring one into being: POST /channels, every append, PUT
+// /topic, and GET /tail (a subscription is forward-looking). GET /messages,
+// GET /wait and GET /topic answer 404 with a `hint` naming the `open` that
+// would fix it. Before this, they all ran through loadChannel(), which
+// registers any name it is handed, so a read resurrected a closed channel into
+// `list` — empty, file-less, and undetectable from the reader's side.
 //
 // Message shape: { id, channel, from, text, ts, kind: "message", in_reply_to?: <id> }
 // IDs are channel-scoped, monotonically ascending integers. `ts` is unix
@@ -488,6 +497,38 @@ function readBacklog(name: string, since: number): Message[] {
   return out;
 }
 
+// Does this channel exist? A NON-CREATING lookup — the counterpart to
+// loadChannel, which builds a record for any name you hand it and registers it
+// in `channels`, so `listChannels()` (which unions the map with the .jsonl
+// files on disk) reports it as live. That is the resurrection: a read verb on a
+// channel the human just closed put it back in `list` with no file, no messages
+// and no way for the reader to tell.
+//
+// "Exists" is loaded-in-memory OR a log on disk, matching exactly what
+// `listChannels()` will report. An invalid name is not an existence question —
+// it can never be on disk, so it answers false and the caller 404s rather than
+// throwing a 400 out of a read.
+function channelExists(name: string): boolean {
+  if (channels.has(name)) return true;
+  try {
+    return existsSync(channelPath(name));
+  } catch {
+    return false;
+  }
+}
+
+// The refusal a read route gives for a channel that is not there. Same envelope
+// as every other daemon error ({ error, channel }) plus `hint`: a response
+// should name the act it makes likely, and the only act that recovers from this
+// one is an explicit open. Without the hint the agent is left guessing whether
+// the name is wrong, the daemon is wrong, or the channel is merely empty.
+function missingChannel(name: string): Response {
+  return json(
+    { error: `no channel "${name}"`, channel: name, hint: `grapevine open ${name}` },
+    { status: 404 },
+  );
+}
+
 function json(data: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -796,6 +837,11 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/messages" && method === "GET") {
+      // A read never creates. This route never did (readBacklog goes straight
+      // to the file) — but it answered `{"messages":[]}` for a name that does
+      // not exist, which is indistinguishable from an empty channel. The guard
+      // is here for the lie, not for the resurrection.
+      if (!channelExists(name)) return missingChannel(name);
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       return json({ messages: readBacklog(name, since) });
     }
@@ -856,6 +902,10 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/wait" && method === "GET") {
+      // A read never creates — and this one DID: loadChannel below registers
+      // the name in `channels`, which is what put a closed channel back in
+      // `list`.
+      if (!channelExists(name)) return missingChannel(name);
       const ch = loadChannel(name);
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       const alias = url.searchParams.get("as");
@@ -957,6 +1007,9 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/topic" && method === "GET") {
+      // Reading a topic is a read: it does not create. (PUT does — it is a
+      // write, and only intent creates.)
+      if (!channelExists(name)) return missingChannel(name);
       const ch = loadChannel(name);
       return json({ channel: name, topic: ch.topic });
     }

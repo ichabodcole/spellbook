@@ -116,7 +116,7 @@ type ChannelsResponse = { channels?: ChannelSummary[]; error?: string };
 type StatusResponse = { ok?: boolean; error?: string };
 
 // GET /channels/<name>/messages and ?since= ranges.
-type MessagesResponse = { messages?: Message[]; error?: string };
+type MessagesResponse = { messages?: Message[]; error?: string; hint?: string };
 
 // GET /channels/<name>/wait — long-poll batch.
 type WaitResponse = {
@@ -124,6 +124,8 @@ type WaitResponse = {
   cursor?: number;
   timed_out?: boolean;
   error?: string;
+  // A refusal names the act that recovers from it (404 on a missing channel).
+  hint?: string;
 };
 
 // POST /channels — open/ensure a channel.
@@ -146,6 +148,7 @@ type TopicResponse = {
   topic?: string | null;
   id?: number;
   error?: string;
+  hint?: string;
 };
 
 // GET /channels/<name>/subscribers — single-channel roster.
@@ -387,6 +390,28 @@ function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
 }
 
+// A daemon refusal carries `hint` — the act that recovers from it (a 404 on a
+// read names the `open` that would create the channel). Fold it into the single
+// stderr line the agent actually reads, or the recovery is on the wire and
+// nowhere the caller looks.
+function apiError(data: { error?: string; hint?: string } | null, status: number): string {
+  const msg = data?.error ?? `HTTP ${status}`;
+  return data?.hint ? `${msg} — try: ${data.hint}` : msg;
+}
+
+// Existence probe for the read verbs that answer from the LOG FILE rather than
+// from a route (`triage`, `pull --status`). Those cannot 404 on their own: a
+// missing log is an empty array, which is the same silent lie the daemon guard
+// exists to kill. GET /topic is the cheapest guarded route, so it is the probe.
+async function requireChannel(port: number, name: string): Promise<void> {
+  const { status, data } = await api<{ error?: string; hint?: string }>(
+    port,
+    "GET",
+    `/channels/${name}/topic`,
+  );
+  if (status >= 400) die(apiError(data, status));
+}
+
 async function cmdOpen(name: string, opts: { topic?: string; from?: string; fresh?: boolean }) {
   if (!name) die("usage: grapevine open <name> [--topic <text>] [--fresh]");
   const port = await ensureDaemon();
@@ -402,19 +427,22 @@ async function cmdOpen(name: string, opts: { topic?: string; from?: string; fres
 async function cmdTopic(name: string, text: string | undefined, from: string | undefined) {
   if (!name) die("usage: grapevine topic <channel> [<text>]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
   if (text === undefined) {
-    // Read current topic.
+    // `topic <name>` with no text is a READ — it asks what the topic is, and a
+    // missing channel answers that question by being missing. No ensure: the
+    // ensure was what resurrected a closed channel from a read verb.
     const { status, data } = await api<TopicResponse>(port, "GET", `/channels/${name}/topic`);
-    if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+    if (status >= 400) die(apiError(data, status));
     printJson({ ok: true, channel: name, topic: data?.topic });
     return;
   }
+  // `topic <name> <text>` is a WRITE, so it may create.
+  await api(port, "POST", "/channels", { name });
   const { status, data } = await api<TopicResponse>(port, "PUT", `/channels/${name}/topic`, {
     topic: text,
     from: from ?? "system",
   });
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) die(apiError(data, status));
   printJson({ ok: true, channel: name, topic: data?.topic, id: data?.id });
 }
 
@@ -502,9 +530,10 @@ async function cmdAnnounce(
 async function cmdPull(name: string, since: number, opts: { status?: string } = {}) {
   if (!name) die("usage: grapevine pull <channel> [--since <id>] [--status <value>]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
 
   if (opts.status !== undefined) {
+    // This branch answers from the log file, so it cannot 404 on its own.
+    await requireChannel(port, name);
     // Full-channel scan: filter by latest disposition, status frames excluded.
     const badged = loadChannelMessagesBadged(name);
     const filtered = badged.filter((m) => {
@@ -526,7 +555,7 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
     "GET",
     `/channels/${name}/messages?since=${since}`,
   );
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) die(apiError(data, status));
   const rawMsgs = data?.messages ?? [];
   const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
   const disp = foldDispositions(name);
@@ -542,7 +571,6 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
 async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
   if (!name || !Number.isFinite(id)) die("usage: grapevine read <channel> <id> [--text]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
   // Built on the existing range fetch — `since=id-1` returns id and beyond;
   // we pick the exact id. No daemon API change. This is the targeted
   // "give me message N in full" verb that recovers a clipped tail preview
@@ -552,7 +580,7 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
     "GET",
     `/channels/${name}/messages?since=${id - 1}`,
   );
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) die(apiError(data, status));
   const msg = (data?.messages ?? []).find((m) => m.id === id);
   if (!msg) die(`message ${id} not found in ${name}`, 1);
   const dispMap = foldDispositions(name);
@@ -576,7 +604,6 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
 async function cmdWait(name: string, since: number, timeoutS: number, alias: string | undefined) {
   if (!name) die("usage: grapevine wait <channel> [--as <alias>] [--since <id>] [--timeout <s>]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
   // Give the HTTP fetch a slightly higher abort timeout than the daemon's
   // long-poll timeout so the daemon always wins the timeout race.
   // `?as=<alias>` registers presence on the channel for the wait duration —
@@ -590,7 +617,7 @@ async function cmdWait(name: string, since: number, timeoutS: number, alias: str
   try {
     data = (await res.json()) as WaitResponse;
   } catch {}
-  if (!res.ok) die(data?.error ?? `HTTP ${res.status}`);
+  if (!res.ok) die(apiError(data, res.status));
   printJson({
     ok: true,
     messages: data?.messages ?? [],
@@ -926,7 +953,10 @@ function renderTriageHuman(
 async function cmdTriage(name: string, opts: { human?: boolean } = {}) {
   if (!name) die("usage: grapevine triage <channel> [--human]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
+  // triage reads the log file, not a route, so it cannot 404 on its own — and
+  // an empty dashboard for a channel that does not exist is the same silent lie
+  // as an empty `pull`.
+  await requireChannel(port, name);
   const badged = loadChannelMessagesBadged(name);
   const open: BadgedMessage[] = [];
   const by_status: Record<string, BadgedMessage[]> = {};

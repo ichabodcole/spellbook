@@ -2073,3 +2073,100 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
     expect(stderr).not.toContain("RangeError");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Channel lifecycle: only an act that declares intent may create a channel
+// (2026-09-06). Before this, every read verb sent `POST /channels {name}` to
+// "ensure loaded" and the read routes ran through `loadChannel`, which
+// REGISTERS the name — so a read resurrected a closed channel into `list`,
+// empty and file-less, with nothing the reader could observe.
+// ---------------------------------------------------------------------------
+
+/** The running daemon's port, read from the test HOME. Used by the handful of
+ *  assertions that must hit a ROUTE rather than a verb — the daemon guard is
+ *  the real fence, and a CLI-only test cannot tell the two apart. */
+function daemonPort(): number {
+  return parseInt(readFileSync(join(HOME, "daemon.port"), "utf-8").trim(), 10);
+}
+
+/** Names in `grapevine list`. The second assertion of every no-resurrection
+ *  test: refusing is not enough if the name came back anyway. */
+async function listedChannels(): Promise<string[]> {
+  const { stdout } = await bunRun(["list"]);
+  return (JSON.parse(stdout) as { channels: { name: string }[] }).channels.map((c) => c.name);
+}
+
+describe("a read verb never creates a channel", () => {
+  // Each row: the argv, and how the verb answers — from a ROUTE, or from the
+  // log file. The file-readers cannot 404 on their own (`triage` and
+  // `pull --status` scan the .jsonl, where absent reads as empty), so they are
+  // here to prove the CLI closes that hole too.
+  const readVerbs: [string, string[]][] = [
+    ["pull", ["pull", "ghost-pull"]],
+    ["read", ["read", "ghost-read", "1"]],
+    ["wait", ["wait", "ghost-wait", "--timeout", "1"]],
+    ["topic (no text — a read)", ["topic", "ghost-topic"]],
+    ["triage", ["triage", "ghost-triage"]],
+    ["pull --status (scans the log file)", ["pull", "ghost-status", "--status", "open"]],
+  ];
+
+  for (const [label, argv] of readVerbs) {
+    test(`${label} refuses a missing channel, names the recovery, and leaves list unchanged`, async () => {
+      const before = await listedChannels();
+      const { code, stdout, stderr } = await bunRun(argv);
+      expect(code).toBe(2);
+      expect(stdout).toBe("");
+      expect(stderr).toContain(`no channel "${argv[1]}"`);
+      // A refusal names the act that recovers from it.
+      expect(stderr).toContain(`grapevine open ${argv[1]}`);
+      // THE ACTUAL BUG: the name must not have come back.
+      const after = await listedChannels();
+      expect(after).not.toContain(argv[1]);
+      expect(after).toEqual(before);
+    });
+  }
+
+  test("the reported repro: a closed channel stays closed when an agent polls it", async () => {
+    await bunRun(["open", "resurrect-me"]);
+    await bunRun(["send", "resurrect-me", "before the close", "--as", "agent"]);
+    expect(await listedChannels()).toContain("resurrect-me");
+    expect((await bunRun(["close", "resurrect-me"])).code).toBe(0);
+
+    const pull = await bunRun(["pull", "resurrect-me"]);
+    expect(pull.code).toBe(2);
+    expect(pull.stderr).toContain('no channel "resurrect-me"');
+    expect(await listedChannels()).not.toContain("resurrect-me");
+  });
+
+  test("the guard is in the DAEMON, not just the CLI: the routes themselves 404", async () => {
+    const port = daemonPort();
+    for (const route of ["messages", "wait?timeout=1", "topic"]) {
+      const res = await fetch(`http://127.0.0.1:${port}/channels/ghost-route/${route}`);
+      expect(res.status).toBe(404);
+      const body = (await res.json()) as { error: string; channel: string; hint: string };
+      expect(body.error).toBe('no channel "ghost-route"');
+      expect(body.channel).toBe("ghost-route");
+      expect(body.hint).toBe("grapevine open ghost-route");
+    }
+    expect(await listedChannels()).not.toContain("ghost-route");
+  });
+
+  test("a read verb on a channel that DOES exist still works", async () => {
+    await bunRun(["open", "still-here", "--topic", "unchanged"]);
+    await bunRun(["send", "still-here", "hello", "--as", "agent"]);
+    const pull = await bunRun(["pull", "still-here"]);
+    expect(pull.code).toBe(0);
+    expect((JSON.parse(pull.stdout) as { messages: unknown[] }).messages.length).toBe(2);
+    const topic = await bunRun(["topic", "still-here"]);
+    expect(topic.code).toBe(0);
+    expect((JSON.parse(topic.stdout) as { topic: string }).topic).toBe("unchanged");
+    expect((await bunRun(["triage", "still-here"])).code).toBe(0);
+  });
+
+  test("a topic WRITE may still create: it declares intent, unlike the read", async () => {
+    expect((await bunRun(["topic", "born-by-topic", "created by a write"])).code).toBe(0);
+    expect(await listedChannels()).toContain("born-by-topic");
+    const back = await bunRun(["topic", "born-by-topic"]);
+    expect((JSON.parse(back.stdout) as { topic: string }).topic).toBe("created by a write");
+  });
+});
