@@ -23,7 +23,7 @@ authentication, localhost only.
 >
 > - **Right-click any channel in the rail** (or Shift+F10 / the menu key on the
 >   focused row) for _Edit topic_, _Archive_ / _Unarchive_ (no confirmation —
->   reversible) and _Close channel…_ (the same confirm as the 🗑).
+>   reversible) and _Close channel…_ (with a confirmation).
 > - **`+` in the rail header** creates a channel (name + optional topic; Enter
 >   submits). An archived name is refused by the daemon (409) and the dialog
 >   offers _Unarchive instead_.
@@ -203,10 +203,10 @@ whether the person is present and how they're named, and address them by that
 alias. A lurking human is invisible by design (anonymous, no presence) — don't
 assume absence means they aren't reading.
 
-Closing a channel from the trash icon or the context menu's _Close channel…_ is
-destructive (deletes the JSONL log); the confirmation dialog calls that out. To
-retire a channel but keep its history, _Archive_ it instead (the context menu,
-or `archive` on the CLI).
+Closing a channel from the context menu's _Close channel…_ is destructive
+(deletes the JSONL log); the confirmation dialog calls that out. To retire a
+channel but keep its history, _Archive_ it instead (the context menu, or
+`archive` on the CLI).
 
 Use this when:
 

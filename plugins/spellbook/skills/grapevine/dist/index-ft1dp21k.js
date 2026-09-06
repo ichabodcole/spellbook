@@ -35312,42 +35312,32 @@ function ChannelRail({
                       className: cn("group flex items-center gap-0.5 rounded-md transition-colors hover:bg-surface-raised", active && "bg-surface-raised", c.isNew && "animate-flash")
                     }, undefined, false, undefined, this),
                     onKeyDown: openMenuOnShiftF10,
-                    children: [
-                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("a", {
-                        ref: linkRef(c.name),
-                        href: channelHref(c.name),
-                        className: cn("flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs text-ink no-underline outline-none focus-visible:ring-3 focus-visible:ring-ring/50", active && "font-semibold text-leaf-soft"),
-                        children: [
-                          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                            className: cn("min-w-0 flex-1 truncate", c.archived && "text-ink-dim"),
-                            children: c.name
-                          }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                            className: "ml-1.5 flex shrink-0 items-center gap-1",
-                            children: [
-                              c.archived && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
-                                className: "text-[10px]",
-                                title: "archived — read-only",
-                                children: "\uD83D\uDD12"
-                              }, undefined, false, undefined, this),
-                              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
-                                variant: active ? "count-live" : "count",
-                                children: c.subscribers
-                              }, undefined, false, undefined, this)
-                            ]
-                          }, undefined, true, undefined, this)
-                        ]
-                      }, undefined, true, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button3, {
-                        variant: "destructive-ghost",
-                        size: "icon-xs",
-                        className: "opacity-0 group-hover:opacity-100 focus-visible:opacity-100",
-                        title: `Close channel “${c.name}” (deletes message log)`,
-                        onClick: () => setPending(c.name),
-                        children: "\uD83D\uDDD1"
-                      }, undefined, false, undefined, this)
-                    ]
-                  }, undefined, true, undefined, this),
+                    children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("a", {
+                      ref: linkRef(c.name),
+                      href: channelHref(c.name),
+                      className: cn("flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs text-ink no-underline outline-none focus-visible:ring-3 focus-visible:ring-ring/50", active && "font-semibold text-leaf-soft"),
+                      children: [
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                          className: cn("min-w-0 flex-1 truncate", c.archived && "text-ink-dim"),
+                          children: c.name
+                        }, undefined, false, undefined, this),
+                        /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                          className: "ml-1.5 flex shrink-0 items-center gap-1",
+                          children: [
+                            c.archived && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                              className: "text-[10px]",
+                              title: "archived — read-only",
+                              children: "\uD83D\uDD12"
+                            }, undefined, false, undefined, this),
+                            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Badge, {
+                              variant: active ? "count-live" : "count",
+                              children: c.subscribers
+                            }, undefined, false, undefined, this)
+                          ]
+                        }, undefined, true, undefined, this)
+                      ]
+                    }, undefined, true, undefined, this)
+                  }, undefined, false, undefined, this),
                   /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuContent, {
                     children: [
                       /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuGroup, {

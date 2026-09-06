@@ -1853,10 +1853,6 @@
     border-color: var(--color-ring);
   }
 
-  .focus-visible\:opacity-100:focus-visible {
-    opacity: 1;
-  }
-
   .focus-visible\:ring-3:focus-visible {
     --tw-ring-shadow: var(--tw-ring-inset, ) 0 0 0 calc(3px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);

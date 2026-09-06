@@ -83,3 +83,11 @@
 - **A failed _Unarchive instead_ stays in the dialog** with the daemon's reason
   on the Name field. Not taken: a toast (no toast primitive installed; the field
   already has an error slot).
+
+## 2026-09-06 — Cole, reviewing the surface
+
+- **The per-row 🗑 is removed.** With _Close channel…_ in the context menu the
+  hover-reveal button was a second path to the one destructive act. Not taken:
+  keeping both (two affordances for delete, none for archive, was the wrong
+  emphasis). Consequence: the rail's Tab order loses one stop per row (L6), and
+  C10's driven arms now run through L1b.

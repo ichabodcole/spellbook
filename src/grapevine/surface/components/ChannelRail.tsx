@@ -89,7 +89,9 @@ export function ChannelRail({
   // nowhere to return focus after an item is chosen (Escape returns it to the
   // link on its own, because that is where it came from). Each row's link is
   // kept by name and refocused after an item runs — the row is still there
-  // after archive/unarchive; after Close channel… the `+` takes it.
+  // after archive/unarchive; after Close channel… the `+` takes it. Close
+  // channel has no per-row button any more (removed 2026-09-06): the context
+  // menu is its one path, so nothing else on the row takes focus.
   // When the filter (L4) hides the row the act just archived, the link is
   // gone by the next frame — focus goes to the switch instead, which is the
   // control that brings the row back.
@@ -187,15 +189,6 @@ export function ChannelRail({
                       <Badge variant={active ? "count-live" : "count"}>{c.subscribers}</Badge>
                     </span>
                   </a>
-                  <Button
-                    variant="destructive-ghost"
-                    size="icon-xs"
-                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
-                    title={`Close channel “${c.name}” (deletes message log)`}
-                    onClick={() => setPending(c.name)}
-                  >
-                    🗑
-                  </Button>
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuGroup>
