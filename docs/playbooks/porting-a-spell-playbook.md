@@ -1,8 +1,9 @@
 # Porting a Spell to the Built / Shared Layout — Playbook
 
-**Created:** 2026-08-31 **Last Updated:** 2026-09-05 **Status:** Active — third
-real run (grapevine, the first **rewrite**: Phase R is new and has run once);
-**next real run: bounty or digestify through Phase R** (see Applicability)
+**Created:** 2026-08-31 **Last Updated:** 2026-09-06 **Status:** Active — third
+real run (grapevine, the first **rewrite**: Phase R has run once; Phase S, the
+registry, has run once on its heels); **next real run: bounty or digestify
+through Phases R and S** (see Applicability)
 
 ---
 
@@ -33,6 +34,10 @@ then neither is wrong.
 - Cutting a spell's backend↔surface seam so its daemon stops reaching into
   surface source.
 - Making two spells share one implementation, on either side of that line.
+- Replacing a surface's hand-rolled primitives (`surface/ui/` look-alikes with
+  shadcn's names) with CLI-managed registry files — Phase S. A rewrite should do
+  this inside Phase R rather than vendor first; an already-ported spell does it
+  as its own branch.
 - Any change where **a green suite and a broken installed artifact can coexist**
   — that is the condition this playbook is really about.
 
@@ -199,9 +204,10 @@ component; every `x-show` in the inventory should have exactly one home.
 Grapevine: 8 components for 190 lines of markup. Resist a finer grain. Native
 `window.confirm` becomes the vendored `AlertDialog` (same text, same forced
 choice — and drivable by a browser agent). No custom button, input, badge,
-dialog or select where a vendored primitive exists; where the recipe and the
-page's look disagree, add a **variant**, not a stacked override (`cn()` does not
-conflict-resolve).
+dialog or select where a registry primitive exists — and _registry_ means
+installed by the CLI (Phase S), not copied from another spell's `ui/`: grapevine
+vendored first and paid for it with a second branch. Where the recipe and the
+page's look disagree, add a **variant**, not a stacked override.
 
 **R4 — CSS to tokens, by role.** `styles.css` opens with the three lines the
 css-scope ward requires (`@import "tailwindcss" source(none)`, the kit
@@ -263,6 +269,141 @@ through.
 **Done when:** every inventory row carries _driven_, _test cell_, or _not
 driven + why_; the page and its CDN links are gone from index and disk; the
 spell is in the dist roster; the four wards are re-declared and green.
+
+### Phase S: Registry — the primitives come from the CLI (inside Phase R, or right after it)
+
+**Goal:** the spell's `surface/ui/` is owned by the shadcn CLI — a
+`components.json`, registry source at the same paths, `base` flavour on
+`@base-ui/react`, Tailwind v4 — with **no change in behaviour** and the smallest
+honest change in look. First run: grapevine, 2026-09-05
+(`docs/projects/grapevine-shadcn/`), as its own branch after the conversion.
+**Fidelity ruling: behaviour-identical, tokens-identical** — the inventory holds
+row for row; recipes may move radii, paddings, rings and weights, and each
+visible difference is recorded with a before/after pair rather than fought back.
+
+> **What "vendored shadcn" was, measured:** shadcn's class vocabulary and alias
+> names over a plain variant lookup, a `cn()` that does not conflict-resolve, no
+> `render` prop, partial overlays, and provenance headers citing a page that no
+> longer existed. Two spells had it and neither had a `components.json`. The
+> honest state was _our own components with shadcn names_ — and the next feature
+> branch would have hand-built a third set.
+
+**S0 — the config directory must be a package.** `add`'s preflight wants
+`cwd/package.json` before it reads `components.json`; no flag bypasses it, and
+`init` refuses the same directory the same way. The clean form is a **Bun
+workspace member**: root `package.json` gains `"workspaces": ["src/<spell>"]`;
+`src/<spell>/package.json` (private, four lines) declares the registry's deps;
+`src/<spell>/tsconfig.json` extends the root with `"@/*": ["./surface/*"]` and
+no `baseUrl`; `src/<spell>/components.json` with `style: "base-nova"`, css
+`surface/styles.css`, aliases into `@/…`. Copy grapevine's three files and add
+one `workspaces` entry — the `@/` alias is scoped by the importing file's
+nearest tsconfig, so two spells with the same alias do not collide (measured
+from one cwd). **Pin the linker:** a root `bunfig.toml` with
+`[install] linker = "hoisted"`, or Bun 1.4 moves every package in the repo into
+`node_modules/.bun/` and symlinks the rest. The daemon's per-spell `bunfig.toml`
+(`[serve.static]`) is unaffected — run both `dev-styled` tests to prove it. Not
+taken: a nested package without the workspace (a second lockfile a root install
+never reads — every fresh clone reds); a root `components.json` (one spell per
+repo by construction). Then two consequences to know: root `tsc -p .` gains
+TS2307 per alias import plus TS7006 cascades (it is nobody's gate;
+`tsc -p src/<spell>` is the honest check, and it is 0), and **the `shadcn`
+skill's probe fails from the repo root** from this commit on (`info` exits
+`monorepo_root`) — `cd src/<spell>` before invoking the skill and before every
+CLI command, or pass `-c src/<spell>`.
+
+**S1 — measure the registry, not the brief.** Everything the brief "knew" about
+the CLI was true of an older one. From the config directory:
+`bunx --bun shadcn@latest add <x> --dry-run --yes` lists the files and deps it
+will write; `add <x> --view surface/ui/<x>.tsx` shows the recipe it will write.
+**`view` from anywhere else shows the radix flavour** — never read it from the
+root as the base recipe. What 4.21 actually does: imports `cn` from the npm
+package **`cn`** (shadcn's own, zero deps) and writes no `lib/utils.ts` —
+creating one does not redirect the import; **`add` does not install
+`class-variance-authority`** (`init` does) — add it to the member manifest by
+hand once, and know it pulls `clsx` transitively; **registry dependencies arrive
+as files** — `field` brings `label`, `toggle-group` brings `toggle`, `dialog`
+brings `button`. The dep cap that follows is `cn` + `class-variance-authority`
+per spell; `@base-ui/react` and `lucide-react` stay at the root, shared
+(house-style `surface-dep-cap`).
+
+**S2 — `add`, and the overwrite trap.** `add --overwrite --yes` replaces the
+hand-rolled five whole, header and all — that is the point. But **`--yes` does
+not answer the overwrite prompt** when a _dependency_ is the file that exists:
+`add dialog` stopped at `button.tsx already exists? (y/N)` with stdin closed and
+wrote three of four files, silently. **Back up the variant file before any `add`
+whose dry run says _overwrite_**, run with `--overwrite`, restore, diff. The
+registry owns `ui/`: Biome's opinions of its code (`noLabelWithoutControl`,
+`useSemanticElements`, `noDoubleEquals`) go in a `biome.json` override scoped to
+`src/*/surface/ui/**`, not in the files; provenance goes nowhere; a spell's own
+variants (`accent`, `joined`, `count`, a `destructive-ghost`) are two lines
+**inside the cva config**, the only hand edits under `ui/`, and the next
+`add --overwrite` erases them — `add --diff` before it, and normalise the
+capture through the repo's biome first or the diff is sixty lines of reflow.
+
+**S3 — three things every recipe needs from `styles.css`, none in a test.** (1)
+**Pin `dark`.** Recipes carry thirty `dark:` arms; Tailwind v4's `dark:` follows
+the OS, so one surface gets two looks. `@custom-variant dark (&:is(.dark *))`
+plus `class="dark"` on `<html>` — what `init` writes; check the built sheet for
+zero `prefers-color-scheme`. (2) **Alias the raw `var()`s.** Two recipes reach
+past the utility layer — `var(--foreground)`, `var(--secondary)` in a
+`color-mix()` hover — and without `:root` aliases the hover resolves to
+`color-mix(in oklch, , )` and is dropped. (3) **Keep the pointer.** Tailwind v4
+buttons lose `cursor: pointer`; the docs' `@layer base` rule restores it —
+measure on an _enabled_ button. And one the UX branch found a day later:
+**`--color-accent` must differ from `--color-popover`**, or a highlighted menu
+item paints its own background and every non-destructive item has no hover.
+Animations (`animate-in`, `fade-in-0`) come from `tw-animate-css`, which `add`
+does not install and the cap excludes — the overlays appear without a
+transition; say so, do not fight it.
+
+**S4 — primitives and feature components land in ONE commit.** A commit with the
+registry files in and the components still asking for `variant="primary"` is
+gate-green (Bun does not type-check; cva ignores an unknown variant) and visibly
+broken — every primary button loses its fill. The components import the same
+`cn` as `ui/` — one semantics per spell; the kit's non-merging `cn.ts` stays for
+the spells that still use it. `Field`/`FieldGroup` for the forms with sr-only
+labels where a visible one would re-type a heading; the skill's `size-*` rule
+**loses to the kit-styling ward** at exactly one size — the 8 px shorthand is
+the ward's sentinel and spelling it anywhere but the kit's `Dot` turns the cell
+red, prose included (Gotcha 12).
+
+**S5 — `@source "./"` ships every installed file, composed or not.** Grapevine
+installed eight components for a branch that had not started yet and shipped a
+sheet a quarter dead (30 KB → 75 KB; 0.6 % → 13–26 % unreferenced by two
+methods). **Uninstall what nothing composes** and let the branch that composes
+it run one `add` — the alias/manifest/config work is what makes the re-add one
+command. Measure it: split the built sheet into leaf rules and count a rule as
+referenced if any of its class names appears in the built JS + HTML (~60 lines
+of Bun; `dead-sheet.ts` in the shadcn session's scratchpad); put the number in
+front of Cole, because it is a cost he rules and the gate will never see it. Not
+taken: a hand-kept `@source not` list per unused file.
+
+**S6 — verify as Phase R did, plus three measures.** The same no-stake drive of
+the whole inventory (type, proxy from first load, scoped HOME) — every row held
+both times. **Drive the same daemon before and after:** a release daemon serves
+the `dist/` _directory_, so one daemon with one set of fixtures serves both
+surfaces across the rebuild, which is what makes the screenshot pairs honest.
+**Measure a swapped primitive's box, not its look:** `opacity-0` does not take a
+button out of flow, and a `size="xs"` reply control moved every feed row by 7 px
+on Join — record row heights in both states; the fix was an `inline` size inside
+the cva config. **Name every visible difference with its recipe cause** in a
+table — the verifier's job is to find the ones the author did not name (two of
+fourteen). Wards: kit-adoption's "no path aliases" premise is now false and its
+green holds for a different reason — rewrite the sentence; gate-honesty does
+_not_ move for a root `bunfig.toml` (its walk roots at `plugins/…/skills/` and
+`src/`), say so rather than let a reader wonder; biome reflows the one-line
+`workspaces` array, so run it on `package.json` before the gate. `info` from the
+config directory listing every file under `ui/`, and `add <x> --dry-run`
+resolving to `surface/ui/<x>.tsx`, is the acceptance test for "set up correctly"
+— paste it in the session record, and know the installed list is the _last_
+thing `info` prints.
+
+**Done when:** `components.json` exists and `info` from its directory sees every
+installed file; no hand-rolled primitive and no provenance header under `ui/`;
+every inventory row holds and every visible difference is enumerated with its
+cause; the dead-sheet number is within a percent of before; house-style carries
+the variant rule and the dep cap (they are not restated in components); gate and
+dist-check green, wards run.
 
 ### Phase 1: Cut the seam, before anything moves
 
@@ -599,6 +740,33 @@ under ~20 ms bursts) reproduced on the original at 300 px vs the rewrite's 295:
 a shared `scroll-behavior: smooth` artefact, recorded on the inventory row and
 not fixed — a fix is a behaviour change.
 
+### Gotcha 11: `--yes` does not answer the CLI's overwrite prompt (registry)
+
+`shadcn add <x> --yes` answers the install prompts, not the "file exists,
+overwrite?" one that fires when a _dependency_ of `<x>` is already on disk
+(`dialog` → `button`). With stdin closed the command writes every other file and
+stops — a three-of-four install that `info` will not flag. Read the dry run for
+the word _overwrite_, back up the file it names (it carries the spell's
+variants), run with `--overwrite`, restore, diff.
+
+### Gotcha 12: The ward reads prose (2 instances, 2 branches)
+
+`kit-styling-ward` walks every tracked text file, journals and briefs included.
+The shadcn verify journal spelled the sentinel class twice in its findings and
+put the gate red at `873fcfd`; the UX brief spelled it in a parenthetical and
+the branch was red from its first commit, before any code. Describe the class,
+do not write it — and when a registry recipe legitimately contains the stem
+followed by `.5`, the fix is a lookahead in the ward's regex, not an edit to the
+recipe.
+
+### Gotcha 13: A recipe's box is part of its look at `opacity-0`
+
+A hover-revealed control that changed from text-sized to a `h-6` pill still
+reserved its box while hidden, growing every row it sat in by 7 px and adding a
+scrollbar the old page never had — invisible in single screenshots, visible only
+by comparing y-coordinates or row heights between states. Measure heights in
+both states for any swapped primitive that lives inside a text line.
+
 ## Validation & Acceptance
 
 **Acceptance Criteria:**
@@ -670,6 +838,19 @@ drive could not see, and drove five of seven "not driven" rows. Full method in
 inventory at
 [behaviour-inventory.md](../projects/grapevine-conversion/behaviour-inventory.md).
 
+### Example 6: grapevine — Phase S, the registry, as its own branch
+
+The five vendored look-alikes became fifteen registry files (then nine, after
+the dead-sheet ruling) under a `components.json` at `src/grapevine/`, with the
+spell made a Bun workspace member so the CLI would run at all. Same two-agent
+shape; the verifier found two visible differences the author's twelve-row table
+omitted, two call sites breaking the branch's own new house-style rule, and put
+a number on the dead stylesheet that turned into a ruling. Full method in
+[the shadcn journal](../projects/grapevine-shadcn/shadcn-journal.md) and
+[its verify journal](../projects/grapevine-shadcn/verify-journal.md); the
+options not taken for where the config lives are in
+[the decision log](../projects/grapevine-shadcn/decision-log.md).
+
 ## Related Patterns
 
 - [`seams.md`](../../.anthill/dev/seams.md) — Contracts 1–5 (serve, `dist/`
@@ -679,7 +860,10 @@ inventory at
   vocabulary; note that `shared/`, `ward`, `pinned` and _the gate_ each mean
   something narrower there, and several numbering schemes reuse the same digits.
 - [`grimoire/house-style.md`](../../grimoire/house-style.md) — the
-  `self-contained-no-build` rule the port re-scopes.
+  `self-contained-no-build` rule the port re-scopes; the two rules Phase S
+  establishes, `registry-primitives-variant-extends-recipe` and
+  `surface-dep-cap`, with
+  [their scenario](../../grimoire/scenarios/2026-09-05-registry-owns-the-primitive-file.md).
 - [the `ward` skill](../../.claude/skills/ward/SKILL.md) — commit-type routing.
 
 ---
@@ -718,3 +902,16 @@ port **taught**, not what it confirmed.
   seven "not driven" reasons fell to a second agent. Applicability re-opened for
   bounty and digestify. Written by the orchestrator from the two agents'
   journals, not by either author.
+- **2026-09-06** — **grapevine again, Phase S: the registry.** Taught: the
+  shadcn CLI needs the config directory to be a package (workspace member,
+  hoisted-linker pin, the skill's probe dead at the root from then on); measure
+  the registry with `--dry-run`/`--view` from that directory because every
+  brief-level fact about it was stale (`cn` from a package named `cn`, cva not
+  installed, dependencies arriving as files); `--yes` does not answer the
+  overwrite prompt; recipes need `dark` pinned, raw vars aliased and the pointer
+  restored before the first screenshot; `@source "./"` ships what nothing
+  composes, so uninstall until composed; a primitive's box counts at
+  `opacity-0`; and the ward reads prose. Three gotchas (11–13). Written by the
+  orchestrator from the branch's two journals and decision log, after the UX
+  branch that composed the primitives had landed — one finding of that branch
+  (`accent` ≠ `popover`) folded into S3.
