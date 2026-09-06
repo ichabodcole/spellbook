@@ -37,7 +37,10 @@ main**. They are separate jobs; you are usually asked for one, not both.
 ## 0 · Preconditions — none of §1 means anything without these
 
 ```bash
-git status --porcelain          # must be EMPTY
+git status --porcelain          # must be EMPTY — of YOUR work. Files the human is
+                                # mid-adding (a new skill, a lock file) that the merge
+                                # does not touch are theirs; leave them, name them in
+                                # the report, do not stash or commit them (2026-09-05)
 git fetch origin                # land-check compares LOCAL refs; a stale base changes the verdict
 git checkout <base>             # you merge FROM the base
 git merge --ff-only origin/<base>   # base must be current
