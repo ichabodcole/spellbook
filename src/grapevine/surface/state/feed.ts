@@ -57,9 +57,20 @@ export function fmtTime(ts: number): string {
   });
 }
 
-/** F3 — the `from` line: a topic change reads `<from> set topic`. */
+/** F11 — a channel-level fact rather than a participant's utterance: the
+ *  daemon's archive/unarchive frame. `kind:"status"` alone is NOT enough —
+ *  disposition metadata wears the same kind and must keep its plain rendering.
+ *  The `event` field is the discriminator, exactly as it is in the CLI. */
+export function isChannelNote(m: Message): boolean {
+  return m.kind === "status" && m.event !== undefined;
+}
+
+/** F3 / F11 — the `from` line: a topic change reads `<from> set topic`, a
+ *  lifecycle note reads `<from> archived the channel`. */
 export function fromLabel(m: Message): string {
-  return m.kind === "topic" ? `${m.from} set topic` : m.from;
+  if (m.kind === "topic") return `${m.from} set topic`;
+  if (isChannelNote(m)) return `${m.from} ${m.event} the channel`;
+  return m.from;
 }
 
 /** S2 — your own name as `(you)`, any other human as `(human)`, agents plain. */

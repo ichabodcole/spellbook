@@ -70,6 +70,9 @@ type Message = {
   in_reply_to?: number;
   target?: number;
   disposition?: string;
+  // Channel-level lifecycle fact (archive / unarchive). A kind:"status" frame
+  // carrying `event` and no `disposition` — see isDispositionFrame.
+  event?: "archived" | "unarchived";
 };
 
 // GET / — daemon liveness/info.
@@ -568,7 +571,9 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
   const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
   const disp = foldDispositions(name);
   const annotated = rawMsgs
-    .filter((m) => m.kind !== "status")
+    // Disposition frames only — a lifecycle frame (archive/unarchive) stays in
+    // the history an agent pulls; it is how it learns the channel was retired.
+    .filter((m) => !isDispositionFrame(m))
     .map((m) => {
       const d = disp.get(m.id);
       return d ? { ...m, disposition: d.disposition, reopens: d.reopens } : m;
@@ -842,8 +847,11 @@ async function cmdTail(
           if (typeof payload.id === "number" && payload.id > highestSeen) {
             highestSeen = payload.id;
           }
-          // Drop status frames — disposition updates are metadata, not messages.
-          if (payload.kind === "status") continue;
+          // Drop DISPOSITION frames — they are metadata about another message.
+          // A lifecycle frame (archive/unarchive) passes through: an agent
+          // tailing a channel could not previously see either party retire it,
+          // and found out when its next send was rejected.
+          if (isDispositionFrame(payload)) continue;
           // Suppress self-echo: when --as is set, drop messages we sent
           // ourselves. The sender already got the receipt as the POST
           // response, so re-emitting it on tail is pure noise.
@@ -919,13 +927,29 @@ function foldDispositions(name: string) {
   }
   return map;
 }
+// TWO things now wear kind:"status". A DISPOSITION frame acts on a specific
+// message (`target` + `disposition`) and is metadata — `pull` and `tail` fold
+// it away and badge the message it points at instead. A LIFECYCLE frame
+// (archive / unarchive) is a fact about the CHANNEL: it targets nothing, and it
+// is the whole point that a reader sees it. Discriminating on `disposition`
+// rather than on `event` keeps a frame from some future emitter visible by
+// default — the failure mode here is swallowing a signal, not showing one.
+function isDispositionFrame(m: { kind?: string; disposition?: string }): boolean {
+  return m.kind === "status" && typeof m.disposition === "string";
+}
+
 // "open" = no entry, or latest disposition is "open"
 function isOpen(d?: { disposition: string }) {
   return !d || d.disposition === "open";
 }
 
-// Reads the full channel log, drops kind:"status" frames, and badges each
+// Reads the full channel log, drops EVERY kind:"status" frame, and badges each
 // remaining message with its latest disposition via foldDispositions.
+//
+// Every one, deliberately — including a lifecycle frame (archive/unarchive),
+// which `pull` and `tail` do let through. This feeds `triage`, whose open queue
+// is "what is left to act on", and an archive is an FYI, not a work item. Same
+// reason `topic` and `announcement` are folded out of the open bucket below.
 function loadChannelMessagesBadged(
   name: string,
 ): (Message & { disposition?: string; reopens?: number })[] {
@@ -1096,11 +1120,19 @@ async function cmdMark(
   printJson(data);
 }
 
-async function cmdArchive(name: string, unarchive: boolean) {
+async function cmdArchive(name: string, unarchive: boolean, from?: string) {
   const verb = unarchive ? "unarchive" : "archive";
   if (!name) die(`usage: grapevine ${verb} <channel>`);
   const port = await ensureDaemon();
-  const { status, data } = await api<StatusResponse>(port, "POST", `/channels/${name}/${verb}`);
+  // Both routes append a kind:"status" frame to the log, so who did it is worth
+  // recording when the caller told us. Identity is optional here (it is on the
+  // globally-accepted --as/--from), and the daemon signs "system" without it.
+  const { status, data } = await api<StatusResponse>(
+    port,
+    "POST",
+    `/channels/${name}/${verb}`,
+    from ? { from } : undefined,
+  );
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   printJson({ ok: true, ...data });
 }
@@ -2009,16 +2041,16 @@ const COMMANDS: CommandSpec[] = [
     name: "archive",
     flags: [],
     positionals: [{ name: "name", required: true }],
-    run: async (positional) => {
-      await cmdArchive(positional[0], false);
+    run: async (positional, flags) => {
+      await cmdArchive(positional[0], false, resolveAlias(flags));
     },
   },
   {
     name: "unarchive",
     flags: [],
     positionals: [{ name: "name", required: true }],
-    run: async (positional) => {
-      await cmdArchive(positional[0], true);
+    run: async (positional, flags) => {
+      await cmdArchive(positional[0], true, resolveAlias(flags));
     },
   },
   {

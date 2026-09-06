@@ -33682,8 +33682,15 @@ function fmtTime(ts) {
     second: "2-digit"
   });
 }
+function isChannelNote(m) {
+  return m.kind === "status" && m.event !== undefined;
+}
 function fromLabel(m) {
-  return m.kind === "topic" ? `${m.from} set topic` : m.from;
+  if (m.kind === "topic")
+    return `${m.from} set topic`;
+  if (isChannelNote(m))
+    return `${m.from} ${m.event} the channel`;
+  return m.from;
 }
 function subLabel(a, alias, humans) {
   if (a === alias)
@@ -35834,6 +35841,7 @@ var BODY = {
   announcement: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
   status: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5"
 };
+var CHANNEL_NOTE = "rounded-[10px] border border-dashed border-edge bg-transparent px-3.5 py-2.5 italic text-ink-dim";
 function MessageRow({
   m,
   parent,
@@ -35841,6 +35849,7 @@ function MessageRow({
   onReply
 }) {
   const kind = m.kind || "message";
+  const channelNote = isChannelNote(m);
   const isReply = m.in_reply_to != null;
   return /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
     className: cn("group my-2.5 max-w-[720px]", isReply && "ml-6", kind === "announcement" && "rounded-md border-l-[3px] border-attention bg-announce-wash px-2.5 py-1.5"),
@@ -35867,8 +35876,8 @@ function MessageRow({
         className: "mb-1 flex items-baseline gap-2 text-xs",
         children: [
           /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
-            className: cn("font-mono font-semibold", kind === "topic" && "text-grape-soft"),
-            style: kind === "topic" ? undefined : { color: aliasColor(m.from) },
+            className: cn("font-mono font-semibold", kind === "topic" && "text-grape-soft", channelNote && "text-ink-dim"),
+            style: kind === "topic" || channelNote ? undefined : { color: aliasColor(m.from) },
             children: [
               fromLabel(m),
               kind === "announcement" && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("span", {
@@ -35881,7 +35890,7 @@ function MessageRow({
             className: "font-mono text-[11px] text-ink-dim",
             children: fmtTime(m.ts)
           }, undefined, false, undefined, this),
-          canReply && kind !== "topic" && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button3, {
+          canReply && kind !== "topic" && !channelNote && /* @__PURE__ */ jsx_dev_runtime18.jsxDEV(Button3, {
             variant: "ghost",
             size: "inline",
             className: "opacity-0 group-hover:opacity-100",
@@ -35891,7 +35900,7 @@ function MessageRow({
         ]
       }, undefined, true, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime18.jsxDEV("div", {
-        className: cn("whitespace-pre-wrap break-words", BODY[kind] ?? BODY.message),
+        className: cn("whitespace-pre-wrap break-words", channelNote ? CHANNEL_NOTE : BODY[kind] ?? BODY.message),
         children: m.text
       }, undefined, false, undefined, this)
     ]

@@ -17,10 +17,14 @@
 //   GET    /identity     — { alias } the persisted default alias (config.json) [V1.7]
 //   GET    /channels     — list channels (each: { …, archived })
 //   GET    /presence     — cross-channel roster: [{ name, subscribers:[alias], humans:[alias], connections, named, anonymous }]
-//   POST   /channels     — { name, topic? } create channel (idempotent; 409 if archived)
+//   POST   /channels     — { name, topic?, from?, explicit? } create channel (idempotent; 409 if
+//                          archived unless explicit, which auto-unarchives and appends the
+//                          kind:"status" unarchived frame)
 //   DELETE /channels/:name — close channel (deletes log + archived marker)
-//   POST   /channels/:name/archive   — mark read-only (sidecar marker) [V1.7]
-//   POST   /channels/:name/unarchive — clear read-only [V1.7]
+//   POST   /channels/:name/archive   — { from? } mark read-only (sidecar marker) [V1.7]; appends a
+//                                    kind:"status" frame (event:"archived") [2026-09-06]
+//   POST   /channels/:name/unarchive — { from? } clear read-only [V1.7]; appends a kind:"status"
+//                                    frame (event:"unarchived") [2026-09-06]
 //   POST   /channels/:name/messages — { from, text, in_reply_to? } append + broadcast (409 if archived)
 //   GET    /channels/:name/messages — backlog (?since=<id>) [404 if no such channel]
 //   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
@@ -154,6 +158,12 @@ type Message = {
   // V1.9 disposition — status frames reference the message being acted on.
   target?: number;
   disposition?: string;
+  // 2026-09-06 — the OTHER kind of kind:"status" frame: a channel-level
+  // lifecycle fact (archive / unarchive), which references no message and
+  // carries no disposition. `event` is the discriminator, and consumers need
+  // it: `pull` and `tail` drop DISPOSITION frames as metadata, and would
+  // otherwise swallow these too.
+  event?: "archived" | "unarchived";
 };
 
 type Subscriber = {
@@ -377,7 +387,7 @@ function appendMessage(
   text: string,
   kind: Message["kind"] = "message",
   inReplyTo?: number,
-  extra?: Partial<Pick<Message, "target" | "disposition">>,
+  extra?: Partial<Pick<Message, "target" | "disposition" | "event">>,
 ): Message {
   const ch = loadChannel(name);
   const msg: Message = {
@@ -542,6 +552,42 @@ function json(data: unknown, init: ResponseInit = {}): Response {
 // null on parse failure) and narrow each field at the use site.
 type JsonBody = Record<string, unknown> | null;
 
+// Is there something here to archive or unarchive? Same non-creating question
+// as channelExists, widened by the archived marker: a channel that was opened,
+// archived and never written to has a marker and no log, and unarchiving it
+// must still work. Archiving a name that does not exist would otherwise CREATE
+// its log via appendLifecycle — reintroducing, on a lifecycle route, exactly
+// the resurrection the read guard removed.
+function lifecycleTarget(name: string): boolean {
+  if (channelExists(name)) return true;
+  try {
+    return existsSync(archivedPath(name));
+  } catch {
+    return false;
+  }
+}
+
+// Who retired it. The watch surface and the CLI both POST these routes with no
+// body today, so "system" is the honest default rather than a placeholder for a
+// name we failed to read.
+async function lifecycleFrom(req: Request): Promise<string> {
+  const body = await readJsonBody(req);
+  return body && typeof body.from === "string" && body.from.trim() ? body.from.trim() : "system";
+}
+
+// The archive/unarchive frame. kind:"status" with an `event` and NO
+// `disposition` — see the Message type: that absence is what tells `pull` and
+// `tail` this is a channel-level fact rather than disposition metadata.
+//
+// Goes through appendMessage rather than writing the line itself, so it
+// inherits the b11 newline repair, the id allocation, the SSE fan-out and the
+// long-poll drain. A second appender is a second place to get JSONL wrong.
+function appendLifecycle(name: string, from: string, event: "archived" | "unarchived"): Message {
+  const text =
+    event === "archived" ? "channel archived — read-only" : "channel unarchived — writable again";
+  return appendMessage(name, from, text, "status", undefined, { event });
+}
+
 async function readJsonBody(req: Request): Promise<JsonBody> {
   try {
     return (await req.json()) as JsonBody;
@@ -663,7 +709,19 @@ async function handle(req: Request): Promise<Response> {
         }
       }
       const ch = loadChannel(body.name);
-      if (unarchived) ch.archived = false;
+      if (unarchived) {
+        ch.archived = false;
+        // ⛔ `open`'s auto-unarchive is an UNARCHIVE, and it must announce
+        // itself for the same reason the explicit route does — otherwise a
+        // convene-at-start wrapper silently makes a retired channel writable
+        // again and the agents tailing it never see the state change. This is
+        // the third unarchive path, and it was the one with no signal.
+        appendLifecycle(
+          body.name,
+          typeof body.from === "string" ? body.from : "system",
+          "unarchived",
+        );
+      }
       // Optional topic on open — only set if provided AND channel has no
       // topic yet (so re-opening doesn't clobber). To update later, use
       // the explicit PUT /topic endpoint.
@@ -795,11 +853,21 @@ async function handle(req: Request): Promise<Response> {
 
     // Archive / unarchive (V1.7) — a non-destructive alternative to close. The
     // marker file is the source of truth; the in-memory flag mirrors it.
+    //
+    // Both APPEND a kind:"status" frame (2026-09-06). Persisted, not an
+    // SSE-only event: an agent that was not connected at the moment learns from
+    // `pull`, and a reconnecting tail replays it — an event would be invisible
+    // to both. Retiring a channel is a fact about the channel, and before this
+    // the only signal either party got was its next send being rejected.
     if (sub === "/archive" && method === "POST") {
+      if (!lifecycleTarget(name)) return missingChannel(name);
+      // Marker first, frame second: the frame asserts a state, so the state is
+      // true by the time any reader can see the assertion.
       writeFileSync(archivedPath(name), "");
       const ch = channels.get(name);
       if (ch) ch.archived = true;
-      return json({ ok: true, channel: name, archived: true });
+      const m = appendLifecycle(name, await lifecycleFrom(req), "archived");
+      return json({ ok: true, channel: name, archived: true, id: m.id });
     }
     if (sub === "/reset" && method === "POST") {
       const body = (await readJsonBody(req)) ?? {};
@@ -818,6 +886,8 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/unarchive" && method === "POST") {
+      if (!lifecycleTarget(name)) return missingChannel(name);
+      const from = await lifecycleFrom(req);
       const ap = archivedPath(name);
       if (existsSync(ap)) {
         try {
@@ -835,7 +905,8 @@ async function handle(req: Request): Promise<Response> {
       }
       const ch = channels.get(name);
       if (ch) ch.archived = false;
-      return json({ ok: true, channel: name, archived: false });
+      const m = appendLifecycle(name, from, "unarchived");
+      return json({ ok: true, channel: name, archived: false, id: m.id });
     }
 
     if (sub === "/messages" && method === "GET") {

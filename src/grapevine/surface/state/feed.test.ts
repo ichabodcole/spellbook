@@ -7,6 +7,7 @@ import {
   fromLabel,
   hashHue,
   isChannelArchived,
+  isChannelNote,
   mergeChannels,
   nearBottom,
   snippet,
@@ -76,6 +77,25 @@ describe("presentation helpers (F2, F3, F7, F8, S2, C11)", () => {
   test("F3 — a topic change reads `<from> set topic`", () => {
     expect(fromLabel(msg(1))).toBe("agent");
     expect(fromLabel(msg(1, { kind: "topic" }))).toBe("agent set topic");
+  });
+  test("F11 — a lifecycle status frame is a channel note, disposition metadata is not", () => {
+    // The daemon emits BOTH as kind:"status". `event` is the only thing that
+    // separates "the channel was retired" from "message 3 was marked done", and
+    // rendering the second as a system note would invent a fact.
+    expect(isChannelNote(msg(1, { kind: "status", event: "archived" }))).toBe(true);
+    expect(isChannelNote(msg(1, { kind: "status", event: "unarchived" }))).toBe(true);
+    expect(isChannelNote(msg(1, { kind: "status" }))).toBe(false);
+    expect(isChannelNote(msg(1, { kind: "message" }))).toBe(false);
+  });
+  test("F11 — a lifecycle note reads `<from> archived the channel`", () => {
+    expect(fromLabel(msg(1, { kind: "status", event: "archived" }))).toBe(
+      "agent archived the channel",
+    );
+    expect(fromLabel(msg(1, { kind: "status", event: "unarchived" }))).toBe(
+      "agent unarchived the channel",
+    );
+    // Disposition metadata keeps the plain `from` — it is not a channel fact.
+    expect(fromLabel(msg(1, { kind: "status" }))).toBe("agent");
   });
   test("S2 — you, human, agent", () => {
     expect(subLabel("cole", "cole", ["cole", "bob"])).toBe("cole (you)");

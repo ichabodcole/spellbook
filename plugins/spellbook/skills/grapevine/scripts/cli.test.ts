@@ -389,8 +389,13 @@ describe("grapevine cli", () => {
     // sends are rejected, but history stays readable
     const blocked = await bunRun(["send", "test_arch", "--from", "a", "nope"]);
     expect(blocked.code).not.toBe(0);
+    // One message — plus the kind:"status" archive frame the archive now
+    // appends (2026-09-06), which is history too and is what a disconnected
+    // agent learns from.
     const pull = await bunRun(["pull", "test_arch", "--since", "0"]);
-    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+    const arcMsgs = JSON.parse(pull.stdout).messages as { kind: string; event?: string }[];
+    expect(arcMsgs.filter((m) => m.kind === "message").length).toBe(1);
+    expect(arcMsgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual(["archived"]);
 
     // open auto-unarchives (the convene-at-start path): reopening a retired
     // channel brings it back rather than failing.
@@ -417,9 +422,17 @@ describe("grapevine cli", () => {
     expect(reopen.code).toBe(0);
     expect(JSON.parse(reopen.stdout).channel.unarchived).toBe(true);
 
-    // history is intact (auto-unarchive does NOT clear)
+    // history is intact (auto-unarchive does NOT clear) — one real message,
+    // bracketed by the archive frame and the frame `open`'s auto-unarchive
+    // appends (2026-09-06: the third unarchive path, and the one that used to
+    // be silent).
     const pull = await bunRun(["pull", "au_chan", "--since", "0"]);
-    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+    const auMsgs = JSON.parse(pull.stdout).messages as { kind: string; event?: string }[];
+    expect(auMsgs.filter((m) => m.kind === "message").length).toBe(1);
+    expect(auMsgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual([
+      "archived",
+      "unarchived",
+    ]);
 
     // list no longer shows it archived
     const ch = JSON.parse((await bunRun(["list"])).stdout).channels.find(
@@ -2210,7 +2223,8 @@ describe("topic on an archived channel is refused by the route AND the verb", ()
     expect(stderr).toContain("archived");
     await bunRun(["unarchive", "arch-topic"]);
     const pull = await bunRun(["pull", "arch-topic"]);
-    expect((JSON.parse(pull.stdout) as { messages: unknown[] }).messages.length).toBe(0);
+    const kinds = (JSON.parse(pull.stdout) as { messages: { kind: string }[] }).messages;
+    expect(kinds.filter((m) => m.kind === "topic").length).toBe(0);
   });
 
   test("the ROUTE refuses too — the daemon guard is the real fence, the verb a courtesy", async () => {
@@ -2225,6 +2239,89 @@ describe("topic on an archived channel is refused by the route AND the verb", ()
     expect((await res.json()) as { error: string }).toMatchObject({ error: "archived" });
     await bunRun(["unarchive", "arch-route"]);
     const pull = await bunRun(["pull", "arch-route"]);
-    expect((JSON.parse(pull.stdout) as { messages: unknown[] }).messages.length).toBe(0);
+    const kinds = (JSON.parse(pull.stdout) as { messages: { kind: string }[] }).messages;
+    expect(kinds.filter((m) => m.kind === "topic").length).toBe(0);
+  });
+});
+
+describe("archive and unarchive announce themselves", () => {
+  type Frame = { id: number; from: string; text: string; kind: string; event?: string };
+
+  test("a tailing agent receives both frames live", async () => {
+    await bunRun(["open", "announce-life"]);
+    await bunRun(["send", "announce-life", "before", "--as", "agent"]);
+    const { proc, output } = spawnTail("announce-life", ["--as", "watcher"]);
+    await sleep(700);
+    await bunRun(["archive", "announce-life", "--as", "cole"]);
+    await sleep(400);
+    await bunRun(["unarchive", "announce-life"]);
+    await sleep(600);
+    proc.kill("SIGTERM");
+    const frames = output()
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l) as Frame)
+      .filter((f) => f.kind === "status");
+    expect(frames.map((f) => f.event)).toEqual(["archived", "unarchived"]);
+    // Attribution rides the globally-accepted --as; without it the daemon signs
+    // "system" rather than guessing.
+    expect(frames[0].from).toBe("cole");
+    expect(frames[0].text).toContain("read-only");
+    expect(frames[1].from).toBe("system");
+  });
+
+  test("pull replays them — an agent that was not connected still learns", async () => {
+    await bunRun(["open", "replay-life"]);
+    await bunRun(["send", "replay-life", "a message", "--as", "agent"]);
+    await bunRun(["archive", "replay-life"]);
+    await bunRun(["unarchive", "replay-life"]);
+    const { stdout } = await bunRun(["pull", "replay-life"]);
+    const msgs = (JSON.parse(stdout) as { messages: Frame[] }).messages;
+    expect(msgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual([
+      "archived",
+      "unarchived",
+    ]);
+  });
+
+  test("triage skips them — an archive is an FYI, not a work item", async () => {
+    await bunRun(["open", "triage-life"]);
+    await bunRun(["send", "triage-life", "the actual work", "--as", "agent"]);
+    await bunRun(["archive", "triage-life"]);
+    await bunRun(["unarchive", "triage-life"]);
+    const { stdout } = await bunRun(["triage", "triage-life"]);
+    const { open } = JSON.parse(stdout) as { open: Frame[] };
+    expect(open.map((m) => m.text)).toEqual(["the actual work"]);
+  });
+
+  test("a DISPOSITION status frame is still folded away — `event` is the discriminator", async () => {
+    await bunRun(["open", "disp-life"]);
+    await bunRun(["send", "disp-life", "do this", "--as", "agent"]);
+    await bunRun(["mark", "disp-life", "1", "done", "--as", "agent"]);
+    await bunRun(["archive", "disp-life"]);
+    const { stdout } = await bunRun(["pull", "disp-life"]);
+    const msgs = (JSON.parse(stdout) as { messages: Frame[] }).messages;
+    // The mark's frame is gone (its disposition badges message 1 instead); the
+    // lifecycle frame stays.
+    expect(msgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual(["archived"]);
+  });
+
+  test("an agent cannot forge one: POST /messages still coerces kind to message", async () => {
+    await bunRun(["open", "forge-life"]);
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/forge-life/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ from: "forger", text: "x", kind: "status", event: "archived" }),
+    });
+    const body = (await res.json()) as Frame;
+    expect(body.kind).toBe("message");
+    expect(body.event).toBeUndefined();
+  });
+
+  test("archiving a channel that does not exist does not create one", async () => {
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/ghost-archive/archive`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(404);
+    expect(await listedChannels()).not.toContain("ghost-archive");
   });
 });
