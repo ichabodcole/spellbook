@@ -152,7 +152,7 @@ export function useGrapevine() {
     [channel, setTopic],
   );
 
-  // init (watch.html 745–778): title; resolve identity (I1/R1) BEFORE the
+  // init (inventory C2, I1/R1, C13): title; resolve identity BEFORE the
   // first connect so a remembered join can register presence; then the
   // stream, the two polls, and the hash listener (C3).
   useEffect(() => {

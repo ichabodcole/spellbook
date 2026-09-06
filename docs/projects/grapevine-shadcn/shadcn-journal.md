@@ -321,3 +321,37 @@ poll from the next tool call, saw C7's lock at 1 ms — the poll had already fir
 between the calls, and C6's 1.5 s flash was gone. Create the channel from INSIDE
 the page script (an `EventSource` to a new channel's `/tail` auto-creates it) so
 the watcher is running first.
+
+## 2026-09-05 · 4. Comments out, rules in
+
+**What moved where.** The registry files carry no provenance by construction
+(chapter 3). The last two `watch.html` citations outside `ui/` were in
+`state/useGrapevine.ts` (a line-range cite on the init effect — now the
+inventory row ids, which is what a reader can actually follow) and the L2
+comment in `styles.css` (rewritten in place at the same line count, so the
+blind-set pin stands). The two rules that were living in component headers are
+now house-style, in the house's shape (imperative + boundary check + repeal,
+with a `rule-id`): _a spell's primitives come from the registry; a variant
+extends the recipe, never fights it_ and _the surface dep cap: `@base-ui/react`,
+`lucide-react`, `cn`, `class-variance-authority`_. The components do not restate
+them.
+
+**A ward comment that had become false.** `kit-adoption-ward.test.ts` skipped
+bare specifiers "because this repo has no path aliases (tsconfig declares no
+`paths`)". True at the root, false since chapter 1 — and the ward's green still
+holds for the reason that matters (the per-spell alias maps only inside the
+spell's `surface/`, so nothing aliased can land in `src/kit/`). The sentence now
+says that, and names the one change that would blind the walk. ⚠ A ward's prose
+is part of its result: a green with a false premise in its header is the exact
+shape the gate-honesty file warns about.
+
+**Not rewritten, deliberately:** the conversion project's brief, proposal and
+journals still say "vendored shadcn primitives" — that is what was true when
+they were written, and they are records. `docs/PROJECT-SUMMARY.md` has no such
+line. The kit's `cn.ts` header still says "if a vendored component ever needs
+twMerge, revisit with a fresh dep flag" — that flag is this branch, and the file
+is outside its scope by ruling; the kit extraction project inherits the sentence
+with the question.
+
+Build after the edits: comments are stripped by both Tailwind and the bundler,
+so `dist/` is byte-identical (dist-check: rebuild a no-op, 0 dirty paths).

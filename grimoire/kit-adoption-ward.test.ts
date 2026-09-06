@@ -197,9 +197,12 @@ function surfaceSources(spell: string, dir = join(SRC, spell, "surface"), out: s
  * the house's shared enumerator (lib/import-graph.ts) and is already
  * cross-checked against `Bun.Transpiler` over the whole tree by
  * import-boundary-wards.test.ts — a second hand-rolled scan would be a second
- * denominator that cannot be audited. Bare specifiers are skipped because this
- * repo has no path aliases (tsconfig declares no `paths`), so nothing but a
- * relative specifier can land in `src/kit/`.
+ * denominator that cannot be audited. Bare specifiers are skipped because no
+ * path alias can land in `src/kit/`: the root tsconfig declares no `paths`,
+ * and the per-spell tsconfigs that do (`src/<spell>/tsconfig.json`, the shadcn
+ * `@/*` alias, since 2026-09-05) map only inside that spell's own `surface/`.
+ * A future alias that pointed at the kit would make this walk blind to it —
+ * re-read this sentence before adding one.
  */
 function reachedKitModules(roots: string[], throughKit = true): Set<string> {
   const kit = new Set<string>();

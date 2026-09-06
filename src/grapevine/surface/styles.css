@@ -11,7 +11,7 @@
    grimoire/spell-css-scope-ward.test.ts runs each claim red. */
 @source "./";
 
-/* L2 — grapevine's palette. watch.html's eleven `:root` custom properties,
+/* L2 — grapevine's palette. The original page's eleven `:root` properties,
    each mapped onto the kit name for its role where one exists (bg, surface,
    surface-raised, ink, ink-dim, edge, attention — the imago/mind-mapper
    taxonomy) and declared under its own name where none does (grape, leaf).
