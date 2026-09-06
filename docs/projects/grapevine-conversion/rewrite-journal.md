@@ -303,3 +303,65 @@ reason on the row (C9's window is shorter than a poll; E6 has no emitter; the
 names). Release drove every visible state in the inventory's checklist; dev
 drove load, styling through Bun's `/_bun/asset` stylesheet, join, Shift+Enter,
 send, and the disconnect dot.
+
+## 2026-09-05 · 4. The wards — what a rewrite drifts that a relocation does not
+
+→ `/ward`, "Revising an existing spell". Ticked from the tree, not from memory:
+
+- Source + rebuilt `dist/` in the same change: every chapter that touched
+  `src/grapevine/` carried its build; `bun scripts/dist-check.ts` → 6/6 spells,
+  20 tracked files, rebuild a git no-op, exit 0.
+- Tests green; new behaviour has cells (25 state, 10 release-serve, 2
+  dev-styled).
+- SKILL.md: **unchanged** — its `/watch` paragraph describes behaviour, and the
+  behaviour is the same. No fresh-agent re-run owed.
+- Narrative version (`V1.x` banner): **not bumped** — the banner tracks features
+  and the fidelity ruling forbade any.
+- Plugin version: release-please, from the `feat(grapevine)` commits.
+- Smoke: driven from the dev tree in both modes; no zombie of mine (one daemon
+  from 2026-09-01, cwd the repo root, non-tmp home, predates this session — left
+  alone; Cole's marketplace daemon likewise).
+
+⛔ **What drifted, and the playbook does not list because a relocation cannot
+drift it:** the prose that describes a spell's surface TIER. Three places called
+the watch "Alpine" or counted the spells that build — `docs/PROJECT-SUMMARY.md`
+(the UI line, the spell table's tier column, the "Five spells build" paragraph
+that has now gone stale a third time in the same way) and
+`grimoire/house-style.md`'s port-queue table (grapevine's row removed; the
+paragraph under it re-worded so bounty stands alone). The decay ledger's "drive
+a conjuration through a daemon + thin CLI" row was re-walked (the daemon now
+serves a built surface with mode resolution) and its date bumped. **Not touched,
+deliberately:** the porting playbook (its status line and Applicability are
+stale by exactly this port, and the rewrite phase is the orchestrator's
+deliverable from this journal); `grimoire/scenarios/` (the mage's two rulings —
+fidelity, shadcn home — live in the decision log; a scenario is canon and the
+canon seat's call).
+
+**What I would tell the next agent (bounty, digestify), in order:**
+
+1. Read the destination's exemplars before the page — three spells, one per
+   artefact (§0). The page is decomposed against the destination's questions.
+2. Write the inventory from `grep -n 'x-show\|x-if\|:class\|:disabled'` and
+   every `fetch`/`EventSource`/`setInterval`/`setTimeout`/`localStorage` in the
+   script block. One row each; the empty `catch {}`s are rows too.
+3. Sort the Alpine object's methods by what they touch; the touch-nothing set is
+   your `state/` and gets tests first.
+4. One component per landmark element. Resist a finer grain.
+5. Tokens by ROLE onto kit names; brand pair under its own name; keyframes into
+   `@theme`; recipe disagreements become variants.
+6. The first surface commit is atomic with `build.ts`, `bunfig.toml`, the
+   `.gitignore` un-ignore and `dist/` — the roster ward forbids less. The daemon
+   can lag one commit.
+7. Expect three wards to red on arrival (kit-styling's consumer list,
+   gate-honesty's pin, import-boundary's pin) and one on departure (gate-honesty
+   again). Re-declare by hand; reconcile from the object's sum.
+8. Contract 5 lands on whoever spawns the daemon; grep `spawn(` in the CLI.
+9. Drive with a scoped HOME, a real load per arm (change the query string;
+   assert `navigation[0].type`), and a fixed-port proxy for the reconnect rows.
+   Compare any quirk against the pre-rewrite page from git before calling it a
+   regression.
+10. Bounty differs in one known way: its `template.html` mirrors tested
+    `server.ts` helpers in Alpine (the b16 lockstep). The inventory there must
+    pair each mirror with its helper, and the state module should IMPORT the
+    helper rather than re-mirror it — that is a seam cut the playbook's Phase 1
+    does describe, and grapevine had none.

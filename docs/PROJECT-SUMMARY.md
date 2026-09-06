@@ -41,8 +41,9 @@ in `grimoire/house-style.md`.
 - **Primary Language:** TypeScript (two spells — magpie and imago — also use
   Python 3.11+ for image work, e.g. `rembg`/background removal)
 - **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
-- **UI:** React 19 + Tailwind 4 for rich surfaces (glamour, imago, magpie);
-  Alpine.js over CDN for light surfaces (bounty, digestify, grapevine watch)
+- **UI:** React 19 + Tailwind 4 for built surfaces (astrolabe, glamour,
+  grapevine watch, imago, magpie, mind-mapper); Alpine.js over CDN for the two
+  not yet rewritten (bounty, digestify)
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
 - **Build Tools:** none at the spell level (Bun runs source directly); heavy
   surfaces use a Bun bundler step inside their own setup
@@ -75,7 +76,7 @@ Two kinds: a **cantrip** casts and resolves (no standing state); a
 | Spell       | Kind        | What it does                                                                            | Surface        |
 | ----------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
 | `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
-| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | Alpine watch   |
+| `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | React (built)  |
 | `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | Alpine-CDN     |
 | `glamour`   | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
 | `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                             | React 3-pane   |
@@ -166,12 +167,14 @@ _Five, as of the 2026-08-10 sweep
   and a committed `dist/` that shipped in v2.2.0 — the real release cut the
   proposal asked for. **Left: NOTHING — closed 2026-09-01.** Seam C's canon
   landed (`house-style.md` now opens `## The build` with a per-spell port
-  queue), and astrolabe was **migrated** rather than dropped. **Five spells
-  build** — astrolabe, glamour, imago, magpie, mind-mapper — two of them with
-  built backends, via `spell-kit`; glamour joined 2026-09-03 (`cae26f8`). _Do
-  not hand-keep this roster: `buildableSpells()` in `src/build.ts` counts it,
-  `dist-roster-ward` prints it, and house-style now points there rather than
-  naming spells. This line has gone stale twice._
+  queue), and astrolabe was **migrated** rather than dropped. **Six spells
+  build** — astrolabe, glamour, grapevine, imago, magpie, mind-mapper — two of
+  them with built backends, via `spell-kit`; glamour joined 2026-09-03
+  (`cae26f8`), grapevine 2026-09-05 (the first REWRITTEN surface, not a
+  relocated one — `docs/projects/grapevine-conversion/`). _Do not hand-keep this
+  roster: `buildableSpells()` in `src/build.ts` counts it, `dist-roster-ward`
+  prints it, and house-style now points there rather than naming spells. This
+  line has gone stale twice._
 
   _Reconciled 2026-09-03 @ `cae26f8` — "Four spells build": **FALSIFIED** by the
   glamour port; corrected to five and pointed at `buildableSpells()`. "two of
