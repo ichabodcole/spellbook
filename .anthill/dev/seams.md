@@ -319,6 +319,10 @@ Maybe not all at the same time, but that is the plan."_ So:
 
 > **Every spell gets a build. The open question is ORDER, not WHETHER.**
 
+_⚠ Cole said "app", and that wider scope is **stated and deliberately unrecorded** (ruled 2026-09-05:
+Spellbook scope is enough). This contract is spell-scoped; the quote is attribution, not a house-wide
+standard._
+
 A new spell may start without one while it is genuinely small, and the criterion is what ends that
 exemption automatically — but the exemption is a **staging concession, not a category.** The cost
 being avoided is the conversion: _"when an app starts growing, all of a sudden now you're back into

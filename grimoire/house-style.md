@@ -380,9 +380,17 @@ and so still ship as source. (Contract 3, amended 2026-09-04 by Cole's ruling.)
 **backends too, not just surfaces**, and it is a **plan rather than a
 tendency**: _"I plan to move pretty much every app to a build. Maybe not all at
 the same time, but that is the plan."_ (Cole, 2026-09-04). **Every spell gets a
-build; the open question is order, not whether.** A new spell may start without
-one while it is genuinely small, and Contract 3's criterion ends that exemption
-automatically — it is a staging concession, not a category.
+build; the open question is order, not whether.**
+
+> ⚠ **That quote is ATTRIBUTION, not house canon.** Cole said _app_, and the
+> broader cross-project plan is **stated and deliberately unrecorded** — ruled
+> 2026-09-05: Spellbook scope is enough for now. The rule this page states is
+> spell-scoped; do not promote the quote into a house-wide standard on the
+> strength of appearing here. See
+> `docs/backlog/2026-09-05-a-ratified-manifesto-correction-never-reached-the-manifesto.md`.
+> A new spell may start without one while it is genuinely small, and Contract
+> 3's criterion ends that exemption automatically — it is a staging concession,
+> not a category.
 
 **Direction is still not permission**, though — the queue below governs _when_ a
 spell ports, and nothing about the backend ruling moves a spell up it. What the
