@@ -34,8 +34,9 @@
 //   GET    /channels/:name/wait     — long-poll for new messages [404 if no such channel]
 //   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
 //                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
-//                                    subscribed event includes the current topic and `created` — true when
-//                                    THIS subscribe brought the channel into being (i.e. a mistyped name).
+//                                    subscribed event includes the current topic, `created` (true when THIS
+//                                    subscribe brought the channel into being — i.e. a mistyped name) and
+//                                    `archived` (the channel is read-only; a send will be rejected).
 //
 // READS DO NOT CREATE (2026-09-06). Only an act declaring intent that the
 // channel exist may bring one into being: POST /channels, every append, PUT
@@ -1156,6 +1157,15 @@ async function handle(req: Request): Promise<Response> {
       // loadChannel, which is what does the creating.
       const created = !channelExists(name);
       const ch = loadChannel(name);
+      // ⚠ The LATE JOINER. `created` tells a subscriber it just invented the
+      // channel; nothing told it the channel it joined is already retired. The
+      // lifecycle frame closes the case for an agent that was connected at the
+      // moment, or that pulls history — but a `tail` that arrives afterwards
+      // got an ordinary grounding line and then "found out when its next send
+      // was rejected", which is verbatim the failure the frame was added to
+      // end. Read off the MARKER, not `ch.archived`: the marker file is the
+      // source of truth and the in-memory flag only mirrors it.
+      const archived = existsSync(archivedPath(name));
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       const alias = url.searchParams.get("as");
       // V1.7 — a human-driven connection (the watch, or `tail --human`) flags
@@ -1198,7 +1208,7 @@ async function handle(req: Request): Promise<Response> {
           // grounding context before any messages arrive.
           controller.enqueue(
             enc.encode(
-              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1, created })}\n\n`,
+              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1, created, archived })}\n\n`,
             ),
           );
           // Replay backlog before live tail begins.

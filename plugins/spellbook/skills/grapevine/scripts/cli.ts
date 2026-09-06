@@ -190,6 +190,11 @@ type TailPayload = {
   // True when THIS subscribe created the channel — the signal that separates
   // "quiet channel" from "you tailed a name that did not exist".
   created?: boolean;
+  // True when the channel is already archived (read-only) at subscribe time —
+  // the signal for a LATE joiner, who would otherwise learn it from a rejected
+  // send. The lifecycle frame only reaches an agent that was connected at the
+  // moment, or that pulls history.
+  archived?: boolean;
   // message fields
   id?: number;
   from?: string;
@@ -808,6 +813,10 @@ async function cmdTail(
               process.stderr.write(
                 `# created ${payload.channel} — this tail brought it into being (check the name)\n`,
               );
+            if (payload.archived)
+              process.stderr.write(
+                `# ${payload.channel} is archived — read-only; a send will be rejected\n`,
+              );
             // Structured grounding on stdout (F3/F7) — under the default
             // Wiring-B Monitor, stdout surfaces as notifications, so a fresh
             // subscriber actually sees the topic + that earlier history exists.
@@ -817,11 +826,33 @@ async function cmdTail(
               grounded = true;
               const latest = typeof payload.latest_id === "number" ? payload.latest_id : 0;
               const earlier = highestSeen < 0 ? latest : Math.max(0, Math.min(highestSeen, latest));
-              // `created` joins the gate on purpose: a channel this subscribe
-              // just made has no topic and no history, so the old condition is
-              // exactly the case that emits NOTHING — which is the silence
-              // being fixed.
-              if (earlier > 0 || payload.topic || payload.created) {
+              // `created` and `archived` join the gate on purpose. A channel
+              // this subscribe just made has no topic and no history, so the
+              // old condition (`earlier > 0 || topic`) is exactly the case that
+              // emits NOTHING; and an ARCHIVED channel's grounding line was
+              // indistinguishable from a healthy one's, so a late joiner still
+              // learned the channel was retired only when its send bounced.
+              //
+              // ⚠ The hints ACCUMULATE into a list rather than assigning to one
+              // field. They used to be three assignments to `grounding.hint`,
+              // ordered so the most important won — which is a hint that can
+              // silently lose to another hint, the failure mode this whole
+              // branch is about, sitting in the fix for it. A list cannot
+              // overwrite: an archived channel WITH history now says both.
+              const hints: string[] = [];
+              if (earlier > 0)
+                hints.push(
+                  `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`,
+                );
+              if (payload.created)
+                hints.push(
+                  `this tail created ${payload.channel} — no such channel existed; check the name, or another party has yet to open it`,
+                );
+              if (payload.archived)
+                hints.push(
+                  `${payload.channel} is archived — read-only; a send will be rejected until someone unarchives it`,
+                );
+              if (earlier > 0 || payload.topic || payload.created || payload.archived) {
                 const grounding: Record<string, unknown> = {
                   kind: "grounding",
                   channel: payload.channel,
@@ -829,16 +860,9 @@ async function cmdTail(
                   earlier,
                 };
                 if (payload.topic) grounding.topic = payload.topic;
-                if (earlier > 0)
-                  grounding.hint = `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`;
-                // LAST, so it cannot be silently overwritten by the backfill
-                // hint. A created channel has no history, so the two are
-                // mutually exclusive today — but a hint that loses to another
-                // hint is the failure mode this whole branch is about.
-                if (payload.created) {
-                  grounding.created = true;
-                  grounding.hint = `this tail created ${payload.channel} — no such channel existed; check the name, or another party has yet to open it`;
-                }
+                if (payload.created) grounding.created = true;
+                if (payload.archived) grounding.archived = true;
+                if (hints.length) grounding.hint = hints.join(" · ");
                 process.stdout.write(`${JSON.stringify(grounding)}\n`);
               }
             }

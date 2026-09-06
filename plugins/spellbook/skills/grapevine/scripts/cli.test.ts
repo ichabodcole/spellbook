@@ -2408,3 +2408,62 @@ describe("a lifecycle frame is emitted only when the state actually flipped", ()
     expect(streamed).toEqual(["unarchived"]);
   });
 });
+
+describe("a late joiner is told the channel is archived", () => {
+  // The lifecycle frame closes gap 3 for an agent that was CONNECTED at the
+  // moment, or that pulls history. A `tail` that arrives afterwards got an
+  // ordinary grounding line and then learned the truth from a rejected send —
+  // verbatim the failure the frame was added to end.
+  type Grounding = {
+    channel: string;
+    topic?: string;
+    archived?: boolean;
+    created?: boolean;
+    hint?: string;
+  };
+  const groundingOf = (out: string) => JSON.parse(out.trim().split("\n")[0]) as Grounding;
+
+  test("the subscribe event carries `archived`, and tail surfaces it", async () => {
+    await bunRun(["open", "late-arch", "--topic", "r"]);
+    await bunRun(["send", "late-arch", "one", "--as", "agent"]);
+    await bunRun(["archive", "late-arch", "--as", "cole"]);
+
+    // The wire first — the daemon is where the fact lives.
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/late-arch/tail?as=probe`);
+    const reader = res.body?.getReader();
+    const first = new TextDecoder().decode((await reader?.read())?.value);
+    await reader?.cancel();
+    expect(first).toContain('"archived":true');
+
+    const { proc, output } = spawnTail("late-arch", ["--as", "latecomer"]);
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const g = groundingOf(output());
+    expect(g.archived).toBe(true);
+    expect(g.hint).toContain("is archived");
+    expect(g.hint).toContain("a send will be rejected");
+  });
+
+  test("a healthy channel says nothing about being archived", async () => {
+    await bunRun(["open", "late-healthy", "--topic", "h"]);
+    await bunRun(["send", "late-healthy", "one", "--as", "agent"]);
+    const { proc, output } = spawnTail("late-healthy");
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const g = groundingOf(output());
+    expect(g.archived).toBeUndefined();
+    expect(g.hint ?? "").not.toContain("archived");
+  });
+
+  test("the hints ACCUMULATE — an archived channel with history says both, neither overwriting the other", async () => {
+    const { proc, output } = spawnTail("late-arch", ["--as", "second-latecomer"]);
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const hint = groundingOf(output()).hint ?? "";
+    // Before this they were three assignments to one field, ordered so the most
+    // important won — a hint that can silently lose to another hint, sitting
+    // inside the fix for exactly that failure mode.
+    expect(hint).toContain("earlier message(s) exist");
+    expect(hint).toContain("is archived");
+  });
+});
