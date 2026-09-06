@@ -33,3 +33,38 @@ Live log of choices and the options not taken. Append; never reconstruct.
   do the rewrite).
 - **Playbook's role: map of the toolchain and the relocate half, not a script
   for the rewrite** (Cole, 2026-09-05).
+
+## 2026-09-05 — the implementing agent
+
+- **Surface commit is atomic with the build, `dist/` and the un-ignore.** The
+  dist-roster ward puts a spell in the roster the moment
+  `src/<spell>/surface/index.html` exists, so a source-only chapter reds the
+  gate. Not taken: surface then build as two commits (the brief's chapter list
+  reads that way; the ward forbids it). The daemon lags one commit — green both
+  sides, old page still served in between.
+- **Close-channel confirmation is the vendored `AlertDialog`, not
+  `window.confirm`.** Same text (C11), same forced choice, and a browser agent
+  can drive it. Not taken: keeping `window.confirm` (behaviour-identical, but
+  not a shadcn primitive where one exists, per the brief's rule).
+- **Wire types are a 20-line copy in `state/types.ts`.** Grapevine's backend
+  shares nothing, so it has no `shared/` folder; an import from
+  `plugins/…/scripts/daemon.ts` would be a surface→backend reach across the
+  artifact boundary. Not taken: minting `shared/` for one type (that is the
+  seam-cut of a spell that has no seam).
+- **Tokens: kit names by role, own names for the brand pair.** `--warn` became
+  `attention` (mind-mapper's name for the same role); `grape`/`leaf` stay
+  grapevine's. Not taken: `--color-accent` for grape — it is a shadcn L1 name
+  and imago's brand slot; the collision is the one `base.css` warns about.
+- **Recipe/page disagreements are Button/Badge variants.** Not taken: stacking
+  overrides on a recipe (`cn()` does not merge; the later class does not win).
+- **No light mode, no theme pre-paint script.** The page had none; the fidelity
+  ruling forbids adding one. The kit's `[data-theme="light"]` block is inert
+  without the attribute.
+- **Web fonts fall through to system faces.** The Google Fonts links go with the
+  CDN (brief); the `--font-*` stacks keep Inter / JetBrains Mono first. Not
+  taken: vendoring the font files into `dist/` (new weight in the artifact for a
+  restyle that is not meant to be pixel-faithful).
+- **Two pin re-declarations, not one.** Chapter 3 declares the three arrivals;
+  chapter 4 declares `watch.html`'s departure. Not taken: one combined paragraph
+  on a squashed surface+daemon commit — the daemon chapter has its own tests and
+  its own failure modes and deserves its own sha.

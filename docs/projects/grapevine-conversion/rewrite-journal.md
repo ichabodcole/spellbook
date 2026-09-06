@@ -137,3 +137,82 @@ to see a page's state machine; do it before the component split.
 **Verification.** `bun test src/grapevine/surface/state/` — 25 pass / 0 fail.
 Tests sit beside their subjects from the start (playbook Gotcha 6's remedy), so
 no `plugins/ → src/` edge ever exists.
+
+## 2026-09-05 · 2. The surface — split, restyle, build, and land it atomically
+
+**Order within the step.** Vendored primitives first (so the components have
+something to compose), `styles.css` second (so the primitives' class vocabulary
+resolves), the hook third, components last, then `build.ts` + `bunfig.toml` +
+`.gitignore` + `bun run build grapevine` — **in one commit**.
+
+⛔ **Why one commit, and the playbook only half says it.** Phase 2's "land as
+one commit when neither half is green alone" was written for the seam. It
+applies to a rewrite's first surface commit for a different reason: the
+dist-roster ward derives its roster from `src/<spell>/surface/index.html`
+existing, so the moment that file is committed grapevine must ALSO have ≥1
+tracked file in `dist/` and two `!` lines in `.gitignore`, or the gate reds. A
+"surface source only" chapter cannot be green. The daemon, however, CAN lag: at
+this commit `dist/` exists and the daemon still serves `watch.html` — green,
+shippable, and the old page is what a consumer would get.
+
+**The decisions a rewrite forces that a relocation does not:**
+
+- _Component split._ → one pass over the markup (515–706), one component per
+  landmark element: `<header>` → `Header`; `aside.left` → `ChannelRail`;
+  `main#stream` → `MessageFeed` + `MessageRow`; the sticky foot of `main` →
+  `Composer` / `ArchivedNote`; `aside.right` → `Roster` + `IdentityBox`;
+  `.status` → `StatusBar`. Every `x-show` in the inventory has exactly one home.
+  I did not invent a smaller grain; the page's own landmarks were the right size
+  (8 components for 190 lines of markup).
+- _CSS to tokens._ → the 11 `:root` properties, each mapped by ROLE to the kit's
+  name where one exists (`--bg`→`bg`, `--bg-elev`→`surface`,
+  `--bg-card`→`surface-raised`, `--line`→`edge`, `--ink`→`ink`,
+  `--ink-mute`→`ink-dim`, `--warn`→`attention` per the imago/mind-mapper
+  taxonomy) and kept under its own name where none does (`grape`, `grape-soft`,
+  `leaf`, `leaf-soft`). Three values the page hard-coded inline became tokens
+  too (`on-grape` white, `danger` #ff6b6b, `announce-wash` as a `color-mix()` —
+  a custom property may hold a `color-mix()` expression and Tailwind's
+  `bg-announce-wash` emits `var()` to it). Then every CSS rule became utilities
+  on those tokens in the component; the two `@keyframes` moved into `@theme` as
+  `--animate-*` so the utility carries the keyframes. The rule for what stays in
+  `styles.css`: only what a utility cannot express (keyframes, tokens).
+  Grapevine's is 74 lines, half of them prose.
+- _Where the shadcn recipe and the page's look disagree._ → a **variant**, not a
+  stacked override: `cn()` is dep-free and does not conflict-resolve, so
+  `Button` grew `primary` / `accent` / `joined`, `Badge` grew `count`, and the
+  `Textarea`/`Input` fill moved to `secondary` (cards, not the page ground). The
+  L1 aliases do the rest (`ring`→`grape`, `secondary`→`surface-raised`).
+- _`window.confirm` → `AlertDialog`._ Same text, same forced choice, drivable by
+  a browser agent. Recorded in the decision log.
+- _Web fonts._ The Google Fonts `<link>`s go with the CDN; the `--font-*` stacks
+  keep the family names and fall through to system faces. No build step can
+  replace a web font; the restyle ruling absorbs the difference.
+
+**Gotchas:**
+
+- ⚠ `bunx biome check` reds on `useExhaustiveDependencies` for a plain
+  `const setTopic = (t) => …` used inside `useCallback`s, and for a layout
+  effect keyed on `[feed]` whose body does not read `feed`. Fix: wrap the setter
+  in `useCallback`, and key the scroll effect on a value it reads
+  (`feed.messages.length`). Biome, not the compiler — the gate's `check` arm.
+- ⚠ `kit-styling-ward` reds on arrival — its `KIT_CONSUMERS` is a declared list
+  re-derived from the tree (every `src/*/surface/styles.css` that imports
+  `kit/theme/base.css`, comment-stripped). Importing the kit stylesheet puts you
+  in it; add the spell to the list. Its divergent-token cell then requires your
+  `--color-edge` to differ from every other consumer's — it does.
+- ⚠ `gate-honesty` reds on arrival (expected). Three files enter: `styles.css`
+  74, `index.html` 23, `bunfig.toml` 2. The arithmetic would not close from the
+  last paragraph's total (4,611); `git log -p` on the object showed the previous
+  pin was re-declared without a paragraph. Reconcile from the object's own sum.
+- ⚠ grepping the built CSS for an arbitrary-value utility: the sheet escapes
+  `[`/`%` (`.grid-cols-\[280px…`), so a regex for the class as written in markup
+  counts 0. Use `grep -F 'grid-cols-\['`.
+- ⚠ `git ls-files`-driven wards read the INDEX: `git add` the new `dist/` and
+  the surface BEFORE `bun test grimoire/`, or dist-roster reports the spell
+  absent (playbook Gotcha 4, and it fired).
+
+**Verification at this step.** `bun run build grapevine` → 3 files
+(`index.html`, `index-<hash>.js`, `index-<hash>.css`, 28.9 KB of CSS);
+`bun test grimoire/ src/grapevine/` → 122 pass / 0 fail;
+`dist roster: 6 buildable spell(s) … grapevine:3`. The surface is NOT yet driven
+— the daemon serves it next step.
