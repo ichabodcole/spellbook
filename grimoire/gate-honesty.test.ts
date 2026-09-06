@@ -194,6 +194,18 @@ import { join } from "node:path";
 //      +1  src/grapevine/surface/index.html   23 -> 24
 // the pre-boot background literal's comment now names the token it mirrors
 // (`--color-bg`) — the verifier's item 4. 3,723 + 1 = 3,724 exactly.
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE SHADCN SETUP — 22/3,724 ->
+// 22/3,758. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +34  src/grapevine/surface/styles.css   74 -> 108
+// the L1 alias block grew from the eight names the hand-rolled primitives
+// consumed to the sixteen the registry set consumes, plus a `:root` pair for
+// the two raw `var()`s a recipe reaches for, the pinned `dark` variant, and
+// the button docs' pointer base rule. 3,724 + 34 = 3,758 exactly. ⚠ The new
+// ROOT `bunfig.toml` (the workspace's hoisted-linker pin) is NOT here and
+// that is correct: the instrument roots its walk at the skills dir and
+// `src/`, so a repo-root file is outside its population, unlike the per-spell
+// bunfigs, which are inside it.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
@@ -209,7 +221,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/imago/surface/index.html": 13,
   "src/magpie/surface/index.html": 13,
   "src/glamour/surface/styles.css": 25,
-  "src/grapevine/surface/styles.css": 74,
+  "src/grapevine/surface/styles.css": 108,
   "src/grapevine/surface/index.html": 24,
   "src/grapevine/bunfig.toml": 2,
   "src/mind-mapper/bunfig.toml": 4,

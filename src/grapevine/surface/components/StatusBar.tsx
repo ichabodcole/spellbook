@@ -1,7 +1,7 @@
 // T1, T2 — the sticky status line: a pulsing dot (leaf; attention when
 // disconnected) and the connection text.
 
-import { cn } from "../../../kit/lib/cn";
+import { cn } from "cn";
 
 export function StatusBar({ status, disconnected }: { status: string; disconnected: boolean }) {
   return (

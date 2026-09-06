@@ -37,18 +37,29 @@
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* L1 — shadcn variable names mapped onto the house token layer, so the
-     vendored ui/ components keep their stock class vocabulary while resolving
-     to spell tokens. var() references, not copied values. Only the names the
-     vendored set consumes. */
+  /* L1 — the shadcn names the installed registry set consumes (button,
+     badge, input, textarea, alert-dialog, dialog, context-menu, field,
+     label, switch, toggle, toggle-group, popover, separator, empty), each a
+     var() onto a grapevine token above. Never a value: the recipes keep
+     their stock class vocabulary and resolve to this spell's palette. Add
+     a name here when a newly added component consumes one; remove nothing
+     a shipped component still reads. */
   --color-background: var(--color-bg);
   --color-foreground: var(--color-ink);
+  --color-primary: var(--color-grape);
+  --color-primary-foreground: var(--color-on-grape);
+  --color-secondary: var(--color-surface-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-raised);
+  --color-muted-foreground: var(--color-ink-dim);
+  --color-accent: var(--color-surface-raised);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-grape);
   --color-popover: var(--color-surface-raised);
   --color-popover-foreground: var(--color-ink);
-  --color-border: var(--color-edge);
-  --color-secondary: var(--color-surface-raised);
-  --color-muted-foreground: var(--color-ink-dim);
-  --color-ring: var(--color-grape);
 
   /* The rail's new-channel flash (C6) and the status dot's pulse (T1). */
   --animate-flash: flash 1.5s ease-out;
@@ -70,5 +81,28 @@
     50% {
       opacity: 1;
     }
+  }
+}
+
+/* Two recipes reach past the utility layer with a raw var() — the secondary
+   button's hover is `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`.
+   Those names exist here as aliases of the same tokens; nothing else defines them. */
+:root {
+  --foreground: var(--color-ink);
+  --secondary: var(--color-surface-raised);
+}
+
+/* The registry recipes carry `dark:` arms tuned for a dark ground. Tailwind's
+   default `dark:` follows the OS (prefers-color-scheme), which would make this
+   always-dark surface look different per machine. Pin the variant to a class
+   and set it on <html> in index.html, so the dark arms always apply. */
+@custom-variant dark (&:is(.dark *));
+
+/* Tailwind v4 gives buttons the default cursor; the registry's button docs
+   offer this base rule to keep the pointer, and the original page had it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }

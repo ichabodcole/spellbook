@@ -177,3 +177,147 @@ rather than let the next reader wonder why the pin did not move.
 ⚠ Biome reformats a one-line `"workspaces": ["src/grapevine"]` into three lines
 — run `bunx biome check --write package.json` before the gate, or the `check`
 arm reds on the root manifest.
+
+## 2026-09-05 · 3. Primitives regenerated, variants re-expressed, the feature components on them — one commit
+
+**Why one commit and not the brief's two.** A commit with the registry files in
+and the feature components still asking for `variant="primary"` and
+`size="auto"` is gate-green (Bun does not type-check; cva ignores an unknown
+variant) and **visibly broken** — every primary button loses its fill. The
+rewrite journal's rule for the first surface commit applies for the same reason:
+land the halves together when one alone is not something a consumer could be
+handed. Chapter 4 (comments, house-style) and 5 (wards) stay separate.
+
+**Order.** `add` from the config dir (`--overwrite --yes`, the five named plus
+the eight) → biome on `ui/` → the registry-file biome errors moved into a
+`biome.json` override → `styles.css` (L1 grown, raw vars, dark pin) +
+`index.html` (`class="dark"`) → the two cva extensions → the seven feature
+components → build → `tsc -p src/grapevine` → the drive.
+
+**What the CLI did that the brief did not say:**
+
+- ⛔ **Fifteen files, not thirteen.** `field` pulls `label`; `toggle-group`
+  pulls `toggle`. Registry dependencies arrive without being named. Both are now
+  under `surface/ui/` and in `info`'s installed list.
+- ⛔ **`add --overwrite` replaced the five whole**, header and all — which is
+  the point: there is no provenance to strip from a registry file, because the
+  registry owns the file. The variant extensions (`accent`, `joined`, `count`)
+  are the ONLY hand edits under `ui/`, each two lines inside the cva config with
+  a one-line comment, and the next `add --overwrite` erases them — that is what
+  the skill's smart-merge (`--diff`) is for.
+- ⚠ **Biome reds on registry code**: `label.tsx` (`noLabelWithoutControl`),
+  `field.tsx` (`useSemanticElements`, `noDoubleEquals`). Fixing them in the
+  files is erased on update. The fix is a `biome.json` `overrides` entry scoped
+  to `src/*/surface/ui/**` turning those three rules off — the linter's opinion
+  of registry-managed code lives in the linter's config, and the glob already
+  covers the next spell.
+- ⚠ **Two recipes reach past the utility layer with raw `var()`s**:
+  `var(--foreground)` and `var(--secondary)` inside the secondary button's
+  `color-mix()` hover, and `var(--radius-md)` in the `sm`/`xs` sizes. Tailwind
+  emits `--radius-md` itself; the other two exist only because `styles.css` now
+  declares them on `:root` as aliases of the same tokens. Symptom without them:
+  the hover resolves to `color-mix(in oklch, , )` — invalid, dropped, no hover.
+- ⚠ **Thirty `dark:` arms, OS-dependent by default.** Tailwind v4's `dark:`
+  follows `prefers-color-scheme`, so the recipes' dark arms (`dark:bg-input/30`
+  on every input, `dark:border-input` on outline buttons) would apply on a
+  dark-mode Mac and not on a light-mode one — one surface, two looks. Pinned
+  with `@custom-variant dark (&:is(.dark *))` + `class="dark"` on `<html>`,
+  which is what `init` writes. Verified in the built sheet: 58 `.dark`
+  selectors, zero `prefers-color-scheme`.
+- ⚠ **The recipes' open/close animations are inert.** `animate-in`, `fade-in-0`,
+  `zoom-in-95` come from `tw-animate-css`, which `init` would install and `add`
+  does not; it is outside the cap, so the dialog appears and disappears without
+  a transition. 0 matches in the built CSS. Not taken; the UX branch can decide.
+- ⚠ **Tailwind v4 buttons lose the pointer cursor.** The button docs ship a base
+  rule for it (`@layer base { button:not(:disabled) … cursor: pointer }`); the
+  original page had the pointer, so the rule is in. ⚠ Measure it on an ENABLED
+  button: my first check read the disabled send button and reported `default`,
+  which is the `:not(:disabled)` doing its job.
+- ⚠ **`cn` in the feature components too.** With `cn` from the registry's
+  package in every `ui/` file, the components import the same `cn` — one
+  semantics per spell. The kit's `cn.ts` is no longer imported by grapevine at
+  all; mind-mapper and glamour still use it. (The kit extraction project
+  inherits the question of which `cn` the kit ships.)
+- The CLI wrote `cn` into the member manifest and root `bun.lock` (+3 lines) and
+  hoisted it to the root `node_modules` — the workspace working as measured.
+
+**Sizes** (`dist/`, bytes, before → after): html 906 → 919 (`class="dark"`); js
+1,203,995 → 1,309,965 (**+105,970**, cva + `cn` + the Base UI parts the five
+recipes pull — `useRender`, `mergeProps`, `Input`, `Button`); css 30,375 →
+74,755 (**+44,380**, and most of it is the six installed-but-unused components:
+`@source "./"` scans them, so their utilities ship now and get used on the UX
+branch). `tsc -p src/grapevine`: **0 errors** (the alias resolves; the ten
+`cli.test.ts` narrowings are outside this tsconfig).
+
+### Visible differences, each with its recipe cause
+
+Screenshots: `scratchpad/shots/before-NN-*.png` / `after-NN-*.png`, 1280×800,
+the same fixtures on the same daemon (`home-before`, release mode, through the
+proxy). Tokens identical throughout — every colour below is the same hex as
+before; what moved is shape, size and weight.
+
+| #   | where               | before                                                                             | after                                                                                                                                                                                     | cause                                                                             |
+| --- | ------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1   | rail rows (01)      | 28 px rows, count pill `py-px`                                                     | 32 px rows, count pill 20 px high (`h-5 rounded-4xl`)                                                                                                                                     | badge base recipe                                                                 |
+| 2   | alias input (01/04) | mono 12 px, 30 px, raised fill                                                     | sans 14 px, `h-8`, `rounded-lg`, transparent + `edge/30` fill                                                                                                                             | input recipe (`md:text-sm`, `dark:bg-input/30`)                                   |
+| 3   | join toggle (01/04) | mono 12 px, `py-1.5`                                                               | sans 12.8 px, `h-7`, radius `min(--radius-md,12px)`                                                                                                                                       | button `size="sm"`; colours are the spell's `accent`/`joined` variants, unchanged |
+| 4   | send (04/05)        | 38 px, `px-4`, semibold                                                            | `h-8`, `px-2.5`, medium                                                                                                                                                                   | button `default` size/variant; `primary`→grape unchanged                          |
+| 5   | composer (04/05)    | `rounded-[10px]`, raised fill, `px-3.5 py-2.5`, one fixed row                      | `rounded-lg`, transparent + `edge/30`, `px-2.5 py-2`, grows with content to `max-h-40`                                                                                                    | textarea recipe (`field-sizing-content`); `min-h-0` keeps it one row when empty   |
+| 6   | focus (05)          | border only                                                                        | 3 px ring at `ring/50` + border                                                                                                                                                           | input/textarea/button `focus-visible:ring-3`                                      |
+| 7   | reply button (04)   | 11 px mono text, hover colour only                                                 | `xs` pill, 12 px sans, muted hover fill                                                                                                                                                   | button `ghost` + `size="xs"`                                                      |
+| 8   | 🗑 and ✕ (02/05)    | text-sized ghost                                                                   | 24 px square (`icon-xs`)                                                                                                                                                                  | button `size="icon-xs"`; the 🗑 keeps its red hover (spell)                       |
+| 9   | close dialog (03)   | bordered card, `shadow-xl`, `bg-background/70 blur-sm` overlay, title 14 / body 12 | `rounded-xl` + `ring-foreground/10`, `bg-black/10 blur-xs` overlay, footer band `bg-muted/50` with top border, title 16 / body 14, stock Cancel (`outline`) / Action (`default`) at `h-8` | alert-dialog recipe; no open/close animation (tw-animate-css not installed)       |
+| 10  | empty feed (07)     | leaf + `ink-dim` text at `my-[60px]`                                               | `Empty` block, `p-6 gap-4`, text `sm/relaxed muted-foreground` — same colour, leaf ~26 px lower                                                                                           | empty recipe                                                                      |
+| 11  | You divider (01)    | `border-t` + `pt-4`                                                                | 1 px `Separator` (`bg-border`) with `mb-2` — heading ~2 px higher                                                                                                                         | separator recipe                                                                  |
+| 12  | cursor              | pointer                                                                            | pointer (kept via the docs' base rule; would be `default`)                                                                                                                                | Tailwind v4 default + button docs                                                 |
+
+Unchanged, by inspection of the pairs: header, rail active/archived/new
+treatment, message cards and kinds (topic dashed, announcement wash), reply
+quote, roster, status bar and dot, archived note, colours everywhere.
+
+### The drive — 72 rows
+
+Instruments: `scratchpad/proxy.ts` on `47111` in front from the first load (with
+`INJECT_BAD=1` for E6), `page.route` for the failure arms and H3's isolation,
+`keyboard.type` with a per-key delay for every typed row,
+`performance.getEntriesByType("navigation")[0].type` for every "real load"
+claim, and one daemon per mode with its own `GRAPEVINE_HOME` (`home-before`
+release, `home-dev` dev — the release daemon serves the `dist/` DIRECTORY, so
+after the rebuild the same daemon and fixtures served the after surface; that is
+what made the pairs comparable).
+
+- **Driven in the browser (release unless noted): 62.** R1–R6; E1–E7 (E3 both
+  arms: `scrollTop` stayed 0 / gap 1 px; E4/F9 ids 15–16 sent during the gap
+  arrived once each in order; E5 six toggles → six `tail` requests, one send →
+  one row; E6 through the injector: 17 rows, no garbage, 0 console errors,
+  stream survived; E7 10.5 s idle); C1 (three arms), C2, C3 (rail click →
+  `reload`), C4, C5, C6 (row and `animate-flash` at 2,297 ms, nothing else
+  flashing), C7, C8, C9 (dev: `no channels yet` 161 → 3,180 ms), C10 (both arms;
+  current → `#lobby`, `reload`), C11 (cancel and confirm, text verbatim), C12,
+  C13, C14; H1–H3 (H3's poll source isolated: header `poll only`, no row, then
+  the row replayed on reconnect); F1–F9 (F8: 81-char snippet); P1–P6 (P6 failure
+  arm: routed 409 and abort both kept draft AND banner; the daemon's own 409 on
+  the archived channel shown with curl); S1–S3; I1–I7 (I2 typed: focus `INPUT`
+  through every key, storage `cole` until Enter, then `verifier`, untouched by
+  further typing; I7 both arms); T1, T2 (release and dev, dot
+  `rgb(240,178,101)`), N1, N2 (`since=14` on every retry, ~1 s apart); X1, X2;
+  D1, D2, D5.
+- **Test cells: 6.** C15 (`<title>grapevine</title>` in `index.html`,
+  unchanged), F10, P7, X3, D3, D4 — all in the gate.
+- **Not driven: 1.** R7 — undrivable by construction (the verify journal's
+  reason stands).
+- **Partial, stated:** F3's `status` kind — the daemon coerces `kind:"status"`
+  on `POST /messages` to `message`, so no emitter exists on this branch either;
+  topic and announcement kinds driven. S3's immediate result is the shared race
+  the inventory already records.
+
+⚠ **`URL` is not a global inside `browser_run_code_unsafe`.** A batch that
+parsed request URLs with `new URL(...)` threw `ReferenceError` after its
+side-effects had run; a regex over the string works. Write the extraction before
+the actions, and make batches re-runnable.
+
+⚠ **The 3 s poll beats a two-call drive.** `open` from the shell, then a page
+poll from the next tool call, saw C7's lock at 1 ms — the poll had already fired
+between the calls, and C6's 1.5 s flash was gone. Create the channel from INSIDE
+the page script (an `EventSource` to a new channel's `/tail` auto-creates it) so
+the watcher is running first.

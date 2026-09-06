@@ -2,10 +2,10 @@
 // banner above it, and the archived note that replaces it.
 
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/ui/button";
+import { Textarea } from "@/ui/textarea";
 import { aliasColor, snippet } from "../state/feed";
 import type { Message } from "../state/types";
-import { Button } from "../ui/button";
-import { Textarea } from "../ui/textarea";
 
 export function ArchivedNote() {
   return (
@@ -50,8 +50,8 @@ export function Composer({
           <span className="flex-1 truncate">{snippet(replyingTo.text || "")}</span>
           <Button
             variant="ghost"
-            size="auto"
-            className="ml-auto px-1 text-xs"
+            size="icon-xs"
+            className="ml-auto"
             aria-label="Cancel reply"
             onClick={onCancelReply}
           >
@@ -60,7 +60,7 @@ export function Composer({
         </div>
       )}
       <form
-        className="flex gap-2"
+        className="flex items-end gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           submit();
@@ -68,7 +68,7 @@ export function Composer({
       >
         <Textarea
           ref={inputRef}
-          className="max-h-40 flex-1 resize-none text-sm leading-normal"
+          className="max-h-40 min-h-0 flex-1 resize-none"
           rows={1}
           value={draft}
           placeholder={`message as ${alias}…`}
@@ -81,13 +81,7 @@ export function Composer({
             }
           }}
         />
-        <Button
-          type="submit"
-          variant="primary"
-          size="auto"
-          className="self-end px-4 py-2.5 text-sm"
-          disabled={!draft.trim()}
-        >
+        <Button type="submit" disabled={!draft.trim()}>
           send
         </Button>
       </form>

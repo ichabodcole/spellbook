@@ -1,23 +1,25 @@
 // C4–C11 — the left rail: one row per channel, the active / new / archived
-// states, the subscriber count, and the close button with its confirmation.
-// The confirm is the vendored AlertDialog (the page used window.confirm; the
-// text is the same, and it still forces a choice).
+// states, the subscriber count, and the close button with its confirmation
+// (an AlertDialog with the same text as the original confirm; it still
+// forces a choice).
 
+import { cn } from "cn";
 import { useState } from "react";
-import { cn } from "../../../kit/lib/cn";
-import { channelHref } from "../state/channel";
-import { closeConfirmText } from "../state/feed";
-import type { ChannelRow } from "../state/types";
 import {
   AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "../ui/alert-dialog";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+} from "@/ui/alert-dialog";
+import { Badge } from "@/ui/badge";
+import { Button } from "@/ui/button";
+import { channelHref } from "../state/channel";
+import { closeConfirmText } from "../state/feed";
+import type { ChannelRow } from "../state/types";
 
 export function ChannelRail({
   channels,
@@ -44,7 +46,7 @@ export function ChannelRail({
             <li key={c.name} className="p-0">
               <div
                 className={cn(
-                  "group flex items-stretch gap-0.5 rounded-md transition-colors hover:bg-surface-raised",
+                  "group flex items-center gap-0.5 rounded-md transition-colors hover:bg-surface-raised",
                   active && "bg-surface-raised",
                   c.isNew && "animate-flash",
                 )}
@@ -59,8 +61,7 @@ export function ChannelRail({
                   <span
                     className={cn(
                       "min-w-0 flex-1 truncate",
-                      // C14 — muted whenever archived, active or not (the original's
-                      // `.row.archived .name` outranked the active colour on the span).
+                      // C14 — muted whenever archived, active or not.
                       c.archived && "text-ink-dim",
                     )}
                   >
@@ -79,8 +80,8 @@ export function ChannelRail({
                 </a>
                 <Button
                   variant="ghost"
-                  size="auto"
-                  className="px-1.5 text-[13px] opacity-0 hover:bg-danger/10 hover:text-danger group-hover:opacity-100"
+                  size="icon-xs"
+                  className="opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
                   title={`Close channel “${c.name}” (deletes message log)`}
                   onClick={() => setPending(c.name)}
                 >
@@ -98,19 +99,15 @@ export function ChannelRail({
             <AlertDialogDescription>{pending && closeConfirmText(pending)}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <Button variant="outline" onClick={() => setPending(null)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              className="px-3"
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
               onClick={() => {
                 if (pending) onClose(pending);
                 setPending(null);
               }}
             >
               Close channel
-            </Button>
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
