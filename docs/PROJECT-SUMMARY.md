@@ -257,9 +257,9 @@ aesthetic/naming pass.
   the traditional app's input→service→output pipeline.
 - **Cantrip↔conjuration is a live spectrum, not a fixed label** — magpie just
   crossed it, gaining a daemon and a surface as its job grew multi-phase.
-- **Two deliberate surface tiers:** React studios (glamour, imago, magpie) for
-  rich canvases; Alpine-CDN (bounty, digestify, grapevine watch) for
-  boards/reviews.
+- **Two deliberate surface tiers:** built React surfaces (astrolabe, glamour,
+  grapevine watch, imago, magpie, mind-mapper) on the house token layer;
+  Alpine-CDN (bounty, digestify) for the two boards not yet rewritten.
 - **The grimoire is the real moat** — a self-pruning craft system most projects
   lack; rules survive only by reinforcement.
 - **The manifesto is canonical in Operator**, mirrored here; edit it there and

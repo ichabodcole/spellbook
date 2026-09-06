@@ -88,3 +88,21 @@ Live log of choices and the options not taken. Append; never reconstruct.
 - **The burst-scroll quirk stays.** Measured identical on the original page;
   fixing it (measure after the smooth scroll settles, or drop `scroll-smooth`)
   is a behaviour change and belongs to a follow-up, not a fidelity port.
+
+## 2026-09-05 — after the verify pass
+
+- **Alias input: controlled draft, commit on blur/Enter, no `key`.** Restores
+  the original's `x-model` + `@change` split (live value drives the toggle;
+  storage written once). Not taken: keeping per-keystroke commit without the
+  `key` — it would fix focus but still write storage per character, which the
+  original never did.
+- **Pre-boot `#0e1410` in `index.html` stays, as a named literal.** No token
+  exists before the stylesheet loads, so the pre-paint cannot reference one; the
+  comment now names `--color-bg` as the value it mirrors. Not taken: dropping
+  the pre-boot (a white flash on cold dev opens) or inlining the stylesheet
+  (defeats the build's hashing).
+- **Archived-row muting: always, active or not** — matched to the original's
+  cascade (verify item 2). Not taken: keeping the "only when inactive" look,
+  which was a restyle nobody ruled.
+- **`daemonCwd()` unforced arm: assert the discriminator and the result**, not a
+  value against itself.

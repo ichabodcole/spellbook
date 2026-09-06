@@ -365,3 +365,44 @@ canon seat's call).
     pair each mirror with its helper, and the state module should IMPORT the
     helper rather than re-mirror it — that is a seam cut the playbook's Phase 1
     does describe, and grapevine had none.
+
+## 2026-09-05 · 5. What the verify pass taught (after `55347ad`)
+
+The no-stake drive came back "ship with fixes" — one severe, three minor — and,
+more usefully, three lessons about how I drove:
+
+- ⚠ **`fill()` is not typing.** The alias box remounted on every keystroke
+  (`key={alias}` plus a per-key commit) and dropped focus after the first
+  character. Every drive I did used Playwright's `fill()` — one input event with
+  the whole value — or the CLI's `alias` pre-fill; neither types. The inventory
+  row (I2) said "`change` → I3" and I marked it driven because the STORED value
+  was right. Fix: a controlled draft that commits on blur/Enter, the original's
+  `x-model` + `@change` split; re-driven with `keyboard.type(…, {delay})`, and
+  I2 rewritten to name the mechanism (keeps focus; commits only on change). **A
+  row driven by its outcome is not driven.** For the next rewrite: any input the
+  page bound with `x-model` needs a typed drive, not a filled one.
+- ⚠ **A `not: <why>` row is a claim someone will run.** Five of my seven fell:
+  C9's "window shorter than one poll" was simply false (46 ms → 3,062 ms on an
+  empty HOME — the first `/channels` fetch beats the auto-create); E6 needed
+  only an injector on the proxy; P6/X2's failure arms needed `page.route`; F8
+  needed a 100-char message; C10's current-channel arm needed one click. Only R7
+  stood, and for a stronger reason than I gave (the daemon's name grammar is
+  URL-unreserved, so the encoding is a no-op by construction). Write the `why`
+  as something the reader can falsify in one step, then try that step yourself.
+- ⛔ **The proxy-with-injector is the drive instrument.** The verifier's version
+  (their session scratchpad `proxy.ts`, ~40 lines: fixed-port pass-through that
+  streams the SSE body, plus `INJECT_BAD=1` prepending a malformed `subscribed`
+  and `message` frame to every `/tail`) drives E4, E6, X1, N2, F9 and H3 from
+  ONE setup, provided it is in front from the FIRST load — the page reconnects
+  to its own origin forever, so a drive that starts on the daemon's port cannot
+  drive E4 later. `page.route` covers the failure arms (409, abort) and isolates
+  a poll from the stream (route first, THEN cut the stream — an open EventSource
+  keeps streaming). Worth promoting to a shared instrument before bounty.
+
+Also fixed: the rail muted an archived name only when inactive (the original's
+`.row.archived .name` outranked the active colour — now always); a test cell
+that compared `daemonCwd()` to itself; `PROJECT-SUMMARY.md:261` and the two seat
+docs that still called the watch Alpine (I fixed three listings and missed the
+fourth sentence in the same file — grep the FILE, not the phrase you remember).
+Four inventory rows added (C14 muting, C15 initial title, F10 keying, S3's race
+caveat).
