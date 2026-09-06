@@ -529,6 +529,10 @@
     margin-bottom: calc(var(--spacing) * 2);
   }
 
+  .mb-3 {
+    margin-bottom: calc(var(--spacing) * 3);
+  }
+
   .ml-1\.5 {
     margin-left: calc(var(--spacing) * 1.5);
   }
@@ -690,6 +694,10 @@
     max-width: 520px;
   }
 
+  .max-w-\[560px\] {
+    max-width: 560px;
+  }
+
   .max-w-\[720px\] {
     max-width: 720px;
   }
@@ -767,6 +775,10 @@
 
   .cursor-default {
     cursor: default;
+  }
+
+  .cursor-not-allowed {
+    cursor: not-allowed;
   }
 
   .resize-none {
@@ -1458,6 +1470,10 @@
     opacity: .6;
   }
 
+  .opacity-70 {
+    opacity: .7;
+  }
+
   .shadow-lg {
     --tw-shadow: 0 10px 15px -3px var(--tw-shadow-color, #0000001a), 0 4px 6px -4px var(--tw-shadow-color, #0000001a);
     box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -1798,6 +1814,12 @@
   }
 
   @media (hover: hover) {
+    .hover\:text-ink:hover {
+      color: var(--color-ink);
+    }
+  }
+
+  @media (hover: hover) {
     .hover\:text-muted-foreground:hover {
       color: var(--color-muted-foreground);
     }
@@ -1829,6 +1851,10 @@
 
   .focus-visible\:border-ring:focus-visible {
     border-color: var(--color-ring);
+  }
+
+  .focus-visible\:opacity-100:focus-visible {
+    opacity: 1;
   }
 
   .focus-visible\:ring-3:focus-visible {
