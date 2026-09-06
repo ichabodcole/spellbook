@@ -17259,7 +17259,7 @@ var require_with_selector = __commonJS((exports, module) => {
 
 // node_modules/react/cjs/react-jsx-dev-runtime.development.js
 var require_react_jsx_dev_runtime_development = __commonJS((exports) => {
-  var React42 = __toESM(require_react());
+  var React43 = __toESM(require_react());
   (function() {
     function getComponentNameFromType(type) {
       if (type == null)
@@ -17451,17 +17451,17 @@ React keys must be passed directly to JSX without using spread:
     function isValidElement3(object) {
       return typeof object === "object" && object !== null && object.$$typeof === REACT_ELEMENT_TYPE;
     }
-    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE2 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React42.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
+    var REACT_ELEMENT_TYPE = Symbol.for("react.transitional.element"), REACT_PORTAL_TYPE = Symbol.for("react.portal"), REACT_FRAGMENT_TYPE = Symbol.for("react.fragment"), REACT_STRICT_MODE_TYPE = Symbol.for("react.strict_mode"), REACT_PROFILER_TYPE = Symbol.for("react.profiler"), REACT_CONSUMER_TYPE = Symbol.for("react.consumer"), REACT_CONTEXT_TYPE = Symbol.for("react.context"), REACT_FORWARD_REF_TYPE = Symbol.for("react.forward_ref"), REACT_SUSPENSE_TYPE = Symbol.for("react.suspense"), REACT_SUSPENSE_LIST_TYPE = Symbol.for("react.suspense_list"), REACT_MEMO_TYPE = Symbol.for("react.memo"), REACT_LAZY_TYPE2 = Symbol.for("react.lazy"), REACT_ACTIVITY_TYPE = Symbol.for("react.activity"), REACT_CLIENT_REFERENCE = Symbol.for("react.client.reference"), ReactSharedInternals = React43.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, hasOwnProperty = Object.prototype.hasOwnProperty, isArrayImpl = Array.isArray, createTask = console.createTask ? console.createTask : function() {
       return null;
     };
-    React42 = {
+    React43 = {
       react_stack_bottom_frame: function(callStackForError) {
         return callStackForError();
       }
     };
     var specialPropKeyWarningShown;
     var didWarnAboutElementRef = {};
-    var unknownOwnerDebugStack = React42.react_stack_bottom_frame.bind(React42, UnknownOwner)();
+    var unknownOwnerDebugStack = React43.react_stack_bottom_frame.bind(React43, UnknownOwner)();
     var unknownOwnerDebugTask = createTask(getTaskName(UnknownOwner));
     var didWarnAboutKeySpread = {};
     exports.Fragment = REACT_FRAGMENT_TYPE;
@@ -17483,82 +17483,1247 @@ var require_jsx_dev_runtime = __commonJS((exports, module) => {
 // src/grapevine/surface/main.tsx
 var import_client = __toESM(require_client(), 1);
 
+// node_modules/cn/dist/tables.js
+var P = 48;
+var U = (s, o = 0) => {
+  const out = new Int32Array(s.length);
+  for (let i = 0;i < s.length; i++)
+    out[i] = s.charCodeAt(i) - P - o;
+  return out;
+};
+var PS = (counts) => {
+  const out = new Int32Array(counts.length + 1);
+  for (let i = 0;i < counts.length; i++)
+    out[i + 1] = out[i] + counts[i];
+  return out;
+};
+var DZ = (s) => {
+  const out = new Int32Array(s.length);
+  let a = 0;
+  for (let i = 0;i < s.length; i++) {
+    const z = s.charCodeAt(i) - P;
+    a += z >>> 1 ^ -(z & 1);
+    out[i] = a;
+  }
+  return out;
+};
+var GROUP_COUNT = 379;
+var customValidatorNames = [];
+var edgeStart = PS(U("E050000200528200000000200015000002002182000001120000000302220200020004200120000200420001200021200301200010400162000010000220021010:2192001200220012000220012000200200200400010200040000000000400200108200110100000022010313000162002000020020012020080213000228200000000082000000000120002000120020020040101020300130001001010"));
+var labelStart = PS(U(":11111111211111119311546544411119731869:67139741568643244111111111116111415121431343415:78311132233313187211117221449443411141111151152226611131111112212518142224214215421421542142424242516171151615616347111111111197911327451111111111111111111113134714133513411111311111111111111111111112444411111342312715245411117:3"));
+var labelText = "@containerabcdefghinlmoprstunderlineviawzccentlignnimatespectuto-colsrowsaglorightnessckdrop-sisbcontrastfiltergrayscalehue-rotateinvertopacityslurrightnessaturateepia-coniclinearpositionradialsizeockurrderttom-belrstxyespacing-xyaretoursorlnt-umnsendspantartentrasteividerop-shadowurationcorationlay-xyasendillexontromlter-featuresstretchapr-xyayscaleidow-colsrowsue-rotatedentlinesetvert-beringsxyeshadoweiadingftnest-clamp-imageabein-lrstxyskx--b-coniclpositionrsizet-x-y-fromto-fromto-inearfromto-fromto-adialfromto-fromtofromtofromtofromtoblockhinlinew-screenesblockhinlinewbjectpacityrutlinederigin-offsetbelrstxyesrspective-originaceholderioghtng-offsettateundedw-xyz-belrstlreseslr-endspantartaturatecepiahizekewpace-taleroll-xyz-barmpbelrstxyesbelrstxyes-thumbrackadowrink-xyxyartrokeabextora-shadowpckingnsformitionlate-xyz-offsetill-changeoom";
+var edgeTarget = (() => {
+  const N = edgeStart.length - 1;
+  const sizes = new Int32Array(N);
+  for (let i = N - 1;i >= 0; i--) {
+    let s = 1;
+    let c = i + 1;
+    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
+      s += sizes[c];
+      c += sizes[c];
+    }
+    sizes[i] = s;
+  }
+  const out = new Int32Array(edgeStart[N]);
+  let e = 0;
+  for (let i = 0;i < N; i++) {
+    let c = i + 1;
+    for (let k = edgeStart[i];k < edgeStart[i + 1]; k++) {
+      out[e++] = c;
+      c += sizes[c];
+    }
+  }
+  return out;
+})();
+var nodeGroup = U("02000000000000900<=0?000B000000F00ŎI0J0LNPRTVX0000]_a0000000000000000000000qrs0000000yŎ00000000000Ŏ0000000Ŏ00000000000000000000000000000000000000000000000000000000000000Ê000000000000000000000Ý000000000000000000ï0000000÷0øùúûüýþÿĀāĂăĄą000000000000000000000000000000000000000000Ħ0ħĩ00000000000000000000Ļļ00000ū000000", 1);
+var vlistPat = PS(U("123333593463463635126367151576"));
+var vlistOps = U("93203242383253248325D>E?F@03263243255B:032325523853:0325B:8GA032542H<C=12727B:03253;D>E?3257D>03258432585:0325B:;0328B:032");
+var vlistRef = U("01211311455155555567811194::::::::;;;:::952888<151=52>>?51921@ABCD;;;588595;9999:9?995;9E11;FGGHGGGGHGG1GG1GG1GGGGGG999IJ;;;;999I;;;;;;1581:5;;;;;11;2;;;;;9:K555544444444444444488855555;;;;;;;;;;;;;;;;;;;;;;225?59555;;L8M?D911199995DI188");
+var vlistGroup = DZ("0202002020200202020020020020200200200200200200200002020202001003040106000200200200200200200200200200200200200200200200200200200200200200200200200200200200020020020020020020002020020200200200200200200200200200202000200202002020022020020020020020020020020020020002002002000200020002000200200200020020020002000200200200020020202002020202000200200020022000200200020020002002000200220002002000200W0Z00020020002002020002002000200g0j00020020002002000200200020020002002000200200020002000200000200200200200200020002000200002002002002002002002020020020200200200200200200200200202020020020020020020020020002002002020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020020002002002002002002000200200200200200200200200200020202020002000200020002002002002000020200200");
+var nodeVlist = (() => {
+  const out = (/* @__PURE__ */ new Int32Array(318)).fill(-1);
+  const A = DZ("02422242:22222224222422224244222222242222224444224226224222426222422442462222422622222222626222462242622422622422424242422222222422222222242422222222222222222622442224222222222222224424442262222222222222222222226224222424242422224422422422222");
+  const V = DZ("0222222222222222222220222222222222222222222222142222222222222222222222222222222222Y\\222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222221422222222222222222222222222222222222222Ŀł222222222222222222");
+  for (let i = 0;i < A.length; i++)
+    out[A[i]] = V[i];
+  return out;
+})();
+var SETS = "container|break-after-all break-after-auto break-after-avoid break-after-avoid-page break-after-column break-after-left break-after-page break-after-right|break-before-all break-before-auto break-before-avoid break-before-avoid-page break-before-column break-before-left break-before-page break-before-right|break-inside-auto break-inside-avoid break-inside-avoid-column break-inside-avoid-page|box-decoration-clone box-decoration-slice|box-border box-content|contents flow-root hidden table table-caption table-cell table-column table-column-group table-footer-group table-header-group table-row table-row-group|not-sr-only sr-only|float-end float-left float-none float-right float-start|clear-both clear-end clear-left clear-none clear-right clear-start|isolate isolation-auto|overflow-auto overflow-clip overflow-hidden overflow-scroll overflow-visible|overflow-x-auto overflow-x-clip overflow-x-hidden overflow-x-scroll overflow-x-visible|overflow-y-auto overflow-y-clip overflow-y-hidden overflow-y-scroll overflow-y-visible|overscroll-auto overscroll-contain overscroll-none|overscroll-x-auto overscroll-x-contain overscroll-x-none|overscroll-y-auto overscroll-y-contain overscroll-y-none|absolute fixed relative static sticky|collapse invisible visible|justify-around justify-baseline justify-between justify-center justify-center-safe justify-end justify-end-safe justify-evenly justify-normal justify-start justify-stretch|justify-items-center justify-items-center-safe justify-items-end justify-items-end-safe justify-items-normal justify-items-start justify-items-stretch|justify-self-auto justify-self-center justify-self-center-safe justify-self-end justify-self-end-safe justify-self-start justify-self-stretch|items-baseline items-baseline-last items-center items-center-safe items-end items-end-safe items-start items-stretch|self-auto self-baseline self-baseline-last self-center self-center-safe self-end self-end-safe self-start self-stretch|place-content-around place-content-baseline place-content-between place-content-center place-content-center-safe place-content-end place-content-end-safe place-content-evenly place-content-start place-content-stretch|place-items-baseline place-items-center place-items-center-safe place-items-end place-items-end-safe place-items-start place-items-stretch|place-self-auto place-self-center place-self-center-safe place-self-end place-self-end-safe place-self-start place-self-stretch|antialiased subpixel-antialiased|italic not-italic|normal-nums|ordinal|slashed-zero|lining-nums oldstyle-nums|proportional-nums tabular-nums|diagonal-fractions stacked-fractions|no-underline overline|capitalize lowercase normal-case uppercase|truncate|whitespace-break-spaces whitespace-normal whitespace-nowrap whitespace-pre whitespace-pre-line whitespace-pre-wrap|break-all break-keep break-normal break-words|wrap-anywhere wrap-break-word wrap-normal|hyphens-auto hyphens-manual hyphens-none|mix-blend-color mix-blend-color-burn mix-blend-color-dodge mix-blend-darken mix-blend-difference mix-blend-exclusion mix-blend-hard-light mix-blend-hue mix-blend-lighten mix-blend-luminosity mix-blend-multiply mix-blend-normal mix-blend-overlay mix-blend-plus-darker mix-blend-plus-lighter mix-blend-saturation mix-blend-screen mix-blend-soft-light|table-auto table-fixed|caption-bottom caption-top|backface-hidden backface-visible|appearance-auto appearance-none|scheme-dark scheme-light scheme-light-dark scheme-normal scheme-only-dark scheme-only-light|field-sizing-content field-sizing-fixed|pointer-events-auto pointer-events-none|resize resize-none resize-x resize-y|snap-align-none snap-center snap-end snap-start|snap-always snap-normal|snap-both snap-none snap-x snap-y|snap-mandatory snap-proximity|touch-auto touch-manipulation touch-none|touch-pan-left touch-pan-right touch-pan-x|touch-pan-down touch-pan-up touch-pan-y|touch-pinch-zoom|select-all select-auto select-none select-text|forced-color-adjust-auto forced-color-adjust-none|normal size|baseline bottom middle sub super text-bottom text-top top|bounce none ping pulse spin|auto square video|auto fr max min|none|auto full px|fixed local scroll|clip-border clip-content clip-padding clip-text|origin-border origin-content origin-padding|bottom bottom-left bottom-right center left left-bottom left-top right right-bottom right-top top top-left top-right|no-repeat repeat repeat-round repeat-space repeat-x repeat-y|auto contain cover|blend-color blend-color-burn blend-color-dodge blend-darken blend-difference blend-exclusion blend-hard-light blend-hue blend-lighten blend-luminosity blend-multiply blend-normal blend-overlay blend-saturation blend-screen blend-soft-light|to-b to-bl to-br to-l to-r to-t to-tl to-tr|auto dvh fit full lh lvh max min px screen svh|dashed dotted double hidden none solid|collapse separate|px|auto|full|around baseline between center center-safe end end-safe evenly normal start stretch|alias all-scroll auto cell col-resize context-menu copy crosshair default e-resize ew-resize grab grabbing help move n-resize ne-resize nesw-resize no-drop none not-allowed ns-resize nw-resize nwse-resize pointer progress row-resize s-resize se-resize sw-resize text vertical-text w-resize wait zoom-in zoom-out|dashed dotted double solid wavy|auto from-font|reverse|initial|in in-out initial linear out|col col-reverse row row-reverse|nowrap wrap wrap-reverse|auto initial none|black bold extrabold extralight light medium normal semibold thin|condensed expanded extra-condensed extra-expanded normal semi-condensed semi-expanded ultra-condensed ultra-expanded|flow-col flow-col-dense flow-dense flow-row flow-row-dense|none subgrid|auto dvh dvw fit full lh lvh lvw max min px screen svh svw|block flex grid table|auto dvw fit full lvw max min px screen svw|loose none normal px relaxed snug tight|through|item|inside outside|decimal disc none|auto px|clip-border clip-content clip-fill clip-padding clip-stroke clip-view no-clip|add exclude intersect subtract|alpha luminance match|origin-border origin-content origin-fill origin-padding origin-stroke origin-view|type-alpha type-luminance|circle ellipse|closest-corner closest-side farthest-corner farthest-side|at-bottom at-bottom-left at-bottom-right at-center at-left at-left-bottom at-left-top at-right at-right-bottom at-right-top at-top at-top-left at-top-right|dvh fit full lh lvh max min none px screen svh|dvw fit full lvw max min none px screen svw|auto dvh dvw fit full lvh lvw max min none prose px svh svw|auto dvh dvw fit full lh lvh lvw max min none px screen svh svw|auto dvh dvw fit full lvh lvw max min none px screen svh svw|contain cover fill none scale-down|first last none|distant dramatic midrange near none normal|inset|full none|3d|auto smooth|gutter-auto gutter-both gutter-stable|auto none thin|auto dvh dvw fit full lvh lvw max min px svh svw|base|center end justify left right start|clip ellipsis|balance nowrap pretty wrap|normal tight tighter wide wider widest|cpu gpu none|3d flat|all colors none opacity shadow transform|discrete normal|full px|auto dvh dvw fit full lvh lvw max min px screen svh svw|auto contents scroll transform".split("|").map((s) => s.split(" "));
+var AA = DZ("0000000000000000000000000000000000000000000000000000000000000262242:6@200000006:240B428:4426046044222426220026642642462026224222824220022400000000\\00N222422242222222224062242222222422226264222422222222222222442804222422222222222222222222220<4<0204260002444020204224422");
+var AG = DZ("ɞ222222222222222222222222222222222222222222222222222222222222˓4222226>6ʮ22ʵʸʵʸʵ42ʲ2ʑ22>62144ɴɯɲɯɲ22ɩ42222ɠ2ɟ26622ɐɋ244ƸƵ222]d24242ǖǓƚ¼ȣ2263ȠȝȠ2222222Ǜ222222222222222222ƺƵ2ƶƭ2222222422222ƔƉ22222222222222222222144Şś22Śŗ222222222222222222222İ2ĩ68ĞěĞəŰ4Ę£¦ĕ822ČĉČ2ċ2222622");
+var AS = DZ("02222222222222222222222222222222222222222222222222222222222222222202021422222222CF2200GJ021KP222?B0WZ2Y10^2222K00N202QT2m0000120porsv22y|{:22p22222222QT2E000gSVI00000q2<40000@00000G000 00000000000000021K¢¡00¤0000000000000000000002§ª>=>U1¬222±2²2222»¾000¡¤2¥");
+var litAnchor = /* @__PURE__ */ new Int32Array(974);
+var litGroup = /* @__PURE__ */ new Int32Array(974);
+var litPool = /* @__PURE__ */ new Int32Array(974);
+var poolText = "";
+var poolOffsets = /* @__PURE__ */ new Int32Array(1008);
+{
+  const tailRef = /* @__PURE__ */ new Map;
+  let nextRef = 0;
+  let e = 0;
+  for (let i = 0;i < AA.length; i++)
+    for (const tail of SETS[AS[i]]) {
+      let r = tailRef.get(tail);
+      if (r === undefined) {
+        r = nextRef++;
+        tailRef.set(tail, r);
+        poolOffsets[r * 2] = poolText.length;
+        poolOffsets[r * 2 + 1] = tail.length;
+        poolText += tail;
+      }
+      litAnchor[e] = AA[i];
+      litGroup[e] = AG[i];
+      litPool[e] = r;
+      e++;
+    }
+}
+var adjGid = DZ("0b2N:222`>F@286¦2@H2D266226FB22B2>BD\\6N22222Z222");
+var adjStart = PS(U("1::2222232:222:22:22>222222:22:222132251111131114"));
+var adjTgt = DZ("24A;33N=C@H4A;33N=C@<2;363@QTQC¸ŴŽ2R2=18cƴÅŅÜÛŲǛȆ:ħ25=11D3A@216Er25;11B3?<438Cn9@7=<8192>2E121@9@EHE@9>2T25511<398216=V25511<398216=ƧNž2ĈÝ242L222290000f22500³222");
+var patGid = U("Ĳ");
+var patTgt = U("");
+var postfixLookupGroups = U("1");
+var orderSensitiveModifiers = "* ** after backdrop before details-content file first-letter first-line marker placeholder selection";
+var tables_generated_default = {
+  GROUP_COUNT,
+  customValidatorNames,
+  edgeStart,
+  labelStart,
+  labelText,
+  edgeTarget,
+  nodeGroup,
+  nodeVlist,
+  vlistPat,
+  vlistOps,
+  vlistRef,
+  vlistGroup,
+  litAnchor,
+  litGroup,
+  litPool,
+  poolOffsets,
+  poolText,
+  adjGid,
+  adjStart,
+  adjTgt,
+  patGid,
+  patTgt,
+  postfixLookupGroups,
+  orderSensitiveModifiers
+};
+
+// node_modules/cn/dist/engine.js
+var IS_JSC = "line" in /* @__PURE__ */ new Error;
+var EXTERNAL = -1;
+var DEAD = -1;
+var fnv = (str, s, e) => {
+  let h = 2166136261;
+  for (let p = s;p < e; p++)
+    h = Math.imul(h ^ str.charCodeAt(p), 16777619);
+  return h;
+};
+var spanHash = (str, s, e) => {
+  const len = e - s;
+  let h = Math.imul(len, 2654435761) ^ str.charCodeAt(s);
+  if (len > 3) {
+    const q = len >> 2;
+    const m = len >> 1;
+    h = Math.imul(h ^ str.charCodeAt(s + 1) << 8 ^ str.charCodeAt(s + 2) << 16 ^ str.charCodeAt(s + q), 2246822507);
+    h = Math.imul(h ^ str.charCodeAt(s + m) << 8 ^ str.charCodeAt(s + m + q) << 16 ^ str.charCodeAt(e - 3), 3266489909);
+    h ^= str.charCodeAt(e - 2) << 8 ^ str.charCodeAt(e - 1) << 16;
+    for (let p = s + 3, q2 = e - 4;p < s + 8 && p < q2; p++, q2--)
+      h = Math.imul(h ^ str.charCodeAt(p) ^ str.charCodeAt(q2) << 8, 16777619);
+  }
+  return h ^ h >>> 15 | 0;
+};
+var createEngine = (T, validatorImpls, options = {}) => {
+  const { GROUP_COUNT: GROUP_COUNT2, edgeStart: edgeStart2, labelStart: labelStart2, labelText: labelText2, edgeTarget: edgeTarget2, nodeGroup: nodeGroup2, nodeVlist: nodeVlist2, vlistPat: vlistPat2, vlistOps: vlistOps2, vlistRef: vlistRef2, vlistGroup: vlistGroup2, litAnchor: litAnchor2, litGroup: litGroup2, litPool: litPool2, poolOffsets: poolOffsets2, poolText: poolText2, adjGid: adjGid2, adjStart: adjStart2, adjTgt: adjTgt2, patGid: patGid2, patTgt: patTgt2, postfixLookupGroups: postfixLookupGroups2, customValidatorNames: customValidatorNames2, orderSensitiveModifiers: orderSensitiveModifiers2 } = T;
+  const adjRow = new Int32Array(GROUP_COUNT2).fill(-1);
+  for (let i = 0;i < adjGid2.length; i++)
+    adjRow[adjGid2[i]] = i;
+  let maxAdj = 0;
+  for (let r = 0;r + 1 < adjStart2.length; r++) {
+    const n = adjStart2[r + 1] - adjStart2[r];
+    if (n > maxAdj)
+      maxAdj = n;
+  }
+  let CLAIM_PER_TOKEN = 32;
+  while (CLAIM_PER_TOKEN < 2 * (1 + maxAdj + patGid2.length))
+    CLAIM_PER_TOKEN <<= 1;
+  const vgStart = new Int32Array(vlistRef2.length + 1);
+  for (let l = 0;l < vlistRef2.length; l++)
+    vgStart[l + 1] = vgStart[l] + vlistPat2[vlistRef2[l] + 1] - vlistPat2[vlistRef2[l]];
+  const postfixLookupSet = new Uint8Array(GROUP_COUNT2);
+  for (let i = 0;i < postfixLookupGroups2.length; i++)
+    postfixLookupSet[postfixLookupGroups2[i]] = 1;
+  const nodeCount = edgeStart2.length - 1;
+  const nodeHasLit = new Uint8Array(nodeCount);
+  let litMaxLen = 0;
+  let litNoArb = true;
+  for (let i = 0;i < litAnchor2.length; i++) {
+    nodeHasLit[litAnchor2[i]] = 1;
+    const len = poolOffsets2[litPool2[i] * 2 + 1];
+    if (len > litMaxLen)
+      litMaxLen = len;
+    const c0 = poolText2.charCodeAt(poolOffsets2[litPool2[i] * 2]);
+    if (c0 === 91 || c0 === 40)
+      litNoArb = false;
+  }
+  let LIT_SIZE = 1;
+  while (LIT_SIZE < litAnchor2.length * 2)
+    LIT_SIZE <<= 1;
+  const litTable = new Int32Array(LIT_SIZE).fill(-1);
+  for (let i = 0;i < litAnchor2.length; i++) {
+    const off = poolOffsets2[litPool2[i] * 2];
+    let idx = (fnv(poolText2, off, off + poolOffsets2[litPool2[i] * 2 + 1]) ^ Math.imul(litAnchor2[i], 2654435761) | 0) & LIT_SIZE - 1;
+    while (litTable[idx] !== -1)
+      idx = idx + 1 & LIT_SIZE - 1;
+    litTable[idx] = i;
+  }
+  const litProbe = (anchor, input, s, e) => {
+    let idx = (fnv(input, s, e) ^ Math.imul(anchor, 2654435761) | 0) & LIT_SIZE - 1;
+    const len = e - s;
+    for (;; ) {
+      const entry = litTable[idx];
+      if (entry === -1)
+        return -1;
+      if (litAnchor2[entry] === anchor && poolOffsets2[litPool2[entry] * 2 + 1] === len) {
+        const off = poolOffsets2[litPool2[entry] * 2];
+        let ok = true;
+        for (let k = 0;k < len; k++)
+          if (poolText2.charCodeAt(off + k) !== input.charCodeAt(s + k)) {
+            ok = false;
+            break;
+          }
+        if (ok)
+          return litGroup2[entry];
+      }
+      idx = idx + 1 & LIT_SIZE - 1;
+    }
+  };
+  const cacheSize = options.cacheSize ?? 8192;
+  const RAW_PREFIX = options.prefix ?? T.prefix ?? "";
+  const FULL_PREFIX = RAW_PREFIX === "" ? "" : RAW_PREFIX + ":";
+  const FPL = FULL_PREFIX.length;
+  const vCustom = (customValidatorNames2 ?? []).map((name) => {
+    const fn = validatorImpls && validatorImpls[name];
+    if (!fn)
+      throw new Error("cn: missing validator " + name);
+    return fn;
+  });
+  const lengthUnitRegex = /\d+(%|px|r?em|[sdl]?v([hwib]|min|max)|pt|pc|in|cm|mm|cap|ch|ex|r?lh|cq(w|h|i|b|min|max))|\b(calc|min|max|clamp)\(.+\)|^0$/;
+  const colorFunctionRegex = /^(rgba?|hsla?|hwb|(ok)?(lab|lch)|color-mix)\(.+\)$/;
+  const shadowRegex = /^(inset_)?-?((\d+)?\.?(\d+)[a-z]+|0)_-?((\d+)?\.?(\d+)[a-z]+|0)/;
+  const imageRegex = /^(url|image|image-set|cross-fade|element|(repeating-)?(linear|radial|conic)-gradient)\(.+\)$/;
+  let aKind = 0;
+  let aLabelS = -1;
+  let aLabelE = -1;
+  let aValS = -1;
+  let aValE = -1;
+  const isWordCode = (c) => c >= 97 && c <= 122 || c >= 65 && c <= 90 || c >= 48 && c <= 57 || c === 95;
+  const isUniWS = (c) => /\s/.test(String.fromCharCode(c));
+  const analyzeArb = (input, s, e) => {
+    aKind = 0;
+    aLabelS = -1;
+    if (e - s < 3)
+      return;
+    const c0 = input.charCodeAt(s);
+    const cl = input.charCodeAt(e - 1);
+    if (c0 === 91 && cl === 93)
+      aKind = 1;
+    else if (c0 === 40 && cl === 41)
+      aKind = 2;
+    else
+      return;
+    aValS = s + 1;
+    aValE = e - 1;
+    let p = s + 1;
+    if (isWordCode(input.charCodeAt(p))) {
+      p++;
+      while (p < e - 1) {
+        const c = input.charCodeAt(p);
+        if (!isWordCode(c) && c !== 45)
+          break;
+        p++;
+      }
+      if (p < e - 2 && input.charCodeAt(p) === 58) {
+        aLabelS = s + 1;
+        aLabelE = p;
+        aValS = p + 1;
+      }
+    }
+  };
+  const spanEq = (input, s, e, str) => {
+    if (e - s !== str.length)
+      return false;
+    for (let i = 0;i < str.length; i++)
+      if (input.charCodeAt(s + i) !== str.charCodeAt(i))
+        return false;
+    return true;
+  };
+  const fractionRegex = /^\d+(?:\.\d+)?\/\d+(?:\.\d+)?$/;
+  const tshirtRegex = /^(\d+(\.\d+)?)?(xs|sm|md|lg|xl)$/;
+  const isNumStr = (v) => !!v && !Number.isNaN(Number(v));
+  const spanIsNamedContainerQuery = (input, s, e) => {
+    if (e - s < 11 || !spanEq(input, s, s + 10, "@container"))
+      return false;
+    if (input.charCodeAt(s + 10) === 47)
+      return e - s >= 12;
+    const c11 = input.charCodeAt(s + 11);
+    return c11 === 115 && e - s >= 17 && spanEq(input, s + 10, s + 16, "-size/") || c11 === 110 && e - s >= 19 && spanEq(input, s + 10, s + 18, "-normal/");
+  };
+  const VKIND = [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ];
+  const VLABELS = "length|number|number weight|family-name|position percentage|length size bg-size|image url|shadow|length|family-name|position percentage|length size bg-size|image url|shadow|number weight".split("|").map((s) => s.split(" "));
+  const VFALL = [
+    2,
+    3,
+    1,
+    0,
+    0,
+    0,
+    4,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1
+  ];
+  const runValidator = (op, input, s, e) => {
+    if (op >= 10) {
+      if (op >= 25)
+        return vCustom[op - 25](input.slice(s, e));
+      const i = op - 10;
+      if (aKind !== VKIND[i])
+        return false;
+      if (aLabelS >= 0) {
+        for (const L of VLABELS[i])
+          if (spanEq(input, aLabelS, aLabelE, L))
+            return true;
+        return false;
+      }
+      switch (VFALL[i]) {
+        case 0:
+          return false;
+        case 1:
+          return true;
+        case 2: {
+          const v = input.slice(aValS, aValE);
+          return lengthUnitRegex.test(v) && !colorFunctionRegex.test(v);
+        }
+        case 3:
+          return isNumStr(input.slice(aValS, aValE));
+        case 4:
+          return imageRegex.test(input.slice(aValS, aValE));
+        default:
+          return shadowRegex.test(input.slice(aValS, aValE));
+      }
+    }
+    switch (op) {
+      case 0:
+        return true;
+      case 1:
+        return aKind === 0;
+      case 2:
+        return aKind === 1;
+      case 3:
+        return aKind === 2;
+      case 4:
+        return fractionRegex.test(input.slice(s, e));
+      case 5:
+        return isNumStr(input.slice(s, e));
+      case 6: {
+        const v = input.slice(s, e);
+        return !!v && Number.isInteger(Number(v));
+      }
+      case 7:
+        return e > s && input.charCodeAt(e - 1) === 37 && isNumStr(input.slice(s, e - 1));
+      case 8:
+        return tshirtRegex.test(input.slice(s, e));
+      default:
+        return spanIsNamedContainerQuery(input, s, e);
+    }
+  };
+  const orderSensitive = new Set(typeof orderSensitiveModifiers2 === "string" ? orderSensitiveModifiers2.split(" ") : orderSensitiveModifiers2);
+  const internSpan = (map, input, s, e, imp, make) => {
+    const h = fnv(input, s, e) ^ (imp ? 2654435769 : 0) | 0;
+    let bucket = map.get(h);
+    if (bucket !== undefined)
+      outer:
+        for (let b = 0;b < bucket.length; b++) {
+          const en = bucket[b];
+          if (en.imp !== imp || en.k.length !== e - s)
+            continue;
+          for (let i = 0;i < en.k.length; i++)
+            if (en.k.charCodeAt(i) !== input.charCodeAt(s + i))
+              continue outer;
+          return en.id;
+        }
+    else
+      map.set(h, bucket = []);
+    const k = input.slice(s, e);
+    const id = make(k);
+    bucket.push({
+      k,
+      imp,
+      id
+    });
+    return id;
+  };
+  let ctxByHash = /* @__PURE__ */ new Map;
+  let ctxByCanon = /* @__PURE__ */ new Map;
+  let nextCtxId = 2;
+  const MAX_CTX = 4096;
+  const canonicalizeContext = (raw, important) => {
+    const mods = [];
+    let dB = 0, dP = 0, start = 0;
+    for (let i = 0;i < raw.length; i++) {
+      const c = raw.charCodeAt(i);
+      if (dB === 0 && dP === 0 && c === 58) {
+        mods.push(raw.slice(start, i));
+        start = i + 1;
+      } else if (c === 91)
+        dB++;
+      else if (c === 93)
+        dB--;
+      else if (c === 40)
+        dP++;
+      else if (c === 41)
+        dP--;
+    }
+    mods.push(raw.slice(start));
+    let canonical = mods[0];
+    if (mods.length > 1) {
+      const result = [];
+      let segment = [];
+      for (const mod of mods)
+        if (mod.charCodeAt(0) === 91 || orderSensitive.has(mod)) {
+          if (segment.length) {
+            result.push(...segment.sort());
+            segment = [];
+          }
+          result.push(mod);
+        } else
+          segment.push(mod);
+      if (segment.length)
+        result.push(...segment.sort());
+      canonical = result.join(":");
+    }
+    const key = important ? canonical + " !" : canonical;
+    let id = ctxByCanon.get(key);
+    if (id === undefined)
+      ctxByCanon.set(key, id = nextCtxId++);
+    return id;
+  };
+  let dynByHash = /* @__PURE__ */ new Map;
+  let nextDynId = GROUP_COUNT2;
+  const MAX_DYN = GROUP_COUNT2 + 4096;
+  const newDynId = () => nextDynId++;
+  const ID_LIMIT = 2097152;
+  const TOKEN_TABLE = 8192;
+  const memoHash = new Int32Array(TOKEN_TABLE);
+  const memoStr = new Array(TOKEN_TABLE).fill(null);
+  const memoGid = new Int32Array(TOKEN_TABLE);
+  const memoCtx = new Int32Array(TOKEN_TABLE);
+  const memoFlags = new Uint8Array(TOKEN_TABLE);
+  let memoTick = 0;
+  const memoPut = (way0, input, ts, te, h, gid, ctxId, flags) => {
+    let slot = way0;
+    if (memoStr[way0] !== null) {
+      if (memoStr[way0 | 1] === null)
+        slot = way0 | 1;
+      else if ((memoTick++ & 3) === 0)
+        slot = way0 | memoTick >> 2 & 1;
+      else
+        return;
+    }
+    memoStr[slot] = input.slice(ts, te);
+    memoHash[slot] = h;
+    memoGid[slot] = gid;
+    memoCtx[slot] = ctxId;
+    memoFlags[slot] = flags;
+  };
+  const memoReset = () => memoStr.fill(null);
+  let cap = 256;
+  let tokI32 = [
+    new Int32Array(cap),
+    new Int32Array(cap),
+    new Int32Array(cap),
+    new Int32Array(cap)
+  ];
+  let [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
+  let tokFlags = new Uint8Array(cap);
+  let keep = new Uint8Array(cap);
+  const growTokens = () => {
+    cap *= 2;
+    tokI32 = tokI32.map((a) => {
+      const n = new Int32Array(cap);
+      n.set(a);
+      return n;
+    });
+    [tokStart, tokEnd, tokGid, tokCtx] = tokI32;
+    const nf = new Uint8Array(cap);
+    nf.set(tokFlags);
+    tokFlags = nf;
+    keep = new Uint8Array(cap);
+  };
+  let ckptCap = 64;
+  let ckptNode = new Int32Array(ckptCap);
+  let ckptTail = new Int32Array(ckptCap);
+  const claim0 = new Int32Array(GROUP_COUNT2);
+  let CLAIM_TABLE = 2048;
+  let claimShift = 21;
+  let claimKeys = new Float64Array(CLAIM_TABLE);
+  let claimEpochs = new Int32Array(CLAIM_TABLE);
+  let epoch = 0;
+  const claimTest = (ctx, gid) => {
+    if (ctx === 0 && gid < GROUP_COUNT2) {
+      if (claim0[gid] === epoch)
+        return 1;
+      claim0[gid] = epoch;
+      return 0;
+    }
+    const key = ctx * 2097152 + gid + 1;
+    let idx = Math.imul(key, 2654435761) >>> claimShift;
+    for (;; ) {
+      if (claimEpochs[idx] !== epoch)
+        break;
+      if (claimKeys[idx] === key)
+        return 1;
+      idx = idx + 1 & CLAIM_TABLE - 1;
+    }
+    claimKeys[idx] = key;
+    claimEpochs[idx] = epoch;
+    return 0;
+  };
+  const resolveAt = (input, bs, endPos, nodeAt, ckptAt) => {
+    if (endPos - bs >= 2 && input.charCodeAt(bs) === 91 && input.charCodeAt(endPos - 1) === 93) {
+      let colon = -1;
+      for (let p = bs + 1;p < endPos - 1; p++)
+        if (input.charCodeAt(p) === 58) {
+          colon = p;
+          break;
+        }
+      if (colon === -1 || colon === bs + 1)
+        return EXTERNAL;
+      return internSpan(dynByHash, input, bs + 1, colon, 0, newDynId);
+    }
+    if (nodeAt >= 0 && nodeGroup2[nodeAt] >= 0)
+      return nodeGroup2[nodeAt];
+    for (let k = ckptAt - 1;k >= 0; k--) {
+      const tailStart = ckptTail[k];
+      if (tailStart > endPos)
+        continue;
+      const nodeId = ckptNode[k];
+      const tlen = endPos - tailStart;
+      if (nodeHasLit[nodeId] === 1 && tlen > 0 && tlen <= litMaxLen) {
+        const c0 = input.charCodeAt(tailStart);
+        if (litNoArb === false || c0 !== 91 && c0 !== 40) {
+          const g = litProbe(nodeId, input, tailStart, endPos);
+          if (g >= 0)
+            return g;
+        }
+      }
+      const vl = nodeVlist2[nodeId];
+      if (vl < 0)
+        continue;
+      const pat = vlistRef2[vl];
+      const vs = vlistPat2[pat];
+      const ve = vlistPat2[pat + 1];
+      if (vs === ve)
+        continue;
+      analyzeArb(input, tailStart, endPos);
+      const g0 = vgStart[vl] - vs;
+      for (let v = vs;v < ve; v++)
+        if (runValidator(vlistOps2[v], input, tailStart, endPos))
+          return vlistGroup2[g0 + v];
+    }
+    return EXTERNAL;
+  };
+  const mergeClassList = (input) => {
+    const n = input.length;
+    let tokenCount = 0;
+    let totalTokenChars = 0;
+    let sawNonSpaceWS = false;
+    if (nextCtxId > MAX_CTX || ctxByHash.size > MAX_CTX) {
+      ctxByHash = /* @__PURE__ */ new Map;
+      ctxByCanon = /* @__PURE__ */ new Map;
+      nextCtxId = 2;
+      memoReset();
+    }
+    if (nextDynId > MAX_DYN) {
+      dynByHash = /* @__PURE__ */ new Map;
+      nextDynId = GROUP_COUNT2;
+      memoReset();
+    }
+    let i = 0;
+    while (i < n) {
+      let c = input.charCodeAt(i);
+      if (c === 32 || c >= 9 && c <= 13 || c >= 160 && isUniWS(c)) {
+        if (c !== 32)
+          sawNonSpaceWS = true;
+        i++;
+        continue;
+      }
+      const ts = i;
+      let th = 0;
+      while (i < n) {
+        c = input.charCodeAt(i);
+        if (c <= 32) {
+          if (c === 32)
+            break;
+          if (c >= 9 && c <= 13) {
+            sawNonSpaceWS = true;
+            break;
+          }
+        } else if (c >= 160 && isUniWS(c)) {
+          sawNonSpaceWS = true;
+          break;
+        }
+        th = Math.imul(th ^ c, 16777619);
+        i++;
+      }
+      const te = i;
+      const len = te - ts;
+      if (tokenCount === cap)
+        growTokens();
+      const t2 = tokenCount++;
+      tokStart[t2] = ts;
+      tokEnd[t2] = te;
+      totalTokenChars += len;
+      th ^= Math.imul(len, 2654435761);
+      const h = th ^ th >>> 15 | 0;
+      const way0 = h & 8190;
+      {
+        let hitAt = -1;
+        if (memoHash[way0] === h && memoStr[way0] !== null && memoStr[way0].length === len)
+          hitAt = way0;
+        else if (memoHash[way0 | 1] === h && memoStr[way0 | 1] !== null && memoStr[way0 | 1].length === len)
+          hitAt = way0 | 1;
+        if (hitAt >= 0) {
+          const s = memoStr[hitAt];
+          let ok = true;
+          for (let k = 0;k < len; k++)
+            if (s.charCodeAt(k) !== input.charCodeAt(ts + k)) {
+              ok = false;
+              break;
+            }
+          if (ok) {
+            tokGid[t2] = memoGid[hitAt];
+            tokCtx[t2] = memoCtx[hitAt];
+            tokFlags[t2] = memoFlags[hitAt];
+            continue;
+          }
+        }
+      }
+      let pts = ts;
+      if (FPL !== 0) {
+        if (te - ts <= FPL || !input.startsWith(FULL_PREFIX, ts)) {
+          tokGid[t2] = EXTERNAL;
+          memoPut(way0, input, ts, te, h, EXTERNAL, 0, 0);
+          continue;
+        }
+        pts = ts + FPL;
+      }
+      let depthB = 0, depthP = 0;
+      let lastColon = -1, lastSlash = -1;
+      for (let p = pts;p < te; p++) {
+        const pc = input.charCodeAt(p);
+        if (depthB === 0 && depthP === 0) {
+          if (pc === 58) {
+            lastColon = p;
+            continue;
+          }
+          if (pc === 47) {
+            lastSlash = p;
+            continue;
+          }
+        }
+        if (pc === 91)
+          depthB++;
+        else if (pc === 93)
+          depthB--;
+        else if (pc === 40)
+          depthP++;
+        else if (pc === 41)
+          depthP--;
+      }
+      const modStart = lastColon >= pts ? lastColon + 1 : pts;
+      let bs = modStart;
+      let be = te;
+      let important = false;
+      let prefixShift = 0;
+      if (be > bs && input.charCodeAt(be - 1) === 33) {
+        important = true;
+        be--;
+      } else if (be > bs && input.charCodeAt(bs) === 33) {
+        important = true;
+        bs++;
+        prefixShift = 1;
+      }
+      let postfixEnd = -1;
+      if (lastSlash > modStart) {
+        postfixEnd = lastSlash + prefixShift;
+        if (postfixEnd >= be)
+          postfixEnd = -1;
+      }
+      let feedStart = bs;
+      if (be - bs > 1 && input.charCodeAt(bs) === 45)
+        feedStart = bs + 1;
+      let node = 0;
+      let lp = 0;
+      let le = 0;
+      let pending = -1;
+      let ckptTop = 0;
+      if (nodeVlist2[0] >= 0 || nodeHasLit[0] === 1) {
+        ckptNode[0] = 0;
+        ckptTail[0] = feedStart;
+        ckptTop = 1;
+      }
+      let slashNode = DEAD;
+      let slashCkpt = 0;
+      for (let p = feedStart;p < be; p++) {
+        if (p === postfixEnd) {
+          slashNode = lp < le ? DEAD : node;
+          slashCkpt = ckptTop;
+        }
+        if (node !== DEAD) {
+          const cc = input.charCodeAt(p);
+          let arrived = -1;
+          if (lp < le) {
+            if (labelText2.charCodeAt(lp) === cc) {
+              lp++;
+              if (lp === le)
+                arrived = node = pending;
+            } else
+              node = DEAD;
+          } else {
+            const es = edgeStart2[node];
+            const ee = edgeStart2[node + 1];
+            let next = DEAD;
+            for (let e = es;e < ee; e++) {
+              const ls = labelStart2[e];
+              if (labelText2.charCodeAt(ls) === cc) {
+                if (labelStart2[e + 1] - ls === 1)
+                  arrived = next = edgeTarget2[e];
+                else {
+                  lp = ls + 1;
+                  le = labelStart2[e + 1];
+                  pending = edgeTarget2[e];
+                  next = node;
+                }
+                break;
+              }
+            }
+            node = next;
+          }
+          if (arrived >= 0 && (nodeVlist2[arrived] >= 0 || nodeHasLit[arrived] === 1) && p + 1 < be && input.charCodeAt(p + 1) === 45) {
+            if (ckptTop === ckptCap) {
+              ckptCap *= 2;
+              const nv = new Int32Array(ckptCap);
+              nv.set(ckptNode);
+              ckptNode = nv;
+              const nt = new Int32Array(ckptCap);
+              nt.set(ckptTail);
+              ckptTail = nt;
+            }
+            ckptNode[ckptTop] = arrived;
+            ckptTail[ckptTop] = p + 2;
+            ckptTop++;
+          }
+        }
+      }
+      if (postfixEnd === be) {
+        slashNode = lp < le ? DEAD : node;
+        slashCkpt = ckptTop;
+      }
+      const endNode = lp < le ? DEAD : node;
+      let gid;
+      let hasPostfix = false;
+      if (postfixEnd >= 0) {
+        hasPostfix = true;
+        gid = resolveAt(input, bs, postfixEnd, slashNode, slashCkpt);
+        if (gid !== EXTERNAL && gid < GROUP_COUNT2 && postfixLookupSet[gid]) {
+          const gidFull = resolveAt(input, bs, be, endNode, ckptTop);
+          if (gidFull !== EXTERNAL && gidFull !== gid) {
+            gid = gidFull;
+            hasPostfix = false;
+          }
+        } else if (gid === EXTERNAL) {
+          gid = resolveAt(input, bs, be, endNode, ckptTop);
+          hasPostfix = false;
+        }
+      } else
+        gid = resolveAt(input, bs, be, endNode, ckptTop);
+      let ctxId = 0;
+      let flags = 0;
+      if (gid === EXTERNAL)
+        tokGid[t2] = EXTERNAL;
+      else {
+        flags = hasPostfix ? 1 : 0;
+        ctxId = pts >= lastColon ? important ? 1 : 0 : internSpan(ctxByHash, input, pts, lastColon, important ? 1 : 0, (k) => canonicalizeContext(k, important));
+        tokGid[t2] = gid;
+        tokFlags[t2] = flags;
+        tokCtx[t2] = ctxId;
+      }
+      memoPut(way0, input, ts, te, h, gid, ctxId, flags);
+    }
+    if (tokenCount === 0)
+      return "";
+    if (tokenCount === 1)
+      return tokStart[0] === 0 && tokEnd[0] === n ? input : input.slice(tokStart[0], tokEnd[0]);
+    if (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
+      while (tokenCount * CLAIM_PER_TOKEN > CLAIM_TABLE) {
+        CLAIM_TABLE <<= 1;
+        claimShift--;
+      }
+      claimKeys = new Float64Array(CLAIM_TABLE);
+      claimEpochs = new Int32Array(CLAIM_TABLE);
+    }
+    if (nextCtxId >= ID_LIMIT || nextDynId >= ID_LIMIT)
+      throw new Error("cn: too many distinct classes in one merge");
+    epoch = epoch + 1 | 0;
+    if (epoch === 0) {
+      claim0.fill(0);
+      claimEpochs.fill(0);
+      epoch = 1;
+    }
+    let didDrop = false;
+    for (let t2 = tokenCount - 1;t2 >= 0; t2--) {
+      const gid = tokGid[t2];
+      if (gid === EXTERNAL) {
+        keep[t2] = 1;
+        continue;
+      }
+      const ctxId = tokCtx[t2];
+      if (claimTest(ctxId, gid) === 1) {
+        keep[t2] = 0;
+        didDrop = true;
+        continue;
+      }
+      keep[t2] = 1;
+      if (gid < GROUP_COUNT2) {
+        const r = adjRow[gid];
+        if (r >= 0)
+          for (let k = adjStart2[r];k < adjStart2[r + 1]; k++)
+            claimTest(ctxId, adjTgt2[k]);
+        if (tokFlags[t2] & 1) {
+          for (let k = 0;k < patGid2.length; k++)
+            if (patGid2[k] === gid)
+              claimTest(ctxId, patTgt2[k]);
+        }
+      }
+    }
+    if (!didDrop && !sawNonSpaceWS && n === totalTokenChars + tokenCount - 1)
+      return input;
+    let out = "";
+    let t = 0;
+    while (t < tokenCount) {
+      if (!keep[t]) {
+        t++;
+        continue;
+      }
+      const runStart = tokStart[t];
+      let runEnd = tokEnd[t];
+      let u = t + 1;
+      while (u < tokenCount && keep[u] && tokStart[u] === runEnd + 1 && input.charCodeAt(runEnd) === 32) {
+        runEnd = tokEnd[u];
+        u++;
+      }
+      if (out.length > 0)
+        out += " ";
+      out += input.slice(runStart, runEnd);
+      t = u;
+    }
+    return out;
+  };
+  const DOOR_SIZE = 16384;
+  const door = new Int32Array(DOOR_SIZE * 2);
+  let doorBase = 0;
+  let doorEpoch = 1;
+  let cache = Object.create(null);
+  let prevCache = Object.create(null);
+  let cacheMap = /* @__PURE__ */ new Map;
+  let prevCacheMap = /* @__PURE__ */ new Map;
+  let cacheCount = 0;
+  let doorMarks = 0;
+  const rotateDoor = () => {
+    doorBase ^= DOOR_SIZE;
+    doorEpoch = doorEpoch + 1 | 0;
+    doorMarks = 0;
+  };
+  const mergeCached = (input) => {
+    let merged = cache[input];
+    if (merged !== undefined)
+      return merged;
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
+    if (wasSeen) {
+      merged = prevCache[input];
+      if (merged !== undefined) {
+        cache[input] = merged;
+        return merged;
+      }
+    }
+    merged = mergeClassList(input);
+    if (wasSeen) {
+      cache[input] = merged;
+      if (++cacheCount > cacheSize) {
+        cacheCount = 0;
+        prevCache = cache;
+        cache = Object.create(null);
+        rotateDoor();
+      }
+    } else {
+      door[slot] = hash ^ doorEpoch;
+      if (++doorMarks > DOOR_SIZE)
+        rotateDoor();
+    }
+    return merged;
+  };
+  const mergeCachedMap = (input) => {
+    let merged = cacheMap.get(input);
+    if (merged !== undefined)
+      return merged;
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    const wasSeen = door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1);
+    if (wasSeen) {
+      merged = prevCacheMap.get(input);
+      if (merged !== undefined) {
+        cacheMap.set(input, merged);
+        return merged;
+      }
+    }
+    merged = mergeClassList(input);
+    if (wasSeen) {
+      cacheMap.set(input, merged);
+      if (++cacheCount > cacheSize) {
+        cacheCount = 0;
+        prevCacheMap = cacheMap;
+        cacheMap = /* @__PURE__ */ new Map;
+        rotateDoor();
+      }
+    } else {
+      door[slot] = hash ^ doorEpoch;
+      if (++doorMarks > DOOR_SIZE)
+        rotateDoor();
+    }
+    return merged;
+  };
+  const seenBefore = (input) => {
+    const hash = spanHash(input, 0, input.length);
+    const slot = (hash & 16383) + doorBase;
+    if (door[slot] === (hash ^ doorEpoch) || door[slot ^ DOOR_SIZE] === (hash ^ doorEpoch - 1))
+      return true;
+    door[slot] = hash ^ doorEpoch;
+    if (++doorMarks > DOOR_SIZE)
+      rotateDoor();
+    return false;
+  };
+  const mergeString = cacheSize === 0 ? mergeClassList : IS_JSC ? (input) => {
+    const merged = cacheMap.get(input);
+    return merged !== undefined ? merged : mergeCachedMap(input);
+  } : mergeCached;
+  const merge = function() {
+    return arguments.length === 1 && typeof arguments[0] === "string" ? mergeString(arguments[0]) : mergeString(twJoin.apply(null, arguments));
+  };
+  return {
+    merge,
+    mergeString,
+    seenBefore: cacheSize === 0 ? () => false : seenBefore,
+    mergeUncached: mergeClassList
+  };
+};
+var resolveValue = (v, clsxMode) => {
+  if (!v)
+    return "";
+  if (typeof v === "string")
+    return v;
+  let out = "";
+  if (typeof v.length === "number" && (clsxMode ? Array.isArray(v) : true)) {
+    const arr = v;
+    for (let i = 0;i < arr.length; i++) {
+      const item = arr[i];
+      if (!item)
+        continue;
+      const r = typeof item === "string" ? item : resolveValue(item, clsxMode);
+      if (r) {
+        if (out)
+          out += " ";
+        out += r;
+      }
+    }
+    return out;
+  }
+  if (clsxMode) {
+    if (typeof v === "number")
+      return "" + v;
+    if (typeof v === "object") {
+      for (const k in v)
+        if (v[k]) {
+          if (out)
+            out += " ";
+          out += k;
+        }
+    }
+  }
+  return out;
+};
+var joinArgs = (args, clsxMode) => {
+  let s = "";
+  for (let i = 0;i < args.length; i++) {
+    const a = args[i];
+    if (!a)
+      continue;
+    const r = typeof a === "string" ? a : resolveValue(a, clsxMode);
+    if (r) {
+      if (s)
+        s += " ";
+      s += r;
+    }
+  }
+  return s;
+};
+var twJoin = function() {
+  return joinArgs(arguments, false);
+};
+var wrapClsx = (mergeString, fresh) => {
+  const seenBefore = fresh === undefined ? () => true : fresh.seenBefore;
+  const mergeUncached = fresh === undefined ? mergeString : fresh.mergeUncached;
+  let argCache = /* @__PURE__ */ new Map;
+  let prevArgCache = /* @__PURE__ */ new Map;
+  let argCount = 0;
+  let lastHit = null;
+  const match3 = (e, v0, v1, v2) => {
+    let k = 0;
+    if (v0) {
+      if (v0 !== e.a0)
+        return false;
+      k = 1;
+    }
+    if (v1) {
+      if (v1 !== (k === 0 ? e.a0 : e.a1))
+        return false;
+      k++;
+    }
+    if (v2) {
+      if (v2 !== (k === 0 ? e.a0 : k === 1 ? e.a1 : e.a2))
+        return false;
+      k++;
+    }
+    return k === e.t;
+  };
+  const matchN = (e, vals) => {
+    const ea = e.a;
+    let k = 0;
+    for (let i = 0;i < vals.length; i++) {
+      const v = vals[i];
+      if (!v)
+        continue;
+      if (v !== ea[k])
+        return false;
+      k++;
+    }
+    return k === e.t;
+  };
+  const resolveArgs = (vals, probed) => {
+    const nArgs = vals.length;
+    const pred = lastHit === null ? null : lastHit.n;
+    if (!probed) {
+      if (pred !== null && matchN(pred, vals)) {
+        lastHit = pred;
+        return pred.r;
+      }
+      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
+        return lastHit.r;
+    }
+    let first = "";
+    let firstIdx = -1;
+    let truthy = 0;
+    let hasResolvedValue = false;
+    for (let i = 0;i < nArgs; i++) {
+      let v = vals[i];
+      if (!v)
+        continue;
+      if (typeof v !== "string") {
+        v = vals[i] = resolveValue(v, true);
+        if (!v)
+          continue;
+        hasResolvedValue = true;
+      }
+      if (firstIdx < 0) {
+        first = v;
+        firstIdx = i;
+      }
+      truthy++;
+    }
+    if (truthy === 0)
+      return "";
+    if (truthy === 1)
+      return mergeString(first);
+    if (hasResolvedValue) {
+      if (pred !== null && matchN(pred, vals)) {
+        lastHit = pred;
+        return pred.r;
+      }
+      if (lastHit !== null && lastHit !== pred && matchN(lastHit, vals))
+        return lastHit.r;
+    }
+    let bucket = argCache.get(first);
+    if (bucket === undefined) {
+      bucket = prevArgCache.get(first);
+      if (bucket !== undefined)
+        argCache.set(first, bucket);
+    }
+    let hit = null;
+    if (bucket !== undefined)
+      outer:
+        for (let b = 0;b < bucket.length; b++) {
+          const e = bucket[b];
+          if (e.t !== truthy)
+            continue;
+          const ea = e.a;
+          let k = 1;
+          for (let i = firstIdx + 1;i < nArgs; i++) {
+            const v = vals[i];
+            if (v && v !== ea[k++])
+              continue outer;
+          }
+          hit = e;
+          break;
+        }
+    if (hit === null) {
+      let joined = first;
+      const a = [first];
+      for (let i = firstIdx + 1;i < nArgs; i++) {
+        const v = vals[i];
+        if (!v)
+          continue;
+        joined += " " + v;
+        a.push(v);
+      }
+      if (!seenBefore(joined))
+        return mergeUncached(joined);
+      hit = {
+        r: mergeString(joined),
+        t: a.length,
+        a0: a[0],
+        a1: a[1],
+        a2: a[2] ?? "",
+        a,
+        n: null
+      };
+      if (bucket === undefined)
+        argCache.set(first, bucket = []);
+      if (bucket.length >= 256)
+        bucket.shift();
+      bucket.push(hit);
+      if (++argCount > 1000) {
+        argCount = 0;
+        prevArgCache = argCache;
+        argCache = /* @__PURE__ */ new Map;
+      }
+    }
+    if (lastHit !== null && lastHit !== hit)
+      lastHit.n = hit;
+    lastHit = hit;
+    return hit.r;
+  };
+  const mergeSingleValue = (value) => Array.isArray(value) ? resolveArgs(value.slice(), false) : mergeString(resolveValue(value, true));
+  return function(v0, v1, v2) {
+    const nArgs = arguments.length;
+    if ((nArgs | 1) === 3) {
+      const lh2 = lastHit;
+      if (lh2 !== null) {
+        const pred = lh2.n;
+        if (pred !== null && match3(pred, v0, v1, v2)) {
+          lastHit = pred;
+          return pred.r;
+        }
+        if (lh2 !== pred && match3(lh2, v0, v1, v2))
+          return lh2.r;
+      }
+      return resolveArgs([
+        v0,
+        v1,
+        v2
+      ], true);
+    }
+    if (nArgs === 1)
+      return typeof v0 === "string" ? mergeString(v0) : mergeSingleValue(v0);
+    const lh = lastHit;
+    if (lh !== null) {
+      const pred = lh.n;
+      if (pred !== null) {
+        const pa = pred.a;
+        let k = 0;
+        let ok = true;
+        for (let i = 0;i < nArgs; i++) {
+          const v = arguments[i];
+          if (!v)
+            continue;
+          if (v !== pa[k]) {
+            ok = false;
+            break;
+          }
+          k++;
+        }
+        if (ok && k === pred.t) {
+          lastHit = pred;
+          return pred.r;
+        }
+      }
+      if (lh !== pred) {
+        const la = lh.a;
+        let k = 0;
+        let ok = true;
+        for (let i = 0;i < nArgs; i++) {
+          const v = arguments[i];
+          if (!v)
+            continue;
+          if (v !== la[k]) {
+            ok = false;
+            break;
+          }
+          k++;
+        }
+        if (ok && k === lh.t)
+          return lh.r;
+      }
+    }
+    const vals = [];
+    for (let i = 0;i < nArgs; i++)
+      vals.push(arguments[i]);
+    return resolveArgs(vals, true);
+  };
+};
+
+// node_modules/cn/dist/index.js
+var instance = /* @__PURE__ */ createEngine(tables_generated_default);
+var cn = /* @__PURE__ */ wrapClsx(instance.mergeString, instance);
+var twMerge = instance.merge;
+
 // src/grapevine/surface/components/ChannelRail.tsx
 var import_react2 = __toESM(require_react(), 1);
-
-// src/kit/lib/cn.ts
-function cn(...inputs) {
-  return inputs.filter(Boolean).join(" ");
-}
-
-// src/grapevine/surface/state/channel.ts
-function channelFromHash(hash) {
-  return decodeURIComponent((hash || "#lobby").slice(1)) || "lobby";
-}
-function channelHref(name) {
-  return `#${encodeURIComponent(name)}`;
-}
-function pageTitle(channel) {
-  return `grapevine · ${channel}`;
-}
-
-// src/grapevine/surface/state/feed.ts
-var emptyFeed = () => ({ messages: [], byId: new Map, highest: 0 });
-function appendMessage(feed, m) {
-  const byId = new Map(feed.byId);
-  if (typeof m.id === "number")
-    byId.set(m.id, m);
-  const highest = typeof m.id === "number" && m.id > feed.highest ? m.id : feed.highest;
-  const next = { messages: [...feed.messages, m], byId, highest };
-  return m.kind === "topic" ? { feed: next, topic: m.text } : { feed: next };
-}
-function nearBottom(scrollTop, clientHeight, scrollHeight) {
-  return scrollTop + clientHeight + 80 >= scrollHeight;
-}
-function hashHue(s) {
-  let h = 0;
-  for (let i = 0;i < s.length; i++)
-    h = h * 31 + s.charCodeAt(i) | 0;
-  return Math.abs(h) % 360;
-}
-function aliasColor(alias) {
-  return `hsl(${hashHue(alias || "")} 70% 70%)`;
-}
-function snippet(t) {
-  return t.length > 80 ? `${t.slice(0, 80)}…` : t;
-}
-function fmtTime(ts) {
-  return new Date(ts).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit"
-  });
-}
-function fromLabel(m) {
-  return m.kind === "topic" ? `${m.from} set topic` : m.from;
-}
-function subLabel(a, alias, humans) {
-  if (a === alias)
-    return `${a} (you)`;
-  if (humans.includes(a))
-    return `${a} (human)`;
-  return a;
-}
-function mergeChannels(seen, list, firstPoll) {
-  const nextSeen = new Set(seen);
-  const rows = list.map((c) => {
-    const isNew = !firstPoll && !seen.has(c.name);
-    nextSeen.add(c.name);
-    return { name: c.name, subscribers: c.subscribers ?? 0, archived: !!c.archived, isNew };
-  });
-  return { rows, seen: nextSeen };
-}
-function isChannelArchived(rows, channel) {
-  return rows.find((c) => c.name === channel)?.archived ?? false;
-}
-function closeConfirmText(name) {
-  return `Close channel "${name}"? This deletes its message log and disconnects any subscribers. This cannot be undone.`;
-}
 
 // node_modules/@base-ui/react/alert-dialog/index.parts.mjs
 var exports_index_parts = {};
@@ -18151,12 +19316,12 @@ function update(forkRef, refs) {
     forkRef.callback = null;
     return;
   }
-  forkRef.callback = (instance) => {
+  forkRef.callback = (instance2) => {
     if (forkRef.cleanup) {
       forkRef.cleanup();
       forkRef.cleanup = null;
     }
-    if (instance != null) {
+    if (instance2 != null) {
       const cleanupCallbacks = Array(refs.length).fill(null);
       for (let i = 0;i < refs.length; i += 1) {
         const ref = refs[i];
@@ -18165,14 +19330,14 @@ function update(forkRef, refs) {
         }
         switch (typeof ref) {
           case "function": {
-            const refCleanup = ref(instance);
+            const refCleanup = ref(instance2);
             if (typeof refCleanup === "function") {
               cleanupCallbacks[i] = refCleanup;
             }
             break;
           }
           case "object": {
-            ref.current = instance;
+            ref.current = instance2;
             break;
           }
           default:
@@ -20541,16 +21706,16 @@ function useStoreR19(store, selector, a1, a2, a3) {
   return import_shim.useSyncExternalStore(store.subscribe, getSelection, getSelection);
 }
 register({
-  before(instance) {
-    instance.syncIndex = 0;
-    if (!instance.didInitialize) {
-      instance.syncTick = 1;
-      instance.syncHooks = [];
-      instance.didChangeStore = true;
-      instance.getSnapshot = () => {
+  before(instance2) {
+    instance2.syncIndex = 0;
+    if (!instance2.didInitialize) {
+      instance2.syncTick = 1;
+      instance2.syncHooks = [];
+      instance2.didChangeStore = true;
+      instance2.getSnapshot = () => {
         let didChange2 = false;
-        for (let i = 0;i < instance.syncHooks.length; i += 1) {
-          const hook = instance.syncHooks[i];
+        for (let i = 0;i < instance2.syncHooks.length; i += 1) {
+          const hook = instance2.syncHooks[i];
           const value = hook.selector(hook.store.state, hook.a1, hook.a2, hook.a3);
           if (!Object.is(hook.value, value)) {
             didChange2 = true;
@@ -20558,19 +21723,19 @@ register({
           }
         }
         if (didChange2) {
-          instance.syncTick += 1;
+          instance2.syncTick += 1;
         }
-        return instance.syncTick;
+        return instance2.syncTick;
       };
     }
   },
-  after(instance) {
-    if (instance.syncHooks.length > 0) {
-      if (instance.didChangeStore) {
-        instance.didChangeStore = false;
-        instance.subscribe = (onStoreChange) => {
+  after(instance2) {
+    if (instance2.syncHooks.length > 0) {
+      if (instance2.didChangeStore) {
+        instance2.didChangeStore = false;
+        instance2.subscribe = (onStoreChange) => {
           const stores = new Set;
-          for (const hook of instance.syncHooks) {
+          for (const hook of instance2.syncHooks) {
             stores.add(hook.store);
           }
           const unsubscribes = [];
@@ -20584,19 +21749,19 @@ register({
           };
         };
       }
-      import_shim.useSyncExternalStore(instance.subscribe, instance.getSnapshot, instance.getSnapshot);
+      import_shim.useSyncExternalStore(instance2.subscribe, instance2.getSnapshot, instance2.getSnapshot);
     }
   }
 });
 function useStoreFast(store, selector, a1, a2, a3) {
-  const instance = getInstance();
-  if (!instance) {
+  const instance2 = getInstance();
+  if (!instance2) {
     return useStoreR19(store, selector, a1, a2, a3);
   }
-  const index = instance.syncIndex;
-  instance.syncIndex += 1;
+  const index = instance2.syncIndex;
+  instance2.syncIndex += 1;
   let hook;
-  if (!instance.didInitialize) {
+  if (!instance2.didInitialize) {
     hook = {
       store,
       selector,
@@ -20605,12 +21770,12 @@ function useStoreFast(store, selector, a1, a2, a3) {
       a3,
       value: selector(store.getSnapshot(), a1, a2, a3)
     };
-    instance.syncHooks.push(hook);
+    instance2.syncHooks.push(hook);
   } else {
-    hook = instance.syncHooks[index];
+    hook = instance2.syncHooks[index];
     if (hook.store !== store || hook.selector !== selector || !Object.is(hook.a1, a1) || !Object.is(hook.a2, a2) || !Object.is(hook.a3, a3)) {
       if (hook.store !== store) {
-        instance.didChangeStore = true;
+        instance2.didChangeStore = true;
       }
       hook.store = store;
       hook.selector = selector;
@@ -22622,43 +23787,207 @@ class AlertDialogHandle extends DialogHandle {
 function createAlertDialogHandle() {
   return new AlertDialogHandle;
 }
-// src/grapevine/surface/ui/alert-dialog.tsx
+// node_modules/@base-ui/react/button/Button.mjs
+var React42 = __toESM(require_react(), 1);
+"use client";
+var Button = /* @__PURE__ */ React42.forwardRef(function Button2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    disabled: disabled2 = false,
+    focusableWhenDisabled = false,
+    nativeButton = true,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    getButtonProps,
+    buttonRef
+  } = useButton({
+    disabled: disabled2,
+    focusableWhenDisabled,
+    native: nativeButton
+  });
+  const state = {
+    disabled: disabled2
+  };
+  return useRenderElement("button", componentProps, {
+    state,
+    ref: [forwardedRef, buttonRef],
+    props: [elementProps, getButtonProps]
+  });
+});
+if (true)
+  Button.displayName = "Button";
+// node_modules/clsx/dist/clsx.mjs
+function r(e) {
+  var t, f, n = "";
+  if (typeof e == "string" || typeof e == "number")
+    n += e;
+  else if (typeof e == "object")
+    if (Array.isArray(e)) {
+      var o = e.length;
+      for (t = 0;t < o; t++)
+        e[t] && (f = r(e[t])) && (n && (n += " "), n += f);
+    } else
+      for (f in e)
+        e[f] && (n && (n += " "), n += f);
+  return n;
+}
+function clsx2() {
+  for (var e, t, f = 0, n = "", o = arguments.length;f < o; f++)
+    (e = arguments[f]) && (t = r(e)) && (n && (n += " "), n += t);
+  return n;
+}
+
+// node_modules/class-variance-authority/dist/index.mjs
+var falsyToString = (value) => typeof value === "boolean" ? `${value}` : value === 0 ? "0" : value;
+var cx = clsx2;
+var cva = (base, config) => (props) => {
+  var _config_compoundVariants;
+  if ((config === null || config === undefined ? undefined : config.variants) == null)
+    return cx(base, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
+  const { variants, defaultVariants } = config;
+  const getVariantClassNames = Object.keys(variants).map((variant) => {
+    const variantProp = props === null || props === undefined ? undefined : props[variant];
+    const defaultVariantProp = defaultVariants === null || defaultVariants === undefined ? undefined : defaultVariants[variant];
+    if (variantProp === null)
+      return null;
+    const variantKey = falsyToString(variantProp) || falsyToString(defaultVariantProp);
+    return variants[variant][variantKey];
+  });
+  const propsWithoutUndefined = props && Object.entries(props).reduce((acc, param) => {
+    let [key, value] = param;
+    if (value === undefined) {
+      return acc;
+    }
+    acc[key] = value;
+    return acc;
+  }, {});
+  const getCompoundVariantClassNames = config === null || config === undefined ? undefined : (_config_compoundVariants = config.compoundVariants) === null || _config_compoundVariants === undefined ? undefined : _config_compoundVariants.reduce((acc, param) => {
+    let { class: cvClass, className: cvClassName, ...compoundVariantOptions } = param;
+    return Object.entries(compoundVariantOptions).every((param2) => {
+      let [key, value] = param2;
+      return Array.isArray(value) ? value.includes({
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key]) : {
+        ...defaultVariants,
+        ...propsWithoutUndefined
+      }[key] === value;
+    }) ? [
+      ...acc,
+      cvClass,
+      cvClassName
+    ] : acc;
+  }, []);
+  return cx(base, getVariantClassNames, getCompoundVariantClassNames, props === null || props === undefined ? undefined : props.class, props === null || props === undefined ? undefined : props.className);
+};
+
+// src/grapevine/surface/ui/button.tsx
 var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
-var AlertDialog = exports_index_parts.Root;
-var AlertDialogTrigger2 = exports_index_parts.Trigger;
-function AlertDialogContent({
+var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4", {
+  variants: {
+    variant: {
+      default: "bg-primary text-primary-foreground hover:bg-primary/80",
+      outline: "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+      secondary: "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+      ghost: "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+      destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
+      link: "text-primary underline-offset-4 hover:underline",
+      accent: "border-ring bg-transparent text-grape-soft hover:bg-primary/10",
+      joined: "border-leaf bg-leaf/10 text-leaf-soft hover:bg-leaf/15",
+      "destructive-ghost": "hover:bg-destructive/10 hover:text-destructive aria-expanded:bg-destructive/10 aria-expanded:text-destructive"
+    },
+    size: {
+      default: "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+      xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
+      sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+      lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+      icon: "size-8",
+      "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
+      "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
+      "icon-lg": "size-9",
+      inline: "h-auto gap-1 rounded-sm border-0 px-1 py-0 text-[0.6875rem] leading-none"
+    }
+  },
+  defaultVariants: {
+    variant: "default",
+    size: "default"
+  }
+});
+function Button3({
   className,
-  children,
+  variant = "default",
+  size: size2 = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Portal, {
+  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(Button, {
+    "data-slot": "button",
+    className: cn(buttonVariants({ variant, size: size2, className })),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/alert-dialog.tsx
+var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
+function AlertDialog({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Root, {
+    "data-slot": "alert-dialog",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogPortal({ ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Portal, {
+    "data-slot": "alert-dialog-portal",
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogOverlay({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Backdrop, {
+    "data-slot": "alert-dialog-overlay",
+    className: cn("fixed inset-0 isolate z-50 bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogContent({
+  className,
+  size: size2 = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(AlertDialogPortal, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Backdrop, {
-        className: "fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Popup, {
-        className: cn("fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-popover p-5 text-popover-foreground shadow-xl", className),
-        ...props,
-        children
+      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(AlertDialogOverlay, {}, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Popup, {
+        "data-slot": "alert-dialog-content",
+        "data-size": size2,
+        className: cn("group/alert-dialog-content fixed top-1/2 left-1/2 z-50 grid w-full -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className),
+        ...props
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 function AlertDialogHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-    className: cn("flex flex-col gap-1.5", className),
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
+    "data-slot": "alert-dialog-header",
+    className: cn("grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function AlertDialogFooter({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("div", {
-    className: cn("mt-4 flex justify-end gap-2", className),
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("div", {
+    "data-slot": "alert-dialog-footer",
+    className: cn("-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end", className),
     ...props
   }, undefined, false, undefined, this);
 }
-function AlertDialogTitle({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Title, {
-    className: cn("text-sm font-semibold text-foreground", className),
+function AlertDialogTitle({
+  className,
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Title, {
+    "data-slot": "alert-dialog-title",
+    className: cn("text-base font-medium sm:group-data-[size=default]/alert-dialog-content:group-has-data-[slot=alert-dialog-media]/alert-dialog-content:col-start-2", className),
     ...props
   }, undefined, false, undefined, this);
 }
@@ -22666,115 +23995,204 @@ function AlertDialogDescription({
   className,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime.jsxDEV(exports_index_parts.Description, {
-    className: cn("text-xs leading-relaxed text-muted-foreground", className),
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Description, {
+    "data-slot": "alert-dialog-description",
+    className: cn("text-sm text-balance text-muted-foreground md:text-pretty *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground", className),
     ...props
   }, undefined, false, undefined, this);
+}
+function AlertDialogAction({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Button3, {
+    "data-slot": "alert-dialog-action",
+    className: cn(className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function AlertDialogCancel({
+  className,
+  variant = "outline",
+  size: size2 = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(exports_index_parts.Close, {
+    "data-slot": "alert-dialog-cancel",
+    className: cn(className),
+    render: /* @__PURE__ */ jsx_dev_runtime2.jsxDEV(Button3, {
+      variant,
+      size: size2
+    }, undefined, false, undefined, this),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/@base-ui/react/use-render/useRender.mjs
+function useRender(params) {
+  return useRenderElement(params.defaultTagName ?? "div", params, params);
 }
 
 // src/grapevine/surface/ui/badge.tsx
-var jsx_dev_runtime2 = __toESM(require_jsx_dev_runtime(), 1);
-var VARIANT = {
-  outline: "rounded-full border border-border bg-secondary px-2 py-0.5 text-xs",
-  count: "shrink-0 rounded-full bg-background px-1.5 py-px text-[10px] text-muted-foreground"
-};
+var badgeVariants = cva("group/badge inline-flex h-5 w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-all focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3!", {
+  variants: {
+    variant: {
+      default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+      secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
+      destructive: "bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",
+      outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
+      ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
+      link: "text-primary underline-offset-4 hover:underline",
+      count: "bg-background px-1.5 text-[10px] text-muted-foreground",
+      "count-live": "bg-background px-1.5 text-[10px] text-leaf-soft"
+    }
+  },
+  defaultVariants: {
+    variant: "default"
+  }
+});
 function Badge({
   className,
-  variant = "outline",
+  variant = "default",
+  render,
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime2.jsxDEV("span", {
-    className: cn("inline-flex items-center gap-1", VARIANT[variant], className),
-    ...props
-  }, undefined, false, undefined, this);
+  return useRender({
+    defaultTagName: "span",
+    props: mergeProps({
+      className: cn(badgeVariants({ variant }), className)
+    }, props),
+    render,
+    state: {
+      slot: "badge",
+      variant
+    }
+  });
 }
 
-// src/grapevine/surface/ui/button.tsx
-var jsx_dev_runtime3 = __toESM(require_jsx_dev_runtime(), 1);
-var VARIANT2 = {
-  outline: "rounded-md border border-border bg-secondary text-muted-foreground hover:border-ring hover:text-foreground",
-  ghost: "rounded-md text-muted-foreground hover:text-foreground",
-  primary: "rounded-lg bg-grape font-semibold text-on-grape hover:bg-grape/90",
-  accent: "rounded-md border border-ring bg-transparent text-grape-soft hover:bg-grape/10",
-  joined: "rounded-md border border-leaf bg-leaf/10 text-leaf-soft"
-};
-var SIZE = {
-  sm: "h-7 px-2.5",
-  icon: "h-7 w-7",
-  auto: ""
-};
-function Button({
-  className,
-  variant = "outline",
-  size: size2 = "sm",
-  type = "button",
-  ...props
-}) {
-  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("button", {
-    type,
-    className: cn("inline-flex cursor-pointer items-center justify-center gap-1.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0", VARIANT2[variant], SIZE[size2], className),
-    ...props
-  }, undefined, false, undefined, this);
+// src/grapevine/surface/state/channel.ts
+function channelFromHash(hash) {
+  return decodeURIComponent((hash || "#lobby").slice(1)) || "lobby";
+}
+function channelHref(name) {
+  return `#${encodeURIComponent(name)}`;
+}
+function pageTitle(channel) {
+  return `grapevine · ${channel}`;
+}
+
+// src/grapevine/surface/state/feed.ts
+var emptyFeed = () => ({ messages: [], byId: new Map, highest: 0 });
+function appendMessage(feed, m) {
+  const byId = new Map(feed.byId);
+  if (typeof m.id === "number")
+    byId.set(m.id, m);
+  const highest = typeof m.id === "number" && m.id > feed.highest ? m.id : feed.highest;
+  const next = { messages: [...feed.messages, m], byId, highest };
+  return m.kind === "topic" ? { feed: next, topic: m.text } : { feed: next };
+}
+function nearBottom(scrollTop, clientHeight, scrollHeight) {
+  return scrollTop + clientHeight + 80 >= scrollHeight;
+}
+function hashHue(s) {
+  let h = 0;
+  for (let i = 0;i < s.length; i++)
+    h = h * 31 + s.charCodeAt(i) | 0;
+  return Math.abs(h) % 360;
+}
+function aliasColor(alias) {
+  return `hsl(${hashHue(alias || "")} 70% 70%)`;
+}
+function snippet(t) {
+  return t.length > 80 ? `${t.slice(0, 80)}…` : t;
+}
+function fmtTime(ts) {
+  return new Date(ts).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
+}
+function fromLabel(m) {
+  return m.kind === "topic" ? `${m.from} set topic` : m.from;
+}
+function subLabel(a, alias, humans) {
+  if (a === alias)
+    return `${a} (you)`;
+  if (humans.includes(a))
+    return `${a} (human)`;
+  return a;
+}
+function mergeChannels(seen, list, firstPoll) {
+  const nextSeen = new Set(seen);
+  const rows = list.map((c) => {
+    const isNew = !firstPoll && !seen.has(c.name);
+    nextSeen.add(c.name);
+    return { name: c.name, subscribers: c.subscribers ?? 0, archived: !!c.archived, isNew };
+  });
+  return { rows, seen: nextSeen };
+}
+function isChannelArchived(rows, channel) {
+  return rows.find((c) => c.name === channel)?.archived ?? false;
+}
+function closeConfirmText(name) {
+  return `Close channel "${name}"? This deletes its message log and disconnects any subscribers. This cannot be undone.`;
 }
 
 // src/grapevine/surface/components/ChannelRail.tsx
-var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime3 = __toESM(require_jsx_dev_runtime(), 1);
 function ChannelRail({
   channels,
   current,
   onClose
 }) {
   const [pending, setPending] = import_react2.useState(null);
-  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("aside", {
+  return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("aside", {
     className: "overflow-y-auto border-r border-edge bg-surface px-[18px] py-4",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("h2", {
+      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("h2", {
         className: "mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
         children: "Channels"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("ul", {
+      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("ul", {
         className: "m-0 list-none p-0",
         children: [
-          channels.length === 0 && /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("li", {
+          channels.length === 0 && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("li", {
             className: "px-2 py-1.5 font-mono text-xs italic text-ink-dim",
             children: "no channels yet"
           }, undefined, false, undefined, this),
           channels.map((c) => {
             const active = c.name === current;
-            return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("li", {
+            return /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("li", {
               className: "p-0",
-              children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("div", {
-                className: cn("group flex items-stretch gap-0.5 rounded-md transition-colors hover:bg-surface-raised", active && "bg-surface-raised", c.isNew && "animate-flash"),
+              children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("div", {
+                className: cn("group flex items-center gap-0.5 rounded-md transition-colors hover:bg-surface-raised", active && "bg-surface-raised", c.isNew && "animate-flash"),
                 children: [
-                  /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("a", {
+                  /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("a", {
                     href: channelHref(c.name),
                     className: cn("flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs text-ink no-underline", active && "font-semibold text-leaf-soft"),
                     children: [
-                      /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+                      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("span", {
                         className: cn("min-w-0 flex-1 truncate", c.archived && "text-ink-dim"),
                         children: c.name
                       }, undefined, false, undefined, this),
-                      /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+                      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("span", {
                         className: "ml-1.5 flex shrink-0 items-center gap-1",
                         children: [
-                          c.archived && /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
+                          c.archived && /* @__PURE__ */ jsx_dev_runtime3.jsxDEV("span", {
                             className: "text-[10px]",
                             title: "archived — read-only",
                             children: "\uD83D\uDD12"
                           }, undefined, false, undefined, this),
-                          /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Badge, {
-                            variant: "count",
-                            className: cn(active && "text-leaf-soft"),
+                          /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Badge, {
+                            variant: active ? "count-live" : "count",
                             children: c.subscribers
                           }, undefined, false, undefined, this)
                         ]
                       }, undefined, true, undefined, this)
                     ]
                   }, undefined, true, undefined, this),
-                  /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Button, {
-                    variant: "ghost",
-                    size: "auto",
-                    className: "px-1.5 text-[13px] opacity-0 hover:bg-danger/10 hover:text-danger group-hover:opacity-100",
+                  /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Button3, {
+                    variant: "destructive-ghost",
+                    size: "icon-xs",
+                    className: "opacity-0 group-hover:opacity-100",
                     title: `Close channel “${c.name}” (deletes message log)`,
                     onClick: () => setPending(c.name),
                     children: "\uD83D\uDDD1"
@@ -22785,31 +24203,27 @@ function ChannelRail({
           })
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(AlertDialog, {
+      /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialog, {
         open: pending !== null,
         onOpenChange: (o) => !o && setPending(null),
-        children: /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(AlertDialogContent, {
+        children: /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogContent, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(AlertDialogHeader, {
+            /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogHeader, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(AlertDialogTitle, {
+                /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogTitle, {
                   children: "Close channel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(AlertDialogDescription, {
+                /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogDescription, {
                   children: pending && closeConfirmText(pending)
                 }, undefined, false, undefined, this)
               ]
             }, undefined, true, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(AlertDialogFooter, {
+            /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogFooter, {
               children: [
-                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Button, {
-                  variant: "outline",
-                  onClick: () => setPending(null),
+                /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogCancel, {
                   children: "Cancel"
                 }, undefined, false, undefined, this),
-                /* @__PURE__ */ jsx_dev_runtime4.jsxDEV(Button, {
-                  variant: "primary",
-                  className: "px-3",
+                /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(AlertDialogAction, {
                   onClick: () => {
                     if (pending)
                       onClose(pending);
@@ -22827,21 +24241,115 @@ function ChannelRail({
 }
 
 // src/grapevine/surface/components/Composer.tsx
+var import_react4 = __toESM(require_react(), 1);
+
+// src/grapevine/surface/ui/field.tsx
 var import_react3 = __toESM(require_react(), 1);
 
-// src/grapevine/surface/ui/textarea.tsx
+// src/grapevine/surface/ui/label.tsx
+var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
+function Label({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("label", {
+    "data-slot": "label",
+    className: cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/@base-ui/react/separator/Separator.mjs
+var React43 = __toESM(require_react(), 1);
+"use client";
+var Separator = /* @__PURE__ */ React43.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
+  const {
+    className,
+    render,
+    orientation = "horizontal",
+    style,
+    ...elementProps
+  } = componentProps;
+  const state = {
+    orientation
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [{
+      role: "separator",
+      "aria-orientation": orientation
+    }, elementProps]
+  });
+  return element;
+});
+if (true)
+  Separator.displayName = "Separator";
+// src/grapevine/surface/ui/separator.tsx
 var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+"use client";
+function Separator2({ className, orientation = "horizontal", ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Separator, {
+    "data-slot": "separator",
+    orientation,
+    className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/field.tsx
+var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+function FieldGroup({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+    "data-slot": "field-group",
+    className: cn("group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+var fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:text-destructive", {
+  variants: {
+    orientation: {
+      vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
+      horizontal: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+      responsive: "flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px"
+    }
+  },
+  defaultVariants: {
+    orientation: "vertical"
+  }
+});
+function Field({
+  className,
+  orientation = "vertical",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+    role: "group",
+    "data-slot": "field",
+    "data-orientation": orientation,
+    className: cn(fieldVariants({ orientation }), className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function FieldLabel({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Label, {
+    "data-slot": "field-label",
+    className: cn("group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-muted/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-ring has-[>[data-slot=field]]:has-[:focus-visible]:ring-3 has-[>[data-slot=field]]:has-[:focus-visible]:ring-ring/50 *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10", "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/textarea.tsx
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
 function Textarea({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("textarea", {
-    className: cn("w-full rounded-[10px] border border-border bg-secondary px-3.5 py-2.5 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none disabled:cursor-not-allowed disabled:opacity-40", className),
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("textarea", {
+    "data-slot": "textarea",
+    className: cn("flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
     ...props
   }, undefined, false, undefined, this);
 }
 
 // src/grapevine/surface/components/Composer.tsx
-var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
 function ArchivedNote() {
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
     className: "sticky bottom-0 bg-linear-to-t from-bg from-80% to-transparent pt-3 pb-2 text-center font-mono text-xs text-attention",
     children: "\uD83D\uDD12 this channel is archived — read-only"
   }, undefined, false, undefined, this);
@@ -22852,9 +24360,10 @@ function Composer({
   onCancelReply,
   onSend
 }) {
-  const [draft, setDraft] = import_react3.useState("");
-  const inputRef = import_react3.useRef(null);
-  import_react3.useEffect(() => {
+  const [draft, setDraft] = import_react4.useState("");
+  const draftId = import_react4.useId();
+  const inputRef = import_react4.useRef(null);
+  import_react4.useEffect(() => {
     if (replyingTo)
       inputRef.current?.focus();
   }, [replyingTo]);
@@ -22862,101 +24371,107 @@ function Composer({
     if (await onSend(draft))
       setDraft("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
     className: "sticky bottom-0 bg-linear-to-t from-bg from-80% to-transparent pt-3 pb-1",
     children: [
-      replyingTo && /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+      replyingTo && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
         className: "-mb-px flex items-center gap-1.5 rounded-t-lg border border-edge border-l-2 border-l-grape bg-surface-raised px-2.5 py-1.5 font-mono text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "text-grape-soft",
             children: "↳"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             children: "replying to"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "font-mono font-semibold",
             style: { color: aliasColor(replyingTo.from) },
             children: replyingTo.from
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "flex-1 truncate",
             children: snippet(replyingTo.text || "")
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Button3, {
             variant: "ghost",
-            size: "auto",
-            className: "ml-auto px-1 text-xs",
+            size: "icon-xs",
+            className: "ml-auto",
             "aria-label": "Cancel reply",
             onClick: onCancelReply,
             children: "✕"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("form", {
-        className: "flex gap-2",
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("form", {
         onSubmit: (e) => {
           e.preventDefault();
           submit();
         },
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Textarea, {
-            ref: inputRef,
-            className: "max-h-40 flex-1 resize-none text-sm leading-normal",
-            rows: 1,
-            value: draft,
-            placeholder: `message as ${alias}…`,
-            onChange: (e) => setDraft(e.target.value),
-            onKeyDown: (e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                submit();
+        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Field, {
+          orientation: "horizontal",
+          className: "items-end",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FieldLabel, {
+              htmlFor: draftId,
+              className: "sr-only",
+              children: "Message"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Textarea, {
+              id: draftId,
+              ref: inputRef,
+              className: "max-h-40 min-h-0 flex-1 resize-none",
+              rows: 1,
+              value: draft,
+              placeholder: `message as ${alias}…`,
+              onChange: (e) => setDraft(e.target.value),
+              onKeyDown: (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
               }
-            }
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Button, {
-            type: "submit",
-            variant: "primary",
-            size: "auto",
-            className: "self-end px-4 py-2.5 text-sm",
-            disabled: !draft.trim(),
-            children: "send"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Button3, {
+              type: "submit",
+              disabled: !draft.trim(),
+              children: "send"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
 // src/grapevine/surface/components/Header.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
 function Header({ channel, topic }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("header", {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("header", {
     className: "flex items-center gap-4 border-b border-edge bg-surface px-6 py-4",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
         className: "text-[22px]",
         children: "\uD83C\uDF3F"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
         className: "flex-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("h1", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("h1", {
             className: "m-0 text-base font-semibold tracking-[0.01em]",
             children: [
               "grapevine",
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
                 className: "mx-1.5 text-ink-dim",
                 children: "·"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
                 className: "text-leaf-soft",
                 children: channel
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("p", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("p", {
             className: cn("m-0 text-[13px] text-ink-dim", !topic && "italic"),
             children: topic || "no topic set"
           }, undefined, false, undefined, this)
@@ -22967,7 +24482,1448 @@ function Header({ channel, topic }) {
 }
 
 // src/grapevine/surface/components/IdentityBox.tsx
-var import_react4 = __toESM(require_react(), 1);
+var import_react5 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/input/Input.mjs
+var React63 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/index.parts.mjs
+var exports_index_parts2 = {};
+__export(exports_index_parts2, {
+  Validity: () => FieldValidity,
+  Root: () => FieldRoot,
+  Label: () => FieldLabel2,
+  Item: () => FieldItem,
+  Error: () => FieldError,
+  Description: () => FieldDescription,
+  Control: () => FieldControl
+});
+
+// node_modules/@base-ui/react/field/root/FieldRoot.mjs
+var React51 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
+var React44 = __toESM(require_react(), 1);
+// node_modules/@base-ui/react/field/control/FieldControlDataAttributes.mjs
+var FieldControlDataAttributes = /* @__PURE__ */ function(FieldControlDataAttributes2) {
+  FieldControlDataAttributes2["disabled"] = "data-disabled";
+  FieldControlDataAttributes2["valid"] = "data-valid";
+  FieldControlDataAttributes2["invalid"] = "data-invalid";
+  FieldControlDataAttributes2["touched"] = "data-touched";
+  FieldControlDataAttributes2["dirty"] = "data-dirty";
+  FieldControlDataAttributes2["filled"] = "data-filled";
+  FieldControlDataAttributes2["focused"] = "data-focused";
+  return FieldControlDataAttributes2;
+}({});
+
+// node_modules/@base-ui/react/internals/field-constants/constants.mjs
+var DEFAULT_VALIDITY_STATE = {
+  badInput: false,
+  customError: false,
+  patternMismatch: false,
+  rangeOverflow: false,
+  rangeUnderflow: false,
+  stepMismatch: false,
+  tooLong: false,
+  tooShort: false,
+  typeMismatch: false,
+  valid: null,
+  valueMissing: false
+};
+var DEFAULT_FIELD_STATE_ATTRIBUTES = {
+  valid: null,
+  touched: false,
+  dirty: false,
+  filled: false,
+  focused: false
+};
+var DEFAULT_FIELD_ROOT_STATE = {
+  disabled: false,
+  ...DEFAULT_FIELD_STATE_ATTRIBUTES
+};
+var fieldValidityMapping = {
+  valid(value) {
+    if (value === null) {
+      return null;
+    }
+    if (value) {
+      return {
+        [FieldControlDataAttributes.valid]: ""
+      };
+    }
+    return {
+      [FieldControlDataAttributes.invalid]: ""
+    };
+  }
+};
+
+// node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
+"use client";
+var DEFAULT_FIELD_ROOT_CONTEXT = {
+  invalid: undefined,
+  name: undefined,
+  validityData: {
+    state: DEFAULT_VALIDITY_STATE,
+    errors: [],
+    error: "",
+    value: "",
+    initialValue: null
+  },
+  setValidityData: NOOP,
+  disabled: undefined,
+  touched: DEFAULT_FIELD_STATE_ATTRIBUTES.touched,
+  setTouched: NOOP,
+  dirty: DEFAULT_FIELD_STATE_ATTRIBUTES.dirty,
+  setDirty: NOOP,
+  filled: DEFAULT_FIELD_STATE_ATTRIBUTES.filled,
+  setFilled: NOOP,
+  focused: DEFAULT_FIELD_STATE_ATTRIBUTES.focused,
+  setFocused: NOOP,
+  validate: () => null,
+  validationMode: "onSubmit",
+  validationDebounceTime: 0,
+  shouldValidateOnChange: () => false,
+  state: DEFAULT_FIELD_ROOT_STATE,
+  markedDirtyRef: {
+    current: false
+  },
+  registerFieldControl: NOOP,
+  validation: {
+    getValidationProps: (_disabled, props = EMPTY_OBJECT) => props,
+    inputRef: {
+      current: null
+    },
+    registerInput: NOOP,
+    commit: async () => {},
+    change: NOOP
+  }
+};
+var FieldRootContext = /* @__PURE__ */ React44.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
+if (true)
+  FieldRootContext.displayName = "FieldRootContext";
+function useFieldRootContext(optional = true) {
+  const context = React44.useContext(FieldRootContext);
+  if (context.setValidityData === NOOP && !optional) {
+    throw new Error("Base UI: FieldRootContext is missing. Field parts must be placed within <Field.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/fieldset/root/FieldsetRootContext.mjs
+var React45 = __toESM(require_react(), 1);
+"use client";
+var FieldsetRootContext = /* @__PURE__ */ React45.createContext(undefined);
+if (true)
+  FieldsetRootContext.displayName = "FieldsetRootContext";
+function useFieldsetRootContext(optional = false) {
+  const context = React45.useContext(FieldsetRootContext);
+  if (!context && !optional) {
+    throw new Error("Base UI: FieldsetRootContext is missing. Fieldset parts must be placed within <Fieldset.Root>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/internals/form-context/FormContext.mjs
+var React46 = __toESM(require_react(), 1);
+"use client";
+var FormContext = /* @__PURE__ */ React46.createContext({
+  formRef: {
+    current: {
+      fields: new Map
+    }
+  },
+  errors: {},
+  clearErrors: NOOP,
+  validationMode: "onSubmit",
+  submitAttemptedRef: {
+    current: false
+  }
+});
+if (true)
+  FormContext.displayName = "FormContext";
+function useFormContext() {
+  return React46.useContext(FormContext);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
+var React48 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableContext.mjs
+var React47 = __toESM(require_react(), 1);
+"use client";
+var LabelableContext = /* @__PURE__ */ React47.createContext({
+  controlId: undefined,
+  registerControlId: NOOP,
+  labelId: undefined,
+  setLabelId: NOOP,
+  messageIds: [],
+  setMessageIds: NOOP,
+  getDescriptionProps: (externalProps) => externalProps
+});
+if (true)
+  LabelableContext.displayName = "LabelableContext";
+function useLabelableContext() {
+  return React47.useContext(LabelableContext);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
+var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var LabelableProvider = function LabelableProvider2(props) {
+  const defaultId = useBaseUiId();
+  const initialControlId = props.controlId === undefined ? defaultId : props.controlId;
+  const [controlId, setControlIdState] = React48.useState(initialControlId);
+  const [labelId, setLabelId] = React48.useState(props.labelId);
+  const [messageIds, setMessageIds] = React48.useState([]);
+  const registrationsRef = useRefWithInit(() => new Map);
+  const {
+    messageIds: parentMessageIds
+  } = useLabelableContext();
+  const registerControlId = useStableCallback((source, nextId) => {
+    const registrations = registrationsRef.current;
+    if (nextId === undefined) {
+      registrations.delete(source);
+      return;
+    }
+    registrations.set(source, nextId);
+    setControlIdState((prev) => {
+      if (registrations.size === 0) {
+        return;
+      }
+      let nextControlId;
+      for (const id of registrations.values()) {
+        if (prev !== undefined && id === prev) {
+          return prev;
+        }
+        if (nextControlId === undefined) {
+          nextControlId = id;
+        }
+      }
+      return nextControlId;
+    });
+  });
+  const getDescriptionProps = React48.useCallback((externalProps) => {
+    const ids = externalProps["aria-describedby"] ? externalProps["aria-describedby"].split(" ") : [];
+    ids.push(...parentMessageIds, ...messageIds);
+    return {
+      ...externalProps,
+      "aria-describedby": Array.from(new Set(ids)).join(" ") || undefined
+    };
+  }, [parentMessageIds, messageIds]);
+  const contextValue = React48.useMemo(() => ({
+    controlId,
+    registerControlId,
+    labelId,
+    setLabelId,
+    messageIds,
+    setMessageIds,
+    getDescriptionProps
+  }), [controlId, registerControlId, labelId, setLabelId, messageIds, setMessageIds, getDescriptionProps]);
+  return /* @__PURE__ */ import_jsx_runtime9.jsx(LabelableContext.Provider, {
+    value: contextValue,
+    children: props.children
+  });
+};
+if (true)
+  LabelableProvider.displayName = "LabelableProvider";
+
+// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
+var React49 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/field/utils/getCombinedFieldValidityData.mjs
+function getCombinedFieldValidityData(validityData, invalid) {
+  return {
+    ...validityData,
+    state: {
+      ...validityData.state,
+      valid: !invalid && validityData.state.valid
+    }
+  };
+}
+
+// node_modules/@base-ui/react/field/root/useFieldValidation.mjs
+"use client";
+var validityKeys = Object.keys(DEFAULT_VALIDITY_STATE);
+function isOnlyValueMissing(state) {
+  if (!state || state.valid || !state.valueMissing) {
+    return false;
+  }
+  let onlyValueMissing = false;
+  for (const key of validityKeys) {
+    if (key === "valid") {
+      continue;
+    }
+    if (key === "valueMissing") {
+      onlyValueMissing = state[key];
+    } else if (state[key]) {
+      onlyValueMissing = false;
+    }
+  }
+  return onlyValueMissing;
+}
+function findRepresentativeInput(inputs) {
+  let fallback = null;
+  for (const input of inputs) {
+    if (input.disabled) {
+      continue;
+    }
+    if (!input.validity.valid) {
+      return input;
+    }
+    fallback ??= input;
+  }
+  return fallback;
+}
+function clearCustomValidity(element, inputs) {
+  let didClearElement = false;
+  for (const input of inputs) {
+    input.setCustomValidity("");
+    didClearElement ||= input === element;
+  }
+  if (!didClearElement) {
+    element.setCustomValidity("");
+  }
+}
+function useFieldValidation(params) {
+  const {
+    formRef
+  } = useFormContext();
+  const {
+    setValidityData,
+    validate,
+    validityData,
+    validationDebounceTime,
+    invalid,
+    markedDirtyRef,
+    state,
+    shouldValidateOnChange,
+    getRegisteredFieldId
+  } = params;
+  const {
+    controlId,
+    getDescriptionProps
+  } = useLabelableContext();
+  const timeout = useTimeout();
+  const inputRef = React49.useRef(null);
+  const registeredInputs = useRefWithInit(() => new Set).current;
+  const validationCommitIdRef = React49.useRef(0);
+  const registerInput = React49.useCallback((element) => {
+    if (!element) {
+      return;
+    }
+    registeredInputs.add(element);
+    return () => {
+      registeredInputs.delete(element);
+    };
+  }, [registeredInputs]);
+  const commit = useStableCallback(async (value, revalidate = false) => {
+    const element = findRepresentativeInput(registeredInputs) ?? inputRef.current;
+    if (!element) {
+      return;
+    }
+    validationCommitIdRef.current += 1;
+    const validationCommitId = validationCommitIdRef.current;
+    function updateRegisteredFieldValidity(nextValidityData2, externalInvalid = invalid) {
+      const fieldId = getRegisteredFieldId() ?? controlId;
+      if (fieldId == null) {
+        return;
+      }
+      const currentFieldData = formRef.current.fields.get(fieldId);
+      if (!currentFieldData) {
+        return;
+      }
+      const validityDataWithFormErrors = getCombinedFieldValidityData(nextValidityData2, externalInvalid);
+      formRef.current.fields.set(fieldId, {
+        ...currentFieldData,
+        validityData: validityDataWithFormErrors
+      });
+    }
+    if (revalidate) {
+      if (state.valid !== false) {
+        return;
+      }
+      const currentNativeValidity = element.validity;
+      if (!currentNativeValidity.valueMissing) {
+        const nextValidityData2 = {
+          value,
+          state: {
+            ...DEFAULT_VALIDITY_STATE,
+            valid: true
+          },
+          error: "",
+          errors: [],
+          initialValue: validityData.initialValue
+        };
+        clearCustomValidity(element, registeredInputs);
+        updateRegisteredFieldValidity(nextValidityData2, false);
+        setValidityData(nextValidityData2);
+        return;
+      }
+      const currentNativeValidityObject = validityKeys.reduce((acc, key) => {
+        acc[key] = currentNativeValidity[key];
+        return acc;
+      }, {});
+      if (!currentNativeValidityObject.valid && !isOnlyValueMissing(currentNativeValidityObject)) {
+        return;
+      }
+    }
+    function getState(el) {
+      const computedState = validityKeys.reduce((acc, key) => {
+        acc[key] = el.validity[key];
+        return acc;
+      }, {});
+      let hasOnlyValueMissingError = false;
+      for (const key of validityKeys) {
+        if (key === "valid") {
+          continue;
+        }
+        if (key === "valueMissing" && computedState[key]) {
+          hasOnlyValueMissingError = true;
+        } else if (computedState[key]) {
+          return computedState;
+        }
+      }
+      if (hasOnlyValueMissingError && !markedDirtyRef.current) {
+        computedState.valid = true;
+        computedState.valueMissing = false;
+      }
+      return computedState;
+    }
+    timeout.clear();
+    let result = null;
+    let validationErrors = [];
+    const nextState = getState(element);
+    let defaultValidationMessage;
+    const isValidatingOnChange = shouldValidateOnChange();
+    if (element.validationMessage && !isValidatingOnChange) {
+      defaultValidationMessage = element.validationMessage;
+      validationErrors = [element.validationMessage];
+    } else {
+      const formValues = Array.from(formRef.current.fields.values()).reduce((acc, field) => {
+        if (field.name) {
+          acc[field.name] = field.getValue();
+        }
+        return acc;
+      }, {});
+      const resultOrPromise = validate(value, formValues);
+      if (typeof resultOrPromise === "object" && resultOrPromise !== null && "then" in resultOrPromise) {
+        result = await resultOrPromise;
+        if (validationCommitId !== validationCommitIdRef.current) {
+          return;
+        }
+      } else {
+        result = resultOrPromise;
+      }
+      if (result !== null) {
+        nextState.valid = false;
+        nextState.customError = true;
+        if (Array.isArray(result)) {
+          validationErrors = result;
+          element.setCustomValidity(result.join(`
+`));
+        } else if (result) {
+          validationErrors = [result];
+          element.setCustomValidity(result);
+        }
+      } else if (isValidatingOnChange) {
+        clearCustomValidity(element, registeredInputs);
+        nextState.customError = false;
+        if (element.validationMessage) {
+          defaultValidationMessage = element.validationMessage;
+          validationErrors = [element.validationMessage];
+        } else if (element.validity.valid && !nextState.valid) {
+          nextState.valid = true;
+        }
+      }
+    }
+    const nextValidityData = {
+      value,
+      state: nextState,
+      error: defaultValidationMessage ?? (Array.isArray(result) ? result[0] : result ?? ""),
+      errors: validationErrors,
+      initialValue: validityData.initialValue
+    };
+    updateRegisteredFieldValidity(nextValidityData);
+    setValidityData(nextValidityData);
+  });
+  const change = useStableCallback((value) => {
+    timeout.clear();
+    const validateOnChange = shouldValidateOnChange();
+    if (validateOnChange && value !== "" && validationDebounceTime) {
+      validationCommitIdRef.current += 1;
+      timeout.start(validationDebounceTime, () => {
+        commit(value);
+      });
+    } else {
+      commit(value, !validateOnChange);
+    }
+  });
+  const getValidationProps = React49.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
+    "aria-invalid": true
+  } : EMPTY_OBJECT), [getDescriptionProps, state.disabled, state.valid]);
+  return React49.useMemo(() => ({
+    getValidationProps,
+    inputRef,
+    registerInput,
+    commit,
+    change
+  }), [getValidationProps, registerInput, commit, change]);
+}
+
+// node_modules/@base-ui/react/internals/field-register-control/useFieldControlRegistration.mjs
+var React50 = __toESM(require_react(), 1);
+"use client";
+function useFieldControlRegistration(params) {
+  const {
+    commit,
+    invalid,
+    markedDirtyRef,
+    name,
+    setRegisteredFieldName,
+    setRegisteredFieldId,
+    setValidityData,
+    validityData
+  } = params;
+  const {
+    formRef
+  } = useFormContext();
+  const activeFieldControlSourceRef = React50.useRef(null);
+  const registrationRef = React50.useRef(null);
+  const fallbackControlRef = React50.useRef(null);
+  const getValueForForm = useStableCallback(() => {
+    const registration = registrationRef.current;
+    if (!registration) {
+      return;
+    }
+    if (registration.getValue) {
+      return registration.getValue();
+    }
+    return registration.value;
+  });
+  function getRegistrationValue(registration) {
+    return registration.value === undefined ? getValueForForm() : registration.value;
+  }
+  const validate = useStableCallback(() => {
+    const registration = registrationRef.current;
+    markedDirtyRef.current = true;
+    if (!registration) {
+      commit(validityData.value);
+      return;
+    }
+    commit(getRegistrationValue(registration));
+  });
+  function refreshRegistration() {
+    const registration = registrationRef.current;
+    if (!registration || !registration.id) {
+      return;
+    }
+    formRef.current.fields.set(registration.id, {
+      getValue: getValueForForm,
+      name: name ?? registration.name,
+      controlRef: registration.controlRef ?? fallbackControlRef,
+      validityData: getCombinedFieldValidityData(validityData, invalid),
+      validate
+    });
+  }
+  function deleteRegistration(id = registrationRef.current?.id) {
+    if (id) {
+      formRef.current.fields.delete(id);
+    }
+  }
+  function syncInitialValue() {
+    const registration = registrationRef.current;
+    if (!registration) {
+      return;
+    }
+    const initialValue = getRegistrationValue(registration);
+    if (validityData.initialValue === null && initialValue !== null) {
+      setValidityData((prev) => ({
+        ...prev,
+        initialValue
+      }));
+    }
+  }
+  useIsoLayoutEffect(() => {
+    const registration = registrationRef.current;
+    if (!registration || !registration.id) {
+      return;
+    }
+    setRegisteredFieldName(name ? undefined : registration.name);
+    formRef.current.fields.set(registration.id, {
+      getValue: getValueForForm,
+      name: name ?? registration.name,
+      controlRef: registration.controlRef ?? fallbackControlRef,
+      validityData: getCombinedFieldValidityData(validityData, invalid),
+      validate
+    });
+  }, [formRef, getValueForForm, invalid, name, setRegisteredFieldName, validate, validityData]);
+  useIsoLayoutEffect(() => {
+    const fields = formRef.current.fields;
+    return () => {
+      const id = registrationRef.current?.id;
+      if (id) {
+        fields.delete(id);
+      }
+    };
+  }, [formRef]);
+  const register2 = useStableCallback((source, registration) => {
+    if (!registration) {
+      if (activeFieldControlSourceRef.current === source) {
+        activeFieldControlSourceRef.current = null;
+        deleteRegistration();
+        registrationRef.current = null;
+        setRegisteredFieldName(undefined);
+        setRegisteredFieldId(undefined);
+      }
+      return;
+    }
+    const previousId = registrationRef.current?.id;
+    activeFieldControlSourceRef.current = source;
+    registrationRef.current = registration;
+    if (!name) {
+      setRegisteredFieldName(registration.name);
+    }
+    setRegisteredFieldId(registration.id);
+    if (previousId && previousId !== registration.id) {
+      deleteRegistration(previousId);
+    }
+    syncInitialValue();
+    refreshRegistration();
+  });
+  return [validate, register2];
+}
+
+// node_modules/@base-ui/react/field/root/FieldRoot.mjs
+var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldRootInner = /* @__PURE__ */ React51.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
+  const {
+    errors,
+    validationMode: formValidationMode,
+    submitAttemptedRef
+  } = useFormContext();
+  const {
+    render,
+    className,
+    validate: validateProp,
+    validationDebounceTime = 0,
+    validationMode = formValidationMode,
+    name,
+    disabled: disabledProp = false,
+    invalid: invalidProp,
+    dirty: dirtyProp,
+    touched: touchedProp,
+    actionsRef,
+    style,
+    ...elementProps
+  } = componentProps;
+  const disabledFieldset = useFieldsetRootContext(true)?.disabled;
+  const validate = useStableCallback(validateProp || (() => null));
+  const disabled2 = disabledFieldset || disabledProp;
+  const [touchedState, setTouchedUnwrapped] = React51.useState(false);
+  const [dirtyState, setDirtyUnwrapped] = React51.useState(false);
+  const [filled, setFilled] = React51.useState(false);
+  const [focused, setFocused] = React51.useState(false);
+  const dirty = dirtyProp ?? dirtyState;
+  const touched = touchedProp ?? touchedState;
+  const markedDirtyRef = React51.useRef(dirty);
+  const registeredFieldIdRef = React51.useRef(undefined);
+  const [registeredFieldName, setRegisteredFieldName] = React51.useState();
+  const effectiveName = name ?? registeredFieldName;
+  useIsoLayoutEffect(() => {
+    if (dirtyProp !== undefined) {
+      markedDirtyRef.current = dirtyProp;
+    }
+  }, [dirtyProp]);
+  const getRegisteredFieldId = React51.useCallback(() => registeredFieldIdRef.current, []);
+  const setRegisteredFieldId = React51.useCallback((id) => {
+    registeredFieldIdRef.current = id;
+  }, []);
+  const setDirty = useStableCallback((value) => {
+    if (dirtyProp !== undefined) {
+      return;
+    }
+    if (value) {
+      markedDirtyRef.current = true;
+    }
+    setDirtyUnwrapped(value);
+  });
+  const setTouched = useStableCallback((value) => {
+    if (touchedProp !== undefined) {
+      return;
+    }
+    setTouchedUnwrapped(value);
+  });
+  const shouldValidateOnChange = useStableCallback(() => validationMode === "onChange" || validationMode === "onSubmit" && submitAttemptedRef.current);
+  const formError = effectiveName && Object.hasOwn(errors, effectiveName) ? errors[effectiveName] : null;
+  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
+  const invalid = invalidProp === true || hasFormError;
+  const [validityData, setValidityData] = React51.useState({
+    state: DEFAULT_VALIDITY_STATE,
+    error: "",
+    errors: [],
+    value: null,
+    initialValue: null
+  });
+  const valid = disabled2 ? null : !invalid && validityData.state.valid;
+  const state = React51.useMemo(() => ({
+    disabled: disabled2,
+    touched,
+    dirty,
+    valid,
+    filled,
+    focused
+  }), [disabled2, touched, dirty, valid, filled, focused]);
+  const validation = useFieldValidation({
+    setValidityData,
+    validate,
+    validityData,
+    validationDebounceTime,
+    invalid,
+    markedDirtyRef,
+    state,
+    shouldValidateOnChange,
+    getRegisteredFieldId
+  });
+  const [validateFieldControl, registerFieldControl] = useFieldControlRegistration({
+    commit: validation.commit,
+    invalid,
+    markedDirtyRef,
+    name,
+    setRegisteredFieldName,
+    setRegisteredFieldId,
+    setValidityData,
+    validityData
+  });
+  React51.useImperativeHandle(actionsRef, () => ({
+    validate: validateFieldControl
+  }), [validateFieldControl]);
+  const contextValue = React51.useMemo(() => ({
+    invalid,
+    name: effectiveName,
+    validityData,
+    setValidityData,
+    disabled: disabled2,
+    touched,
+    setTouched,
+    dirty,
+    setDirty,
+    filled,
+    setFilled,
+    focused,
+    setFocused,
+    validate,
+    validationMode,
+    validationDebounceTime,
+    shouldValidateOnChange,
+    state,
+    markedDirtyRef,
+    registerFieldControl,
+    validation
+  }), [invalid, effectiveName, validityData, disabled2, touched, setTouched, dirty, setDirty, filled, setFilled, focused, setFocused, validate, validationMode, validationDebounceTime, shouldValidateOnChange, state, registerFieldControl, validation]);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: elementProps,
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return /* @__PURE__ */ import_jsx_runtime10.jsx(FieldRootContext.Provider, {
+    value: contextValue,
+    children: element
+  });
+});
+if (true)
+  FieldRootInner.displayName = "FieldRootInner";
+var FieldRoot = /* @__PURE__ */ React51.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime10.jsx(LabelableProvider, {
+    children: /* @__PURE__ */ import_jsx_runtime10.jsx(FieldRootInner, {
+      ...componentProps,
+      ref: forwardedRef
+    })
+  });
+});
+if (true)
+  FieldRoot.displayName = "FieldRoot";
+// node_modules/@base-ui/react/field/label/FieldLabel.mjs
+var React53 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/utils/useRegisteredLabelId.mjs
+"use client";
+function useRegisteredLabelId(idProp, setLabelId) {
+  const id = useBaseUiId(idProp);
+  useIsoLayoutEffect(() => {
+    setLabelId(id);
+    return () => {
+      setLabelId(undefined);
+    };
+  }, [id, setLabelId]);
+  return id;
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useLabel.mjs
+"use client";
+function useLabel(params = {}) {
+  const {
+    id: idProp,
+    fallbackControlId,
+    native = false,
+    setLabelId: setLabelIdProp,
+    focusControl: focusControlProp
+  } = params;
+  const {
+    controlId: contextControlId,
+    setLabelId: setContextLabelId
+  } = useLabelableContext();
+  const syncLabelId = useStableCallback((nextLabelId) => {
+    setContextLabelId(nextLabelId);
+    setLabelIdProp?.(nextLabelId);
+  });
+  const id = useRegisteredLabelId(idProp, syncLabelId);
+  const resolvedControlId = contextControlId ?? fallbackControlId;
+  function focusControl(event) {
+    if (focusControlProp) {
+      focusControlProp(event, resolvedControlId);
+      return;
+    }
+    if (!resolvedControlId) {
+      return;
+    }
+    const controlElement = ownerDocument(event.currentTarget).getElementById(resolvedControlId);
+    if (isHTMLElement(controlElement)) {
+      focusElementWithVisible(controlElement);
+    }
+  }
+  function handleInteraction(event) {
+    const target = getTarget(event.nativeEvent);
+    if (target?.closest("button,input,select,textarea")) {
+      return;
+    }
+    if (!event.defaultPrevented && event.detail > 1) {
+      event.preventDefault();
+    }
+    if (native) {
+      return;
+    }
+    focusControl(event);
+  }
+  return native ? {
+    id,
+    htmlFor: resolvedControlId ?? undefined,
+    onMouseDown: handleInteraction
+  } : {
+    id,
+    onClick: handleInteraction,
+    onPointerDown(event) {
+      event.preventDefault();
+    }
+  };
+}
+function focusElementWithVisible(element) {
+  element.focus({
+    focusVisible: true
+  });
+}
+
+// node_modules/@base-ui/react/field/item/FieldItemContext.mjs
+var React52 = __toESM(require_react(), 1);
+"use client";
+var FieldItemContext = /* @__PURE__ */ React52.createContext({
+  disabled: false
+});
+if (true)
+  FieldItemContext.displayName = "FieldItemContext";
+function useFieldItemContext() {
+  const context = React52.useContext(FieldItemContext);
+  return context;
+}
+
+// node_modules/@base-ui/react/field/label/FieldLabel.mjs
+"use client";
+var FieldLabel2 = /* @__PURE__ */ React53.forwardRef(function FieldLabel3(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    id: idProp,
+    nativeLabel = true,
+    ...elementProps
+  } = componentProps;
+  const fieldRootContext = useFieldRootContext(false);
+  const fieldItemContext = useFieldItemContext();
+  const {
+    labelId
+  } = useLabelableContext();
+  const state = {
+    ...fieldRootContext.state,
+    disabled: fieldRootContext.disabled || fieldItemContext.disabled
+  };
+  const labelRef = React53.useRef(null);
+  const labelProps = useLabel({
+    id: labelId ?? idProp,
+    native: nativeLabel
+  });
+  if (true) {
+    React53.useEffect(() => {
+      if (!labelRef.current) {
+        return;
+      }
+      const isLabelTag = labelRef.current.tagName === "LABEL";
+      if (nativeLabel) {
+        if (!isLabelTag) {
+          const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+          const message = "<Field.Label> expected a <label> element because the `nativeLabel` prop is true. " + "Rendering a non-<label> disables native label association, so `htmlFor` will not " + "work. Use a real <label> in the `render` prop, or set `nativeLabel` to `false`.";
+          error(`${message}${ownerStackMessage}`);
+        }
+      } else if (isLabelTag) {
+        const ownerStackMessage = SafeReact.captureOwnerStack?.() || "";
+        const message = "<Field.Label> expected a non-<label> element because the `nativeLabel` prop is false. " + "Rendering a <label> assumes native label behavior while Base UI treats it as " + "non-native, which can cause unexpected pointer behavior. Use a non-<label> in the " + "`render` prop, or set `nativeLabel` to `true`.";
+        error(`${message}${ownerStackMessage}`);
+      }
+    }, [nativeLabel]);
+  }
+  const element = useRenderElement("label", componentProps, {
+    ref: [forwardedRef, labelRef],
+    state,
+    props: [labelProps, elementProps],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldLabel2.displayName = "FieldLabel";
+// node_modules/@base-ui/react/field/error/FieldError.mjs
+var React54 = __toESM(require_react(), 1);
+var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var stateAttributesMapping4 = {
+  ...fieldValidityMapping,
+  ...transitionStatusMapping
+};
+var FieldError = /* @__PURE__ */ React54.forwardRef(function FieldError2(componentProps, forwardedRef) {
+  const {
+    render,
+    id: idProp,
+    className,
+    match,
+    style,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const {
+    validityData,
+    state: fieldState,
+    name
+  } = useFieldRootContext(false);
+  const {
+    setMessageIds
+  } = useLabelableContext();
+  const {
+    errors
+  } = useFormContext();
+  const formError = name && Object.hasOwn(errors, name) ? errors[name] : null;
+  const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
+  const hasSpecificMatch = typeof match === "string";
+  let rendered = false;
+  if (match === true) {
+    rendered = true;
+  } else if (fieldState.disabled) {
+    rendered = false;
+  } else if (hasSpecificMatch) {
+    rendered = Boolean(validityData.state[match]);
+  } else {
+    rendered = hasFormError || validityData.state.valid === false;
+  }
+  const {
+    mounted,
+    transitionStatus,
+    setMounted
+  } = useTransitionStatus(rendered);
+  useIsoLayoutEffect(() => {
+    if (!rendered || !id) {
+      return;
+    }
+    setMessageIds((v) => v.concat(id));
+    return () => {
+      setMessageIds((v) => v.filter((item) => item !== id));
+    };
+  }, [rendered, id, setMessageIds]);
+  const errorRef = React54.useRef(null);
+  const [lastRenderedMessage, setLastRenderedMessage] = React54.useState(null);
+  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React54.useState(null);
+  let error2 = validityData.error;
+  if (!hasSpecificMatch && hasFormError) {
+    error2 = formError;
+  } else if (validityData.errors.length > 1) {
+    error2 = validityData.errors;
+  }
+  let errorMessage = error2 ?? "";
+  if (Array.isArray(error2)) {
+    errorMessage = error2.length > 1 ? /* @__PURE__ */ import_jsx_runtime11.jsx("ul", {
+      children: error2.map((message) => /* @__PURE__ */ import_jsx_runtime11.jsx("li", {
+        children: message
+      }, message))
+    }) : error2[0] ?? "";
+  }
+  const errorKey = Array.isArray(error2) ? JSON.stringify(error2) : error2;
+  if (rendered && errorKey !== lastRenderedMessageKey) {
+    setLastRenderedMessageKey(errorKey);
+    setLastRenderedMessage(errorMessage);
+  }
+  useOpenChangeComplete({
+    open: rendered,
+    ref: errorRef,
+    onComplete() {
+      if (!rendered) {
+        setMounted(false);
+      }
+    }
+  });
+  const state = {
+    ...fieldState,
+    transitionStatus
+  };
+  const element = useRenderElement("div", componentProps, {
+    ref: [forwardedRef, errorRef],
+    state,
+    props: [{
+      id,
+      children: rendered ? errorMessage : lastRenderedMessage
+    }, elementProps],
+    stateAttributesMapping: stateAttributesMapping4,
+    enabled: mounted
+  });
+  if (!mounted) {
+    return null;
+  }
+  return element;
+});
+if (true)
+  FieldError.displayName = "FieldError";
+// node_modules/@base-ui/react/field/description/FieldDescription.mjs
+var React55 = __toESM(require_react(), 1);
+"use client";
+var FieldDescription = /* @__PURE__ */ React55.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
+  const {
+    render,
+    id: idProp,
+    className,
+    style,
+    ...elementProps
+  } = componentProps;
+  const id = useBaseUiId(idProp);
+  const fieldRootContext = useFieldRootContext(false);
+  const fieldItemContext = useFieldItemContext();
+  const {
+    setMessageIds
+  } = useLabelableContext();
+  const state = {
+    ...fieldRootContext.state,
+    disabled: fieldRootContext.disabled || fieldItemContext.disabled
+  };
+  useIsoLayoutEffect(() => {
+    if (!id) {
+      return;
+    }
+    setMessageIds((v) => v.concat(id));
+    return () => {
+      setMessageIds((v) => v.filter((item) => item !== id));
+    };
+  }, [id, setMessageIds]);
+  const element = useRenderElement("p", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: [{
+      id
+    }, elementProps],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldDescription.displayName = "FieldDescription";
+// node_modules/@base-ui/react/field/control/FieldControl.mjs
+var React59 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/utils/useControlled.mjs
+var React56 = __toESM(require_react(), 1);
+"use client";
+function useControlled({
+  controlled,
+  default: defaultProp,
+  name,
+  state = "value"
+}) {
+  const {
+    current: isControlled
+  } = React56.useRef(controlled !== undefined);
+  const [valueState, setValue] = React56.useState(defaultProp);
+  const value = isControlled ? controlled : valueState;
+  if (true) {
+    React56.useEffect(() => {
+      if (isControlled !== (controlled !== undefined)) {
+        error([`A component is changing the ${isControlled ? "" : "un"}controlled ${state} state of ${name} to be ${isControlled ? "un" : ""}controlled.`, "Elements should not switch from uncontrolled to controlled (or vice versa).", `Decide between using a controlled or uncontrolled ${name} ` + "element for the lifetime of the component.", "The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.", "More info: https://fb.me/react-controlled-components"].join(`
+`));
+      }
+    }, [state, name, controlled]);
+    const {
+      current: defaultValue
+    } = React56.useRef(defaultProp);
+    React56.useEffect(() => {
+      if (!isControlled && serializeToDevModeString(defaultValue) !== serializeToDevModeString(defaultProp)) {
+        error([`A component is changing the default ${state} state of an uncontrolled ${name} after being initialized. ` + `To suppress this warning opt to use a controlled ${name}.`].join(`
+`));
+      }
+    }, [defaultProp]);
+  }
+  const setValueIfUncontrolled = React56.useCallback((newValue) => {
+    if (!isControlled) {
+      setValue(newValue);
+    }
+  }, []);
+  return [value, setValueIfUncontrolled];
+}
+function serializeToDevModeString(input) {
+  let nextId = 0;
+  const seen = new WeakMap;
+  try {
+    const result = JSON.stringify(input, function replacer(key, value) {
+      if (key === "_owner" && this != null && typeof this === "object" && "$$typeof" in this) {
+        return;
+      }
+      if (typeof value === "bigint") {
+        return `__bigint__:${value}`;
+      }
+      if (value !== null && typeof value === "object") {
+        const id = seen.get(value);
+        if (id !== undefined) {
+          return `__object__:${id}`;
+        }
+        seen.set(value, nextId);
+        nextId += 1;
+      }
+      return value;
+    });
+    return result ?? `__top__:${typeof input}`;
+  } catch {
+    return "__unserializable__";
+  }
+}
+
+// node_modules/@base-ui/react/internals/field-register-control/useRegisterFieldControl.mjs
+var React57 = __toESM(require_react(), 1);
+"use client";
+function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, enabled = true, name) {
+  const {
+    registerFieldControl
+  } = useFieldRootContext();
+  const sourceRef = React57.useRef(null);
+  if (!sourceRef.current) {
+    sourceRef.current = Symbol();
+  }
+  useIsoLayoutEffect(() => {
+    const source = sourceRef.current;
+    if (!source || !enabled) {
+      return;
+    }
+    const registration = {
+      controlRef,
+      getValue: getFormValueOverride,
+      id,
+      name,
+      value
+    };
+    registerFieldControl(source, registration);
+    return () => {
+      registerFieldControl(source, undefined);
+    };
+  }, [controlRef, enabled, getFormValueOverride, id, name, registerFieldControl, value]);
+}
+
+// node_modules/@base-ui/react/internals/labelable-provider/useLabelableId.mjs
+var React58 = __toESM(require_react(), 1);
+"use client";
+function useLabelableId(params = {}) {
+  const {
+    id,
+    implicit = false,
+    controlRef
+  } = params;
+  const {
+    controlId,
+    registerControlId
+  } = useLabelableContext();
+  const defaultId = useBaseUiId(id);
+  const controlIdForEffect = implicit ? controlId : undefined;
+  const controlSourceRef = useRefWithInit(() => Symbol("labelable-control"));
+  const hasRegisteredRef = React58.useRef(false);
+  const hadExplicitIdRef = React58.useRef(id != null);
+  const unregisterControlId = useStableCallback(() => {
+    if (!hasRegisteredRef.current || registerControlId === NOOP) {
+      return;
+    }
+    hasRegisteredRef.current = false;
+    registerControlId(controlSourceRef.current, undefined);
+  });
+  useIsoLayoutEffect(() => {
+    if (registerControlId === NOOP) {
+      return;
+    }
+    let nextId;
+    if (implicit) {
+      const elem = controlRef?.current;
+      if (isElement(elem) && elem.closest("label") != null) {
+        nextId = id ?? null;
+      } else {
+        nextId = controlIdForEffect ?? defaultId;
+      }
+    } else if (id != null) {
+      hadExplicitIdRef.current = true;
+      nextId = id;
+    } else if (hadExplicitIdRef.current) {
+      nextId = defaultId;
+    } else {
+      unregisterControlId();
+      return;
+    }
+    if (nextId === undefined) {
+      unregisterControlId();
+      return;
+    }
+    hasRegisteredRef.current = true;
+    registerControlId(controlSourceRef.current, nextId);
+    return;
+  }, [id, controlRef, controlIdForEffect, registerControlId, implicit, defaultId, controlSourceRef, unregisterControlId]);
+  React58.useEffect(() => {
+    return unregisterControlId;
+  }, [unregisterControlId]);
+  return controlId ?? defaultId;
+}
+
+// node_modules/@base-ui/react/field/control/FieldControl.mjs
+"use client";
+var FieldControl = /* @__PURE__ */ React59.forwardRef(function FieldControl2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    id: idProp,
+    name: nameProp,
+    value: valueProp,
+    disabled: disabledProp = false,
+    onValueChange,
+    defaultValue,
+    autoFocus = false,
+    style,
+    ...elementProps
+  } = componentProps;
+  const {
+    state: fieldState,
+    name: fieldName,
+    disabled: fieldDisabled,
+    setTouched,
+    setDirty,
+    validityData,
+    setFocused,
+    setFilled,
+    validationMode,
+    validation
+  } = useFieldRootContext();
+  const {
+    clearErrors
+  } = useFormContext();
+  const disabled2 = fieldDisabled || disabledProp;
+  const name = fieldName ?? nameProp;
+  const state = {
+    ...fieldState,
+    disabled: disabled2
+  };
+  const {
+    labelId
+  } = useLabelableContext();
+  const id = useLabelableId({
+    id: idProp
+  });
+  useIsoLayoutEffect(() => {
+    const hasExternalValue = valueProp != null;
+    if (validation.inputRef.current?.value || hasExternalValue && valueProp !== "") {
+      setFilled(true);
+    } else if (hasExternalValue && valueProp === "") {
+      setFilled(false);
+    }
+  }, [validation.inputRef, setFilled, valueProp]);
+  const inputRef = React59.useRef(null);
+  useIsoLayoutEffect(() => {
+    if (autoFocus && inputRef.current === activeElement(ownerDocument(inputRef.current))) {
+      setFocused(true);
+    }
+  }, [autoFocus, setFocused]);
+  const [valueUnwrapped] = useControlled({
+    controlled: valueProp,
+    default: defaultValue,
+    name: "FieldControl",
+    state: "value"
+  });
+  const isControlled = valueProp !== undefined;
+  const value = isControlled ? valueUnwrapped : undefined;
+  const getValueFromInput = useStableCallback(() => validation.inputRef.current?.value);
+  useRegisterFieldControl(validation.inputRef, id, value, getValueFromInput, !disabled2, nameProp);
+  const element = useRenderElement("input", componentProps, {
+    ref: [forwardedRef, inputRef],
+    state,
+    props: [{
+      id,
+      disabled: disabled2,
+      name,
+      ref: validation.inputRef,
+      "aria-labelledby": labelId,
+      autoFocus,
+      ...isControlled ? {
+        value
+      } : {
+        defaultValue
+      },
+      onChange(event) {
+        const inputValue = event.currentTarget.value;
+        onValueChange?.(inputValue, createChangeEventDetails(exports_reason_parts.none, event.nativeEvent));
+        setDirty(inputValue !== validityData.initialValue);
+        setFilled(inputValue !== "");
+        if (!event.nativeEvent.defaultPrevented) {
+          clearErrors(name);
+          validation.change(inputValue);
+        }
+      },
+      onFocus() {
+        setFocused(true);
+      },
+      onBlur(event) {
+        setTouched(true);
+        setFocused(false);
+        if (validationMode === "onBlur") {
+          validation.commit(event.currentTarget.value);
+        }
+      },
+      onKeyDown(event) {
+        if (event.currentTarget.tagName === "INPUT" && event.key === "Enter") {
+          setTouched(true);
+          validation.commit(event.currentTarget.value);
+        }
+      }
+    }, elementProps, (props) => validation.getValidationProps(disabled2, props)],
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return element;
+});
+if (true)
+  FieldControl.displayName = "FieldControl";
+// node_modules/@base-ui/react/field/validity/FieldValidity.mjs
+var React60 = __toESM(require_react(), 1);
+var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldValidity = function FieldValidity2(props) {
+  const {
+    children
+  } = props;
+  const {
+    validityData,
+    invalid
+  } = useFieldRootContext(false);
+  const combinedFieldValidityData = React60.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
+  const isInvalid = combinedFieldValidityData.state.valid === false;
+  const {
+    transitionStatus
+  } = useTransitionStatus(isInvalid);
+  const fieldValidityState = React60.useMemo(() => {
+    return {
+      ...combinedFieldValidityData,
+      validity: combinedFieldValidityData.state,
+      transitionStatus
+    };
+  }, [combinedFieldValidityData, transitionStatus]);
+  return /* @__PURE__ */ import_jsx_runtime12.jsx(React60.Fragment, {
+    children: children(fieldValidityState)
+  });
+};
+if (true)
+  FieldValidity.displayName = "FieldValidity";
+// node_modules/@base-ui/react/field/item/FieldItem.mjs
+var React62 = __toESM(require_react(), 1);
+
+// node_modules/@base-ui/react/checkbox-group/CheckboxGroupContext.mjs
+var React61 = __toESM(require_react(), 1);
+"use client";
+var CheckboxGroupContext = /* @__PURE__ */ React61.createContext(undefined);
+if (true)
+  CheckboxGroupContext.displayName = "CheckboxGroupContext";
+function useCheckboxGroupContext(optional = true) {
+  const context = React61.useContext(CheckboxGroupContext);
+  if (context === undefined && !optional) {
+    throw new Error("Base UI: CheckboxGroupContext is missing. CheckboxGroup parts must be placed within <CheckboxGroup>.");
+  }
+  return context;
+}
+
+// node_modules/@base-ui/react/field/item/FieldItem.mjs
+var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var FieldItem = /* @__PURE__ */ React62.forwardRef(function FieldItem2(componentProps, forwardedRef) {
+  const {
+    render,
+    className,
+    style,
+    disabled: disabledProp = false,
+    ...elementProps
+  } = componentProps;
+  const {
+    state: fieldState,
+    disabled: rootDisabled
+  } = useFieldRootContext(false);
+  const disabled2 = rootDisabled || disabledProp;
+  const state = {
+    ...fieldState,
+    disabled: disabled2
+  };
+  const checkboxGroupContext = useCheckboxGroupContext();
+  const hasParentCheckbox = checkboxGroupContext?.allValues !== undefined;
+  const controlId = hasParentCheckbox ? checkboxGroupContext?.parent.id : undefined;
+  const fieldItemContext = React62.useMemo(() => ({
+    disabled: disabled2
+  }), [disabled2]);
+  const element = useRenderElement("div", componentProps, {
+    ref: forwardedRef,
+    state,
+    props: elementProps,
+    stateAttributesMapping: fieldValidityMapping
+  });
+  return /* @__PURE__ */ import_jsx_runtime13.jsx(LabelableProvider, {
+    controlId,
+    children: /* @__PURE__ */ import_jsx_runtime13.jsx(FieldItemContext.Provider, {
+      value: fieldItemContext,
+      children: element
+    })
+  });
+});
+if (true)
+  FieldItem.displayName = "FieldItem";
+// node_modules/@base-ui/react/input/Input.mjs
+var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
+"use client";
+var Input = /* @__PURE__ */ React63.forwardRef(function Input2(props, forwardedRef) {
+  return /* @__PURE__ */ import_jsx_runtime14.jsx(exports_index_parts2.Control, {
+    ref: forwardedRef,
+    ...props
+  });
+});
+if (true)
+  Input.displayName = "Input";
+// src/grapevine/surface/ui/input.tsx
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+function Input3({ className, type, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Input, {
+    type,
+    "data-slot": "input",
+    className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
 
 // src/grapevine/surface/state/identity.ts
 var ALIAS_KEY = "grapevine:alias";
@@ -23008,58 +25964,115 @@ function subscribedStatus(mode, channel, alias) {
   return mode === "join" ? `joined ${channel} as ${alias}` : `subscribed to ${channel}`;
 }
 
-// src/grapevine/surface/ui/input.tsx
-var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
-function Input({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("input", {
-    className: cn("w-full rounded-md border border-border bg-secondary px-2 py-1.5 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none disabled:opacity-60", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
 // src/grapevine/surface/components/IdentityBox.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function IdentityBox({
   alias,
   mode,
   onAliasChange,
   onToggle
 }) {
-  const [draft, setDraft] = import_react4.useState(alias);
-  import_react4.useEffect(() => setDraft(alias), [alias]);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
-    className: "mt-5 flex flex-col gap-2 border-t border-edge pt-4",
+  const [draft, setDraft] = import_react5.useState(alias);
+  const aliasId = import_react5.useId();
+  import_react5.useEffect(() => setDraft(alias), [alias]);
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+    className: "mt-5 flex flex-col gap-2",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("h2", {
+      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator2, {
+        className: "mb-2"
+      }, undefined, false, undefined, this),
+      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("h2", {
         className: "m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
         children: "You"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Input, {
-        className: "font-mono text-xs",
-        value: draft,
-        placeholder: "set an alias",
-        disabled: mode === "join",
-        onChange: (e) => setDraft(e.target.value),
-        onBlur: () => onAliasChange(draft),
-        onKeyDown: (e) => {
-          if (e.key === "Enter")
-            onAliasChange(draft);
-        }
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button, {
-        variant: mode === "join" ? "joined" : "accent",
-        size: "auto",
-        className: "px-2 py-1.5 font-mono text-xs",
-        disabled: toggleDisabled(mode, draft),
-        onClick: onToggle,
-        children: toggleLabel(mode)
-      }, undefined, false, undefined, this)
+      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldGroup, {
+        className: "gap-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Field, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldLabel, {
+                htmlFor: aliasId,
+                className: "sr-only",
+                children: "Alias"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Input3, {
+                id: aliasId,
+                value: draft,
+                placeholder: "set an alias",
+                disabled: mode === "join",
+                onChange: (e) => setDraft(e.target.value),
+                onBlur: () => onAliasChange(draft),
+                onKeyDown: (e) => {
+                  if (e.key === "Enter")
+                    onAliasChange(draft);
+                }
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Field, {
+            children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
+              variant: mode === "join" ? "joined" : "accent",
+              size: "sm",
+              disabled: toggleDisabled(mode, draft),
+              onClick: onToggle,
+              children: toggleLabel(mode)
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
+// src/grapevine/surface/ui/empty.tsx
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+function Empty({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+    "data-slot": "empty",
+    className: cn("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function EmptyHeader({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+    "data-slot": "empty-header",
+    className: cn("flex max-w-sm flex-col items-center gap-2", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+var emptyMediaVariants = cva("mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0", {
+  variants: {
+    variant: {
+      default: "bg-transparent",
+      icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-'])]:size-4"
+    }
+  },
+  defaultVariants: {
+    variant: "default"
+  }
+});
+function EmptyMedia({
+  className,
+  variant = "default",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+    "data-slot": "empty-icon",
+    "data-variant": variant,
+    className: cn(emptyMediaVariants({ variant, className })),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function EmptyDescription({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+    "data-slot": "empty-description",
+    className: cn("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
 // src/grapevine/surface/components/MessageRow.tsx
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 var BODY = {
   message: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
   topic: "rounded-[10px] border border-dashed border-grape bg-transparent px-3.5 py-2.5 italic text-grape-soft",
@@ -23074,55 +26087,55 @@ function MessageRow({
 }) {
   const kind = m.kind || "message";
   const isReply = m.in_reply_to != null;
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: cn("group my-2.5 max-w-[720px]", isReply && "ml-6", kind === "announcement" && "rounded-md border-l-[3px] border-attention bg-announce-wash px-2.5 py-1.5"),
     children: [
-      isReply && parent && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+      isReply && parent && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "mb-1 flex max-w-full items-center gap-1.5 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "text-grape-soft",
             children: "↳"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "font-semibold",
             style: { color: aliasColor(parent.from) },
             children: parent.from
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "truncate",
             children: snippet(parent.text)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "mb-1 flex items-baseline gap-2 text-xs",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: cn("font-mono font-semibold", kind === "topic" && "text-grape-soft"),
             style: kind === "topic" ? undefined : { color: aliasColor(m.from) },
             children: [
               fromLabel(m),
-              kind === "announcement" && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+              kind === "announcement" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
                 className: "italic opacity-60",
                 children: " · announced"
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "font-mono text-[11px] text-ink-dim",
             children: fmtTime(m.ts)
           }, undefined, false, undefined, this),
-          canReply && kind !== "topic" && /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Button, {
+          canReply && kind !== "topic" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button3, {
             variant: "ghost",
-            size: "auto",
-            className: "px-1 font-mono text-[11px] opacity-0 hover:text-grape-soft group-hover:opacity-100",
+            size: "inline",
+            className: "opacity-0 group-hover:opacity-100",
             onClick: () => onReply(m),
             children: "reply"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: cn("whitespace-pre-wrap break-words", BODY[kind] ?? BODY.message),
         children: m.text
       }, undefined, false, undefined, this)
@@ -23131,7 +26144,7 @@ function MessageRow({
 }
 
 // src/grapevine/surface/components/MessageFeed.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 function MessageFeed({
   streamRef,
   messages,
@@ -23140,23 +26153,25 @@ function MessageFeed({
   onReply,
   children
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("main", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("main", {
     ref: streamRef,
     className: "scroll-smooth overflow-y-auto px-6 pt-4 pb-6",
     children: [
-      messages.length === 0 && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-        className: "mx-auto my-[60px] max-w-[520px] text-center text-ink-dim",
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-            className: "mb-3 text-[40px]",
-            children: "\uD83C\uDF3F"
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
-            children: "Waiting for messages on this channel…"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this),
-      messages.map((m, idx) => /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(MessageRow, {
+      messages.length === 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Empty, {
+        className: "mx-auto my-[60px] max-w-[520px] flex-none",
+        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyHeader, {
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyMedia, {
+              className: "text-[40px]",
+              children: "\uD83C\uDF3F"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyDescription, {
+              children: "Waiting for messages on this channel…"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this),
+      messages.map((m, idx) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(MessageRow, {
         m,
         parent: m.in_reply_to != null ? msgById(m.in_reply_to) : undefined,
         canReply,
@@ -23168,33 +26183,33 @@ function MessageFeed({
 }
 
 // src/grapevine/surface/components/Roster.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 function Roster({
   subscribers,
   humans,
   alias
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(jsx_dev_runtime12.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("h2", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("h2", {
         className: "mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
         children: "On the line"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("ul", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("ul", {
         className: "m-0 list-none p-0",
         children: [
-          subscribers.length === 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("li", {
+          subscribers.length === 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("li", {
             className: "py-1 font-mono text-xs italic text-ink-dim",
             children: "no one currently subscribed"
           }, undefined, false, undefined, this),
-          subscribers.map((a) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("li", {
+          subscribers.map((a) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("li", {
             className: "flex items-center gap-2 py-1 font-mono text-xs",
             style: { color: aliasColor(a) },
             children: [
-              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
                 className: "h-2 w-2 rounded-full bg-current"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
                 children: subLabel(a, alias, humans)
               }, undefined, false, undefined, this)
             ]
@@ -23206,15 +26221,15 @@ function Roster({
 }
 
 // src/grapevine/surface/components/StatusBar.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusBar({ status, disconnected }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     className: "sticky bottom-0 border-t border-edge bg-surface px-3 py-2 font-mono text-[11px] text-ink-dim",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
-        className: cn("mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full", disconnected ? "bg-attention" : "bg-leaf")
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+        className: cn("mr-1.5 inline-block size-1.5 animate-pulse-dot rounded-full", disconnected ? "bg-attention" : "bg-leaf")
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
         children: status
       }, undefined, false, undefined, this)
     ]
@@ -23222,52 +26237,52 @@ function StatusBar({ status, disconnected }) {
 }
 
 // src/grapevine/surface/state/useGrapevine.ts
-var import_react5 = __toESM(require_react(), 1);
+var import_react6 = __toESM(require_react(), 1);
 function useGrapevine() {
-  const [channel] = import_react5.useState(() => channelFromHash(location.hash));
-  const [topic, setTopicState] = import_react5.useState("");
-  const [status, setStatus] = import_react5.useState("connecting…");
-  const [disconnected, setDisconnected] = import_react5.useState(false);
-  const [feed, setFeed] = import_react5.useState(emptyFeed);
-  const [subscribers, setSubscribers] = import_react5.useState([]);
-  const [humans, setHumans] = import_react5.useState([]);
-  const [channels, setChannels] = import_react5.useState([]);
-  const [channelArchived, setChannelArchived] = import_react5.useState(false);
-  const [alias, setAliasState] = import_react5.useState(() => loadAlias(localStorage));
-  const [mode, setModeState] = import_react5.useState("lurk");
-  const [replyingTo, setReplyingTo] = import_react5.useState(null);
-  const feedRef = import_react5.useRef(feed);
-  const modeRef = import_react5.useRef("lurk");
-  const aliasRef = import_react5.useRef(alias);
-  const seenRef = import_react5.useRef(new Set);
-  const firstPollRef = import_react5.useRef(true);
-  const streamRef = import_react5.useRef(null);
-  const esRef = import_react5.useRef(null);
-  const genRef = import_react5.useRef(0);
-  const stickRef = import_react5.useRef(false);
-  const setTopic = import_react5.useCallback((t) => setTopicState(t || ""), []);
+  const [channel] = import_react6.useState(() => channelFromHash(location.hash));
+  const [topic, setTopicState] = import_react6.useState("");
+  const [status, setStatus] = import_react6.useState("connecting…");
+  const [disconnected, setDisconnected] = import_react6.useState(false);
+  const [feed, setFeed] = import_react6.useState(emptyFeed);
+  const [subscribers, setSubscribers] = import_react6.useState([]);
+  const [humans, setHumans] = import_react6.useState([]);
+  const [channels, setChannels] = import_react6.useState([]);
+  const [channelArchived, setChannelArchived] = import_react6.useState(false);
+  const [alias, setAliasState] = import_react6.useState(() => loadAlias(localStorage));
+  const [mode, setModeState] = import_react6.useState("lurk");
+  const [replyingTo, setReplyingTo] = import_react6.useState(null);
+  const feedRef = import_react6.useRef(feed);
+  const modeRef = import_react6.useRef("lurk");
+  const aliasRef = import_react6.useRef(alias);
+  const seenRef = import_react6.useRef(new Set);
+  const firstPollRef = import_react6.useRef(true);
+  const streamRef = import_react6.useRef(null);
+  const esRef = import_react6.useRef(null);
+  const genRef = import_react6.useRef(0);
+  const stickRef = import_react6.useRef(false);
+  const setTopic = import_react6.useCallback((t) => setTopicState(t || ""), []);
   const rendered = feed.messages.length;
-  import_react5.useLayoutEffect(() => {
+  import_react6.useLayoutEffect(() => {
     const el = streamRef.current;
     if (rendered > 0 && stickRef.current && el) {
       el.scrollTop = el.scrollHeight;
       stickRef.current = false;
     }
   }, [rendered]);
-  const refreshSubscribers = import_react5.useCallback(async () => {
+  const refreshSubscribers = import_react6.useCallback(async () => {
     try {
-      const r = await fetch(`/channels/${encodeURIComponent(channel)}/subscribers`);
-      const j = await r.json();
+      const r2 = await fetch(`/channels/${encodeURIComponent(channel)}/subscribers`);
+      const j = await r2.json();
       setSubscribers(j.subscribers || []);
       setHumans(j.humans || []);
       if (j.topic !== undefined)
         setTopic(j.topic);
     } catch {}
   }, [channel, setTopic]);
-  const refreshChannels = import_react5.useCallback(async () => {
+  const refreshChannels = import_react6.useCallback(async () => {
     try {
-      const r = await fetch("/channels");
-      const j = await r.json();
+      const r2 = await fetch("/channels");
+      const j = await r2.json();
       const { rows, seen } = mergeChannels(seenRef.current, j.channels || [], firstPollRef.current);
       seenRef.current = seen;
       firstPollRef.current = false;
@@ -23275,7 +26290,7 @@ function useGrapevine() {
       setChannelArchived(isChannelArchived(rows, channel));
     } catch {}
   }, [channel]);
-  const connect = import_react5.useCallback((m, a) => {
+  const connect = import_react6.useCallback((m, a) => {
     const myGen = ++genRef.current;
     esRef.current?.close();
     setDisconnected(false);
@@ -23299,11 +26314,11 @@ function useGrapevine() {
         const msg = JSON.parse(ev.data);
         const el = streamRef.current;
         stickRef.current = el ? nearBottom(el.scrollTop, el.clientHeight, el.scrollHeight) : false;
-        const r = appendMessage(feedRef.current, msg);
-        feedRef.current = r.feed;
-        setFeed(r.feed);
-        if (r.topic !== undefined)
-          setTopic(r.topic);
+        const r2 = appendMessage(feedRef.current, msg);
+        feedRef.current = r2.feed;
+        setFeed(r2.feed);
+        if (r2.topic !== undefined)
+          setTopic(r2.topic);
       } catch {}
     });
     es.addEventListener("error", () => {
@@ -23318,15 +26333,15 @@ function useGrapevine() {
       }, 1000);
     });
   }, [channel, setTopic]);
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     document.title = pageTitle(channel);
     let cancelled = false;
     (async () => {
       let a = aliasRef.current;
       if (!a) {
         try {
-          const r = await fetch("/identity");
-          const j = await r.json();
+          const r2 = await fetch("/identity");
+          const j = await r2.json();
           if (j.alias)
             a = j.alias;
         } catch {}
@@ -23355,13 +26370,13 @@ function useGrapevine() {
       esRef.current?.close();
     };
   }, [channel, connect, refreshSubscribers, refreshChannels]);
-  const setAlias = import_react5.useCallback((raw) => {
+  const setAlias = import_react6.useCallback((raw) => {
     const a = commitAlias(localStorage, raw);
     aliasRef.current = a;
     setAliasState(a);
     return a;
   }, []);
-  const toggleMode = import_react5.useCallback(() => {
+  const toggleMode = import_react6.useCallback(() => {
     const n = nextMode(modeRef.current, aliasRef.current);
     if (!n)
       return;
@@ -23373,7 +26388,7 @@ function useGrapevine() {
     connect(n, aliasRef.current);
     refreshSubscribers();
   }, [channel, connect, refreshSubscribers, setAlias]);
-  const closeChannel = import_react5.useCallback(async (name) => {
+  const closeChannel = import_react6.useCallback(async (name) => {
     try {
       await fetch(`/channels/${encodeURIComponent(name)}`, { method: "DELETE" });
     } catch {}
@@ -23382,7 +26397,7 @@ function useGrapevine() {
     if (name === channel)
       location.hash = "lobby";
   }, [channel, refreshChannels]);
-  const send = import_react5.useCallback(async (draft) => {
+  const send = import_react6.useCallback(async (draft) => {
     const text = draft.trim();
     if (!text || modeRef.current !== "join")
       return false;
@@ -23393,12 +26408,12 @@ function useGrapevine() {
     if (replyingTo)
       body.in_reply_to = replyingTo.id;
     try {
-      const r = await fetch(`/channels/${encodeURIComponent(channel)}/messages`, {
+      const r2 = await fetch(`/channels/${encodeURIComponent(channel)}/messages`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body)
       });
-      if (r.ok) {
+      if (r2.ok) {
         setReplyingTo(null);
         return true;
       }
@@ -23430,33 +26445,33 @@ function useGrapevine() {
 }
 
 // src/grapevine/surface/App.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 function App() {
   const g = useGrapevine();
   const joined = g.mode === "join";
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(jsx_dev_runtime17.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Header, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Header, {
         channel: g.channel,
         topic: g.topic
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "grid min-h-0 flex-1 grid-cols-[280px_1fr_220px]",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ChannelRail, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ChannelRail, {
             channels: g.channels,
             current: g.channel,
             onClose: g.closeChannel
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(MessageFeed, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(MessageFeed, {
             streamRef: g.streamRef,
             messages: g.messages,
             msgById: g.msgById,
             canReply: joined && !g.channelArchived,
             onReply: g.replyTo,
             children: [
-              g.channelArchived && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(ArchivedNote, {}, undefined, false, undefined, this),
-              joined && !g.channelArchived && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Composer, {
+              g.channelArchived && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ArchivedNote, {}, undefined, false, undefined, this),
+              joined && !g.channelArchived && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Composer, {
                 alias: g.alias,
                 replyingTo: g.replyingTo,
                 onCancelReply: g.cancelReply,
@@ -23464,15 +26479,15 @@ function App() {
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("aside", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("aside", {
             className: "overflow-y-auto border-l border-edge bg-surface px-[18px] py-4",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Roster, {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Roster, {
                 subscribers: g.subscribers,
                 humans: g.humans,
                 alias: g.alias
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(IdentityBox, {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(IdentityBox, {
                 alias: g.alias,
                 mode: g.mode,
                 onAliasChange: g.setAlias,
@@ -23482,7 +26497,7 @@ function App() {
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(StatusBar, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(StatusBar, {
         status: g.status,
         disconnected: g.disconnected
       }, undefined, false, undefined, this)
@@ -23491,7 +26506,7 @@ function App() {
 }
 
 // src/grapevine/surface/main.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime15.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime18.jsxDEV(App, {}, undefined, false, undefined, this));

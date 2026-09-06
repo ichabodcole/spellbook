@@ -1,6 +1,6 @@
 // H1–H3 — the leaf, `grapevine · <channel>`, and the topic line.
 
-import { cn } from "../../../kit/lib/cn";
+import { cn } from "cn";
 
 export function Header({ channel, topic }: { channel: string; topic: string }) {
   return (

@@ -4,6 +4,9 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "workspaces": [
+    "src/grapevine"
+  ],
   "scripts": {
     "build": "bun run src/build.ts",
     "format": "biome format --write .",

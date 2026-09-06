@@ -2,6 +2,7 @@
 // archived note are sticky at its foot (P1, P2).
 
 import type { RefObject } from "react";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/ui/empty";
 import type { Message } from "../state/types";
 import { MessageRow } from "./MessageRow";
 
@@ -23,10 +24,12 @@ export function MessageFeed({
   return (
     <main ref={streamRef} className="scroll-smooth overflow-y-auto px-6 pt-4 pb-6">
       {messages.length === 0 && (
-        <div className="mx-auto my-[60px] max-w-[520px] text-center text-ink-dim">
-          <div className="mb-3 text-[40px]">🌿</div>
-          <div>Waiting for messages on this channel…</div>
-        </div>
+        <Empty className="mx-auto my-[60px] max-w-[520px] flex-none">
+          <EmptyHeader>
+            <EmptyMedia className="text-[40px]">🌿</EmptyMedia>
+            <EmptyDescription>Waiting for messages on this channel…</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
       {messages.map((m, idx) => (
         <MessageRow

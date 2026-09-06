@@ -1,12 +1,11 @@
 // F2–F8 — one message: the reply quote, the meta line, the body by kind.
 
-import { cn } from "../../../kit/lib/cn";
+import { cn } from "cn";
+import { Button } from "@/ui/button";
 import { aliasColor, fmtTime, fromLabel, snippet } from "../state/feed";
 import type { Message } from "../state/types";
-import { Button } from "../ui/button";
 
-// F3 — one recipe per kind; a lookup rather than stacked overrides because
-// cn() does not conflict-resolve.
+// F3 — one body recipe per message kind.
 const BODY: Record<string, string> = {
   message: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
   topic:
@@ -58,8 +57,8 @@ export function MessageRow({
         {canReply && kind !== "topic" && (
           <Button
             variant="ghost"
-            size="auto"
-            className="px-1 font-mono text-[11px] opacity-0 hover:text-grape-soft group-hover:opacity-100"
+            size="inline"
+            className="opacity-0 group-hover:opacity-100"
             onClick={() => onReply(m)}
           >
             reply

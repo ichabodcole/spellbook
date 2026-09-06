@@ -460,6 +460,62 @@ authoritative:
 > untested backup. The digestify trigger above names an owner and an occasion
 > for exactly this reason.
 
+### A spell's primitives come from the shadcn registry; a variant extends the recipe, never fights it.
+
+<!-- rule-id: registry-primitives-variant-extends-recipe -->
+
+A spell with a React surface takes its primitives from the shadcn registry
+through the CLI (`bunx --bun shadcn@latest add …` from the spell's
+`components.json`), `base` flavour on `@base-ui/react`. The registry owns every
+file under `surface/ui/`: no provenance header, no hand-written look-alike, no
+comment about where it came from — the next `add --overwrite` rewrites the file,
+and a header that survives only until then is a lie waiting to happen. Where the
+spell's look disagrees with a recipe, **add a variant inside the recipe's `cva`
+config** (two lines, one comment) and use it — never a parallel lookup, never a
+stack of overriding utilities at the call site, and never a copy of the file
+under another name. The spell's tokens do the rest: the L1 alias block in
+`styles.css` maps every registry name the installed set consumes
+(`--color-primary`, `--color-muted-foreground`, …) onto the spell's own tokens,
+each a `var()`, never a value — so a recipe changes shape, size and weight, and
+the palette stays the spell's.
+
+- **Boundary check:** `bunx --bun shadcn@latest info` from the spell folder
+  lists every file under `surface/ui/` as installed and nothing else lives
+  there; `git diff` of a re-`add` shows only the variant lines. If a `className`
+  at a call site sets a colour, a font or a radius the recipe also sets, that is
+  a variant that has not been written yet. If a spell's `styles.css` carries a
+  registry name as a literal colour, the alias rule has been broken.
+- **Repeal when:** the kit ships the primitives itself (the kit extraction
+  project), at which point this rule moves to the kit and spells stop holding a
+  `surface/ui/` at all.
+
+### The surface dep cap: `@base-ui/react`, `lucide-react`, `cn`, `class-variance-authority` — and nothing else without a ruling.
+
+<!-- rule-id: surface-dep-cap -->
+
+Four runtime dependencies are open to a spell's surface: the two the adoption
+card allowed (`@base-ui/react`, `lucide-react`), which stay declared **at the
+root** because every React spell shares them, and the two the registry's recipes
+import (`cn` — shadcn's own package, a compiled clsx + tailwind-merge with no
+dependencies of its own — and `class-variance-authority`), which are declared
+**in the spell's own manifest** (`src/<spell>/package.json`, a Bun workspace
+member) so the CLI's install lands where the CLI runs. `clsx` and
+`tailwind-merge` are **not** in the cap — `cn` replaces both, and `clsx` arrives
+only transitively under cva. `src/kit/lib/cn.ts` (the dependency-free,
+non-merging `cn`) stays as it is for the spells that use it; a spell on the
+registry uses the registry's `cn` throughout, one semantics per spell.
+
+- **Boundary check:** `src/<spell>/package.json` declares nothing outside the
+  four; the root `package.json` gained no surface dependency for this spell; a
+  registry file that imports something else (`tw-animate-css`, a `radix-ui`
+  slot) is a signal to look at the recipe's flavour, not to add the package.
+  _(Measured 2026-09-05 on shadcn 4.21: `add` does not install
+  `class-variance-authority` — only `init` does — so it is added by hand,
+  once.)_
+- **Repeal when:** a component the house needs cannot be built on these four and
+  a ruling names the fifth. Record the ruling here, with the name, before
+  `bun add`.
+
 ### Honor the exit-code contract.
 
 <!-- rule-id: honor-exit-code-contract -->
