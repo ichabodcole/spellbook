@@ -23,6 +23,16 @@ import {
   subscribedStatus,
   tailUrl,
 } from "./identity";
+import {
+  type CreateOutcome,
+  createFollowUpTopic,
+  createOutcome,
+  loadShowArchived,
+  parkIntent,
+  saveShowArchived,
+  takeIntent,
+  topicFrom,
+} from "./lifecycle";
 import type { ChannelRow, ChannelWire, Message, Mode } from "./types";
 
 export type Grapevine = ReturnType<typeof useGrapevine>;
@@ -41,6 +51,14 @@ export function useGrapevine() {
   const [alias, setAliasState] = useState(() => loadAlias(localStorage));
   const [mode, setModeState] = useState<Mode>("lurk");
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  // L3 — the persisted default alias (/identity), kept apart from the UI
+  // override so a lurking human can still sign a topic edit with it.
+  const [identityAlias, setIdentityAlias] = useState<string | null>(null);
+  // L4 — the archived filter, remembered per browser.
+  const [showArchived, setShowArchivedState] = useState(() => loadShowArchived(localStorage));
+  // L3 — bumped whenever something asks the header to open its topic editor
+  // (the context menu's _Edit topic_, or an intent parked before a reload).
+  const [topicEditRequest, setTopicEditRequest] = useState(0);
 
   // Refs mirror the state the stream handlers and timers need without
   // re-subscribing: the feed (for `since=highest` on reconnect, N2), mode and
@@ -160,16 +178,20 @@ export function useGrapevine() {
     let cancelled = false;
     (async () => {
       let a = aliasRef.current;
-      if (!a) {
-        try {
-          const r = await fetch("/identity");
-          const j = (await r.json()) as { alias?: string | null };
-          if (j.alias) a = j.alias;
-        } catch {
-          // X1
-        }
+      // R1 (amended 2026-09-05): /identity is fetched on every init — the
+      // default alias also signs a lurker's topic edit (L3) — but it PRE-FILLS
+      // the alias only when no localStorage override exists, as before.
+      let d: string | null = null;
+      try {
+        const r = await fetch("/identity");
+        const j = (await r.json()) as { alias?: string | null };
+        if (j.alias) d = j.alias;
+      } catch {
+        // X1
       }
+      if (!a && d) a = d;
       if (cancelled) return;
+      setIdentityAlias(d);
       aliasRef.current = a;
       setAliasState(a);
       const m = initialMode(localStorage, channel, a); // I4
@@ -178,6 +200,8 @@ export function useGrapevine() {
       connect(m, a);
       refreshSubscribers();
       refreshChannels();
+      // L3 — an _Edit topic_ parked before the switch to this channel.
+      if (takeIntent(localStorage, channel) === "edit-topic") setTopicEditRequest((n) => n + 1);
     })();
     const t1 = setInterval(refreshSubscribers, 3000); // C13 / S3
     const t2 = setInterval(refreshChannels, 3000);
@@ -228,6 +252,150 @@ export function useGrapevine() {
     [channel, refreshChannels],
   );
 
+  // L1 / L5 — archive and unarchive are reversible, so no confirmation. The
+  // rail poll is the source of truth: nothing is mutated optimistically, the
+  // refresh right after is just the next poll brought forward, and the
+  // composer follows `channelArchived` from that poll exactly as it does for
+  // the agent-driven case (C12).
+  const archiveChannel = useCallback(
+    async (name: string) => {
+      try {
+        await fetch(`/channels/${encodeURIComponent(name)}/archive`, { method: "POST" });
+      } catch {
+        // X1
+      }
+      refreshChannels();
+    },
+    [refreshChannels],
+  );
+  const unarchiveChannel = useCallback(
+    async (name: string): Promise<{ ok: true } | { ok: false; message: string }> => {
+      let out: { ok: true } | { ok: false; message: string } = {
+        ok: false,
+        message: "daemon unreachable",
+      };
+      try {
+        const r = await fetch(`/channels/${encodeURIComponent(name)}/unarchive`, {
+          method: "POST",
+        });
+        if (r.ok) out = { ok: true };
+        else {
+          const j = (await r.json().catch(() => null)) as { error?: unknown } | null;
+          out = { ok: false, message: typeof j?.error === "string" ? j.error : `HTTP ${r.status}` };
+        }
+      } catch {
+        // X1 — the message above stands
+      }
+      refreshChannels();
+      return out;
+    },
+    [refreshChannels],
+  );
+
+  // L2 — POST /channels as the CLI's non-explicit verbs do (no `explicit`,
+  // so an archived name answers 409 and the dialog offers unarchive). The
+  // topic, when given, is signed the way a topic edit is (L3) or falls to the
+  // daemon's `system`. On success navigate: a hash change is a reload (C3);
+  // creating the channel we are on is a no-op the poll confirms.
+  // L2c — the daemon sets the POST's topic only on a channel with none, so a
+  // topic typed for a channel the rail already lists is PUT afterwards (signed
+  // the same way; the CLI's `topic` verb is that PUT).
+  const createChannel = useCallback(
+    async (name: string, topic: string): Promise<CreateOutcome> => {
+      const existed = channels.some((c) => c.name === name);
+      const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
+      const body: { name: string; topic?: string; from?: string } = { name };
+      if (topic.trim()) {
+        body.topic = topic.trim();
+        if (from) body.from = from;
+      }
+      let outcome: CreateOutcome;
+      try {
+        const r = await fetch("/channels", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        outcome = createOutcome(
+          r.status,
+          (await r.json().catch(() => null)) as { error?: unknown },
+        );
+      } catch {
+        outcome = { kind: "error", message: "daemon unreachable" };
+      }
+      if (outcome.kind === "created") {
+        const owed = createFollowUpTopic(existed, topic);
+        if (owed) {
+          try {
+            await fetch(`/channels/${encodeURIComponent(name)}/topic`, {
+              method: "PUT",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ topic: owed, from: from ?? "system" }),
+            });
+          } catch {
+            // X1 — the header follows the stream either way
+          }
+        }
+        if (name === channel) refreshChannels();
+        else location.hash = name;
+      }
+      return outcome;
+    },
+    [channel, channels, identityAlias, refreshChannels],
+  );
+
+  // L2 — the dialog's _Unarchive instead_: unarchive, then go there; a
+  // failure comes back to the dialog, which stays open and says so.
+  const unarchiveAndGo = useCallback(
+    async (name: string) => {
+      const r = await unarchiveChannel(name);
+      if (r.ok && name !== channel) location.hash = name;
+      return r;
+    },
+    [channel, unarchiveChannel],
+  );
+
+  // L3 — PUT the topic signed as `from`; the header follows the `kind:"topic"`
+  // message that arrives over our own stream (E2), never an optimistic set.
+  const putTopic = useCallback(
+    async (text: string): Promise<boolean> => {
+      const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
+      if (!from) return false;
+      try {
+        const r = await fetch(`/channels/${encodeURIComponent(channel)}/topic`, {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ topic: text, from }),
+        });
+        return r.ok;
+      } catch {
+        return false; // X1
+      }
+    },
+    [channel, identityAlias],
+  );
+
+  // L3 — _Edit topic_ from the rail: the current channel's editor opens in
+  // place; another channel's means switching there first (a reload), so the
+  // request is parked and taken on the next init.
+  const editTopicFor = useCallback(
+    (name: string) => {
+      if (name === channel) {
+        setTopicEditRequest((n) => n + 1);
+      } else {
+        parkIntent(localStorage, name, "edit-topic");
+        location.hash = name;
+      }
+    },
+    [channel],
+  );
+
+  // L4
+  const setShowArchived = useCallback((on: boolean) => {
+    saveShowArchived(localStorage, on);
+    setShowArchivedState(on);
+  }, []);
+
   // P6 / P7 — resolves true iff the daemon accepted it; the composer clears
   // its draft on true and keeps it otherwise. No optimistic insert: the row
   // arrives over our own stream.
@@ -277,6 +445,17 @@ export function useGrapevine() {
     toggleMode,
     closeChannel,
     send,
+    identityAlias,
+    topicFrom: topicFrom(mode, alias, identityAlias),
+    showArchived,
+    setShowArchived,
+    topicEditRequest,
+    archiveChannel,
+    unarchiveChannel,
+    createChannel,
+    unarchiveAndGo,
+    putTopic,
+    editTopicFor,
     replyTo: (m: Message) => setReplyingTo(m),
     cancelReply: () => setReplyingTo(null),
   };

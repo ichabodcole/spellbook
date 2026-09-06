@@ -206,6 +206,13 @@ import { join } from "node:path";
 // that is correct: the instrument roots its walk at the skills dir and
 // `src/`, so a repo-root file is outside its population, unlike the per-spell
 // bunfigs, which are inside it.
+//
+// ⛔ RE-DECLARED 2026-09-06 FOR THE UX BRANCH'S MENU-HOVER FIX — 22/3,758 ->
+// 22/3,760. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +2   src/grapevine/surface/styles.css   108 -> 110
+// a two-line comment on the `--color-accent` alias (why it must differ from
+// `--color-popover`, or a hovered menu item is invisible). 3,758 + 2 = 3,760
+// exactly.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
@@ -221,7 +228,7 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/imago/surface/index.html": 13,
   "src/magpie/surface/index.html": 13,
   "src/glamour/surface/styles.css": 25,
-  "src/grapevine/surface/styles.css": 108,
+  "src/grapevine/surface/styles.css": 110,
   "src/grapevine/surface/index.html": 24,
   "src/grapevine/bunfig.toml": 2,
   "src/mind-mapper/bunfig.toml": 4,
