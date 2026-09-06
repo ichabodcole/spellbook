@@ -184,6 +184,9 @@ type TailPayload = {
   since?: number;
   as?: string | null;
   latest_id?: number;
+  // True when THIS subscribe created the channel — the signal that separates
+  // "quiet channel" from "you tailed a name that did not exist".
+  created?: boolean;
   // message fields
   id?: number;
   from?: string;
@@ -713,8 +716,11 @@ async function cmdTail(
 
   while (!stopped) {
     const port = await ensureDaemon();
-    // Ensure the channel exists (so a fresh `tail name` works without explicit open).
-    await api(port, "POST", "/channels", { name });
+    // ⚠ NO ensure call. A fresh `tail name` still works without an explicit
+    // open — GET …/tail creates the channel itself — and that is the ONLY way
+    // the subscribed event's `created` flag can ever be true: an ensure sent
+    // first creates the channel, so the subscribe that follows always reports
+    // `created:false` and the mistyped-name signal never fires.
     const asParam = myAlias ? `&as=${encodeURIComponent(myAlias)}` : "";
     const humanParam = opts.human && !opts.lurk ? "&human=1" : "";
     const lurkParam = opts.lurk ? "&lurk=1" : "";
@@ -788,6 +794,10 @@ async function cmdTail(
           if (eventName === "subscribed") {
             process.stderr.write(`# subscribed to ${payload.channel} (since=${payload.since})\n`);
             if (payload.topic) process.stderr.write(`# topic: ${payload.topic}\n`);
+            if (payload.created)
+              process.stderr.write(
+                `# created ${payload.channel} — this tail brought it into being (check the name)\n`,
+              );
             // Structured grounding on stdout (F3/F7) — under the default
             // Wiring-B Monitor, stdout surfaces as notifications, so a fresh
             // subscriber actually sees the topic + that earlier history exists.
@@ -797,7 +807,11 @@ async function cmdTail(
               grounded = true;
               const latest = typeof payload.latest_id === "number" ? payload.latest_id : 0;
               const earlier = highestSeen < 0 ? latest : Math.max(0, Math.min(highestSeen, latest));
-              if (earlier > 0 || payload.topic) {
+              // `created` joins the gate on purpose: a channel this subscribe
+              // just made has no topic and no history, so the old condition is
+              // exactly the case that emits NOTHING — which is the silence
+              // being fixed.
+              if (earlier > 0 || payload.topic || payload.created) {
                 const grounding: Record<string, unknown> = {
                   kind: "grounding",
                   channel: payload.channel,
@@ -807,6 +821,14 @@ async function cmdTail(
                 if (payload.topic) grounding.topic = payload.topic;
                 if (earlier > 0)
                   grounding.hint = `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`;
+                // LAST, so it cannot be silently overwritten by the backfill
+                // hint. A created channel has no history, so the two are
+                // mutually exclusive today — but a hint that loses to another
+                // hint is the failure mode this whole branch is about.
+                if (payload.created) {
+                  grounding.created = true;
+                  grounding.hint = `this tail created ${payload.channel} — no such channel existed; check the name, or another party has yet to open it`;
+                }
                 process.stdout.write(`${JSON.stringify(grounding)}\n`);
               }
             }

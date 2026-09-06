@@ -29,7 +29,8 @@
 //   GET    /channels/:name/wait     — long-poll for new messages [404 if no such channel]
 //   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
 //                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
-//                                    subscribed event includes the current topic.
+//                                    subscribed event includes the current topic and `created` — true when
+//                                    THIS subscribe brought the channel into being (i.e. a mistyped name).
 //
 // READS DO NOT CREATE (2026-09-06). Only an act declaring intent that the
 // channel exist may bring one into being: POST /channels, every append, PUT
@@ -1033,6 +1034,15 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/tail" && method === "GET") {
+      // A subscribe is forward-looking — "tell me about this from now on" — so
+      // it MAY create the channel, and that is deliberate: a fresh `tail name`
+      // works without an explicit open, and the watch surface's first load
+      // relies on it. But an agent that tails a MISTYPED name then waits
+      // forever inside a channel of its own making, with no signal that this is
+      // what happened — the same silent-failure class as a resurrecting read,
+      // just slower. So the subscribed event says so. Computed BEFORE
+      // loadChannel, which is what does the creating.
+      const created = !channelExists(name);
       const ch = loadChannel(name);
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       const alias = url.searchParams.get("as");
@@ -1076,7 +1086,7 @@ async function handle(req: Request): Promise<Response> {
           // grounding context before any messages arrive.
           controller.enqueue(
             enc.encode(
-              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1 })}\n\n`,
+              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1, created })}\n\n`,
             ),
           );
           // Replay backlog before live tail begins.

@@ -2170,3 +2170,32 @@ describe("a read verb never creates a channel", () => {
     expect((JSON.parse(back.stdout) as { topic: string }).topic).toBe("created by a write");
   });
 });
+
+describe("tail creates — and says so", () => {
+  test("tailing a name that does not exist emits created:true with a hint naming the risk", async () => {
+    const { proc, output } = spawnTail("mistyped-channel", ["--as", "watcher"]);
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const grounding = JSON.parse(output().trim().split("\n")[0]) as {
+      kind: string;
+      channel: string;
+      created?: boolean;
+      hint?: string;
+    };
+    expect(grounding.kind).toBe("grounding");
+    expect(grounding.channel).toBe("mistyped-channel");
+    expect(grounding.created).toBe(true);
+    expect(grounding.hint).toContain("this tail created mistyped-channel");
+    // It still creates — that is the ruling. The fix is the signal, not a refusal.
+    expect(await listedChannels()).toContain("mistyped-channel");
+  });
+
+  test("tailing an EXISTING channel does not claim to have created it", async () => {
+    await bunRun(["open", "already-open", "--topic", "t"]);
+    const { proc, output } = spawnTail("already-open");
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const grounding = JSON.parse(output().trim().split("\n")[0]) as { created?: boolean };
+    expect(grounding.created).toBeUndefined();
+  });
+});
