@@ -65,11 +65,16 @@ building around a workaround. Record the decision and the options not taken in
 the decision log.
 
 **The dep cap is lifted for exactly what the registry needs:**
-`class-variance-authority`, `clsx`, `tailwind-merge`. `src/kit/lib/cn.ts` stays
-as it is — mind-mapper and glamour depend on its non-merging semantics and
-changing it is a behaviour change to spells outside this branch. Grapevine gets
-the CLI's own `lib/utils.ts` (`cn` = clsx + twMerge). Note in the journal that
-the kit extraction project inherits the question of which `cn` the kit ships.
+`class-variance-authority`, `clsx`, `tailwind-merge`. _(Amended 2026-09-05,
+measured against shadcn 4.21: the registry imports `cn` from shadcn's own npm
+package **`cn`** and writes no `lib/utils.ts`, and `add` does not install cva.
+The real cap is **`cn` + `class-variance-authority`** — neither clsx nor
+tailwind-merge is a direct dependency. See the decision log.)_
+`src/kit/lib/cn.ts` stays as it is — mind-mapper and glamour depend on its
+non-merging semantics and changing it is a behaviour change to spells outside
+this branch. Grapevine gets the CLI's own `lib/utils.ts` (`cn` = clsx +
+twMerge). Note in the journal that the kit extraction project inherits the
+question of which `cn` the kit ships.
 
 **Components:** regenerate the five (`button`, `badge`, `input`, `textarea`,
 `alert-dialog`) from the registry, and add the set the UX branch will compose:
