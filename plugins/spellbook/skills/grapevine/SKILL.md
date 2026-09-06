@@ -46,16 +46,23 @@ authentication, localhost only.
 >   carries `archived` beside `topic`, `latest_id` and `created`, so an agent
 >   joining an already-retired channel learns it on arrival rather than from a
 >   rejected send.
+> - **A creating act writes the channel down.** `open` (and a `tail` that
+>   created one) now leaves an **empty `.jsonl`**, so a channel survives a
+>   `restart` even if nothing was ever said in it. Before this, `open <name>`
+>   with no `--topic` appended nothing and the channel lived only in the
+>   daemon's memory — so once reads stopped resurrecting, a wrapper that
+>   correctly opened first still broke if the daemon restarted in between. The
+>   file is the record of existence and its birth time is the channel's age,
+>   which no longer restarts with the daemon. It is an empty file rather than a
+>   header record because this log's lines are messages to every reader of it,
+>   `grep` included. Closing still deletes it — persistence is not resurrection.
 >
 > ⚠ **Scope of the breaking change, stated in full.** A read verb refuses any
-> channel the daemon cannot see, and `open <name>` **without `--topic` writes no
-> log file** — such a channel lives only in the daemon's memory. So a wrapper
-> that correctly opened first still breaks **if the daemon restarted in
-> between** (`grapevine restart` is a documented healing action for version
-> skew). Mitigation: `open --topic <text>`, which writes a frame and therefore a
-> file, or re-`open` after a restart. This is storage semantics rather than
-> route behaviour and was deliberately not changed here — filed as
-> `docs/backlog/2026-09-06-open-without-topic-writes-no-file.md`.
+> channel the daemon cannot see. With creating acts now persisted, the case that
+> remains is the honest one: a wrapper that **never opened at all** and relied
+> on a read to bring the channel into being. That fails loudly the first time it
+> runs. Channels opened by a daemon older than V2.2 and never written to are
+> still memory-only until something re-opens them.
 >
 > 🌿 **V2.1 — human parity on the watch surface.** The human can now do to a
 > channel what an agent does through the CLI, from the browser, through the same

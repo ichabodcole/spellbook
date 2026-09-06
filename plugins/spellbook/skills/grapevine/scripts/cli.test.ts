@@ -2553,3 +2553,56 @@ describe("a retired channel's refusal names its recovery too (verify ⚠7)", () 
     for (const s of [missing.stderr, archived.stderr]) expect(s).toContain("try: bun ");
   });
 });
+
+describe("a created channel outlives the daemon that created it (backlog ⚠4)", () => {
+  test("open with no --topic survives a restart — the filed repro, verbatim", async () => {
+    expect((await bunRun(["open", "persists-me"])).code).toBe(0);
+    expect(await listedChannels()).toContain("persists-me");
+
+    // `restart` is a DOCUMENTED healing action (version skew), and before V2.2
+    // it silently dropped every channel that had been opened but never written
+    // to — so a wrapper that correctly opened FIRST still met a 404.
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+
+    expect(await listedChannels()).toContain("persists-me");
+    const pull = await bunRun(["pull", "persists-me"]);
+    expect(pull.code).toBe(0);
+    expect(JSON.parse(pull.stdout).messages).toEqual([]);
+  });
+
+  test("a channel a subscribe created survives too", async () => {
+    // tail creates (a subscription is forward-looking); that creation is as
+    // real as open's and must be written down the same way.
+    const t = spawn("bun", [CLI, "tail", "tail-persists", "--as", "sub"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+    await new Promise((r) => setTimeout(r, 1200));
+    t.kill();
+    await new Promise((r) => setTimeout(r, 200));
+
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+    expect(await listedChannels()).toContain("tail-persists");
+    expect((await bunRun(["pull", "tail-persists"])).code).toBe(0);
+  });
+
+  test("the age of an empty channel does not restart with the daemon", async () => {
+    await bunRun(["open", "stable-age"]);
+    const first = JSON.parse((await bunRun(["open", "stable-age"])).stdout).channel.created_at;
+    expect(typeof first).toBe("number");
+
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+    const second = JSON.parse((await bunRun(["open", "stable-age"])).stdout).channel.created_at;
+    // Read off the file's birth, not Date.now(): a channel that has said
+    // nothing yet is still as old as the moment it was made.
+    expect(second).toBe(first);
+  });
+
+  test("a closed channel is still gone — persistence is not resurrection", async () => {
+    await bunRun(["open", "closed-stays-closed"]);
+    expect((await bunRun(["close", "closed-stays-closed"])).code).toBe(0);
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+    expect(await listedChannels()).not.toContain("closed-stays-closed");
+    expect((await bunRun(["pull", "closed-stays-closed"])).code).toBe(2);
+  });
+});

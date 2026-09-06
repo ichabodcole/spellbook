@@ -151,3 +151,37 @@ rule; the follow-up would also have to re-open the same tests.
 _A wrong premise caught by its own test: the symmetry cell first compared the
 two WRITE forms of `topic` and found no asymmetry, because a write creates and
 therefore never refuses a missing channel. The read form is the missing arm._
+
+## 2026-09-06 — Cole: a created channel persists
+
+Cole's lean, given the filed finding: creating a channel should persist it,
+which means writing a file even if it carries nothing but a null topic. Ruled in
+and implemented on this branch rather than filed onward, because it is what
+makes ruling 1's premise true — "only intent creates" cannot rest on a record
+that does not outlive the process holding it.
+
+**An empty `.jsonl`, not a header record.** Cole's phrasing allowed either. The
+log's lines are messages to every consumer that reads it — including `grep`,
+which reads the file off disk without the daemon, and the count, which counts
+non-empty lines — so a metadata first line has to be taught to each of them and
+makes an empty channel report one message. The file's existence is the record of
+existence, and "null topic" is already what the absence of a topic frame means.
+Truncation to zero bytes was also already a supported state: that is what
+clearing a channel leaves behind, so nothing new had to learn to read it.
+
+**The age comes from the file.** With no line to read a `ts` from, `Date.now()`
+made a channel's `created_at` restart on every daemon boot — the same drift the
+file was written to stop. It now reads the file's birth time, and the in-memory
+record is aligned to the file at the moment it is written, or the two hold
+different readings of the same instant and the age still changes across a
+restart. _Caught by its own test asserting equality rather than closeness._
+
+**Not taken:** a `kind:"status"` `event:"opened"` frame (the backlog's second
+option) — it would put a record in every channel whether or not anyone wanted
+one, and give every consumer another frame to classify, to buy a durability the
+empty file already buys. **Not taken:** leaving it filed — the branch's own
+premise stays half true, and the release note has to keep explaining a case that
+did not need to exist.
+
+The backlog item is deleted rather than archived: it was filed on this branch,
+and it is closed by this branch.

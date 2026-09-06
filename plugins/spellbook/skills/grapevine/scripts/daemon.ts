@@ -246,6 +246,39 @@ function snapshotAndClear(name: string): string | null {
   return snapshot;
 }
 
+// V2.2 — a creating act writes the channel down. Before this, `open` with no
+// `--topic` appended nothing, so the channel lived only in the daemon's map:
+// `restart` (a DOCUMENTED healing action) dropped it, and once reads stopped
+// resurrecting missing channels, a wrapper that had correctly opened first
+// still broke. "Only intent creates" cannot rest on a record that does not
+// outlive the process holding it.
+//
+// An EMPTY `.jsonl`, not a header record: this file is a message log and every
+// consumer parses its lines as messages — including `grep`, which reads it off
+// disk without the daemon, and the count, which counts non-empty lines. A
+// metadata first line would have to be taught to each of them and would make an
+// empty channel report one message. The file's existence is the record of
+// existence; its birth time is the creation time; and a null topic is exactly
+// what "no topic frame yet" already means. Truncation to zero bytes is also
+// already a supported state — that is what clearing a channel leaves behind.
+function persistChannel(name: string): void {
+  const p = channelPath(name); // validates the name
+  if (!existsSync(p)) writeFileSync(p, "");
+  // ⚠ Align the in-memory record to the file it now has. `loadChannel` stamps
+  // `Date.now()` for a channel with nothing to read a `ts` from, and this write
+  // happens a moment later — so memory and disk hold two readings of the same
+  // instant, and `created_at` CHANGED across a restart even though the channel
+  // had not. The file is the record; make it the age too. Guarded on an empty
+  // log: once a message exists, its `ts` is the better answer and must stand.
+  const ch = channels.get(name);
+  if (ch && ch.next_id === 1) {
+    try {
+      const st = statSync(p);
+      ch.created_at = st.birthtimeMs || st.mtimeMs;
+    } catch {}
+  }
+}
+
 function loadChannel(name: string): Channel {
   const existing = channels.get(name);
   if (existing) return existing;
@@ -256,6 +289,7 @@ function loadChannel(name: string): Channel {
   if (existsSync(path)) {
     const raw = readFileSync(path, "utf-8");
     const lines = raw.split("\n").filter((l) => l.trim());
+    let sawParseableLine = false;
     if (lines.length) {
       // b11 — this block used to read the FIRST line for created_at and the
       // LAST line for next_id, each in a `try` with an EMPTY CATCH. A final
@@ -277,7 +311,6 @@ function loadChannel(name: string): Channel {
       // present instead of restarting at 1 — over-report, never under-report,
       // because under-reporting here is what reuses an id.
       let maxId = 0;
-      let sawParseable = false;
       for (let i = 0; i < lines.length; i++) {
         let m: Message;
         try {
@@ -285,15 +318,27 @@ function loadChannel(name: string): Channel {
         } catch {
           continue; // a corrupt line is skipped for RECOVERY, never for COUNTING
         }
-        if (!sawParseable && typeof m.ts === "number") {
+        if (!sawParseableLine && typeof m.ts === "number") {
           created_at = m.ts;
-          sawParseable = true;
+          sawParseableLine = true;
         }
         if (typeof m.id === "number" && m.id > maxId) maxId = m.id;
         // Latest topic wins; this walks forward, so the last one assigned stands.
         if (m.kind === "topic") topic = m.text;
       }
       next_id = Math.max(maxId, lines.length) + 1;
+    }
+    if (!sawParseableLine) {
+      // An EMPTY log is a real state, not a missing one: `open` creates the
+      // file (V2.2), and clearing a channel truncates it to zero bytes. With no
+      // line to read a `ts` from, `Date.now()` would make the channel's age
+      // restart on every daemon boot — the same drift the file was written to
+      // stop. The file's own birth is the honest answer; mtime backs it up on
+      // filesystems that do not record one.
+      try {
+        const st = statSync(path);
+        created_at = st.birthtimeMs || st.mtimeMs;
+      } catch {}
     }
   }
   const ch: Channel = {
@@ -746,6 +791,10 @@ async function handle(req: Request): Promise<Response> {
         }
       }
       const ch = loadChannel(body.name);
+      // The channel is written down here, not on its first message: this route
+      // IS the explicit creating act, and an open that leaves no trace does not
+      // survive a restart (see persistChannel).
+      persistChannel(body.name);
       if (unarchived) {
         ch.archived = false;
         // ⛔ `open`'s auto-unarchive is an UNARCHIVE, and it must announce
@@ -1193,6 +1242,10 @@ async function handle(req: Request): Promise<Response> {
       // loadChannel, which is what does the creating.
       const created = !channelExists(name);
       const ch = loadChannel(name);
+      // A subscribe that created the channel is a creating act like any other,
+      // so it writes the channel down too — otherwise `tail`'s own creation is
+      // the one that still evaporates on a restart.
+      if (created) persistChannel(name);
       // ⚠ The LATE JOINER. `created` tells a subscriber it just invented the
       // channel; nothing told it the channel it joined is already retired. The
       // lifecycle frame closes the case for an agent that was connected at the
