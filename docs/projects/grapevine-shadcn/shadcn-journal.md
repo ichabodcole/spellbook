@@ -355,3 +355,63 @@ with the question.
 
 Build after the edits: comments are stripped by both Tailwind and the bundler,
 so `dist/` is byte-identical (dist-check: rebuild a no-op, 0 dirty paths).
+
+## 2026-09-05 · 5. The wards
+
+→ `/ward`, "Revising an existing spell" AND "Changing a house-style convention"
+— this branch is both. Ticked from the tree:
+
+- Source + rebuilt `dist/` in the same change: every chapter that touched
+  `src/grapevine/` carried its build; dist-check after each commit → 6/6, 20
+  tracked files, rebuild a no-op, exit 0.
+- Tests green at every chapter (1627 / 0 / 128). No new behaviour, so no new
+  behavioural cell; the pins that moved (gate-honesty) were re-declared with
+  their arithmetic.
+- SKILL.md unchanged; no fresh-agent re-run owed. Narrative `V1.x` banner
+  unchanged (no feature). Plugin version: release-please from the two
+  `feat(grapevine)` commits.
+- The house-style change: two rules in the house's shape, one scenario
+  (`grimoire/scenarios/2026-09-05-registry-owns-the-primitive-file.md`), two
+  decay-ledger rows seeded at 2026-09-05. `inscribe` and `scaffold/README.md`
+  point at house-style by name, not by rule — the pointer resolves, nothing to
+  inline.
+- Acceptance re-run at the end: `info` from `src/grapevine/` lists all fifteen
+  files as installed (`scratchpad/info-final.txt`); `add separator --dry-run`
+  from the same directory resolves to `surface/ui/separator.tsx` (overwrite)
+  with one dep — `add` works from that directory.
+- Drift check: the spell-folder roster matches every listing except the three
+  `mind-mapper` gaps the roster-drift ward already declares as Cole's WIP ruling
+  (`47238d7`) — pre-existing, not mine, left alone.
+- Smoke: the drive (release and dev); my daemon, proxy and tails torn down; the
+  three protected daemons (`23127`, `66902`, `47904`) untouched and running.
+- Meta: the ward skill gained one checkbox — a spell with a `components.json`
+  has a registry-managed `surface/ui/`, and the way to change a primitive there
+  is the CLI, not an editor.
+
+**What I would tell the next agent (bounty, mind-mapper, the kit), in order:**
+
+1. **The config directory must be a package.** `add`'s preflight wants
+   `cwd/package.json` before it reads `components.json`; the clean form is a Bun
+   workspace member with the hoisted-linker pin at the root. Copy
+   `src/grapevine/{package,tsconfig,components}.json`, add one entry to the root
+   `workspaces`, done — the `@/*` alias is scoped by directory, so two spells do
+   not collide.
+2. **Measure the registry, not the brief.** The dep cap, `lib/utils.ts`, and
+   "cva comes with it" were all true of an older CLI. `add --dry-run` and
+   `add --view` from the config directory are the truth; `view` from anywhere
+   else shows the radix flavour.
+3. **Pin `dark`, alias the raw vars, keep the pointer.** The recipes carry
+   `dark:` arms (pin the variant or the look follows the OS), reach for
+   `var(--foreground)`/`var(--secondary)` (declare them on `:root`), and lose
+   the pointer cursor (the docs' base rule). None of the three shows up in a
+   test; all three show up on the first screenshot.
+4. **Registry files are not yours to lint or annotate.** Biome's opinions go in
+   `biome.json` scoped to `src/*/surface/ui/**`; provenance goes nowhere; a
+   variant is two lines inside the cva config, and `--diff` before the next
+   `add`.
+5. **Drive the same daemon before and after.** A release daemon serves the
+   `dist/` directory, so one daemon with one set of fixtures serves both
+   surfaces across the rebuild — that is what makes the screenshot pairs honest.
+6. **Watch before you poke.** Anything on the 3 s poll (C6's flash) is gone by
+   the time a second tool call starts; create the fixture from inside the page
+   script with the watcher already running.

@@ -84,6 +84,14 @@ Then confirm that exact set appears in each listing above.
       "does this reach a consumer?" question wrongly.
       `bun scripts/dist-check.ts` is the check.
 - [ ] `bun test` still green; new behavior has a test
+- [ ] **If the spell has a `src/<spell>/components.json`, its `surface/ui/` is
+      registry-managed** (house-style
+      `registry-primitives-variant-extends-recipe`): change a primitive with
+      `bunx --bun shadcn@latest add <name>` from that folder (`--diff` first
+      when a variant line is in the file), never by hand-editing the recipe;
+      `bunx --bun shadcn@latest info` there must list every file under
+      `surface/ui/` as installed. New runtime deps go in the spell's own
+      `package.json`, within the `surface-dep-cap` rule.
 - [ ] Fresh-agent test re-run if ergonomics/SKILL.md changed; findings logged
 - [ ] Any judgment the mage supplied captured in `grimoire/scenarios/`
 - [ ] Checked `grimoire/decay-ledger.md` for rules this revision re-walked (bump
