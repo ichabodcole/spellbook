@@ -58,7 +58,28 @@
   Label, which the skill's styling rule discourages; the alternative (an sr-only
   label and a tooltip) hides the one word Cole asked to see.
 - **No backend change, and one backend finding reported, not fixed:** the
-  daemon's `PUT /channels/:name/topic` has no archived check — only the CLI's
-  `topic` verb refuses (through its `POST /channels` 409). The surface disables
-  the edit on an archived channel itself, so the human path matches the CLI
-  path; the raw route stays as it was.
+  daemon's `PUT /channels/:name/topic` has no archived check. _Corrected
+  2026-09-06 after verify:_ neither does the CLI's `topic` verb — `cli.ts:405`
+  discards its ensure's 409 (I had written that it refused; the verifier ran
+  it). The surface disables the edit on an archived channel and cancels one an
+  archive overtakes, so the human path is **stricter** than the agent path here;
+  the route and the verb stay as they were, filed.
+
+## 2026-09-06 — after the verify pass (implementing agent; orchestrator's defaults pending Cole)
+
+- **A topic typed for an existing channel is set (a `PUT /topic` follows the
+  create).** The dialog's `Set as <signer>.` hint is a promise, and the human
+  who typed a topic meant it. Not taken: dropping the promise for existing names
+  and saying "channel exists — opening" — quieter, but it makes the topic field
+  mean two things depending on a fact the human cannot see before Enter. Note
+  the CLI's `open --topic` does NOT clobber an existing topic; the dialog is now
+  the `open` + `topic` pair, not `open` alone.
+- **The delete act has one name: _Close channel…_** (menu item), matching the
+  dialog's title/button and the CLI verb `close`. Orchestrator's default,
+  reversible; Cole may prefer _Delete…_ for the menu, which is the brief's word.
+- **ArrowDown does not wrap at the menu's bottom; ArrowUp wraps at the top.**
+  Measured to be Base UI's own behaviour with the recipe's defaults (no
+  `loopFocus` set by us); recorded in the inventory row, not fought.
+- **A failed _Unarchive instead_ stays in the dialog** with the daemon's reason
+  on the Name field. Not taken: a toast (no toast primitive installed; the field
+  already has an error slot).

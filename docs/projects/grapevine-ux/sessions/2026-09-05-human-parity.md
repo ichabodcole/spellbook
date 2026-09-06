@@ -13,6 +13,28 @@ from a file) · `dist-check` exit 0 · `tsc -p src/grapevine` 0 errors
 | `19232fd` | **The six additions** — the context menu on every row (mouse, menu key, Shift+F10 synthesised), `+` → the create dialog with the 409 → _Unarchive instead_ arm, the header topic edits in place signed as the joined alias or the `/identity` default, _Show archived_ off by default and remembered, archive/unarchive of the current channel through the poll, every control Tab-reachable with focus returned after each act; R1 amended (`/identity` on every init); `dist/`. |
 | _this_    | **The records and the wards** — inventory amended in place (12 new L rows, R1/C7 rewritten and marked, the visible-states checklist), SKILL.md's V2.1 banner and watch paragraph, the decay-ledger row, the fresh-agent record, the backend backlog item, the journal, the decision log, this record.                                                                                                                                                                             |
 
+## After verify (2026-09-06)
+
+The no-stake verify pass (`verify-journal.md`, `b3a04b7`) came back "ship with
+fixes". Two more chapters: `a9f7ee5` — the race closed (an archive landing
+mid-edit cancels the editor and hands focus back; `commit` re-reads the state;
+`shouldCancelEdit` cell), a failed _Unarchive instead_ stays in the dialog with
+the daemon's reason and focus on the field, a topic typed for an existing
+channel is `PUT` after the create (`createFollowUpTopic` cell), focus goes to
+`+` after _Close channel…_, the menu item renamed to match the dialog and the
+CLI verb; `dist/`. _this commit_ — the inverted parity claim corrected in five
+places (the CLI's `topic` verb does NOT refuse an archived channel; the surface
+is stricter than the agent path), three inventory rows added (L2c, L2d, L3c),
+the ArrowDown-does-not-wrap fact recorded as Base UI's default, the stale bundle
+size fixed.
+
+**The race, re-driven the verifier's way** (playwright-core script, the archive
+fired as `POST …/archive` from the script between "editor open with a draft" and
+"Enter"): after one poll the editor was gone, focus sat on the `aria-disabled`
+topic line, the archived note was up; Enter sent **0 `PUT`s** and **0 frames**
+landed on the archived log; the header was unchanged. Before the fix the same
+sequence sent a 200 `PUT` and lost focus to `body`.
+
 ## The contract, moved
 
 The inventory is the surface's living contract and this is the first branch that
@@ -39,12 +61,13 @@ with the rail in both directions. The journal's §4 has the table.
 Tab order (14 stops from the body, release): topic line → `+` → the switch → per
 row link + 🗑 → the alias input → wrap; the old page's order is the floor
 beneath three new stops. Menu: Shift+F10 and the menu key open it on a focused
-row, arrows move and wrap, Enter activates, Escape returns focus to the row;
-after an act focus returns to the row, or to the switch when the act hid the
-row. Dialog: Enter opens from `+`, Name focused, Tab to Topic, Enter submits
-from either, Escape returns focus to `+`. Editor: Enter opens from the focused
-line, Enter/Escape return focus to it. Delete: Shift+F10 → ArrowUp (wraps) →
-Enter → Tab → Enter.
+row, arrows move (ArrowUp wraps at the top, ArrowDown stops at the bottom — Base
+UI's default), Enter activates, Escape returns focus to the row; after an act
+focus returns to the row, or to the switch when the act hid the row. Dialog:
+Enter opens from `+`, Name focused, Tab to Topic, Enter submits from either,
+Escape returns focus to `+`. Editor: Enter opens from the focused line,
+Enter/Escape return focus to it. Delete: Shift+F10 → ArrowUp (wraps) → Enter →
+Tab → Enter.
 
 ## Wards
 
@@ -68,9 +91,14 @@ the backend routed to `docs/backlog/`, not fixed.
 
 ## Left undone, deliberately
 
-- The daemon's `PUT /topic` archived check, the read verbs' auto-create, and the
-  silent archive/unarchive — backend, filed.
-- One word for delete (menu _Delete…_ vs dialog _Close channel_ vs CLI `close`)
-  — Cole's call; decision-logged.
+- The daemon's `PUT /topic` archived check — and the CLI `topic` verb's, which
+  the verify pass showed is open too (`cli.ts:405` discards its ensure's 409; an
+  earlier version of this record said it refused) — the read verbs' auto-create,
+  and the silent archive/unarchive: backend, filed. On topic-on-archived the
+  surface is stricter than the agent path.
+- ~~One word for delete~~ — unified after verify to _Close channel…_ (menu), the
+  dialog's title and the CLI `close`; the orchestrator's default, Cole may flip
+  (was: menu _Delete…_ vs dialog _Close channel_ vs CLI `close`) — Cole's call;
+  decision-logged.
 - The switch label's typography override and the `+`'s missing `data-icon` —
   named in the decision log with the reasons.

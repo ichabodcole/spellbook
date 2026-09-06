@@ -37,13 +37,13 @@ The whole branch is five routes the CLI already had, read from `daemon.ts`'s
 header and then from the handlers, because the header is not the contract's fine
 print:
 
-| act       | route                            | what the surface had to know                                                                                                                                                                                                     |
-| --------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| create    | `POST /channels {name, topic?}`  | **409 `archived` only when `explicit` is absent** — the CLI's `open` sends `explicit: true` and auto-unarchives; every other verb sends the bare shape. The surface sends the bare shape so the 409 exists to offer a way out of |
-| topic     | `PUT /channels/:name/topic`      | `from` is optional and defaults to `system`; the CLI's `topic` verb `POST /channels {name}`s first, which is where _its_ archived refusal comes from — **the PUT itself has no archived check** (finding, below)                 |
-| archive   | `POST /channels/:name/archive`   | idempotent, no body; the marker file is the truth, `GET /channels` reflects it on the next read                                                                                                                                  |
-| unarchive | `POST /channels/:name/unarchive` | same; 500 only if the marker cannot be unlinked                                                                                                                                                                                  |
-| delete    | `DELETE /channels/:name`         | already wired (C10)                                                                                                                                                                                                              |
+| act       | route                            | what the surface had to know                                                                                                                                                                                                                                      |
+| --------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| create    | `POST /channels {name, topic?}`  | **409 `archived` only when `explicit` is absent** — the CLI's `open` sends `explicit: true` and auto-unarchives; every other verb sends the bare shape. The surface sends the bare shape so the 409 exists to offer a way out of                                  |
+| topic     | `PUT /channels/:name/topic`      | `from` is optional and defaults to `system`; **no archived check** on the PUT — and none on the CLI's `topic` verb either, which `POST /channels {name}`s first and discards the 409 (the verify pass ran it; my first reading of `cli.ts` had it refusing — §11) |
+| archive   | `POST /channels/:name/archive`   | idempotent, no body; the marker file is the truth, `GET /channels` reflects it on the next read                                                                                                                                                                   |
+| unarchive | `POST /channels/:name/unarchive` | same; 500 only if the marker cannot be unlinked                                                                                                                                                                                                                   |
+| delete    | `DELETE /channels/:name`         | already wired (C10)                                                                                                                                                                                                                                               |
 
 The rule that made every one of these easy: **the rail poll is the source of
 truth.** A mutating call is followed by `refreshChannels()` — the next poll
@@ -160,8 +160,9 @@ heading.
 
 **What held** (the inventory's L rows carry the per-row evidence):
 
-- L1 mouse and keyboard (right-click; menu key; Shift+F10; arrows wrap; Enter;
-  Escape returns focus to the row) in release and dev.
+- L1 mouse and keyboard (right-click; menu key; Shift+F10; ArrowUp wraps at the
+  top, ArrowDown stops at the bottom — Base UI's default, see §11; Enter; Escape
+  returns focus to the row) in release and dev.
 - L1a/L1b archive, unarchive, delete from the menu — each once from the UI and
   once from the CLI, comparing `list` after the UI act and the rail after the
   CLI act.
@@ -208,19 +209,21 @@ after the intent's reload · `15` topic set while lurking as the default alias �
 
 ## 5. Findings for the backend (reported, not worked around)
 
-1. **`PUT /channels/:name/topic` has no archived check.** The CLI's `topic` verb
-   refuses on an archived channel only because it `POST /channels {name}`s first
-   and that answers 409. A raw PUT (or a surface that did not gate) would append
-   a `kind:"topic"` frame to a read-only channel. The surface disables the edit
-   on an archived channel itself (L3a), which is what the brief asked for; the
-   route is out of scope by ruling.
+1. **`PUT /channels/:name/topic` has no archived check, and neither does the
+   CLI's `topic` verb** (_corrected after verify — I had written that the verb
+   refuses through its ensure's 409; `cli.ts:405` discards that response and the
+   PUT lands; measured: `archive x; topic x "t"` → `ok:true`_). The surface
+   disables the edit on an archived channel (L3a) and cancels an edit that an
+   archive overtakes (L3c), so the human path is **stricter** than the agent
+   path here — not parity, but what the agent path should be. The route and the
+   verb are out of scope by ruling; filed.
 2. **`POST /channels` creates on any non-explicit verb** — `topic`, `pull`,
    `tail`, `who` all auto-create a missing channel. Not a defect, but the reason
    "create" from the UI needed no new route.
 
 ## 6. Bundle
 
-`dist/` bytes, before → after: html 919 → 919 · js 1,314,605 → 1,657,042 (**+342
+`dist/` bytes, before → after: html 919 → 919 · js 1,314,605 → 1,660,101 (**+345
 KB**, source maps inline by ruling — `@base-ui/react` modules 121 → 246 for the
 menu, dialog, tooltip and switch machinery, plus `@floating-ui/react-dom` for
 the two positioned popups, plus 13 tree-shaken `lucide-react` modules for
@@ -286,9 +289,10 @@ reads `switch "Show archived (N hidden)"` through `<label for>`.
 ## 10. What I would tell the next agent (bounty, digestify)
 
 1. **Read the handler, not the header.** `POST /channels`'s 409 is conditional
-   on a body flag the header does not mention; `PUT /topic`'s archived refusal
-   lives in the CLI, not the daemon. The header is the map; parity is measured
-   against the territory.
+   on a body flag the header does not mention; `PUT /topic` has no archived
+   refusal anywhere — not the daemon, and (the verify pass measured) not the CLI
+   either — so run the claim before you build on it. The header is the map;
+   parity is measured against the territory.
 2. **Bring the poll forward; never write the state.** Every human action here is
    `fetch(...)` then `refreshChannels()`. The agent-driven rows were already
    written for "the poll says so", so the human path inherited them for free and
@@ -304,3 +308,38 @@ reads `switch "Show archived (N hidden)"` through `<label for>`.
 6. **Spend the cold read.** Five of the ten findings were things I could not see
    from inside the build (who signs, where focus goes after an act), and four
    were one edit each.
+
+## 11. After verify — one inverted record, one landed race, and the fix chapter
+
+The no-stake verify pass (`verify-journal.md`) came back "ship with fixes":
+
+- ⛔ **The record error.** I had written, in five places, that the CLI's `topic`
+  verb refuses an archived channel through its ensure's 409. It does not:
+  `cli.ts:405` discards the ensure's response. I read the call and not the
+  handling of its result; the verifier ran it. Every place now says what was
+  measured, and the consequence is stated plainly: on topic-on-archived the
+  surface is stricter than the agent path. The fresh-agent record had even
+  logged "set a topic on `archived-one` from the CLI" without either of us
+  reading those two lines together. Lesson, for the record: a parity claim about
+  a verb is one `bun cli.ts <verb>` away from being a fact.
+- ⚠ **The race lands.** Editor open → the agent archives → one poll → Enter: the
+  PUT went out (200), a topic frame landed on the read-only channel, and focus
+  fell to `body` because the disabled branch had no `buttonRef`. Fix: the editor
+  cancels itself when the poll flips the channel to archived
+  (`shouldCancelEdit`, a cell), `commit` re-reads the state and no-ops when
+  disabled, and the disabled button carries the ref. Re-driven the verifier's
+  way (the archive fired as `POST …/archive` from inside the script, between
+  "editor open" and "Enter"): the editor closed on the poll with focus on the
+  line, and Enter sent nothing — see the session record.
+- **Silent failure → visible.** A failed _Unarchive instead_ now keeps the
+  dialog open and puts the daemon's reason on the Name field; the hook returns
+  the outcome instead of `void`.
+- **Silent no-op → the promise kept.** A topic typed for a channel the rail
+  already lists is followed by `PUT /topic` (the daemon's POST sets a topic only
+  where none exists) — `createFollowUpTopic`, a cell; decision-logged with the
+  alternative.
+- **Focus after Close channel…** goes to `+` (the row is gone). ArrowDown at the
+  menu's bottom does not wrap while ArrowUp at the top does — Base UI's default;
+  the inventory row says so rather than fighting it.
+- **One word for the act:** the menu item reads _Close channel…_, matching the
+  dialog and the CLI's `close` (orchestrator's default, Cole may flip).

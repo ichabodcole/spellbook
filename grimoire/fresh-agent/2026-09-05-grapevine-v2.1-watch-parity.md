@@ -36,8 +36,9 @@ visible to an agent through the same daemon state a CLI action produces.
    channel (a full reload) before opening the editor. → **fixed in-branch**:
    SKILL.md says so.
 6. _papercut_ — three names for one act: the menu says _Delete…_, the confirm
-   says _Close channel_, the CLI verb is `close`. → decision-logged; the
-   dialog's text is inventory C11 verbatim and changing it is Cole's call.
+   says _Close channel_, the CLI verb is `close`. → unified after the verify
+   pass: the menu item reads _Close channel…_ (orchestrator's default, Cole may
+   flip); the dialog's text stays C11 verbatim.
 7. _papercut_ — the create dialog's 409 lands as a red network line in the
    browser console. → browser-layer; the same class of entry the reconnect rows
    (E4) produce. Noted in the inventory.
@@ -55,4 +56,7 @@ visible to an agent through the same daemon state a CLI action produces.
 
 **Drive record:** created and deleted `cold-read-test`; archived / unarchived
 `archived-one`, `fresh-one`, `other` from the surface and the CLI; set a topic
-on `archived-one` from the CLI.
+on `archived-one` from the CLI — _which, the verify pass later noticed, was done
+while `archived-one` was archived and succeeded: the CLI `topic` verb does not
+refuse an archived channel (see the backlog item), a fact this line recorded
+without either agent reading it as one._

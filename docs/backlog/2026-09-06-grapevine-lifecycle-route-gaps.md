@@ -5,15 +5,24 @@ its fresh-agent cold read · **Type:** backend findings (out of the UX branch's
 scope by ruling — "no backend changes"); each is a route behaviour the surface
 now works around or documents rather than fixes.
 
-## 1. `PUT /channels/:name/topic` has no archived check
+## 1. `PUT /channels/:name/topic` has no archived check — and the CLI verb is open too
 
-The CLI's `topic` verb refuses on an archived channel only because it
-`POST /channels {name}`s first and that answers 409. The PUT handler itself
-appends a `kind:"topic"` frame to a read-only channel. The watch surface
-disables its topic editor on an archived channel (inventory L3a), so the human
-path matches the CLI path — but a race (an agent archives between the human's
-click and Enter, inside one poll) lands the frame. Fix shape: the same
-`existsSync(archivedPath(name))` → 409 guard `POST /messages` has.
+_Corrected 2026-09-06 after the verify pass, which ran it:_ the PUT handler
+appends a `kind:"topic"` frame to a read-only channel, **and the CLI's `topic`
+verb does not refuse either** — `cli.ts:405` sends `POST /channels {name}` to
+ensure the channel is loaded and **discards the response**, so the 409 that
+answers for an archived name is ignored and the PUT that follows lands
+(`archive x; topic x "t"` → `ok:true`, exit 0). An earlier version of this item
+said the verb refused "through its `POST /channels` 409"; it does not.
+
+So the agent path is open on both the route and the verb, and the watch
+surface's topic editor — disabled on an archived channel (inventory L3a), and
+cancelled when an archive lands mid-edit (L3c) — is **stricter than the agent
+path**, not at parity with it. Fix shape, daemon side: the same
+`existsSync(archivedPath(name))` → 409 guard `POST /messages` has, on
+`PUT /topic`; CLI side: `cmdTopic` should read the ensure's status and die on
+409 like `cmdOpen` does. The daemon guard is the real fence; the surface's is a
+courtesy until it lands.
 
 ## 2. Any non-explicit verb re-creates a deleted channel
 
