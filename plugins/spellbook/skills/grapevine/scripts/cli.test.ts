@@ -2130,8 +2130,9 @@ describe("a read verb never creates a channel", () => {
       expect(code).toBe(2);
       expect(stdout).toBe("");
       expect(stderr).toContain(`no channel "${argv[1]}"`);
-      // A refusal names the act that recovers from it.
-      expect(stderr).toContain(`grapevine open ${argv[1]}`);
+      // A refusal names the act that recovers from it — and the line it prints
+      // must be RUNNABLE, not a `grapevine …` command no PATH resolves.
+      expect(stderr).toContain(`try: bun ${CLI} open ${argv[1]}`);
       // THE ACTUAL BUG: the name must not have come back.
       const after = await listedChannels();
       expect(after).not.toContain(argv[1]);
@@ -2159,7 +2160,9 @@ describe("a read verb never creates a channel", () => {
       const body = (await res.json()) as { error: string; channel: string; hint: string };
       expect(body.error).toBe('no channel "ghost-route"');
       expect(body.channel).toBe("ghost-route");
-      expect(body.hint).toBe("grapevine open ghost-route");
+      // The wire carries the VERB. The daemon cannot know how its client was
+      // invoked, so composing the runnable line is the CLI's job.
+      expect(body.hint).toBe("open ghost-route");
     }
     expect(await listedChannels()).not.toContain("ghost-route");
   });
@@ -2465,5 +2468,31 @@ describe("a late joiner is told the channel is archived", () => {
     // inside the fix for exactly that failure mode.
     expect(hint).toContain("earlier message(s) exist");
     expect(hint).toContain("is archived");
+  });
+});
+
+describe("the recovery a refusal names is runnable (verify ⚠6)", () => {
+  test("what stderr tells you to run, run verbatim, actually recovers", async () => {
+    const refused = await bunRun(["pull", "runnable-ghost"]);
+    expect(refused.code).toBe(2);
+    // Pull the command straight out of the message and execute it — no
+    // interpretation, which is the whole point of the finding: the old hint
+    // read `grapevine open x`, and nothing installs a `grapevine` binary.
+    const line = refused.stderr.split("try: ")[1]?.trim();
+    expect(line).toBeDefined();
+    const [runner, ...rest] = (line as string).split(" ");
+    expect(runner).toBe("bun");
+    expect(rest[0]).toBe(CLI);
+    const recovered = await new Promise<number>((resolve) => {
+      const proc = spawn(runner, rest, {
+        env: { ...process.env, GRAPEVINE_HOME: HOME },
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+      proc.on("exit", (c) => resolve(c ?? -1));
+    });
+    expect(recovered).toBe(0);
+    // …and the read that refused now succeeds.
+    const after = await bunRun(["pull", "runnable-ghost"]);
+    expect(after.code).toBe(0);
   });
 });

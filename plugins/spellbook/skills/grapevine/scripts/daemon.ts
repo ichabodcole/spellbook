@@ -535,9 +535,19 @@ function channelExists(name: string): boolean {
 // should name the act it makes likely, and the only act that recovers from this
 // one is an explicit open. Without the hint the agent is left guessing whether
 // the name is wrong, the daemon is wrong, or the channel is merely empty.
+//
+// ⚠ `hint` IS A VERB INVOCATION — the arguments to the CLI — NOT a shell
+// command. It read `grapevine open <name>`, which looks pasteable and is not:
+// nothing installs a `grapevine` binary on PATH, and SKILL.md's own canonical
+// form is `bun …/cli.ts open <name>`. The daemon cannot honestly render the
+// runnable line, because it does not know how its client was invoked — a CLI
+// from the plugin cache can be talking to a daemon started from a checkout. So
+// the daemon names the ACT and the CLI, which is the thing being invoked,
+// composes the runnable command from its own argv. Consumers that build a
+// command from this field must prefix their own invocation.
 function missingChannel(name: string): Response {
   return json(
-    { error: `no channel "${name}"`, channel: name, hint: `grapevine open ${name}` },
+    { error: `no channel "${name}"`, channel: name, hint: `open ${name}` },
     { status: 404 },
   );
 }

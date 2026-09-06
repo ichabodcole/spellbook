@@ -401,13 +401,30 @@ function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
 }
 
+// How THIS CLI was invoked, as a runnable prefix. `process.argv[1]` is the
+// absolute path of cli.ts under `bun …/cli.ts <verb>`, which is SKILL.md's
+// canonical invocation — so the line we print can actually be pasted. Falls
+// back to the bare verb if argv is not shaped as expected, which is a verb
+// reference rather than a command that lies about being one.
+function invocationPrefix(): string {
+  const entry = process.argv[1];
+  return entry ? `bun ${entry}` : "";
+}
+
 // A daemon refusal carries `hint` — the act that recovers from it (a 404 on a
-// read names the `open` that would create the channel). Fold it into the single
-// stderr line the agent actually reads, or the recovery is on the wire and
-// nowhere the caller looks.
+// read names the `open` that would create the channel).
+//
+// ⚠ `hint` is a VERB INVOCATION, not a shell command: the daemon cannot know
+// how its client was invoked, so it names the act and we render it. It used to
+// arrive as `grapevine open <name>` and be printed verbatim after `try:`, which
+// reads as something to paste — and pasting it gets `command not found`,
+// because nothing installs a `grapevine` binary. Ruling 2 asked that a refusal
+// name the next act; a recovery that fails when you run it does not.
 function apiError(data: { error?: string; hint?: string } | null, status: number): string {
   const msg = data?.error ?? `HTTP ${status}`;
-  return data?.hint ? `${msg} — try: ${data.hint}` : msg;
+  if (!data?.hint) return msg;
+  const prefix = invocationPrefix();
+  return prefix ? `${msg} — try: ${prefix} ${data.hint}` : `${msg} — try the \`${data.hint}\` verb`;
 }
 
 // Existence probe for the read verbs that answer from the LOG FILE rather than
