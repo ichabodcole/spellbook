@@ -91,3 +91,10 @@
   keeping both (two affordances for delete, none for archive, was the wrong
   emphasis). Consequence: the rail's Tab order loses one stop per row (L6), and
   C10's driven arms now run through L1b.
+- **Menu hover was invisible; _Edit topic_ swallowed the click.**
+  `--color-accent` aliased the same token as `--color-popover`, so the
+  highlighted item had the menu's own fill; now `edge`. And the menu item stayed
+  enabled while the header's editor was disabled (lurking, no alias), so the
+  click did nothing — the item now mirrors `topicEditState` and shows the short
+  reason. Not taken: a toast on click (a disabled item that says why is the
+  shadcn-shaped answer).

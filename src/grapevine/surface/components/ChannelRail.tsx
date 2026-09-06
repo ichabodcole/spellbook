@@ -32,7 +32,7 @@ import { Field, FieldLabel } from "@/ui/field";
 import { Switch } from "@/ui/switch";
 import { channelHref } from "../state/channel";
 import { closeConfirmText } from "../state/feed";
-import { archiveLabel, type CreateOutcome } from "../state/lifecycle";
+import { archiveLabel, type CreateOutcome, topicEditState } from "../state/lifecycle";
 import type { ChannelRow } from "../state/types";
 import { CreateChannelDialog } from "./CreateChannelDialog";
 
@@ -148,6 +148,9 @@ export function ChannelRail({
         )}
         {channels.map((c) => {
           const active = c.name === current;
+          // L3 — the menu item mirrors the header's rule: an item that swallows the
+          // click is worse than one that says why (Cole, 2026-09-06).
+          const editState = topicEditState(c.archived, signer);
           return (
             <li key={c.name} className="p-0">
               <ContextMenu>
@@ -192,8 +195,16 @@ export function ChannelRail({
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuGroup>
-                    <ContextMenuItem onClick={() => onEditTopic(c.name)}>
+                    <ContextMenuItem
+                      disabled={editState.disabled}
+                      onClick={() => onEditTopic(c.name)}
+                    >
                       Edit topic
+                      {editState.disabled && (
+                        <span className="ml-auto pl-3 text-[10px] text-muted-foreground">
+                          {c.archived ? "read-only" : "join first"}
+                        </span>
+                      )}
                     </ContextMenuItem>
                     <ContextMenuItem
                       onClick={() => {

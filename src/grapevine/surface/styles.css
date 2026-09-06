@@ -52,7 +52,9 @@
   --color-secondary-foreground: var(--color-ink);
   --color-muted: var(--color-surface-raised);
   --color-muted-foreground: var(--color-ink-dim);
-  --color-accent: var(--color-surface-raised);
+  /* accent is the highlighted-item fill (menus): it must differ from popover,
+     or a hovered menu item is invisible (found by Cole 2026-09-06). */
+  --color-accent: var(--color-edge);
   --color-accent-foreground: var(--color-ink);
   --color-destructive: var(--color-danger);
   --color-border: var(--color-edge);

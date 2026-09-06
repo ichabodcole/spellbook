@@ -35303,6 +35303,7 @@ function ChannelRail({
           }, undefined, false, undefined, this),
           channels.map((c) => {
             const active = c.name === current;
+            const editState = topicEditState(c.archived, signer);
             return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("li", {
               className: "p-0",
               children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenu, {
@@ -35343,9 +35344,16 @@ function ChannelRail({
                       /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuGroup, {
                         children: [
                           /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuItem, {
+                            disabled: editState.disabled,
                             onClick: () => onEditTopic(c.name),
-                            children: "Edit topic"
-                          }, undefined, false, undefined, this),
+                            children: [
+                              "Edit topic",
+                              editState.disabled && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+                                className: "ml-auto pl-3 text-[10px] text-muted-foreground",
+                                children: c.archived ? "read-only" : "join first"
+                              }, undefined, false, undefined, this)
+                            ]
+                          }, undefined, true, undefined, this),
                           /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuItem, {
                             onClick: () => {
                               if (c.archived)
