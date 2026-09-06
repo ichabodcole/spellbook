@@ -36,9 +36,10 @@ page to decompose. So:
   daemon's dev/release resolution), Phase 3 (prove what the gate cannot see),
   and every Gotcha. Those are real and they bite.
 - **Do not expect it to tell you how to do the rewrite.** It does not. Keep a
-  running log of what the rewrite needed that the playbook did not say (see
-  "Records" below) — that log is how the playbook grows the phase bounty and
-  digestify will need.
+  journal of the process you actually follow — steps, discoveries, gotchas, and
+  what the playbook did not say (see "Records" below). That journal is how the
+  playbook grows the phase bounty and digestify will need, and it is a
+  deliverable of equal weight to the code.
 
 ## Step one: the behaviour inventory (the oracle)
 
@@ -170,10 +171,19 @@ Keep two files current as you go, not reconstructed at the end:
 
 1. `docs/projects/grapevine-conversion/decision-log.md` — every choice with
    options not taken (the file exists; append).
-2. `docs/projects/grapevine-conversion/playbook-gaps.md` — what the rewrite
-   needed that the porting playbook did not say, and what a rewrite phase would
-   have to tell the bounty and digestify agents. Terse, dated, one entry per
-   gap.
+2. `docs/projects/grapevine-conversion/rewrite-journal.md` — **the raw material
+   for the playbook's rewrite phase, and a deliverable of equal weight to the
+   code.** Bounty and digestify will be converted by other agents against a
+   playbook written from this file, so write it for them. Record, as you go and
+   in the order you actually did things: each step you took and why that order;
+   what you had to discover before you could take it (and how you discovered it
+   — the grep, the file, the experiment); the decisions a rewrite forces that a
+   relocation does not (how to split a page into components, how to move
+   hand-rolled CSS onto tokens, where the Alpine state goes, what the inventory
+   had to capture); every gotcha, with the symptom you saw and the fix; what the
+   porting playbook did not say that you needed; and what you would tell the
+   next agent to do differently. Dated entries, terse, concrete. A future agent
+   should be able to reconstruct your method from it without your transcript.
 
 And at the end, a session record at
 `docs/projects/grapevine-conversion/sessions/2026-09-05-the-rewrite.md`: what
@@ -187,4 +197,4 @@ next agent.
 - The daemon serves it; `watch.html` and the CDN links are gone.
 - Every row of the behaviour inventory is marked driven or explicitly not.
 - Gate green, dist-check green, wards run, `DECLARED_BLIND` reconciled.
-- Decision log, playbook gaps, and session record written.
+- Decision log, rewrite journal, and session record written.

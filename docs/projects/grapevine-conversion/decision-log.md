@@ -24,8 +24,12 @@ Live log of choices and the options not taken. Append; never reconstruct.
   where cheap** (proposal open question 1). Not taken: rendered-output baseline
   capture (fidelity ruling makes it meaningless).
 - **Playbook extension, lightened.** The agent keeps a `playbook-gaps.md`; the
-  orchestrator writes the playbook's rewrite phase from it after verify. Not
-  taken: making the agent author the playbook phase itself (it is the wrong
-  reader — the phase has to be legible to someone who did not do the rewrite).
+  orchestrator writes the playbook's rewrite phase from it after verify.
+  **Widened 2026-09-05 (Cole):** not a gaps list but a full process journal
+  (`rewrite-journal.md`) — steps in order, discoveries, gotchas — so the
+  playbook can be written from it the way the porting playbook was written from
+  the five ports. Not taken: making the agent author the playbook phase itself
+  (it is the wrong reader — the phase has to be legible to someone who did not
+  do the rewrite).
 - **Playbook's role: map of the toolchain and the relocate half, not a script
   for the rewrite** (Cole, 2026-09-05).
