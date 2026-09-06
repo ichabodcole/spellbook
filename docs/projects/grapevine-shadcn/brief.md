@@ -46,7 +46,11 @@ rather than fighting the recipe back to the old look.
 
 **Use the `shadcn` skill (`.claude/skills/shadcn/`) for every step.** Run its
 CLI through `bunx --bun shadcn@latest`; run `docs <component>` and read the
-returned URLs before writing against any component. Its Critical Rules apply to
+returned URLs before writing against any component. _(Added 2026-09-05: once a
+spell is a workspace member, the skill's injected probe fails from the repo root
+— `info` reports `monorepo_root` and names `src/grapevine` — so the Skill tool
+errors there. Invoke it, and run every CLI command, from the spell's folder:
+`cd src/<spell>` first, or pass `-c src/<spell>`.)_ Its Critical Rules apply to
 the feature components too (className for layout not styling; `gap-*` not
 `space-*`; `size-*`; `data-icon`; Field/FieldGroup for form layout; Empty for
 empty states; Alert for callouts; Separator; Badge).

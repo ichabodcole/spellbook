@@ -494,16 +494,16 @@ the palette stays the spell's.
 <!-- rule-id: surface-dep-cap -->
 
 Four runtime dependencies are open to a spell's surface: the two the adoption
-card allowed (`@base-ui/react`, `lucide-react`) and the two the registry's
-recipes import (`cn` — shadcn's own package, a compiled clsx + tailwind-merge
-with no dependencies of its own — and `class-variance-authority`). They are
-declared in the spell's own manifest (`src/<spell>/package.json`, a Bun
-workspace member) so the CLI's install lands where the CLI runs; the root
-manifest keeps everything else. `clsx` and `tailwind-merge` are **not** in the
-cap — `cn` replaces both, and `clsx` arrives only transitively under cva.
-`src/kit/lib/cn.ts` (the dependency-free, non-merging `cn`) stays as it is for
-the spells that use it; a spell on the registry uses the registry's `cn`
-throughout, one semantics per spell.
+card allowed (`@base-ui/react`, `lucide-react`), which stay declared **at the
+root** because every React spell shares them, and the two the registry's recipes
+import (`cn` — shadcn's own package, a compiled clsx + tailwind-merge with no
+dependencies of its own — and `class-variance-authority`), which are declared
+**in the spell's own manifest** (`src/<spell>/package.json`, a Bun workspace
+member) so the CLI's install lands where the CLI runs. `clsx` and
+`tailwind-merge` are **not** in the cap — `cn` replaces both, and `clsx` arrives
+only transitively under cva. `src/kit/lib/cn.ts` (the dependency-free,
+non-merging `cn`) stays as it is for the spells that use it; a spell on the
+registry uses the registry's `cn` throughout, one semantics per spell.
 
 - **Boundary check:** `src/<spell>/package.json` declares nothing outside the
   four; the root `package.json` gained no surface dependency for this spell; a

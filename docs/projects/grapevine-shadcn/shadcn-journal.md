@@ -63,8 +63,12 @@ because the alias is scoped by directory, not by name. Per-spell
 in TS 6 (`TS5101`) — `paths` without it resolves relative to the tsconfig, which
 is what we want. ⚠ Root `tsc -p .` reports **TS2307 for every alias import** (3
 of 3) — the root tsconfig has no `paths` and cannot see a nested one. The
-conversion's "0 TS2307" measure will move by exactly the number of alias
-imports; the per-spell tsc is the honest replacement.
+conversion's "0 TS2307" measure moves by MORE than the alias imports: at the
+branch's close root `tsc -p .` reads 455 lines (435 + 15 TS2307 + **5 TS7006
+cascades** — `Parameter 'e' implicitly has an 'any' type` on event handlers
+whose component types the root cannot resolve: `ChannelRail.tsx:95`,
+`Composer.tsx:75–76`, `IdentityBox.tsx:42,44`; the verifier's count). The
+per-spell tsc is the honest replacement, and it is 0.
 
 **B — where does `bun add` write from a subdirectory with no `package.json`?** →
 `measure-b/`: it walks up and writes the root manifest. So _if_ the CLI
@@ -415,3 +419,67 @@ so `dist/` is byte-identical (dist-check: rebuild a no-op, 0 dirty paths).
 6. **Watch before you poke.** Anything on the 3 s poll (C6's flash) is gone by
    the time a second tool call starts; create the fixture from inside the page
    script with the watcher already running.
+
+## 2026-09-05 · 6. After the verify pass — the fixes
+
+The no-stake drive came back "ship with fixes", all minor (`verify-journal.md`).
+What changed, and what each taught:
+
+- **The feed re-flowed on Join (+7 px per row).** The reply control was
+  `size="xs"` — `h-6` inside a `text-xs` meta line, reserving its box at
+  `opacity-0`. Row heights, measured with one script on one daemon: lurk
+  `[64,85,85,84,64,76]` → join `[64,92,92,92,71,83]` before; the first fix
+  (`h-auto leading-4`) still left `[64,86,86,86,65,77]` — the recipe's 1 px
+  transparent borders plus a 16 px line in a 17 px meta line; the landed
+  `inline` size (`h-auto border-0 py-0 text-[0.6875rem] leading-none`) gives
+  **`[64,85,85,84,64,76]` in both modes**, meta line 17 px in both, the reply
+  box 11 px inside it. ⚠ **A recipe's box is part of its look even at
+  `opacity-0`** — measure heights in both states, not just the visible one. It
+  is a size inside the cva config, per the variant rule, not a call-site
+  override.
+- **Two call sites broke the branch's own boundary check.** The rail's 🗑 set
+  `hover:bg-destructive/10 hover:text-destructive` on a ghost; the active row's
+  count set `text-leaf-soft` on `count`. Now `variant="destructive-ghost"` on
+  Button and `variant="count-live"` on Badge — two lines each inside the
+  configs. The rule was not softened; the rule was right.
+- **The dep-cap sentence misdescribed the manifests**: only `cn` and
+  `class-variance-authority` are per spell; `@base-ui/react` and `lucide-react`
+  stay at the root, shared. Fixed in house-style with the reason.
+- **Field/FieldGroup for the two forms.** `IdentityBox`: a `FieldGroup` of two
+  `Field`s (an sr-only `FieldLabel` "Alias" on the input, the toggle in its own
+  Field) under the section heading, which stays an `<h2>` — a FieldLabel would
+  re-type the heading. `Composer`: one horizontal `Field` (`items-end`) with an
+  sr-only "Message" label, the textarea and send. Measured: textarea 670×38,
+  send 54×32 bottom-aligned, the You box full width — the look did not move, and
+  the inputs gained real labels.
+- **`size-*` — one of two, and the reason matters.** StatusBar's dot took
+  `size-1.5`. Roster's 8 px dot could not: that shorthand is
+  `kit-styling-ward`'s **sentinel**, the one class that must exist nowhere but
+  `src/kit/ui/Dot.tsx` for the ward to discriminate at all, and spelling it in
+  `Roster.tsx` turned the cell red (`Expected 1, received 4` — the source, the
+  two built files, and the verify journal, which had spelled it twice in its
+  findings). ⚠ **The verify journal itself had put the ward red at `873fcfd`** —
+  the ward walks every non-ignored text file, prose included. Two lines in that
+  journal now name the class without spelling it. The skill's rule loses to the
+  ward here; the ward's own header lists this as breakage route 5.
+- **The dead sheet — ruled: uninstall until composed.** Six files out
+  (`context-menu`, `dialog`, `popover`, `switch`, `toggle-group`, and `toggle`,
+  which only `toggle-group` imported); `field`, `label`, `separator`, `empty`
+  stay because they are composed or imported by what is. Measured with
+  `scratchpad/dead-sheet.ts` (leaf rules; a rule is referenced if any of its
+  class names is a substring of the built JS + HTML — generous, so "dead" is a
+  floor): develop 30,375 B / **190 B (0.6 %)** dead; the branch before the fix
+  74,755 B / **9,900 B (13.2 %)**; after 62,952 B / **903 B (1.4 %)**. The
+  verifier's stricter script reported 19,313 B (25.8 %) on the same before sheet
+  — the two methods differ on what counts as a reference (mine also accepts a
+  variant-stripped name), and both agree on the direction and on the after
+  number being within a percent of develop. The UX branch re-adds each with one
+  `add`. Decision log has the ruling and the alternatives.
+- ⚠ **The `shadcn` skill's probe fails from the repo root** since the workspace
+  entry: `info --json` there exits `monorepo_root` naming `src/grapevine`, and
+  the Skill tool reports a shell failure with no SKILL.md injected. Workaround:
+  `cd src/grapevine` before invoking the skill, and run every CLI command from
+  there (or `-c src/grapevine`). The brief's Technical direction now says so for
+  the next spell.
+- ⚠ **`bun run build` is a root script** — from `src/grapevine/` it says
+  `Script not found "build"`; the member manifest has no scripts, on purpose.

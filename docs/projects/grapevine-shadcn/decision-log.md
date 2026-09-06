@@ -101,3 +101,22 @@ note; house-style gets the real names; `src/kit/lib/cn.ts` untouched), and
 `class-variance-authority` is added by hand to the member manifest because `add`
 does not install it. ⚠ cva depends on `clsx`, so clsx arrives transitively — it
 is not a direct dependency and is not in the cap.
+
+## 2026-09-05 — orchestrator: the dead sheet — uninstall until composed (default pending Cole's cost call)
+
+The verify pass measured the shipped stylesheet: on develop 0.6 % of it was
+unreferenced; on this branch, with eight installed-but-uncomposed components
+inside `@source "./"`, 13.2 % by the author's generous method and 25.8 % by the
+verifier's stricter one. **Ruled by the orchestrator as the default pending
+Cole's cost call:** uninstall what nothing composes (`context-menu`, `dialog`,
+`popover`, `switch`, `toggle-group`, `toggle`) and let `feat/grapevine-ux`
+re-add each with one `add` when it composes it — the alias/manifest/config setup
+is what this branch was for, and it is what makes the re-add one command.
+`field`, `empty` (now composed), `label` and `separator` (imported by `field`)
+stay. After: 62,952 B, 1.4 % dead.
+
+**Alternatives, not taken:** (a) accept as stated debt against the UX branch
+landing soon — a quarter of the sheet dead for an unknown interval on every
+`/watch` load; (b) a Tailwind v4 `@source not "./ui/<name>.tsx"` line per unused
+file — keeps the files but adds a hand-kept list that drifts the day a component
+is composed without its line being removed.
