@@ -25,7 +25,8 @@
 //   GET    /channels/:name/messages — backlog (?since=<id>) [404 if no such channel]
 //   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
 //   GET    /channels/:name/topic    — { channel, topic } [404 if no such channel]
-//   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message)
+//   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message;
+//                                    creates the channel — it is a write; 409 if archived)
 //   GET    /channels/:name/wait     — long-poll for new messages [404 if no such channel]
 //   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
 //                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
@@ -1020,6 +1021,17 @@ async function handle(req: Request): Promise<Response> {
       if (!body || typeof body.topic !== "string") {
         return json({ error: "topic required" }, { status: 400 });
       }
+      // Archived means read-only, and a topic is a write — it appends a
+      // kind:"topic" frame to the log like any other message. The sibling
+      // POST …/messages has had this guard since V1.7; this route never did, so
+      // `archive x` then `topic x "t"` landed a frame on a read-only channel
+      // and answered ok:true. Same status, same envelope as the sibling.
+      if (existsSync(archivedPath(name))) {
+        return json({ error: "archived", channel: name }, { status: 409 });
+      }
+      // Deliberately NO existence guard: under "only intent creates", a topic
+      // WRITE declares that this channel should hold this, so it may create
+      // one — the same class of act as `send`. Only the read (GET) refuses.
       try {
         const m = appendMessage(
           name,

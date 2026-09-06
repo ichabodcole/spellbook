@@ -439,8 +439,13 @@ async function cmdTopic(name: string, text: string | undefined, from: string | u
     printJson({ ok: true, channel: name, topic: data?.topic });
     return;
   }
-  // `topic <name> <text>` is a WRITE, so it may create.
-  await api(port, "POST", "/channels", { name });
+  // `topic <name> <text>` is a WRITE, so it may create — but it must not write
+  // to an ARCHIVED channel. The PUT enforces that itself now; this ensure stays
+  // because DISCARDING ITS STATUS is precisely the bug being fixed here. Before
+  // today the 409 that answers for an archived name was thrown away and the PUT
+  // that followed landed: `archive x; topic x "t"` returned ok:true, exit 0.
+  const ensure = await api<{ error?: string; hint?: string }>(port, "POST", "/channels", { name });
+  if (ensure.status >= 400) die(apiError(ensure.data, ensure.status));
   const { status, data } = await api<TopicResponse>(port, "PUT", `/channels/${name}/topic`, {
     topic: text,
     from: from ?? "system",

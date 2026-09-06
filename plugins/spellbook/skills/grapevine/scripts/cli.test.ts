@@ -2199,3 +2199,32 @@ describe("tail creates — and says so", () => {
     expect(grounding.created).toBeUndefined();
   });
 });
+
+describe("topic on an archived channel is refused by the route AND the verb", () => {
+  test("the verb dies instead of reporting ok:true, and appends nothing", async () => {
+    await bunRun(["open", "arch-topic"]);
+    await bunRun(["archive", "arch-topic"]);
+    const { code, stdout, stderr } = await bunRun(["topic", "arch-topic", "a new topic"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("archived");
+    await bunRun(["unarchive", "arch-topic"]);
+    const pull = await bunRun(["pull", "arch-topic"]);
+    expect((JSON.parse(pull.stdout) as { messages: unknown[] }).messages.length).toBe(0);
+  });
+
+  test("the ROUTE refuses too — the daemon guard is the real fence, the verb a courtesy", async () => {
+    await bunRun(["open", "arch-route"]);
+    await bunRun(["archive", "arch-route"]);
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/arch-route/topic`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ topic: "forced past the CLI", from: "curl" }),
+    });
+    expect(res.status).toBe(409);
+    expect((await res.json()) as { error: string }).toMatchObject({ error: "archived" });
+    await bunRun(["unarchive", "arch-route"]);
+    const pull = await bunRun(["pull", "arch-route"]);
+    expect((JSON.parse(pull.stdout) as { messages: unknown[] }).messages.length).toBe(0);
+  });
+});
