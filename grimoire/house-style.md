@@ -376,15 +376,20 @@ an import reaching out of it fails on the consumer's machine. Both of them
 import `src/kit/lib/printJson`; the other five backends import nothing shared
 and so still ship as source. (Contract 3, amended 2026-09-04 by Cole's ruling.)
 
-**The direction is that everything ports** — and as of 2026-09-04 that direction
-covers **backends too, not just surfaces**: the house is moving to one
-development path, with a build, for every spell. A new spell may start without
-one while it is genuinely small, and Contract 3's criterion is what ends that
-exemption automatically. **Direction is not permission**, though — the queue
-below still governs _when_ a spell ports, and nothing about the backend ruling
-moves a spell up it. The remaining three are _not yet_, not _correctly not_ —
-but they are not one queue, and treating them as one is how a port gets
-estimated wrong:
+**The direction is that everything ports** — and as of 2026-09-04 it covers
+**backends too, not just surfaces**, and it is a **plan rather than a
+tendency**: _"I plan to move pretty much every app to a build. Maybe not all at
+the same time, but that is the plan."_ (Cole, 2026-09-04). **Every spell gets a
+build; the open question is order, not whether.** A new spell may start without
+one while it is genuinely small, and Contract 3's criterion ends that exemption
+automatically — it is a staging concession, not a category.
+
+**Direction is still not permission**, though — the queue below governs _when_ a
+spell ports, and nothing about the backend ruling moves a spell up it. What the
+plan DOES change is the queue's status: it is no longer a list of candidates
+that may or may not be taken up, but **scheduled work with an unpriced bill.**
+The remaining three are _not yet_, not _correctly not_ — but they are not one
+queue, and treating them as one is how a port gets estimated wrong:
 
 | spell         | surface today           | distance                                |
 | ------------- | ----------------------- | --------------------------------------- |
@@ -411,6 +416,12 @@ says the same thing from its side.
 > more dynamic exists and the port is expected to follow it. **Cole owns this
 > trigger and checks it when that work starts.** Until then digestify staying
 > put is the correct state, not debt.
+>
+> _Refined 2026-09-04 without overruling the trigger — it is still Cole's:_
+> **under the universal plan above, this condition governs WHEN digestify ports,
+> not WHETHER.** "Correct state, not debt" holds for today; what it stops being
+> is a permanent answer. The trigger is now the EARLIEST occasion, not the only
+> one.\_
 
 **What a built spell must satisfy** — the contracts, not this page, are
 authoritative:

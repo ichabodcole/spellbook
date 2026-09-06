@@ -313,13 +313,23 @@ are the same two spells:
 correctly, and the renaming is the deliverable: the enumeration could not tell the next spell what to
 do, and the criterion can.
 
-**The DIRECTION, which is broader than the criterion and is not the same claim:** the house is moving
-to **one development path, with a build, for every spell.** A new spell may start without one while it
-is genuinely small — but the criterion is what ends that exemption, and it ends it automatically. The
-cost being avoided is the conversion: _"when an app starts growing, all of a sudden now you're back
-into this situation of I've got to convert it to have a build process"_ (Cole, 2026-09-03).
-**Direction is not permission** — nothing here licenses porting bounty or grapevine; house-style's
-queue table still governs when a spell ports, and both of those need a surface rewrite first.
+**The DIRECTION, which is broader than the criterion and is not the same claim.** Restated by Cole on
+2026-09-04, and it is a **plan, not a tendency** — _"I plan to move pretty much every app to a build.
+Maybe not all at the same time, but that is the plan."_ So:
+
+> **Every spell gets a build. The open question is ORDER, not WHETHER.**
+
+A new spell may start without one while it is genuinely small, and the criterion is what ends that
+exemption automatically — but the exemption is a **staging concession, not a category.** The cost
+being avoided is the conversion: _"when an app starts growing, all of a sudden now you're back into
+this situation of I've got to convert it to have a build process"_ (Cole, 2026-09-03).
+
+**Direction is still not permission** — nothing here licenses porting bounty or grapevine, and
+house-style's queue table still governs when a spell ports. What changed on 2026-09-04 is the
+**status of that queue**: it is no longer a list of candidates that may or may not be taken up. It is
+**scheduled work with an unpriced bill** — bounty and grapevine need a surface rewrite before they
+can port at all, and nobody has costed it. _An unpriced item on a plan is a different object from an
+undecided one, and only the second is free to sit._
 
 **What this does NOT change — four things, because each has been misread before:**
 
