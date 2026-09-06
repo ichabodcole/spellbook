@@ -22,9 +22,9 @@
 //                          kind:"status" unarchived frame)
 //   DELETE /channels/:name — close channel (deletes log + archived marker)
 //   POST   /channels/:name/archive   — { from? } mark read-only (sidecar marker) [V1.7]; appends a
-//                                    kind:"status" frame (event:"archived") [2026-09-06]
-//   POST   /channels/:name/unarchive — { from? } clear read-only [V1.7]; appends a kind:"status"
-//                                    frame (event:"unarchived") [2026-09-06]
+//                                    kind:"status" frame (event:"archived") ONLY when the state
+//                                    flipped; response carries { changed, id } [2026-09-06]
+//   POST   /channels/:name/unarchive — { from? } clear read-only [V1.7]; same, event:"unarchived"
 //   POST   /channels/:name/messages — { from, text, in_reply_to? } append + broadcast (409 if archived)
 //   GET    /channels/:name/messages — backlog (?since=<id>) [404 if no such channel]
 //   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
@@ -859,15 +859,35 @@ async function handle(req: Request): Promise<Response> {
     // `pull`, and a reconnecting tail replays it — an event would be invisible
     // to both. Retiring a channel is a fact about the channel, and before this
     // the only signal either party got was its next send being rejected.
+    //
+    // ⚠ THE FRAME IS EMITTED ONLY WHEN THE STATE ACTUALLY FLIPPED. Both routes
+    // are idempotent — archiving an archived channel has always been an ok:true
+    // no-op — and an unconditional emitter turned that no-op into a durable,
+    // broadcast claim that a transition happened. `unarchive` on a healthy
+    // channel wrote `event:"unarchived"` into its log and every tailing agent
+    // saw it: a false statement in the permanent record, which is the exact
+    // failure class this branch exists to remove. The same guard already lives
+    // on the explicit-open path, which emits only when `unarchived` flipped.
+    // `changed` reports which it was, so an idempotent caller can tell.
     if (sub === "/archive" && method === "POST") {
       if (!lifecycleTarget(name)) return missingChannel(name);
+      const from = await lifecycleFrom(req);
+      // Read the prior state BEFORE the write, or there is nothing left to
+      // compare against.
+      const wasArchived = existsSync(archivedPath(name));
       // Marker first, frame second: the frame asserts a state, so the state is
       // true by the time any reader can see the assertion.
       writeFileSync(archivedPath(name), "");
       const ch = channels.get(name);
       if (ch) ch.archived = true;
-      const m = appendLifecycle(name, await lifecycleFrom(req), "archived");
-      return json({ ok: true, channel: name, archived: true, id: m.id });
+      const m = wasArchived ? null : appendLifecycle(name, from, "archived");
+      return json({
+        ok: true,
+        channel: name,
+        archived: true,
+        changed: !wasArchived,
+        id: m ? m.id : null,
+      });
     }
     if (sub === "/reset" && method === "POST") {
       const body = (await readJsonBody(req)) ?? {};
@@ -889,6 +909,9 @@ async function handle(req: Request): Promise<Response> {
       if (!lifecycleTarget(name)) return missingChannel(name);
       const from = await lifecycleFrom(req);
       const ap = archivedPath(name);
+      // The prior state, read before the unlink — see the archive route above:
+      // no flip, no frame.
+      const wasArchived = existsSync(ap);
       if (existsSync(ap)) {
         try {
           unlinkSync(ap);
@@ -905,8 +928,14 @@ async function handle(req: Request): Promise<Response> {
       }
       const ch = channels.get(name);
       if (ch) ch.archived = false;
-      const m = appendLifecycle(name, from, "unarchived");
-      return json({ ok: true, channel: name, archived: false, id: m.id });
+      const m = wasArchived ? appendLifecycle(name, from, "unarchived") : null;
+      return json({
+        ok: true,
+        channel: name,
+        archived: false,
+        changed: wasArchived,
+        id: m ? m.id : null,
+      });
     }
 
     if (sub === "/messages" && method === "GET") {

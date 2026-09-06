@@ -2325,3 +2325,86 @@ describe("archive and unarchive announce themselves", () => {
     expect(await listedChannels()).not.toContain("ghost-archive");
   });
 });
+
+describe("a lifecycle frame is emitted only when the state actually flipped", () => {
+  // Both routes have always been idempotent. An unconditional emitter turned
+  // that no-op into a durable, broadcast claim that a transition happened —
+  // a false statement in the permanent record, which is the failure class this
+  // whole branch exists to remove.
+  type Frame = { kind: string; event?: string };
+  const frames = async (name: string): Promise<(string | undefined)[]> => {
+    const { stdout } = await bunRun(["pull", name]);
+    return (JSON.parse(stdout) as { messages: Frame[] }).messages
+      .filter((m) => m.kind === "status")
+      .map((m) => m.event);
+  };
+
+  test("archiving three times appends ONE frame; the repeats report changed:false", async () => {
+    await bunRun(["open", "idem-arch"]);
+    await bunRun(["send", "idem-arch", "work item", "--as", "agent"]);
+    const first = JSON.parse((await bunRun(["archive", "idem-arch"])).stdout) as {
+      changed: boolean;
+      id: number | null;
+    };
+    expect(first.changed).toBe(true);
+    expect(typeof first.id).toBe("number");
+    for (const _ of [1, 2]) {
+      const again = JSON.parse((await bunRun(["archive", "idem-arch"])).stdout) as {
+        changed: boolean;
+        id: number | null;
+        archived: boolean;
+      };
+      // Still idempotent and still ok — it just no longer lies about it.
+      expect(again.archived).toBe(true);
+      expect(again.changed).toBe(false);
+      expect(again.id).toBeNull();
+    }
+    expect(await frames("idem-arch")).toEqual(["archived"]);
+  });
+
+  test("unarchiving three times appends ONE frame", async () => {
+    const first = JSON.parse((await bunRun(["unarchive", "idem-arch"])).stdout) as {
+      changed: boolean;
+    };
+    expect(first.changed).toBe(true);
+    await bunRun(["unarchive", "idem-arch"]);
+    await bunRun(["unarchive", "idem-arch"]);
+    expect(await frames("idem-arch")).toEqual(["archived", "unarchived"]);
+  });
+
+  test("unarchiving a channel that was NEVER archived writes nothing at all", async () => {
+    await bunRun(["open", "idem-healthy"]);
+    await bunRun(["send", "idem-healthy", "a real message", "--as", "agent"]);
+    const r = JSON.parse((await bunRun(["unarchive", "idem-healthy"])).stdout) as {
+      ok: boolean;
+      changed: boolean;
+      id: number | null;
+    };
+    expect(r.ok).toBe(true);
+    expect(r.changed).toBe(false);
+    expect(r.id).toBeNull();
+    // The sharpest case: a healthy channel's durable log must be untouched.
+    expect(await frames("idem-healthy")).toEqual([]);
+    const { stdout } = await bunRun(["pull", "idem-healthy"]);
+    expect((JSON.parse(stdout) as { messages: unknown[] }).messages.length).toBe(1);
+  });
+
+  test("a no-op archive broadcasts nothing to a tailing agent either", async () => {
+    await bunRun(["open", "idem-tail"]);
+    await bunRun(["archive", "idem-tail"]);
+    const { proc, output } = spawnTail("idem-tail", ["--as", "watcher"]);
+    await sleep(700);
+    await bunRun(["archive", "idem-tail"]); // no-op
+    await bunRun(["unarchive", "idem-tail"]); // real
+    await bunRun(["unarchive", "idem-tail"]); // no-op
+    await sleep(700);
+    proc.kill("SIGTERM");
+    const streamed = output()
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l) as Frame)
+      .filter((f) => f.kind === "status")
+      .map((f) => f.event);
+    expect(streamed).toEqual(["unarchived"]);
+  });
+});
