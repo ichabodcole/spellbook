@@ -11,7 +11,9 @@
 // HTTP surface (all 127.0.0.1):
 //   GET    /             — daemon info ({pid, started_at, channels: N, version})
 //   DELETE /             — shut down the daemon
-//   GET    /watch        — HTML control plane (live view; channel from URL hash)
+//   GET    /watch        — the watch surface (live view; channel from URL hash). Built:
+//                          release serves dist/index.html + its hashed chunks at the root;
+//                          dev serves Bun's bundle of src/grapevine/surface/ (Contract 1)
 //   GET    /identity     — { alias } the persisted default alias (config.json) [V1.7]
 //   GET    /channels     — list channels (each: { …, archived })
 //   GET    /presence     — cross-channel roster: [{ name, subscribers:[alias], humans:[alias], connections, named, anonymous }]
@@ -51,7 +53,47 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const WATCH_HTML_PATH = join(SCRIPT_DIR, "watch.html");
+// Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd to
+// src/grapevine/ in dev for bunfig.toml's sake (Contract 5), so cwd is not a
+// stable base for dist/.
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root — the FILE, never the
+// directory (a built backend can put cli.js in dist/ with no surface there) —
+// else dev; the env override wins either way (Contract 1). Release: zero reads
+// of surface source or bunfig.toml — static files only. Same shape as
+// glamour's server.ts. Exported for tests.
+export function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+const MODE = resolveMode();
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves one file from dist/ verbatim — the unhashed entry index.html, and the
+// hashed index-*.js / index-*.css it links RELATIVELY (`./index-<hash>.js`),
+// which from /watch resolve to bare filenames at the root (Contract 2's flat
+// layout). The guard keeps this one level deep: a nested or `..` path is
+// refused, so it can never reach outside dist/ and never shadows a JSON route.
+function serveDist(rel: string): Response | null {
+  if (!rel || rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "content-type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 // Read our plugin version from the same plugin.json the CLI reads. Daemon
 // advertises this on GET / so CLI clients can detect cache-pinning mismatches
@@ -478,6 +520,9 @@ async function handle(req: Request): Promise<Response> {
       channels: channels.size,
       data_dir: DATA_DIR,
       version: PLUGIN_VERSION,
+      // Which surface this daemon serves (Contract 1) — additive, so a CLI
+      // that does not know the field ignores it.
+      mode: MODE,
     });
   }
 
@@ -488,20 +533,19 @@ async function handle(req: Request): Promise<Response> {
   }
 
   if (path === "/watch" && method === "GET") {
-    try {
-      const html = readFileSync(WATCH_HTML_PATH, "utf-8");
-      return new Response(html, {
-        headers: { "content-type": "text/html; charset=utf-8" },
-      });
-    } catch (e) {
-      return json(
+    // Release: the built surface's entry. Dev never reaches here — Bun's
+    // `routes` answers /watch with the HTMLBundle before fetch() runs — so a
+    // miss is a broken install, and it fails LOUD with the path it looked for.
+    return (
+      serveDist("index.html") ??
+      json(
         {
-          error: "watch.html missing",
-          details: e instanceof Error ? e.message : String(e),
+          error: "watch surface missing",
+          details: `${join(DIST_DIR, "index.html")} not found (mode ${MODE})`,
         },
         { status: 500 },
-      );
-    }
+      )
+    );
   }
 
   if (path === "/channels" && method === "GET") {
@@ -1026,6 +1070,15 @@ async function handle(req: Request): Promise<Response> {
     }
   }
 
+  // Release only: the surface's hashed chunks, linked relatively from /watch,
+  // arrive as bare filenames at the root. Dev never serves from dist/ — a
+  // checkout can carry a committed dist/ that is stale against its source,
+  // and in dev Bun's router owns the bundle's assets.
+  if (MODE === "release" && method === "GET") {
+    const served = serveDist(path.slice(1));
+    if (served) return served;
+  }
+
   return json({ error: "not found", path }, { status: 404 });
 }
 
@@ -1057,6 +1110,24 @@ function shutdown(code: number) {
 }
 
 async function main() {
+  // --- mode, resolved BEFORE any filesystem write -----------------------------
+  // dev: a dynamic string-literal import keeps the surface graph off the module
+  // load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at serve
+  // time, reading bunfig.toml from cwd, which cli.ts pins to src/grapevine/
+  // (Contract 5). A forced-dev boot at a surface-free destination must die
+  // HERE, at the import, having written nothing: no port file, no pid file, no
+  // channels dir — so a CLI polling for the port file sees a clean failure
+  // rather than a half-born daemon. release: dist/ is static and pre-built
+  // (Contract 2) — /watch and the hashed chunks are answered by serveDist() in
+  // handle(), so this branch never touches surface source or bunfig.toml and
+  // never needs either to exist. This is the ONE src/-naming specifier in the
+  // deployed spell (grimoire/import-boundary-wards.test.ts pins it).
+  const devIndex =
+    MODE === "dev"
+      ? (await import("../../../../../src/grapevine/surface/index.html")).default
+      : undefined;
+  const routes = (devIndex ? { "/watch": devIndex } : {}) as Record<string, never>;
+
   ensureDirs();
 
   // Delete an expired hold file for tidiness (the hold is enforced CLI-side).
@@ -1097,6 +1168,11 @@ async function main() {
     // idleTimeout closes them prematurely; set to 255 (Bun's max — 0 isn't
     // honored on all paths). Our own 3s heartbeat keeps clients aware.
     idleTimeout: 255,
+    // dev: the HTMLBundle at /watch (Bun serves its assets itself). release:
+    // no routes — handle() serves dist/. Bun's Routes type ties the value's
+    // type to the literal object shape, so the mode-ternary union is cast.
+    routes,
+    development: { hmr: MODE === "dev" },
     fetch: handle,
   });
 
@@ -1104,7 +1180,7 @@ async function main() {
   Bun.write(PID_FILE, String(process.pid));
   STARTED_AT = Date.now();
   console.error(
-    `grapevine daemon listening on http://127.0.0.1:${server.port} (pid ${process.pid})`,
+    `grapevine daemon listening on http://127.0.0.1:${server.port} (pid ${process.pid}, mode ${MODE})`,
   );
   console.error(`data dir: ${DATA_DIR}`);
 

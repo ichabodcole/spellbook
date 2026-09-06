@@ -68,3 +68,23 @@ Live log of choices and the options not taken. Append; never reconstruct.
   chapter 4 declares `watch.html`'s departure. Not taken: one combined paragraph
   on a squashed surface+daemon commit — the daemon chapter has its own tests and
   its own failure modes and deserves its own sha.
+- **`mode` is emitted on `GET /` and the boot line.** The brief scopes the
+  daemon's other routes out; the playbook's Phase 3 requires `mode` on every
+  transport. Additive field, so a CLI that does not read it is unaffected
+  (glamour's precedent). Not taken: a stdout handshake — grapevine's CLI
+  discovers the daemon by port file, and inventing a third transport would be a
+  feature.
+- **The root static fall-through is release-only.** Dev never serves from
+  `dist/` (Bun's router owns the bundle; a checkout's `dist/` may be stale). Not
+  taken: serving `dist/` in both modes (would mask a broken dev bundle with
+  yesterday's build).
+- **`cli.ts` gains `daemonCwd()` and a cwd guard — a backend edit in a surface
+  port.** Contract 5 lands on whoever spawns the daemon. Not taken: reading
+  `bunfig.toml` by path from the daemon (Bun offers no such option).
+- **E4 driven through a fixed-port proxy, not a daemon restart.** The daemon's
+  port is OS-assigned, so a restart cannot reproduce a same-origin drop. Not
+  taken: adding a `--port` flag to the daemon for the test (a feature; and the
+  proxy is 15 lines).
+- **The burst-scroll quirk stays.** Measured identical on the original page;
+  fixing it (measure after the smooth scroll settles, or drop `scroll-smooth`)
+  is a behaviour change and belongs to a follow-up, not a fidelity port.

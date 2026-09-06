@@ -38,6 +38,23 @@ const HOLD_FILE = join(DATA_DIR, "daemon.hold");
 const CONFIG_FILE = join(DATA_DIR, "config.json");
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const DAEMON_SCRIPT = join(SCRIPT_DIR, "daemon.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// The watch surface is built (src/grapevine/surface → dist/). Bun reads
+// bunfig.toml (the Tailwind plugin) from cwd ONLY, so in DEV mode the daemon's
+// cwd MUST be src/grapevine/ (seams Contract 5) — launched elsewhere the dev
+// bundler cannot compile the stylesheet and the page fails (measured on
+// glamour: HTTP 500, no stylesheet link). In RELEASE mode dist/ is static and
+// pre-built, no bunfig is read, and src/grapevine/ need not exist at all (a
+// source-free marketplace clone has no top-level src/) — so the cwd stays at
+// the skill root. Same shape as glamour's daemonCwd(). Exported for tests.
+const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "grapevine");
+
+export function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
 
 // ── Daemon HTTP protocol ──────────────────────────────────────────────────
 // Response shapes the daemon emits. Any endpoint can also return an error
@@ -314,11 +331,26 @@ async function ensureDaemon(): Promise<number> {
   if (port) return port;
   if (holdActive())
     die("daemon is held (respawn suppressed) — wait for the hold to clear or run `grapevine roll`");
+  // Check the cwd EXISTS before spawning: the daemon's stdio is ignored, so a
+  // dev-mode daemon dying at its surface import would otherwise surface only as
+  // "failed to start within 3s" — and node reports a missing cwd as ENOENT on
+  // the executable, which reads as "bun is missing".
+  const cwd = daemonCwd();
+  if (!existsSync(cwd)) {
+    die(
+      `grapevine cannot start its daemon: the working directory it needs is missing — ${cwd}. ` +
+        "No dist/index.html was found (or SPELLBOOK_SURFACE_MODE=dev is set), so the daemon " +
+        "must run from src/grapevine/ to bundle the watch surface, which a source-free install " +
+        "does not have. Either the shipped dist/ is missing (reinstall the spell) or you are in " +
+        "a checkout without src/grapevine/.",
+    );
+  }
   // Spawn detached so the daemon survives this CLI process exit.
   const proc = spawn(process.execPath, [DAEMON_SCRIPT], {
     detached: true,
     stdio: ["ignore", "ignore", "ignore"],
     env: process.env,
+    cwd,
   });
   proc.unref();
   // Wait up to 3s for the port file to appear and respond.

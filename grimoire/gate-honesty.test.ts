@@ -177,10 +177,20 @@ import { join } from "node:path";
 // 4,624 + 74 + 23 + 2 = 4,723 exactly, with nothing left over. `watch.html`
 // (1,000) is STILL HERE at this commit: the daemon does not serve the new
 // surface until the next chapter, and that commit re-declares its departure.
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE REWRITE, DEPARTURE — 23/4,723 ->
+// 22/3,723. ONE file LEAVES, and it is the good direction: the daemon now
+// serves the built surface, so `watch.html` is deleted —
+//   -1,000  plugins/spellbook/skills/grapevine/scripts/watch.html
+// 4,723 - 1,000 = 3,723 exactly, with nothing left over. Its 1,000 lines of
+// Alpine + hand-rolled CSS did not become gateable by moving; they became
+// ~900 lines of .tsx/.ts under src/grapevine/surface/ that `bun run check`
+// reads and `bun test` exercises (state/*.test.ts), plus the 99 blind lines
+// declared above. Net for the roster: the blind set is 21.6% smaller than it
+// was this morning, and grapevine's own share of it fell from 1,000 to 99.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
-  "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
   "src/mind-mapper/surface/styles.css": 238,
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,

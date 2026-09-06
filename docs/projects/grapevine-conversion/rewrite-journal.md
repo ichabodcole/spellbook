@@ -216,3 +216,90 @@ shippable, and the old page is what a consumer would get.
 `bun test grimoire/ src/grapevine/` → 122 pass / 0 fail;
 `dist roster: 6 buildable spell(s) … grapevine:3`. The surface is NOT yet driven
 — the daemon serves it next step.
+
+## 2026-09-05 · 3. The daemon serves the surface; the inventory is driven
+
+**Order within the step.** `git rm watch.html` FIRST (the `ls-files` wards read
+the index) → `cli.ts` cwd pin → `daemon.ts` (constants, `/watch`, the root
+fall-through, `main()`) → the two pins re-declared (gate-honesty departure,
+import-boundary's sixth entry) → the two new tests → wards → the browser drive
+in release, then dev → the inventory's Driven column.
+
+**What the relocate half of the playbook covered, and what grapevine changed
+about it:**
+
+- The dev/release resolution is glamour's `server.ts` shape verbatim
+  (`resolveMode()` on `dist/index.html`, the env override, the dynamic
+  string-literal import on the dev branch only). Two differences forced by
+  grapevine's daemon: the surface lives at **`/watch`, not `/`** — so in dev the
+  HTMLBundle goes in `routes: { "/watch": devIndex }`, and in release the hashed
+  chunks that `index.html` links as `./index-<hash>.js` arrive at the **root**
+  as bare filenames and need a fall-through before the 404 — and the daemon
+  **prints no stdout handshake**, so the mode has two transports here (the
+  `GET /` JSON, additive `mode` field, and the stderr boot line) rather than
+  glamour's three. ⛔ The fall-through is release-only: in dev Bun's router owns
+  the bundle's assets, and a checkout's committed `dist/` can be stale against
+  its source.
+- ⛔ **The CLI spawns the daemon, so Contract 5 lands on `cli.ts`** even though
+  "the backend is out of scope": `ensureDaemon()` passed no `cwd`, and a dev
+  daemon spawned from the repo root cannot read `src/grapevine/bunfig.toml`.
+  Copied glamour's `daemonCwd()` (skill root in release, `src/<spell>/` in dev)
+  plus its existsSync guard — the daemon's stdio is ignored, so without the
+  guard a dev boot at a source-free install surfaces only as "failed to start
+  within 3s".
+- The forced-dev die-clean check has a grapevine-specific ordering: the import
+  must precede `ensureDirs()` and the port/pid writes, or a CLI polling for
+  `daemon.port` sees a half-born daemon. The cell asserts no `daemon.port`, no
+  `daemon.pid`, no `channels/` under the scoped HOME.
+- Every spawn in tests and drives sets `GRAPEVINE_HOME` to a tmpdir. Grapevine
+  is one daemon per machine; an unscoped test would respawn or stop a live
+  `~/.grapevine` daemon (glamour's comms #1166 lesson, same shape).
+
+**Gotchas:**
+
+- ⚠ `import-boundary-wards` pins the dev import by `{file, spec, resolved}` and
+  the population walks every `scripts/*.ts` — grapevine's site is a `daemon.ts`,
+  the first non-`server.ts` entry. Add the triple by hand; `existsSync` the
+  resolved path first (the ward compares strings and would launder a typo into
+  the pin).
+- ⚠ `tsc` neutrality by LINES, not count: 435 → 435, but 54 lines "arrived" and
+  54 "left" — every pair the same message at a shifted line number (cli.ts +32,
+  daemon.ts +44). Diff, then pair; a count alone cannot tell this from a real
+  change.
+- ⚠ `curl -I /watch` returns 404 — HEAD, and the route was always GET-only. Use
+  `-o /dev/null -w '%{http_code}'`.
+- ⚠ **Playwright's `goto` to the same URL with only a hash differing is a
+  fragment navigation, not a reload.** My first "reload" arms for the alias
+  rules ran on the SAME document: no `/identity` fetch, doubled `tail` entries,
+  an input that kept its state. Symptom: `performance` resources show no
+  page-load fetches and `navigation[0].type` is not `reload`. Fix: change the
+  query string (`/watch?fresh=N#chan`) for a real load, and assert
+  `navigation[0].type`. (The page's own C3 handler reloads on a hash CHANGE,
+  which a rail click gives you — and that one did report `reload`.)
+- ⚠ Playwright refs go stale after a targeted (`target:`) snapshot; a full
+  snapshot restores them. Click by the ref from the most recent snapshot.
+- ⚠ E4 cannot be driven with the CLI alone: `stop` + any verb respawns the
+  daemon on a NEW port, and the page reconnects to its own origin forever. A
+  15-line pass-through proxy on a fixed port (`scratchpad/proxy.ts`, streams the
+  SSE body through) makes a same-origin drop-and-return possible: kill the proxy
+  → `disconnected — reconnecting…`; send to the daemon directly; restart the
+  proxy → the gap arrives once, every retry carried `since=<highest>`. Worth
+  keeping as a shared instrument.
+- ⚠ Under a burst (6 messages ~20 ms apart) the feed stops following. Before
+  calling it a regression I booted the pre-rewrite daemon + `watch.html` from
+  `5776fa0` under its own HOME and ran the identical burst: gap 300 px vs the
+  rewrite's 295. `scroll-behavior: smooth` animates each `scrollTop` assignment
+  and the next message's 80 px measurement lands mid-animation. Shared quirk;
+  recorded on E3, not fixed (no behaviour changes).
+- ⚠ A rebuilt `dist/` with the same content reproduces the same hash
+  (`index-4kaadwkp.js` twice), so a temporary `console.log` instrument came and
+  went without dirtying the tree — but the browser served the cached bundle
+  across a hash-only navigation, which is the same non-reload trap.
+
+**What was driven.** All 68 rows carry a value: 52 driven in a browser (release,
+dev, or both), 9 covered by a named test cell, 7 explicitly not driven with the
+reason on the row (C9's window is shorter than a poll; E6 has no emitter; the
+409 and failure arms of P6/X2; F8's long-parent snippet; R7's odd channel
+names). Release drove every visible state in the inventory's checklist; dev
+drove load, styling through Bun's `/_bun/asset` stylesheet, join, Shift+Enter,
+send, and the disconnect dot.

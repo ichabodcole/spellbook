@@ -301,6 +301,17 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     spec: "../../../../../src/glamour/surface/index.html",
     resolved: "src/glamour/surface/index.html",
   },
+  // grapevine, the sixth (grapevine conversion, 2026-09-05) — and the first
+  // whose site is a `daemon.ts`, not a `server.ts`: the rewrite-then-relocate
+  // pathfinder. Pinned by the agent that wrote the specifier after running
+  // existsSync on the resolved path; the admission was verified the same way
+  // as the others (scripts/release-serve.test.ts boots a copied tree with a
+  // dist/ and no surface/, and its forced-dev cell dies at exactly this import).
+  {
+    file: "plugins/spellbook/skills/grapevine/scripts/daemon.ts",
+    spec: "../../../../../src/grapevine/surface/index.html",
+    resolved: "src/grapevine/surface/index.html",
+  },
   {
     file: "plugins/spellbook/skills/imago/scripts/server.ts",
     spec: "../../../../../src/imago/surface/index.html",
