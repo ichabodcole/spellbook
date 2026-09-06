@@ -568,9 +568,17 @@ function lifecycleTarget(name: string): boolean {
   }
 }
 
-// Who retired it. The watch surface and the CLI both POST these routes with no
-// body today, so "system" is the honest default rather than a placeholder for a
-// name we failed to read.
+// Who retired it. Both clients send `{from}` when they have a name: the CLI
+// passes the globally-accepted `--as`/`--from`, and the watch surface signs
+// with the same alias its topic edit uses (surface inventory L5a). "system" is
+// therefore what you get when there genuinely is no name — a lurker with no
+// persisted default — rather than a placeholder for a name we failed to read.
+//
+// ⚠ This comment previously said both clients posted with no body. It was
+// stale in the commit that introduced it (the CLI half changed in the same
+// diff), and the surface half then stayed unsigned for a commit because the
+// comment said that was intended. A comment that describes the caller is a
+// claim about a file you are not editing; re-read the caller.
 async function lifecycleFrom(req: Request): Promise<string> {
   const body = await readJsonBody(req);
   return body && typeof body.from === "string" && body.from.trim() ? body.from.trim() : "system";

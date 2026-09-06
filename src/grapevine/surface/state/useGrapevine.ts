@@ -29,6 +29,7 @@ import {
   loadShowArchived,
   parkIntent,
   saveShowArchived,
+  signedBody,
   takeIntent,
   topicFrom,
 } from "./lifecycle";
@@ -256,16 +257,24 @@ export function useGrapevine() {
   // refresh right after is just the next poll brought forward, and the
   // composer follows `channelArchived` from that poll exactly as it does for
   // the agent-driven case (C12).
+  // L5a — SIGNED with the same alias a topic edit is signed with. Both routes
+  // append a kind:"status" frame carrying `from`, and posting with no body left
+  // the human's own act attributed to `system` on the one path humans actually
+  // use. `topicFrom` is the single signer (mode/alias/identity fallback); when
+  // it resolves to null the daemon signs `system`, which is then honest.
   const archiveChannel = useCallback(
     async (name: string) => {
       try {
-        await fetch(`/channels/${encodeURIComponent(name)}/archive`, { method: "POST" });
+        await fetch(`/channels/${encodeURIComponent(name)}/archive`, {
+          method: "POST",
+          ...signedBody(topicFrom(modeRef.current, aliasRef.current, identityAlias)),
+        });
       } catch {
         // X1
       }
       refreshChannels();
     },
-    [refreshChannels],
+    [refreshChannels, identityAlias],
   );
   const unarchiveChannel = useCallback(
     async (name: string): Promise<{ ok: true } | { ok: false; message: string }> => {
@@ -276,6 +285,7 @@ export function useGrapevine() {
       try {
         const r = await fetch(`/channels/${encodeURIComponent(name)}/unarchive`, {
           method: "POST",
+          ...signedBody(topicFrom(modeRef.current, aliasRef.current, identityAlias)),
         });
         if (r.ok) out = { ok: true };
         else {
@@ -288,7 +298,7 @@ export function useGrapevine() {
       refreshChannels();
       return out;
     },
-    [refreshChannels],
+    [refreshChannels, identityAlias],
   );
 
   // L2 — POST /channels as the CLI's non-explicit verbs do (no `explicit`,

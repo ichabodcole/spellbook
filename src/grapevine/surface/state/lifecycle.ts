@@ -50,13 +50,33 @@ export function createOutcome(status: number, body: { error?: unknown } | null):
   return { kind: "error", message };
 }
 
+/** L5a — the `fetch` init fragment that signs a surface-originated channel
+ *  write. A `null` signer (lurking with no persisted default) sends NO body at
+ *  all, which is what the routes accepted before and leaves the daemon to sign
+ *  `system` — honest, because there genuinely is no name to give. */
+export function signedBody(from: string | null): RequestInit {
+  if (!from) return {};
+  return {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ from }),
+  };
+}
+
 /** L2 — the create dialog's message for a refused name. */
 export function createArchivedText(name: string): string {
   return `“${name}” exists but is archived. Unarchive it instead?`;
 }
 
-/** L3 — the alias a topic edit is signed with: the joined alias, or the
- *  persisted default from /identity while lurking. Null when neither exists. */
+/** L3 / L5a — the alias a channel write from the surface is signed with: the
+ *  joined alias, or the persisted default from `/identity` while lurking. Null
+ *  when neither exists.
+ *
+ *  Named for the topic edit, which was its first caller, but it is the SIGNER
+ *  for every surface-originated channel write — archive and unarchive included
+ *  (L5a, added 2026-09-06 after verify found them posting unsigned, so the
+ *  human's own act was landing in the log as `system`). One signer, one
+ *  fallback rule: two would drift, and the whole point of the frame's `from` is
+ *  that an agent sees a human's act the way it sees another agent's. */
 export function topicFrom(mode: Mode, alias: string, identityAlias: string | null): string | null {
   if (mode === "join" && alias.trim()) return alias.trim();
   const d = identityAlias?.trim();

@@ -86,6 +86,12 @@ describe("presentation helpers (F2, F3, F7, F8, S2, C11)", () => {
     expect(isChannelNote(msg(1, { kind: "status", event: "unarchived" }))).toBe(true);
     expect(isChannelNote(msg(1, { kind: "status" }))).toBe(false);
     expect(isChannelNote(msg(1, { kind: "message" }))).toBe(false);
+    // Verify ⚠5 — a frame carrying BOTH fields is metadata, the same call the
+    // CLI's isDispositionFrame makes. Without this clause the two consumers
+    // read the same bytes and disagreed.
+    expect(isChannelNote(msg(1, { kind: "status", event: "archived", disposition: "open" }))).toBe(
+      false,
+    );
   });
   test("F11 — a lifecycle note reads `<from> archived the channel`", () => {
     expect(fromLabel(msg(1, { kind: "status", event: "archived" }))).toBe(

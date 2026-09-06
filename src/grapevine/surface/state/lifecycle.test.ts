@@ -12,6 +12,7 @@ import {
   SHOW_ARCHIVED_KEY,
   saveShowArchived,
   shouldCancelEdit,
+  signedBody,
   takeIntent,
   topicEditState,
   topicFrom,
@@ -148,5 +149,33 @@ describe("context menu (L1)", () => {
   test("the archive verb follows the row", () => {
     expect(archiveLabel(false)).toBe("Archive");
     expect(archiveLabel(true)).toBe("Unarchive");
+  });
+});
+
+describe("signed channel writes (inventory L5a)", () => {
+  // Verify ⚠2: archive/unarchive posted with no body, so the human's own act
+  // landed in the durable log as `system` on the one path humans actually use —
+  // the exact scenario the backlog item is about.
+  test("a resolved signer becomes a JSON {from} body", () => {
+    const init = signedBody("cole");
+    expect(init.body).toBe(JSON.stringify({ from: "cole" }));
+    expect((init.headers as Record<string, string>)["content-type"]).toBe("application/json");
+  });
+
+  test("no signer sends NO body — the daemon then signs `system`, which is honest", () => {
+    expect(signedBody(null)).toEqual({});
+    expect(signedBody("")).toEqual({});
+  });
+
+  test("the signer is topicFrom — one rule for every surface-originated channel write", () => {
+    // Joined: the joined alias. Lurking: the persisted default. Neither: null,
+    // and `system` is then the truth rather than a lost attribution.
+    expect(signedBody(topicFrom("join", "cole", "default")).body).toBe(
+      JSON.stringify({ from: "cole" }),
+    );
+    expect(signedBody(topicFrom("lurk", "cole", "default")).body).toBe(
+      JSON.stringify({ from: "default" }),
+    );
+    expect(signedBody(topicFrom("lurk", "", null))).toEqual({});
   });
 });

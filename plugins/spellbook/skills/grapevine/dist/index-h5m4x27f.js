@@ -33683,7 +33683,7 @@ function fmtTime(ts) {
   });
 }
 function isChannelNote(m) {
-  return m.kind === "status" && m.event !== undefined;
+  return m.kind === "status" && m.event !== undefined && m.disposition === undefined;
 }
 function fromLabel(m) {
   if (m.kind === "topic")
@@ -33741,6 +33741,14 @@ function createOutcome(status, body) {
     return { kind: "archived" };
   const message = typeof body?.error === "string" ? body.error : `HTTP ${status}`;
   return { kind: "error", message };
+}
+function signedBody(from) {
+  if (!from)
+    return {};
+  return {
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ from })
+  };
 }
 function createArchivedText(name) {
   return `“${name}” exists but is archived. Unarchive it instead?`;
@@ -36170,10 +36178,13 @@ function useGrapevine() {
   }, [channel, refreshChannels]);
   const archiveChannel = import_react12.useCallback(async (name) => {
     try {
-      await fetch(`/channels/${encodeURIComponent(name)}/archive`, { method: "POST" });
+      await fetch(`/channels/${encodeURIComponent(name)}/archive`, {
+        method: "POST",
+        ...signedBody(topicFrom(modeRef.current, aliasRef.current, identityAlias))
+      });
     } catch {}
     refreshChannels();
-  }, [refreshChannels]);
+  }, [refreshChannels, identityAlias]);
   const unarchiveChannel = import_react12.useCallback(async (name) => {
     let out = {
       ok: false,
@@ -36181,7 +36192,8 @@ function useGrapevine() {
     };
     try {
       const r2 = await fetch(`/channels/${encodeURIComponent(name)}/unarchive`, {
-        method: "POST"
+        method: "POST",
+        ...signedBody(topicFrom(modeRef.current, aliasRef.current, identityAlias))
       });
       if (r2.ok)
         out = { ok: true };
@@ -36192,7 +36204,7 @@ function useGrapevine() {
     } catch {}
     refreshChannels();
     return out;
-  }, [refreshChannels]);
+  }, [refreshChannels, identityAlias]);
   const createChannel = import_react12.useCallback(async (name, topic2) => {
     const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
     const body = { name };
