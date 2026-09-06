@@ -35,6 +35,19 @@ topic line, the archived note was up; Enter sent **0 `PUT`s** and **0 frames**
 landed on the archived log; the header was unchanged. Before the fix the same
 sequence sent a 200 `PUT` and lost focus to `body`.
 
+## After Cole's review (2026-09-06)
+
+Three rounds at the keyboard on the review daemon, each a fix on the branch:
+
+| sha       | finding                                                                                    | fix                                                                                                                                                                                                             |
+| --------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `77fdb87` | With _Close channel…_ in the menu, the per-row 🗑 button is a second path to the same act. | The button goes; the menu is the one path. SKILL.md and the inventory row amended.                                                                                                                              |
+| `0b648b3` | Menu items had no hover state except the destructive one.                                  | `--color-accent` was aliased to the same token as `--color-popover`, so a highlighted item painted its own background. It now aliases the edge token. The gate-honesty blind pin re-declared (108 → 110 lines). |
+| `0b648b3` | _Edit topic_ did nothing.                                                                  | The menu item was enabled while the header editor was disabled (lurking with no alias, or archived). It now mirrors `topicEditState` — disabled with _join first_ / _read-only_ — and inventory row L1 says so. |
+
+Gate at close: 1642 pass / 0 fail / 129 files, exit 0 (198 s, unpiped, exit read
+from a file) · `dist-check` exit 0.
+
 ## The contract, moved
 
 The inventory is the surface's living contract and this is the first branch that
