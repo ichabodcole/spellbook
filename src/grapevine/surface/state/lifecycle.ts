@@ -100,6 +100,24 @@ export function takeIntent(kv: KV, channel: string): Intent | null {
   }
 }
 
+/** L3c — the editor must not outlive the channel's writability: when a poll
+ *  flips the channel to archived while the editor is open, the edit is
+ *  cancelled (and, at commit time, refused) rather than landing a topic frame
+ *  on a read-only channel. The daemon does not guard `PUT /topic`; this is the
+ *  surface's fence. */
+export function shouldCancelEdit(editing: boolean, disabled: boolean): boolean {
+  return editing && disabled;
+}
+
+/** L2c — a topic typed for a channel that ALREADY existed is not set by
+ *  `POST /channels` (the daemon sets it only when none exists), so the create
+ *  follows with `PUT /topic` — the dialog promised `Set as <signer>`. Returns
+ *  the topic to PUT, or null when nothing is owed. */
+export function createFollowUpTopic(existed: boolean, topic: string): string | null {
+  const t = topic.trim();
+  return existed && t ? t : null;
+}
+
 /** L1 — the context menu's archive verb for a row. */
 export function archiveLabel(archived: boolean): "Archive" | "Unarchive" {
   return archived ? "Unarchive" : "Archive";

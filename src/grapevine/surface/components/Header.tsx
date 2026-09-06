@@ -8,6 +8,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Field, FieldLabel } from "@/ui/field";
 import { Input } from "@/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
+import { shouldCancelEdit } from "../state/lifecycle";
 
 export function Header({
   channel,
@@ -67,7 +68,15 @@ export function Header({
     restoreFocus.current = fromKeyboard;
     setEditing(false);
   };
+  // L3c — an archive that lands while the editor is open (the agent's, over
+  // the poll) cancels the edit and hands focus back to the line; and commit
+  // re-reads the state, so an Enter that races the poll sends nothing.
+  useEffect(() => {
+    if (shouldCancelEdit(editing, editState.disabled)) close(true);
+  }, [editing, editState.disabled]);
+
   const commit = async () => {
+    if (editState.disabled) return close(true);
     close(true);
     await onCommit(draft.trim());
   };
@@ -111,6 +120,7 @@ export function Header({
             <TooltipTrigger
               render={
                 <button
+                  ref={buttonRef}
                   type="button"
                   aria-disabled="true"
                   aria-label="Edit topic"

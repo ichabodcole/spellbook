@@ -73,12 +73,12 @@ export function ChannelRail({
   showArchived: boolean;
   onShowArchived: (on: boolean) => void;
   current: string;
-  onClose: (name: string) => void;
+  onClose: (name: string) => Promise<void>;
   onArchive: (name: string) => void;
   onUnarchive: (name: string) => void;
   onEditTopic: (name: string) => void;
   onCreate: (name: string, topic: string) => Promise<CreateOutcome>;
-  onUnarchiveAndGo: (name: string) => Promise<void>;
+  onUnarchiveAndGo: (name: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   signer: string | null;
 }) {
   const [pending, setPending] = useState<string | null>(null);
@@ -89,7 +89,7 @@ export function ChannelRail({
   // nowhere to return focus after an item is chosen (Escape returns it to the
   // link on its own, because that is where it came from). Each row's link is
   // kept by name and refocused after an item runs — the row is still there
-  // after archive/unarchive; after Delete… the dialog owns focus.
+  // after archive/unarchive; after Close channel… the `+` takes it.
   // When the filter (L4) hides the row the act just archived, the link is
   // gone by the next frame — focus goes to the switch instead, which is the
   // control that brings the row back.
@@ -215,7 +215,7 @@ export function ChannelRail({
                   <ContextMenuSeparator />
                   <ContextMenuGroup>
                     <ContextMenuItem variant="destructive" onClick={() => setPending(c.name)}>
-                      Delete…
+                      Close channel…
                     </ContextMenuItem>
                   </ContextMenuGroup>
                 </ContextMenuContent>
@@ -241,9 +241,14 @@ export function ChannelRail({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (pending) onClose(pending);
+              onClick={async () => {
+                const name = pending;
                 setPending(null);
+                if (!name) return;
+                await onClose(name);
+                // The row that owned focus is gone (or a reload is under way);
+                // the rail's `+` is the nearest control that still exists.
+                requestAnimationFrame(() => plusRef.current?.focus());
               }}
             >
               Close channel

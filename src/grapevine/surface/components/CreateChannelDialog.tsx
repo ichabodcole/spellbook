@@ -2,7 +2,7 @@
 // submits. The daemon's 409 for an archived name is named in place and the
 // footer offers _Unarchive instead_.
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { Button } from "@/ui/button";
 import {
   Dialog,
@@ -28,7 +28,7 @@ export function CreateChannelDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreate: (name: string, topic: string) => Promise<CreateOutcome>;
-  onUnarchive: (name: string) => Promise<void>;
+  onUnarchive: (name: string) => Promise<{ ok: true } | { ok: false; message: string }>;
   // The dialog is opened by state, not a DialogTrigger, so Base UI has no
   // trigger to hand focus back to on close — the rail passes its `+`.
   finalFocus: React.RefObject<HTMLElement | null>;
@@ -41,6 +41,7 @@ export function CreateChannelDialog({
   const [outcome, setOutcome] = useState<CreateOutcome | null>(null);
   const nameId = useId();
   const topicId = useId();
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
   const reset = () => {
     setName("");
@@ -87,6 +88,7 @@ export function CreateChannelDialog({
               <FieldLabel htmlFor={nameId}>Name</FieldLabel>
               <Input
                 id={nameId}
+                ref={nameRef}
                 autoFocus
                 value={name}
                 placeholder="design-review"
@@ -118,8 +120,17 @@ export function CreateChannelDialog({
                 disabled={busy}
                 onClick={async () => {
                   setBusy(true);
-                  await onUnarchive(name.trim());
-                  change(false);
+                  const r = await onUnarchive(name.trim());
+                  setBusy(false);
+                  // L2b — a failed unarchive keeps the dialog open and names
+                  // the daemon's reason on the field; focus stays inside.
+                  if (r.ok) change(false);
+                  else {
+                    setOutcome({ kind: "error", message: r.message });
+                    // The button that had focus is replaced by Create; keep
+                    // focus in the dialog, on the field that carries the error.
+                    requestAnimationFrame(() => nameRef.current?.focus());
+                  }
                 }}
               >
                 Unarchive instead

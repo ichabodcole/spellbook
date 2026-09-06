@@ -3,6 +3,7 @@ import type { KV } from "./identity";
 import {
   archiveLabel,
   createArchivedText,
+  createFollowUpTopic,
   createOutcome,
   hiddenArchivedCount,
   INTENT_KEY,
@@ -10,6 +11,7 @@ import {
   parkIntent,
   SHOW_ARCHIVED_KEY,
   saveShowArchived,
+  shouldCancelEdit,
   takeIntent,
   topicEditState,
   topicFrom,
@@ -117,6 +119,22 @@ describe("intent across the channel-switch reload (L3, C3)", () => {
   });
   test("garbage in storage is swallowed", () => {
     expect(takeIntent(fakeKV({ [INTENT_KEY]: "{" }), "a")).toBeNull();
+  });
+});
+
+describe("the editor under an archive that lands mid-edit (L3c)", () => {
+  test("an open editor on a channel that just became archived is cancelled; otherwise not", () => {
+    expect(shouldCancelEdit(true, true)).toBe(true);
+    expect(shouldCancelEdit(true, false)).toBe(false);
+    expect(shouldCancelEdit(false, true)).toBe(false);
+  });
+});
+
+describe("create on an existing channel with a topic (L2c)", () => {
+  test("owes a PUT only when the channel existed AND a topic was typed", () => {
+    expect(createFollowUpTopic(true, " t ")).toBe("t");
+    expect(createFollowUpTopic(true, "  ")).toBeNull();
+    expect(createFollowUpTopic(false, "t")).toBeNull();
   });
 });
 

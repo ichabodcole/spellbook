@@ -33770,6 +33770,13 @@ function takeIntent(kv, channel) {
     return null;
   }
 }
+function shouldCancelEdit(editing, disabled2) {
+  return editing && disabled2;
+}
+function createFollowUpTopic(existed, topic) {
+  const t = topic.trim();
+  return existed && t ? t : null;
+}
 function archiveLabel(archived) {
   return archived ? "Unarchive" : "Archive";
 }
@@ -35056,6 +35063,7 @@ function CreateChannelDialog({
   const [outcome, setOutcome] = import_react7.useState(null);
   const nameId = import_react7.useId();
   const topicId = import_react7.useId();
+  const nameRef = import_react7.useRef(null);
   const reset = () => {
     setName("");
     setTopic("");
@@ -35113,6 +35121,7 @@ function CreateChannelDialog({
                   }, undefined, false, undefined, this),
                   /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Input3, {
                     id: nameId,
+                    ref: nameRef,
                     autoFocus: true,
                     value: name,
                     placeholder: "design-review",
@@ -35166,8 +35175,14 @@ function CreateChannelDialog({
                 disabled: busy,
                 onClick: async () => {
                   setBusy(true);
-                  await onUnarchive(name.trim());
-                  change(false);
+                  const r2 = await onUnarchive(name.trim());
+                  setBusy(false);
+                  if (r2.ok)
+                    change(false);
+                  else {
+                    setOutcome({ kind: "error", message: r2.message });
+                    requestAnimationFrame(() => nameRef.current?.focus());
+                  }
                 },
                 children: "Unarchive instead"
               }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
@@ -35358,7 +35373,7 @@ function ChannelRail({
                         children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(ContextMenuItem, {
                           variant: "destructive",
                           onClick: () => setPending(c.name),
-                          children: "Delete…"
+                          children: "Close channel…"
                         }, undefined, false, undefined, this)
                       }, undefined, false, undefined, this)
                     ]
@@ -35398,10 +35413,13 @@ function ChannelRail({
                   children: "Cancel"
                 }, undefined, false, undefined, this),
                 /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialogAction, {
-                  onClick: () => {
-                    if (pending)
-                      onClose(pending);
+                  onClick: async () => {
+                    const name = pending;
                     setPending(null);
+                    if (!name)
+                      return;
+                    await onClose(name);
+                    requestAnimationFrame(() => plusRef.current?.focus());
                   },
                   children: "Close channel"
                 }, undefined, false, undefined, this)
@@ -35572,7 +35590,13 @@ function Header({
     restoreFocus.current = fromKeyboard;
     setEditing(false);
   };
+  import_react10.useEffect(() => {
+    if (shouldCancelEdit(editing, editState.disabled))
+      close(true);
+  }, [editing, editState.disabled]);
   const commit = async () => {
+    if (editState.disabled)
+      return close(true);
     close(true);
     await onCommit(draft.trim());
   };
@@ -35630,6 +35654,7 @@ function Header({
             children: [
               /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(TooltipTrigger3, {
                 render: /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("button", {
+                  ref: buttonRef,
                   type: "button",
                   "aria-disabled": "true",
                   "aria-label": "Edit topic",
@@ -36145,21 +36170,30 @@ function useGrapevine() {
     refreshChannels();
   }, [refreshChannels]);
   const unarchiveChannel = import_react12.useCallback(async (name) => {
-    let ok = false;
+    let out = {
+      ok: false,
+      message: "daemon unreachable"
+    };
     try {
       const r2 = await fetch(`/channels/${encodeURIComponent(name)}/unarchive`, {
         method: "POST"
       });
-      ok = r2.ok;
+      if (r2.ok)
+        out = { ok: true };
+      else {
+        const j = await r2.json().catch(() => null);
+        out = { ok: false, message: typeof j?.error === "string" ? j.error : `HTTP ${r2.status}` };
+      }
     } catch {}
     refreshChannels();
-    return ok;
+    return out;
   }, [refreshChannels]);
   const createChannel = import_react12.useCallback(async (name, topic2) => {
+    const existed = channels.some((c) => c.name === name);
+    const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
     const body = { name };
     if (topic2.trim()) {
       body.topic = topic2.trim();
-      const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
       if (from)
         body.from = from;
     }
@@ -36175,18 +36209,28 @@ function useGrapevine() {
       outcome = { kind: "error", message: "daemon unreachable" };
     }
     if (outcome.kind === "created") {
+      const owed = createFollowUpTopic(existed, topic2);
+      if (owed) {
+        try {
+          await fetch(`/channels/${encodeURIComponent(name)}/topic`, {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ topic: owed, from: from ?? "system" })
+          });
+        } catch {}
+      }
       if (name === channel)
         refreshChannels();
       else
         location.hash = name;
     }
     return outcome;
-  }, [channel, identityAlias, refreshChannels]);
+  }, [channel, channels, identityAlias, refreshChannels]);
   const unarchiveAndGo = import_react12.useCallback(async (name) => {
-    if (await unarchiveChannel(name)) {
-      if (name !== channel)
-        location.hash = name;
-    }
+    const r2 = await unarchiveChannel(name);
+    if (r2.ok && name !== channel)
+      location.hash = name;
+    return r2;
   }, [channel, unarchiveChannel]);
   const putTopic = import_react12.useCallback(async (text) => {
     const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
