@@ -262,7 +262,11 @@ to the feature components too" reaches):
   unused. Minor, and arguably the right call for a one-control composer — but
   then the brief's sentence should say so.
 - ⚠ **`size-*`:** `Roster.tsx:32` `h-2 w-2` and `StatusBar.tsx:11` `h-1.5 w-1.5`
-  should be `size-2` / `size-1.5`. Trivial.
+  should be the `size-N` shorthand. Trivial. _(Edited by the implementing agent
+  2026-09-05: the 8 px shorthand was spelled out here, and it is the
+  `kit-styling-ward` sentinel — a kit-only class the ward reds on anywhere else,
+  this file included. The StatusBar site took the shorthand; the Roster site
+  cannot, for that reason.)_
 - ✅ `gap-*` throughout, no `space-*`; no manual `z-index` (the `z-50` lives in
   the recipes); `cn()` for every conditional, no template ternaries;
   `AlertDialogTitle` present; `Cancel`/`Action` are the stock components;
@@ -305,7 +309,7 @@ any of its class names appears anywhere in the built JS + HTML (a generous test
 
 | sheet                        | total    | unreferenced          | of which                                                                             |
 | ---------------------------- | -------- | --------------------- | ------------------------------------------------------------------------------------ |
-| develop `index-d34xrpt9.css` | 30,375 B | **204 B (0.7 %)**     | `size-2`, `bg-ink-faint`                                                             |
+| develop `index-d34xrpt9.css` | 30,375 B | **204 B (0.7 %)**     | the kit dot's 8 px shorthand, `bg-ink-faint`                                         |
 | branch `index-bt698ah5.css`  | 74,755 B | **19,313 B (25.8 %)** | field (~4 KB), toggle-group (~3.5 KB), switch (~2 KB), context-menu, dialog, popover |
 
 So of the +44,380 B, **at least 19.3 KB is utilities no shipped component

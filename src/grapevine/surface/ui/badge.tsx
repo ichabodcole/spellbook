@@ -17,6 +17,8 @@ const badgeVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         // grapevine: the rail's subscriber count.
         count: "bg-background px-1.5 text-[10px] text-muted-foreground",
+        // grapevine: the count on the ACTIVE rail row takes the row's colour.
+        "count-live": "bg-background px-1.5 text-[10px] text-leaf-soft",
       },
     },
     defaultVariants: {

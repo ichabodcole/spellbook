@@ -7,7 +7,7 @@
    automatic content detection (which roots at the process cwd — the repo
    root under `bun run build`). The @source below is this surface's ONLY
    content source; the kit stylesheet brings its own. A bare directory, not a
-   ts/tsx glob, so index.html and the vendored ui/ are scanned too.
+   ts/tsx glob, so index.html and the registry ui/ are scanned too.
    grimoire/spell-css-scope-ward.test.ts runs each claim red. */
 @source "./";
 

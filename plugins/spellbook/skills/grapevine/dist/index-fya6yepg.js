@@ -23896,7 +23896,8 @@ var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify
       destructive: "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
       link: "text-primary underline-offset-4 hover:underline",
       accent: "border-ring bg-transparent text-grape-soft hover:bg-primary/10",
-      joined: "border-leaf bg-leaf/10 text-leaf-soft hover:bg-leaf/15"
+      joined: "border-leaf bg-leaf/10 text-leaf-soft hover:bg-leaf/15",
+      "destructive-ghost": "hover:bg-destructive/10 hover:text-destructive aria-expanded:bg-destructive/10 aria-expanded:text-destructive"
     },
     size: {
       default: "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
@@ -23906,7 +23907,8 @@ var buttonVariants = cva("group/button inline-flex shrink-0 items-center justify
       icon: "size-8",
       "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
       "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
-      "icon-lg": "size-9"
+      "icon-lg": "size-9",
+      inline: "h-auto gap-1 rounded-sm border-0 px-1 py-0 text-[0.6875rem] leading-none"
     }
   },
   defaultVariants: {
@@ -24038,7 +24040,8 @@ var badgeVariants = cva("group/badge inline-flex h-5 w-fit shrink-0 items-center
       outline: "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
       ghost: "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
       link: "text-primary underline-offset-4 hover:underline",
-      count: "bg-background px-1.5 text-[10px] text-muted-foreground"
+      count: "bg-background px-1.5 text-[10px] text-muted-foreground",
+      "count-live": "bg-background px-1.5 text-[10px] text-leaf-soft"
     }
   },
   defaultVariants: {
@@ -24179,8 +24182,7 @@ function ChannelRail({
                             children: "\uD83D\uDD12"
                           }, undefined, false, undefined, this),
                           /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Badge, {
-                            variant: "count",
-                            className: cn(active && "text-leaf-soft"),
+                            variant: active ? "count-live" : "count",
                             children: c.subscribers
                           }, undefined, false, undefined, this)
                         ]
@@ -24188,9 +24190,9 @@ function ChannelRail({
                     ]
                   }, undefined, true, undefined, this),
                   /* @__PURE__ */ jsx_dev_runtime3.jsxDEV(Button3, {
-                    variant: "ghost",
+                    variant: "destructive-ghost",
                     size: "icon-xs",
-                    className: "opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100",
+                    className: "opacity-0 group-hover:opacity-100",
                     title: `Close channel “${c.name}” (deletes message log)`,
                     onClick: () => setPending(c.name),
                     children: "\uD83D\uDDD1"
@@ -24239,12 +24241,105 @@ function ChannelRail({
 }
 
 // src/grapevine/surface/components/Composer.tsx
+var import_react4 = __toESM(require_react(), 1);
+
+// src/grapevine/surface/ui/field.tsx
 var import_react3 = __toESM(require_react(), 1);
 
-// src/grapevine/surface/ui/textarea.tsx
+// src/grapevine/surface/ui/label.tsx
 var jsx_dev_runtime4 = __toESM(require_jsx_dev_runtime(), 1);
+function Label({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("label", {
+    "data-slot": "label",
+    className: cn("flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// node_modules/@base-ui/react/separator/Separator.mjs
+var React43 = __toESM(require_react(), 1);
+"use client";
+var Separator = /* @__PURE__ */ React43.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
+  const {
+    className,
+    render,
+    orientation = "horizontal",
+    style,
+    ...elementProps
+  } = componentProps;
+  const state = {
+    orientation
+  };
+  const element = useRenderElement("div", componentProps, {
+    state,
+    ref: forwardedRef,
+    props: [{
+      role: "separator",
+      "aria-orientation": orientation
+    }, elementProps]
+  });
+  return element;
+});
+if (true)
+  Separator.displayName = "Separator";
+// src/grapevine/surface/ui/separator.tsx
+var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+"use client";
+function Separator2({ className, orientation = "horizontal", ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Separator, {
+    "data-slot": "separator",
+    orientation,
+    className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/field.tsx
+var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+function FieldGroup({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+    "data-slot": "field-group",
+    className: cn("group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+var fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:text-destructive", {
+  variants: {
+    orientation: {
+      vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
+      horizontal: "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
+      responsive: "flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px"
+    }
+  },
+  defaultVariants: {
+    orientation: "vertical"
+  }
+});
+function Field({
+  className,
+  orientation = "vertical",
+  ...props
+}) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+    role: "group",
+    "data-slot": "field",
+    "data-orientation": orientation,
+    className: cn(fieldVariants({ orientation }), className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+function FieldLabel({ className, ...props }) {
+  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV(Label, {
+    "data-slot": "field-label",
+    className: cn("group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-muted/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-ring has-[>[data-slot=field]]:has-[:focus-visible]:ring-3 has-[>[data-slot=field]]:has-[:focus-visible]:ring-ring/50 *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10", "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col", className),
+    ...props
+  }, undefined, false, undefined, this);
+}
+
+// src/grapevine/surface/ui/textarea.tsx
+var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
 function Textarea({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("textarea", {
+  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV("textarea", {
     "data-slot": "textarea",
     className: cn("flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
     ...props
@@ -24252,9 +24347,9 @@ function Textarea({ className, ...props }) {
 }
 
 // src/grapevine/surface/components/Composer.tsx
-var jsx_dev_runtime5 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
 function ArchivedNote() {
-  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
     className: "sticky bottom-0 bg-linear-to-t from-bg from-80% to-transparent pt-3 pb-2 text-center font-mono text-xs text-attention",
     children: "\uD83D\uDD12 this channel is archived — read-only"
   }, undefined, false, undefined, this);
@@ -24265,9 +24360,10 @@ function Composer({
   onCancelReply,
   onSend
 }) {
-  const [draft, setDraft] = import_react3.useState("");
-  const inputRef = import_react3.useRef(null);
-  import_react3.useEffect(() => {
+  const [draft, setDraft] = import_react4.useState("");
+  const draftId = import_react4.useId();
+  const inputRef = import_react4.useRef(null);
+  import_react4.useEffect(() => {
     if (replyingTo)
       inputRef.current?.focus();
   }, [replyingTo]);
@@ -24275,29 +24371,29 @@ function Composer({
     if (await onSend(draft))
       setDraft("");
   };
-  return /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
     className: "sticky bottom-0 bg-linear-to-t from-bg from-80% to-transparent pt-3 pb-1",
     children: [
-      replyingTo && /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
+      replyingTo && /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
         className: "-mb-px flex items-center gap-1.5 rounded-t-lg border border-edge border-l-2 border-l-grape bg-surface-raised px-2.5 py-1.5 font-mono text-xs text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "text-grape-soft",
             children: "↳"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             children: "replying to"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "font-mono font-semibold",
             style: { color: aliasColor(replyingTo.from) },
             children: replyingTo.from
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
             className: "flex-1 truncate",
             children: snippet(replyingTo.text || "")
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
+          /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Button3, {
             variant: "ghost",
             size: "icon-xs",
             className: "ml-auto",
@@ -24307,66 +24403,75 @@ function Composer({
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("form", {
-        className: "flex items-end gap-2",
+      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("form", {
         onSubmit: (e) => {
           e.preventDefault();
           submit();
         },
-        children: [
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Textarea, {
-            ref: inputRef,
-            className: "max-h-40 min-h-0 flex-1 resize-none",
-            rows: 1,
-            value: draft,
-            placeholder: `message as ${alias}…`,
-            onChange: (e) => setDraft(e.target.value),
-            onKeyDown: (e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                submit();
+        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Field, {
+          orientation: "horizontal",
+          className: "items-end",
+          children: [
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(FieldLabel, {
+              htmlFor: draftId,
+              className: "sr-only",
+              children: "Message"
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Textarea, {
+              id: draftId,
+              ref: inputRef,
+              className: "max-h-40 min-h-0 flex-1 resize-none",
+              rows: 1,
+              value: draft,
+              placeholder: `message as ${alias}…`,
+              onChange: (e) => setDraft(e.target.value),
+              onKeyDown: (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  submit();
+                }
               }
-            }
-          }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime5.jsxDEV(Button3, {
-            type: "submit",
-            disabled: !draft.trim(),
-            children: "send"
-          }, undefined, false, undefined, this)
-        ]
-      }, undefined, true, undefined, this)
+            }, undefined, false, undefined, this),
+            /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Button3, {
+              type: "submit",
+              disabled: !draft.trim(),
+              children: "send"
+            }, undefined, false, undefined, this)
+          ]
+        }, undefined, true, undefined, this)
+      }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
 // src/grapevine/surface/components/Header.tsx
-var jsx_dev_runtime6 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
 function Header({ channel, topic }) {
-  return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("header", {
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("header", {
     className: "flex items-center gap-4 border-b border-edge bg-surface px-6 py-4",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
         className: "text-[22px]",
         children: "\uD83C\uDF3F"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
         className: "flex-1",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("h1", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("h1", {
             className: "m-0 text-base font-semibold tracking-[0.01em]",
             children: [
               "grapevine",
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
                 className: "mx-1.5 text-ink-dim",
                 children: "·"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
                 className: "text-leaf-soft",
                 children: channel
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("p", {
+          /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("p", {
             className: cn("m-0 text-[13px] text-ink-dim", !topic && "italic"),
             children: topic || "no topic set"
           }, undefined, false, undefined, this)
@@ -24377,17 +24482,17 @@ function Header({ channel, topic }) {
 }
 
 // src/grapevine/surface/components/IdentityBox.tsx
-var import_react4 = __toESM(require_react(), 1);
+var import_react5 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/input/Input.mjs
-var React62 = __toESM(require_react(), 1);
+var React63 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/field/index.parts.mjs
 var exports_index_parts2 = {};
 __export(exports_index_parts2, {
   Validity: () => FieldValidity,
   Root: () => FieldRoot,
-  Label: () => FieldLabel,
+  Label: () => FieldLabel2,
   Item: () => FieldItem,
   Error: () => FieldError,
   Description: () => FieldDescription,
@@ -24395,10 +24500,10 @@ __export(exports_index_parts2, {
 });
 
 // node_modules/@base-ui/react/field/root/FieldRoot.mjs
-var React50 = __toESM(require_react(), 1);
+var React51 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/field-root-context/FieldRootContext.mjs
-var React43 = __toESM(require_react(), 1);
+var React44 = __toESM(require_react(), 1);
 // node_modules/@base-ui/react/field/control/FieldControlDataAttributes.mjs
 var FieldControlDataAttributes = /* @__PURE__ */ function(FieldControlDataAttributes2) {
   FieldControlDataAttributes2["disabled"] = "data-disabled";
@@ -24493,11 +24598,11 @@ var DEFAULT_FIELD_ROOT_CONTEXT = {
     change: NOOP
   }
 };
-var FieldRootContext = /* @__PURE__ */ React43.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
+var FieldRootContext = /* @__PURE__ */ React44.createContext(DEFAULT_FIELD_ROOT_CONTEXT);
 if (true)
   FieldRootContext.displayName = "FieldRootContext";
 function useFieldRootContext(optional = true) {
-  const context = React43.useContext(FieldRootContext);
+  const context = React44.useContext(FieldRootContext);
   if (context.setValidityData === NOOP && !optional) {
     throw new Error("Base UI: FieldRootContext is missing. Field parts must be placed within <Field.Root>.");
   }
@@ -24505,13 +24610,13 @@ function useFieldRootContext(optional = true) {
 }
 
 // node_modules/@base-ui/react/fieldset/root/FieldsetRootContext.mjs
-var React44 = __toESM(require_react(), 1);
+var React45 = __toESM(require_react(), 1);
 "use client";
-var FieldsetRootContext = /* @__PURE__ */ React44.createContext(undefined);
+var FieldsetRootContext = /* @__PURE__ */ React45.createContext(undefined);
 if (true)
   FieldsetRootContext.displayName = "FieldsetRootContext";
 function useFieldsetRootContext(optional = false) {
-  const context = React44.useContext(FieldsetRootContext);
+  const context = React45.useContext(FieldsetRootContext);
   if (!context && !optional) {
     throw new Error("Base UI: FieldsetRootContext is missing. Fieldset parts must be placed within <Fieldset.Root>.");
   }
@@ -24519,9 +24624,9 @@ function useFieldsetRootContext(optional = false) {
 }
 
 // node_modules/@base-ui/react/internals/form-context/FormContext.mjs
-var React45 = __toESM(require_react(), 1);
+var React46 = __toESM(require_react(), 1);
 "use client";
-var FormContext = /* @__PURE__ */ React45.createContext({
+var FormContext = /* @__PURE__ */ React46.createContext({
   formRef: {
     current: {
       fields: new Map
@@ -24537,16 +24642,16 @@ var FormContext = /* @__PURE__ */ React45.createContext({
 if (true)
   FormContext.displayName = "FormContext";
 function useFormContext() {
-  return React45.useContext(FormContext);
+  return React46.useContext(FormContext);
 }
 
 // node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
-var React47 = __toESM(require_react(), 1);
+var React48 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/internals/labelable-provider/LabelableContext.mjs
-var React46 = __toESM(require_react(), 1);
+var React47 = __toESM(require_react(), 1);
 "use client";
-var LabelableContext = /* @__PURE__ */ React46.createContext({
+var LabelableContext = /* @__PURE__ */ React47.createContext({
   controlId: undefined,
   registerControlId: NOOP,
   labelId: undefined,
@@ -24558,7 +24663,7 @@ var LabelableContext = /* @__PURE__ */ React46.createContext({
 if (true)
   LabelableContext.displayName = "LabelableContext";
 function useLabelableContext() {
-  return React46.useContext(LabelableContext);
+  return React47.useContext(LabelableContext);
 }
 
 // node_modules/@base-ui/react/internals/labelable-provider/LabelableProvider.mjs
@@ -24567,9 +24672,9 @@ var import_jsx_runtime9 = __toESM(require_jsx_runtime(), 1);
 var LabelableProvider = function LabelableProvider2(props) {
   const defaultId = useBaseUiId();
   const initialControlId = props.controlId === undefined ? defaultId : props.controlId;
-  const [controlId, setControlIdState] = React47.useState(initialControlId);
-  const [labelId, setLabelId] = React47.useState(props.labelId);
-  const [messageIds, setMessageIds] = React47.useState([]);
+  const [controlId, setControlIdState] = React48.useState(initialControlId);
+  const [labelId, setLabelId] = React48.useState(props.labelId);
+  const [messageIds, setMessageIds] = React48.useState([]);
   const registrationsRef = useRefWithInit(() => new Map);
   const {
     messageIds: parentMessageIds
@@ -24597,7 +24702,7 @@ var LabelableProvider = function LabelableProvider2(props) {
       return nextControlId;
     });
   });
-  const getDescriptionProps = React47.useCallback((externalProps) => {
+  const getDescriptionProps = React48.useCallback((externalProps) => {
     const ids = externalProps["aria-describedby"] ? externalProps["aria-describedby"].split(" ") : [];
     ids.push(...parentMessageIds, ...messageIds);
     return {
@@ -24605,7 +24710,7 @@ var LabelableProvider = function LabelableProvider2(props) {
       "aria-describedby": Array.from(new Set(ids)).join(" ") || undefined
     };
   }, [parentMessageIds, messageIds]);
-  const contextValue = React47.useMemo(() => ({
+  const contextValue = React48.useMemo(() => ({
     controlId,
     registerControlId,
     labelId,
@@ -24623,7 +24728,7 @@ if (true)
   LabelableProvider.displayName = "LabelableProvider";
 
 // node_modules/@base-ui/react/field/root/useFieldValidation.mjs
-var React48 = __toESM(require_react(), 1);
+var React49 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/field/utils/getCombinedFieldValidityData.mjs
 function getCombinedFieldValidityData(validityData, invalid) {
@@ -24699,10 +24804,10 @@ function useFieldValidation(params) {
     getDescriptionProps
   } = useLabelableContext();
   const timeout = useTimeout();
-  const inputRef = React48.useRef(null);
+  const inputRef = React49.useRef(null);
   const registeredInputs = useRefWithInit(() => new Set).current;
-  const validationCommitIdRef = React48.useRef(0);
-  const registerInput = React48.useCallback((element) => {
+  const validationCommitIdRef = React49.useRef(0);
+  const registerInput = React49.useCallback((element) => {
     if (!element) {
       return;
     }
@@ -24853,10 +24958,10 @@ function useFieldValidation(params) {
       commit(value, !validateOnChange);
     }
   });
-  const getValidationProps = React48.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
+  const getValidationProps = React49.useCallback((disabled2, externalProps = {}) => mergeProps(getDescriptionProps(externalProps), state.valid === false && !state.disabled && !disabled2 ? {
     "aria-invalid": true
   } : EMPTY_OBJECT), [getDescriptionProps, state.disabled, state.valid]);
-  return React48.useMemo(() => ({
+  return React49.useMemo(() => ({
     getValidationProps,
     inputRef,
     registerInput,
@@ -24866,7 +24971,7 @@ function useFieldValidation(params) {
 }
 
 // node_modules/@base-ui/react/internals/field-register-control/useFieldControlRegistration.mjs
-var React49 = __toESM(require_react(), 1);
+var React50 = __toESM(require_react(), 1);
 "use client";
 function useFieldControlRegistration(params) {
   const {
@@ -24882,9 +24987,9 @@ function useFieldControlRegistration(params) {
   const {
     formRef
   } = useFormContext();
-  const activeFieldControlSourceRef = React49.useRef(null);
-  const registrationRef = React49.useRef(null);
-  const fallbackControlRef = React49.useRef(null);
+  const activeFieldControlSourceRef = React50.useRef(null);
+  const registrationRef = React50.useRef(null);
+  const fallbackControlRef = React50.useRef(null);
   const getValueForForm = useStableCallback(() => {
     const registration = registrationRef.current;
     if (!registration) {
@@ -24991,7 +25096,7 @@ function useFieldControlRegistration(params) {
 // node_modules/@base-ui/react/field/root/FieldRoot.mjs
 var import_jsx_runtime10 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
+var FieldRootInner = /* @__PURE__ */ React51.forwardRef(function FieldRootInner2(componentProps, forwardedRef) {
   const {
     errors,
     validationMode: formValidationMode,
@@ -25015,23 +25120,23 @@ var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2
   const disabledFieldset = useFieldsetRootContext(true)?.disabled;
   const validate = useStableCallback(validateProp || (() => null));
   const disabled2 = disabledFieldset || disabledProp;
-  const [touchedState, setTouchedUnwrapped] = React50.useState(false);
-  const [dirtyState, setDirtyUnwrapped] = React50.useState(false);
-  const [filled, setFilled] = React50.useState(false);
-  const [focused, setFocused] = React50.useState(false);
+  const [touchedState, setTouchedUnwrapped] = React51.useState(false);
+  const [dirtyState, setDirtyUnwrapped] = React51.useState(false);
+  const [filled, setFilled] = React51.useState(false);
+  const [focused, setFocused] = React51.useState(false);
   const dirty = dirtyProp ?? dirtyState;
   const touched = touchedProp ?? touchedState;
-  const markedDirtyRef = React50.useRef(dirty);
-  const registeredFieldIdRef = React50.useRef(undefined);
-  const [registeredFieldName, setRegisteredFieldName] = React50.useState();
+  const markedDirtyRef = React51.useRef(dirty);
+  const registeredFieldIdRef = React51.useRef(undefined);
+  const [registeredFieldName, setRegisteredFieldName] = React51.useState();
   const effectiveName = name ?? registeredFieldName;
   useIsoLayoutEffect(() => {
     if (dirtyProp !== undefined) {
       markedDirtyRef.current = dirtyProp;
     }
   }, [dirtyProp]);
-  const getRegisteredFieldId = React50.useCallback(() => registeredFieldIdRef.current, []);
-  const setRegisteredFieldId = React50.useCallback((id) => {
+  const getRegisteredFieldId = React51.useCallback(() => registeredFieldIdRef.current, []);
+  const setRegisteredFieldId = React51.useCallback((id) => {
     registeredFieldIdRef.current = id;
   }, []);
   const setDirty = useStableCallback((value) => {
@@ -25053,7 +25158,7 @@ var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2
   const formError = effectiveName && Object.hasOwn(errors, effectiveName) ? errors[effectiveName] : null;
   const hasFormError = !!(Array.isArray(formError) ? formError.length : formError);
   const invalid = invalidProp === true || hasFormError;
-  const [validityData, setValidityData] = React50.useState({
+  const [validityData, setValidityData] = React51.useState({
     state: DEFAULT_VALIDITY_STATE,
     error: "",
     errors: [],
@@ -25061,7 +25166,7 @@ var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2
     initialValue: null
   });
   const valid = disabled2 ? null : !invalid && validityData.state.valid;
-  const state = React50.useMemo(() => ({
+  const state = React51.useMemo(() => ({
     disabled: disabled2,
     touched,
     dirty,
@@ -25090,10 +25195,10 @@ var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2
     setValidityData,
     validityData
   });
-  React50.useImperativeHandle(actionsRef, () => ({
+  React51.useImperativeHandle(actionsRef, () => ({
     validate: validateFieldControl
   }), [validateFieldControl]);
-  const contextValue = React50.useMemo(() => ({
+  const contextValue = React51.useMemo(() => ({
     invalid,
     name: effectiveName,
     validityData,
@@ -25129,7 +25234,7 @@ var FieldRootInner = /* @__PURE__ */ React50.forwardRef(function FieldRootInner2
 });
 if (true)
   FieldRootInner.displayName = "FieldRootInner";
-var FieldRoot = /* @__PURE__ */ React50.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
+var FieldRoot = /* @__PURE__ */ React51.forwardRef(function FieldRoot2(componentProps, forwardedRef) {
   return /* @__PURE__ */ import_jsx_runtime10.jsx(LabelableProvider, {
     children: /* @__PURE__ */ import_jsx_runtime10.jsx(FieldRootInner, {
       ...componentProps,
@@ -25140,7 +25245,7 @@ var FieldRoot = /* @__PURE__ */ React50.forwardRef(function FieldRoot2(component
 if (true)
   FieldRoot.displayName = "FieldRoot";
 // node_modules/@base-ui/react/field/label/FieldLabel.mjs
-var React52 = __toESM(require_react(), 1);
+var React53 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/utils/useRegisteredLabelId.mjs
 "use client";
@@ -25220,21 +25325,21 @@ function focusElementWithVisible(element) {
 }
 
 // node_modules/@base-ui/react/field/item/FieldItemContext.mjs
-var React51 = __toESM(require_react(), 1);
+var React52 = __toESM(require_react(), 1);
 "use client";
-var FieldItemContext = /* @__PURE__ */ React51.createContext({
+var FieldItemContext = /* @__PURE__ */ React52.createContext({
   disabled: false
 });
 if (true)
   FieldItemContext.displayName = "FieldItemContext";
 function useFieldItemContext() {
-  const context = React51.useContext(FieldItemContext);
+  const context = React52.useContext(FieldItemContext);
   return context;
 }
 
 // node_modules/@base-ui/react/field/label/FieldLabel.mjs
 "use client";
-var FieldLabel = /* @__PURE__ */ React52.forwardRef(function FieldLabel2(componentProps, forwardedRef) {
+var FieldLabel2 = /* @__PURE__ */ React53.forwardRef(function FieldLabel3(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -25252,13 +25357,13 @@ var FieldLabel = /* @__PURE__ */ React52.forwardRef(function FieldLabel2(compone
     ...fieldRootContext.state,
     disabled: fieldRootContext.disabled || fieldItemContext.disabled
   };
-  const labelRef = React52.useRef(null);
+  const labelRef = React53.useRef(null);
   const labelProps = useLabel({
     id: labelId ?? idProp,
     native: nativeLabel
   });
   if (true) {
-    React52.useEffect(() => {
+    React53.useEffect(() => {
       if (!labelRef.current) {
         return;
       }
@@ -25285,16 +25390,16 @@ var FieldLabel = /* @__PURE__ */ React52.forwardRef(function FieldLabel2(compone
   return element;
 });
 if (true)
-  FieldLabel.displayName = "FieldLabel";
+  FieldLabel2.displayName = "FieldLabel";
 // node_modules/@base-ui/react/field/error/FieldError.mjs
-var React53 = __toESM(require_react(), 1);
+var React54 = __toESM(require_react(), 1);
 var import_jsx_runtime11 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var stateAttributesMapping4 = {
   ...fieldValidityMapping,
   ...transitionStatusMapping
 };
-var FieldError = /* @__PURE__ */ React53.forwardRef(function FieldError2(componentProps, forwardedRef) {
+var FieldError = /* @__PURE__ */ React54.forwardRef(function FieldError2(componentProps, forwardedRef) {
   const {
     render,
     id: idProp,
@@ -25342,9 +25447,9 @@ var FieldError = /* @__PURE__ */ React53.forwardRef(function FieldError2(compone
       setMessageIds((v) => v.filter((item) => item !== id));
     };
   }, [rendered, id, setMessageIds]);
-  const errorRef = React53.useRef(null);
-  const [lastRenderedMessage, setLastRenderedMessage] = React53.useState(null);
-  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React53.useState(null);
+  const errorRef = React54.useRef(null);
+  const [lastRenderedMessage, setLastRenderedMessage] = React54.useState(null);
+  const [lastRenderedMessageKey, setLastRenderedMessageKey] = React54.useState(null);
   let error2 = validityData.error;
   if (!hasSpecificMatch && hasFormError) {
     error2 = formError;
@@ -25395,9 +25500,9 @@ var FieldError = /* @__PURE__ */ React53.forwardRef(function FieldError2(compone
 if (true)
   FieldError.displayName = "FieldError";
 // node_modules/@base-ui/react/field/description/FieldDescription.mjs
-var React54 = __toESM(require_react(), 1);
+var React55 = __toESM(require_react(), 1);
 "use client";
-var FieldDescription = /* @__PURE__ */ React54.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
+var FieldDescription = /* @__PURE__ */ React55.forwardRef(function FieldDescription2(componentProps, forwardedRef) {
   const {
     render,
     id: idProp,
@@ -25437,10 +25542,10 @@ var FieldDescription = /* @__PURE__ */ React54.forwardRef(function FieldDescript
 if (true)
   FieldDescription.displayName = "FieldDescription";
 // node_modules/@base-ui/react/field/control/FieldControl.mjs
-var React58 = __toESM(require_react(), 1);
+var React59 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/utils/useControlled.mjs
-var React55 = __toESM(require_react(), 1);
+var React56 = __toESM(require_react(), 1);
 "use client";
 function useControlled({
   controlled,
@@ -25450,11 +25555,11 @@ function useControlled({
 }) {
   const {
     current: isControlled
-  } = React55.useRef(controlled !== undefined);
-  const [valueState, setValue] = React55.useState(defaultProp);
+  } = React56.useRef(controlled !== undefined);
+  const [valueState, setValue] = React56.useState(defaultProp);
   const value = isControlled ? controlled : valueState;
   if (true) {
-    React55.useEffect(() => {
+    React56.useEffect(() => {
       if (isControlled !== (controlled !== undefined)) {
         error([`A component is changing the ${isControlled ? "" : "un"}controlled ${state} state of ${name} to be ${isControlled ? "un" : ""}controlled.`, "Elements should not switch from uncontrolled to controlled (or vice versa).", `Decide between using a controlled or uncontrolled ${name} ` + "element for the lifetime of the component.", "The nature of the state is determined during the first render. It's considered controlled if the value is not `undefined`.", "More info: https://fb.me/react-controlled-components"].join(`
 `));
@@ -25462,15 +25567,15 @@ function useControlled({
     }, [state, name, controlled]);
     const {
       current: defaultValue
-    } = React55.useRef(defaultProp);
-    React55.useEffect(() => {
+    } = React56.useRef(defaultProp);
+    React56.useEffect(() => {
       if (!isControlled && serializeToDevModeString(defaultValue) !== serializeToDevModeString(defaultProp)) {
         error([`A component is changing the default ${state} state of an uncontrolled ${name} after being initialized. ` + `To suppress this warning opt to use a controlled ${name}.`].join(`
 `));
       }
     }, [defaultProp]);
   }
-  const setValueIfUncontrolled = React55.useCallback((newValue) => {
+  const setValueIfUncontrolled = React56.useCallback((newValue) => {
     if (!isControlled) {
       setValue(newValue);
     }
@@ -25505,13 +25610,13 @@ function serializeToDevModeString(input) {
 }
 
 // node_modules/@base-ui/react/internals/field-register-control/useRegisterFieldControl.mjs
-var React56 = __toESM(require_react(), 1);
+var React57 = __toESM(require_react(), 1);
 "use client";
 function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, enabled = true, name) {
   const {
     registerFieldControl
   } = useFieldRootContext();
-  const sourceRef = React56.useRef(null);
+  const sourceRef = React57.useRef(null);
   if (!sourceRef.current) {
     sourceRef.current = Symbol();
   }
@@ -25535,7 +25640,7 @@ function useRegisterFieldControl(controlRef, id, value, getFormValueOverride, en
 }
 
 // node_modules/@base-ui/react/internals/labelable-provider/useLabelableId.mjs
-var React57 = __toESM(require_react(), 1);
+var React58 = __toESM(require_react(), 1);
 "use client";
 function useLabelableId(params = {}) {
   const {
@@ -25550,8 +25655,8 @@ function useLabelableId(params = {}) {
   const defaultId = useBaseUiId(id);
   const controlIdForEffect = implicit ? controlId : undefined;
   const controlSourceRef = useRefWithInit(() => Symbol("labelable-control"));
-  const hasRegisteredRef = React57.useRef(false);
-  const hadExplicitIdRef = React57.useRef(id != null);
+  const hasRegisteredRef = React58.useRef(false);
+  const hadExplicitIdRef = React58.useRef(id != null);
   const unregisterControlId = useStableCallback(() => {
     if (!hasRegisteredRef.current || registerControlId === NOOP) {
       return;
@@ -25588,7 +25693,7 @@ function useLabelableId(params = {}) {
     registerControlId(controlSourceRef.current, nextId);
     return;
   }, [id, controlRef, controlIdForEffect, registerControlId, implicit, defaultId, controlSourceRef, unregisterControlId]);
-  React57.useEffect(() => {
+  React58.useEffect(() => {
     return unregisterControlId;
   }, [unregisterControlId]);
   return controlId ?? defaultId;
@@ -25596,7 +25701,7 @@ function useLabelableId(params = {}) {
 
 // node_modules/@base-ui/react/field/control/FieldControl.mjs
 "use client";
-var FieldControl = /* @__PURE__ */ React58.forwardRef(function FieldControl2(componentProps, forwardedRef) {
+var FieldControl = /* @__PURE__ */ React59.forwardRef(function FieldControl2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -25645,7 +25750,7 @@ var FieldControl = /* @__PURE__ */ React58.forwardRef(function FieldControl2(com
       setFilled(false);
     }
   }, [validation.inputRef, setFilled, valueProp]);
-  const inputRef = React58.useRef(null);
+  const inputRef = React59.useRef(null);
   useIsoLayoutEffect(() => {
     if (autoFocus && inputRef.current === activeElement(ownerDocument(inputRef.current))) {
       setFocused(true);
@@ -25710,7 +25815,7 @@ var FieldControl = /* @__PURE__ */ React58.forwardRef(function FieldControl2(com
 if (true)
   FieldControl.displayName = "FieldControl";
 // node_modules/@base-ui/react/field/validity/FieldValidity.mjs
-var React59 = __toESM(require_react(), 1);
+var React60 = __toESM(require_react(), 1);
 var import_jsx_runtime12 = __toESM(require_jsx_runtime(), 1);
 "use client";
 var FieldValidity = function FieldValidity2(props) {
@@ -25721,35 +25826,35 @@ var FieldValidity = function FieldValidity2(props) {
     validityData,
     invalid
   } = useFieldRootContext(false);
-  const combinedFieldValidityData = React59.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
+  const combinedFieldValidityData = React60.useMemo(() => getCombinedFieldValidityData(validityData, invalid), [validityData, invalid]);
   const isInvalid = combinedFieldValidityData.state.valid === false;
   const {
     transitionStatus
   } = useTransitionStatus(isInvalid);
-  const fieldValidityState = React59.useMemo(() => {
+  const fieldValidityState = React60.useMemo(() => {
     return {
       ...combinedFieldValidityData,
       validity: combinedFieldValidityData.state,
       transitionStatus
     };
   }, [combinedFieldValidityData, transitionStatus]);
-  return /* @__PURE__ */ import_jsx_runtime12.jsx(React59.Fragment, {
+  return /* @__PURE__ */ import_jsx_runtime12.jsx(React60.Fragment, {
     children: children(fieldValidityState)
   });
 };
 if (true)
   FieldValidity.displayName = "FieldValidity";
 // node_modules/@base-ui/react/field/item/FieldItem.mjs
-var React61 = __toESM(require_react(), 1);
+var React62 = __toESM(require_react(), 1);
 
 // node_modules/@base-ui/react/checkbox-group/CheckboxGroupContext.mjs
-var React60 = __toESM(require_react(), 1);
+var React61 = __toESM(require_react(), 1);
 "use client";
-var CheckboxGroupContext = /* @__PURE__ */ React60.createContext(undefined);
+var CheckboxGroupContext = /* @__PURE__ */ React61.createContext(undefined);
 if (true)
   CheckboxGroupContext.displayName = "CheckboxGroupContext";
 function useCheckboxGroupContext(optional = true) {
-  const context = React60.useContext(CheckboxGroupContext);
+  const context = React61.useContext(CheckboxGroupContext);
   if (context === undefined && !optional) {
     throw new Error("Base UI: CheckboxGroupContext is missing. CheckboxGroup parts must be placed within <CheckboxGroup>.");
   }
@@ -25759,7 +25864,7 @@ function useCheckboxGroupContext(optional = true) {
 // node_modules/@base-ui/react/field/item/FieldItem.mjs
 var import_jsx_runtime13 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var FieldItem = /* @__PURE__ */ React61.forwardRef(function FieldItem2(componentProps, forwardedRef) {
+var FieldItem = /* @__PURE__ */ React62.forwardRef(function FieldItem2(componentProps, forwardedRef) {
   const {
     render,
     className,
@@ -25779,7 +25884,7 @@ var FieldItem = /* @__PURE__ */ React61.forwardRef(function FieldItem2(component
   const checkboxGroupContext = useCheckboxGroupContext();
   const hasParentCheckbox = checkboxGroupContext?.allValues !== undefined;
   const controlId = hasParentCheckbox ? checkboxGroupContext?.parent.id : undefined;
-  const fieldItemContext = React61.useMemo(() => ({
+  const fieldItemContext = React62.useMemo(() => ({
     disabled: disabled2
   }), [disabled2]);
   const element = useRenderElement("div", componentProps, {
@@ -25801,7 +25906,7 @@ if (true)
 // node_modules/@base-ui/react/input/Input.mjs
 var import_jsx_runtime14 = __toESM(require_jsx_runtime(), 1);
 "use client";
-var Input = /* @__PURE__ */ React62.forwardRef(function Input2(props, forwardedRef) {
+var Input = /* @__PURE__ */ React63.forwardRef(function Input2(props, forwardedRef) {
   return /* @__PURE__ */ import_jsx_runtime14.jsx(exports_index_parts2.Control, {
     ref: forwardedRef,
     ...props
@@ -25810,50 +25915,12 @@ var Input = /* @__PURE__ */ React62.forwardRef(function Input2(props, forwardedR
 if (true)
   Input.displayName = "Input";
 // src/grapevine/surface/ui/input.tsx
-var jsx_dev_runtime7 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 function Input3({ className, type, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime7.jsxDEV(Input, {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(Input, {
     type,
     "data-slot": "input",
     className: cn("h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40", className),
-    ...props
-  }, undefined, false, undefined, this);
-}
-
-// node_modules/@base-ui/react/separator/Separator.mjs
-var React63 = __toESM(require_react(), 1);
-"use client";
-var Separator = /* @__PURE__ */ React63.forwardRef(function SeparatorComponent(componentProps, forwardedRef) {
-  const {
-    className,
-    render,
-    orientation = "horizontal",
-    style,
-    ...elementProps
-  } = componentProps;
-  const state = {
-    orientation
-  };
-  const element = useRenderElement("div", componentProps, {
-    state,
-    ref: forwardedRef,
-    props: [{
-      role: "separator",
-      "aria-orientation": orientation
-    }, elementProps]
-  });
-  return element;
-});
-if (true)
-  Separator.displayName = "Separator";
-// src/grapevine/surface/ui/separator.tsx
-var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
-"use client";
-function Separator2({ className, orientation = "horizontal", ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Separator, {
-    "data-slot": "separator",
-    orientation,
-    className: cn("shrink-0 bg-border data-horizontal:h-px data-horizontal:w-full data-vertical:w-px data-vertical:self-stretch", className),
     ...props
   }, undefined, false, undefined, this);
 }
@@ -25898,58 +25965,76 @@ function subscribedStatus(mode, channel, alias) {
 }
 
 // src/grapevine/surface/components/IdentityBox.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function IdentityBox({
   alias,
   mode,
   onAliasChange,
   onToggle
 }) {
-  const [draft, setDraft] = import_react4.useState(alias);
-  import_react4.useEffect(() => setDraft(alias), [alias]);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+  const [draft, setDraft] = import_react5.useState(alias);
+  const aliasId = import_react5.useId();
+  import_react5.useEffect(() => setDraft(alias), [alias]);
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
     className: "mt-5 flex flex-col gap-2",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Separator2, {
+      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Separator2, {
         className: "mb-2"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("h2", {
+      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("h2", {
         className: "m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
         children: "You"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Input3, {
-        value: draft,
-        placeholder: "set an alias",
-        disabled: mode === "join",
-        onChange: (e) => setDraft(e.target.value),
-        onBlur: () => onAliasChange(draft),
-        onKeyDown: (e) => {
-          if (e.key === "Enter")
-            onAliasChange(draft);
-        }
-      }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button3, {
-        variant: mode === "join" ? "joined" : "accent",
-        size: "sm",
-        disabled: toggleDisabled(mode, draft),
-        onClick: onToggle,
-        children: toggleLabel(mode)
-      }, undefined, false, undefined, this)
+      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldGroup, {
+        className: "gap-2",
+        children: [
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Field, {
+            children: [
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldLabel, {
+                htmlFor: aliasId,
+                className: "sr-only",
+                children: "Alias"
+              }, undefined, false, undefined, this),
+              /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Input3, {
+                id: aliasId,
+                value: draft,
+                placeholder: "set an alias",
+                disabled: mode === "join",
+                onChange: (e) => setDraft(e.target.value),
+                onBlur: () => onAliasChange(draft),
+                onKeyDown: (e) => {
+                  if (e.key === "Enter")
+                    onAliasChange(draft);
+                }
+              }, undefined, false, undefined, this)
+            ]
+          }, undefined, true, undefined, this),
+          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Field, {
+            children: /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
+              variant: mode === "join" ? "joined" : "accent",
+              size: "sm",
+              disabled: toggleDisabled(mode, draft),
+              onClick: onToggle,
+              children: toggleLabel(mode)
+            }, undefined, false, undefined, this)
+          }, undefined, false, undefined, this)
+        ]
+      }, undefined, true, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
 // src/grapevine/surface/ui/empty.tsx
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
 function Empty({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
     "data-slot": "empty",
     className: cn("flex w-full min-w-0 flex-1 flex-col items-center justify-center gap-4 rounded-xl border-dashed p-6 text-center text-balance", className),
     ...props
   }, undefined, false, undefined, this);
 }
 function EmptyHeader({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
     "data-slot": "empty-header",
     className: cn("flex max-w-sm flex-col items-center gap-2", className),
     ...props
@@ -25971,7 +26056,7 @@ function EmptyMedia({
   variant = "default",
   ...props
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
     "data-slot": "empty-icon",
     "data-variant": variant,
     className: cn(emptyMediaVariants({ variant, className })),
@@ -25979,7 +26064,7 @@ function EmptyMedia({
   }, undefined, false, undefined, this);
 }
 function EmptyDescription({ className, ...props }) {
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
     "data-slot": "empty-description",
     className: cn("text-sm/relaxed text-muted-foreground [&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary", className),
     ...props
@@ -25987,7 +26072,7 @@ function EmptyDescription({ className, ...props }) {
 }
 
 // src/grapevine/surface/components/MessageRow.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 var BODY = {
   message: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
   topic: "rounded-[10px] border border-dashed border-grape bg-transparent px-3.5 py-2.5 italic text-grape-soft",
@@ -26002,55 +26087,55 @@ function MessageRow({
 }) {
   const kind = m.kind || "message";
   const isReply = m.in_reply_to != null;
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     className: cn("group my-2.5 max-w-[720px]", isReply && "ml-6", kind === "announcement" && "rounded-md border-l-[3px] border-attention bg-announce-wash px-2.5 py-1.5"),
     children: [
-      isReply && parent && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+      isReply && parent && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "mb-1 flex max-w-full items-center gap-1.5 border-l-2 border-edge pl-2 font-mono text-[11px] text-ink-dim",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "text-grape-soft",
             children: "↳"
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "font-semibold",
             style: { color: aliasColor(parent.from) },
             children: parent.from
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "truncate",
             children: snippet(parent.text)
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "mb-1 flex items-baseline gap-2 text-xs",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: cn("font-mono font-semibold", kind === "topic" && "text-grape-soft"),
             style: kind === "topic" ? undefined : { color: aliasColor(m.from) },
             children: [
               fromLabel(m),
-              kind === "announcement" && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+              kind === "announcement" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
                 className: "italic opacity-60",
                 children: " · announced"
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "font-mono text-[11px] text-ink-dim",
             children: fmtTime(m.ts)
           }, undefined, false, undefined, this),
-          canReply && kind !== "topic" && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(Button3, {
+          canReply && kind !== "topic" && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button3, {
             variant: "ghost",
-            size: "xs",
+            size: "inline",
             className: "opacity-0 group-hover:opacity-100",
             onClick: () => onReply(m),
             children: "reply"
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: cn("whitespace-pre-wrap break-words", BODY[kind] ?? BODY.message),
         children: m.text
       }, undefined, false, undefined, this)
@@ -26059,7 +26144,7 @@ function MessageRow({
 }
 
 // src/grapevine/surface/components/MessageFeed.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 function MessageFeed({
   streamRef,
   messages,
@@ -26068,25 +26153,25 @@ function MessageFeed({
   onReply,
   children
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("main", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("main", {
     ref: streamRef,
     className: "scroll-smooth overflow-y-auto px-6 pt-4 pb-6",
     children: [
-      messages.length === 0 && /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Empty, {
+      messages.length === 0 && /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Empty, {
         className: "mx-auto my-[60px] max-w-[520px] flex-none",
-        children: /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyHeader, {
+        children: /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyHeader, {
           children: [
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyMedia, {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyMedia, {
               className: "text-[40px]",
               children: "\uD83C\uDF3F"
             }, undefined, false, undefined, this),
-            /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(EmptyDescription, {
+            /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(EmptyDescription, {
               children: "Waiting for messages on this channel…"
             }, undefined, false, undefined, this)
           ]
         }, undefined, true, undefined, this)
       }, undefined, false, undefined, this),
-      messages.map((m, idx) => /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(MessageRow, {
+      messages.map((m, idx) => /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(MessageRow, {
         m,
         parent: m.in_reply_to != null ? msgById(m.in_reply_to) : undefined,
         canReply,
@@ -26098,33 +26183,33 @@ function MessageFeed({
 }
 
 // src/grapevine/surface/components/Roster.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 function Roster({
   subscribers,
   humans,
   alias
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h2", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("h2", {
         className: "mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim",
         children: "On the line"
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("ul", {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("ul", {
         className: "m-0 list-none p-0",
         children: [
-          subscribers.length === 0 && /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("li", {
+          subscribers.length === 0 && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("li", {
             className: "py-1 font-mono text-xs italic text-ink-dim",
             children: "no one currently subscribed"
           }, undefined, false, undefined, this),
-          subscribers.map((a) => /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("li", {
+          subscribers.map((a) => /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("li", {
             className: "flex items-center gap-2 py-1 font-mono text-xs",
             style: { color: aliasColor(a) },
             children: [
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
                 className: "h-2 w-2 rounded-full bg-current"
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
+              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("span", {
                 children: subLabel(a, alias, humans)
               }, undefined, false, undefined, this)
             ]
@@ -26136,15 +26221,15 @@ function Roster({
 }
 
 // src/grapevine/surface/components/StatusBar.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 function StatusBar({ status, disconnected }) {
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("div", {
     className: "sticky bottom-0 border-t border-edge bg-surface px-3 py-2 font-mono text-[11px] text-ink-dim",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
-        className: cn("mr-1.5 inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full", disconnected ? "bg-attention" : "bg-leaf")
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
+        className: cn("mr-1.5 inline-block size-1.5 animate-pulse-dot rounded-full", disconnected ? "bg-attention" : "bg-leaf")
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime16.jsxDEV("span", {
         children: status
       }, undefined, false, undefined, this)
     ]
@@ -26152,39 +26237,39 @@ function StatusBar({ status, disconnected }) {
 }
 
 // src/grapevine/surface/state/useGrapevine.ts
-var import_react5 = __toESM(require_react(), 1);
+var import_react6 = __toESM(require_react(), 1);
 function useGrapevine() {
-  const [channel] = import_react5.useState(() => channelFromHash(location.hash));
-  const [topic, setTopicState] = import_react5.useState("");
-  const [status, setStatus] = import_react5.useState("connecting…");
-  const [disconnected, setDisconnected] = import_react5.useState(false);
-  const [feed, setFeed] = import_react5.useState(emptyFeed);
-  const [subscribers, setSubscribers] = import_react5.useState([]);
-  const [humans, setHumans] = import_react5.useState([]);
-  const [channels, setChannels] = import_react5.useState([]);
-  const [channelArchived, setChannelArchived] = import_react5.useState(false);
-  const [alias, setAliasState] = import_react5.useState(() => loadAlias(localStorage));
-  const [mode, setModeState] = import_react5.useState("lurk");
-  const [replyingTo, setReplyingTo] = import_react5.useState(null);
-  const feedRef = import_react5.useRef(feed);
-  const modeRef = import_react5.useRef("lurk");
-  const aliasRef = import_react5.useRef(alias);
-  const seenRef = import_react5.useRef(new Set);
-  const firstPollRef = import_react5.useRef(true);
-  const streamRef = import_react5.useRef(null);
-  const esRef = import_react5.useRef(null);
-  const genRef = import_react5.useRef(0);
-  const stickRef = import_react5.useRef(false);
-  const setTopic = import_react5.useCallback((t) => setTopicState(t || ""), []);
+  const [channel] = import_react6.useState(() => channelFromHash(location.hash));
+  const [topic, setTopicState] = import_react6.useState("");
+  const [status, setStatus] = import_react6.useState("connecting…");
+  const [disconnected, setDisconnected] = import_react6.useState(false);
+  const [feed, setFeed] = import_react6.useState(emptyFeed);
+  const [subscribers, setSubscribers] = import_react6.useState([]);
+  const [humans, setHumans] = import_react6.useState([]);
+  const [channels, setChannels] = import_react6.useState([]);
+  const [channelArchived, setChannelArchived] = import_react6.useState(false);
+  const [alias, setAliasState] = import_react6.useState(() => loadAlias(localStorage));
+  const [mode, setModeState] = import_react6.useState("lurk");
+  const [replyingTo, setReplyingTo] = import_react6.useState(null);
+  const feedRef = import_react6.useRef(feed);
+  const modeRef = import_react6.useRef("lurk");
+  const aliasRef = import_react6.useRef(alias);
+  const seenRef = import_react6.useRef(new Set);
+  const firstPollRef = import_react6.useRef(true);
+  const streamRef = import_react6.useRef(null);
+  const esRef = import_react6.useRef(null);
+  const genRef = import_react6.useRef(0);
+  const stickRef = import_react6.useRef(false);
+  const setTopic = import_react6.useCallback((t) => setTopicState(t || ""), []);
   const rendered = feed.messages.length;
-  import_react5.useLayoutEffect(() => {
+  import_react6.useLayoutEffect(() => {
     const el = streamRef.current;
     if (rendered > 0 && stickRef.current && el) {
       el.scrollTop = el.scrollHeight;
       stickRef.current = false;
     }
   }, [rendered]);
-  const refreshSubscribers = import_react5.useCallback(async () => {
+  const refreshSubscribers = import_react6.useCallback(async () => {
     try {
       const r2 = await fetch(`/channels/${encodeURIComponent(channel)}/subscribers`);
       const j = await r2.json();
@@ -26194,7 +26279,7 @@ function useGrapevine() {
         setTopic(j.topic);
     } catch {}
   }, [channel, setTopic]);
-  const refreshChannels = import_react5.useCallback(async () => {
+  const refreshChannels = import_react6.useCallback(async () => {
     try {
       const r2 = await fetch("/channels");
       const j = await r2.json();
@@ -26205,7 +26290,7 @@ function useGrapevine() {
       setChannelArchived(isChannelArchived(rows, channel));
     } catch {}
   }, [channel]);
-  const connect = import_react5.useCallback((m, a) => {
+  const connect = import_react6.useCallback((m, a) => {
     const myGen = ++genRef.current;
     esRef.current?.close();
     setDisconnected(false);
@@ -26248,7 +26333,7 @@ function useGrapevine() {
       }, 1000);
     });
   }, [channel, setTopic]);
-  import_react5.useEffect(() => {
+  import_react6.useEffect(() => {
     document.title = pageTitle(channel);
     let cancelled = false;
     (async () => {
@@ -26285,13 +26370,13 @@ function useGrapevine() {
       esRef.current?.close();
     };
   }, [channel, connect, refreshSubscribers, refreshChannels]);
-  const setAlias = import_react5.useCallback((raw) => {
+  const setAlias = import_react6.useCallback((raw) => {
     const a = commitAlias(localStorage, raw);
     aliasRef.current = a;
     setAliasState(a);
     return a;
   }, []);
-  const toggleMode = import_react5.useCallback(() => {
+  const toggleMode = import_react6.useCallback(() => {
     const n = nextMode(modeRef.current, aliasRef.current);
     if (!n)
       return;
@@ -26303,7 +26388,7 @@ function useGrapevine() {
     connect(n, aliasRef.current);
     refreshSubscribers();
   }, [channel, connect, refreshSubscribers, setAlias]);
-  const closeChannel = import_react5.useCallback(async (name) => {
+  const closeChannel = import_react6.useCallback(async (name) => {
     try {
       await fetch(`/channels/${encodeURIComponent(name)}`, { method: "DELETE" });
     } catch {}
@@ -26312,7 +26397,7 @@ function useGrapevine() {
     if (name === channel)
       location.hash = "lobby";
   }, [channel, refreshChannels]);
-  const send = import_react5.useCallback(async (draft) => {
+  const send = import_react6.useCallback(async (draft) => {
     const text = draft.trim();
     if (!text || modeRef.current !== "join")
       return false;
@@ -26360,33 +26445,33 @@ function useGrapevine() {
 }
 
 // src/grapevine/surface/App.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime17 = __toESM(require_jsx_dev_runtime(), 1);
 function App() {
   const g = useGrapevine();
   const joined = g.mode === "join";
-  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(jsx_dev_runtime17.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Header, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Header, {
         channel: g.channel,
         topic: g.topic
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
         className: "grid min-h-0 flex-1 grid-cols-[280px_1fr_220px]",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ChannelRail, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ChannelRail, {
             channels: g.channels,
             current: g.channel,
             onClose: g.closeChannel
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(MessageFeed, {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(MessageFeed, {
             streamRef: g.streamRef,
             messages: g.messages,
             msgById: g.msgById,
             canReply: joined && !g.channelArchived,
             onReply: g.replyTo,
             children: [
-              g.channelArchived && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(ArchivedNote, {}, undefined, false, undefined, this),
-              joined && !g.channelArchived && /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Composer, {
+              g.channelArchived && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(ArchivedNote, {}, undefined, false, undefined, this),
+              joined && !g.channelArchived && /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Composer, {
                 alias: g.alias,
                 replyingTo: g.replyingTo,
                 onCancelReply: g.cancelReply,
@@ -26394,15 +26479,15 @@ function App() {
               }, undefined, false, undefined, this)
             ]
           }, undefined, true, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime15.jsxDEV("aside", {
+          /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("aside", {
             className: "overflow-y-auto border-l border-edge bg-surface px-[18px] py-4",
             children: [
-              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Roster, {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Roster, {
                 subscribers: g.subscribers,
                 humans: g.humans,
                 alias: g.alias
               }, undefined, false, undefined, this),
-              /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(IdentityBox, {
+              /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(IdentityBox, {
                 alias: g.alias,
                 mode: g.mode,
                 onAliasChange: g.setAlias,
@@ -26412,7 +26497,7 @@ function App() {
           }, undefined, true, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(StatusBar, {
+      /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(StatusBar, {
         status: g.status,
         disconnected: g.disconnected
       }, undefined, false, undefined, this)
@@ -26421,7 +26506,7 @@ function App() {
 }
 
 // src/grapevine/surface/main.tsx
-var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime18 = __toESM(require_jsx_dev_runtime(), 1);
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime16.jsxDEV(App, {}, undefined, false, undefined, this));
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime18.jsxDEV(App, {}, undefined, false, undefined, this));

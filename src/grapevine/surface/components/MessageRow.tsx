@@ -57,7 +57,7 @@ export function MessageRow({
         {canReply && kind !== "topic" && (
           <Button
             variant="ghost"
-            size="xs"
+            size="inline"
             className="opacity-0 group-hover:opacity-100"
             onClick={() => onReply(m)}
           >

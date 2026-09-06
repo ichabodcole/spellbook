@@ -73,15 +73,13 @@ export function ChannelRail({
                         🔒
                       </span>
                     )}
-                    <Badge variant="count" className={cn(active && "text-leaf-soft")}>
-                      {c.subscribers}
-                    </Badge>
+                    <Badge variant={active ? "count-live" : "count"}>{c.subscribers}</Badge>
                   </span>
                 </a>
                 <Button
-                  variant="ghost"
+                  variant="destructive-ghost"
                   size="icon-xs"
-                  className="opacity-0 hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  className="opacity-0 group-hover:opacity-100"
                   title={`Close channel “${c.name}” (deletes message log)`}
                   onClick={() => setPending(c.name)}
                 >

@@ -21,6 +21,9 @@ const buttonVariants = cva(
         // once joined (leaf). Extend the cva config; never a parallel lookup.
         accent: "border-ring bg-transparent text-grape-soft hover:bg-primary/10",
         joined: "border-leaf bg-leaf/10 text-leaf-soft hover:bg-leaf/15",
+        // grapevine: a ghost that turns red on hover (the rail's close button).
+        "destructive-ghost":
+          "hover:bg-destructive/10 hover:text-destructive aria-expanded:bg-destructive/10 aria-expanded:text-destructive",
       },
       size: {
         default:
@@ -34,6 +37,11 @@ const buttonVariants = cva(
         "icon-sm":
           "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
         "icon-lg": "size-9",
+        // grapevine: a text-sized control that sits INSIDE a text line without
+        // changing its height (the feed's reply button lives in the text-xs
+        // meta line and is hidden at opacity-0 — a fixed-height size would
+        // reserve its box and re-flow every row when it appears).
+        inline: "h-auto gap-1 rounded-sm border-0 px-1 py-0 text-[0.6875rem] leading-none",
       },
     },
     defaultVariants: {

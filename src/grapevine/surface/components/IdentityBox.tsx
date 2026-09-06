@@ -7,8 +7,9 @@
 // you type; the toggle itself commits through the blur that precedes the
 // click.
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/ui/button";
+import { Field, FieldGroup, FieldLabel } from "@/ui/field";
 import { Input } from "@/ui/input";
 import { Separator } from "@/ui/separator";
 import { toggleDisabled, toggleLabel } from "../state/identity";
@@ -26,6 +27,7 @@ export function IdentityBox({
   onToggle: () => void;
 }) {
   const [draft, setDraft] = useState(alias);
+  const aliasId = useId();
   // The committed alias can change from outside the box (/identity resolves
   // after mount, R1; a commit trims, I3) — follow it, never the other way.
   useEffect(() => setDraft(alias), [alias]);
@@ -35,24 +37,34 @@ export function IdentityBox({
       <h2 className="m-0 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-dim">
         You
       </h2>
-      <Input
-        value={draft}
-        placeholder="set an alias"
-        disabled={mode === "join"}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => onAliasChange(draft)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") onAliasChange(draft);
-        }}
-      />
-      <Button
-        variant={mode === "join" ? "joined" : "accent"}
-        size="sm"
-        disabled={toggleDisabled(mode, draft)}
-        onClick={onToggle}
-      >
-        {toggleLabel(mode)}
-      </Button>
+      <FieldGroup className="gap-2">
+        <Field>
+          <FieldLabel htmlFor={aliasId} className="sr-only">
+            Alias
+          </FieldLabel>
+          <Input
+            id={aliasId}
+            value={draft}
+            placeholder="set an alias"
+            disabled={mode === "join"}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => onAliasChange(draft)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onAliasChange(draft);
+            }}
+          />
+        </Field>
+        <Field>
+          <Button
+            variant={mode === "join" ? "joined" : "accent"}
+            size="sm"
+            disabled={toggleDisabled(mode, draft)}
+            onClick={onToggle}
+          >
+            {toggleLabel(mode)}
+          </Button>
+        </Field>
+      </FieldGroup>
     </div>
   );
 }

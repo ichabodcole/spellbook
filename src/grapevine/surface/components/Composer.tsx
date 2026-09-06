@@ -1,8 +1,9 @@
 // P1–P7 — the compose box (join mode, unarchived channel only), the reply
 // banner above it, and the archived note that replaces it.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/ui/button";
+import { Field, FieldLabel } from "@/ui/field";
 import { Textarea } from "@/ui/textarea";
 import { aliasColor, snippet } from "../state/feed";
 import type { Message } from "../state/types";
@@ -27,6 +28,7 @@ export function Composer({
   onSend: (draft: string) => Promise<boolean>;
 }) {
   const [draft, setDraft] = useState("");
+  const draftId = useId();
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   // F6 — choosing a reply focuses the box.
@@ -60,30 +62,35 @@ export function Composer({
         </div>
       )}
       <form
-        className="flex items-end gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           submit();
         }}
       >
-        <Textarea
-          ref={inputRef}
-          className="max-h-40 min-h-0 flex-1 resize-none"
-          rows={1}
-          value={draft}
-          placeholder={`message as ${alias}…`}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            // P4 — Enter sends, Shift+Enter inserts a newline.
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-        />
-        <Button type="submit" disabled={!draft.trim()}>
-          send
-        </Button>
+        <Field orientation="horizontal" className="items-end">
+          <FieldLabel htmlFor={draftId} className="sr-only">
+            Message
+          </FieldLabel>
+          <Textarea
+            id={draftId}
+            ref={inputRef}
+            className="max-h-40 min-h-0 flex-1 resize-none"
+            rows={1}
+            value={draft}
+            placeholder={`message as ${alias}…`}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              // P4 — Enter sends, Shift+Enter inserts a newline.
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                submit();
+              }
+            }}
+          />
+          <Button type="submit" disabled={!draft.trim()}>
+            send
+          </Button>
+        </Field>
       </form>
     </div>
   );
