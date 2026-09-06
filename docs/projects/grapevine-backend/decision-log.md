@@ -66,3 +66,64 @@
   otherwise cut a major for a daemon whose only known consumers are in this
   repo. Cost if wrong: a consumer outside the repo sees a minor version and is
   surprised. Recorded here so the decision is visible rather than inferred.
+
+## 2026-09-06 — after the verify pass
+
+- **Idempotent routes emit on the FLIP, not on the call** (⚠1). The response
+  gains `changed: boolean` and `id: number | null` so an idempotent caller can
+  still tell what happened. Not taken: emitting always and letting consumers
+  de-duplicate (the log is the permanent record; a consumer cannot un-write it,
+  and a reader of the file six months later has no way to know which frames were
+  real); not taken: emitting only on the flip and saying nothing in the response
+  (the caller then infers "nothing changed" from an absent `id`, which is the
+  guess-from-silence this branch keeps removing).
+- **`archived` goes on the `subscribed` event, not into a new event** (⚠3). Same
+  one-field shape `created` took, same place a joiner already looks. Not taken:
+  a separate `event: archived` SSE frame at subscribe time (a second thing to
+  parse for a fact that belongs to the greeting); not taken: telling the joiner
+  to `pull` first (it makes every tail two round trips to learn something the
+  subscribe already knows).
+- **The grounding hints ACCUMULATE into a list rather than assigning to one
+  field.** Structural, not stylistic: three ordered assignments to `.hint` is a
+  hint that can silently lose to another hint. Cost of the list: a longer line
+  when several apply. Cost of what it replaces: a dropped signal, which is the
+  thing the branch exists to prevent.
+- **The surface signs with `topicFrom`, the signer it already had** (⚠2). Not
+  taken: a second, archive-specific signer (two rules to drift); not taken:
+  sending `from: "system"` explicitly when no identity resolves (it would make
+  the daemon unable to distinguish "no one told me" from "the caller means
+  system" — the body is omitted instead, and `system` stays the daemon's own
+  honest default).
+- **The two discriminators are ALIGNED rather than merely documented** (⚠5).
+  `isChannelNote` gains `disposition === undefined`. They stay two functions
+  because they answer different questions ("hide it?" vs "style it?"), but they
+  now share the rule that `disposition` means metadata. Not taken: leaving them
+  divergent and correcting only the inventory row — the record would have been
+  true and the behaviour would still have been a trap for the third frame kind;
+  not taken: exporting one predicate from a shared module — the backend ships as
+  source and shares nothing with the surface (seams Contract 3 does not fire for
+  grapevine), so the type is already a hand-kept copy and a second copy of the
+  rule is the honest cost of that seam.
+- **`hint` becomes the VERB, and the CLI renders the runnable command** (⚠6).
+  This is the "say which you chose and why" the ruling asked for: **a fully
+  pasteable form IS reliably derivable, but only by the CLI** — it is the thing
+  being invoked, and `process.argv[1]` is exactly its own path. The daemon
+  cannot derive it (a plugin-cache CLI can talk to a checkout's daemon), so it
+  would have had to guess a path and would sometimes have guessed wrong — a
+  command that is confidently wrong is worse than a verb reference. So: the wire
+  carries `open x` and is documented as a verb invocation; stderr carries
+  `try: bun /abs/.../cli.ts open x`, which was driven by pasting it. The
+  fallback, if `argv[1]` is ever absent, is `try the \`open x\` verb` — phrased
+  so it cannot be mistaken for something to paste.
+- **⚠4 recorded, not fixed** — per the ruling. What `open` persists is storage
+  semantics; the branch changes route behaviour. Filed as
+  `docs/backlog/2026-09-06-open-without-topic-writes-no-file.md` with three
+  options costed, and SKILL.md's banner now states the real blast radius. The
+  backlog item carries the sharper consequence the verifier implied but did not
+  spell out: it makes ruling 1's "open creates" only half true, because an open
+  whose intent was never written down does not outlive the process holding it.
+- **⚠7 left as filed** — the 409s carry no `hint`. Per the ruling, and it is
+  per-brief (which said to mirror `POST /messages`'s existing envelope). Noting
+  the cost so it stays a decision: an agent hitting `grapevine: archived` on
+  `topic` or `send` must still guess `unarchive`. The asymmetry with the 404s is
+  real; the fix is one line per 409 site whenever someone wants it.

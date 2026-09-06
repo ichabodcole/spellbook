@@ -5,11 +5,9 @@
 verify agent follows · **Contract:** [`../brief.md`](../brief.md), whose Rulings
 section was decided before the branch opened and was implemented as written.
 
-**Gate at close:** `bun run gate` (unpiped, exit read from a file) **exit 0** —
-1666 pass / 0 fail / 4881 expect() across 129 files. `bun scripts/dist-check.ts`
-**exit 0** — roster 6/6 buildable spells, 20 tracked files; reproduction:
-rebuild is a git no-op across every dist root. The grapevine CLI suite went 117
-→ 136 tests.
+**Gate at close of the first pass:** exit 0 — 1666 pass / 0 fail / 4881 expect()
+across 129 files; `dist-check` exit 0. **After the verify fixes:** the numbers
+are in _After verify_ below. The grapevine CLI suite went 117 → 136 → 144 tests.
 
 ## What shipped
 
@@ -19,7 +17,7 @@ rebuild is a git no-op across every dist root. The grapevine CLI suite went 117
 | `746788f` | **`tail` says when it created the channel.** `created` on the `subscribed` event; the CLI's `grounding` line carries it with a hint. `cmdTail`'s ensure removed — it was creating the channel a moment before the subscribe, so the flag could never be true.                                                                              |
 | `9e329fa` | **`topic` refuses an archived channel**, at the route (409, the guard `POST …/messages` has had since V1.7) and at the verb (which was discarding its ensure's 409). Recorded: `PUT …/topic` on a MISSING channel still creates — it is a write.                                                                                           |
 | `58ca14a` | **Archive and unarchive announce themselves.** A persisted `kind:"status"` frame with `event: "archived"`/`"unarchived"`; `pull` replays it, a tailing agent receives it, `triage` skips it, the watch feed renders it as a channel-level note (inventory F11). `open`'s auto-unarchive emits one too. `dist/` rebuilt in the same commit. |
-| _last_    | **The records and the wards** — SKILL.md's V2.2 banner, the verb table and the Channel-lifecycle prose; two decay-ledger rows reinforced; the journal, the decision log, this file.                                                                                                                                                        |
+| _prev_    | **The records and the wards** — SKILL.md's V2.2 banner, the verb table and the Channel-lifecycle prose; two decay-ledger rows reinforced; the journal, the decision log, this file.                                                                                                                                                        |
 
 ## What I drove, and what I did not
 
@@ -92,3 +90,68 @@ client's ensure can destroy a daemon-computed fact) and
 `carry-frame-just-value`. No house-style rule changed, so no scenario was
 written; the portable mechanism lives in the journal, which is the material this
 project intends to promote.
+
+## After verify — the five fixes
+
+The no-stake pass ([`../verify-journal.md`](../verify-journal.md), `e818455`)
+re-ran every claim above and they held, including the list-byte-identical sweep
+and the unforgeability of the frame; it also closed the dev-mode gap I had
+declared and found nothing there. It returned **ship with fixes**.
+
+| sha        | finding | what changed                                                                                                                                                                                                          |
+| ---------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `7bc27bd`  | ⚠1      | **The frame is emitted only when the state flipped.** Both lifecycle routes are idempotent; my emitter was not, so `unarchive` on a healthy channel wrote a false `unarchived` into its durable log and broadcast it. |
+| `fd23771`  | ⚠3      | **`archived` on the `subscribed` event** — the late joiner learns it on arrival rather than from a rejected send. The grounding hints now accumulate into a list instead of assigning to one field.                   |
+| `8f6152e`  | ⚠2, ⚠5  | **The surface signs its own act** with `topicFrom` (inventory L5a), and `isChannelNote` gains the `disposition`-absent clause so the two consumers agree. F11 corrected; the stale `daemon.ts` comment rewritten.     |
+| `8d78a0b`  | ⚠6, ⚠4  | **The hint is runnable** — the wire carries the verb, the CLI composes `bun …/cli.ts open x`. ⚠4 recorded not fixed: SKILL.md states the real blast radius, and a backlog item carries the storage question.          |
+| _this one_ | —       | The records: this section, the journal's §6 (why my own drive missed each one), and the decision log's after-verify entries.                                                                                          |
+
+**Gate after the fixes:** `bun run gate` unpiped, exit read from a file — **exit
+0**, 1677 pass / 0 fail / 4920 expect() across 129 files.
+`bun scripts/dist-check.ts` **exit 0** — 6/6 buildable spells, 20 tracked files,
+rebuild a git no-op across every dist root.
+
+### What I drove for each
+
+- **⚠1** — the verifier's exact repro, `archive ×3` then `unarchive ×3`: six
+  `ok:true` responses, `changed` true then false, **two** frames in the log.
+  Then the sharpest case it named: `unarchive` on a channel that was never
+  archived leaves a healthy log byte-for-byte alone. Then a live tail across
+  no-op → real → no-op, which received exactly one frame.
+- **⚠3** — the raw SSE greeting (`"archived":true`); a late `tail` printing both
+  the stderr warning and a grounding frame whose hint names the backfill **and**
+  the read-only state; and a healthy channel whose grounding is unchanged.
+- **⚠2** — **in Chrome, through the rail's right-click menu**, which is the act
+  I never performed in my own pass. All three signer arms: joined as `cole` →
+  `cole archived the channel`; lurking with `grapevine alias cole-default` →
+  `cole-default …`; no identity at all → `system …`.
+- **⚠6** — pasted the command out of stderr into a shell and watched it recover
+  the channel; the test now parses it out and executes it.
+- **⚠5** — unit cells for the both-fields frame on both sides.
+
+### Still not driven, after both passes
+
+A second concurrent watch tab; a daemon restart underneath a live CLI tail (the
+auto-reconnect path) — the verifier drove the sharper adjacent case, `close`
+under a live tail, which does not resurrect; and any consumer outside this
+machine's trees.
+
+## Release note — the true scope of the breaking change
+
+**Read verbs (`pull`, `read`, `wait`, `triage`, `topic <name>`) now refuse a
+channel the daemon cannot see.** This breaks two caller shapes, not one:
+
+1. **A wrapper that reads before it opens.** Intended, and it fails loudly on
+   first run.
+2. **A wrapper that opened first — if the daemon restarted in between.**
+   `open <name>` without `--topic` writes no log file, so the channel lives only
+   in the daemon's memory. `grapevine restart` (a documented healing action for
+   version skew) drops it, and the next read 404s. Mitigation: `open --topic`,
+   which writes a frame and therefore a file, or re-`open` after a restart.
+
+The second shape was found by the verify pass and is **understated in
+`71391cd`'s commit body**, which names only the first. It is stated correctly in
+SKILL.md's V2.2 banner and filed as
+`docs/backlog/2026-09-06-open-without-topic-writes-no-file.md`; that commit body
+was left alone rather than rewritten, because the session table above and the
+verify journal both cite these shas.

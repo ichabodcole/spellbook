@@ -229,3 +229,119 @@ In order of how much time each one saves.
 - **It did not mention that `pull` and `tail` already drop every `kind:"status"`
   frame**, which is the single largest piece of work in ruling 4 and the reason
   the frame needed a discriminator field at all.
+
+## 6. After verify — the fixes, and why my own drive missed them
+
+The no-stake pass ran every claim I made and they held. It then found seven
+things by attacking from angles I did not. **This section is the most useful
+part of the journal**, because the interesting question is not what it found but
+why a thorough author's drive did not.
+
+### ⚠1 — the frame that lied (`7bc27bd`)
+
+The one regression this branch introduced. Both lifecycle routes are idempotent,
+and my emitter was unconditional, so `unarchive` on a healthy channel wrote
+`event:"unarchived"` into its durable log and broadcast it to every tail. A
+false statement in the permanent record — the exact failure class the rest of
+the branch exists to remove — shipped inside the fix for it.
+
+**Why I missed it: I only ever drove the transitions.** Every one of my drives
+was `open → archive → unarchive`, because that is the story the ruling tells.
+The bug lives entirely in the _repeat_, and a repeat is not a story, so it never
+occurred to me to type it. The verifier typed `archive` three times because it
+had no story to protect.
+
+⚠ **The general form, and it is the transferable one: when you add an emitter to
+a route, the test that matters is calling it TWICE.** An idempotent route with a
+non-idempotent side effect is no longer idempotent, and nothing in the route's
+name says so. My own journal §4 already said "when you add an emitter to a
+route, re-ask that route's existence question" — I asked the existence question
+and not the idempotence one, which were the same question wearing two hats.
+
+⚠ **A second, quieter lesson: I had the correct pattern in my own diff.**
+`POST /channels {explicit:true}` emits only when `unarchived` actually flipped,
+and I wrote that guard myself, in this branch, in the same file. I did not carry
+it eight hundred lines down. A correct instance of a rule sitting in your own
+diff is not the same as having internalised the rule.
+
+### ⚠3 — the late joiner (`fd23771`)
+
+I read ruling 4 as the live case, and it is defensible on the text. It is not
+defensible against the backlog item's own complaint, which is that "an agent
+tailing a channel cannot see either party retire it and finds out when its next
+send is rejected" — still true, verbatim, for anyone connecting after the fact.
+
+**Why I missed it: I drove the frame's arrival, never an arrival at an archived
+channel.** My tail was always attached first, because that is what "a tailing
+agent receives it" made me build. The state I never occupied was _joining
+something already retired_.
+
+⚠ Fixing it surfaced a latent bug of mine. The grounding hints were three
+assignments to one `grounding.hint` field, ordered so the most important won —
+and I had written a comment congratulating myself on the ordering. That is a
+hint that silently loses to another hint, which is this branch's whole subject,
+sitting in the fix for it. It was invisible while `created` and the backfill
+hint were mutually exclusive; `archived` is exclusive with neither. **The hints
+are now a list joined with `·`, which cannot overwrite.** Structure beat
+ordering, and the ordering comment was the tell that ordering was load-bearing.
+
+### ⚠2 — the surface signed as `system` (`8f6152e`)
+
+The human archives from the rail while joined as `cole`, and the log records
+`from:"system"`.
+
+**Why I missed it: I drove the surface's RENDERING and the CLI's WRITING, and
+never the surface's writing.** My browser drive archived the channel _from the
+CLI in another process_ — deliberately, to prove the SSE path — so the surface
+was only ever a reader in my session. The one act I never performed in the
+browser is the one a human actually performs. **If a feature has a human path
+and an agent path, drive the human path with the human's hands, not with the
+agent's while a human watches.**
+
+⚠ **A stale comment kept it alive.** `daemon.ts`'s `lifecycleFrom` said "the
+watch surface and the CLI both POST these routes with no body today, so `system`
+is the honest default". That was stale _in the commit that introduced it_ — the
+CLI half changed in the same diff — and having written it, I read it back as a
+decision. **A comment describing a caller is a claim about a file you are not
+editing.** Re-read the caller, or do not make the claim.
+
+### ⚠5 — the two discriminators (`8f6152e`)
+
+The CLI classifies a status frame as metadata by the presence of `disposition`
+(so an unknown future frame stays visible); the surface classified a channel
+note by the presence of `event`. My inventory row asserted they were the same
+rule. They agreed on today's two frame kinds and diverged on any third.
+
+I aligned them rather than only documenting the divergence: `isChannelNote` now
+also requires `disposition` to be absent. They ask genuinely different questions
+("hide it?" vs "style it?") so they cannot be one predicate — but they can share
+the rule that `disposition` means metadata, and now do.
+
+**Why I missed it: I wrote the two predicates ninety minutes apart and never put
+them side by side.** The claim in the inventory row was written from memory of
+my own intent, not from reading both functions. A cross-consumer claim needs
+both files open.
+
+### ⚠6 — the hint you cannot run (`8d78a0b`)
+
+`hint: "grapevine open x"`, and `which grapevine` finds nothing.
+
+**Why I missed it: I read my own hint as a human reads a sentence, not as an
+agent reads an instruction.** I checked that it named the right verb. I never
+pasted it. The fix is a split by who actually knows: the daemon cannot render a
+runnable line (its client may live in a different install), so it names the ACT
+and the CLI composes the command from its own `process.argv[1]`. The test now
+parses the command out of stderr and _executes it_, which is the only kind of
+test that could have caught the original.
+
+### The pattern across all six
+
+Five of the seven findings are **states I never occupied**, not code I read
+wrong: a repeat call, an arrival at an already-archived channel, an act
+performed through the surface, two functions side by side, a hint pasted into a
+shell. My drive was thorough along the paths the rulings describe and blind
+exactly where the rulings stop describing. **A no-stake reader is worth more
+than a more careful author** — it has no story to protect, so it types the
+sequence the story does not contain. If you cannot get one, the cheapest
+substitute is to write down the states your rulings do _not_ mention and visit
+them deliberately.
