@@ -59,7 +59,9 @@ export function ChannelRail({
                   <span
                     className={cn(
                       "min-w-0 flex-1 truncate",
-                      c.archived && !active && "text-ink-dim",
+                      // C14 — muted whenever archived, active or not (the original's
+                      // `.row.archived .name` outranked the active colour on the span).
+                      c.archived && "text-ink-dim",
                     )}
                   >
                     {c.name}

@@ -22751,7 +22751,7 @@ function ChannelRail({
                     className: cn("flex min-w-0 flex-1 items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs text-ink no-underline", active && "font-semibold text-leaf-soft"),
                     children: [
                       /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
-                        className: cn("min-w-0 flex-1 truncate", c.archived && !active && "text-ink-dim"),
+                        className: cn("min-w-0 flex-1 truncate", c.archived && "text-ink-dim"),
                         children: c.name
                       }, undefined, false, undefined, this),
                       /* @__PURE__ */ jsx_dev_runtime4.jsxDEV("span", {
@@ -22966,6 +22966,9 @@ function Header({ channel, topic }) {
   }, undefined, true, undefined, this);
 }
 
+// src/grapevine/surface/components/IdentityBox.tsx
+var import_react4 = __toESM(require_react(), 1);
+
 // src/grapevine/surface/state/identity.ts
 var ALIAS_KEY = "grapevine:alias";
 var modeKey = (channel) => `grapevine:mode:${channel}`;
@@ -23022,6 +23025,8 @@ function IdentityBox({
   onAliasChange,
   onToggle
 }) {
+  const [draft, setDraft] = import_react4.useState(alias);
+  import_react4.useEffect(() => setDraft(alias), [alias]);
   return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
     className: "mt-5 flex flex-col gap-2 border-t border-edge pt-4",
     children: [
@@ -23031,17 +23036,21 @@ function IdentityBox({
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Input, {
         className: "font-mono text-xs",
-        defaultValue: alias,
+        value: draft,
         placeholder: "set an alias",
         disabled: mode === "join",
-        onChange: (e) => onAliasChange(e.target.value),
-        onBlur: (e) => onAliasChange(e.target.value)
-      }, alias, false, undefined, this),
+        onChange: (e) => setDraft(e.target.value),
+        onBlur: () => onAliasChange(draft),
+        onKeyDown: (e) => {
+          if (e.key === "Enter")
+            onAliasChange(draft);
+        }
+      }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Button, {
         variant: mode === "join" ? "joined" : "accent",
         size: "auto",
         className: "px-2 py-1.5 font-mono text-xs",
-        disabled: toggleDisabled(mode, alias),
+        disabled: toggleDisabled(mode, draft),
         onClick: onToggle,
         children: toggleLabel(mode)
       }, undefined, false, undefined, this)
@@ -23213,39 +23222,39 @@ function StatusBar({ status, disconnected }) {
 }
 
 // src/grapevine/surface/state/useGrapevine.ts
-var import_react4 = __toESM(require_react(), 1);
+var import_react5 = __toESM(require_react(), 1);
 function useGrapevine() {
-  const [channel] = import_react4.useState(() => channelFromHash(location.hash));
-  const [topic, setTopicState] = import_react4.useState("");
-  const [status, setStatus] = import_react4.useState("connecting…");
-  const [disconnected, setDisconnected] = import_react4.useState(false);
-  const [feed, setFeed] = import_react4.useState(emptyFeed);
-  const [subscribers, setSubscribers] = import_react4.useState([]);
-  const [humans, setHumans] = import_react4.useState([]);
-  const [channels, setChannels] = import_react4.useState([]);
-  const [channelArchived, setChannelArchived] = import_react4.useState(false);
-  const [alias, setAliasState] = import_react4.useState(() => loadAlias(localStorage));
-  const [mode, setModeState] = import_react4.useState("lurk");
-  const [replyingTo, setReplyingTo] = import_react4.useState(null);
-  const feedRef = import_react4.useRef(feed);
-  const modeRef = import_react4.useRef("lurk");
-  const aliasRef = import_react4.useRef(alias);
-  const seenRef = import_react4.useRef(new Set);
-  const firstPollRef = import_react4.useRef(true);
-  const streamRef = import_react4.useRef(null);
-  const esRef = import_react4.useRef(null);
-  const genRef = import_react4.useRef(0);
-  const stickRef = import_react4.useRef(false);
-  const setTopic = import_react4.useCallback((t) => setTopicState(t || ""), []);
+  const [channel] = import_react5.useState(() => channelFromHash(location.hash));
+  const [topic, setTopicState] = import_react5.useState("");
+  const [status, setStatus] = import_react5.useState("connecting…");
+  const [disconnected, setDisconnected] = import_react5.useState(false);
+  const [feed, setFeed] = import_react5.useState(emptyFeed);
+  const [subscribers, setSubscribers] = import_react5.useState([]);
+  const [humans, setHumans] = import_react5.useState([]);
+  const [channels, setChannels] = import_react5.useState([]);
+  const [channelArchived, setChannelArchived] = import_react5.useState(false);
+  const [alias, setAliasState] = import_react5.useState(() => loadAlias(localStorage));
+  const [mode, setModeState] = import_react5.useState("lurk");
+  const [replyingTo, setReplyingTo] = import_react5.useState(null);
+  const feedRef = import_react5.useRef(feed);
+  const modeRef = import_react5.useRef("lurk");
+  const aliasRef = import_react5.useRef(alias);
+  const seenRef = import_react5.useRef(new Set);
+  const firstPollRef = import_react5.useRef(true);
+  const streamRef = import_react5.useRef(null);
+  const esRef = import_react5.useRef(null);
+  const genRef = import_react5.useRef(0);
+  const stickRef = import_react5.useRef(false);
+  const setTopic = import_react5.useCallback((t) => setTopicState(t || ""), []);
   const rendered = feed.messages.length;
-  import_react4.useLayoutEffect(() => {
+  import_react5.useLayoutEffect(() => {
     const el = streamRef.current;
     if (rendered > 0 && stickRef.current && el) {
       el.scrollTop = el.scrollHeight;
       stickRef.current = false;
     }
   }, [rendered]);
-  const refreshSubscribers = import_react4.useCallback(async () => {
+  const refreshSubscribers = import_react5.useCallback(async () => {
     try {
       const r = await fetch(`/channels/${encodeURIComponent(channel)}/subscribers`);
       const j = await r.json();
@@ -23255,7 +23264,7 @@ function useGrapevine() {
         setTopic(j.topic);
     } catch {}
   }, [channel, setTopic]);
-  const refreshChannels = import_react4.useCallback(async () => {
+  const refreshChannels = import_react5.useCallback(async () => {
     try {
       const r = await fetch("/channels");
       const j = await r.json();
@@ -23266,7 +23275,7 @@ function useGrapevine() {
       setChannelArchived(isChannelArchived(rows, channel));
     } catch {}
   }, [channel]);
-  const connect = import_react4.useCallback((m, a) => {
+  const connect = import_react5.useCallback((m, a) => {
     const myGen = ++genRef.current;
     esRef.current?.close();
     setDisconnected(false);
@@ -23309,7 +23318,7 @@ function useGrapevine() {
       }, 1000);
     });
   }, [channel, setTopic]);
-  import_react4.useEffect(() => {
+  import_react5.useEffect(() => {
     document.title = pageTitle(channel);
     let cancelled = false;
     (async () => {
@@ -23346,13 +23355,13 @@ function useGrapevine() {
       esRef.current?.close();
     };
   }, [channel, connect, refreshSubscribers, refreshChannels]);
-  const setAlias = import_react4.useCallback((raw) => {
+  const setAlias = import_react5.useCallback((raw) => {
     const a = commitAlias(localStorage, raw);
     aliasRef.current = a;
     setAliasState(a);
     return a;
   }, []);
-  const toggleMode = import_react4.useCallback(() => {
+  const toggleMode = import_react5.useCallback(() => {
     const n = nextMode(modeRef.current, aliasRef.current);
     if (!n)
       return;
@@ -23364,7 +23373,7 @@ function useGrapevine() {
     connect(n, aliasRef.current);
     refreshSubscribers();
   }, [channel, connect, refreshSubscribers, setAlias]);
-  const closeChannel = import_react4.useCallback(async (name) => {
+  const closeChannel = import_react5.useCallback(async (name) => {
     try {
       await fetch(`/channels/${encodeURIComponent(name)}`, { method: "DELETE" });
     } catch {}
@@ -23373,7 +23382,7 @@ function useGrapevine() {
     if (name === channel)
       location.hash = "lobby";
   }, [channel, refreshChannels]);
-  const send = import_react4.useCallback(async (draft) => {
+  const send = import_react5.useCallback(async (draft) => {
     const text = draft.trim();
     if (!text || modeRef.current !== "join")
       return false;

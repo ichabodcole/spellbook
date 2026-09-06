@@ -217,10 +217,11 @@ test("the CLI's daemonCwd() picks the skill root in release and src/grapevine in
     process.env.SPELLBOOK_SURFACE_MODE = "dev";
     expect(daemonCwd().endsWith(join("src", "grapevine"))).toBe(true);
     delete process.env.SPELLBOOK_SURFACE_MODE;
-    // In THIS checkout dist/index.html is committed, so unforced = release.
-    expect(daemonCwd()).toBe(
-      existsSync(join(SKILL_SRC, "dist", "index.html")) ? SKILL_SRC : daemonCwd(),
-    );
+    // Unforced: the discriminator is the FILE dist/index.html. This checkout
+    // commits it, so both halves are asserted — the file is there, and the
+    // cwd therefore resolves to the skill root, not to src/grapevine.
+    expect(existsSync(join(SKILL_SRC, "dist", "index.html"))).toBe(true);
+    expect(daemonCwd()).toBe(SKILL_SRC);
   } finally {
     if (prev === undefined) delete process.env.SPELLBOOK_SURFACE_MODE;
     else process.env.SPELLBOOK_SURFACE_MODE = prev;
