@@ -127,3 +127,27 @@
   the cost so it stays a decision: an agent hitting `grapevine: archived` on
   `topic` or `send` must still guess `unarchive`. The asymmetry with the 404s is
   real; the fix is one line per 409 site whenever someone wants it.
+
+## 2026-09-06 — orchestrator, reversing the ⚠7 ruling
+
+The after-verify instruction said to leave the hintless 409s as filed, on the
+grounds that the brief had already decided it. The implementing agent pushed
+back, and it was right: the brief decided it **before** ⚠6 made the 404s render
+a runnable recovery, so what was a uniform silence became an asymmetry inside a
+single verb — `topic <missing>` names an act, `topic <archived>` does not. An
+agent that has learned to read `hint` reads its absence as "nothing recovers
+this", and unarchiving is exactly as guessable as opening was, which is to say
+not at all until something says it. The archived 409s now carry
+`hint: "unarchive <name>"` through the same helper.
+
+**Not taken: hinting the `live` 409 on a destructive reset.** Its recovery is
+`--force`, and a guard that exists to stop an agent dropping a live session
+should not end by suggesting the override. That refusal wants a human.
+
+**Not taken: leaving it for a follow-up branch** (the agent's own suggestion). A
+known one-line inconsistency shipped deliberately is how a rule stops being a
+rule; the follow-up would also have to re-open the same tests.
+
+_A wrong premise caught by its own test: the symmetry cell first compared the
+two WRITE forms of `topic` and found no asymmetry, because a write creates and
+therefore never refuses a missing channel. The read form is the missing arm._

@@ -2496,3 +2496,60 @@ describe("the recovery a refusal names is runnable (verify ⚠6)", () => {
     expect(after.code).toBe(0);
   });
 });
+
+describe("a retired channel's refusal names its recovery too (verify ⚠7)", () => {
+  test("topic on an archived channel refuses WITH the unarchive hint", async () => {
+    await bunRun(["open", "hinted-arch"]);
+    expect((await bunRun(["archive", "hinted-arch"])).code).toBe(0);
+
+    const refused = await bunRun(["topic", "hinted-arch", "a new topic"]);
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain("archived");
+    expect(refused.stderr).toContain(`try: bun ${CLI} unarchive hinted-arch`);
+  });
+
+  test("send to an archived channel refuses WITH the unarchive hint", async () => {
+    await bunRun(["open", "hinted-send"]);
+    expect((await bunRun(["archive", "hinted-send"])).code).toBe(0);
+
+    const refused = await bunRun(["send", "hinted-send", "nope", "--as", "agent"]);
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain(`try: bun ${CLI} unarchive hinted-send`);
+  });
+
+  test("what the archived refusal tells you to run, run verbatim, recovers", async () => {
+    await bunRun(["open", "hinted-run"]);
+    await bunRun(["archive", "hinted-run"]);
+    const refused = await bunRun(["topic", "hinted-run", "after the thaw"]);
+    const line = refused.stderr.split("try: ")[1]?.trim();
+    expect(line).toBeDefined();
+    const [runner, ...rest] = (line as string).split(" ");
+    const recovered = await new Promise<number>((resolve) => {
+      const proc = spawn(runner, rest, {
+        env: { ...process.env, GRAPEVINE_HOME: HOME },
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+      proc.on("exit", (c) => resolve(c ?? -1));
+    });
+    expect(recovered).toBe(0);
+    expect((await bunRun(["topic", "hinted-run", "after the thaw"])).code).toBe(0);
+  });
+
+  test("ONE verb answers two refusals the same way — the asymmetry ⚠7 named", async () => {
+    // `topic <missing>` already named its recovery; `topic <archived>` did not.
+    // An agent that learns to read the hint reads its absence as "unrecoverable".
+    //
+    // ⚠ The missing arm is the READ form (no text). `topic <name> <text>` is a
+    // write, and under the branch's first ruling a write CREATES — so the write
+    // form never refuses a missing channel at all. Comparing the two write
+    // forms finds no asymmetry because one of them is not a refusal.
+    const missing = await bunRun(["topic", "never-existed-at-all"]);
+    await bunRun(["open", "sym-arch"]);
+    await bunRun(["archive", "sym-arch"]);
+    const archived = await bunRun(["topic", "sym-arch", "x"]);
+
+    expect(missing.code).toBe(2);
+    expect(archived.code).toBe(2);
+    for (const s of [missing.stderr, archived.stderr]) expect(s).toContain("try: bun ");
+  });
+});

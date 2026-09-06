@@ -503,7 +503,7 @@ async function cmdSend(
   };
   if (opts.inReplyTo !== undefined) body.in_reply_to = opts.inReplyTo;
   const { status, data } = await api<SendReceipt>(port, "POST", `/channels/${name}/messages`, body);
-  if (status >= 400 || !data) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400 || !data) die(apiError(data, status));
   // Target echo on stderr — confirms WHERE the message landed so a misrouted
   // reply (right prompt, wrong channel) is caught the instant it happens (F9).
   // On stderr so it never pollutes the stdout JSON receipt, and it fires even
@@ -545,7 +545,7 @@ async function cmdAnnounce(
   const body: { from: string; text: string; channels?: string[] } = { from, text };
   if (channels?.length) body.channels = channels;
   const { status, data } = await api<AnnounceReceipt>(port, "POST", "/announce", body);
-  if (status >= 400 || !data) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400 || !data) die(apiError(data, status));
   process.stderr.write(
     `# announced → ${data.channels.length} channel(s) · ${data.total_recipients} recipient(s)\n`,
   );

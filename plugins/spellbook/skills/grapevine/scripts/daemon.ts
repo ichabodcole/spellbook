@@ -552,6 +552,24 @@ function missingChannel(name: string): Response {
   );
 }
 
+// The refusal for a channel that IS there and is retired. Same reasoning as
+// missingChannel, and the same `hint` contract (a VERB INVOCATION, not a shell
+// command — the CLI composes the runnable line from its own argv).
+//
+// ⚠ These 409s used to carry no hint while the 404s did, which made the SAME
+// verb answer two ways: `topic <missing>` named its recovery and
+// `topic <archived>` did not. An agent that has learned to read `hint` reads
+// its absence as "nothing recovers this". Unarchiving is exactly as guessable
+// as opening was, which is to say not at all until something says it.
+//
+// Deliberately NOT extended to the `live` 409 on a destructive reset: the act
+// that recovers from it is `--force`, and naming it would turn a guard that
+// exists to protect a live session into a suggestion to override it. That
+// refusal wants a human, not a hint.
+function archivedChannel(name: string): Response {
+  return json({ error: "archived", channel: name, hint: `unarchive ${name}` }, { status: 409 });
+}
+
 function json(data: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -713,7 +731,7 @@ async function handle(req: Request): Promise<Response> {
         }
         unarchived = true;
       } else if (body.explicit !== true && existsSync(ap)) {
-        return json({ error: "archived", channel: body.name }, { status: 409 });
+        return archivedChannel(body.name);
       }
       // open --fresh: clear the channel for a new session, but ONLY when no seats
       // are connected. A re-runnable convene must never wipe a live session.
@@ -973,7 +991,7 @@ async function handle(req: Request): Promise<Response> {
         return json({ error: "from and text required" }, { status: 400 });
       }
       if (existsSync(archivedPath(name))) {
-        return json({ error: "archived", channel: name }, { status: 409 });
+        return archivedChannel(name);
       }
       try {
         const inReplyTo = typeof body.in_reply_to === "number" ? body.in_reply_to : undefined;
@@ -1146,7 +1164,7 @@ async function handle(req: Request): Promise<Response> {
       // `archive x` then `topic x "t"` landed a frame on a read-only channel
       // and answered ok:true. Same status, same envelope as the sibling.
       if (existsSync(archivedPath(name))) {
-        return json({ error: "archived", channel: name }, { status: 409 });
+        return archivedChannel(name);
       }
       // Deliberately NO existence guard: under "only intent creates", a topic
       // WRITE declares that this channel should hold this, so it may create

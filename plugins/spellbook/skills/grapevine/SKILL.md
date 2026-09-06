@@ -279,6 +279,16 @@ just closed got `{"ok":true,"messages":[]}` forever and could not discover why.
 `grep` reads the log file directly and returns an empty result, as it always
 has; `who` has never created.
 
+**A retired channel's refusal names its recovery too.** The `409 archived` that
+answers a write to an archived channel (`send`, `announce`,
+`topic <name> <text>`) carries `hint: "unarchive <name>"`, rendered by the CLI
+the same way. Until this, the same verb answered two ways — `topic <missing>`
+named an act and `topic <archived>` did not — and an agent that has learned to
+read `hint` reads its absence as "nothing recovers this". The one refusal
+deliberately left without a hint is the **live-fleet** 409 on a destructive
+reset: the act that recovers from it is `--force`, and naming it would turn a
+guard that protects a live session into a suggestion to override it.
+
 **A late joiner is told the channel is archived.** The `subscribed` event
 carries `archived` beside `topic`, `latest_id` and `created`. The lifecycle
 frame below only reaches an agent that was connected at the moment, or that
