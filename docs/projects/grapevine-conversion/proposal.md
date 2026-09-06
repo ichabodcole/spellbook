@@ -48,8 +48,10 @@ components, and the cost compounds every time the spell grows.
 
 ## Proposed Solution
 
-**Grapevine first, serially, with the anthill team. Then bounty and digestify in
-parallel against what grapevine produced.**
+**Grapevine first, serially, ~~with the anthill team~~ — _amended 2026-09-05:
+via an orchestrator briefing one implementing subagent and one verify subagent;
+see [decision-log.md](./decision-log.md)_. Then bounty and digestify in parallel
+against what grapevine produced.**
 
 Grapevine is the right pathfinder on four measured grounds:
 
@@ -159,10 +161,16 @@ rewrite against no tests.
 
 ## Open Questions
 
-1. **What is the rewrite's oracle?** Blocking; owed by the plan phase.
-2. **How faithful must the rewrite be?** Pixel-faithful, behaviour-faithful, or
-   licensed to improve the design while it is open? This is a product call and
-   it changes the verification answer.
+1. ~~**What is the rewrite's oracle?** Blocking; owed by the plan phase.~~
+   **Ruled 2026-09-05:** a written behaviour inventory extracted from
+   `watch.html` before any component is written, driven by hand and by a
+   separate verify agent; route-contract and state-module tests where cheap. See
+   [the brief](./brief.md).
+2. ~~**How faithful must the rewrite be?** Pixel-faithful, behaviour-faithful,
+   or licensed to improve the design while it is open? This is a product call
+   and it changes the verification answer.~~ **Ruled by Cole 2026-09-05:
+   behaviour-faithful, restyled** onto the house token layer and vendored shadcn
+   primitives.
 3. **Does the `/watch` route's contract change?** If the daemon serves a built
    bundle, anything depending on the current static-file shape needs checking.
 
