@@ -33773,9 +33773,9 @@ function takeIntent(kv, channel) {
 function shouldCancelEdit(editing, disabled2) {
   return editing && disabled2;
 }
-function createFollowUpTopic(existed, topic) {
-  const t = topic.trim();
-  return existed && t ? t : null;
+function createTopicHint(existed, signer) {
+  const who = signer ?? "system";
+  return existed ? `Set as ${who}, if this channel has no topic yet. Use Edit topic to replace one.` : `Set as ${who}.`;
 }
 function archiveLabel(archived) {
   return archived ? "Unarchive" : "Archive";
@@ -35055,7 +35055,8 @@ function CreateChannelDialog({
   onCreate,
   onUnarchive,
   finalFocus,
-  signer
+  signer,
+  existingNames
 }) {
   const [name, setName] = import_react7.useState("");
   const [topic, setTopic] = import_react7.useState("");
@@ -35152,12 +35153,8 @@ function CreateChannelDialog({
                     onChange: (e) => setTopic(e.target.value)
                   }, undefined, false, undefined, this),
                   topic.trim() && /* @__PURE__ */ jsx_dev_runtime11.jsxDEV(FieldDescription, {
-                    children: [
-                      "Set as ",
-                      signer ?? "system",
-                      "."
-                    ]
-                  }, undefined, true, undefined, this)
+                    children: createTopicHint(existingNames.includes(name.trim()), signer)
+                  }, undefined, false, undefined, this)
                 ]
               }, undefined, true, undefined, this)
             ]
@@ -35388,7 +35385,8 @@ function ChannelRail({
         onCreate,
         onUnarchive: onUnarchiveAndGo,
         finalFocus: plusRef,
-        signer
+        signer,
+        existingNames: channels.map((c) => c.name)
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(AlertDialog, {
         open: pending !== null,
@@ -36187,7 +36185,6 @@ function useGrapevine() {
     return out;
   }, [refreshChannels]);
   const createChannel = import_react12.useCallback(async (name, topic2) => {
-    const existed = channels.some((c) => c.name === name);
     const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
     const body = { name };
     if (topic2.trim()) {
@@ -36207,23 +36204,13 @@ function useGrapevine() {
       outcome = { kind: "error", message: "daemon unreachable" };
     }
     if (outcome.kind === "created") {
-      const owed = createFollowUpTopic(existed, topic2);
-      if (owed) {
-        try {
-          await fetch(`/channels/${encodeURIComponent(name)}/topic`, {
-            method: "PUT",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ topic: owed, from: from ?? "system" })
-          });
-        } catch {}
-      }
       if (name === channel)
         refreshChannels();
       else
         location.hash = name;
     }
     return outcome;
-  }, [channel, channels, identityAlias, refreshChannels]);
+  }, [channel, identityAlias, refreshChannels]);
   const unarchiveAndGo = import_react12.useCallback(async (name) => {
     const r2 = await unarchiveChannel(name);
     if (r2.ok && name !== channel)

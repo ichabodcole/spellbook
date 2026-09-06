@@ -235,6 +235,7 @@ export function ChannelRail({
         onUnarchive={onUnarchiveAndGo}
         finalFocus={plusRef}
         signer={signer}
+        existingNames={channels.map((c) => c.name)}
       />
       <AlertDialog open={pending !== null} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>

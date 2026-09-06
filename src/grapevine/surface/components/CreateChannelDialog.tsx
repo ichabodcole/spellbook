@@ -15,7 +15,7 @@ import {
 } from "@/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/ui/field";
 import { Input } from "@/ui/input";
-import { type CreateOutcome, createArchivedText } from "../state/lifecycle";
+import { type CreateOutcome, createArchivedText, createTopicHint } from "../state/lifecycle";
 
 export function CreateChannelDialog({
   open,
@@ -24,6 +24,7 @@ export function CreateChannelDialog({
   onUnarchive,
   finalFocus,
   signer,
+  existingNames,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -34,6 +35,9 @@ export function CreateChannelDialog({
   finalFocus: React.RefObject<HTMLElement | null>;
   // Who a given topic is signed as (L3a); the daemon signs `system` otherwise.
   signer: string | null;
+  // L2c — the rail's channel names, so the topic hint can say what a typed
+  // topic will actually do for a name that already exists.
+  existingNames: string[];
 }) {
   const [name, setName] = useState("");
   const [topic, setTopic] = useState("");
@@ -109,7 +113,11 @@ export function CreateChannelDialog({
                 placeholder="what this channel is for"
                 onChange={(e) => setTopic(e.target.value)}
               />
-              {topic.trim() && <FieldDescription>Set as {signer ?? "system"}.</FieldDescription>}
+              {topic.trim() && (
+                <FieldDescription>
+                  {createTopicHint(existingNames.includes(name.trim()), signer)}
+                </FieldDescription>
+              )}
             </Field>
           </FieldGroup>
           <DialogFooter>

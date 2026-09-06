@@ -109,13 +109,16 @@ export function shouldCancelEdit(editing: boolean, disabled: boolean): boolean {
   return editing && disabled;
 }
 
-/** L2c — a topic typed for a channel that ALREADY existed is not set by
- *  `POST /channels` (the daemon sets it only when none exists), so the create
- *  follows with `PUT /topic` — the dialog promised `Set as <signer>`. Returns
- *  the topic to PUT, or null when nothing is owed. */
-export function createFollowUpTopic(existed: boolean, topic: string): string | null {
-  const t = topic.trim();
-  return existed && t ? t : null;
+/** L2c — what the create dialog promises for a typed topic. `POST /channels`
+ *  sets a topic only where none exists, and the create does NOT follow with a
+ *  PUT — the CLI's `open --topic` does not clobber either. So for a channel the
+ *  rail already lists the promise is conditional, and names the act that does
+ *  replace a topic. */
+export function createTopicHint(existed: boolean, signer: string | null): string {
+  const who = signer ?? "system";
+  return existed
+    ? `Set as ${who}, if this channel has no topic yet. Use Edit topic to replace one.`
+    : `Set as ${who}.`;
 }
 
 /** L1 — the context menu's archive verb for a row. */

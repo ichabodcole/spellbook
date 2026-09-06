@@ -98,3 +98,20 @@
   click did nothing — the item now mirrors `topicEditState` and shows the short
   reason. Not taken: a toast on click (a disabled item that says why is the
   shadcn-shaped answer).
+
+## 2026-09-06 — Cole, on the create-with-topic divergence
+
+- **The dialog no longer replaces an existing topic.** Ruled by Cole after the
+  divergence was put to him: the surface now does exactly what `POST /channels`
+  does — set a topic only where none exists — which is what the CLI's
+  `open --topic` has always done. The follow-up `PUT` is gone, and with it the
+  one case where the two paths disagreed. _Edit topic_ is the act that replaces
+  a topic, on both sides.
+- **The promise is made conditional rather than dropped.** The Topic field's
+  hint reads `Set as <signer>.` for a new name and
+  `Set as <signer>, if this channel has no topic yet. Use Edit topic to replace one.`
+  for a name the rail already lists — the dialog knows only what the rail lists,
+  because `GET /channels` carries no topic. Not taken: fetching the channel on a
+  name match to show its current topic (a request per keystroke, and it
+  duplicates _Edit topic_); reporting after the fact from the create response
+  (honest, but it tells the human only once the act is already done).

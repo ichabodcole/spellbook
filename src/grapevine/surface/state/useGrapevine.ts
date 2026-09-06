@@ -25,7 +25,6 @@ import {
 } from "./identity";
 import {
   type CreateOutcome,
-  createFollowUpTopic,
   createOutcome,
   loadShowArchived,
   parkIntent,
@@ -297,12 +296,12 @@ export function useGrapevine() {
   // topic, when given, is signed the way a topic edit is (L3) or falls to the
   // daemon's `system`. On success navigate: a hash change is a reload (C3);
   // creating the channel we are on is a no-op the poll confirms.
-  // L2c — the daemon sets the POST's topic only on a channel with none, so a
-  // topic typed for a channel the rail already lists is PUT afterwards (signed
-  // the same way; the CLI's `topic` verb is that PUT).
+  // L2c — the daemon sets the POST's topic only on a channel with none, and
+  // this deliberately does NOT follow with a PUT: the CLI's `open --topic`
+  // does not clobber an existing topic either, and the dialog's hint says so.
+  // Replacing a topic is _Edit topic_ (L3), one act with one path.
   const createChannel = useCallback(
     async (name: string, topic: string): Promise<CreateOutcome> => {
-      const existed = channels.some((c) => c.name === name);
       const from = topicFrom(modeRef.current, aliasRef.current, identityAlias);
       const body: { name: string; topic?: string; from?: string } = { name };
       if (topic.trim()) {
@@ -324,24 +323,12 @@ export function useGrapevine() {
         outcome = { kind: "error", message: "daemon unreachable" };
       }
       if (outcome.kind === "created") {
-        const owed = createFollowUpTopic(existed, topic);
-        if (owed) {
-          try {
-            await fetch(`/channels/${encodeURIComponent(name)}/topic`, {
-              method: "PUT",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ topic: owed, from: from ?? "system" }),
-            });
-          } catch {
-            // X1 — the header follows the stream either way
-          }
-        }
         if (name === channel) refreshChannels();
         else location.hash = name;
       }
       return outcome;
     },
-    [channel, channels, identityAlias, refreshChannels],
+    [channel, identityAlias, refreshChannels],
   );
 
   // L2 — the dialog's _Unarchive instead_: unarchive, then go there; a

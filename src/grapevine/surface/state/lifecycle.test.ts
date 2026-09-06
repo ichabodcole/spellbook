@@ -3,8 +3,8 @@ import type { KV } from "./identity";
 import {
   archiveLabel,
   createArchivedText,
-  createFollowUpTopic,
   createOutcome,
+  createTopicHint,
   hiddenArchivedCount,
   INTENT_KEY,
   loadShowArchived,
@@ -130,11 +130,17 @@ describe("the editor under an archive that lands mid-edit (L3c)", () => {
   });
 });
 
-describe("create on an existing channel with a topic (L2c)", () => {
-  test("owes a PUT only when the channel existed AND a topic was typed", () => {
-    expect(createFollowUpTopic(true, " t ")).toBe("t");
-    expect(createFollowUpTopic(true, "  ")).toBeNull();
-    expect(createFollowUpTopic(false, "t")).toBeNull();
+describe("the topic hint on the create dialog (L2c)", () => {
+  test("a new name promises the topic outright", () => {
+    expect(createTopicHint(false, "cole")).toBe("Set as cole.");
+  });
+  test("an existing name says the topic only lands on a channel with none", () => {
+    const hint = createTopicHint(true, "cole");
+    expect(hint).toContain("if this channel has no topic yet");
+    expect(hint).toContain("Edit topic");
+  });
+  test("no signer falls to the daemon's own author", () => {
+    expect(createTopicHint(false, null)).toBe("Set as system.");
   });
 });
 
