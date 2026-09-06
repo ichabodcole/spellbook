@@ -402,13 +402,14 @@ queue, and treating them as one is how a port gets estimated wrong:
 | spell         | surface today           | distance                                |
 | ------------- | ----------------------- | --------------------------------------- |
 | **bounty**    | Alpine in one HTML file | a surface **rewrite** first             |
-| **grapevine** | Alpine in one HTML file | a surface **rewrite** first             |
 | **digestify** | one HTML file + CDN     | **conditional** — see the trigger below |
 
-bounty and grapevine are Alpine single-pagers — porting them means rewriting the
-surface, which is a different project with a different budget. **A spell with no
-`surface/` is not yet a port subject**; the porting playbook's Applicability
-says the same thing from its side.
+bounty is an Alpine single-pager — porting it means rewriting the surface, which
+is a different project with a different budget. _(grapevine was, and went first:
+rewritten to React + tokens and ported on 2026-09-05 — the pathfinder for the
+rewrite-then-relocate phase, `docs/projects/grapevine-conversion/`.)_ **A spell
+with no `surface/` is not yet a port subject**; the porting playbook's
+Applicability says the same thing from its side.
 
 > _Repaired 2026-09-04: this paragraph carried a sentence with **no subject** —
 > "is already React and Tailwind; what stands between it and a build is moving

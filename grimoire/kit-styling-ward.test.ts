@@ -101,7 +101,7 @@ const KIT_CSS = join(REPO_ROOT, "src", "kit", "theme", "base.css");
  *  by the membership cell — a spell that adopts the kit and is not added here
  *  would otherwise leave this ward silently narrower than its title claims
  *  (seams Contract 19: a ward's population must follow its subject). */
-const KIT_CONSUMERS = ["imago", "mind-mapper"] as const;
+const KIT_CONSUMERS = ["grapevine", "imago", "mind-mapper"] as const;
 
 /** A utility used by a KIT component and by NOTHING else in the roster — the
  *  hand-written dots all spell it `w-2 h-2`. Its discrimination is asserted

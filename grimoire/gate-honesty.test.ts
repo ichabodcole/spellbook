@@ -158,10 +158,45 @@ import { join } from "node:path";
 // cell counts LINES, so it fires identically on a blank line and stays green on
 // a class name added to an existing line. Verified both directions. A red here
 // licenses "the blind set moved", never "the blind file is wrong".
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE REWRITE, ARRIVALS — 20/4,624 ->
+// 23/4,723. ⚠ The 4,624 is the OBJECT's own sum at the previous pin, not the
+// 4,611 the paragraph above ends on. `git log -p` on this object: glamour's
+// relocation (`cae26f8`) re-pathed its three ALREADY-BLIND entries from the
+// plugin folder to `src/glamour/` and its `styles.css` grew 12 -> 25 with the
+// `source(none)` prose — 4,611 + 13 = 4,624 — and that commit re-declared the
+// object without a paragraph. Start every reconciliation from the object's
+// own sum, and read the log before trusting the last paragraph's total.
+// Three files ENTER, and this is the expected shape of a rewrite's first
+// commit, not new blindness on the roster: the React surface for grapevine's
+// watch page arrives under `src/grapevine/` with the blind trio every built
+// spell carries —
+//     +74  src/grapevine/surface/styles.css   (L0 import, L1 aliases, L2 theme)
+//     +23  src/grapevine/surface/index.html
+//      +2  src/grapevine/bunfig.toml
+// 4,624 + 74 + 23 + 2 = 4,723 exactly, with nothing left over. `watch.html`
+// (1,000) is STILL HERE at this commit: the daemon does not serve the new
+// surface until the next chapter, and that commit re-declares its departure.
+//
+// ⛔ RE-DECLARED 2026-09-05 FOR THE GRAPEVINE REWRITE, DEPARTURE — 23/4,723 ->
+// 22/3,723. ONE file LEAVES, and it is the good direction: the daemon now
+// serves the built surface, so `watch.html` is deleted —
+//   -1,000  plugins/spellbook/skills/grapevine/scripts/watch.html
+// 4,723 - 1,000 = 3,723 exactly, with nothing left over. Its 1,000 lines of
+// Alpine + hand-rolled CSS did not become gateable by moving; they became
+// ~900 lines of .tsx/.ts under src/grapevine/surface/ that `bun run check`
+// reads and `bun test` exercises (state/*.test.ts), plus the 99 blind lines
+// declared above. Net for the roster: the blind set is 21.6% smaller than it
+// was this morning, and grapevine's own share of it fell from 1,000 to 99.
+//
+// ⛔ RE-DECLARED 2026-09-05 AFTER THE VERIFY PASS — 22/3,723 -> 22/3,724.
+// MEMBERSHIP DID NOT MOVE; one entry grew, and all of it is PROSE:
+//      +1  src/grapevine/surface/index.html   23 -> 24
+// the pre-boot background literal's comment now names the token it mirrors
+// (`--color-bg`) — the verifier's item 4. 3,723 + 1 = 3,724 exactly.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
-  "plugins/spellbook/skills/grapevine/scripts/watch.html": 1000,
   "src/mind-mapper/surface/styles.css": 238,
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,
@@ -174,6 +209,9 @@ const DECLARED_BLIND: Record<string, number> = {
   "src/imago/surface/index.html": 13,
   "src/magpie/surface/index.html": 13,
   "src/glamour/surface/styles.css": 25,
+  "src/grapevine/surface/styles.css": 74,
+  "src/grapevine/surface/index.html": 24,
+  "src/grapevine/bunfig.toml": 2,
   "src/mind-mapper/bunfig.toml": 4,
   "src/astrolabe/bunfig.toml": 2,
   "src/glamour/bunfig.toml": 2,

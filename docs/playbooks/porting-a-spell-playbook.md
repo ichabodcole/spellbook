@@ -1,8 +1,8 @@
 # Porting a Spell to the Built / Shared Layout — Playbook
 
-**Created:** 2026-08-31 **Last Updated:** 2026-09-03 **Status:** Active — second
-real run (glamour); **next real run after bounty or grapevine is rewritten**
-(nothing else in the roster is a subject; see Applicability)
+**Created:** 2026-08-31 **Last Updated:** 2026-09-05 **Status:** Active — third
+real run (grapevine, the first **rewrite**: Phase R is new and has run once);
+**next real run: bounty or digestify through Phase R** (see Applicability)
 
 ---
 
@@ -40,9 +40,11 @@ then neither is wrong.
 
 - The change stays inside one spell's already-ported tree. That is ordinary
   work.
-- The spell has no build input (no `surface/`, no shared module). There is
-  nothing to relocate. **A spell with no `surface/` is not yet a subject — the
-  rewrite comes first**; house-style's queue table says which spells that is.
+- The spell has no build input AND no page to rewrite (no `surface/`, no
+  single-file HTML surface, no shared module). ~~A spell with no `surface/` is
+  not yet a subject — the rewrite comes first.~~ _Amended 2026-09-05: a spell
+  whose surface is one hand-written HTML file **is** a subject — Phase R turns
+  the page into a `surface/`, then Phases 1–3 apply. First run: grapevine._
 - You are only editing `dist/` — you are not; `dist/` is generated. Edit the
   source and rebuild.
 
@@ -83,6 +85,9 @@ then neither is wrong.
 
 - **Instruments before the move.** A ward built after the relocation is
   calibrated against the damage.
+- **A rewrite's oracle is a written inventory, driven twice.** A page has no
+  tests; the inventory is the contract, the author drives it, a no-stake agent
+  drives it again at the keyboard (Phase R).
 - **Cut the seam before you relocate.** Prove the coupling is gone while
   everything is still where it was and still shippable; then move.
 - **The gate is not the proof. The local-sim is.** `bun test` runs in-repo with
@@ -94,8 +99,9 @@ then neither is wrong.
   the 1a/1c shape).
 
 **Overall Strategy:** make the invisible failure classes visible first
-(instruments), remove the coupling that the move would break (seam), move
-(relocation), then prove the thing the gate cannot see (local-sim).
+(instruments), **rewrite the page into a surface if there is none (Phase R)**,
+remove the coupling that the move would break (seam), move (relocation), then
+prove the thing the gate cannot see (local-sim).
 
 > **How well-tested this order is.** Phase 0 and Phase 3 have run on every port;
 > Phase 1 has run on two (magpie, glamour), and glamour ran the whole sequence
@@ -132,6 +138,131 @@ HEAD**.
 - [ ] Any vacuous ward prints its own vacuity.
 - [ ] Gate green at HEAD, unpiped, exit code read from a file — a piped `$?` is
       the pipe's, and this repo has burned actors on it.
+
+### Phase R: Rewrite — a page becomes a surface (between Phase 0 and Phase 1)
+
+**Goal:** a spell whose surface is one hand-written HTML file (Alpine over CDN,
+hand-rolled CSS, no tests) gains a `src/<spell>/surface/` that Phases 1–3 can
+then relocate and prove. **Run Phase 0 first** — the baselines and wards are the
+same, and the blind-set pin is about to move by the size of the page.
+
+**Applicability of this phase alone:** the spell has no `surface/`. First run:
+grapevine, 2026-09-05 (`docs/projects/grapevine-conversion/`). Population
+remaining: bounty, digestify. Bounty differs in one known way — see R7.
+
+> **What a rewrite has that a relocation does not: no oracle.** A relocation
+> carries its tests with it. A page has none, so the first artefact is a written
+> contract for the page's observable behaviour, and every later step is verified
+> against that contract rather than against the old markup. The fidelity ruling
+> sets what "faithful" means — grapevine's was _behaviour-faithful, restyled_ —
+> and it changes what the contract must capture. Get the ruling before R1.
+
+**R0 — read the destination before the subject.** The destination has a fixed
+shape, so the questions to ask of the page are the destination's questions.
+Three exemplars, one per artefact: the smallest recent port for `build.ts`,
+`bunfig.toml`, `index.html` (glamour); the vendored-primitive spell for
+`surface/ui/` and the L1 alias block in `styles.css` (mind-mapper, lines 46–60);
+the daemon's dev/release resolution and its two route-contract tests (glamour's
+`server.ts` 40–80, `tests/release-serve.test.ts`,
+`src/glamour/dev-styled.test.ts`). Then `ls grimoire/*.test.ts` and read what
+each population-derived ward demands of an arriving spell (R6).
+
+**R1 — the behaviour inventory, before any code.** One file under the project
+folder, one row per behaviour, each with the page's line range and a "how to
+drive it" step. Extract it from the script block, not the markup:
+
+```
+grep -n 'x-show\|x-if\|:class\|:disabled' <page>      # every visibility/state predicate
+grep -n 'fetch(\|EventSource\|setInterval\|setTimeout\|localStorage' <page>
+```
+
+Capture the **observable contract**: every route and its query params; every SSE
+event and what state it mutates; every persisted key; every visibility
+predicate; every timer; and every **silent branch** — an empty `catch {}` is a
+behaviour ("this error is not shown") and gets a row. Grapevine: 68 rows from
+1,000 lines. This file is what the verify agent drives; write it for them.
+
+**R2 — sort the state by what it touches.** Every method on the Alpine object
+goes in one of two bins: **touches nothing** (no DOM, network, timer) →
+`surface/state/*.ts`, pure, tested first, with storage **injected** so the
+persistence rules run under `bun test` with a Map; **touches one** → one hook
+(`useX.ts`), untested by unit. Every `x-data` field becomes React state in that
+hook or a parameter to a pure function. Wire types are a ~20-line **copy** in
+`state/types.ts` when the backend ships as source and shares nothing (an import
+from `plugins/…/scripts/daemon.ts` is a surface→backend reach the
+import-boundary wards forbid); they are an import from `shared/` only when a
+Phase 1 seam exists. Tests beside their subjects from the first commit.
+
+**R3 — one component per landmark element.** Walk the markup once; each
+`<header>`, `<aside>`, `<main>` region and each sticky foot becomes one
+component; every `x-show` in the inventory should have exactly one home.
+Grapevine: 8 components for 190 lines of markup. Resist a finer grain. Native
+`window.confirm` becomes the vendored `AlertDialog` (same text, same forced
+choice — and drivable by a browser agent). No custom button, input, badge,
+dialog or select where a vendored primitive exists; where the recipe and the
+page's look disagree, add a **variant**, not a stacked override (`cn()` does not
+conflict-resolve).
+
+**R4 — CSS to tokens, by role.** `styles.css` opens with the three lines the
+css-scope ward requires (`@import "tailwindcss" source(none)`, the kit
+`base.css` import, `@source "./"`). Map each `:root` property to the kit name
+for its **role** where one exists (`--bg`→`bg`, `--line`→`edge`,
+`--ink-mute`→`ink-dim`, `--warn`→`attention`); keep the brand pair under its own
+name; lift inline hard-codes into tokens; `@keyframes` into `@theme` as
+`--animate-*`. What stays in `styles.css` is only what a utility cannot express
+— grapevine's is 74 lines, half prose. Web fonts go with the CDN; the family
+names stay in the `--font-*` stacks and fall through to system faces — no build
+step replaces a web font, and the restyle ruling absorbs it.
+
+**R5 — the first surface commit is atomic with the build.** The dist-roster ward
+derives its roster from `src/<spell>/surface/index.html` existing, so the commit
+that adds it must also carry `build.ts` (the one-line delegator), `bunfig.toml`,
+the two `.gitignore` un-ignore lines and the built `dist/` — a source-only
+chapter cannot be green. The daemon **can** lag one commit: `dist/` exists, the
+daemon still serves the old page, the tree is shippable. Then the daemon commit:
+`git rm` the page FIRST (the `ls-files` wards read the index), pin the spawn cwd
+(**Contract 5 lands on whoever spawns the daemon** — grep `spawn(` in the CLI;
+grapevine's passed no cwd), and copy the exemplar's dev/release resolution.
+Where the surface lives at a sub-route (`/watch`) the release `index.html`'s
+relative chunk links resolve to bare root filenames, so add a release-only root
+fall-through before the 404. If the daemon prints no stdout handshake, `mode`
+has two transports (the info JSON and the stderr boot line), not three.
+
+**R6 — expect four wards to red, and re-declare by hand.** On arrival:
+kit-styling's `KIT_CONSUMERS` (importing `base.css` puts you in it),
+gate-honesty's pin (three files enter), import-boundary's pin (the dev import
+triple — `existsSync` the resolved path before pinning; the ward compares
+strings and would launder a typo). On departure: gate-honesty again (the page
+leaves). Reconcile gate-honesty's arithmetic from the **object's own sum**, not
+the last paragraph's total — the paragraph can be a re-declaration behind. Then
+the prose that names a spell's surface tier drifts too: `PROJECT-SUMMARY.md`,
+house-style's queue table, the decay ledger. A relocation cannot drift these; a
+rewrite does.
+
+**R7 — bounty's known difference.** Its `template.html` mirrors tested
+`server.ts` helpers in Alpine (the b16 lockstep). The inventory must pair each
+mirror with its helper, and the R2 state module should **import** the helper
+rather than re-mirror it — that is a Phase 1 seam cut, which grapevine did not
+have.
+
+**R8 — verify by a second agent, at the keyboard.** The author drives the
+inventory; a no-stake agent drives it again, and the difference is where the
+regressions are. Grapevine's one severe finding — an alias input that dropped
+focus on every keystroke — was invisible to the author because `fill()` fires
+one input event; **type with a per-key delay** for every input. Put a fixed-port
+pass-through proxy with an injector switch in front of the daemon **from the
+first load**, not when a reconnect row comes up (the page reconnects to its own
+origin forever, so a drive that starts on the daemon's port cannot drive a drop
+later without a fresh page); with `page.route` for the failure arms it covers
+the reconnect, malformed-frame, abort and 409 rows from one setup. **A
+`not: <why>` row is a claim the verifier will run** — five of grapevine's seven
+fell. The verifier also gap-reads the inventory against the old page; an
+under-specified row ("commits on change") is where the regression walked
+through.
+
+**Done when:** every inventory row carries _driven_, _test cell_, or _not
+driven + why_; the page and its CDN links are gone from index and disk; the
+spell is in the dist roster; the four wards are re-declared and green.
 
 ### Phase 1: Cut the seam, before anything moves
 
@@ -439,6 +570,35 @@ cells about import specifiers, because a pinned inventory records specifier
   from a document or a peer — five seats measured five floors on one tree, and
   every difference was the instrument.
 
+### Gotcha 8: A hash-only navigation is not a reload (rewrite drives)
+
+`goto` to the same URL with only the fragment changed is a fragment navigation:
+no page load, no `/identity` fetch, doubled `tail` entries, an input that keeps
+its state — and the surface's "reload on hash change" handler is the thing you
+were trying to test. Symptom: `performance.getEntriesByType("resource")` shows
+no page-load fetches and `navigation[0].type !== "reload"`. Fix: change the
+query string (`/watch?fresh=N#chan`) for a real load, and assert
+`navigation[0].type`. The same trap serves a cached bundle across a hash-only
+navigation after a rebuild with an identical hash.
+
+### Gotcha 9: The reconnect rows need a fixed-port proxy
+
+`stop` + any verb respawns a daemon on a NEW port, and the page reconnects to
+its own origin forever — so the CLI alone cannot drive an SSE drop-and-return. A
+~15-line pass-through proxy on a fixed port (stream the SSE body through) lets
+you kill the proxy, post to the daemon directly, restart the proxy, and watch
+the gap arrive once with every retry carrying `since=<highest>`. Three spells
+now have reconnect rows and no shared instrument; grapevine's lives in its
+session's scratchpad, uncommitted.
+
+### Gotcha 10: Compare a quirk against the pre-rewrite page before calling it a regression
+
+Boot the old daemon + page from git under its own scoped HOME and run the
+identical stimulus. Grapevine's burst-scroll quirk (the feed stops following
+under ~20 ms bursts) reproduced on the original at 300 px vs the rewrite's 295:
+a shared `scroll-behavior: smooth` artefact, recorded on the inventory row and
+not fixed — a fix is a behaviour change.
+
 ## Validation & Acceptance
 
 **Acceptance Criteria:**
@@ -498,6 +658,18 @@ artifact gaining a source file. **Lessons:** _prefer the most boring shared
 module, never the most valuable one_ — the valuable extraction's copies are
 usually different architectures. **Reference:** `475cb6a`.
 
+### Example 5: grapevine — the first rewrite, Phase R end to end
+
+A 1,000-line Alpine page with no tests became 8 components on 5 vendored
+primitives, a tested `state/` module and a 74-line stylesheet; the daemon serves
+the built `dist/` at `/watch`. A brief-driven implementing agent and a separate
+verify agent; the verifier found one severe regression the author's `fill()`
+drive could not see, and drove five of seven "not driven" rows. Full method in
+[the rewrite journal](../projects/grapevine-conversion/rewrite-journal.md) and
+[the verify journal](../projects/grapevine-conversion/verify-journal.md);
+inventory at
+[behaviour-inventory.md](../projects/grapevine-conversion/behaviour-inventory.md).
+
 ## Related Patterns
 
 - [`seams.md`](../../.anthill/dev/seams.md) — Contracts 1–5 (serve, `dist/`
@@ -536,3 +708,13 @@ port **taught**, not what it confirmed.
   section shrank and Phases 2–3 grew by more than that, because this port taught
   more than it confirmed. Scored by a cold read before and after
   (`docs/projects/glamour-conversion/plan/thoth.md`, B1/B4).
+- **2026-09-05** — **grapevine, the third real run, and the first rewrite.**
+  Taught: Phase R (a page has no oracle — inventory first, state sorted by what
+  it touches, one component per landmark, tokens by role, the first surface
+  commit atomic with the build, four wards red on arrival); three drive gotchas
+  (hash-only navigation is not a reload; reconnect rows need a fixed-port proxy;
+  compare a quirk against the old page from git); and that the author's drive is
+  not the verification — `fill()` missed the port's one regression, and five of
+  seven "not driven" reasons fell to a second agent. Applicability re-opened for
+  bounty and digestify. Written by the orchestrator from the two agents'
+  journals, not by either author.
