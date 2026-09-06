@@ -71,8 +71,8 @@ stop and report — the backend is out of scope.
   see the shadcn project's brief). `tooltip` if the disabled-topic hint needs
   one. Nothing hand-rolled where a registry primitive exists; the `shadcn`
   skill's Critical Rules apply (Field/FieldGroup in the create dialog;
-  DialogTitle; `data-icon`; `gap-*`; `size-*` except the kit-styling ward's
-  `size-2` sentinel).
+  DialogTitle; `data-icon`; `gap-*`; `size-*` except the kit-styling ward's 8
+  px-square sentinel, which is never spelled outside `src/kit/`).
 - **State:** the mutating calls (`POST /channels`, `PUT …/topic`,
   `POST …/archive`, `POST …/unarchive`) go in the hook next to the existing
   delete; the pure parts (the show-archived key, the visible-rows filter with

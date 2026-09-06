@@ -39,7 +39,7 @@
 
   /* L1 — the shadcn names the installed registry set consumes (button,
      badge, input, textarea, alert-dialog, dialog, context-menu, field,
-     label, switch, toggle, toggle-group, popover, separator, empty), each a
+     label, switch, tooltip, separator, empty), each a
      var() onto a grapevine token above. Never a value: the recipes keep
      their stock class vocabulary and resolve to this spell's palette. Add
      a name here when a newly added component consumes one; remove nothing

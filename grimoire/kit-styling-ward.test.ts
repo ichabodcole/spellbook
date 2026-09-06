@@ -169,10 +169,17 @@ describe("kit styling ward", () => {
           /\.(tsx|ts|html|css|md)$/.test(f) && !f.startsWith("src/kit/") && !f.includes("/dist/"),
       );
     expect(files.length).toBeGreaterThan(0); // a dead walk and a clean walk look identical
+    // ⚠ `\b` alone over-matches: a `.` is a word boundary, so the sentinel's
+    // fractional neighbour (the same stem followed by `.5`, which the registry's
+    // tooltip arrow uses) registered as a hit at 2026-09-05's grapevine UX
+    // branch. A Tailwind utility ends at whitespace, a quote or a bracket —
+    // never at `.`, `/` or `-`, which continue the class name. Measured: with
+    // the lookahead the tooltip recipe is clean and a planted bare sentinel
+    // in a .tsx still registers.
     const offenders: string[] = [];
     for (const f of files) {
       const text = await Bun.file(join(REPO_ROOT, f)).text();
-      if (new RegExp(`\\b${KIT_ONLY_UTILITY}\\b`).test(text)) offenders.push(f);
+      if (new RegExp(`\\b${KIT_ONLY_UTILITY}\\b(?![./-])`).test(text)) offenders.push(f);
     }
     expect(offenders).toEqual([]);
   });
