@@ -97,3 +97,43 @@ keys here), every visibility predicate (each `x-show`), every side-effect timer
 (two 3-second polls, one 1-second reconnect), and every _silent_ branch (each
 empty `catch {}` is a behaviour: "this error is not shown"). Line ranges, so the
 verify agent can read the source of a row without reading the file.
+
+## 2026-09-05 · 1. The inventory, then the state module — before any component
+
+**Order.** Inventory (`0e72a73`) → pure state module with tests → components.
+Why: the inventory is the spec; the state module is the spec's testable half;
+the components are the untestable half and should carry as little logic as
+possible. A relocation never faces this split because the logic already lives
+wherever it lives. ⛔ The playbook says nothing about **where the Alpine state
+goes**. What I did:
+
+- Every `x-data` field became either a piece of React state in one hook
+  (`useGrapevine.ts`, next step) or a parameter to a pure function.
+- Every method on the Alpine object was sorted by whether it touches the DOM,
+  the network, or a timer. **Touches none** → `state/*.ts`, tested (`hashHue`,
+  `snippet`, `subLabel`, `mergeChannels`, `appendMessage`, `tailUrl`, the mode
+  rules). **Touches one** → the hook, untested by unit (EventSource, the two 3 s
+  polls, the 1 s reconnect, `scrollTop`). The boundary is the same one glamour's
+  `derive.ts` / `useSession.ts` draws.
+- `localStorage` is **injected** (`KV` interface) so the identity rules run
+  under `bun test` with a Map. The three keys — `grapevine:alias`,
+  `grapevine:mode:<channel>` — are constants in one file now; the page had them
+  as string literals in four places.
+- The wire types (`Message`, the `/channels` row) are a **copy** in
+  `state/types.ts`, not an import from `daemon.ts`: grapevine's backend ships as
+  source and shares nothing (Contract 3 does not fire), so there is no `shared/`
+  folder and an import from `plugins/…/scripts/daemon.ts` would be a
+  surface→backend reach the import-boundary wards forbid. (glamour's surface
+  imports `../../../../plugins/spellbook/skills/glamour/shared/types` — a
+  `shared/` folder that exists because glamour's seam was cut. Grapevine's seam
+  has nothing to cut; the copy is the cheaper honest answer, and it is ~20
+  lines.)
+
+**Discovery.** → `grep -n 'x-show\|x-if\|:class\|:disabled' watch.html` gives
+every visibility and state predicate in one screen — 17 of them. Each is one
+inventory row and one boolean the components read. That grep is the fastest way
+to see a page's state machine; do it before the component split.
+
+**Verification.** `bun test src/grapevine/surface/state/` — 25 pass / 0 fail.
+Tests sit beside their subjects from the start (playbook Gotcha 6's remedy), so
+no `plugins/ → src/` edge ever exists.
