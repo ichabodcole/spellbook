@@ -64,3 +64,78 @@ sets swapped at runtime.
 **Not taken:** port the default only and file the rest as follow-up (ships a
 knowingly narrowed CLI); retire the two alternates (breaking CLI change, throws
 away commissioned artwork).
+
+## D6 · Three server-side HTML substitutions become two runtime derivations and one additive WS field
+
+**Ruled:** implementing agent, 2026-09-06.
+
+`template.html` is not served as a file — the daemon reads it and substitutes
+`__TITLE__`, `__SESSION_ID__` and `__WS_URL__` before every response
+(`server.ts:1498–1501`). A built `dist/index.html` is a static artifact the
+daemon serves verbatim (Contract 2), and in **dev** mode Bun's own HTMLBundle
+serves it, so there is no point at which the daemon can substitute in both
+modes. The three values are resolved instead as:
+
+- `__WS_URL__` → derived in the browser: `ws://${location.host}/ws`. The daemon
+  binds `127.0.0.1:<port>` and the page is served from that same origin, so the
+  string is identical.
+- `__TITLE__` → already canonical on the WS `init` frame; `applyInit` sets both
+  the state and `document.title`. The built page ships `<title>bounty</title>`
+  as the pre-connect placeholder.
+- `__SESSION_ID__` → an **additive `sessionId` field on the WS `init` frame**.
+
+**Not taken:** (a) keep the placeholders in the built HTML and have the release
+daemon `.replace()` them — works in release, silently does nothing in dev, so
+the two modes diverge in exactly the way Contract 1 exists to prevent; (b) a new
+`GET /session` route — the brief says _same routes_; (c) put `session_id` on
+`GET /state` — that route calls `touch()`, so a browser read would count as
+board activity and change the idle-close clock (a real behaviour change); (d)
+drop the session id from the header — it is the string a human pastes into a
+joining agent.
+
+The `init` frame was chosen because `server.ts`'s own b16 comment argues the
+case already: _"Rides `init` rather than a new message type because it is a boot
+fact, and `init` is the only frame that carries boot facts."_ `sessionId` is a
+boot fact. It is additive and browser-only: the agent-facing event log, `/state`
+and `/cmd` are untouched.
+
+## D7 · The seam is five symbols, not the ten the brief listed
+
+**Ruled:** implementing agent, 2026-09-06, from the consumer sets.
+
+The brief named ten pure predicates. Resolving consumers rather than reading the
+list: the surface uses **four** of them (`cardPassesFilter`, `cardOverdue`,
+`ownersOverWip`, `expectedMinutes`) plus a count form of the module-private
+`isBlocked`. `computeDuePokes`, `isNoOpMove`, `isNoOpUpdate`, `validateTask`,
+`cleanTags` and `snapshotTaskCount` have **no** surface consumer — the daemon
+alone enforces them — so they stay in `scripts/`.
+
+Note the shape, because it contradicts a naive reading of Phase 1 action 2:
+three of the four moving symbols (`cardOverdue`, `cardPassesFilter`,
+`ownersOverWip`) are **not called by the daemon at all** — their `server.ts`
+header comments say so explicitly ("NOT used by the daemon — it's the canonical
+the surface copies"). By _runtime_ consumer set they are surface-only; by
+_total_ consumer set they are two-sided, because `server.test.ts` is what guards
+them and it lives in `scripts/`. They go to `shared/` on the total set, which is
+what keeps `server.test.ts` passing with an import-path-only edit.
+
+**Not taken:** move the three surface-only-at-runtime helpers into
+`src/bounty/surface/state/` and re-point `server.test.ts` at them. That is a
+`plugins/ → src/` test edge, which is Gotcha 6's illegal small fix, and it would
+put the canonical predicate outside the shipped artifact.
+
+## D8 · `isBlocked` is re-expressed as `liveBlockerCount`
+
+**Ruled:** implementing agent, 2026-09-06.
+
+The surface needs a **count** (`⛔ blocked by 3`); the daemon needs a
+**boolean**. Rather than ship two implementations again — which is the exact
+defect this branch exists to remove — `shared/predicates.ts` exports
+`liveBlockerCount(task, tasks): number` and defines
+`isBlocked = liveBlockerCount(...) > 0`. `server.test.ts`'s existing cells are
+unchanged; they test `isBlocked` through the helpers that call it.
+
+**Not taken:** export only `isBlocked` and let the surface re-count (keeps the
+mirror alive, which is the thing being deleted); export only the count and make
+the daemon compare (a body change to a tested predicate, forbidden by the
+"import path only" rule).
