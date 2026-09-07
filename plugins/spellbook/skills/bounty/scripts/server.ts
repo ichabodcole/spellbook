@@ -67,6 +67,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
+import { expectedMinutes, isBlocked } from "../shared/predicates";
+// The seam (2026-09-06). Types and the four board predicates live one level up,
+// in the tracked skill subtree, so the React surface at src/bounty/ imports the
+// SAME code the daemon runs instead of hand-mirroring it in the page. `shared/`
+// is inside what the marketplace copies, so this resolves at the destination
+// with nothing installed (seams Contract 3, row 1).
+import type { BoardState, StatusVisit, Task, TaskSize, TaskStatus } from "../shared/types";
+import { SIZE_MINUTES } from "../shared/types";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -89,53 +97,8 @@ const SHUTDOWN_WATCHDOG_MS = Number(process.env.BOUNTY_SHUTDOWN_WATCHDOG_MS ?? 5
 // Diagnostics only — no board behavior reads this.
 const DAEMON_LOG = join(BOUNTY_HOME, "daemon.log");
 
-type TaskStatus = "todo" | "doing" | "review" | "done";
-type StatusVisit = { status: TaskStatus; at: number }; // a single transition (unix ms)
-type Task = {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  notes?: string;
-  owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
-  blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
-  tags?: string[]; // free-form labels; clean string[] (a future filter groups on them)
-  enteredStatusAt?: number; // unix ms the task entered its CURRENT status
-  statusHistory?: StatusVisit[]; // capped transition log (heartbeat/aging/metrics substrate)
-  size?: TaskSize; // heartbeat sizing — opt-in; maps to a default expected time
-  expect?: number; // explicit expected minutes (overrides size); for the rare exception
-};
-type BoardState = { title: string; tasks: Task[] };
-
 // Cap the per-task transition log so long-lived tasks don't bloat snapshots.
 const MAX_STATUS_HISTORY = 20;
-
-// Heartbeat sizing (#29). Three sizes only — agents are fast (a code change
-// rarely runs past ~20 min) and the absence of an XL is deliberate: a days-long
-// task is a signal to BREAK IT DOWN, not size it bigger. Minutes are tunable.
-type TaskSize = "S" | "M" | "L";
-const SIZE_MINUTES: Record<TaskSize, number> = { S: 5, M: 10, L: 20 };
-
-// A task's expected time in minutes, or undefined when it isn't watched.
-// Heartbeat is opt-in per task: an explicit `expect` wins, else the size's
-// default, else undefined (no size/expect → never poked).
-function expectedMinutes(task: Task): number | undefined {
-  if (typeof task.expect === "number" && task.expect > 0) return task.expect;
-  if (task.size && task.size in SIZE_MINUTES) return SIZE_MINUTES[task.size];
-  return undefined;
-}
-
-// A task is blocked iff a blockedBy id points at an EXISTING task that isn't
-// done yet (a missing or done blocker doesn't block) — the same predicate the
-// /state projection uses for `blocked`/`liveBlockers`. Pure + module-level so
-// the heartbeat poke + card-aging sweeps and reconcileBlocked all share it. A
-// blocked doing card is legitimately waiting on a peer, not stuck — neither
-// sweep should fire on it (#40; model the wait as `block <id> --on <peer>`).
-function isBlocked(task: Task, tasks: Task[]): boolean {
-  return (task.blockedBy ?? []).some((bid) => {
-    const b = tasks.find((t) => t.id === bid);
-    return b !== undefined && b.status !== "done";
-  });
-}
 
 type Poke = { taskId: string; owner?: string; overdueByMs: number; expectedMinutes: number };
 type PokeState = Map<string, number>; // taskId -> lastPokeAt (unix ms)
@@ -170,43 +133,6 @@ function computeDuePokes(
     }
   }
   return { pokes, pokeState: next };
-}
-
-// Card-aging (#2): the surface companion to heartbeat. A doing card that has an
-// expected time (size/expect) and has overrun it reads as "stale". Returns null
-// when the card shouldn't be cued (not doing, unsized, unstamped, or not yet
-// overdue) — opt-in, mirroring heartbeat. Returns both overdueByMs (an "Nm over"
-// badge) and ageMs (a "Doing Nm" badge) so the surface picks the wording. Pure +
-// clock-injected so it's unit-tested; the inline Alpine surface mirrors it (it
-// can't import — it ticks `now` client-side). NOT used by the daemon (no server
-// behavior change) — it's the canonical the surface copies.
-function cardOverdue(
-  task: Task,
-  tasks: Task[],
-  now: number,
-): { overdueByMs: number; ageMs: number } | null {
-  if (task.status !== "doing" || task.enteredStatusAt === undefined) return null;
-  const exp = expectedMinutes(task);
-  if (exp === undefined) return null;
-  if (isBlocked(task, tasks)) return null; // legitimately waiting on a peer — not stale
-  const ageMs = now - task.enteredStatusAt;
-  const overdueByMs = ageMs - exp * 60_000;
-  return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
-}
-
-// surface-filter: the canonical decision for whether a card survives the human's
-// view filter. Faceted — OR within a facet (any selected tag matches), AND across
-// facets (the tag-set AND the owner-set). An empty facet means "no filter on this
-// facet" → it passes. So no active filters at all → every card passes (default
-// view). Pure + state-free so it's unit-tested; the inline Alpine surface mirrors
-// it (it can't import). NOT used by the daemon — view-only narrowing, no server
-// behavior change. Hide (don't dim) cards that fail this, so column counts track
-// the visible set.
-function cardPassesFilter(task: Task, activeTags: string[], activeOwners: string[]): boolean {
-  const tagPass = activeTags.length === 0 || (task.tags ?? []).some((t) => activeTags.includes(t));
-  const ownerPass =
-    activeOwners.length === 0 || (task.owner !== undefined && activeOwners.includes(task.owner));
-  return tagPass && ownerPass;
 }
 
 // open-timeout: the idle-close decision, factored out so it's clock-free testable
@@ -262,26 +188,6 @@ function shouldRotateSnapshot(
   if (alreadyRotatedThisSession) return false;
   if (priorTaskCount === null) return false; // nothing readable to protect
   return nextTaskCount < priorTaskCount;
-}
-
-// wip-cue: the owners who have >= threshold cards in DOING — a soft, per-owner
-// WIP signal ("you've got a pileup; wrap one before pulling more"). Per-owner, so
-// legit parallel owners each under the limit never trip it. UNOWNED doing cards
-// have no worker, so they're excluded and don't count toward any owner's tally.
-// Pure so it's unit-tested; the inline Alpine surface mirrors it (it can't
-// import). NOT used by the daemon — a purely visual, non-blocking nudge (it can
-// never block the move), no server behavior change. A card shows the cue iff it
-// is in doing AND its owner is in this set.
-function ownersOverWip(tasks: Task[], threshold: number): Set<string> {
-  const counts = new Map<string, number>();
-  for (const t of tasks) {
-    if (t.status === "doing" && t.owner !== undefined) {
-      counts.set(t.owner, (counts.get(t.owner) ?? 0) + 1);
-    }
-  }
-  const over = new Set<string>();
-  for (const [owner, n] of counts) if (n >= threshold) over.add(owner);
-  return over;
 }
 
 // Stamp a status transition: the fields to merge onto a task entering `status`
@@ -1652,22 +1558,17 @@ if (import.meta.main) {
   process.exit(exitCode);
 }
 
-export type { BoardState, Task, TaskStatus };
 export {
   applyTaskAdd,
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
-  cardOverdue,
-  cardPassesFilter,
   cleanTags,
   computeDuePokes,
-  expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
   main,
-  ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
   shouldRotateSnapshot,

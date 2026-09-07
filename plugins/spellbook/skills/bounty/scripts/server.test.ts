@@ -28,6 +28,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  cardOverdue,
+  cardPassesFilter,
+  expectedMinutes,
+  ownersOverWip,
+} from "../shared/predicates";
+import type { BoardState, Task, TaskStatus } from "../shared/types";
+import {
   deriveSessionId,
   findScopeRoot,
   liveBoards,
@@ -44,22 +51,15 @@ import {
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
-  type BoardState,
-  cardOverdue,
-  cardPassesFilter,
   cleanTags,
   computeDuePokes,
-  expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
-  ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
   shouldRotateSnapshot,
   snapshotTaskCount,
-  type Task,
-  type TaskStatus,
   validateTask,
 } from "./server.ts";
 
