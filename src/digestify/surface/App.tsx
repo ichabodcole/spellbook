@@ -36,6 +36,28 @@ export function App({ payload }: { payload: Payload }) {
     review.clearSubmitError();
   }, [review.submitError, review.clearSubmitError]);
 
+  // ⛔ THE OLD PAGE EMPTIED `document.body` NODE BY NODE, and two of those
+  // nodes are not React's to remove: the payload island and the module script
+  // are siblings of `#root` in index.html. Leaving them means the sent screen
+  // still carries THE ENTIRE REVIEW TEXT in the document, under a line that
+  // says "you can close this tab" — which is the one thing about the old page's
+  // scorched-earth teardown that was doing real work.
+  //
+  // The honest residue, named rather than hidden: `#root` itself survives,
+  // because React is still mounted in it. The old page had no root to survive.
+  // Runs on the submit transition only; the nodes it removes are outside the
+  // React tree, so there is nothing here for React to re-own.
+  useEffect(() => {
+    if (!review.submitted) return;
+    document.getElementById("payload")?.remove();
+    // Not scoped to <body>: the bundler hoists the module script into <head>
+    // for the release build and leaves it in <body> in dev, and the sent screen
+    // should look the same either way.
+    for (const script of document.querySelectorAll('script[type="module"]')) {
+      script.remove();
+    }
+  }, [review.submitted]);
+
   if (review.submitted) return <SentScreen theme={theme} />;
 
   return (

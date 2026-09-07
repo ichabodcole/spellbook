@@ -237,12 +237,123 @@ sampled 31 · changed 31 · stylesheets removed 1 · inline <style> blocks 0
 The floor is 0 (no inline `<style>`), so any change proves the shipped sheet
 reaches the browser; 31 of 31 is the whole sampled set.
 
+## The verify pass, and what it cost
+
+Eight findings. The three defects I had found myself held up under re-driving,
+DOMPurify held under a much wider attack set (including an mXSS truncation the
+old page also does — not a regression), and all three themes drove clean on a
+second sample. What it found instead:
+
+**SEVERE — one of two HTML sinks was not memoised.** `QuestionCard`'s prompt
+re-rendered on every countdown tick, and React 19 re-applies
+`dangerouslySetInnerHTML` on every update: **6 nodes removed and 6 added, every
+second, forever, in both modes.** Three driven consequences — a comment anchored
+inside a prompt lost its chip's portal host and was therefore persisted and
+**submitted** while its owner could not see it; an editor opened on prompt text
+vanished within a second with the typed text and the focus; a selection inside a
+prompt was dropped within a second.
+
+**And the knowledge was already in the branch.** `sinks.test.ts` named both
+sinks in an array and asserted the memoisation property over one of them, by
+literal string, in a cell titled for the property with a comment explaining the
+exact consequence. **A guard that enumerates a set and then checks one member
+reports on its own diligence** — worse than no guard, because the list being
+correct is what makes it convincing. Both fixes landed: the two sinks are now
+one `SanitisedHtml` component, and the cell iterates the set it found
+(calibrated red by un-memoising it).
+
+**After the fix, measured the same way the verifier measured the defect:**
+
+```text
+MutationObserver on #doc .qprompt > div  ·  5.2 s (5 ticks)  ·  0 removed / 0 added
+MutationObserver on #doc (whole subtree) ·  5.2 s            ·  0 removed / 0 added
+```
+
+and the consequences, driven: chips in DOM **2** = comments in draft **2**, one
+of them inside a prompt and editable there; an editor open on prompt text
+survives two ticks with `value: "on the prompt"` and focus intact; a prompt
+selection survives a tick with its floating button. Highlighting still present.
+
+**HIGH — the breakpoint had moved 128 px.** Every responsive utility was
+`max-md:` (Tailwind's `md` is 768px) against the old page's single
+`@media (max-width: 640px)`. Re-driven at six widths after declaring
+`--breakpoint-narrow: 40.0625rem`:
+
+| width   | mascot  | `#doc` pad-left / top | header pad-left | prompt max-w | title max-w |
+| ------- | ------- | --------------------- | --------------- | ------------ | ----------- |
+| 639     | `none`  | 16 / 32               | 16              | 100%         | ~371px      |
+| **640** | `none`  | 16 / 32               | 16              | 100%         | ~371px      |
+| **641** | `block` | 24 / 40               | 28              | 88%          | `none`      |
+| **700** | `block` | 24 / 40               | 28              | 88%          | `none`      |
+| 760     | `block` | 24 / 40               | 28              | 88%          | `none`      |
+| 1280    | `block` | 24 / 40               | 28              | 88%          | `none`      |
+
+`max-width: 640px`, exactly. `max-sm:` would have been 639.
+
+**HIGH — dev mode at the repo root served Bun's "Build Failed" page.** The guard
+asked whether _a_ `bunfig.toml` existed in cwd, and the repo root has one with
+no plugins in it. After the change (the test is now whether the bunfig loads
+`bun-plugin-tailwind`), driven from three cwds:
+
+| cwd                    | bound? | exit     | served                           |
+| ---------------------- | ------ | -------- | -------------------------------- |
+| repo root              | **no** | **2**    | nothing — refused before binding |
+| `<repo>/src`           | **no** | **2**    | nothing — refused before binding |
+| `<repo>/src/digestify` | yes    | (killed) | the real page, `mode: "dev"`     |
+
+The refusal names the cwd it has as well as the one it needs.
+`dev-styled.test.ts` has a third arm for the repo root — the likeliest cwd an
+agent actually has, and the one the old two arms could not have caught, because
+the skill root has no bunfig at all.
+
+**MEDIUM/LOW, all fixed and driven.** The pill's ↻ hover reveal was dead
+(`group-hover:` with no `group` ancestor): now 0.55 resting → **1** hovered →
+0.55 after, driven with a real pointer move, and it has its own row (S25)
+because S21 and S24 were both green over it. The answer textarea auto-grew from
+the recipe's `field-sizing-content`: now **92 px → 92 px** across seven typed
+lines (`scrollHeight` 164), with a row (Q11). The sent screen kept the payload
+island: now `document.body.children` is `[DIV#root]` alone, **0**
+`script[type="module"]` anywhere, and the review's text absent from
+`document.documentElement.innerHTML`. `disabled:cursor-wait` was defeated by the
+recipe's `disabled:pointer-events-none`: restored with
+`disabled:pointer-events-auto`, measured `cursor: wait` (a disabled `<button>`
+dispatches no click either way). **T16 was falsified** — a 404'd `<img>` renders
+its `alt`, measured at 192×27 px, so the rule I called dead was reachable.
+
+**And one the verifier did not flag, found by driving T9 the way its row asks.**
+The mascot's reveal was a `data-has-src` flag this surface set beside the
+attribute, not the `[src]` selector the old page used. Identical for every input
+the payload can produce; different exactly when the attribute is removed at
+runtime. Now `[&[src]]:opacity-100`, driven: opacity 1 → **0** on
+`removeAttribute("src")`, in both themes that have a mascot.
+
+**The Driven column, again.** Eight cells rewritten. **T10 was green while
+broken**, for the pattern I swept for on the last branch — it recorded that a
+media query exists in the shipped sheet instead of where it fires. **X1 was the
+same shape** and it is where the dead `cursor: wait` was hiding. **Q2's verdict
+was right and its reasoning was wrong**: the old page's early return fires on an
+unknown id, not on nesting; what makes the deviation unreachable is that
+`QBLOCK_RE` is `^:::`-anchored. **Three rows did not exist at all** (S25, Q11,
+P10) and every one of them named a property that was broken.
+
+**Two `not:` rows fell.** S19 was an instrument limit I imagined — it needed two
+processes in the right order and no instrument — and it turned up a faithful
+transient I had not predicted. T16 was an inference stated as a measurement.
+Three remain (T15, A7, X9).
+
+**One for the notes, not for the fixes:** `skills-lock.json` gained a `shadcn`
+entry during the session, harness-written. Left untouched.
+
 ## Handover
 
 - The port is complete and green. **Not pushed, not merged** — orchestrator
   reviews, a no-stake verify agent drives the inventory again, Cole finalizes.
-- The verify agent's highest-value first move is **S19** (kill the daemon under
-  a loaded page, click the pill), then a **second sample of every visual row**,
-  seconds apart — that is where all three of this port's defects lived.
+- The verify pass is in and its findings are addressed. What it taught, for the
+  next person: **"sample twice" was not enough on its own.** I wrote that
+  amendment from three defects of that shape and then shipped a fourth of the
+  same shape, because the guard I pinned the fix with enumerated two sinks and
+  checked one. The sweep that finds that class is not a drive at all — it is
+  reading every cell whose subject is "a property of every X" and asking whether
+  it loops.
 - `skills-lock.json` and `.claude/skills/shadcn/` were never staged, stashed,
   committed or edited. `git status` is not empty and that is correct.

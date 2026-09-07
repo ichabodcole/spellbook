@@ -30222,14 +30222,13 @@ var require_common = __commonJS((exports, module) => {
 var import_client = __toESM(require_client(), 1);
 
 // src/digestify/surface/App.tsx
-var import_react8 = __toESM(require_react(), 1);
+var import_react10 = __toESM(require_react(), 1);
 
 // src/digestify/surface/components/AmbientMascot.tsx
 var jsx_dev_runtime = __toESM(require_jsx_dev_runtime(), 1);
 function AmbientMascot({ src, theme }) {
   return /* @__PURE__ */ jsx_dev_runtime.jsxDEV("img", {
-    className: "pointer-events-none fixed right-[max(22px,calc((100vw-1120px)/2))] bottom-[18px] z-2 w-[clamp(120px,16vw,220px)] translate-y-3 rotate-[-3deg] opacity-0 transition-[opacity,transform] duration-200 [filter:var(--mascot-filter)] max-md:hidden data-[has-src=1]:translate-y-0 data-[has-src=1]:opacity-100 data-[theme=classic]:hidden",
-    "data-has-src": src ? "1" : undefined,
+    className: "pointer-events-none fixed right-[max(22px,calc((100vw-1120px)/2))] bottom-[18px] z-2 w-[clamp(120px,16vw,220px)] translate-y-3 rotate-[-3deg] opacity-0 transition-[opacity,transform] duration-200 [filter:var(--mascot-filter)] max-narrow:hidden [&[src]]:translate-y-0 [&[src]]:opacity-100 data-[theme=classic]:hidden",
     "data-theme": theme,
     src: src || undefined,
     alt: "",
@@ -30242,7 +30241,7 @@ var import_common = __toESM(require_common(), 1);
 var common_default = import_common.default;
 
 // src/digestify/surface/components/DocumentView.tsx
-var import_react4 = __toESM(require_react(), 1);
+var import_react6 = __toESM(require_react(), 1);
 
 // src/digestify/surface/state/document.ts
 var VOID_TAGS = new Set([
@@ -36072,7 +36071,7 @@ function CommentEditor({ anchor, initialText, onSave, onCancel }) {
         placeholder: "Comment...",
         value: text2,
         onChange: (e) => setText(e.currentTarget.value),
-        className: "min-h-12.5 w-full rounded-lg border-edge px-2.5 py-2 text-base text-ink"
+        className: "field-sizing-fixed min-h-12.5 w-full rounded-lg border-edge px-2.5 py-2 text-base text-ink"
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
         className: "mt-2 flex gap-2",
@@ -36243,73 +36242,92 @@ function AnnotationLayer({ docRef, comments, active, onAdd, onEdit, onDelete }) 
 }
 
 // src/digestify/surface/components/QuestionCard.tsx
+var import_react5 = __toESM(require_react(), 1);
+
+// src/digestify/surface/components/SanitisedHtml.tsx
+var import_react4 = __toESM(require_react(), 1);
 var jsx_dev_runtime8 = __toESM(require_jsx_dev_runtime(), 1);
-function QuestionCard({ question, stampLines, initialAnswer, onAnswer }) {
+var SanitisedHtml = import_react4.memo(function SanitisedHtml2({
+  html: html3,
+  className
+}) {
   return /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+    className,
+    dangerouslySetInnerHTML: { __html: html3 }
+  }, undefined, false, undefined, this);
+});
+
+// src/digestify/surface/components/QuestionCard.tsx
+var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+function QuestionCard({ question, stampLines, initialAnswer, onAnswer }) {
+  const prompt = import_react5.useMemo(() => renderMd(question.prompt), [question.prompt]);
+  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
     className: "relative my-8 overflow-hidden rounded-lg border border-edge bg-surface bg-[image:var(--question-bg)] p-6 shadow-[var(--elevation-card)] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-question-accent before:content-['']",
     children: [
-      stampLines.length > 0 ? /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
+      stampLines.length > 0 ? /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
         "aria-hidden": "true",
         className: "absolute top-3.5 right-4.5 rotate-[-8deg] text-[22px] leading-[0.95] font-black uppercase text-[color-mix(in_srgb,var(--color-brand-strong)_16%,transparent)]",
-        children: stampLines.map((line) => /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("span", {
+        children: stampLines.map((line) => /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("span", {
           className: line.small ? "block text-[0.62em] tracking-[0.03em]" : "block",
           children: line.text
         }, line.text, false, undefined, this))
       }, undefined, false, undefined, this) : null,
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
-        className: "qprompt relative mx-0 mt-0 mb-3.5 flex max-w-[88%] items-start gap-2.5 max-md:max-w-full",
-        children: /* @__PURE__ */ jsx_dev_runtime8.jsxDEV("div", {
-          className: "doc-prose min-w-0 flex-auto [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p:first-child]:font-extrabold [&>p]:mx-0 [&>p]:mt-0 [&>p]:mb-2.5",
-          dangerouslySetInnerHTML: { __html: renderMd(question.prompt) }
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
+        className: "qprompt relative mx-0 mt-0 mb-3.5 flex max-w-[88%] items-start gap-2.5 max-narrow:max-w-full",
+        children: /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(SanitisedHtml, {
+          html: prompt,
+          className: "doc-prose min-w-0 flex-auto [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p:first-child]:font-extrabold [&>p]:mx-0 [&>p]:mt-0 [&>p]:mb-2.5"
         }, undefined, false, undefined, this)
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime8.jsxDEV(Textarea, {
+      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(Textarea, {
         placeholder: "Your answer...",
         defaultValue: initialAnswer,
         onInput: (e) => onAnswer(question.id, e.currentTarget.value),
-        className: "min-h-23 w-full resize-y rounded-lg border-edge bg-surface px-3.5 py-3 text-base text-ink"
+        className: "field-sizing-fixed min-h-23 w-full resize-y rounded-lg border-edge bg-surface px-3.5 py-3 text-base text-ink"
       }, undefined, false, undefined, this)
     ]
   }, undefined, true, undefined, this);
 }
 
 // src/digestify/surface/components/DocumentView.tsx
-var jsx_dev_runtime9 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
 function DocumentView(props) {
   const { payload, theme, comments, initialAnswers, active, onAnswer } = props;
-  const docRef = import_react4.useRef(null);
-  const segments = import_react4.useMemo(() => splitDocument(renderMd(payload.markdown)), [payload.markdown]);
-  const questions = import_react4.useMemo(() => new Map(payload.questions.map((q) => [q.id, q])), [payload.questions]);
-  import_react4.useEffect(() => {
+  const docRef = import_react6.useRef(null);
+  const segments = import_react6.useMemo(() => splitDocument(renderMd(payload.markdown)), [payload.markdown]);
+  const questions = import_react6.useMemo(() => new Map(payload.questions.map((q) => [q.id, q])), [payload.questions]);
+  import_react6.useEffect(() => {
     for (const el of docRef.current?.querySelectorAll("pre code") ?? []) {
       common_default.highlightElement(el);
     }
   }, []);
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("main", {
+  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("main", {
     id: "doc",
     ref: docRef,
-    className: "doc-prose relative mx-auto max-w-[860px] px-6 pt-10 pb-30 max-md:px-4 max-md:pt-8 max-md:pb-24",
+    className: "doc-prose relative mx-auto max-w-[860px] px-6 pt-10 pb-30 max-narrow:px-4 max-narrow:pt-8 max-narrow:pb-24",
     children: [
       segments.map((segment, i) => {
         if (segment.kind === "html") {
-          return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(HtmlSegment, {
-            html: segment.html
+          return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SanitisedHtml, {
+            html: segment.html,
+            className: "contents"
           }, `html-${i}`, false, undefined, this);
         }
         const question = questions.get(segment.id);
         if (!question) {
-          return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(HtmlSegment, {
-            html: segment.marker
+          return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(SanitisedHtml, {
+            html: segment.marker,
+            className: "contents"
           }, `orphan-${i}`, false, undefined, this);
         }
-        return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(QuestionCard, {
+        return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(QuestionCard, {
           question,
           stampLines: theme.stampLines,
           initialAnswer: initialAnswers[question.id],
           onAnswer
         }, `q-${segment.id}`, false, undefined, this);
       }),
-      /* @__PURE__ */ jsx_dev_runtime9.jsxDEV(AnnotationLayer, {
+      /* @__PURE__ */ jsx_dev_runtime10.jsxDEV(AnnotationLayer, {
         docRef,
         comments,
         active,
@@ -36320,24 +36338,18 @@ function DocumentView(props) {
     ]
   }, undefined, true, undefined, this);
 }
-var HtmlSegment = import_react4.memo(function HtmlSegment2({ html: html3 }) {
-  return /* @__PURE__ */ jsx_dev_runtime9.jsxDEV("div", {
-    className: "contents",
-    dangerouslySetInnerHTML: { __html: html3 }
-  }, undefined, false, undefined, this);
-});
 
 // src/digestify/surface/components/Header.tsx
-var import_react6 = __toESM(require_react(), 1);
+var import_react8 = __toESM(require_react(), 1);
 
 // src/digestify/surface/components/SessionIdButton.tsx
-var import_react5 = __toESM(require_react(), 1);
-var jsx_dev_runtime10 = __toESM(require_jsx_dev_runtime(), 1);
+var import_react7 = __toESM(require_react(), 1);
+var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function SessionIdButton({ sessionId }) {
-  const [copied, setCopied] = import_react5.useState(false);
-  const timer = import_react5.useRef(null);
-  import_react5.useEffect(() => () => timer.current ? clearTimeout(timer.current) : undefined, []);
-  return /* @__PURE__ */ jsx_dev_runtime10.jsxDEV("button", {
+  const [copied, setCopied] = import_react7.useState(false);
+  const timer = import_react7.useRef(null);
+  import_react7.useEffect(() => () => timer.current ? clearTimeout(timer.current) : undefined, []);
+  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
     id: "session-id",
     type: "button",
     title: "Click to copy session ID — give this to the agent if you need to recover an interrupted session",
@@ -36357,18 +36369,18 @@ function SessionIdButton({ sessionId }) {
 }
 
 // src/digestify/surface/components/TimerPill.tsx
-var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
 function TimerPill({ text: text2, state, justReset, onExtend }) {
-  return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
+  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("button", {
     type: "button",
     id: "timer-display",
     title: "Time remaining before idle timeout — resets on activity, or click to reset manually",
     "data-state": state ?? undefined,
     "data-just-reset": justReset ? "1" : undefined,
     onClick: onExtend,
-    className: "inline-flex min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 text-[13px] font-extrabold tabular-nums text-ink-dim transition-colors select-none hover:bg-surface hover:text-brand-ink data-[state=warn]:border-alarm-edge data-[state=warn]:bg-alarm-bg data-[state=warn]:text-alarm data-[state=expired]:border-expired data-[state=expired]:bg-expired data-[state=expired]:text-white",
+    className: "group inline-flex min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 text-[13px] font-extrabold tabular-nums text-ink-dim transition-colors select-none hover:bg-surface hover:text-brand-ink data-[state=warn]:border-alarm-edge data-[state=warn]:bg-alarm-bg data-[state=warn]:text-alarm data-[state=expired]:border-expired data-[state=expired]:bg-expired data-[state=expired]:text-white",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("span", {
+      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
         "aria-hidden": "true",
         className: "inline-block text-[13px] font-bold opacity-55 transition-transform duration-400 group-hover:opacity-100 data-[spin=1]:rotate-360",
         "data-spin": justReset ? "1" : undefined,
@@ -36380,7 +36392,7 @@ function TimerPill({ text: text2, state, justReset, onExtend }) {
 }
 
 // src/digestify/surface/components/Header.tsx
-var jsx_dev_runtime12 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
 function Header({
   theme,
   title,
@@ -36393,64 +36405,64 @@ function Header({
   onExtend,
   onSubmit
 }) {
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("header", {
-    className: "sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-header-edge bg-header px-7 py-3 shadow-[var(--elevation-soft)] backdrop-blur-lg",
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("header", {
+    className: "sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-header-edge bg-header px-7 py-3 shadow-[var(--elevation-soft)] backdrop-blur-lg max-narrow:px-4 max-narrow:py-2.5",
     children: [
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "min-w-0",
         children: [
-          theme.logoSrc ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("img", {
+          theme.logoSrc ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
             className: "m-0 block h-auto w-[clamp(126px,18vw,192px)] [filter:var(--brand-mark-filter)]",
             src: theme.logoSrc,
             alt: "Digestify"
-          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("span", {
+          }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("span", {
             className: "m-0 inline-block text-xl leading-none font-extrabold text-brand-ink",
             children: theme.brand
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("h1", {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h1", {
             id: "page-title",
-            className: "mt-1 mb-0 overflow-hidden text-[13px] leading-tight font-bold text-ellipsis whitespace-nowrap text-brand-ink max-md:max-w-[58vw]",
+            className: "mt-1 mb-0 overflow-hidden text-[13px] leading-tight font-bold text-ellipsis whitespace-nowrap text-brand-ink max-narrow:max-w-[58vw]",
             children: title
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
         className: "mr-3.5 ml-auto flex flex-none items-center gap-2.5",
         children: [
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(TimerPill, {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(TimerPill, {
             text: timerText,
             state: timerState,
             justReset,
             onExtend
           }, undefined, false, undefined, this),
-          /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(SessionIdButton, {
+          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(SessionIdButton, {
             sessionId
           }, undefined, false, undefined, this)
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(Button3, {
+      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(Button3, {
         id: "submit-btn",
         type: "button",
         size: "lg",
-        className: "h-auto flex-none rounded-full px-5 pt-2.5 pb-3 text-sm font-black disabled:cursor-wait",
+        className: "h-auto flex-none rounded-full px-5 pt-2.5 pb-3 text-sm font-black disabled:pointer-events-auto disabled:cursor-wait",
         disabled: submitting,
         onClick: onSubmit,
         children: submitting ? theme.submitting : theme.submit
       }, undefined, false, undefined, this),
-      restored ? /* @__PURE__ */ jsx_dev_runtime12.jsxDEV(RestoredBanner, {}, undefined, false, undefined, this) : null
+      restored ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(RestoredBanner, {}, undefined, false, undefined, this) : null
     ]
   }, undefined, true, undefined, this);
 }
 var BANNER_MS = 4000;
 function RestoredBanner() {
-  const [shown, setShown] = import_react6.useState(true);
-  import_react6.useEffect(() => {
+  const [shown, setShown] = import_react8.useState(true);
+  import_react8.useEffect(() => {
     const t = setTimeout(() => setShown(false), BANNER_MS);
     return () => clearTimeout(t);
   }, []);
   if (!shown)
     return null;
-  return /* @__PURE__ */ jsx_dev_runtime12.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
     id: "restored-banner",
     className: "absolute top-[calc(100%+8px)] left-1/2 z-5 -translate-x-1/2 rounded-full bg-brand-strong px-3.5 py-1.5 text-xs font-extrabold text-white shadow-[var(--elevation-soft)]",
     children: "Draft restored from earlier session"
@@ -36458,22 +36470,22 @@ function RestoredBanner() {
 }
 
 // src/digestify/surface/components/SentScreen.tsx
-var jsx_dev_runtime13 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
 function SentScreen({ theme }) {
-  return /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("div", {
+  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("div", {
     className: "px-6 py-20 text-center text-brand-ink",
     children: [
-      theme.sentMascotSrc ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
+      theme.sentMascotSrc ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("img", {
         className: "mx-auto mt-0 mb-4.5 block w-[clamp(120px,18vw,200px)] [filter:drop-shadow(0_14px_24px_rgb(106_77_188/0.2))]",
         src: theme.sentMascotSrc,
         alt: "Digested"
-      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime13.jsxDEV(jsx_dev_runtime13.Fragment, {
+      }, undefined, false, undefined, this) : /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
         children: [
-          /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("h2", {
+          /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("h2", {
             className: "mx-0 mt-0 mb-6 inline-block text-[56px] font-black tracking-[-1px] text-brand-strong",
             children: "✓ Sent"
           }, undefined, false, undefined, this),
-          theme.mascotSrc ? /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("img", {
+          theme.mascotSrc ? /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("img", {
             className: "mx-auto mt-0 mb-4.5 block w-[clamp(120px,18vw,200px)] [filter:drop-shadow(0_14px_24px_rgb(106_77_188/0.2))]",
             src: theme.mascotSrc,
             alt: "",
@@ -36481,7 +36493,7 @@ function SentScreen({ theme }) {
           }, undefined, false, undefined, this) : null
         ]
       }, undefined, true, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime13.jsxDEV("p", {
+      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV("p", {
         className: "m-0 text-base text-ink-dim",
         children: "You can close this tab."
       }, undefined, false, undefined, this)
@@ -36525,7 +36537,7 @@ function resolveThemeName(name) {
 }
 
 // src/digestify/surface/state/useReview.ts
-var import_react7 = __toESM(require_react(), 1);
+var import_react9 = __toESM(require_react(), 1);
 
 // src/digestify/surface/state/draft.ts
 var browserStorage = {
@@ -36623,7 +36635,7 @@ function useReview(payload, storage = browserStorage) {
   const timeoutSeconds = payload.timeout_seconds || 1800;
   const timeoutMs = timeoutSeconds * 1000;
   const key = draftKey(sessionId);
-  const boot = import_react7.useRef(null);
+  const boot = import_react9.useRef(null);
   if (boot.current === null) {
     const now = Date.now();
     pruneDrafts(storage, now);
@@ -36635,30 +36647,30 @@ function useReview(payload, storage = browserStorage) {
       restored: snapshot !== null
     };
   }
-  const answers = import_react7.useRef({ ...boot.current.answers });
-  const [comments, setComments] = import_react7.useState(boot.current.comments);
-  const commentsRef = import_react7.useRef(comments);
+  const answers = import_react9.useRef({ ...boot.current.answers });
+  const [comments, setComments] = import_react9.useState(boot.current.comments);
+  const commentsRef = import_react9.useRef(comments);
   commentsRef.current = comments;
-  const seq = import_react7.useRef(boot.current.comments.length);
-  const dirty = import_react7.useRef(false);
-  const startedAt = import_react7.useRef(Date.now());
-  const [submitted, setSubmitted] = import_react7.useState(false);
-  const submittedRef = import_react7.useRef(false);
-  const [expired, setExpired] = import_react7.useState(false);
-  const expiredRef = import_react7.useRef(false);
-  const markExpired = import_react7.useCallback(() => {
+  const seq = import_react9.useRef(boot.current.comments.length);
+  const dirty = import_react9.useRef(false);
+  const startedAt = import_react9.useRef(Date.now());
+  const [submitted, setSubmitted] = import_react9.useState(false);
+  const submittedRef = import_react9.useRef(false);
+  const [expired, setExpired] = import_react9.useState(false);
+  const expiredRef = import_react9.useRef(false);
+  const markExpired = import_react9.useCallback(() => {
     expiredRef.current = true;
     setExpired(true);
   }, []);
-  const deadlineAt = import_react7.useRef(Date.now() + timeoutMs);
-  const lastHeartbeatAt = import_react7.useRef(0);
-  const [remaining, setRemaining] = import_react7.useState(timeoutMs);
-  const [justReset, setJustReset] = import_react7.useState(false);
-  const [submitting, setSubmitting] = import_react7.useState(false);
-  const persist = import_react7.useCallback(() => {
+  const deadlineAt = import_react9.useRef(Date.now() + timeoutMs);
+  const lastHeartbeatAt = import_react9.useRef(0);
+  const [remaining, setRemaining] = import_react9.useState(timeoutMs);
+  const [justReset, setJustReset] = import_react9.useState(false);
+  const [submitting, setSubmitting] = import_react9.useState(false);
+  const persist = import_react9.useCallback(() => {
     saveSnapshot(storage, key, answers.current, stripIds(commentsRef.current), Date.now());
   }, [storage, key]);
-  const markActivity = import_react7.useCallback(() => {
+  const markActivity = import_react9.useCallback(() => {
     if (submittedRef.current || expiredRef.current)
       return;
     dirty.current = true;
@@ -36670,14 +36682,14 @@ function useReview(payload, storage = browserStorage) {
       fetch("/heartbeat", { method: "POST" }).catch(() => {});
     }
   }, [persist, timeoutMs]);
-  const setAnswer = import_react7.useCallback((id, value) => {
+  const setAnswer = import_react9.useCallback((id, value) => {
     if (value.trim())
       answers.current[id] = value;
     else
       delete answers.current[id];
     markActivity();
   }, [markActivity]);
-  const addComment = import_react7.useCallback((anchor, text2) => {
+  const addComment = import_react9.useCallback((anchor, text2) => {
     seq.current += 1;
     const id = commentId(seq.current);
     setComments((cs) => [...cs, { id, anchor, text: text2 }]);
@@ -36685,17 +36697,17 @@ function useReview(payload, storage = browserStorage) {
     markActivity();
     return id;
   }, [markActivity]);
-  const editComment = import_react7.useCallback((id, text2) => {
+  const editComment = import_react9.useCallback((id, text2) => {
     commentsRef.current = updateCommentText(commentsRef.current, id, text2);
     setComments(commentsRef.current);
     markActivity();
   }, [markActivity]);
-  const deleteComment = import_react7.useCallback((id) => {
+  const deleteComment = import_react9.useCallback((id) => {
     commentsRef.current = removeComment(commentsRef.current, id);
     setComments(commentsRef.current);
     markActivity();
   }, [markActivity]);
-  const tick = import_react7.useCallback(() => {
+  const tick = import_react9.useCallback(() => {
     if (submittedRef.current)
       return;
     const left = deadlineAt.current - Date.now();
@@ -36703,12 +36715,12 @@ function useReview(payload, storage = browserStorage) {
     if (left <= 0)
       markExpired();
   }, [markExpired]);
-  import_react7.useEffect(() => {
+  import_react9.useEffect(() => {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [tick]);
-  const extendDeadline = import_react7.useCallback(() => {
+  const extendDeadline = import_react9.useCallback(() => {
     if (submittedRef.current || expiredRef.current)
       return;
     const now = Date.now();
@@ -36722,8 +36734,8 @@ function useReview(payload, storage = browserStorage) {
     setJustReset(true);
     setTimeout(() => setJustReset(false), 450);
   }, [markExpired, tick, timeoutMs]);
-  const [submitError, setSubmitError] = import_react7.useState(null);
-  const submit = import_react7.useCallback(async () => {
+  const [submitError, setSubmitError] = import_react9.useState(null);
+  const submit = import_react9.useCallback(async () => {
     setSubmitting(true);
     try {
       const res = await fetch("/submit", {
@@ -36744,8 +36756,8 @@ function useReview(payload, storage = browserStorage) {
       setSubmitError(err instanceof Error ? err.message : String(err));
     }
   }, [storage, key]);
-  const clearSubmitError = import_react7.useCallback(() => setSubmitError(null), []);
-  import_react7.useEffect(() => {
+  const clearSubmitError = import_react9.useCallback(() => setSubmitError(null), []);
+  import_react9.useEffect(() => {
     const onBeforeUnload = () => {
       if (submittedRef.current || !navigator.sendBeacon)
         return;
@@ -36788,30 +36800,38 @@ function useReview(payload, storage = browserStorage) {
 }
 
 // src/digestify/surface/App.tsx
-var jsx_dev_runtime14 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
 function App({ payload }) {
   const themeName = resolveThemeName(payload.theme);
   const theme = THEMES[themeName];
   const review = useReview(payload);
-  import_react8.useEffect(() => {
+  import_react10.useEffect(() => {
     document.body.dataset.theme = themeName;
   }, [themeName]);
-  import_react8.useEffect(() => {
+  import_react10.useEffect(() => {
     document.title = payload.title;
   }, [payload.title]);
-  import_react8.useEffect(() => {
+  import_react10.useEffect(() => {
     if (review.submitError === null)
       return;
     alert(`Submit failed: ${review.submitError}`);
     review.clearSubmitError();
   }, [review.submitError, review.clearSubmitError]);
+  import_react10.useEffect(() => {
+    if (!review.submitted)
+      return;
+    document.getElementById("payload")?.remove();
+    for (const script of document.querySelectorAll('script[type="module"]')) {
+      script.remove();
+    }
+  }, [review.submitted]);
   if (review.submitted)
-    return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(SentScreen, {
+    return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(SentScreen, {
       theme
     }, undefined, false, undefined, this);
-  return /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(jsx_dev_runtime14.Fragment, {
+  return /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(jsx_dev_runtime15.Fragment, {
     children: [
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(Header, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(Header, {
         theme,
         title: payload.title,
         sessionId: review.sessionId,
@@ -36823,11 +36843,11 @@ function App({ payload }) {
         onExtend: review.extendDeadline,
         onSubmit: review.submit
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(AmbientMascot, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(AmbientMascot, {
         src: theme.mascotSrc,
         theme: themeName
       }, undefined, false, undefined, this),
-      /* @__PURE__ */ jsx_dev_runtime14.jsxDEV(DocumentView, {
+      /* @__PURE__ */ jsx_dev_runtime15.jsxDEV(DocumentView, {
         payload,
         theme,
         comments: review.comments,
@@ -36843,7 +36863,7 @@ function App({ payload }) {
 }
 
 // src/digestify/surface/main.tsx
-var jsx_dev_runtime15 = __toESM(require_jsx_dev_runtime(), 1);
+var jsx_dev_runtime16 = __toESM(require_jsx_dev_runtime(), 1);
 function readPayload() {
   const el = document.getElementById("payload");
   if (!el)
@@ -36852,6 +36872,6 @@ function readPayload() {
 }
 var el = document.getElementById("root");
 if (el)
-  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime15.jsxDEV(App, {
+  import_client.createRoot(el).render(/* @__PURE__ */ jsx_dev_runtime16.jsxDEV(App, {
     payload: readPayload()
   }, undefined, false, undefined, this));

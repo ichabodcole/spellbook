@@ -411,7 +411,19 @@ where the regression walked through.
 >   digestify with a `MutationObserver` — syntax highlighting applied on mount
 >   survived exactly until the countdown's first one-second tick, and it would
 >   have detached every comment chip's portal host with it. `memo` the element;
->   a static subtree should never re-render.
+>   a static subtree should never re-render. **And memoise EVERY such element**
+>   — digestify memoised one of its two sinks and shipped the other churning for
+>   the life of the page, because the guard that knew about both checked one.
+>
+> **⚠ A `not:` ROW WRITTEN FROM REASONING RATHER THAN FROM AN ATTEMPT IS THE ONE
+> SHAPE THE DRIVEN COLUMN CANNOT CATCH BY ITSELF.** Two of digestify's five
+> fell, wrong in different ways: one was an instrument limit its author imagined
+> (driving it needed two processes in the right order and no instrument at all),
+> and one was an inference — "an image has no text to size", therefore a
+> `font-size` rule on an `<img>` is dead — stated in the cell as though it had
+> been measured. A broken `<img>` renders its `alt`. **Before writing `not:`,
+> make the attempt and record what stopped it**; a reason that could have been
+> written without opening the browser is a hypothesis in a verdict's clothes.
 >
 > And the cheaper half of the proxy: for a WebSocket or SSE surface, install a
 > `window.WebSocket` / `EventSource` shim with
@@ -434,6 +446,20 @@ where the regression walked through.
 > for cells that name a different property than their row, and for bare verdicts
 > — `visual`, or a lone `both` with no measurement.** Both classes hide misses,
 > and neither can be seen by re-reading the code.
+>
+> **⛔ A GUARD THAT ENUMERATES A SET AND THEN CHECKS ONE MEMBER REPORTS ON ITS
+> OWN DILIGENCE.** The sibling of the substituted cell above, and the more
+> dangerous one, because it is a TEST rather than a note and it stays green
+> forever. Digestify's sink census listed both of the surface's HTML sinks by
+> name, in an array, in the same file as a cell named for the property they both
+> had to satisfy — and that cell asserted the property over one of them, by
+> literal string. The second sink's subtree was destroyed and rebuilt once per
+> second, in both modes, for the life of the page, with a comment persisted and
+> SUBMITTED that its owner could not see, edit or delete. **Whenever a cell's
+> subject is "a property of every X", it must iterate the X it FOUND.** A
+> hand-kept list beside a single assertion is decoration, and the list being
+> correct is exactly what makes it convincing. Sweep for the shape: any census
+> or `const ALLOWED = […]` that a later cell does not loop over.
 >
 > **⛔ SAMPLE EVERY VISUAL ROW TWICE, SECONDS APART. This is the cheapest
 > amendment in the document and it would have found the most.** Digestify's

@@ -15,6 +15,14 @@ type Props = {
  * pseudo-element cannot be animated per-instance from a data attribute without
  * a hand-written rule, and this way the spin is one utility.
  *
+ * ⚠ THE `group` ON THE BUTTON IS LOAD-BEARING. The ↻ glyph's resting opacity
+ * is 0.55 and it goes to 1 on hover — the old page's `#timer-display:hover
+ * ::before { opacity: 1 }`. `group-hover:` needs an ancestor carrying `group`,
+ * and without it the utility compiles, ships, and never matches: measured 0.55
+ * resting AND 0.55 hovered, with S21 and S24 both green throughout. The glyph
+ * now has its own inventory row (S25) so the reveal is asserted rather than
+ * assumed.
+ *
  * ⚠ ONE MECHANISM CHANGE, SAME OBSERVABLE. The old page was a
  * `<div role="button" tabindex="0">` with its own Enter/Space keydown handler
  * (template.html 878-883, 1140-1145). This is a real `<button>`, which gets
@@ -31,7 +39,7 @@ export function TimerPill({ text, state, justReset, onExtend }: Props) {
       data-state={state ?? undefined}
       data-just-reset={justReset ? "1" : undefined}
       onClick={onExtend}
-      className="inline-flex min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 text-[13px] font-extrabold tabular-nums text-ink-dim transition-colors select-none hover:bg-surface hover:text-brand-ink data-[state=warn]:border-alarm-edge data-[state=warn]:bg-alarm-bg data-[state=warn]:text-alarm data-[state=expired]:border-expired data-[state=expired]:bg-expired data-[state=expired]:text-white"
+      className="group inline-flex min-w-14 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 text-[13px] font-extrabold tabular-nums text-ink-dim transition-colors select-none hover:bg-surface hover:text-brand-ink data-[state=warn]:border-alarm-edge data-[state=warn]:bg-alarm-bg data-[state=warn]:text-alarm data-[state=expired]:border-expired data-[state=expired]:bg-expired data-[state=expired]:text-white"
     >
       <span
         aria-hidden="true"

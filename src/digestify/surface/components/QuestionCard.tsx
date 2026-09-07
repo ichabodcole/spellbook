@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { renderMd } from "../state/markdown";
 import type { Question, StampLine } from "../state/types";
 import { Textarea } from "../ui/textarea";
+import { SanitisedHtml } from "./SanitisedHtml";
 
 type Props = {
   question: Question;
@@ -20,9 +22,20 @@ type Props = {
  * The textarea is UNCONTROLLED, as the old page's was. Nothing on screen
  * depends on an answer's value, so there is no state to hold and therefore no
  * caret to drop — the failure class that produced the previous conversion's one
- * severe regression.
+ * severe regression. It is also `field-sizing-fixed`, which UNDOES the
+ * registry recipe's `field-sizing-content`: the old page's answer box was a
+ * fixed 92px minimum you resized by hand, and an auto-growing one reflows the
+ * document under the reader as they type.
+ *
+ * ⛔ THIS COMPONENT RE-RENDERS ON EVERY COUNTDOWN TICK, and its prompt is one
+ * of the surface's HTML sinks. Both halves of that are handled by going through
+ * `SanitisedHtml` (memoised) with the render itself memoised on the prompt —
+ * see that component's header for what happened when they were not.
  */
 export function QuestionCard({ question, stampLines, initialAnswer, onAnswer }: Props) {
+  // Memoised so the prop is referentially stable and DOMPurify does not re-parse
+  // every prompt once per second.
+  const prompt = useMemo(() => renderMd(question.prompt), [question.prompt]);
   return (
     <div className="relative my-8 overflow-hidden rounded-lg border border-edge bg-surface bg-[image:var(--question-bg)] p-6 shadow-[var(--elevation-card)] before:absolute before:inset-y-0 before:left-0 before:w-1.5 before:bg-question-accent before:content-['']">
       {stampLines.length > 0 ? (
@@ -41,13 +54,10 @@ export function QuestionCard({ question, stampLines, initialAnswer, onAnswer }: 
         </div>
       ) : null}
 
-      <div className="qprompt relative mx-0 mt-0 mb-3.5 flex max-w-[88%] items-start gap-2.5 max-md:max-w-full">
-        <div
+      <div className="qprompt relative mx-0 mt-0 mb-3.5 flex max-w-[88%] items-start gap-2.5 max-narrow:max-w-full">
+        <SanitisedHtml
+          html={prompt}
           className="doc-prose min-w-0 flex-auto [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p:first-child]:font-extrabold [&>p]:mx-0 [&>p]:mt-0 [&>p]:mb-2.5"
-          // ⛔ THE SECOND OF THE SURFACE'S TWO HTML SINKS. renderMd is
-          // DOMPurify over marked; sinks.test.ts fails if anything else feeds
-          // one.
-          dangerouslySetInnerHTML={{ __html: renderMd(question.prompt) }}
         />
       </div>
 
@@ -55,7 +65,7 @@ export function QuestionCard({ question, stampLines, initialAnswer, onAnswer }: 
         placeholder="Your answer..."
         defaultValue={initialAnswer}
         onInput={(e) => onAnswer(question.id, e.currentTarget.value)}
-        className="min-h-23 w-full resize-y rounded-lg border-edge bg-surface px-3.5 py-3 text-base text-ink"
+        className="field-sizing-fixed min-h-23 w-full resize-y rounded-lg border-edge bg-surface px-3.5 py-3 text-base text-ink"
       />
     </div>
   );

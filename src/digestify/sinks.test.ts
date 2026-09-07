@@ -61,22 +61,20 @@ function sinks(): { file: string; expr: string }[] {
 }
 
 /** The complete, DECLARED set of HTML sinks this surface is allowed to have.
- *  A fourth entry must be argued for in review, not merged quietly. */
+ *  A second entry must be argued for in review, not merged quietly. */
 const ALLOWED: { file: string; expr: string; why: string }[] = [
   {
-    file: "components/DocumentView.tsx",
+    file: "components/SanitisedHtml.tsx",
     expr: "html",
-    why: "HtmlSegment's only prop — a run of the sanitised document, or this surface's own literal marker div, both out of splitDocument(renderMd(payload.markdown))",
-  },
-  {
-    file: "components/QuestionCard.tsx",
-    expr: "renderMd(question.prompt)",
-    why: "the question prompt, rendered as full block markdown",
+    why: "the surface's ONE sink component — its only prop, which every caller must feed from renderMd",
   },
 ];
 
+/** Does this file define its components with `memo`? */
+const isMemoised = (file: string): boolean => /=\s*memo\(/.test(code(readFileSync(file, "utf8")));
+
 describe("the surface's HTML sinks", () => {
-  test("there are exactly two, and they are the declared two", () => {
+  test("there is exactly one, and it is the declared one", () => {
     // A zero-guard: an empty scan and a clean surface look identical otherwise.
     const found = sinks();
     expect(found.length).toBeGreaterThan(0);
@@ -85,22 +83,69 @@ describe("the surface's HTML sinks", () => {
     );
   });
 
-  test("the document sink is fed by splitDocument over renderMd, never by a raw payload field", () => {
+  test("the document is fed by splitDocument over renderMd, never by a raw payload field", () => {
     const view = readFileSync(join(SURFACE, "components", "DocumentView.tsx"), "utf8");
     expect(view).toContain("splitDocument(renderMd(payload.markdown))");
     // The failure this catches: someone "simplifying" to payload.markdown.
     expect(view).not.toContain("__html: payload.markdown");
   });
 
-  test("the document segment is MEMOISED — React 19 re-applies innerHTML on every update", () => {
-    // Not a style rule. React 19 does not compare the previous `__html` and
-    // skip: it rewrites the subtree on EVERY update of the element that carries
-    // `dangerouslySetInnerHTML`. Measured on this surface — the countdown's
-    // first one-second tick wiped the syntax highlighting, and would have
-    // detached every comment chip's portal host with it. Dropping `memo` here
-    // reintroduces both, and neither shows up on first paint.
-    const view = readFileSync(join(SURFACE, "components", "DocumentView.tsx"), "utf8");
-    expect(view).toContain("const HtmlSegment = memo(");
+  test("EVERY sink is memoised — React 19 re-applies innerHTML on every update", () => {
+    // ⛔ THIS CELL IS WRITTEN OVER THE FOUND SET, NOT OVER ONE MEMBER OF IT, AND
+    // THE PREVIOUS VERSION IS WHY.
+    //
+    // React 19 does not compare the previous `__html` and skip: it rewrites the
+    // subtree on EVERY update of the element that carries
+    // `dangerouslySetInnerHTML`. That destroys anything imperative inside it —
+    // highlight.js's work, and every comment chip's portal HOST, which is how a
+    // comment ends up persisted and submitted while its owner cannot see it.
+    //
+    // The surface had TWO sinks. This cell enumerated both in `ALLOWED`, was
+    // NAMED for the property, explained the consequence in its own comment —
+    // and then asserted the property over ONE of them by literal string. The
+    // question prompt's subtree was destroyed and rebuilt once per second in
+    // both modes, for the whole life of the page, with this cell green.
+    //
+    // **A guard that enumerates a set and then checks one item reports on its
+    // own diligence.** It is not specific to memoisation: any cell whose
+    // subject is "a property of every X" must iterate the X it found, or the
+    // list becomes decoration. Derived from `sinks()`, so a sink added tomorrow
+    // is governed the day it appears.
+    const found = sinks();
+    expect(found.length).toBeGreaterThan(0);
+    for (const sink of found) {
+      const where = `${sink.file} memoised`;
+      expect(where).toBe(
+        isMemoised(join(SURFACE, sink.file)) ? where : `${sink.file} NOT memoised`,
+      );
+    }
+  });
+
+  test("every CALLER feeds the sink from renderMd, and nothing else", () => {
+    // The other half of collapsing two sinks into one component: the sink no
+    // longer sees where its string came from, so the callers are what must be
+    // checked. Each <SanitisedHtml html={...}> in the surface is enumerated
+    // here with what it is fed.
+    const callers: { file: string; expr: string }[] = [];
+    for (const file of walk(SURFACE)) {
+      const text = code(readFileSync(file, "utf8"));
+      for (const m of text.matchAll(/<SanitisedHtml[\s\S]{0,200}?html=\{([^}]+)\}/g)) {
+        const expr = m[1];
+        if (expr !== undefined)
+          callers.push({ file: file.replace(`${SURFACE}/`, ""), expr: expr.trim() });
+      }
+    }
+    expect(callers.map((c) => `${c.file} <- ${c.expr}`).sort()).toEqual([
+      // the document body and the empty marker div for an unknown question id,
+      // both out of splitDocument(renderMd(payload.markdown))
+      "components/DocumentView.tsx <- segment.html",
+      "components/DocumentView.tsx <- segment.marker",
+      // the question prompt, memoised on the prompt text
+      "components/QuestionCard.tsx <- prompt",
+    ]);
+    // and the one that is computed rather than split IS renderMd's output
+    const card = readFileSync(join(SURFACE, "components", "QuestionCard.tsx"), "utf8");
+    expect(card).toContain("useMemo(() => renderMd(question.prompt), [question.prompt])");
   });
 
   test("the ONLY module that imports dompurify is state/markdown.ts", () => {

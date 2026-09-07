@@ -449,6 +449,106 @@ description of it.
 The temptation S5 exists for — "install a few more while the CLI is configured"
 — was real and was declined.
 
+## After the verify pass — what a second agent found that I did not
+
+Written after the independent drive, and it is the part of this journal with the
+most information in it, because it is the only part where someone with no stake
+checked my claims.
+
+**R8's premise held again, and it held against the very finding I had just
+written up.** My own drive found three defects of one shape — correct at t=0,
+wrong at t=1 — and I put "sample twice, seconds apart" into the playbook as the
+amendment that would have caught them. **The verifier then found a FOURTH of
+exactly that shape, in exactly that class, which my new rule did not save me
+from**, and the reason is the part worth carrying:
+
+**I fixed one of two sinks and pinned the fix with a guard that knew about
+both.** `sinks.test.ts` maintains a `const ALLOWED` array naming every
+`dangerouslySetInnerHTML` in the surface — the document segment AND the question
+prompt. The memoisation cell in the same file is _named_ for the property, and
+its comment explains that losing it "would have detached every comment chip's
+portal host". It then asserted
+`expect(view).toContain("const HtmlSegment = memo(")` — one member, by literal
+string.
+
+So the question prompt's subtree was destroyed and rebuilt **once per second, in
+both modes, for the life of the page**, with three consequences the verifier
+drove:
+
+- a comment anchored inside a question prompt lost its chip's host, so it stayed
+  in state, was **persisted and submitted**, and the user could not see, edit or
+  delete something they were about to send;
+- an editor opened on prompt text vanished within a second, taking the typed
+  text and the focus;
+- text selected inside a prompt was dropped within a second, leaving a stale
+  floating button.
+
+**The lesson is not "memoise more".** It is that **a guard which enumerates a
+set and then checks one member reports on its own diligence** — and that it is
+worse than an unwritten guard, because the list being correct is what makes it
+convincing. It is now in the playbook next to the substituted-cell note, phrased
+generally, because it has nothing to do with memoisation or with this spell. The
+cell now iterates `sinks()`, and the two sinks are one component.
+
+**Three more findings, and two of them are behaviour changes I did not notice
+making.**
+
+- **The mobile breakpoint had moved 128 px.** Every responsive utility was
+  `max-md:`, and Tailwind's `md` is 48rem/768px against the old page's single
+  `@media (max-width: 640px)`. Measured at 700: mascot hidden, `#doc` padding
+  collapsed, prompt at 100%, title clamped — none of which the old page did
+  there. `max-sm:` is not the fix either (it is `width < 40rem`, i.e. 639 px,
+  wrong at the one width that matters); the sheet now declares
+  `--breakpoint-narrow: 40.0625rem`, which compiles to `width < 641px`.
+- **The answer textarea auto-grew**, 92 → 146 px while typing, reflowing the
+  document under the reader. The registry recipe carries `field-sizing-content`
+  — a good default, not this page's, whose box was a fixed 92 px you resized by
+  hand. **A recipe default is a behaviour change that arrives without an edit**,
+  which is a class R3 and S2 do not warn about at all.
+- **The sent screen still carried the whole review.** The payload island is a
+  sibling of `#root` in `index.html`, so React cannot remove it; the old page
+  emptied `document.body` node by node. The review's text sat in the document
+  under "you can close this tab".
+
+**And one guard of mine was too narrow in the same way as the sink cell.**
+`dev-styled.test.ts` covered the pinned cwd and the skill root, and the skill
+root has NO `bunfig.toml` at all — so the guard I wrote asked only whether the
+file existed. **The repo root has one** (the workspace's `[install]` linker pin,
+no plugins), and from there the daemon booted happily, announced `mode:"dev"`,
+and served Bun's own `<title>Bun - Build Failed</title>`. A green boot over a
+page that never renders: Contract 5's exact scar, on the likeliest cwd an agent
+actually has. The test is now whether the bunfig LOADS THE PLUGIN, and the third
+arm covers the repo root.
+
+**Two of my five `not:` rows fell, and they were wrong in different ways.**
+**S19** was an instrument limit I imagined — the verifier killed the daemon
+under a loaded page and clicked the pill, which needed two processes in the
+right order and no instrument at all, and it surfaced a faithful transient I had
+not predicted (the pill briefly reverts to counting down before the rejection
+lands; the old page does the same). **T16 was worse**: I wrote "an `<img>` has
+no text to size, so the rule is dead" as though it were a measurement. A broken
+`<img>` renders its `alt` — measured here at 192×27 px — so the rule was
+reachable the whole time. **A `not:` row written from reasoning rather than from
+an attempt is the one shape the Driven column cannot catch by itself**, and it
+is now in R8.
+
+**Six Driven cells were flagged as readable-either-way and all six were
+rewritten**; two of them were green over a real defect (T10 recorded that a
+media query exists, not where it fires; X1 read the resting label and argued the
+in-flight one from it, which is where the dead `cursor: wait` was hiding). **And
+Q2's verdict was right while its REASONING was wrong** — the old page's early
+return fires on an unknown id, not on nesting; what makes the deviation
+unreachable is that `QBLOCK_RE` is `^:::`-anchored. Fixing a verdict is cheap;
+finding that a green cell reached its verdict by the wrong route needs someone
+who has not spent the day believing the argument.
+
+**Three rows did not exist**, and all three name a property that was broken: S25
+(the timer glyph's hover reveal, dead because `group-hover:` had no `group`
+ancestor — with S21 and S24 both green over it), Q11 (the textarea's fixed
+height), P10 (where the one breakpoint is). **A missing row is not a coverage
+gap you can count**; it is a property nobody wrote down, and the cell beside it
+reads like reassurance.
+
 ## What this port would tell the playbook, now that the population is closed
 
 1. **Phases 0, 2 and 3 are load-bearing and portable. Phase R is now TWO
@@ -463,7 +563,11 @@ The temptation S5 exists for — "install a few more while the CLI is configured
    Bounty proposed the fix — count your own — and it worked. Take it into the
    text rather than leaving it in a journal.
 3. **The instrument scars are the most valuable paragraphs in the document and
-   they need a THIRD entry.** React 19's `onBlur`/`focusout` and the controlled
+   they need a THIRD entry — plus a fourth that is about TESTS, not
+   instruments.** The fourth is the one this port paid most for: a guard that
+   enumerates a set and then checks one member. It is not a drive artefact and
+   not a framework quirk; it is the shape of a check that is convincing because
+   its list is correct. React 19's `onBlur`/`focusout` and the controlled
    input's prototype setter both held here. The new one is
    `dangerouslySetInnerHTML` being re-applied on every update — which is not an
    instrument lie but a framework behaviour that makes correct code decay

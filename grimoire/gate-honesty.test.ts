@@ -277,6 +277,18 @@ import { join } from "node:path";
 // sanitiser's output, and rewriting it would be a second sink), so a descendant
 // selector is the ONLY way to style the document and a utility cannot reach it.
 //
+// ⛔ RE-DECLARED AGAIN, SAME DAY, FOR THE VERIFY PASS'S BREAKPOINT FIX —
+// 26/1,975 -> 26/1,987. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +12  src/digestify/surface/styles.css   503 -> 515
+// a `--breakpoint-narrow` declaration and the comment that has to sit with it.
+// The page has ONE media query, `@media (max-width: 640px)`, and Tailwind's
+// scale has nothing on that boundary: `md` is 768px (the port shipped `max-md:`
+// and moved every responsive rule 128px — measured firing at 700 where the old
+// page did nothing) and `max-sm:` compiles to `width < 40rem`, which is 639px
+// and wrong at the one width the rule is about. 40.0625rem is 641px, so
+// `max-narrow:` is `max-width: 640px` exactly. 1,975 + 12 = 1,987, from the
+// object's own sum.
+//
 // ⚠ AND WHAT THE NUMBER MEANS, WHICH IS NOT WHAT IT LOOKS LIKE. The gate can
 // now READ digestify's review page — it is .tsx and .ts, linted and
 // type-checked — where before it could read NONE of it. 1,505 lines of
@@ -285,7 +297,7 @@ import { join } from "node:path";
 // ward's history, and it closes the population: every spell in the roster now
 // builds, and no hand-written HTML surface remains anywhere in the tree.
 const DECLARED_BLIND: Record<string, number> = {
-  "src/digestify/surface/styles.css": 503,
+  "src/digestify/surface/styles.css": 515,
   "src/digestify/surface/index.html": 26,
   "src/digestify/bunfig.toml": 2,
   "src/bounty/surface/styles.css": 158,

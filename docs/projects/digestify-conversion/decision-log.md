@@ -351,3 +351,114 @@ radii the old page had.
 **Not taken:** `badge` for the session-id pill and the stamp (both are one
 element with no state, and a `Badge` would have been a rename), and `separator`
 (the page has no rule that is not a `<hr>` from the markdown).
+
+---
+
+# After the verify pass, 2026-09-07
+
+## D21 · Two HTML sinks become ONE sink component
+
+The severe finding was that `memo` had been applied to one of two sinks. The fix
+could have been "add `memo` to the other one". It is instead a single
+`SanitisedHtml` component both callers go through.
+
+**Why the bigger change.** The defect's real cause was not a missing `memo`, it
+was that the surface had two places where a string becomes markup and a guard
+that could name both while checking one. One sink component means one place the
+sanitiser must have run, one place to memoise, and a census whose length is 1 —
+so the "check every member" property has nowhere left to hide even if someone
+later writes the assertion badly.
+
+**Not taken:** `memo` on `QuestionCard` itself. It would have worked today and
+been wrong in principle — `QuestionCard` is not static (its `initialAnswer` and
+`onAnswer` are props, and a future stamp or cue could depend on state), so
+memoising the whole card to protect the sink inside it makes the sink's safety
+depend on the card staying simple.
+
+**And the prompt render is memoised separately**
+(`useMemo(() => renderMd(...))`), which is not about correctness — `memo`
+compares the string by value either way — but about not re-running DOMPurify
+over every prompt once per second.
+
+## D22 · The guard iterates the found set, not the declared list
+
+`sinks.test.ts`'s memoisation cell now loops `sinks()` — what it discovered by
+scanning — rather than asserting one literal string. Calibrated red by
+un-memoising the component: `components/SanitisedHtml.tsx NOT memoised`.
+
+**Not taken:** iterating `ALLOWED` instead. The census pin and the property
+check must not share a source, or a sink added without updating `ALLOWED`
+escapes both. `ALLOWED` stays as the pin that says "there is exactly one"; the
+property is asserted over whatever is actually there.
+
+A second cell now enumerates every **caller** of the sink with what it feeds it,
+because collapsing to one component moved the risk: the sink can no longer see
+where its string came from.
+
+## D23 · A custom breakpoint, pinned to the pixel
+
+`--breakpoint-narrow: 40.0625rem` → `width < 641px` → `max-width: 640px`, which
+is the old page's only media query, exactly.
+
+**Not taken:** `max-md:` (what shipped, and wrong by 128 px — the narrow layout
+fired at 700 and 760); `max-sm:`, which is Tailwind's own 640 but compiles to
+`width < 40rem` = 639 px and is off by one at the single width the rule is
+about. A page with one breakpoint that is not on Tailwind's scale should declare
+it rather than borrow the nearest.
+
+## D24 · The dev guard tests for the PLUGIN, not for the file
+
+`existsSync(cwd/bunfig.toml)` was the wrong question, and the repo root is where
+it gives the wrong answer: it has a bunfig (the workspace's `[install]` linker
+pin) that loads nothing. The daemon booted, announced `mode:"dev"`, and served
+Bun's `Bun - Build Failed` page.
+
+The guard now reads the file and requires `bun-plugin-tailwind` in it. The error
+names the cwd it actually has as well as the one it needs, because a message
+that only names the destination is unhelpful from an unexpected origin.
+
+**Not taken:** comparing `process.cwd()` to the surface directory by path. It is
+exact but breaks a second checkout, a symlinked tree and a worktree, and the
+property that matters is not "am I in that directory" but "will Bun load the
+plugin".
+
+## D25 · The mascot's reveal goes back to the attribute selector
+
+`[&[src]]:opacity-100`, not the `data-has-src` flag the first draft set beside
+the attribute. The two agree for every input the payload can produce, because
+the src is decided once at boot — which is precisely why the flag looked right
+and why driving the row is what separated them.
+
+**Recorded as a rule rather than a fix:** carrying a mechanism that agrees "for
+every reachable input" is how a rewrite drifts one defensible step at a time.
+When the old page's mechanism is available at the same cost, take it.
+
+## D26 · Two recipe defaults are overridden at the call site
+
+`field-sizing-fixed` on both textareas (the recipe ships `field-sizing-content`,
+which made the answer box grow 92 → 146 px and reflow the document under the
+reader), and `disabled:pointer-events-auto` beside `disabled:cursor-wait` on the
+submit button (the recipe's base has `disabled:pointer-events-none`, and an
+element with no pointer events has no cursor either).
+
+**Neither fights the recipe**; both are call-site utilities, which is what the
+`className` prop is for, and neither touches a file under `ui/`. But they are
+worth naming together because they are the same class of surprise: **a registry
+default is a behaviour change that arrives without an edit**, and nothing in the
+inventory points at it. Both now have rows (Q11, X1).
+
+**On re-enabling pointer events for a disabled button:** a disabled `<button>`
+dispatches no click regardless, so this restores the cursor and the title
+tooltip and nothing else.
+
+## D27 · The sent screen removes the two nodes React does not own
+
+`#payload` and every `script[type="module"]`, on the submit transition. The old
+page emptied `document.body` node by node; ours renders into `#root`, so those
+two survived and the sent screen carried the entire review text under a line
+saying the tab can be closed.
+
+**Not taken:** removing `#root` too, which is what full parity would mean and
+would unmount React mid-transition. The residue is named in the code and in the
+inventory row rather than hidden: `#root` survives, and the old page had no root
+to survive.

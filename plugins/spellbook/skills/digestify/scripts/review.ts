@@ -22,7 +22,7 @@
 // at src/digestify/surface/ built into dist/. review.py, if it is ever run
 // again, serves nothing.
 
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -50,6 +50,10 @@ export function resolveMode(): "dev" | "release" {
   if (override === "dev" || override === "release") return override;
   return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
 }
+
+/** What a dev-mode cwd's bunfig.toml must load, or the stylesheet never
+ *  compiles. Named once; the guard and its error message share it. */
+const TAILWIND_PLUGIN = "bun-plugin-tailwind";
 
 /** Where the dev bundler's HTML lives. Never "/" — see the "/" handler. */
 const DEV_SURFACE_ROUTE = "/__surface";
@@ -370,13 +374,26 @@ async function main(argv: string[]): Promise<number> {
   const DEV_SURFACE_CWD = join(SKILL_ROOT, "..", "..", "..", "..", "src", "digestify");
   let devIndex: unknown;
   if (mode === "dev") {
-    if (!existsSync(join(process.cwd(), "bunfig.toml"))) {
+    // ⛔ THE TEST IS "DOES THIS bunfig LOAD THE TAILWIND PLUGIN", NOT "IS THERE
+    // A bunfig". The first draft asked only whether the file existed, and the
+    // REPO ROOT has one — an `[install] linker` pin with no plugins in it. From
+    // there the daemon booted happily, announced `mode:"dev"`, and served Bun's
+    // own `<title>Bun - Build Failed</title>` page: a green boot over a page
+    // that never renders, which is Contract 5's scar wearing new clothes. And
+    // the repo root is the likeliest cwd an agent actually has.
+    const bunfig = join(process.cwd(), "bunfig.toml");
+    const loadsTailwind =
+      existsSync(bunfig) && readFileSync(bunfig, "utf8").includes(TAILWIND_PLUGIN);
+    if (!loadsTailwind) {
       process.stderr.write(
         "digestify: cannot start in dev mode from this directory.\n" +
-          `  needed: run with the cwd set to ${DEV_SURFACE_CWD}\n` +
-          "  why:    Bun reads bunfig.toml (which loads the Tailwind plugin) from the\n" +
-          "          process cwd, at startup — chdir is too late. Without it the page\n" +
-          "          is served UNSTYLED with no error anywhere.\n" +
+          `  cwd:    ${process.cwd()}\n` +
+          `  needed: a cwd whose bunfig.toml loads ${TAILWIND_PLUGIN} — in a checkout of\n` +
+          `          this repo that is ${DEV_SURFACE_CWD}\n` +
+          "  why:    Bun reads bunfig.toml from the process cwd, at STARTUP — chdir is\n" +
+          "          too late. Without the plugin the stylesheet never compiles and the\n" +
+          "          page is served unstyled, or as Bun's own build-failure page, with\n" +
+          "          nothing red anywhere.\n" +
           "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
           "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from that directory.\n",
       );

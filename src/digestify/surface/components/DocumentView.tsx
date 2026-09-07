@@ -1,10 +1,11 @@
 import hljs from "highlight.js/lib/common";
-import { memo, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { splitDocument } from "../state/document";
 import { renderMd } from "../state/markdown";
 import type { Answers, Comment, Payload, Theme } from "../state/types";
 import { AnnotationLayer } from "./AnnotationLayer";
 import { QuestionCard } from "./QuestionCard";
+import { SanitisedHtml } from "./SanitisedHtml";
 
 type Props = {
   payload: Payload;
@@ -61,19 +62,19 @@ export function DocumentView(props: Props) {
     <main
       id="doc"
       ref={docRef}
-      className="doc-prose relative mx-auto max-w-[860px] px-6 pt-10 pb-30 max-md:px-4 max-md:pt-8 max-md:pb-24"
+      className="doc-prose relative mx-auto max-w-[860px] px-6 pt-10 pb-30 max-narrow:px-4 max-narrow:pt-8 max-narrow:pb-24"
     >
       {segments.map((segment, i) => {
         if (segment.kind === "html") {
           // Segments are positional and the document never changes, so the
           // index IS the identity here.
-          return <HtmlSegment key={`html-${i}`} html={segment.html} />;
+          return <SanitisedHtml key={`html-${i}`} html={segment.html} className="contents" />;
         }
         const question = questions.get(segment.id);
         if (!question) {
           // An id with no question is left exactly where it was, invisibly —
           // the old page's `if (!q) return` (template.html 1160-1161).
-          return <HtmlSegment key={`orphan-${i}`} html={segment.marker} />;
+          return <SanitisedHtml key={`orphan-${i}`} html={segment.marker} className="contents" />;
         }
         return (
           <QuestionCard
@@ -97,37 +98,3 @@ export function DocumentView(props: Props) {
     </main>
   );
 }
-
-/**
- * One run of the rendered document.
- *
- * ⛔ `memo` IS LOAD-BEARING, AND THE REASON IS A REACT 19 BEHAVIOUR NOBODY HERE
- * KNEW. React 19 re-applies `dangerouslySetInnerHTML` on EVERY update of the
- * element that carries it — it does not compare the previous `__html` and skip.
- * Measured 2026-09-07 with a MutationObserver on this surface: the syntax
- * highlighting applied on mount survived exactly until the countdown's first
- * one-second tick re-rendered App, and then a single `childList` mutation
- * replaced the whole subtree and the classes were gone.
- *
- * That silently breaks TWO things, and the second is worse than the first:
- *   1. highlight.js's work, which is applied to nodes React then discards; and
- *   2. every comment chip, because the AnnotationLayer's host nodes live INSIDE
- *      this subtree, and a wiped subtree detaches the portal containers.
- *
- * Neither is visible on first paint, and neither would ever have been caught by
- * a drive that did not wait a second and then look again.
- *
- * The document is static — one payload, no updates — so the honest fix is for
- * this element never to re-render at all. `html` is a stable string out of a
- * memoised split, so `memo` holds it.
- */
-const HtmlSegment = memo(function HtmlSegment({ html }: { html: string }) {
-  return (
-    <div
-      className="contents"
-      // ⛔ ONE OF THE SURFACE'S TWO HTML SINKS. renderMd is DOMPurify over
-      // marked; sinks.test.ts fails if anything else feeds one.
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
-  );
-});

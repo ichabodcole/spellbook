@@ -35,7 +35,7 @@ export function CommentEditor({ anchor, initialText, onSave, onCancel }: Props) 
         placeholder="Comment..."
         value={text}
         onChange={(e) => setText(e.currentTarget.value)}
-        className="min-h-12.5 w-full rounded-lg border-edge px-2.5 py-2 text-base text-ink"
+        className="field-sizing-fixed min-h-12.5 w-full rounded-lg border-edge px-2.5 py-2 text-base text-ink"
       />
       <div className="mt-2 flex gap-2">
         <Button

@@ -36,6 +36,9 @@ const ROOT = repoRoot(import.meta.dir);
 const REVIEW = join(ROOT, "plugins", "spellbook", "skills", "digestify", "scripts", "review.ts");
 const SURFACE_CWD = join(ROOT, "src", "digestify");
 const SKILL_ROOT = join(ROOT, "plugins", "spellbook", "skills", "digestify");
+// The repo root: it HAS a bunfig.toml (the workspace's hoisted-linker pin) and
+// that bunfig loads no plugins. It is also the likeliest cwd an agent has.
+const REPO_ROOT = ROOT;
 // Assembled from fragments so no text scanner sees the utility whole (the
 // surface writes it literally in TimerPill.tsx; a scanner reading THIS file
 // must not count it as a use).
@@ -115,7 +118,7 @@ test("dev mode, cwd pinned to src/digestify: / links a stylesheet carrying the s
   }
 }, 60_000);
 
-test("POSITIVE CONTROL — dev mode from the skill root REFUSES, naming the directory", async () => {
+test("POSITIVE CONTROL 1 — dev mode from the skill root (NO bunfig at all) REFUSES", async () => {
   const { proc, ready, err } = await bootDev(SKILL_ROOT);
   try {
     // It must not bind at all. The failure this replaces is a daemon that binds
@@ -125,6 +128,28 @@ test("POSITIVE CONTROL — dev mode from the skill root REFUSES, naming the dire
     expect(err).toContain("cannot start in dev mode from this directory");
     expect(err).toContain(join("src", "digestify"));
     expect(err).toContain("bunfig.toml");
+  } finally {
+    proc.kill();
+  }
+}, 60_000);
+
+test("POSITIVE CONTROL 2 — dev mode from the REPO ROOT (a bunfig with no plugins) REFUSES", async () => {
+  // ⛔ THE ARM THAT WAS MISSING, AND THE ONE THAT MATTERED MOST. The first guard
+  // asked only whether a bunfig.toml existed in cwd. The repo root HAS one — the
+  // workspace's `[install] linker` pin, with no plugins in it — so from the
+  // likeliest cwd an agent actually has, the daemon booted happily, announced
+  // `mode:"dev"`, and served Bun's own `<title>Bun - Build Failed</title>`. A
+  // green boot over a page that never renders is Contract 5's exact scar; the
+  // test is now whether the bunfig LOADS THE PLUGIN, not whether it exists.
+  expect(existsSync(join(REPO_ROOT, "bunfig.toml"))).toBe(true);
+  const { proc, ready, err } = await bootDev(REPO_ROOT);
+  try {
+    expect(ready).toBeNull();
+    expect(await proc.exited).toBe(2);
+    expect(err).toContain("cannot start in dev mode from this directory");
+    expect(err).toContain("bun-plugin-tailwind");
+    // It never bound, so nothing could have been served.
+    expect(err).not.toContain('"url"');
   } finally {
     proc.kill();
   }

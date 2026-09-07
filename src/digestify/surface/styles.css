@@ -77,6 +77,18 @@
   --color-alarm-bg: #fff4dc;
   --color-expired: #c0392b;
 
+  /* ⛔ THE PAGE'S ONE BREAKPOINT, PINNED TO THE PIXEL. The old page's single
+     media query is `@media (max-width: 640px)`, which applies AT 640. Tailwind's
+     own scale has nothing on that boundary: `md` is 48rem/768px (a `max-md:`
+     port moves the breakpoint 128px and was measured doing exactly that — the
+     mascot vanished and the document's padding collapsed at 700px, which the
+     old page did not do), and `max-sm:` is `width < 40rem`, which is 639px and
+     off by one at the only width that matters. 40.0625rem = 641px, so
+     `max-narrow:` compiles to `width < 641px` — i.e. `max-width: 640px`,
+     exactly. Named for what it means rather than borrowed from a scale this
+     page does not otherwise use. */
+  --breakpoint-narrow: 40.0625rem;
+
   /* The old page's only font declaration; no web font ever loaded, and none is
      introduced here — a web font would be a build input (playbook R4). */
   --font-sans:

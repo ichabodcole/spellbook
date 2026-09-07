@@ -39,7 +39,7 @@ export function Header({
   onSubmit,
 }: Props) {
   return (
-    <header className="sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-header-edge bg-header px-7 py-3 shadow-[var(--elevation-soft)] backdrop-blur-lg">
+    <header className="sticky top-0 z-10 flex items-center justify-between gap-6 border-b border-header-edge bg-header px-7 py-3 shadow-[var(--elevation-soft)] backdrop-blur-lg max-narrow:px-4 max-narrow:py-2.5">
       <div className="min-w-0">
         {theme.logoSrc ? (
           <img
@@ -54,7 +54,7 @@ export function Header({
         )}
         <h1
           id="page-title"
-          className="mt-1 mb-0 overflow-hidden text-[13px] leading-tight font-bold text-ellipsis whitespace-nowrap text-brand-ink max-md:max-w-[58vw]"
+          className="mt-1 mb-0 overflow-hidden text-[13px] leading-tight font-bold text-ellipsis whitespace-nowrap text-brand-ink max-narrow:max-w-[58vw]"
         >
           {title}
         </h1>
@@ -69,7 +69,7 @@ export function Header({
         id="submit-btn"
         type="button"
         size="lg"
-        className="h-auto flex-none rounded-full px-5 pt-2.5 pb-3 text-sm font-black disabled:cursor-wait"
+        className="h-auto flex-none rounded-full px-5 pt-2.5 pb-3 text-sm font-black disabled:pointer-events-auto disabled:cursor-wait"
         disabled={submitting}
         onClick={onSubmit}
       >
