@@ -41,7 +41,7 @@ import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
-import type { Task } from "./server.ts";
+import type { Task } from "../shared/types";
 
 type SessionInfo = { url: string; port: number; session_id: string; title: string };
 

@@ -262,9 +262,62 @@ origin forever, so a drive that starts on the daemon's port cannot drive a drop
 later without a fresh page); with `page.route` for the failure arms it covers
 the reconnect, malformed-frame, abort and 409 rows from one setup. **A
 `not: <why>` row is a claim the verifier will run** — five of grapevine's seven
-fell. The verifier also gap-reads the inventory against the old page; an
-under-specified row ("commits on change") is where the regression walked
-through.
+fell, and **thirteen of bounty's fifteen**. The verifier also gap-reads the
+inventory against the old page; an under-specified row ("commits on change") is
+where the regression walked through.
+
+> **⛔ THE INSTRUMENT LIES BEFORE THE SURFACE DOES. Four scars, two of them from
+> a drive that reported a false red.** Every one of these makes a correct
+> surface look broken, or a broken one look fine, and none of them is visible
+> from the code under test.
+>
+> - **React 19 maps `onBlur` to `focusout`.** A dispatched
+>   `new FocusEvent("blur")` does not bubble and never reaches the handler.
+>   Bounty's first drag probe reported the title-blur `draggable` restore as
+>   broken; the probe was broken. Dispatch `focusout`, or use a real focus
+>   change.
+> - **A controlled input's value must be set through the prototype's setter** —
+>   `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set`
+>   (and the `HTMLTextAreaElement` one) — followed by an `input` event.
+>   Assigning `el.value` directly leaves React's tracker unchanged and the
+>   change is silently discarded. This is the same defect as `fill()` one layer
+>   down, and it is why the per-key rule above says _type_, not _set_.
+> - **`DataTransfer.prototype.setData` CAN be patched to throw** from a
+>   page-side init script — no `DataTransfer` replacement needed. Bounty's
+>   author recorded the opposite as an instrument limit and the verifier broke
+>   it in one line.
+> - **Neuter a LIVE socket's `send` while leaving `readyState` OPEN** to test an
+>   emitted-but-undelivered frame. A surface whose guard is
+>   `readyState === OPEN` cannot be tested by closing the socket — that
+>   exercises the guard, not the delivery.
+>
+> And the cheaper half of the proxy: for a WebSocket or SSE surface, install a
+> `window.WebSocket` / `EventSource` shim with
+> `Page.addScriptToEvaluateOnNewDocument` **before the page loads**. It is the
+> only way to reach a socket the surface never exposes, it lets you inject any
+> frame including malformed ones, and it turns every "sends nothing" row from an
+> inference into an assertion — which matters because the silent-branch rows are
+> the majority of any inventory and they are all claims about an absence. The
+> fixed-port proxy is still the right tool for a genuine transport drop; the
+> hook is the right tool for everything else, and it needs nothing installed.
+
+> **⚠ A GREEN CELL THAT ANSWERED AN EASIER QUESTION IS THE FAILURE MODE OF THE
+> DRIVEN COLUMN ITSELF.** Bounty's verifier found two cells recording an
+> observation _adjacent_ to the one their row demanded — and re-driving the
+> actual question found a defect behind each. A row asking for a two-line clamp
+> was answered with "clicking the notes opened the modal", and the clamp was in
+> fact dead (`line-clamp` is a _display_ utility; a `block` beside it wins the
+> merge). A row asking whether the whole board goes inert was answered from the
+> board wrapper, and the dialogs portal outside it. **Sweep the Driven column
+> for cells that name a different property than their row, and for bare verdicts
+> — `visual`, or a lone `both` with no measurement.** Both classes hide misses,
+> and neither can be seen by re-reading the code.
+>
+> **Count the Driven column BY COMMAND.** ~40 lines: take every table row, read
+> the last cell, classify on its first token, report unparsed cells and
+> duplicate ids. Bounty's hand-count was wrong in three of four columns, and the
+> one it got most wrong was `not:` — the number a reader uses to judge how much
+> is unverified.
 
 **Done when:** every inventory row carries _driven_, _test cell_, or _not
 driven + why_; the page and its CDN links are gone from index and disk; the
@@ -902,6 +955,22 @@ port **taught**, not what it confirmed.
   seven "not driven" reasons fell to a second agent. Applicability re-opened for
   bounty and digestify. Written by the orchestrator from the two agents'
   journals, not by either author.
+- **2026-09-06** — **bounty, the second rewrite, and the first to run Phase S
+  INSIDE Phase R.** Taught, in R8: the instrument lies before the surface does
+  (React 19's `onBlur` is `focusout`; a controlled input needs the prototype
+  setter; `DataTransfer.prototype.setData` is patchable; a live socket's `send`
+  can be neutered with `readyState` left OPEN); a `window.WebSocket` shim
+  installed before page load is cheaper than the proxy for everything except a
+  real transport drop; a Driven cell that answers an easier question than its
+  row is a green hiding a miss, and the column must be counted by command.
+  Elsewhere: a ward that reds on an arriving spell may be wrong about the spell
+  (bounty exposed a latent `group`/`peer` marker-class defect in the css-scope
+  ward that every earlier spell escaped by coincidence); R5's transport count
+  must be read off the daemon, not subtracted from the exemplar; a daemon-wide
+  fatal handler will eat the dev import's error; an `url()` in the sheet is a
+  build input; and a test file under `surface/` changes the shipped stylesheet.
+  Full record in
+  [the rewrite journal](../projects/bounty-conversion/rewrite-journal.md).
 - **2026-09-06** — **grapevine again, Phase S: the registry.** Taught: the
   shadcn CLI needs the config directory to be a package (workspace member,
   hoisted-linker pin, the skill's probe dead at the root from then on); measure

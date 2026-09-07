@@ -28,6 +28,15 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  cardOverdue,
+  cardPassesFilter,
+  expectedMinutes,
+  isBlocked,
+  liveBlockerCount,
+  ownersOverWip,
+} from "../shared/predicates";
+import type { BoardState, Task, TaskStatus } from "../shared/types";
+import {
   deriveSessionId,
   findScopeRoot,
   liveBoards,
@@ -44,22 +53,15 @@ import {
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
-  type BoardState,
-  cardOverdue,
-  cardPassesFilter,
   cleanTags,
   computeDuePokes,
-  expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
-  ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
   shouldRotateSnapshot,
   snapshotTaskCount,
-  type Task,
-  type TaskStatus,
   validateTask,
 } from "./server.ts";
 
@@ -382,6 +384,92 @@ describe("validateTask size/expect", () => {
     expect(validateTask({ ...base, expect: 0 })).toEqual(base);
     expect(validateTask({ ...base, expect: -5 })).toEqual(base);
     expect(validateTask({ ...base, expect: "soon" })).toEqual(base);
+  });
+});
+
+// ── the blocker primitive ────────────────────────────────────────────────
+//
+// ⛔ THIS BLOCK EXISTS BECAUSE THE INVENTORY CLAIMED IT ALREADY DID. bounty's
+// behaviour inventory named `scripts/server.test.ts` as the guard for the
+// blocked-count row (L5), and this file contained neither `isBlocked` nor
+// `liveBlockerCount` — `isBlocked` was reached only THROUGH computeDuePokes and
+// cardOverdue, which is coverage of the callers, not of the predicate.
+// `liveBlockerCount` was worse: the seam cut (2026-09-06) EXTRACTED it as a new
+// exported primitive so the daemon's boolean and the card's "blocked by N"
+// could stop being two implementations, and then shipped it with no cell of its
+// own in the file the inventory pointed at. Found by the verify pass.
+//
+// The count is the primitive and the boolean is defined over it, so the cells
+// below are written against the count and the boolean is checked for agreement
+// at each case rather than re-tested.
+
+describe("liveBlockerCount / isBlocked", () => {
+  const t = (id: string, over: Partial<Task> = {}): Task => ({
+    id,
+    title: id,
+    status: "todo",
+    ...over,
+  });
+
+  test("no blockedBy at all is zero, and not blocked", () => {
+    const a = t("a");
+    expect(liveBlockerCount(a, [a])).toBe(0);
+    expect(isBlocked(a, [a])).toBe(false);
+  });
+
+  test("an empty blockedBy is zero — an unblock that removed the last edge", () => {
+    const a = t("a", { blockedBy: [] });
+    expect(liveBlockerCount(a, [a])).toBe(0);
+    expect(isBlocked(a, [a])).toBe(false);
+  });
+
+  test("a LIVE blocker counts", () => {
+    const a = t("a", { blockedBy: ["b"] });
+    const tasks = [a, t("b")];
+    expect(liveBlockerCount(a, tasks)).toBe(1);
+    expect(isBlocked(a, tasks)).toBe(true);
+  });
+
+  test("a DONE blocker does not block", () => {
+    const a = t("a", { blockedBy: ["b"] });
+    const tasks = [a, t("b", { status: "done" })];
+    expect(liveBlockerCount(a, tasks)).toBe(0);
+    expect(isBlocked(a, tasks)).toBe(false);
+  });
+
+  test("a MISSING blocker does not block — a deleted task cannot hold one back", () => {
+    const a = t("a", { blockedBy: ["gone"] });
+    expect(liveBlockerCount(a, [a])).toBe(0);
+    expect(isBlocked(a, [a])).toBe(false);
+  });
+
+  test("the COUNT is what the card renders, so it must count each live edge", () => {
+    // The whole reason this is a count and not a boolean: the board says
+    // "blocked by 3". A boolean here would have made that a second, unguarded
+    // implementation on the surface — which is exactly what it was until the
+    // seam cut.
+    const a = t("a", { blockedBy: ["b", "c", "d", "done", "gone"] });
+    const tasks = [a, t("b"), t("c"), t("d"), t("done", { status: "done" })];
+    expect(liveBlockerCount(a, tasks)).toBe(3);
+    expect(isBlocked(a, tasks)).toBe(true);
+  });
+
+  test("doing/review blockers block; only done clears", () => {
+    for (const status of ["todo", "doing", "review"] as const) {
+      const a = t("a", { blockedBy: ["b"] });
+      expect(liveBlockerCount(a, [a, t("b", { status })])).toBe(1);
+    }
+    expect(liveBlockerCount(t("a", { blockedBy: ["b"] }), [t("b", { status: "done" })])).toBe(0);
+  });
+
+  test("a self-edge is not special-cased — it blocks until the task is done", () => {
+    // Not an endorsement: the daemon's cycle guard is what prevents this being
+    // created. Pinned so a future change to the guard cannot silently change
+    // what an already-persisted snapshot renders.
+    const a = t("a", { blockedBy: ["a"] });
+    expect(liveBlockerCount(a, [a])).toBe(1);
+    const done = t("a", { blockedBy: ["a"], status: "done" });
+    expect(liveBlockerCount(done, [done])).toBe(0);
   });
 });
 
@@ -2626,27 +2714,21 @@ describe("dependencies (Phase D)", () => {
     }
   }, 15000);
 
-  test("b16 LOCKSTEP — template.html actually RENDERS restoreFailed, not just receives it", async () => {
-    // THE DRIFT THIS WHOLE FIX IS AN INSTANCE OF. bounty's surface features pair
-    // logic in server.ts with a HAND-WRITTEN Alpine mirror in template.html, and
-    // nothing has ever guarded the pair. That is precisely how `restoreFailed`
-    // shipped emitted-at-5-sites and rendered-at-0 for a full release.
-    //
-    // A wire test alone would NOT have caught the original defect: the field was
-    // on GET /state the whole time. Only the surface was blind. So this cell
-    // reads the template as text and asserts the mirror exists — crude, but it
-    // fails loudly the moment someone adds a field to the wire and forgets the
-    // human, which is the failure that actually happened.
-    const template = readFileSync(join(import.meta.dir, "template.html"), "utf8");
-    // it is in the component's state
-    expect(template).toContain("restoreFailed: null");
-    // it is populated from the init frame
-    expect(template).toContain("msg.restoreFailed");
-    // and it is actually put on screen, with BOTH fields the agent gets
-    expect(template).toContain('x-if="restoreFailed"');
-    expect(template).toContain('x-text="restoreFailed.path"');
-    expect(template).toContain('x-text="restoreFailed.reason"');
-  });
+  // ⛔ THE b16 LOCKSTEP CELL MOVED, IT WAS NOT DROPPED. It used to read
+  // `scripts/template.html` as text and assert the Alpine mirror rendered
+  // `restoreFailed`, because bounty's surface features paired logic here with a
+  // HAND-WRITTEN mirror in that page and nothing guarded the pair — which is
+  // exactly how `restoreFailed` shipped emitted-at-5-sites and rendered-at-0
+  // for a full release. The page is gone (2026-09-06); the surface is React at
+  // src/bounty/surface/, and a test HERE that reached across into src/ would be
+  // the relative escape out of the artifact boundary the import-boundary wards
+  // forbid. The guard now lives beside its subject, at
+  // src/bounty/surface/reaches-the-human.test.ts, and it is WIDER than this one
+  // was: it asserts the property for every field the daemon puts on the init
+  // frame, not for restoreFailed alone.
+  //
+  // What stays here is the daemon's own half — the cell above, which asserts
+  // the field is present-and-null on a healthy boot.
 
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();

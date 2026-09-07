@@ -58,6 +58,24 @@ import { parseArgs as nodeParseArgs } from "node:util";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SERVER_SCRIPT = join(SCRIPT_DIR, "server.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+// ⛔ CONTRACT 5 LANDS ON WHOEVER SPAWNS THE DAEMON, AND THAT IS THIS FILE.
+// Bun reads bunfig.toml (the Tailwind plugin) from cwd ONLY, so in DEV mode the
+// daemon's cwd MUST be src/bounty/ — spawned anywhere else the dev bundler
+// cannot compile the stylesheet and the WHOLE PAGE fails (500, no stylesheet
+// link), silently, with nothing red anywhere. In RELEASE there is no bundling
+// and no src/ at all (a source-free marketplace clone has no top-level src/),
+// so the cwd stays at the skill root. Until 2026-09-06 this spawn passed the
+// skill root unconditionally, which was correct while the board was a single
+// static HTML file and is not correct now.
+const SURFACE_CWD = join(SCRIPT_DIR, "..", "..", "..", "..", "..", "src", "bounty");
+
+function daemonCwd(): string {
+  if (process.env.SPELLBOOK_SURFACE_MODE === "release") return SKILL_ROOT;
+  if (process.env.SPELLBOOK_SURFACE_MODE === "dev") return SURFACE_CWD;
+  return existsSync(join(DIST_DIR, "index.html")) ? SKILL_ROOT : SURFACE_CWD;
+}
 const SNAPSHOTS_DIR = join(process.env.BOUNTY_HOME ?? join(homedir(), ".bounty"), "snapshots");
 
 type TaskStatus = "todo" | "doing" | "review" | "done";
@@ -707,11 +725,22 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
   // node:child_process (not Bun.spawn) is deliberate + matches imago/grapevine:
   // the daemon must SURVIVE this CLI process exiting, which needs detached:true
   // + unref(). Bun.spawn can't detach a surviving daemon.
+  // Check the cwd EXISTS before spawning: the daemon's stdio is detached, so a
+  // missing directory would surface as a silent "failed to start" — and node
+  // reports a missing cwd as ENOENT on the EXECUTABLE, which reads as "bun is
+  // missing" rather than "the surface is not here".
+  const cwd = daemonCwd();
+  if (!existsSync(cwd)) {
+    printJson({
+      error: `bounty cannot start its daemon: the working directory it needs is missing — ${cwd}. No dist/index.html was found (or SPELLBOOK_SURFACE_MODE=dev is set), so the daemon would run in dev mode and needs the surface source at that path.`,
+    });
+    return 2;
+  }
   const proc = spawn(process.execPath, args, {
     detached: true,
     stdio: ["ignore", "ignore", stderr],
     env: process.env,
-    cwd: join(SCRIPT_DIR, ".."),
+    cwd,
   });
   proc.unref();
 

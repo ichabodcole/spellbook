@@ -213,9 +213,50 @@ import { join } from "node:path";
 // a two-line comment on the `--color-accent` alias (why it must differ from
 // `--color-popover`, or a hovered menu item is invisible). 3,758 + 2 = 3,760
 // exactly.
+//
+// ⛔ RE-DECLARED 2026-09-06 FOR BOUNTY'S SURFACE — 22/3,760 -> 25/3,938.
+// MEMBERSHIP MOVED BY THREE, all of them arrivals from the bounty rewrite:
+//     +144  src/bounty/surface/styles.css   (new)
+//     +32   src/bounty/surface/index.html   (new)
+//     +2    src/bounty/bunfig.toml          (new)
+// 3,760 + 178 = 3,938 exactly, summed FROM THE OBJECT BELOW rather than from
+// the paragraph above it. bounty ships the roster's largest surface sheet
+// because on this board colour IS the status vocabulary: the old page's 27
+// `:root` properties became 34 tokens (four status families of three, plus two
+// washes) on top of the same L1 alias block and the same three pins — dark,
+// the raw-var aliases, the pointer — that grapevine carries.
+//
+// ⛔ RE-DECLARED A THIRD TIME, SAME DAY, FOR THE VERIFY PASS'S FIX — 24/2,935
+// -> 24/2,949. MEMBERSHIP DID NOT MOVE; one entry grew:
+//     +14  src/bounty/surface/styles.css   144 -> 158
+// a `.board-ended` rule and its comment. The session-end state went back onto
+// <body>, where the old page had it, because the registry dialogs portal to
+// document.body and a class on a wrapper inside #root cannot reach them. It is
+// a hand-written rule rather than two utilities for a reason that belongs in
+// this ward's own subject matter: the class is applied from script to an
+// element this surface does not render, so there is no markup for Tailwind's
+// scanner to read — spelled only in a JS string array, it emitted NEITHER rule
+// and the fix shipped inert. 2,935 + 14 = 2,949 exactly, from the object's sum.
+//
+// ⛔ RE-DECLARED AGAIN, SAME DAY, FOR THE DAEMON COMMIT — 25/3,938 -> 24/2,935.
+// MEMBERSHIP SHRANK BY ONE, and it is the largest departure this ward has ever
+// recorded:
+//     -1003  plugins/spellbook/skills/bounty/scripts/template.html  (deleted)
+// The Alpine page is gone; the daemon serves the built dist/. 3,938 - 1,003 =
+// 2,935 exactly, summed from the object below.
+//
+// ⚠ WHAT THIS NUMBER DOES AND DOES NOT MEAN. The gate can now READ bounty's
+// board — it is .tsx and .ts, linted and type-checked — where before it could
+// read none of it. But 178 of those 1,003 lines did not leave the blind set,
+// they MOVED into it as styles.css, index.html and bunfig.toml, and the
+// remaining 825 became code the gate still cannot prove renders anything. The
+// honest reading is "1,003 lines of unreadable board became 178 lines of
+// unreadable configuration", not "the board is now covered".
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
-  "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
+  "src/bounty/surface/styles.css": 158,
+  "src/bounty/surface/index.html": 32,
+  "src/bounty/bunfig.toml": 2,
   "src/mind-mapper/surface/styles.css": 238,
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,

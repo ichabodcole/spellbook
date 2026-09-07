@@ -67,8 +67,65 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import type { ServerWebSocket } from "bun";
+import { expectedMinutes, isBlocked } from "../shared/predicates";
+// The seam (2026-09-06). Types and the four board predicates live one level up,
+// in the tracked skill subtree, so the React surface at src/bounty/ imports the
+// SAME code the daemon runs instead of hand-mirroring it in the page. `shared/`
+// is inside what the marketplace copies, so this resolves at the destination
+// with nothing installed (seams Contract 3, row 1).
+import type { BoardState, StatusVisit, Task, TaskSize, TaskStatus } from "../shared/types";
+import { SIZE_MINUTES } from "../shared/types";
 
+// The board's HTML used to be `scripts/template.html`, read at boot and string
+// substituted before every response. It is now a React surface at
+// src/bounty/surface/, built into dist/ (seams Contract 2). The dev entry is a
+// DYNAMIC import reached only on the dev branch: a static one would force Bun
+// to resolve the whole .tsx + Tailwind graph when this module LOADS, so the
+// published artifact — which ships dist/ and no surface source — would die
+// before it could serve the dist it does have (Contract 1).
+//
+// Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd to
+// src/bounty/ in dev for bunfig.toml's sake (Contract 5), so cwd is not a
+// stable base for dist/.
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root — the FILE, never the
+// directory (a built backend can put cli.js in dist/ with no surface there) —
+// else dev; the env override wins either way (Contract 1). Release: zero reads
+// of surface source or bunfig.toml, static files only.
+export function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves dist/ verbatim — the unhashed entry index.html at "/", and the hashed
+// index-*.js / index-*.css it links RELATIVELY, which from "/" arrive as bare
+// filenames (Contract 2's flat layout). The guard keeps this ONE level deep: a
+// nested or `..` path is refused, which also keeps it disjoint from the board's
+// own GET /assets/<name> route (every /assets/ path is nested, so it is refused
+// here and falls through to that handler).
+function serveDist(path: string): Response | null {
+  const rel = path === "/" ? "index.html" : path.slice(1);
+  if (!rel || rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 // Persistence root: debounced snapshots land in $BOUNTY_HOME/snapshots/<id>.json
 // so a board survives a restart via `cli.ts open --restore <id>`. cli.ts derives
@@ -89,53 +146,8 @@ const SHUTDOWN_WATCHDOG_MS = Number(process.env.BOUNTY_SHUTDOWN_WATCHDOG_MS ?? 5
 // Diagnostics only — no board behavior reads this.
 const DAEMON_LOG = join(BOUNTY_HOME, "daemon.log");
 
-type TaskStatus = "todo" | "doing" | "review" | "done";
-type StatusVisit = { status: TaskStatus; at: number }; // a single transition (unix ms)
-type Task = {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  notes?: string;
-  owner?: string; // assignee — lead sets via add/update --owner; worker self-claims
-  blockedBy?: string[]; // ids this task is blocked on (mutated only via block/unblock)
-  tags?: string[]; // free-form labels; clean string[] (a future filter groups on them)
-  enteredStatusAt?: number; // unix ms the task entered its CURRENT status
-  statusHistory?: StatusVisit[]; // capped transition log (heartbeat/aging/metrics substrate)
-  size?: TaskSize; // heartbeat sizing — opt-in; maps to a default expected time
-  expect?: number; // explicit expected minutes (overrides size); for the rare exception
-};
-type BoardState = { title: string; tasks: Task[] };
-
 // Cap the per-task transition log so long-lived tasks don't bloat snapshots.
 const MAX_STATUS_HISTORY = 20;
-
-// Heartbeat sizing (#29). Three sizes only — agents are fast (a code change
-// rarely runs past ~20 min) and the absence of an XL is deliberate: a days-long
-// task is a signal to BREAK IT DOWN, not size it bigger. Minutes are tunable.
-type TaskSize = "S" | "M" | "L";
-const SIZE_MINUTES: Record<TaskSize, number> = { S: 5, M: 10, L: 20 };
-
-// A task's expected time in minutes, or undefined when it isn't watched.
-// Heartbeat is opt-in per task: an explicit `expect` wins, else the size's
-// default, else undefined (no size/expect → never poked).
-function expectedMinutes(task: Task): number | undefined {
-  if (typeof task.expect === "number" && task.expect > 0) return task.expect;
-  if (task.size && task.size in SIZE_MINUTES) return SIZE_MINUTES[task.size];
-  return undefined;
-}
-
-// A task is blocked iff a blockedBy id points at an EXISTING task that isn't
-// done yet (a missing or done blocker doesn't block) — the same predicate the
-// /state projection uses for `blocked`/`liveBlockers`. Pure + module-level so
-// the heartbeat poke + card-aging sweeps and reconcileBlocked all share it. A
-// blocked doing card is legitimately waiting on a peer, not stuck — neither
-// sweep should fire on it (#40; model the wait as `block <id> --on <peer>`).
-function isBlocked(task: Task, tasks: Task[]): boolean {
-  return (task.blockedBy ?? []).some((bid) => {
-    const b = tasks.find((t) => t.id === bid);
-    return b !== undefined && b.status !== "done";
-  });
-}
 
 type Poke = { taskId: string; owner?: string; overdueByMs: number; expectedMinutes: number };
 type PokeState = Map<string, number>; // taskId -> lastPokeAt (unix ms)
@@ -170,43 +182,6 @@ function computeDuePokes(
     }
   }
   return { pokes, pokeState: next };
-}
-
-// Card-aging (#2): the surface companion to heartbeat. A doing card that has an
-// expected time (size/expect) and has overrun it reads as "stale". Returns null
-// when the card shouldn't be cued (not doing, unsized, unstamped, or not yet
-// overdue) — opt-in, mirroring heartbeat. Returns both overdueByMs (an "Nm over"
-// badge) and ageMs (a "Doing Nm" badge) so the surface picks the wording. Pure +
-// clock-injected so it's unit-tested; the inline Alpine surface mirrors it (it
-// can't import — it ticks `now` client-side). NOT used by the daemon (no server
-// behavior change) — it's the canonical the surface copies.
-function cardOverdue(
-  task: Task,
-  tasks: Task[],
-  now: number,
-): { overdueByMs: number; ageMs: number } | null {
-  if (task.status !== "doing" || task.enteredStatusAt === undefined) return null;
-  const exp = expectedMinutes(task);
-  if (exp === undefined) return null;
-  if (isBlocked(task, tasks)) return null; // legitimately waiting on a peer — not stale
-  const ageMs = now - task.enteredStatusAt;
-  const overdueByMs = ageMs - exp * 60_000;
-  return overdueByMs >= 0 ? { overdueByMs, ageMs } : null;
-}
-
-// surface-filter: the canonical decision for whether a card survives the human's
-// view filter. Faceted — OR within a facet (any selected tag matches), AND across
-// facets (the tag-set AND the owner-set). An empty facet means "no filter on this
-// facet" → it passes. So no active filters at all → every card passes (default
-// view). Pure + state-free so it's unit-tested; the inline Alpine surface mirrors
-// it (it can't import). NOT used by the daemon — view-only narrowing, no server
-// behavior change. Hide (don't dim) cards that fail this, so column counts track
-// the visible set.
-function cardPassesFilter(task: Task, activeTags: string[], activeOwners: string[]): boolean {
-  const tagPass = activeTags.length === 0 || (task.tags ?? []).some((t) => activeTags.includes(t));
-  const ownerPass =
-    activeOwners.length === 0 || (task.owner !== undefined && activeOwners.includes(task.owner));
-  return tagPass && ownerPass;
 }
 
 // open-timeout: the idle-close decision, factored out so it's clock-free testable
@@ -262,26 +237,6 @@ function shouldRotateSnapshot(
   if (alreadyRotatedThisSession) return false;
   if (priorTaskCount === null) return false; // nothing readable to protect
   return nextTaskCount < priorTaskCount;
-}
-
-// wip-cue: the owners who have >= threshold cards in DOING — a soft, per-owner
-// WIP signal ("you've got a pileup; wrap one before pulling more"). Per-owner, so
-// legit parallel owners each under the limit never trip it. UNOWNED doing cards
-// have no worker, so they're excluded and don't count toward any owner's tally.
-// Pure so it's unit-tested; the inline Alpine surface mirrors it (it can't
-// import). NOT used by the daemon — a purely visual, non-blocking nudge (it can
-// never block the move), no server behavior change. A card shows the cue iff it
-// is in doing AND its owner is in this set.
-function ownersOverWip(tasks: Task[], threshold: number): Set<string> {
-  const counts = new Map<string, number>();
-  for (const t of tasks) {
-    if (t.status === "doing" && t.owner !== undefined) {
-      counts.set(t.owner, (counts.get(t.owner) ?? 0) + 1);
-    }
-  }
-  const over = new Set<string>();
-  for (const [owner, n] of counts) if (n >= threshold) over.add(owner);
-  return over;
 }
 
 // Stamp a status transition: the fields to merge onto a task entering `status`
@@ -712,7 +667,42 @@ async function main(argv: string[]): Promise<number> {
   process.on("SIGTERM", onFatal("SIGTERM", 143));
   process.on("SIGINT", onFatal("SIGINT", 130));
 
-  const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
+  // Resolved BEFORE any filesystem write. A forced-dev boot at a surface-free
+  // destination must die HERE, at the import, having written nothing: no
+  // snapshot, no discovery file — so a CLI polling for the session file sees a
+  // clean failure rather than a half-born daemon.
+  const mode = resolveMode();
+  // dev: Bun bundles the .tsx graph + Tailwind at serve time, reading
+  // bunfig.toml from cwd, which cli.ts pins to src/bounty/ (Contract 5).
+  // release: dist/ is static and pre-built — "/" is answered by serveDist() in
+  // the fetch handler, so this branch never touches surface source or
+  // bunfig.toml and never needs either to exist. This is the ONE src/-naming
+  // specifier in the deployed spell (grimoire/import-boundary-wards.test.ts
+  // pins it).
+  //
+  // ⛔ THE FAILURE MUST NAME THE SURFACE. This daemon installs an
+  // `uncaughtException` handler that logs to $BOUNTY_HOME/daemon.log and exits
+  // 1 WITHOUT touching stderr — correct for a mid-flight invariant break, and
+  // exactly wrong here: a forced-dev boot at a surface-free destination then
+  // dies with no output at all, and the operator has no way to tell it from a
+  // missing `bun`. Measured on the local-sim before this catch existed: exit 1,
+  // stdout empty, stderr empty.
+  let devIndex: unknown;
+  if (mode === "dev") {
+    try {
+      devIndex = (await import("../../../../../src/bounty/surface/index.html")).default;
+    } catch (e) {
+      process.stderr.write(
+        "bounty: cannot start in dev mode — the surface source is missing.\n" +
+          "  needed: src/bounty/surface/index.html (relative to the repo root)\n" +
+          `  reason: ${e instanceof Error ? e.message : String(e)}\n` +
+          "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
+          "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from a checkout.\n",
+      );
+      return 2;
+    }
+  }
+  const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
   // Initial state — restored from a snapshot (merge-over-defaults) or fresh.
@@ -1069,7 +1059,7 @@ async function main(argv: string[]): Promise<number> {
           .filter((d): d is { index: number; reason: string } => d.reason !== null);
         for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
       }
-      broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed });
+      broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed, sessionId });
       emitEvent({ type: "init", title: state.title, by });
       // Present-and-null, never absent: an absent field cannot distinguish "all
       // your tasks were seeded" from "this daemon does not report drops".
@@ -1239,12 +1229,17 @@ async function main(argv: string[]): Promise<number> {
     return { ok: true, applied: false };
   }
 
-  let pageHtml = "";
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
       hostname: host,
+      // dev: the HTMLBundle at "/" (Bun serves its assets itself).
+      // release: no routes — the fetch handler serves dist/. Bun's Routes type
+      // ties the value's type to the literal object shape, so the mode-ternary
+      // union is cast; the runtime behaviour is correct either way.
+      routes,
+      development: { hmr: mode === "dev" },
       // P1e (re-scoped from #64). Bun's default request idleTimeout is 10s, and
       // the SSE heartbeat below fires every 15s — so on an OTHERWISE-IDLE
       // connection the heartbeat cannot fire, because the connection is severed
@@ -1266,11 +1261,6 @@ async function main(argv: string[]): Promise<number> {
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
-        if (req.method === "GET" && path === "/") {
-          return new Response(pageHtml, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
-        }
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded) return undefined;
@@ -1344,6 +1334,15 @@ async function main(argv: string[]): Promise<number> {
                 }),
           );
         }
+        // Release only: "/" and the surface's hashed chunks, which the built
+        // index.html links relatively and which therefore arrive as bare
+        // filenames at the root. Dev never serves from dist/ — a checkout can
+        // carry a committed dist/ that is stale against its source, and in dev
+        // Bun's router owns the bundle's assets.
+        if (mode === "release" && req.method === "GET") {
+          const served = serveDist(path);
+          if (served) return served;
+        }
         return new Response('{"error":"not found"}', {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -1366,7 +1365,13 @@ async function main(argv: string[]): Promise<number> {
           // EVERY connect, not just the first: a reload or reconnect must not be
           // the thing that loses the warning.
           ws.send(
-            JSON.stringify({ type: "init", title: state.title, tasks: state.tasks, restoreFailed }),
+            JSON.stringify({
+              type: "init",
+              title: state.title,
+              tasks: state.tasks,
+              restoreFailed,
+              sessionId,
+            }),
           );
         },
         message(_ws, raw) {
@@ -1404,7 +1409,13 @@ async function main(argv: string[]): Promise<number> {
             if (applyTaskMove(state, msg.id, msg.status, msg.index) !== -1) {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
-              broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed });
+              broadcast({
+                type: "init",
+                title: state.title,
+                tasks: state.tasks,
+                restoreFailed,
+                sessionId,
+              });
               emitEvent({
                 type: "task.move",
                 taskId: msg.id,
@@ -1488,21 +1499,23 @@ async function main(argv: string[]): Promise<number> {
 
   const boundPort = server.port;
   if (!sessionId) sessionId = `bounty-${randHex(4)}-p${boundPort}`;
-  const wsUrl = `ws://${host}:${boundPort}/ws`;
-  // Two contexts for substitutions:
-  //   - HTML/text contexts (the visible <h1>, <title>, <code>): use htmlEscape.
-  //   - JS string context (the wsUrl literal inside <script>): use
-  //     JSON.stringify, which produces a properly-quoted JS string literal.
-  //     The template uses bare placeholders (no surrounding quotes) for the
-  //     JS-context substitutions so JSON.stringify provides them.
-  pageHtml = template
-    .replace(/__TITLE__/g, htmlEscape(state.title))
-    .replace(/__SESSION_ID__/g, htmlEscape(sessionId))
-    .replace(/__WS_URL__/g, JSON.stringify(wsUrl));
-
+  // The three values the old template.html had substituted into it now reach
+  // the board another way, because a BUILT index.html is a static artifact the
+  // daemon serves verbatim and dev mode is served by Bun's own bundler — there
+  // is no point at which the daemon could substitute in both modes:
+  //   - the WebSocket URL is derived in the browser from location.host (the
+  //     page is served from this same origin);
+  //   - the title already rode the `init` frame and always overrode the
+  //     substituted one within a few ms of connect;
+  //   - the session id now rides `init` too. It is a BOOT FACT, and `init` is
+  //     the frame that carries boot facts — the same argument b16 made for
+  //     putting restoreFailed there.
   const url = `http://${host}:${boundPort}`;
   // First frame on the event log (id 1) — bookends the stream with `closed`.
-  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, by: "system" });
+  // `mode` rides BOTH transports bounty has. It prints no stdout handshake and
+  // no stderr boot line, so the ready event and the discovery JSON are the
+  // whole set — a cell that reads one certifies half the contract.
+  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, mode, by: "system" });
   logDaemon("ready", { port: boundPort });
 
   // Discovery: write session info to predictable temp files so joining
@@ -1517,6 +1530,11 @@ async function main(argv: string[]): Promise<number> {
     port: boundPort,
     session_id: sessionId,
     title: state.title,
+    // Which surface answered: "release" serves the committed dist/, "dev" asks
+    // Bun to bundle src/bounty/surface/ at serve time. A dev daemon with the
+    // repo's deps present renders an identical-looking board, so this is the
+    // only way a caller can tell them apart.
+    mode,
     // b15 — rides the DISCOVERY payload because that is what `open` prints, and
     // `open` is the command whose restore just failed. Reporting it only on a
     // later /state would mean the caller learns of it, if at all, on a different
@@ -1652,22 +1670,17 @@ if (import.meta.main) {
   process.exit(exitCode);
 }
 
-export type { BoardState, Task, TaskStatus };
 export {
   applyTaskAdd,
   applyTaskMove,
   applyTaskRemove,
   applyTaskUpdate,
-  cardOverdue,
-  cardPassesFilter,
   cleanTags,
   computeDuePokes,
-  expectedMinutes,
   htmlEscape,
   isNoOpMove,
   isNoOpUpdate,
   main,
-  ownersOverWip,
   parsePortFromSessionId,
   shouldIdleClose,
   shouldRotateSnapshot,
