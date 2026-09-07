@@ -6,6 +6,7 @@
   "private": true,
   "workspaces": [
     "src/bounty",
+    "src/digestify",
     "src/grapevine"
   ],
   "scripts": {

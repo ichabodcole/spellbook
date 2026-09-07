@@ -392,46 +392,45 @@ build; the open question is order, not whether.**
 > 3's criterion ends that exemption automatically — it is a staging concession,
 > not a category.
 
-**Direction is still not permission**, though — the queue below governs _when_ a
-spell ports, and nothing about the backend ruling moves a spell up it. What the
-plan DOES change is the queue's status: it is no longer a list of candidates
-that may or may not be taken up, but **scheduled work with an unpriced bill.**
-The remaining three are _not yet_, not _correctly not_ — but they are not one
-queue, and treating them as one is how a port gets estimated wrong:
+**Direction is still not permission**, though — the queue below governed _when_
+a spell ported. **The queue is now EMPTY, and this section is a record rather
+than a schedule.**
 
-| spell         | surface today       | distance                                |
-| ------------- | ------------------- | --------------------------------------- |
-| **digestify** | one HTML file + CDN | **conditional** — see the trigger below |
+| spell    | surface today | distance |
+| -------- | ------------- | -------- |
+| _(none)_ | —             | —        |
 
-**The queue is one spell long.** bounty left it on 2026-09-06
-(`docs/projects/bounty-conversion/`): rewritten to React + tokens, its
-primitives taken from the shadcn registry INSIDE the rewrite rather than
-vendored first, and ported the same day. It was the second rewrite; grapevine
-went first on 2026-09-05 and was the pathfinder
-(`docs/projects/grapevine-conversion/`). **A spell with no `surface/` is not yet
-a port subject**; the porting playbook's Applicability says the same thing from
-its side — and with bounty gone, that sentence now governs exactly one spell.
+**Every spell in the roster builds.** digestify left the queue on 2026-09-07
+(`docs/projects/digestify-conversion/`), the third and last rewrite: 1,505 lines
+of hand-written HTML with three CDN runtime dependencies became a React surface
+with its primitives from the shadcn registry, taken INSIDE the rewrite rather
+than vendored first. bounty went on 2026-09-06 and grapevine — the pathfinder —
+on 2026-09-05. **A spell with no `surface/` is not yet a port subject**; the
+porting playbook's Applicability says the same thing from its side, and it now
+governs nobody.
 
-> _Repaired 2026-09-04: this paragraph carried a sentence with **no subject** —
-> "is already React and Tailwind; what stands between it and a build is moving
-> the files" — followed by a verbatim duplicate of the bounty/grapevine sentence
-> above it. The missing subject was a spell that has since ported, so the clause
-> described nobody by the time anyone read it. Removed rather than
-> reconstructed: all five React surfaces build today, and the three that remain
-> are Alpine or static._
+> **⏳ DIGESTIFY'S TRIGGER FIRED, AND NOT THE WAY IT WAS WRITTEN.** The
+> condition was "digestify ports when it becomes dynamic enough to want a
+> build", owned by Cole and checked when that work started. What actually
+> happened is that the two ports either side of it turned a conditional into an
+> obvious last step: with grapevine and bounty on the built layer, digestify was
+> the only spell whose surface the gate could not read at all, and Cole ruled
+> the port directly (2026-09-06, behaviour-faithful + restyled, all three themes
+> tokenized). **A named trigger with an owner did its job even though the named
+> occasion never arrived** — because it made the question re-askable, which is
+> the whole difference between a trigger and a comment.
 
-> **⏳ DIGESTIFY'S TRIGGER, stated because an unnamed one does not fire.**
-> digestify ports **when it becomes dynamic enough to want a build** — that is
-> the condition, and it is real rather than a placeholder: the plan to make it
-> more dynamic exists and the port is expected to follow it. **Cole owns this
-> trigger and checks it when that work starts.** Until then digestify staying
-> put is the correct state, not debt.
->
-> _Refined 2026-09-04 without overruling the trigger — it is still Cole's:_
-> **under the universal plan above, this condition governs WHEN digestify ports,
-> not WHETHER.** "Correct state, not debt" holds for today; what it stops being
-> is a permanent answer. The trigger is now the EARLIEST occasion, not the only
-> one.\_
+> **⛔ THIS RULE'S OWN REPEAL CONDITION HAS NOW FIRED.** It reads: _"Repeal
+> when: the last spell ports. Then this rule becomes 'spells build.'"_ The last
+> spell has ported. The successor sentence is therefore live — **spells build**
+> — and the porting DIRECTION this rule exists to state no longer has anyone to
+> point at. Left standing rather than deleted here for one reason and one only:
+> the next spell to be inscribed is the subject it will govern, and deleting it
+> the same week it was satisfied would hand that spell's author no rule at all.
+> **Rewriting it from a direction into a default is a canon decision and belongs
+> to the grooming pass, not to the port that satisfied it.** The judgment, and
+> what the trigger bought even though its named occasion never arrived, are in
+> [that scenario](scenarios/2026-09-07-a-repeal-condition-fired-and-the-rule-stayed.md).
 
 **What a built spell must satisfy** — the contracts, not this page, are
 authoritative:

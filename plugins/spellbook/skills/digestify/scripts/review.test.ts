@@ -161,7 +161,7 @@ describe("isoZNoMillis", () => {
 
 // ── End-to-end subprocess tests ─────────────────────────────────────────────
 
-type ReadyInfo = { url: string; port: number; session_id: string };
+type ReadyInfo = { url: string; port: number; session_id: string; mode: "dev" | "release" };
 
 async function spawnAndWaitForReady(
   args: string[],
@@ -489,50 +489,75 @@ describe("b4 — a departure is observable through a pipe", () => {
   }, 20000);
 });
 
-// ── b4s: the surface's departure beacon ─────────────────────────────────────
-// `template.html` is invisible to `bun run check` — biome's files.includes is an
-// allow-list of ts/tsx/json/jsonc, so a syntax error in 1475 lines of inline
-// Alpine ships silently. These cells are the only mechanical guard that file has.
-// They run against the SERVED html, not the source, so the substitution pass in
-// renderPage is exercised too.
-describe("surface departure beacon (b4s)", () => {
-  async function servedAppScript(port: number): Promise<string> {
-    const html = await (await fetch(`http://127.0.0.1:${port}/`)).text();
-    const blocks = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
-    expect(blocks.length).toBeGreaterThan(0);
-    return blocks[blocks.length - 1];
-  }
-
-  // FAILS IF: the pre-b4s beforeunload is restored (it beaconed /cancel only, and
-  // only when dirty). The behavioural half — a presence check, NOT proof the beacon
-  // fires. Whether beforeunload actually dispatches is browser-only and stays so.
-  test("served surface beacons /left on departure, and keeps /cancel", async () => {
+// ── the served page ─────────────────────────────────────────────────────────
+// ⚠ THIS BLOCK REPLACED TWO CELLS THAT NO LONGER HAVE A SUBJECT, and the reason
+// they existed is worth keeping. `template.html` was invisible to
+// `bun run check` — biome's files.includes is an allow-list of ts/tsx/json/jsonc
+// — so a syntax error in 1,500 lines of inline vanilla JS shipped silently, and
+// these were the only mechanical guard that file had:
+//
+//   • "served surface beacons /left on departure, and keeps /cancel" — a text
+//     search of the served <script> block. Its successor is
+//     `src/digestify/reaches-the-agent.test.ts`, which reads the surface source
+//     beside its subject. It CANNOT live here: a test under plugins/ reaching
+//     into src/ is the relative escape out of the artifact boundary the
+//     import-boundary wards forbid (playbook Gotcha 6).
+//   • "served app script parses" — a Bun.Transpiler parse of the same block.
+//     Now VACUOUS by construction: the surface is .tsx that `bun run check`
+//     lints and `tsc` type-checks, and `bun run build` fails outright on a
+//     syntax error. Deleted rather than kept as a cell that cannot fail.
+//
+// What is left here is the half that is still this file's: the daemon's
+// substitution pass, asserted against the page it actually serves.
+describe("the served page", () => {
+  test("carries the substituted title and a parseable payload island", async () => {
     const { proc, ready } = await spawnAndWaitForReady(
-      ["--timeout", "5"],
+      ["--timeout", "5", "--title", "Served & Checked"],
       "::: question id=q1\nQ?\n:::",
     );
-    const app = await servedAppScript(ready.port);
-    expect(app).toContain('"/left"');
-    expect(app).toContain("engaged: dirty");
-    // /cancel must survive unchanged — house-style pins 130 to "closed tab after
-    // interacting", so the dirty gate on /cancel is canon, not incidental.
-    expect(app).toContain('"/cancel"');
+    const html = await (await fetch(`http://127.0.0.1:${ready.port}/`)).text();
+
+    // Neither placeholder survives, and the title is HTML-escaped.
+    expect(html).not.toContain("__TITLE__");
+    expect(html).not.toContain("__PAYLOAD__");
+    expect(html).toContain("Served &amp; Checked");
+
+    const island = /<script id="payload" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+    expect(island?.[1]).toBeTruthy();
+    const payload = JSON.parse(island?.[1] ?? "");
+    expect(payload.title).toBe("Served & Checked");
+    expect(payload.session_id).toBe(ready.session_id);
+    expect(payload.questions).toEqual([{ id: "q1", prompt: "Q?" }]);
+    expect(payload.timeout_seconds).toBe(5);
+
     await postCancel(ready.port);
     await proc.exited;
   }, 15000);
 
-  // FAILS IF: any syntax error is introduced anywhere in template.html.
-  // This is the cell biome cannot provide for this file. Bun.Transpiler PARSES
-  // without evaluating — deliberately not `new Function`, which compiles the
-  // source into a callable and is the wrong tool for a parse assertion.
-  test("served app script parses", async () => {
+  test("a document containing `</script>` does not break out of the payload island", async () => {
+    // The one thing that could turn a document's own text into markup at this
+    // seam. `JSON.stringify(...).replace(/<\//g, "<\\/")` is what stops it, and
+    // this cell is what stops that line being tidied away.
     const { proc, ready } = await spawnAndWaitForReady(
       ["--timeout", "5"],
-      "::: question id=q1\nQ?\n:::",
+      "before </script><script>globalThis.PWNED=1</script> after\n\n::: question id=q1\nQ?\n:::",
     );
-    const app = await servedAppScript(ready.port);
-    const transpiler = new Bun.Transpiler({ loader: "js" });
-    expect(() => transpiler.transformSync(app)).not.toThrow();
+    const html = await (await fetch(`http://127.0.0.1:${ready.port}/`)).text();
+    const island = /<script id="payload" type="application\/json">([\s\S]*?)<\/script>/.exec(html);
+    const payload = JSON.parse(island?.[1] ?? "");
+    // The whole document survived INSIDE the island — the tag never closed early.
+    expect(payload.markdown).toContain("globalThis.PWNED=1");
+    expect(html).not.toContain("<script>globalThis.PWNED=1</script>");
+
+    await postCancel(ready.port);
+    await proc.exited;
+  }, 15000);
+
+  test("the ready line names the mode", async () => {
+    // The daemon's ONLY mode transport (Contract 1). In this repo dist/ is
+    // committed, so an unforced boot is release.
+    const { proc, ready } = await spawnAndWaitForReady(["--timeout", "5"], "hello");
+    expect(ready.mode).toBe("release");
     await postCancel(ready.port);
     await proc.exited;
   }, 15000);

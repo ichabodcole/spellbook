@@ -252,8 +252,10 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
 
-// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. SEVEN entries, the same site in seven
-// spells. Read the site before you add a fifth — the question is never "is it
+// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. EIGHT entries, the same site in eight
+// spells — and eight is now the WHOLE ROSTER: digestify's arrival (2026-09-07)
+// closed the port population, so a NINTH entry means a ninth spell, not a
+// ninth site. Read the site before you add a fifth — the question is never "is it
 // dynamic?" but "does it run at the DESTINATION?", and static-vs-dynamic is
 // only the mechanical stand-in for that.
 //
@@ -309,6 +311,23 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     file: "plugins/spellbook/skills/bounty/scripts/server.ts",
     spec: "../../../../../src/bounty/surface/index.html",
     resolved: "src/bounty/surface/index.html",
+  },
+  // digestify, the EIGHTH and last — the third rewrite, and the only spell in
+  // the roster whose daemon is not spawned by a cli.ts. `review.ts` IS the
+  // process the agent runs, so there is no spawner to pin the dev cwd (seams
+  // Contract 5) and `process.chdir` cannot substitute for one: Bun reads
+  // bunfig.toml at process START, so a chdir-then-import serves an UNSTYLED
+  // page with a green boot. The daemon therefore refuses a dev boot from the
+  // wrong directory BEFORE reaching this import, and the import's own catch
+  // names the missing surface. Neither widens the escape. Pinned by the agent
+  // that wrote the specifier after running existsSync on the resolved path; the
+  // admission was verified the same way as the others —
+  // scripts/release-serve.test.ts boots a copied tracked subtree with a dist/
+  // and no surface/, and its forced-dev cell dies before binding.
+  {
+    file: "plugins/spellbook/skills/digestify/scripts/review.ts",
+    spec: "../../../../../src/digestify/surface/index.html",
+    resolved: "src/digestify/surface/index.html",
   },
   {
     file: "plugins/spellbook/skills/glamour/scripts/server.ts",

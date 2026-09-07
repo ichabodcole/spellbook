@@ -1,9 +1,12 @@
 # Porting a Spell to the Built / Shared Layout — Playbook
 
-**Created:** 2026-08-31 **Last Updated:** 2026-09-06 **Status:** Active — third
-real run (grapevine, the first **rewrite**: Phase R has run once; Phase S, the
-registry, has run once on its heels); **next real run: bounty or digestify
-through Phases R and S** (see Applicability)
+**Created:** 2026-08-31 **Last Updated:** 2026-09-07 **Status:** Active, and its
+subject population is **CLOSED** — five real runs, three of them rewrites
+(grapevine, bounty, digestify). Every spell in the roster builds; no
+hand-written HTML surface remains anywhere in the tree. **There is no next run
+scheduled, and that changes what this document is for** — it has stopped being a
+schedule and become the thing an agent reads before it writes a NEW spell's
+first surface (see Applicability)
 
 ---
 
@@ -26,6 +29,24 @@ points at its authoritative home; two denominators for one fact drift apart and
 then neither is wrong.
 
 ## Applicability
+
+> **⛔ THE POPULATION IS CLOSED (2026-09-07).** digestify was the last spell
+> this playbook had a subject in; the roster is eight spells and eight built
+> surfaces. **Everything below still applies — to a spell that does not exist
+> yet.** Read that as the change it is: the phases were written by agents
+> porting things that were already shipping, under a fidelity ruling, against an
+> inventory that existed because the old page did. A NEW spell has none of that.
+> What survives for it is Phase 0 (instruments before the work), Phase S (the
+> registry is where primitives come from), and the destination shape R0 points
+> at. What does not is the premise of Phase R, which is that there is something
+> to be faithful to.
+>
+> **And one section is now a prediction with no population left to test it:**
+> R6's "expect four wards to red" was four for grapevine, four for bounty, and
+> **three** for digestify — because bounty had already fixed the latent defect
+> that made the fourth. A count derived from two runs is not a set; what
+> survives is _re-declare every ward that reds, by hand, and ask of each whether
+> it is out of date or wrong about you._
 
 **Use this playbook when:**
 
@@ -185,10 +206,59 @@ Capture the **observable contract**: every route and its query params; every SSE
 event and what state it mutates; every persisted key; every visibility
 predicate; every timer; and every **silent branch** — an empty `catch {}` is a
 behaviour ("this error is not shown") and gets a row. Grapevine: 68 rows from
-1,000 lines. This file is what the verify agent drives; write it for them.
+1,000 lines; bounty 114 from 1,003; digestify **138 from 1,505**. This file is
+what the verify agent drives; write it for them.
 
-**R2 — sort the state by what it touches.** Every method on the Alpine object
-goes in one of two bins: **touches nothing** (no DOM, network, timer) →
+⛔ **FOR A PAGE WITH NO FRAMEWORK, ADD A THIRD GREP AND EXPECT IT TO
+OVER-REPORT:**
+
+```
+grep -n 'return;\|else\|catch' <page>   # every branch whose FALSE arm is a behaviour
+```
+
+The two greps above find the timers, the storage and the fetches — about a third
+of an imperative page. What they miss is every `if` whose other arm is
+observable (`if (!q) return`, `if (submitted || expired) return`,
+`if (theme.logoSrc) … else …`), and on such a page those are the MAJORITY.
+Over-reporting is the right direction when the alternative is silence.
+
+⚠ **A DEAD DECLARATION IS A ROW.** Digestify shipped a custom property no rule
+read and a media-query rule that could never apply. Neither is a behaviour, and
+writing them off as styling is the easy call — but a reader six months out
+cannot tell a fossil from something they broke. One row each, saying it is dead
+and how that was checked, is cheaper than the archaeology.
+
+**R2 — sort the state by what it touches.** ⛔ **THIS STEP HAS TWO SHAPES AND
+THE SECOND IS NOT WRITTEN BELOW — decide which subject you have before reading
+on.** Everything in this paragraph presumes a REACTIVE SHELL: an `x-data` object
+whose methods are a finite enumeration the page hands you. A page of imperative
+vanilla DOM has no such object — digestify's ~600 lines are twenty-odd anonymous
+closures inside one IIFE, several registered inline and never named — and the
+sort below is structurally silent for it.
+
+> **For a page with no framework, sort the INVENTORY, not the code.** Take each
+> row and ask what its behaviour needs: nothing (a formatter, a TTL rule, a
+> truncation, a document split) → a pure module with a test; a clock, `fetch`,
+> `localStorage` or `sendBeacon` → the one hook; the DOM itself (selection,
+> ranges, node placement) → a component. **A row that will not sort is a row
+> describing two behaviours**, and splitting it is free now and expensive later.
+> Digestify: six pure modules, 90 cells before a component existed, one hook,
+> one DOM-owning component.
+
+⛔ **AND THERE IS A THIRD BIN THE SORT HAS NO NAME FOR: A DEPENDENCY THAT CANNOT
+RUN UNDER `bun test`.** Outside a browser `dompurify`'s default export is the
+FACTORY, so `.sanitize` is `undefined` and the render function THROWS — the
+purest and most important module on digestify's page could not be called in a
+test at all. When that happens, SPLIT the guard rather than skipping it: (1)
+take the dependency as an ARGUMENT so the COMPOSITION is testable with no DOM —
+that it wraps, in that order, with that config, exactly once; (2) add a cell
+that reads the surface as TEXT and fails if any sink is fed by anything else,
+which is what catches the second sink someone adds later; (3) drive the real
+thing in the browser. One of the three is not enough, and which one you skip
+decides which failure ships.
+
+The original sort, for a page that has a shell: Every method on the Alpine
+object goes in one of two bins: **touches nothing** (no DOM, network, timer) →
 `surface/state/*.ts`, pure, tested first, with storage **injected** so the
 persistence rules run under `bun test` with a Map; **touches one** → one hook
 (`useX.ts`), untested by unit. Every `x-data` field becomes React state in that
@@ -198,16 +268,22 @@ from `plugins/…/scripts/daemon.ts` is a surface→backend reach the
 import-boundary wards forbid); they are an import from `shared/` only when a
 Phase 1 seam exists. Tests beside their subjects from the first commit.
 
-**R3 — one component per landmark element.** Walk the markup once; each
-`<header>`, `<aside>`, `<main>` region and each sticky foot becomes one
-component; every `x-show` in the inventory should have exactly one home.
-Grapevine: 8 components for 190 lines of markup. Resist a finer grain. Native
-`window.confirm` becomes the vendored `AlertDialog` (same text, same forced
-choice — and drivable by a browser agent). No custom button, input, badge,
-dialog or select where a registry primitive exists — and _registry_ means
-installed by the CLI (Phase S), not copied from another spell's `ui/`: grapevine
-vendored first and paid for it with a second branch. Where the recipe and the
-page's look disagree, add a **variant**, not a stacked override.
+**R3 — one component per landmark element.** ⚠ **Where the page BUILDS its own
+DOM, the landmarks are the FUNCTIONS THAT CREATE ELEMENTS, not the elements in
+the file.** Digestify's `<body>` is 29 lines — a header, an image, an empty
+`<main>` — so "walk the markup" reads as "you need three components" and is
+wrong by seven; the real landmarks were `renderChip`, `buildEditor`,
+`showSentScreen`, the question-card loop and the floating button. Ten components
+from 29 lines of markup. Otherwise: walk the markup once; each `<header>`,
+`<aside>`, `<main>` region and each sticky foot becomes one component; every
+`x-show` in the inventory should have exactly one home. Grapevine: 8 components
+for 190 lines of markup. Resist a finer grain. Native `window.confirm` becomes
+the vendored `AlertDialog` (same text, same forced choice — and drivable by a
+browser agent). No custom button, input, badge, dialog or select where a
+registry primitive exists — and _registry_ means installed by the CLI (Phase S),
+not copied from another spell's `ui/`: grapevine vendored first and paid for it
+with a second branch. Where the recipe and the page's look disagree, add a
+**variant**, not a stacked override.
 
 **R4 — CSS to tokens, by role.** `styles.css` opens with the three lines the
 css-scope ward requires (`@import "tailwindcss" source(none)`, the kit
@@ -216,34 +292,71 @@ for its **role** where one exists (`--bg`→`bg`, `--line`→`edge`,
 `--ink-mute`→`ink-dim`, `--warn`→`attention`); keep the brand pair under its own
 name; lift inline hard-codes into tokens; `@keyframes` into `@theme` as
 `--animate-*`. What stays in `styles.css` is only what a utility cannot express
-— grapevine's is 74 lines, half prose. Web fonts go with the CDN; the family
-names stay in the `--font-*` stacks and fall through to system faces — no build
-step replaces a web font, and the restyle ruling absorbs it.
+— grapevine's is 74 lines, half prose. ⚠ **TWO NAMED EXCEPTIONS, measured on
+digestify's 503-line sheet, which is three times the previous largest and is not
+an author's indiscipline.** (1) **A surface that renders user markdown has a
+prose block utilities structurally cannot reach.** `marked` emits bare `<h1>`,
+`<pre>`, `<code>`, `<blockquote>`, `<a>` with no class attribute, and nothing
+may add one — that HTML is a sanitiser's OUTPUT and rewriting it would be a
+second sink. A descendant selector is the only instrument, and its size is a
+property of the markdown vocabulary. (2) **A multi-theme spell's L3 override
+blocks are DATA** — digestify's three themes are ~250 lines, one of which is an
+eighteen-gradient page texture carried across verbatim. Web fonts go with the
+CDN; the family names stay in the `--font-*` stacks and fall through to system
+faces — no build step replaces a web font, and the restyle ruling absorbs it.
 
 **R5 — the first surface commit is atomic with the build.** The dist-roster ward
 derives its roster from `src/<spell>/surface/index.html` existing, so the commit
 that adds it must also carry `build.ts` (the one-line delegator), `bunfig.toml`,
 the two `.gitignore` un-ignore lines and the built `dist/` — a source-only
 chapter cannot be green. The daemon **can** lag one commit: `dist/` exists, the
-daemon still serves the old page, the tree is shippable. Then the daemon commit:
-`git rm` the page FIRST (the `ls-files` wards read the index), pin the spawn cwd
-(**Contract 5 lands on whoever spawns the daemon** — grep `spawn(` in the CLI;
-grapevine's passed no cwd), and copy the exemplar's dev/release resolution.
+daemon still serves the old page, the tree is shippable — ⚠ **but only if
+gate-honesty's arriving and departing halves can be declared separately. CHECK
+THE PIN BEFORE PLANNING THE SPLIT.** Digestify's pin moves once for both
+directions (three files arrive, one leaves), so a commit carrying only the
+arrival is red and the port landed as ONE chapter — the playbook's own "land as
+one commit when neither half is green alone", arriving from a direction this
+step does not anticipate. Then the daemon commit: `git rm` the page FIRST (the
+`ls-files` wards read the index), pin the spawn cwd (**Contract 5 lands on
+whoever spawns the daemon** — grep `spawn(` in the CLI; grapevine's passed no
+cwd; ⛔ **and if there IS no CLI, it lands on the daemon itself, which must
+REFUSE a dev boot from the wrong cwd rather than serve an unstyled page.**
+Digestify's `review.ts` is the process the agent runs directly, from wherever
+the conversation is. `process.chdir()` is NOT the repair — measured 2026-09-07:
+Bun reads `bunfig.toml` at process START, so chdir-then-import bundles the page,
+serves it, and fails to parse `@import "tailwindcss" source(none)` at request
+time, green boot, nothing red), and copy the exemplar's dev/release resolution.
+⚠ **A SERVER-RENDERED PAYLOAD HAS A DEV-MODE PROBLEM NO FETCHING SURFACE HAS.**
+Where the page's state is substituted into its HTML at serve time rather than
+fetched, dev mode cannot hand `/` to Bun's `HTMLBundle` — Bun owns that response
+and offers no way to read it as text, so the placeholder ships literal and the
+page dies on `JSON.parse`, looking exactly like a surface bug. Register the
+bundle at a PRIVATE route and have `/` self-fetch it and substitute. Eight
+lines; the wrong answer costs an afternoon. (First seen on digestify, the only
+spell whose payload is injected.)
+
 Where the surface lives at a sub-route (`/watch`) the release `index.html`'s
 relative chunk links resolve to bare root filenames, so add a release-only root
-fall-through before the 404. If the daemon prints no stdout handshake, `mode`
-has two transports (the info JSON and the stderr boot line), not three.
+fall-through before the 404. ⛔ **COUNT THE DAEMON'S MODE TRANSPORTS OFF THE
+DAEMON — read `emitEvent`, the discovery write, and EVERY `stdout`/`stderr`
+write — never by subtracting from an exemplar.** This sentence used to say "two,
+not three"; it has now been wrong twice, in two different shapes. Bounty has two
+(discovery JSON + ready event) and neither is a handshake; digestify has **ONE**
+(a stderr ready line) and no discovery file at all.
 
-**R6 — expect four wards to red, and re-declare by hand.** On arrival:
-kit-styling's `KIT_CONSUMERS` (importing `base.css` puts you in it),
-gate-honesty's pin (three files enter), import-boundary's pin (the dev import
-triple — `existsSync` the resolved path before pinning; the ward compares
-strings and would launder a typo). On departure: gate-honesty again (the page
-leaves). Reconcile gate-honesty's arithmetic from the **object's own sum**, not
-the last paragraph's total — the paragraph can be a re-declaration behind. Then
-the prose that names a spell's surface tier drifts too: `PROJECT-SUMMARY.md`,
-house-style's queue table, the decay ledger. A relocation cannot drift these; a
-rewrite does.
+**R6 — expect wards to red, and re-declare by hand.** ⚠ **"Four" was a count
+from two runs, and digestify's was THREE** — `spell-css-scope` stayed green
+because bounty's port had already fixed the latent `group`/`peer` defect it
+would have hit, and a fixed defect does not recur. Treat the list below as the
+usual suspects, not a set. On arrival: kit-styling's `KIT_CONSUMERS` (importing
+`base.css` puts you in it), gate-honesty's pin (three files enter),
+import-boundary's pin (the dev import triple — `existsSync` the resolved path
+before pinning; the ward compares strings and would launder a typo). On
+departure: gate-honesty again (the page leaves). Reconcile gate-honesty's
+arithmetic from the **object's own sum**, not the last paragraph's total — the
+paragraph can be a re-declaration behind. Then the prose that names a spell's
+surface tier drifts too: `PROJECT-SUMMARY.md`, house-style's queue table, the
+decay ledger. A relocation cannot drift these; a rewrite does.
 
 **R7 — bounty's known difference.** Its `template.html` mirrors tested
 `server.ts` helpers in Alpine (the b16 lockstep). The inventory must pair each
@@ -290,6 +403,27 @@ where the regression walked through.
 >   emitted-but-undelivered frame. A surface whose guard is
 >   `readyState === OPEN` cannot be tested by closing the socket — that
 >   exercises the guard, not the delivery.
+> - **React 19 RE-APPLIES `dangerouslySetInnerHTML` ON EVERY UPDATE of the
+>   element that carries it** — it does not compare the previous `__html` and
+>   skip. This is not an instrument lying; it is a framework behaviour that
+>   makes CORRECT CODE DECAY, and it belongs here because the effect is
+>   identical: the drive reports green and the surface is broken. Measured on
+>   digestify with a `MutationObserver` — syntax highlighting applied on mount
+>   survived exactly until the countdown's first one-second tick, and it would
+>   have detached every comment chip's portal host with it. `memo` the element;
+>   a static subtree should never re-render. **And memoise EVERY such element**
+>   — digestify memoised one of its two sinks and shipped the other churning for
+>   the life of the page, because the guard that knew about both checked one.
+>
+> **⚠ A `not:` ROW WRITTEN FROM REASONING RATHER THAN FROM AN ATTEMPT IS THE ONE
+> SHAPE THE DRIVEN COLUMN CANNOT CATCH BY ITSELF.** Two of digestify's five
+> fell, wrong in different ways: one was an instrument limit its author imagined
+> (driving it needed two processes in the right order and no instrument at all),
+> and one was an inference — "an image has no text to size", therefore a
+> `font-size` rule on an `<img>` is dead — stated in the cell as though it had
+> been measured. A broken `<img>` renders its `alt`. **Before writing `not:`,
+> make the attempt and record what stopped it**; a reason that could have been
+> written without opening the browser is a hypothesis in a verdict's clothes.
 >
 > And the cheaper half of the proxy: for a WebSocket or SSE surface, install a
 > `window.WebSocket` / `EventSource` shim with
@@ -312,6 +446,46 @@ where the regression walked through.
 > for cells that name a different property than their row, and for bare verdicts
 > — `visual`, or a lone `both` with no measurement.** Both classes hide misses,
 > and neither can be seen by re-reading the code.
+>
+> **⛔ A GUARD THAT ENUMERATES A SET AND THEN CHECKS ONE MEMBER REPORTS ON ITS
+> OWN DILIGENCE.** The sibling of the substituted cell above, and the more
+> dangerous one, because it is a TEST rather than a note and it stays green
+> forever. Digestify's sink census listed both of the surface's HTML sinks by
+> name, in an array, in the same file as a cell named for the property they both
+> had to satisfy — and that cell asserted the property over one of them, by
+> literal string. The second sink's subtree was destroyed and rebuilt once per
+> second, in both modes, for the life of the page, with a comment persisted and
+> SUBMITTED that its owner could not see, edit or delete. **Whenever a cell's
+> subject is "a property of every X", it must iterate the X it FOUND.** A
+> hand-kept list beside a single assertion is decoration, and the list being
+> correct is exactly what makes it convincing. Sweep for the shape: any census
+> or `const ALLOWED = […]` that a later cell does not loop over.
+>
+> **⛔ SAMPLE EVERY VISUAL ROW TWICE, SECONDS APART. This is the cheapest
+> amendment in the document and it would have found the most.** Digestify's
+> author found three defects in his own new code and ALL THREE were of one shape
+> the box above does not describe: **correct at t=0 and wrong at t=1.** Syntax
+> highlighting wiped by the first countdown tick; restored comment chips that
+> never appeared because a layout effect ran before the parent's ref was
+> attached; a "draft restored" banner whose four-second auto-hide had simply not
+> been written. A screenshot is one sample, and every one of these is green in
+> it. If the page has an interval, assert past it.
+>
+> **And for a page whose whole input is one JSON island, PATCHING `JSON.parse`
+> IN AN INIT SCRIPT IS EDITING THE PAYLOAD.** It is the imperative page's
+> counterpart of the socket shim: it hands the surface any state at all — an
+> unknown theme, an empty session id, a zero timeout, a malformed marker — with
+> no server changes and no fixture files. Four of digestify's rows are
+> unreachable any other way.
+>
+> **Three drive artefacts, all paid for in real time.** A same-URL
+> `Page.navigate` is not reliably a reload (Gotcha 8's cousin — change the query
+> string); `Page.loadEventFired` is not a reliable completion signal for
+> `about:blank` in headless (poll `readyState` + `location.href`); and ⛔ **a
+> stale tab's `beforeunload` beacons land on the NEXT daemon bound to that
+> port** — kill the daemon before leaving the page and the old page's `/cancel`
+> kills its successor. That last one is not only a drive artefact: it is the
+> real session-recovery flow, and it is filed as a live defect.
 >
 > **Count the Driven column BY COMMAND.** ~40 lines: take every table row, read
 > the last cell, classify on its first token, report unparsed cells and
@@ -904,6 +1078,24 @@ a number on the dead stylesheet that turned into a ruling. Full method in
 options not taken for where the config lives are in
 [the decision log](../projects/grapevine-shadcn/decision-log.md).
 
+### Example 7: digestify — the third rewrite, and the one that closed the population
+
+A 1,505-line hand-written page with **no framework at all** — ~600 lines of
+imperative vanilla DOM, three CDN runtime dependencies and three themes — became
+ten components on two registry primitives, six tested pure modules, one hook and
+a 503-line stylesheet; the daemon serves the built `dist/` at `/`, with the
+payload still injected into it at serve time. **It is the only spell whose
+payload is server-rendered, the only one with more than one theme, and the only
+one whose daemon has no spawner** — so it is the run that exercised the kit's L3
+mode override (documented since the kit was written, never used until now) and
+the run that found where Contract 5 lands when nothing spawns the daemon. Full
+record in
+[the rewrite journal](../projects/digestify-conversion/rewrite-journal.md);
+inventory at
+[behaviour-inventory.md](../projects/digestify-conversion/behaviour-inventory.md)
+— 138 rows, 128 driven in a browser, five `not:` — and the options not taken in
+[the decision log](../projects/digestify-conversion/decision-log.md).
+
 ## Related Patterns
 
 - [`seams.md`](../../.anthill/dev/seams.md) — Contracts 1–5 (serve, `dist/`
@@ -971,6 +1163,28 @@ port **taught**, not what it confirmed.
   build input; and a test file under `surface/` changes the shipped stylesheet.
   Full record in
   [the rewrite journal](../projects/bounty-conversion/rewrite-journal.md).
+- **2026-09-07** — **digestify, the third rewrite, and the LAST — the population
+  is closed.** Taught, mostly by being the first subject with no reactive shell:
+  R2 and R3 have a second shape for an imperative page (sort the INVENTORY, not
+  the code; the landmarks are the constructors, not the markup) and were
+  structurally silent for it until now; R1 needs a third grep, because on such a
+  page the branches whose FALSE arm is a behaviour are the majority; a
+  dependency that cannot run under `bun test` needs its guard SPLIT three ways
+  rather than skipped (`dompurify` outside a browser is the factory, and the
+  render function throws); Contract 5 lands on the DAEMON when nothing spawns
+  it, and `process.chdir()` cannot substitute because Bun reads `bunfig.toml` at
+  process start; a server-rendered payload cannot be handed to Bun's
+  `HTMLBundle` in dev; R4's line-count expectation has two named exceptions (a
+  markdown prose block utilities cannot reach, and a multi-theme spell's
+  override blocks, which are data); and **R8 needs "sample twice, seconds
+  apart"** — all three defects the author found in his own code were correct at
+  t=0 and wrong at t=1, including React 19 re-applying `dangerouslySetInnerHTML`
+  on every update, which silently decays anything imperative inside such a
+  subtree. Confirmed and therefore shorter: R5's atomic-commit rule (with one
+  added condition on the pin), R6's hand re-declaration (three wards, not four),
+  Phase S end to end, and bounty's "count your own transports" — which was
+  needed a THIRD time, in a third shape. Applicability is now **closed**, and
+  the header says what that changes.
 - **2026-09-06** — **grapevine again, Phase S: the registry.** Taught: the
   shadcn CLI needs the config directory to be a package (workspace member,
   hoisted-linker pin, the skill's probe dead at the root from then on); measure
