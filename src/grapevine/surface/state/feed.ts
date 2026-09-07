@@ -57,9 +57,30 @@ export function fmtTime(ts: number): string {
   });
 }
 
-/** F3 — the `from` line: a topic change reads `<from> set topic`. */
+/** F11 — a channel-level fact rather than a participant's utterance: the
+ *  daemon's archive/unarchive frame. `kind:"status"` alone is NOT enough —
+ *  disposition metadata wears the same kind and must keep its plain rendering.
+ *
+ *  TWO clauses, and the second one matters (verify ⚠5). `event` marks a
+ *  lifecycle frame; a `disposition` DISQUALIFIES it. That second clause is what
+ *  makes this agree with the CLI, which classifies by the presence of
+ *  `disposition` (`isDispositionFrame` in `scripts/cli.ts`) so that an unknown
+ *  future frame stays visible rather than being swallowed as metadata. Without
+ *  it, a frame carrying BOTH fields would be metadata to the CLI and a channel
+ *  note here — the two consumers reading the same bytes and disagreeing. They
+ *  ask different questions ("is this metadata to hide?" vs "is this a note to
+ *  style?"), so they cannot be the same predicate; they can and now do share
+ *  the rule that `disposition` means metadata. */
+export function isChannelNote(m: Message): boolean {
+  return m.kind === "status" && m.event !== undefined && m.disposition === undefined;
+}
+
+/** F3 / F11 — the `from` line: a topic change reads `<from> set topic`, a
+ *  lifecycle note reads `<from> archived the channel`. */
 export function fromLabel(m: Message): string {
-  return m.kind === "topic" ? `${m.from} set topic` : m.from;
+  if (m.kind === "topic") return `${m.from} set topic`;
+  if (isChannelNote(m)) return `${m.from} ${m.event} the channel`;
+  return m.from;
 }
 
 /** S2 — your own name as `(you)`, any other human as `(human)`, agents plain. */

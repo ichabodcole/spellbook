@@ -389,8 +389,13 @@ describe("grapevine cli", () => {
     // sends are rejected, but history stays readable
     const blocked = await bunRun(["send", "test_arch", "--from", "a", "nope"]);
     expect(blocked.code).not.toBe(0);
+    // One message — plus the kind:"status" archive frame the archive now
+    // appends (2026-09-06), which is history too and is what a disconnected
+    // agent learns from.
     const pull = await bunRun(["pull", "test_arch", "--since", "0"]);
-    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+    const arcMsgs = JSON.parse(pull.stdout).messages as { kind: string; event?: string }[];
+    expect(arcMsgs.filter((m) => m.kind === "message").length).toBe(1);
+    expect(arcMsgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual(["archived"]);
 
     // open auto-unarchives (the convene-at-start path): reopening a retired
     // channel brings it back rather than failing.
@@ -417,9 +422,17 @@ describe("grapevine cli", () => {
     expect(reopen.code).toBe(0);
     expect(JSON.parse(reopen.stdout).channel.unarchived).toBe(true);
 
-    // history is intact (auto-unarchive does NOT clear)
+    // history is intact (auto-unarchive does NOT clear) — one real message,
+    // bracketed by the archive frame and the frame `open`'s auto-unarchive
+    // appends (2026-09-06: the third unarchive path, and the one that used to
+    // be silent).
     const pull = await bunRun(["pull", "au_chan", "--since", "0"]);
-    expect(JSON.parse(pull.stdout).messages.length).toBe(1);
+    const auMsgs = JSON.parse(pull.stdout).messages as { kind: string; event?: string }[];
+    expect(auMsgs.filter((m) => m.kind === "message").length).toBe(1);
+    expect(auMsgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual([
+      "archived",
+      "unarchived",
+    ]);
 
     // list no longer shows it archived
     const ch = JSON.parse((await bunRun(["list"])).stdout).channels.find(
@@ -2071,5 +2084,525 @@ describe("declared surface (schema / root routing / per-verb flags)", () => {
     expect(stdout).toBe("");
     expect(stderr).toContain("--timeout expects a non-negative number");
     expect(stderr).not.toContain("RangeError");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Channel lifecycle: only an act that declares intent may create a channel
+// (2026-09-06). Before this, every read verb sent `POST /channels {name}` to
+// "ensure loaded" and the read routes ran through `loadChannel`, which
+// REGISTERS the name — so a read resurrected a closed channel into `list`,
+// empty and file-less, with nothing the reader could observe.
+// ---------------------------------------------------------------------------
+
+/** The running daemon's port, read from the test HOME. Used by the handful of
+ *  assertions that must hit a ROUTE rather than a verb — the daemon guard is
+ *  the real fence, and a CLI-only test cannot tell the two apart. */
+function daemonPort(): number {
+  return parseInt(readFileSync(join(HOME, "daemon.port"), "utf-8").trim(), 10);
+}
+
+/** Names in `grapevine list`. The second assertion of every no-resurrection
+ *  test: refusing is not enough if the name came back anyway. */
+async function listedChannels(): Promise<string[]> {
+  const { stdout } = await bunRun(["list"]);
+  return (JSON.parse(stdout) as { channels: { name: string }[] }).channels.map((c) => c.name);
+}
+
+describe("a read verb never creates a channel", () => {
+  // Each row: the argv, and how the verb answers — from a ROUTE, or from the
+  // log file. The file-readers cannot 404 on their own (`triage` and
+  // `pull --status` scan the .jsonl, where absent reads as empty), so they are
+  // here to prove the CLI closes that hole too.
+  const readVerbs: [string, string[]][] = [
+    ["pull", ["pull", "ghost-pull"]],
+    ["read", ["read", "ghost-read", "1"]],
+    ["wait", ["wait", "ghost-wait", "--timeout", "1"]],
+    ["topic (no text — a read)", ["topic", "ghost-topic"]],
+    ["triage", ["triage", "ghost-triage"]],
+    ["pull --status (scans the log file)", ["pull", "ghost-status", "--status", "open"]],
+  ];
+
+  for (const [label, argv] of readVerbs) {
+    test(`${label} refuses a missing channel, names the recovery, and leaves list unchanged`, async () => {
+      const before = await listedChannels();
+      const { code, stdout, stderr } = await bunRun(argv);
+      expect(code).toBe(2);
+      expect(stdout).toBe("");
+      expect(stderr).toContain(`no channel "${argv[1]}"`);
+      // A refusal names the act that recovers from it — and the line it prints
+      // must be RUNNABLE, not a `grapevine …` command no PATH resolves.
+      expect(stderr).toContain(`try: bun ${CLI} open ${argv[1]}`);
+      // THE ACTUAL BUG: the name must not have come back.
+      const after = await listedChannels();
+      expect(after).not.toContain(argv[1]);
+      expect(after).toEqual(before);
+    });
+  }
+
+  test("the reported repro: a closed channel stays closed when an agent polls it", async () => {
+    await bunRun(["open", "resurrect-me"]);
+    await bunRun(["send", "resurrect-me", "before the close", "--as", "agent"]);
+    expect(await listedChannels()).toContain("resurrect-me");
+    expect((await bunRun(["close", "resurrect-me"])).code).toBe(0);
+
+    const pull = await bunRun(["pull", "resurrect-me"]);
+    expect(pull.code).toBe(2);
+    expect(pull.stderr).toContain('no channel "resurrect-me"');
+    expect(await listedChannels()).not.toContain("resurrect-me");
+  });
+
+  test("the guard is in the DAEMON, not just the CLI: the routes themselves 404", async () => {
+    const port = daemonPort();
+    for (const route of ["messages", "wait?timeout=1", "topic"]) {
+      const res = await fetch(`http://127.0.0.1:${port}/channels/ghost-route/${route}`);
+      expect(res.status).toBe(404);
+      const body = (await res.json()) as { error: string; channel: string; hint: string };
+      expect(body.error).toBe('no channel "ghost-route"');
+      expect(body.channel).toBe("ghost-route");
+      // The wire carries the VERB. The daemon cannot know how its client was
+      // invoked, so composing the runnable line is the CLI's job.
+      expect(body.hint).toBe("open ghost-route");
+    }
+    expect(await listedChannels()).not.toContain("ghost-route");
+  });
+
+  test("a read verb on a channel that DOES exist still works", async () => {
+    await bunRun(["open", "still-here", "--topic", "unchanged"]);
+    await bunRun(["send", "still-here", "hello", "--as", "agent"]);
+    const pull = await bunRun(["pull", "still-here"]);
+    expect(pull.code).toBe(0);
+    expect((JSON.parse(pull.stdout) as { messages: unknown[] }).messages.length).toBe(2);
+    const topic = await bunRun(["topic", "still-here"]);
+    expect(topic.code).toBe(0);
+    expect((JSON.parse(topic.stdout) as { topic: string }).topic).toBe("unchanged");
+    expect((await bunRun(["triage", "still-here"])).code).toBe(0);
+  });
+
+  test("a topic WRITE may still create: it declares intent, unlike the read", async () => {
+    expect((await bunRun(["topic", "born-by-topic", "created by a write"])).code).toBe(0);
+    expect(await listedChannels()).toContain("born-by-topic");
+    const back = await bunRun(["topic", "born-by-topic"]);
+    expect((JSON.parse(back.stdout) as { topic: string }).topic).toBe("created by a write");
+  });
+});
+
+describe("tail creates — and says so", () => {
+  test("tailing a name that does not exist emits created:true with a hint naming the risk", async () => {
+    const { proc, output } = spawnTail("mistyped-channel", ["--as", "watcher"]);
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const grounding = JSON.parse(output().trim().split("\n")[0]) as {
+      kind: string;
+      channel: string;
+      created?: boolean;
+      hint?: string;
+    };
+    expect(grounding.kind).toBe("grounding");
+    expect(grounding.channel).toBe("mistyped-channel");
+    expect(grounding.created).toBe(true);
+    expect(grounding.hint).toContain("this tail created mistyped-channel");
+    // It still creates — that is the ruling. The fix is the signal, not a refusal.
+    expect(await listedChannels()).toContain("mistyped-channel");
+  });
+
+  test("tailing an EXISTING channel does not claim to have created it", async () => {
+    await bunRun(["open", "already-open", "--topic", "t"]);
+    const { proc, output } = spawnTail("already-open");
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const grounding = JSON.parse(output().trim().split("\n")[0]) as { created?: boolean };
+    expect(grounding.created).toBeUndefined();
+  });
+});
+
+describe("topic on an archived channel is refused by the route AND the verb", () => {
+  test("the verb dies instead of reporting ok:true, and appends nothing", async () => {
+    await bunRun(["open", "arch-topic"]);
+    await bunRun(["archive", "arch-topic"]);
+    const { code, stdout, stderr } = await bunRun(["topic", "arch-topic", "a new topic"]);
+    expect(code).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("archived");
+    await bunRun(["unarchive", "arch-topic"]);
+    const pull = await bunRun(["pull", "arch-topic"]);
+    const kinds = (JSON.parse(pull.stdout) as { messages: { kind: string }[] }).messages;
+    expect(kinds.filter((m) => m.kind === "topic").length).toBe(0);
+  });
+
+  test("the ROUTE refuses too — the daemon guard is the real fence, the verb a courtesy", async () => {
+    await bunRun(["open", "arch-route"]);
+    await bunRun(["archive", "arch-route"]);
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/arch-route/topic`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ topic: "forced past the CLI", from: "curl" }),
+    });
+    expect(res.status).toBe(409);
+    expect((await res.json()) as { error: string }).toMatchObject({ error: "archived" });
+    await bunRun(["unarchive", "arch-route"]);
+    const pull = await bunRun(["pull", "arch-route"]);
+    const kinds = (JSON.parse(pull.stdout) as { messages: { kind: string }[] }).messages;
+    expect(kinds.filter((m) => m.kind === "topic").length).toBe(0);
+  });
+});
+
+describe("archive and unarchive announce themselves", () => {
+  type Frame = { id: number; from: string; text: string; kind: string; event?: string };
+
+  test("a tailing agent receives both frames live", async () => {
+    await bunRun(["open", "announce-life"]);
+    await bunRun(["send", "announce-life", "before", "--as", "agent"]);
+    const { proc, output } = spawnTail("announce-life", ["--as", "watcher"]);
+    await sleep(700);
+    await bunRun(["archive", "announce-life", "--as", "cole"]);
+    await sleep(400);
+    await bunRun(["unarchive", "announce-life"]);
+    await sleep(600);
+    proc.kill("SIGTERM");
+    const frames = output()
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l) as Frame)
+      .filter((f) => f.kind === "status");
+    expect(frames.map((f) => f.event)).toEqual(["archived", "unarchived"]);
+    // Attribution rides the globally-accepted --as; without it the daemon signs
+    // "system" rather than guessing.
+    expect(frames[0].from).toBe("cole");
+    expect(frames[0].text).toContain("read-only");
+    expect(frames[1].from).toBe("system");
+  });
+
+  test("pull replays them — an agent that was not connected still learns", async () => {
+    await bunRun(["open", "replay-life"]);
+    await bunRun(["send", "replay-life", "a message", "--as", "agent"]);
+    await bunRun(["archive", "replay-life"]);
+    await bunRun(["unarchive", "replay-life"]);
+    const { stdout } = await bunRun(["pull", "replay-life"]);
+    const msgs = (JSON.parse(stdout) as { messages: Frame[] }).messages;
+    expect(msgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual([
+      "archived",
+      "unarchived",
+    ]);
+  });
+
+  test("triage skips them — an archive is an FYI, not a work item", async () => {
+    await bunRun(["open", "triage-life"]);
+    await bunRun(["send", "triage-life", "the actual work", "--as", "agent"]);
+    await bunRun(["archive", "triage-life"]);
+    await bunRun(["unarchive", "triage-life"]);
+    const { stdout } = await bunRun(["triage", "triage-life"]);
+    const { open } = JSON.parse(stdout) as { open: Frame[] };
+    expect(open.map((m) => m.text)).toEqual(["the actual work"]);
+  });
+
+  test("a DISPOSITION status frame is still folded away — `event` is the discriminator", async () => {
+    await bunRun(["open", "disp-life"]);
+    await bunRun(["send", "disp-life", "do this", "--as", "agent"]);
+    await bunRun(["mark", "disp-life", "1", "done", "--as", "agent"]);
+    await bunRun(["archive", "disp-life"]);
+    const { stdout } = await bunRun(["pull", "disp-life"]);
+    const msgs = (JSON.parse(stdout) as { messages: Frame[] }).messages;
+    // The mark's frame is gone (its disposition badges message 1 instead); the
+    // lifecycle frame stays.
+    expect(msgs.filter((m) => m.kind === "status").map((m) => m.event)).toEqual(["archived"]);
+  });
+
+  test("an agent cannot forge one: POST /messages still coerces kind to message", async () => {
+    await bunRun(["open", "forge-life"]);
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/forge-life/messages`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ from: "forger", text: "x", kind: "status", event: "archived" }),
+    });
+    const body = (await res.json()) as Frame;
+    expect(body.kind).toBe("message");
+    expect(body.event).toBeUndefined();
+  });
+
+  test("archiving a channel that does not exist does not create one", async () => {
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/ghost-archive/archive`, {
+      method: "POST",
+    });
+    expect(res.status).toBe(404);
+    expect(await listedChannels()).not.toContain("ghost-archive");
+  });
+});
+
+describe("a lifecycle frame is emitted only when the state actually flipped", () => {
+  // Both routes have always been idempotent. An unconditional emitter turned
+  // that no-op into a durable, broadcast claim that a transition happened —
+  // a false statement in the permanent record, which is the failure class this
+  // whole branch exists to remove.
+  type Frame = { kind: string; event?: string };
+  const frames = async (name: string): Promise<(string | undefined)[]> => {
+    const { stdout } = await bunRun(["pull", name]);
+    return (JSON.parse(stdout) as { messages: Frame[] }).messages
+      .filter((m) => m.kind === "status")
+      .map((m) => m.event);
+  };
+
+  test("archiving three times appends ONE frame; the repeats report changed:false", async () => {
+    await bunRun(["open", "idem-arch"]);
+    await bunRun(["send", "idem-arch", "work item", "--as", "agent"]);
+    const first = JSON.parse((await bunRun(["archive", "idem-arch"])).stdout) as {
+      changed: boolean;
+      id: number | null;
+    };
+    expect(first.changed).toBe(true);
+    expect(typeof first.id).toBe("number");
+    for (const _ of [1, 2]) {
+      const again = JSON.parse((await bunRun(["archive", "idem-arch"])).stdout) as {
+        changed: boolean;
+        id: number | null;
+        archived: boolean;
+      };
+      // Still idempotent and still ok — it just no longer lies about it.
+      expect(again.archived).toBe(true);
+      expect(again.changed).toBe(false);
+      expect(again.id).toBeNull();
+    }
+    expect(await frames("idem-arch")).toEqual(["archived"]);
+  });
+
+  test("unarchiving three times appends ONE frame", async () => {
+    const first = JSON.parse((await bunRun(["unarchive", "idem-arch"])).stdout) as {
+      changed: boolean;
+    };
+    expect(first.changed).toBe(true);
+    await bunRun(["unarchive", "idem-arch"]);
+    await bunRun(["unarchive", "idem-arch"]);
+    expect(await frames("idem-arch")).toEqual(["archived", "unarchived"]);
+  });
+
+  test("unarchiving a channel that was NEVER archived writes nothing at all", async () => {
+    await bunRun(["open", "idem-healthy"]);
+    await bunRun(["send", "idem-healthy", "a real message", "--as", "agent"]);
+    const r = JSON.parse((await bunRun(["unarchive", "idem-healthy"])).stdout) as {
+      ok: boolean;
+      changed: boolean;
+      id: number | null;
+    };
+    expect(r.ok).toBe(true);
+    expect(r.changed).toBe(false);
+    expect(r.id).toBeNull();
+    // The sharpest case: a healthy channel's durable log must be untouched.
+    expect(await frames("idem-healthy")).toEqual([]);
+    const { stdout } = await bunRun(["pull", "idem-healthy"]);
+    expect((JSON.parse(stdout) as { messages: unknown[] }).messages.length).toBe(1);
+  });
+
+  test("a no-op archive broadcasts nothing to a tailing agent either", async () => {
+    await bunRun(["open", "idem-tail"]);
+    await bunRun(["archive", "idem-tail"]);
+    const { proc, output } = spawnTail("idem-tail", ["--as", "watcher"]);
+    await sleep(700);
+    await bunRun(["archive", "idem-tail"]); // no-op
+    await bunRun(["unarchive", "idem-tail"]); // real
+    await bunRun(["unarchive", "idem-tail"]); // no-op
+    await sleep(700);
+    proc.kill("SIGTERM");
+    const streamed = output()
+      .trim()
+      .split("\n")
+      .map((l) => JSON.parse(l) as Frame)
+      .filter((f) => f.kind === "status")
+      .map((f) => f.event);
+    expect(streamed).toEqual(["unarchived"]);
+  });
+});
+
+describe("a late joiner is told the channel is archived", () => {
+  // The lifecycle frame closes gap 3 for an agent that was CONNECTED at the
+  // moment, or that pulls history. A `tail` that arrives afterwards got an
+  // ordinary grounding line and then learned the truth from a rejected send —
+  // verbatim the failure the frame was added to end.
+  type Grounding = {
+    channel: string;
+    topic?: string;
+    archived?: boolean;
+    created?: boolean;
+    hint?: string;
+  };
+  const groundingOf = (out: string) => JSON.parse(out.trim().split("\n")[0]) as Grounding;
+
+  test("the subscribe event carries `archived`, and tail surfaces it", async () => {
+    await bunRun(["open", "late-arch", "--topic", "r"]);
+    await bunRun(["send", "late-arch", "one", "--as", "agent"]);
+    await bunRun(["archive", "late-arch", "--as", "cole"]);
+
+    // The wire first — the daemon is where the fact lives.
+    const res = await fetch(`http://127.0.0.1:${daemonPort()}/channels/late-arch/tail?as=probe`);
+    const reader = res.body?.getReader();
+    const first = new TextDecoder().decode((await reader?.read())?.value);
+    await reader?.cancel();
+    expect(first).toContain('"archived":true');
+
+    const { proc, output } = spawnTail("late-arch", ["--as", "latecomer"]);
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const g = groundingOf(output());
+    expect(g.archived).toBe(true);
+    expect(g.hint).toContain("is archived");
+    expect(g.hint).toContain("a send will be rejected");
+  });
+
+  test("a healthy channel says nothing about being archived", async () => {
+    await bunRun(["open", "late-healthy", "--topic", "h"]);
+    await bunRun(["send", "late-healthy", "one", "--as", "agent"]);
+    const { proc, output } = spawnTail("late-healthy");
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const g = groundingOf(output());
+    expect(g.archived).toBeUndefined();
+    expect(g.hint ?? "").not.toContain("archived");
+  });
+
+  test("the hints ACCUMULATE — an archived channel with history says both, neither overwriting the other", async () => {
+    const { proc, output } = spawnTail("late-arch", ["--as", "second-latecomer"]);
+    await sleep(1200);
+    proc.kill("SIGTERM");
+    const hint = groundingOf(output()).hint ?? "";
+    // Before this they were three assignments to one field, ordered so the most
+    // important won — a hint that can silently lose to another hint, sitting
+    // inside the fix for exactly that failure mode.
+    expect(hint).toContain("earlier message(s) exist");
+    expect(hint).toContain("is archived");
+  });
+});
+
+describe("the recovery a refusal names is runnable (verify ⚠6)", () => {
+  test("what stderr tells you to run, run verbatim, actually recovers", async () => {
+    const refused = await bunRun(["pull", "runnable-ghost"]);
+    expect(refused.code).toBe(2);
+    // Pull the command straight out of the message and execute it — no
+    // interpretation, which is the whole point of the finding: the old hint
+    // read `grapevine open x`, and nothing installs a `grapevine` binary.
+    const line = refused.stderr.split("try: ")[1]?.trim();
+    expect(line).toBeDefined();
+    const [runner, ...rest] = (line as string).split(" ");
+    expect(runner).toBe("bun");
+    expect(rest[0]).toBe(CLI);
+    const recovered = await new Promise<number>((resolve) => {
+      const proc = spawn(runner, rest, {
+        env: { ...process.env, GRAPEVINE_HOME: HOME },
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+      proc.on("exit", (c) => resolve(c ?? -1));
+    });
+    expect(recovered).toBe(0);
+    // …and the read that refused now succeeds.
+    const after = await bunRun(["pull", "runnable-ghost"]);
+    expect(after.code).toBe(0);
+  });
+});
+
+describe("a retired channel's refusal names its recovery too (verify ⚠7)", () => {
+  test("topic on an archived channel refuses WITH the unarchive hint", async () => {
+    await bunRun(["open", "hinted-arch"]);
+    expect((await bunRun(["archive", "hinted-arch"])).code).toBe(0);
+
+    const refused = await bunRun(["topic", "hinted-arch", "a new topic"]);
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain("archived");
+    expect(refused.stderr).toContain(`try: bun ${CLI} unarchive hinted-arch`);
+  });
+
+  test("send to an archived channel refuses WITH the unarchive hint", async () => {
+    await bunRun(["open", "hinted-send"]);
+    expect((await bunRun(["archive", "hinted-send"])).code).toBe(0);
+
+    const refused = await bunRun(["send", "hinted-send", "nope", "--as", "agent"]);
+    expect(refused.code).toBe(2);
+    expect(refused.stderr).toContain(`try: bun ${CLI} unarchive hinted-send`);
+  });
+
+  test("what the archived refusal tells you to run, run verbatim, recovers", async () => {
+    await bunRun(["open", "hinted-run"]);
+    await bunRun(["archive", "hinted-run"]);
+    const refused = await bunRun(["topic", "hinted-run", "after the thaw"]);
+    const line = refused.stderr.split("try: ")[1]?.trim();
+    expect(line).toBeDefined();
+    const [runner, ...rest] = (line as string).split(" ");
+    const recovered = await new Promise<number>((resolve) => {
+      const proc = spawn(runner, rest, {
+        env: { ...process.env, GRAPEVINE_HOME: HOME },
+        stdio: ["ignore", "ignore", "ignore"],
+      });
+      proc.on("exit", (c) => resolve(c ?? -1));
+    });
+    expect(recovered).toBe(0);
+    expect((await bunRun(["topic", "hinted-run", "after the thaw"])).code).toBe(0);
+  });
+
+  test("ONE verb answers two refusals the same way — the asymmetry ⚠7 named", async () => {
+    // `topic <missing>` already named its recovery; `topic <archived>` did not.
+    // An agent that learns to read the hint reads its absence as "unrecoverable".
+    //
+    // ⚠ The missing arm is the READ form (no text). `topic <name> <text>` is a
+    // write, and under the branch's first ruling a write CREATES — so the write
+    // form never refuses a missing channel at all. Comparing the two write
+    // forms finds no asymmetry because one of them is not a refusal.
+    const missing = await bunRun(["topic", "never-existed-at-all"]);
+    await bunRun(["open", "sym-arch"]);
+    await bunRun(["archive", "sym-arch"]);
+    const archived = await bunRun(["topic", "sym-arch", "x"]);
+
+    expect(missing.code).toBe(2);
+    expect(archived.code).toBe(2);
+    for (const s of [missing.stderr, archived.stderr]) expect(s).toContain("try: bun ");
+  });
+});
+
+describe("a created channel outlives the daemon that created it (backlog ⚠4)", () => {
+  test("open with no --topic survives a restart — the filed repro, verbatim", async () => {
+    expect((await bunRun(["open", "persists-me"])).code).toBe(0);
+    expect(await listedChannels()).toContain("persists-me");
+
+    // `restart` is a DOCUMENTED healing action (version skew), and before V2.2
+    // it silently dropped every channel that had been opened but never written
+    // to — so a wrapper that correctly opened FIRST still met a 404.
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+
+    expect(await listedChannels()).toContain("persists-me");
+    const pull = await bunRun(["pull", "persists-me"]);
+    expect(pull.code).toBe(0);
+    expect(JSON.parse(pull.stdout).messages).toEqual([]);
+  });
+
+  test("a channel a subscribe created survives too", async () => {
+    // tail creates (a subscription is forward-looking); that creation is as
+    // real as open's and must be written down the same way.
+    const t = spawn("bun", [CLI, "tail", "tail-persists", "--as", "sub"], {
+      env: { ...process.env, GRAPEVINE_HOME: HOME },
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+    await new Promise((r) => setTimeout(r, 1200));
+    t.kill();
+    await new Promise((r) => setTimeout(r, 200));
+
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+    expect(await listedChannels()).toContain("tail-persists");
+    expect((await bunRun(["pull", "tail-persists"])).code).toBe(0);
+  });
+
+  test("the age of an empty channel does not restart with the daemon", async () => {
+    await bunRun(["open", "stable-age"]);
+    const first = JSON.parse((await bunRun(["open", "stable-age"])).stdout).channel.created_at;
+    expect(typeof first).toBe("number");
+
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+    const second = JSON.parse((await bunRun(["open", "stable-age"])).stdout).channel.created_at;
+    // Read off the file's birth, not Date.now(): a channel that has said
+    // nothing yet is still as old as the moment it was made.
+    expect(second).toBe(first);
+  });
+
+  test("a closed channel is still gone — persistence is not resurrection", async () => {
+    await bunRun(["open", "closed-stays-closed"]);
+    expect((await bunRun(["close", "closed-stays-closed"])).code).toBe(0);
+    expect((await bunRun(["restart", "--yes"])).code).toBe(0);
+    expect(await listedChannels()).not.toContain("closed-stays-closed");
+    expect((await bunRun(["pull", "closed-stays-closed"])).code).toBe(2);
   });
 });

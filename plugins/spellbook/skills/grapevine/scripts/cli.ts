@@ -70,6 +70,9 @@ type Message = {
   in_reply_to?: number;
   target?: number;
   disposition?: string;
+  // Channel-level lifecycle fact (archive / unarchive). A kind:"status" frame
+  // carrying `event` and no `disposition` — see isDispositionFrame.
+  event?: "archived" | "unarchived";
 };
 
 // GET / — daemon liveness/info.
@@ -116,7 +119,7 @@ type ChannelsResponse = { channels?: ChannelSummary[]; error?: string };
 type StatusResponse = { ok?: boolean; error?: string };
 
 // GET /channels/<name>/messages and ?since= ranges.
-type MessagesResponse = { messages?: Message[]; error?: string };
+type MessagesResponse = { messages?: Message[]; error?: string; hint?: string };
 
 // GET /channels/<name>/wait — long-poll batch.
 type WaitResponse = {
@@ -124,6 +127,8 @@ type WaitResponse = {
   cursor?: number;
   timed_out?: boolean;
   error?: string;
+  // A refusal names the act that recovers from it (404 on a missing channel).
+  hint?: string;
 };
 
 // POST /channels — open/ensure a channel.
@@ -146,6 +151,7 @@ type TopicResponse = {
   topic?: string | null;
   id?: number;
   error?: string;
+  hint?: string;
 };
 
 // GET /channels/<name>/subscribers — single-channel roster.
@@ -181,6 +187,14 @@ type TailPayload = {
   since?: number;
   as?: string | null;
   latest_id?: number;
+  // True when THIS subscribe created the channel — the signal that separates
+  // "quiet channel" from "you tailed a name that did not exist".
+  created?: boolean;
+  // True when the channel is already archived (read-only) at subscribe time —
+  // the signal for a LATE joiner, who would otherwise learn it from a rejected
+  // send. The lifecycle frame only reaches an agent that was connected at the
+  // moment, or that pulls history.
+  archived?: boolean;
   // message fields
   id?: number;
   from?: string;
@@ -387,6 +401,45 @@ function printJson(data: unknown) {
   process.stdout.write(`${JSON.stringify(data)}\n`);
 }
 
+// How THIS CLI was invoked, as a runnable prefix. `process.argv[1]` is the
+// absolute path of cli.ts under `bun …/cli.ts <verb>`, which is SKILL.md's
+// canonical invocation — so the line we print can actually be pasted. Falls
+// back to the bare verb if argv is not shaped as expected, which is a verb
+// reference rather than a command that lies about being one.
+function invocationPrefix(): string {
+  const entry = process.argv[1];
+  return entry ? `bun ${entry}` : "";
+}
+
+// A daemon refusal carries `hint` — the act that recovers from it (a 404 on a
+// read names the `open` that would create the channel).
+//
+// ⚠ `hint` is a VERB INVOCATION, not a shell command: the daemon cannot know
+// how its client was invoked, so it names the act and we render it. It used to
+// arrive as `grapevine open <name>` and be printed verbatim after `try:`, which
+// reads as something to paste — and pasting it gets `command not found`,
+// because nothing installs a `grapevine` binary. Ruling 2 asked that a refusal
+// name the next act; a recovery that fails when you run it does not.
+function apiError(data: { error?: string; hint?: string } | null, status: number): string {
+  const msg = data?.error ?? `HTTP ${status}`;
+  if (!data?.hint) return msg;
+  const prefix = invocationPrefix();
+  return prefix ? `${msg} — try: ${prefix} ${data.hint}` : `${msg} — try the \`${data.hint}\` verb`;
+}
+
+// Existence probe for the read verbs that answer from the LOG FILE rather than
+// from a route (`triage`, `pull --status`). Those cannot 404 on their own: a
+// missing log is an empty array, which is the same silent lie the daemon guard
+// exists to kill. GET /topic is the cheapest guarded route, so it is the probe.
+async function requireChannel(port: number, name: string): Promise<void> {
+  const { status, data } = await api<{ error?: string; hint?: string }>(
+    port,
+    "GET",
+    `/channels/${name}/topic`,
+  );
+  if (status >= 400) die(apiError(data, status));
+}
+
 async function cmdOpen(name: string, opts: { topic?: string; from?: string; fresh?: boolean }) {
   if (!name) die("usage: grapevine open <name> [--topic <text>] [--fresh]");
   const port = await ensureDaemon();
@@ -402,19 +455,27 @@ async function cmdOpen(name: string, opts: { topic?: string; from?: string; fres
 async function cmdTopic(name: string, text: string | undefined, from: string | undefined) {
   if (!name) die("usage: grapevine topic <channel> [<text>]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
   if (text === undefined) {
-    // Read current topic.
+    // `topic <name>` with no text is a READ — it asks what the topic is, and a
+    // missing channel answers that question by being missing. No ensure: the
+    // ensure was what resurrected a closed channel from a read verb.
     const { status, data } = await api<TopicResponse>(port, "GET", `/channels/${name}/topic`);
-    if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+    if (status >= 400) die(apiError(data, status));
     printJson({ ok: true, channel: name, topic: data?.topic });
     return;
   }
+  // `topic <name> <text>` is a WRITE, so it may create — but it must not write
+  // to an ARCHIVED channel. The PUT enforces that itself now; this ensure stays
+  // because DISCARDING ITS STATUS is precisely the bug being fixed here. Before
+  // today the 409 that answers for an archived name was thrown away and the PUT
+  // that followed landed: `archive x; topic x "t"` returned ok:true, exit 0.
+  const ensure = await api<{ error?: string; hint?: string }>(port, "POST", "/channels", { name });
+  if (ensure.status >= 400) die(apiError(ensure.data, ensure.status));
   const { status, data } = await api<TopicResponse>(port, "PUT", `/channels/${name}/topic`, {
     topic: text,
     from: from ?? "system",
   });
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) die(apiError(data, status));
   printJson({ ok: true, channel: name, topic: data?.topic, id: data?.id });
 }
 
@@ -442,7 +503,7 @@ async function cmdSend(
   };
   if (opts.inReplyTo !== undefined) body.in_reply_to = opts.inReplyTo;
   const { status, data } = await api<SendReceipt>(port, "POST", `/channels/${name}/messages`, body);
-  if (status >= 400 || !data) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400 || !data) die(apiError(data, status));
   // Target echo on stderr — confirms WHERE the message landed so a misrouted
   // reply (right prompt, wrong channel) is caught the instant it happens (F9).
   // On stderr so it never pollutes the stdout JSON receipt, and it fires even
@@ -484,7 +545,7 @@ async function cmdAnnounce(
   const body: { from: string; text: string; channels?: string[] } = { from, text };
   if (channels?.length) body.channels = channels;
   const { status, data } = await api<AnnounceReceipt>(port, "POST", "/announce", body);
-  if (status >= 400 || !data) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400 || !data) die(apiError(data, status));
   process.stderr.write(
     `# announced → ${data.channels.length} channel(s) · ${data.total_recipients} recipient(s)\n`,
   );
@@ -502,9 +563,10 @@ async function cmdAnnounce(
 async function cmdPull(name: string, since: number, opts: { status?: string } = {}) {
   if (!name) die("usage: grapevine pull <channel> [--since <id>] [--status <value>]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
 
   if (opts.status !== undefined) {
+    // This branch answers from the log file, so it cannot 404 on its own.
+    await requireChannel(port, name);
     // Full-channel scan: filter by latest disposition, status frames excluded.
     const badged = loadChannelMessagesBadged(name);
     const filtered = badged.filter((m) => {
@@ -526,12 +588,14 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
     "GET",
     `/channels/${name}/messages?since=${since}`,
   );
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) die(apiError(data, status));
   const rawMsgs = data?.messages ?? [];
   const cursor = rawMsgs.length ? rawMsgs[rawMsgs.length - 1].id : since;
   const disp = foldDispositions(name);
   const annotated = rawMsgs
-    .filter((m) => m.kind !== "status")
+    // Disposition frames only — a lifecycle frame (archive/unarchive) stays in
+    // the history an agent pulls; it is how it learns the channel was retired.
+    .filter((m) => !isDispositionFrame(m))
     .map((m) => {
       const d = disp.get(m.id);
       return d ? { ...m, disposition: d.disposition, reopens: d.reopens } : m;
@@ -542,7 +606,6 @@ async function cmdPull(name: string, since: number, opts: { status?: string } = 
 async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
   if (!name || !Number.isFinite(id)) die("usage: grapevine read <channel> <id> [--text]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
   // Built on the existing range fetch — `since=id-1` returns id and beyond;
   // we pick the exact id. No daemon API change. This is the targeted
   // "give me message N in full" verb that recovers a clipped tail preview
@@ -552,7 +615,7 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
     "GET",
     `/channels/${name}/messages?since=${id - 1}`,
   );
-  if (status >= 400) die(data?.error ?? `HTTP ${status}`);
+  if (status >= 400) die(apiError(data, status));
   const msg = (data?.messages ?? []).find((m) => m.id === id);
   if (!msg) die(`message ${id} not found in ${name}`, 1);
   const dispMap = foldDispositions(name);
@@ -576,7 +639,6 @@ async function cmdRead(name: string, id: number, opts: { text?: boolean }) {
 async function cmdWait(name: string, since: number, timeoutS: number, alias: string | undefined) {
   if (!name) die("usage: grapevine wait <channel> [--as <alias>] [--since <id>] [--timeout <s>]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
   // Give the HTTP fetch a slightly higher abort timeout than the daemon's
   // long-poll timeout so the daemon always wins the timeout race.
   // `?as=<alias>` registers presence on the channel for the wait duration —
@@ -590,7 +652,7 @@ async function cmdWait(name: string, since: number, timeoutS: number, alias: str
   try {
     data = (await res.json()) as WaitResponse;
   } catch {}
-  if (!res.ok) die(data?.error ?? `HTTP ${res.status}`);
+  if (!res.ok) die(apiError(data, res.status));
   printJson({
     ok: true,
     messages: data?.messages ?? [],
@@ -686,8 +748,11 @@ async function cmdTail(
 
   while (!stopped) {
     const port = await ensureDaemon();
-    // Ensure the channel exists (so a fresh `tail name` works without explicit open).
-    await api(port, "POST", "/channels", { name });
+    // ⚠ NO ensure call. A fresh `tail name` still works without an explicit
+    // open — GET …/tail creates the channel itself — and that is the ONLY way
+    // the subscribed event's `created` flag can ever be true: an ensure sent
+    // first creates the channel, so the subscribe that follows always reports
+    // `created:false` and the mistyped-name signal never fires.
     const asParam = myAlias ? `&as=${encodeURIComponent(myAlias)}` : "";
     const humanParam = opts.human && !opts.lurk ? "&human=1" : "";
     const lurkParam = opts.lurk ? "&lurk=1" : "";
@@ -761,6 +826,14 @@ async function cmdTail(
           if (eventName === "subscribed") {
             process.stderr.write(`# subscribed to ${payload.channel} (since=${payload.since})\n`);
             if (payload.topic) process.stderr.write(`# topic: ${payload.topic}\n`);
+            if (payload.created)
+              process.stderr.write(
+                `# created ${payload.channel} — this tail brought it into being (check the name)\n`,
+              );
+            if (payload.archived)
+              process.stderr.write(
+                `# ${payload.channel} is archived — read-only; a send will be rejected\n`,
+              );
             // Structured grounding on stdout (F3/F7) — under the default
             // Wiring-B Monitor, stdout surfaces as notifications, so a fresh
             // subscriber actually sees the topic + that earlier history exists.
@@ -770,7 +843,33 @@ async function cmdTail(
               grounded = true;
               const latest = typeof payload.latest_id === "number" ? payload.latest_id : 0;
               const earlier = highestSeen < 0 ? latest : Math.max(0, Math.min(highestSeen, latest));
-              if (earlier > 0 || payload.topic) {
+              // `created` and `archived` join the gate on purpose. A channel
+              // this subscribe just made has no topic and no history, so the
+              // old condition (`earlier > 0 || topic`) is exactly the case that
+              // emits NOTHING; and an ARCHIVED channel's grounding line was
+              // indistinguishable from a healthy one's, so a late joiner still
+              // learned the channel was retired only when its send bounced.
+              //
+              // ⚠ The hints ACCUMULATE into a list rather than assigning to one
+              // field. They used to be three assignments to `grounding.hint`,
+              // ordered so the most important won — which is a hint that can
+              // silently lose to another hint, the failure mode this whole
+              // branch is about, sitting in the fix for it. A list cannot
+              // overwrite: an archived channel WITH history now says both.
+              const hints: string[] = [];
+              if (earlier > 0)
+                hints.push(
+                  `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`,
+                );
+              if (payload.created)
+                hints.push(
+                  `this tail created ${payload.channel} — no such channel existed; check the name, or another party has yet to open it`,
+                );
+              if (payload.archived)
+                hints.push(
+                  `${payload.channel} is archived — read-only; a send will be rejected until someone unarchives it`,
+                );
+              if (earlier > 0 || payload.topic || payload.created || payload.archived) {
                 const grounding: Record<string, unknown> = {
                   kind: "grounding",
                   channel: payload.channel,
@@ -778,8 +877,9 @@ async function cmdTail(
                   earlier,
                 };
                 if (payload.topic) grounding.topic = payload.topic;
-                if (earlier > 0)
-                  grounding.hint = `${earlier} earlier message(s) exist — use --from-start or --since <id> to backfill`;
+                if (payload.created) grounding.created = true;
+                if (payload.archived) grounding.archived = true;
+                if (hints.length) grounding.hint = hints.join(" · ");
                 process.stdout.write(`${JSON.stringify(grounding)}\n`);
               }
             }
@@ -788,8 +888,11 @@ async function cmdTail(
           if (typeof payload.id === "number" && payload.id > highestSeen) {
             highestSeen = payload.id;
           }
-          // Drop status frames — disposition updates are metadata, not messages.
-          if (payload.kind === "status") continue;
+          // Drop DISPOSITION frames — they are metadata about another message.
+          // A lifecycle frame (archive/unarchive) passes through: an agent
+          // tailing a channel could not previously see either party retire it,
+          // and found out when its next send was rejected.
+          if (isDispositionFrame(payload)) continue;
           // Suppress self-echo: when --as is set, drop messages we sent
           // ourselves. The sender already got the receipt as the POST
           // response, so re-emitting it on tail is pure noise.
@@ -865,13 +968,29 @@ function foldDispositions(name: string) {
   }
   return map;
 }
+// TWO things now wear kind:"status". A DISPOSITION frame acts on a specific
+// message (`target` + `disposition`) and is metadata — `pull` and `tail` fold
+// it away and badge the message it points at instead. A LIFECYCLE frame
+// (archive / unarchive) is a fact about the CHANNEL: it targets nothing, and it
+// is the whole point that a reader sees it. Discriminating on `disposition`
+// rather than on `event` keeps a frame from some future emitter visible by
+// default — the failure mode here is swallowing a signal, not showing one.
+function isDispositionFrame(m: { kind?: string; disposition?: string }): boolean {
+  return m.kind === "status" && typeof m.disposition === "string";
+}
+
 // "open" = no entry, or latest disposition is "open"
 function isOpen(d?: { disposition: string }) {
   return !d || d.disposition === "open";
 }
 
-// Reads the full channel log, drops kind:"status" frames, and badges each
+// Reads the full channel log, drops EVERY kind:"status" frame, and badges each
 // remaining message with its latest disposition via foldDispositions.
+//
+// Every one, deliberately — including a lifecycle frame (archive/unarchive),
+// which `pull` and `tail` do let through. This feeds `triage`, whose open queue
+// is "what is left to act on", and an archive is an FYI, not a work item. Same
+// reason `topic` and `announcement` are folded out of the open bucket below.
 function loadChannelMessagesBadged(
   name: string,
 ): (Message & { disposition?: string; reopens?: number })[] {
@@ -926,7 +1045,10 @@ function renderTriageHuman(
 async function cmdTriage(name: string, opts: { human?: boolean } = {}) {
   if (!name) die("usage: grapevine triage <channel> [--human]");
   const port = await ensureDaemon();
-  await api(port, "POST", "/channels", { name });
+  // triage reads the log file, not a route, so it cannot 404 on its own — and
+  // an empty dashboard for a channel that does not exist is the same silent lie
+  // as an empty `pull`.
+  await requireChannel(port, name);
   const badged = loadChannelMessagesBadged(name);
   const open: BadgedMessage[] = [];
   const by_status: Record<string, BadgedMessage[]> = {};
@@ -1039,11 +1161,19 @@ async function cmdMark(
   printJson(data);
 }
 
-async function cmdArchive(name: string, unarchive: boolean) {
+async function cmdArchive(name: string, unarchive: boolean, from?: string) {
   const verb = unarchive ? "unarchive" : "archive";
   if (!name) die(`usage: grapevine ${verb} <channel>`);
   const port = await ensureDaemon();
-  const { status, data } = await api<StatusResponse>(port, "POST", `/channels/${name}/${verb}`);
+  // Both routes append a kind:"status" frame to the log, so who did it is worth
+  // recording when the caller told us. Identity is optional here (it is on the
+  // globally-accepted --as/--from), and the daemon signs "system" without it.
+  const { status, data } = await api<StatusResponse>(
+    port,
+    "POST",
+    `/channels/${name}/${verb}`,
+    from ? { from } : undefined,
+  );
   if (status >= 400) die(data?.error ?? `HTTP ${status}`);
   printJson({ ok: true, ...data });
 }
@@ -1952,16 +2082,16 @@ const COMMANDS: CommandSpec[] = [
     name: "archive",
     flags: [],
     positionals: [{ name: "name", required: true }],
-    run: async (positional) => {
-      await cmdArchive(positional[0], false);
+    run: async (positional, flags) => {
+      await cmdArchive(positional[0], false, resolveAlias(flags));
     },
   },
   {
     name: "unarchive",
     flags: [],
     positionals: [{ name: "name", required: true }],
-    run: async (positional) => {
-      await cmdArchive(positional[0], true);
+    run: async (positional, flags) => {
+      await cmdArchive(positional[0], true, resolveAlias(flags));
     },
   },
   {

@@ -14,6 +14,15 @@ export type Message = {
   ts: number;
   kind?: MessageKind;
   in_reply_to?: number | null;
+  // A kind:"status" frame is one of two things. With `event` it is a
+  // channel-level lifecycle fact (the daemon's archive/unarchive frame, added
+  // 2026-09-06) and the feed renders it as a system note; without one it is
+  // disposition metadata about another message and has no special rendering.
+  event?: "archived" | "unarchived";
+  // Disposition metadata about ANOTHER message (V1.9). Present on a status
+  // frame minted by `mark`; never on a lifecycle frame. Read only to
+  // DISQUALIFY a frame from the channel-note rendering — see isChannelNote.
+  disposition?: string;
 };
 
 /** One row of the channel rail, derived from GET /channels (inventory C4–C8). */

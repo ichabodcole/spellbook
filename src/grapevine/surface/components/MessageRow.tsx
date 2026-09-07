@@ -2,7 +2,7 @@
 
 import { cn } from "cn";
 import { Button } from "@/ui/button";
-import { aliasColor, fmtTime, fromLabel, snippet } from "../state/feed";
+import { aliasColor, fmtTime, fromLabel, isChannelNote, snippet } from "../state/feed";
 import type { Message } from "../state/types";
 
 // F3 — one body recipe per message kind.
@@ -13,6 +13,13 @@ const BODY: Record<string, string> = {
   announcement: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
   status: "rounded-[10px] border border-edge bg-surface-raised px-3.5 py-2.5",
 };
+
+// F11 — the archive/unarchive frame. Same treatment as `topic` and for the same
+// reason: both are channel-level facts, not somebody's message, and a `status`
+// frame rendered as an utterance puts words in a participant's mouth. Neutral
+// rather than accented — the grape dashes are the topic's identity.
+const CHANNEL_NOTE =
+  "rounded-[10px] border border-dashed border-edge bg-transparent px-3.5 py-2.5 italic text-ink-dim";
 
 export function MessageRow({
   m,
@@ -26,6 +33,7 @@ export function MessageRow({
   onReply: (m: Message) => void;
 }) {
   const kind = m.kind || "message";
+  const channelNote = isChannelNote(m);
   const isReply = m.in_reply_to != null;
   return (
     <div
@@ -47,14 +55,18 @@ export function MessageRow({
       )}
       <div className="mb-1 flex items-baseline gap-2 text-xs">
         <span
-          className={cn("font-mono font-semibold", kind === "topic" && "text-grape-soft")}
-          style={kind === "topic" ? undefined : { color: aliasColor(m.from) }}
+          className={cn(
+            "font-mono font-semibold",
+            kind === "topic" && "text-grape-soft",
+            channelNote && "text-ink-dim",
+          )}
+          style={kind === "topic" || channelNote ? undefined : { color: aliasColor(m.from) }}
         >
           {fromLabel(m)}
           {kind === "announcement" && <span className="italic opacity-60"> · announced</span>}
         </span>
         <span className="font-mono text-[11px] text-ink-dim">{fmtTime(m.ts)}</span>
-        {canReply && kind !== "topic" && (
+        {canReply && kind !== "topic" && !channelNote && (
           <Button
             variant="ghost"
             size="inline"
@@ -65,7 +77,12 @@ export function MessageRow({
           </Button>
         )}
       </div>
-      <div className={cn("whitespace-pre-wrap break-words", BODY[kind] ?? BODY.message)}>
+      <div
+        className={cn(
+          "whitespace-pre-wrap break-words",
+          channelNote ? CHANNEL_NOTE : (BODY[kind] ?? BODY.message),
+        )}
+      >
         {m.text}
       </div>
     </div>

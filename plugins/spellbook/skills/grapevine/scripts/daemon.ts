@@ -17,18 +17,34 @@
 //   GET    /identity     — { alias } the persisted default alias (config.json) [V1.7]
 //   GET    /channels     — list channels (each: { …, archived })
 //   GET    /presence     — cross-channel roster: [{ name, subscribers:[alias], humans:[alias], connections, named, anonymous }]
-//   POST   /channels     — { name, topic? } create channel (idempotent; 409 if archived)
+//   POST   /channels     — { name, topic?, from?, explicit? } create channel (idempotent; 409 if
+//                          archived unless explicit, which auto-unarchives and appends the
+//                          kind:"status" unarchived frame)
 //   DELETE /channels/:name — close channel (deletes log + archived marker)
-//   POST   /channels/:name/archive   — mark read-only (sidecar marker) [V1.7]
-//   POST   /channels/:name/unarchive — clear read-only [V1.7]
+//   POST   /channels/:name/archive   — { from? } mark read-only (sidecar marker) [V1.7]; appends a
+//                                    kind:"status" frame (event:"archived") ONLY when the state
+//                                    flipped; response carries { changed, id } [2026-09-06]
+//   POST   /channels/:name/unarchive — { from? } clear read-only [V1.7]; same, event:"unarchived"
 //   POST   /channels/:name/messages — { from, text, in_reply_to? } append + broadcast (409 if archived)
-//   GET    /channels/:name/messages — backlog (?since=<id>)
+//   GET    /channels/:name/messages — backlog (?since=<id>) [404 if no such channel]
 //   GET    /channels/:name/subscribers — { channel, subscribers:[alias], humans:[alias], count, connections, named, anonymous, topic }
-//   GET    /channels/:name/topic    — { channel, topic }
-//   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message)
+//   GET    /channels/:name/topic    — { channel, topic } [404 if no such channel]
+//   PUT    /channels/:name/topic    — { topic, from? } update topic (appends a kind:"topic" message;
+//                                    creates the channel — it is a write; 409 if archived)
+//   GET    /channels/:name/wait     — long-poll for new messages [404 if no such channel]
 //   GET    /channels/:name/tail     — SSE: live messages (?since=<id> catch-up, ?as=<alias> registers,
 //                                    ?human=1 marks human [V1.7], ?lurk=1 receives but registers no presence [V1.7]).
-//                                    subscribed event includes the current topic.
+//                                    subscribed event includes the current topic, `created` (true when THIS
+//                                    subscribe brought the channel into being — i.e. a mistyped name) and
+//                                    `archived` (the channel is read-only; a send will be rejected).
+//
+// READS DO NOT CREATE (2026-09-06). Only an act declaring intent that the
+// channel exist may bring one into being: POST /channels, every append, PUT
+// /topic, and GET /tail (a subscription is forward-looking). GET /messages,
+// GET /wait and GET /topic answer 404 with a `hint` naming the `open` that
+// would fix it. Before this, they all ran through loadChannel(), which
+// registers any name it is handed, so a read resurrected a closed channel into
+// `list` — empty, file-less, and undetectable from the reader's side.
 //
 // Message shape: { id, channel, from, text, ts, kind: "message", in_reply_to?: <id> }
 // IDs are channel-scoped, monotonically ascending integers. `ts` is unix
@@ -143,6 +159,12 @@ type Message = {
   // V1.9 disposition — status frames reference the message being acted on.
   target?: number;
   disposition?: string;
+  // 2026-09-06 — the OTHER kind of kind:"status" frame: a channel-level
+  // lifecycle fact (archive / unarchive), which references no message and
+  // carries no disposition. `event` is the discriminator, and consumers need
+  // it: `pull` and `tail` drop DISPOSITION frames as metadata, and would
+  // otherwise swallow these too.
+  event?: "archived" | "unarchived";
 };
 
 type Subscriber = {
@@ -224,6 +246,39 @@ function snapshotAndClear(name: string): string | null {
   return snapshot;
 }
 
+// V2.2 — a creating act writes the channel down. Before this, `open` with no
+// `--topic` appended nothing, so the channel lived only in the daemon's map:
+// `restart` (a DOCUMENTED healing action) dropped it, and once reads stopped
+// resurrecting missing channels, a wrapper that had correctly opened first
+// still broke. "Only intent creates" cannot rest on a record that does not
+// outlive the process holding it.
+//
+// An EMPTY `.jsonl`, not a header record: this file is a message log and every
+// consumer parses its lines as messages — including `grep`, which reads it off
+// disk without the daemon, and the count, which counts non-empty lines. A
+// metadata first line would have to be taught to each of them and would make an
+// empty channel report one message. The file's existence is the record of
+// existence; its birth time is the creation time; and a null topic is exactly
+// what "no topic frame yet" already means. Truncation to zero bytes is also
+// already a supported state — that is what clearing a channel leaves behind.
+function persistChannel(name: string): void {
+  const p = channelPath(name); // validates the name
+  if (!existsSync(p)) writeFileSync(p, "");
+  // ⚠ Align the in-memory record to the file it now has. `loadChannel` stamps
+  // `Date.now()` for a channel with nothing to read a `ts` from, and this write
+  // happens a moment later — so memory and disk hold two readings of the same
+  // instant, and `created_at` CHANGED across a restart even though the channel
+  // had not. The file is the record; make it the age too. Guarded on an empty
+  // log: once a message exists, its `ts` is the better answer and must stand.
+  const ch = channels.get(name);
+  if (ch && ch.next_id === 1) {
+    try {
+      const st = statSync(p);
+      ch.created_at = st.birthtimeMs || st.mtimeMs;
+    } catch {}
+  }
+}
+
 function loadChannel(name: string): Channel {
   const existing = channels.get(name);
   if (existing) return existing;
@@ -234,6 +289,7 @@ function loadChannel(name: string): Channel {
   if (existsSync(path)) {
     const raw = readFileSync(path, "utf-8");
     const lines = raw.split("\n").filter((l) => l.trim());
+    let sawParseableLine = false;
     if (lines.length) {
       // b11 — this block used to read the FIRST line for created_at and the
       // LAST line for next_id, each in a `try` with an EMPTY CATCH. A final
@@ -255,7 +311,6 @@ function loadChannel(name: string): Channel {
       // present instead of restarting at 1 — over-report, never under-report,
       // because under-reporting here is what reuses an id.
       let maxId = 0;
-      let sawParseable = false;
       for (let i = 0; i < lines.length; i++) {
         let m: Message;
         try {
@@ -263,15 +318,27 @@ function loadChannel(name: string): Channel {
         } catch {
           continue; // a corrupt line is skipped for RECOVERY, never for COUNTING
         }
-        if (!sawParseable && typeof m.ts === "number") {
+        if (!sawParseableLine && typeof m.ts === "number") {
           created_at = m.ts;
-          sawParseable = true;
+          sawParseableLine = true;
         }
         if (typeof m.id === "number" && m.id > maxId) maxId = m.id;
         // Latest topic wins; this walks forward, so the last one assigned stands.
         if (m.kind === "topic") topic = m.text;
       }
       next_id = Math.max(maxId, lines.length) + 1;
+    }
+    if (!sawParseableLine) {
+      // An EMPTY log is a real state, not a missing one: `open` creates the
+      // file (V2.2), and clearing a channel truncates it to zero bytes. With no
+      // line to read a `ts` from, `Date.now()` would make the channel's age
+      // restart on every daemon boot — the same drift the file was written to
+      // stop. The file's own birth is the honest answer; mtime backs it up on
+      // filesystems that do not record one.
+      try {
+        const st = statSync(path);
+        created_at = st.birthtimeMs || st.mtimeMs;
+      } catch {}
     }
   }
   const ch: Channel = {
@@ -366,7 +433,7 @@ function appendMessage(
   text: string,
   kind: Message["kind"] = "message",
   inReplyTo?: number,
-  extra?: Partial<Pick<Message, "target" | "disposition">>,
+  extra?: Partial<Pick<Message, "target" | "disposition" | "event">>,
 ): Message {
   const ch = loadChannel(name);
   const msg: Message = {
@@ -488,6 +555,66 @@ function readBacklog(name: string, since: number): Message[] {
   return out;
 }
 
+// Does this channel exist? A NON-CREATING lookup — the counterpart to
+// loadChannel, which builds a record for any name you hand it and registers it
+// in `channels`, so `listChannels()` (which unions the map with the .jsonl
+// files on disk) reports it as live. That is the resurrection: a read verb on a
+// channel the human just closed put it back in `list` with no file, no messages
+// and no way for the reader to tell.
+//
+// "Exists" is loaded-in-memory OR a log on disk, matching exactly what
+// `listChannels()` will report. An invalid name is not an existence question —
+// it can never be on disk, so it answers false and the caller 404s rather than
+// throwing a 400 out of a read.
+function channelExists(name: string): boolean {
+  if (channels.has(name)) return true;
+  try {
+    return existsSync(channelPath(name));
+  } catch {
+    return false;
+  }
+}
+
+// The refusal a read route gives for a channel that is not there. Same envelope
+// as every other daemon error ({ error, channel }) plus `hint`: a response
+// should name the act it makes likely, and the only act that recovers from this
+// one is an explicit open. Without the hint the agent is left guessing whether
+// the name is wrong, the daemon is wrong, or the channel is merely empty.
+//
+// ⚠ `hint` IS A VERB INVOCATION — the arguments to the CLI — NOT a shell
+// command. It read `grapevine open <name>`, which looks pasteable and is not:
+// nothing installs a `grapevine` binary on PATH, and SKILL.md's own canonical
+// form is `bun …/cli.ts open <name>`. The daemon cannot honestly render the
+// runnable line, because it does not know how its client was invoked — a CLI
+// from the plugin cache can be talking to a daemon started from a checkout. So
+// the daemon names the ACT and the CLI, which is the thing being invoked,
+// composes the runnable command from its own argv. Consumers that build a
+// command from this field must prefix their own invocation.
+function missingChannel(name: string): Response {
+  return json(
+    { error: `no channel "${name}"`, channel: name, hint: `open ${name}` },
+    { status: 404 },
+  );
+}
+
+// The refusal for a channel that IS there and is retired. Same reasoning as
+// missingChannel, and the same `hint` contract (a VERB INVOCATION, not a shell
+// command — the CLI composes the runnable line from its own argv).
+//
+// ⚠ These 409s used to carry no hint while the 404s did, which made the SAME
+// verb answer two ways: `topic <missing>` named its recovery and
+// `topic <archived>` did not. An agent that has learned to read `hint` reads
+// its absence as "nothing recovers this". Unarchiving is exactly as guessable
+// as opening was, which is to say not at all until something says it.
+//
+// Deliberately NOT extended to the `live` 409 on a destructive reset: the act
+// that recovers from it is `--force`, and naming it would turn a guard that
+// exists to protect a live session into a suggestion to override it. That
+// refusal wants a human, not a hint.
+function archivedChannel(name: string): Response {
+  return json({ error: "archived", channel: name, hint: `unarchive ${name}` }, { status: 409 });
+}
+
 function json(data: unknown, init: ResponseInit = {}): Response {
   return new Response(JSON.stringify(data), {
     ...init,
@@ -498,6 +625,50 @@ function json(data: unknown, init: ResponseInit = {}): Response {
 // Request bodies are untrusted external JSON. We return a loose record (or
 // null on parse failure) and narrow each field at the use site.
 type JsonBody = Record<string, unknown> | null;
+
+// Is there something here to archive or unarchive? Same non-creating question
+// as channelExists, widened by the archived marker: a channel that was opened,
+// archived and never written to has a marker and no log, and unarchiving it
+// must still work. Archiving a name that does not exist would otherwise CREATE
+// its log via appendLifecycle — reintroducing, on a lifecycle route, exactly
+// the resurrection the read guard removed.
+function lifecycleTarget(name: string): boolean {
+  if (channelExists(name)) return true;
+  try {
+    return existsSync(archivedPath(name));
+  } catch {
+    return false;
+  }
+}
+
+// Who retired it. Both clients send `{from}` when they have a name: the CLI
+// passes the globally-accepted `--as`/`--from`, and the watch surface signs
+// with the same alias its topic edit uses (surface inventory L5a). "system" is
+// therefore what you get when there genuinely is no name — a lurker with no
+// persisted default — rather than a placeholder for a name we failed to read.
+//
+// ⚠ This comment previously said both clients posted with no body. It was
+// stale in the commit that introduced it (the CLI half changed in the same
+// diff), and the surface half then stayed unsigned for a commit because the
+// comment said that was intended. A comment that describes the caller is a
+// claim about a file you are not editing; re-read the caller.
+async function lifecycleFrom(req: Request): Promise<string> {
+  const body = await readJsonBody(req);
+  return body && typeof body.from === "string" && body.from.trim() ? body.from.trim() : "system";
+}
+
+// The archive/unarchive frame. kind:"status" with an `event` and NO
+// `disposition` — see the Message type: that absence is what tells `pull` and
+// `tail` this is a channel-level fact rather than disposition metadata.
+//
+// Goes through appendMessage rather than writing the line itself, so it
+// inherits the b11 newline repair, the id allocation, the SSE fan-out and the
+// long-poll drain. A second appender is a second place to get JSONL wrong.
+function appendLifecycle(name: string, from: string, event: "archived" | "unarchived"): Message {
+  const text =
+    event === "archived" ? "channel archived — read-only" : "channel unarchived — writable again";
+  return appendMessage(name, from, text, "status", undefined, { event });
+}
 
 async function readJsonBody(req: Request): Promise<JsonBody> {
   try {
@@ -605,7 +776,7 @@ async function handle(req: Request): Promise<Response> {
         }
         unarchived = true;
       } else if (body.explicit !== true && existsSync(ap)) {
-        return json({ error: "archived", channel: body.name }, { status: 409 });
+        return archivedChannel(body.name);
       }
       // open --fresh: clear the channel for a new session, but ONLY when no seats
       // are connected. A re-runnable convene must never wipe a live session.
@@ -620,7 +791,23 @@ async function handle(req: Request): Promise<Response> {
         }
       }
       const ch = loadChannel(body.name);
-      if (unarchived) ch.archived = false;
+      // The channel is written down here, not on its first message: this route
+      // IS the explicit creating act, and an open that leaves no trace does not
+      // survive a restart (see persistChannel).
+      persistChannel(body.name);
+      if (unarchived) {
+        ch.archived = false;
+        // ⛔ `open`'s auto-unarchive is an UNARCHIVE, and it must announce
+        // itself for the same reason the explicit route does — otherwise a
+        // convene-at-start wrapper silently makes a retired channel writable
+        // again and the agents tailing it never see the state change. This is
+        // the third unarchive path, and it was the one with no signal.
+        appendLifecycle(
+          body.name,
+          typeof body.from === "string" ? body.from : "system",
+          "unarchived",
+        );
+      }
       // Optional topic on open — only set if provided AND channel has no
       // topic yet (so re-opening doesn't clobber). To update later, use
       // the explicit PUT /topic endpoint.
@@ -752,11 +939,41 @@ async function handle(req: Request): Promise<Response> {
 
     // Archive / unarchive (V1.7) — a non-destructive alternative to close. The
     // marker file is the source of truth; the in-memory flag mirrors it.
+    //
+    // Both APPEND a kind:"status" frame (2026-09-06). Persisted, not an
+    // SSE-only event: an agent that was not connected at the moment learns from
+    // `pull`, and a reconnecting tail replays it — an event would be invisible
+    // to both. Retiring a channel is a fact about the channel, and before this
+    // the only signal either party got was its next send being rejected.
+    //
+    // ⚠ THE FRAME IS EMITTED ONLY WHEN THE STATE ACTUALLY FLIPPED. Both routes
+    // are idempotent — archiving an archived channel has always been an ok:true
+    // no-op — and an unconditional emitter turned that no-op into a durable,
+    // broadcast claim that a transition happened. `unarchive` on a healthy
+    // channel wrote `event:"unarchived"` into its log and every tailing agent
+    // saw it: a false statement in the permanent record, which is the exact
+    // failure class this branch exists to remove. The same guard already lives
+    // on the explicit-open path, which emits only when `unarchived` flipped.
+    // `changed` reports which it was, so an idempotent caller can tell.
     if (sub === "/archive" && method === "POST") {
+      if (!lifecycleTarget(name)) return missingChannel(name);
+      const from = await lifecycleFrom(req);
+      // Read the prior state BEFORE the write, or there is nothing left to
+      // compare against.
+      const wasArchived = existsSync(archivedPath(name));
+      // Marker first, frame second: the frame asserts a state, so the state is
+      // true by the time any reader can see the assertion.
       writeFileSync(archivedPath(name), "");
       const ch = channels.get(name);
       if (ch) ch.archived = true;
-      return json({ ok: true, channel: name, archived: true });
+      const m = wasArchived ? null : appendLifecycle(name, from, "archived");
+      return json({
+        ok: true,
+        channel: name,
+        archived: true,
+        changed: !wasArchived,
+        id: m ? m.id : null,
+      });
     }
     if (sub === "/reset" && method === "POST") {
       const body = (await readJsonBody(req)) ?? {};
@@ -775,7 +992,12 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/unarchive" && method === "POST") {
+      if (!lifecycleTarget(name)) return missingChannel(name);
+      const from = await lifecycleFrom(req);
       const ap = archivedPath(name);
+      // The prior state, read before the unlink — see the archive route above:
+      // no flip, no frame.
+      const wasArchived = existsSync(ap);
       if (existsSync(ap)) {
         try {
           unlinkSync(ap);
@@ -792,10 +1014,22 @@ async function handle(req: Request): Promise<Response> {
       }
       const ch = channels.get(name);
       if (ch) ch.archived = false;
-      return json({ ok: true, channel: name, archived: false });
+      const m = wasArchived ? appendLifecycle(name, from, "unarchived") : null;
+      return json({
+        ok: true,
+        channel: name,
+        archived: false,
+        changed: wasArchived,
+        id: m ? m.id : null,
+      });
     }
 
     if (sub === "/messages" && method === "GET") {
+      // A read never creates. This route never did (readBacklog goes straight
+      // to the file) — but it answered `{"messages":[]}` for a name that does
+      // not exist, which is indistinguishable from an empty channel. The guard
+      // is here for the lie, not for the resurrection.
+      if (!channelExists(name)) return missingChannel(name);
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       return json({ messages: readBacklog(name, since) });
     }
@@ -806,7 +1040,7 @@ async function handle(req: Request): Promise<Response> {
         return json({ error: "from and text required" }, { status: 400 });
       }
       if (existsSync(archivedPath(name))) {
-        return json({ error: "archived", channel: name }, { status: 409 });
+        return archivedChannel(name);
       }
       try {
         const inReplyTo = typeof body.in_reply_to === "number" ? body.in_reply_to : undefined;
@@ -856,6 +1090,10 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/wait" && method === "GET") {
+      // A read never creates — and this one DID: loadChannel below registers
+      // the name in `channels`, which is what put a closed channel back in
+      // `list`.
+      if (!channelExists(name)) return missingChannel(name);
       const ch = loadChannel(name);
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       const alias = url.searchParams.get("as");
@@ -957,6 +1195,9 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/topic" && method === "GET") {
+      // Reading a topic is a read: it does not create. (PUT does — it is a
+      // write, and only intent creates.)
+      if (!channelExists(name)) return missingChannel(name);
       const ch = loadChannel(name);
       return json({ channel: name, topic: ch.topic });
     }
@@ -966,6 +1207,17 @@ async function handle(req: Request): Promise<Response> {
       if (!body || typeof body.topic !== "string") {
         return json({ error: "topic required" }, { status: 400 });
       }
+      // Archived means read-only, and a topic is a write — it appends a
+      // kind:"topic" frame to the log like any other message. The sibling
+      // POST …/messages has had this guard since V1.7; this route never did, so
+      // `archive x` then `topic x "t"` landed a frame on a read-only channel
+      // and answered ok:true. Same status, same envelope as the sibling.
+      if (existsSync(archivedPath(name))) {
+        return archivedChannel(name);
+      }
+      // Deliberately NO existence guard: under "only intent creates", a topic
+      // WRITE declares that this channel should hold this, so it may create
+      // one — the same class of act as `send`. Only the read (GET) refuses.
       try {
         const m = appendMessage(
           name,
@@ -980,7 +1232,29 @@ async function handle(req: Request): Promise<Response> {
     }
 
     if (sub === "/tail" && method === "GET") {
+      // A subscribe is forward-looking — "tell me about this from now on" — so
+      // it MAY create the channel, and that is deliberate: a fresh `tail name`
+      // works without an explicit open, and the watch surface's first load
+      // relies on it. But an agent that tails a MISTYPED name then waits
+      // forever inside a channel of its own making, with no signal that this is
+      // what happened — the same silent-failure class as a resurrecting read,
+      // just slower. So the subscribed event says so. Computed BEFORE
+      // loadChannel, which is what does the creating.
+      const created = !channelExists(name);
       const ch = loadChannel(name);
+      // A subscribe that created the channel is a creating act like any other,
+      // so it writes the channel down too — otherwise `tail`'s own creation is
+      // the one that still evaporates on a restart.
+      if (created) persistChannel(name);
+      // ⚠ The LATE JOINER. `created` tells a subscriber it just invented the
+      // channel; nothing told it the channel it joined is already retired. The
+      // lifecycle frame closes the case for an agent that was connected at the
+      // moment, or that pulls history — but a `tail` that arrives afterwards
+      // got an ordinary grounding line and then "found out when its next send
+      // was rejected", which is verbatim the failure the frame was added to
+      // end. Read off the MARKER, not `ch.archived`: the marker file is the
+      // source of truth and the in-memory flag only mirrors it.
+      const archived = existsSync(archivedPath(name));
       const since = parseInt(url.searchParams.get("since") ?? "0", 10) || 0;
       const alias = url.searchParams.get("as");
       // V1.7 — a human-driven connection (the watch, or `tail --human`) flags
@@ -1023,7 +1297,7 @@ async function handle(req: Request): Promise<Response> {
           // grounding context before any messages arrive.
           controller.enqueue(
             enc.encode(
-              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1 })}\n\n`,
+              `event: subscribed\ndata: ${JSON.stringify({ channel: name, since: effectiveSince, as: alias, topic: ch.topic, latest_id: ch.next_id - 1, created, archived })}\n\n`,
             ),
           );
           // Replay backlog before live tail begins.
