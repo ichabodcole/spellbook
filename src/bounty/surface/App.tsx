@@ -7,6 +7,7 @@ import { Header } from "./components/Header";
 import { RestoreFailedBanner } from "./components/RestoreFailedBanner";
 import { Toasts } from "./components/Toasts";
 import { ownersOverWip } from "./state/cards";
+import type { DropHint } from "./state/drag";
 import { tasksByStatus } from "./state/filters";
 import { COLUMNS, type Task, type TaskStatus, WIP_THRESHOLD } from "./state/types";
 import { useBoard } from "./state/useBoard";
@@ -16,6 +17,10 @@ export function App() {
   const board = useBoard();
   const [detail, setDetail] = useState<Task | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  // ONE hint for the whole board: a dragover anywhere replaces it, which is
+  // what the old page's board-wide clearDropMarkers() did on every dragover.
+  // Per-column state leaves two columns lit when a dragleave is missed.
+  const [dropHint, setDropHint] = useState<DropHint | null>(null);
 
   const over = ownersOverWip(board.tasks, WIP_THRESHOLD);
 
@@ -51,6 +56,8 @@ export function App() {
             now={board.now}
             overWip={over}
             draggingId={draggingId}
+            hint={dropHint}
+            onHint={setDropHint}
             onDragStart={(task, e) => {
               // A mousedown inside the title turned this off so a text
               // selection is not a drag; honour it and abort.
@@ -66,10 +73,14 @@ export function App() {
               e.dataTransfer.effectAllowed = "move";
               setDraggingId(task.id);
             }}
-            onDragEnd={() => setDraggingId(null)}
+            onDragEnd={() => {
+              setDraggingId(null);
+              setDropHint(null);
+            }}
             onDrop={(status: TaskStatus, index: number) => {
               const id = draggingId;
               setDraggingId(null);
+              setDropHint(null);
               // A drop back on the card's own slot still sends: the DAEMON
               // suppresses it (isNoOpMove), so no event and no broadcast.
               if (id) board.moveTask(id, status, index);

@@ -2626,27 +2626,21 @@ describe("dependencies (Phase D)", () => {
     }
   }, 15000);
 
-  test("b16 LOCKSTEP — template.html actually RENDERS restoreFailed, not just receives it", async () => {
-    // THE DRIFT THIS WHOLE FIX IS AN INSTANCE OF. bounty's surface features pair
-    // logic in server.ts with a HAND-WRITTEN Alpine mirror in template.html, and
-    // nothing has ever guarded the pair. That is precisely how `restoreFailed`
-    // shipped emitted-at-5-sites and rendered-at-0 for a full release.
-    //
-    // A wire test alone would NOT have caught the original defect: the field was
-    // on GET /state the whole time. Only the surface was blind. So this cell
-    // reads the template as text and asserts the mirror exists — crude, but it
-    // fails loudly the moment someone adds a field to the wire and forgets the
-    // human, which is the failure that actually happened.
-    const template = readFileSync(join(import.meta.dir, "template.html"), "utf8");
-    // it is in the component's state
-    expect(template).toContain("restoreFailed: null");
-    // it is populated from the init frame
-    expect(template).toContain("msg.restoreFailed");
-    // and it is actually put on screen, with BOTH fields the agent gets
-    expect(template).toContain('x-if="restoreFailed"');
-    expect(template).toContain('x-text="restoreFailed.path"');
-    expect(template).toContain('x-text="restoreFailed.reason"');
-  });
+  // ⛔ THE b16 LOCKSTEP CELL MOVED, IT WAS NOT DROPPED. It used to read
+  // `scripts/template.html` as text and assert the Alpine mirror rendered
+  // `restoreFailed`, because bounty's surface features paired logic here with a
+  // HAND-WRITTEN mirror in that page and nothing guarded the pair — which is
+  // exactly how `restoreFailed` shipped emitted-at-5-sites and rendered-at-0
+  // for a full release. The page is gone (2026-09-06); the surface is React at
+  // src/bounty/surface/, and a test HERE that reached across into src/ would be
+  // the relative escape out of the artifact boundary the import-boundary wards
+  // forbid. The guard now lives beside its subject, at
+  // src/bounty/surface/reaches-the-human.test.ts, and it is WIDER than this one
+  // was: it asserts the property for every field the daemon puts on the init
+  // frame, not for restoreFailed alone.
+  //
+  // What stays here is the daemon's own half — the cell above, which asserts
+  // the field is present-and-null on a healthy boot.
 
   test("b6: state reads FULL by default and SAYS which mode answered it", async () => {
     const home = uniqHome();

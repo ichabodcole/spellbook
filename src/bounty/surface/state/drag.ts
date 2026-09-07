@@ -43,3 +43,12 @@ export function dropMarker(
   if (last) return { id: last.id, edge: "after" };
   return null;
 }
+
+/** Where the board is currently offering to drop: one column, and at most one
+ *  card edge inside it. BOARD-level, so a `dragover` anywhere replaces it — the
+ *  old page's clearDropMarkers() ran board-wide on every dragover, and nothing
+ *  else reproduces "at most one column is lit, dragleave or no dragleave". */
+export type DropHint = {
+  status: string;
+  marker: { id: string; edge: "before" | "after" } | null;
+};

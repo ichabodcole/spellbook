@@ -225,12 +225,23 @@ import { join } from "node:path";
 // `:root` properties became 34 tokens (four status families of three, plus two
 // washes) on top of the same L1 alias block and the same three pins — dark,
 // the raw-var aliases, the pointer — that grapevine carries.
-// ⚠ `plugins/spellbook/skills/bounty/scripts/template.html` (1,003) is STILL
-// declared here and leaves in the daemon commit; that departure is its own
-// re-declaration, not this one.
+//
+// ⛔ RE-DECLARED AGAIN, SAME DAY, FOR THE DAEMON COMMIT — 25/3,938 -> 24/2,935.
+// MEMBERSHIP SHRANK BY ONE, and it is the largest departure this ward has ever
+// recorded:
+//     -1003  plugins/spellbook/skills/bounty/scripts/template.html  (deleted)
+// The Alpine page is gone; the daemon serves the built dist/. 3,938 - 1,003 =
+// 2,935 exactly, summed from the object below.
+//
+// ⚠ WHAT THIS NUMBER DOES AND DOES NOT MEAN. The gate can now READ bounty's
+// board — it is .tsx and .ts, linted and type-checked — where before it could
+// read none of it. But 178 of those 1,003 lines did not leave the blind set,
+// they MOVED into it as styles.css, index.html and bunfig.toml, and the
+// remaining 825 became code the gate still cannot prove renders anything. The
+// honest reading is "1,003 lines of unreadable board became 178 lines of
+// unreadable configuration", not "the board is now covered".
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
-  "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
   "src/bounty/surface/styles.css": 144,
   "src/bounty/surface/index.html": 32,
   "src/bounty/bunfig.toml": 2,

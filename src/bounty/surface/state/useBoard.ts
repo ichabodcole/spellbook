@@ -181,9 +181,23 @@ export function useBoard(): Board {
     s.send(JSON.stringify(msg));
   }, []);
 
-  const writeFilters = useCallback((next: Filters) => {
-    setFilters(next);
-    persistFilters(safeStorage(), next);
+  /**
+   * ⛔ FUNCTIONAL, NOT `{...filters}`. Two toggles inside ONE task — a fast
+   * double-click, a held key, a synthetic drive — both read the same render's
+   * `filters` closure, and the second silently discards the first. The Alpine
+   * page could not have this defect: it mutated the arrays in place. Measured
+   * on the local-sim: clicking two tag chips in the same tick left only one
+   * toggled, and the board then filtered to the wrong set.
+   *
+   * The persist rides the same update, so what is stored is always what was
+   * applied and never a stale copy of it.
+   */
+  const updateFilters = useCallback((f: (prev: Filters) => Filters) => {
+    setFilters((prev) => {
+      const next = f(prev);
+      persistFilters(safeStorage(), next);
+      return next;
+    });
   }, []);
 
   return {
@@ -198,10 +212,9 @@ export function useBoard(): Board {
     now,
     filters,
 
-    toggleTag: (tag) => writeFilters({ ...filters, tags: toggleFacet(filters.tags, tag) }),
-    toggleOwner: (owner) =>
-      writeFilters({ ...filters, owners: toggleFacet(filters.owners, owner) }),
-    clearFilters: () => writeFilters(NO_FILTERS),
+    toggleTag: (tag) => updateFilters((p) => ({ ...p, tags: toggleFacet(p.tags, tag) })),
+    toggleOwner: (owner) => updateFilters((p) => ({ ...p, owners: toggleFacet(p.owners, owner) })),
+    clearFilters: () => updateFilters(() => NO_FILTERS),
 
     addTask: (status, title) => {
       const trimmed = title.trim();

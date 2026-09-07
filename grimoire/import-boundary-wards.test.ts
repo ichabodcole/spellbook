@@ -252,7 +252,7 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
 
-// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. FOUR entries, the same site in four
+// ⛔ THE PINNED DYNAMIC-ESCAPE INVENTORY. SEVEN entries, the same site in seven
 // spells. Read the site before you add a fifth — the question is never "is it
 // dynamic?" but "does it run at the DESTINATION?", and static-vs-dynamic is
 // only the mechanical stand-in for that.
@@ -296,6 +296,20 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // path — this ward compares strings and would launder a broken spec into the
   // pin (measured at the glamour ratify, cassandra); the check is a human's
   // until the filed existsSync guard is built.
+  // bounty, the SEVENTH (bounty conversion, 2026-09-06) — the second rewrite,
+  // and the first whose dev branch is wrapped in a try/catch. The catch does not
+  // widen the escape: it turns an exit-1-with-no-output into an exit 2 that
+  // NAMES the missing surface (the daemon's uncaughtException handler logs to a
+  // file and never touches stderr, so a forced-dev boot at a surface-free
+  // destination was silent). Pinned by the agent that wrote the specifier after
+  // running existsSync on the resolved path; the admission was verified the same
+  // way as the others — tests/release-serve.test.ts boots a copied tree with a
+  // dist/ and no surface/, and its forced-dev cell dies at exactly this import.
+  {
+    file: "plugins/spellbook/skills/bounty/scripts/server.ts",
+    spec: "../../../../../src/bounty/surface/index.html",
+    resolved: "src/bounty/surface/index.html",
+  },
   {
     file: "plugins/spellbook/skills/glamour/scripts/server.ts",
     spec: "../../../../../src/glamour/surface/index.html",

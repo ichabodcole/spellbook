@@ -1,6 +1,6 @@
 import { cn } from "cn";
 import { useRef, useState } from "react";
-import { type CardBox, dropIndex, dropMarker } from "../state/drag";
+import { type CardBox, type DropHint, dropIndex, dropMarker } from "../state/drag";
 import type { Task, TaskStatus } from "../state/types";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -24,14 +24,23 @@ const HEAD: Record<TaskStatus, string> = {
 };
 
 /**
- * One column, and the whole drop interaction for it.
+ * One column, and the drop interaction for it.
  *
- * ⚠ THE DROP MARKER IS DERIVED, NOT WRITTEN. The old page cleared and stamped
- * classes on DOM nodes imperatively from `dragover`, which is why a frame
- * arriving mid-drag could wipe the hint out from under the pointer. Here the
- * marker is `useState` on this column and the cards read it as a prop, so a
- * re-render preserves it. The geometry — which card, which edge — is
- * `state/drag.ts`, unit-tested without a browser.
+ * ⚠ THE DROP HINT IS DERIVED, NOT WRITTEN, AND IT IS GLOBAL. The old page
+ * cleared and stamped classes on DOM nodes imperatively from `dragover` — which
+ * is why a frame arriving mid-drag could wipe the hint out from under the
+ * pointer. Here it is React state and the cards read it as a prop, so a
+ * re-render preserves it.
+ *
+ * It lives on the BOARD, not on each column, and that is faithful rather than
+ * tidy: the old page's `clearDropMarkers()` ran board-wide on EVERY `dragover`,
+ * so at most one column could ever be highlighted, whether or not a `dragleave`
+ * arrived. Per-column state made the highlight depend on `dragleave` firing —
+ * measured on the local-sim, a dragover sequence that skipped one left TWO
+ * columns lit at once, which the old page could not do.
+ *
+ * The geometry — which card, which edge — is `state/drag.ts`, unit-tested
+ * without a browser.
  */
 export function Column({
   status,
@@ -41,6 +50,8 @@ export function Column({
   now,
   overWip,
   draggingId,
+  hint,
+  onHint,
   onDragStart,
   onDragEnd,
   onDrop,
@@ -57,6 +68,8 @@ export function Column({
   now: number;
   overWip: Set<string>;
   draggingId: string | null;
+  hint: DropHint | null;
+  onHint: (hint: DropHint | null) => void;
   onDragStart: (task: Task, e: React.DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
   onDrop: (status: TaskStatus, index: number) => void;
@@ -67,9 +80,9 @@ export function Column({
   onRemove: (id: string) => void;
 }) {
   const [draft, setDraft] = useState("");
-  const [isTarget, setIsTarget] = useState(false);
-  const [marker, setMarker] = useState<{ id: string; edge: "before" | "after" } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const isTarget = hint?.status === status;
+  const marker = isTarget ? hint.marker : null;
 
   /**
    * The live geometry of every card in this column EXCEPT the one being
@@ -89,11 +102,6 @@ export function Column({
       });
   };
 
-  const clear = () => {
-    setIsTarget(false);
-    setMarker(null);
-  };
-
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: HTML5 drag TARGET — dragover/dragleave/drop, never click. The keyboard path to the same move is the four status pills on each card.
     <section
@@ -102,19 +110,18 @@ export function Column({
         if (!draggingId) return; // not our drag — do not preview, do not accept
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
-        setIsTarget(true);
-        setMarker(dropMarker(boxes(), e.clientY));
+        onHint({ status, marker: dropMarker(boxes(), e.clientY) });
       }}
       onDragLeave={(e) => {
         // Only when the pointer really left the column — moving between two
         // cards inside it must not flicker the highlight.
-        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) clear();
+        if (isTarget && !e.currentTarget.contains(e.relatedTarget as Node | null)) onHint(null);
       }}
       onDrop={(e) => {
         if (!draggingId) return;
         e.preventDefault();
         const index = dropIndex(boxes(), e.clientY);
-        clear();
+        onHint(null);
         onDrop(status, index);
       }}
       className={cn(
@@ -147,10 +154,7 @@ export function Column({
             dragging={draggingId === task.id}
             marker={marker && marker.id === task.id ? marker.edge : null}
             onDragStart={onDragStart}
-            onDragEnd={() => {
-              clear();
-              onDragEnd();
-            }}
+            onDragEnd={onDragEnd}
             onToggle={onToggle}
             onEditTitle={onEditTitle}
             onOpenDetail={onOpenDetail}

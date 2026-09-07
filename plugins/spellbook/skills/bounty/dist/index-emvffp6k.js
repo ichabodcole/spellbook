@@ -25828,6 +25828,8 @@ function Column({
   now,
   overWip,
   draggingId,
+  hint,
+  onHint,
   onDragStart,
   onDragEnd,
   onDrop,
@@ -25838,9 +25840,9 @@ function Column({
   onRemove
 }) {
   const [draft, setDraft] = import_react3.useState("");
-  const [isTarget, setIsTarget] = import_react3.useState(false);
-  const [marker, setMarker] = import_react3.useState(null);
   const listRef = import_react3.useRef(null);
+  const isTarget = hint?.status === status;
+  const marker = isTarget ? hint.marker : null;
   const boxes = () => {
     const list = listRef.current;
     if (!list)
@@ -25850,10 +25852,6 @@ function Column({
       return { id: n.dataset.taskId, top: r2.top, height: r2.height };
     });
   };
-  const clear = () => {
-    setIsTarget(false);
-    setMarker(null);
-  };
   return /* @__PURE__ */ jsx_dev_runtime6.jsxDEV("section", {
     "data-status": status,
     onDragOver: (e) => {
@@ -25861,19 +25859,18 @@ function Column({
         return;
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
-      setIsTarget(true);
-      setMarker(dropMarker(boxes(), e.clientY));
+      onHint({ status, marker: dropMarker(boxes(), e.clientY) });
     },
     onDragLeave: (e) => {
-      if (!e.currentTarget.contains(e.relatedTarget))
-        clear();
+      if (isTarget && !e.currentTarget.contains(e.relatedTarget))
+        onHint(null);
     },
     onDrop: (e) => {
       if (!draggingId)
         return;
       e.preventDefault();
       const index = dropIndex(boxes(), e.clientY);
-      clear();
+      onHint(null);
       onDrop(status, index);
     },
     className: cn("min-h-32 rounded-lg border border-edge px-3.5 pt-3 pb-4 transition-colors", PANEL[status], isTarget && "border-ice bg-ice/[0.06]"),
@@ -25902,10 +25899,7 @@ function Column({
           dragging: draggingId === task.id,
           marker: marker && marker.id === task.id ? marker.edge : null,
           onDragStart,
-          onDragEnd: () => {
-            clear();
-            onDragEnd();
-          },
+          onDragEnd,
           onToggle,
           onEditTitle,
           onOpenDetail,
@@ -26628,9 +26622,12 @@ function useBoard() {
       return;
     s.send(JSON.stringify(msg));
   }, []);
-  const writeFilters = import_react8.useCallback((next) => {
-    setFilters(next);
-    persistFilters(safeStorage(), next);
+  const updateFilters = import_react8.useCallback((f) => {
+    setFilters((prev) => {
+      const next = f(prev);
+      persistFilters(safeStorage(), next);
+      return next;
+    });
   }, []);
   return {
     title: board.title,
@@ -26643,9 +26640,9 @@ function useBoard() {
     toasts,
     now,
     filters,
-    toggleTag: (tag) => writeFilters({ ...filters, tags: toggleFacet(filters.tags, tag) }),
-    toggleOwner: (owner) => writeFilters({ ...filters, owners: toggleFacet(filters.owners, owner) }),
-    clearFilters: () => writeFilters(NO_FILTERS),
+    toggleTag: (tag) => updateFilters((p) => ({ ...p, tags: toggleFacet(p.tags, tag) })),
+    toggleOwner: (owner) => updateFilters((p) => ({ ...p, owners: toggleFacet(p.owners, owner) })),
+    clearFilters: () => updateFilters(() => NO_FILTERS),
     addTask: (status, title) => {
       const trimmed = title.trim();
       if (!trimmed)
@@ -26723,6 +26720,7 @@ function App() {
   const board = useBoard();
   const [detail, setDetail] = import_react9.useState(null);
   const [draggingId, setDraggingId] = import_react9.useState(null);
+  const [dropHint, setDropHint] = import_react9.useState(null);
   const over = ownersOverWip(board.tasks, WIP_THRESHOLD);
   return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
     className: board.ended ? "pointer-events-none opacity-60" : undefined,
@@ -26753,6 +26751,8 @@ function App() {
           now: board.now,
           overWip: over,
           draggingId,
+          hint: dropHint,
+          onHint: setDropHint,
           onDragStart: (task, e) => {
             if (e.currentTarget.getAttribute("draggable") !== "true") {
               e.preventDefault();
@@ -26764,10 +26764,14 @@ function App() {
             e.dataTransfer.effectAllowed = "move";
             setDraggingId(task.id);
           },
-          onDragEnd: () => setDraggingId(null),
+          onDragEnd: () => {
+            setDraggingId(null);
+            setDropHint(null);
+          },
           onDrop: (status, index2) => {
             const id = draggingId;
             setDraggingId(null);
+            setDropHint(null);
             if (id)
               board.moveTask(id, status, index2);
           },

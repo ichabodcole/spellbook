@@ -76,7 +76,56 @@ import { expectedMinutes, isBlocked } from "../shared/predicates";
 import type { BoardState, StatusVisit, Task, TaskSize, TaskStatus } from "../shared/types";
 import { SIZE_MINUTES } from "../shared/types";
 
+// The board's HTML used to be `scripts/template.html`, read at boot and string
+// substituted before every response. It is now a React surface at
+// src/bounty/surface/, built into dist/ (seams Contract 2). The dev entry is a
+// DYNAMIC import reached only on the dev branch: a static one would force Bun
+// to resolve the whole .tsx + Tailwind graph when this module LOADS, so the
+// published artifact — which ships dist/ and no surface source — would die
+// before it could serve the dist it does have (Contract 1).
+//
+// Paths anchor at the SKILL ROOT, never at cwd: cli.ts pins the daemon's cwd to
+// src/bounty/ in dev for bunfig.toml's sake (Contract 5), so cwd is not a
+// stable base for dist/.
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root — the FILE, never the
+// directory (a built backend can put cli.js in dist/ with no surface there) —
+// else dev; the env override wins either way (Contract 1). Release: zero reads
+// of surface source or bunfig.toml, static files only.
+export function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves dist/ verbatim — the unhashed entry index.html at "/", and the hashed
+// index-*.js / index-*.css it links RELATIVELY, which from "/" arrive as bare
+// filenames (Contract 2's flat layout). The guard keeps this ONE level deep: a
+// nested or `..` path is refused, which also keeps it disjoint from the board's
+// own GET /assets/<name> route (every /assets/ path is nested, so it is refused
+// here and falls through to that handler).
+function serveDist(path: string): Response | null {
+  const rel = path === "/" ? "index.html" : path.slice(1);
+  if (!rel || rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 // Persistence root: debounced snapshots land in $BOUNTY_HOME/snapshots/<id>.json
 // so a board survives a restart via `cli.ts open --restore <id>`. cli.ts derives
@@ -618,7 +667,42 @@ async function main(argv: string[]): Promise<number> {
   process.on("SIGTERM", onFatal("SIGTERM", 143));
   process.on("SIGINT", onFatal("SIGINT", 130));
 
-  const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
+  // Resolved BEFORE any filesystem write. A forced-dev boot at a surface-free
+  // destination must die HERE, at the import, having written nothing: no
+  // snapshot, no discovery file — so a CLI polling for the session file sees a
+  // clean failure rather than a half-born daemon.
+  const mode = resolveMode();
+  // dev: Bun bundles the .tsx graph + Tailwind at serve time, reading
+  // bunfig.toml from cwd, which cli.ts pins to src/bounty/ (Contract 5).
+  // release: dist/ is static and pre-built — "/" is answered by serveDist() in
+  // the fetch handler, so this branch never touches surface source or
+  // bunfig.toml and never needs either to exist. This is the ONE src/-naming
+  // specifier in the deployed spell (grimoire/import-boundary-wards.test.ts
+  // pins it).
+  //
+  // ⛔ THE FAILURE MUST NAME THE SURFACE. This daemon installs an
+  // `uncaughtException` handler that logs to $BOUNTY_HOME/daemon.log and exits
+  // 1 WITHOUT touching stderr — correct for a mid-flight invariant break, and
+  // exactly wrong here: a forced-dev boot at a surface-free destination then
+  // dies with no output at all, and the operator has no way to tell it from a
+  // missing `bun`. Measured on the local-sim before this catch existed: exit 1,
+  // stdout empty, stderr empty.
+  let devIndex: unknown;
+  if (mode === "dev") {
+    try {
+      devIndex = (await import("../../../../../src/bounty/surface/index.html")).default;
+    } catch (e) {
+      process.stderr.write(
+        "bounty: cannot start in dev mode — the surface source is missing.\n" +
+          "  needed: src/bounty/surface/index.html (relative to the repo root)\n" +
+          `  reason: ${e instanceof Error ? e.message : String(e)}\n` +
+          "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
+          "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from a checkout.\n",
+      );
+      return 2;
+    }
+  }
+  const routes = (devIndex ? { "/": devIndex } : {}) as Record<string, never>;
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
   // Initial state — restored from a snapshot (merge-over-defaults) or fresh.
@@ -975,7 +1059,7 @@ async function main(argv: string[]): Promise<number> {
           .filter((d): d is { index: number; reason: string } => d.reason !== null);
         for (const task of msg.tasks.map(validateTask)) if (task) applyTaskAdd(state, task);
       }
-      broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed });
+      broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed, sessionId });
       emitEvent({ type: "init", title: state.title, by });
       // Present-and-null, never absent: an absent field cannot distinguish "all
       // your tasks were seeded" from "this daemon does not report drops".
@@ -1145,12 +1229,17 @@ async function main(argv: string[]): Promise<number> {
     return { ok: true, applied: false };
   }
 
-  let pageHtml = "";
   let server: ReturnType<typeof Bun.serve>;
   try {
     server = Bun.serve({
       port,
       hostname: host,
+      // dev: the HTMLBundle at "/" (Bun serves its assets itself).
+      // release: no routes — the fetch handler serves dist/. Bun's Routes type
+      // ties the value's type to the literal object shape, so the mode-ternary
+      // union is cast; the runtime behaviour is correct either way.
+      routes,
+      development: { hmr: mode === "dev" },
       // P1e (re-scoped from #64). Bun's default request idleTimeout is 10s, and
       // the SSE heartbeat below fires every 15s — so on an OTHERWISE-IDLE
       // connection the heartbeat cannot fire, because the connection is severed
@@ -1172,11 +1261,6 @@ async function main(argv: string[]): Promise<number> {
       fetch: (req, srv) => {
         const url = new URL(req.url);
         const path = url.pathname;
-        if (req.method === "GET" && path === "/") {
-          return new Response(pageHtml, {
-            headers: { "Content-Type": "text/html; charset=utf-8" },
-          });
-        }
         if (path === "/ws") {
           const upgraded = srv.upgrade(req);
           if (upgraded) return undefined;
@@ -1250,6 +1334,15 @@ async function main(argv: string[]): Promise<number> {
                 }),
           );
         }
+        // Release only: "/" and the surface's hashed chunks, which the built
+        // index.html links relatively and which therefore arrive as bare
+        // filenames at the root. Dev never serves from dist/ — a checkout can
+        // carry a committed dist/ that is stale against its source, and in dev
+        // Bun's router owns the bundle's assets.
+        if (mode === "release" && req.method === "GET") {
+          const served = serveDist(path);
+          if (served) return served;
+        }
         return new Response('{"error":"not found"}', {
           status: 404,
           headers: { "Content-Type": "application/json" },
@@ -1272,7 +1365,13 @@ async function main(argv: string[]): Promise<number> {
           // EVERY connect, not just the first: a reload or reconnect must not be
           // the thing that loses the warning.
           ws.send(
-            JSON.stringify({ type: "init", title: state.title, tasks: state.tasks, restoreFailed }),
+            JSON.stringify({
+              type: "init",
+              title: state.title,
+              tasks: state.tasks,
+              restoreFailed,
+              sessionId,
+            }),
           );
         },
         message(_ws, raw) {
@@ -1310,7 +1409,13 @@ async function main(argv: string[]): Promise<number> {
             if (applyTaskMove(state, msg.id, msg.status, msg.index) !== -1) {
               // Broadcast the full ordered list — simpler than diffing for
               // browsers, and it covers the source-column shift correctly.
-              broadcast({ type: "init", title: state.title, tasks: state.tasks, restoreFailed });
+              broadcast({
+                type: "init",
+                title: state.title,
+                tasks: state.tasks,
+                restoreFailed,
+                sessionId,
+              });
               emitEvent({
                 type: "task.move",
                 taskId: msg.id,
@@ -1394,21 +1499,23 @@ async function main(argv: string[]): Promise<number> {
 
   const boundPort = server.port;
   if (!sessionId) sessionId = `bounty-${randHex(4)}-p${boundPort}`;
-  const wsUrl = `ws://${host}:${boundPort}/ws`;
-  // Two contexts for substitutions:
-  //   - HTML/text contexts (the visible <h1>, <title>, <code>): use htmlEscape.
-  //   - JS string context (the wsUrl literal inside <script>): use
-  //     JSON.stringify, which produces a properly-quoted JS string literal.
-  //     The template uses bare placeholders (no surrounding quotes) for the
-  //     JS-context substitutions so JSON.stringify provides them.
-  pageHtml = template
-    .replace(/__TITLE__/g, htmlEscape(state.title))
-    .replace(/__SESSION_ID__/g, htmlEscape(sessionId))
-    .replace(/__WS_URL__/g, JSON.stringify(wsUrl));
-
+  // The three values the old template.html had substituted into it now reach
+  // the board another way, because a BUILT index.html is a static artifact the
+  // daemon serves verbatim and dev mode is served by Bun's own bundler — there
+  // is no point at which the daemon could substitute in both modes:
+  //   - the WebSocket URL is derived in the browser from location.host (the
+  //     page is served from this same origin);
+  //   - the title already rode the `init` frame and always overrode the
+  //     substituted one within a few ms of connect;
+  //   - the session id now rides `init` too. It is a BOOT FACT, and `init` is
+  //     the frame that carries boot facts — the same argument b16 made for
+  //     putting restoreFailed there.
   const url = `http://${host}:${boundPort}`;
   // First frame on the event log (id 1) — bookends the stream with `closed`.
-  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, by: "system" });
+  // `mode` rides BOTH transports bounty has. It prints no stdout handshake and
+  // no stderr boot line, so the ready event and the discovery JSON are the
+  // whole set — a cell that reads one certifies half the contract.
+  emitEvent({ type: "ready", url, port: boundPort, session_id: sessionId, mode, by: "system" });
   logDaemon("ready", { port: boundPort });
 
   // Discovery: write session info to predictable temp files so joining
@@ -1423,6 +1530,11 @@ async function main(argv: string[]): Promise<number> {
     port: boundPort,
     session_id: sessionId,
     title: state.title,
+    // Which surface answered: "release" serves the committed dist/, "dev" asks
+    // Bun to bundle src/bounty/surface/ at serve time. A dev daemon with the
+    // repo's deps present renders an identical-looking board, so this is the
+    // only way a caller can tell them apart.
+    mode,
     // b15 — rides the DISCOVERY payload because that is what `open` prints, and
     // `open` is the command whose restore just failed. Reporting it only on a
     // later /state would mean the caller learns of it, if at all, on a different
