@@ -22,7 +22,12 @@ Two small board-surface items bundled for one pass:
 
 ## Notes
 
-Both are surface-only (template.html / Alpine mirror). Mind the lockstep-mirror
-convention: if the size badge needs a server-side field it already exists
-(`size`, `expect`) — this should be pure presentation. Small enough for a single
-gopher-grade lane; could ride along any other bounty session.
+Both are surface-only. **Amended 2026-09-06 by the bounty conversion:** the
+surface is no longer `scripts/template.html` — it is React at
+`src/bounty/surface/`, built into a committed `dist/`, and **the Alpine mirror
+this note told you to mind no longer exists.** The predicates live once in
+`plugins/spellbook/skills/bounty/shared/predicates.ts` and the board imports
+them, so a change that needs a server-side field is now one edit, not two kept
+in step. The fields this item wants (`size`, `expect`) already exist; it is
+still pure presentation, and it is now a `TaskCard.tsx` change plus a cell
+beside it. Still small enough for a single gopher-grade lane.

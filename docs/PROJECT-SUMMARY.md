@@ -41,9 +41,9 @@ in `grimoire/house-style.md`.
 - **Primary Language:** TypeScript (two spells — magpie and imago — also use
   Python 3.11+ for image work, e.g. `rembg`/background removal)
 - **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
-- **UI:** React 19 + Tailwind 4 for built surfaces (astrolabe, glamour,
-  grapevine watch, imago, magpie, mind-mapper); Alpine.js over CDN for the two
-  not yet rewritten (bounty, digestify)
+- **UI:** React 19 + Tailwind 4 for built surfaces (astrolabe, bounty, glamour,
+  grapevine watch, imago, magpie, mind-mapper); Alpine.js over CDN for the one
+  not yet rewritten (digestify)
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
 - **Build Tools:** none at the spell level (Bun runs source directly); heavy
   surfaces use a Bun bundler step inside their own setup
@@ -77,7 +77,7 @@ Two kinds: a **cantrip** casts and resolves (no standing state); a
 | ----------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
 | `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
 | `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | React (built)  |
-| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | Alpine-CDN     |
+| `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | React (built)  |
 | `glamour`   | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
 | `imago`     | conjuration | Image create⟷annotate⟷edit canvas — a grounded conversation                             | React 3-pane   |
 | `magpie`    | conjuration | Extracts individual assets from a composite image; phased Intake→Slice→Remove→Export    | React + Alpine |
@@ -167,21 +167,25 @@ _Five, as of the 2026-08-10 sweep
   and a committed `dist/` that shipped in v2.2.0 — the real release cut the
   proposal asked for. **Left: NOTHING — closed 2026-09-01.** Seam C's canon
   landed (`house-style.md` now opens `## The build` with a per-spell port
-  queue), and astrolabe was **migrated** rather than dropped. **Six spells
-  build** — astrolabe, glamour, grapevine, imago, magpie, mind-mapper — two of
-  them with built backends, via `spell-kit`; glamour joined 2026-09-03
+  queue), and astrolabe was **migrated** rather than dropped. **Seven spells
+  build** — astrolabe, bounty, glamour, grapevine, imago, magpie, mind-mapper —
+  two of them with built backends, via `spell-kit`; glamour joined 2026-09-03
   (`cae26f8`), grapevine 2026-09-05 (the first REWRITTEN surface, not a
-  relocated one — `docs/projects/grapevine-conversion/`). _Do not hand-keep this
-  roster: `buildableSpells()` in `src/build.ts` counts it, `dist-roster-ward`
-  prints it, and house-style now points there rather than naming spells. This
-  line has gone stale twice._
+  relocated one — `docs/projects/grapevine-conversion/`), bounty 2026-09-06 (the
+  second rewrite, and the first to run the registry INSIDE the rewrite instead
+  of vendoring first — `docs/projects/bounty-conversion/`). _Do not hand-keep
+  this roster: `buildableSpells()` in `src/build.ts` counts it,
+  `dist-roster-ward` prints it, and house-style now points there rather than
+  naming spells. This line has gone stale twice._
 
   _Reconciled 2026-09-03 @ `cae26f8` — "Four spells build": **FALSIFIED** by the
   glamour port; corrected to five and pointed at `buildableSpells()`. "two of
   them with built backends": **HELD** (astrolabe, magpie — glamour's backend
   ships as source; Phase 3 dropped and re-affirmed post-acc). "spell-surface-
   pipeline closed 2026-09-01": **HELD**. "Two deliberate surface tiers (glamour,
-  imago, magpie / bounty, digestify, grapevine)": **HELD**. Found by the
+  imago, magpie / bounty, digestify, grapevine)": **HELD** at the time, and
+  **FALSIFIED since** — grapevine (2026-09-05) and bounty (2026-09-06) both
+  crossed, leaving digestify alone on the Alpine tier. Found by the
   docs-of-record sweep, which ranges over docs NO SEAT OWNS — the same reason
   this bullet went stale before._
 
@@ -257,9 +261,12 @@ aesthetic/naming pass.
   the traditional app's input→service→output pipeline.
 - **Cantrip↔conjuration is a live spectrum, not a fixed label** — magpie just
   crossed it, gaining a daemon and a surface as its job grew multi-phase.
-- **Two deliberate surface tiers:** built React surfaces (astrolabe, glamour,
-  grapevine watch, imago, magpie, mind-mapper) on the house token layer;
-  Alpine-CDN (bounty, digestify) for the two boards not yet rewritten.
+- **Two deliberate surface tiers, and one of them is nearly empty:** built React
+  surfaces (astrolabe, bounty, glamour, grapevine watch, imago, magpie,
+  mind-mapper) on the house token layer; Alpine-CDN for **digestify** alone, the
+  last board not yet rewritten. _The "two tiers" reading was always a
+  description of where the roster had got to, never a design — with one spell
+  left on the old tier it is closer to a countdown than a taxonomy._
 - **The grimoire is the real moat** — a self-pruning craft system most projects
   lack; rules survive only by reinforcement.
 - **The manifesto is canonical in Operator**, mirrored here; edit it there and

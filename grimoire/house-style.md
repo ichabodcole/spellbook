@@ -399,17 +399,18 @@ that may or may not be taken up, but **scheduled work with an unpriced bill.**
 The remaining three are _not yet_, not _correctly not_ — but they are not one
 queue, and treating them as one is how a port gets estimated wrong:
 
-| spell         | surface today           | distance                                |
-| ------------- | ----------------------- | --------------------------------------- |
-| **bounty**    | Alpine in one HTML file | a surface **rewrite** first             |
-| **digestify** | one HTML file + CDN     | **conditional** — see the trigger below |
+| spell         | surface today       | distance                                |
+| ------------- | ------------------- | --------------------------------------- |
+| **digestify** | one HTML file + CDN | **conditional** — see the trigger below |
 
-bounty is an Alpine single-pager — porting it means rewriting the surface, which
-is a different project with a different budget. _(grapevine was, and went first:
-rewritten to React + tokens and ported on 2026-09-05 — the pathfinder for the
-rewrite-then-relocate phase, `docs/projects/grapevine-conversion/`.)_ **A spell
-with no `surface/` is not yet a port subject**; the porting playbook's
-Applicability says the same thing from its side.
+**The queue is one spell long.** bounty left it on 2026-09-06
+(`docs/projects/bounty-conversion/`): rewritten to React + tokens, its
+primitives taken from the shadcn registry INSIDE the rewrite rather than
+vendored first, and ported the same day. It was the second rewrite; grapevine
+went first on 2026-09-05 and was the pathfinder
+(`docs/projects/grapevine-conversion/`). **A spell with no `surface/` is not yet
+a port subject**; the porting playbook's Applicability says the same thing from
+its side — and with bounty gone, that sentence now governs exactly one spell.
 
 > _Repaired 2026-09-04: this paragraph carried a sentence with **no subject** —
 > "is already React and Tailwind; what stands between it and a build is moving

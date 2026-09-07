@@ -139,3 +139,85 @@ unchanged; they test `isBlocked` through the helpers that call it.
 mirror alive, which is the thing being deleted); export only the count and make
 the daemon compare (a body change to a tested predicate, forbidden by the
 "import path only" rule).
+
+## D9 · The status pill gets a cva DIMENSION, not four variants
+
+**Ruled:** implementing agent, 2026-09-06.
+
+House-style's `registry-primitives-variant-extends-recipe` describes a spell's
+variant as "two lines, one comment" inside the recipe's `cva` config. Bounty
+needs more: the active status pill's colour IS which status it names — gold is
+doing, ice is done, amethyst is review, loam is todo — so a single "selected"
+look would erase the information. `button.tsx` gains a second variant dimension,
+`tone`, alongside two new `variant` values (`chip`, `pill`) and one new `size`.
+
+Still inside the cva config, still no call-site override, and tailwind-merge
+resolves `tone` over `variant` because cva emits dimensions in declaration
+order.
+
+**Not taken:** four more `variant` values (`pillTodo`, `pillDoing`, …) — the
+same information, spelled worse, and it makes the inactive/active pair two
+unrelated names; `compoundVariants` pairing `variant:"pill"` with each tone —
+correct and three times the config for no additional expressiveness; a colour
+map at the call site — the exact "stacked override at the call site" the rule
+forbids.
+
+## D10 · `shared/` holds the wire's NOUNS; the surface re-declares its FRAMES
+
+**Ruled:** implementing agent, 2026-09-06.
+
+`Task`, `TaskStatus`, `StatusVisit`, `TaskSize`, `BoardState` are exported from
+`shared/types.ts` and imported by both sides. The browser-facing frame unions
+(`{type:"init",…}`, `{type:"task.move",…}`) are **re-declared** in
+`src/bounty/surface/state/types.ts`.
+
+The reason is mechanical rather than principled: those frames are not exported
+from anywhere. They are built inline inside `server.ts`'s own websocket handlers
+and its `broadcast()` calls, so there is nothing to import — and a
+surface→`scripts/` import is what the import-boundary wards forbid.
+
+**Not taken:** export the frame unions from `shared/wire.ts` and have the daemon
+build its frames through them. That is the better end state and it is a change
+to the daemon's write path, which this branch is not allowed to make (no new
+behaviour, and a typed frame would invite a shape change). Filed as the obvious
+next step for anyone touching the daemon's broadcast path.
+
+## D11 · The `spell-css-scope` ward is amended, not re-pinned
+
+**Ruled:** implementing agent, 2026-09-06.
+
+Bounty's arrival produced five cross-spell leak lines, all of them `group` or
+`peer`. Those are Tailwind's marker classes: they reach a stylesheet only inside
+the compound selector generated for a `group-*`/`peer-*` variant, never as a
+utility a spell could have written. Every spell before bounty escaped by
+coincidence — each spells one of the two bare somewhere in its own markup.
+
+The exemption covers those two names only, applies only to the spell being
+accused (the accuser must still genuinely use the class), and a new cell pins
+its membership so a later widening reds. Calibrated: adding a third marker takes
+the cell red.
+
+**Not taken:** spell a bare `group` somewhere in bounty's markup to make the
+ward happy — adding markup to satisfy an instrument, which is the failure mode
+wards exist to prevent; suppress the pair globally in `classSelectors` — the
+same exemption with no cell behind it and no record of why.
+
+## D12 · The dev import gets its own try/catch
+
+**Ruled:** implementing agent, 2026-09-06, from the local-sim.
+
+`server.ts` installs an `uncaughtException` handler that logs to
+`$BOUNTY_HOME/daemon.log` and exits 1 **without writing to stderr** — correct
+for a mid-flight invariant break (the teardown writes the snapshot, and flushing
+possibly-corrupt state over a good one is the #73 failure with extra steps). It
+also swallowed the forced-dev import failure: exit 1, stdout empty, stderr
+empty, indistinguishable from a missing `bun`.
+
+The dev import now catches and names `src/bounty/surface/index.html`, exiting 2.
+
+**Not taken:** make the fatal handler write to stderr — it would print on every
+mid-flight fault, which is what the file log is for, and the message would still
+not name the surface; leave it silent and let `tests/release-serve.test.ts`
+assert only the exit code — the playbook asks for an error that names the
+missing surface precisely because "bun is missing" is what an operator otherwise
+reads.
