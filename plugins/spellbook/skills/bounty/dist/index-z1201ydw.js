@@ -25757,7 +25757,7 @@ function TaskCard({
         type: "button",
         title: "View / edit description",
         onClick: () => onOpenDetail(task),
-        className: "mt-1 line-clamp-2 block w-full cursor-pointer text-left text-[0.78rem] whitespace-pre-wrap text-ink-dim hover:text-ink",
+        className: "mt-1 w-full cursor-pointer text-left text-[0.78rem] whitespace-pre-wrap text-ink-dim line-clamp-2 hover:text-ink",
         children: task.notes
       }, undefined, false, undefined, this),
       /* @__PURE__ */ jsx_dev_runtime5.jsxDEV("div", {
@@ -26722,8 +26722,11 @@ function App() {
   const [draggingId, setDraggingId] = import_react9.useState(null);
   const [dropHint, setDropHint] = import_react9.useState(null);
   const over = ownersOverWip(board.tasks, WIP_THRESHOLD);
+  import_react9.useEffect(() => {
+    document.body.classList.toggle("board-ended", board.ended);
+    return () => document.body.classList.remove("board-ended");
+  }, [board.ended]);
   return /* @__PURE__ */ jsx_dev_runtime17.jsxDEV("div", {
-    className: board.ended ? "pointer-events-none opacity-60" : undefined,
     children: [
       /* @__PURE__ */ jsx_dev_runtime17.jsxDEV(Header, {
         title: board.title,

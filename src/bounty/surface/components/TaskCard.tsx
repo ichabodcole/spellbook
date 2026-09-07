@@ -129,7 +129,13 @@ export function TaskCard({
           type="button"
           title="View / edit description"
           onClick={() => onOpenDetail(task)}
-          className="mt-1 line-clamp-2 block w-full cursor-pointer text-left text-[0.78rem] whitespace-pre-wrap text-ink-dim hover:text-ink"
+          // ⛔ NO `block` HERE. `line-clamp-2` IS a display utility — it sets
+          // `display: -webkit-box` along with the orient and the line count —
+          // so `block` beside it is a display conflict, tailwind-merge keeps the
+          // last one, and the clamp silently dies. Shipped that way and caught
+          // by measuring `scrollHeight > clientHeight` rather than by reading
+          // the class list, which looks correct.
+          className="mt-1 w-full cursor-pointer text-left text-[0.78rem] whitespace-pre-wrap text-ink-dim line-clamp-2 hover:text-ink"
         >
           {task.notes}
         </button>

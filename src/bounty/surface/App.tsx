@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BoardFooter } from "./components/BoardFooter";
 import { Column } from "./components/Column";
 import { DetailDialog } from "./components/DetailDialog";
@@ -24,10 +24,31 @@ export function App() {
 
   const over = ownersOverWip(board.tasks, WIP_THRESHOLD);
 
+  // ⛔ `ended` GOES ON <body>, NOT ON A WRAPPER, AND THE REASON IS THE PORTALS.
+  // The old page put `.ended { opacity: .6; pointer-events: none }` on <body>,
+  // so an open detail modal — inline markup — dimmed and went inert with
+  // everything else. A React wrapper div cannot do that: `DialogContent` and
+  // `AlertDialogContent` portal to document.body, OUTSIDE any element inside
+  // #root. Measured on an open modal after session end: pointer-events auto,
+  // opacity 1, `closest("#root")` null — a bright, fully responsive modal over
+  // a dead grey board, whose Save button accepted the click and sent nothing
+  // (`send()` is already a no-op, so no state diverges; the lie is the whole
+  // defect).
+  //
+  // ⚠ AND IT IS A HAND-WRITTEN CLASS, NOT TWO UTILITIES. Measured: Tailwind's
+  // scanner did not extract `pointer-events-none` / `opacity-60` from a string
+  // ARRAY in this file, so the built sheet shipped neither rule and the fix was
+  // silently inert — a green build, a green gate, and a board that never dims.
+  // `.board-ended` lives in styles.css beside `.title-empty`, for the same
+  // reason: it is applied from script to an element outside this tree, so there
+  // is no markup for the scanner to read.
+  useEffect(() => {
+    document.body.classList.toggle("board-ended", board.ended);
+    return () => document.body.classList.remove("board-ended");
+  }, [board.ended]);
+
   return (
-    // `ended` makes the WHOLE board inert, not merely dim — the session is over
-    // and every control would silently drop its frame anyway.
-    <div className={board.ended ? "pointer-events-none opacity-60" : undefined}>
+    <div>
       <Header
         title={board.title}
         conn={board.conn}

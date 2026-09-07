@@ -374,6 +374,62 @@ so _any_ change proves the sheet is reaching the browser, and the honest number
 to record is the pair (elements sampled, elements changed) plus the count of
 inline `<style>` blocks (bounty: 1, the pre-boot ground literal).
 
+## After the verify pass — what a second agent found that I did not
+
+Written after the independent drive, and it is the part of this journal with the
+most information in it, because it is the only part where someone with no stake
+checked my claims.
+
+**R8's premise held again, and harder than I wrote it.** My own drive found two
+defects (the filter double-toggle, the two-lit-columns) and I recorded that as
+R8 holding. It is stronger than that: **thirteen of my fifteen `not:` rows
+fell.** Two of the limits I stated were not limits at all —
+`DataTransfer.prototype.setData` is patchable from a page-side init script, and
+a live socket's `send` can be replaced while `readyState` stays OPEN, which is
+what actually tests an emitted-but-undelivered frame. Both are in the playbook
+now. **The lesson is not "drive more". It is that a stated instrument limit is a
+claim about the instrument, and the author is the worst person to make it** — I
+had just finished building the instrument and my limits described my imagination
+of it.
+
+**The one defect I shipped, and why my own drive could not see it.**
+`DialogContent` and `AlertDialogContent` portal to `document.body`, outside the
+`#root` wrapper carrying the `ended` class. The old page put `.ended` on
+`<body>` with the modal inline, so both dimmed together. Mine left a bright,
+fully clickable modal over a dead grey board, with a Save button that accepted
+the click and sent nothing. **My P7 cell said "release — after session end:
+pointer-events none, opacity 0.6, and a click sent nothing" — every word true,
+and about the board.** The row says _the whole board becomes inert_. I answered
+an adjacent, easier question.
+
+That is the shape worth carrying forward, and it is not the same failure as
+"under-specified row" (grapevine's lesson): **the row was specified fine. The
+CELL substituted.** Two more instances in the sweep the verifier's finding
+prompted, and one of them was a second live defect: K17's cell recorded
+"clicking the notes opened the modal", which is half the row; measuring the
+clamp the row also asks for showed `clientHeight === scrollHeight`, because
+`line-clamp-2` is a _display_ utility and a `block` beside it wins the
+tailwind-merge conflict. The class list reads correctly. Only the box does not.
+
+**And the records were wrong in a way I could not see by re-reading them.** The
+coverage table was wrong in three of its four columns — I counted 110/62/21/17
+by eye against a table that held 114/75/15/14, and `not:` is exactly the number
+a reader uses to judge how much is unverified. It is now derived by a ~40-line
+script that is re-run after every edit. Separately, the L-table cited
+`server.test.ts` as the guard for the blocker predicate and that file contained
+neither name — and one of the two, `liveBlockerCount`, was a primitive **this
+branch created**. Eight cells now exist. **An inventory that cites a guard is
+asserting the guard exists; check the citation, not the intention.**
+
+**Three behaviours had no row at all**, and two of them are improvements that
+would otherwise have read as drift to the next agent: focus containment in the
+modal, and the whole card being keyboard-reachable (every pill, chip, note and
+delete is a real `<button>` now; the old page's were `<span>`s with click
+handlers). The third — a frame arriving while the human is typing — is the exact
+class grapevine's severe finding came from, covered in my inventory for drag
+alone and unrowed for text. It holds on all three text surfaces, caret included.
+It is now W16.
+
 ## What I would tell digestify's agent
 
 1. **The playbook is now load-bearing, and the two places it will fail you are
@@ -386,7 +442,13 @@ inline `<style>` blocks (bounty: 1, the pre-boot ground literal).
    it needs nothing installed, and it is what found both of my regressions. The
    silent-branch rows are the majority of any inventory and they are all
    assertions about an absence — you cannot check an absence by looking at it.
-3. **Digestify's shape differs where mine was easiest.** Bounty is Alpine, so
+3. **Your `not:` rows are not coverage, and your instrument limits are probably
+   wrong.** Thirteen of my fifteen fell to someone who had not built the probe.
+   Write each one as the falsifiable claim it is, name the instrument you
+   believe cannot do it, and expect to be shown otherwise — that is the row's
+   job, not a confession. Then count the Driven column with a script, because I
+   got it wrong in three of four columns by eye.
+4. **Digestify's shape differs where mine was easiest.** Bounty is Alpine, so
    R2's "every method on the Alpine object" was a real enumeration; digestify is
    ~600 lines of imperative vanilla DOM with no object to enumerate, so **the
    inventory is the only enumeration you will get** — write it before you read

@@ -2353,6 +2353,11 @@
   }
 }
 
+.board-ended {
+  opacity: .6;
+  pointer-events: none;
+}
+
 .title-empty:empty:before {
   content: "(empty — type a title)";
   color: var(--color-ink-faint);

@@ -134,6 +134,20 @@
   }
 }
 
+/* The session-end state. The old page carried this on <body> — `.ended
+   { opacity: .6; pointer-events: none }` — so an open detail modal, which was
+   inline markup, dimmed and went inert with everything else. React portals the
+   dialogs to document.body, outside #root, so a wrapper class inside the tree
+   reaches the board and not the modal; putting it back on <body> restores
+   parity. Written here rather than as two utilities because it is applied from
+   script to an element this surface does not render, so there is no markup for
+   Tailwind's scanner to read — it silently emitted neither rule when the class
+   names lived only in a JS string array. */
+.board-ended {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 /* The empty-title placeholder. `:empty::before` has no utility form, and the
    card's title is a contenteditable that CAN be empty between a keystroke and
    its blur. */

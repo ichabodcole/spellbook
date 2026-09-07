@@ -31,6 +31,8 @@ import {
   cardOverdue,
   cardPassesFilter,
   expectedMinutes,
+  isBlocked,
+  liveBlockerCount,
   ownersOverWip,
 } from "../shared/predicates";
 import type { BoardState, Task, TaskStatus } from "../shared/types";
@@ -382,6 +384,92 @@ describe("validateTask size/expect", () => {
     expect(validateTask({ ...base, expect: 0 })).toEqual(base);
     expect(validateTask({ ...base, expect: -5 })).toEqual(base);
     expect(validateTask({ ...base, expect: "soon" })).toEqual(base);
+  });
+});
+
+// ── the blocker primitive ────────────────────────────────────────────────
+//
+// ⛔ THIS BLOCK EXISTS BECAUSE THE INVENTORY CLAIMED IT ALREADY DID. bounty's
+// behaviour inventory named `scripts/server.test.ts` as the guard for the
+// blocked-count row (L5), and this file contained neither `isBlocked` nor
+// `liveBlockerCount` — `isBlocked` was reached only THROUGH computeDuePokes and
+// cardOverdue, which is coverage of the callers, not of the predicate.
+// `liveBlockerCount` was worse: the seam cut (2026-09-06) EXTRACTED it as a new
+// exported primitive so the daemon's boolean and the card's "blocked by N"
+// could stop being two implementations, and then shipped it with no cell of its
+// own in the file the inventory pointed at. Found by the verify pass.
+//
+// The count is the primitive and the boolean is defined over it, so the cells
+// below are written against the count and the boolean is checked for agreement
+// at each case rather than re-tested.
+
+describe("liveBlockerCount / isBlocked", () => {
+  const t = (id: string, over: Partial<Task> = {}): Task => ({
+    id,
+    title: id,
+    status: "todo",
+    ...over,
+  });
+
+  test("no blockedBy at all is zero, and not blocked", () => {
+    const a = t("a");
+    expect(liveBlockerCount(a, [a])).toBe(0);
+    expect(isBlocked(a, [a])).toBe(false);
+  });
+
+  test("an empty blockedBy is zero — an unblock that removed the last edge", () => {
+    const a = t("a", { blockedBy: [] });
+    expect(liveBlockerCount(a, [a])).toBe(0);
+    expect(isBlocked(a, [a])).toBe(false);
+  });
+
+  test("a LIVE blocker counts", () => {
+    const a = t("a", { blockedBy: ["b"] });
+    const tasks = [a, t("b")];
+    expect(liveBlockerCount(a, tasks)).toBe(1);
+    expect(isBlocked(a, tasks)).toBe(true);
+  });
+
+  test("a DONE blocker does not block", () => {
+    const a = t("a", { blockedBy: ["b"] });
+    const tasks = [a, t("b", { status: "done" })];
+    expect(liveBlockerCount(a, tasks)).toBe(0);
+    expect(isBlocked(a, tasks)).toBe(false);
+  });
+
+  test("a MISSING blocker does not block — a deleted task cannot hold one back", () => {
+    const a = t("a", { blockedBy: ["gone"] });
+    expect(liveBlockerCount(a, [a])).toBe(0);
+    expect(isBlocked(a, [a])).toBe(false);
+  });
+
+  test("the COUNT is what the card renders, so it must count each live edge", () => {
+    // The whole reason this is a count and not a boolean: the board says
+    // "blocked by 3". A boolean here would have made that a second, unguarded
+    // implementation on the surface — which is exactly what it was until the
+    // seam cut.
+    const a = t("a", { blockedBy: ["b", "c", "d", "done", "gone"] });
+    const tasks = [a, t("b"), t("c"), t("d"), t("done", { status: "done" })];
+    expect(liveBlockerCount(a, tasks)).toBe(3);
+    expect(isBlocked(a, tasks)).toBe(true);
+  });
+
+  test("doing/review blockers block; only done clears", () => {
+    for (const status of ["todo", "doing", "review"] as const) {
+      const a = t("a", { blockedBy: ["b"] });
+      expect(liveBlockerCount(a, [a, t("b", { status })])).toBe(1);
+    }
+    expect(liveBlockerCount(t("a", { blockedBy: ["b"] }), [t("b", { status: "done" })])).toBe(0);
+  });
+
+  test("a self-edge is not special-cased — it blocks until the task is done", () => {
+    // Not an endorsement: the daemon's cycle guard is what prevents this being
+    // created. Pinned so a future change to the guard cannot silently change
+    // what an already-persisted snapshot renders.
+    const a = t("a", { blockedBy: ["a"] });
+    expect(liveBlockerCount(a, [a])).toBe(1);
+    const done = t("a", { blockedBy: ["a"], status: "done" });
+    expect(liveBlockerCount(done, [done])).toBe(0);
   });
 });
 
