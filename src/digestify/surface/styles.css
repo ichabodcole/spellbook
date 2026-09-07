@@ -1,0 +1,503 @@
+@import "tailwindcss" source(none);
+/* L0 shared tokens (src/kit/theme/base.css), imported BEFORE this surface's own
+   @theme so every token below overrides the kit default and digestify keeps its
+   own palette. */
+@import "../../kit/theme/base.css";
+/* `source(none)` on the tailwindcss import is load-bearing: it turns OFF
+   automatic content detection (which roots at the process cwd — the repo root
+   under `bun run build`). The @source below is this surface's ONLY content
+   source; the kit stylesheet brings its own. A bare directory, not a ts/tsx
+   glob, so index.html and the registry ui/ are scanned too.
+   grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+@source "./";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   THREE THEMES, AND ONLY HALF OF THEM IS CSS.
+
+   `--theme digestify|cthulhu|classic` (Cole, 2026-09-06: all three survive,
+   tokenized). The old page declared 42 custom properties at `:root`, overrode
+   38 under `body[data-theme="classic"]` and all 42 under
+   `body[data-theme="cthulhu"]`. That is a clean L3 mode override on ONE set of
+   names — so this file declares the digestify palette once, as the default, and
+   the two blocks at the bottom redeclare the same names. There is no second or
+   third token set.
+
+   The OTHER half — the wordmark, the mascots, the brand text, the submit and
+   submitting copy, and the stamp lines — is not styling and is not here. It
+   lives in `surface/state/themes.ts`, because it is content the page builds
+   from data, and the asset folders do not even match the theme names (the theme
+   called `digestify` loads from /assets/classic/, and `classic` loads nothing).
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* L2 — digestify's palette, the DEFAULT theme. Each of the old page's `:root`
+   colour properties mapped onto the kit name for its ROLE where one exists (bg,
+   surface, ink, ink-dim, edge) and kept under its own name where none does. The
+   BRAND PAIR keeps its own names: on this page pink and purple are not emphasis
+   levels, they are the product's identity, and a role name would erase that. */
+@theme {
+  --color-bg: #fff5f7; /* --page-bg */
+  --color-surface: #fff; /* --surface */
+  --color-surface-soft: #fff8f2; /* --surface-soft */
+  --color-ink: #2a2033; /* --text-primary */
+  --color-ink-dim: #7f6d88; /* --text-muted */
+  --color-edge: #f5d5e0; /* --border-subtle */
+
+  /* the brand pair, plus the two tints the old page derived from them */
+  --color-brand: #ff7aa6; /* --brand-primary */
+  --color-brand-strong: #ff4f84; /* --brand-strong */
+  --color-brand-alt: #6a4dbc; /* --brand-secondary */
+  --color-brand-soft: #9d6bff; /* --brand-tertiary */
+  --color-brand-ink: #2a2033; /* --brand-ink */
+  --color-brand-highlight: #ffd5e0; /* --brand-highlight */
+
+  /* the sticky-note comment chip */
+  --color-note: #fff6cc; /* --comment-bg */
+  --color-note-edge: #ffe06b; /* --comment-border */
+
+  /* code, inline and block */
+  --color-code: #fff0f5; /* --code-bg */
+  --color-code-ink: #6a3c86; /* --code-fg */
+  --color-code-block: #fff; /* --code-block-bg */
+
+  /* the header bar, translucent over the page wash */
+  --color-header: rgb(255 248 250 / 0.88); /* --header-bg */
+  --color-header-edge: rgb(245 213 224 / 0.84); /* --header-border */
+
+  /* the question card's left rail */
+  --color-question-accent: #6a4dbc; /* --question-accent */
+
+  /* ⛔ THE TIMER'S TWO ALARM STATES WERE INLINE HARD-CODES IN ALL THREE THEMES
+     — #b15a00 / #f0c97c / #fff4dc for warn and #c0392b for expired, written
+     once in the stylesheet and never themed. Lifted into tokens here (R4's
+     "lift inline hard-codes into tokens"). They are deliberately NOT overridden
+     below: an expiry warning that changes colour with the theme is a worse
+     warning, and the old page agreed by never theming them. */
+  --color-alarm: #b15a00;
+  --color-alarm-edge: #f0c97c;
+  --color-alarm-bg: #fff4dc;
+  --color-expired: #c0392b;
+
+  /* The old page's only font declaration; no web font ever loaded, and none is
+     introduced here — a web font would be a build input (playbook R4). */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* L1 — the shadcn names the installed registry set consumes (button,
+     textarea), each a var() onto a digestify token above. Never a value: the
+     recipes keep their stock class vocabulary and resolve to this spell's
+     palette, in whichever theme is active. Add a name here when a newly added
+     component consumes one. */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-brand-strong);
+  --color-primary-foreground: #fff;
+  --color-secondary: var(--color-surface-soft);
+  --color-secondary-foreground: var(--color-brand-ink);
+  --color-muted: var(--color-surface-soft);
+  --color-muted-foreground: var(--color-ink-dim);
+  --color-accent: var(--color-brand-highlight);
+  --color-accent-foreground: var(--color-brand-ink);
+  --color-destructive: var(--color-expired);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-brand);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+}
+
+/* Non-colour theme values. These are gradients, shadows, filters and one
+   `content:` string — Tailwind has no namespace for them, so they live in a
+   plain `:root` block and are overridden by the two theme blocks below on the
+   same names, exactly like the tokens above. */
+:root {
+  color-scheme: light;
+  --page-wash:
+    radial-gradient(
+      circle at 10% 0%,
+      rgb(255 179 193 / 0.3),
+      transparent 24rem
+    ),
+    linear-gradient(180deg, #fff8f8 0%, #fff5f7 46%, #fff 100%);
+  --page-pattern:
+    radial-gradient(circle, rgb(255 122 166 / 0.18) 0 2px, transparent 2.5px),
+    radial-gradient(circle, rgb(106 77 188 / 0.12) 0 1.5px, transparent 2px);
+  --page-pattern-position: 28px 44px, 0 0;
+  --page-pattern-size: 118px 118px, 167px 167px;
+  --page-pattern-repeat: repeat;
+  --page-pattern-opacity: 1;
+  --question-bg: linear-gradient(
+    180deg,
+    #fff 0%,
+    var(--color-surface-soft) 100%
+  );
+  --brand-mark-filter: drop-shadow(0 7px 10px rgb(255 79 132 / 0.18));
+  --mascot-filter: drop-shadow(0 18px 28px rgb(106 77 188 / 0.18));
+  --elevation-soft: 0 8px 28px rgb(42 32 51 / 0.05);
+  --elevation-card: 0 18px 50px rgb(106 77 188 / 0.16);
+  --elevation-popover: 0 12px 28px rgb(42 32 51 / 0.22);
+  /* The question card's badge glyph. A `content:` string cannot be a utility. */
+  --question-icon: "?";
+  /* Two registry recipes reach past the utility layer with a raw var() — the
+     secondary button's hover is
+     `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`. Without
+     these aliases that hover resolves to `color-mix(in oklch, , )` and is
+     dropped (playbook S3). */
+  --foreground: var(--color-ink);
+  --secondary: var(--color-surface-soft);
+}
+
+/* ── L3 · classic ─────────────────────────────────────────────────────────────
+   The restrained baseline. It overrides the palette, flattens every elevation
+   and filter to `none`, and drops the page pattern entirely. */
+body[data-theme="classic"] {
+  --color-bg: #fafafa;
+  --color-surface: #fff;
+  --color-surface-soft: #fafafa;
+  --color-ink: #1a1a1a;
+  --color-ink-dim: #666;
+  --color-edge: #e2e2e2;
+  --color-brand: #2563eb;
+  --color-brand-strong: #2563eb;
+  --color-brand-alt: #1d4ed8;
+  --color-brand-soft: #60a5fa;
+  --color-brand-ink: #111827;
+  --color-brand-highlight: #dbeafe;
+  --color-note: #fff7c2;
+  --color-note-edge: #e0d27a;
+  --color-code: #f0f0f0;
+  --color-code-ink: #1a1a1a;
+  --color-code-block: #f4f4f4;
+  --color-header: rgb(255 255 255 / 0.94);
+  --color-header-edge: #e2e2e2;
+  --color-question-accent: #2563eb;
+
+  --page-wash: linear-gradient(180deg, #fafafa 0%, #fff 100%);
+  --page-pattern: none;
+  /* `none`, not a colour: --question-bg is consumed as a background-IMAGE over
+     a `bg-surface` base, and a bare colour there is invalid and drops to
+     nothing. classic's card is therefore the flat surface, which is what it was. */
+  --question-bg: none;
+  --brand-mark-filter: none;
+  --mascot-filter: none;
+  --elevation-soft: none;
+  --elevation-card: none;
+  --elevation-popover: 0 2px 8px rgb(0 0 0 / 0.15);
+}
+
+/* ── L3 · cthulhu ────────────────────────────────────────────────────────────
+   The only dark theme, and the only one that sets `color-scheme: dark`. Its
+   page pattern is an eighteen-gradient fixed starfield rather than a repeating
+   tile — carried across verbatim, because it is data, not markup. */
+body[data-theme="cthulhu"] {
+  color-scheme: dark;
+  --color-bg: #15141e;
+  --color-surface: #2b243b;
+  --color-surface-soft: #211c30;
+  --color-ink: #f0f0e6;
+  --color-ink-dim: #d7d6c2;
+  --color-edge: rgb(167 243 161 / 0.18);
+  --color-brand: #a7f3a1;
+  --color-brand-strong: #7bc88b;
+  --color-brand-alt: #a58bcf;
+  --color-brand-soft: #6d5a8c;
+  --color-brand-ink: #f0f0e6;
+  --color-brand-highlight: rgb(167 243 161 / 0.32);
+  --color-note: rgb(37 78 74 / 0.74);
+  --color-note-edge: rgb(167 243 161 / 0.32);
+  --color-code: rgb(165 139 207 / 0.18);
+  --color-code-ink: #d7d6c2;
+  --color-code-block: #211c30;
+  --color-header: rgb(21 20 30 / 0.88);
+  --color-header-edge: rgb(167 243 161 / 0.14);
+  --color-question-accent: #7bc88b;
+  --color-primary-foreground: #15141e;
+
+  --page-wash: #15141e;
+  --page-pattern:
+    radial-gradient(
+      circle at 8% 12%,
+      rgb(167 243 161 / 0.48) 0 1.7px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle at 17% 41%,
+      rgb(240 240 230 / 0.38) 0 1.2px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 27% 19%,
+      rgb(165 139 207 / 0.42) 0 1.6px,
+      transparent 2.4px
+    ),
+    radial-gradient(
+      circle at 38% 68%,
+      rgb(167 243 161 / 0.32) 0 1px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 49% 31%,
+      rgb(240 240 230 / 0.28) 0 1.1px,
+      transparent 1.9px
+    ),
+    radial-gradient(
+      circle at 61% 76%,
+      rgb(165 139 207 / 0.36) 0 1.5px,
+      transparent 2.2px
+    ),
+    radial-gradient(
+      circle at 73% 16%,
+      rgb(167 243 161 / 0.34) 0 1.2px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 84% 52%,
+      rgb(240 240 230 / 0.3) 0 1.3px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 92% 28%,
+      rgb(165 139 207 / 0.3) 0 1px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 13% 82%,
+      rgb(167 243 161 / 0.26) 0 1.1px,
+      transparent 1.9px
+    ),
+    radial-gradient(
+      circle at 56% 9%,
+      rgb(240 240 230 / 0.26) 0 1px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 88% 87%,
+      rgb(167 243 161 / 0.28) 0 1.2px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 22% 73%,
+      rgb(240 240 230 / 0.34) 0 1px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 34% 7%,
+      rgb(167 243 161 / 0.28) 0 1.2px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 44% 88%,
+      rgb(165 139 207 / 0.28) 0 1.1px,
+      transparent 1.9px
+    ),
+    radial-gradient(
+      circle at 67% 38%,
+      rgb(240 240 230 / 0.36) 0 1.3px,
+      transparent 2.1px
+    ),
+    radial-gradient(
+      circle at 78% 74%,
+      rgb(167 243 161 / 0.3) 0 1px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 96% 68%,
+      rgb(165 139 207 / 0.32) 0 1.2px,
+      transparent 2px
+    );
+  --page-pattern-position: 0 0;
+  --page-pattern-size: 100% 100%;
+  --page-pattern-repeat: no-repeat;
+  --page-pattern-opacity: 0.95;
+  --question-bg: linear-gradient(
+    180deg,
+    rgb(43 36 59 / 0.96) 0%,
+    #211c30 100%
+  );
+  --brand-mark-filter: drop-shadow(0 7px 14px rgb(167 243 161 / 0.16));
+  --mascot-filter: drop-shadow(0 18px 28px rgb(0 0 0 / 0.38));
+  --elevation-soft: 0 10px 32px rgb(0 0 0 / 0.22);
+  --elevation-card:
+    0 18px 50px rgb(0 0 0 / 0.28), 0 0 0 1px rgb(167 243 161 / 0.08);
+  --elevation-popover: 0 12px 30px rgb(0 0 0 / 0.42);
+  --question-icon: "◉";
+}
+
+/* ⛔ `dark:` IS PINNED TO THE CTHULHU THEME, NOT TO THE OS AND NOT TO A CLASS.
+   The registry recipes carry `dark:` arms tuned for a dark ground. Tailwind
+   v4's default `dark:` follows `prefers-color-scheme`, which would give the two
+   LIGHT themes a dark textarea on a dark-mode machine — a per-machine look for
+   a page whose theme the agent chose. Pinning the variant to the theme
+   attribute makes the recipes' dark arms follow the same switch everything else
+   on this page follows. Check the built sheet for zero `prefers-color-scheme`.
+   (Grapevine and bounty pin `.dark` on <html> instead; they have ONE theme, so
+   there is nothing for the variant to follow.) */
+@custom-variant dark (&:is([data-theme="cthulhu"] *));
+
+@layer base {
+  /* Tailwind v4 gives buttons the default cursor; the registry's button docs
+     offer this base rule to keep the pointer, and the original page had it. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    min-height: 100%;
+    background: var(--color-bg);
+  }
+
+  body {
+    min-height: 100vh;
+    color: var(--color-ink);
+    background: var(--page-wash);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.68;
+  }
+
+  /* The page's texture layer. A fixed, masked, pointer-transparent overlay over
+     four theme tokens — a utility cannot express a two-layer gradient with a
+     per-theme position, size, repeat and opacity without spelling all four
+     inline. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: var(--page-pattern);
+    background-position: var(--page-pattern-position);
+    background-size: var(--page-pattern-size);
+    background-repeat: var(--page-pattern-repeat);
+    opacity: var(--page-pattern-opacity);
+    mask-image: linear-gradient(180deg, #000 0%, transparent 70%);
+  }
+
+  /* Selection colour is part of the theme on a page whose whole point is
+     selecting text to annotate it. */
+  ::selection {
+    color: var(--color-brand-ink);
+    background: var(--color-brand-highlight);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   THE RENDERED DOCUMENT.
+
+   ⛔ THESE RULES CANNOT BE UTILITIES AND THAT IS NOT A STYLE PREFERENCE. The
+   document body is `dangerouslySetInnerHTML` of sanitised markdown — `marked`
+   emits bare `<h1>`, `<pre>`, `<code>`, `<blockquote>`, `<a>` with no class
+   attribute, and nothing in this repo may add one (the HTML is a security
+   boundary's output; rewriting it is a second sink). So the only way to style
+   the document is a descendant selector, and this is it.
+   ────────────────────────────────────────────────────────────────────────── */
+.doc-prose h1,
+.doc-prose h2,
+.doc-prose h3 {
+  line-height: 1.25;
+  color: var(--color-brand-ink);
+}
+.doc-prose h1 {
+  font-size: clamp(2rem, 5vw, 3.7rem);
+  margin-top: 0;
+}
+.doc-prose h2 {
+  font-size: 1.6rem;
+  margin-top: 2rem;
+}
+.doc-prose pre {
+  background: var(--color-code-block);
+  border: 1px solid var(--color-edge);
+  padding: 14px;
+  border-radius: 8px;
+  overflow-x: auto;
+  box-shadow: var(--elevation-soft);
+}
+.doc-prose code {
+  background: var(--color-code);
+  color: var(--color-code-ink);
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 0.92em;
+  font-family: var(--font-mono);
+}
+.doc-prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.doc-prose blockquote {
+  border-left: 4px solid var(--color-brand);
+  margin: 0;
+  padding-left: 16px;
+  color: var(--color-ink-dim);
+}
+.doc-prose a {
+  color: var(--color-brand-alt);
+  font-weight: 700;
+}
+.doc-prose img {
+  max-width: 100%;
+}
+
+/* The reference/agent boundary marker `review.ts` injects between a
+   `--reference` document and the agent's own content. Styled as a LABELLED
+   double line so it is unambiguously a section break and not just another
+   markdown `<hr>` the reference document might itself contain. The label text
+   comes out of the attribute, so it cannot be a utility. */
+[data-refboundary] {
+  position: relative;
+  margin: 44px 0 28px;
+  height: 0;
+  border-top: 3px double var(--color-brand-alt);
+}
+[data-refboundary]::before {
+  content: "end of " attr(data-refboundary);
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg);
+  color: var(--color-ink-dim);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+}
+
+/* The question card's badge glyph — a themed `content:` string on a
+   pseudo-element, which has no utility form. */
+.qprompt::before {
+  content: var(--question-icon);
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--color-brand);
+  font-size: 14px;
+  line-height: 1;
+  box-shadow:
+    inset 0 1.5px 0 rgb(255 255 255 / 0.55),
+    inset 0 -2px 0 color-mix(in srgb, var(--color-brand-alt) 35%, transparent),
+    0 4px 10px color-mix(in srgb, var(--color-brand-alt) 24%, transparent);
+}
+
+/* The floating "Comment" button's three leading dots: one element plus two
+   box-shadow copies 10px and 20px to its right. Flex reserves only the 7px
+   width, so the margin reserves the rendered dots' space. */
+.comment-dots::before {
+  content: "";
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  margin-right: 20px;
+  border-radius: 999px;
+  background: var(--color-brand);
+  box-shadow:
+    10px 0 0 var(--color-brand),
+    20px 0 0 var(--color-brand);
+}

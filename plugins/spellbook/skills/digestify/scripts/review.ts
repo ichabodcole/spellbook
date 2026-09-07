@@ -13,15 +13,72 @@
 //   124 timeout
 //   130 user closed tab without submitting
 //
-// Contract intentionally mirrors review.py so the same template.html, tests,
-// and agent-facing behavior apply. See review.py for prose-level commentary
-// on edge cases — repeated here only where the implementation differs.
+// Contract intentionally mirrors review.py so the same tests and agent-facing
+// behavior apply. See review.py for prose-level commentary on edge cases —
+// repeated here only where the implementation differs.
+//
+// ⚠ The shared SURFACE is gone from that sentence as of 2026-09-07: the page
+// both scripts used to serve, `scripts/template.html`, is now a React surface
+// at src/digestify/surface/ built into dist/. review.py, if it is ever run
+// again, serves nothing.
 
+import { existsSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
+// The review page used to be `scripts/template.html`, read at boot and string
+// substituted before every response. It is now a React surface at
+// src/digestify/surface/, built into dist/ (seams Contract 2). The dev entry is
+// a DYNAMIC import reached only on the dev branch: a static one would force Bun
+// to resolve the whole .tsx + Tailwind graph when this module LOADS, so the
+// published artifact — which ships dist/ and no surface source — would die
+// before it could serve the dist it does have (Contract 1).
+//
+// Paths anchor at the SKILL ROOT, never at cwd: this script is invoked by the
+// agent from wherever the conversation happens to be.
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(SCRIPT_DIR, "..");
+const DIST_DIR = join(SKILL_ROOT, "dist");
+
+// release iff dist/index.html exists at the skill root — the FILE, never the
+// directory (a built backend can put cli.js in dist/ with no surface there) —
+// else dev; the env override wins either way (Contract 1). Release: zero reads
+// of surface source or bunfig.toml, static files only.
+export function resolveMode(): "dev" | "release" {
+  const override = process.env.SPELLBOOK_SURFACE_MODE;
+  if (override === "dev" || override === "release") return override;
+  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+}
+
+/** Where the dev bundler's HTML lives. Never "/" — see the "/" handler. */
+const DEV_SURFACE_ROUTE = "/__surface";
+
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+};
+
+// Serves dist/ verbatim EXCEPT its entry: the hashed index-*.js / index-*.css
+// that index.html links RELATIVELY, which from "/" arrive as bare filenames
+// (Contract 2's flat layout). "/" is NOT served from here — it is the
+// substituted page, built once after the port is known. The guard keeps this
+// ONE level deep, so every /assets/ path (all nested) is refused here and falls
+// through to the board's own asset route.
+function serveDist(path: string): Response | null {
+  const rel = path.slice(1);
+  if (!rel || rel === "index.html" || rel.includes("..") || rel.includes("/")) return null;
+  const file = join(DIST_DIR, rel);
+  if (!existsSync(file)) return null;
+  const ext = rel.slice(rel.lastIndexOf("."));
+  return new Response(Bun.file(file), {
+    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
+  });
+}
 
 type Question = { id: string; prompt: string };
 type Payload = {
@@ -291,12 +348,74 @@ async function main(argv: string[]): Promise<number> {
     return 2;
   }
 
-  const template = await Bun.file(join(SCRIPT_DIR, "template.html")).text();
+  // Resolved BEFORE the server binds and before anything is written, so a
+  // forced-dev boot at a surface-free destination dies HERE, having done
+  // nothing.
+  const mode = resolveMode();
+
+  // ⛔ CONTRACT 5 LANDS ON WHOEVER SPAWNS THE DAEMON — AND NOTHING SPAWNS THIS
+  // ONE. Every other ported spell has a `cli.ts` that pins the daemon's cwd to
+  // src/<spell>/ so Bun can read that directory's bunfig.toml and load the
+  // Tailwind plugin. Digestify's daemon IS the process the agent runs, from
+  // whatever directory the conversation is in, so there is no spawner to pin.
+  //
+  // And `process.chdir()` does not rescue it: MEASURED 2026-09-07 — Bun reads
+  // bunfig.toml at process START, so chdir-then-import bundles the page, serves
+  // it, and fails to parse `@import "tailwindcss" source(none)` at request time.
+  // The page comes back unstyled with a green build and no error on the daemon.
+  //
+  // So the daemon checks its own cwd and REFUSES, loudly, naming the directory.
+  // A hard exit is the right shape: the alternative is the silent-unstyled
+  // defect four spells' comments describe and nobody had run.
+  const DEV_SURFACE_CWD = join(SKILL_ROOT, "..", "..", "..", "..", "src", "digestify");
+  let devIndex: unknown;
+  if (mode === "dev") {
+    if (!existsSync(join(process.cwd(), "bunfig.toml"))) {
+      process.stderr.write(
+        "digestify: cannot start in dev mode from this directory.\n" +
+          `  needed: run with the cwd set to ${DEV_SURFACE_CWD}\n` +
+          "  why:    Bun reads bunfig.toml (which loads the Tailwind plugin) from the\n" +
+          "          process cwd, at startup — chdir is too late. Without it the page\n" +
+          "          is served UNSTYLED with no error anywhere.\n" +
+          "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
+          "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from that directory.\n",
+      );
+      return 2;
+    }
+    try {
+      devIndex = (await import("../../../../../src/digestify/surface/index.html")).default;
+    } catch (e) {
+      // ⛔ THE FAILURE MUST NAME THE SURFACE. A forced-dev boot at a
+      // surface-free destination otherwise dies with a module-resolution error
+      // the operator cannot tell from a missing `bun`.
+      process.stderr.write(
+        "digestify: cannot start in dev mode — the surface source is missing.\n" +
+          "  needed: src/digestify/surface/index.html (relative to the repo root)\n" +
+          `  reason: ${e instanceof Error ? e.message : String(e)}\n` +
+          "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
+          "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from a checkout.\n",
+      );
+      return 2;
+    }
+  }
+
+  // The page's HTML SOURCE, before substitution. In release it is the committed
+  // dist/index.html, read once. In dev it is whatever Bun's bundler produces,
+  // fetched from this same server's private surface route at request time (see
+  // the "/" handler) — the bundler owns the response and there is no way to ask
+  // it for the text directly.
+  const releaseTemplate =
+    mode === "release" ? await Bun.file(join(DIST_DIR, "index.html")).text() : "";
   const assetsDir = join(SCRIPT_DIR, "..", "assets");
 
-  // Page HTML is finalized after the server binds; the handler reads it from
-  // closure, so we keep it in a `let` populated before we open the browser.
-  let pageHtml = "";
+  // The substitution the page's whole state arrives through. Applied to the
+  // BUILT html IN MEMORY at serve time, so dist/ stays byte-stable and
+  // Contract 18's reproduction check is unaffected.
+  //
+  // ⚠ NEITHER REPLACE IS GLOBAL, and that is the shipped behaviour: only the
+  // FIRST occurrence of each token is substituted. index.html carries each
+  // exactly once (asserted by scripts/release-serve.test.ts).
+  let substitute: (html: string) => string = (html) => html;
   let heartbeatAt = performance.now();
   // b4 — what the surface told us about the human's departure, and whether the
   // page was ever served at all. Both are RECORDS, not resolutions: neither ends
@@ -320,6 +439,10 @@ async function main(argv: string[]): Promise<number> {
     server = Bun.serve({
       port,
       hostname: host,
+      // Dev only, and deliberately NOT "/": the bundler would then own the
+      // response and the payload could never be injected. "/" stays this
+      // module's, and reads the bundle through here.
+      routes: (devIndex ? { [DEV_SURFACE_ROUTE]: devIndex } : {}) as Record<string, never>,
       fetch: async (req) => {
         const url = new URL(req.url);
         const path = url.pathname;
@@ -330,9 +453,22 @@ async function main(argv: string[]): Promise<number> {
           // "opened and then went quiet". Without it those two are the same
           // timeout, which is half of what made a cancelled review unreportable.
           pageServed = true;
-          return new Response(pageHtml, {
+          // Dev: ask this same server's private surface route for the bundler's
+          // HTML, then substitute. Bun owns the HTMLBundle response and offers
+          // no way to read it as text, and the payload MUST be injected (a
+          // GET /payload route would be new behaviour and a new failure mode).
+          // Release: the committed dist/index.html, read once at boot.
+          const source =
+            mode === "dev"
+              ? await (await fetch(`http://${host}:${server.port}${DEV_SURFACE_ROUTE}`)).text()
+              : releaseTemplate;
+          return new Response(substitute(source), {
             headers: { "Content-Type": "text/html; charset=utf-8" },
           });
+        }
+        if (method === "GET" && mode === "release") {
+          const asset = serveDist(path);
+          if (asset) return asset;
         }
         if (method === "GET" && path.startsWith("/assets/")) {
           const assetName = decodeURIComponent(path.slice("/assets/".length));
@@ -429,14 +565,26 @@ async function main(argv: string[]): Promise<number> {
     sessionId = `digestify-${randHex(4)}-p${boundPort}`;
   }
   payload.session_id = sessionId;
+  // The `</script>` breakout guard. The payload lands inside a
+  // <script type="application/json"> data island, and a document containing the
+  // literal characters `</script>` would otherwise close the tag early and turn
+  // the rest of the review into markup. Re-derived, not carried on faith: the
+  // payload still reaches the page as the text content of that element, so the
+  // escape is still exactly the one that seam needs.
   const payloadJson = JSON.stringify(payload).replace(/<\//g, "<\\/");
-  pageHtml = template
-    .replace("__TITLE__", htmlEscape(payload.title))
-    .replace("__PAYLOAD__", payloadJson);
+  const escapedTitle = htmlEscape(payload.title);
+  substitute = (html) =>
+    html.replace("__TITLE__", escapedTitle).replace("__PAYLOAD__", payloadJson);
 
   const readyUrl = `http://${host}:${boundPort}`;
+  // The ready line is this daemon's ONLY mode transport — derived by reading
+  // every stdout/stderr write in this file rather than by subtracting from an
+  // exemplar (the mistake bounty's port recorded). There is no discovery file,
+  // no ready EVENT and no stdout handshake: the other writes are the heartbeat
+  // trace, the error lines, and the single final envelope. `mode` is additive
+  // to a line SKILL.md documents as {url, port, session_id}.
   process.stderr.write(
-    `${JSON.stringify({ url: readyUrl, port: boundPort, session_id: sessionId })}\n`,
+    `${JSON.stringify({ url: readyUrl, port: boundPort, session_id: sessionId, mode })}\n`,
   );
   if (!v["no-open"]) openBrowser(readyUrl);
 

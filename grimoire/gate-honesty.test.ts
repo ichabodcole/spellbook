@@ -252,8 +252,42 @@ import { join } from "node:path";
 // remaining 825 became code the gate still cannot prove renders anything. The
 // honest reading is "1,003 lines of unreadable board became 178 lines of
 // unreadable configuration", not "the board is now covered".
+//
+// ⛔ RE-DECLARED 2026-09-07 FOR DIGESTIFY — THE LAST SPELL IN THE POPULATION.
+// 24/2,949 -> 26/1,975. MEMBERSHIP MOVED BY TWO, and it is the only
+// re-declaration this ward has ever recorded where the blind set SHRANK while
+// gaining files:
+//     -1505  plugins/spellbook/skills/digestify/scripts/template.html (deleted)
+//     +503   src/digestify/surface/styles.css   (new)
+//     +26    src/digestify/surface/index.html   (new)
+//     +2     src/digestify/bunfig.toml          (new)
+// 2,949 - 1,505 + 531 = 1,975 exactly, summed FROM THE OBJECT BELOW rather than
+// from the paragraph above it.
+//
+// ⚠ 503 LINES IS THE ROSTER'S LARGEST SURFACE SHEET BY A FACTOR OF THREE
+// (bounty, the previous holder, is 158) AND THE NUMBER IS HONEST RATHER THAN
+// SLOPPY. Digestify is the only spell with THREE themes, and the palette is
+// only half of what a theme is here: 42 custom properties declared once and
+// redeclared twice on the same names (the L3 mode override the kit stylesheet
+// documents and no spell had exercised), plus cthulhu's page texture, which is
+// an EIGHTEEN-gradient fixed starfield carried across verbatim because it is
+// data. The three theme blocks alone are ~250 lines. The rest is the rendered
+// document: `marked` emits bare `<h1>`, `<pre>`, `<code>`, `<blockquote>` and
+// `<a>` with no class attribute, and nothing may add one (that HTML is a
+// sanitiser's output, and rewriting it would be a second sink), so a descendant
+// selector is the ONLY way to style the document and a utility cannot reach it.
+//
+// ⚠ AND WHAT THE NUMBER MEANS, WHICH IS NOT WHAT IT LOOKS LIKE. The gate can
+// now READ digestify's review page — it is .tsx and .ts, linted and
+// type-checked — where before it could read NONE of it. 1,505 lines of
+// unreadable page became 531 lines of unreadable configuration and 1,100-odd
+// lines of code the gate parses. That is the largest single reduction in this
+// ward's history, and it closes the population: every spell in the roster now
+// builds, and no hand-written HTML surface remains anywhere in the tree.
 const DECLARED_BLIND: Record<string, number> = {
-  "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
+  "src/digestify/surface/styles.css": 503,
+  "src/digestify/surface/index.html": 26,
+  "src/digestify/bunfig.toml": 2,
   "src/bounty/surface/styles.css": 158,
   "src/bounty/surface/index.html": 32,
   "src/bounty/bunfig.toml": 2,
