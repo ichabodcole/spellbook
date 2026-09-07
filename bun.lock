@@ -32,6 +32,13 @@
         "typescript": "^5",
       },
     },
+    "src/bounty": {
+      "name": "@spellbook/bounty",
+      "dependencies": {
+        "class-variance-authority": "^0.7.1",
+        "cn": "^0.2.5",
+      },
+    },
     "src/grapevine": {
       "name": "@spellbook/grapevine",
       "dependencies": {
@@ -164,6 +171,8 @@
     "@oven/bun-windows-x64": ["@oven/bun-windows-x64@1.3.14", "", { "os": "win32", "cpu": "x64" }, "sha512-mUFWL3BoYkNpjd8e9PqROiFF/1Xeotq20mABJsiQH62jM1g5zqWh4khw1RZ6bX8Q8fWvlPaxG1PjofkmjUi3vg=="],
 
     "@oven/bun-windows-x64-baseline": ["@oven/bun-windows-x64-baseline@1.3.14", "", { "os": "win32", "cpu": "x64" }, "sha512-uIjLUC1S9DWgICzuoMba7vurBJnBruE4S5CxnvmZkdqWVXRzx1Rgu636HoH+k0qeaQCFh3jeG3JQ1y6fRHv0sw=="],
+
+    "@spellbook/bounty": ["@spellbook/bounty@workspace:src/bounty"],
 
     "@spellbook/grapevine": ["@spellbook/grapevine@workspace:src/grapevine"],
 

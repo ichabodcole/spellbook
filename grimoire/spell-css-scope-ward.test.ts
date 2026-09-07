@@ -109,6 +109,34 @@ const usedIn = (text: string, cls: string): boolean => {
   return asCandidate.test(text) || asSelector.test(text);
 };
 
+/** Tailwind's two MARKER classes, and the one reason a spell can SHIP a class
+ *  it never wrote.
+ *
+ *  `.group` and `.peer` never reach a stylesheet as utilities of their own.
+ *  They arrive INSIDE the compound selector Tailwind generates for a `group-*`
+ *  or `peer-*` variant — `.group-data-\[x\]\:y:is(:where(.group)[data-x] *)` —
+ *  and `classSelectors` correctly harvests `.group` out of that prelude. So a
+ *  spell whose components write `group-data-…` and never a bare `group` ships
+ *  `.group` with nothing in its own text to account for it, and the cross-spell
+ *  cell below then attributes it to whichever spell happens to spell the bare
+ *  word.
+ *
+ *  ⚠ LATENT SINCE THE FIRST REGISTRY SPELL; FOUND BY THE SECOND. Every spell
+ *  before bounty escaped by coincidence — each spells one of the two bare
+ *  somewhere in its own markup. bounty (2026-09-06) is the first that does not,
+ *  and its arrival produced five leak lines, all `group`/`peer`, none of them a
+ *  class bounty could have used. Exempting the pair is narrower than it looks:
+ *  it applies only to these two names, and only for the spell being ACCUSED —
+ *  the accuser must still genuinely use the class. */
+const VARIANT_MARKERS: Record<string, string> = { group: "group-", peer: "peer-" };
+
+/** `usedIn`, plus the marker exemption. Use this for the spell whose sheet
+ *  carries the class; use `usedIn` for the spell said to own it. */
+const accountedFor = (text: string, cls: string): boolean => {
+  const prefix = VARIANT_MARKERS[cls];
+  return usedIn(text, cls) || (prefix !== undefined && text.includes(prefix));
+};
+
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
 }
@@ -258,6 +286,30 @@ async function shippedCss(spell: string): Promise<string> {
 describe("spell css scope ward", () => {
   const spells = relocatedSpells();
 
+  test("the marker exemption is exactly two names wide, and only on the accused side", () => {
+    // The exemption above is the ONE way a spell may ship a class its own text
+    // does not spell. Without this cell, widening it later — a third name, a
+    // prefix match, an `includes` on the wrong string — is a silent loss of the
+    // cross-spell cell's teeth, because a weaker cell still reports zero leaks.
+    // The membership itself, so ANY widening reds here — a behavioural probe
+    // can only catch a widening it happens to name.
+    expect(Object.keys(VARIANT_MARKERS).sort()).toEqual(["group", "peer"]);
+    const variantOnly = 'className="group-data-[disabled=true]:opacity-50 peer-disabled:hidden"';
+    // The two markers: `usedIn` says no (the bare word never appears), the
+    // exemption says yes.
+    expect(usedIn(variantOnly, "group")).toBe(false);
+    expect(accountedFor(variantOnly, "group")).toBe(true);
+    expect(usedIn(variantOnly, "peer")).toBe(false);
+    expect(accountedFor(variantOnly, "peer")).toBe(true);
+    // Nothing else is exempt, including a class whose name STARTS like one.
+    for (const cls of ["grape", "peerless", "flex", "bg-bg", "tile"]) {
+      expect(accountedFor(variantOnly, cls)).toBe(usedIn(variantOnly, cls));
+    }
+    // And a spell that uses neither variant is not exempted either.
+    expect(accountedFor('className="flex"', "group")).toBe(false);
+    expect(accountedFor('className="flex"', "peer")).toBe(false);
+  });
+
   test("the instrument can tell a class from a longer class that contains it", () => {
     // Without this the cross-spell cell reports leaks that are not there, and
     // "0 leaks" and "the matcher is broken" are the same output.
@@ -346,7 +398,7 @@ describe("spell css scope ward", () => {
         if (a === b) continue;
         const aText = text.get(a) ?? "";
         // Emitted into B, spelled in A, spelled nowhere B is allowed to look.
-        const leaked = [...bCss].filter((c) => !usedIn(bText, c) && usedIn(aText, c));
+        const leaked = [...bCss].filter((c) => !accountedFor(bText, c) && usedIn(aText, c));
         if (leaked.length > 0) {
           leaks.push(
             `${b} carries ${leaked.length} class(es) only ${a} uses: ${leaked

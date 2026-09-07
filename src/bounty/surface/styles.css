@@ -1,0 +1,144 @@
+@import "tailwindcss" source(none);
+/* L0 shared tokens (src/kit/theme/base.css), imported BEFORE this surface's
+   own @theme so every token below overrides the kit default and bounty keeps
+   its own palette. */
+@import "../../kit/theme/base.css";
+/* `source(none)` on the tailwindcss import is load-bearing: it turns OFF
+   automatic content detection (which roots at the process cwd — the repo root
+   under `bun run build`). The @source below is this surface's ONLY content
+   source; the kit stylesheet brings its own. A bare directory, not a ts/tsx
+   glob, so index.html and the registry ui/ are scanned too.
+   grimoire/spell-css-scope-ward.test.ts runs each claim red. */
+@source "./";
+
+/* L2 — bounty's palette. The old page's twenty-seven `:root` properties, each
+   mapped onto the kit name for its ROLE where one exists (bg, surface, ink,
+   ink-dim, ink-faint, edge) and declared under its own name where none does.
+   The four status families keep their commissioned names — mammoth gold is
+   "doing", ice blue is "done" and every drop hint, amethyst is "review", loam
+   is "todo" and the neutral chip — because on this board colour IS the status
+   vocabulary and a role name would erase which status it means.
+   No raw palette in markup: components use these through utilities. */
+@theme {
+  --color-bg: #16100b; /* --bg */
+  --color-bg-crest: #1d1610; /* the top of --bg-overlay's radial gradient */
+  --color-surface: #24190f; /* --panel */
+  --color-surface-doing: #2a1f12; /* --panel-doing */
+  --color-surface-review: #251a2b; /* --panel-review */
+  --color-surface-done: #1d2128; /* --panel-done */
+  --color-surface-raised: #2d2114; /* --card */
+  --color-surface-hover: #3a2c1d; /* --card-hover */
+  --color-surface-editing: #3f301f; /* --card-editing */
+  --color-edge: #3d2e1f; /* --border */
+  --color-edge-hover: #5e4830; /* --border-hover */
+  --color-ink: #f0e6d4; /* --text */
+  --color-ink-dim: #b09a7c; /* --text-muted */
+  --color-ink-faint: #6e5d44; /* --text-faint */
+
+  /* doing */
+  --color-mammoth: #d49a55; /* --accent-warm */
+  --color-mammoth-bg: #3d2e16; /* --accent-warm-bg */
+  --color-mammoth-ink: #f6d49a; /* --accent-warm-text */
+  --color-on-mammoth: #1a1207; /* text on the gold fill */
+  /* done, and every drop hint */
+  --color-ice: #6ba3c8; /* --accent-cool */
+  --color-ice-bg: #1e2d3a; /* --accent-cool-bg */
+  --color-ice-ink: #b3d4e8; /* --accent-cool-text */
+  /* review */
+  --color-amethyst: #b083c8; /* --accent-review */
+  --color-amethyst-bg: #2e1d36; /* --accent-review-bg */
+  --color-amethyst-ink: #d9bce8; /* --accent-review-text */
+  /* todo, and the neutral tag / owner family */
+  --color-loam: #8a6f4e; /* --accent-neutral */
+  --color-loam-bg: #2a2014; /* --accent-neutral-bg */
+  --color-loam-ink: #d6c2a3; /* --accent-neutral-text */
+
+  --color-danger: #d97a73; /* --danger */
+  --color-danger-bg: #3a1a17; /* --danger-bg */
+
+  /* The page's inline hard-codes, lifted: the count pill's and the status
+     pill's `rgba(0,0,0,0.2..0.25)` washes, and the modal overlay's 0.55. */
+  --color-well: color-mix(in srgb, #000 22%, transparent);
+  --color-scrim: color-mix(in srgb, #000 55%, transparent);
+
+  /* The Alpine page's only font declaration; no web font ever loaded. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* L1 — the shadcn names the installed registry set consumes (button, badge,
+     input, textarea, dialog, alert-dialog, separator, empty, label), each a
+     var() onto a bounty token above. Never a value: the recipes keep their
+     stock class vocabulary and resolve to this spell's palette. Add a name
+     here when a newly added component consumes one; remove nothing a shipped
+     component still reads. */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-primary: var(--color-mammoth);
+  --color-primary-foreground: var(--color-on-mammoth);
+  --color-secondary: var(--color-surface-raised);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-surface-raised);
+  --color-muted-foreground: var(--color-ink-dim);
+  /* accent is the highlighted-item fill: it must differ from popover, or a
+     hovered item paints its own background and has no hover at all. */
+  --color-accent: var(--color-surface-hover);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-danger);
+  --color-border: var(--color-edge);
+  --color-input: var(--color-edge);
+  --color-ring: var(--color-mammoth);
+  --color-popover: var(--color-surface);
+  --color-popover-foreground: var(--color-ink);
+
+  /* The toast's entry (the page's only @keyframes). */
+  --animate-toast-in: toast-in 0.15s ease-out;
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* Two recipes reach past the utility layer with a raw var() — the secondary
+   button's hover is `color-mix(in oklch, var(--secondary), var(--foreground) 5%)`.
+   Those names exist here as aliases of the same tokens; nothing else defines them. */
+:root {
+  --foreground: var(--color-ink);
+  --secondary: var(--color-surface-raised);
+}
+
+/* The registry recipes carry `dark:` arms tuned for a dark ground. Tailwind's
+   default `dark:` follows the OS (prefers-color-scheme), which would make this
+   always-dark surface look different per machine. Pin the variant to a class
+   and set it on <html> in index.html, so the dark arms always apply. */
+@custom-variant dark (&:is(.dark *));
+
+@layer base {
+  /* Tailwind v4 gives buttons the default cursor; the registry's button docs
+     offer this base rule to keep the pointer, and the original page had it. */
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  /* The page's radial ground. A gradient over two tokens is the one thing here
+     a utility cannot express without spelling the whole function inline. */
+  body {
+    background-image: radial-gradient(
+      ellipse at top,
+      var(--color-bg-crest) 0%,
+      var(--color-bg) 60%
+    );
+  }
+}
+
+/* The empty-title placeholder. `:empty::before` has no utility form, and the
+   card's title is a contenteditable that CAN be empty between a keystroke and
+   its blur. */
+.title-empty:empty::before {
+  content: "(empty — type a title)";
+  color: var(--color-ink-faint);
+  font-style: italic;
+}

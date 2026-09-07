@@ -5,6 +5,7 @@
   "type": "module",
   "private": true,
   "workspaces": [
+    "src/bounty",
     "src/grapevine"
   ],
   "scripts": {

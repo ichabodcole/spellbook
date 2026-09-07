@@ -213,9 +213,27 @@ import { join } from "node:path";
 // a two-line comment on the `--color-accent` alias (why it must differ from
 // `--color-popover`, or a hovered menu item is invisible). 3,758 + 2 = 3,760
 // exactly.
+//
+// ⛔ RE-DECLARED 2026-09-06 FOR BOUNTY'S SURFACE — 22/3,760 -> 25/3,938.
+// MEMBERSHIP MOVED BY THREE, all of them arrivals from the bounty rewrite:
+//     +144  src/bounty/surface/styles.css   (new)
+//     +32   src/bounty/surface/index.html   (new)
+//     +2    src/bounty/bunfig.toml          (new)
+// 3,760 + 178 = 3,938 exactly, summed FROM THE OBJECT BELOW rather than from
+// the paragraph above it. bounty ships the roster's largest surface sheet
+// because on this board colour IS the status vocabulary: the old page's 27
+// `:root` properties became 34 tokens (four status families of three, plus two
+// washes) on top of the same L1 alias block and the same three pins — dark,
+// the raw-var aliases, the pointer — that grapevine carries.
+// ⚠ `plugins/spellbook/skills/bounty/scripts/template.html` (1,003) is STILL
+// declared here and leaves in the daemon commit; that departure is its own
+// re-declaration, not this one.
 const DECLARED_BLIND: Record<string, number> = {
   "plugins/spellbook/skills/digestify/scripts/template.html": 1505,
   "plugins/spellbook/skills/bounty/scripts/template.html": 1003,
+  "src/bounty/surface/styles.css": 144,
+  "src/bounty/surface/index.html": 32,
+  "src/bounty/bunfig.toml": 2,
   "src/mind-mapper/surface/styles.css": 238,
   "src/magpie/surface/styles.css": 186,
   "src/imago/surface/styles.css": 167,

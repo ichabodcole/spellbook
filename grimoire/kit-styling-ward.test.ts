@@ -101,7 +101,11 @@ const KIT_CSS = join(REPO_ROOT, "src", "kit", "theme", "base.css");
  *  by the membership cell — a spell that adopts the kit and is not added here
  *  would otherwise leave this ward silently narrower than its title claims
  *  (seams Contract 19: a ward's population must follow its subject). */
-const KIT_CONSUMERS = ["grapevine", "imago", "mind-mapper"] as const;
+// bounty joins on its rewrite (2026-09-06): its styles.css imports the kit
+// base, which is what membership means here — not that it inherits an L0
+// default (it overrides all five), but that the kit's stylesheet is in front of
+// Tailwind for it and its sheet is therefore governed by the cells below.
+const KIT_CONSUMERS = ["bounty", "grapevine", "imago", "mind-mapper"] as const;
 
 /** A utility used by a KIT component and by NOTHING else in the roster — the
  *  hand-written dots all spell it `w-2 h-2`. Its discrimination is asserted
