@@ -41,9 +41,10 @@ in `grimoire/house-style.md`.
 - **Primary Language:** TypeScript (two spells — magpie and imago — also use
   Python 3.11+ for image work, e.g. `rembg`/background removal)
 - **Framework/Runtime:** Bun (serves surfaces, runs `.ts` natively, `bun test`)
-- **UI:** React 19 + Tailwind 4 for built surfaces (astrolabe, bounty, glamour,
-  grapevine watch, imago, magpie, mind-mapper); Alpine.js over CDN for the one
-  not yet rewritten (digestify)
+- **UI:** React 19 + Tailwind 4 on the house token layer, for **every** surface
+  in the roster (astrolabe, bounty, digestify, glamour, grapevine watch, imago,
+  magpie, mind-mapper). digestify was the last hand-written page and it was
+  rewritten on 2026-09-07; there is no CDN surface left anywhere in the tree
 - **Key Dependencies:** `react`/`react-dom` 19, `lucide-react`, `sharp`
 - **Build Tools:** none at the spell level (Bun runs source directly); heavy
   surfaces use a Bun bundler step inside their own setup
@@ -75,7 +76,7 @@ Two kinds: a **cantrip** casts and resolves (no standing state); a
 
 | Spell       | Kind        | What it does                                                                            | Surface        |
 | ----------- | ----------- | --------------------------------------------------------------------------------------- | -------------- |
-| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | Alpine-CDN     |
+| `digestify` | cantrip     | One-shot browser review surface with inline questions; submit returns JSON              | React (built)  |
 | `grapevine` | conjuration | Agent-to-agent channels (append-only JSONL + SSE); human watch surface                  | React (built)  |
 | `bounty`    | conjuration | Live duplex Kanban board (todo→doing→review→done), human ↔ agent                        | React (built)  |
 | `glamour`   | conjuration | Style studio — conversation-first; influences in, a re-castable style spec + images out | React studio   |
@@ -184,10 +185,11 @@ _Five, as of the 2026-08-10 sweep
   ships as source; Phase 3 dropped and re-affirmed post-acc). "spell-surface-
   pipeline closed 2026-09-01": **HELD**. "Two deliberate surface tiers (glamour,
   imago, magpie / bounty, digestify, grapevine)": **HELD** at the time, and
-  **FALSIFIED since** — grapevine (2026-09-05) and bounty (2026-09-06) both
-  crossed, leaving digestify alone on the Alpine tier. Found by the
-  docs-of-record sweep, which ranges over docs NO SEAT OWNS — the same reason
-  this bullet went stale before._
+  **FALSIFIED since** — grapevine (2026-09-05), bounty (2026-09-06) and
+  digestify (2026-09-07) all crossed. **There is now ONE tier**, which is what a
+  countdown looks like when it reaches zero. Found by the docs-of-record sweep,
+  which ranges over docs NO SEAT OWNS — the same reason this bullet went stale
+  before._
 
   _(This bullet told readers the build did not exist for two days after Seam C
   killed that claim, in the repo's front-door summary. Found by a non-author
@@ -261,12 +263,13 @@ aesthetic/naming pass.
   the traditional app's input→service→output pipeline.
 - **Cantrip↔conjuration is a live spectrum, not a fixed label** — magpie just
   crossed it, gaining a daemon and a surface as its job grew multi-phase.
-- **Two deliberate surface tiers, and one of them is nearly empty:** built React
-  surfaces (astrolabe, bounty, glamour, grapevine watch, imago, magpie,
-  mind-mapper) on the house token layer; Alpine-CDN for **digestify** alone, the
-  last board not yet rewritten. _The "two tiers" reading was always a
-  description of where the roster had got to, never a design — with one spell
-  left on the old tier it is closer to a countdown than a taxonomy._
+- **One surface tier, as of 2026-09-07:** every spell in the roster ships a
+  built React surface on the house token layer, with its primitives from the
+  shadcn registry. _The "two tiers" reading was always a description of where
+  the roster had got to, never a design — it was closer to a countdown than a
+  taxonomy, and the countdown has finished. digestify was the last, and it is
+  the one that exercised the token layer's **mode override**: three themes over
+  one set of names, which no earlier port had used._
 - **The grimoire is the real moat** — a self-pruning craft system most projects
   lack; rules survive only by reinforcement.
 - **The manifesto is canonical in Operator**, mirrored here; edit it there and
