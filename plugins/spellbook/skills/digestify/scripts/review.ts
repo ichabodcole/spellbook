@@ -442,6 +442,10 @@ async function main(argv: string[]): Promise<number> {
     elapsedMs: number | null;
     answered: number | null;
     commented: number | null;
+    /** True when the beacon named a session that is not this one — a tab left
+     *  over from a review this daemon replaced on the same re-bound port. The
+     *  fact is still worth recording; it just must not end the session. */
+    stale: boolean;
   };
   let departure: Departure | null = null;
   let pageServed = false;
@@ -532,23 +536,60 @@ async function main(argv: string[]): Promise<number> {
         // would make one route sometimes resolve and sometimes not.
         if (method === "POST" && path === "/left") {
           try {
-            const b = (await req.json()) as Partial<Departure>;
+            const b = (await req.json()) as Partial<Departure> & { sessionId?: unknown };
+            const named = typeof b.sessionId === "string" ? b.sessionId : null;
             departure = {
               engaged: b.engaged === true,
               elapsedMs: typeof b.elapsedMs === "number" ? b.elapsedMs : null,
               answered: typeof b.answered === "number" ? b.answered : null,
               commented: typeof b.commented === "number" ? b.commented : null,
+              stale: named !== null && named !== sessionId,
             };
           } catch {
             // A malformed beacon still means SOMEBODY LEFT — that fact is the
             // point of the route, and discarding it would restore the very
             // silence b4 exists to remove. Record the departure with unknown
             // detail rather than nothing.
-            departure = { engaged: false, elapsedMs: null, answered: null, commented: null };
+            departure = {
+              engaged: false,
+              elapsedMs: null,
+              answered: null,
+              commented: null,
+              stale: false,
+            };
           }
           return new Response(null, { status: 204 });
         }
         if (method === "POST" && path === "/cancel") {
+          // ⛔ /cancel ENDS THIS SESSION, NOT WHOEVER HOLDS THE PORT.
+          //
+          // Recovery re-binds the port encoded in the session id so the
+          // relaunched page lands on the same origin and inherits its
+          // localStorage draft. That leaves the user's OLD tab pointed at the
+          // same origin, so closing it after a relaunch beaconed /cancel into
+          // the NEW daemon and resolved 130 — the restored review died the
+          // moment the user tidied up the tab it was restored from. Found by
+          // losing an hour to it during the port's browser drive.
+          //
+          // A beacon that NAMES a different session is therefore ignored. One
+          // carrying no id is still honoured: the route stays callable by hand,
+          // and the only page that can send an id-less beacon is a tab from a
+          // release older than this one.
+          let named: string | null = null;
+          try {
+            const b = (await req.json()) as { sessionId?: unknown };
+            if (typeof b.sessionId === "string") named = b.sessionId;
+          } catch {
+            /* an empty or malformed body names nothing — honoured, as above */
+          }
+          if (named !== null && named !== sessionId) {
+            process.stderr.write(
+              `${JSON.stringify({ event: "stale_cancel_ignored", named, current: sessionId })}\n`,
+            );
+            return new Response('{"ok":true,"ignored":"stale-session"}', {
+              headers: { "Content-Type": "application/json" },
+            });
+          }
           resolveDone({ code: 130, data: null });
           return new Response('{"ok":true}', { headers: { "Content-Type": "application/json" } });
         }

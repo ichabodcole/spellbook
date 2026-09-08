@@ -214,6 +214,14 @@ export function useReview(payload: Payload, storage: DraftStorage = browserStora
         new Blob(
           [
             JSON.stringify({
+              // ⚠ NAMES THE SESSION THIS PAGE WAS SERVED WITH. Recovery
+              // re-binds the port encoded in the session id, so a relaunched
+              // review lands on the SAME origin — which is what hands it the
+              // same localStorage draft. The cost is that a stale tab is still
+              // pointed at that origin, and its departure beacons reach the
+              // daemon that REPLACED it. The id is how the far end tells the
+              // two apart.
+              sessionId,
               engaged: dirty.current,
               elapsedMs: Date.now() - startedAt.current,
               answered: Object.keys(answers.current).length,
@@ -228,12 +236,21 @@ export function useReview(payload: Payload, storage: DraftStorage = browserStora
       // canon, not an accident — refreshing a clean page must not exit.
       // --timeout stays the failsafe for true abandons.
       if (dirty.current) {
-        navigator.sendBeacon("/cancel", new Blob([], { type: "application/json" }));
+        // The body was empty until 2026-09-08. A stale tab closing after the
+        // agent relaunched the review would beacon here, hit the NEW daemon on
+        // the re-bound port, and end a session the user had just been given
+        // back — exit 130, "closed without submitting", on a review they never
+        // touched. The id makes the route's guarantee explicit instead of
+        // positional: /cancel ends THIS session, not whoever holds the port.
+        navigator.sendBeacon(
+          "/cancel",
+          new Blob([JSON.stringify({ sessionId })], { type: "application/json" }),
+        );
       }
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, []);
+  }, [sessionId]);
 
   const state: TimerState = timerState(remaining);
   return {

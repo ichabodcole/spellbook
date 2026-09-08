@@ -61,8 +61,19 @@ export type SubmitBody = { answers: Answers; comments: WireComment[] };
 
 /** The body of the POST /left beacon (review.ts 380–397). */
 export type DepartureBody = {
+  /** The session this page was served with — see CancelBody. */
+  sessionId: string;
   engaged: boolean;
   elapsedMs: number;
   answered: number;
   commented: number;
 };
+
+/** The body of the POST /cancel beacon.
+ *
+ *  `sessionId` names the session the departing page belongs to. The daemon
+ *  ignores a beacon that names a DIFFERENT session, because port re-binding on
+ *  recovery means a stale tab's departure can reach the daemon that replaced
+ *  it. A beacon carrying no id at all is still honoured, so the route stays
+ *  callable by hand. */
+export type CancelBody = { sessionId: string };

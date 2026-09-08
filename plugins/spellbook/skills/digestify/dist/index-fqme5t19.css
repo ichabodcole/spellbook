@@ -1504,6 +1504,18 @@
     color: var(--color-brand-strong);
   }
 
+  .data-\[copy-failed\=1\]\:border-alarm-edge[data-copy-failed="1"] {
+    border-color: var(--color-alarm-edge);
+  }
+
+  .data-\[copy-failed\=1\]\:bg-alarm-bg[data-copy-failed="1"] {
+    background-color: var(--color-alarm-bg);
+  }
+
+  .data-\[copy-failed\=1\]\:text-alarm[data-copy-failed="1"] {
+    color: var(--color-alarm);
+  }
+
   .data-\[spin\=1\]\:rotate-360[data-spin="1"] {
     rotate: 360deg;
   }

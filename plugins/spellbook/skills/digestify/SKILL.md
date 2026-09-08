@@ -284,6 +284,16 @@ has typed into a textarea or saved a comment. Closing or refreshing a clean page
 without interacting is intentionally treated as "still thinking", not a cancel —
 those abandons hit the `--timeout` and exit `124` instead of `130`.
 
+**A departing tab can only cancel its own session.** The `/cancel` beacon names
+the session the page was served with, and the daemon ignores one that names a
+different session. This matters because recovery re-binds the port encoded in
+the session id (see **Session Recovery**), so the user's _old_ tab is still
+pointed at the same origin: before 2026-09-08, closing that stale tab after a
+relaunch beaconed `/cancel` into the daemon that replaced it, and the restored
+review exited `130` the moment the user tidied up the tab it was restored from.
+The departure is still recorded on `/left`, flagged stale — "a tab from an
+earlier session of this review closed" is a true and useful fact.
+
 ## Flags
 
 - `--file PATH` — read agent-authored markdown from this file instead of stdin
@@ -327,6 +337,9 @@ Mechanics, for context:
 - Drafts persist for 7 days then auto-prune on next page load.
 - Restore needs the same browser, no cleared site data, and the encoded port to
   still be bindable. Best-effort: an emergency hatch, not a guarantee.
+- Re-binding the port is what makes restore work, and it is also why the user's
+  stale tab keeps talking to the new daemon. Beacons carry a session id so the
+  daemon can tell them apart; see the note on `130` vs `124` above.
 
 If port rebinding fails (rare — process holding the port), the relaunch errors
 clearly and you can tell the user the draft isn't recoverable this time.

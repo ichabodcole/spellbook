@@ -36344,27 +36344,39 @@ var import_react8 = __toESM(require_react(), 1);
 
 // src/digestify/surface/components/SessionIdButton.tsx
 var import_react7 = __toESM(require_react(), 1);
+
+// src/digestify/surface/state/clipboard.ts
+function copyFeedback(ok) {
+  return ok ? { outcome: "copied", label: "Copied!", holdMs: 1200 } : { outcome: "failed", label: "Copy failed — select it", holdMs: 2400 };
+}
+
+// src/digestify/surface/components/SessionIdButton.tsx
 var jsx_dev_runtime11 = __toESM(require_jsx_dev_runtime(), 1);
 function SessionIdButton({ sessionId }) {
-  const [copied, setCopied] = import_react7.useState(false);
+  const [result, setResult] = import_react7.useState("idle");
   const timer = import_react7.useRef(null);
   import_react7.useEffect(() => () => timer.current ? clearTimeout(timer.current) : undefined, []);
+  const copied = result === "copied";
   return /* @__PURE__ */ jsx_dev_runtime11.jsxDEV("button", {
     id: "session-id",
     type: "button",
     title: "Click to copy session ID — give this to the agent if you need to recover an interrupted session",
     "data-copied": copied ? "1" : undefined,
+    "data-copy-failed": result === "failed" ? "1" : undefined,
     onClick: async () => {
+      let ok = false;
       try {
         await navigator.clipboard.writeText(sessionId);
+        ok = true;
       } catch {}
-      setCopied(true);
+      const fb = copyFeedback(ok);
+      setResult(fb.outcome);
       if (timer.current)
         clearTimeout(timer.current);
-      timer.current = setTimeout(() => setCopied(false), 1200);
+      timer.current = setTimeout(() => setResult("idle"), fb.holdMs);
     },
-    className: "cursor-pointer rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 font-mono text-[11px] font-bold text-ink-dim hover:bg-surface hover:text-brand-ink data-[copied=1]:border-brand data-[copied=1]:text-brand-strong",
-    children: copied ? "Copied!" : sessionId
+    className: "cursor-pointer rounded-full border border-edge bg-surface-soft px-2.5 py-1.5 font-mono text-[11px] font-bold text-ink-dim hover:bg-surface hover:text-brand-ink data-[copied=1]:border-brand data-[copied=1]:text-brand-strong data-[copy-failed=1]:border-alarm-edge data-[copy-failed=1]:bg-alarm-bg data-[copy-failed=1]:text-alarm",
+    children: result === "copied" ? "Copied!" : result === "failed" ? "Copy failed — select it" : sessionId
   }, undefined, false, undefined, this);
 }
 
@@ -36763,6 +36775,7 @@ function useReview(payload, storage = browserStorage) {
         return;
       navigator.sendBeacon("/left", new Blob([
         JSON.stringify({
+          sessionId,
           engaged: dirty.current,
           elapsedMs: Date.now() - startedAt.current,
           answered: Object.keys(answers.current).length,
@@ -36770,12 +36783,12 @@ function useReview(payload, storage = browserStorage) {
         })
       ], { type: "application/json" }));
       if (dirty.current) {
-        navigator.sendBeacon("/cancel", new Blob([], { type: "application/json" }));
+        navigator.sendBeacon("/cancel", new Blob([JSON.stringify({ sessionId })], { type: "application/json" }));
       }
     };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, []);
+  }, [sessionId]);
   const state = timerState(remaining);
   return {
     sessionId,

@@ -216,9 +216,56 @@ async function postSubmit(
   });
 }
 
-async function postCancel(port: number): Promise<void> {
-  await fetch(`http://127.0.0.1:${port}/cancel`, { method: "POST", body: "" });
+async function postCancel(port: number, sessionId?: string): Promise<Response> {
+  return await fetch(`http://127.0.0.1:${port}/cancel`, {
+    method: "POST",
+    body: sessionId === undefined ? "" : JSON.stringify({ sessionId }),
+  });
 }
+
+// ── /cancel ends THIS session, not whoever holds the port ────────────────────
+//
+// Recovery re-binds the port encoded in the session id so a relaunched review
+// lands on the same origin and inherits its localStorage draft. That leaves the
+// user's OLD tab pointed at the same origin: closing it beaconed /cancel into
+// the daemon that REPLACED it, and the restored review died with exit 130 the
+// moment the user tidied up the tab it was restored from. Filed 2026-09-07 off
+// the port's browser drive, fixed 2026-09-08.
+describe("a departing tab can only cancel its own session", () => {
+  test("a /cancel naming a DIFFERENT session is ignored — the daemon lives on", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "3"],
+      "::: question id=q1\nWhy?\n:::",
+    );
+    const res = await postCancel(ready.port, "digestify-deadbeef-p1");
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, ignored: "stale-session" });
+    // The proof is the EXIT CODE, not the response: 130 is "closed without
+    // submitting" and 124 is the timeout failsafe. Before the fix this was 130.
+    expect(await proc.exited).toBe(124);
+  }, 10000);
+
+  test("a /cancel naming the CURRENT session still ends it with 130", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "10"],
+      "::: question id=q1\nWhy?\n:::",
+    );
+    const res = await postCancel(ready.port, ready.session_id);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(await proc.exited).toBe(130);
+  }, 15000);
+
+  test("a /cancel naming NOTHING is still honoured — the route stays hand-callable", async () => {
+    // Deliberate: an id-less beacon can only come from a tab older than this
+    // fix, and refusing it would break every direct caller of the route.
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "10"],
+      "::: question id=q1\nWhy?\n:::",
+    );
+    await postCancel(ready.port);
+    expect(await proc.exited).toBe(130);
+  }, 15000);
+});
 
 describe("end-to-end via subprocess", () => {
   test("submit prints response JSON and exits 0", async () => {
