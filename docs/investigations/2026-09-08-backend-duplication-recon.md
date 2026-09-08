@@ -65,12 +65,13 @@ that build.
 
 1. **The CLI's SSE tail reader** — ~150 lines × 6, three near-verbatim. Same
    `boundId`/`grounded` pinning, same `delay = Math.min(delay*2, 5000)`, same
-   frame splitter, same keepalive line. `glamour/scripts/cli.ts:1269`,
-   `imago/scripts/cli.ts:255`, `src/magpie/backend/cli.ts:399`. Astrolabe's is a
-   fourth variant; mind-mapper's (`cli.ts:656`) is a structurally different and
-   better fifth (AbortController + idle watchdog) that splits on `"data: "`
-   where the others split on `"data:"`. Grapevine's `cmdTail` is a sixth.
-   **Heavily drifted at the top, byte-identical in the middle.**
+   frame splitter, same keepalive line. `glamour/scripts/cli.ts:621` (was :1269
+   before the surface relocation), `imago/scripts/cli.ts:255`,
+   `src/magpie/backend/cli.ts:399`. Astrolabe's is a fourth variant;
+   mind-mapper's (`cli.ts:656`) is a structurally different and better fifth
+   (AbortController + idle watchdog) that splits on `"data: "` where the others
+   split on `"data:"`. Grapevine's `cmdTail` is a sixth. **Heavily drifted at
+   the top, byte-identical in the middle.**
 2. **Daemon discovery + session pointer** — two rival conventions (per-session
    tmpdir JSON: bounty, glamour, imago, magpie; singleton
    `$HOME/daemon.{port,pid}`: astrolabe, grapevine, mind-mapper), with a third
