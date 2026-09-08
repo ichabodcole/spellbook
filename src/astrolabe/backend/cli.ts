@@ -39,6 +39,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { printJson } from "../../kit/lib/printJson";
+import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { tailEvents } from "../../kit/wire/tailEvents";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ "..", "scripts" — NOT a sibling lookup. This file is AUTHORED here and
@@ -71,11 +73,12 @@ const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
 
 // Failures leave stdout empty and put ONE JSON envelope on stderr — the same
 // machine shape as the data path, so a piped caller parses the error instead of
-// scraping prose. kind follows the acc exit taxonomy (usage=2, internal=1).
-function die(msg: string, kind = "usage", code = 2): never {
-  process.stderr.write(`${JSON.stringify({ ok: false, error: { kind, message: msg } })}\n`);
-  process.exit(code);
-}
+// scraping prose. THE ENVELOPE, THE TAXONOMY AND THE EXIT CODES ARE NOW SHARED
+// (`src/kit/wire/errors.ts`); astrolabe's fourth, minimal copy is gone. Two
+// things changed and both are additive: the envelope gains `exit_code`,
+// `retryable` and `meta.command`, and `die` THROWS a CliError that `main`
+// reports, rather than exiting from wherever it was called. `kind` and
+// `message` — the two fields anything can be keying on — are untouched.
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // id + avatar are DERIVED by the daemon (state.ts) from the project name, so the
@@ -141,7 +144,7 @@ async function ensureDaemon(): Promise<{ base: string; port: number }> {
     const p = await readPort();
     if (p && (await isUp(p))) return { base: `http://127.0.0.1:${p}`, port: p };
   }
-  die("astrolabe daemon failed to start within 45s", "internal", 1);
+  die("astrolabe daemon failed to start within 45s", "internal");
 }
 
 // A read-only verb requires a live daemon but must not spawn one (nothing to
@@ -190,103 +193,60 @@ function openBrowser(url: string): void {
   }
 }
 
-// SSE reader: stream the event log as JSONL on stdout, resumable + reconnecting.
+// SSE reader: stream the event log as JSONL on stdout, resumable + reconnecting
+// — one call into the house's shared tail client (`src/kit/wire/tailEvents.ts`),
+// which is where the loop, the frame parser, the backoff, the idle watchdog and
+// the drained exit now live, ONCE, for every spell.
+//
 // `scopeId` (set by `join`) filters to this project's frames + lifecycle; an
 // unscoped tail passes everything. Self-echo (frames the caller's own --as
-// caused) is suppressed. `:` keepalives ride stderr; exits 0 on `closed`.
-async function streamEvents(
-  base: string,
-  opts: { since: number; project?: string; scopeId?: string; self?: string },
-) {
-  let since = opts.since;
-  let delay = 250;
-  const stop = () => process.exit(0);
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
+// caused) is suppressed. `:` keepalives ride stderr; returns 0 on `closed`.
+//
+// ⛔ `resolve` IS `runningBase`, RE-READ ON EVERY ATTEMPT — this is the B1 fix
+// and the reason astrolabe went first. astrolabe binds an EPHEMERAL port, and
+// this function used to take a captured `base: string`, so after any daemon
+// restart `join` reconnected to a dead port forever and streamed nothing while
+// looking perfectly alive. It cannot: the callback re-reads
+// `$ASTROLABE_HOME/daemon.port` before every connect. Driven in `cli.test.ts`.
+//
+// It deliberately does NOT spawn. `join`/`tail` still call `ensureDaemon()`
+// once up front (a tail with no daemon at all is worth reporting); a daemon
+// that dies MID-watch is a wait, not a respawn, because a second astrolabe
+// spawned from inside a reconnect loop is a worse outcome than a watch that
+// resumes when the human reopens the board.
+async function streamEvents(opts: {
+  since: number;
+  project?: string;
+  scopeId?: string;
+  self?: string;
+}): Promise<number> {
+  type Ev = { id?: number; type?: string; by?: string; projectId?: string };
 
-  const inScope = (ev: { type?: string; projectId?: string }) => {
+  const inScope = (ev: Ev) => {
     if (!opts.scopeId) return true;
     if (ev.type === "ready" || ev.type === "closed") return true;
     return ev.projectId === opts.scopeId;
   };
 
-  for (;;) {
-    const projectQ = opts.project ? `&project=${encodeURIComponent(opts.project)}` : "";
-    let res: Response;
-    try {
-      res = await fetch(`${base}/events?since=${since}${projectQ}`);
-    } catch {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!res.ok || !res.body) {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    delay = 250;
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    for (;;) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch {
-        break;
-      }
-      if (chunk.done) break;
-      buf += dec.decode(chunk.value, { stream: true });
-      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
-        const block = buf.slice(0, sep);
-        buf = buf.slice(sep + 2);
-        const dataLines: string[] = [];
-        for (const line of block.split("\n")) {
-          if (line.startsWith(":")) {
-            process.stderr.write(": astrolabe-keepalive\n");
-            continue;
-          }
-          if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        const payload = dataLines.join("\n");
-        try {
-          const ev = JSON.parse(payload) as {
-            id?: number;
-            type?: string;
-            by?: string;
-            projectId?: string;
-          };
-          if (typeof ev.id === "number" && ev.id > since) since = ev.id;
-          const selfEcho = opts.self !== undefined && ev.by === opts.self;
-          const emit = inScope(ev) && !selfEcho;
-          if (ev.type === "closed") {
-            // P0f — SHAPE B: the drain callback rides THIS write, so it fires on
-            // this write's completion. NOT a trailing `write("", cb)`, which
-            // covers only its own write and is not a barrier.
-            //
-            // PER-SITE PRECONDITION, read at THIS site — and astrolabe is the
-            // one of the five that differs. The exit lives in `streamEvents`,
-            // NOT in a `cmdTail`, and there is no `stopped` flag here to set:
-            // the enclosing loops are `for (;;)` -> `for (;;)` -> the frame
-            // loop. `return` is safe because `streamEvents` is awaited directly
-            // from main's switch and main returns straight after — so returning
-            // ends the process rather than landing in another retry loop, which
-            // is the thing that had to be checked and could not be inferred
-            // from the shape.
-            if (emit) process.stdout.write(`${payload}\n`, () => process.exit(0));
-            else process.exit(0);
-            return;
-          }
-          if (emit) process.stdout.write(`${payload}\n`);
-        } catch {
-          /* skip malformed frame */
-        }
-      }
-    }
-    await sleep(delay);
-  }
+  return await tailEvents<Ev>({
+    resolve: runningBase,
+    path: "/events",
+    since: opts.since,
+    cursorOf: (ev) => ev.id,
+    query: (cursor) => ({
+      since: String(cursor),
+      ...(opts.project ? { project: opts.project } : {}),
+    }),
+    accept: (ev) => inScope(ev) && !(opts.self !== undefined && ev.by === opts.self),
+    terminal: (ev) => ev.type === "closed",
+    // The daemon heartbeats every 15s, so this is three missed beats. ⚠ IT MUST
+    // STAY WELL ABOVE THAT: holding the connection open IS `join`'s presence
+    // signal, so every watchdog fire flaps a card in a human's view. It still
+    // wants a watchdog — a wedged half-open socket shows a card as permanently
+    // present, which is the worse lie.
+    idleMs: 45_000,
+    onComment: () => process.stderr.write(": astrolabe-keepalive\n"),
+  });
 }
 
 // ── verbs ────────────────────────────────────────────────────────────
@@ -446,8 +406,29 @@ async function versionInfo(): Promise<{ name: string; version: string }> {
   return { name: "astrolabe", version: "unknown" };
 }
 
+/**
+ * The failure funnel. `die` THROWS a CliError now (the house's one error
+ * contract, `src/kit/wire/errors.ts`) instead of exiting from wherever it was
+ * called, so this is the ONE place a failure becomes an exit code — and the
+ * process still ends the one way the house sanctions, `process.exitCode` plus a
+ * natural return, which is what drains stdout on a pipe.
+ *
+ * ⛔ A NON-CliError IS RETHROWN, NEVER ENVELOPED. Reporting an unknown throw as
+ * a tidy taxonomy failure would lose the stack that says what actually broke.
+ */
 async function main(argv: string[]): Promise<number> {
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
+}
+
+async function dispatch(argv: string[]): Promise<number> {
   const verb = argv[0];
+  setCurrentCommand(verb ?? null);
   // A bare invocation requested nothing — that is a usage error, not a help
   // request. help stays reachable by name (and --help/-h) on stdout at exit 0.
   if (verb === undefined) die("no verb given — try 'help'");
@@ -532,13 +513,13 @@ async function main(argv: string[]): Promise<number> {
       };
       if (!state.projects.some((p) => p.id === id))
         die(`unknown project '${id}' — register it first`);
-      await streamEvents(base, { since, project: id, scopeId: id, self: resolveAs(flags) });
-      return 0;
+      return await streamEvents({ since, project: id, scopeId: id, self: resolveAs(flags) });
     }
     case "tail": {
-      const { base } = await ensureDaemon();
-      await streamEvents(base, { since, self: resolveAs(flags) });
-      return 0;
+      // ensureDaemon for the START of the watch only; the tail re-resolves the
+      // daemon on every reconnect (see streamEvents), so `base` is not carried.
+      await ensureDaemon();
+      return await streamEvents({ since, self: resolveAs(flags) });
     }
     default:
       die(`unknown verb '${verb}' — try 'help'`);
