@@ -85,3 +85,39 @@ nothing observable moves.
 
 **Not taken:** _settle the shape up front_ so nothing lands in the wrong place —
 rejected as deciding on priors rather than on evidence.
+
+## D6 · The daemon can build — one bundler flag, measured
+
+**Found:** orchestrator, 2026-09-08, in Phase 0. **Not a ruling; a measurement
+that unblocks D2.**
+
+`src/build.ts:95` refused the daemon: _"CLIs ONLY. A server does bundle, but
+drags the entire surface graph into the backend artifact; that is unruled and
+out of scope. Do not add server.ts."_ Measured, that is accurate about the
+default and not the whole story:
+
+```
+bun build .../astrolabe/scripts/server.ts --target=bun --external '*/surface/index.html'
+  → Bundled 2 modules in 4ms · server.js 20.49 KB
+```
+
+Without the external it fails compiling `src/astrolabe/surface/styles.css`
+(`@import "tailwindcss" source(none)`), because the bundler follows the daemon's
+dev-mode `await import(…/surface/index.html)`. The external is safe: that import
+sits behind `mode === "dev" ? … : undefined` and is dead code in a release
+artifact — which `server.ts:518-519` independently states, having been written
+for a different reason.
+
+**Consequence for the phase plan.** D1's "zero migration cost" holds only for
+the **CLI-side** modules; astrolabe's and magpie's servers still ship as unbuilt
+source and cannot import `src/kit/` until they build. So Phase 1 splits:
+
+- **1a (now)** — the CLI-side modules, adopted by two spells that already build.
+  Genuinely zero migration.
+- **1b (next)** — bring those two servers into the build, then adopt the
+  daemon-side modules. Cheaper than a full spell migration, because half the
+  infrastructure already exists.
+
+**Not taken:** treating `build.ts`'s comment as a closed door and scoping the
+project around a CLI-only convergence. That would have forfeited five of the
+eight spine concerns permanently, which is exactly what D2 rejected.
