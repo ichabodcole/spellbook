@@ -3,7 +3,7 @@
  * envelope, and the `die` that raises one.
  *
  * ⛔ THE KIT IS A LEAF. Nothing here may import out of `src/kit/` — ward 2's
- * assertion, not a convention, and it is what makes this module safe to inline
+ * assertion, not a convention, and it is what makes this module safe to bundle
  * into any spell's bundle (see `../lib/printJson.ts`, the kit's first
  * inhabitant, for the full account).
  *
@@ -20,7 +20,7 @@
  * Bun's stdout is ASYNCHRONOUS on a pipe (synchronous on a TTY or file), so
  * `process.exit()` discards whatever has not drained — measured at exactly
  * 65,536 bytes, and the caller gets well-formed-looking JSON that stops
- * mid-string. Reproduced, fixed and gated in bounty first (P0, #77/#78).
+ * mid-string. Reproduced, repaired and gated in bounty first (P0, #77/#78).
  *
  * The old shape wrote one short envelope to stderr and exited immediately,
  * which is safe ONLY while the payload fits the 64 KiB pipe buffer — stderr
@@ -34,11 +34,14 @@
  * this shape independently at their acc L0 passes; this module is where the
  * three copies stop being three.
  *
- * ⚠ A `die` inside a `try` whose `catch` SWALLOWS is now a silent
- * continue rather than an exit. Every call site in an adopting spell must be
- * read for that before it adopts. Audited for astrolabe (16 sites) and magpie
- * (30) on adoption: every one is either outside a `try` or inside a `catch`,
- * from which the throw propagates.
+ * ⚠ A `die` REACHABLE from inside a `try` whose `catch` SWALLOWS is now a
+ * silent continue rather than an exit. ⛔ REACHABILITY, NOT CALL SITES: a
+ * HELPER that dies, invoked from inside a swallowing `catch`, has its `die` at
+ * a site that reads as perfectly safe. An adopting spell must follow the call
+ * graph, not grep for `die(`. Audited that way on adoption — 15 sites in
+ * astrolabe, 29 in magpie, plus the helpers reachable from them — and every
+ * path is either outside a `try` or inside a `catch`, from which the throw
+ * propagates.
  */
 
 /**

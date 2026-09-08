@@ -169,7 +169,10 @@ describe("tailEvents", () => {
       cursorOf: (ev) => ev.id,
       terminal: (ev) => ev.type === "closed",
       idleMs: 150,
-      onComment: (text) => seen.push(text),
+      onComment: (text) => {
+        seen.push(text);
+        return null;
+      },
       signals: false,
       out,
     });
@@ -369,4 +372,208 @@ describe("tailEvents", () => {
       }),
     ).rejects.toThrow("refused: 404");
   });
+
+  // ── the stop path, which is what a human does to a tail ───────────────────
+
+  test("⛔ a stop DURING BACKOFF returns at once, not at the end of the sleep", async () => {
+    // The regression this cell exists for: `stop` aborted the in-flight attempt
+    // but left the reconnect sleeping on a bare timer, so Ctrl-C during backoff
+    // waited out `retry.maxMs`. Measured on a real CLI at 2.80s where the
+    // hand-written loop took 0.13s — and repeat signals did not help, because
+    // they all hit the same sleeping timer.
+    //
+    // Nothing is listening on this port, so the tail is in backoff within ms.
+    const dead = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("x") });
+    const port = dead.port;
+    dead.stop(true);
+
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 80);
+    const started = Date.now();
+    const code = await tailEvents({
+      resolve: () => `http://127.0.0.1:${port}`,
+      path: "/events",
+      since: 0,
+      // A backoff far longer than the test's patience: if the sleep is not
+      // woken, this cell cannot finish inside its own timeout.
+      retry: { initialMs: 10_000, maxMs: 10_000 },
+      signal: ac.signal,
+      signals: false,
+      out: collector(),
+      err: collector(),
+    });
+    const elapsed = Date.now() - started;
+    expect(code).toBe(0);
+    expect(elapsed).toBeLessThan(1000);
+  }, 15000);
+
+  // ── the exit path both adopters depend on ─────────────────────────────────
+
+  test("terminal ends the watch at 0 and the terminal frame is emitted", async () => {
+    const server = fakeSse((conn) => {
+      conn.push(frame({ id: 1 }));
+      conn.push(frame({ id: 2, type: "closed" }));
+      conn.push(frame({ id: 3 })); // after the end: must never be read
+    });
+    const out = collector();
+    const code = await tailEvents<{ id?: number; type?: string }>({
+      resolve: () => server.base,
+      path: "/events",
+      since: 0,
+      cursorOf: (ev) => ev.id,
+      terminal: (ev) => ev.type === "closed",
+      signals: false,
+      out,
+    });
+    expect(code).toBe(0);
+    expect(out.lines().map((l) => JSON.parse(l).id)).toEqual([1, 2]);
+  });
+
+  test("a FILTERED terminal frame still ends the watch, and is emitted only when asked", async () => {
+    // astrolabe's exact shape: a `closed` frame the scope predicate rejects must
+    // still end the tail at 0, and must NOT reach stdout.
+    const run = async (terminalEmitsFiltered: boolean) => {
+      const server = fakeSse((conn) => {
+        conn.push(frame({ id: 1, type: "closed", by: "me" }));
+      });
+      const out = collector();
+      const code = await tailEvents<{ id?: number; type?: string; by?: string }>({
+        resolve: () => server.base,
+        path: "/events",
+        since: 0,
+        cursorOf: (ev) => ev.id,
+        accept: (ev) => ev.by !== "me",
+        terminal: (ev) => ev.type === "closed",
+        terminalEmitsFiltered,
+        signals: false,
+        out,
+      });
+      return { code, lines: out.lines() };
+    };
+    expect(await run(false)).toEqual({ code: 0, lines: [] });
+    expect((await run(true)).lines.length).toBe(1);
+  });
+
+  // ── B5: the branch that lost its growth line ──────────────────────────────
+
+  test("an empty response grows the backoff (B5) instead of storming at a constant interval", async () => {
+    const at: number[] = [];
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => {
+        at.push(Date.now());
+        // ⚠ MEASURED, AND IT CORRECTS THE DEFECT'S OWN DESCRIPTION. B5 is
+        // written up as "a 200 with no body sleeps without growing the
+        // backoff", and `!res.body` is the branch that reads like. But Bun's
+        // fetch hands the client an EMPTY-BUT-PRESENT body for both a
+        // null-body 200 AND a 204 — checked both — so `!res.body` is
+        // unreachable from a Bun client and survives only as a types-level
+        // guard. The LIVE path for an empty response is the read loop ending
+        // at once, i.e. `stream-end`. Same branch to get wrong, same fix, and
+        // this drives the one that actually runs.
+        return new Response(null, { status: 204 });
+      },
+    });
+    cleanup.push(() => server.stop(true));
+    const ac = new AbortController();
+    const causes: string[] = [];
+    const err = collector();
+    setTimeout(() => ac.abort(), 900);
+    await tailEvents({
+      resolve: () => `http://127.0.0.1:${server.port}`,
+      path: "/events",
+      since: 0,
+      retry: { initialMs: 40, maxMs: 5000 },
+      onDisconnect: ({ cause }) => {
+        causes.push(cause);
+        return null;
+      },
+      signal: ac.signal,
+      signals: false,
+      out: collector(),
+      err,
+    });
+    expect(causes.every((c) => c === "stream-end")).toBe(true);
+    expect(at.length).toBeGreaterThanOrEqual(4);
+    const gaps = at.slice(1).map((t, i) => t - (at[i] as number));
+    // Each wait is at least (nearly) double the one before — the property, not
+    // the timings: a constant-interval storm has gaps that never grow.
+    const last = gaps.at(-1) as number;
+    const first = gaps[0] as number;
+    expect(last).toBeGreaterThan(first * 2);
+  }, 15000);
+
+  // ── the diagnostics sink ──────────────────────────────────────────────────
+
+  test("every diagnostic goes to err and NOTHING but data goes to out", async () => {
+    let attempts = 0;
+    const server = fakeSse((conn) => {
+      attempts += 1;
+      conn.push(": hb\n\n");
+      conn.push("data: {not json\n\n");
+      if (attempts === 1) {
+        conn.end(); // → stream-end
+      } else {
+        conn.push(frame({ id: 1, type: "closed" }));
+      }
+    });
+    const out = collector();
+    const err = collector();
+    const causes: string[] = [];
+    await tailEvents<{ id?: number; type?: string }>({
+      resolve: () => server.base,
+      path: "/events",
+      since: 0,
+      cursorOf: (ev) => ev.id,
+      terminal: (ev) => ev.type === "closed",
+      onComment: () => ": keepalive",
+      onMalformed: (f) => `# bad sse data: ${f.data}`,
+      onDisconnect: ({ cause }) => {
+        causes.push(cause);
+        return `# ${cause}`;
+      },
+      retry: { initialMs: 5, maxMs: 20 },
+      signals: false,
+      out,
+      err,
+    });
+    // stdout carries the one data line and nothing else.
+    expect(out.lines()).toEqual(['{"id":1,"type":"closed"}']);
+    expect(err.lines()).toEqual([
+      ": keepalive",
+      "# bad sse data: {not json",
+      "# stream-end",
+      ": keepalive",
+      "# bad sse data: {not json",
+    ]);
+    expect(causes).toEqual(["stream-end"]);
+  });
+
+  test("onDisconnect names a refused connection and an HTTP status", async () => {
+    const seen: Array<{ cause: string; status?: number }> = [];
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch: () => new Response("nope", { status: 503 }),
+    });
+    cleanup.push(() => server.stop(true));
+    const ac = new AbortController();
+    setTimeout(() => ac.abort(), 200);
+    await tailEvents({
+      resolve: () => `http://127.0.0.1:${server.port}`,
+      path: "/events",
+      since: 0,
+      retry: { initialMs: 20, maxMs: 40 },
+      onDisconnect: ({ cause, status }) => {
+        seen.push({ cause, status });
+        return null;
+      },
+      signal: ac.signal,
+      signals: false,
+      out: collector(),
+      err: collector(),
+    });
+    expect(seen[0]).toEqual({ cause: "http", status: 503 });
+  }, 10000);
 });

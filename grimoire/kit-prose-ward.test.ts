@@ -386,6 +386,115 @@ function isClassShaped(token: string, vocab: Vocabulary): boolean {
   return vocab.follow.has(last) || /^\d/.test(last);
 }
 
+/**
+ * ── ⛔ THE HALF THIS WARD SHIPPED WITHOUT, AND THE LEAK THAT PROVED IT ──────
+ *
+ * `CLASS_TOKEN` requires a STRUCTURAL MARKER and `isClassShaped` requires two
+ * segments, so **every single-word Tailwind utility was unreachable by this
+ * ward** — `invisible`, `truncate`, `italic`, `underline`, `uppercase`,
+ * `isolate`, `container` and the rest. The header said so, in the list of what
+ * it cannot see, and treated it as a small hole. It is not.
+ *
+ * ⭐ MEASURED, 2026-09-08, backend-convergence Phase 1a. Two ordinary English
+ * words in the comments of two NEW kit modules — "invisible" and "truncate" —
+ * put `.invisible` into bounty's, digestify's and imago's shipped stylesheets
+ * and `.truncate` into bounty's. Three spells that share no code with the
+ * modules and were not touched by that branch. **This ward stayed green.** The
+ * only instrument that caught it was `scripts/dist-check.ts`'s reproduction
+ * arm, which noticed eleven dirty paths after a rebuild — i.e. it was caught by
+ * an artifact check, downstream, by luck of the artifact being committed.
+ *
+ * Words like `filter`, `inline`, `fixed`, `block`, `relative` and `border` were
+ * ALSO sitting in kit prose at that moment and emitted nothing new — but only
+ * because those classes already appear in all five adopting stylesheets from
+ * other sources. That is a coincidence about today's surfaces, not a guard.
+ *
+ * ── WHY A LIST HERE AND A DERIVED VOCABULARY THERE ──────────────────────────
+ *
+ * The structural half CANNOT use a list: `bg-teal-500` is unbounded by
+ * construction (numeric scales, arbitrary values, novel palettes), which is why
+ * that half reads its vocabulary out of the roster's own markup. The bare half
+ * is the opposite: Tailwind's single-word utilities are a CLOSED, ENUMERABLE,
+ * SLOW-MOVING set — they are the ones with no value to vary. So a list is the
+ * right instrument here and the wrong one there, and the two halves disagreeing
+ * about method is a property of the mechanism rather than an inconsistency.
+ *
+ * ⚠ NOT CLAIMED EXHAUSTIVE. It is a list, so it has a blind set by
+ * construction, and the repair when a utility is found missing is to ADD IT —
+ * one line, no design. A derived alternative was considered and rejected: the
+ * roster's own markup would supply only the utilities the roster HAPPENS to
+ * use, and the whole finding is that the dangerous word is the one no surface
+ * uses (nothing in the tree writes `invisible`).
+ */
+const BARE_UTILITIES = new Set([
+  // display / layout
+  "block",
+  "inline",
+  "flex",
+  "grid",
+  "contents",
+  "hidden",
+  "table",
+  "isolate",
+  "columns",
+  // position
+  "static",
+  "fixed",
+  "absolute",
+  "relative",
+  "sticky",
+  // visibility — the two measured leaks are here
+  "visible",
+  "invisible",
+  "collapse",
+  "truncate",
+  // typography
+  "italic",
+  "underline",
+  "overline",
+  "uppercase",
+  "lowercase",
+  "capitalize",
+  "antialiased",
+  "hyphens",
+  // box / decoration
+  "container",
+  "border",
+  "outline",
+  "ring",
+  "shadow",
+  "rounded",
+  // filters and motion
+  "blur",
+  "filter",
+  "invert",
+  "sepia",
+  "grayscale",
+  "transform",
+  "transition",
+  "resize",
+]);
+
+/**
+ * Every BARE utility name in a blob. Same span rules as `shapedTokens` — same
+ * boundary charset, same sentence trimming — so the two halves cut the text
+ * identically and only the membership test differs.
+ *
+ * ⚠ A word inside an expression is NOT a bare token, and that matches the
+ * mechanism rather than being a leniency: `(` and `)` are inside Tailwind's
+ * candidate charset, so `.filter((l) => …)` in CODE is one long span and emits
+ * nothing, while the word "filter" in a SENTENCE is a candidate on its own.
+ * That asymmetry is why prose and code must be judged by the same extractor.
+ */
+function bareUtilities(text: string): string[] {
+  const out: string[] = [];
+  for (const span of text.split(BOUNDARY)) {
+    const t = trimSentence(span);
+    if (t !== "" && /^[a-z][a-z0-9]*$/.test(t) && BARE_UTILITIES.has(t)) out.push(t);
+  }
+  return out;
+}
+
 type KitFile = { path: string; model: ProseModel; code: string; prose: string };
 
 /** The kit, split. `not-scanned` files keep empty halves rather than being
@@ -579,5 +688,59 @@ describe("kit prose ward", () => {
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  test("BARE: no single-word Tailwind utility appears in kit prose that kit code does not use", () => {
+    // The half that was missing. See BARE_UTILITIES for the measurement that
+    // motivated it — two English words, three spells' shipped CSS, ward green.
+    const code = new Set<string>();
+    for (const f of files) for (const t of bareUtilities(f.code)) code.add(t);
+
+    const offenders: string[] = [];
+    for (const f of files) {
+      const leaked = [...new Set(bareUtilities(f.prose))].filter((t) => !code.has(t)).sort();
+      if (leaked.length > 0) {
+        offenders.push(
+          `${rel(f.path)}: prose names ${leaked.join(", ")} — no kit code uses ` +
+            `${leaked.length === 1 ? "it" : "them"}, so Tailwind emits ` +
+            `${leaked.length === 1 ? "it" : "them"} into every spell that imports the kit ` +
+            `stylesheet. Reword: "opaque" for invisible, "cut short" for truncate, ` +
+            `"bundle" for inline, "predicate" for filter.`,
+        );
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  test("BARE CALIBRATION: the two measured leaks are caught, and English is not", () => {
+    // ⛔ A LIST-BASED CELL THAT NEVER FIRED IS A LIST NOBODY CAN TRUST. This is
+    // the red route, run in-process against the exact prose that leaked.
+    const leakedProse = "// a second place the process could end, invisible to the caller\n";
+    expect(bareUtilities(leakedProse)).toEqual(["invisible"]);
+    expect(bareUtilities("// stderr does not truncate the way stdout does\n")).toEqual([
+      "truncate",
+    ]);
+    // …and the repairs that were actually applied stay green.
+    expect(
+      bareUtilities("// a second place the process could end, opaque to the caller\n"),
+    ).toEqual([]);
+    expect(bareUtilities("// stderr is cut short the way stdout is\n")).toEqual([]);
+
+    // Ordinary prose, including words that CONTAIN a utility and words that are
+    // near-misses. Only the exact bare token is a candidate.
+    expect(bareUtilities("the filtered frame was truncated and the blocked writer")).toEqual([]);
+    expect(bareUtilities("a line-delimited parser reads one document")).toEqual([]);
+    // A utility inside an expression is one span and emits nothing — the
+    // asymmetry documented on bareUtilities().
+    expect(bareUtilities('buf.split("n").filter((l) => l.length > 0)')).toEqual([]);
+    // Sentence punctuation is stripped here exactly as in the structural half,
+    // so a leak cannot hide behind a full stop.
+    expect(bareUtilities("the card is invisible.")).toEqual(["invisible"]);
+
+    // The set is not vacuous, and it holds the shapes the header names.
+    expect(BARE_UTILITIES.size).toBeGreaterThan(30);
+    for (const u of ["invisible", "truncate", "italic", "underline", "uppercase", "container"]) {
+      expect(BARE_UTILITIES.has(u)).toBe(true);
+    }
   });
 });

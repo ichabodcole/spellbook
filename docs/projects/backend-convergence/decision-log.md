@@ -173,11 +173,24 @@ both could truncate their own output. The two spells' `main` now funnel a thrown
 house has measured as safe, and the shape glamour and mind-mapper each reached
 independently at their acc L0 passes.
 
-**The cost, named:** a `die` inside a `try` whose `catch` swallows is now a
-silent continue rather than an exit. Every call site in both spells was read
-before the change (astrolabe 16, magpie 30); all are outside a `try` or inside a
-`catch`, from which the throw propagates. **A spell adopting this contract must
-do that audit**, and Phase 2's playbook must say so.
+**The cost, named — and the criterion stated correctly, because Phase 2's
+playbook inherits this sentence.** A `die` that is REACHABLE from inside a `try`
+whose `catch` swallows is now a silent continue rather than an exit.
+
+⛔ **REACHABILITY, NOT CALL SITES.** The first draft of this entry said "every
+call site is outside a `try` or inside a `catch`", which is a weaker claim and
+misses the defect class entirely: a HELPER that dies, invoked from inside a
+swallowing `catch`, has its `die` at a site that looks perfectly safe. The audit
+must follow the call graph, not grep for `die(`.
+
+Audited that way for both spells — 15 sites in astrolabe, 29 in magpie, plus the
+helpers reachable from them (`cmd`, `requireSession`, `readSession`,
+`ensureDaemon`). Every path either lies outside a `try` or sits inside a
+`catch`, from which the throw propagates. Two of magpie's sit in a `catch` and
+depend on `die` still being `never` for definite assignment; it is.
+
+**A spell adopting this contract must do that audit**, and Phase 2's playbook
+must say so in those words.
 
 **Not taken:** _keep the exiting `die` in the kit_ — smaller diff, no audit, and
 it would have put the house's only sanctioned exit-truncation hazard inside the

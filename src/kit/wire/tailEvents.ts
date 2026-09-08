@@ -3,7 +3,7 @@
  * spell's `tail`/`join` verb runs.
  *
  * ⛔ THE KIT IS A LEAF. Nothing here may import out of `src/kit/` — ward 2's
- * assertion, and it is what makes this module safe to inline into any spell's
+ * assertion, and it is what makes this module safe to bundle into any spell's
  * bundle. It reaches for nothing, not even the sibling error contract.
  *
  * Designed against all seven of the house's hand-written tails (the convergence
@@ -159,10 +159,15 @@ export type TailOptions<Ev> = {
    *  branches on a named non-data frame (`event: subscribed`) is served here
    *  rather than needing a hatch of its own. */
   render?: (ev: Ev, frame: SseFrame) => string | null;
-  /** A frame whose data will not parse. Default: skip it. Returning a string
-   *  emits it. ⚠ The cursor cannot advance past a frame nobody can read, so a
-   *  PERMANENTLY malformed frame is re-delivered on every reconnect for the
-   *  daemon's life; a spell that can happen to should log it. */
+  /**
+   * A frame whose data will not parse. Default: skip it. ⛔ THE RETURNED LINE
+   * GOES TO `err`, NOT `out` — it is a diagnostic about the stream, and stdout
+   * carries data. A spell that genuinely wants the unparsed line on stdout
+   * (one does) writes it from inside this hook and returns null.
+   *
+   * ⚠ The cursor cannot advance past a frame nobody can read, so a PERMANENTLY
+   * malformed frame is re-delivered on every reconnect for the daemon's life.
+   */
   onMalformed?: (frame: SseFrame, error: unknown) => string | null;
 
   // ── END ──────────────────────────────────────────────────────────────────
@@ -195,13 +200,37 @@ export type TailOptions<Ev> = {
    *  connection (an unknown project, a store that needs one) is a usage error,
    *  not a transport blip, and retrying it forever just spins silently. */
   onHttpError?: (res: Response) => "retry" | Promise<"retry">;
-  /** A `:` comment line (a keepalive). ⛔ Comments FEED THE WATCHDOG even
-   *  though the data filter discards them — that is handled here, before this
-   *  hook is called. */
-  onComment?: (text: string) => void;
+  /** A `:` comment line (a keepalive). Return a line for `err` — the sentinel
+   *  that lets a `2>&1` consumer tell "idle" from "wedged" — or null.
+   *  ⛔ Comments FEED THE WATCHDOG even though only data frames survive the
+   *  selection below — that is handled here, before this hook is called. */
+  onComment?: (text: string) => string | null;
+  /**
+   * One connection attempt ended. Return a line for `err`, or null.
+   *
+   * ⛔ THIS IS A DIAGNOSTICS SINK, NOT A FIFTH ESCAPE HATCH — and the
+   * distinction is a ruling, not a preference. The hatches this client offers
+   * (`accept`, `render`, `query`, `resolve`) are BEHAVIOURAL: they change what
+   * the client DOES. This one changes only what the CALLER REPORTS, which is
+   * what `err` was in the signature for. The design's trip-wire — "a fifth
+   * escape hatch means grapevine keeps its own loop" — is not tripped by it.
+   *
+   * It exists because a tail that reconnects in silence is indistinguishable
+   * from a tail that is working, and one spell writes four distinct lines here.
+   * `cause` says which; `error` and `status` carry what the line needs.
+   */
+  onDisconnect?: (info: {
+    cause: "connect-failed" | "http" | "no-body" | "stream-error" | "stream-end";
+    error?: unknown;
+    status?: number;
+  }) => string | null;
 
   // ── PLUMBING ─────────────────────────────────────────────────────────────
+  /** Where DATA goes. Default `process.stdout`. */
   out?: Sink;
+  /** Where DIAGNOSTICS go — keepalive sentinels, disconnect notes, unparseable
+   *  frames. Default `process.stderr`. Never mixed with `out`: a caller reading
+   *  our stdout with a line-delimited parser must never meet a note. */
   err?: Sink;
   /** Caller-owned abort. Aborting ends the tail at exit code 0. */
   signal?: AbortSignal;
@@ -216,8 +245,6 @@ export type TailOptions<Ev> = {
 
 const DEFAULT_IDLE_MS = 45_000;
 const DEFAULT_RETRY = { initialMs: 250, maxMs: 5000 };
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Parse a complete SSE frame body (the text between blank lines) per the spec's
@@ -265,6 +292,7 @@ export function parseSseFrame(block: string): { frame: SseFrame | null; comments
  */
 export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
   const out = opts.out ?? process.stdout;
+  const err = opts.err ?? process.stderr;
   const idleMs = opts.idleMs ?? DEFAULT_IDLE_MS;
   const retry = opts.retry ?? DEFAULT_RETRY;
   const cursorPolicy = opts.cursorPolicy ?? "monotonic";
@@ -278,15 +306,41 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
   let code = 0;
 
   // One stop switch for every way this loop can end: a signal, a caller's
-  // abort, a downstream reader closing our stdout. Each sets it and aborts the
-  // in-flight attempt; the loop then falls out and RETURNS.
+  // abort, a downstream reader closing our stdout. Each sets it, aborts the
+  // in-flight attempt AND WAKES THE BACKOFF; the loop then falls out and
+  // RETURNS.
+  //
+  // ⛔ WAKING THE BACKOFF IS NOT A DETAIL — IT IS THE Ctrl-C PATH. Installing a
+  // SIGINT listener SUPPRESSES the runtime's default terminate, so whatever
+  // this client does on a signal is now the whole of what happens. A first
+  // version aborted the attempt and left the reconnect sleeping on a bare
+  // timer: Ctrl-C during backoff took up to `retry.maxMs` instead of ending at
+  // once, measured at 2.80s against a dead port where the hand-written loop
+  // took 0.13s — and hammering Ctrl-C did not help, because every repeat hit
+  // the same sleeping timer. A tail spends most of a dead daemon's lifetime
+  // inside this sleep, so that is the state a human interrupts.
   let stopped = false;
   let attempt: AbortController | null = null;
+  let wakeBackoff: (() => void) | null = null;
   const stop = (exitCode: number) => {
     stopped = true;
     code = exitCode;
     attempt?.abort();
+    wakeBackoff?.();
   };
+
+  /** Sleep, but return AT ONCE if the tail is stopped meanwhile. */
+  const backoff = (ms: number): Promise<void> =>
+    new Promise<void>((resolveSleep) => {
+      if (stopped) return resolveSleep();
+      const finish = () => {
+        clearTimeout(timer);
+        wakeBackoff = null;
+        resolveSleep();
+      };
+      const timer = setTimeout(finish, ms);
+      wakeBackoff = finish;
+    });
 
   const onSignal = () => stop(0);
   const useSignals = opts.signals !== false;
@@ -313,6 +367,11 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
   const emit = (line: string) => {
     out.write(`${line}\n`);
   };
+  /** Every diagnostic the client produces goes here and NOWHERE else, so a
+   *  caller parsing our stdout never meets a note about our stdout. */
+  const note = (line: string | null | undefined) => {
+    if (line !== null && line !== undefined) err.write(`${line}\n`);
+  };
 
   try {
     while (!stopped) {
@@ -325,7 +384,7 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       if (base === null) {
         const verdict = opts.onUnresolved?.({ everResolved, everConnected }) ?? "retry";
         if (verdict === "stop") return code;
-        await sleep(delay);
+        await backoff(delay);
         delay = Math.min(delay * 2, retry.maxMs);
         continue;
       }
@@ -354,11 +413,12 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       let res: Response;
       try {
         res = await fetch(url, { signal: controller.signal });
-      } catch {
+      } catch (e) {
         if (watchdog !== null) clearTimeout(watchdog);
         attempt = null;
         if (stopped) break;
-        await sleep(delay);
+        note(opts.onDisconnect?.({ cause: "connect-failed", error: e }));
+        await backoff(delay);
         delay = Math.min(delay * 2, retry.maxMs);
         continue;
       }
@@ -367,23 +427,28 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
         if (!res.ok) {
           // May throw — a typed refusal is a usage error, not a blip.
           await opts.onHttpError?.(res);
-          await sleep(delay);
+          // ⛔ CANCEL THE BODY BEFORE LOOPING. An unread response body holds a
+          // stream open, and this branch runs once per failed attempt for as
+          // long as the daemon is unhappy — which is exactly the long-running
+          // case. The hook may already have read it; cancel is a no-op then.
+          await res.body?.cancel().catch(() => {});
+          note(opts.onDisconnect?.({ cause: "http", status: res.status }));
+          await backoff(delay);
           delay = Math.min(delay * 2, retry.maxMs);
           continue;
         }
         if (!res.body) {
           // ⛔ A 200 WITH NO BODY MUST GROW THE BACKOFF like every other failed
           // attempt. One spell split this guard from its sibling and the second
-          // half lost the growth line, which is a 250ms reconnect storm at a constant
-          // interval.
-          await sleep(delay);
+          // half lost the growth line — a reconnect storm at a constant 250ms.
+          note(opts.onDisconnect?.({ cause: "no-body", status: res.status }));
+          await backoff(delay);
           delay = Math.min(delay * 2, retry.maxMs);
           continue;
         }
 
         everConnected = true;
         firstConnect = false;
-        delay = retry.initialMs; // reset on a successful open
         resetWatchdog();
 
         const reader = res.body.getReader();
@@ -394,12 +459,26 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
           let chunk: Awaited<ReturnType<typeof reader.read>>;
           try {
             chunk = await reader.read();
-          } catch {
+          } catch (e) {
             // Watchdog abort, caller abort, or a dropped connection. All three
             // mean the same thing here: this attempt is over, reconnect below.
+            if (!stopped) note(opts.onDisconnect?.({ cause: "stream-error", error: e }));
             break;
           }
-          if (chunk.done) break;
+          if (chunk.done) {
+            if (!stopped) note(opts.onDisconnect?.({ cause: "stream-end" }));
+            break;
+          }
+          // ⛔ THE BACKOFF RESETS ON THE FIRST BYTE, NOT ON A SUCCESSFUL OPEN —
+          // and that is WIDER than the defect it was written for. B5 is
+          // recorded as "a 200 with no body sleeps without growing the
+          // backoff"; resetting at the open has the same shape for ANY
+          // connection that is accepted and then yields nothing, which is what
+          // a daemon mid-restart does. Driven: reset-at-open gives a constant
+          // 41ms reconnect against a server that accepts and closes; reset-at-
+          // first-byte gives 40, 80, 160. A byte is the only evidence the
+          // daemon is actually talking to us.
+          delay = retry.initialMs;
           // ⛔ BEFORE FRAME PARSING. A keepalive comment carries no data and is
           // discarded when data frames are selected below, but it is the proof the socket is
           // alive — feeding the watchdog only on DATA aborts every healthy but
@@ -411,15 +490,14 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
             const block = buf.slice(0, sep);
             buf = buf.slice(sep + 2);
             const { frame, comments } = parseSseFrame(block);
-            for (const text of comments) opts.onComment?.(text);
+            for (const text of comments) note(opts.onComment?.(text));
             if (!frame) continue;
 
             let ev: Ev;
             try {
               ev = JSON.parse(frame.data) as Ev;
             } catch (e) {
-              const line = opts.onMalformed?.(frame, e) ?? null;
-              if (line !== null) emit(line);
+              note(opts.onMalformed?.(frame, e));
               continue;
             }
 
@@ -436,7 +514,7 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
             }
 
             // ⛔ THE CURSOR ADVANCES ON EVERY EVENT, INCLUDING A FILTERED ONE.
-            // A scope filter is about what the CALLER reads, never about what
+            // A scope predicate is about what the CALLER reads, never about what
             // the daemon has delivered; advancing only on emitted events makes
             // every reconnect re-request the filtered ones forever.
             const n = opts.cursorOf?.(ev);
@@ -460,7 +538,15 @@ export async function tailEvents<Ev>(opts: TailOptions<Ev>): Promise<number> {
       }
 
       if (stopped) break;
-      await sleep(delay);
+      // ⛔ AND THE GROWTH LINE BELONGS HERE TOO. Every `continue` above grows
+      // the delay; the path that falls through — a connection that OPENED and
+      // then ended — did not, in any of the seven hand-written loops. Against a
+      // daemon that accepts and immediately closes, that is a reconnect at a
+      // constant 250ms for as long as it stays sick, which is B5's shape
+      // reached by a different door. The reset on the first byte (above) is
+      // what keeps this from slowing a healthy tail down.
+      await backoff(delay);
+      delay = Math.min(delay * 2, retry.maxMs);
     }
     return code;
   } finally {

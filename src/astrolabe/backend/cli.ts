@@ -71,6 +71,41 @@ function daemonCwd(): string {
 const ASTROLABE_HOME = process.env.ASTROLABE_HOME ?? join(homedir(), ".astrolabe");
 const PORT_FILE = join(ASTROLABE_HOME, "daemon.port");
 
+// ── the tail watchdog, DERIVED FROM THE DAEMON'S OWN HEARTBEAT ──────────────
+//
+// ⛔ A CONSTANT HERE WOULD BE A CONSTANT DECOUPLED FROM THE THING IT WATCHES.
+// The watchdog aborts a connection that has said nothing for `TAIL_IDLE_MS`;
+// the only thing keeping a quiet connection alive is the daemon's `: hb`
+// comment. So the two numbers are ONE invariant — watchdog > heartbeat, with
+// room for missed beats — and a hard-coded 45s satisfied it only at the
+// daemon's DEFAULT heartbeat.
+//
+// Measured: `ASTROLABE_HEARTBEAT_MS` is env-tunable and clamped only to half
+// the idle timeout, a ceiling of 127.5s at defaults, so any value above 45,000
+// put the tail in a permanent abort/reconnect cycle — reconnects at +47.4s,
+// +92.6s and +137.9s against a healthy but slow-beating daemon. It was harmless
+// only because `PRESENCE_DEBOUNCE_MS` happened to absorb the churn, which is a
+// third constant with no relationship to either.
+//
+// ⚠ THE TWO EXPRESSIONS BELOW MIRROR `scripts/server.ts:135-142` BY HAND, and
+// that is duplication with its eyes open: the CLI cannot import the daemon
+// (that would drag the whole server graph into `dist/cli.js`). It is exactly
+// the shape Phase 1b's shared spine should collapse into one exported
+// constant. Until then, an edit there is an edit here.
+const IDLE_TIMEOUT_SEC = Math.max(
+  1,
+  Math.min(255, Number.parseInt(process.env.ASTROLABE_IDLE_TIMEOUT ?? "255", 10) || 255),
+);
+const SSE_HEARTBEAT_MS = Math.min(
+  Number.parseInt(process.env.ASTROLABE_HEARTBEAT_MS ?? "10000", 10) || 10000,
+  Math.max(500, Math.floor((IDLE_TIMEOUT_SEC * 1000) / 2)),
+);
+// Three missed beats. ⚠ IT MUST STAY WELL ABOVE THE HEARTBEAT: holding the
+// connection open IS `join`'s presence signal, so every watchdog fire flaps a
+// card in a human's view. It still wants a watchdog — a wedged half-open socket
+// shows a card as permanently present, which is the worse lie.
+const TAIL_IDLE_MS = SSE_HEARTBEAT_MS * 3;
+
 // Failures leave stdout empty and put ONE JSON envelope on stderr — the same
 // machine shape as the data path, so a piped caller parses the error instead of
 // scraping prose. THE ENVELOPE, THE TAXONOMY AND THE EXIT CODES ARE NOW SHARED
@@ -239,13 +274,8 @@ async function streamEvents(opts: {
     }),
     accept: (ev) => inScope(ev) && !(opts.self !== undefined && ev.by === opts.self),
     terminal: (ev) => ev.type === "closed",
-    // The daemon heartbeats every 15s, so this is three missed beats. ⚠ IT MUST
-    // STAY WELL ABOVE THAT: holding the connection open IS `join`'s presence
-    // signal, so every watchdog fire flaps a card in a human's view. It still
-    // wants a watchdog — a wedged half-open socket shows a card as permanently
-    // present, which is the worse lie.
-    idleMs: 45_000,
-    onComment: () => process.stderr.write(": astrolabe-keepalive\n"),
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": astrolabe-keepalive",
   });
 }
 

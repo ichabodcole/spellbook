@@ -10,7 +10,7 @@
  *
  * ⛔ THE KIT IS A LEAF. Nothing here may import out of `src/kit/` — not a spell,
  * not a surface, not a backend. That is ward 2's assertion, not a convention,
- * and it is what makes the kit safe to inline into any spell's bundle.
+ * and it is what makes the kit safe to bundle into any spell's artifact.
  *
  * Deliberately dependency-free and deliberately dull: it is bundled INTO each
  * spell's emitted CLI (Contract 4's built-backend amendment), so anything it

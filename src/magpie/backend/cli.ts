@@ -99,6 +99,24 @@ function readPluginVersion(): string | null {
 }
 const PLUGIN_VERSION = readPluginVersion();
 
+// ⛔ THE WATCHDOG IS DERIVED FROM THE DAEMON'S HEARTBEAT, NOT CHOSEN. The only
+// thing keeping a quiet SSE connection alive is the daemon's `: hb` comment, so
+// the two numbers are one invariant: the watchdog must clear several missed
+// beats or a healthy-but-idle tail reconnects forever. magpie's daemon
+// heartbeats on a LITERAL 15,000 ms with no env override
+// (`plugins/spellbook/skills/magpie/scripts/server.ts`, inside `sseResponse`),
+// so three missed beats is 45s.
+//
+// ⚠ Mirrored by hand: the CLI cannot import the daemon without dragging the
+// whole server graph into `dist/cli.js`. An edit there is an edit here, and
+// Phase 1b's shared spine is where the pair should become one constant.
+const SSE_HEARTBEAT_MS = 15_000;
+const TAIL_IDLE_MS = SSE_HEARTBEAT_MS * 3;
+
+// Without a watchdog, `await reader.read()` parks forever on a half-open socket
+// after laptop sleep, a NAT rebind or a SIGKILLed daemon — and the tail looks
+// alive while receiving nothing.
+
 type Session = {
   url: string;
   port: number;
@@ -435,11 +453,8 @@ async function cmdTail(session: string | undefined, sinceArg: number): Promise<n
     since: sinceArg,
     cursorOf: (ev) => ev.id,
     terminal: (ev) => ev.type === "closed",
-    // Three missed 15s daemon heartbeats. Without it, `await reader.read()`
-    // parks forever on a half-open socket after laptop sleep, a NAT rebind or a
-    // SIGKILLed daemon — and the tail looks alive while receiving nothing.
-    idleMs: 45_000,
-    onComment: () => process.stderr.write(": magpie-keepalive\n"),
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": magpie-keepalive",
   });
 }
 

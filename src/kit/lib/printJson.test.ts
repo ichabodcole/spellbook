@@ -154,7 +154,7 @@ test("BYTE-IDENTICAL ON THE WIRE — both SHIPPED CLIs, driven as processes, emi
       stdout: "pipe",
       stderr: "pipe",
       // An explicit stdin so a stdin-defaulting verb can never inherit the test
-      // runner's never-EOF pipe and block forever.
+      // runner's never-EOF pipe and hang forever.
       stdin: new Response("").body,
     });
     const out = await new Response(proc.stdout).text();

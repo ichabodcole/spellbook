@@ -153,3 +153,151 @@ keepalives feeding the watchdog, first-connect-only grounding (as a `query`
   `MIND_MAPPER_TAIL_RETRY_MS` → `retry.initialMs`. Neither astrolabe nor magpie
   took an env override for those; a spell whose tests drive a short window will
   need one, and it should be that spell's env var, not the kit's.
+
+---
+
+# Post-verification round
+
+Written after the orchestrator's verification pass. The verifier built its own
+B1 instrument and agreed; behaviour preservation was checked byte-for-byte on
+both spells. Seven things came back, and what follows is what changed and what
+was learned by fixing them.
+
+## ⛔ The regression the phase nearly shipped: Ctrl-C during backoff
+
+**Measured: 0.13s before, 2.80s after, and hammering Ctrl-C did not help.**
+
+Installing a SIGINT listener SUPPRESSES the runtime's default terminate, so from
+that moment whatever the client does on a signal is the WHOLE of what happens.
+The client aborted the in-flight attempt — and every backoff was a bare
+`setTimeout` with nothing wired to it, so a signal arriving during the sleep did
+nothing at all until the timer ran out. The ceiling is `retry.maxMs`, and repeat
+signals all hit the same sleeping timer, which is why hammering was useless.
+
+⭐ **A tail spends most of a dead daemon's lifetime inside that sleep**, so it
+is precisely the state a human interrupts. Fixed by making the backoff wakeable
+from `stop()`. Re-measured the way the verifier measured it, against a session
+pointer aimed at a dead port, three seconds in:
+
+|                                                    | SIGINT → process exit |
+| -------------------------------------------------- | --------------------- |
+| control (a bare bun process with a SIGINT handler) | 0.12s                 |
+| magpie, before                                     | 2.80s                 |
+| magpie, after (source)                             | 0.117s                |
+| magpie, after (built `dist/cli.js`, twice)         | 0.129s · 0.124s       |
+
+**The lesson for the roll:** taking over a signal is not a neutral act. Any
+`await` a converged client can be sitting in must be abortable, or the client
+has made the process LESS interruptible than the hand-written loop it replaced.
+
+## `err` was declared and never read, and finishing it answered the grapevine question
+
+The orchestrator ruled the design's trip-wire is not tripped by a diagnostics
+sink: the four named hatches are BEHAVIOURAL — they change what the client does
+— while a sink changes only what the caller REPORTS, and `err` was in the
+signature for exactly that. So `onDisconnect` is not a fifth hatch, and
+grapevine does not keep its own loop.
+
+Wired as ruled, and it went further than the ruling required, because once there
+is a diagnostics sink the client must not be writing diagnostics anywhere else:
+
+- `onComment` now RETURNS a line instead of writing one. Both adopters were
+  writing their keepalive sentinel straight to `process.stderr` from inside a
+  callback — which works, and means the client cannot be tested with a fake
+  `err`, and means `out`/`err` are not actually the two streams.
+- `onMalformed`'s returned line goes to `err`, not `out`. It is a note ABOUT the
+  stream; stdout carries data. A spell that wants the unparsed line on stdout
+  (mind-mapper does) writes it from inside the hook and returns null — stated in
+  the hook's doc.
+- `onDisconnect` carries `cause` + `error` + `status`, which covers all four of
+  grapevine's lines: `connect-failed`, `http`, `stream-error`, `stream-end`.
+
+There is now a cell asserting that stdout receives ONE data line while every
+sentinel, malformed note and disconnect note lands on `err` — the property the
+adopters' JSONL contract actually rests on.
+
+## ⛔ B5 is wider than its write-up, and the write-up's branch is unreachable
+
+Two findings from writing the cell the verifier asked for.
+
+**1. `!res.body` cannot be reached from a Bun client.** Measured: Bun's `fetch`
+hands the caller an empty-but-PRESENT body for
+`new Response(null, {status: 200})` AND for a 204. So the guard B5 is written
+about survives only as a types-level safety net, and the LIVE path for an empty
+response is the read loop ending immediately.
+
+**2. The reset was in the wrong place, in all seven loops.**
+`delay = retry.initialMs` sat after a successful OPEN. An open that yields
+nothing — exactly what a daemon mid-restart does — therefore reset the backoff
+every time: a reconnect storm at a constant interval, which is B5's shape
+reached through a different door. Driven: reset-at-open gives a constant 41ms
+against a server that accepts and closes; reset-at-first-BYTE gives 40, 80, 160.
+
+**And the fall-through path never grew the delay at all.** Every `continue`
+branch doubled it; the path where a connection opened and then ended just slept.
+Both are fixed, and they are a pair: the reset must move to the first byte or
+growing the fall-through would slow a healthy tail that reconnects normally.
+
+**So B5 is retired more thoroughly than claimed, and the claim was too narrow.**
+
+## The watchdog was a constant decoupled from the thing it watches
+
+`idleMs: 45_000` was hard-coded in both CLIs. astrolabe's daemon heartbeat is
+`ASTROLABE_HEARTBEAT_MS`, env-tunable and clamped only to half the idle timeout
+— a ceiling of 127.5s at defaults. Any value above 45,000 put the tail in a
+permanent abort/reconnect cycle; the verifier drove it and saw reconnects at
++47.4s, +92.6s and +137.9s against a healthy daemon. It was harmless only
+because `PRESENCE_DEBOUNCE_MS` happened to absorb the churn — a third constant
+with no relationship to either.
+
+Both CLIs now DERIVE `idleMs` from the same heartbeat expression their own
+daemon uses (astrolabe mirrors the clamp; magpie's daemon heartbeats on a
+literal 15,000 with no override). The mirroring is by hand and says so: a CLI
+cannot import its daemon without dragging the whole server graph into
+`dist/cli.js`. **That pair is a Phase 1b deliverable** — one exported constant,
+daemon-side, is exactly what the shared spine is for.
+
+## Record, do not fix
+
+**The epoch gap is now OBSERVABLE in astrolabe, and it was not before.** After a
+daemon restart the tail resumes at `since=<last seen>` against a daemon whose
+event ids restart at 1, so the new daemon's early frames — its `ready` at id 1 —
+are never delivered. This is not a regression: the old tail delivered NOTHING
+after a restart, because it was still dialling a dead port. **B1's repair is
+what makes the gap reachable for the first time.** It is the design's named
+daemon-side dependency (a daemon must stamp an epoch before `epochOf` can do
+anything), and it is a Phase 1b input: astrolabe's event log needs an epoch, and
+then astrolabe's tail gets `epochOf`/`onEpochChange` for free.
+
+## Three things the adoption playbook MUST say
+
+Written here because the next five spells inherit them.
+
+1. **DELETE the spell's own signal handler.** `tailEvents` installs its own and
+   removes them on return, but it does NOT remove the caller's. A spell that
+   adopts the client and keeps its `process.on("SIGINT", () => process.exit(0))`
+   still discards undrained stdout on Ctrl-C — B3 survives the adoption, and
+   silently, because the two handlers both run and the exiting one wins.
+2. **DERIVE `idleMs` from that spell's own daemon heartbeat**, never copy
+   45,000. The number is meaningless except as a multiple of the heartbeat.
+3. **`exit-site-inventory` coverage goes to zero for an adopter**, and will for
+   all seven. That is correct — the shared client contains no `process.exit(` by
+   construction — but it must be recorded in the ward's prose each time rather
+   than showing up as eight silently deleted rows.
+
+## The ward, fixed rather than noted
+
+The kit-prose ward now has a BARE half: a closed, enumerable list of Tailwind's
+single-word utilities, cut out of the text by the same extractor the structural
+half uses. The two halves disagree about method — derived vocabulary there, list
+here — and that is a property of the mechanism: `bg-teal-500` is unbounded by
+construction, single-word utilities are not.
+
+It was calibrated by the tree rather than by a fixture: switched on, it
+immediately red on a live occurrence in `src/kit/ui/Dot.tsx` that predates this
+branch. Six kit files were reworded (`inline` → bundle, `filter` → predicate,
+`invisible` → opaque, `truncate` → cut short, `block` → hang, `fixed` →
+repaired), including two outside this phase's modules. **The rebuild after that
+is byte-identical for every spell's CSS** — the occurrences that were harmless
+stayed harmless — so the ward is now stricter than the mechanism in exactly the
+way its structural half already is.

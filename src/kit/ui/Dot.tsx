@@ -30,8 +30,9 @@ import { cn } from "../lib/cn";
  * imago, in both palettes), because `edge` is the only shared token whose value
  * genuinely differs between the two spells — they happen to agree on tertiary
  * ink. But `box-sizing: border-box` means a 1px rim shrinks an 8px dot's
- * visible fill to 6px on two SHIPPED surfaces, and that is something a human
- * SEES. Measured side by side and visible. Restoring it is one line here; the
+ * apparent fill to 6px on two SHIPPED surfaces, and that is something a human
+ * SEES. Measured side by side, and the difference shows. Restoring it is one
+ * line here; the
  * override proof meanwhile lives mechanically in the ward's divergence cell,
  * which compares the emitted token values and needs no rendering at all.
  *
@@ -67,7 +68,7 @@ export function Dot({
   title,
 }: {
   /** Fill class — the caller's status vocabulary. Defaults to the L0 rim colour
-   *  so an unspecified dot reads as "nothing to report" rather than invisible.
+   *  so an unspecified dot reads as "nothing to report" rather than vanishing.
    *  `ink-faint` is the kit's own L0 default and imago does not define it —
    *  which is precisely what makes the kit's stylesheet load-bearing there. */
   tone?: string;
