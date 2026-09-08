@@ -121,3 +121,64 @@ source and cannot import `src/kit/` until they build. So Phase 1 splits:
 **Not taken:** treating `build.ts`'s comment as a closed door and scoping the
 project around a CLI-only convergence. That would have forfeited five of the
 eight spine concerns permanently, which is exactly what D2 rejected.
+
+## D7 · The shared modules live at `src/kit/wire/`
+
+**Decided:** implementer, 2026-09-08, Phase 1a, under D5's explicit deferral
+("decide the directory from the modules, not before them").
+
+Two modules landed: the SSE tail client and the CLI error contract. Read
+together they are not "CLI-side helpers" — they are **the two halves of what a
+caller can observe**. `tailEvents` decides what arrives on stdout, in what
+order, on which stream, and with which exit code; `die`/`EXIT_FOR` decides what
+a failure looks like and which number the shell sees. Change either and an agent
+observes something different and the spell needs an acc re-grade. Change `cn`
+and nothing observable moves.
+
+That is exactly D5's contract-versus-utility cut, and the house had already
+named the category without noticing: `printJson.ts`'s own header calls itself
+"the house's one-line JSON emitter — imported by every spell that **speaks the
+agent wire**." So: **`src/kit/wire/`** — the modules that define what a caller
+observes. `src/kit/lib/` keeps what is left, which is the honest residual.
+
+**Not taken:**
+
+- **`src/kit/cli/`** — audience-based, and audience is precisely the residual
+  category D5 warned about: it is how `lib/` ended up holding a backend-only
+  emitter beside a surface-only helper. It is also already wrong: the tail
+  client is a protocol client, and a daemon-side twin would have no home under
+  it.
+- **Leave them in `src/kit/lib/`** — cheapest, and it defers the question a
+  second time. Rejected because Phase 2 lands the daemon-side spine, and a
+  residual directory with ten modules in it is a decision nobody will make
+  later.
+- **Move `printJson.ts` into `wire/` in this phase** so the category is complete
+  on day one. It belongs there — it is the third inhabitant by the same test —
+  but its path is spelled in eight prose locations across the investigations,
+  the seams doc and the archived spell-kit sprints, and this phase's scope is
+  two modules. **Stated as debt, not overlooked:** `printJson` moves to
+  `src/kit/wire/` when a phase can carry its references with it.
+
+## D8 · `die` throws instead of exiting, and the tail client returns a code
+
+**Decided:** implementer, 2026-09-08, Phase 1a. Not in the drafted signature;
+found while adopting.
+
+The convergence design already ruled that the tail client returns an exit code
+rather than calling `process.exit` (its decision 2). Adopting it exposed that
+`die` had the same problem for the same reason: both were places the process
+could end from three frames down, and Bun's stdout is asynchronous on a pipe, so
+both could truncate their own output. The two spells' `main` now funnel a thrown
+`CliError` into `process.exitCode` plus a natural return — the one shape the
+house has measured as safe, and the shape glamour and mind-mapper each reached
+independently at their acc L0 passes.
+
+**The cost, named:** a `die` inside a `try` whose `catch` swallows is now a
+silent continue rather than an exit. Every call site in both spells was read
+before the change (astrolabe 16, magpie 30); all are outside a `try` or inside a
+`catch`, from which the throw propagates. **A spell adopting this contract must
+do that audit**, and Phase 2's playbook must say so.
+
+**Not taken:** _keep the exiting `die` in the kit_ — smaller diff, no audit, and
+it would have put the house's only sanctioned exit-truncation hazard inside the
+module every spell is about to inline.
