@@ -85,3 +85,113 @@ nothing observable moves.
 
 **Not taken:** _settle the shape up front_ so nothing lands in the wrong place —
 rejected as deciding on priors rather than on evidence.
+
+## D6 · The daemon can build — one bundler flag, measured
+
+**Found:** orchestrator, 2026-09-08, in Phase 0. **Not a ruling; a measurement
+that unblocks D2.**
+
+`src/build.ts:95` refused the daemon: _"CLIs ONLY. A server does bundle, but
+drags the entire surface graph into the backend artifact; that is unruled and
+out of scope. Do not add server.ts."_ Measured, that is accurate about the
+default and not the whole story:
+
+```
+bun build .../astrolabe/scripts/server.ts --target=bun --external '*/surface/index.html'
+  → Bundled 2 modules in 4ms · server.js 20.49 KB
+```
+
+Without the external it fails compiling `src/astrolabe/surface/styles.css`
+(`@import "tailwindcss" source(none)`), because the bundler follows the daemon's
+dev-mode `await import(…/surface/index.html)`. The external is safe: that import
+sits behind `mode === "dev" ? … : undefined` and is dead code in a release
+artifact — which `server.ts:518-519` independently states, having been written
+for a different reason.
+
+**Consequence for the phase plan.** D1's "zero migration cost" holds only for
+the **CLI-side** modules; astrolabe's and magpie's servers still ship as unbuilt
+source and cannot import `src/kit/` until they build. So Phase 1 splits:
+
+- **1a (now)** — the CLI-side modules, adopted by two spells that already build.
+  Genuinely zero migration.
+- **1b (next)** — bring those two servers into the build, then adopt the
+  daemon-side modules. Cheaper than a full spell migration, because half the
+  infrastructure already exists.
+
+**Not taken:** treating `build.ts`'s comment as a closed door and scoping the
+project around a CLI-only convergence. That would have forfeited five of the
+eight spine concerns permanently, which is exactly what D2 rejected.
+
+## D7 · The shared modules live at `src/kit/wire/`
+
+**Decided:** implementer, 2026-09-08, Phase 1a, under D5's explicit deferral
+("decide the directory from the modules, not before them").
+
+Two modules landed: the SSE tail client and the CLI error contract. Read
+together they are not "CLI-side helpers" — they are **the two halves of what a
+caller can observe**. `tailEvents` decides what arrives on stdout, in what
+order, on which stream, and with which exit code; `die`/`EXIT_FOR` decides what
+a failure looks like and which number the shell sees. Change either and an agent
+observes something different and the spell needs an acc re-grade. Change `cn`
+and nothing observable moves.
+
+That is exactly D5's contract-versus-utility cut, and the house had already
+named the category without noticing: `printJson.ts`'s own header calls itself
+"the house's one-line JSON emitter — imported by every spell that **speaks the
+agent wire**." So: **`src/kit/wire/`** — the modules that define what a caller
+observes. `src/kit/lib/` keeps what is left, which is the honest residual.
+
+**Not taken:**
+
+- **`src/kit/cli/`** — audience-based, and audience is precisely the residual
+  category D5 warned about: it is how `lib/` ended up holding a backend-only
+  emitter beside a surface-only helper. It is also already wrong: the tail
+  client is a protocol client, and a daemon-side twin would have no home under
+  it.
+- **Leave them in `src/kit/lib/`** — cheapest, and it defers the question a
+  second time. Rejected because Phase 2 lands the daemon-side spine, and a
+  residual directory with ten modules in it is a decision nobody will make
+  later.
+- **Move `printJson.ts` into `wire/` in this phase** so the category is complete
+  on day one. It belongs there — it is the third inhabitant by the same test —
+  but its path is spelled in eight prose locations across the investigations,
+  the seams doc and the archived spell-kit sprints, and this phase's scope is
+  two modules. **Stated as debt, not overlooked:** `printJson` moves to
+  `src/kit/wire/` when a phase can carry its references with it.
+
+## D8 · `die` throws instead of exiting, and the tail client returns a code
+
+**Decided:** implementer, 2026-09-08, Phase 1a. Not in the drafted signature;
+found while adopting.
+
+The convergence design already ruled that the tail client returns an exit code
+rather than calling `process.exit` (its decision 2). Adopting it exposed that
+`die` had the same problem for the same reason: both were places the process
+could end from three frames down, and Bun's stdout is asynchronous on a pipe, so
+both could truncate their own output. The two spells' `main` now funnel a thrown
+`CliError` into `process.exitCode` plus a natural return — the one shape the
+house has measured as safe, and the shape glamour and mind-mapper each reached
+independently at their acc L0 passes.
+
+**The cost, named — and the criterion stated correctly, because Phase 2's
+playbook inherits this sentence.** A `die` that is REACHABLE from inside a `try`
+whose `catch` swallows is now a silent continue rather than an exit.
+
+⛔ **REACHABILITY, NOT CALL SITES.** The first draft of this entry said "every
+call site is outside a `try` or inside a `catch`", which is a weaker claim and
+misses the defect class entirely: a HELPER that dies, invoked from inside a
+swallowing `catch`, has its `die` at a site that looks perfectly safe. The audit
+must follow the call graph, not grep for `die(`.
+
+Audited that way for both spells — 15 sites in astrolabe, 29 in magpie, plus the
+helpers reachable from them (`cmd`, `requireSession`, `readSession`,
+`ensureDaemon`). Every path either lies outside a `try` or sits inside a
+`catch`, from which the throw propagates. Two of magpie's sit in a `catch` and
+depend on `die` still being `never` for definite assignment; it is.
+
+**A spell adopting this contract must do that audit**, and Phase 2's playbook
+must say so in those words.
+
+**Not taken:** _keep the exiting `die` in the kit_ — smaller diff, no audit, and
+it would have put the house's only sanctioned exit-truncation hazard inside the
+module every spell is about to inline.

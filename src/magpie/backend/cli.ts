@@ -49,6 +49,8 @@ import { newId } from "../../../plugins/spellbook/skills/magpie/scripts/reduce";
 import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
 import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
 import { printJson } from "../../kit/lib/printJson";
+import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { tailEvents } from "../../kit/wire/tailEvents";
 
 // Swallow EPIPE (a downstream `head`/Monitor closing our stdout shouldn't crash).
 process.stdout.on("error", (e: NodeJS.ErrnoException) => {
@@ -97,6 +99,24 @@ function readPluginVersion(): string | null {
 }
 const PLUGIN_VERSION = readPluginVersion();
 
+// ⛔ THE WATCHDOG IS DERIVED FROM THE DAEMON'S HEARTBEAT, NOT CHOSEN. The only
+// thing keeping a quiet SSE connection alive is the daemon's `: hb` comment, so
+// the two numbers are one invariant: the watchdog must clear several missed
+// beats or a healthy-but-idle tail reconnects forever. magpie's daemon
+// heartbeats on a LITERAL 15,000 ms with no env override
+// (`plugins/spellbook/skills/magpie/scripts/server.ts`, inside `sseResponse`),
+// so three missed beats is 45s.
+//
+// ⚠ Mirrored by hand: the CLI cannot import the daemon without dragging the
+// whole server graph into `dist/cli.js`. An edit there is an edit here, and
+// Phase 1b's shared spine is where the pair should become one constant.
+const SSE_HEARTBEAT_MS = 15_000;
+const TAIL_IDLE_MS = SSE_HEARTBEAT_MS * 3;
+
+// Without a watchdog, `await reader.read()` parks forever on a half-open socket
+// after laptop sleep, a NAT rebind or a SIGKILLed daemon — and the tail looks
+// alive while receiving nothing.
+
 type Session = {
   url: string;
   port: number;
@@ -107,58 +127,20 @@ type Session = {
 
 // ── error envelope ──────────────────────────────────────────────────
 //
+// ⛔ THE TAXONOMY, THE EXIT CODES, THE ENVELOPE AND `die` NOW LIVE ONCE, at
+// `src/kit/wire/errors.ts`. magpie held the fullest of the house's four copies
+// and it is the one the shared contract was drawn from, byte for byte — so
+// nothing a caller can observe about a magpie failure changed when this moved.
+// The one behavioural change is that `die` THROWS rather than exiting, and
+// `main` reports it; see the funnel there.
+//
+// What it says, kept here because this is where a reader of magpie looks:
 // magpie declares `defaultOutput: "json"`, and that declaration is about EVERY
 // stream, not just the happy path. A caller that gets one JSON document from a
 // verb and prose from a failure has to parse two formats to use one tool — and
 // the failure is the case where it can least afford to guess. So a failure is
 // ONE JSON document on stderr, and stdout stays empty because stdout carries
 // data and a failure has none.
-//
-// `kind` is the contract; `message` is presentation. Rewording a message must
-// never break a caller, which it does the moment anyone matches on prose.
-// Exit codes follow the acc taxonomy: usage errors are the caller's to fix by
-// changing the command, internal faults are not, and collapsing them into one
-// number leaves an agent with nothing to route on.
-type ErrKind = "usage" | "internal" | "not_found" | "conflict";
-
-const EXIT_FOR: Record<ErrKind, number> = {
-  usage: 2, // the caller can fix this by changing the command
-  internal: 1, // magpie broke; the invocation may have been fine
-  not_found: 5, // the named thing does not exist
-  conflict: 6, // a precondition failed
-};
-
-// The verb under execution, so the envelope can name it. Set once by main().
-let CURRENT_COMMAND: string | null = null;
-
-function errorEnvelope(
-  kind: ErrKind,
-  message: string,
-  extra?: { hint?: string; choices?: string[] },
-): string {
-  return `${JSON.stringify({
-    ok: false,
-    error: {
-      kind,
-      exit_code: EXIT_FOR[kind],
-      // Only rate limits are worth retrying unchanged; nothing magpie raises is.
-      retryable: false,
-      message,
-      ...(extra?.hint ? { hint: extra.hint } : {}),
-      ...(extra?.choices ? { choices: extra.choices } : {}),
-    },
-    meta: { command: CURRENT_COMMAND },
-  })}\n`;
-}
-
-function die(
-  msg: string,
-  kind: ErrKind = "usage",
-  extra?: { hint?: string; choices?: string[] },
-): never {
-  process.stderr.write(errorEnvelope(kind, msg, extra));
-  process.exit(EXIT_FOR[kind]);
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -423,104 +405,57 @@ async function cmdState(session?: string, full = false) {
   printJson(data);
 }
 
-async function cmdTail(session: string | undefined, sinceArg: number) {
-  let since = sinceArg;
-  let delay = 250;
-  let stopped = false;
+/**
+ * The event tail — one call into the house's shared SSE client
+ * (`src/kit/wire/tailEvents.ts`), where the reconnect loop, the spec-correct
+ * frame parser, the backoff, the idle watchdog and the drained exit live once
+ * for every spell.
+ *
+ * ⛔ `resolve` RE-READS THE SESSION POINTER ON EVERY ATTEMPT, which is what
+ * magpie's own loop did and what the shared client makes structural: the daemon
+ * binds an ephemeral port, so a captured base is a tail that survives exactly
+ * one daemon.
+ *
+ * The pin, the grounding anchor and the "our session went away" exit are all
+ * preserved verbatim: the FIRST resolved session is pinned for the life of the
+ * watch, the grounding line names that binding once, and a pointer that
+ * disappears AFTER we were bound ends the watch at 0 — a completed watch, not a
+ * failure. A pointer that never appeared keeps retrying.
+ */
+async function cmdTail(session: string | undefined, sinceArg: number): Promise<number> {
   let boundId = session;
   let grounded = false;
-  const stop = () => {
-    stopped = true;
-    process.exit(0);
-  };
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
 
-  while (!stopped) {
-    const s = readSession(boundId);
-    if (!s) {
-      if (grounded) process.exit(0); // our pinned session went away → done
+  return await tailEvents<{ id?: number; type?: string }>({
+    resolve: () => {
+      // readSession dies on a CORRUPT pointer and returns null only for a
+      // genuinely absent one — the ENOENT rule. A die here now throws, and the
+      // throw leaves the tail through main's funnel instead of exiting from
+      // three frames down inside a reconnect loop.
+      const s = readSession(boundId);
+      if (!s) return null;
+      if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+      if (!grounded) {
+        grounded = true;
+        // grounding anchor — parseable + visible in a Monitor; names the binding.
+        process.stdout.write(
+          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+        );
+      }
+      return `http://127.0.0.1:${s.port}`;
+    },
+    onUnresolved: ({ everResolved }) => {
+      if (everResolved) return "stop"; // our pinned session went away → done
       process.stderr.write("# no session yet, retrying…\n");
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!boundId) boundId = s.session_id; // pin to the first session we resolved
-    if (!grounded) {
-      grounded = true;
-      // grounding anchor — parseable + visible in a Monitor; names the binding.
-      process.stdout.write(
-        `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-      );
-    }
-    let res: Response;
-    try {
-      res = await fetch(`http://127.0.0.1:${s.port}/events?since=${since}`);
-    } catch {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!res.ok || !res.body) {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    delay = 250;
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch {
-        break;
-      }
-      if (chunk.done) break;
-      buf += dec.decode(chunk.value, { stream: true });
-      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
-        const block = buf.slice(0, sep);
-        buf = buf.slice(sep + 2);
-        const dataLines: string[] = [];
-        for (const line of block.split("\n")) {
-          if (line.startsWith(":")) {
-            process.stderr.write(": magpie-keepalive\n");
-            continue;
-          }
-          if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        const payload = dataLines.join("\n");
-        try {
-          const ev = JSON.parse(payload) as { id?: number; type?: string };
-          if (typeof ev.id === "number" && ev.id > since) since = ev.id;
-          if (ev.type === "closed") {
-            // P0f — SHAPE B: the drain callback rides THIS write, so it fires
-            // on this write's completion. NOT a trailing `write("", cb)` — a
-            // drain callback covers only its own write and is not a barrier
-            // (measured byte-for-byte as broken as no fix), and that is exactly
-            // the helper this write-then-exit shape invites.
-            //
-            // PER-SITE PRECONDITION, read at THIS site rather than carried over
-            // from a sibling: the exit sits inside `while (!stopped)` ->
-            // `while (true)` -> the frame loop, so `process.exitCode` + a
-            // natural return (shape D) does NOT leave the tail — it falls
-            // through and the loops go round again. The explicit `return` is
-            // what exits the loops; the callback is what drains. Both, for
-            // different reasons.
-            process.stdout.write(`${payload}\n`, () => process.exit(0));
-            stopped = true;
-            return;
-          }
-          process.stdout.write(`${payload}\n`);
-        } catch {
-          /* skip malformed frame */
-        }
-      }
-    }
-    await sleep(delay);
-  }
+      return "retry";
+    },
+    path: "/events",
+    since: sinceArg,
+    cursorOf: (ev) => ev.id,
+    terminal: (ev) => ev.type === "closed",
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": magpie-keepalive",
+  });
 }
 
 function cmdInfo(session?: string) {
@@ -1036,9 +971,30 @@ const HELP = `magpie — a standing review surface for extracting assets from a 
   (JSONL). Prose, liveness and diagnostics go to stderr. \`--full\`
   widens the state payload; it does not switch formats.`;
 
+/**
+ * The failure funnel. `die` THROWS a CliError now (the house's one error
+ * contract, `src/kit/wire/errors.ts`) instead of exiting from wherever it was
+ * called, so this is the ONE place a failure becomes an exit code — and the
+ * process still ends the one way the house sanctions, `process.exitCode` plus a
+ * natural return, which is what drains stdout on a pipe.
+ *
+ * ⛔ A NON-CliError IS RETHROWN, NEVER ENVELOPED. Reporting an unknown throw as
+ * a tidy taxonomy failure would lose the stack that says what actually broke.
+ * (`UsageError` is answered inside `dispatch`, where its choices list is.)
+ */
 async function main(argv: string[]): Promise<number> {
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
+}
+
+async function dispatch(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  CURRENT_COMMAND = verb ?? null;
+  setCurrentCommand(verb ?? null);
 
   // ROOT TOKENS FIRST, before any flag parsing. These are not verbs and they
   // carry no flags, so resolving them here keeps them out of every verb's set.
@@ -1093,8 +1049,12 @@ async function main(argv: string[]): Promise<number> {
       await cmdOpen(flags);
       break;
     case "tail":
-      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1);
-      break;
+      // The tail RETURNS its exit code (0 on `closed`, on a signal, or when the
+      // pinned session goes away) instead of exiting from inside its own loop.
+      return await cmdTail(
+        session,
+        typeof flags.since === "string" ? parseInt(flags.since, 10) : -1,
+      );
     case "state":
       await cmdState(session, flags.full === true);
       break;
