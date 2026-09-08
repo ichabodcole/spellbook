@@ -68,16 +68,18 @@ type Family = "A-drain" | "B-noemit" | "C-signal" | "D-die" | "E-terminal" | "F-
 /** The pinned inventory: relative path -> normalised source line -> family. */
 const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // A — remediated: the exit is the callback of the write it drains (sprint 02).
-  // astrolabe/backend/cli.ts LEFT THIS FAMILY on the backend-convergence Phase
-  // 1a branch, along with its B/C/D siblings below: its tail is now one call
-  // into `src/kit/wire/tailEvents.ts`, which RETURNS an exit code instead of
-  // exiting, and its `die` is one call into `src/kit/wire/errors.ts`, which
-  // THROWS. ZERO live exit sites remain in that CLI.
+  // astrolabe/backend/cli.ts AND magpie/backend/cli.ts LEFT THIS FAMILY on the
+  // backend-convergence Phase 1a branch, along with their B/C/D/F siblings
+  // below. Both tails are now one call into `src/kit/wire/tailEvents.ts`, which
+  // RETURNS an exit code instead of exiting, and both `die`s are one call into
+  // `src/kit/wire/errors.ts`, which THROWS. astrolabe has zero live exit sites
+  // left; magpie keeps exactly one (its module-level EPIPE guard, F-live).
   //
-  // ⛔ AND THAT MEANS THIS WARD NO LONGER SEES WHERE ASTROLABE ENDS. The shared
-  // client is under `src/kit/`, which this inventory does not walk, and it
-  // contains no `process.exit(` at all — by construction, which is the whole
-  // design. Nothing was hidden; there is nothing there to pin. The day the kit
+  // ⛔ AND THAT MEANS THIS WARD NO LONGER SEES WHERE THOSE TWO SPELLS END. The
+  // shared client is under `src/kit/`, which this inventory does not walk, and
+  // it contains no `process.exit(` at all — by construction, which is the whole
+  // design. Nothing was hidden; there is nothing there to pin. When the other
+  // five tails adopt, the same eight-row deletion repeats, and the day the kit
   // ever grows an exit is the day this walk must grow a third root.
   {
     file: "bounty/scripts/cli.ts",
@@ -94,11 +96,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
-  {
-    file: "magpie/backend/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
   // B — the no-emit sibling of an A site: nothing was written, so nothing can be undrained.
   { file: "bounty/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   // C — signal / shutdown. As of 2cc513d, ZERO of these are defects: the two
@@ -108,7 +105,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "glamour/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "magpie/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
@@ -144,10 +140,10 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // CliError and main() returns the taxonomy code (usage 2, internal 1,
   // not_found 5, conflict 6), so the drained-exit defect has no site to live in.
   { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
-  // magpie's die() picks its code from the acc exit-code taxonomy (usage 2,
-  // internal 1, not_found 5, conflict 6) rather than always 2 — same family and
-  // same one-short-write shape, variable code, as grapevine's below.
-  { file: "magpie/backend/cli.ts", text: "process.exit(EXIT_FOR[kind]);", family: "D-die" },
+  // magpie's die() left this family too: it now THROWS a CliError from
+  // `src/kit/wire/errors.ts` and `main` returns the taxonomy code — the same
+  // move glamour and mind-mapper made at their acc L0 passes, and the direction
+  // this inventory exists to push.
   // mind-mapper/scripts/cli.ts left this family entirely (acc L0 lane B): its
   // requireDaemon die became a thrown CliError that main() returns as an exit
   // code — zero live process.exit sites remain in that CLI, which is the
@@ -173,11 +169,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   },
   {
     file: "imago/scripts/cli.ts",
-    text: "if (grounded) process.exit(0); // our pinned session went away → done",
-    family: "F-live",
-  },
-  {
-    file: "magpie/backend/cli.ts",
     text: "if (grounded) process.exit(0); // our pinned session went away → done",
     family: "F-live",
   },
