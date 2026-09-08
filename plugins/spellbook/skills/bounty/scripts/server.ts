@@ -59,6 +59,8 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  renameSync,
+  rmSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -1541,9 +1543,31 @@ async function main(argv: string[]): Promise<number> {
     // command than the one that broke.
     restoreFailed,
   });
+  // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
+  // rather than absence. A bare writeFileSync is not atomic: a CLI reading
+  // while the daemon writes can observe a half-written pointer, and under the
+  // old best-effort read that surfaced as "no running session". Write beside
+  // the target and rename — rename within one directory is atomic, so a reader
+  // sees either the previous pointer or the new one, never a partial file.
+  // Fixed in glamour 2026-09-07; found standing in three siblings 2026-09-08
+  // (docs/investigations/2026-09-08-backend-duplication-recon.md).
+  const writeAtomic = (target: string, text: string) => {
+    const tmp = `${target}.${process.pid}.tmp`;
+    try {
+      writeFileSync(tmp, text);
+      renameSync(tmp, target);
+    } catch (err) {
+      try {
+        rmSync(tmp, { force: true });
+      } catch {
+        /* the temp file is already gone, or was never created */
+      }
+      throw err;
+    }
+  };
   try {
-    writeFileSync(sessionFile, sessionInfo);
-    writeFileSync(latestFile, sessionInfo);
+    writeAtomic(sessionFile, sessionInfo);
+    writeAtomic(latestFile, sessionInfo);
   } catch (e) {
     // Discovery files are nice-to-have, not load-bearing. Log to stderr
     // and continue — the session id printed to stdout still lets the

@@ -26,7 +26,15 @@
 //
 // Exit codes: 0 submit/close, 2 bad args, 124 idle timeout, 130 cancel.
 
-import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -1356,6 +1364,17 @@ async function main(argv: string[]): Promise<number> {
       port,
       hostname: host,
       routes,
+      // ⛔ HELD SSE CONNECTIONS DIE WITHOUT THIS. Bun's default request
+      // idleTimeout is 10s and a server-sent heartbeat does NOT reset it, so an
+      // SSE client is closed before the 15s `: hb` below ever fires — the
+      // keepalive arrives five seconds after the thing it was keeping alive is
+      // gone, which is why raising the heartbeat rate would not have helped.
+      // 255 is Bun's maximum (0 is not "disabled"), matching bounty, grapevine
+      // and mind-mapper; astrolabe env-tunes it and clamps the heartbeat to half.
+      // Found 2026-09-08 by the backend duplication recon: four spells had hit
+      // this and fixed it, three had not, because the daemon spine is one design
+      // implemented six times.
+      idleTimeout: 255,
       development: { hmr: mode === "dev" },
       fetch: (req, srv) => {
         const url = new URL(req.url);
@@ -1650,9 +1669,31 @@ async function main(argv: string[]): Promise<number> {
     files_dir: sessionFilesDir,
     mode,
   });
+  // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
+  // rather than absence. A bare writeFileSync is not atomic: a CLI reading
+  // while the daemon writes can observe a half-written pointer, and under the
+  // old best-effort read that surfaced as "no running session". Write beside
+  // the target and rename — rename within one directory is atomic, so a reader
+  // sees either the previous pointer or the new one, never a partial file.
+  // Fixed in glamour 2026-09-07; found standing in three siblings 2026-09-08
+  // (docs/investigations/2026-09-08-backend-duplication-recon.md).
+  const writeAtomic = (target: string, text: string) => {
+    const tmp = `${target}.${process.pid}.tmp`;
+    try {
+      writeFileSync(tmp, text);
+      renameSync(tmp, target);
+    } catch (err) {
+      try {
+        rmSync(tmp, { force: true });
+      } catch {
+        /* the temp file is already gone, or was never created */
+      }
+      throw err;
+    }
+  };
   try {
-    writeFileSync(sessionFile, sessionInfo);
-    writeFileSync(latestFile, sessionInfo);
+    writeAtomic(sessionFile, sessionInfo);
+    writeAtomic(latestFile, sessionInfo);
   } catch (e) {
     process.stderr.write(
       `imago: could not write discovery file: ${e instanceof Error ? e.message : String(e)}\n`,

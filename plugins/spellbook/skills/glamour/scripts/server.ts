@@ -448,6 +448,17 @@ export async function startDaemon(opts: StartOpts) {
     port: opts.port ?? 0,
     hostname: opts.host ?? "127.0.0.1",
     routes,
+    // ⛔ HELD SSE CONNECTIONS DIE WITHOUT THIS. Bun's default request
+    // idleTimeout is 10s and a server-sent heartbeat does NOT reset it, so an
+    // SSE client is closed before the 15s `: hb` below ever fires — the
+    // keepalive arrives five seconds after the thing it was keeping alive is
+    // gone, which is why raising the heartbeat rate would not have helped.
+    // 255 is Bun's maximum (0 is not "disabled"), matching bounty, grapevine
+    // and mind-mapper; astrolabe env-tunes it and clamps the heartbeat to half.
+    // Found 2026-09-08 by the backend duplication recon: four spells had hit
+    // this and fixed it, three had not, because the daemon spine is one design
+    // implemented six times.
+    idleTimeout: 255,
     development: { hmr: mode === "dev" },
     fetch(req, srv) {
       const url = new URL(req.url);

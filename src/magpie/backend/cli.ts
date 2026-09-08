@@ -168,11 +168,39 @@ function sessionFilePath(session?: string): string {
   return session ? join(tmpdir(), `magpie-${session}.json`) : join(tmpdir(), "magpie-latest.json");
 }
 
+/** ⛔ NULL MEANS "NO SESSION", AND NOTHING ELSE.
+ *
+ *  This caught every error from the read and returned null, so a corrupt
+ *  pointer, an EACCES, and any transient the OS raises under load all arrived
+ *  at the callers wearing absence's clothes — and the callers act on absence:
+ *  they report "no running session", and a tail loop reads it as "the pinned
+ *  session went away" and exits 0. A resource failure was therefore reported
+ *  as a SUCCESSFUL end of watch.
+ *
+ *  Measured in glamour, whose copy of this function is byte-identical: its CLI
+ *  contract cell failed once under the full gate with the not_found exit where
+ *  the contract said usage, and passed alone and on re-run. Fixed there
+ *  2026-09-07; found still standing here 2026-09-08 by the backend duplication
+ *  recon (docs/investigations/2026-09-08-backend-duplication-recon.md).
+ *
+ *  ENOENT is the only honest absence. Everything else says what it was.
+ *
+ *  ⚠ The daemon writes this file atomically (server.ts), which is what lets
+ *  unparseable content count as corruption rather than a half-written read. */
 function readSession(session?: string): Session | null {
+  const path = sessionFilePath(session);
+  let raw: string;
   try {
-    return JSON.parse(readFileSync(sessionFilePath(session), "utf8")) as Session;
+    raw = readFileSync(path, "utf8");
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") return null;
+    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`, "internal");
+  }
+  try {
+    return JSON.parse(raw) as Session;
   } catch {
-    return null;
+    die(`the session pointer is not valid JSON: ${path}`, "internal");
   }
 }
 
