@@ -1,4 +1,12 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -542,9 +550,29 @@ export async function startDaemon(opts: StartOpts) {
     files_dir: sessionFilesDir,
     mode,
   });
+  // ⚠ ATOMIC, because cli.ts's readSession now treats unparseable content as
+  // corruption rather than absence. A bare writeFileSync is not atomic: a CLI
+  // reading while the daemon writes can observe a half-written pointer, and
+  // under the old best-effort read that surfaced as "no running glamour
+  // session". Write beside the target and rename — rename within one directory
+  // is atomic, so a reader sees either the previous pointer or the new one.
+  const writeAtomic = (target: string, text: string) => {
+    const tmp = `${target}.${process.pid}.tmp`;
+    try {
+      writeFileSync(tmp, text);
+      renameSync(tmp, target);
+    } catch {
+      try {
+        rmSync(tmp, { force: true });
+      } catch {
+        /* the temp file is already gone, or was never created */
+      }
+      throw new Error(`could not publish ${target}`);
+    }
+  };
   try {
-    writeFileSync(sessionFile, info);
-    writeFileSync(latestFile, info);
+    writeAtomic(sessionFile, info);
+    writeAtomic(latestFile, info);
   } catch {
     /* discovery is best-effort */
   }

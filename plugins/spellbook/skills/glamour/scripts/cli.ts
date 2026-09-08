@@ -165,11 +165,38 @@ function sessionFilePath(session?: string): string {
     : join(tmpdir(), "glamour-latest.json");
 }
 
+/** ⛔ NULL MEANS "NO SESSION", AND NOTHING ELSE.
+ *
+ *  This used to `catch { return null }` over the whole read, so EVERY failure —
+ *  a corrupt pointer, EACCES, and any transient the OS raises under load —
+ *  arrived at the callers wearing absence's clothes. Three of them act on that:
+ *  `requireSession` dies `not_found` (exit 5), `cmdInfo` the same, and the watch
+ *  loop treats it as "the pinned session went away" and exits **0**. A resource
+ *  failure was therefore reported as a SUCCESSFUL end of watch.
+ *
+ *  Measured consequence: `tests/cli-contract.test.ts`'s HTTP-400 row failed once
+ *  under the full 146-file gate with exit **5** where the contract says 2, and
+ *  passed alone and on re-run (filed 2026-09-07, digestify's Phase 0 baseline).
+ *  5 is not a spawn crash — it is this function's `not_found`, which is why the
+ *  cell could not tell "the contract broke" from "the machine was busy".
+ *
+ *  So: ENOENT is the only absence. Everything else throws and names itself. */
 function readSession(session?: string): Session | null {
+  const path = sessionFilePath(session);
+  let raw: string;
   try {
-    return JSON.parse(readFileSync(sessionFilePath(session), "utf8")) as Session;
+    raw = readFileSync(path, "utf8");
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") return null; // the one honest absence
+    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`, "internal");
+  }
+  try {
+    return JSON.parse(raw) as Session;
   } catch {
-    return null;
+    // The daemon writes this file atomically (server.ts), so a half-written
+    // pointer is not reachable and unparseable content is real corruption.
+    die(`the session pointer is not valid JSON: ${path}`, "internal");
   }
 }
 

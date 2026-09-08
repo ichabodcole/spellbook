@@ -1151,7 +1151,7 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const at = (file: string, line: number) =>
       scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8")).find((r) => r.line === line)
         ?.kind;
-    expect(at("plugins/spellbook/skills/glamour/scripts/server.ts", 146)).toBe("type"); // was 77; the Phase 2 mode block above it moved the line (bookkeeping, not a change to the escape)
+    expect(at("plugins/spellbook/skills/glamour/scripts/server.ts", 154)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
     expect(at("plugins/spellbook/skills/mind-mapper/scripts/propose.test.ts", 463)).toBe("type");
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an

@@ -13,7 +13,7 @@
 //      spawn it.
 
 import { expect, test } from "bun:test";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS, verbToken } from "../scripts/cli";
@@ -342,6 +342,63 @@ test.each([
   } finally {
     server.stop(true);
   }
+});
+
+// ── absence is not the same as failure ───────────────────────────────
+//
+// ⛔ THE CELL ABOVE WAS FLAKY UNTIL THIS GROUP EXISTED. Its HTTP-400 row failed
+// once under the full 146-file gate with exit 5 where the contract says 2, then
+// passed alone and on re-run (filed 2026-09-07 by digestify's Phase 0 baseline).
+// 5 is not a crash: it is `not_found`, which `readSession` returned for EVERY
+// read failure, so a transient under load was indistinguishable from "there is
+// no session". These cells pin the distinction the fix introduced, so the flake
+// cannot come back silently — and so a REAL not_found stays exit 5.
+
+function runIn(dir: string, args: string[]): { code: number; stderr: string } {
+  const p = Bun.spawnSync(["bun", CLI, ...args], {
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: new Uint8Array(0),
+    env: { ...process.env, TMPDIR: dir },
+  });
+  return { code: p.exitCode, stderr: new TextDecoder().decode(p.stderr) };
+}
+
+test("a session pointer that cannot be READ is internal/1, not not_found/5", () => {
+  // A DIRECTORY where the pointer belongs: readFileSync raises EISDIR, standing
+  // in for the transient errnos (EMFILE, ENFILE, EACCES) a loaded machine
+  // raises and that no test can summon on demand. The point is not EISDIR — it
+  // is that everything which is not ENOENT leaves by a different door.
+  const dir = mkdtempSync(join(tmpdir(), "glamour-unreadable-"));
+  mkdirSync(join(dir, "glamour-latest.json"));
+  const r = runIn(dir, ["state"]);
+  expect(r.code).toBe(1);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("internal");
+  expect(doc.error.exit_code).toBe(1);
+  // and it NAMES the cause, so a recurrence is self-diagnosing rather than a
+  // mismatch someone re-runs away.
+  expect(doc.error.message).toContain("cannot read the session pointer");
+  expect(doc.error.message).toContain("EISDIR");
+});
+
+test("a corrupt session pointer is internal/1, not not_found/5", () => {
+  const dir = mkdtempSync(join(tmpdir(), "glamour-corrupt-"));
+  writeFileSync(join(dir, "glamour-latest.json"), '{"url":"http://127.0.0.1:1"');
+  const r = runIn(dir, ["state"]);
+  expect(r.code).toBe(1);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("internal");
+  expect(doc.error.message).toContain("not valid JSON");
+});
+
+test("a genuinely ABSENT pointer is still not_found/5 — the contract did not move", () => {
+  // The fix narrows what counts as absence; it must not narrow absence itself.
+  const dir = mkdtempSync(join(tmpdir(), "glamour-absent-"));
+  const r = runIn(dir, ["state"]);
+  expect(r.code).toBe(5);
+  const doc = JSON.parse(r.stderr) as Envelope;
+  expect(doc.error.kind).toBe("not_found");
 });
 
 test("close against a dead port is a transport failure, not a success (review finding)", () => {
