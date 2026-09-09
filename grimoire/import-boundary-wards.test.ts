@@ -574,10 +574,41 @@ const BUILTIN_EXACT = ["bun"] as const;
  * When the emission lands, ONE line here turns the exemption on for exactly the
  * root it names.
  */
-/** Node/Bun builtins, DERIVED from the runtime rather than hand-listed — a
- *  hand-kept copy of this set is exactly the drift `gate-blind-set` records
- *  having shipped once. These are the bare names a bundler leaves behind. */
-const BARE_BUILTINS = new Set(builtinModules);
+/**
+ * Node/Bun builtins, DERIVED from the runtime rather than hand-listed — a
+ * hand-kept copy of this set is exactly the drift `gate-blind-set` records
+ * having shipped once. These are the bare names a bundler leaves behind.
+ *
+ * ⛔ **MINUS THE NAMES THE OTHER TWO EXEMPTIONS ALREADY GOVERN, AND THAT
+ * SUBTRACTION IS THE WHOLE POINT OF THIS BLOCK (D16).** Under Bun,
+ * `builtinModules` has 76 entries and **`"bun"` is one of them** (so are
+ * `bun:ffi`, `bun:jsc`, `bun:sqlite`, `bun:test`). Taken whole, this set
+ * therefore exempts a bare `import … from "bun"` inside any declared emitted
+ * root **regardless of `BUILTIN_EXACT`** — which makes the differential cell
+ * below (the one that re-runs the ward with `BUILTIN_EXACT` emptied and asserts
+ * the difference) structurally blind in exactly the file class the emission
+ * created. MEASURED on the chapter 1 verify pass: five ward mutations, four went
+ * red, and `import { serve as __s } from "bun"` planted in
+ * `astrolabe/dist/server.js` stayed **green, 18 pass / 0 fail**.
+ *
+ * ⚠ The blindness was not a deployment hazard — `bun` IS the runtime — it is the
+ * **"population changed during a relocation"** shape: these daemons' sources
+ * were hand-authored `.ts` where a runtime `bun` import was visible to the
+ * differential, and after Phase 1b their artifact sits inside an exemption that
+ * swallowed it. Closed BEFORE `src/kit/` enters these same bundles, because
+ * anything the kit drags in that resolves to a name in `builtinModules` would
+ * inherit the same silence.
+ *
+ * **Overlapping exemptions cannot be differentiated.** Each of this ward's three
+ * exemptions now covers a disjoint set of names, so removing any one of them
+ * changes the verdict on the names it owns — which is the property every cell
+ * below relies on.
+ */
+const BARE_BUILTINS = new Set(
+  builtinModules.filter(
+    (m) => !BUILTIN_PREFIXES.some((p) => m.startsWith(p)) && !BUILTIN_EXACT.some((e) => e === m),
+  ),
+);
 
 /**
  * The ward's predicate, as a FACTORY over its two exemptions, so a cell can
@@ -729,6 +760,20 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // 4. The prefix match is on a PATH SEGMENT, not a string prefix — a sibling
     // directory whose name merely starts with the root must not inherit it.
     expect(probe("path", `${emitted}-notmine/cli.ts`)).toBe(false);
+
+    // 5. ⛔ THE EXEMPTIONS ARE DISJOINT (D16). `bun` inside an emitted root is
+    // exempt via `BUILTIN_EXACT` and via NOTHING ELSE — so emptying that list
+    // reddens it HERE, in a synthetic population, and not only on whatever the
+    // roster happens to contain today. This is the clause that would have gone
+    // red for the verifier's fifth mutation; before the subtraction above,
+    // `BARE_BUILTINS` held `"bun"` and this expectation was `true`, which is why
+    // planting a runtime `bun` import in `dist/server.js` cost the suite nothing.
+    expect(probe("bun", `${emitted}/server.js`)).toBe(true);
+    expect(makeIsBuiltin([], [emitted])("bun", `${emitted}/server.js`)).toBe(false);
+
+    // …and the `bun:` PREFIX exemption is the one that owns `bun:sqlite`, in an
+    // emitted root as everywhere else. Removing `BUILTIN_EXACT` must not touch it.
+    expect(makeIsBuiltin([], [emitted])("bun:sqlite", `${emitted}/server.js`)).toBe(true);
   });
 
   test("the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it", () => {
@@ -759,11 +804,19 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // ⚠ THREE SINCE PHASE 1b, AND THE DEPARTURES ARE NOT A WEAKENING. astrolabe's
     // and magpie's rows were their `server.ts` files; both daemons' SOURCE moved
     // to `src/<spell>/backend/` and each one's `import type { ServerWebSocket }
-    // from "bun"` is TYPE-ONLY, so the bundler erases it and `dist/server.js` —
-    // which IS in this ward's population, via `emittedSources` — carries no
-    // `bun` import to violate. The dependency did not become exempt; it stopped
-    // existing in anything that ships. Re-derived by running the mutation, not
-    // by deleting the rows that failed.
+    // from "bun"` is TYPE-ONLY, so the bundler erases it and `dist/server.js`
+    // carries no `bun` import to violate. The dependency did not become exempt;
+    // it stopped existing in anything that ships. Re-derived by running the
+    // mutation, not by deleting the rows that failed.
+    //
+    // ⛔ THE SECOND HALF OF THAT SENTENCE USED TO SAY "which IS in this ward's
+    // population, via `emittedSources`" — offered as the guarantee, and it was
+    // ASSERTED, NOT VERIFIED. Being in the population is necessary and was not
+    // sufficient: `BARE_BUILTINS` held `"bun"`, so this cell could not have seen
+    // a runtime `bun` import in `dist/server.js` if one appeared, and the
+    // verifier's mutation proved exactly that (green, 18/0). The subtraction at
+    // `BARE_BUILTINS` is what makes the claim true; the clause is kept, with the
+    // record of what it was worth before.
     //
     // ⛔ AND THE COUNT IS NOW A FLOOR THAT ONLY FALLS. Every spell that ports its
     // daemon into the build erases another of these, so a future reader finding
