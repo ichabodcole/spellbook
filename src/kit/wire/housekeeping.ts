@@ -131,8 +131,17 @@ export interface DrainOptions {
  * ⚠ **WHAT IS DELIBERATELY NOT HERE: bounty's shutdown watchdog.** Bounty arms
  * a REF'd `setTimeout` that calls `process.exit` if teardown does not finish,
  * and the census is right that it is the corpus's only unconditional
- * termination guarantee. It belongs to bounty's SIGNAL path — a death arriving
- * from outside, where nothing bounds what the teardown is waiting on. The two
+ * termination guarantee. It belongs to bounty's TEARDOWN — the stretch where
+ * nothing bounds what is being waited on. ⛔ **THIS PARAGRAPH SAID "SIGNAL
+ * PATH" UNTIL D53, AND THE CODE AGREED WITH IT, WHICH WAS THE DEFECT.** Bounty
+ * has FOUR ways into one teardown (a signal, a `close` verb, the browser's
+ * close over the WebSocket, an idle timeout) and only the signal one armed the
+ * timer, while the comment above it claimed the ending was unconditional.
+ * Driven with a planted hang: the other three ran past 10 s, the idle one
+ * included — the orphan-daemon class the 23-minute hang came from. The arming
+ * now lives in the RESOLVE that all four entries pass through. **The lesson for
+ * an adopter is the count, not the placement: enumerate every entry into the
+ * teardown before you believe a guarantee covers it.** The two
  * daemons adopting this module register no signal handlers, and their whole
  * teardown is bounded by the two numbers above; adding an exit here would put
  * the house's only unconditional `process.exit` inside a module every spell is
@@ -157,7 +166,8 @@ export interface DrainOptions {
  * question is never "does this module have a place to put a watchdog" but
  * "does the watchdog's window coincide with this module's". Where a spell's
  * teardown has unbounded work BEFORE the drain, the watchdog belongs at the
- * spell, wrapped around all of it. If a spell ever appears whose signal path
+ * spell, wrapped around all of it — and around EVERY WAY IN, which is the half
+ * D53 had to repair after this header was written. If a spell ever appears whose signal path
  * enters `drainAndStop` immediately, add the option THEN — and the option must
  * take an `onExpire` callback rather than exiting, so the `process.exit` stays
  * outside a module every spell bundles.
