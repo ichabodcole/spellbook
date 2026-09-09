@@ -412,3 +412,78 @@ than by globbing, because `dist/server.js` is the whole module graph.
 - **Copy the daemon SOURCE into the fake release tree and run it there.**
   Rejected because it would assert a tree that does not exist — nothing ships
   `src/`, which is the whole point of Contract 4.
+
+## D15 · The spawn-path ward is a chapter 2 deliverable
+
+**Ruled:** Cole, 2026-09-08, on the orchestrator's offer to fold it in here or
+defer it to Phase 2's playbook: _"fold it into chapter 2."_
+
+Chapter 1 produced two defects of one class — magpie's `remove.py` resolved off
+`import.meta.dir` (dead for eight days in the SHIPPED plugin, since the CLI
+build at `7bb0f4a`, answering `ok:true` at exit 0 the whole time) and a bundled
+daemon with no entry, because `import.meta.main` is false in a module the
+launcher imports. Both are the same defect: **bundling changes what a module
+knows about its own location, and every symptom is quiet and exit-zero.**
+
+**The finding is an instrument gap, not a sequencing win.** The magpie bug
+predates this phase and survived its own branch's verify pass. Nothing in this
+repo tests a path that is SPAWNED rather than imported: the gate type-checks,
+the wards text-scan, the unit tests import, and a `join(import.meta.dir, …)`
+pointing at empty air passes all three. Only running the verb finds it.
+
+So chapter 2 grows one deliverable: **a ward that enumerates every path-pinned
+non-bundled sibling reachable from a BUILT backend — Python files, assets, spawn
+targets — and asserts each resolves from the EMITTED location.** It is the
+natural companion to the shared spine: five spells are queued behind this, each
+with its own `import.meta` assumptions, and the same three instruments will stay
+green through every one of them.
+
+**Not taken:** _a Phase 2 playbook item_ — keeps chapter 2 at its scoped size,
+and the brief's own warning is that a phase which grows is a phase nobody can
+verify; rejected because a playbook line is a thing an author must remember,
+which is exactly what failed here, and because the five remaining spells all
+port before that playbook is written.
+
+## D16 · Chapter 2's FIRST commit is ward 1b's emitted-root exemption
+
+**Decided:** orchestrator, 2026-09-08, on the chapter 1 verify pass.
+
+The verifier calibrated five mutations against the wards this chapter widened.
+Four went red. The fifth — `import { serve as __s } from "bun"` inside
+`dist/server.js` — stayed **green, 18 pass / 0 fail**.
+
+`makeIsBuiltin(exact, emittedRoots)` falls through to
+`emitted && BARE_BUILTINS.has(spec)`, and under Bun `node:module`'s
+`builtinModules` **contains `"bun"`** (76 entries, including `bun:ffi`,
+`bun:jsc`, `bun:sqlite`, `bun:test`). So inside a declared emitted root, `bun`
+is exempt via `BARE_BUILTINS` regardless of `BUILTIN_EXACT`, and the
+`withoutBun` differential cell — the cell this branch just edited from five
+names to three — is structurally blind there.
+
+**The 5→3 comment reads as verified and is asserted.** Its first half is true
+and the verifier confirmed it: both bundles carry only `fs/os/path/util/url`
+plus the one external surface specifier. Its second half — that `dist/server.js`
+being in the population is the guarantee — does not carry the weight it is
+given, because that cell could not see a `bun` value import if one appeared. Net
+against `develop`: these daemons were hand-authored `.ts` inside ward 1b's
+population, where a runtime `bun` import was visible to the differential; their
+source is now outside that population and their artifact sits inside an
+exemption that swallows `bun`.
+
+Not a deployment hazard — `bun` is the runtime. It is the **"population changed
+during a relocation"** shape, which is the exact failure this project exists to
+end, and it must be closed **before** chapter 2 starts putting `src/kit/`
+modules into these same bundles: anything the kit drags in that resolves to a
+name in Bun's `builtinModules` would be exempt inside `dist/` and invisible to
+both cells. Fixing it after the kit's surface area lands means fixing it against
+a population that already grew.
+
+So chapter 2 opens with it, before any shared module is adopted, and the fix is
+calibrated the way the verifier calibrated the others: mutate, see red, restore.
+
+**Not taken:** _a chapter 1 addendum_ — arguably where it belongs, since this
+branch caused it; rejected because chapter 1 is verified and closed, and
+reopening a verified chapter to edit a ward is how a clean verdict goes stale.
+_Write it down honestly and move on_, which the verifier offered as the
+alternative — rejected because the next five spells all relocate into that same
+exemption.

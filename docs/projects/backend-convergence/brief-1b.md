@@ -200,3 +200,69 @@ Same rule as 1a, and it now applies to daemon-side prose: bounty's
 `resolveMode` comment about a hashed `index.html` making release mode invisible,
 and magpie's note that `dist/` existing is not the discriminator. **A
 convergence that loses the scars re-earns them.**
+
+---
+
+# Chapter 2 — amendments, after the chapter 1 verify pass
+
+Chapter 1 landed and was **driven**, not argued: both daemons boot through their
+real launchers in both modes, both surfaces render in a real browser, HMR was
+observed live (DOM changed under an open page in under a second, zero frame
+navigations), the source diff against `develop` is mechanically minimal, gate
+green unpiped at 1901/0, `dist-check` 0, Contract 18 reproduces. Chapter 2 may
+be built on it. Three amendments follow.
+
+## A1 · The FIRST commit is ward 1b's emitted-root exemption (D16)
+
+Before any shared module is adopted. Five ward mutations were calibrated; four
+went red and one did not — `import { serve as __s } from "bun"` inside
+`dist/server.js` stays green, because Bun's `builtinModules` contains `"bun"`
+and `BARE_BUILTINS` exempts it inside any declared emitted root. **Chapter 2
+puts `src/kit/` into these same bundles, so anything the kit drags in that
+resolves to a builtin name would be exempt inside `dist/` and invisible to both
+cells.** Close it first, and calibrate the fix the way the verifier calibrated
+the rest: mutate, see red, restore. The `5→3` comment must also stop reading as
+verified when it is asserted.
+
+## A2 · The spawn-path ward (D15, ruled by Cole)
+
+Chapter 1 produced two defects of one class — `remove.py` resolved off
+`import.meta.dir` (**dead for eight days in the shipped plugin**, reproduced by
+the verifier against `develop` before it was believed, answering `ok:true` at
+exit 0) and a bundled daemon with no entry. **Bundling changes what a module
+knows about its own location, and every symptom is quiet and exit-zero.**
+
+Write the ward: **enumerate every path-pinned non-bundled sibling reachable from
+a BUILT backend — Python files, assets, spawn targets — and assert each resolves
+from the EMITTED location.** Nothing here tests a path that is _spawned_ rather
+than imported: the gate type-checks, the wards text-scan, the unit tests import,
+and a `join(import.meta.dir, …)` pointing at empty air passes all three.
+
+⛔ **Derive its population from the tree**, the way `src/build.ts`'s
+`buildableSpells()` does — never a hand-kept list. Today it covers two spells;
+by the end of the roll, eight. A hand-kept list goes quietly blind on exactly
+the spell that arrives next, which is the defect
+`grimoire/daemon-lifecycle-ward.test.ts` already has and asks to be deleted for.
+
+## A3 · Three things the verifier found that are not defects
+
+Carry them; do not fix them silently.
+
+- **The re-homed `release-serve` scar is narrower than its new prose.** "A new
+  module is in the copied tree by construction" is true by _bundling_, but
+  `ARTIFACT_FILES` is a hand-written two-entry list and `dist/server.js` is the
+  whole **module** graph, not the whole **asset** graph. A non-TS runtime
+  sibling — precisely `remove.py`'s class — would not be covered. Nothing is
+  broken today; the sentence claims more than it holds. **A2's ward is the
+  honest home for that guarantee.**
+- **D10 leaves the two-sided modules duplicated.** `dist/server.js` inlines
+  `astrolabe/scripts/state.ts` and `magpie/shared/types.ts`, which also still
+  ship as source and are inlined again in `dist/cli.js` and the surface chunk.
+  No unresolved cross-boundary import survives into either artifact, so Contract
+  3 genuinely holds — but staleness between the source copy and the inlined
+  copies is caught only by `dist-check` ARM 2, which its own docstring scopes to
+  CI rather than the local gate. **Know this before chapter 2 adds `src/kit/` to
+  the same bundles.**
+- **Stale addresses:** `grimoire/import-boundary-wards.test.ts` at ~123, ~660
+  and ~1157 still cites `magpie/scripts/backend.ts` and
+  `magpie/scripts/discover.ts` as live paths. Those files moved in chapter 1.
