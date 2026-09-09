@@ -149,8 +149,18 @@
 
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { builtinModules } from "node:module";
+import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type ImportKind, isRelative, scanSpecifiers } from "./lib/import-graph.ts";
@@ -285,14 +295,53 @@ const EMITTED_ROOTS: string[] = process.env.WARD_EMITTED_ROOTS
  * would have gone green because it stopped looking. Both wards read the same
  * root list, which is what stops the two populations drifting apart.
  */
-function emittedSources(roots: readonly string[]): string[] {
+function emittedSources(roots: readonly string[], repo: string = REPO_ROOT): string[] {
   if (roots.length === 0) return [];
-  return roots.flatMap((root) =>
-    execFileSync("git", ["-C", REPO_ROOT, "ls-files", root], { encoding: "utf8" })
+  return roots.flatMap((root) => {
+    const tracked = execFileSync("git", ["-C", repo, "ls-files", root], { encoding: "utf8" })
       .trim()
       .split("\n")
-      .filter((f) => /\.(js|mjs|cjs|ts|tsx)$/.test(f)),
+      .filter(Boolean);
+    const dir = join(repo, root);
+    // ⛔ THE DISK, UNIONED WITH THE INDEX (D42). This read `git ls-files` alone,
+    // and that is the third instance of one defect in this project — the other
+    // two were `grimoire/spawn-path-ward.test.ts` and `scripts/dist-check.ts`
+    // ARM 1. An emitted root is a BUILD OUTPUT under a gitignored `dist/`: on the
+    // commit that first emits a spell's backend, the artifact is on the disk and
+    // not in the index, so an index-only enumerator returns nothing for it and
+    // both wards that share this population go green **because they stopped
+    // looking**, which is exactly what the "cannot go quietly short" cell below
+    // exists to prevent — reached through the INDEX instead of through the list.
+    // Driven: an untracked `astrolabe/dist/probe-unstaged.js` carrying
+    // `import "sharp"` — a bare non-builtin dependency, the precise thing ward 1b
+    // exists for — passed the whole file 19/0.
+    //
+    // ⚠ THE UNION, NOT A SWAP. A tracked file the disk has lost is still a fact
+    // about what SHIPS (ward 1a's subject), so it stays in the population; it is
+    // filtered out only at the point of reading, below, because there is nothing
+    // to read. And a stale build leftover cannot accumulate on the disk:
+    // `src/build.ts` `rm`s each `dist/` before every build and `bun run gate`
+    // builds before it tests.
+    const onDisk = existsSync(dir) ? readdirSync(dir).map((f) => `${root}/${f}`) : [];
+    return [...new Set([...tracked, ...onDisk])]
+      .filter((f) => /\.(js|mjs|cjs|ts|tsx)$/.test(f))
+      .filter((f) => existsSync(join(repo, f)))
+      .sort();
+  });
+}
+
+/** Emitted files in the population that the INDEX does not have — reported by
+ *  the cell below so a green can never quietly mean "unexamined". */
+function unstagedEmitted(roots: readonly string[], repo: string = REPO_ROOT): string[] {
+  const tracked = new Set(
+    roots.flatMap((root) =>
+      execFileSync("git", ["-C", repo, "ls-files", root], { encoding: "utf8" })
+        .trim()
+        .split("\n")
+        .filter(Boolean),
+    ),
   );
+  return emittedSources(roots, repo).filter((f) => !tracked.has(f));
 }
 
 // ── WARD 1a ─────────────────────────────────────────────────────────────────
@@ -776,6 +825,63 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     expect(emitters.length).toBeGreaterThan(0); // zero-guard: an empty walk is not a pass
     const undeclared = emitters.filter((r) => !DECLARED_EMITTED_ROOTS.includes(r));
     expect(undeclared).toEqual([]);
+  });
+
+  test("⛔ THE EMITTED POPULATION IS READ FROM THE DISK — an unstaged artifact is IN IT, and NAMED", () => {
+    // ⛔ D42, THE THIRD INSTANCE OF ONE DEFECT. The cell above stops the
+    // DECLARED LIST going short. It cannot stop the ENUMERATOR going short, and
+    // `emittedSources` read `git ls-files`: on the commit that first emits a
+    // spell's backend the artifact is on the disk and not in the index, so both
+    // wards that share this population had zero coverage of it and reported
+    // green. Driven before the repair: an untracked
+    // `astrolabe/dist/probe-unstaged.js` carrying `import "sharp"` — the exact
+    // subject of ward 1b — passed this file 19 / 0.
+    //
+    // ⛔ AND THE CONTROL GOES THROUGH THE ENUMERATOR, against a repo this cell
+    // built, which is the ruling `trackedBuildInputs`'s control earned: proving
+    // `git ls-files` can read an index says nothing about which set is walked.
+    const repo = mkdtempSync(join(tmpdir(), "emitted-population-"));
+    try {
+      const root = "plugins/spellbook/skills/probe/dist";
+      mkdirSync(join(repo, root), { recursive: true });
+      const git = (...a: string[]) =>
+        Bun.spawnSync(["git", ...a], { cwd: repo, stdout: "pipe", stderr: "pipe" });
+      expect(git("init", "-q").exitCode).toBe(0);
+      writeFileSync(join(repo, root, "server.js"), "// staged\n");
+      writeFileSync(join(repo, root, "index-oldhash.js"), "// about to be replaced\n");
+      expect(git("add", "-f", "--", "plugins").exitCode).toBe(0);
+      writeFileSync(join(repo, root, "cli.js"), "// emitted, NOT staged\n"); // disk only
+      rmSync(join(repo, root, "index-oldhash.js")); // index only — the renamed chunk
+
+      expect(emittedSources([root], repo)).toEqual([
+        // ⭐ THE FILE THAT WAS NOT IN THE POPULATION BEFORE.
+        `${root}/cli.js`,
+        `${root}/server.js`,
+      ]);
+      // …and it is NAMED as unstaged, so a green can never read as "examined".
+      expect(unstagedEmitted([root], repo)).toEqual([`${root}/cli.js`]);
+      // The index-only file is dropped at the point of READING, not silently
+      // excluded from the question — there is no content to scan, and reading it
+      // is how three cells in the sibling ward once died of ENOENT.
+      expect(emittedSources([root], repo)).not.toContain(`${root}/index-oldhash.js`);
+      // The enumerator CAN measure empty, so the rows above came from it
+      // discriminating rather than from a walk that returns everything.
+      expect(emittedSources(["plugins/spellbook/skills/absent/dist"], repo)).toEqual([]);
+    } finally {
+      rmSync(repo, { recursive: true, force: true });
+    }
+
+    // CONTEXT on the real tree — never compared, so a legitimate mid-edit state
+    // does not red this cell. Ward 1b scans these files whatever the index says.
+    const unstaged = unstagedEmitted(EMITTED_ROOTS);
+    console.warn(
+      [
+        "",
+        `  R6 WARD 1a/1b — emitted population: ${emittedSources(EMITTED_ROOTS).length} file(s), ${unstaged.length} NOT STAGED (scanned anyway)`,
+        ...unstaged.map((f) => `      NOT STAGED  ${f}`),
+        "",
+      ].join("\n"),
+    );
   });
 
   test("the emitted exemption is SCOPED — it does not reach hand-authored files, and never covers a real dependency", () => {
