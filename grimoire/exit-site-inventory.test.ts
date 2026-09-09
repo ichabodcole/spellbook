@@ -98,8 +98,11 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // ⛔ glamour's CLI has ZERO live `process.exit` sites, which is the direction
   // this inventory exists to push and the third CLI to reach it after magpie and
   // mind-mapper. `scripts/cli.ts` is a LAUNCHER holding `process.exitCode`.
+  // ⚠ imago's four CLI sites moved from `scripts/cli.ts` to `backend/cli.ts` in
+  // Phase 3 chapter 1 — the ADDRESS changed, the families and the texts did not,
+  // which is what a relocation is supposed to look like in this inventory.
   {
-    file: "imago/scripts/cli.ts",
+    file: "imago/backend/cli.ts",
     text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
@@ -110,7 +113,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
+  { file: "imago/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
@@ -145,7 +148,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // glamour/scripts/cli.ts left this family at its acc L0 pass: die() now THROWS a
   // CliError and main() returns the taxonomy code (usage 2, internal 1,
   // not_found 5, conflict 6), so the drained-exit defect has no site to live in.
-  { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  { file: "imago/backend/cli.ts", text: "process.exit(2);", family: "D-die" },
   // magpie's die() left this family too: it now THROWS a CliError from
   // `src/kit/wire/errors.ts` and `main` returns the taxonomy code — the same
   // move glamour and mind-mapper made at their acc L0 passes, and the direction
@@ -174,7 +177,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   },
   // F — live: an in-function exit with stdout pending upstream of it.
   {
-    file: "imago/scripts/cli.ts",
+    file: "imago/backend/cli.ts",
     text: "if (grounded) process.exit(0); // our pinned session went away → done",
     family: "F-live",
   },

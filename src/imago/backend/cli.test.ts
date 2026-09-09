@@ -4,7 +4,7 @@
 // batch.add, losing --prompt/--tag/--summary). Both forms must work now.
 
 import { expect, test } from "bun:test";
-import { parseArgs } from "../scripts/cli";
+import { parseArgs } from "./cli";
 
 test("space form: --key value", () => {
   const { pos, flags } = parseArgs(["--kind", "edit", "src1", "src2"]);

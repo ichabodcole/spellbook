@@ -1,5 +1,9 @@
 // Release-mode serve (seams Contract 1). THIRD port of this gate — after
 // mind-mapper's original and astrolabe's (scripts/release-serve.test.ts).
+//
+// ⛔ SINCE PHASE 3 THE COPIED TREE IS THE ARTIFACT, NOT THE SOURCE: the
+// launcher `scripts/server.ts` and the bundle `dist/server.js` it imports,
+// which is precisely what a marketplace clone contains.
 // cassandra's Seam D recipe: boot the daemon from a COPIED tree that has a
 // dist/ but NO surface/ and NO bunfig.toml, proving the code path genuinely
 // never reads surface source in release mode rather than merely working when
@@ -22,11 +26,14 @@
 //
 // EARNED BY IMAGO ALONE, not in either precedent — two cells, for two facts
 // that are true of imago and of no other spell yet:
-//   1. shared/ MUST BE IN THE COPIED TREE. imago is the first spell with a
-//      shared/ (Phase 1b), and the daemon imports it as a sibling. A release
-//      tree missing shared/ does not boot — so the copy asserts shared/ is
-//      present and surface/ is absent, which is the 1b seam's whole payoff
-//      expressed as a gate.
+//   1. shared/ NEED NOT BE IN THE COPIED TREE — ⚠ AND THIS CELL INVERTED IN
+//      PHASE 3, WHICH IS RECORDED RATHER THAN QUIETLY REWRITTEN. It used to
+//      read "shared/ MUST be in the copied tree": imago was the first spell
+//      with a shared/ (Phase 1b), the daemon imported it as a sibling, and a
+//      release tree missing it did not boot. Building the daemon absorbed it —
+//      dist/server.js IS the whole module graph — so the rig now asserts the
+//      STRONGER fact: the daemon boots from a tree with no shared/ at all.
+//      shared/ still ships, because the surface imports it 33 times (D10).
 //   2. /assets/ MUST NOT BECOME A DIST READER. imago already owns a
 //      GET /assets/<name> route for session files, and serveDist was added
 //      BELOW it. The cell proves the two stay disjoint: a file that exists in
@@ -43,7 +50,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -51,13 +57,20 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const TESTS_DIR = import.meta.dir;
-const SKILL_SRC = join(TESTS_DIR, "..");
-// Every non-test module under scripts/ and shared/ ships — a glob, not a
-// hand-maintained mirror (mind-mapper's mirror shipped a broken release twice
-// before it was globbed; a new module is in the copied tree by construction).
-const shipping = (dir: string) =>
-  readdirSync(join(SKILL_SRC, dir)).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
+// ⛔ THE SKILL ROOT IS EXPLICIT, NOT COUNTED FROM THIS FILE'S NEIGHBOURS
+// (playbook B6). This suite used to sit at `<skill>/tests/`, where
+// `join(import.meta.dir, "..")` WAS the skill root; from `src/imago/backend/`
+// the same expression names `src/imago/`.
+const SKILL_SRC = join(
+  import.meta.dir,
+  "..",
+  "..",
+  "..",
+  "plugins",
+  "spellbook",
+  "skills",
+  "imago",
+);
 
 let skillRoot: string;
 let home: string;
@@ -66,14 +79,22 @@ let url = "";
 
 function buildReleaseTree(): string {
   const root = mkdtempSync(join(tmpdir(), "imago-release-test-"));
-  for (const dir of ["scripts", "shared"] as const) {
-    mkdirSync(join(root, dir), { recursive: true });
-    for (const f of shipping(dir)) cpSync(join(SKILL_SRC, dir, f), join(root, dir, f));
-  }
+  // ⛔ TWO FILES, NOT A GLOB — AND THE SCAR THE GLOB CARRIED IS RE-HOMED, NOT
+  // DELETED. It copied every non-test `.ts` beside the daemon, under a property
+  // earned when mind-mapper's hand-maintained mirror shipped a broken release
+  // twice: a NEW MODULE IS IN THE COPIED TREE BY CONSTRUCTION. That property is
+  // now true by BUNDLING instead of by globbing — `dist/server.js` IS the whole
+  // module graph — and the glob has additionally become impossible, because the
+  // sources it used to copy now carry `../../../plugins/…` specifiers that
+  // cannot resolve from a temp directory. So the copy is the launcher and its
+  // bundle: exactly what a marketplace clone contains, and exactly what runs.
+  mkdirSync(join(root, "scripts"), { recursive: true });
+  cpSync(join(SKILL_SRC, "scripts", "server.ts"), join(root, "scripts", "server.ts"));
   // The dist/ a real build.ts produces — flat, hashed chunk names, relative
   // hrefs, UNHASHED entry (Contract 2's shape). Content is fake; the SHAPE is
   // what release-mode serving reads.
   mkdirSync(join(root, "dist"), { recursive: true });
+  cpSync(join(SKILL_SRC, "dist", "server.js"), join(root, "dist", "server.js"));
   writeFileSync(
     join(root, "dist", "index.html"),
     '<!doctype html><html><head><link rel="stylesheet" href="./chunk-abc123.css"></head><body><div id="root"></div><script src="./chunk-abc123.js"></script></body></html>',
@@ -115,8 +136,16 @@ beforeAll(async () => {
   // and — imago-specific — shared/ present, because the daemon imports it.
   expect(existsSync(join(skillRoot, "surface"))).toBe(false);
   expect(existsSync(join(skillRoot, "bunfig.toml"))).toBe(false);
-  expect(existsSync(join(skillRoot, "shared", "types.ts"))).toBe(true);
-  expect(existsSync(join(skillRoot, "shared", "imageOptimize.ts"))).toBe(true);
+  // ⚠ THE `shared/` CELL INVERTED, AND SAYING SO IS THE POINT. Before the
+  // backend was built, imago was the first spell with a `shared/` the daemon
+  // imported as a sibling, so this rig ASSERTED `shared/` was present — a
+  // release tree without it did not boot. The bundle absorbed it: `shared/` is
+  // inlined into `dist/server.js`, and the stronger claim is now available and
+  // asserted here — the daemon boots from a tree that has NO `shared/` at all.
+  // `shared/` still ships in the deployed skill folder, because the SURFACE
+  // imports it 33 times (D10), but the DAEMON no longer needs it on disk.
+  expect(existsSync(join(skillRoot, "shared"))).toBe(false);
+  expect(existsSync(join(skillRoot, "dist", "server.js"))).toBe(true);
 
   proc = Bun.spawn(
     [

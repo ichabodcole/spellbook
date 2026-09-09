@@ -261,6 +261,7 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 const DECLARED_EMITTED_ROOTS: string[] = [
   "plugins/spellbook/skills/astrolabe/dist",
   "plugins/spellbook/skills/glamour/dist",
+  "plugins/spellbook/skills/imago/dist",
   "plugins/spellbook/skills/magpie/dist",
 ];
 
@@ -309,7 +310,7 @@ function emittedSources(roots: readonly string[]): string[] {
 // published artifact always has one, so the line never executes where it
 // cannot resolve. Verified INDEPENDENTLY for astrolabe and for imago
 // (2026-08-31), each by booting a copied tree with a dist/ and NO surface/ —
-// see their release-serve gates (astrolabe/scripts/, imago/tests/), whose
+// see their release-serve gates (both now at `src/<spell>/backend/`), whose
 // override cells show the other direction too: forced into dev mode, those same
 // trees die at exactly this import. Neither was admitted on mind-mapper's
 // say-so.
@@ -404,8 +405,13 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     spec: "../../../../../src/grapevine/surface/index.html",
     resolved: "src/grapevine/surface/index.html",
   },
+  // imago, Phase 3 — the pin FOLLOWED THE SPECIFIER INTO THE ARTIFACT, exactly
+  // as astrolabe's, magpie's and glamour's did. The string is byte-identical
+  // before and after the relocation because `dist/` sits at the same depth as
+  // the `scripts/` it replaced; ⚠ that is a coincidence of depth, not a
+  // property, which is why it is asserted here rather than trusted.
   {
-    file: "plugins/spellbook/skills/imago/scripts/server.ts",
+    file: "plugins/spellbook/skills/imago/dist/server.js",
     spec: "../../../../../src/imago/surface/index.html",
     resolved: "src/imago/surface/index.html",
   },
@@ -870,10 +876,17 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // `src/glamour/backend/server.ts` and shipped as `dist/server.js`, the
     // bundler erased it and nothing that ships carries a `bun` import. The floor
     // fell again; it did not break.
+    // ⚠ THREE SINCE PHASE 2, AND IMAGO IS THE FOURTH DEPARTURE BY THE SAME
+    // MECHANISM. imago wrote its dependency as `import type { ServerWebSocket }
+    // from "bun"` — the plainest form of the three spellings this floor has now
+    // seen — so relocating the daemon to `src/imago/backend/server.ts` and
+    // shipping it as `dist/server.js` erased it, and nothing imago ships carries
+    // a `bun` import. bounty is the last holder, and this floor now rests on ONE
+    // file: when bounty ports, this cell has no population and the exemption it
+    // guards must be re-argued rather than silently kept.
     const withoutBun = violationsUnder(makeIsBuiltin([], EMITTED_ROOTS));
     expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([
       "plugins/spellbook/skills/bounty/scripts/server.ts",
-      "plugins/spellbook/skills/imago/scripts/server.ts",
     ]);
   });
 });
@@ -1283,11 +1296,23 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     // that showed only `../shared/` here would be hiding the distinction the
     // sort exists to make.
     expect(found.sort((a, b) => key(a).localeCompare(key(b)))).toEqual([
-      { file: "imago/scripts/server.ts", spec: "../shared/types", erased: false },
-      { file: "imago/scripts/server.ts", spec: "../shared/types", erased: true },
       {
         file: "src/astrolabe/backend/server.ts",
         spec: "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts",
+        erased: true,
+      },
+      // imago, Phase 3: the same two rows as before, at the relocated address and
+      // through the two-sided specifier D10 keeps in the deployed skill folder.
+      // The `erased` pair is one `export type` and one `export {}` from the same
+      // module — the distinction this pin exists to keep visible.
+      {
+        file: "src/imago/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/imago/shared/types",
+        erased: false,
+      },
+      {
+        file: "src/imago/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/imago/shared/types",
         erased: true,
       },
       {

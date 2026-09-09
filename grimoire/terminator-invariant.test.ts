@@ -72,7 +72,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   "bounty/scripts/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
   "glamour/backend/cli.ts": "caller-facing; prompt text is a positional",
   "grapevine/scripts/cli.ts": "caller-facing; message bodies are prose positionals",
-  "imago/scripts/cli.ts": "caller-facing; prompt text is a positional",
+  "imago/backend/cli.ts": "caller-facing; prompt text is a positional",
   "magpie/backend/cli.ts": "caller-facing",
   "magpie/backend/discover.ts": "internal (sibling-spawned argv), hazard still structural",
   "mind-mapper/scripts/cli.ts": "caller-facing; send bodies are prose positionals",

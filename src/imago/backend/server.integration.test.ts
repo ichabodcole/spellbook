@@ -30,7 +30,11 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { AgentEventPayload, ImagoState, Mark } from "../shared/types";
+import type {
+  AgentEventPayload,
+  ImagoState,
+  Mark,
+} from "../../../plugins/spellbook/skills/imago/shared/types";
 
 // The state as observed over /state: ImagoState, but the lean projection drops
 // some blob fields and a restored snapshot may temporarily carry a legacy
@@ -38,8 +42,25 @@ import type { AgentEventPayload, ImagoState, Mark } from "../shared/types";
 type ObservedState = ImagoState & { marks?: Mark[] };
 const ids = (marks: Mark[]): string[] => marks.map((m) => m.id);
 
+// ⛔ EVERY PATH IS DERIVED FROM AN EXPLICIT SKILL ROOT, NEVER BY COUNTING `..`
+// FROM WHEREVER THIS FILE HAPPENS TO SIT (playbook B6). This suite used to live
+// at `<skill>/tests/`, where `join(SCRIPT_DIR, "..", "scripts", "server.ts")`
+// was right by accident of adjacency; from `src/imago/backend/` the same
+// expression names `src/imago/scripts/server.ts`, which does not exist — and a
+// test whose spawn path is wrong fails as "the daemon never answered", not as
+// "wrong path".
+//
+// ⚠ AND IT SPAWNS THE LAUNCHER, NOT THIS DIRECTORY'S SOURCE. The daemon has ONE
+// entry (D12): `<skill>/scripts/server.ts` → `../dist/server.js`. The source
+// beside this file is not runnable and must not be made runnable — from here it
+// would compute `SKILL_ROOT = src/imago/`, find no `dist/index.html`, silently
+// choose DEV and then fail the dev import from the wrong anchor. So this suite
+// depends on a built `dist/server.js`; `bun run gate` is `build && check &&
+// test`, so the artifact is always fresh and the thing asserted is the thing
+// that ships.
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const SERVER = join(SCRIPT_DIR, "..", "scripts", "server.ts");
+const SKILL_ROOT = join(SCRIPT_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "imago");
+const SERVER = join(SKILL_ROOT, "scripts", "server.ts");
 
 // A tiny 1x1 PNG as a data url — small enough that optimizeSrc may or may not
 // re-encode it; either way it materializes to a file. Used for style images,
@@ -68,7 +89,7 @@ async function spawnDaemon(
   const tmp = mkdtempSync(join(tmpdir(), "imago-tmp-"));
   const proc = Bun.spawn({
     cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--timeout", "30", ...args],
-    cwd: join(SCRIPT_DIR, ".."),
+    cwd: SKILL_ROOT,
     stdout: "ignore",
     stderr: "pipe",
     env: { ...process.env, IMAGO_HOME: home, TMPDIR: tmp, ...extraEnv },

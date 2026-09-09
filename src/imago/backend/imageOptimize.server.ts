@@ -4,7 +4,7 @@
 // already said so); the POLICY it applies is two-sided and lives in shared/.
 // Do NOT import this from browser code (Bun.Image is a Bun runtime built-in,
 // absent in the browser). Browser code imports OPTIMIZE from shared/imageOptimize.
-import { OPTIMIZE } from "../shared/imageOptimize";
+import { OPTIMIZE } from "../../../plugins/spellbook/skills/imago/shared/imageOptimize";
 
 export async function optimizeImageBuffer(
   input: Uint8Array,

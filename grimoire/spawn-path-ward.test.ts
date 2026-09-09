@@ -375,6 +375,11 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       // because it could not see the escape at all, which is the same blindness
       // the coverage cell above now asserts against.
       "plugins/spellbook/skills/glamour/dist/cli.js -> src/glamour",
+      // imago's `SURFACE_CWD` — the same Contract 5 dev-mode cwd pin, arriving
+      // in Phase 3 for the same reason and with the same bare anchor spelling
+      // the pattern has always read. It is the third instance of this one
+      // escape, which is what makes it a shape rather than a spell's quirk.
+      "plugins/spellbook/skills/imago/dist/cli.js -> src/imago",
       "plugins/spellbook/skills/magpie/dist/cli.js -> src/magpie",
     ]);
   });

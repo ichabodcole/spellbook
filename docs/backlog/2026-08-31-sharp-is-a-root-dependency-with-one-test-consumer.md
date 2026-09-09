@@ -7,14 +7,15 @@
 ## The measurement
 
 After `e7b2ed2`, no spell's **shipped execution path** imports `sharp`. Its only
-remaining consumer repo-wide is
-`plugins/spellbook/skills/imago/tests/imageOptimize.test.ts:11`, which uses it
-to build a **fixture** (`const sharp = (await import("sharp")).default`).
+remaining consumer repo-wide is `src/imago/backend/imageOptimize.test.ts:11`
+(relocated from `plugins/spellbook/skills/imago/tests/` by backend convergence
+Phase 3), which uses it to build a **fixture**
+(`const sharp = (await import("sharp")).default`).
 
 It sits in `dependencies`, not `devDependencies` — wrong for a test-only fixture
 regardless of what happens next. And the precedent for removing it entirely
 already exists: **glamour's equivalent test builds its fixtures with `Bun.Image`
-alone** (`glamour/tests/imageOptimize.test.ts:14-16`).
+alone** (`src/glamour/backend/imageOptimize.test.ts:14-16`).
 
 ## Why it was deliberately not touched
 
