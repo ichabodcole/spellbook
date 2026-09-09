@@ -46,16 +46,16 @@ import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildableSpells } from "../src/build.ts";
+import { classifyDist, distDirFor, isBackendArtifact } from "./lib/dist-artifacts.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGIN_ROOT = join(REPO_ROOT, "plugins", "spellbook");
 
-/** Where a spell's build emits — the same expression `src/build.ts` uses. The
- *  `root` parameter exists so the calibration below can drive these enumerators
- *  against a throwaway repo whose index and disk IT chose, rather than proving
- *  only that they can read this one. */
-const distDirFor = (spell: string, root: string = REPO_ROOT) =>
-  join(root, "plugins", "spellbook", "skills", spell, "dist");
+// `distDirFor` — where a spell's build emits, the same expression `src/build.ts`
+// uses — comes from `lib/dist-artifacts.ts` along with the backend/surface
+// split. Its `root` parameter is what lets the calibration cells below drive
+// these enumerators against a throwaway repo whose index and disk THEY chose,
+// rather than proving only that they can read this one.
 
 /** One emitted `.js` file, and whether the INDEX has it yet. */
 type Emitted = { abs: string; staged: boolean };
@@ -131,11 +131,21 @@ function indexOnlyEmitted(spell: string, root: string = REPO_ROOT): string[] {
 
 const emittedJs = (spell: string): string[] => emittedFiles(spell).map((e) => e.abs);
 
-/** The emitted files a spell's BACKEND produces — the ones whose anchor
- *  arithmetic this ward exists to check. A surface chunk is emitted too and
- *  pins nothing, so it must not count toward coverage. */
-const isBackendArtifact = (abs: string): boolean =>
-  abs.endsWith("/cli.js") || abs.endsWith("/server.js");
+// ⛔ WHICH EMITTED FILES ARE THE BACKEND'S — `isBackendArtifact`, IMPORTED, NOT
+// WRITTEN HERE. This ward carried its own answer until D43's follow-through:
+//
+//     const isBackendArtifact = (abs) =>
+//       abs.endsWith("/cli.js") || abs.endsWith("/server.js");
+//
+// — a hand-kept list of two names, which is the exact hard-coding D43 had just
+// removed from `src/build.ts`, surviving one instrument over. It was correct
+// today for the wrong reason (the derived entry set happens to be `cli` +
+// `server` for all four built spells) and went **silently blind** on bounty's
+// `join.js`, digestify's `review.js` and grapevine's `daemon.js` the day they
+// land: an unrecognised backend artifact simply produces NO COVERAGE ROW, which
+// is the D42 silence in the very cell written to end it. The shared derivation
+// in `lib/dist-artifacts.ts` reads the split off `index.html`'s reference
+// closure instead — see that module for the reasoning, which travelled with it.
 
 type Pin = { file: string; line: number; expr: string; resolved: string };
 
@@ -385,9 +395,23 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     // exempt, and stays exempt.
     const unread: string[] = [];
     const blind: string[] = [];
+    const notLookedAt: string[] = [];
     const coverage: string[] = [];
     for (const spell of spells) {
-      for (const emitted of emittedFiles(spell).filter((e) => isBackendArtifact(e.abs))) {
+      // ⛔ `null` FROM THE SPLIT IS "NOT LOOKED AT", NEVER "NOT A BACKEND". It
+      // is unreachable by construction here — `spells` is filtered to those
+      // whose `dist/` yielded emitted `.js` off the disk — so treating it as
+      // `false` would cost nothing today and be a silence the day it is
+      // reachable. It goes in a list that is asserted empty.
+      const backendOf = (abs: string): boolean => {
+        const verdict = isBackendArtifact(abs);
+        if (verdict === null) {
+          notLookedAt.push(`${relative(REPO_ROOT, abs)} — dist/ vanished mid-run, NOT CLASSIFIED`);
+          return false;
+        }
+        return verdict;
+      };
+      for (const emitted of emittedFiles(spell).filter((e) => backendOf(e.abs))) {
         const file = emitted.abs;
         const rel = relative(REPO_ROOT, file);
         const text = readFileSync(file, "utf8");
@@ -405,8 +429,14 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
       }
     }
     console.warn(`\n  SPAWN-PATH WARD — coverage:\n    ${coverage.join("\n    ")}\n`);
+    expect(notLookedAt).toEqual([]);
     expect(unread).toEqual([]);
     expect(blind).toEqual([]);
+    // ⛔ AND THE COVERAGE SET IS NOT EMPTY. The split is now DERIVED, so a
+    // derivation that answered "no backend artifacts anywhere" would empty this
+    // cell's population and leave it green — the vacuity failure, one level up
+    // from the one the cell itself asserts against.
+    expect(coverage.length).toBeGreaterThan(0);
   });
 
   test("⛔ EVERY SHIPPED PIN RESOLVES — this is the cell `remove.py` would have reddened", () => {
@@ -558,6 +588,46 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(missing.map((p) => p.resolved.replace(root, "<tmp>"))).toEqual([
       "<tmp>/dist/nowhere.py",
     ]);
+  });
+
+  test("⛔ CALIBRATION — A BACKEND ARTIFACT THIS WARD HAS NEVER SEEN A NAME FOR IS COVERED", () => {
+    // ⛔ THE BLIND SPOT D43 FILED, CLOSED AND THEN PINNED. Until this branch the
+    // backend set was `endsWith("/cli.js") || endsWith("/server.js")` — so
+    // bounty's `join.js`, digestify's `review.js` and grapevine's `daemon.js`
+    // would each have been emitted, scanned by NOTHING in the coverage cell, and
+    // reported green. The split is now the reference closure from `index.html`,
+    // and this cell drives the three real shapes the remaining ports produce
+    // against a tree it builds, through the SAME function the ward calls.
+    const root = mkdtempSync(join(tmpdir(), "spawn-path-derived-split-"));
+    const dist = distDirFor("probe", root);
+    mkdirSync(dist, { recursive: true });
+    writeFileSync(join(dist, "index.html"), '<script src="./index-aaaa.js"></script>\n');
+    writeFileSync(join(dist, "index-aaaa.js"), 'import "./index-bbbb.js";\n'); // a chunk of the surface
+    writeFileSync(join(dist, "index-bbbb.js"), "// reached transitively\n");
+    for (const name of ["join.js", "review.js", "daemon.js"]) {
+      writeFileSync(join(dist, name), "// a backend entry with a name nobody listed\n");
+    }
+
+    const split = classifyDist("probe", root);
+    expect(split.surface).toEqual(["index-aaaa.js", "index-bbbb.js"]);
+    // ⭐ THE THREE ROWS THAT DID NOT EXIST BEFORE — and note that the OLD
+    // predicate is asserted here too, so this cell states the defect rather than
+    // merely being green over its repair.
+    expect(split.backend).toEqual(["daemon.js", "join.js", "review.js"]);
+    for (const name of split.backend ?? []) {
+      expect(isBackendArtifact(join(dist, name), root)).toBe(true);
+      expect(name.endsWith("cli.js") || name.endsWith("server.js")).toBe(false); // the old list: blind
+    }
+    // …and the surface chunks still do not count toward coverage, which is what
+    // the name test got right and what the derivation must not lose.
+    expect(isBackendArtifact(join(dist, "index-aaaa.js"), root)).toBe(false);
+
+    // ⛔ AND A SPELL WITH NO `dist/` IS `null` — NOT LOOKED AT, never `false`.
+    expect(isBackendArtifact(join(distDirFor("no-such-spell-6f3a1c", root), "cli.js"), root)).toBe(
+      null,
+    );
+
+    rmSync(root, { recursive: true, force: true });
   });
 
   test("⛔ CALIBRATION — AN UNSTAGED EMITTED ARTIFACT IS IN THE POPULATION, NOT MISSING FROM IT", () => {

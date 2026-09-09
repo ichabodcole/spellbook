@@ -1585,17 +1585,15 @@ unported spells live at `scripts/X.ts` as real sources, NOT at
 must produce, not about what the tree holds today, and the generalisation
 correctly builds nothing for them.
 
-**One live blind spot found and NOT repaired here, deliberately.**
-`grimoire/spawn-path-ward.test.ts`'s `isBackendArtifact` is
+**One live blind spot found — filed for bounty's port, then PULLED FORWARD into
+this branch** (Cole, same day: the instrument that guards a port must not be
+repaired _by_ that port, competing with a 1,713-line daemon relocation).
+`grimoire/spawn-path-ward.test.ts`'s `isBackendArtifact` was
 `abs.endsWith("/cli.js") || abs.endsWith("/server.js")` — the same two
-hard-coded names, in the instrument that checks anchor arithmetic. It is exactly
+hard-coded names, in the instrument that checks anchor arithmetic. Exactly
 correct today (the derived set is `cli` + `server` for all four built spells),
-and it goes **silently blind on bounty's `join.js`, digestify's `review.js` and
-grapevine's `daemon.js`** the day those land. It is not touched in this branch
-because this branch's acceptance criterion is "changes no artifact and no other
-instrument's verdict"; **it is a required step of bounty's port**, and it is
-filed here rather than in a backlog item so the next port's brief cannot miss
-it.
+and **silently blind on bounty's `join.js`, digestify's `review.js` and
+grapevine's `daemon.js`** the day those land. **It is repaired here — see D44.**
 
 **Not taken:** _hard-code a third name `join.ts`_ — cheapest, and wrong twice
 over before the roll ends (digestify has no `cli.ts`, grapevine no `server.ts`).
@@ -1605,3 +1603,75 @@ naming convention (`*.entry.ts`)_ — derived, but it renames five spells' files
 and every SKILL.md path that spawns them. _Derive from SKILL.md's spawn lines
 instead of the launcher_ — closer to the human contract, and it makes the build
 depend on parsing prose, which is Gotcha 12's whole subject.
+
+## D44 · The surface/backend split is ONE shared derivation, and the spawn-path ward consumes it
+
+**Ruled:** Cole, 2026-09-09, pulling D43's deferred blind spot forward into the
+same pre-work branch. Implemented on `chore/entries-derive-from-launchers`, as a
+refactor that changes no artifact and no ward's verdict on a clean tree.
+
+`grimoire/launcher-pairing-ward.test.ts` already computed the honest split —
+backend artifacts are `dist/*.js` minus the SURFACE's reference closure from the
+emitted `index.html` — and `grimoire/spawn-path-ward.test.ts` answered the same
+question with a hand-kept list of two names. **The derivation is now written
+once, in `grimoire/lib/dist-artifacts.ts`, beside `entry-points.ts`**, and both
+wards consume it. The ⛔ reasoning for the split (D36: deriving it as "`cli.js`
+and `server.js`" re-commits the hard-coding D43 removed; deriving it as "a
+hashed name is a surface chunk" is a name test in a behaviour costume) travelled
+to the module rather than staying stranded in one caller.
+
+**D42 is enforced by the return TYPE, not by each caller's memory.** `surface`
+and `backend` are `string[] | null`, `null` meaning NOT LOOKED AT — the pairing
+ward's `null`-not-`[]` discipline, hoisted from the launcher-reader to the
+artifact-reader. `present: false` (no `dist/` at all) yields `null`; a `dist/`
+with no `index.html` is LOOKED AT and its empty surface closure is the right
+answer. `isBackendArtifact()` returns `boolean | null` for the same reason, and
+the spawn-path ward collects any `null` into a list it asserts empty rather than
+coercing it to `false` — unreachable by construction today, and the silence it
+would be the day it is reachable is exactly this decision's subject.
+
+### ⛔ What the extraction contradicted in D43's own description of the defect
+
+**"Silently blind" was half right, and the half it got wrong is the more
+dangerous half.** Driven on the real tree, with an untracked
+`bounty/dist/join.js` — the shape bounty's port really produces:
+
+| planted `bounty/dist/join.js`                                                   | ward BEFORE         | ward AFTER                                      |
+| ------------------------------------------------------------------------------- | ------------------- | ----------------------------------------------- |
+| readable anchor (`dirname(fileURLToPath(...))`) + pin at `../NOWHERE/server.ts` | **1 fail**          | 1 fail (+ a coverage row that did not exist)    |
+| **unreadable anchor (`import.meta.dirname`) + the same bad pin**                | **8 pass / 0 fail** | **1 fail** — `join.js:2 UNREAD ANCHOR SPELLING` |
+
+The "every shipped pin RESOLVES" cell walks `emittedJs()` — every emitted `.js`,
+not just the backend ones — so a `join.js` whose anchor the ward CAN read was
+already covered by it. The name list gated only the COVERAGE cell, which is the
+cell that catches an anchor spelling the ward cannot read. So the blind spot was
+narrower AND worse than filed: it was blind precisely on the case where the ward
+computes no pins, which is the case where a missing coverage row is
+indistinguishable from a clean file. That is D42's silence living inside the
+cell written to end it, and it took planting the artifact to see it — reading
+the predicate suggested the wrong half.
+
+**Calibration, both directions** (real repo unless noted; every mutation
+restored):
+
+| drive                                                                   | verdict                                                     |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------- |
+| clean tree, both wards                                                  | **15 pass / 0 fail** (9 spawn-path, 6 pairing)              |
+| `bounty/dist/join.js`, unreadable anchor + bad pin (untracked)          | spawn-path **1 fail**, naming the line; was 0 before        |
+| `bounty/dist/cli.js`, corrupted pin, untracked (D42's own drive re-run) | spawn-path **1 fail**, pairing **1 fail** (orphan artifact) |
+| synthetic root: surface closure vs `join.js`/`review.js`/`daemon.js`    | the new CALIBRATION cell — all three classified as backend  |
+
+**Acceptance, as measured:** full-roster `bun run build`, then `git diff` /
+`git status --porcelain` over the deployed dist roots — **empty**. Gate **1976
+pass / 0 fail** unpiped, exit 0 (1975 + the new calibration cell).
+`bun scripts/dist-check.ts` exit 0, three arms, `32 tracked / 32 on disk`, ARM 2
+`dirty paths 0`.
+
+**Not taken:** _leave it to bounty's port_ — D43's original filing, and it makes
+the port repair the instrument that guards the port. _Teach the spawn-path ward
+its own copy of the closure walk_ — two derivations of one fact, which is the
+two-denominators defect `entry-points.ts` exists because of. _Have the
+spawn-path ward read `backendEntryNames()` from `src/build.ts` instead_ — it
+derives from the SOURCE tree, so it cannot see an artifact the build no longer
+emits but `dist/` still holds, and it would make a check of the build's
+derivation a restatement of it (D36).

@@ -78,15 +78,49 @@ document did not predict:
    nothing imports, silently. `grimoire/launcher-pairing-ward.test.ts` cell C
    reds on it before anything is built.
 
-3. ⛔ **`grimoire/spawn-path-ward.test.ts` still hard-codes the two names.** Its
-   `isBackendArtifact` is `endsWith("/cli.js") || endsWith("/server.js")`.
-   Correct today, and it goes **silently blind** on `join.js`, `review.js` and
-   `daemon.js` the day they land — the same defect this pre-work removed from
-   `build.ts`, one instrument over. Not repaired here (this branch's acceptance
-   criterion is "no artifact and no other instrument's verdict changes"). **It
-   is a required step of bounty's port** and must be in its brief.
+3. ⛔ **`grimoire/spawn-path-ward.test.ts` still hard-coded the two names** —
+   `isBackendArtifact` was `endsWith("/cli.js") || endsWith("/server.js")`, the
+   same defect this pre-work removed from `build.ts`, one instrument over. Filed
+   for bounty's port, then **pulled forward into this branch by Cole**: the
+   instrument that guards a port must not be repaired _by_ that port. See
+   **D44** — the split now lives once, in `grimoire/lib/dist-artifacts.ts`, and
+   both wards consume it.
 
-**Acceptance, as measured:** full-roster `bun run build`, then `git diff` /
-`git status --porcelain` over the deployed dist roots — **empty**. Gate 1975
-pass / 0 fail unpiped, exit 0. `bun scripts/dist-check.ts` exit 0, three arms,
+### What the extraction turned up (D44)
+
+- **The split was already written honestly ONCE**, in the pairing ward, and the
+  second instrument reached for the cheap version instead. The extraction is
+  therefore not "write a derivation" but "stop writing the second one" —
+  `entry-points.ts`'s own founding argument (two denominators that drift apart
+  cannot both be right while both stay green), arriving a second time in the
+  same directory.
+
+- ⛔ **D43 described the blind spot's SHAPE wrong, and reading the predicate is
+  what got it wrong.** "Goes silently blind on `join.js`" is only true for the
+  COVERAGE cell. The "every shipped pin resolves" cell walks every emitted
+  `.js`, so a `join.js` with a READABLE anchor and a bad pin was already caught.
+  What the name list actually gated was the case where the ward computes NO pins
+  — an anchor spelling it cannot read — which is exactly the case where a
+  missing coverage row is indistinguishable from a clean file. Driven: an
+  untracked `bounty/dist/join.js` with `var SCRIPT_DIR = import.meta.dirname;`
+  and a pin at `../NOWHERE/server.ts` was **8 pass / 0 fail** before and reds
+  after, naming the line. The narrower blind spot was the more dangerous one,
+  and only planting the artifact showed it.
+
+- **D42's `null`-not-`[]` discipline moved from a caller's habit into the return
+  TYPE.** `classifyDist` answers `string[] | null` and `isBackendArtifact`
+  answers `boolean | null`, so "no backend artifacts" and "never examined"
+  cannot be spelled the same way by a future caller that forgets to check
+  `present` first. The spawn-path ward collects `null` into a list it asserts
+  empty rather than coercing it to `false`.
+
+- **Neither ward's assumptions were contradicted otherwise.** The derived split
+  reproduces the old name-based set exactly on today's tree (`cli.js` +
+  `server.js` for the four built spells, the hashed `index-*.js` chunks reached
+  from `index.html` in every case), which is why no verdict changed.
+
+**Acceptance, as measured** (re-run after the D44 extraction): full-roster
+`bun run build`, then `git diff` / `git status --porcelain` over the deployed
+dist roots — **empty**. Gate 1976 pass / 0 fail unpiped, exit 0 (1975 + D44's
+new calibration cell). `bun scripts/dist-check.ts` exit 0, three arms,
 `32 tracked / 32 on disk`, ARM 2 `dirty paths 0`.

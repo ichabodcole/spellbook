@@ -33,7 +33,10 @@
 // ⛔ **BOTH POPULATIONS ARE DERIVED FROM THE TREE, NEVER HAND-KEPT** — the
 // launcher side by READING every shipped `scripts/*.ts` for a `../dist/X.js`
 // specifier, the artifact side by READING the emitted `dist/` off the DISK and
-// subtracting the surface's own reference closure. Neither is a list, and
+// subtracting the surface's own reference closure. **The artifact side now
+// lives in `grimoire/lib/dist-artifacts.ts`**, shared with the spawn-path ward,
+// which was carrying a hand-kept `cli.js`/`server.js` name list for the same
+// question; the reasoning for the split travelled to the module with it. Neither is a list, and
 // neither is computed from the other; cell C is where `src/build.ts`'s
 // derivation is checked against both, which is the only reason a check of a
 // derivation is not a check of itself (D36 — a backstop computed from the
@@ -62,18 +65,17 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { backendEntryNames, buildableSpells } from "../src/build.ts";
+import { classifyDist, distDirFor } from "./lib/dist-artifacts.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const skillsDirIn = (root: string) => join(root, "plugins", "spellbook", "skills");
 const scriptsDirIn = (root: string, spell: string) => join(skillsDirIn(root), spell, "scripts");
-const distDirIn = (root: string, spell: string) => join(skillsDirIn(root), spell, "dist");
 
 /**
  * `../dist/X.js` specifiers in one shipped script, as the bare names `X`.
@@ -144,64 +146,11 @@ function launcherImports(
   return { imports, unreadable };
 }
 
-/**
- * The emitted `.js` in a spell's `dist/`, split into the SURFACE's own graph
- * and everything else — the backend artifacts.
- *
- * ⛔ THE SPLIT IS DERIVED FROM `index.html`, NOT FROM THE NAMES, AND THAT IS
- * D36's rule applied to this ward's second population. The obvious split is
- * "`cli.js` and `server.js` are the backend" — which is the very hard-coding
- * D43 removed from `src/build.ts`, and would make this ward blind to exactly
- * the entries D43 exists to allow (bounty's `join.js`, digestify's `review.js`,
- * grapevine's `daemon.js`). The next-most-obvious is "a hashed name is a
- * surface chunk", which is a name test wearing a behaviour costume. So the
- * surface set is the REFERENCE CLOSURE from the emitted `index.html`: whatever
- * the served page actually pulls in, transitively. Everything else in `dist/`
- * is something only a launcher can reach.
- *
- * ⚠ `surface === null` means NOT LOOKED AT, and the two causes are different:
- * no `dist/` (nothing built) versus a `dist/` with no `index.html` (a
- * backend-only spell, where the empty closure is the right answer and is
- * returned as such). The caller prints which.
- */
-function classifyDist(
-  root: string,
-  spell: string,
-): { present: boolean; hasIndex: boolean; surface: string[]; backend: string[] } {
-  const dir = distDirIn(root, spell);
-  if (!existsSync(dir)) return { present: false, hasIndex: false, surface: [], backend: [] };
-  const all = readdirSync(dir).filter((f) => statSync(join(dir, f)).isFile());
-  const js = all.filter((f) => f.endsWith(".js")).sort();
-  const index = join(dir, "index.html");
-  if (!existsSync(index)) return { present: true, hasIndex: false, surface: [], backend: js };
-
-  // Transitive closure by NAME MENTION: start from index.html's text, and keep
-  // pulling in any dist file whose name is mentioned by something already
-  // reached. Substring search rather than a parser because the emitted forms
-  // differ per asset kind (`href`, `src`, a bare `import`), and a parser for
-  // three of them is a fourth thing to keep in step.
-  const reached = new Set<string>();
-  const frontier = [readFileSync(index, "utf8")];
-  while (frontier.length > 0) {
-    const text = frontier.pop() as string;
-    for (const f of all) {
-      if (reached.has(f) || f === "index.html") continue;
-      if (!text.includes(f)) continue;
-      reached.add(f);
-      try {
-        frontier.push(readFileSync(join(dir, f), "utf8"));
-      } catch {
-        /* a binary asset contributes no further references */
-      }
-    }
-  }
-  return {
-    present: true,
-    hasIndex: true,
-    surface: js.filter((f) => reached.has(f)),
-    backend: js.filter((f) => !reached.has(f)),
-  };
-}
+// The surface/backend split lives in `grimoire/lib/dist-artifacts.ts` — see that
+// module for WHY it is derived from `index.html` rather than from the names
+// (D36), and for the D42 shape of its answer (`null` is NOT LOOKED AT, never an
+// empty set). It was extracted there when the spawn-path ward turned out to be
+// answering the same question with a hand-kept list of two names.
 
 /** The roster, from the tree: a name is a spell iff its deployed skill folder
  *  exists. The SAME criterion `thoth`'s ownership rule already uses, and the
@@ -226,7 +175,7 @@ const rows: Row[] = roster(REPO_ROOT).map((spell) => ({
   spell,
   ...launcherImports(REPO_ROOT, spell),
   derived: backendEntryNames(spell),
-  dist: classifyDist(REPO_ROOT, spell),
+  dist: classifyDist(spell, REPO_ROOT),
 }));
 
 /** One line per spell, printed by the coverage cell. This is the D42 surface:
@@ -240,8 +189,8 @@ function describeRow(r: Row): string {
   const dist = !r.dist.present
     ? "dist/ ABSENT — emitted artifacts NOT LOOKED AT"
     : !r.dist.hasIndex
-      ? `dist/ has no index.html — no surface closure; all .js treated as backend: [${r.dist.backend.join(", ") || "none"}]`
-      : `surface=[${r.dist.surface.join(", ") || "none"}] backend=[${r.dist.backend.join(", ") || "none"}]`;
+      ? `dist/ has no index.html — no surface closure; all .js treated as backend: [${r.dist.backend?.join(", ") || "none"}]`
+      : `surface=[${r.dist.surface?.join(", ") || "none"}] backend=[${r.dist.backend?.join(", ") || "none"}]`;
   const unread =
     r.unreadable.length > 0 ? ` UNREADABLE(NOT LOOKED AT)=[${r.unreadable.join(", ")}]` : "";
   return `  ${r.spell.padEnd(12)} derived=[${r.derived.join(", ") || "none"}]  ${launchers}  ${dist}${unread}`;
@@ -255,7 +204,7 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
     expect(roster(REPO_ROOT).length).toBeGreaterThan(0);
     expect(buildableSpells().length).toBeGreaterThan(0);
     expect(rows.flatMap((r) => r.imports).length).toBeGreaterThan(0);
-    expect(rows.flatMap((r) => r.dist.backend).length).toBeGreaterThan(0);
+    expect(rows.flatMap((r) => r.dist.backend ?? []).length).toBeGreaterThan(0);
   });
 
   test("COVERAGE — every spell in the roster gets a row, including the ones with nothing to look at", () => {
@@ -275,7 +224,7 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
     const missing: string[] = [];
     for (const r of rows) {
       for (const i of r.imports) {
-        const abs = join(distDirIn(REPO_ROOT, r.spell), `${i.entry}.js`);
+        const abs = join(distDirFor(r.spell, REPO_ROOT), `${i.entry}.js`);
         if (!existsSync(abs)) {
           missing.push(
             `${r.spell}/scripts/${i.file} imports ../dist/${i.entry}.js — ${relative(REPO_ROOT, abs)} is NOT on disk`,
@@ -289,7 +238,12 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
   test("B · every emitted BACKEND artifact is imported by a launcher", () => {
     const orphans: string[] = [];
     for (const r of rows) {
-      if (!r.dist.present) continue; // named as NOT LOOKED AT by the coverage row
+      // `backend === null` is D42's NOT LOOKED AT — a spell with no `dist/`.
+      // It is named as such by the coverage row above; there is no artifact to
+      // pair, and treating the null as "no orphans" is exactly the silence the
+      // shared helper's return shape exists to make impossible to write by
+      // accident.
+      if (!r.dist.present || r.dist.backend === null) continue;
       const wanted = new Set(r.imports.map((i) => `${i.entry}.js`));
       for (const f of r.dist.backend) {
         if (!wanted.has(f)) {
@@ -316,7 +270,7 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
             `${r.spell}: build.ts derives entry "${name}" from ${r.spell}/scripts/${name}.ts, but that file does NOT import ../dist/${name}.js — the emitted artifact would be unreachable`,
           );
         }
-        if (r.dist.present && !r.dist.backend.includes(`${name}.js`)) {
+        if (r.dist.present && r.dist.backend !== null && !r.dist.backend.includes(`${name}.js`)) {
           drift.push(
             `${r.spell}: build.ts derives entry "${name}" and no ${name}.js is on disk as a backend artifact`,
           );
@@ -368,7 +322,7 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
 
     // Cell A's subject: an imported artifact that is or is not on disk.
     const onDisk = (spell: string, entry: string) =>
-      existsSync(join(distDirIn(root, spell), `${entry}.js`));
+      existsSync(join(distDirFor(spell, root), `${entry}.js`));
     expect(launcherImports(root, "paired").imports).toEqual([{ file: "cli.ts", entry: "cli" }]);
     expect(onDisk("paired", "cli")).toBe(true);
     expect(launcherImports(root, "launcher-only").imports).toEqual([
@@ -382,19 +336,21 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
     expect(onDisk("nothing-built", "cli")).toBe(false); // ← cell A would RED
 
     // Cell B's subject: the surface/backend split, and the NOT-LOOKED-AT row.
-    expect(classifyDist(root, "paired")).toEqual({
+    expect(classifyDist("paired", root)).toEqual({
       present: true,
       hasIndex: true,
       surface: ["index-aaaa.js"],
       backend: ["cli.js"],
     });
-    expect(classifyDist(root, "artifact-only").backend).toEqual(["cli.js"]); // ← cell B would RED
-    expect(classifyDist(root, "launcher-only").backend).toEqual([]);
-    expect(classifyDist(root, "nothing-built")).toEqual({
+    expect(classifyDist("artifact-only", root).backend).toEqual(["cli.js"]); // ← cell B would RED
+    expect(classifyDist("launcher-only", root).backend).toEqual([]);
+    expect(classifyDist("nothing-built", root)).toEqual({
       present: false,
       hasIndex: false,
-      surface: [],
-      backend: [],
+      // ⛔ `null`, NOT `[]` — the D42 shape, now enforced by the shared helper's
+      // type rather than by each caller remembering to check `present` first.
+      surface: null,
+      backend: null,
     });
     // ⛔ AND THE EMPTY MEASUREMENT MUST NOT LOOK LIKE THE CLEAN ONE. Both
     // `launcher-only` and `nothing-built` contribute an empty backend set; only
@@ -403,7 +359,7 @@ describe("launcher-pairing ward — a launcher and its built entry exist togethe
       spell,
       ...launcherImports(root, spell),
       derived: [],
-      dist: classifyDist(root, spell),
+      dist: classifyDist(spell, root),
     });
     expect(describeRow(rowOf("nothing-built"))).toContain("NOT LOOKED AT");
     expect(describeRow(rowOf("launcher-only"))).not.toContain("NOT LOOKED AT");
