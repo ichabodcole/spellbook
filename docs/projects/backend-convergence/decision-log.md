@@ -1675,3 +1675,238 @@ spawn-path ward read `backendEntryNames()` from `src/build.ts` instead_ — it
 derives from the SOURCE tree, so it cannot see an artifact the build no longer
 emits but `dist/` still holds, and it would make a check of the build's
 derivation a restatement of it (D36).
+
+## D45 · bounty's failure contract CHANGES at the port — and B8's uncaught-`fetch` prediction is falsified
+
+**Decided:** implementer, 2026-09-09, `feat/bounty-backend-port` chapter 2.
+
+D38 is the worked example and this is its second instance: adopting
+`src/kit/wire/errors.ts` re-spells every failure a CLI can produce, and for a
+spell that did not already speak the envelope it is a **caller-visible change**,
+not a de-duplication.
+
+**Measured by RUNNING the failing invocations, before and after** — never
+characterised from `die` alone, which is the discipline D38 earned:
+
+| invocation                                    | before            | after                            |
+| --------------------------------------------- | ----------------- | -------------------------------- |
+| `badverb`                                     | prose, **exit 2** | envelope `usage`, **exit 2**     |
+| `add` (no title)                              | prose, **exit 2** | envelope `usage`, **exit 2**     |
+| `update` (no id)                              | prose, **exit 2** | envelope `usage`, **exit 2**     |
+| `block t1` (no `--on`)                        | prose, **exit 2** | envelope `usage`, **exit 2**     |
+| `state --session <nonexistent>`               | prose, **exit 2** | envelope `not_found`, **exit 5** |
+| `state` with a stale pointer at a closed port | prose, **exit 2** | envelope `not_found`, **exit 5** |
+| `message hello`, same stale pointer           | prose, **exit 2** | envelope `not_found`, **exit 5** |
+
+Before: `bounty: <msg>` on stderr, stdout empty, **2 for everything**. After:
+one JSON document on stderr, stdout still empty, and the taxonomy — so a caller
+can tell "that board is gone" from "you typed it wrong". SKILL.md's agent-facing
+notes now state the codes and warn that a script testing `exit == 2` for "no
+session" must test `5`. Where the daemon itself refused, its reply rides
+`error.server` verbatim (the field D31 widened for glamour).
+
+### ⛔ What the tree contradicted
+
+**B8 says the uncaught-`fetch` shape "is common to every spell whose CLI talks
+to a session daemon". It does not exist in bounty.** imago's `api()` fetches
+with no handler, so a stale pointer crashes with a raw Bun `TypeError`
+(`code: "ConnectionRefused"`) at exit 1. bounty's `resolveSession` **probes
+liveness before it ever fetches**, so the same stale pointer raises deliberately
+through `die` — driven on two verbs, both `not_found`. The generalisation held
+for four spells and failed at the fifth; it is narrowed here rather than
+deleted, because the shape is still what an unguarded `api()` produces.
+
+**Not taken:** _keep the local `die` and only adopt the daemon-side modules_ —
+the CLI would then be the one half of the spell not on the spine, and `errors`
+is the module whose absence a caller can actually observe. _Adopt `errors` but
+map every kind to 2_ — preserves the contract byte-for-byte and throws away the
+only thing the adoption is for. _Treat "no running session" as `usage`_ —
+defensible (the caller could pass `--session`), and it collapses the distinction
+the taxonomy exists to make: there is no board, which is what `not_found` means.
+
+## D46 · The shutdown watchdog stays at bounty — the kit's pre-commitment is FALSIFIED, and its real window was never the claimed one
+
+**Decided:** implementer, 2026-09-09, driven. This was the port's central design
+question, assigned in the brief.
+
+`kit/wire/housekeeping.ts` named bounty's watchdog as a deliberate ABSENCE
+(D17's "what it refused is part of the ruling") and pre-committed to a
+resolution: _"when a spell with a signal path adopts this, the watchdog arrives
+as an option on these arguments and the reasoning is already written down."_
+bounty is that spell. **The option was not added, and the prediction is recorded
+as falsified in the kit's header rather than quietly dropped.**
+
+### Why the option is the wrong shape — the WINDOW, not the placement
+
+A `watchdogMs` on `drainAndStop` would arm at **drain** time. bounty's arms at
+**signal** time, and the stretch between them is the entire reason it exists:
+`await done`, an fs append to the daemon log, the housekeeping stop, a FULL
+snapshot write that can rotate and copy a backup of a large board, a `closed`
+frame and a broadcast. `drainAndStop`'s own body is already bounded by its two
+numbers (150 ms grace + a 200 ms stop race). So a watchdog scoped to it would
+guard the one stretch that cannot hang and abandon the stretch that can.
+
+### ⛔ And driving it found that the watchdog did not cover ITS OWN claimed window
+
+`clearTimeout(shutdownWatchdog)` sat four lines into a fifteen-line teardown,
+under a comment reading "`clearTimeout` sits at the end of the teardown". Driven
+with a 2 s watchdog, a hang planted in a COPY of the shipped artifact, SIGTERM,
+and the death timed:
+
+| hang point            | before (armed / disarmed)   | after (armed / disarmed)   |
+| --------------------- | --------------------------- | -------------------------- |
+| `await done`          | 143 @2002ms / RUNNING @10s  | 143 @2002ms / RUNNING @10s |
+| the final snapshot    | RUNNING @10s / RUNNING @10s | 143 @2004ms / RUNNING @10s |
+| inside `drainAndStop` | RUNNING @10s / RUNNING @10s | 143 @2003ms / RUNNING @10s |
+
+Two rows where **armed and disarmed are indistinguishable** is the measurement.
+The clear moved to the end (`fix(bounty)`, its own commit); the stated reason
+for clearing early — "the REF'd timer must stop holding the event loop or the
+natural drain never happens" — does not hold, because there is no natural drain:
+`main` returns and the LAUNCHER calls `process.exit(exitCode)`, and a ref'd
+timer cannot delay an explicit exit.
+
+**So the pre-commitment was wrong twice over**: the option would have covered a
+stretch the watchdog never reached, while still abandoning the longest unbounded
+step — it would have READ as adoption and BEEN a narrowing.
+
+### The transferable rule, written into the kit's header
+
+_The question is never "does this module have a place to put a watchdog" but
+"does the watchdog's window coincide with this module's"._ Where a spell's
+teardown has unbounded work BEFORE the drain, the watchdog belongs at the spell,
+around all of it. If a spell ever appears whose signal path enters
+`drainAndStop` immediately, add the option then — and it must take an `onExpire`
+callback rather than exiting, so the `process.exit` stays outside a module every
+spell bundles (D8's direction).
+
+**Not taken:** _add `watchdogMs` to `DrainOptions`_ — the pre-commitment, and
+the measurement above is why. _Add `armShutdownWatchdog()` as a separate kit
+export taking `onExpire`_ — genuinely tempting: it shares the two scars (REF'd
+deliberately, because an unref'd timer cannot rescue a hang; cleared at the END,
+not optionally) without sharing the `process.exit`. Refused for now because it
+has exactly ONE consumer and the thing worth sharing is six lines of
+`setTimeout` plus two paragraphs of prose — the prose now lives in the kit's
+header, which is where the next adopter will read it, and the code can follow
+the second spell that needs it. _Leave the watchdog un-ruled because bounty
+"already had it"_ — the brief's question was what happens to it under adoption,
+and not asking is how the clear-placement defect would have survived a fifth
+reading.
+
+## D47 · Three wire-observable changes at bounty's adoption, named rather than smuggled
+
+**Decided:** implementer, 2026-09-09. D20 and D35's shape, third instance.
+
+1. **Presence leaves the replay log (census L7).** `connected` / `disconnected`
+   went through `emitEvent`, so they were buffered and a tail resuming at
+   `--since 0` replayed the whole browser-presence history of the session — and
+   each replayed frame ADVANCED the agent's cursor, so presence churn pushed
+   real events out of a bounded window. They now go to live tails only, through
+   `sse.ts`'s `client.send` (the widening Phase 2 made for glamour; bounty is
+   its second consumer and needed no further kit change). **The caller-visible
+   delta: they no longer carry an `id`**, because an unlogged frame has no
+   cursor position. SKILL.md's event table says so. Nothing in the surface or
+   the suite read that `id`; the browser learns presence over its own WebSocket.
+2. **`--timeout 0` means NEVER, not "close immediately".** bounty's local
+   `shouldIdleClose` lacked astrolabe's `timeoutMs <= 0` guard — the one thing
+   that came back the OTHER way when bounty met its own converged code. Driven:
+   a board opened with `--timeout 0`, unwatched, is still alive at +1.5 s and +3
+   s. Nothing documents 0 as a value and nothing in the suite drove it; the old
+   reading was the accident of a `>=` comparison.
+3. **`tail` returns instead of exiting.** Adopting `tailEvents` took bounty's
+   CLI to ZERO live `process.exit` sites (the fifth CLI, after magpie,
+   mind-mapper, glamour and imago). The exit code is unchanged (0 on `closed`);
+   what changed is that a `closed` frame the scope filter REJECTED is still
+   emitted, which the old loop achieved by guarding the exit outside the filter
+   and which is now `terminalEmitsFiltered: true`.
+
+## D48 · bounty stamps NO epoch; L6 is NARROWED, not closed
+
+**Decided:** implementer, 2026-09-09, applying D39's criterion.
+
+**A SESSION-scoped daemon stamps no epoch; a SINGLETON is the case that needs
+one.** bounty is session-scoped: a board is identified by `session_id`, a
+restart is a different session with a different id, and a resuming tail is
+talking to a different daemon BY NAME rather than by watermark. So L6's
+ambiguity (after a restart `seq` restarts at 0 and a resuming client cannot
+distinguish a stale watermark from a fresh one) cannot arise through bounty's
+own discovery.
+
+**The residue, named, because "narrowed" without a residue is "closed" in
+disguise:** a caller that carries a cursor across a restart BY HAND — reusing
+`--since N` against a board reopened with the same `--session-key`, which
+derives the same id deliberately (#69) — still cannot tell the two logs apart.
+Smaller than L6: it needs a caller doing something deliberate, not a daemon
+restarting underneath a tail.
+
+## D49 · `dist-check` ARM 1b read two file NAMES — the third surviving copy of D43's hard-coding
+
+**Decided:** implementer, 2026-09-09, landed as its own commit before chapter 2.
+
+`scripts/dist-check.ts`'s `isBackendArtifact` was
+`endsWith("/cli.js") || endsWith("/server.js")` — the names D43 removed from
+`src/build.ts` and D44 removed from `spawn-path-ward.test.ts`, alive inside the
+arm D42 built for the first-emit window.
+
+**Found by driving it.** `git rm --cached` on bounty's freshly emitted
+`dist/join.js` — the exact shape this port produces — gave **exit 0**, the
+artifact demoted into the NON-FATAL "expected mid-edit" list beside rebuilt
+surface chunks. digestify's `review.js` and grapevine's `daemon.js` were behind
+it. Reading the predicate would have suggested the same conclusion D43 drew
+about the spawn-path ward and, as with D44, planting the artifact is what showed
+the real shape.
+
+The split is now imported from `grimoire/lib/dist-artifacts.ts`; `null` (NOT
+LOOKED AT) throws rather than being coerced to `false`. `dist-roster-ward`'s
+control gained a third entry name and a staged `index.html` — the old control
+spelled only the two names the clause knew, and a synthetic `dist/` with no
+entry page is a spell with no surface, where every `.js` is correctly backend
+and the discrimination does not exist.
+
+**Not taken:** _leave it to digestify's port_ — the same argument D44 rejected:
+the instrument that guards a port must not be repaired by that port. It is
+repaired here because bounty is the port that MADE it observable, and the fix is
+20 lines rather than a competing concern. _Teach dist-check its own closure
+walk_ — two derivations of one fact.
+
+## D50 · The `bun` exemption is RE-ARGUED, not re-declared — its population reached zero at bounty
+
+**Decided:** implementer, 2026-09-09.
+
+`import-boundary-wards`' ward 1b carried a cell asserting that removing `bun`
+from `BUILTIN_EXACT` reddens the ward on a named list of files, and its comment
+said in as many words: _"bounty is the last holder, and this floor now rests on
+ONE file: when bounty ports, this cell has no population and the exemption it
+guards must be RE-ARGUED rather than silently kept."_ bounty's
+`import type { ServerWebSocket } from "bun"` is type-only, the fifth departure
+by that mechanism, so the bundler erased it and the measurement is now
+**empty**.
+
+**The argument, which no longer rests on the roster:**
+
+1. **`bun` is not a dependency, and that is the ward's actual subject.** The
+   ward asks whether the shipped execution path reaches for something a caller
+   must INSTALL. The bare specifier `"bun"` is the runtime's own module, present
+   wherever `bun` is. An empty population is not evidence against the exemption
+   and was never evidence for it.
+2. **The disjointness clause is a different clause.** `bun:sqlite` and every
+   `bun:`-prefixed specifier is exempted by `BUILTIN_PREFIX` (asserted directly
+   in the synthetic cell). Deleting `bun` from `BUILTIN_EXACT` narrows the ward
+   by exactly one specifier.
+3. **The population is not closed.** Three spells still ship daemons as SOURCE.
+   The day one writes this dependency where the bundler does not erase it — or
+   any spell needs a VALUE import of Bun's API — the row returns.
+
+**The liveness proof MOVES rather than dying with the population.** It now rests
+entirely on D16's synthetic cell, which EVALUATES the exemption against a
+population the file constructs. Driven: with `BUILTIN_EXACT` emptied, the suite
+still reds (1 fail, in the scoping cell) on a tree where no spell writes the
+import at all. And the empty measurement is spelled as **looked at and empty**
+(D42) — the cell asserts a non-zero denominator FIRST, so deleting
+`DECLARED_EMITTED_ROOTS` would make it redder, not greener.
+
+**Not taken:** _delete the exemption_ — correct-looking with an empty
+population, and wrong: it would red the day any spell ships a value `bun`
+import, over a specifier that needs no installing. _Keep the cell asserting an
+empty array with no denominator check_ — the D42 defect, in the file that has
+now paid for it twice.
