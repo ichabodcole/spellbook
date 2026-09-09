@@ -919,12 +919,52 @@ async function main(argv: string[]): Promise<number> {
     "task.edit",
   ]);
 
+  // ⛔ THE WATCHDOG IS ARMED BY THE RESOLVE ITSELF, SO EVERY TEARDOWN ENTRY IS
+  // COVERED — AND IT WAS NOT (D53).
+  //
+  // There are FOUR ways into the fifteen-line teardown below: a signal, the
+  // `close` verb over /cmd, the browser's "Close board" over the WebSocket, and
+  // the idle timeout. All four run the SAME teardown. Only the signal one used
+  // to arm the watchdog, from inside `requestShutdown` — while the code above it
+  // said "this makes the ending unconditional" and D46 called it "the only
+  // unconditional termination guarantee in the corpus". Three quarters of the
+  // entries had no guarantee at all.
+  //
+  // ⚠ AND THE UNGUARDED IDLE PATH IS THE ORPHAN-DAEMON CLASS THE 23-MINUTE HANG
+  // CAME FROM. A board nobody is watching, ending by its own timer, with nobody
+  // to notice it did not: the one entry where a hang costs the most is the one
+  // that could not be reached by a signal handler.
+  //
+  // Driven, hang planted between `drainAndStop` and `cleanupDiscovery` in a COPY
+  // of the shipped artifact, `BOUNTY_SHUTDOWN_WATCHDOG_MS=2000`:
+  //
+  //   entry            before                after
+  //   signal           143 @2002ms           143 @2002ms
+  //   close verb       RUNNING @10s          143 @2003ms
+  //   WS "user"        RUNNING @10s          143 @2004ms
+  //   idle timeout     RUNNING @10s          124 @2004ms
+  //
+  // Arming HERE rather than at each of the four call sites is deliberate: a
+  // fourth entry added later inherits the guarantee instead of needing someone
+  // to remember it, which is the failure this repair is repairing. The `settled`
+  // latch already makes the resolve once-only, so the timer is armed once too.
+  //
+  // The exit code is the RESOLVING code (0, 124, …) rather than a signal's — the
+  // forced death must report the ending the daemon was trying to have.
+  let shutdownWatchdog: ReturnType<typeof setTimeout> | null = null;
   let resolveDone!: (val: DoneResult) => void;
   let settled = false;
   const done = new Promise<DoneResult>((res) => {
     resolveDone = (v) => {
       if (settled) return;
       settled = true;
+      shutdownWatchdog = setTimeout(() => {
+        logDaemon("shutdownWatchdog", {
+          reason: v.reason,
+          note: "teardown did not finish; forcing exit",
+        });
+        process.exit(v.code);
+      }, SHUTDOWN_WATCHDOG_MS);
       res(v);
     };
   });
@@ -935,9 +975,14 @@ async function main(argv: string[]): Promise<number> {
   // ⛔ THE WATCHDOG IS THE LOAD-BEARING PART, not the resolve. `resolveDone`
   // alone would make termination depend on the teardown completing, and "the
   // teardown always completes" is exactly the kind of claim that shipped a
-  // 23-minute hang. This makes the ending unconditional: teardown finishes and
-  // clears it (the normal path, and the timer never fires), or it does not and
-  // the process still dies with the right code.
+  // 23-minute hang. The ending is unconditional: teardown finishes and clears
+  // the timer (the normal path, and it never fires), or it does not and the
+  // process still dies with the right code.
+  //
+  // ⚠ AND "UNCONDITIONAL" IS NOW TRUE OF ALL FOUR ENTRIES, WHICH IS WHAT THIS
+  // SENTENCE USED TO CLAIM WHILE THE ARMING SAT HERE, ON THE SIGNAL PATH ALONE.
+  // The arming moved into `resolveDone` (D53, driven); what stays here is the
+  // signal path's own diagnostics.
   //
   // REF'd deliberately — an unref'd timer cannot rescue a hang, because a hang
   // means something else is already holding the loop open. The cost is that the
@@ -964,7 +1009,6 @@ async function main(argv: string[]): Promise<number> {
   // So the kit keeps no `process.exit` (D8's direction, one phase on), bounty
   // keeps the guarantee at full width, and the falsified prediction is recorded
   // in the kit's header where the next spell with a signal path will read it.
-  let shutdownWatchdog: ReturnType<typeof setTimeout> | null = null;
   requestShutdown = (code, reason, signal) => {
     // `subscribers` on the signal path — the field this class of death has never
     // carried. Today `signal` is the only exit class that omits it, so nothing
@@ -972,10 +1016,8 @@ async function main(argv: string[]): Promise<number> {
     // requires the instrument to exist now. Captured BEFORE teardown closes
     // anything, matching the `exit` line's own discipline.
     logDaemon("signal", { signal, subscribers: sockets.size + sseClients.size });
-    shutdownWatchdog = setTimeout(() => {
-      logDaemon("shutdownWatchdog", { signal, note: "teardown did not finish; forcing exit" });
-      process.exit(code);
-    }, SHUTDOWN_WATCHDOG_MS);
+    // The watchdog is armed by `resolveDone` itself now — for this entry and for
+    // the three that never had it.
     resolveDone({ code, reason: reason as CloseReason });
   };
 

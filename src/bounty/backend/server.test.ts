@@ -4675,6 +4675,50 @@ describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", (
     expect(drain).toBeGreaterThan(done);
   });
 
+  test("the watchdog is armed by the RESOLVE, so all four teardown entries are covered", () => {
+    // ⛔ SOURCE-SCANNED FOR THE SAME REASON AS THE CELL ABOVE — observing it
+    // needs a planted hang — and the property is an ABSENCE: no teardown entry
+    // without a guarantee. Driven at the repair (D53), hang planted between
+    // `drainAndStop` and `cleanupDiscovery`, watchdog 2 s:
+    //
+    //   entry          before          after
+    //   signal         143 @2002ms     143 @2002ms
+    //   close verb     RUNNING @10s    143 @2003ms
+    //   WS "user"      RUNNING @10s    143 @2004ms
+    //   idle timeout   RUNNING @10s    124 @2004ms
+    //
+    // Three of the four entries had no force-exit at all while the code above
+    // them said "this makes the ending unconditional". The arming now lives
+    // inside `resolveDone`, which every entry goes through, so a FIFTH entry
+    // added later inherits the guarantee instead of needing to remember it.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    // There is exactly ONE arming site in the file, and it is the resolver.
+    const armings = src.match(/setTimeout\([\s\S]*?SHUTDOWN_WATCHDOG_MS\)/g) ?? [];
+    expect(armings.length).toBe(1);
+    const arm = src.indexOf("shutdownWatchdog = setTimeout(");
+    const resolverOpen = src.indexOf("resolveDone = (v) => {");
+    const resolverClose = src.indexOf("const { code, reason } = await done;");
+    expect(arm).toBeGreaterThan(-1);
+    expect(resolverOpen).toBeGreaterThan(-1);
+    expect(arm).toBeGreaterThan(resolverOpen);
+    expect(arm).toBeLessThan(resolverClose);
+    // ⚠ AND NOT IN `requestShutdown`, which is where it used to be — the
+    // signal-only placement that made the claim above it false. Anchored on the
+    // assignment, so re-adding a second arming there reddens this.
+    const reqStart = src.indexOf("requestShutdown = (code, reason, signal) => {");
+    expect(reqStart).toBeGreaterThan(-1);
+    expect(arm).toBeLessThan(reqStart);
+    // All four entries resolve, and none of them arms anything itself.
+    for (const entry of [
+      "resolveDone({ code, reason: reason as CloseReason })",
+      'resolveDone({ code: 0, reason: "close" })',
+      'resolveDone({ code: 0, reason: "user" })',
+      'resolveDone({ code: 124, reason: "timeout" })',
+    ]) {
+      expect(src).toContain(entry);
+    }
+  });
+
   test("idleTimeout is not ZERO — 0 stalls the initial response rather than disabling", () => {
     // Measured in mind-mapper: `idleTimeout: 0` does not mean "no timeout", it
     // empirically stalls the first response. A future editor reaching for 0 as

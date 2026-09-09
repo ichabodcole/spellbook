@@ -157,13 +157,17 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   //   :860  the shutdown WATCHDOG -- force-exits if the teardown does not
   //         finish. It exists so termination is guaranteed by construction
   //         rather than by the teardown being correct.
-  // NOTE: :673 and :860 are BYTE-IDENTICAL ("process.exit(code);"), so the
-  // (file, text) key CANNOT tell them apart. Both are pinned; this comment is
-  // the only thing that distinguishes them. If one is ever removed, the ward
-  // reports one `removed` and cannot say which -- go read both.
+  // NOTE: :673 and :860 USED TO BE BYTE-IDENTICAL ("process.exit(code);"), so
+  // the (file, text) key could not tell them apart and this comment was the
+  // only thing that did. THE AMBIGUITY IS GONE as a side effect of D53: the
+  // watchdog moved into `resolveDone`, where the code it exits with is the
+  // RESOLVING code, so it now reads `process.exit(v.code);` and the two sites
+  // have distinct keys. The distinction was worth having and was bought by a
+  // change made for another reason -- recorded so nobody "tidies" the two
+  // spellings back into one.
   { file: "bounty/backend/server.ts", text: "process.exit(1);", family: "C-signal" },
   { file: "bounty/backend/server.ts", text: "process.exit(code);", family: "C-signal" },
-  { file: "bounty/backend/server.ts", text: "process.exit(code);", family: "C-signal" },
+  { file: "bounty/backend/server.ts", text: "process.exit(v.code);", family: "C-signal" },
   // D — die(): one short stderr write, then exit. Safe ONLY while the payload
   // fits the 64 KiB pipe buffer — stderr truncates exactly like stdout (measured).
   // astrolabe's die() picks its code the way magpie's does (acc taxonomy:
