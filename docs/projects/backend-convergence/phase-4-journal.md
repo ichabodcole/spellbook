@@ -254,6 +254,92 @@ escape. And the pin was driven end to end: a dev daemon serves
 `/_bun/asset/…css` (Tailwind markers present) and `/_bun/client/…js`, which only
 happens if `bunfig.toml` was read from `src/bounty/`.
 
+## The repair chapter (2026-09-09, same branch) — what an independent verify pass found
+
+Four findings, all driven by the verifier before they were handed back, and the
+first one is the shape worth remembering: **the chapter that adopted the failure
+contract left the spell's MOST COMMON failure on the old one, and then wrote a
+SKILL.md bullet asserting the opposite.** A doc written from the intent of a
+change rather than from the change.
+
+### R1 · The failure contract was half-applied (D51)
+
+`ackOrFail` and five verb arms still wrote prose to stderr, a legacy
+`{"ok":false,"applied":false,…}` document to stdout, and returned **1** — the
+taxonomy's "the spell broke" — for refusals where the spell worked perfectly.
+`conflict` (6) was documented and emitted nowhere.
+
+| invocation                                        | before           | after                                          |
+| ------------------------------------------------- | ---------------- | ---------------------------------------------- |
+| `add` a duplicate `--id`                          | 1 (+ stdout doc) | **6** `conflict`                               |
+| `claim` an other-owned task                       | 1                | **6** `conflict`                               |
+| `block` that forms a cycle                        | 1                | **6** `conflict`                               |
+| `block --on <ghost>`                              | 1                | **5** `not_found`                              |
+| `update` / `remove` / `unblock` a ghost id        | 1                | **5** `not_found`                              |
+| `ackOrFail` via `init` / `close`, stand-in daemon | 1 (+ stdout doc) | **6**, or **5** when the daemon names the kind |
+
+Stdout empty throughout; the daemon's reply verbatim under `error.server`.
+`ackOrFail`'s branch is unreachable through any real verb (the daemon answers
+`message`/`init`/`close` with `applied:true`), so it was driven against a
+stand-in daemon that refuses everything — in the kind-present and kind-absent
+directions both. The taxonomy travels on the wire because the CLI cannot recover
+it: `block` alone answers with two different kinds, and telling them apart at
+the CLI means matching on the daemon's prose (D34).
+
+**Not converted, and named:** `open`'s attach refusal, which carries a data
+payload the envelope has no field for (D51).
+
+### R2 · `join.ts` had never adopted the contract at all (D52)
+
+Two caller-facing entries of one spell, disagreeing about what a failure looks
+like, with nothing in the records saying so. Startup failures now speak the
+envelope (`usage` 2 for a bad flag; `not_found` 5 for no discovery file, an
+unknown `--id`, a dead pointer); session ENDINGS keep their own numbers, with
+the `2`-means-two-things residue named in SKILL.md. The connect-refused path
+used to emit a prose line AND a failure line — two documents on stderr — and now
+emits one. Re-driven end to end afterwards: a host and a joiner, a task mutation
+each way, `join` exit 0, `close` exit 0. ⚠ And this time the terminal
+`disconnected` frame WAS observed (`reason:"stdin_close"`), which the port's own
+drive could not see — it is not a measurement of the truncation either way, but
+it is more than the port had.
+
+### R3 · The watchdog guarantee was one entry wide, and the words said four (D53)
+
+Four `resolveDone` sites, one teardown, one arming. Table in D53. The
+idle-timeout path — the orphan-daemon class the 23-minute hang came from — was
+among the three unguarded.
+
+### R4 · Two instruments, both violating the rule they were built to enforce (D54)
+
+`dist-check` ARM 1b printed nothing on a pass; the `bun`-exemption cell's title
+claimed a liveness proof that D50 had moved out from under it.
+
+### And two things recorded rather than fixed
+
+- **A FOURTH wire-observable change**, which D47's title undercounted:
+  `GET /events` opens with `: connected\n\n` from `sse.ts` (a headers-flushing
+  SSE comment; bounty's own loop wrote no preamble). Every house client drops
+  `:` lines. D51 adds a fifth — `kind` on `/cmd`'s refusal replies. Both are in
+  D47's amendment.
+- **Who resolves `assets/`, which the brief asked and the records never
+  answered.** `server.ts` computes
+  `assetsDir = join(SCRIPT_DIR, "..", "assets")` and serves `GET /assets/<name>`
+  itself, out of the SKILL FOLDER — so in release `SCRIPT_DIR` is the skill's
+  `dist/` and the assets are its sibling, and in dev it is
+  `src/bounty/backend/`, whose sibling `src/bounty/assets/` does not exist (the
+  same asymmetry the "no second entry here" block records for `SKILL.md` and
+  `dist/index.html`). It is the `remove.py` class: a non-TS runtime sibling that
+  stays in the skill folder and is NOT a build input. Driven on a booted release
+  daemon — all five files answer 200:
+
+  ```
+  /assets/mascot.webp        200 image/webp
+  /assets/wordmark.webp      200 image/webp
+  /assets/mascot-large.webp  200 image/webp
+  /assets/favicon.png        200 image/png
+  /assets/README.md          200 application/octet-stream
+  ```
+
 ## What I could not verify
 
 - **That `join.ts`'s terminal `disconnected` frame is truncated by its exit.**

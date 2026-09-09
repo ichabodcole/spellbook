@@ -1795,6 +1795,22 @@ reading.
 
 ## D47 · Three wire-observable changes at bounty's adoption, named rather than smuggled
 
+> ⚠ **AMENDED 2026-09-09 (the repair chapter): THERE ARE FOUR, AND THE TITLE
+> UNDERCOUNTED.** A verify pass found a fourth on bounty's own wire —
+> `GET /events` now opens with `: connected\n\n` before any frame, because
+> `sse.ts` writes an opening SSE COMMENT to flush the response headers (some
+> clients, Bun's own `fetch()` among them, buffer until the first body byte, so
+> a quiet stream would otherwise leave the caller's `fetch()` unresolved).
+> bounty's own loop wrote no preamble. It is a comment line: every house tail
+> client — and the spec — drops `:` lines, `cli.ts tail` included, and nothing
+> in the suite or the surface reads it. **But "a caller cannot see it" and "the
+> bytes did not change" are different claims**, and a section titled "named
+> rather than smuggled" that lists three of four is making the second while
+> meaning the first. A fifth arrives with D51: `/cmd`'s refusal replies now
+> carry a `kind` beside `applied` and `error` — additive, and read by the CLI to
+> pick the exit code. Counted here so the count is the measurement rather than
+> the memory of one.
+
 **Decided:** implementer, 2026-09-09. D20 and D35's shape, third instance.
 
 1. **Presence leaves the replay log (census L7).** `connected` / `disconnected`
@@ -1910,3 +1926,206 @@ population, and wrong: it would red the day any spell ships a value `bun`
 import, over a specifier that needs no installing. _Keep the cell asserting an
 empty array with no denominator check_ — the D42 defect, in the file that has
 now paid for it twice.
+
+## D51 · The failure contract is completed at the cooperative refusals — and the TAXONOMY travels on the wire
+
+**Decided:** implementer, 2026-09-09, `feat/bounty-backend-port`, the repair
+chapter. D45 is the ruling this finishes; found by an independent verify pass
+that drove it.
+
+D45 adopted `kit/wire/errors.ts` and moved seven failing invocations onto the
+taxonomy. **It did not move the refusal bounty produces most often.**
+`ackOrFail` and the `add` / `claim` / `block` / `unblock` / `remove` arms still
+wrote prose to stderr, put a legacy `{"ok":false,"applied":false,…}` document on
+**stdout**, and returned **1** — which the very taxonomy that chapter adopted
+defines as _the spell broke_. So a cooperative refusal, the case where the spell
+worked perfectly and the board said no, was coded as an internal fault. And
+`conflict` (6) was advertised in SKILL.md and **emitted nowhere**: zero
+`die(…, "conflict")` sites in the whole spell.
+
+**Driven, on a booted daemon, every converted path, before and after:**
+
+| invocation                                 | before                             | after                       |
+| ------------------------------------------ | ---------------------------------- | --------------------------- |
+| `add` a duplicate `--id`                   | 1 · prose + `{ok:false}` on stdout | **6** `conflict`            |
+| `claim` an other-owned task                | 1 · prose on stderr                | **6** `conflict`            |
+| `block` that forms a cycle                 | 1 · prose on stderr                | **6** `conflict`            |
+| `block --on <ghost id>`                    | 1 · prose on stderr                | **5** `not_found`           |
+| `update` / `remove` / `unblock` a ghost id | 1 · prose on stderr                | **5** `not_found`           |
+| `ackOrFail` (`init`, `close`)              | 1 · prose + `{ok:false}` on stdout | **6**, or the daemon's kind |
+
+Stdout is empty on all of them; the daemon's own reply rides `error.server`
+verbatim (D31's field), which is where `applied:false` now lives.
+
+`ackOrFail`'s branch is not reachable through any real verb today — the daemon
+answers `message` / `init` / `close` with `applied:true` — so it was driven
+against a **stand-in daemon that refuses everything**, in both the kind-present
+and kind-absent directions. A contract change that cannot be reached by a verb
+is still a contract change; refusing to drive it because it is inconvenient is
+how the pre-port shape survived a chapter.
+
+### ⛔ The taxonomy is decided at the DAEMON, because the CLI cannot see it
+
+`ApplyResult` gains `kind`. From the CLI a claim conflict and a ghost id arrive
+identically — `applied:false` plus a sentence — and `block` alone answers with
+BOTH kinds depending on which guard fired. Classifying at the CLI therefore
+means matching on the sentence, which is glamour's ECONNRESET shape (D34) and
+rots the day someone rewords a human-facing string. `kind` is the contract;
+`message` is presentation; the module says so in its own header.
+
+An absent `kind` degrades to **`conflict`**, not to `internal` and not to 2: it
+is the genus of every refusal that reaches the funnel, so a daemon build that
+predates the field answers with the right family and one wrong species rather
+than a lie about whose fault the failure is.
+
+### The one refusal deliberately NOT converted, and why
+
+**`open`'s attach refusal** (`--title`/`--timeout`/`--restore` against a board
+already running) keeps exit `2` and keeps printing the live board's discovery
+JSON — `url`, `port`, `session_id`, `restoreSkipped` — on **stdout**. The house
+taxonomy has a `kind` for it; what it has no room for is a refusal that CARRIES
+DATA. The payload is the answer to the caller's next question ("then where is my
+board"), and `ErrExtra` has `hint`, `choices` and `server` — where `server` is
+reserved, in as many words, for the upstream's body verbatim. Converting would
+delete coordinates a caller needs; smuggling them into `server` would break the
+one guarantee that field exists to make. It is named in SKILL.md as the single
+exception, recognisable by `restoreSkipped.requested`.
+
+**Not taken:** _widen `ErrExtra` with a payload field_ — a fifth consumer's
+boundary problem is a finding about the module (Phase 2's rule), and this one is
+not that: a failure carrying a data payload is a second contract wearing the
+first one's envelope, and it would land in every spell that bundles `errors.ts`
+to serve one call site. _Convert `open` and drop the payload_ — trades a real
+caller affordance for uniformity. _Classify the refusals in the CLI by their
+prose_ — D34, deliberately not repeated. _Map every refusal to `conflict`_ —
+simpler, and it collapses "there is no such task" into "a precondition failed",
+which is the distinction `not_found` exists to make. _Leave `applied:false` on
+stdout beside the envelope_ — the two-channel shape the old comment defended;
+the exit code already tells a refusal from a benign silence, and a caller that
+must parse two formats to use one tool is worst served on the failure path.
+
+## D52 · `join.ts` adopts the envelope for STARTUP failures — and session ENDINGS keep their own numbers
+
+**Decided:** implementer, 2026-09-09, the repair chapter, driven both sides.
+
+`join.ts` never adopted `errors.ts` at all. Its failures — no discovery file, an
+unknown `--id`, an unreachable `--url`, a bad flag, a connect refusal — all
+exited **2** with bare `error: <prose>` on stderr. So the **two caller-facing
+entries of ONE spell disagreed about what a failure looks like**, and nothing in
+the records said so: SKILL.md tells an agent to spawn both, and an agent that
+does had to parse two formats to use one tool.
+
+| invocation                      | before              | after                           |
+| ------------------------------- | ------------------- | ------------------------------- |
+| `--nope` (a bad flag)           | 2 · prose           | **2** `usage`, enveloped        |
+| no discovery file               | 2 · prose           | **5** `not_found`               |
+| `--id` with no session file     | 2 · prose           | **5** `not_found`               |
+| `--id` / `--url` at a dead port | 2 · TWO prose lines | **5** `not_found`, ONE document |
+
+The connect-refused path used to print `join: ws error: …` AND the failure line;
+that diagnostic is now silenced before the handshake, because "ONE JSON document
+on stderr" is the contract and a prose line above it is a second document.
+
+**What does NOT convert, ruled rather than overlooked: the ending family.** A
+clean disconnect is 0 and a mid-session socket error is 2, both reported by the
+terminal `disconnected` frame on stdout. Those are OUTCOMES, the same family as
+the host daemon's own 0 / 124, which the taxonomy does not govern either — not
+refusals of a caller's command. ⚠ **The named residue:** `2` now means both
+`usage` and "ended by error". They are distinguishable by the CHANNEL — an
+ending always writes the `disconnected` frame and never an envelope; a startup
+failure is the reverse — and not by the number. SKILL.md's join table says so.
+
+**Not taken:** _convert the ending too, remapping the error ending to `internal`
+(1)_ — tempting for uniformity, and it was refused because the ending could not
+be DRIVEN here (killing the host fires `close`, not `error`), and changing an
+exit code that nothing in the suite reaches on the strength of a reading is the
+opposite of what this chapter is for. _Leave `join.ts` alone and record the
+divergence_ — the brief's alternative, and it loses: the divergence is not a
+considered design, it is a module one entry adopted and the other did not.
+_Adopt only for the discovery failures_ — a bad flag is the most ordinary
+failure an entry has, and leaving one prose path keeps the two-formats problem.
+
+## D53 · The shutdown watchdog arms at the RESOLVE, so all four teardown entries are covered
+
+**Decided:** implementer, 2026-09-09, driven. This narrows D46, which is
+otherwise unchanged — the watchdog still stays at bounty, unshared.
+
+D46 established WHERE the watchdog belongs and left a claim standing that the
+code had never earned. `server.ts` has **four** `resolveDone` sites — the signal
+handler, the `close` verb, the browser's "Close board" over the WebSocket, and
+`onIdleClose` — and all four run the same fifteen-line teardown. **Only the
+signal one armed the watchdog**, from inside `requestShutdown`, while the
+comment above it said "this makes the ending unconditional" and D46 called it
+"the only unconditional termination guarantee in the corpus". It was the
+guarantee of one entry in four.
+
+⚠ **And the unguarded idle path is exactly the orphan-daemon class the 23-minute
+hang came from**: a board nobody is watching, ending by its own timer, with
+nobody present to notice that it did not end. The entry where a hang costs the
+most was the one a signal handler could never reach.
+
+**Driven** — hang planted between `drainAndStop` and `cleanupDiscovery` in a
+COPY of the shipped artifact, `BOUNTY_SHUTDOWN_WATCHDOG_MS=2000`, with a no-hang
+control that dies in ~150 ms on every entry:
+
+| entry            | before        | after        |
+| ---------------- | ------------- | ------------ |
+| signal (SIGTERM) | 143 @2002 ms  | 143 @2002 ms |
+| `close` verb     | RUNNING @10 s | 143 @2003 ms |
+| WS `"user"`      | RUNNING @10 s | 143 @2004 ms |
+| idle timeout     | RUNNING @10 s | 124 @2004 ms |
+
+The arming moved INTO `resolveDone` rather than being pasted at the four call
+sites: a fifth entry added later then inherits the guarantee instead of needing
+someone to remember it, which is precisely the failure being repaired. The
+`settled` latch already made the resolve once-only, so the timer arms once. The
+forced exit reports the RESOLVING code, so an idle-timeout hang still dies 124
+rather than borrowing a signal's number — and as a side effect the two
+byte-identical `process.exit(code)` sites in `exit-site-inventory`'s map are now
+distinguishable, an ambiguity that map documented and could not fix.
+
+A source-scanning ward pins it (the property is an ABSENCE — no entry without a
+guarantee — and observing it needs a planted hang, which is a calibration drive
+and not a suite cell): exactly one arming site, inside the resolver, above
+`requestShutdown`, with all four entries present.
+
+**Not taken:** _arm at each of the four call sites_ — correct today and it is
+the shape that produced the defect; the fifth entry is the one that would be
+missed. _Narrow the words instead of the code_ — the brief's explicit
+alternative, and it fails on the idle path: there is no reason an idle close
+should be allowed to hang, so the sentence was right and the code was wrong.
+_Move the arming into `drainAndStop`_ — D46, still falsified: the window would
+start after the unbounded work.
+
+## D54 · Two instruments D42 built, both violating D42 — a silent green and a title that outlived its cell
+
+**Decided:** implementer, 2026-09-09, both driven both ways.
+
+**`dist-check` ARM 1b printed nothing when it passed.** On a clean tree the
+output went from ARM 1's `✅ PASS` straight to ARM 2 — so "1b ran and found
+nothing" and "1b never ran" were the same bytes, which is the exact silence D42
+was written about, inside the arm D42 added. It now prints a header and a
+`looked at` line on the pass. ⚠ **The denominator is the DISK, not the untracked
+set**: `0 untracked` is the number a broken enumerator prints, so the line leads
+with the population that must be non-zero for the comparison to mean anything.
+Driven: clean tree (PASS, with the line), and an untracked backend artifact
+planted in bounty's `dist/` (still FATAL, exit 1).
+
+**`import-boundary-wards`' cell titled _"the `bun` exemption is LIVE — this cell
+FAILS if BUILTIN_EXACT loses it"_ now passes when `BUILTIN_EXACT` loses it.**
+D50 moved the liveness proof to the synthetic cell when the population reached
+zero at bounty's port; the title kept the claim. Driven with `BUILTIN_EXACT`
+emptied: **this cell green, the synthetic scoping cell red** — so the guarantee
+still holds and this cell is no longer what holds it. Renamed to what it
+asserts, with the record of what it used to claim. A title making a claim its
+cell no longer makes is the vacuity this file's own header records convicting
+someone of once, and it is worse than a missing cell: a reader who greps for the
+guarantee finds a green cell that names it and does not test it.
+
+**Not taken:** _delete the renamed cell_ — its roster measurement is real
+(looked at, non-zero denominator, empty result) and it is where a returning
+`bun` import would show up. _Restore the liveness claim by re-pointing the cell
+at the synthetic population_ — that is the synthetic cell, and two derivations
+of one fact is the defect `entry-points.ts` exists because of. _Leave both and
+file them_ — they are one-line repairs in the instruments that judge every
+remaining port.
