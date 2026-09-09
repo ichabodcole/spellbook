@@ -7,11 +7,24 @@
 // comment widgets, blocks until the user submits, then prints
 // {answers, comments, submitted_at} JSON to stdout.
 //
-// Exit codes:
-//   0   submitted successfully
-//   2   bad input (no questions, malformed args, etc.)
-//   124 timeout
-//   130 user closed tab without submitting
+// Exit codes — TWO POPULATIONS, and the split is the contract (D58):
+//
+//   FAILURES, raised through `src/kit/wire/errors.ts` as ONE JSON envelope on
+//   stderr, with `kind` to route on and stdout left empty:
+//     2   usage      — a bad flag, a bad --theme, a malformed :::question
+//                      fence, or nothing to review
+//     5   not_found  — --file/--reference names a path that is not there, or a
+//                      forced dev boot cannot find the surface source
+//     6   conflict   — the review server could not bind (recovery re-binds the
+//                      port in the session id, and the old daemon may hold it)
+//     1   internal   — nothing raises this deliberately; an unknown throw ends
+//                      the process here with its stack, as it always did
+//
+//   SESSION OUTCOMES, returned rather than raised, each with an observation
+//   line on STDOUT and no envelope. They are OUTSIDE the taxonomy:
+//     0   submitted successfully
+//     124 idle timeout
+//     130 user closed the tab after interacting
 //
 // Contract intentionally mirrors review.py so the same tests and agent-facing
 // behavior apply. See review.py for prose-level commentary on edge cases —
@@ -26,6 +39,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { die, reportCliError, setCurrentCommand } from "../../kit/wire/errors.ts";
+import { shouldIdleClose } from "../../kit/wire/housekeeping.ts";
+import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
 
 // The review page used to be `scripts/template.html`, read at boot and string
 // substituted before every response. It is now a React surface at
@@ -53,13 +69,18 @@ const SKILL_ROOT = join(SCRIPT_DIR, "..");
 const DIST_DIR = join(SKILL_ROOT, "dist");
 
 // release iff dist/index.html exists at the skill root — the FILE, never the
-// directory (a built backend can put cli.js in dist/ with no surface there) —
-// else dev; the env override wins either way (Contract 1). Release: zero reads
-// of surface source or bunfig.toml, static files only.
+// directory (a built backend can put review.js in dist/ with no surface there)
+// — else dev; the env override wins either way (Contract 1). Release: zero
+// reads of surface source or bunfig.toml, static files only.
+//
+// DE-DUPLICATED at Phase 5: the body is now `src/kit/wire/serveDist.ts`'s, which
+// the census measured as byte-identical across all eight daemons (the only md5
+// difference being the `export` keyword). The zero-argument wrapper is the house
+// shape — glamour, imago and bounty all keep one — because this spell's callers
+// ask the question about ITS dist, and passing the directory at every call site
+// is a second place to get it wrong.
 export function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+  return resolveModeIn(DIST_DIR);
 }
 
 /** What a dev-mode cwd's bunfig.toml must load, or the stylesheet never
@@ -69,30 +90,34 @@ const TAILWIND_PLUGIN = "bun-plugin-tailwind";
 /** Where the dev bundler's HTML lives. Never "/" — see the "/" handler. */
 const DEV_SURFACE_ROUTE = "/__surface";
 
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html; charset=utf-8",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
-
-// Serves dist/ verbatim EXCEPT its entry: the hashed index-*.js / index-*.css
-// that index.html links RELATIVELY, which from "/" arrive as bare filenames
-// (Contract 2's flat layout). "/" is NOT served from here — it is the
-// substituted page, built once after the port is known. The guard keeps this
-// ONE level deep, so every /assets/ path (all nested) is refused here and falls
-// through to the board's own asset route.
+/**
+ * Serves `dist/` verbatim EXCEPT its entry: the hashed `index-*.js` /
+ * `index-*.css` that `index.html` links RELATIVELY, which from "/" arrive as
+ * bare filenames (Contract 2's flat layout).
+ *
+ * ⛔ **THE `index.html` REFUSAL IS DIGESTIFY'S AND THE KIT DOES NOT CARRY IT.**
+ * `serveFromDist` decides whether a file may be READ — its guards are
+ * empty / `..` / nested only — and the CALLER decides WHICH file. The house
+ * caller is `path === "/" ? "index.html" : path.slice(1)`, and that expression
+ * is exactly what this spell must never write: `/` here returns
+ * `substitute(source)`, the built HTML with the review payload injected in
+ * memory. Handing the entry document to the kit would serve the committed
+ * `dist/index.html` UNSUBSTITUTED — a page that renders with no questions in
+ * it, at HTTP 200, with nothing red anywhere — and even leaving the router
+ * alone, a verbatim adoption would leave `GET /index.html` answering that same
+ * unsubstituted document, because the refusal being deleted is this file's and
+ * not the kit's. So the name check stays HERE, one line above the call, and
+ * `src/digestify/backend/release-serve.test.ts` drives both routes in release
+ * mode rather than reading them.
+ *
+ * ⚠ The nesting guard is the KIT's now, and it is what keeps this serve clear
+ * of the review's own `/assets/<name>` route (all nested, all refused here).
+ * Same rule, one owner.
+ */
 function serveDist(path: string): Response | null {
   const rel = path.slice(1);
-  if (!rel || rel === "index.html" || rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
+  if (rel === "index.html") return null;
+  return serveFromDist(DIST_DIR, rel);
 }
 
 type Question = { id: string; prompt: string };
@@ -287,7 +312,12 @@ function guessMime(name: string): string {
   return MIME_BY_EXT[ext] || "application/octet-stream";
 }
 
-async function main(argv: string[]): Promise<number> {
+/**
+ * The review itself. Every failure below RAISES through `die` rather than
+ * returning a number — see `main`, which is the one place a `CliError` becomes
+ * an exit code.
+ */
+async function runReview(argv: string[]): Promise<number> {
   let parsed: ReturnType<typeof parseArgs>;
   try {
     parsed = parseArgs({
@@ -307,16 +337,17 @@ async function main(argv: string[]): Promise<number> {
       allowPositionals: false,
     });
   } catch (e) {
-    process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
-    return 2;
+    // A bad flag is the most ordinary failure this entry has, and it is the
+    // caller's to fix by changing the command — `usage`, which the taxonomy
+    // already exits 2 for, so this site changes its ENVELOPE and not its code.
+    die(e instanceof Error ? e.message : String(e), "usage");
   }
   const v = parsed.values;
   const theme = v.theme as string;
   if (!VALID_THEMES.includes(theme as (typeof VALID_THEMES)[number])) {
-    process.stderr.write(
-      `error: invalid --theme '${theme}' (allowed: ${VALID_THEMES.join(", ")})\n`,
-    );
-    return 2;
+    // `choices` is what the envelope adds that the prose could only imply: the
+    // set that WOULD have been accepted, as data rather than inside a sentence.
+    die(`invalid --theme '${theme}'`, "usage", { choices: [...VALID_THEMES] });
   }
   const timeout = parseFloat(v.timeout as string);
   let port = parseInt(v.port as string, 10);
@@ -338,14 +369,23 @@ async function main(argv: string[]): Promise<number> {
   } catch (e) {
     if (e && typeof e === "object" && "code" in e && e.code === "ENOENT") {
       const path = "path" in e ? e.path : undefined;
-      process.stderr.write(`error: file not found: ${path ?? "<unknown>"}\n`);
-      return 2;
+      // ⚠ A CODE CHANGE, 2 → 5, AND IT IS THE ONE THING HERE A CALLER CAN
+      // OBSERVE WITHOUT PARSING ANYTHING. `--file` or `--reference` naming a
+      // path that is not there is `not_found` — the named thing does not exist
+      // — which is a different act of repair from a malformed command, and
+      // collapsing the two into 2 left an agent with nothing to route on. Same
+      // ruling `join.ts` took for its missing discovery file (D52). SKILL.md's
+      // exit-code table carries the row.
+      die(`file not found: ${path ?? "<unknown>"}`, "not_found");
     }
+    // ⛔ NOT SWALLOWED. An unknown read failure is not a taxonomy failure, and
+    // reporting it as one would lose the stack that says what actually broke.
     throw e;
   }
   if (!markdown.trim()) {
-    process.stderr.write("error: no markdown provided on stdin, --file, or --reference\n");
-    return 2;
+    die("no markdown provided on stdin, --file, or --reference", "usage", {
+      hint: "pipe the document on stdin, or pass --file PATH / --reference PATH",
+    });
   }
 
   // Build payload with a placeholder session_id; finalize after we know the
@@ -359,8 +399,9 @@ async function main(argv: string[]): Promise<number> {
       timeout,
     });
   } catch (e) {
-    process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
-    return 2;
+    // A malformed `::: question` fence — a missing id, a duplicate id, an empty
+    // body. The markdown is the caller's argument, so this is `usage` at 2.
+    die(e instanceof Error ? e.message : String(e), "usage");
   }
 
   // Resolved BEFORE the server binds and before anything is written, so a
@@ -396,19 +437,24 @@ async function main(argv: string[]): Promise<number> {
     const loadsTailwind =
       existsSync(bunfig) && readFileSync(bunfig, "utf8").includes(TAILWIND_PLUGIN);
     if (!loadsTailwind) {
-      process.stderr.write(
-        "digestify: cannot start in dev mode from this directory.\n" +
-          `  cwd:    ${process.cwd()}\n` +
-          `  needed: a cwd whose bunfig.toml loads ${TAILWIND_PLUGIN} — in a checkout of\n` +
-          `          this repo that is ${DEV_SURFACE_CWD}\n` +
-          "  why:    Bun reads bunfig.toml from the process cwd, at STARTUP — chdir is\n" +
-          "          too late. Without the plugin the stylesheet never compiles and the\n" +
-          "          page is served unstyled, or as Bun's own build-failure page, with\n" +
-          "          nothing red anywhere.\n" +
-          "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
-          "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from that directory.\n",
-      );
-      return 2;
+      // ⛔ THE DIAGNOSTIC SURVIVES THE ENVELOPE, IT DOES NOT SHRINK INTO IT.
+      // Every line below was earned, and `hint` is the field that exists so a
+      // structured failure can still say the operator's whole sentence. ⚠ AND
+      // THE HINT NAMES A DIRECTORY COMPUTED FROM THIS FILE'S OWN ANCHOR — which
+      // is precisely the message D57 caught lying when the anchor was wrong.
+      // It is true only because this module ships at `dist/`; the ward, not the
+      // message, is what holds that.
+      die("digestify: cannot start in dev mode from this directory", "usage", {
+        hint:
+          `cwd: ${process.cwd()}\n` +
+          `needed: a cwd whose bunfig.toml loads ${TAILWIND_PLUGIN} — in a checkout of ` +
+          `this repo that is ${DEV_SURFACE_CWD}\n` +
+          "why: Bun reads bunfig.toml from the process cwd, at STARTUP — chdir is too " +
+          "late. Without the plugin the stylesheet never compiles and the page is served " +
+          "unstyled, or as Bun's own build-failure page, with nothing red anywhere.\n" +
+          "A published spell ships a built dist/ and resolves to release mode; dev mode " +
+          "needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from that directory.",
+      });
     }
     try {
       devIndex = (await import("../../../../../src/digestify/surface/index.html")).default;
@@ -416,14 +462,19 @@ async function main(argv: string[]): Promise<number> {
       // ⛔ THE FAILURE MUST NAME THE SURFACE. A forced-dev boot at a
       // surface-free destination otherwise dies with a module-resolution error
       // the operator cannot tell from a missing `bun`.
-      process.stderr.write(
-        "digestify: cannot start in dev mode — the surface source is missing.\n" +
-          "  needed: src/digestify/surface/index.html (relative to the repo root)\n" +
-          `  reason: ${e instanceof Error ? e.message : String(e)}\n` +
-          "  A published spell ships a built dist/ and resolves to release mode; dev mode\n" +
-          "  needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from a checkout.\n",
-      );
-      return 2;
+      //
+      // ⚠ A CODE CHANGE, 2 → 5. The named thing — `src/digestify/surface/
+      // index.html` — does not exist, which is `not_found` and not a malformed
+      // command; the caller's repair is to fetch a checkout, not to retype the
+      // invocation. The sibling refusal above stays `usage` at 2 because there
+      // the cwd IS the argument.
+      die("digestify: cannot start in dev mode — the surface source is missing", "not_found", {
+        hint:
+          "needed: src/digestify/surface/index.html (relative to the repo root)\n" +
+          `reason: ${e instanceof Error ? e.message : String(e)}\n` +
+          "A published spell ships a built dist/ and resolves to release mode; dev mode " +
+          "needs the repo. Unset SPELLBOOK_SURFACE_MODE, or run from a checkout.",
+      });
     }
   }
 
@@ -625,15 +676,21 @@ async function main(argv: string[]): Promise<number> {
       },
     });
   } catch (e) {
-    process.stderr.write(
-      `${JSON.stringify({
-        event: "bind_error",
-        host,
-        port,
-        error: e instanceof Error ? e.message : String(e),
-      })}\n`,
-    );
-    return 2;
+    // ⚠ A CODE CHANGE, 2 → 6, AND THE ONE FAILURE HERE THAT IS NOT THE
+    // CALLER'S FAULT IN THE USUAL SENSE. A bind refusal is `conflict` — a
+    // precondition failed — and it has a live subject in this spell: Session
+    // Recovery re-binds the port encoded in the session id, so the daemon it is
+    // replacing may still hold it. An agent that can tell "the port is taken"
+    // from "your markdown is malformed" can retry; before this it could not.
+    //
+    // ⛔ AND THE OLD `{"event":"bind_error"}` LINE IS GONE, NOT KEPT BESIDE THE
+    // ENVELOPE. "ONE JSON document on stderr" is the contract, and a second
+    // JSON line above it is a second document — the same repair `join.ts` made
+    // to its pre-handshake ws diagnostic (D52). The host and port it carried
+    // are in the envelope's `hint`.
+    die("could not bind the review server", "conflict", {
+      hint: `host=${host} port=${port}: ${e instanceof Error ? e.message : String(e)}`,
+    });
   }
 
   const boundPort = server.port;
@@ -665,8 +722,31 @@ async function main(argv: string[]): Promise<number> {
   if (!v["no-open"]) openBrowser(readyUrl);
 
   // Idle-timeout watcher: slides forward on every /heartbeat.
+  //
+  // ⛔ THE DECISION IS THE KIT'S; THE SWEEP STAYS HERE. `shouldIdleClose` is
+  // `src/kit/wire/housekeeping.ts`'s, and this spell has a real subject for it:
+  // one idle window, slid forward by a `POST /heartbeat` the PAGE sends. What
+  // is NOT adopted is `startHousekeeping`, which exists to own the PAIR of
+  // standing timers a session daemon runs (the idle sweep and the debounced
+  // snapshot) because they have always been one lifetime. Digestify has one
+  // timer and no snapshot, so adopting the pair-manager would mean a no-op
+  // `touch` and a `subscriberCount` that exists only to be zero.
+  //
+  // ⚠ AND ONE THING CAME BACK THE OTHER WAY — a RECEIVED change, not a gained
+  // one, at exactly one input. `shouldIdleClose` carries astrolabe's
+  // `timeoutMs <= 0` guard, which means NEVER. Before this adoption
+  // `--timeout 0` closed the review on the first 50 ms tick; it now means the
+  // review never times out on its own. Driven both sides and recorded as its
+  // own decision-log entry, because "adopt and gain" is the framing that lands
+  // a behaviour change unnamed.
+  //
+  // ⚠ `subscriberCount` is 0 BY FACT, not by omission: digestify holds no SSE
+  // tail and no WebSocket, so there is never a watcher whose presence should
+  // hold the session open. The argument is required precisely so a daemon that
+  // DOES hold one cannot forget it (census defect L1).
+  const timeoutMs = timeout * 1000;
   const idleTimer = setInterval(() => {
-    if ((performance.now() - heartbeatAt) / 1000 >= timeout) {
+    if (shouldIdleClose(0, performance.now() - heartbeatAt, timeoutMs)) {
       resolveDone({ code: 124, data: null });
     }
   }, 50);
@@ -726,6 +806,51 @@ async function main(argv: string[]): Promise<number> {
     );
   }
   return code;
+}
+
+/**
+ * The ONE place a failure becomes an exit code.
+ *
+ * ⛔ DIGESTIFY HAD NO `die` AND NO ERROR CLASS, AND THAT IS NOT THE SAME AS
+ * HAVING NO ERROR CONTRACT (playbook Phase B, B8). It raised by
+ * `process.stderr.write("error: …"); return 2;` at eight sites, and a grep for
+ * `die(` reported "nothing to change" — the loudest possible wrong answer for a
+ * spell whose exit codes SKILL.md publishes in a table with a per-code sentence
+ * for the agent to say to the human. Every one of those eight is now
+ * `src/kit/wire/errors.ts`'s envelope: ONE JSON document on stderr, `kind` to
+ * route on, and stdout left empty because a failure has no data.
+ *
+ * ⛔ AND THE EXIT CODES ARE TWO POPULATIONS, RULED SEPARATELY — D52's ruling
+ * for `join.ts`, arriving at the spell it was written for. **`2` is a FAILURE;
+ * `124` and `130` are SESSION OUTCOMES.** A timeout and a closed tab are not
+ * refusals of the caller's command: they are what happened to the review, they
+ * are RETURNED from the body below and never raised, they each carry their own
+ * observation envelope on STDOUT, and SKILL.md gives the agent a different
+ * sentence to say to the human for each. They stay OUTSIDE the taxonomy and
+ * keep their own numbers. Adopting `errors.ts` over them would re-spell the two
+ * states this spell exists to distinguish.
+ *
+ * ⚠ AND THE CHANNEL IS WHAT SEPARATES THEM, NOT THE NUMBER — the same named
+ * residue D52 recorded. A failure writes an envelope to stderr and nothing to
+ * stdout; an outcome writes an observation to stdout and no envelope. `0` is
+ * the third case and the only one with a payload.
+ *
+ * ⛔ AN UNKNOWN THROW IS RETHROWN, NOT REPORTED. `reportCliError` answers
+ * `null` for anything that is not a `CliError`, and reporting one as a tidy
+ * taxonomy failure would lose the stack that says what actually broke. Such a
+ * throw ends the process at 1 with its stack, which is what it did before.
+ */
+async function main(argv: string[]): Promise<number> {
+  // Digestify has one verb and it has no name — the envelope's `meta.command`
+  // is the entry, which is what an agent reading the failure has in hand.
+  setCurrentCommand("review");
+  try {
+    return await runReview(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
 }
 
 /**

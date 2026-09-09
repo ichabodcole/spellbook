@@ -272,12 +272,43 @@ Stdout JSON on successful submit:
 
 ## Exit Code Contract
 
-| Code | Meaning                                      | What to do                                                                                                                                                |
-| ---- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Submitted                                    | Parse stdout JSON, continue conversation                                                                                                                  |
-| 2    | Bad input                                    | stderr explains; fix the markdown and retry                                                                                                               |
-| 124  | Timeout                                      | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.) |
-| 130  | User closed the tab _after typing something_ | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                    |
+**There are TWO populations here and they are read differently.** `0`, `124` and
+`130` are **session outcomes** — what happened to the review — and each writes a
+line to **stdout**. `1`, `2`, `5` and `6` are **failures**: the review never
+started, and each writes exactly **one JSON envelope to stderr** with stdout
+left empty. The channel is what tells them apart, not the number.
+
+| Code | Population | Meaning                                                                                       | What to do                                                                                                                                                |
+| ---- | ---------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | outcome    | Submitted                                                                                     | Parse stdout JSON, continue conversation                                                                                                                  |
+| 124  | outcome    | Timeout                                                                                       | Tell the user "the digestify timed out — want to try again? I can also restore your prior draft if you didn't lose anything." (See **Session Recovery**.) |
+| 130  | outcome    | User closed the tab _after typing something_                                                  | Tell the user "I noticed you closed the tab without submitting — want me to relaunch and restore your draft, or continue another way?"                    |
+| 2    | failure    | `usage` — a bad flag, a bad `--theme`, a malformed `::: question` fence, or nothing to review | stderr's envelope explains; fix the command or the markdown and retry. An invalid `--theme` also lists `choices`.                                         |
+| 5    | failure    | `not_found` — `--file`/`--reference` names a path that is not there                           | Check the path. Do not retry unchanged.                                                                                                                   |
+| 6    | failure    | `conflict` — the review server could not bind                                                 | Usually a relaunch onto the port in a session id while the old daemon still holds it (see **Session Recovery**). Retry without `--id`, or wait.           |
+| 1    | failure    | `internal` — the spell broke                                                                  | Not the invocation's fault. Report it; the stack is on stderr.                                                                                            |
+
+**The failure envelope** is the house shape, so an agent routes on `kind` and
+never on prose:
+
+```json
+{
+  "ok": false,
+  "error": {
+    "kind": "not_found",
+    "exit_code": 5,
+    "retryable": false,
+    "message": "file not found: /tmp/nope.md"
+  },
+  "meta": { "command": "review" }
+}
+```
+
+⚠ **`5` and `6` are new as of 2026-09-09** (backend convergence Phase 5, D58).
+They were both `2` before, alongside bare `error: <prose>` on stderr. `2` still
+means `usage` and still means the same thing it always did; what changed is that
+the two failures a caller repairs DIFFERENTLY stopped sharing its number. The
+outcome codes were deliberately left alone.
 
 **Note on 130 vs. 124:** the page only fires the `/cancel` beacon if the user
 has typed into a textarea or saved a comment. Closing or refreshing a clean page

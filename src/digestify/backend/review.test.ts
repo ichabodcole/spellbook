@@ -347,7 +347,14 @@ describe("end-to-end via subprocess", () => {
     expect(code).toBe(2);
   }, 5000);
 
-  test("missing --reference path exits 2", async () => {
+  // ⛔ THE ONE CELL THE ERROR-CONTRACT ADOPTION MOVED, AND IT IS THE DELTA
+  // ITSELF RATHER THAN AN INCIDENTAL. Before Phase 5's chapter 2 this exited 2
+  // with `error: file not found: …` as prose; a missing path is `not_found` in
+  // the house taxonomy and `not_found` exits 5. Same ruling `join.ts` took for
+  // its missing discovery file (D52), and SKILL.md's exit-code table carries
+  // the row. The title said "exits 2"; a title that keeps a claim its cell no
+  // longer makes is worse than no cell.
+  test("a missing --reference path is not_found (5), enveloped — NOT the old prose at 2", async () => {
     const proc = Bun.spawn({
       cmd: [
         "bun",
@@ -362,8 +369,80 @@ describe("end-to-end via subprocess", () => {
       stderr: "pipe",
     });
     const code = await proc.exited;
-    expect(code).toBe(2);
+    expect(code).toBe(5);
+    // ONE JSON document on stderr, and stdout stays empty — a failure has no
+    // data, and a caller that gets JSON from a verb and prose from a failure
+    // has to parse two formats to use one tool.
+    const err = await new Response(proc.stderr).text();
+    expect(await new Response(proc.stdout).text()).toBe("");
+    const lines = err.trim().split("\n").filter(Boolean);
+    expect(lines).toHaveLength(1);
+    const env = JSON.parse(lines[0]);
+    expect(env.ok).toBe(false);
+    expect(env.error.kind).toBe("not_found");
+    expect(env.error.exit_code).toBe(5);
+    expect(env.error.message).toContain("file not found");
+    expect(env.meta.command).toBe("review");
   }, 5000);
+
+  // ⚠ AND THE POPULATION THAT DID **NOT** MOVE. `usage` already exits 2, so a
+  // bad flag keeps its number and changes only its shape. Pinned so the two
+  // halves of the ruling are both visible: what converted, and what agreed.
+  test("a bad flag stays usage at 2 — the envelope changed, the code did not", async () => {
+    const proc = Bun.spawn({
+      cmd: ["bun", "run", SCRIPT, "--no-open", "--definitely-not-a-flag"],
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(await proc.exited).toBe(2);
+    const env = JSON.parse((await new Response(proc.stderr).text()).trim());
+    expect(env.error.kind).toBe("usage");
+    expect(env.error.exit_code).toBe(2);
+  }, 5000);
+
+  // ⛔ `choices` IS WHY THE ENVELOPE IS WORTH THE CHANGE. The prose said
+  // "(allowed: digestify, cthulhu, classic)" inside a sentence; the set an
+  // agent can actually route on is data.
+  test("an invalid --theme enumerates what WOULD have been accepted", async () => {
+    const proc = Bun.spawn({
+      cmd: ["bun", "run", SCRIPT, "--no-open", "--theme", "nope"],
+      stdin: "ignore",
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    expect(await proc.exited).toBe(2);
+    const env = JSON.parse((await new Response(proc.stderr).text()).trim());
+    expect(env.error.kind).toBe("usage");
+    expect(env.error.choices).toEqual(["digestify", "cthulhu", "classic"]);
+  }, 5000);
+
+  // ⛔ THE ONE THING THE KIT GAVE BACK RATHER THAN TOOK — a RECEIVED change,
+  // driven, at exactly one input (D59). `shouldIdleClose` carries astrolabe's
+  // `timeoutMs <= 0` guard, which means NEVER. Digestify's own watcher was
+  // `elapsed/1000 >= timeout`, so `--timeout 0` used to end the review 124 on
+  // the first 50 ms tick — a review nobody could ever read. It now means the
+  // review does not time out on its own; `/cancel` and `/submit` still end it,
+  // which is what this cell proves rather than waiting for a timeout that will
+  // never come.
+  test("--timeout 0 now means NEVER, not 'immediately' — and /cancel still ends it", async () => {
+    const { proc, ready } = await spawnAndWaitForReady(
+      ["--timeout", "0"],
+      "::: question id=q1\nWhy?\n:::",
+    );
+    // Well past the old behaviour's first tick (50 ms) and its whole window.
+    await Bun.sleep(750);
+    // Still alive: it answers, and it has not written its ending line.
+    expect(
+      (await fetch(`http://127.0.0.1:${ready.port}/heartbeat`, { method: "POST" })).status,
+    ).toBe(200);
+    await fetch(`http://127.0.0.1:${ready.port}/cancel`, { method: "POST" });
+    const out = await readStdout(proc);
+    expect(await proc.exited).toBe(130);
+    // 130, not 124 — the session ended because the tab closed, and the idle
+    // watcher never fired at all.
+    expect(JSON.parse(out).exit).toBe(130);
+  }, 10000);
 
   test("--file input works without stdin", async () => {
     const dir = mkdtempSync(join(tmpdir(), "digestify-test-"));

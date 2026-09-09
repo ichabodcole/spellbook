@@ -200,6 +200,28 @@ test("GET /index-*.js and .css serve the hashed assets with the right content ty
   }
 });
 
+// ⛔ THE CELL THE KIT ADOPTION EARNED, AND THE ONE THING `serveFromDist` COULD
+// HAVE BROKEN SILENTLY. `src/kit/wire/serveDist.ts` guards empty / `..` /
+// nested and NOTHING ELSE — the refusal of the entry document BY NAME is
+// digestify's own, and a verbatim adoption would have deleted it and left this
+// route answering the committed `dist/index.html` UNSUBSTITUTED: a page that
+// renders with no questions in it, at HTTP 200, with nothing red anywhere.
+// Driven rather than read, and driven at BOTH ends — the route must refuse, and
+// `/` must still answer the injected payload (the cell above).
+test("GET /index.html does NOT serve the unsubstituted page — the refusal is this spell's, not the kit's", async () => {
+  const res = await fetch(`${url}/index.html`);
+  expect(res.status).toBe(404);
+  // A 404 whose body happened to be the page would pass a status check. Assert
+  // the placeholders are not on the wire at all, from this route or any other.
+  const body = await res.text();
+  expect(body).not.toContain("__PAYLOAD__");
+  expect(body).not.toContain("__TITLE__");
+  // And the file it would have served really is sitting there, unsubstituted —
+  // otherwise this cell passes because there was nothing to leak.
+  const onDisk = await Bun.file(join(skillRoot, "dist", "index.html")).text();
+  expect(onDisk).toContain("__PAYLOAD__");
+});
+
 test("an unknown static path 404s (not a silent fallthrough)", async () => {
   const res = await fetch(`${url}/index-deadbeef.js`);
   expect(res.status).toBe(404);
