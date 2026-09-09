@@ -26,15 +26,7 @@
 //
 // Exit codes: 0 submit/close, 2 bad args, 124 idle timeout, 130 cancel.
 
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  unlinkSync,
-  writeFileSync,
-} from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -54,6 +46,12 @@ import {
   styleId,
   type Variant,
 } from "../../../plugins/spellbook/skills/imago/shared/types";
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { createEventLog } from "../../kit/wire/eventLog.ts";
+import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
+import { resolveMode as resolveModeIn, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { sseResponse as kitSseResponse, type SseClients } from "../../kit/wire/sse.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 import { optimizeImageBuffer } from "./imageOptimize.server";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -75,34 +73,29 @@ const DIST_DIR = join(SKILL_ROOT, "dist");
 // release iff dist/index.html exists at the skill root, else dev; the env
 // override wins either way (seams Contract 1). Release: zero reads of surface/
 // or bunfig.toml — static files only.
+//
+// ⛔ THE PREDICATE AND THE SCAR IT CARRIES ARE NOW `src/kit/wire/serveDist.ts`:
+// it is the FILE that discriminates, never the DIRECTORY, because a built
+// BACKEND puts cli.js and server.js in a dist/ that has no surface anywhere
+// near it — magpie stayed correctly in dev for a whole slice with a dist/ that
+// existed. That is imago's situation from this phase onward, so the scar is
+// now load-bearing here and not only in the module's header.
 function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
+  return resolveModeIn(DIST_DIR);
 }
 
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
-
 // Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
-// (Contract 2's flat, relative-href layout). Path traversal guarded (a static
-// asset request is always a bare filename, never nested), which is also what
-// keeps this clear of imago's own /assets/<name> route above it.
+// (Contract 2's flat, relative-href layout). The URL→filename decision stays
+// HERE, because that half is each router's own (digestify substitutes into the
+// entry HTML, grapevine serves at /watch); the kit decides whether the file may
+// be read and what it is served as.
+//
+// ⚠ AND THE NESTING REFUSAL IS WHAT KEEPS THIS CLEAR OF IMAGO'S OWN
+// /assets/<name> ROUTE, not the route ordering — measured, and asserted in
+// `release-serve.test.ts`. `serveFromDist` refusing anything with a slash in it
+// is that refusal, now shared.
 function serveDist(path: string): Response | null {
-  const rel = path === "/" ? "index.html" : path.slice(1);
-  if (rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
+  return serveFromDist(DIST_DIR, path === "/" ? "index.html" : path.slice(1));
 }
 
 // Persistent home for session snapshots (survives restarts, unlike tmpdir).
@@ -505,14 +498,31 @@ async function main(argv: string[]): Promise<number> {
     }
   }
   const sockets = new Set<ServerWebSocket<unknown>>();
-  const enc = new TextEncoder();
 
-  // Append-only event log for the agent's SSE tail. Each event gets a monotonic
-  // id so a (re)connecting tail can replay via ?since=<id>.
-  const events: Array<Record<string, unknown>> = [];
-  let eventSeq = 0;
-  const sseClients = new Set<ReadableStreamDefaultController>();
-  const sseTimers = new Set<ReturnType<typeof setInterval>>();
+  // The replay log behind `GET /events?since=<id>` — shared
+  // (`kit/wire/eventLog.ts`). ⛔ THREE CENSUS DEFECTS DIE HERE AND NONE OF THEM
+  // BY ANYONE REMEMBERING:
+  //   · L5 — the buffer was `const events: Array<…> = []`, pushed for the
+  //     daemon's whole life. It is now bounded at 1,000 frames.
+  //   · the monotonic id now actually WINS over a payload `id`. The old
+  //     `{ id: ++eventSeq, ...msg }` spread AFTER the id, so any caller passing
+  //     an `id` silently overrode the cursor — and imago's frames do carry ids
+  //     (`{ type: "proposal.send", id: msg.id }`), which made this live rather
+  //     than theoretical: those two frames went out with the PROPOSAL's id as
+  //     their cursor value. Fixed by construction.
+  //   · a `?since=` that will not parse used to yield NaN, fail every `>`
+  //     comparison, and open the tail EMPTY and connected. Absent and
+  //     unparseable now mean the same thing: from the start.
+  //
+  // ⚠ IMAGO STAMPS NO EPOCH, and that is glamour's ruling for glamour's reason,
+  // which is imago's too: a session is identified by `session_id`, a restart is
+  // a DIFFERENT session, and a resuming tail is already talking to a different
+  // daemon by name. Census defect L6 is therefore NARROWED here rather than
+  // closed — `subscribe` treating `since > cursor` as "that cursor is from
+  // another process" is what a resuming tail actually gets — and the epoch query
+  // parameter that would close it is deliberately out of scope (D23).
+  const log = createEventLog<Record<string, unknown>>();
+  const sseClients: SseClients = new Set();
 
   let resolveDone!: (val: DoneResult) => void;
   let settled = false;
@@ -529,18 +539,23 @@ async function main(argv: string[]): Promise<number> {
     lastActivity = performance.now();
   };
 
-  function emitEvent(msg: Record<string, unknown>) {
-    const ev = { id: ++eventSeq, ...msg };
-    events.push(ev);
-    const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
-    for (const c of sseClients) {
-      try {
-        c.enqueue(frame);
-      } catch {
-        /* client gone */
-      }
-    }
-  }
+  const emitEvent = (msg: Record<string, unknown>) => log.emit(msg);
+
+  // Presence is TRANSIENT: it goes to the live SSE clients and is NEVER stored
+  // in the replay log — census defect L7, which imago had. A reconnecting agent
+  // should not re-see every past connect/disconnect, and these frames carry no
+  // id, so they never advance a tail cursor either. SKILL.md's documented wake
+  // grep still receives them live, which is all it ever wanted them for.
+  //
+  // ⛔ `client.send` IS THE MEMBER THAT MAKES THIS POSSIBLE WITHOUT A SECOND
+  // REGISTRY. Phase 2 widened `SseClients` for exactly this — keeping a parallel
+  // `Set<ReadableStreamDefaultController>` here would re-create the drift the
+  // registry exists to remove, and it is the drift imago's OLD code had: two
+  // sets (`sseClients`, `sseTimers`) swept in two places at teardown.
+  const emitTransient = (msg: Record<string, unknown>) => {
+    const frame = `data: ${JSON.stringify(msg)}\n\n`;
+    for (const c of sseClients) c.send(frame);
+  };
 
   function broadcast(msg: object) {
     const s = JSON.stringify(msg);
@@ -801,45 +816,38 @@ async function main(argv: string[]): Promise<number> {
     return true;
   }
 
-  function sseResponse(url: URL): Response {
+  // GET /events?since=<id> — replay, then stay open for live frames plus a
+  // heartbeat comment. ONE call into `kit/wire/sse.ts`, which is where the
+  // teardown funnel lives: `cancel()`, `req.signal` and a failed enqueue all
+  // reach it, at most once, and that funnel is what bounds the subscriber count
+  // the idle sweep now reads.
+  //
+  // ⛔ WHAT THE OLD COPY COULD NOT DO, AND IT IS WHY THE SUBSCRIBER COUNT WAS
+  // NEVER TRUSTWORTHY. It relied on `try { enqueue } catch` to notice a departed
+  // client — measured on Bun 1.3.14 NOT to work, an enqueue on an orphaned
+  // stream buffers silently and never throws — and it was not wired to
+  // `req.signal` at all, so a client that vanished without cancelling was
+  // counted as present for the life of the daemon. It also kept a SECOND set
+  // (`sseTimers`) of per-stream heartbeats, swept separately at teardown, which
+  // is the two-registries-drifting shape the module's header warns about.
+  //
+  // ⚠ AND THE HEARTBEAT IS NO LONGER A LITERAL. It was `15000`, hard-coded in
+  // this function, 1,300 lines from the `idleTimeout: 255` it is chained to, with
+  // the relationship written only in the prose between them. Both now come from
+  // `./heartbeat.ts`, which DERIVES the pair — so `beat <= idleTimeout / 2` holds
+  // for any configured value, not only for the two that happened to be written.
+  const eventsResponse = (req: Request, url: URL): Response => {
     touch();
-    const since = parseInt(url.searchParams.get("since") ?? "-1", 10);
-    let ref: ReadableStreamDefaultController | null = null;
-    let hb: ReturnType<typeof setInterval> | null = null;
-    const stream = new ReadableStream({
-      start(controller) {
-        ref = controller;
-        for (const ev of events) {
-          if ((ev.id as number) > since) {
-            controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
-          }
-        }
-        sseClients.add(controller);
-        hb = setInterval(() => {
-          try {
-            controller.enqueue(enc.encode(`: hb\n\n`));
-          } catch {
-            /* gone */
-          }
-        }, 15000);
-        sseTimers.add(hb);
-      },
-      cancel() {
-        if (hb) {
-          clearInterval(hb);
-          sseTimers.delete(hb);
-        }
-        if (ref) sseClients.delete(ref);
-      },
+    return kitSseResponse({
+      log,
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
+      heartbeatMs: SSE_HEARTBEAT_MS,
+      clients: sseClients,
+      signal: req.signal,
+      onOpen: touch,
+      onClose: touch,
     });
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
-    });
-  }
+  };
 
   // ── browser messages (WebSocket) ──────────────────────────────────
   async function handleBrowserMsg(msg: Record<string, unknown>) {
@@ -1374,7 +1382,12 @@ async function main(argv: string[]): Promise<number> {
       // Found 2026-09-08 by the backend duplication recon: four spells had hit
       // this and fixed it, three had not, because the daemon spine is one design
       // implemented six times.
-      idleTimeout: 255,
+      //
+      // ⚠ NO LONGER A LITERAL — and it is the OTHER HALF of the pair, which is
+      // the whole reason `./heartbeat.ts` exists. The 255 and the 15,000 were
+      // written 1,300 lines apart and chained only by the prose above; they are
+      // now derived together and the clamp is enforced.
+      idleTimeout: IDLE_TIMEOUT_SEC,
       development: { hmr: mode === "dev" },
       fetch: (req, srv) => {
         const url = new URL(req.url);
@@ -1385,14 +1398,23 @@ async function main(argv: string[]): Promise<number> {
           return new Response("upgrade required", { status: 426 });
         }
         if (req.method === "GET" && path === "/state") {
+          // ⛔ `touch()` — CENSUS DEFECT L2, AND IT IS A ONE-WORD FIX FOR A REAL
+          // KILL. Every other route touched the activity clock and this one did
+          // not, so an agent polling `/state` in a loop — the exact shape
+          // SKILL.md tells it to use for ambient board state — was idle-closed
+          // UNDER ITSELF at the 30-minute floor while it was actively reading.
+          // Not closed by a module: closed by adopting the housekeeper, which
+          // made "what counts as activity" a question with one answer instead of
+          // a property of whichever route the author remembered.
+          touch();
           const lean = url.searchParams.get("lean") === "1";
           const payload = lean ? leanState(state) : state;
-          return new Response(JSON.stringify({ state: payload, cursor: eventSeq }), {
+          return new Response(JSON.stringify({ state: payload, cursor: log.cursor() }), {
             headers: { "Content-Type": "application/json" },
           });
         }
         if (req.method === "GET" && path === "/events") {
-          return sseResponse(url);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req
@@ -1473,7 +1495,7 @@ async function main(argv: string[]): Promise<number> {
         open(ws) {
           sockets.add(ws);
           touch();
-          emitEvent({ type: "connected" });
+          emitTransient({ type: "connected" });
           ws.send(JSON.stringify({ type: "state", state }));
         },
         message(_ws, raw) {
@@ -1491,7 +1513,8 @@ async function main(argv: string[]): Promise<number> {
         },
         close(ws) {
           sockets.delete(ws);
-          emitEvent({ type: "disconnected" });
+          touch();
+          emitTransient({ type: "disconnected" });
         },
       },
     });
@@ -1669,89 +1692,103 @@ async function main(argv: string[]): Promise<number> {
     files_dir: sessionFilesDir,
     mode,
   });
-  // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
-  // rather than absence. A bare writeFileSync is not atomic: a CLI reading
-  // while the daemon writes can observe a half-written pointer, and under the
-  // old best-effort read that surfaced as "no running session". Write beside
-  // the target and rename — rename within one directory is atomic, so a reader
-  // sees either the previous pointer or the new one, never a partial file.
-  // Fixed in glamour 2026-09-07; found standing in three siblings 2026-09-08
-  // (docs/investigations/2026-09-08-backend-duplication-recon.md).
-  const writeAtomic = (target: string, text: string) => {
-    const tmp = `${target}.${process.pid}.tmp`;
-    try {
-      writeFileSync(tmp, text);
-      renameSync(tmp, target);
-    } catch (err) {
-      try {
-        rmSync(tmp, { force: true });
-      } catch {
-        /* the temp file is already gone, or was never created */
-      }
-      throw err;
-    }
-  };
+  // ⚠ ATOMIC, because readSession treats unparseable content as corruption
+  // rather than absence — and this implementation is now
+  // `kit/wire/discovery.ts`, shared with the singleton convention D3 kept alive
+  // beside this one. A bare `writeFileSync` is not atomic: a CLI reading while
+  // the daemon writes observes a half-written pointer, which the old
+  // best-effort read reported as "no running session". Census defect L3 —
+  // imago was already CORRECT here (it was fixed 2026-09-08 from glamour's
+  // find), so what adoption buys is not a fix but the removal of the fourth
+  // copy: the temp-name-carries-the-pid detail and the failed-write cleanup are
+  // no longer four things that must stay equal.
   try {
-    writeAtomic(sessionFile, sessionInfo);
-    writeAtomic(latestFile, sessionInfo);
+    writeFileAtomic(sessionFile, sessionInfo);
+    writeFileAtomic(latestFile, sessionInfo);
   } catch (e) {
     process.stderr.write(
       `imago: could not write discovery file: ${e instanceof Error ? e.message : String(e)}\n`,
     );
   }
-  const cleanupDiscovery = async () => {
+  // The session pointer is unconditionally ours; `imago-latest.json` is NOT — a
+  // newer session may already have claimed it, and unlinking that would make the
+  // live daemon invisible to the next verb, so the next CLI verb spawns a third.
+  // `unlinkIfMatches`'s `identify` hook is what lets ONE shared predicate serve
+  // both this JSON pointer and astrolabe's bare pid file.
+  //
+  // ⚠ IT ALSO STOPPED BEING ASYNC, which is a real simplification and not a
+  // style edit: the old version read `latestFile` through `await Bun.file().text()`
+  // purely to compare one field, which made the whole teardown path async for a
+  // synchronous decision.
+  const cleanupDiscovery = () => {
     try {
       unlinkSync(sessionFile);
-    } catch {}
-    try {
-      const cur = await Bun.file(latestFile).text();
-      if (JSON.parse(cur).session_id === sessionId) unlinkSync(latestFile);
     } catch {
       /* gone — fine */
     }
+    unlinkIfMatches(latestFile, sessionId, (raw) => {
+      try {
+        const id = (JSON.parse(raw) as { session_id?: unknown }).session_id;
+        return typeof id === "string" ? id : null;
+      } catch {
+        return null;
+      }
+    });
     try {
       if (sessionFilesDir) rmSync(sessionFilesDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      /* already gone */
+    }
   };
 
   if (!v["no-open"]) openBrowser(url);
 
-  const idleTimer = setInterval(() => {
-    if ((performance.now() - lastActivity) / 1000 >= timeout) {
-      resolveDone({ code: 124, reason: "timeout" });
-    }
-  }, 250);
-
-  // Debounced persistence: snapshot the full state ~1s after any change, so a
-  // restart (cli.ts open --restore <id>) resumes exactly where we left off.
-  const snapTimer = setInterval(() => {
-    if (snapDirty) {
-      snapDirty = false;
-      saveSnapshot();
-    }
-  }, 1000);
+  // The two standing timers — the idle sweep and the debounced snapshot — are
+  // ONE call, because they have always been one lifetime: every copy cleared
+  // both in the same two lines after `await done`, and the pair that gets
+  // forgotten is the pair whose timers keep a process alive after teardown.
+  //
+  // ⛔ THE SWEEP NOW SEES ITS SUBSCRIBERS — CENSUS DEFECT L1, closed by the
+  // shared housekeeper REQUIRING a `subscriberCount` rather than by anyone
+  // remembering to pass one. imago's expression read
+  // `(now - lastActivity) / 1000 >= timeout` and nothing else, so an agent
+  // holding a `/events` tail on a quiet board was killed WITH ITS CONNECTION
+  // OPEN at the 30-minute default. `timeout` now means "linger this long after
+  // the LAST subscriber leaves", not "maximum idle while connected" — a
+  // deliberate change of meaning, and the one the census asked for.
+  const stopHousekeeping = startHousekeeping({
+    subscriberCount: () => sockets.size + sseClients.size,
+    idleMs: () => performance.now() - lastActivity,
+    touch,
+    timeoutMs: timeout * 1000,
+    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    snapshot: {
+      dirty: () => snapDirty,
+      clear: () => {
+        snapDirty = false;
+      },
+      // Debounced persistence, so a restart (`cli.ts open --restore <id>`)
+      // resumes exactly where we left off.
+      write: saveSnapshot,
+    },
+  });
 
   const { code, reason } = await done;
-  clearInterval(idleTimer);
-  clearInterval(snapTimer);
+  stopHousekeeping();
   saveSnapshot(); // final write — keep it (the resume point, NOT deleted on close)
   emitEvent({ type: "closed", reason });
   broadcast({ type: "message", text: `session ended: ${reason}` });
-  // Grace period so the closed event + submit/cancel broadcasts flush.
-  await new Promise((r) => setTimeout(r, 150));
-  for (const t of sseTimers) clearInterval(t);
-  for (const c of sseClients) {
-    try {
-      c.close();
-    } catch {}
-  }
-  for (const ws of sockets) {
-    try {
-      ws.close();
-    } catch {}
-  }
-  await Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]);
-  await cleanupDiscovery();
+  // ⛔ THE GRACE PERIOD IS NOT POLITENESS: a `closed` frame followed immediately
+  // by an aggressive `server.stop(true)` is a frame the client never sees, and
+  // the CLI's tail watches for exactly that frame to end the watch. AND THE STOP
+  // IS RACED, because `stop(true)` awaits its connections and one wedged peer is
+  // enough to park teardown forever. Both are now `kit/wire/housekeeping.ts`.
+  //
+  // ⚠ AND THE SECOND REGISTRY IS GONE. This swept `sseTimers` and `sseClients`
+  // separately; the per-stream heartbeat now lives inside the stream's own
+  // teardown funnel, so there is nothing left to fall out of step with.
+  await drainAndStop({ server, clients: sseClients, sockets });
+  cleanupDiscovery();
   return code;
 }
 

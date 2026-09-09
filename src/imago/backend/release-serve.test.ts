@@ -184,10 +184,26 @@ test("the ready EVENT carries the resolved mode, not only the discovery file", a
   // surface, and `mode` is the only thing that tells them apart.
   const res = await fetch(`${url}/events?since=0`);
   const reader = (res.body as ReadableStream<Uint8Array>).getReader();
-  const { value } = await reader.read();
+  // ⚠ THE STREAM NOW OPENS WITH A COMMENT, and reading "the first line" is no
+  // longer the same as reading "the first event". `kit/wire/sse.ts` writes
+  // `: connected` before the replay — a spec-legal comment that tells a client
+  // the stream is live even when the replay is empty — so this cell reads until
+  // it finds a `data:` line instead of assuming index 0. Phase 3 chapter 2.
+  const dec = new TextDecoder();
+  let buf = "";
+  let dataLine: string | undefined;
+  for (let i = 0; i < 20 && dataLine === undefined; i++) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    dataLine = buf.split("\n").find((l) => l.startsWith("data:"));
+  }
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
-  const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
+  expect(buf.startsWith(": connected")).toBe(true);
+  const ready = JSON.parse((dataLine ?? "").replace(/^data: ?/, "")) as {
+    type: string;
+    mode: string;
+  };
   expect(ready.type).toBe("ready");
   expect(ready.mode).toBe("release");
 });

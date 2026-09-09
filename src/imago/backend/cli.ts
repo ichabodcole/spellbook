@@ -34,6 +34,15 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
+import {
+  CliError,
+  die,
+  type ErrKind,
+  reportCliError,
+  setCurrentCommand,
+} from "../../kit/wire/errors.ts";
+import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 // ⛔ EVERY PATH BELOW IS RESOLVED FROM THE EMITTED BUNDLE, NEVER FROM THIS FILE.
 // This module is authored here and SHIPS BUILT at
@@ -104,9 +113,41 @@ type Session = {
   mode?: "dev" | "release";
 };
 
-function die(msg: string): never {
-  process.stderr.write(`imago: ${msg}\n`);
-  process.exit(2);
+/**
+ * ⛔ `die` IS NOW THE HOUSE'S (`src/kit/wire/errors.ts`) AND IT THROWS RATHER
+ * THAN EXITS — and for imago that is a CALLER-VISIBLE CHANGE, stated here
+ * rather than absorbed. The function this replaces wrote `imago: <msg>` to
+ * stderr as PROSE and exited **2 for every failure**: a missing session, an
+ * unreachable daemon, a bad flag and an internal fault were one number. A
+ * failure now emits ONE JSON envelope on stderr and the exit code comes from
+ * the taxonomy — usage 2, internal 1, not_found 5, conflict 6 — so an agent can
+ * route on `kind` instead of matching prose. See decision D38.
+ *
+ * The THROW is the other half, and it is why B9's audit had to be run: Bun's
+ * stdout is asynchronous on a pipe, so an exit from three frames down discards
+ * whatever has not drained. Every failure now leaves through `main`'s funnel.
+ *
+ * ⚠ A `die` REACHABLE from inside a `try` whose `catch` SWALLOWS is a silent
+ * continue rather than an exit. Audited by call graph, not by grep — the count
+ * and the classification are in the phase 3 journal.
+ */
+const NO_SESSION_HINT = { hint: "run: cli.ts open (or pass --session <id>)" };
+
+/** A refusal from imago's own daemon, carried VERBATIM under `error.server` so
+ *  a caller can branch on what the other side actually said rather than on this
+ *  CLI's prose about it. The status→kind map is the house's. */
+function daemonRefused(what: string, status: number, data: unknown): never {
+  const kind: ErrKind =
+    status === 400
+      ? "usage"
+      : status === 404
+        ? "not_found"
+        : status === 409
+          ? "conflict"
+          : "internal";
+  die(`${what} failed (HTTP ${status})`, kind, {
+    ...(data !== null && data !== undefined ? { server: data } : {}),
+  });
 }
 
 function sleep(ms: number): Promise<void> {
@@ -148,18 +189,18 @@ function readSession(session?: string): Session | null {
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code === "ENOENT") return null;
-    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`);
+    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`, "internal");
   }
   try {
     return JSON.parse(raw) as Session;
   } catch {
-    die(`the session pointer is not valid JSON: ${path}`);
+    die(`the session pointer is not valid JSON: ${path}`, "internal");
   }
 }
 
 function requireSession(session?: string): Session {
   const s = readSession(session);
-  if (!s) die("no running imago session — run: cli.ts open");
+  if (!s) die("no running imago session", "not_found", NO_SESSION_HINT);
   return s;
 }
 
@@ -248,8 +289,8 @@ export function parseArgs(args: string[]): {
 
 async function postCmd(session: string | undefined, msg: Record<string, unknown>) {
   const s = requireSession(session);
-  const { status } = await api(s.port, "POST", "/cmd", msg);
-  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
+  const { status, data } = await api(s.port, "POST", "/cmd", msg);
+  if (status !== 200) daemonRefused("cmd", status, data);
   printJson({ ok: true, sent: msg.type });
 }
 
@@ -295,121 +336,87 @@ async function cmdOpen(flags: Record<string, string | boolean>) {
       }
     }
   }
-  die("imago server failed to start within 5s");
+  die("imago server failed to start within 5s", "internal", {
+    hint: "the daemon writes its discovery pointer once it has bound; check for a stale $TMPDIR/imago-latest.json",
+  });
 }
 
 async function cmdState(session?: string, full = false) {
   const s = requireSession(session);
   const { status, data } = await api(s.port, "GET", `/state${full ? "" : "?lean=1"}`);
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) daemonRefused("state", status, data);
   printJson(data);
 }
 
-async function cmdTail(session: string | undefined, sinceArg: number) {
-  let since = sinceArg;
-  let delay = 250;
-  let stopped = false;
-  // Pin the session: resolve once, then RECONNECT to the SAME session on every
-  // retry — never silently hop to a new "most recent" daemon (that hijack ended a
-  // watcher the moment a second daemon spawned). `session` may be undefined; it's
-  // pinned to the first resolved id below. Once pinned + grounded, if that session
-  // disappears we EXIT (end-of-session), rather than retry forever or re-resolve.
+/**
+ * The event tail — ONE CALL into the house's shared SSE client
+ * (`src/kit/wire/tailEvents.ts`), where the reconnect loop, the spec-correct
+ * frame parser, the backoff, the idle watchdog and the drained exit live once
+ * for every spell.
+ *
+ * ⛔ **THE HAND-ROLLED LOOP THIS REPLACES HAD THE CONSTANT-BACKOFF DEFECT, AND
+ * IMAGO'S COPY WAS WORSE THAN THE ONE GLAMOUR PAID FOR.** It set `delay = 250`,
+ * doubled it on three failure branches — and RESET IT TO 250 on every successful
+ * OPEN, before reading a byte. A daemon that accepts a connection and
+ * immediately drops it was therefore reconnected against at a constant 250 ms,
+ * forever, with no growth: a reconnect storm that reads as a healthy retry.
+ * ⚠ AND IMAGO HAD A FOURTH SITE THE OTHERS DID NOT — `await sleep(delay)` at the
+ * BOTTOM of the outer loop, after the stream ended, using whatever `delay` the
+ * successful open had just reset. It cannot be re-expressed here, because there
+ * is no loop left to put it in.
+ *
+ * ⛔ AND IT GAINED A WATCHDOG IT DID NOT HAVE. The old loop blocked on
+ * `await reader.read()` forever, so a half-open socket after laptop sleep, a NAT
+ * rebind or a SIGKILLed daemon parked the tail in silence with no way out.
+ * `TAIL_IDLE_MS` is DERIVED from imago's own heartbeat (`./heartbeat.ts`), never
+ * copied from a sibling.
+ *
+ * ⛔ `resolve` RE-READS THE SESSION POINTER ON EVERY ATTEMPT — which the old
+ * loop did too, and which the shared client makes structural: the daemon binds
+ * an ephemeral port, so a captured base is a tail that survives one daemon.
+ *
+ * PRESERVED VERBATIM, because they are imago's own contract and not the shared
+ * client's: the FIRST resolved session is pinned for the life of the watch, the
+ * grounding line names that binding once so a wrong session/port is obvious
+ * instead of silent, a pointer that disappears AFTER we were bound ends the
+ * watch at 0 (a completed watch, not a failure), and one that never appeared
+ * keeps retrying with `# no session yet, retrying…` on stderr.
+ */
+async function cmdTail(session: string | undefined, sinceArg: number): Promise<number> {
   let boundId = session;
   let grounded = false;
-  const stop = () => {
-    stopped = true;
-    process.exit(0);
-  };
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
 
-  while (!stopped) {
-    const s = readSession(boundId);
-    if (!s) {
-      if (grounded) process.exit(0); // our pinned session went away → done
+  return await tailEvents<{ id?: number; type?: string }>({
+    resolve: () => {
+      // `readSession` dies on a CORRUPT pointer and returns null only for a
+      // genuinely absent one — the ENOENT rule. That `die` now THROWS, and the
+      // throw leaves the tail through main's funnel instead of exiting from
+      // three frames down inside a reconnect loop. It is B9's audit paying for
+      // itself: this is the one die-reachable call the shared client invokes on
+      // a schedule.
+      const s = readSession(boundId);
+      if (!s) return null;
+      if (!boundId) boundId = s.session_id; // pin to the first session we resolved
+      if (!grounded) {
+        grounded = true;
+        process.stdout.write(
+          `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
+        );
+      }
+      return `http://127.0.0.1:${s.port}`;
+    },
+    onUnresolved: ({ everResolved }) => {
+      if (everResolved) return "stop"; // our pinned session went away → done
       process.stderr.write("# no session yet, retrying…\n");
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!boundId) boundId = s.session_id; // pin to the first session we resolved
-    if (!grounded) {
-      grounded = true;
-      // grounding line — parseable + visible in a Monitor, names the binding so a
-      // wrong session/port is obvious instead of silent.
-      process.stdout.write(
-        `${JSON.stringify({ type: "grounding", session_id: s.session_id, port: s.port })}\n`,
-      );
-    }
-    let res: Response;
-    try {
-      res = await fetch(`http://127.0.0.1:${s.port}/events?since=${since}`);
-    } catch {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!res.ok || !res.body) {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    delay = 250;
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch {
-        break;
-      }
-      if (chunk.done) break;
-      buf += dec.decode(chunk.value, { stream: true });
-      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
-        const block = buf.slice(0, sep);
-        buf = buf.slice(sep + 2);
-        const dataLines: string[] = [];
-        for (const line of block.split("\n")) {
-          if (line.startsWith(":")) {
-            process.stderr.write(": imago-keepalive\n");
-            continue;
-          }
-          if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        const payload = dataLines.join("\n");
-        try {
-          const ev = JSON.parse(payload) as { id?: number; type?: string };
-          if (typeof ev.id === "number" && ev.id > since) since = ev.id;
-          if (ev.type === "closed") {
-            // P0f — SHAPE B: the drain callback rides THIS write, so it fires
-            // on this write's completion. NOT a trailing `write("", cb)` — a
-            // drain callback covers only its own write and is not a barrier
-            // (measured byte-for-byte as broken as no fix), and that is exactly
-            // the helper this write-then-exit shape invites.
-            //
-            // PER-SITE PRECONDITION, read at THIS site rather than carried over
-            // from a sibling: the exit sits inside `while (!stopped)` ->
-            // `while (true)` -> the frame loop, so `process.exitCode` + a
-            // natural return (shape D) does NOT leave the tail — it falls
-            // through and the loops go round again. The explicit `return` is
-            // what exits the loops; the callback is what drains. Both, for
-            // different reasons.
-            process.stdout.write(`${payload}\n`, () => process.exit(0));
-            stopped = true;
-            return;
-          }
-          process.stdout.write(`${payload}\n`);
-        } catch {
-          /* skip malformed frame */
-        }
-      }
-    }
-    // stream ended — session likely closed; loop will retry or exit.
-    await sleep(delay);
-  }
+      return "retry";
+    },
+    path: "/events",
+    since: sinceArg,
+    cursorOf: (ev) => ev.id,
+    terminal: (ev) => ev.type === "closed",
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": imago-keepalive",
+  });
 }
 
 function fileToDataUrl(path: string): string {
@@ -424,7 +431,7 @@ function fileToDataUrl(path: string): string {
 // is self-contained (persists in the snapshot, survives presigned-URL expiry).
 async function urlToDataUrl(url: string): Promise<string> {
   const res = await fetch(url);
-  if (!res.ok) die(`fetch failed (HTTP ${res.status}): ${url}`);
+  if (!res.ok) die(`fetch failed (HTTP ${res.status}): ${url}`, "usage");
   const buf = Buffer.from(await res.arrayBuffer());
   const mime = (res.headers.get("content-type") || "image/jpeg").split(";")[0];
   return `data:${mime};base64,${buf.toString("base64")}`;
@@ -440,7 +447,7 @@ async function resolveSrc(arg: string): Promise<string> {
 
 function cmdInfo(session?: string) {
   const s = readSession(session);
-  if (!s) die("no running imago session");
+  if (!s) die("no running imago session", "not_found", NO_SESSION_HINT);
   printJson(s);
 }
 
@@ -500,17 +507,23 @@ const HELP = `imago — a grounded image conversation.
 
   Add --session <id> to target a specific session (default: most recent).`;
 
-async function main(argv: string[]): Promise<number> {
+async function dispatch(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
-  // A usage failure returns 2 rather than exiting, so the runtime drains stdout.
+  // Names the verb in every envelope's `meta.command`, so a caller reading a
+  // failure knows which invocation produced it without correlating.
+  setCurrentCommand(typeof verb === "string" ? verb : null);
+  // A usage failure RETURNS rather than exiting, so the runtime drains stdout.
   let pos: string[];
   let flags: Record<string, string | boolean>;
   try {
     ({ pos, flags } = parseArgs(rest));
   } catch (e) {
     if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`imago: ${e.message}\n`);
-    return 2;
+    // The parser's own error class, converted at the boundary into the house
+    // envelope. `UsageError` stays because it carries the recognised-flag list
+    // that `parseArgs` builds; what changed is that the message no longer goes
+    // out as bare prose.
+    die(e.message, "usage");
   }
   const session = typeof flags.session === "string" ? flags.session : undefined;
 
@@ -663,6 +676,38 @@ async function main(argv: string[]): Promise<number> {
       die(`unknown verb "${verb}" — run: cli.ts help`);
   }
   return 0;
+}
+
+/**
+ * THE ONE PLACE A FAILURE BECOMES AN EXIT CODE.
+ *
+ * `die` THROWS (`src/kit/wire/errors.ts`), so every raise in this file — and
+ * every raise in a helper reachable from it — arrives here, is written as ONE
+ * JSON envelope on stderr, and becomes a taxonomy exit code. That is what lets
+ * a failure three frames down stop truncating its own stdout: nothing exits
+ * from inside a verb any more.
+ *
+ * ⛔ A NON-`CliError` IS NOT SWALLOWED INTO THE TAXONOMY. `reportCliError`
+ * returns `null` for a throw it does not recognise, and the branch below turns
+ * it into an INTERNAL envelope rather than a stack trace — the process contract
+ * is JSON on stderr for EVERY failure — but it does so knowingly, in one place,
+ * instead of by a catch-all that would report an unexpected fault as a tidy
+ * usage error.
+ */
+async function main(argv: string[]): Promise<number> {
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    const reported = reportCliError(e);
+    if (reported !== null) return reported;
+    const code =
+      e && typeof e === "object" && "code" in e ? String((e as { code: unknown }).code) : "";
+    const msg = e instanceof Error ? e.message : String(e);
+    // A named file that is not there — `batch <path>` and `context --image
+    // <path>` both read caller-supplied paths, so ENOENT here is the caller's.
+    if (code === "ENOENT") return reportCliError(new CliError("usage", msg)) ?? 2;
+    return reportCliError(new CliError("internal", msg)) ?? 1;
+  }
 }
 
 /**
