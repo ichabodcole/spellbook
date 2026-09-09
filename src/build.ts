@@ -17,11 +17,10 @@
 // 3) — this script only ever touches the surface" while `buildBackend()` sat 75
 // lines below it emitting `dist/cli.js`. It described the file before Slice 2
 // and nothing re-read it after. **This script builds BOTH:** a spell's surface
-// always, and its backend when `src/<spell>/backend/cli.ts` exists — and, since
-// Phase 1b, its DAEMON when `src/<spell>/backend/server.ts` exists. Under
-// Contract 3 as amended 2026-09-04, a backend builds when it imports from
-// outside its own deployed skill folder; source remains the default for a
-// backend that shares nothing.
+// always, and every BACKEND ENTRY it has — see `backendEntryNames` below for
+// what makes a module an entry. Under Contract 3 as amended 2026-09-04, a
+// backend builds when it imports from outside its own deployed skill folder;
+// source remains the default for a backend that shares nothing.
 //
 // The Tailwind plugin is passed explicitly here (not read off bunfig.toml,
 // which only wires Bun's dev SERVE path) — same plugin, both modes, no second
@@ -56,13 +55,62 @@ const DEPLOY_ROOT = join(REPO_ROOT, "plugins", "spellbook", "skills");
 const SURFACE_HTML_EXTERNAL = "*/surface/index.html";
 
 const entryFor = (spell: string) => join(SRC_DIR, spell, "surface", "index.html");
-const backendEntryFor = (spell: string) => join(SRC_DIR, spell, "backend", "cli.ts");
-const serverEntryFor = (spell: string) => join(SRC_DIR, spell, "backend", "server.ts");
+const backendDirFor = (spell: string) => join(SRC_DIR, spell, "backend");
+const backendEntryFor = (spell: string, name: string) => join(backendDirFor(spell), `${name}.ts`);
+const launcherFor = (spell: string, name: string) =>
+  join(DEPLOY_ROOT, spell, "scripts", `${name}.ts`);
 const outDirFor = (spell: string) => join(DEPLOY_ROOT, spell, "dist");
 
 const hasSurface = (spell: string) => existsSync(entryFor(spell));
-const hasBackend = (spell: string) => existsSync(backendEntryFor(spell));
-const hasServer = (spell: string) => existsSync(serverEntryFor(spell));
+
+/**
+ * **A backend entry is `src/<spell>/backend/X.ts` for which a launcher
+ * `plugins/spellbook/skills/<spell>/scripts/X.ts` exists.** (D43, ruled
+ * 2026-09-09.)
+ *
+ * ⛔ THIS FUNCTION REPLACED TWO HARD-CODED NAMES, AND THE ROSTER IS WHY. Until
+ * 2026-09-09 the entries were `backendEntryFor` = `backend/cli.ts` and
+ * `serverEntryFor` = `backend/server.ts`, spelled as two constants and built by
+ * two near-duplicate `Bun.build` calls. Measured across the whole roster before
+ * bounty's port, that assumption is wrong for **three of the four remaining
+ * ports, in three different ways**: bounty has a THIRD caller-facing entry
+ * (`join.ts`, named twice in its SKILL.md), digestify has `review.ts` and NO
+ * `cli.ts` at all (so the old code built nothing for it), and grapevine's
+ * daemon is `daemon.ts` with no `server.ts`. Two names could not describe the
+ * roster, and the duplication between the two build calls is what made a third
+ * name unthinkable.
+ *
+ * **The launcher is the deployed contract, so it is the honest source of the
+ * entry set.** It sits at a fixed path, it is what SKILL.md tells an agent to
+ * spawn, it is what `grimoire/lib/entry-points.ts` enumerates and what
+ * `exit-site-inventory` and `terminator-invariant` pin. So the entry set is a
+ * FACT ABOUT THE TREE rather than a list anyone maintains — the same principle
+ * `buildableSpells()` already follows, and the same principle three instrument
+ * defects in this project (D36, D42 and its two siblings) came from violating.
+ *
+ * **Non-entry modules are excluded for free.** `reduce.ts`, `state.ts`,
+ * `heartbeat.ts`, every `*.server.ts` and every test file have no launcher, so
+ * they are not entries and never become one by being renamed. No naming
+ * convention, no exclusion list.
+ *
+ * ⚠ THE CONVERSE IS NOT ASSERTED HERE. A launcher with no backend module of
+ * that name is not this function's problem — `mind-mapper/scripts/cli.ts` is a
+ * real unported CLI, not a launcher, and `astrolabe/scripts/state.ts` is a
+ * two-sided module. **`grimoire/launcher-pairing-ward.test.ts` is what checks
+ * the pairing in both directions**; this function only answers "what does the
+ * build emit".
+ */
+function backendEntryNames(spell: string): string[] {
+  const dir = backendDirFor(spell);
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))
+    .map((f) => f.slice(0, -".ts".length))
+    .filter((name) => existsSync(launcherFor(spell, name)))
+    .sort();
+}
+
+const hasBackend = (spell: string) => backendEntryNames(spell).length > 0;
 
 /** A spell is buildable iff `src/<spell>/surface/index.html` exists. Derived
  *  from the tree rather than from a hand-kept list, so relocating a spell is
@@ -74,16 +122,14 @@ const hasServer = (spell: string) => existsSync(serverEntryFor(spell));
  *  Anything assuming a spell has both is wrong about three of the four. */
 function buildableSpells(): string[] {
   return readdirSync(SRC_DIR, { withFileTypes: true })
-    .filter(
-      (e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name) || hasServer(e.name)),
-    )
+    .filter((e) => e.isDirectory() && (hasSurface(e.name) || hasBackend(e.name)))
     .map((e) => e.name)
     .sort();
 }
 
 /**
- * Build one spell's BACKEND CLI (seams Contract 4's built-backend amendment,
- * ruled 2026-08-31). Returns a process exit code.
+ * Build ONE backend entry (seams Contract 4's built-backend amendment, ruled
+ * 2026-08-31; generalised past two fixed names by D43). Returns an exit code.
  *
  * THE LOCATION IS THE RULING, NOT THE EMITTED FILENAME. Every instrument in
  * this repo already defines "generated" as "under dist/" - biome excludes
@@ -104,43 +150,56 @@ function buildableSpells(): string[] {
  * does bundle, but drags the entire surface graph into the backend artifact;
  * that is unruled and out of scope. Do not add server.ts."
  *
- * THE MEASUREMENT IT RECORDS IS STILL TRUE AND IS THE REASON `buildServer`
- * BELOW EXISTS SEPARATELY. A daemon's dev branch does
+ * ⛔ THE `external` IS WHY A DAEMON CAN BUILD AT ALL, AND IT IS NOT A TIDINESS
+ * FLAG — this is the measurement that used to live on the separate
+ * `buildServer` this function absorbed. A daemon's dev branch does
  * `await import(".../surface/index.html")`, and with no `external` the bundler
- * follows it, resolves the whole .tsx + Tailwind graph, and fails compiling
- * `@import "tailwindcss" source(none)`. What changed is not the fact but the
- * remedy: D6 measured `--external` on the surface-HTML glob (spelled once, at
- * `SURFACE_HTML_EXTERNAL` above — a `*` then a slash then `surface/index.html`;
- * ⛔ IT CANNOT BE WRITTEN LITERALLY INSIDE A BLOCK COMMENT, because those two
- * characters CLOSE one. This build failed exactly that way once, which is
- * principles.md #2 live inside the file that introduces the flag), which leaves that
- * one specifier in the artifact verbatim, and the import is dead code in a
- * release artifact anyway (the daemon's own source says so, for its own
- * reasons). So a server DOES build, with exactly one flag, and D2's "the whole
- * backend builds" is reachable.
+ * FOLLOWS it, resolves the whole .tsx + Tailwind graph, and fails compiling
+ * `@import "tailwindcss" source(none)`. D6 measured `--external` on the
+ * surface-HTML glob (spelled once, at `SURFACE_HTML_EXTERNAL` above — a `*`
+ * then a slash then `surface/index.html`; ⛔ IT CANNOT BE WRITTEN LITERALLY
+ * INSIDE A BLOCK COMMENT, because those two characters CLOSE one. This build
+ * failed exactly that way once, which is principles.md #2 live inside the file
+ * that introduces the flag) as the remedy: that ONE specifier survives into the
+ * artifact **BYTE-FOR-BYTE**, which means the specifier written in the source
+ * is resolved at runtime relative to `dist/`, NOT relative to the source file.
+ * See the block above that specifier in each daemon source; getting it wrong is
+ * silent in release mode, which never executes the line. The pattern is safe
+ * because the import sits behind `mode === "dev"` and a published artifact
+ * resolves to release by `dist/index.html`'s presence.
  *
- * ⛔ STILL CLIs ONLY *HERE*. `buildServer` is a second Bun.build call rather
- * than a second entrypoint in this one, and that is deliberate: one call with
- * two entrypoints hoists whatever the two share into a hashed common chunk,
- * which would rewrite `dist/cli.js` — a byte change in an artifact this phase
- * did not touch, and Contract 18 verifies by reproduction.
+ * ⚠ THE FLAG IS PASSED FOR EVERY ENTRY, NOT ONLY DAEMONS, and that is what
+ * makes one function possible. An entry that never imports the surface HTML has
+ * no such specifier to leave external, so the flag is inert for it — measured
+ * as the acceptance criterion of the D43 refactor: rebuilding the whole roster
+ * with this one call in place of the old two left a `git diff` restricted to
+ * the deployed dist folders EMPTY. Same bytes, different derivation. (⛔ That
+ * pathspec is not written literally here for the reason two paragraphs up: a
+ * doubled star followed by a slash CLOSES this comment.)
+ *
+ * ⛔ ONE `Bun.build` CALL PER ENTRY. This is a LOOP over entries, never one
+ * call with several entrypoints, and that is deliberate: one call with two
+ * entrypoints hoists whatever the entries share into a hashed common chunk,
+ * which rewrites the OTHER entries' artifacts — a byte change in artifacts the
+ * change did not touch, and Contract 18 verifies by reproduction.
  */
-async function buildBackend(spell: string): Promise<number> {
+async function buildBackendEntry(spell: string, name: string): Promise<number> {
   const outdir = outDirFor(spell);
   const result = await Bun.build({
-    entrypoints: [backendEntryFor(spell)],
+    entrypoints: [backendEntryFor(spell, name)],
     outdir,
     target: "bun",
     sourcemap: "inline",
-    // An entry naming of [name].[ext] off a cli.ts entry emits exactly cli.js,
-    // which is the literal path the launcher at scripts/cli.ts imports - so
+    external: [SURFACE_HTML_EXTERNAL],
+    // An entry naming of [name].[ext] off an `X.ts` entry emits exactly `X.js`,
+    // which is the literal path the launcher at `scripts/X.ts` imports - so
     // this naming is load-bearing, not a free choice.
     naming: { entry: "[dir]/[name].[ext]", chunk: "[dir]/[name]-[hash].[ext]" },
   });
 
   if (!result.success) {
     for (const log of result.logs) process.stderr.write(`${log}\n`);
-    process.stderr.write(`${spell}: backend build failed\n`);
+    process.stderr.write(`${spell}: backend build failed for entry ${name}\n`);
     return 1;
   }
 
@@ -151,50 +210,9 @@ async function buildBackend(spell: string): Promise<number> {
   // surface summary, so without this it reports one bare filename and no spell
   // name - the build log stops naming what it built for exactly the spell this
   // slice introduced.
-  process.stdout.write(`${spell}: built backend ${result.outputs.length} file(s) -> ${outdir}\n`);
-  return 0;
-}
-
-/**
- * Build one spell's DAEMON into `dist/server.js` (Phase 1b chapter 1, under
- * decision D6 / D2 — "the whole backend builds, not just the CLI entry").
- *
- * ⛔ THE `external` IS THE WHOLE REASON THIS IS POSSIBLE, AND IT IS NOT A
- * TIDINESS FLAG. Without it the bundler follows the daemon's dev-mode
- * `await import("…/surface/index.html")` into the surface graph and dies on
- * the stylesheet. With it, that ONE specifier survives into `dist/server.js`
- * BYTE-FOR-BYTE — which means the specifier written in the source is resolved
- * at runtime relative to `dist/`, NOT relative to the source file. See the
- * block above that specifier in each `src/<spell>/backend/server.ts`; getting
- * it wrong is silent in release mode, which never executes the line.
- *
- * The pattern is safe because the import sits behind `mode === "dev"` and a
- * published artifact resolves to release by `dist/index.html`'s presence.
- *
- * Emits `server.js` (the entry naming is load-bearing: `scripts/server.ts`, the
- * launcher the CLI spawns, imports that literal path).
- */
-async function buildServer(spell: string): Promise<number> {
-  const outdir = outDirFor(spell);
-  const result = await Bun.build({
-    entrypoints: [serverEntryFor(spell)],
-    outdir,
-    target: "bun",
-    sourcemap: "inline",
-    external: [SURFACE_HTML_EXTERNAL],
-    naming: { entry: "[dir]/[name].[ext]", chunk: "[dir]/[name]-[hash].[ext]" },
-  });
-
-  if (!result.success) {
-    for (const log of result.logs) process.stderr.write(`${log}\n`);
-    process.stderr.write(`${spell}: server build failed\n`);
-    return 1;
-  }
-
-  for (const artifact of result.outputs) {
-    process.stdout.write(`${artifact.path.replace(`${outdir}/`, "")} (server ${artifact.kind})\n`);
-  }
-  process.stdout.write(`${spell}: built server ${result.outputs.length} file(s) -> ${outdir}\n`);
+  process.stdout.write(
+    `${spell}: built backend ${name} ${result.outputs.length} file(s) -> ${outdir}\n`,
+  );
   return 0;
 }
 
@@ -244,14 +262,16 @@ async function buildSurface(spell: string): Promise<number> {
  * and the CLI simply disappears. Clean once, then build each aspect present.
  */
 async function buildSpell(spell: string): Promise<number> {
-  if (!hasSurface(spell) && !hasBackend(spell) && !hasServer(spell)) {
+  const entries = backendEntryNames(spell);
+  if (!hasSurface(spell) && entries.length === 0) {
     // Name what was looked for AND what would have worked - an unknown spell
-    // is the one failure this script can fully explain.
+    // is the one failure this script can fully explain. The backend half names
+    // the RULE rather than two filenames, because the rule is what changed:
+    // there is no fixed list of entry names to print.
     process.stderr.write(
       `build: nothing to build for "${spell}"\n` +
         `       looked for ${entryFor(spell)}\n` +
-        `       and ${backendEntryFor(spell)}\n` +
-        `       and ${serverEntryFor(spell)}\n` +
+        `       and any ${backendDirFor(spell)}/X.ts whose launcher ${launcherFor(spell, "X")} exists\n` +
         `       buildable spells: ${buildableSpells().join(", ") || "(none)"}\n`,
     );
     return 1;
@@ -259,8 +279,7 @@ async function buildSpell(spell: string): Promise<number> {
   rmSync(outDirFor(spell), { recursive: true, force: true });
   let code = 0;
   if (hasSurface(spell)) code = (await buildSurface(spell)) || code;
-  if (hasBackend(spell)) code = (await buildBackend(spell)) || code;
-  if (hasServer(spell)) code = (await buildServer(spell)) || code;
+  for (const name of entries) code = (await buildBackendEntry(spell, name)) || code;
   return code;
 }
 
@@ -284,4 +303,12 @@ if (import.meta.main) {
   process.exit(await main(process.argv.slice(2)));
 }
 
-export { buildableSpells, buildBackend, buildServer, buildSpell, buildSurface, main };
+export {
+  backendEntryNames,
+  buildableSpells,
+  buildBackendEntry,
+  buildSpell,
+  buildSurface,
+  launcherFor,
+  main,
+};
