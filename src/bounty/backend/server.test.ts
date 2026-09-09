@@ -4599,6 +4599,38 @@ describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", (
     expect(src).toMatch(/idleTimeout:\s*IDLE_TIMEOUT_SEC\b/);
   });
 
+  test("the shutdown WATCHDOG is cleared AFTER the drain, not before it", () => {
+    // ⛔ SOURCE-SCANNED, AND THE REASON IS THAT DRIVING IT NEEDS A PLANTED HANG.
+    // The property is "the force-exit still covers the teardown", and the only
+    // way to observe it is to make the teardown not finish — which means
+    // mutating the artifact, which is a calibration drive and not a suite cell.
+    // So this pins the ORDER, which is the thing that was wrong and the thing an
+    // ordinary edit would get wrong again.
+    //
+    // ⚠ WHAT WAS WRONG, MEASURED. `clearTimeout(shutdownWatchdog)` used to sit
+    // four lines into a fifteen-line teardown, immediately after
+    // `logDaemon("exit")` — under a comment saying it "sits at the end of the
+    // teardown". Its real coverage was `await done` plus one fs append; the
+    // final snapshot, the `closed` frame, the drain and discovery cleanup all
+    // ran unguarded. Driven with a 2 s watchdog and a hang planted in a copy of
+    // the shipped artifact: a hang at the snapshot or inside `drainAndStop` was
+    // STILL RUNNING at 10 s with the watchdog ARMED — indistinguishable from
+    // disarmed, which is the measurement. After the move, both die at ~2 s.
+    //
+    // ⚠ AND THE ORDER IS THE WHOLE ASSERTION, so `indexOf` is compared rather
+    // than "does the file contain a clearTimeout" — the second is true of both
+    // the broken and the fixed file.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    const clear = src.lastIndexOf("clearTimeout(shutdownWatchdog)");
+    const drain = src.lastIndexOf("await drainAndStop(");
+    const done = src.lastIndexOf("const { code, reason } = await done;");
+    expect(clear).toBeGreaterThan(-1);
+    expect(drain).toBeGreaterThan(-1);
+    expect(done).toBeGreaterThan(-1);
+    expect(clear).toBeGreaterThan(drain);
+    expect(drain).toBeGreaterThan(done);
+  });
+
   test("idleTimeout is not ZERO — 0 stalls the initial response rather than disabling", () => {
     // Measured in mind-mapper: `idleTimeout: 0` does not mean "no timeout", it
     // empirically stalls the first response. A future editor reaching for 0 as

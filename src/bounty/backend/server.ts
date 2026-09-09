@@ -1743,12 +1743,6 @@ async function main(argv: string[]): Promise<number> {
     subscribers: sockets.size + sseClients.size,
     idleMs: performance.now() - lastActivity,
   });
-  // ⛔ THE SHUTDOWN WATCHDOG IS CLEARED FIRST AND IT IS STILL BOUNTY'S OWN — see
-  // the ruling at its arming site above and in `kit/wire/housekeeping.ts`'s
-  // header. The teardown reached this point, so the force-exit is no longer
-  // needed AND the REF'd timer must stop holding the event loop or the natural
-  // drain never happens.
-  if (shutdownWatchdog) clearTimeout(shutdownWatchdog);
   stopHousekeeping();
   clearInterval(heartbeatTimer);
   saveSnapshot(); // final write — KEEP it (the resume point, not deleted on close)
@@ -1771,6 +1765,40 @@ async function main(argv: string[]): Promise<number> {
   // a funnel that already does the job is how two registries drift apart.
   await drainAndStop({ server, clients: sseClients, sockets });
   cleanupDiscovery();
+  // ⛔ THE WATCHDOG IS CLEARED **HERE**, AT THE END OF THE TEARDOWN — WHICH IS
+  // WHERE ITS OWN COMMENT ALWAYS SAID IT WAS, AND WHERE IT WAS NOT.
+  //
+  // It used to sit four lines into a fifteen-line teardown, immediately after
+  // `logDaemon("exit")`, under the sentence "`clearTimeout` sits at the end of
+  // the teardown rather than being optional". So its real coverage was
+  // `await done` → one fs append, and EVERYTHING the teardown actually does —
+  // the final snapshot (which can rotate and COPY a backup of a large board),
+  // the `closed` frame, the drain, discovery cleanup — ran unguarded, for the
+  // whole life of the watchdog.
+  //
+  // Driven with BOUNTY_SHUTDOWN_WATCHDOG_MS=2000, a hang planted in a COPY of
+  // the shipped artifact, SIGTERM, and the death timed:
+  //
+  //   hang at `await done`     armed 143 @2002ms · disarmed STILL RUNNING @10s
+  //   hang at final snapshot   armed STILL RUNNING @10s · disarmed the same
+  //   hang inside drainAndStop armed STILL RUNNING @10s · disarmed the same
+  //
+  // Two rows where armed and disarmed are INDISTINGUISHABLE is the measurement:
+  // the guarantee did not extend there. That is also why the pre-commitment in
+  // `kit/wire/housekeeping.ts` was doubly wrong — a `watchdogMs` on
+  // `drainAndStop` would have covered a stretch this watchdog never reached,
+  // while still abandoning the snapshot, and it would have READ as adoption.
+  //
+  // ⚠ THE REASON GIVEN FOR CLEARING EARLY DOES NOT HOLD, AND WAS CHECKED RATHER
+  // THAN DISMISSED: "the REF'd timer must stop holding the event loop or the
+  // natural drain never happens". There is no natural drain here. `main`
+  // RETURNS a code and the launcher calls `process.exit(exitCode)` — family
+  // E-terminal, preserved verbatim across the port precisely because a daemon's
+  // ending must not depend on the loop emptying. A pending ref'd timer cannot
+  // delay an explicit exit. (This is exactly the distinction that makes the CLI
+  // launcher's `process.exitCode` and this one's `process.exit` different by
+  // design rather than by oversight.)
+  if (shutdownWatchdog) clearTimeout(shutdownWatchdog);
   return code;
 }
 
