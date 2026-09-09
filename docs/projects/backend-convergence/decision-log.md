@@ -1317,3 +1317,153 @@ nothing, and enshrines a version chosen by a plugin's peer range. _Bump
 `node_modules` without declaring bun_ — satisfies the ruling and leaves the
 drift mechanism in place, so the next `bun install` on a fresh clone could
 resolve differently again.
+
+## D42 · Instruments read the TREE, not the index — and the rule under all three instances
+
+**Decided:** implementer, 2026-09-09, `fix/instruments-read-the-index`.
+
+Two instruments derived a population from `git ls-files` and then reported about
+a spell whose emitted artifact was on the **disk** and not yet in the index as
+if there were nothing to check. Both were driven before the repair, both
+directions.
+
+**Instance 1 — `grimoire/spawn-path-ward.test.ts`.** `emittedJs()` read
+`git ls-files`. A corrupted pin
+(`join(SCRIPT_DIR, "..", "NOWHERE", "server.ts")`) planted in an
+on-disk-but-untracked `bounty/dist/cli.js` produced **not one new failure — 7
+pass / 0 fail** — while the population line said
+`17 emitted file(s) across 8 spell(s): astrolabe, bounty, …`. The spell was
+NAMED and got **no coverage row at all** — not `pins=0`, no row. A missing row
+reads as "nothing to cover"; it meant **"not looked at"**.
+
+**Instance 2 — `scripts/dist-check.ts` ARM 1.** Its predicate was "≥1
+**tracked** file in `dist/`". With imago's two backend artifacts unstaged
+(`git rm --cached`), it printed `imago 3 tracked` and **PASSED on its surface
+chunks alone**. Derived denominator, uncovered numerator.
+
+**Instance 3, found by the sweep — `grimoire/import-boundary-wards.test.ts:291`,
+`emittedSources()`.** An untracked `astrolabe/dist/probe-unstaged.js` carrying
+`import "sharp"` — a bare non-builtin dependency, the precise subject of ward 1b
+— passed the whole file **19 / 0**. Same subject class, same enumerator, same
+silence.
+
+**Why it mattered now:** all four remaining ports (bounty, digestify, grapevine,
+mind-mapper) first-emit their backend artifacts, so all four pass through this
+window.
+
+### What was NOT broken, and was deliberately not "fixed" into a false alarm
+
+**Nothing could actually LAND unguarded.** `dist-check` ARM 2 uses
+`git status --porcelain` on purpose and lists an unstaged emitted artifact as
+`??` → dirty → red, and the `.gitignore` un-ignore lines exist for all eight
+spells. build → gate → commit cannot go green-then-commit. **The defect was that
+the instrument was SILENT about a spell it had already named.**
+
+### The shape chosen
+
+**Read the DISK where the question is about the artifact; keep the index where
+the question is about shipping; and never let either be silent about the
+other.**
+
+- **`emittedFiles()` (spawn-path ward) now reads the disk** and labels each file
+  `staged` / `NOT STAGED`. The ward's question is "does the anchor arithmetic in
+  the artifact the build just produced resolve?", and that artifact is on the
+  disk whether or not anyone has run `git add`. Staging is `dist-check`'s
+  question. The reverse divergence (tracked, absent from disk — a renamed hashed
+  chunk) is now **printed as `INDEX-ONLY … not looked at`** instead of silently
+  skipped.
+- **`emittedSources()` (import-boundary wards) reads the UNION** — a tracked
+  file the disk has lost is still a fact about what ships (ward 1a's subject),
+  so it stays in the population and is filtered only at the point of reading.
+- **`dist-check` ARM 1 measures BOTH numbers** (`3 tracked / 5 on disk`) and
+  gains a **fatal ARM 1b**: every **backend** artifact on disk must be tracked.
+
+**The false-positive question, answered rather than assumed.** "Read the disk"
+invites stale build leftovers. It cannot accumulate them: `src/build.ts` `rm`s
+each `dist/` before every build and `bun run gate` builds before it tests. A
+leftover from a foreign checkout examined by a bare `bun test` produces a RED
+naming a path — loud, and one `bun run build` from resolved.
+
+**The fatal/non-fatal split is a real discriminator, not a compromise.** A
+backend artifact has a **stable** emitted name (`[dir]/[name].[ext]`); a surface
+chunk carries a content hash and is **renamed** by every content change. So an
+untracked `index-<hash>.js` is ordinary work in progress — failing on it would
+red the local gate on every surface edit, which is the same reason ARM 2 is
+CI-only (Cole, 2026-09-01) — while an untracked `cli.js`/`server.js` **cannot**
+mean that: a rebuild of a tracked one leaves it MODIFIED, not untracked. It
+means the spell's backend has never been staged, which is the defect itself. The
+non-fatal half is still **named** in the output, so no green can read as
+"everything on the disk was examined".
+
+### Calibration, both directions
+
+| drive                                                              | before                                                 | after                                                                 |
+| ------------------------------------------------------------------ | ------------------------------------------------------ | --------------------------------------------------------------------- |
+| corrupted pin in untracked `bounty/dist/cli.js`                    | spawn-path ward **7 pass / 0 fail**, no row for bounty | **1 fail**, `NOT STAGED … pins=1` row + the pin named                 |
+| same, `dist-check --no-build`                                      | `bounty 3 tracked` **✅ PASS, exit 0**                 | **⛔ FAIL exit 1**, artifact named with the `git add` remedy          |
+| imago's `cli.js`+`server.js` `git rm --cached`                     | `imago 3 tracked` **✅ PASS**                          | **⛔ FAIL**, both named; `dist-roster-ward` ARM 1b red                |
+| untracked `astrolabe/dist/probe-unstaged.js` with `import "sharp"` | import-boundary **19 / 0**                             | **2 fail**, `NOT STAGED` listed and the bare specifier named          |
+| everything staged (clean tree)                                     | green                                                  | **green** — gate 1969 / 0 unpiped, `dist-check` all three arms exit 0 |
+
+Three synthetic-repo controls were added so the enumerators cannot quietly
+return to the index: one per instrument, each going **through the predicate**
+against a repo the cell built (the ruling `trackedBuildInputs`'s control
+earned), each shown discriminating — a staged file, a disk-only file, an
+index-only file, and an empty measurement in the same run.
+
+### The sweep — four sites judged DIFFERENT, and why
+
+`grimoire/import-boundary-wards.test.ts` derives four more populations from
+`git ls-files`. Each was driven; each is silent; **only one was fixed.**
+
+- **`:291` `emittedSources` — SAME defect. Fixed** (instance 3 above).
+- **`:166` `trackedSources` and `:1257` `backendSrc` — DIFFERENT.** Driven: an
+  untracked `src/imago/backend/probe-unstaged.ts` carrying a cross-spell
+  relative import, a re-export and `import "sharp"` passed **19 / 0**. The
+  silence is real, but the subject is a **hand-authored source file the author
+  has not added yet** — `git status` nags about it, the un-ignore trap does not
+  apply, and "what ships" for source is defined by the tracked file list
+  (Contract 20), so switching these to the disk would change the wards' subject
+  and pull editor scratch into the population. The artifact case is different in
+  kind: the divergence is created by a **machine the instrument itself runs**
+  (`bun run gate` builds before it tests), so the instrument is _guaranteed_ to
+  execute in the divergent state.
+- **`:485` (launcher roster) and `:1028` (`spellNames`) — DIFFERENT.** Both
+  sides of those comparisons are derived from the index, so an unstaged launcher
+  or an unstaged skill folder leaves **both** at once: nothing is
+  named-then-silent, which is the specific defect here. They are the weaker
+  cousin — a population that can go short without contradicting itself — and are
+  recorded rather than changed.
+
+### The rule under all three instances
+
+The project has now paid for this three times:
+
+1. **A derived population is not coverage** (Phase 1b) — arriving in the
+   denominator is not the same as being measured.
+2. **A backstop computed from the same predicate it backstops is not a
+   backstop** (Phase 2 / D36) — a spelling the predicate cannot read becomes
+   _exempt_ instead of _loud_.
+3. **A population read from the index is not a population read from the tree**
+   (here) — the set git has is not the set the build wrote.
+
+**The single rule underneath: an instrument must measure the thing it is asked
+about, in the place where that thing actually lives — and where it cannot, it
+must SAY SO in the same breath it names the subject. Every one of the three was
+a measurement taken on a PROXY for the subject — a roster instead of coverage, a
+predicate instead of the ingredient, an index instead of a disk — and each proxy
+failed in the one direction none of them could report: SILENCE. So the operative
+form is: a subject an instrument NAMES and does not EXAMINE must produce a row
+that says "not looked at". Absence of a finding must never be spelled the same
+way as absence of a subject.**
+
+**Not taken:** _make every unstaged `dist/` file fatal_ — correct-looking, and
+it reds the local gate on every surface edit, which is precisely the false alarm
+the ARM 2 ruling already rejected; the stable-name/hashed-name asymmetry is what
+lets the fatal clause be narrow and still catch the real case. _Leave the
+enumerators on the index and merely PRINT the disk difference_ — the spawn-path
+ward's silence would have become a warning nobody's exit code reads, and the
+corrupted pin would still have passed; printing was already tried in Phase 1b
+and D36 records what it bought. _Swap `emittedSources` to the disk outright_
+rather than unioning — it would drop a tracked-but-deleted artifact out of ward
+1a's shipping question, trading one silence for another.
