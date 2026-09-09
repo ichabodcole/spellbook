@@ -943,7 +943,21 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     expect(makeIsBuiltin([], [emitted])("bun:sqlite", `${emitted}/server.js`)).toBe(true);
   });
 
-  test("the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it", () => {
+  test("the `bun` exemption's population is LOOKED AT AND EMPTY — no emitted file writes a runtime `bun` import", () => {
+    // ⛔ THE TITLE WAS RENAMED TO WHAT THE CELL ASSERTS (D54). It used to read
+    // "the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it",
+    // and after D50 that was false: the population reached zero at bounty's
+    // port, so emptying `BUILTIN_EXACT` leaves this cell GREEN. The liveness
+    // proof MOVED to the synthetic cell above, which evaluates the exemption
+    // against a population it constructs; what remains here is the roster
+    // measurement — read, non-zero, and carrying no violation.
+    //
+    // ⚠ A TITLE MAKING A CLAIM ITS CELL NO LONGER MAKES IS THE VACUITY THIS
+    // FILE'S OWN HEADER RECORDS CONVICTING SOMEONE OF ONCE (see the paragraph
+    // below): a reader who greps for the guarantee finds a green cell that
+    // names it and does not test it. Driven both ways at the rename — with
+    // `bun` deleted from `BUILTIN_EXACT`, this cell passes and the synthetic
+    // cell reds.
     // ⛔ REWRITTEN AFTER cassandra CONVICTED THE FIRST VERSION VACUOUS. That one
     // counted `bun` imports and never referenced the predicate, so deleting the
     // exemption reddened the VIOLATION cell while this one — the cell whose

@@ -263,6 +263,7 @@ function main(argv: string[]): number {
     console.log("     dies importing a src/ tree the marketplace never copied.\n");
     return 1;
   }
+  console.log(`  ✅ PASS — ${rows.length}/${rows.length} spells, ${trackedTotal} tracked files.`);
   // ── ARM 1b · THE INDEX IS NOT THE TREE ───────────────────────────────────
   //
   // ⛔ A POPULATION READ FROM THE INDEX IS NOT A POPULATION READ FROM THE TREE.
@@ -276,6 +277,23 @@ function main(argv: string[]): number {
   // exists because of.
   const unstagedBackends = rows.flatMap((r) => r.untracked.filter((f) => isBackendArtifact(f)));
   const unstagedOther = rows.flatMap((r) => r.untracked.filter((f) => !isBackendArtifact(f)));
+  const diskTotal = rows.reduce((n, r) => n + r.disk, 0);
+  const untrackedTotal = rows.reduce((n, r) => n + r.untracked.length, 0);
+
+  // ⛔ THE ARM SAYS WHAT IT LOOKED AT, ON THE PASS AS WELL AS ON THE FAIL — the
+  // rule D42 wrote and this arm was built to enforce, broken by the arm itself.
+  // It used to print NOTHING when it passed: on a clean tree the output went
+  // from ARM 1's `✅ PASS` straight to ARM 2, so "1b ran and found nothing" and
+  // "1b never ran" were the same bytes. That is the silent green D42 forbids,
+  // in the instrument D42 built.
+  //
+  // ⚠ THE DENOMINATOR IS THE DISK, NOT THE UNTRACKED SET. `0 untracked` is
+  // exactly the number a broken enumerator prints, so the line leads with the
+  // population that must be non-zero for the comparison to mean anything.
+  console.log("\n  ARM 1b · index vs disk  a BACKEND artifact on the disk must be in the INDEX");
+  console.log(
+    `  looked at             ${rows.length} spell(s), ${diskTotal} file(s) on disk, ${untrackedTotal} untracked`,
+  );
 
   if (unstagedBackends.length > 0) {
     console.log(
@@ -296,7 +314,7 @@ function main(argv: string[]): number {
     return 1;
   }
 
-  console.log(`  ✅ PASS — ${rows.length}/${rows.length} spells, ${trackedTotal} tracked files.`);
+  console.log(`  ✅ PASS — 0 of ${untrackedTotal} untracked file(s) is a backend artifact.`);
 
   // ⚠ NON-FATAL, AND THE ASYMMETRY IS DELIBERATE (see `isBackendArtifact`). A
   // hashed surface chunk is renamed by every content change, so untracked here is
