@@ -865,6 +865,17 @@ port is before Phase 1, because they have different done-whens below.
 > glamour's the difference is recorded, because that difference is the part a
 > third spell cannot predict.
 >
+> ⭐⭐ **AMENDED AGAIN 2026-09-09 FROM BOUNTY — the second port driven by this
+> document, the first with THREE entries, and the first of a spell the shared
+> spine was half copied FROM.** Six more gaps, each marked `⭐ bounty`; the
+> account is `docs/projects/backend-convergence/phase-4-journal.md`. **What
+> transferred, stated once: B1's import rule, B3's entry ruling, B4's spawn-path
+> class — which predicted bounty's shipped `SERVER_SCRIPT` defect a second time,
+> in writing, before the spell was touched — B5's specifier, B6's re-anchoring,
+> B7's list and B9's audit all held, and B9 found a real swallow the adoption
+> itself created.** What did NOT transfer is the assumption running under B8's
+> whole table: that the spell you are porting is the one with the worse code.
+>
 > ⭐ **AMENDED 2026-09-08 FROM IMAGO, THE FIRST PORT DRIVEN BY THIS DOCUMENT
 > RATHER THAN WRITTEN FROM ONE.** Imago's whole job was to run on Phase B and
 > record every place it was not enough; the seven gaps it found are folded in
@@ -954,6 +965,21 @@ same diff with nothing between them.
 and commit `dist/` in the same chapter as its source (Contract 18), through
 `bun run build` and never a bare `bun src/build.ts`.
 
+⚠ ⭐ **bounty — AND THERE IS A THIRD, UNPLANNED CHAPTER THIS TABLE HAS NO ROW
+FOR: AN INSTRUMENT THE PORT ITSELF BREAKS.** D44 ruled that "the instrument that
+guards a port must not be repaired BY that port", and pulled one such repair
+forward into the pre-work. bounty found a THIRD copy of the same defect
+(`scripts/dist-check.ts` ARM 1b, hard-coded to `cli.js`/`server.js`, silent on a
+first-emit `join.js`) DURING chapter 1's validation — nobody could have pulled
+it forward, because bounty's port is what made it observable.
+
+**Land it as its own commit BETWEEN the chapters, before the work it judges.**
+Not inline (D44 forbids it, and a 1,700-line relocation is not the diff to hide
+an instrument change in) and not handed back (the port cannot then be
+validated). The discriminator: repair it separately when the fix is small AND
+the instrument is what will judge your next chapter; hand it back when the fix
+is a competing concern of its own size.
+
 **Chapter 1 must be green AND DEMONSTRATED ON A BOOTED DAEMON before chapter 2
 starts.** That is D9's whole point: chapter 1's two runtime hazards (B3's dead
 entry, B4's wrong spawn path) are invisible to the type-checker and to every
@@ -1006,7 +1032,27 @@ flags against a file that recognises none.
 Launchers come in exactly two shapes — one for a CLI (anything whose stdout the
 caller parses) and one for a DAEMON — and they differ in exactly one line, which
 is not a style choice. Pick by what the entry IS, not by what it is called:
-bounty's `join.ts` is a CLI shape, grapevine's `daemon.ts` is a daemon shape.
+grapevine's `daemon.ts` is a daemon shape.
+
+⛔ ⭐ **bounty — AND THERE IS A THIRD CASE, WHICH THIS PARAGRAPH USED TO OFFER
+AS ITS EXAMPLE OF THE FIRST.** It said "bounty's `join.ts` is a CLI shape". By
+stdout contract that is right — `join.ts` writes JSON lines a caller parses, and
+the write most at risk is the terminal `disconnected` frame emitted on the line
+before `main` returns, which is the A-drain hazard at its sharpest. **It ships
+the DAEMON shape anyway, and the file records why: the CLI shape was MEASURED
+THERE AND IT HANGS.** `process.exitCode` + a natural return leaves the
+idle-timeout cell running to a 15 s test timeout, because a natural exit waits
+for the loop to drain and that file's WebSocket is not guaranteed closed on
+every exit path. The `process.exit` is doing DOUBLE DUTY: draining the payload
+is broken, and force-terminating a live socket is load-bearing.
+
+**So the third case is: an entry whose exit is LOAD-BEARING FOR SOMETHING OTHER
+THAN EXITING.** Read your entry for one before you pick a shape. Where you find
+it, keep the terminal exit, carry the truncation defect across UNCHANGED and
+deliberately, and write the reason at BOTH the launcher and the backend entry
+block — a relocation whose contract is "nothing the caller sees moves" is not
+the place to trade a truncation for a hang. File the lifecycle fix (close the
+socket on every path, then return naturally) separately.
 
 ```ts
 // scripts/cli.ts   — a CLI's stdout is a pipe the caller parses
@@ -1178,6 +1224,23 @@ Three specific moves, all earned:
 1. **Spawn the LAUNCHER, not the source.** The contract a CLI suite asserts is
    what the PROCESS writes and exits with, and the process a caller runs is
    `scripts/cli.ts` → `dist/cli.js`.
+
+   ⛔ ⭐ **bounty — AND IF ONE CONSTANT DOES BOTH JOBS, THIS INSTRUCTION
+   SILENTLY BREAKS THE OTHER ONE.** bounty's suite held
+   `const CLI = join(SCRIPT_DIR, "cli.ts")` and used it to SPAWN a process AND
+   to READ the source with `Bun.file(CLI).text()`. Re-pointing it at the
+   launcher re-pointed the source scans too; they then read a 45-line comment
+   block, found none of what they pin, and failed as `expect(m).not.toBeNull()`
+   — **which reads as a broken regex, not as a wrong file.** A source scan
+   follows the SOURCE; only a process spawn follows the launcher. Split the
+   constant (`CLI` / `CLI_SRC`) and say so at the declaration.
+
+   ⚠ **The same class one file over is LOUD, and the difference is worth
+   knowing:** a sibling suite read bounty's test file by absolute path and
+   failed with `ENOENT`, naming it. A `readFileSync` that cannot find its
+   subject says so; a regex over the wrong file returns null. **Grep for every
+   READ of a moved file, not only for every spawn of one.**
+
 2. **Anything computed from `import.meta.url` must be read out of the
    ARTIFACT.** glamour's `daemonCwd()` and `SKILL_ROOT_FOR_TEST` answer
    `src/<spell>/` when imported from source — a directory with no `SKILL.md`, no
@@ -1286,6 +1349,14 @@ old path, filter to LIVE files (not `docs/**` history, not archived sprints),
 and repair what is still meant to be true.\*\* Thirty seconds, and it is the
 only step here with no instrument behind it.
 
+⚠ ⭐ **bounty — AND "THIRTY SECONDS" IS IMAGO'S NUMBER, NOT A PROPERTY OF THE
+STEP. THE COST SCALES WITH THE SPELL'S HISTORY, NOT WITH THE SIZE OF ITS PORT.**
+imago had two live instances. bounty had **thirteen live backlog items** naming
+`skills/bounty/scripts/`, because it is an old spell with a long card trail —
+and two of them named a `template.html` deleted at its rewrite, so the sweep
+also finds prose that was already stale before you touched anything. Budget it
+by counting first, not by trusting the number above.
+
 #### B8 · Adopt the kit — and `idleMs` is DERIVED, never copied
 
 All of `src/kit/wire/`: `tailEvents` + `errors` on the CLI side; `serveDist`,
@@ -1310,6 +1381,26 @@ adopting daemons, so it is a table:
 | a local `writeAtomic` (tmp + rename)                                    | `writeFileAtomic`            |
 | `cleanupDiscovery` comparing `session_id` before unlinking              | `unlinkIfMatches`            |
 | `idleTimeout: 255` and a literal `15000` heartbeat                      | `./heartbeat.ts` (yours)     |
+
+⛔ ⭐ **bounty — AND EVERY ROW OF THAT TABLE ASSUMES YOUR SPELL HAS THE WORSE
+CODE. FOR A CONVERGENCE-SOURCE SPELL, HALF OF THEM ARE DE-DUPLICATIONS AND ONE
+RUNS BACKWARDS.** The census picked convergence targets from the corpus, so some
+spell is the source of each; bounty is the source of three. Its
+`shouldIdleClose` IS the kit's, its `writeAtomic` IS `writeFileAtomic`, its
+grace/close/race block IS `drainAndStop`, and census defects L1–L4 were already
+correct there. Four rows had no behaviour delta at all.
+
+**And exactly one thing came back the OTHER way, which this table has no cell
+for.** astrolabe's `timeoutMs <= 0` guard was folded into `shouldIdleClose` at
+convergence and is absent from bounty's copy — so adopting it CHANGED bounty's
+behaviour at one input (`--timeout 0` used to close the board on the first idle
+tick; it now means NEVER). Framed as "adopt and gain", that lands unnamed.
+
+**So: DIFF IN BOTH DIRECTIONS, and say for every row which of three it was —
+GAINED (the kit is better), DE-DUPLICATED (identical in substance), or RECEIVED
+(the kit carries something your copy lacked, and it is a behaviour change you
+now owe a drive and a decision-log line).** The third is the one nobody looks
+for, because the whole phase is written as though the kit is the destination.
 
 ⛔ **AND THERE IS A SECOND PER-SPELL RULING THIS STEP DID NOT NAME: WHETHER THE
 DAEMON STAMPS AN EPOCH.** `createEventLog` takes `{ epoch }`, mind-mapper stamps
@@ -1351,6 +1442,30 @@ exit codes, then adopting it re-spells every failure the spell can produce:
 - **Half the roster has no acc grade** (imago, bounty, digestify, grapevine), so
   **nothing in the gate will tell you.** D37 is right that building does not
   drag conformance in front of a spell; **B8 does.**
+
+⛔ ⭐ **bounty — AND THE CONCERN YOUR SPELL KEEPS IS PART OF THIS STEP, WHICH
+NOTHING HERE SAID.** A kit module that names a deliberate ABSENCE (D17's "what
+it refused is part of the ruling") hands the adopting spell a boundary, and the
+adoption is the moment to DRIVE it — because the module you are pulling in now
+sits inside the window the kept concern claims to cover.
+
+bounty kept its shutdown watchdog, the corpus's only unconditional termination
+guarantee, and `kit/wire/housekeeping.ts` had PRE-COMMITTED in prose to how it
+would arrive ("as an option on these arguments"). Driving it falsified the
+pre-commitment — the option would arm at DRAIN time and the watchdog arms at
+SIGNAL time — and then, in the same run, showed that **the watchdog did not
+cover the window its own comment claimed**: its `clearTimeout` sat four lines
+into a fifteen-line teardown, so the final snapshot, the `closed` frame, the
+drain and discovery cleanup all ran unguarded. Two hang points where ARMED and
+DISARMED were indistinguishable.
+
+**Five readings had not found it; planting a hang in a COPY of the shipped
+artifact found it in one run.** The generalisation, which is D42's rule arriving
+at a runtime guarantee: **a guard that names a window and does not cover it
+reports the same thing as a window with nothing to guard.** Drive the boundary
+of whatever your spell keeps — a watchdog, a signal handler, a retry — with a
+fault planted at each end of the window it claims. Never in the repo: build the
+artifact, copy it, mutate the copy, run it, throw it away.
 
 **So: state the delta, drive it, and put it in its own commit and its own
 decision-log entry** — D38 is the worked example. Do not let a chapter whose
@@ -1493,8 +1608,15 @@ belongs in its own commit, filed rather than smuggled.
   finding and "it fit" is also one: `sse.ts`'s `client.send`, widened in Phase 2
   for glamour's presence, covered imago's presence case at zero cost, which is
   the first evidence that a widening generalised rather than fitting one spell.
-  **Report the blast radius either way, from `git status`, and say which case
-  you were in.**
+  ⭐ **bounty is a THIRD case and it is the one that surprises: a kit change
+  that alters NO behaviour still dirties every consumer.** Its chapter 2
+  modified one kit module by ONE PARAGRAPH OF COMMENT, and the blast radius was
+  SIX artifacts across FIVE spells — `dist/server.js` for astrolabe, glamour,
+  imago and magpie as well as its own two — because the emitted bundle carries
+  an inlined `sourcesContent`, and prose is source. Executable bytes unchanged;
+  `git diff` shows one line, the sourcemap. Contract 18 verifies by
+  reproduction, so they all belong in the chapter. **Report the blast radius
+  either way, from `git status`, and say which case you were in.**
 - **`bun run gate` is not sufficient after a `src/kit/` change.** Run
   `bun scripts/dist-check.ts` and read `git status` for **stylesheet** churn in
   spells you never opened: `src/kit/theme/base.css` declares `@source "../"`, so
@@ -1514,6 +1636,13 @@ belongs in its own commit, filed rather than smuggled.
       tells the two apart — a dev daemon with root deps present renders an
       identical board.
 - [ ] Every path-pinned sibling **driven**, not reasoned about.
+- [ ] ⭐ **Every CALLER-FACING ENTRY the gate does not exercise, driven end to
+      end.** The gate proves the entries its suite spawns; a spell's third entry
+      may have none. bounty's `join.ts` is a WebSocket participant an agent
+      spawns directly, and the drive that proves it is a HOST and a JOINER
+      connected and exchanging one mutation EACH WAY — not one process starting.
+      Read your SKILL.md for what it tells a caller to spawn, and drive each
+      one.
 - [ ] **acc re-run FROM THE SKILL DIRECTORY** (that is where `acc.config.json`
       is discovered) and the level reported. It must not regrade. ⭐ **If the
       spell has no `acc.config.json`, this box is N/A** — say so explicitly
@@ -1785,6 +1914,21 @@ a number on the dead stylesheet that turned into a ruling. Full method in
 options not taken for where the config lives are in
 [the decision log](../projects/grapevine-shadcn/decision-log.md).
 
+### Example 8: bounty — three entries, and a guarantee that did not reach
+
+**The second port driven by this document, 2026-09-09.** The first spell with
+THREE caller-facing entries (`cli.ts`, `server.ts`, `join.ts`) and the first
+consumer of D43's derived entry set; the first of a spell the shared spine was
+half copied FROM. B4 predicted its shipped `SERVER_SCRIPT` defect in writing
+before it was touched, for the second time. Six playbook gaps, all folded in
+above. The one worth carrying: **when a spell keeps a concern the kit
+deliberately does not share, the adoption is the moment to DRIVE that concern's
+boundary** — bounty's shutdown watchdog turned out to cover `await done` and one
+fs append, not the fifteen-line teardown its own comment named, and a hang
+planted in a copy of the shipped artifact found it in one run after five
+readings had not. Full account:
+`docs/projects/backend-convergence/phase-4-journal.md`.
+
 ### Example 7: digestify — the third rewrite, and the one that closed the population
 
 A 1,505-line hand-written page with **no framework at all** — ~600 lines of
@@ -1825,6 +1969,27 @@ inventory at
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
 
+- **2026-09-09** — ⭐⭐ **AMENDED FROM BOUNTY, the second port driven by this
+  document and the first with three entries.** Six gaps, and the two that
+  generalise past this spell: (1) **B8's whole module table assumed the porting
+  spell has the worse code** — for a spell the census converged TOWARD, half the
+  rows are de-duplications and one runs BACKWARDS (astrolabe's `timeoutMs <= 0`
+  guard arrived at bounty as a real behaviour change at one input), so the step
+  now says to diff in both directions and label every row GAINED / DE-DUPLICATED
+  / RECEIVED; (2) **a concern the kit deliberately does NOT share is part of B8,
+  and its boundary must be DRIVEN at the adoption** — bounty's shutdown
+  watchdog, the corpus's only unconditional termination guarantee, covered
+  `await done` plus one fs append rather than the fifteen-line teardown its own
+  comment named, and two hang points where armed and disarmed were
+  indistinguishable is what showed it. Also: B2 gains a THIRD launcher shape (an
+  entry whose exit is load-bearing for something other than exiting — and the
+  example it used to give of the FIRST shape is it); B6.1 gains the
+  spawn-vs-source-scan constant split; B7's prose sweep is budgeted by the
+  spell's HISTORY rather than at "thirty seconds"; B0 gains the
+  instrument-repair chapter between the two; B10 gains a third blast-radius case
+  (a comment-only kit edit dirties every consumer through the inlined
+  sourcemap); and the checklist gains a box for driving every caller-facing
+  entry the gate does not exercise.
 - **2026-09-09** — ⛔ **Phase B's "two entries, `cli.ts` and `server.ts`"
   CORRECTED, and it was wrong for THREE of the four remaining ports.** Not
   taught by a port — taught by MEASURING the roster before writing bounty's

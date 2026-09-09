@@ -178,10 +178,12 @@ session by default; pass `--session <id>` to target a specific one.
 >   `open --pin --session-key K` persists the derived id to `.bounty-session`.
 > - `--title`, `--timeout` and `--restore` configure a daemon **at spawn time**,
 >   so on the attach path they cannot take effect. `open` **refuses** (exit `2`)
->   rather than attaching and discarding them, and every `open` envelope carries
->   `restoreSkipped` — `null` when nothing was skipped, `{requested, reason}`
->   when an **explicit** `--restore` could not be honoured (a keyed respawn
->   restores by default and never populates this field).
+>   rather than attaching and discarding them — ⚠ this is the ONE refusal that
+>   is not the JSON failure envelope, because it hands you the live board's
+>   coordinates on stdout instead; see the Exit Code Contract — and every `open`
+>   envelope carries `restoreSkipped` — `null` when nothing was skipped,
+>   `{requested, reason}` when an **explicit** `--restore` could not be honoured
+>   (a keyed respawn restores by default and never populates this field).
 > - **`restoreSkipped` and `restoreFailed` are different situations and call for
 >   different fixes.** `restoreSkipped` means the restore was **never
 >   attempted** — fix your invocation. `restoreFailed` —
@@ -295,8 +297,9 @@ shrinking write, and names the file. See **Durability** for when that fires.
 > restart that loses an event.
 
 **A write confirms itself** — the verb reports the daemon's `applied` verdict
-(non-zero exit + `applied: false` + a named `error` on a refusal), so `state` is
-for **reading the board**, not for checking whether your last write landed.
+(on a refusal: exit `5`/`6` and a failure envelope on stderr whose
+`error.server` carries the daemon's `applied: false` and its reason), so `state`
+is for **reading the board**, not for checking whether your last write landed.
 
 **`add` and `update` also report what they THREW AWAY.** A bad `--size` or
 `--expect` value is deliberately ignored rather than fatal (a typo must not set
@@ -372,7 +375,7 @@ Each `tail` frame is `{ id, type, …, by }`:
 
 ```
 {id, type:"ready",        url, port, session_id, by:"system"}
-{id, type:"connected" | "disconnected", by:"user"}
+{     type:"connected" | "disconnected", by:"user"}   // LIVE ONLY — no id, never replayed
 {id, type:"task.toggle",  taskId, status, by, owner}     // pill click
 {id, type:"task.move",    taskId, status, index, by, owner}  // drag-drop
 {id, type:"task.edit",    taskId, title, by, owner}      // inline title edit
@@ -385,9 +388,19 @@ Each `tail` frame is `{ id, type, …, by }`:
 ```
 
 The board mutations + `closed` are the actionable ones; `ready` / `connected` /
-`disconnected` are lifecycle noise you can usually ignore. Events are **not
-commands** — by the time you see one, the daemon has already applied it; you're
-being informed. Read `cli.ts state` when you want the full truth.
+`disconnected` are lifecycle noise you can usually ignore.
+
+⚠ **`connected` / `disconnected` carry NO `id` and are never replayed.** They go
+to tails that are open at the moment they happen, and nowhere else. Presence is
+a fact about _now_ — a replayed "someone connected" is false by the time you
+read it — and buffering them meant a tail resuming from `--since 0` waded
+through the whole browser-presence history of the session, with each replayed
+frame advancing its cursor. Every other frame in the table above still carries
+an `id` and is still replayable.
+
+Events are **not commands** — by the time you see one, the daemon has already
+applied it; you're being informed. Read `cli.ts state` when you want the full
+truth.
 
 ### Task shape
 
@@ -490,9 +503,10 @@ keep each worker's wake-set small instead of every event waking everyone.
   `cli.ts update <id> --owner <name>`. Assignment-first is the primary path;
   `update --owner` is also the **reassignment** path and always wins.
 - **Self-claim (worker).** `cli.ts claim <id> --as <name>` takes an **unowned**
-  task. A claim on a task someone else owns is **rejected** (stderr notice +
-  non-zero exit) — never a silent steal; claiming your own task is a no-op
-  success. (Reassignment is the lead's job via `update --owner`.)
+  task. A claim on a task someone else owns is **rejected** — a `conflict`
+  envelope on stderr at exit **`6`**, never a silent steal; claiming your own
+  task is a no-op success. (Reassignment is the lead's job via
+  `update --owner`.)
 - **Scoped tail.** `cli.ts tail --owner <name>` wakes only on that owner's
   tasks; `cli.ts tail --mine --as <name>` wakes on your own **plus claimable
   (unowned)** tasks. Lifecycle frames (`ready`/`closed`/…) always pass.
@@ -553,8 +567,10 @@ flat list.
   **only** through these — a raw `update` can't set it, so the cycle guard
   always runs.)
 - **Cycle guard:** a `block` that would create a self-reference or a cycle
-  (direct or transitive) is **rejected** (stderr + non-zero exit, like a
-  rejected claim) — the board can't wedge.
+  (direct or transitive) is **rejected** — a `conflict` envelope on stderr at
+  exit **`6`**, like a rejected claim — so the board can't wedge. A `--on` that
+  names a task the board does not have is a different refusal: `not_found`, exit
+  **`5`**, and nothing is blocked.
 - **`unblocked` event:** when a task's **last** live blocker clears — the last
   blocker reaches `done`, _or_ its last blocking edge is removed — the daemon
   fires `{type:"unblocked", taskId, owner}` to the task's owner. It's in the
@@ -647,12 +663,39 @@ ending is non-destructive and reopenable with `cli.ts open --restore`.
 
 The session-ending outcome (a clean exit 0, or 124 on idle timeout) belongs to
 the **daemon** and surfaces to the agent via the `closed` event's `reason` on
-the tail. `cli.ts` itself exits `2` on bad args and `0` on a successful verb
-(and `tail` exits `0` on the `closed` frame). One more: a **cooperatively
-rejected** verb — `claim` on an other-owned task, or `block` that would form a
-cycle — exits **`1`** (with the reason on stderr), distinct from `2` (bad args).
-So `claim`/`block` exiting non-zero means "the daemon refused this," not "you
-called it wrong" — check stderr and adjust, don't retry verbatim.
+the tail. That family is the table above and the taxonomy does not govern it.
+
+**`cli.ts`'s own exits are the house taxonomy** (`src/kit/wire/errors.ts`), and
+every one of them prints ONE JSON envelope on **stderr** with stdout left empty:
+
+| Code | `kind`      | What it means                  | Typical cause                                                                    |
+| ---- | ----------- | ------------------------------ | -------------------------------------------------------------------------------- |
+| 0    | —           | The verb succeeded             | `tail` also exits 0 on the `closed` frame                                        |
+| 2    | `usage`     | Fix it by changing the command | A bad flag, a missing verb, a missing required argument, an empty `update` patch |
+| 5    | `not_found` | The named thing does not exist | No running session; a stale session pointer; a task id that is not on this board |
+| 6    | `conflict`  | A precondition failed          | A duplicate `--id`; `claim` on an other-owned task; a `block` that forms a cycle |
+| 1    | `internal`  | The spell broke                | The daemon answered a command with a non-200                                     |
+
+⚠ **This changed in 2026-09, twice, and a script may be pinned to either old
+shape.** Before the port every failure was prose at exit **2**. The port then
+moved most failures onto the taxonomy but left the **cooperative refusals** —
+the ones above at 5 and 6 — writing prose to stderr, a legacy
+`{"ok":false,"applied":false,…}` document to **stdout**, and exiting **1**. Both
+are gone. A script testing `exit == 2` for "no session" must test **5**; one
+testing `exit == 1` for "the daemon refused my claim" must test **6**, and must
+read the refusal from **stderr**, not stdout.
+
+So `claim`/`block` exiting **6** means "the daemon refused this," not "you
+called it wrong" (2) and not "the spell broke" (1) — read `error.message`,
+adjust, and do not retry verbatim.
+
+**One refusal is deliberately NOT an envelope: `open`'s attach refusal**
+(`--title`/`--timeout`/`--restore` against a board that is already running). It
+exits `2` and prints the live board's discovery JSON — `url`, `port`,
+`session_id` plus `restoreSkipped` — on **stdout**, because that payload is the
+answer to "then where IS my board", and the house envelope has no field for a
+refusal that carries data. Recognise it by the `restoreSkipped.requested` array;
+every other refusal is an envelope on stderr.
 
 ## Join Mode — Connect to an Existing Board
 
@@ -668,9 +711,10 @@ opens a WebSocket to the daemon and bridges it to its own stdio.
    - User said "just join the latest one" or didn't specify → omit both;
      `join.ts` reads `<tmpdir>/bounty-latest.json`.
 
-   If discovery fails (no file, no host running at that URL), `join.ts` exits 2
-   with a clear stderr message. Surface it to the user and ask for an explicit
-   `--url` or `--id`.
+   If discovery fails — no discovery file, an `--id` with no session file, or
+   nothing listening at the URL — `join.ts` exits **5** (`not_found`) with the
+   same JSON failure envelope `cli.ts` prints, on stderr. Surface it to the user
+   and ask for an explicit `--url` or `--id`. A bad flag is **2** (`usage`).
 
 2. **Spawn the joiner.** It opens the WebSocket and stays connected.
 
@@ -743,10 +787,21 @@ Treat `disconnected` as the end; the board is restorable via
 
 ### Join exit codes
 
-| Code | Meaning                                            | What to do                                  |
-| ---- | -------------------------------------------------- | ------------------------------------------- |
-| 0    | Clean disconnect (server closed or agent closed)   | Normal — tell the user the session is done  |
-| 2    | Bad args, no discovery file, or connection refused | Ask the user for an explicit `--url`/`--id` |
+**Two families, and the channel tells them apart.** A STARTUP failure prints the
+house envelope on stderr and nothing on stdout. A session ENDING prints a
+`disconnected` frame on stdout and no envelope — it is an outcome, not a
+refusal, and it belongs with the host daemon's own 0 / 124.
+
+| Code | Family  | Meaning                                                                          | What to do                                    |
+| ---- | ------- | -------------------------------------------------------------------------------- | --------------------------------------------- |
+| 0    | ending  | Clean disconnect (server closed, or agent closed)                                | Normal — tell the user the session is done    |
+| 2    | startup | `usage` — a bad flag                                                             | Fix the command line                          |
+| 5    | startup | `not_found` — no discovery file, unknown `--id`, or nothing listening at the URL | Ask the user for an explicit `--url`/`--id`   |
+| 2    | ending  | The socket errored mid-session (`disconnected` frame with `reason:"error"`)      | The board may be gone; re-discover and rejoin |
+
+⚠ **`2` is the one number both families use.** They are distinguished by the
+channel, never by the code: an ending always emits the `disconnected` frame on
+stdout and never an envelope; a startup failure is the reverse.
 
 ### Join example
 
@@ -785,14 +840,34 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
   argument, not its "body"** — so on `update`, whose only positional is `<id>`,
   it overwrites the **title** at `ok:true`. See the `--stdin` note under Verbs
   before using it on `update`.
+- **A failure is ONE JSON document on stderr, and stdout stays empty.** Every
+  refusal prints
+  `{"ok":false,"error":{"kind","exit_code","retryable","message",…},"meta":{"command"}}`
+  and exits on the taxonomy: **2** usage (you can fix it by changing the
+  command), **1** internal (the spell broke), **5** not_found (the named thing
+  does not exist — most often "no running bounty session", and also a task id
+  this board has never had), **6** conflict (a precondition failed — a duplicate
+  `--id`, a claim on someone else's task, a `block` that would form a cycle). ⚠
+  **This changed in 2026-09:** every failure used to print prose
+  (`bounty: <msg>`) and exit **2**, so "that board is gone" and "you typed it
+  wrong" were the same number; the cooperative refusals then spent one release
+  writing prose plus a stdout document at exit **1**. A script that tested
+  `exit == 2` for "no session" must test `5`, and one that tested `exit == 1`
+  for a refused write must test `5`/`6`. Where the daemon itself refused, its
+  own reply is carried verbatim under `error.server` — that is where
+  `applied: false` now lives. **The one exception is `open`'s attach refusal**,
+  which exits `2` with the live board's discovery JSON on stdout because the
+  payload IS the answer; see the Exit Code Contract.
 - **A write verb tells you whether it took.** Every write (`add`, `update`,
   `claim`, `block`/`unblock`, `remove`, `message`, `close`) reports the daemon's
-  `applied` verdict: on success it exits `0`; on a refusal it exits non-zero and
-  prints an envelope carrying `applied: false` and an `error` naming the reason.
-  A duplicate `--id` is a refusal — the board is left unchanged and the existing
-  task keeps its id. **You no longer need a follow-up `state` to find out
-  whether a write landed;** read the exit code, or `applied` if you are parsing
-  stdout. `state` remains the way to read the board, not the way to confirm a
+  `applied` verdict: on success it exits `0` with its result on stdout; on a
+  refusal it exits `5` (a ghost id) or `6` (a duplicate `--id`, an other-owned
+  claim, a cycle) with the failure envelope on **stderr** and nothing on stdout.
+  The daemon's own reply — `applied: false` and its sentence — rides
+  `error.server` inside that envelope. A duplicate `--id` is a refusal: the
+  board is left unchanged and the existing task keeps its id. **You no longer
+  need a follow-up `state` to find out whether a write landed;** read the exit
+  code. `state` remains the way to read the board, not the way to confirm a
   write.
 - **Don't merge tail's stderr into stdout.** Monitor notifies on every stdout
   line; the keepalive tick + diagnostics ride stderr by design. `2>&1` turns

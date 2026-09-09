@@ -270,6 +270,7 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
 // converts the silence into a failure; it is what glamour's arrival paid for.
 const DECLARED_EMITTED_ROOTS: string[] = [
   "plugins/spellbook/skills/astrolabe/dist",
+  "plugins/spellbook/skills/bounty/dist",
   "plugins/spellbook/skills/glamour/dist",
   "plugins/spellbook/skills/imago/dist",
   "plugins/spellbook/skills/magpie/dist",
@@ -410,8 +411,22 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
   // running existsSync on the resolved path; the admission was verified the same
   // way as the others — tests/release-serve.test.ts boots a copied tree with a
   // dist/ and no surface/, and its forced-dev cell dies at exactly this import.
+  // ⚠ AND ITS ADDRESS MOVED TO THE EMITTED FILE IN PHASE 4, for the same reason
+  // astrolabe's, magpie's and glamour's did: `trackedSources` is `.ts`/`.tsx`
+  // only, so after the relocation a pin at `scripts/server.ts` would have been
+  // DELETED as "no longer present" and this ward would have gone green because
+  // it stopped looking (Contract 19, exactly). The pin now sits where the
+  // specifier EXECUTES — inside `dist/server.js`, whose five `..` are counted
+  // from `plugins/spellbook/skills/bounty/dist/`.
+  //
+  // ⛔ AND THE STRING IS UNCHANGED, WHICH IS A COINCIDENCE OF DEPTH AND NOT A
+  // PROPERTY (playbook Phase B, B5). `dist/` sits at the same depth as the
+  // `scripts/` it replaced, so the same five `..` land on the repo root from
+  // both. Asserted rather than trusted: `resolved` below is compared against
+  // the tree, and `src/build.ts` passes `--external` for the surface-HTML glob
+  // so this ONE specifier survives into the bundle BYTE-FOR-BYTE.
   {
-    file: "plugins/spellbook/skills/bounty/scripts/server.ts",
+    file: "plugins/spellbook/skills/bounty/dist/server.js",
     spec: "../../../../../src/bounty/surface/index.html",
     resolved: "src/bounty/surface/index.html",
   },
@@ -928,7 +943,21 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     expect(makeIsBuiltin([], [emitted])("bun:sqlite", `${emitted}/server.js`)).toBe(true);
   });
 
-  test("the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it", () => {
+  test("the `bun` exemption's population is LOOKED AT AND EMPTY — no emitted file writes a runtime `bun` import", () => {
+    // ⛔ THE TITLE WAS RENAMED TO WHAT THE CELL ASSERTS (D54). It used to read
+    // "the `bun` exemption is LIVE — this cell FAILS if BUILTIN_EXACT loses it",
+    // and after D50 that was false: the population reached zero at bounty's
+    // port, so emptying `BUILTIN_EXACT` leaves this cell GREEN. The liveness
+    // proof MOVED to the synthetic cell above, which evaluates the exemption
+    // against a population it constructs; what remains here is the roster
+    // measurement — read, non-zero, and carrying no violation.
+    //
+    // ⚠ A TITLE MAKING A CLAIM ITS CELL NO LONGER MAKES IS THE VACUITY THIS
+    // FILE'S OWN HEADER RECORDS CONVICTING SOMEONE OF ONCE (see the paragraph
+    // below): a reader who greps for the guarantee finds a green cell that
+    // names it and does not test it. Driven both ways at the rename — with
+    // `bun` deleted from `BUILTIN_EXACT`, this cell passes and the synthetic
+    // cell reds.
     // ⛔ REWRITTEN AFTER cassandra CONVICTED THE FIRST VERSION VACUOUS. That one
     // counted `bun` imports and never referenced the predicate, so deleting the
     // exemption reddened the VIOLATION cell while this one — the cell whose
@@ -990,10 +1019,58 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // a `bun` import. bounty is the last holder, and this floor now rests on ONE
     // file: when bounty ports, this cell has no population and the exemption it
     // guards must be re-argued rather than silently kept.
+    // ⛔ ⛔ THE FLOOR REACHED ZERO AT BOUNTY'S PORT (Phase 4, 2026-09-09), AND
+    // THE PARAGRAPH ABOVE SAID WHAT MUST HAPPEN NEXT: **RE-ARGUED, NOT
+    // RE-DECLARED.** bounty was the last hand-authored holder — its
+    // `import type { ServerWebSocket } from "bun"` is type-only, the same
+    // mechanism as the four departures above — so relocating the daemon to
+    // `src/bounty/backend/server.ts` and shipping it as `dist/server.js` erased
+    // it and this measurement is now EMPTY.
+    //
+    // **The argument for keeping the exemption, which no longer rests on the
+    // roster:**
+    //
+    //  1. **`bun` IS NOT A DEPENDENCY, AND THAT IS THE WARD'S ACTUAL SUBJECT.**
+    //     This ward asks "does the shipped execution path reach for something a
+    //     caller would have to INSTALL". The bare specifier `"bun"` is the
+    //     runtime's own module; it is present wherever `bun` is, by definition,
+    //     which is wherever any of this ships. The exemption is a statement
+    //     about the specifier, not about who currently writes it — so an empty
+    //     population is not evidence against it, and would not have been
+    //     evidence FOR it either.
+    //  2. **THE DISJOINTNESS CLAUSE IS A DIFFERENT CLAUSE.** `bun:sqlite` and
+    //     every other `bun:`-prefixed specifier is exempted by `BUILTIN_PREFIX`,
+    //     NOT by this entry (asserted directly in the synthetic cell above).
+    //     Deleting `bun` from `BUILTIN_EXACT` would therefore narrow the ward by
+    //     exactly one specifier and would not tidy anything else away.
+    //  3. **THE POPULATION IS NOT CLOSED.** Three spells still ship their
+    //     daemons as SOURCE (digestify, grapevine, mind-mapper). The day one of
+    //     them writes this dependency in a file the bundler does not erase it
+    //     from — or the day any spell needs a VALUE import of `Bun`'s own API —
+    //     the row comes back. The floor "only falls" was always a statement
+    //     about today's roster, never about the language.
+    //
+    // **And the liveness proof MOVES rather than dying with the population.**
+    // It now lives entirely in the synthetic cell above, which is the stronger
+    // home and was already built (D16): `probe("bun", `${emitted}/server.js`)`
+    // is `true` and `makeIsBuiltin([], [emitted])("bun", …)` is `false` — the
+    // exemption is EVALUATED against a population this file constructs, so
+    // removing it from `BUILTIN_EXACT` still reddens the suite on a tree where
+    // no spell writes the import at all. That is what stops this from being a
+    // re-declaration.
+    //
+    // ⚠ ⛔ AND THE EMPTY MEASUREMENT IS SPELLED AS **LOOKED AT AND EMPTY** (D42
+    // / D44), WHICH IS THE ONLY REASON IT IS ALLOWED TO BE EMPTY HERE. An
+    // `expect(x).toEqual([])` over a population that silently went to zero FILES
+    // is the exact defect this project has now paid for four times: absence of a
+    // finding spelled the same way as absence of a subject. So the cell asserts
+    // the denominator FIRST — files were enumerated and read — and only then
+    // that none of them violates. Without the first line, deleting
+    // `DECLARED_EMITTED_ROOTS` would make this cell greener, not redder.
+    const population = emittedSources(EMITTED_ROOTS);
+    expect(population.length).toBeGreaterThan(0);
     const withoutBun = violationsUnder(makeIsBuiltin([], EMITTED_ROOTS));
-    expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([
-      "plugins/spellbook/skills/bounty/scripts/server.ts",
-    ]);
+    expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([]);
   });
 });
 

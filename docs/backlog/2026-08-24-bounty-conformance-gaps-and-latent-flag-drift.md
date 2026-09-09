@@ -7,8 +7,8 @@ here was changed.
 
 ## The gaps (same class grapevine fixed on `feat/grapevine-self-declaration`)
 
-`acc check` on `plugins/spellbook/skills/bounty/scripts/cli.ts`: NOT CONFORMANT
-(L0), 3 core violated —
+`acc check` on `src/bounty/backend/cli.ts`: NOT CONFORMANT (L0), 3 core violated
+—
 
 - **C2 / D2:** bare invocation prints help to stdout at exit 0 (usage-error
   population reads `2,2,0`). grapevine conformed (bare → usage error, exit 2,

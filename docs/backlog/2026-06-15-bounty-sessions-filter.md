@@ -11,5 +11,5 @@ Cap to the N most-recent by mtime, or add a `--limit` / `--since` filter. (LOW)
 
 ## References
 
-- `plugins/spellbook/skills/bounty/scripts/cli.ts` — `cmdSessions`
+- `src/bounty/backend/cli.ts` — `cmdSessions`
 - Origin: `docs/projects/_archive/bounty-agent-usable/backlog.md` (F2)

@@ -69,7 +69,7 @@ const HAZARD_APPLIES: Record<string, string> = {
   // launcher took its old address. The hazard travels with the PARSER, not
   // with the filename a consumer invokes.
   "astrolabe/backend/cli.ts": "caller-facing; verbs take free-text operands",
-  "bounty/scripts/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
+  "bounty/backend/cli.ts": "caller-facing; the c1 scar itself (`--session-key` eaten)",
   "glamour/backend/cli.ts": "caller-facing; prompt text is a positional",
   "grapevine/scripts/cli.ts": "caller-facing; message bodies are prose positionals",
   "imago/backend/cli.ts": "caller-facing; prompt text is a positional",

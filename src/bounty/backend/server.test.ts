@@ -34,8 +34,12 @@ import {
   isBlocked,
   liveBlockerCount,
   ownersOverWip,
-} from "../shared/predicates";
-import type { BoardState, Task, TaskStatus } from "../shared/types";
+} from "../../../plugins/spellbook/skills/bounty/shared/predicates";
+import type {
+  BoardState,
+  Task,
+  TaskStatus,
+} from "../../../plugins/spellbook/skills/bounty/shared/types";
 import {
   deriveSessionId,
   findScopeRoot,
@@ -48,6 +52,7 @@ import {
   sessionKeyToId,
   slugifyKey,
 } from "./cli.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -67,6 +72,25 @@ import {
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 
+// ⛔ THE SPAWNED FILE IS THE LAUNCHER, NEVER THIS DIRECTORY'S SOURCE (playbook
+// Phase B, B6.1). The contract every process-level cell below asserts is what
+// the PROCESS a caller runs writes and exits with, and the process a caller
+// runs is `plugins/spellbook/skills/bounty/scripts/<entry>.ts`, which imports
+// the BUILT `../dist/<entry>.js`. Spawning `./server.ts` from here would test a
+// module that never ships in that form and would compute every one of its own
+// path pins from `src/bounty/backend/` — an address with no `dist/`, no
+// `assets/` and no `SKILL.md`, five levels from the right dev cwd.
+//
+// ⚠ AND IT IS DERIVED FROM AN EXPLICIT SKILL ROOT, NOT BY COUNTING `..` AT EACH
+// SITE. The count is the repair that rots, and a test whose spawn path is wrong
+// fails as "the daemon never answered" — which reads like flake, not like a
+// broken path.
+//
+// The SOURCE-SCANNING cells further down deliberately keep reading
+// `SCRIPT_DIR`: their subject is the authored text, not the running process.
+const SKILL_ROOT = join(SCRIPT_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "bounty");
+const LAUNCHER_DIR = join(SKILL_ROOT, "scripts");
+
 // A decoded protocol frame as observed on stdout / the WebSocket. The
 // helpers collect heterogeneous frames (ready, meta, task.*, submit, init,
 // joined, disconnected, …); fields are optional and narrowed per assertion.
@@ -85,8 +109,18 @@ type WireMsg = {
   port?: number;
   session_id?: string;
 };
-const SERVER = join(SCRIPT_DIR, "server.ts");
-const JOIN = join(SCRIPT_DIR, "join.ts");
+const SERVER = join(LAUNCHER_DIR, "server.ts");
+// ⛔ THE SOURCE ADDRESSES, HELD SEPARATELY FROM THE SPAWN ADDRESSES — and the
+// need for the split is a gap in Phase B's B6.1. B6.1 says "spawn the LAUNCHER,
+// not the source", which is right and is not the whole instruction: this file
+// used ONE constant per entry for BOTH jobs, so re-pointing it at the launcher
+// silently re-pointed the SOURCE-SCANNING cells too. They then read a 45-line
+// comment block and found none of what they pin — `G7 PRECONDITION` failed as
+// `expect(m).not.toBeNull()`, which reads like a broken regex rather than a
+// wrong file. A source scan follows the SOURCE; only a process spawn follows
+// the launcher.
+const CLI_SRC = join(SCRIPT_DIR, "cli.ts");
+const JOIN = join(LAUNCHER_DIR, "join.ts");
 
 function freshState(): BoardState {
   return { title: "T", tasks: [] };
@@ -1678,7 +1712,7 @@ describe("ownership claim guard (Phase C)", () => {
 // targets its daemon by explicit --session <id> (never the shared "latest"
 // pointer) so concurrent/stale discovery files can't cross-wire the assertions.
 
-const CLI = join(SCRIPT_DIR, "cli.ts");
+const CLI = join(LAUNCHER_DIR, "cli.ts");
 
 // A fresh per-test BOUNTY_HOME so snapshot/discovery state never leaks between
 // tests (Phase B writes snapshots here; Phase A keeps tests isolated up front).
@@ -1924,7 +1958,28 @@ describe("cli.ts ↔ daemon parity", () => {
     // the session discovery file/port become unreachable.
     await new Promise((res) => setTimeout(res, 2000));
     const dead = await runCli(["state", "--session", session], { env });
-    expect(dead.code).toBe(2); // cli.ts `die`s when the daemon is gone
+    // ⛔ 5, NOT 2 — AND THIS ONE LINE IS THE ERROR-CONTRACT DELTA ARRIVING IN A
+    // TEST. It read `toBe(2)` under the comment "cli.ts `die`s when the daemon
+    // is gone", which was true and said nothing about WHY it died: before
+    // bounty adopted `src/kit/wire/errors.ts`, every failure this CLI could
+    // produce exited 2, so a caller could not tell "that board is gone" from
+    // "you typed the command wrong". `not_found` is 5 in the acc taxonomy, and
+    // a board that idle-closed underneath you is exactly that.
+    expect(dead.code).toBe(5);
+    // ...and the failure is now ONE JSON DOCUMENT on stderr with stdout empty,
+    // which is the half a bare exit code cannot assert. Pinned here because
+    // this cell is the only one in the suite that drives a real post-mortem
+    // board — a naturally-occurring not_found rather than a constructed one.
+    expect(dead.stdout).toBe("");
+    const envelope = JSON.parse(dead.stderr) as {
+      ok: boolean;
+      error: { kind: string; exit_code: number; message: string; hint?: string };
+      meta: { command: string | null };
+    };
+    expect(envelope.ok).toBe(false);
+    expect(envelope.error.kind).toBe("not_found");
+    expect(envelope.error.exit_code).toBe(5);
+    expect(envelope.meta.command).toBe("state");
   }, 25000);
 });
 
@@ -2034,8 +2089,17 @@ describe("ownership scoping (Phase C E2E)", () => {
     await runCli(["add", "F", "--id", "F", "--session", session], { env });
     try {
       const rejected = await runCli(["claim", "O", "--as", "bob", "--session", session], { env });
-      expect(rejected.code).toBe(1); // visible nonzero — not a silent {ok:true}
-      expect(rejected.stderr).toContain("alice");
+      // D51 — a cooperative refusal is `conflict` (6), not `internal` (1). The
+      // task exists and someone else holds it: a precondition failed, and the
+      // spell did not break.
+      expect(rejected.code).toBe(6);
+      expect(rejected.stdout).toBe(""); // stdout carries data; a failure has none
+      const claimErr = JSON.parse(rejected.stderr) as {
+        error: { kind: string; exit_code: number; message: string };
+      };
+      expect(claimErr.error.kind).toBe("conflict");
+      expect(claimErr.error.exit_code).toBe(6);
+      expect(claimErr.error.message).toContain("alice");
 
       const ok = await runCli(["claim", "F", "--as", "bob", "--session", session], { env });
       expect(ok.code).toBe(0);
@@ -2056,14 +2120,21 @@ describe("ownership scoping (Phase C E2E)", () => {
       const badUpd = await runCli(["update", "ghost", "--status", "done", "--session", session], {
         env,
       });
-      expect(badUpd.code).toBe(1);
-      expect(badUpd.stdout).not.toContain('"ok":true');
-      expect(badUpd.stderr).toContain("ghost");
+      // D51 — a ghost id is `not_found` (5), the same number `state --session
+      // <nonexistent>` already answered (D45). One spell, one meaning per code.
+      expect(badUpd.code).toBe(5);
+      expect(badUpd.stdout).toBe("");
+      const updErr = JSON.parse(badUpd.stderr) as { error: { kind: string; message: string } };
+      expect(updErr.error.kind).toBe("not_found");
+      expect(updErr.error.message).toContain("ghost");
 
       // A not-found remove is the same visible failure.
       const badRm = await runCli(["remove", "ghost", "--session", session], { env });
-      expect(badRm.code).toBe(1);
-      expect(badRm.stdout).not.toContain('"ok":true');
+      expect(badRm.code).toBe(5);
+      expect(badRm.stdout).toBe("");
+      expect((JSON.parse(badRm.stderr) as { error: { kind: string } }).error.kind).toBe(
+        "not_found",
+      );
 
       // An EXISTING task still updates + removes with exit 0 + a success line.
       const okUpd = await runCli(["update", "real", "--status", "doing", "--session", session], {
@@ -2771,8 +2842,26 @@ describe("dependencies (Phase D)", () => {
       expect((JSON.parse(ok.stdout) as { blocked?: string }).blocked).toBe("X");
 
       const cyc = await runCli(["block", "B", "--on", "X", "--session", session], { env });
-      expect(cyc.code).toBe(1); // visible nonzero, like a rejected claim
-      expect(cyc.stderr.toLowerCase()).toContain("cycle");
+      // A cycle is a `conflict` (6) — the same family as a rejected claim, which
+      // is what "like a rejected claim" now means in a number rather than in
+      // prose. D51.
+      expect(cyc.code).toBe(6);
+      expect(cyc.stdout).toBe("");
+      const cycErr = JSON.parse(cyc.stderr) as { error: { kind: string; message: string } };
+      expect(cycErr.error.kind).toBe("conflict");
+      expect(cycErr.error.message.toLowerCase()).toContain("cycle");
+
+      // ⛔ ONE VERB, TWO KINDS — and this is why the taxonomy is decided at the
+      // DAEMON. `block` refuses a cycle as `conflict` and an unknown blocker as
+      // `not_found`; from the CLI both arrive as `applied:false` plus a
+      // sentence, so classifying here would mean matching on the sentence.
+      const ghostBlocker = await runCli(["block", "X", "--on", "nosuch", "--session", session], {
+        env,
+      });
+      expect(ghostBlocker.code).toBe(5);
+      expect((JSON.parse(ghostBlocker.stderr) as { error: { kind: string } }).error.kind).toBe(
+        "not_found",
+      );
 
       const un = await runCli(["unblock", "X", "--on", "B", "--session", session], { env });
       expect(un.code).toBe(0);
@@ -3868,7 +3957,7 @@ describe("P0b — the snapshot facts the construction rests on", () => {
 // BLAST-RADIUS GUARDS. Reporting "3 cells green" would be a coverage claim
 // three times its true size.
 describe("P0d #83 — a duplicate add is a REFUSAL, not a silent success", () => {
-  test("RED PRE-FIX — duplicate --id exits non-zero and the envelope says applied:false", async () => {
+  test("RED PRE-FIX — duplicate --id is a `conflict` (6) whose envelope says applied:false", async () => {
     const home = uniqHome();
     const env = { BOUNTY_HOME: home };
     const open = await runCli(["open", "--no-open", "--timeout", "30"], { env });
@@ -3885,12 +3974,22 @@ describe("P0d #83 — a duplicate add is a REFUSAL, not a silent success", () =>
         ["add", "IMPOSTOR TITLE", "--id", "dup-probe", "--owner", "bob", "--session", session],
         { env },
       );
-      expect(second.code).not.toBe(0);
-      const envelope = JSON.parse(second.stdout) as { applied?: boolean; error?: string };
-      expect(envelope.applied).toBe(false);
+      // D51 — the envelope moved to STDERR and the exit code became `conflict`
+      // (6). It used to be a legacy `{ok:false,applied:false}` document on
+      // stdout beside prose on stderr, at exit 1 — the taxonomy's "the spell
+      // broke", for the refusal bounty produces most often.
+      expect(second.code).toBe(6);
+      expect(second.stdout).toBe("");
+      const envelope = JSON.parse(second.stderr) as {
+        error: { kind: string; message: string; server?: { applied?: boolean } };
+      };
+      expect(envelope.error.kind).toBe("conflict");
+      // The daemon's OWN reply, verbatim, under `error.server` (D31's field) —
+      // so `applied:false` is still readable without parsing a human line.
+      expect(envelope.error.server?.applied).toBe(false);
       // The reason is named, not merely signalled — `applied:false` alone
       // conflated an invalid shape with a taken id and told the caller neither.
-      expect(envelope.error).toContain("dup-probe");
+      expect(envelope.error.message).toContain("dup-probe");
     } finally {
       await runCli(["close", "--session", session], { env });
     }
@@ -4114,7 +4213,7 @@ describe("P0f — tail drains its terminal frame before exiting", () => {
 // names why. (Same instrument as the P0e hermeticity guard, which found five
 // spawn sites a mutation test could not reach.)
 test("G7 PRECONDITION — the detached daemon holds NO pipe from its spawner", async () => {
-  const src = codeLines(await Bun.file(CLI).text());
+  const src = codeLines(await Bun.file(CLI_SRC).text());
   const m = /spawn\(process\.execPath, args, \{([\s\S]*?)\}\);/.exec(src);
   expect(m).not.toBeNull();
   const call = (m as RegExpExecArray)[1];
@@ -4515,14 +4614,109 @@ describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", (
     // ⚠ This asserts the two numbers stay ordered, NOT that any death was
     // caused by their being unordered. See the source comment: P1e is
     // consistent with #64's clue and untested against it.
+    // ⛔ THIS CELL NOW ASSERTS THE DERIVATION, NOT TWO LITERALS — AND THAT IS
+    // THE UPGRADE THE PORT BOUGHT. It used to scan `server.ts` with two regexes
+    // for `idleTimeout: 255` and the `15000` beside `sseTimers.add(hb)`, and
+    // compare the numbers it found. Both literals are gone: they live in
+    // `./heartbeat.ts`, where `heartbeatMs()` CLAMPS the beat to half the idle
+    // timeout. So the ordering holds for ANY configured pair rather than for the
+    // two values that happened to be typed — which is what the old cell was
+    // reaching for and could only approximate.
+    //
+    // ⚠ THE OLD FORM WAS ALSO ONE RENAME FROM VACUOUS. Its second regex was
+    // anchored on the literal token `sseTimers.add(hb)`; that registry is gone
+    // now (the kit's SSE teardown funnel owns the interval), so the match
+    // returns null and the cell fails LOUDLY — which is the good outcome, and
+    // is only good because `expect(hb).not.toBe(null)` was there. A source scan
+    // without a found-it assertion passes when it stops finding anything.
+    expect(SSE_HEARTBEAT_MS).toBeLessThanOrEqual((IDLE_TIMEOUT_SEC * 1000) / 2);
+    expect(SSE_HEARTBEAT_MS).toBeGreaterThan(0);
+    // The defaults, pinned so the derivation cannot quietly change bounty's
+    // shipped behaviour: 255 s (Bun's clamped maximum, bounty's own measured
+    // value) and a 15 s beat.
+    expect(IDLE_TIMEOUT_SEC).toBe(255);
+    expect(SSE_HEARTBEAT_MS).toBe(15_000);
+    // ...and the daemon actually PASSES it to Bun.serve rather than keeping a
+    // literal beside the import. This is the half that must stay a source scan:
+    // the value is right, and the question is whether it reaches the server.
     const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
-    const idle = src.match(/idleTimeout:\s*(\d+)/);
-    const hb = src.match(/\}, (\d+)\);\n\s*sseTimers\.add\(hb\);/);
-    expect(idle).not.toBe(null);
-    expect(hb).not.toBe(null);
-    const idleMs = Number(idle?.[1]) * 1000;
-    const hbMs = Number(hb?.[1]);
-    expect(idleMs).toBeGreaterThan(hbMs);
+    expect(src).toMatch(/idleTimeout:\s*IDLE_TIMEOUT_SEC\b/);
+  });
+
+  test("the shutdown WATCHDOG is cleared AFTER the drain, not before it", () => {
+    // ⛔ SOURCE-SCANNED, AND THE REASON IS THAT DRIVING IT NEEDS A PLANTED HANG.
+    // The property is "the force-exit still covers the teardown", and the only
+    // way to observe it is to make the teardown not finish — which means
+    // mutating the artifact, which is a calibration drive and not a suite cell.
+    // So this pins the ORDER, which is the thing that was wrong and the thing an
+    // ordinary edit would get wrong again.
+    //
+    // ⚠ WHAT WAS WRONG, MEASURED. `clearTimeout(shutdownWatchdog)` used to sit
+    // four lines into a fifteen-line teardown, immediately after
+    // `logDaemon("exit")` — under a comment saying it "sits at the end of the
+    // teardown". Its real coverage was `await done` plus one fs append; the
+    // final snapshot, the `closed` frame, the drain and discovery cleanup all
+    // ran unguarded. Driven with a 2 s watchdog and a hang planted in a copy of
+    // the shipped artifact: a hang at the snapshot or inside `drainAndStop` was
+    // STILL RUNNING at 10 s with the watchdog ARMED — indistinguishable from
+    // disarmed, which is the measurement. After the move, both die at ~2 s.
+    //
+    // ⚠ AND THE ORDER IS THE WHOLE ASSERTION, so `indexOf` is compared rather
+    // than "does the file contain a clearTimeout" — the second is true of both
+    // the broken and the fixed file.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    const clear = src.lastIndexOf("clearTimeout(shutdownWatchdog)");
+    const drain = src.lastIndexOf("await drainAndStop(");
+    const done = src.lastIndexOf("const { code, reason } = await done;");
+    expect(clear).toBeGreaterThan(-1);
+    expect(drain).toBeGreaterThan(-1);
+    expect(done).toBeGreaterThan(-1);
+    expect(clear).toBeGreaterThan(drain);
+    expect(drain).toBeGreaterThan(done);
+  });
+
+  test("the watchdog is armed by the RESOLVE, so all four teardown entries are covered", () => {
+    // ⛔ SOURCE-SCANNED FOR THE SAME REASON AS THE CELL ABOVE — observing it
+    // needs a planted hang — and the property is an ABSENCE: no teardown entry
+    // without a guarantee. Driven at the repair (D53), hang planted between
+    // `drainAndStop` and `cleanupDiscovery`, watchdog 2 s:
+    //
+    //   entry          before          after
+    //   signal         143 @2002ms     143 @2002ms
+    //   close verb     RUNNING @10s    143 @2003ms
+    //   WS "user"      RUNNING @10s    143 @2004ms
+    //   idle timeout   RUNNING @10s    124 @2004ms
+    //
+    // Three of the four entries had no force-exit at all while the code above
+    // them said "this makes the ending unconditional". The arming now lives
+    // inside `resolveDone`, which every entry goes through, so a FIFTH entry
+    // added later inherits the guarantee instead of needing to remember it.
+    const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
+    // There is exactly ONE arming site in the file, and it is the resolver.
+    const armings = src.match(/setTimeout\([\s\S]*?SHUTDOWN_WATCHDOG_MS\)/g) ?? [];
+    expect(armings.length).toBe(1);
+    const arm = src.indexOf("shutdownWatchdog = setTimeout(");
+    const resolverOpen = src.indexOf("resolveDone = (v) => {");
+    const resolverClose = src.indexOf("const { code, reason } = await done;");
+    expect(arm).toBeGreaterThan(-1);
+    expect(resolverOpen).toBeGreaterThan(-1);
+    expect(arm).toBeGreaterThan(resolverOpen);
+    expect(arm).toBeLessThan(resolverClose);
+    // ⚠ AND NOT IN `requestShutdown`, which is where it used to be — the
+    // signal-only placement that made the claim above it false. Anchored on the
+    // assignment, so re-adding a second arming there reddens this.
+    const reqStart = src.indexOf("requestShutdown = (code, reason, signal) => {");
+    expect(reqStart).toBeGreaterThan(-1);
+    expect(arm).toBeLessThan(reqStart);
+    // All four entries resolve, and none of them arms anything itself.
+    for (const entry of [
+      "resolveDone({ code, reason: reason as CloseReason })",
+      'resolveDone({ code: 0, reason: "close" })',
+      'resolveDone({ code: 0, reason: "user" })',
+      'resolveDone({ code: 124, reason: "timeout" })',
+    ]) {
+      expect(src).toContain(entry);
+    }
   });
 
   test("idleTimeout is not ZERO — 0 stalls the initial response rather than disabling", () => {
