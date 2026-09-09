@@ -23,6 +23,7 @@
 //   - context.delete removes from library AND every set
 //   - agent context.add upserts a style on name; link attaches it
 //   - context.capture emits the agent event with the focus
+//   - proposal.send/dismiss frames carry a NUMERIC cursor `id` AND `proposalId`
 //   - restore backfills newer fields (library, marksByVariant) from an old snapshot
 
 import { afterAll, describe, expect, test } from "bun:test";
@@ -761,6 +762,50 @@ describe("agent event contract", () => {
       ["focus.set", "ref.select", "variant.like", "image.import"].includes(e.type as string),
     );
     expect(ambient).toEqual([]); // state-only — the agent reads them from /state
+    ws.close();
+  });
+
+  // ⛔ THE ONLY TEST IN THIS SUITE THAT ASSERTS THE SHAPE OF A FRAME ITSELF, and
+  // it exists because imago had none and so shipped two regressions in a row on
+  // the same two frames. First `{ id: ++eventSeq, ...msg }` let the payload's
+  // `id` overwrite the cursor — a string where the tail's `ev.id > since`
+  // filter needs a number, so `proposal.send` and `proposal.dismiss` were never
+  // replayed to a resuming agent AT ALL. Then adopting `kit/wire/eventLog.ts`
+  // made the cursor win, which resolved the collision by DELETING the proposal's
+  // identity from the wire — a two-sided contract (`shared/types.ts`) went false
+  // with no type error, because `emitEvent` takes `Record<string, unknown>`.
+  // Both halves are asserted here: the `id` is the NUMERIC cursor, and the
+  // proposal's identity is present under a name that cannot collide with it.
+  test("proposal.send / proposal.dismiss carry a numeric cursor id AND the proposal's id", async () => {
+    const s = await spawnDaemon();
+
+    // the agent proposes a prompt; the surface shows a Send card
+    await postCmd(s, { type: "propose", prompt: "a cat in a hat", n: 4 });
+    const withProposal = await waitForState(s, (x) =>
+      x.conversation.some((m) => m.proposal != null),
+    );
+    const proposalMsgId = withProposal.conversation.find((m) => m.proposal != null)?.id as string;
+    expect(proposalMsgId).toBeTruthy();
+
+    const ws = await openWs(s);
+    const cursor = (await fetchCursor(s)) - 1;
+    const evP = collectEvents(s, cursor, (e) => e.type === "proposal.dismiss");
+    ws.send({ type: "proposal.send", id: proposalMsgId });
+    await Bun.sleep(150);
+    ws.send({ type: "proposal.dismiss", id: proposalMsgId });
+    const events = await evP;
+
+    for (const type of ["proposal.send", "proposal.dismiss"] as const) {
+      const frame = events.find((e) => e.type === type) as
+        | (AgentEventPayload[typeof type] & { id?: unknown })
+        | undefined;
+      expect(frame).toBeDefined();
+      // the cursor half: a number, and one a `?since=` filter can compare
+      expect(typeof frame?.id).toBe("number");
+      expect(frame?.id as number).toBeGreaterThan(cursor);
+      // the identity half: WHICH proposal, under a non-colliding name
+      expect(frame?.proposalId).toBe(proposalMsgId);
+    }
     ws.close();
   });
 

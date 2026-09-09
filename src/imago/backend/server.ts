@@ -509,7 +509,11 @@ async function main(argv: string[]): Promise<number> {
   //     an `id` silently overrode the cursor — and imago's frames do carry ids
   //     (`{ type: "proposal.send", id: msg.id }`), which made this live rather
   //     than theoretical: those two frames went out with the PROPOSAL's id as
-  //     their cursor value. Fixed by construction.
+  //     their cursor value, and since a string is never `> since`, NEITHER WAS
+  //     EVER REPLAYED. Fixed by construction — and the collision is gone on the
+  //     other side too: the proposal's identity now rides as `proposalId`, so
+  //     the frame carries the cursor AND the proposal. Resolving a collision in
+  //     one field's favour is a field silently deleted; rename, don't pick.
   //   · a `?since=` that will not parse used to yield NaN, fail every `>`
   //     comparison, and open the tail EMPTY and connected. Absent and
   //     unparseable now mean the same thing: from the start.
@@ -885,14 +889,22 @@ async function main(argv: string[]): Promise<number> {
         m.proposal.status = "sent";
         broadcastState();
       }
-      emitEvent({ type: "proposal.send", id: msg.id });
+      // ⛔ THE PROPOSAL'S IDENTITY RIDES AS `proposalId`, NOT `id`. `id` on a
+      // frame belongs to the event log's monotonic cursor and nothing else.
+      // These two frames used to pass `id: msg.id`; the old bus spread the
+      // payload after the cursor, so the proposal's id BECAME the cursor and
+      // `ev.id > since` (a string) was false forever — the frames were never
+      // replayed at all. Adopting `kit/wire/eventLog.ts` fixed the cursor by
+      // making it win, which resolved the collision by DELETING the payload
+      // field. Two names, no collision, both survive.
+      emitEvent({ type: "proposal.send", proposalId: msg.id });
     } else if (t === "proposal.dismiss") {
       const m = state.conversation.find((x) => x.id === msg.id);
       if (m?.proposal) {
         m.proposal.status = "dismissed";
         broadcastState();
       }
-      emitEvent({ type: "proposal.dismiss", id: msg.id });
+      emitEvent({ type: "proposal.dismiss", proposalId: msg.id });
     } else if (t === "focus.set") {
       const b = findBatch(msg.batchId as string);
       if (!b) return;

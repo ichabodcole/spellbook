@@ -146,9 +146,11 @@ There's no phase pipeline — react to what the user does:
   fine; pull options out of it — "widescreen" → you'll generate 16:9). Reply
   with `say` (your read), then `propose` a prompt. Don't silently forward their
   words to a generator — you're the collaborator interpreting them.
-- **`proposal.send`** (they hit Send on your prompt) —
-  `status on "generating…"`, generate via media-forge, post a
-  `batch --kind generate`, `status off`. The first variant auto-focuses.
+- **`proposal.send`** (they hit Send on your prompt — the frame carries
+  `proposalId`, the conversation message the proposal hangs off; the frame's
+  `id` is the tail cursor, not the proposal) — `status on "generating…"`,
+  generate via media-forge, post a `batch --kind generate`, `status off`. The
+  first variant auto-focuses.
 - **`marks.commit`** / a change request about the focused image — this is an
   **edit**: read the focused variant's `path` from `state`, generate with
   `--ref <path>` + an instruction that folds in what they marked, post a
