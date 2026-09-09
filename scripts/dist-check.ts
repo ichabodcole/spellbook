@@ -40,6 +40,7 @@
  */
 import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
+import { isBackendArtifact as classifyBackendArtifact } from "../grimoire/lib/dist-artifacts.ts";
 import { buildableSpells } from "../src/build.ts";
 
 const REPO_ROOT = join(import.meta.dir, "..");
@@ -135,21 +136,59 @@ export function untrackedDistFiles(spell: string, root: string = REPO_ROOT): str
   return diskDistFiles(spell, root).filter((f) => !tracked.has(f));
 }
 
-/** A backend artifact has a STABLE emitted name (`src/build.ts` names cli/server
- *  entries `[dir]/[name].[ext]`); a surface chunk carries a content hash and is
- *  RENAMED by every content change.
+/** A backend artifact has a STABLE emitted name (`src/build.ts` names entries
+ *  `[dir]/[name].[ext]`); a surface chunk carries a content hash and is RENAMED
+ *  by every content change.
  *
  *  ⛔ THAT ASYMMETRY IS WHAT MAKES THE FATAL CLAUSE BELOW DISCRIMINATING RATHER
  *  THAN A FALSE ALARM. An untracked `index-<hash>.js` is ordinary work in
  *  progress — a rebuilt surface whose new chunk name is not staged yet — and the
  *  ruling that keeps ARM 2 out of the local suite (Cole, 2026-09-01) is the same
- *  ruling that keeps it non-fatal here. An untracked `cli.js` or `server.js`
- *  cannot mean that: a rebuild of a tracked one leaves it MODIFIED, not
- *  untracked. Untracked at a stable name means this spell's backend has never
- *  been staged — the first-emit window, which is exactly the defect, and which
- *  all four remaining ports pass through. */
-export const isBackendArtifact = (repoRelative: string): boolean =>
-  repoRelative.endsWith("/cli.js") || repoRelative.endsWith("/server.js");
+ *  ruling that keeps it non-fatal here. An untracked backend artifact cannot
+ *  mean that: a rebuild of a tracked one leaves it MODIFIED, not untracked.
+ *  Untracked at a stable name means this spell's backend has never been staged —
+ *  the first-emit window, which is exactly the defect, and which all four
+ *  remaining ports pass through.
+ *
+ *  ⛔ ⛔ AND UNTIL 2026-09-09 THIS WAS `endsWith("/cli.js") || endsWith("/server.js")`
+ *  — THE THIRD SURVIVING COPY OF THE HARD-CODING D43 REMOVED FROM `src/build.ts`
+ *  AND D44 REMOVED FROM `spawn-path-ward.test.ts`, sitting inside the arm built
+ *  for D42. Found by DRIVING it, not by reading it: `git rm --cached` on
+ *  bounty's freshly emitted `dist/join.js` — the exact first-emit shape ARM 1b
+ *  exists for — produced **exit 0**, with the artifact demoted into the
+ *  NON-FATAL "expected mid-edit" list beside rebuilt surface chunks. The remedy
+ *  the message offers ("ARM 2 is what refuses to let them stay that way") is
+ *  true and is not this arm's job. The same silence was waiting for digestify's
+ *  `review.js` and grapevine's `daemon.js`.
+ *
+ *  ⛔ THE SPLIT IS NOW IMPORTED, NOT RE-DERIVED (D44). `grimoire/lib/dist-artifacts.ts`
+ *  computes it from the emitted `index.html`'s REFERENCE CLOSURE — what the
+ *  served page actually pulls in — so "backend" means "nothing the surface
+ *  reaches", which is a property rather than a name test. A second derivation
+ *  here would be the two-denominators defect `entry-points.ts` exists because of.
+ *
+ *  ⚠ `null` FROM THE SHARED PREDICATE MEANS **NOT LOOKED AT**, AND IT IS MADE
+ *  LOUD RATHER THAN COERCED. It can only arise for a path whose own `dist/` does
+ *  not exist, which cannot happen for a path this script read OFF that
+ *  directory — so if it ever happens, the enumerator and the classifier
+ *  disagree about the tree, and a `false` there would spell that disagreement as
+ *  "not a backend artifact". */
+// ⛔ NEVER PASS THIS BARE TO `.filter(...)`. `Array.prototype.filter` supplies
+// (value, index, array), so a bare reference feeds the ELEMENT INDEX into
+// `root` — which threw `ERR_INVALID_ARG_TYPE` the first time this function grew
+// a second parameter, and which would have been a SILENT wrong answer had the
+// parameter been anything `join` tolerates. Every call site below wraps it.
+export const isBackendArtifact = (repoRelative: string, root: string = REPO_ROOT): boolean => {
+  const verdict = classifyBackendArtifact(join(root, repoRelative), root);
+  if (verdict === null) {
+    throw new Error(
+      `dist-check: ${repoRelative} was enumerated from the disk but its dist/ could not be ` +
+        "classified — the enumerator and grimoire/lib/dist-artifacts.ts disagree about the tree. " +
+        "This is NOT LOOKED AT and must never be reported as `not a backend artifact` (D42).",
+    );
+  }
+  return verdict;
+};
 
 export type Roster = {
   spell: string;
@@ -235,7 +274,7 @@ function main(argv: string[]): number {
   // un-ignore lines exist for all eight spells — but ARM 1 said `✅ PASS` over
   // it, and a green that means "unexamined" is the failure this whole script
   // exists because of.
-  const unstagedBackends = rows.flatMap((r) => r.untracked.filter(isBackendArtifact));
+  const unstagedBackends = rows.flatMap((r) => r.untracked.filter((f) => isBackendArtifact(f)));
   const unstagedOther = rows.flatMap((r) => r.untracked.filter((f) => !isBackendArtifact(f)));
 
   if (unstagedBackends.length > 0) {
@@ -250,7 +289,7 @@ function main(argv: string[]): number {
     console.log("     about these files. Stage them, or add the two `.gitignore` un-ignore");
     console.log("     lines if `git add` is silently refusing them at exit 0:");
     console.log("");
-    for (const r of rows.filter((x) => x.untracked.some(isBackendArtifact))) {
+    for (const r of rows.filter((x) => x.untracked.some((f) => isBackendArtifact(f)))) {
       console.log(`       git add -- ${r.root}`);
     }
     console.log("");

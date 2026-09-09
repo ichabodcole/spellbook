@@ -77,7 +77,11 @@ describe("dist roster ward", () => {
     //
     // Named per path, because the remedy is per path: `git add`, or the two
     // `.gitignore` un-ignore lines that make `git add` refuse at exit 0.
-    const unstaged = rows.flatMap((r) => r.untracked.filter(isBackendArtifact));
+    // ⚠ WRAPPED, NEVER BARE. `isBackendArtifact` gained a `root` parameter when it
+    // stopped being `endsWith("/cli.js")` and started reading the tree (D44's
+    // derivation, adopted here 2026-09-09), and `.filter` passes the ELEMENT
+    // INDEX as the second argument.
+    const unstaged = rows.flatMap((r) => r.untracked.filter((f) => isBackendArtifact(f)));
     expect(unstaged).toEqual([]);
   });
 
@@ -102,6 +106,18 @@ describe("dist roster ward", () => {
       const dist = join(root, "plugins", "spellbook", "skills", "probe", "dist");
       mkdirSync(dist, { recursive: true });
       writeFileSync(join(dist, "server.js"), "// staged\n");
+      // ⛔ THE CONTROL SHIPS AN `index.html`, AND IT HAS TO — STAGED WITH THE
+      // REST, so it is not itself an untracked row. The fatal clause used to
+      // read the NAME (`endsWith("/cli.js")`); it now reads the emitted
+      // `index.html`'s REFERENCE CLOSURE (D44 via `lib/dist-artifacts.ts`), so
+      // a synthetic `dist/` with no entry page is a spell with NO SURFACE —
+      // where every `.js` is correctly a backend artifact and the
+      // discrimination this cell asserts does not exist. A control that models
+      // the wrong world proves the wrong thing.
+      writeFileSync(
+        join(dist, "index.html"),
+        '<!doctype html><script src="./index-newhash.js"></script>',
+      );
       const git = (...a: string[]) =>
         Bun.spawnSync(["git", ...a], { cwd: root, stdout: "pipe", stderr: "pipe" });
       expect(git("init", "-q").exitCode).toBe(0);
@@ -110,18 +126,30 @@ describe("dist roster ward", () => {
       expect(git("add", "-f", "--", "plugins").exitCode).toBe(0);
       // The first-emit window, exactly: a backend artifact on disk, not staged.
       writeFileSync(join(dist, "cli.js"), "// emitted, never staged\n");
+      // ⛔ AND A THIRD ENTRY NAME THAT IS NEITHER `cli` NOR `server`, WHICH IS
+      // THE WHOLE POINT OF THIS ROW. Until 2026-09-09 the fatal clause was
+      // `endsWith("/cli.js") || endsWith("/server.js")` and this control used
+      // only names it happened to spell, so it PASSED while the clause was
+      // silently blind on bounty's `join.js`, digestify's `review.js` and
+      // grapevine's `daemon.js` — the exact entries D43 exists to allow. Driven
+      // on the real tree before the repair: `git rm --cached` on bounty's
+      // freshly emitted `dist/join.js` gave **exit 0**, the artifact demoted
+      // into the non-fatal "expected mid-edit" list. After: exit 1, named.
+      writeFileSync(join(dist, "join.js"), "// a THIRD entry, never staged\n");
       writeFileSync(join(dist, "index-newhash.js"), "// a rebuilt surface chunk\n");
 
       expect(untrackedDistFiles("probe", root)).toEqual([
         "plugins/spellbook/skills/probe/dist/cli.js",
         "plugins/spellbook/skills/probe/dist/index-newhash.js",
+        "plugins/spellbook/skills/probe/dist/join.js",
       ]);
-      // ⭐ AND THE FATAL CLAUSE DISCRIMINATES. Only the stable-named artifact is
-      // fatal; the hashed chunk is ordinary work in progress and must stay
-      // non-fatal, or the local gate reds on every surface edit — the same
-      // reason ARM 2 is CI-only.
-      expect(untrackedDistFiles("probe", root).filter(isBackendArtifact)).toEqual([
+      // ⭐ AND THE FATAL CLAUSE DISCRIMINATES. Only what the surface cannot
+      // reach is fatal; the hashed chunk `index.html` links IS reachable and
+      // must stay non-fatal, or the local gate reds on every surface edit — the
+      // same reason ARM 2 is CI-only.
+      expect(untrackedDistFiles("probe", root).filter((f) => isBackendArtifact(f, root))).toEqual([
         "plugins/spellbook/skills/probe/dist/cli.js",
+        "plugins/spellbook/skills/probe/dist/join.js",
       ]);
       // …and it can measure empty in the SAME repo, so the rows above came from
       // a comparison rather than from a function that returns the whole disk.
