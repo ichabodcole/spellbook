@@ -55,6 +55,14 @@ import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
+import {
+  CliError,
+  die as kitDie,
+  reportCliError,
+  setCurrentCommand,
+} from "../../kit/wire/errors.ts";
+import { tailEvents } from "../../kit/wire/tailEvents.ts";
+import { TAIL_IDLE_MS } from "./heartbeat.ts";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 // ⛔ UP AND BACK DOWN, NOT `join(SCRIPT_DIR, "server.ts")` — THE DEFECT THIS
@@ -100,10 +108,36 @@ type Session = {
   title: string;
 };
 
-function die(msg: string): never {
-  process.stderr.write(`bounty: ${msg}\n`);
-  process.exit(2);
-}
+// ⛔ `die` IS `src/kit/wire/errors.ts`'s NOW, AND FOR BOUNTY THAT IS A
+// CALLER-VISIBLE CHANGE — NOT A DE-DUPLICATION. The local one wrote
+// `bounty: <msg>` as PROSE on stderr and exited 2 for EVERY failure: a bad
+// flag, a missing verb, an absent session and an HTTP fault were one number and
+// one unparseable format. Measured before adoption, on the real CLI, across
+// seven failing invocations — `badverb`, `add`, `update`, `block t1`,
+// `state --session <nonexistent>`, and `state` / `message` against a STALE
+// pointer naming a closed port — every one of them `exit=2`, stdout empty,
+// stderr prose.
+//
+// After adoption: ONE JSON envelope on stderr, stdout still empty, and the
+// taxonomy exit codes — usage 2, internal 1, not_found 5, conflict 6. So a
+// caller can now tell "you typed it wrong" from "that board is gone" from "the
+// daemon broke", which is the whole point and which no amount of prose could
+// give it. The full before/after table is in the session doc (D38's shape).
+//
+// ⚠ AND ONE THING B8 PREDICTS FOR "every spell whose CLI talks to a session
+// daemon" IS FALSE HERE: bounty has NO uncaught-`fetch` shape. imago's `api()`
+// calls `fetch` with no handler, so a stale pointer crashes with a raw Bun
+// `TypeError` at exit 1; bounty PROBES LIVENESS in `resolveSession` before it
+// ever fetches, so the same stale pointer raises deliberately. Driven, both
+// verbs, before the change — recorded because a prediction that holds four
+// times and fails the fifth is worth more than one that was never checked.
+const die = kitDie;
+
+/** The one remedy for a missing board, named once so the two raise sites cannot
+ *  drift. It rides `hint`, which is a field of the envelope rather than prose
+ *  glued to the message — the point of the taxonomy is that a caller can read
+ *  the parts separately. */
+const NO_SESSION_HINT = { hint: "run: cli.ts open (or pass --session <id>)" } as const;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -249,18 +283,21 @@ function readSession(session?: string): Session | null {
   } catch (e) {
     const code = (e as NodeJS.ErrnoException).code;
     if (code === "ENOENT") return null;
-    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`);
+    die(`cannot read the session pointer (${code ?? "unknown error"}): ${path}`, "internal");
   }
   try {
     return JSON.parse(raw) as Session;
   } catch {
-    die(`the session pointer is not valid JSON: ${path}`);
+    die(`the session pointer is not valid JSON: ${path}`, "internal");
   }
 }
 
 function requireSession(session?: string): Session {
   const s = readSession(session);
-  if (!s) die("no running bounty session — run: cli.ts open");
+  // `not_found` (5), not `usage` (2). The caller did not type this wrong —
+  // there is no board. That distinction is the single most useful thing this
+  // adoption buys an agent: "open one" versus "fix your command".
+  if (!s) die("no running bounty session — run: cli.ts open", "not_found", NO_SESSION_HINT);
   return s;
 }
 
@@ -518,7 +555,8 @@ async function postCmd(
   const s = requireSession(session);
   const body = opts.as ? { ...msg, as: opts.as } : msg;
   const { status, data } = await api(s.port, "POST", "/cmd", body);
-  if (status !== 200) die(`cmd failed (HTTP ${status}) — is the session still alive?`);
+  if (status !== 200)
+    die(`cmd failed (HTTP ${status}) — is the session still alive?`, "internal", { server: body });
   if (!opts.quiet) printJson({ ok: true, sent: msg.type });
   return (data ?? {}) as CmdResult;
 }
@@ -810,7 +848,7 @@ async function cmdOpen(flags: Record<string, string | boolean>): Promise<number>
       }
     }
   }
-  return die("bounty daemon failed to start within 5s");
+  return die("bounty daemon failed to start within 5s", "internal");
 }
 
 // b6 — `full` is no longer a parameter. The read is always full, so there is
@@ -844,7 +882,7 @@ async function cmdState(
   // bearing (cassandra's r4: SKILL.md advertised it with no note that it was
   // inert, and that is the contract a cold agent reads).
   const { status, data } = await api(s.port, "GET", "/state");
-  if (status !== 200) die(`state failed (HTTP ${status})`);
+  if (status !== 200) die(`state failed (HTTP ${status})`, "internal", { server: data });
   // Scoped readback (mirrors `tail` semantics): --owner X = X's tasks; --mine =
   // own + claimable (unowned). Each retained task keeps its computed
   // `liveBlockers`, so a blocked task stays actionable even when the blocker is
@@ -868,150 +906,105 @@ async function cmdState(
   printJson({ ...(data as Record<string, unknown>), readMode: "full" });
 }
 
+/**
+ * The agent's live tail — ONE call into `src/kit/wire/tailEvents.ts`.
+ *
+ * ⛔ WHAT THIS REPLACED, AND WHY IT IS NOT A TIDY-UP. bounty's tail was a
+ * hand-rolled `while (!stopped)` around a `getReader()` loop, ~90 lines, and it
+ * carried three defects the shared client does not have:
+ *
+ *  1. **NO WATCHDOG AT ALL.** `await reader.read()` parks FOREVER on a half-open
+ *     socket — laptop sleep, a NAT rebind, a SIGKILLed daemon. A watching agent
+ *     cannot tell that from a quiet board, which is the single worst failure a
+ *     tail can have. `TAIL_IDLE_MS` (three missed beats, DERIVED from this
+ *     spell's own heartbeat in `./heartbeat.ts`) is the fix.
+ *  2. **THREE `process.exit` SITES, ONE OF THEM THREE LOOPS DEEP.** The `closed`
+ *     branch and the two signal handlers all ended the process from inside the
+ *     loop, because `process.exitCode` + a natural return does NOT return from
+ *     three nested loops — the P0f scar, recorded at length in the code this
+ *     replaces. `tailEvents` RETURNS an exit code, so the shape has nowhere to
+ *     live: the loops are the client's and the exit is `main`'s. bounty is the
+ *     fifth CLI to reach zero live `process.exit` sites, after magpie,
+ *     mind-mapper, glamour and imago.
+ *  3. **THE FRAME PARSER WAS `line.slice(5).trim()`.** That strips ALL leading
+ *     whitespace rather than the spec's at-most-one space, and joins multi-line
+ *     `data:` fields by a convention of its own. `parseSseFrame` is the spec.
+ *
+ * ⚠ EVERYTHING BEHAVIOURAL IS PRESERVED, in the hooks: the session PIN (#tail-pin
+ * — an unpinned tail pins the first session it resolves and never consults
+ * `latest` again, so a long-lived tail cannot silently migrate to a newer
+ * board), the client-side scope filter, self-echo suppression, the cursor
+ * advancing on EVERY frame including filtered ones, and the `# ` stderr
+ * groundings.
+ */
 async function cmdTail(
   session: string | undefined,
   sinceArg: number,
   scope: { owner?: string; mine?: boolean; as?: string } = {},
-) {
-  let since = sinceArg;
-  let delay = 250;
-  let stopped = false;
-  const stop = () => {
-    stopped = true;
-    process.exit(0);
-  };
-  process.on("SIGINT", stop);
-  process.on("SIGTERM", stop);
-
-  // Client-side scope filter (the daemon streams ALL events). Lifecycle frames
-  // (ready/connected/disconnected/closed) always pass — only task.* frames are
-  // owner-scoped. `--mine` also passes claimable (unowned) tasks.
+): Promise<number> {
   const owner = scope.owner;
   const self = scope.as;
   // Owner-scoped frames: task.* mutations AND `unblocked` (it carries an owner,
-  // so it must be scoped — else every worker wakes on every unblock). Lifecycle
-  // (ready/connected/disconnected/closed) always passes.
+  // so it must be scoped — else every worker wakes on every unblock) AND
+  // `heartbeat`. Lifecycle (ready/connected/disconnected/closed) always passes.
   const scopeable = (t?: string) =>
     typeof t === "string" && (t.startsWith("task.") || t === "unblocked" || t === "heartbeat");
   const inScope = (ev: { type?: string; owner?: string }) =>
     !scopeable(ev.type) || ownerInScope(ev.owner, scope);
-  // Self-echo suppression: drop frames the caller's own identity caused (applied
-  // after the scope filter). Notice rides stderr, never stdout.
   if (owner) process.stderr.write(`# scoped to owner=${owner}\n`);
   else if (scope.mine)
     process.stderr.write(`# scoped to --mine (owner=${self ?? "?"} + claimable)\n`);
 
-  // Pin the session this tail follows (#tail-pin). An explicit --session is
-  // pinned up front; an unpinned tail pins the first session it resolves and
-  // never consults `latest` again — no silent cross-project hijack on reconnect.
   let pinned = session;
-  while (!stopped) {
-    const resolved = pickTailSession(pinned, readSession);
-    if (!resolved) {
+  let announcedPin = false;
+
+  return await tailEvents<{ id?: number; type?: string; by?: string; owner?: string }>({
+    // ⛔ CALLED BEFORE EVERY CONNECT ATTEMPT, NEVER CAPTURED — a tail outlives
+    // the daemon it started against. `readSession` DIES on a corrupt pointer and
+    // returns null only for a genuinely absent one, and that `die` now THROWS,
+    // so it leaves through `main`'s funnel instead of exiting from inside a
+    // reconnect loop. B9's audit paying for itself: this is the one
+    // die-reachable call the shared client invokes on a schedule.
+    resolve: () => {
+      const resolved = pickTailSession(pinned, readSession);
+      if (!resolved) return null;
+      if (pinned === undefined) {
+        pinned = resolved.pinned;
+      }
+      if (!announcedPin) {
+        announcedPin = true;
+        process.stderr.write(
+          `# pinned to session ${pinned} — a long-lived tail won't migrate to a newer board (pass --session to choose another)\n`,
+        );
+      }
+      return `http://127.0.0.1:${resolved.session.port}`;
+    },
+    onUnresolved: () => {
       process.stderr.write("# no session yet, retrying…\n");
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (pinned === undefined) {
-      pinned = resolved.pinned;
-      process.stderr.write(
-        `# pinned to session ${pinned} — a long-lived tail won't migrate to a newer board (pass --session to choose another)\n`,
-      );
-    }
-    const s = resolved.session;
-    let res: Response;
-    try {
-      res = await fetch(`http://127.0.0.1:${s.port}/events?since=${since}`);
-    } catch {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    if (!res.ok || !res.body) {
-      await sleep(delay);
-      delay = Math.min(delay * 2, 5000);
-      continue;
-    }
-    delay = 250;
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "";
-    while (true) {
-      let chunk: ReadableStreamReadResult<Uint8Array>;
-      try {
-        chunk = await reader.read();
-      } catch {
-        break;
-      }
-      if (chunk.done) break;
-      buf += dec.decode(chunk.value, { stream: true });
-      for (let sep = buf.indexOf("\n\n"); sep >= 0; sep = buf.indexOf("\n\n")) {
-        const block = buf.slice(0, sep);
-        buf = buf.slice(sep + 2);
-        const dataLines: string[] = [];
-        for (const line of block.split("\n")) {
-          if (line.startsWith(":")) {
-            process.stderr.write(": bounty-keepalive\n");
-            continue;
-          }
-          if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
-        }
-        if (!dataLines.length) continue;
-        const payload = dataLines.join("\n");
-        try {
-          const ev = JSON.parse(payload) as {
-            id?: number;
-            type?: string;
-            by?: string;
-            owner?: string;
-          };
-          // Advance the cursor on EVERY event (even filtered ones) so resume is
-          // correct regardless of scope.
-          if (typeof ev.id === "number" && ev.id > since) since = ev.id;
-          // Scope filter, then self-echo suppression. `closed` is lifecycle, so
-          // it always passes — but guard the exit outside the filter regardless.
-          const selfEcho = self !== undefined && ev.by === self;
-          const emit = inScope(ev) && !selfEcho;
-          if (ev.type === "closed") {
-            // P0f — the terminal frame is the one a consumer most needs and the
-            // one `write(payload); process.exit(0)` throws away: Bun's stdout is
-            // async on a PIPE, and an explicit exit discards whatever has not
-            // drained (measured in this repo at exactly 65,536 bytes).
-            //
-            // SHAPE B — the callback rides THIS write, so it fires on THIS
-            // write's completion. Do NOT "fix" this with a trailing
-            // `write("", () => exit)`: a drain callback covers only its own
-            // write and is not a barrier — measured byte-for-byte as broken as
-            // no fix at all, and it is the helper this shape invites.
-            //
-            // PER-SITE PRECONDITION, checked here and not inferred from the
-            // shape: this exit sits THREE loops deep (while → for-sep →
-            // for-line), so `process.exitCode` + a natural return — the tidy
-            // one-liner used at the nine entry points — does NOT return from a
-            // tail. It falls through and the loop goes round again. That is the
-            // 23-minute `glamour open` hang, one sprint later, in a new place.
-            // The explicit `return` below is what leaves all three loops; the
-            // callback is what drains. Both are required, for different reasons.
-            if (emit) process.stdout.write(`${payload}\n`, () => process.exit(0));
-            else process.exit(0);
-            stopped = true;
-            return;
-          }
-          if (emit) process.stdout.write(`${payload}\n`);
-        } catch {
-          /* skip malformed frame */
-        }
-      }
-    }
-    // stream ended — daemon likely closed; loop will retry or exit.
-    await sleep(delay);
-  }
+      return "retry";
+    },
+    path: "/events",
+    since: sinceArg,
+    // The cursor advances on EVERY frame, including ones `accept` rejects —
+    // that is the client's documented rule and it is what bounty's own loop did
+    // ("advance the cursor on EVERY event (even filtered ones) so resume is
+    // correct regardless of scope").
+    cursorOf: (ev) => ev.id,
+    accept: (ev) => inScope(ev) && !(self !== undefined && ev.by === self),
+    terminal: (ev) => ev.type === "closed",
+    // ⛔ THE `closed` FRAME IS EMITTED EVEN WHEN THE SCOPE FILTER REJECTED IT.
+    // It is lifecycle, not board data: a scoped worker still needs to know the
+    // board ended, and the old loop guarded the exit outside the filter for
+    // exactly this reason.
+    terminalEmitsFiltered: true,
+    idleMs: TAIL_IDLE_MS,
+    onComment: () => ": bounty-keepalive",
+  });
 }
 
 function cmdInfo(session?: string) {
   const s = readSession(session);
-  if (!s) die("no running bounty session");
+  if (!s) die("no running bounty session", "not_found", NO_SESSION_HINT);
   printJson(s);
 }
 
@@ -1192,16 +1185,32 @@ const HELP = `bounty — an agent-driven task board.
   board binding with no stored/latest pointer. Or use open --pin to write
   cwd/.bounty-session and bind a board to this directory.`;
 
-async function main(argv: string[]): Promise<number> {
+/**
+ * The verb table.
+ *
+ * ⛔ IT NO LONGER ENDS THE PROCESS ON A FAILURE — `main` DOES, via the funnel
+ * in `run()`. Every `die` in this file THROWS a `CliError` now, so a failure
+ * three frames down cannot truncate its own stdout on the way out (D8), and the
+ * exit code comes from the taxonomy rather than from whichever `process.exit`
+ * literal was nearest.
+ */
+async function dispatch(argv: string[]): Promise<number> {
   const [verb, ...rest] = argv;
+  // Named on the envelope's `meta.command`, so a caller reading a failure knows
+  // which verb produced it without correlating against its own invocation.
+  setCurrentCommand(typeof verb === "string" ? verb : null);
   let pos: string[];
   let flags: Record<string, string | boolean>;
   try {
     ({ pos, flags } = parseArgs(rest));
   } catch (e) {
+    // ⛔ CONVERTED, NOT RE-SPELLED. `UsageError` is this file's own parser
+    // failure and used to print prose and return 2 from here; routing it
+    // through `die` puts it in the same envelope as every other usage failure
+    // at the same exit code. This catch PROPAGATES (B9): it rethrows anything
+    // that is not a `UsageError`, and raises for the one that is.
     if (!(e instanceof UsageError)) throw e;
-    process.stderr.write(`bounty: ${e.message}\n`);
-    return 2;
+    die(e.message, "usage");
   }
   const session = resolveSession(flags);
   const as = resolveAs(flags);
@@ -1214,12 +1223,19 @@ async function main(argv: string[]): Promise<number> {
     case "tail": {
       const mine = flags.mine === true;
       if (mine && !as) die("--mine needs an identity — pass --as <name> or set BOUNTY_AS");
-      await cmdTail(session, typeof flags.since === "string" ? parseInt(flags.since, 10) : -1, {
-        owner: typeof flags.owner === "string" ? flags.owner : undefined,
-        mine,
-        as,
-      });
-      break;
+      // ⛔ RETURNED, NOT AWAITED-AND-DROPPED. `tailEvents` hands back an exit
+      // code instead of ending the process from inside its own loops (the P0f
+      // scar), so `break` here would swallow it into main's trailing `return 0`
+      // — the same mistake `open` has a comment about two cases up.
+      return await cmdTail(
+        session,
+        typeof flags.since === "string" ? parseInt(flags.since, 10) : -1,
+        {
+          owner: typeof flags.owner === "string" ? flags.owner : undefined,
+          mine,
+          as,
+        },
+      );
     }
     case "state": {
       const mine = flags.mine === true;
@@ -1425,8 +1441,22 @@ async function main(argv: string[]): Promise<number> {
           if (!Array.isArray(tasks)) die("init --stdin-tasks: stdin must be a JSON array of tasks");
           msg.tasks = tasks;
         } catch (e) {
-          if (e instanceof Error && e.message.includes("JSON array")) throw e;
-          die("init --stdin-tasks: invalid JSON on stdin");
+          // ⛔ THIS IS THE ONE SWALLOW B9's AUDIT FOUND, AND ADOPTING `errors.ts`
+          // IS WHAT MADE IT REACHABLE. The `die` three lines up sits INSIDE this
+          // `try`. While `die` was `process.exit(2)` the catch could never see
+          // it; now it THROWS, so without a ward the "stdin must be a JSON
+          // array" failure would be caught here and RE-RAISED as "invalid JSON
+          // on stdin" — the same exit code with the wrong diagnosis, which is
+          // the worst kind of wrong because a caller cannot tell it happened.
+          //
+          // ⚠ AND THE GUARD THAT WAS ALREADY HERE IS NOT THE FIX. It matched on
+          // `e.message.includes("JSON array")` over an untyped error — glamour's
+          // `postCmd`/ECONNRESET shape exactly (D34's CONDITIONAL): correct only
+          // for as long as nobody rewords the message above it. Rewording a
+          // human-facing string is not the kind of edit anyone expects to change
+          // an error contract. Matching the TYPE cannot rot that way.
+          if (e instanceof CliError) throw e;
+          die("init --stdin-tasks: invalid JSON on stdin", "usage");
         }
       }
       // The generic path — and the one with a REAL behaviour change today. The
@@ -1527,6 +1557,26 @@ async function main(argv: string[]): Promise<number> {
  */
 export async function run(): Promise<number> {
   return await main(process.argv.slice(2));
+}
+
+/**
+ * The failure funnel. ⛔ ONE PLACE WHERE A `CliError` BECOMES AN ENVELOPE AND AN
+ * EXIT CODE, and it is `main` rather than each raise site — which is what makes
+ * `die` safe to call from three frames down inside a reconnect loop.
+ *
+ * ⛔ AND IT RETHROWS ANYTHING THAT IS NOT A `CliError`. Swallowing an unknown
+ * throw here would report a genuine internal fault as a tidy taxonomy failure
+ * and lose the stack that says what actually broke. `reportCliError` returns
+ * `null` for exactly that case; the `throw` below is not optional.
+ */
+async function main(argv: string[]): Promise<number> {
+  try {
+    return await dispatch(argv);
+  } catch (e) {
+    const code = reportCliError(e);
+    if (code === null) throw e;
+    return code;
+  }
 }
 
 export type { Session };

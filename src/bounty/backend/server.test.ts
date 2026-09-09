@@ -52,6 +52,7 @@ import {
   sessionKeyToId,
   slugifyKey,
 } from "./cli.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 import {
   applyTaskAdd,
   applyTaskMove,
@@ -1957,7 +1958,28 @@ describe("cli.ts ↔ daemon parity", () => {
     // the session discovery file/port become unreachable.
     await new Promise((res) => setTimeout(res, 2000));
     const dead = await runCli(["state", "--session", session], { env });
-    expect(dead.code).toBe(2); // cli.ts `die`s when the daemon is gone
+    // ⛔ 5, NOT 2 — AND THIS ONE LINE IS THE ERROR-CONTRACT DELTA ARRIVING IN A
+    // TEST. It read `toBe(2)` under the comment "cli.ts `die`s when the daemon
+    // is gone", which was true and said nothing about WHY it died: before
+    // bounty adopted `src/kit/wire/errors.ts`, every failure this CLI could
+    // produce exited 2, so a caller could not tell "that board is gone" from
+    // "you typed the command wrong". `not_found` is 5 in the acc taxonomy, and
+    // a board that idle-closed underneath you is exactly that.
+    expect(dead.code).toBe(5);
+    // ...and the failure is now ONE JSON DOCUMENT on stderr with stdout empty,
+    // which is the half a bare exit code cannot assert. Pinned here because
+    // this cell is the only one in the suite that drives a real post-mortem
+    // board — a naturally-occurring not_found rather than a constructed one.
+    expect(dead.stdout).toBe("");
+    const envelope = JSON.parse(dead.stderr) as {
+      ok: boolean;
+      error: { kind: string; exit_code: number; message: string; hint?: string };
+      meta: { command: string | null };
+    };
+    expect(envelope.ok).toBe(false);
+    expect(envelope.error.kind).toBe("not_found");
+    expect(envelope.error.exit_code).toBe(5);
+    expect(envelope.meta.command).toBe("state");
   }, 25000);
 });
 
@@ -4548,14 +4570,33 @@ describe("P1e — Bun.serve carries an idleTimeout the heartbeat can survive", (
     // ⚠ This asserts the two numbers stay ordered, NOT that any death was
     // caused by their being unordered. See the source comment: P1e is
     // consistent with #64's clue and untested against it.
+    // ⛔ THIS CELL NOW ASSERTS THE DERIVATION, NOT TWO LITERALS — AND THAT IS
+    // THE UPGRADE THE PORT BOUGHT. It used to scan `server.ts` with two regexes
+    // for `idleTimeout: 255` and the `15000` beside `sseTimers.add(hb)`, and
+    // compare the numbers it found. Both literals are gone: they live in
+    // `./heartbeat.ts`, where `heartbeatMs()` CLAMPS the beat to half the idle
+    // timeout. So the ordering holds for ANY configured pair rather than for the
+    // two values that happened to be typed — which is what the old cell was
+    // reaching for and could only approximate.
+    //
+    // ⚠ THE OLD FORM WAS ALSO ONE RENAME FROM VACUOUS. Its second regex was
+    // anchored on the literal token `sseTimers.add(hb)`; that registry is gone
+    // now (the kit's SSE teardown funnel owns the interval), so the match
+    // returns null and the cell fails LOUDLY — which is the good outcome, and
+    // is only good because `expect(hb).not.toBe(null)` was there. A source scan
+    // without a found-it assertion passes when it stops finding anything.
+    expect(SSE_HEARTBEAT_MS).toBeLessThanOrEqual((IDLE_TIMEOUT_SEC * 1000) / 2);
+    expect(SSE_HEARTBEAT_MS).toBeGreaterThan(0);
+    // The defaults, pinned so the derivation cannot quietly change bounty's
+    // shipped behaviour: 255 s (Bun's clamped maximum, bounty's own measured
+    // value) and a 15 s beat.
+    expect(IDLE_TIMEOUT_SEC).toBe(255);
+    expect(SSE_HEARTBEAT_MS).toBe(15_000);
+    // ...and the daemon actually PASSES it to Bun.serve rather than keeping a
+    // literal beside the import. This is the half that must stay a source scan:
+    // the value is right, and the question is whether it reaches the server.
     const src = readFileSync(join(SCRIPT_DIR, "server.ts"), "utf8");
-    const idle = src.match(/idleTimeout:\s*(\d+)/);
-    const hb = src.match(/\}, (\d+)\);\n\s*sseTimers\.add\(hb\);/);
-    expect(idle).not.toBe(null);
-    expect(hb).not.toBe(null);
-    const idleMs = Number(idle?.[1]) * 1000;
-    const hbMs = Number(hb?.[1]);
-    expect(idleMs).toBeGreaterThan(hbMs);
+    expect(src).toMatch(/idleTimeout:\s*IDLE_TIMEOUT_SEC\b/);
   });
 
   test("idleTimeout is not ZERO — 0 stalls the initial response rather than disabling", () => {

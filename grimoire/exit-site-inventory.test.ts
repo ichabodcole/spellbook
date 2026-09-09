@@ -55,13 +55,19 @@ const REPO_ROOT =
   process.env.SPELLBOOK_REPO_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SKILLS = join(REPO_ROOT, "plugins", "spellbook", "skills");
 
-/** The pinned texts quote real source lines that contain a template
- *  placeholder. Writing `$`+`{payload}` keeps the digraph out of this file, so
- *  biome's noTemplateCurlyInString (a rule aimed at someone who MEANT to
- *  interpolate) does not fire on data that is deliberately literal. A blanket
- *  suppression would silence the rule everywhere in this file, including on a
- *  future genuine mistake; this does not. */
-const PH = `${"$"}{payload}`;
+/* ⚠ `const PH = `${"$"}{payload}`` STOOD HERE AND IS GONE WITH ITS LAST READER.
+ * It existed so a pinned text could quote a real source line containing a
+ * template placeholder without putting the digraph in this file — biome's
+ * noTemplateCurlyInString is aimed at someone who MEANT to interpolate, and a
+ * blanket suppression would have silenced the rule on a future genuine mistake
+ * too. Every A-drain row that quoted such a line has now left the inventory
+ * (magpie, mind-mapper, glamour, imago, bounty), because the write-then-exit
+ * shape has nowhere to live once a CLI adopts `src/kit/wire/tailEvents.ts`.
+ *
+ * ⛔ THE HELPER COMES BACK THE DAY A PINNED TEXT NEEDS IT, NOT BEFORE — an
+ * unused constant kept "just in case" is what `noUnusedVariables` reds on, and
+ * the gate treats that warning as fatal. Reinstate the four lines above with
+ * the row that needs them. */
 
 type Family = "A-drain" | "B-noemit" | "C-signal" | "D-die" | "E-terminal" | "F-live";
 
@@ -81,16 +87,28 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // design. Nothing was hidden; there is nothing there to pin. When the other
   // five tails adopt, the same eight-row deletion repeats, and the day the kit
   // ever grows an exit is the day this walk must grow a third root.
-  // ⚠ bounty's three CLI rows and three daemon rows CHANGED ADDRESS in Phase 4
-  // chapter 1 — `bounty/scripts/*.ts` → `bounty/backend/*.ts` — and NOTHING
-  // ELSE about them changed. Families and texts are identical; the source moved
-  // and a launcher took its address. This is the relocation half of the two
-  // reds this ward produces per port (the deletion half is chapter 2).
-  {
-    file: "bounty/backend/cli.ts",
-    text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
+  // ⭐ bounty's A-drain site is GONE, and it is the THIRD time this inventory has
+  // recorded that sentence. It moved to `backend/cli.ts` in Phase 4 chapter 1
+  // (three CLI rows and three daemon rows re-addressed, families and texts
+  // unchanged), then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (B-noemit,
+  // C-signal) went with it for the same reason — the `closed` branch and both
+  // signal handlers are one `return` now.
+  //
+  // ⛔ BOUNTY'S CLI NOW HAS ZERO LIVE `process.exit` SITES — the FIFTH CLI to
+  // reach that, after magpie, mind-mapper, glamour and imago, and the direction
+  // this inventory exists to push. `scripts/cli.ts` is a LAUNCHER holding
+  // `process.exitCode`.
+  //
+  // ⚠ AND IT IS THE FIRST CLI WHOSE A-DRAIN SITE WAS NOT A ONE-LINER TO REMOVE.
+  // The comment at that site recorded a PER-SITE PRECONDITION — the exit sat
+  // three loops deep, so `process.exitCode` + a natural return does not return
+  // from a tail; it falls through and the loop goes round again, which is the
+  // 23-minute hang in a new place. Adopting the shared client is what made the
+  // deletion safe: the loops belong to the client and the exit belongs to
+  // `main`. Deleting the exit WITHOUT the adoption would have shipped the hang.
   // ⭐ glamour's A-drain site is GONE, and it is the clearest thing this
   // inventory has recorded. It moved to `backend/cli.ts` in Phase 2 chapter 1,
   // then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
@@ -116,12 +134,10 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // inventory exists to push. `scripts/cli.ts` is a LAUNCHER holding
   // `process.exitCode`.
   // B — the no-emit sibling of an A site: nothing was written, so nothing can be undrained.
-  { file: "bounty/backend/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   // C — signal / shutdown. As of 2cc513d, ZERO of these are defects: the two
   // that were (SIGTERM/SIGINT pre-empting the teardown) were fixed by the funnel
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
-  { file: "bounty/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
@@ -152,7 +168,12 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // fits the 64 KiB pipe buffer — stderr truncates exactly like stdout (measured).
   // astrolabe's die() picks its code the way magpie's does (acc taxonomy:
   // usage 2, internal 1) rather than always 2 — same one-short-write shape.
-  { file: "bounty/backend/cli.ts", text: "process.exit(2);", family: "D-die" },
+  //
+  // bounty/backend/cli.ts left this family in Phase 4 chapter 2, by adopting the
+  // SAME module (`src/kit/wire/errors.ts`) glamour, imago and magpie did — and
+  // ⚠ for bounty that was a CALLER-VISIBLE change, because its die() emitted
+  // PROSE and exit 2 for every failure it could produce. Driven across seven
+  // failing invocations before and after; see D45 and the Phase 4 journal.
   // glamour/scripts/cli.ts left this family at its acc L0 pass: die() now THROWS a
   // CliError and main() returns the taxonomy code (usage 2, internal 1,
   // not_found 5, conflict 6), so the drained-exit defect has no site to live in.

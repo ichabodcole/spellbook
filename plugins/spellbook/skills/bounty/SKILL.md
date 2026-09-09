@@ -372,7 +372,7 @@ Each `tail` frame is `{ id, type, …, by }`:
 
 ```
 {id, type:"ready",        url, port, session_id, by:"system"}
-{id, type:"connected" | "disconnected", by:"user"}
+{     type:"connected" | "disconnected", by:"user"}   // LIVE ONLY — no id, never replayed
 {id, type:"task.toggle",  taskId, status, by, owner}     // pill click
 {id, type:"task.move",    taskId, status, index, by, owner}  // drag-drop
 {id, type:"task.edit",    taskId, title, by, owner}      // inline title edit
@@ -385,9 +385,19 @@ Each `tail` frame is `{ id, type, …, by }`:
 ```
 
 The board mutations + `closed` are the actionable ones; `ready` / `connected` /
-`disconnected` are lifecycle noise you can usually ignore. Events are **not
-commands** — by the time you see one, the daemon has already applied it; you're
-being informed. Read `cli.ts state` when you want the full truth.
+`disconnected` are lifecycle noise you can usually ignore.
+
+⚠ **`connected` / `disconnected` carry NO `id` and are never replayed.** They go
+to tails that are open at the moment they happen, and nowhere else. Presence is
+a fact about _now_ — a replayed "someone connected" is false by the time you
+read it — and buffering them meant a tail resuming from `--since 0` waded
+through the whole browser-presence history of the session, with each replayed
+frame advancing its cursor. Every other frame in the table above still carries
+an `id` and is still replayable.
+
+Events are **not commands** — by the time you see one, the daemon has already
+applied it; you're being informed. Read `cli.ts state` when you want the full
+truth.
 
 ### Task shape
 
@@ -785,6 +795,17 @@ bun run ${CLAUDE_PLUGIN_ROOT}/skills/bounty/scripts/join.ts
   argument, not its "body"** — so on `update`, whose only positional is `<id>`,
   it overwrites the **title** at `ok:true`. See the `--stdin` note under Verbs
   before using it on `update`.
+- **A failure is ONE JSON document on stderr, and stdout stays empty.** Every
+  refusal prints
+  `{"ok":false,"error":{"kind","exit_code","retryable","message",…},"meta":{"command"}}`
+  and exits on the taxonomy: **2** usage (you can fix it by changing the
+  command), **1** internal (the spell broke), **5** not_found (the named thing
+  does not exist — most often "no running bounty session"), **6** conflict (a
+  precondition failed). ⚠ **This changed in 2026-09:** every failure used to
+  print prose (`bounty: <msg>`) and exit **2**, so "that board is gone" and "you
+  typed it wrong" were the same number. A script that tested `exit == 2` for "no
+  session" must test `5`. Where the daemon itself refused, its own reply is
+  carried verbatim under `error.server`.
 - **A write verb tells you whether it took.** Every write (`add`, `update`,
   `claim`, `block`/`unblock`, `remove`, `message`, `close`) reports the daemon's
   `applied` verdict: on success it exits `0`; on a refusal it exits non-zero and

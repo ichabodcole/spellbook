@@ -137,8 +137,30 @@ export interface DrainOptions {
  * teardown is bounded by the two numbers above; adding an exit here would put
  * the house's only unconditional `process.exit` inside a module every spell is
  * about to bundle, one phase after D8 took exactly that hazard OUT of `die`.
- * When a spell with a signal path adopts this, the watchdog arrives as an
- * option on these arguments and the reasoning is already written down.
+ *
+ * ⛔ **AND THE SENTENCE THAT USED TO END THAT PARAGRAPH WAS A PREDICTION, WHICH
+ * BOUNTY'S OWN PORT FALSIFIED.** It read: "when a spell with a signal path
+ * adopts this, the watchdog arrives as an option on these arguments and the
+ * reasoning is already written down." bounty adopted `drainAndStop` on
+ * 2026-09-09 (Phase 4) and the option was NOT added, because the window is
+ * wrong. **A `watchdogMs` on these arguments would arm at DRAIN time; bounty's
+ * arms at SIGNAL time**, and the whole reason it exists is the stretch BETWEEN
+ * those two points — `await done`, an fs append to the daemon log, a full
+ * snapshot write that can rotate and COPY a backup of a large board, a `closed`
+ * frame and a broadcast. `drainAndStop`'s own body is already bounded by the two
+ * numbers above, so a watchdog scoped to it would guard the one stretch that
+ * cannot hang and abandon the stretch that can: it would READ as adoption and
+ * BE a narrowing of the corpus's only unconditional termination guarantee. The
+ * 23-minute hang this project keeps citing happened in the unbounded stretch.
+ *
+ * ⚠ **SO THE RULE FOR THE NEXT SPELL, WHICH IS THE TRANSFERABLE HALF:** the
+ * question is never "does this module have a place to put a watchdog" but
+ * "does the watchdog's window coincide with this module's". Where a spell's
+ * teardown has unbounded work BEFORE the drain, the watchdog belongs at the
+ * spell, wrapped around all of it. If a spell ever appears whose signal path
+ * enters `drainAndStop` immediately, add the option THEN — and the option must
+ * take an `onExpire` callback rather than exiting, so the `process.exit` stays
+ * outside a module every spell bundles.
  */
 export async function drainAndStop(opts: DrainOptions): Promise<void> {
   const graceMs = opts.graceMs ?? 150;

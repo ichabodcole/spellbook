@@ -176,12 +176,25 @@ afterAll(() => {
 });
 
 test("transport 2 of 2: the ready EVENT carries the resolved mode", async () => {
+  // ⛔ THIS CELL USED TO READ `chunk.split("\n")[0]` AND `JSON.parse` IT, WHICH
+  // BAKED THE HAND-ROLLED `sseResponse`'s BYTE LAYOUT IN AS AN INCIDENTAL.
+  // `src/kit/wire/sse.ts` opens every stream with a `: connected` COMMENT, so
+  // the first line stopped being the first event the moment bounty adopted it —
+  // and the failure read as "the ready frame is missing" rather than "the
+  // preamble moved". The repair is to read until a `data:` line AND ASSERT THE
+  // PREAMBLE, so the new shape is PINNED rather than merely tolerated.
   const res = await fetch(`${url}/events?since=0`);
   const reader = (res.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
-  const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode?: string };
+  const lines = new TextDecoder().decode(value).split("\n");
+  expect(lines[0]).toBe(": connected");
+  const dataLine = lines.find((l) => l.startsWith("data:"));
+  expect(dataLine).toBeDefined();
+  const ready = JSON.parse((dataLine as string).replace(/^data: ?/, "")) as {
+    type: string;
+    mode?: string;
+  };
   expect(ready.type).toBe("ready");
   expect(ready.mode).toBe("release");
 });
