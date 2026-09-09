@@ -504,3 +504,25 @@ red naming file, line, expression and resolved path; restored.
 5. **A required argument is a better fix than a fixed bug.** L1 is closed
    because `subscriberCount` cannot be omitted, not because three daemons were
    edited.
+
+## The spawn-path ward asserts nothing about the servers it was written for
+
+Found by the chapter 2 verify pass, and it is the kind of thing only a
+population print reveals. The ward's population is right — 8 spells, 12 emitted
+files, derived from `buildableSpells()` — but of the **7 governed pins, all 7
+come from `dist/cli.js` and the two `dist/server.js` files contribute zero.**
+Their only anchors resolve to directories, and `resolveMode`'s
+`join(distDir, "index.html")` now runs inside the inlined kit off a
+**parameter** rather than an anchor, so it is not an anchored pin at all.
+
+This is inside the ward's declared blind spots and it is not a defect: the ward
+catches the real historical defect, catches a novel one it has never seen, and
+stays green on a correct up-and-back-down pin. But **its framing implies it
+guards the daemons, and today it guards the CLIs.** The coverage will arrive on
+its own as the remaining six spells bring servers with real assets into the
+build — magpie's `remove.py` is the only non-TS runtime sibling in the house
+today, and it is pinned from a CLI.
+
+**The generalisation for the roll:** a ward whose population is derived can
+still have zero coverage of the thing it was written for, because population and
+coverage are different measurements. Print both.

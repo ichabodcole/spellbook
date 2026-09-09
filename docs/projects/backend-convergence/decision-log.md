@@ -699,3 +699,87 @@ rejected in the ward's own header for a reason that still holds (the dangerous
 word is the one no surface uses). _Reword only, and leave the list_ — it would
 have left the next author to rediscover the same word through a committed
 artifact.
+
+## D23 · The restart gap is NARROWED, not closed — and `>=` is the wrong fix
+
+**Found:** chapter 2 verify pass, 2026-09-08, driven. **Amends D19, which reads
+as "closed" and is stronger than the code.**
+
+`subscribe` replays whole only when `since > seq` **strictly**. So the case that
+stays open is equality, and equality is the ordinary state of a quiet standing
+observatory:
+
+- daemon 1 boots, emits `ready` (id 1); a tail attaches, cursor is now **1**
+- `kill -9`, respawn; the new daemon's cursor is also **1**
+- the tail reconnects at `since=1`; `1 > 1` is false, so `ready` is filtered and
+  the tail sits **connected and silent** — verbatim the symptom D19 exists to
+  close. Probed directly: `GET /events?since=1` → 15 bytes (`: connected\n\n`);
+  `?since=0` → the `ready`.
+
+It self-heals on the first real event (that frame carries the new epoch →
+`epoch.changed` → cursor reset), and `develop` was silent after **every**
+restart, so this is a partial fix and not a regression. It is recorded because
+D19 claims more than it delivers and a future reader would trust it.
+
+⛔ **The obvious one-line repair is wrong and must not be applied.** Changing
+`since > seq` to `since >= seq` closes this case by breaking the common one: a
+HEALTHY tail reconnecting at the tip sends `since == seq` every time, and would
+then be handed the entire buffer again on every reconnect — duplicating every
+event the caller has already seen. The verifier proposed it as one option and
+deliberately did not apply it; measuring the reconnect path is what shows why.
+
+**The correct close is epoch-aware, not cursor-aware**: the client sends the
+epoch it last saw, and the daemon replays whole whenever that epoch is absent or
+does not match its own. The client already tracks the epoch (`epochOf` /
+`onEpochChange`, Phase 1a); what is missing is the query parameter and the
+daemon-side comparison. **It is deliberately not done here** — it is a change to
+the shared client that all seven spells inherit, arriving after this phase's
+verification, and the other daemons do not stamp an epoch yet. **It is the first
+input to the phase that gives them one**, where it can be designed against all
+seven rather than retrofitted to one.
+
+**Not taken:** _apply `>=` and land_ — closes the reported case and opens a
+worse one. _Hold the branch until the epoch parameter is designed_ — the branch
+is strictly better than `develop` on this axis today, and holding a verified
+merge for an improvement is how a good landing goes stale.
+
+## D24 · Two out-of-range inputs change meaning, and are accepted as such
+
+**Found:** chapter 2 verify pass, 2026-09-08. **D20 named two wire changes;
+these are a third and fourth, both outside the documented range.**
+
+- **`magpie --timeout 0`.** Develop: `(now - last)/1000 >= 0` is true on the
+  first tick, so the daemon closes immediately. Branch: `shouldIdleClose`
+  returns false for `timeoutMs <= 0`, so it **never** idle-closes.
+- **`ASTROLABE_IDLE_TIMEOUT=-5`.** Develop clamps to 1 s; `intOr` now rejects
+  non-positives, so it falls back to the 255 s default.
+
+Both are accepted rather than restored. The old behaviours were accidental
+consequences of an arithmetic comparison, not intended semantics — "close the
+daemon instantly" is not a plausible reading of `--timeout 0`, and a 1-second
+clamp is not a plausible reading of a negative timeout. Defaults are 1800 s and
+255 s, so nothing in documented use moves.
+
+**Not taken:** _restore develop's arithmetic exactly_ — the strictest reading of
+"behaviour unchanged", and it would have put a `<= 0` special case back into a
+shared module every spell is about to adopt, to preserve two behaviours no
+caller wants. Changing shared code after the verify pass to reproduce an
+accident is the worse trade.
+
+## D25 · A3's carried items, discharged explicitly
+
+**Closed:** orchestrator, 2026-09-08. The brief said "carry them; do not fix
+them silently"; the verifier correctly reported that nothing recorded whether
+they had been carried at all.
+
+- **Stale addresses** in `grimoire/import-boundary-wards.test.ts` (now `:123`,
+  `:691`, `:1210`) still cite `magpie/scripts/backend.ts` and `.../discover.ts`,
+  which moved in chapter 1. **Left as prose drift, filed here**; they are
+  comments, not pins, and the pins themselves are green.
+- **`ARTIFACT_FILES` narrowness** — the `release-serve` guarantee covers the
+  module graph, not the asset graph. **Discharged by the spawn-path ward**,
+  which is now the honest home for it.
+- **D10's two-sided duplication** — `state.ts` and `magpie/shared/types.ts` ship
+  as source and are inlined into three artifacts each; staleness is caught only
+  by `dist-check` ARM 2. **Still true, still stable, still worth knowing**
+  before a later phase adds more to those bundles.

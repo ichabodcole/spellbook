@@ -662,11 +662,15 @@ async function main(argv: string[]): Promise<number> {
   await saveRegistry(); // final registry write
   emitEvent({ type: "closed", reason, by: "system" });
   broadcastState();
-  // The presence debounce timers are astrolabe's own and outlive nothing — they
-  // are cleared here, before the shared drain closes the connections whose
-  // teardown would otherwise re-arm them.
-  for (const t of idleTimers.values()) clearTimeout(t);
   await drainAndStop({ server, clients: sseClients, sockets });
+  // The presence debounce timers are astrolabe's own, and this clear runs AFTER
+  // the drain on purpose: `drainAndStop` closes each connection, every close
+  // runs `onClose` → `presenceDisconnect`, and that RE-ARMS a 2500 ms timer.
+  // Clearing first therefore cleared timers that the drain then re-created —
+  // which an earlier version of this comment claimed it prevented. Harmless
+  // either way (the launcher ends the process), but a comment that describes
+  // ordering the code does not have is the exact defect this phase found twice.
+  for (const t of idleTimers.values()) clearTimeout(t);
   cleanupDiscovery();
   return code;
 }
