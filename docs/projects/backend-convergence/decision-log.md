@@ -487,3 +487,215 @@ reopening a verified chapter to edit a ward is how a clean verdict goes stale.
 _Write it down honestly and move on_, which the verifier offered as the
 alternative — rejected because the next five spells all relocate into that same
 exemption.
+
+## D17 · The daemon-side spine is six modules in `src/kit/wire/`, and what it refused is part of the ruling
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2, under the brief's
+presumption that `src/kit/wire/` is the home and the burden is on the
+implementer to argue otherwise. It was not argued otherwise: D7's test — "the
+modules that define what a caller observes" — covers every one of these.
+`sseResponse` decides what a tail client receives; `resolveMode` decides which
+of two surfaces a caller is served; `shouldIdleClose` decides whether a held
+connection survives. None of them is a utility.
+
+| module            | exports                                                  |
+| ----------------- | -------------------------------------------------------- |
+| `serveDist.ts`    | `resolveMode` · `contentTypeFor` · `serveFromDist`       |
+| `eventLog.ts`     | `createEventLog`                                         |
+| `sse.ts`          | `sseResponse` · `SseClients`                             |
+| `housekeeping.ts` | `shouldIdleClose` · `startHousekeeping` · `drainAndStop` |
+| `discovery.ts`    | `writeFileAtomic` · `unlinkIfMatches`                    |
+| `heartbeat.ts`    | `idleTimeoutSec` · `heartbeatMs` · `tailIdleMs`          |
+
+**Checked against these two spells rather than against the census's counts, as
+the brief demanded.** Every module above is used by BOTH servers. Two things the
+census listed did not come: `emitTransient` (glamour's, and neither of these two
+has presence frames in its replay log) and the discovery WRITER (D3 — the two
+conventions stay, only the primitives are shared).
+
+**Three refusals, each of which is a decision:**
+
+- **The URL-to-filename mapping stays in each router.** `serveFromDist` takes a
+  filename, not a request path. The census marked two of the eight `serveDist`
+  divergences DELIBERATE and both live in that half — digestify substitutes into
+  the entry document in memory, grapevine serves its surface at `/watch`. A
+  signature wide enough for those stops being a file server and becomes a
+  router, and the two spells it would serve are not the two adopting.
+- **Bounty's shutdown watchdog did not come.** It is the corpus's only
+  unconditional-termination guarantee and it belongs to bounty's SIGNAL path,
+  where nothing bounds what teardown waits on. Neither adopting daemon registers
+  a signal handler, and their teardown is bounded by `drainAndStop`'s own two
+  numbers. Importing it would have put the house's only unconditional
+  `process.exit` inside a module every spell is about to bundle, one phase after
+  D8 took exactly that hazard out of `die`. The reasoning is written into
+  `drainAndStop`'s header so the spell that DOES have a signal path adds it as
+  an option rather than re-deriving it.
+- **`printJson` did not move into `wire/`.** D7 named it as debt and the brief
+  offered this phase the chance to pay it. This phase's diff already spans two
+  daemons, two CLIs, six new modules and two wards; adding eight prose
+  re-pointings to that is how a phase stops being verifiable. **Still debt, and
+  the sentence about it is unchanged.**
+
+**Not taken:**
+
+- **`src/kit/daemon/`**, a directory named for the audience. Rejected for the
+  reason D7 rejected `src/kit/cli/`: audience is the residual category that put
+  a backend-only emitter beside a surface-only helper in `lib/`. It is also
+  already wrong — `heartbeat.ts` is imported by both halves, so a daemon-scoped
+  directory would have a CLI's constant in it on day one.
+- **One `daemon.ts` module rather than six.** Fewer files, one import line.
+  Rejected because the six have genuinely different audiences: a spell adopting
+  the tail client needs `heartbeat.ts` and none of the rest, and a spell with no
+  SSE at all still wants `writeFileAtomic`. A single module makes every adopter
+  take all of it.
+- **Keeping `shouldIdleClose` exported from each server** so its existing cells
+  did not move. Rejected: it would have asserted a re-export, and the shared
+  predicate now carries a case (magpie's) that astrolabe's copy never had.
+
+## D18 · The heartbeat crosses the seam through a per-spell leaf module, not through the kit alone
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2. This is the brief's
+first named deliverable and the shape it takes was not given.
+
+The kit holds the DERIVATIONS (`idleTimeoutSec`, `heartbeatMs`'s clamp to half
+the idle timeout, `tailIdleMs`'s three missed beats) and no spell's numbers.
+Each spell holds its VALUES in `src/<spell>/backend/heartbeat.ts` — a
+leaf-shaped module that imports the kit and nothing else — and both the daemon
+and the CLI import that.
+
+**Why a per-spell file at all.** The values differ and the env names differ
+(astrolabe tunes `ASTROLABE_HEARTBEAT_MS`; magpie tunes nothing). Putting the
+derivations in the kit and calling them from both halves would have left the env
+name and the fallback hand-mirrored in two files — the same duplication one
+level down, and harder to see.
+
+**Why it is not exported from `server.ts`.** That is the thing that could not
+happen: a CLI importing the daemon drags the whole server graph into
+`dist/cli.js`, which is why both files carried a comment asking the next author
+to remember instead. The new module is the seam BECAUSE it is a leaf.
+
+**Not taken:** _an env var read by both halves_ — no new module, and it makes
+the invariant a runtime coincidence rather than a derivation, with nothing to
+fail when one half is launched without it. _Constants in the kit, one pair per
+spell_ — the kit would then know the roster, which is exactly the coupling that
+makes a kit stop being adoptable.
+
+## D19 · Astrolabe gets the epoch; the STALE-WATERMARK REPLAY is what makes it reachable
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2, after driving it.
+
+**The brief's model of this deliverable was incomplete, and the tree said so.**
+It reads: the client already carries `epochOf`/`onEpochChange`, so "give the
+daemon an epoch and the gap closes with no client change". Measured: it does
+not. The client detects an epoch change on a frame it RECEIVES, and the bug is
+that no frame is received — a tail resuming at `since=4` against a restarted
+daemon whose `ready` is id 1 gets nothing, because every copy filters
+`id > since`. The tail sits connected and silent until the new daemon has
+emitted as many events as the old one did.
+
+So the repair is two-sided and the daemon side is the load-bearing half:
+`createEventLog.subscribe` treats `since > cursor` as a cursor from a PRIOR
+PROCESS and replays whole. The epoch is what stops the tail then re-requesting
+that stale cursor on every subsequent reconnect.
+
+**Driven, fail-first, on two live daemons** (journal has the transcript): the
+chapter-1 bundle answers `/events?since=4` with ZERO bytes over three seconds
+while holding a `ready` it will happily serve at `since=0`; the chapter-2 daemon
+answers the same request with the `ready`. Under a real `tail`, a hard `kill -9`
+and a respawn produced `{"type":"epoch.changed",…}` followed by the new daemon's
+`ready`.
+
+**Magpie deliberately has NO epoch**, though the module offers one for free. A
+magpie session is identified by `session_id` and a restart is a different
+session, so a resuming tail is already talking to a different daemon by name;
+and "epoch for the other daemons" is out of this phase's scope. Free-riding it
+in because the module made it cheap is how a scoped phase stops being one.
+
+**Not taken:** _emit an epoch frame at connect_ instead of the replay rule. It
+would deliver the epoch, but the client resets its cursor to 0 without
+reconnecting, so the events between 1 and the stale watermark are lost for that
+connection — a worse failure than the silence, because it looks like it worked.
+_Have the client send `since=0` on every reconnect_ — no daemon change, and it
+re-replays the whole window on every network blip.
+
+## D20 · Two wire-observable changes, named rather than smuggled
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2. A convergence that
+changes what a caller sees must say which bytes moved.
+
+1. **`.html` is served as `text/html; charset=utf-8`.** The census found this to
+   be the ONLY divergence in the content-type table across all eight daemons —
+   three had it, five did not, graded `stale` with zero design content. Kept
+   because it is correct: a document served with no charset is decoded by the
+   browser's guess. One test cell asserted `text/html` by `toContain`, so
+   nothing needed changing; the change is real all the same.
+2. **The SSE stream opens with a `: connected` comment.** mind-mapper's, and it
+   flushes the response headers — some clients, Bun's own `fetch()` included,
+   buffer until the first body byte, so a genuinely quiet stream leaves the
+   caller's `fetch()` unresolved. **It broke a cell**, and the cell was reading
+   the first LINE of the stream rather than the first FRAME; every house tail
+   client already drops `:` lines. The cell now reads like the clients do.
+
+**Not taken:** _keep `text/html` bare and keep the stream silent until the first
+frame_, i.e. converge on the majority rather than on the better copy. Rejected
+under the brief's own instruction — convergence is toward the best sibling, not
+a merge of equals — and because the majority here is a count, not an argument.
+
+## D21 · The spawn-path ward's boundary is the PLUGIN, and what it cannot assert is enumerated
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2, executing D15.
+
+The ward resolves anchor arithmetic (`join(import.meta.dir, …)` and every named
+anchor derived from it) in the EMITTED `.js`, then asserts the file is there.
+Population from `src/build.ts`'s own `buildableSpells()`, per D15's ⛔.
+
+**The tree corrected the first draft twice.**
+
+- The boundary was `plugins/…/skills/<spell>/`. The scanner immediately found a
+  pin one level ABOVE it that both CLIs make — `.claude-plugin/plugin.json`,
+  read for the version they report — which a skill-scoped boundary would have
+  exempted while it is a shipped sibling by every criterion the ward has.
+  Contract 3's boundary is the plugin, so the ward's is too.
+- A pin that leaves the plugin cannot be asserted from this repo at all:
+  `SURFACE_CWD` is `src/<spell>/`, which exists HERE and does not exist at the
+  destination. Asserting it would assert the opposite of Contract 4. Those are
+  **enumerated and pinned as a set** rather than filtered away, so a new escape
+  is loud — ward 1a's discipline applied to a path instead of to a specifier.
+
+**What it cannot see is in its own header**, not in this log: concatenated
+paths, paths through a non-anchor variable, and paths assembled across a
+function boundary. It is the instrument for the ANCHOR-ARITHMETIC class, which
+is the class bundling breaks and the class both of chapter 1's defects were in.
+
+**Not taken:** _assert every pin, inside the plugin or not_ — it would have gone
+red on `SURFACE_CWD` in any tree that ships without `src/`, i.e. it would have
+been a ward that fails at the destination it exists to protect. _Parse the
+bundle with a real AST_ — strictly better and it is a different project; the
+regex evaluator is calibrated on a synthetic tree in-cell AND was driven against
+the real artifact by re-breaking `remove.py`, which is the standard this repo
+applies to its own scanners. _Scan the SOURCE instead of the artifact_ — it
+would have been green on `remove.py` for eight days, because in the source the
+path was correct and it was BUNDLING that moved the anchor.
+
+## D22 · `grow`/`shrink` join the kit-prose ward, and the way they were found is the finding
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 2 — the ward's own
+prescribed repair, taken.
+
+A sentence in a new kit module ("five daemons GROW an array for the life of the
+process") emitted `.grow { flex-grow: 1 }` into the stylesheets of four
+unrelated spells — bounty, digestify, grapevine and imago. `kit-prose-ward`
+stayed green because `grow` was not in `BARE_UTILITIES`. **What caught it was
+`dist-check`'s reproduction arm**, i.e. downstream, by luck of the artifact
+being committed — which is verbatim the failure the ward's own header warns
+about and says it exists to prevent.
+
+The list's header says it is not claimed exhaustive and that the repair is to
+add the word. Added, with the account. A second pre-existing `grow` was standing
+in `src/kit/wire/tailEvents.test.ts` from Phase 1a and is reworded.
+
+**Not taken:** _derive the vocabulary instead of listing it_ — considered and
+rejected in the ward's own header for a reason that still holds (the dangerous
+word is the one no surface uses). _Reword only, and leave the list_ — it would
+have left the next author to rediscover the same word through a committed
+artifact.

@@ -339,3 +339,168 @@ as the exemplar) already solved it and does not say so.
    rewritten by chunk hoisting and Contract 18 reds on an artifact you did not
    touch.
 7. **Never write a `*` followed by `/` inside a block comment.**
+
+---
+
+# Chapter 2 — the daemons adopt the spine
+
+Same branch, after the chapter 1 verify pass. Written as the work happened; the
+failures are the part Phase 2 inherits.
+
+## The first commit was a ward, and the mutation is why it is trustworthy
+
+D16 said ward 1b's emitted-root exemption swallows `bun`, and the fix had to be
+calibrated the way the verifier calibrated the rest. It was, twice:
+
+- **The exact mutation.** `import { serve as __s } from "bun"` appended to
+  `plugins/spellbook/skills/astrolabe/dist/server.js`. Before the fix: 18 pass /
+  0 fail. After: 17/1, the differential cell naming the file. Restored.
+- **The reverse.** Reverting the subtraction (`new Set(builtinModules)`) reddens
+  the new synthetic clause instead — so the mechanism is guarded from both
+  directions and not only by whatever the roster happens to contain today.
+
+**The finding under the finding:** `BARE_BUILTINS` was DERIVED from the runtime,
+which is the house's own rule and is why it was trusted — and deriving it is
+exactly what put `"bun"` in it. A derived set is not automatically the right
+set; it is the right set only if what you derive it from means what you think.
+Bun's `builtinModules` answers "what does this runtime resolve without an
+install", and the exemption needed "what does the bundler leave behind after
+stripping `node:`". Those are different questions with a 76-entry overlap.
+
+## Where the brief was wrong, and it is the deliverable it was wrong about
+
+**The epoch does not close the restart gap on its own.** The brief says the
+client already carries `epochOf`/`onEpochChange`, so "give the daemon an epoch
+and the gap closes with no client change". Measured against the tree, that is
+false and the mechanism says why: the client detects the change on a frame it
+RECEIVES, and the whole bug is that no frame is received.
+
+Driven fail-first, on the chapter-1 bundle, from a temp skill root:
+
+```
+$ curl -sN "http://127.0.0.1:56958/events?since=4" --max-time 3 | od -c
+        (nothing — zero bytes in three seconds)
+$ curl -sN "http://127.0.0.1:56958/events?since=0" | head -1
+data: {"id":1,"type":"ready", … "mode":"release"}
+```
+
+The daemon is alive, holds a `ready`, and will not send it — because `ready` is
+id 1 and the resuming tail asked for `> 4`. A `join` in this state is connected,
+silent, and indistinguishable from a quiet board.
+
+So the repair is two-sided, and `createEventLog.subscribe` treating
+`since > cursor` as "a cursor from a prior process" is the load-bearing half.
+Driven on the real thing — a live `tail --since 0`, `kill -9` on the daemon,
+`open` again:
+
+```
+{"id":4,"type":"project.add", … "epoch":"e38d0a4f-…"}
+{"type":"epoch.changed","epoch":"19c31ba7-…"}
+{"id":1,"type":"ready","url":"http://127.0.0.1:56941", … "epoch":"19c31ba7-…"}
+```
+
+The new daemon's `ready` arrives under a tail that resumed at 4. That is the
+deliverable, and it needed a daemon-side change the brief did not name.
+
+## The two defects nobody was looking for, both found by writing the module down
+
+1. **The monotonic id did not win.** Both daemons wrote
+   `const ev = { id: ++eventSeq, ...msg }` under a comment saying "the monotonic
+   `id` MUST win over any `id` in the payload, so callers carry a project
+   identifier as `projectId`, never `id`". Spread order says the payload wins.
+   The comment was the only thing holding it, and it held — nobody has passed an
+   `id` — which is precisely why it survived two code reviews. The kit keeps the
+   key order (`id` first, so the wire is unchanged) and assigns after the
+   spread.
+2. **A typo'd cursor opened an empty stream.** `parseInt(param ?? "-1")` yields
+   `NaN` for `?since=x`, every `id > NaN` is false, and the tail opens connected
+   with nothing in it — the same silent-and-connected symptom as the stale
+   watermark, from a different cause. Absent and unparseable are now the same
+   request.
+
+Neither is in the census's L1–L7. Both were found by having to write down what
+the function does, which is the argument for extraction that no defect table
+makes.
+
+## ⛔ A SENTENCE IN A COMMENT CHANGED FOUR UNRELATED SPELLS' STYLESHEETS
+
+`src/kit/wire/eventLog.ts` said "five daemons **grow** an array for the life of
+the process". `src/kit/theme/base.css` declares `@source "../"`, so Tailwind
+scans every file in `src/kit/` — including prose — and `.grow { flex-grow: 1 }`
+was emitted into bounty's, digestify's, grapevine's and imago's CSS. Four
+spells' artifacts changed because of a verb.
+
+**`kit-prose-ward` was green.** Its `BARE_UTILITIES` list did not contain
+`grow`. What caught it was `dist-check`'s reproduction arm — four
+`?? index-*.css` files and four modified `index.html`s in `git status` — i.e.
+**downstream, by luck of the artifact being committed**, which is verbatim the
+failure the ward's own header describes and claims to prevent. Its prescribed
+repair is to add the word; `grow` and `shrink` are added, and a second
+pre-existing `grow` was standing in `tailEvents.test.ts` from Phase 1a.
+
+**For the playbook:** when a phase adds files to `src/kit/`, `bun run gate` is
+not sufficient. Run `bun scripts/dist-check.ts` and read `git status` for
+stylesheet churn in spells you did not touch. A green gate and a dirty artifact
+is the pairing to look for.
+
+## What the adoption cost, per spell
+
+**Astrolabe** — the `events`/`eventSeq`/`sseClients`/`sseTimers` quartet became
+one `log` plus one `SseClients`; `emitEvent` shrank to a snapshot-flag line and
+a call; `sseResponse` became a mapping function that hands presence to the kit's
+open/close hooks; the idle and snapshot timers became one `startHousekeeping`;
+the whole teardown block became `drainAndStop` plus one loop over its own
+presence-debounce timers, which are astrolabe's and belong to it. Net −80 lines
+in the daemon and every one of them was a copy of something.
+
+**Magpie** — the same, plus `writeAtomic` deleted in favour of the kit's, plus
+its `cleanupDiscovery` learning `unlinkIfMatches` for `magpie-latest.json` (the
+session file is unconditionally ours; the latest pointer is not).
+
+**One test cell moved and one changed.** `shouldIdleClose`'s cell left
+`astrolabe/backend/server.test.ts` for the kit, where it now also carries
+magpie's case. `release-serve.test.ts` read the FIRST LINE of an SSE stream and
+now looks for the first `data:` line, because the stream opens with a comment.
+
+## Driven
+
+**L1, both directions, on a real magpie daemon** (`--timeout 5`):
+
+```
+14s after boot, with a tail held:   GET /state -> 200 · GET / -> 200 text/html; charset=utf-8 413B
+9s after the tail was dropped:      GET /state -> 000   (idle-closed, unwatched)
+```
+
+Before this chapter the first line was a dead daemon: magpie's sweep could not
+see its subscribers, so an agent tailing a quiet session was killed with its
+connection open at the 30-minute floor.
+
+**Dev mode, both spells, through the real launchers** — magpie `"mode":"dev"`,
+`GET /` 200/723 B referencing `/_bun/asset/fb1a5a2389bfcbee.css`; astrolabe
+`"mode":"dev"`, `GET /` 200/1,667 B referencing
+`/_bun/client/index-0000000063e6978e.js`. The dev import still resolves from
+`dist/`, which is the line nothing in CI can see.
+
+**Discovery cleanup** — after `astrolabe close`, `$ASTROLABE_HOME` holds only
+`registry.json`: `unlinkIfMatches` removed the pid file and the port file went
+with its verdict.
+
+**The spawn-path ward, calibrated by re-breaking the real defect.**
+`dist/cli.js`'s `REMOVE_PY` reverted to its shipped-defect form; the ward went
+red naming file, line, expression and resolved path; restored.
+
+## For Phase 2's playbook — what chapter 2 adds
+
+1. **Prose in `src/kit/` is Tailwind content.** A single English word can change
+   an artifact in a spell you have never opened. Check `dist-check`, not just
+   the gate.
+2. **A derived set is only as good as the question it derives from.**
+   `BARE_BUILTINS` was derived, which is why nobody looked at it, which is how
+   `"bun"` got in.
+3. **The client half of a protocol repair is not the whole repair.** Ask what
+   the daemon must SEND before believing a client-side mechanism can act.
+4. **Extraction finds defects that defect tables do not.** Two here, both in
+   comments that described code they did not govern.
+5. **A required argument is a better fix than a fixed bug.** L1 is closed
+   because `subscriberCount` cannot be omitted, not because three daemons were
+   edited.
