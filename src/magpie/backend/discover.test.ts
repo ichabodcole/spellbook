@@ -12,7 +12,7 @@ import {
   elementsFromRaw,
   normalizedToPixel,
   parseBboxes,
-} from "../scripts/discover";
+} from "./discover";
 
 // ── normalizedToPixel ────────────────────────────────────────────────────────
 

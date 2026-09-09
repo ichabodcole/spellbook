@@ -204,3 +204,112 @@ resolves: `plugins/spellbook/skills/astrolabe/dist` + `../../../../../src/…` =
 call with two entrypoints hoists shared modules into a hashed chunk and rewrites
 an artifact this chapter did not touch, which Contract 18 verifies by
 reproduction.
+
+---
+
+## Magpie — the larger subject, and the one real bug
+
+The brief called magpie "the larger subject by a wide margin" and it is: six
+modules and five test files moved against astrolabe's one and two. **It was also
+the cheaper of the two to do**, because astrolabe's journal had already answered
+every structural question — the missing entry block, the launcher's exit, the
+dev specifier's anchor, which wards would red. The brief's ordering ruling (D9)
+paid for itself exactly as predicted.
+
+### What moved
+
+`server.ts`, `backend.ts`, `discover.ts`, `persist.server.ts`, `reduce.ts`,
+`source.server.ts` and five of the six test files, all into
+`src/magpie/backend/`. `shared/` stayed (12 surface importers),
+`versions.test.ts` stayed with it, `remove.py` stayed (D13).
+
+**A benefit the brief did not predict:** `src/magpie/backend/cli.ts` had been
+importing `backend`, `discover` and `reduce` through
+`../../../plugins/spellbook/skills/magpie/scripts/…` since Slice 2. Those three
+specifiers are now `./backend`, `./discover`, `./reduce`. The move _removed_ a
+cross-root reach rather than adding one — because D10's rule put the CLI and the
+modules it actually uses in the same directory for the first time.
+
+### ⛔ The one real bug, and it was already shipped
+
+Full account at the top of this file. `REMOVE_PY` is now
+`join(import.meta.dir, "..", "scripts", "remove.py")` — up and back down, the
+same trick `cli.ts` uses for `SERVER_SCRIPT`.
+
+**Driven after the fix**, same probe as the fail-first drive:
+
+```
+$ … extract
+magpie: cut box (object, crop) → …/magpie-c2ff8b09-p53957-files/box.png
+{"ok":true,"cut":1,"failed":0,"total":1,"keptWhole":0,"model":"crop"}
+$ file …/box.png
+PNG image data, 70 x 70, 8-bit/color RGBA, non-interlaced
+```
+
+`magpie extract` produces a cutout for the first time since `7bb0f4a`.
+
+### Driven — release mode
+
+Through the launcher, isolated `$MAGPIE_HOME` + `$TMPDIR`: `open --no-open` →
+`"mode":"release"` · ready frame on `GET /events?since=0` reports release ·
+`GET /` → 200 `text/html` 413 B (the committed `dist/index.html`) · `source` →
+`element-add` → `extract` (above) → `close`.
+
+### Driven — dev mode
+
+`SPELLBOOK_SURFACE_MODE=dev`, fresh home: ready line reports `"mode":"dev"` —
+the dev import resolved from `dist/` — and `GET /` → 200, 723 B, referencing
+`/_bun/client/index-000000009d5a543a.js` (200, 1,667,880 B) and
+`/_bun/asset/fb1a5a2389bfcbee.css` (200, 46,529 B, **252** Tailwind markers).
+Contract 5's cwd pin holds through the relocation for this spell too.
+
+### The wards, second time round
+
+Everything astrolabe's half predicted, plus one:
+
+- `INTERNAL_ENTRY_POINTS` re-keyed for **both** `magpie/backend/server.ts` and
+  `magpie/backend/discover.ts` — `discover.ts` parses args and is
+  sibling-imported, so it carries the same exclusion to its new address.
+- `terminator-invariant`'s `HAZARD_APPLIES` key moved with it.
+- ward 1a's pin moved to `…/magpie/dist/server.js`.
+- the re-export inventory's four magpie rows moved to `src/magpie/backend/`,
+  keeping the three-way distinction the pin was written to show (`../shared/`
+  for the two-sided contracts, `./reduce` for the daemon-only one — now
+  `../../../plugins/…/shared/` and still `./reduce`, so the distinction survives
+  in a longer specifier).
+- ward 1b's `bun`-exemption list went **five → three**. Both departures are the
+  same mechanism: `import type { ServerWebSocket } from "bun"` is erased by the
+  bundler. **That list is now a floor that only falls** as spells port, so the
+  cell says so rather than leaving a future reader to find one entry and assume
+  the ward broke.
+
+### `daemon.integration.test.ts` needed the same repair as astrolabe's suite
+
+It spawned `join(SCRIPT_DIR, "..", "scripts", "server.ts")` from `tests/` and
+pinned `cwd` to `join(SCRIPT_DIR, "..")` — both correct from the old address and
+both wrong from the new one. They are now anchored on an explicit `SKILL_ROOT`
+computed from `src/magpie/backend/`, spawning the launcher. **This is the
+generalisable half of the relocation cost:** a daemon's tests are full of paths
+that were relative to `scripts/`, and every one of them has to be re-derived
+from the skill root rather than adjusted by counting `..`.
+
+---
+
+## For Phase 2's playbook — what a porting spell must do
+
+1. **Enumerate every `import.meta.*` and every path-pinned non-TS sibling FIRST,
+   and drive each one.** No type-check, no unit test and no ward reaches them.
+   Magpie's had already shipped broken, behind a `{"ok":true}` envelope.
+2. **The daemon needs an exported `run()` and no `import.meta.main` block.** A
+   bundle the launcher imports never sets `import.meta.main`, so the old entry
+   is dead code and the daemon exits 0 having served nothing.
+3. **The dev-mode surface specifier is anchored at `dist/`, not at the source.**
+   Keep the string; do not "fix" the `..` count.
+4. **Hand-check `INTERNAL_ENTRY_POINTS`.** Every other instrument reddens; an
+   exclusion set for an absent member is silent in both directions.
+5. **Re-anchor the daemon's tests on an explicit `SKILL_ROOT`** and spawn the
+   launcher. Do not adjust `..` counts.
+6. **Build the server as its own `Bun.build` call**, or `dist/cli.js` gets
+   rewritten by chunk hoisting and Contract 18 reds on an artifact you did not
+   touch.
+7. **Never write a `*` followed by `/` inside a block comment.**

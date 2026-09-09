@@ -395,7 +395,7 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     resolved: "src/imago/surface/index.html",
   },
   {
-    file: "plugins/spellbook/skills/magpie/scripts/server.ts",
+    file: "plugins/spellbook/skills/magpie/dist/server.js",
     spec: "../../../../../src/magpie/surface/index.html",
     resolved: "src/magpie/surface/index.html",
   },
@@ -746,7 +746,7 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // was the clause that the cell must EVALUATE the exemption, not describe it.
     expect(violationsUnder(BUILTIN)).toEqual([]);
 
-    // Without `bun`, the same ward reddens on FOUR files (FIVE before Phase 1b).
+    // Without `bun`, the same ward reddens on THREE files (FIVE before Phase 1b).
     // ⚠ R6 says four, and R6 is not wrong — it is COUNTING A NARROWER
     // CONSTRUCT. Its four carry `import type { ServerWebSocket } from "bun"`.
     // The fifth, glamour, writes the same dependency as a TYPE QUERY —
@@ -756,20 +756,24 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // ruling carries and the number this cell asserts came from two different
     // frames, and this is the wider one.
     //
-    // ⚠ FOUR SINCE PHASE 1b, AND THE DEPARTURE IS NOT A WEAKENING. astrolabe's
-    // row was its `server.ts`; that daemon's SOURCE moved to
-    // `src/astrolabe/backend/` and its `import type { ServerWebSocket } from
-    // "bun"` is TYPE-ONLY, so the bundler erases it and `dist/server.js` — which
-    // IS in this ward's population, via `emittedSources` — carries no `bun`
-    // import to violate. The dependency did not become exempt; it stopped
+    // ⚠ THREE SINCE PHASE 1b, AND THE DEPARTURES ARE NOT A WEAKENING. astrolabe's
+    // and magpie's rows were their `server.ts` files; both daemons' SOURCE moved
+    // to `src/<spell>/backend/` and each one's `import type { ServerWebSocket }
+    // from "bun"` is TYPE-ONLY, so the bundler erases it and `dist/server.js` —
+    // which IS in this ward's population, via `emittedSources` — carries no
+    // `bun` import to violate. The dependency did not become exempt; it stopped
     // existing in anything that ships. Re-derived by running the mutation, not
-    // by deleting the row that failed.
+    // by deleting the rows that failed.
+    //
+    // ⛔ AND THE COUNT IS NOW A FLOOR THAT ONLY FALLS. Every spell that ports its
+    // daemon into the build erases another of these, so a future reader finding
+    // ONE here has not found a ward that stopped working — read the population,
+    // not the number.
     const withoutBun = violationsUnder(makeIsBuiltin([], EMITTED_ROOTS));
     expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([
       "plugins/spellbook/skills/bounty/scripts/server.ts",
       "plugins/spellbook/skills/glamour/scripts/server.ts",
       "plugins/spellbook/skills/imago/scripts/server.ts",
-      "plugins/spellbook/skills/magpie/scripts/server.ts",
     ]);
   });
 });
@@ -1181,15 +1185,27 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     expect(found.sort((a, b) => key(a).localeCompare(key(b)))).toEqual([
       { file: "imago/scripts/server.ts", spec: "../shared/types", erased: false },
       { file: "imago/scripts/server.ts", spec: "../shared/types", erased: true },
-      { file: "magpie/scripts/backend.ts", spec: "../shared/alpha", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../shared/types", erased: false },
-      { file: "magpie/scripts/server.ts", spec: "../shared/types", erased: true },
-      { file: "magpie/scripts/server.ts", spec: "./reduce", erased: false },
       {
         file: "src/astrolabe/backend/server.ts",
         spec: "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts",
         erased: true,
       },
+      {
+        file: "src/magpie/backend/backend.ts",
+        spec: "../../../plugins/spellbook/skills/magpie/shared/alpha",
+        erased: false,
+      },
+      {
+        file: "src/magpie/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/magpie/shared/types",
+        erased: false,
+      },
+      {
+        file: "src/magpie/backend/server.ts",
+        spec: "../../../plugins/spellbook/skills/magpie/shared/types",
+        erased: true,
+      },
+      { file: "src/magpie/backend/server.ts", spec: "./reduce", erased: false },
     ]);
   });
 

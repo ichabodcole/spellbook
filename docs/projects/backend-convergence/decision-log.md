@@ -377,3 +377,38 @@ path.
 - **Resolve it off `SKILL_ROOT`.** Equivalent in effect; rejected only because
   `backend.ts` has no `SKILL_ROOT` and adding one puts a second definition of
   the skill root in a spell that already has two.
+
+## D14 · The daemons' tests re-anchor on an explicit skill root, and they test the ARTIFACT
+
+**Decided:** implementer, 2026-09-08, Phase 1b chapter 1, forced by D12.
+
+Both spells' daemon suites spawned `./server.ts` (or `../scripts/server.ts`) and
+pinned a `cwd` by counting `..` from wherever the test file happened to sit.
+After the move those counts are wrong, and — because D12 gives the daemon one
+entry — the source is not runnable at all. Every such path is now derived from
+an explicit `SKILL_ROOT`, and every daemon spawn goes through the **launcher**.
+
+**The consequence, stated because it changes what a green means:** these suites
+now depend on a built `dist/server.js`. `bun run gate` is
+`build && check && test`, so the artifact is always fresh when they run, and the
+thing being asserted is the thing that ships (Contract 18's spirit, one level
+down). `astrolabe/scripts/cli.test.ts` already worked this way for the CLI.
+
+`release-serve.test.ts` changed the most: it built its fake release tree by
+globbing every non-test `.ts` beside the daemon, under a scar earned when
+mind-mapper's hand-maintained mirror shipped a broken release twice. That glob
+now copies files whose `../../../plugins/…` specifiers cannot resolve from a
+temp directory. **The scar is re-homed:** the property it protects — a new
+module is in the copied tree by construction — is now true by BUNDLING rather
+than by globbing, because `dist/server.js` is the whole module graph.
+
+**Not taken:**
+
+- **Keep an `import.meta.main` block so the source stays spawnable.** Rejected
+  under D12: it offers an entry that computes the wrong `SKILL_ROOT`.
+- **Adjust the `..` counts in place.** The cheapest edit and the one that rots:
+  the next relocation moves them again, silently, and a test whose spawn path is
+  wrong fails as "the daemon never answered".
+- **Copy the daemon SOURCE into the fake release tree and run it there.**
+  Rejected because it would assert a tree that does not exist — nothing ships
+  `src/`, which is the whole point of Contract 4.

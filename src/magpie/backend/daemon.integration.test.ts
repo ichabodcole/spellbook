@@ -17,8 +17,21 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const SERVER = join(SCRIPT_DIR, "..", "scripts", "server.ts");
+const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(BACKEND_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "magpie");
+
+// ⛔ THE LAUNCHER, NEVER `./server.ts`. Phase 1b moved the daemon SOURCE here
+// and left the executable entry at `<skill>/scripts/server.ts`, which imports
+// the built `../dist/server.js`. Spawning the source instead would be a daemon
+// with NO entry block at all (`run()` is exported and nothing calls it): it
+// exits 0 immediately, and every cell below fails as a spawn that never
+// answered — which reads like flake rather than like a wrong path. It would
+// also anchor SKILL_ROOT at `src/magpie/`, so `dist/` would be missing and the
+// daemon would silently choose DEV mode.
+//
+// This makes the suite depend on a BUILT `dist/server.js`; the gate builds
+// before it tests, and the thing worth asserting is the thing that ships.
+const SERVER = join(SKILL_ROOT, "scripts", "server.ts");
 
 // a real 1×1 PNG data-URL → the daemon materializes it (Bun.Image reads its size)
 const PNG_DATA_URL =
@@ -39,7 +52,7 @@ async function spawnDaemon(args: string[] = []): Promise<Spawned> {
   const tmp = mkdtempSync(join(tmpdir(), "magpie-tmp-"));
   const proc = Bun.spawn({
     cmd: ["bun", "run", SERVER, "--no-open", "--port", "0", "--timeout", "30", ...args],
-    cwd: join(SCRIPT_DIR, ".."),
+    cwd: SKILL_ROOT,
     stdout: "ignore",
     stderr: "pipe",
     env: { ...process.env, MAGPIE_HOME: home, TMPDIR: tmp },

@@ -1,4 +1,4 @@
-// scripts/backend.ts
+// src/magpie/backend/backend.ts
 // Removal-backend registry. The rebuilt magpie compares background-removal
 // results from multiple backends per element; the user picks the winner. This
 // file defines the contract, the (live) rembg impl, a media-forge stub for the
@@ -16,15 +16,15 @@ import { join } from "node:path";
 // which is what makes it two-sided rather than daemon-only). Re-exported here
 // for the agent-side consumers (cli.ts, backend tests) that import it from
 // this module.
-import type { AlphaPolicy } from "../shared/alpha";
-import type { Bbox } from "../shared/types";
+import type { AlphaPolicy } from "../../../plugins/spellbook/skills/magpie/shared/alpha";
+import type { Bbox } from "../../../plugins/spellbook/skills/magpie/shared/types";
 
 export {
   ALPHA_AUTO_TYPES,
   ALPHA_FORBIDDEN_TYPES,
   type AlphaPolicy,
   shouldRemove,
-} from "../shared/alpha";
+} from "../../../plugins/spellbook/skills/magpie/shared/alpha";
 
 // A region of the source to cut a transparent asset from.
 export type Crop = {
@@ -59,8 +59,35 @@ export interface RemovalBackend {
   cut(crop: Crop, outPath: string, opts?: CutOptions): Promise<Cutout>;
 }
 
-// Resolve scripts/remove.py relative to this module (not cwd).
-const REMOVE_PY = join(import.meta.dir, "remove.py");
+// ⛔ UP AND BACK DOWN, NEVER A SIBLING LOOKUP — and this line is the reason the
+// whole phase measured its path-pinned siblings first.
+//
+// `import.meta.dir` is the directory of the EMITTED BUNDLE, not of this file.
+// This module is authored here and executes inlined into BOTH
+// `plugins/spellbook/skills/magpie/dist/cli.js` and `.../dist/server.js`, so
+// `import.meta.dir` is `dist/`. `remove.py` is a Python runtime asset that is
+// NOT bundled and must not be: it stays in `scripts/`, where the deployed skill
+// ships it and where `grimoire/gate-honesty.test.ts` declares its 145 blind
+// lines.
+//
+// ⛔ THE PREVIOUS LINE WAS `join(import.meta.dir, "remove.py")` AND IT HAD BEEN
+// BROKEN SINCE SLICE 2 — not by this relocation. `cli.ts` already imported this
+// module, so the shipped `dist/cli.js` already resolved
+// `…/magpie/dist/remove.py`, which does not exist, and EVERY `magpie extract`
+// died there:
+//
+//     magpie: cut FAILED for box: rembg remove.py failed (exit 2):
+//       python3: can't open file '…/magpie/dist/remove.py': No such file or directory
+//     {"ok":true,"cut":0,"failed":1,"total":1,…}
+//
+// Note the envelope: `ok:true`, exit 0. A total failure of the verb answered
+// success-shaped JSON, which is why it stood for eight days. No type-check, no
+// unit test and no ward reaches this path — only running the verb does.
+//
+// `dist/` sits at the same depth as `scripts/`, so "up one, back down into
+// scripts" is correct from the bundle — the same trick `cli.ts` uses for
+// SERVER_SCRIPT, and for the same reason.
+const REMOVE_PY = join(import.meta.dir, "..", "scripts", "remove.py");
 
 function shortId(prefix: string): string {
   const buf = new Uint8Array(4);

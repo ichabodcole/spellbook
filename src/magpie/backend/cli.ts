@@ -37,20 +37,20 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs as nodeParseArgs } from "node:util";
+import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
+import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
+import { printJson } from "../../kit/lib/printJson";
+import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
+import { tailEvents } from "../../kit/wire/tailEvents";
 import {
   type AlphaPolicy,
   isMediaForgeModel,
   mediaForgeBackend,
   rembgBackend,
   shouldRemove,
-} from "../../../plugins/spellbook/skills/magpie/scripts/backend";
-import { DiscoverError, discover } from "../../../plugins/spellbook/skills/magpie/scripts/discover";
-import { newId } from "../../../plugins/spellbook/skills/magpie/scripts/reduce";
-import type { Element } from "../../../plugins/spellbook/skills/magpie/shared/types";
-import { chosenVersion } from "../../../plugins/spellbook/skills/magpie/shared/versions";
-import { printJson } from "../../kit/lib/printJson";
-import { die, errorEnvelope, reportCliError, setCurrentCommand } from "../../kit/wire/errors";
-import { tailEvents } from "../../kit/wire/tailEvents";
+} from "./backend";
+import { DiscoverError, discover } from "./discover";
+import { newId } from "./reduce";
 
 // Swallow EPIPE (a downstream `head`/Monitor closing our stdout shouldn't crash).
 process.stdout.on("error", (e: NodeJS.ErrnoException) => {
@@ -104,7 +104,7 @@ const PLUGIN_VERSION = readPluginVersion();
 // the two numbers are one invariant: the watchdog must clear several missed
 // beats or a healthy-but-idle tail reconnects forever. magpie's daemon
 // heartbeats on a LITERAL 15,000 ms with no env override
-// (`plugins/spellbook/skills/magpie/scripts/server.ts`, inside `sseResponse`),
+// (`src/magpie/backend/server.ts`, inside `sseResponse`),
 // so three missed beats is 45s.
 //
 // ⚠ Mirrored by hand: the CLI cannot import the daemon without dragging the

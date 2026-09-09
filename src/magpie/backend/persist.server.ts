@@ -1,4 +1,4 @@
-// scripts/persist.server.ts
+// src/magpie/backend/persist.server.ts
 // Server/CLI-only snapshot persistence for the magpie daemon. Snapshots live
 // under $MAGPIE_HOME/snapshots/<sessionId>.json (default ~/.magpie) so a session
 // resumes across restarts (cli.ts open --restore <id>). Do NOT import from
@@ -7,7 +7,10 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { defaultState, type MagpieState } from "../shared/types";
+import {
+  defaultState,
+  type MagpieState,
+} from "../../../plugins/spellbook/skills/magpie/shared/types";
 
 export function magpieHome(): string {
   return process.env.MAGPIE_HOME ?? join(homedir(), ".magpie");
