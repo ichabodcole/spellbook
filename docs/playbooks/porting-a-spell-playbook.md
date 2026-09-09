@@ -859,20 +859,77 @@ port is before Phase 1, because they have different done-whens below.
 > ported.** It is the backend convergence's Phase 2, generalised — written from
 > glamour, which is the first spell to take its whole backend out of the
 > deployed skill folder, and which was chosen as the pathfinder precisely so
-> five spells could follow it. **Its population is OPEN:** imago, bounty,
-> digestify, grapevine and mind-mapper all walk this. Astrolabe and magpie
-> walked half of it first (their CLIs already built), and where their experience
-> differs from glamour's the difference is recorded, because that difference is
-> the part a third spell cannot predict.
+> five spells could follow it. **Its population is OPEN:** bounty, digestify,
+> grapevine and mind-mapper still walk this. Astrolabe and magpie walked half of
+> it first (their CLIs already built), and where their experience differs from
+> glamour's the difference is recorded, because that difference is the part a
+> third spell cannot predict.
+>
+> ⭐ **AMENDED 2026-09-08 FROM IMAGO, THE FIRST PORT DRIVEN BY THIS DOCUMENT
+> RATHER THAN WRITTEN FROM ONE.** Imago's whole job was to run on Phase B and
+> record every place it was not enough; the seven gaps it found are folded in
+> below, each marked `⭐ imago`. The full account, with what was measured, is
+> `docs/projects/backend-convergence/phase-3-journal.md`. **What transferred is
+> the more important half and is stated once here: B1's import rule, B3's entry
+> ruling, B4's spawn-path class, B5's specifier, B6's re-anchoring and B9's
+> audit all held on a spell nobody had them in front of, and B4 predicted
+> imago's shipped defect before it was looked for.**
 
 **Goal:** `src/<spell>/backend/` holds the CLI and the daemon; the skill folder
 holds two launchers and a committed `dist/cli.js` + `dist/server.js`; the
 backend imports `src/kit/wire/`.
 
-**Prerequisite, and it has a test rather than a permission behind it:** **acc
-conformance first.** A backend goes conformant before it goes opaque (Phase 2's
-table). Re-run acc from the SKILL DIRECTORY at the end and say the level out
-loud; the port must not regrade it.
+**Prerequisite, and it has a test rather than a permission behind it —
+CONDITIONAL ON THE SPELL HAVING A GRADE:** **acc conformance first.** A backend
+goes conformant before it goes opaque (Phase 2's table). Re-run acc from the
+SKILL DIRECTORY at the end and say the level out loud; the port must not regrade
+it.
+
+⭐ **imago — AND HALF THE ROSTER HAS NO GRADE, WHICH THIS PARAGRAPH USED TO
+IMPLY WAS IMPOSSIBLE.** Four spells have an `acc.config.json` (astrolabe,
+glamour, magpie, mind-mapper) and four do not (imago, bounty, digestify,
+grapevine). **Nothing in `grimoire/`, `scripts/` or `src/` requires one, and
+building does not drag one in** — measured and closed as D37. So for a spell
+with no config: **there is nothing to run, nothing to regrade, and you do not
+acquire one as part of the port.** Do not stop, and do not write one; that is a
+day's work of a different kind and it would make the port the one port that did
+not follow this document. This was the FIRST instruction imago hit and the only
+blocking one it had to leave the playbook to resolve.
+
+⛔ **BUT THE PORT CHANGES A GRADED SURFACE ANYWAY, AND B8 IS WHERE.** Adopting
+`src/kit/wire/errors.ts` replaces the spell's failure contract — the envelope
+and the exit codes, which is the largest observable surface acc grades. For
+glamour that was invisible because glamour was already CONFORMANT L0; for a
+spell that is not, it is a caller-visible change with nothing in the gate to
+report it. **Read B8's error-contract step before you conclude this phase has no
+conformance content.**
+
+#### B0 · ⭐ THE CHAPTER SPLIT, AND B1–B10 ARE NOT IT
+
+⭐ **imago.** Every brief written against this phase has said "chapter it as
+Phase B prescribes", and **Phase B prescribed no chapters** — B1–B10 are ten
+TOPICS and they are not in commit order. The rule that actually governs is D9,
+in the decision log, and an agent with only this document would have to invent
+one; the natural reading (one commit per B-step) is precisely the shape D9
+exists to forbid, because it lands a relocation and a behaviour change in the
+same diff with nothing between them.
+
+**Two chapters, and the gate passes between them.**
+
+| chapter                | steps                            | contract                                                |
+| ---------------------- | -------------------------------- | ------------------------------------------------------- |
+| **1 · the relocation** | B1 · B2 · B3 · B4 · B5 · B6 · B7 | **behaviour unchanged.** Nothing the caller sees moves. |
+| **2 · the adoption**   | B8 · B9                          | **behaviour changes, and each change is named.**        |
+
+**B10 is not a chapter.** It is the build rule, and it applies to BOTH: rebuild
+and commit `dist/` in the same chapter as its source (Contract 18), through
+`bun run build` and never a bare `bun src/build.ts`.
+
+**Chapter 1 must be green AND DEMONSTRATED ON A BOOTED DAEMON before chapter 2
+starts.** That is D9's whole point: chapter 1's two runtime hazards (B3's dead
+entry, B4's wrong spawn path) are invisible to the type-checker and to every
+unit test, so a chapter 2 landed on top of an undemonstrated chapter 1 makes
+neither attributable.
 
 #### B1 · Decide what moves, from the imports — never from the names
 
@@ -890,6 +947,15 @@ being wrong, and **the brief's count has been under-stated before** (astrolabe:
 `imageOptimize.test.ts` imports the module that moves AND the two-sided module
 that stays. It moved, because its subject is the `.server.ts`. The one test that
 stayed behind is the one whose subject is `shared/types.ts`.
+
+⭐ **imago is the fourth measurement and the first where the rule had to decide
+a test with no help from its filename.** 33 surface imports, every one of them
+`shared/` (32 × `types`, 1 × `imageOptimize`), so both shared modules stay and
+all three `scripts/*.ts` move. `state.test.ts` reads like a `shared/types` test
+and IS a `server.ts` test — it imports both, and its subject is `leanState` and
+`optimizeSrc`. It moved, and `<skill>/tests/` was left EMPTY and deleted. **A
+spell can end this phase with no test directory in the skill folder at all**,
+which is fine and is what a fully built backend looks like.
 
 #### B2 · The launcher pattern, and why its PATH is load-bearing
 
@@ -1006,12 +1072,48 @@ naming, and every ingredient-bearing line must be READ (recognised as an anchor,
 or yielding a pin) or the ward reds naming the line. `process.argv[1]` is the
 declared remaining hole.
 
-⭐ **SO DO THIS, EVERY PORT, BY HAND:** read your emitted anchor line, then run
-the ward and **confirm its coverage row prints `anchor-read=yes` with a non-zero
-`pins=` for YOUR spell.** The row is one line of console output and it is the
-only thing that distinguishes "this backend is fine" from "this ward cannot see
-this backend". Do not skip it because the ward is green — green over exactly
-this defect is what it did the first two times.
+⭐ **SO DO THIS, EVERY PORT, BY HAND:** `git add` your two emitted artifacts,
+read your emitted anchor line, then run the ward and **confirm its coverage row
+prints `anchor-read=yes` with a non-zero `pins=` for YOUR spell.** The row is
+one line of console output and it is the only thing that distinguishes "this
+backend is fine" from "this ward cannot see this backend". Do not skip it
+because the ward is green — green over exactly this defect is what it did the
+first two times.
+
+⛔ **⭐ imago — AND THE `git add` IS NOT HOUSEKEEPING. IT IS THE STEP, AND
+WITHOUT IT THE WARD IS BLIND TO EVERY SPELL ON THE COMMIT THAT FIRST EMITS ITS
+BACKEND.** `emittedJs()` reads `git ls-files` and then filters to files that
+exist — deliberately, for the opposite case (a rebuilt hashed chunk is absent
+from the index mid-port, and the ward used to crash on that). **A brand-new
+`dist/cli.js` is the mirror image: present on disk, absent from the index.** It
+is filtered out, `isBackendArtifact` matches nothing, and the spell keeps its
+place in the POPULATION LINE only because its tracked SURFACE chunk is still
+there. Measured on imago, on a green ward:
+
+```
+SPAWN-PATH WARD — 14 emitted file(s) across 8 spell(s): astrolabe, bounty,
+    digestify, glamour, grapevine, imago, magpie, mind-mapper
+SPAWN-PATH WARD — coverage:
+    …/astrolabe/dist/cli.js  anchors=yes  anchor-read=yes  pins=6
+    …/glamour/dist/cli.js    anchors=yes  anchor-read=yes  pins=6
+    …/magpie/dist/cli.js     anchors=yes  anchor-read=yes  pins=7
+    ( … and no imago row at all )
+7 pass · 0 fail
+```
+
+⛔ **THE FAILURE MODE THIS TEXT USED TO DESCRIBE WAS `pins=0`. THE ONE THAT
+HAPPENS IS NO ROW.** A missing row reads as "nothing to cover"; it means "not
+looked at". `git add` the two files and re-run, with nothing else changed, and
+the rows appear (imago: `cli.js pins=5`, `server.js pins=4`).
+
+⚠ **AND THIS IS THE SAME DEFECT ONE LEVEL UP, FOR THE FOURTH TIME.** D27 built
+the coverage cell because population ≠ coverage; D36 rebuilt its gate because a
+backstop computed from the predicate it backstops is not a backstop. **Coverage
+itself now has a silent population.** The honest cell is the one D36 already
+reasoned to: _a spell in the population must produce a coverage row, or red
+naming the spell._ It is not built — filed as journal F1, and it should be the
+first thing the next phase picks up. Until then, this `git add` is the whole
+guard.
 
 #### B5 · ⛔ THE REVERSE SURFACE-IMPORT RE-POINT — the specifier is written for the ARTIFACT
 
@@ -1065,6 +1167,27 @@ Three specific moves, all earned:
 not what this file tests" — provided the spell's `release-serve.test.ts` spawns
 the real launcher and asserts mode there.
 
+⭐ **imago, a FOURTH move, and it is about a cell whose SUBJECT the bundle
+absorbed.** B6.3 tells you to stop globbing and copy the two files that run. It
+does not tell you what to do with an assertion ABOUT one of the files you
+stopped copying. imago's release-serve rig asserted `shared/` was PRESENT in the
+copied tree, because the daemon imported it as a sibling and a tree without it
+did not boot — a cell imago had earned and no sibling had. Bundling absorbed
+`shared/` into `dist/server.js`, so the cell's premise died. **Invert it rather
+than delete it:** the rig now asserts the daemon boots from a tree with NO
+`shared/` at all, which is strictly stronger and is the same property the glob's
+scar was re-homed to. **Write the inversion into the file's own header**, beside
+the "which cells this spell earns" list, or the next reader sees a weakened
+assertion with no account of why.
+
+⭐ **AND CHAPTER 2 BREAKS TESTS THAT ENCODED THE OLD MODULE'S BYTES.** Not a
+path problem, so B6's re-anchoring does not reach it: `kit/wire/sse.ts` opens
+every stream with a `: connected` comment, and imago's ready-frame cell did
+`chunk.split("\n")[0]` then `JSON.parse` — it had baked the hand-rolled
+`sseResponse`'s byte layout in as an incidental. Repair by reading until a
+`data:` line **and asserting the preamble**, so the new shape is pinned rather
+than tolerated.
+
 ⛔ **And set it in a `try/finally`, not as a bare assignment.** `bun test` runs
 a directory's files in ONE process, so `process.env` in a `beforeAll` is a
 global. glamour's first version of this repair leaked `release` into a sibling
@@ -1096,15 +1219,109 @@ it.** A cell now derives the root list from the tree the way `src/build.ts`
 derives what to build, and names any spell missing from it.
 
 Expect these to red, and re-declare every one by hand: `exit-site-inventory`,
-`import-boundary-wards` (1a's pin, 1b's `bun` floor, the re-export inventory,
-and any line-number pin — **a line number is the wrong pin**, and that ward says
-so about itself, having paid for it four times), `terminator-invariant`,
-`daemon-lifecycle-ward`, `flag-invariant`.
+`import-boundary-wards` (1a's pin, 1b's `bun` floor, 1b's
+`DECLARED_EMITTED_ROOTS`, the re-export inventory, and any line-number pin — **a
+line number is the wrong pin**, and that ward says so about itself, having paid
+for it four times), `terminator-invariant`, `flag-invariant`, and ⭐
+**`spawn-path-ward`'s "a pin that leaves the skill folder is ENUMERATED" cell**
+— which this list omitted, because B4 discusses that ward at length as an
+INSTRUMENT and never mentions it also holds a hand-kept list of its own. imago's
+`SURFACE_CWD` escape is the third instance of the same Contract 5 dev-cwd pin;
+astrolabe's and glamour's are already declared, and yours will be too.
+
+⚠ ⭐ **`daemon-lifecycle-ward` DID NOT RED for imago, and it was on this list.**
+Phase 1b already extended both its walks (`daemons()`, `clis()`) across BOTH
+roots, so a relocating daemon simply appears under `src/` as it leaves
+`skills/`, and its population zero-guard never moves. It is listed here because
+it red for glamour; it is generic now. Said out loud because the cost of a stale
+expectation runs the other way — an agent seeing it green goes looking for what
+they broke.
+
+⚠ ⭐ **`exit-site-inventory` REDS TWICE, ONCE PER CHAPTER**, and this paragraph
+used to read as one event. Chapter 1 MOVES the rows (`<spell>/scripts/cli.ts` →
+`<spell>/backend/cli.ts`): addresses change, families and texts do not. Chapter
+2 DELETES them, because adopting `tailEvents` and `errors` leaves the CLI with
+zero live `process.exit` sites — imago is the fourth CLI to reach that, after
+magpie, mind-mapper and glamour. Edit it in both chapters.
+
+⛔ ⭐ **AND THERE IS A CATEGORY THIS STEP DOES NOT COVER AT ALL: THE PROSE THAT
+NAMES THE FILES YOU MOVED.** No ward reads it, so nothing reds, and it rots
+silently. imago found two live instances — a ward's own explanatory comment
+pointing at `<spell>/tests/` for the release-serve gate, and a backlog item
+whose entire subject is a file path that just moved. **Run `git grep` for each
+old path, filter to LIVE files (not `docs/**` history, not archived sprints),
+and repair what is still meant to be true.\*\* Thirty seconds, and it is the
+only step here with no instrument behind it.
 
 #### B8 · Adopt the kit — and `idleMs` is DERIVED, never copied
 
 All of `src/kit/wire/`: `tailEvents` + `errors` on the CLI side; `serveDist`,
 `eventLog`, `sse`, `housekeeping`, `discovery`, `heartbeat` on the daemon side.
+
+⭐ **imago: WHAT EACH ONE REPLACES.** This step used to name the eight modules
+and stop, so the mapping had to be recovered by reading a ported sibling
+side-by-side — which works while the ported sibling is your own fork and works
+less well for the spell that is nobody's fork. It is stable across all three
+adopting daemons, so it is a table:
+
+| the local shape you are looking for                                     | the kit export               |
+| ----------------------------------------------------------------------- | ---------------------------- |
+| `function resolveMode()` reading `existsSync(join(DIST_DIR,…))`         | `resolveMode(distDir)`       |
+| a `STATIC_CONTENT_TYPES` map + the FILE half of `serveDist`             | `serveFromDist`              |
+| `const events: […] = []` + `let eventSeq` + `function emitEvent`        | `createEventLog`             |
+| `function sseResponse(url)` with its own `ReadableStream` and `hb`      | `sseResponse`                |
+| a SECOND `Set` of per-stream heartbeat timers                           | (deleted — it IS the funnel) |
+| presence emitted through `emitEvent`                                    | `client.send` (see below)    |
+| `const idleTimer = setInterval(…)` + `const snapTimer = setInterval(…)` | `startHousekeeping`          |
+| the grace / close-clients / close-sockets / race-stop block             | `drainAndStop`               |
+| a local `writeAtomic` (tmp + rename)                                    | `writeFileAtomic`            |
+| `cleanupDiscovery` comparing `session_id` before unlinking              | `unlinkIfMatches`            |
+| `idleTimeout: 255` and a literal `15000` heartbeat                      | `./heartbeat.ts` (yours)     |
+
+⛔ **AND THERE IS A SECOND PER-SPELL RULING THIS STEP DID NOT NAME: WHETHER THE
+DAEMON STAMPS AN EPOCH.** `createEventLog` takes `{ epoch }`, mind-mapper stamps
+one, and census defect L6 is about its absence — so every adopter must decide,
+and there was no criterion here. **The criterion, which existed only as a
+comment inside one spell's `server.ts`: a SESSION-scoped daemon stamps NO epoch;
+a SINGLETON daemon is the case that needs one.** A session is identified by
+`session_id`, a restart is a DIFFERENT session, and a resuming tail is already
+talking to a different daemon by name. Session-scoped: glamour, imago, magpie,
+bounty. Singleton: astrolabe, mind-mapper, grapevine. Either way **say which you
+chose and whether L6 is closed or merely NARROWED** (D39).
+
+⛔ **AND `errors` IS NOT AN INTERNAL MODULE. READ YOUR SPELL'S `die` BEFORE YOU
+ADOPT IT.** It is listed above beside seven modules nobody outside the daemon
+can observe, and it is the one that changes what every caller sees. If the
+spell's existing `die` does not ALREADY emit the house envelope and the taxonomy
+exit codes, then adopting it re-spells every failure the spell can produce:
+
+- **glamour felt none of this** because it was already CONFORMANT L0 and had
+  reached the envelope shape independently. That is why this step said nothing.
+- **imago's `die` wrote `imago: <msg>` as prose and exited 2** — a missing
+  session, a bad flag and an internal fault were one number. After adoption: one
+  JSON envelope, and `not_found` exits 5. Every one of its 21 raise sites
+  changed.
+- ⛔ **AND `die` WAS ONLY HALF OF IMAGO'S OLD CONTRACT — LOOK FOR THE SECOND
+  SHAPE, WHICH IS THE PATHS THAT NEVER REACH `die` AT ALL.** This bullet used to
+  say "2 for EVERY failure"; driving `develop` falsified it. imago's `api()`
+  calls `fetch` with no handler, so `state` and `say` against a **dead daemon**
+  (a stale session pointer naming a closed port) never raise — they crash with a
+  raw Bun `TypeError: Unable to connect…`, `code: "ConnectionRefused"`, the
+  daemon's own source lines quoted, and an async stack, at **exit 1**. So the
+  delta to state is not one row: it is _prose-at-2 where the CLI raised
+  deliberately, and an uncaught runtime crash at 1 where it did not_. After
+  adoption the crash path answers a `kind:"internal"` envelope — the **exit code
+  is unchanged at 1**; the stack trace becomes something a caller can route on.
+  ⚠ **So do not characterise your spell's old contract from its `die` alone. Run
+  the failing invocations and read the actual exits** — the uncaught-`fetch`
+  shape is common to every spell whose CLI talks to a session daemon.
+- **Half the roster has no acc grade** (imago, bounty, digestify, grapevine), so
+  **nothing in the gate will tell you.** D37 is right that building does not
+  drag conformance in front of a spell; **B8 does.**
+
+**So: state the delta, drive it, and put it in its own commit and its own
+decision-log entry** — D38 is the worked example. Do not let a chapter whose
+sibling is titled "behaviour unchanged" quietly re-spell every error.
 
 ⛔ **THE ONE RULE THAT CANNOT BE COPIED FROM A SIBLING: `idleMs` — the tail's
 watchdog — is DERIVED FROM THAT SPELL'S OWN DAEMON HEARTBEAT.** Give the spell
@@ -1157,13 +1374,34 @@ swallowing `catch`, has its `die` at a site that reads as perfectly safe.
    (rethrows, re-raises, or converts to an exit), **SWALLOWS** (⛔ a defect —
    report file:line), or **CONDITIONAL** (say under what condition it swallows).
 4. **Report the count**, and say what you counted. Astrolabe 15 sites, magpie
-   29, glamour ~20 raise sites plus its further invocation edges — every
-   enclosing catch on every path PROPAGATES.
+   29, glamour ~20 raise sites plus its further invocation edges, imago **21**
+   (20 `die(` + one `throw new UsageError` a token grep does not see) across 14
+   functions and nine `try` blocks — every enclosing catch on every path
+   PROPAGATES.
+5. ⭐ **imago: THE CALL GRAPH NOW LEAVES THE SPELL, and step 3 stops at the file
+   boundary unless you push it.** Adopting `tailEvents` in the same chapter puts
+   a die-reachable call — the `resolve` closure, which reads the session pointer
+   — inside the SHARED CLIENT, invoked on a schedule from a `try` you did not
+   write. Go read it: `tailEvents.ts`'s outer block is a `try`/**`finally`**
+   with no `catch`, under a comment saying the unguarded call is deliberate, so
+   it PROPAGATES into your `main`. **Check it rather than assume it** — it is
+   the only enclosing handler in this audit that a future kit change could turn
+   into a swallow for every spell at once.
 
 ⭐ **The shape that makes a codebase pass this cheaply, worth copying:** try
 NARROWLY and die in the HANDLER. Nine of glamour's twelve dies sit inside a
 `catch` or after a `try`, never inside one — and no rule anywhere told its
 author to write it that way.
+
+⚠ ⭐ **AND IT FOUND ONE AT THE SECOND SPELL, WHICH IS THE ARGUMENT FOR THE
+STEP'S COST.** imago's `cmdOpen` start loop reads `const s = readSession()` —
+die-reachable — **three lines above** a `catch { /* not up yet */ }` that
+swallows. Safe today; one refactor that widens the `try` over the pointer read
+turns a CORRUPT session pointer into "not up yet", the loop spins to the 5 s
+deadline, and a taxonomy failure is reported as a start timeout. Same shape as
+glamour's `postCmd`/ECONNRESET, at a different spell, at a different verb, found
+by following the graph. **Two spells, two conditionals, both three lines from
+being real.**
 
 ⚠ **Report a CONDITIONAL even when it is currently unreachable, and do not
 silently fix it.** glamour's `postCmd` catches an ECONNRESET on `close` and
@@ -1211,7 +1449,15 @@ belongs in its own commit, filed rather than smuggled.
   and rewrites `dist/cli.js`, which Contract 18 verifies by reproduction.
 - **A change to `src/kit/` dirties every spell that inlines it.** glamour's
   chapter 2 touched three kit modules and rebuilt SIX artifacts across THREE
-  spells. Rebuild and commit them all in the same chapter.
+  spells. Rebuild and commit them all in the same chapter. ⭐ **imago's chapter
+  2 modified NO kit module and its blast radius was exactly two files** — its
+  own `dist/cli.js` and `dist/server.js`. That is the expected case for a fourth
+  consumer and it is worth stating, because "the kit had to be widened" is a
+  finding and "it fit" is also one: `sse.ts`'s `client.send`, widened in Phase 2
+  for glamour's presence, covered imago's presence case at zero cost, which is
+  the first evidence that a widening generalised rather than fitting one spell.
+  **Report the blast radius either way, from `git status`, and say which case
+  you were in.**
 - **`bun run gate` is not sufficient after a `src/kit/` change.** Run
   `bun scripts/dist-check.ts` and read `git status` for **stylesheet** churn in
   spells you never opened: `src/kit/theme/base.css` declares `@source "../"`, so
@@ -1232,7 +1478,17 @@ belongs in its own commit, filed rather than smuggled.
       identical board.
 - [ ] Every path-pinned sibling **driven**, not reasoned about.
 - [ ] **acc re-run FROM THE SKILL DIRECTORY** (that is where `acc.config.json`
-      is discovered) and the level reported. It must not regrade.
+      is discovered) and the level reported. It must not regrade. ⭐ **If the
+      spell has no `acc.config.json`, this box is N/A** — say so explicitly
+      rather than leaving it unticked (D37), and check the next box instead.
+- [ ] ⭐ **The error-contract delta stated**, or stated to be nil: what the
+      spell's failures looked like before adopting `errors.ts` and what they
+      look like now, driven, not reasoned about (D38).
+- [ ] ⭐ **Every census defect the spell carries, named with the module that
+      closed it — and every one that is NARROWED rather than closed said so.**
+      imago: L1/L2 by `housekeeping`, L5 by `eventLog`, L7 by `sse`, L3 already
+      correct, **L6 narrowed and not closed** (D39). A port that reports only
+      the closures is reporting half.
 - [ ] D8's audit performed and its **count** reported.
 - [ ] Gate green **unpiped**, exit read from a file
       (`bun run gate > /tmp/g.log 2>&1; echo $?`) — a piped gate reports the
@@ -1532,6 +1788,34 @@ inventory at
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
 
+- **2026-09-08** — ⭐ **Phase B AMENDED FROM IMAGO, the first port DRIVEN BY
+  this document rather than written from one**, and the amendment is the point:
+  the port existed to find where Phase B was not enough. **Seven gaps, in the
+  order they were hit.** (1) The PREREQUISITE — acc conformance — is
+  inapplicable to half the roster and said so nowhere, and it is the first,
+  blocking instruction. (2) Phase B **prescribed no chapters** while every brief
+  said "chapter it as B prescribes"; the split is now B0. (3) ⛔ **B4's coverage
+  row is ABSENT, not `pins=0`, until the artifact is `git add`ed** — the ward
+  reads `git ls-files`, so it is blind to every spell on the commit that first
+  emits its backend, which is the whole remaining population; the same
+  population-versus-coverage defect as D27 and D36, one level up again. (4) B7's
+  ward list omitted `spawn-path-ward`'s own hand-kept escape list, still named
+  `daemon-lifecycle-ward` which is now generic, described `exit-site-inventory`
+  as one event when it reds in BOTH chapters, and had no step for the prose that
+  names the moved files. (5) ⛔ **B8 treats `errors.ts` as internal; it is the
+  spell's failure contract**, and on a CLI that did not already speak the
+  envelope, adopting it changes every failure's bytes and exit code with nothing
+  in the gate to say so — invisible from glamour, which was already CONFORMANT
+  L0. (6) B8 named eight modules and no mapping, and left the epoch — a
+  per-spell ruling with a real criterion — unnamed. (7) B6 had no answer for a
+  test cell whose SUBJECT the bundle absorbed, or for one that had encoded the
+  old module's byte layout. **What transferred, and it is the larger half:**
+  B1's import rule, B3's entry ruling, B4's path-pinned-sibling class (it
+  predicted imago's shipped `dist/server.ts` spawn defect before anyone looked),
+  B5's specifier, B6's re-anchoring and B9's audit — which found a second
+  CONDITIONAL swallow, at a second spell, three lines from being real. And the
+  kit needed no widening for its fourth consumer: `sse.ts`'s `client.send`,
+  widened in Phase 2 for glamour, covered imago at zero cost.
 - **2026-09-08** — ⭐ **Phase B added: the whole backend builds.** Written from
   glamour, the backend convergence's migration pathfinder, with astrolabe's and
   magpie's half-runs folded in. Taught, and every item is a FAILURE rather than

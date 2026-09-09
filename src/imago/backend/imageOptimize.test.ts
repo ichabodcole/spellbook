@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { optimizeImageBuffer } from "../scripts/imageOptimize.server";
-import { OPTIMIZE } from "../shared/imageOptimize";
+import { OPTIMIZE } from "../../../plugins/spellbook/skills/imago/shared/imageOptimize";
+import { optimizeImageBuffer } from "./imageOptimize.server";
 
 test("optimize policy constants are sane", () => {
   expect(OPTIMIZE.maxDim).toBe(1200);

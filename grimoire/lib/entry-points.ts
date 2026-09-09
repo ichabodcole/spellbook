@@ -206,7 +206,7 @@ export const INTERNAL_ENTRY_POINTS: ReadonlySet<string> = new Set([
   "magpie/backend/discover.ts",
   "bounty/scripts/server.ts",
   "glamour/backend/server.ts",
-  "imago/scripts/server.ts",
+  "imago/backend/server.ts",
   "mind-mapper/scripts/server.ts",
 ]);
 

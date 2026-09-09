@@ -8,8 +8,11 @@
 //   - optimizeSrc passes a non-data-url through unchanged
 
 import { expect, test } from "bun:test";
-import { leanState, optimizeSrc } from "../scripts/server.ts";
-import { defaultState, type ImagoState } from "../shared/types";
+import {
+  defaultState,
+  type ImagoState,
+} from "../../../plugins/spellbook/skills/imago/shared/types";
+import { leanState, optimizeSrc } from "./server.ts";
 
 // ── defaultState shape ─────────────────────────────────────────────────────
 

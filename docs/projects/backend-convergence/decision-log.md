@@ -1141,3 +1141,143 @@ which is B3's subject.
   today._ Rejected on the same ground D27 rejected it: five spells port against
   this instrument next, and the whole point of the cell is the spell it has
   never seen.
+
+## D37 · Building does NOT drag acc conformance in front of a spell
+
+**Closed:** orchestrator, 2026-09-08. **Open since Phase 0**, where the proposal
+listed it as a dependency to price rather than a surprise to absorb mid-phase:
+_"confirm whether building drags acc conformance in front of the four spells
+that have no acc.config.json (bounty, digestify, grapevine, imago)."_
+
+**Measured: it does not.** Nothing in `grimoire/`, `scripts/` or `src/` requires
+an `acc.config.json` to exist. The only two references in the tree are a
+fresh-agent record from 2026-08-26 and glamour's own `cli-contract.test.ts` — a
+spell-local test, not a ward. Four spells have a config (astrolabe, glamour,
+magpie, mind-mapper) and four do not; the build is indifferent to which.
+
+**Consequence for the roll.** Imago, bounty, digestify and grapevine port
+without acquiring an acc grade, and their ports are not gated on one. Where a
+spell DOES have a config, its grade is an acceptance criterion — glamour's
+CONFORMANT L0 was re-run and held in Phase 2 — because a port that regrades what
+an agent observes has changed behaviour.
+
+**Not taken:** _add `acc.config.json` to imago as part of its port_ — it is a
+day's work of its own, it is a different kind of change (a conformance grade,
+not a build), and bundling it would make the first playbook-driven port the one
+port that does not follow the playbook.
+
+## D38 · imago's failure contract CHANGES at the port, because adopting `errors.ts` is not a de-duplication for a CLI that never spoke the envelope
+
+**Decided:** implementer, 2026-09-08, Phase 3 chapter 2, on the playbook's
+instruction to adopt all eight `src/kit/wire/` modules.
+
+Imago's `die` wrote `imago: <msg>` to stderr as prose and exited **2**. The
+kit's `die` raises a `CliError`, `main` reports ONE JSON envelope on stderr, and
+the exit code comes from the taxonomy. **Every one of imago's 21 raise sites
+changes its stderr bytes, and most change their exit code.** Driven:
+
+| invocation                   | before                                      | after                                                  |
+| ---------------------------- | ------------------------------------------- | ------------------------------------------------------ |
+| `info` (no session)          | `imago: no running…` · exit 2               | `kind:"not_found"` envelope + hint · exit 5            |
+| `state` (no session)         | prose · exit 2                              | `kind:"not_found"` · exit 5                            |
+| `say` (no text)              | prose · exit 2                              | `kind:"usage"` · exit 2                                |
+| `--nope`                     | prose · exit 2                              | `kind:"usage"` · exit 2                                |
+| a 400 from the daemon        | prose, body discarded                       | `kind:"usage"`, the daemon's body under `error.server` |
+| `state` / `say`, DEAD daemon | ⛔ raw Bun `TypeError` + stack · **exit 1** | `kind:"internal"` envelope · exit 1                    |
+
+⛔ **CORRECTION, 2026-09-09 — THIS ENTRY SAID "2 FOR EVERY FAILURE" AND THAT WAS
+FALSE, falsified by driving develop's CLI rather than by re-reading it.** The
+old contract had **two shapes, not one.** `die` was one of them; the other is
+that `api()` calls `fetch` with no handler at all, so a verb that reaches the
+daemon with a **stale session pointer** never gets near `die`. Driven on
+`develop` (`e88ae5e`) with a pointer naming a closed port: `state` and `say`
+both print Bun's own source excerpt,
+`TypeError: Unable to connect. Is the computer able to access the url?`,
+`code: "ConnectionRefused"` and a two-frame async stack — and exit **1**, not 2.
+(`info` never fetches; it prints the stale pointer and exits **0**.) So the
+pre-port contract was "prose at 2 where the CLI raised deliberately, an uncaught
+runtime crash at 1 where it did not."
+
+**The claim's force survives the correction, and is if anything larger.** The
+adoption replaced a _prose-and-mostly-2_ contract with the house taxonomy, and
+the newly-named path is the one that improves most: the same invocation now
+answers **one machine-readable envelope** — `kind:"internal"`, `exit_code:1`,
+`retryable:false`, the command under `meta` — where it used to answer a stack
+trace with the daemon's source lines in it. The **exit code there is unchanged
+at 1**; what changed is that a caller can now route on it. Both halves driven
+2026-09-09 on `feat/imago-backend-port`.
+
+⛔ **THE REASON THIS NEEDED DECIDING AT ALL, AND IT IS A FINDING ABOUT THE
+PLAYBOOK.** Phase B's B8 lists `errors` beside seven genuinely internal modules
+and says nothing about it. It could not have noticed: **glamour, the spell Phase
+B was written from, was already CONFORMANT L0** and had reached the envelope
+shape independently, so its adoption had no observable delta. **Imago is the
+first adopter for whom it does** — and per D37 imago has no `acc.config.json`,
+so there is no grade to re-run and nothing in the gate would have said a word.
+
+⚠ **And note what that means for D37, which this entry AMENDS rather than
+contradicts.** D37's measurement — building does not drag conformance in front
+of a spell — is true and was re-confirmed. But **the PORT drags a piece of
+conformance in anyway, through B8**: the failure contract, which is the largest
+observable surface an acc grade covers. A spell can come out of this port
+speaking the L0 envelope without ever having been graded. Bounty, digestify and
+grapevine are in the same position.
+
+**Not taken:**
+
+- **Keep imago's prose `die` and adopt only the throwing shape.** It preserves
+  the wire and takes the drained-exit fix, which is the half that is strictly a
+  bug. Rejected because it forks the module on its first real test: `errors.ts`
+  IS the envelope and the taxonomy — a `die` that throws but prints prose is a
+  fifth copy of the thing `wire/` exists to have one of, and the next spell
+  would face the same choice with a precedent for splitting.
+- **Adopt, and file the wire change as a defect to fix later.** Dishonest: the
+  change ships in this commit either way; filing it would only mean not saying
+  so.
+- **Acquire an `acc.config.json` for imago so the change is graded.** D37's own
+  not-taken option, for D37's reason — it is a day's work of a different kind,
+  and it would make the first playbook-driven port the one port that does not
+  follow the playbook.
+
+## D39 · Imago stamps NO epoch, and L6 is NARROWED rather than closed
+
+**Decided:** implementer, 2026-09-08, Phase 3 chapter 2. **Recorded because B8
+does not name this as a decision at all, and it has to be made by every
+adopter** — `createEventLog` takes `{ epoch }`, mind-mapper stamps one, and the
+census's L6 is about its absence.
+
+The criterion, which existed only as a comment inside
+`src/glamour/backend/ server.ts` and is hereby written where an adopter will
+find it: **a SESSION-scoped daemon stamps no epoch; a SINGLETON daemon is the
+case that needs one.** A session is identified by `session_id`, a restart is a
+DIFFERENT session, and a resuming tail is therefore already talking to a
+different daemon by name. Imago is session-scoped, like glamour and magpie;
+astrolabe, mind-mapper and grapevine are the other shape.
+
+So L6 is **narrowed, not closed**, and saying which matters: `subscribe`
+treating `since > cursor` as "that cursor came from another process, replay
+whole" is what a resuming tail actually gets, and D23's equality gap stands
+unchanged. The epoch query parameter that would close it is deliberately out of
+scope here (D23), where it can be designed against all seven daemons.
+
+**Not taken:** _stamp one anyway, since the module offers it_ — it would put an
+epoch on the wire that no client reads, and D23 is explicit that the close is
+epoch-aware on BOTH sides or it is not a close.
+
+## D40 · The teardown ORDER is left divergent, and filed
+
+**Decided:** implementer, 2026-09-08, Phase 3 chapter 2.
+
+`drainAndStop` bounds the drain, but the steps around it stay hand-written, and
+the two adopting session daemons now order them differently: glamour unlinks its
+discovery pointer BEFORE emitting `closed` and draining; imago unlinks AFTER.
+The observable difference is whether a CLI verb issued during the 150 ms grace
+period can still find the session — under imago's order it can.
+
+Left as imago had it. **Closing this means RULING the order across all seven
+daemons**, which is a spine decision and not a port's to make, and imago's order
+is not obviously the wrong one. Filed here so the next census finds a decision
+rather than a discrepancy.
+
+**Not taken:** _match glamour_ — it would silently pick a winner between two
+undiscussed orders, on the authority of whichever spell ported first.

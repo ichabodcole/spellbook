@@ -98,11 +98,18 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // ⛔ glamour's CLI has ZERO live `process.exit` sites, which is the direction
   // this inventory exists to push and the third CLI to reach it after magpie and
   // mind-mapper. `scripts/cli.ts` is a LAUNCHER holding `process.exitCode`.
-  {
-    file: "imago/scripts/cli.ts",
-    text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
-    family: "A-drain",
-  },
+  // ⭐ imago's A-drain site is GONE, and it is the second time this inventory has
+  // recorded that sentence. It moved to `backend/cli.ts` in Phase 3 chapter 1,
+  // then LEFT THE FAMILY ENTIRELY in chapter 2 when the CLI adopted
+  // `src/kit/wire/tailEvents.ts`: the shared tail client RETURNS an exit code
+  // instead of ending the process from inside three nested loops, so the
+  // write-then-exit shape has no site to live in. Its two siblings (C-signal,
+  // F-live) went with it for the same reason.
+  //
+  // ⛔ IMAGO'S CLI NOW HAS ZERO LIVE `process.exit` SITES — the FOURTH CLI to
+  // reach that, after magpie, mind-mapper and glamour, and the direction this
+  // inventory exists to push. `scripts/cli.ts` is a LAUNCHER holding
+  // `process.exitCode`.
   // B — the no-emit sibling of an A site: nothing was written, so nothing can be undrained.
   { file: "bounty/scripts/cli.ts", text: "else process.exit(0);", family: "B-noemit" },
   // C — signal / shutdown. As of 2cc513d, ZERO of these are defects: the two
@@ -110,7 +117,6 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code);", family: "C-signal" },
@@ -145,7 +151,10 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // glamour/scripts/cli.ts left this family at its acc L0 pass: die() now THROWS a
   // CliError and main() returns the taxonomy code (usage 2, internal 1,
   // not_found 5, conflict 6), so the drained-exit defect has no site to live in.
-  { file: "imago/scripts/cli.ts", text: "process.exit(2);", family: "D-die" },
+  // imago left it the same way in Phase 3 chapter 2, by adopting the SAME
+  // module (`src/kit/wire/errors.ts`) rather than by reaching the shape
+  // independently — ⚠ and for imago that was a caller-visible change, because
+  // its die() emitted PROSE and exit 2 for every failure. See D38.
   // magpie's die() left this family too: it now THROWS a CliError from
   // `src/kit/wire/errors.ts` and `main` returns the taxonomy code — the same
   // move glamour and mind-mapper made at their acc L0 passes, and the direction
@@ -173,11 +182,9 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     family: "E-terminal",
   },
   // F — live: an in-function exit with stdout pending upstream of it.
-  {
-    file: "imago/scripts/cli.ts",
-    text: "if (grounded) process.exit(0); // our pinned session went away → done",
-    family: "F-live",
-  },
+  // (imago's F-live site left with the rest — `tailEvents`'s `onUnresolved`
+  //  returns "stop" and the tail RETURNS 0 instead of exiting from inside the
+  //  reconnect loop. Same completed-watch semantics, no exit.)
   {
     file: "magpie/backend/cli.ts",
     text: 'if (e.code === "EPIPE") process.exit(0);',

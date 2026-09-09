@@ -424,8 +424,14 @@ export type AgentEventPayload = {
     flattenedImagePath?: string;
     marks?: Mark[];
   };
-  "proposal.send": { id: string };
-  "proposal.dismiss": { id: string };
+  // ⚠ `proposalId`, NOT `id`: every frame on the tail carries the event log's
+  // monotonic `id` as its cursor, so a payload field named `id` collides with
+  // it. It used to, and the cursor lost — these frames went out with a
+  // proposal's id where a number belongs, which made `ev.id > since` false and
+  // meant neither was ever replayed. The names are now disjoint by
+  // construction, and the frame carries both.
+  "proposal.send": { proposalId: string };
+  "proposal.dismiss": { proposalId: string };
   // "extract this image's look" — carries the focused variant so the agent knows
   // which image to read (focus.set no longer notifies).
   "context.capture": { focus: Focus | null };
