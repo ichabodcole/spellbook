@@ -51,7 +51,7 @@
 // Exit codes: 0 on any clean dismiss, 2 bad args, 124 idle timeout. The
 // observatory is a conjuration — there's no "cancel"/130 discard path.
 
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -66,6 +66,12 @@ import {
   type ObservatoryState,
   type Project,
 } from "../../../plugins/spellbook/skills/astrolabe/scripts/state.ts";
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { createEventLog } from "../../kit/wire/eventLog.ts";
+import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
+import { resolveMode, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 
 export type {
   ObservatoryState,
@@ -98,36 +104,13 @@ const SCRIPT_DIR = import.meta.dir;
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
 const DIST_DIR = join(SKILL_ROOT, "dist");
 
-// release iff dist/index.html exists at the skill root, else dev; the env
-// override wins either way (seams Contract 1). Release: zero reads of surface/
-// or bunfig.toml — static files only.
-function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
-}
-
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
-
-// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
-// (Contract 2's flat, relative-href layout). Path traversal guarded (a static
-// asset request is always a bare filename, never nested).
+// Serves dist/ verbatim — entry index.html plus the hashed JS and CSS chunks
+// (Contract 2's flat, relative-href layout). THE URL-TO-FILENAME MAPPING IS
+// THIS SPELL'S; the file read, the traversal guard and the content type are
+// `src/kit/wire/serveDist.ts` — which is the split the census asked for, since
+// two of the eight daemons diverge in this mapping and none diverges below it.
 function serveDist(path: string): Response | null {
-  const rel = path === "/" ? "index.html" : path.slice(1);
-  if (rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
+  return serveFromDist(DIST_DIR, path === "/" ? "index.html" : path.slice(1));
 }
 
 // Persistence + discovery root. cli.ts derives the same path, so overriding
@@ -141,17 +124,9 @@ const PID_FILE = join(ASTROLABE_HOME, "daemon.pid");
 // for `idleTimeout` seconds; a held `join` SSE that only heartbeats SLOWER than
 // that gets closed at the timeout, the cli reconnects, and the reconnect flips
 // presence disconnect→connect — flickering the card every idle window and
-// flooding the event log. So the heartbeat MUST stay well under idleTimeout.
-// Both are env-tunable (tests drive a short window); the heartbeat is clamped
-// to ≤ half the idle timeout so the invariant holds for any configured value.
-const IDLE_TIMEOUT_SEC = Math.max(
-  1,
-  Math.min(255, Number.parseInt(process.env.ASTROLABE_IDLE_TIMEOUT ?? "255", 10) || 255),
-);
-const SSE_HEARTBEAT_MS = Math.min(
-  Number.parseInt(process.env.ASTROLABE_HEARTBEAT_MS ?? "10000", 10) || 10000,
-  Math.max(500, Math.floor((IDLE_TIMEOUT_SEC * 1000) / 2)),
-);
+// flooding the event log. The pair now lives in `./heartbeat.ts`, imported by
+// BOTH this daemon and `cli.ts`; the reasoning is in `kit/wire/heartbeat.ts`.
+//
 // How long to defer a presence idle-flip; a reconnect within this window cancels
 // it (see idleTimers). Tunable for tests.
 const PRESENCE_DEBOUNCE_MS =
@@ -194,13 +169,6 @@ function openBrowser(url: string): void {
   } catch {
     /* best-effort */
   }
-}
-
-// Should the standing daemon idle-close? Only once the LAST subscriber has left
-// AND a positive timeout is configured (default 0 = never; a singleton
-// observatory is meant to stand until explicitly closed).
-function shouldIdleClose(subscriberCount: number, idleMs: number, timeoutMs: number): boolean {
-  return timeoutMs > 0 && subscriberCount === 0 && idleMs >= timeoutMs;
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -252,13 +220,19 @@ async function main(argv: string[]): Promise<number> {
   const sockets = new Set<ServerWebSocket<unknown>>();
 
   // Append-only event log for the agent SSE tail (GET /events). Monotonic `id`
-  // is the resume cursor (?since=<id>); `cursor` in GET /state is the current
-  // eventSeq.
-  const events: Array<Record<string, unknown>> = [];
-  let eventSeq = 0;
-  const enc = new TextEncoder();
-  const sseClients = new Set<ReadableStreamDefaultController>();
-  const sseTimers = new Set<ReturnType<typeof setInterval>>();
+  // is the resume cursor (?since=<id>); `cursor` in GET /state is the log's
+  // cursor.
+  //
+  // ⛔ AND IT STAMPS AN EPOCH — a fresh one per daemon boot. Astrolabe is a
+  // SINGLETON that `cli.ts` respawns on demand, and its ids restart at 1 after
+  // every restart, so a `join` resuming at `since=<last id it saw>` could not
+  // tell a stale watermark from a fresh one. The client half
+  // (`kit/wire/tailEvents.ts`'s `epochOf` / `onEpochChange`) has been able to
+  // act on this since Phase 1a and had nothing to read. The log's OTHER half of
+  // the repair — replaying whole when `since` is beyond our own cursor — is
+  // what makes the epoch reachable at all; see `kit/wire/eventLog.ts`.
+  const log = createEventLog<Record<string, unknown>>({ epoch: crypto.randomUUID() });
+  const sseClients: SseClients = new Set();
 
   // Per-project SSE connection counts → presence is connected while ≥1 tail is
   // open, idle once the last closes (ref-counted so two watchers don't fight).
@@ -335,19 +309,11 @@ async function main(argv: string[]): Promise<number> {
 
   // Append a frame to the agent event log + push to live SSE tails. The
   // monotonic `id` MUST win over any `id` in the payload, so callers carry a
-  // project identifier as `projectId`, never `id`.
+  // project identifier as `projectId`, never `id` — and the log now ENFORCES
+  // that rather than asking for it.
   function emitEvent(msg: Record<string, unknown>) {
-    const ev = { id: ++eventSeq, ...msg };
-    events.push(ev);
     if (typeof msg.type === "string" && DIRTYING.has(msg.type)) snapDirty = true;
-    const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
-    for (const c of sseClients) {
-      try {
-        c.enqueue(frame);
-      } catch {
-        /* client gone */
-      }
-    }
+    log.emit(msg);
   }
 
   // A scoped tail opening/closing drives presence (ref-counted). On the 0→1
@@ -391,51 +357,24 @@ async function main(argv: string[]): Promise<number> {
     idleTimers.set(projectId, timer);
   }
 
-  // GET /events?since=<id>&project=<id> — replay buffered frames with id > since,
-  // then stay open for live frames + a 15s heartbeat comment. A `project` param
-  // binds presence to this connection's lifetime.
-  function sseResponse(url: URL): Response {
+  // GET /events?since=<id>&project=<id> — replay, then stay open for live frames
+  // plus a heartbeat comment. A `project` param binds PRESENCE to this
+  // connection's lifetime, which is this spell's whole reason for having a
+  // scoped tail: presence cannot be asserted without holding the watch. Ride it
+  // on the kit's open/close hooks, which fire exactly once each.
+  function eventsResponse(req: Request, url: URL): Response {
     touch();
-    const since = Number.parseInt(url.searchParams.get("since") ?? "-1", 10);
     const projectId = url.searchParams.get("project") ?? undefined;
     const bind =
       projectId && state.projects.some((p) => p.id === projectId) ? projectId : undefined;
-    let ref: ReadableStreamDefaultController | null = null;
-    let hb: ReturnType<typeof setInterval> | null = null;
-    const stream = new ReadableStream({
-      start(controller) {
-        ref = controller;
-        for (const ev of events) {
-          if ((ev.id as number) > since) {
-            controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
-          }
-        }
-        sseClients.add(controller);
-        if (bind) presenceConnect(bind);
-        hb = setInterval(() => {
-          try {
-            controller.enqueue(enc.encode(`: hb\n\n`));
-          } catch {
-            /* gone */
-          }
-        }, SSE_HEARTBEAT_MS);
-        sseTimers.add(hb);
-      },
-      cancel() {
-        if (hb) {
-          clearInterval(hb);
-          sseTimers.delete(hb);
-        }
-        if (ref) sseClients.delete(ref);
-        if (bind) presenceDisconnect(bind);
-      },
-    });
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
+    return sseResponse({
+      log,
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
+      heartbeatMs: SSE_HEARTBEAT_MS,
+      clients: sseClients,
+      signal: req.signal,
+      onOpen: bind ? () => presenceConnect(bind) : undefined,
+      onClose: bind ? () => presenceDisconnect(bind) : undefined,
     });
   }
 
@@ -519,7 +458,7 @@ async function main(argv: string[]): Promise<number> {
     return { ok: true, applied: false, error: `unknown command '${String(type)}'` };
   }
 
-  const mode = resolveMode();
+  const mode = resolveMode(DIST_DIR);
 
   // dev: the dynamic string-literal import keeps the surface graph off the
   // module load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at
@@ -567,12 +506,12 @@ async function main(argv: string[]): Promise<number> {
         }
         if (req.method === "GET" && path === "/state") {
           touch();
-          return new Response(JSON.stringify({ state: projectState(), cursor: eventSeq }), {
+          return new Response(JSON.stringify({ state: projectState(), cursor: log.cursor() }), {
             headers: { "Content-Type": "application/json" },
           });
         }
         if (req.method === "GET" && path === "/events") {
-          return sseResponse(url);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req
@@ -662,23 +601,31 @@ async function main(argv: string[]): Promise<number> {
 
   // Discovery: a singleton daemon writes its port + pid so cli.ts can find (or
   // skip auto-spawning) it. Cleaned up on close only if they still name us.
+  //
+  // ⚠ ATOMIC SINCE PHASE 1b — census defect L3. These two were bare
+  // `writeFileSync`s, so a CLI reading `daemon.port` while the daemon wrote it
+  // could observe a partial file and report "no running daemon" for what was a
+  // torn read. The session spells had fixed this in their own convention a day
+  // earlier; the singleton convention had not. One implementation, in
+  // `kit/wire/discovery.ts`, is why it is fixed in both.
   try {
     mkdirSync(ASTROLABE_HOME, { recursive: true });
-    writeFileSync(PORT_FILE, String(boundPort));
-    writeFileSync(PID_FILE, String(process.pid));
+    writeFileAtomic(PORT_FILE, String(boundPort));
+    writeFileAtomic(PID_FILE, String(process.pid));
   } catch (e) {
     process.stderr.write(
       `astrolabe: could not write discovery files: ${e instanceof Error ? e.message : String(e)}\n`,
     );
   }
+  // The pid file is the IDENTITY and the port file rides its verdict: if the pid
+  // no longer names us a successor has already published, and removing either
+  // file would make that successor invisible.
   const cleanupDiscovery = () => {
+    if (!unlinkIfMatches(PID_FILE, String(process.pid))) return;
     try {
-      if (existsSync(PID_FILE) && readFileSync(PID_FILE, "utf8").trim() === String(process.pid)) {
-        unlinkSync(PID_FILE);
-        unlinkSync(PORT_FILE);
-      }
+      unlinkSync(PORT_FILE);
     } catch {
-      /* files gone or unreadable — fine */
+      /* gone already — fine */
     }
   };
 
@@ -692,42 +639,34 @@ async function main(argv: string[]): Promise<number> {
 
   if (!v["no-open"]) openBrowser(url);
 
-  const idleTimer = setInterval(() => {
-    const subscriberCount = sockets.size + sseClients.size;
-    if (subscriberCount > 0) touch();
-    if (shouldIdleClose(subscriberCount, performance.now() - lastActivity, timeout * 1000)) {
-      resolveDone({ code: 124, reason: "timeout" });
-    }
-  }, 250);
-
-  const snapTimer = setInterval(async () => {
-    if (snapDirty) {
-      snapDirty = false;
-      await saveRegistry();
-    }
-  }, 1000);
+  // The idle sweep + the debounced registry snapshot. `subscriberCount` is a
+  // REQUIRED argument of the shared housekeeper, which is what makes L1
+  // unexpressible: a daemon cannot idle-close out from under a held tail.
+  const stopHousekeeping = startHousekeeping({
+    subscriberCount: () => sockets.size + sseClients.size,
+    idleMs: () => performance.now() - lastActivity,
+    touch,
+    timeoutMs: timeout * 1000, // 0 = standing; the observatory's default
+    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    snapshot: {
+      dirty: () => snapDirty,
+      clear: () => {
+        snapDirty = false;
+      },
+      write: saveRegistry,
+    },
+  });
 
   const { code, reason } = await done;
-  clearInterval(idleTimer);
-  clearInterval(snapTimer);
+  stopHousekeeping();
   await saveRegistry(); // final registry write
   emitEvent({ type: "closed", reason, by: "system" });
   broadcastState();
-  // Grace period so queued frames flush before the aggressive stop (Bun gotcha).
-  await new Promise((r) => setTimeout(r, 150));
-  for (const t of sseTimers) clearInterval(t);
+  // The presence debounce timers are astrolabe's own and outlive nothing — they
+  // are cleared here, before the shared drain closes the connections whose
+  // teardown would otherwise re-arm them.
   for (const t of idleTimers.values()) clearTimeout(t);
-  for (const c of sseClients) {
-    try {
-      c.close();
-    } catch {}
-  }
-  for (const ws of sockets) {
-    try {
-      ws.close();
-    } catch {}
-  }
-  await Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]);
+  await drainAndStop({ server, clients: sseClients, sockets });
   cleanupDiscovery();
   return code;
 }
@@ -757,4 +696,4 @@ export async function run(): Promise<number> {
   return await main(process.argv.slice(2));
 }
 
-export { main, shouldIdleClose, validateProject };
+export { main, validateProject };

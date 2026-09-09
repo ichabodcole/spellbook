@@ -473,6 +473,17 @@ const BARE_UTILITIES = new Set([
   "transform",
   "transition",
   "resize",
+  // ⚠ FLEX CHILD KEYWORDS — ADDED 2026-09-08 (Phase 1b chapter 2), AND THE WAY
+  // THEY WERE FOUND IS THE POINT. The sentence "five daemons GROW an array for
+  // the life of the process" landed in a new `src/kit/wire/` module, this ward
+  // stayed green because `grow` was not in the list, and `.grow { flex-grow: 1 }`
+  // appeared in FOUR unrelated spells' stylesheets — bounty, digestify,
+  // grapevine and imago. It was caught by `dist-check`'s reproduction arm, i.e.
+  // downstream, by luck of the artifact being committed, which is exactly the
+  // failure mode this ward's own header warns about. The prescribed repair is
+  // to add the word.
+  "grow",
+  "shrink",
 ]);
 
 /**

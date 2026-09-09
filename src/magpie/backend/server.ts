@@ -25,7 +25,7 @@
 //
 // Exit codes: 0 submit/close, 2 bad args, 124 idle timeout, 130 cancel.
 
-import { existsSync, mkdirSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,6 +41,12 @@ import {
   type MagpieState,
   type PhaseKey,
 } from "../../../plugins/spellbook/skills/magpie/shared/types";
+import { unlinkIfMatches, writeFileAtomic } from "../../kit/wire/discovery.ts";
+import { createEventLog } from "../../kit/wire/eventLog.ts";
+import { drainAndStop, startHousekeeping } from "../../kit/wire/housekeeping.ts";
+import { resolveMode, serveFromDist } from "../../kit/wire/serveDist.ts";
+import { type SseClients, sseResponse } from "../../kit/wire/sse.ts";
+import { IDLE_TIMEOUT_SEC, SSE_HEARTBEAT_MS } from "./heartbeat.ts";
 import { loadSnapshot, saveSnapshot, snapshotsDir } from "./persist.server";
 import {
   addElement,
@@ -93,37 +99,14 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const SKILL_ROOT = join(SCRIPT_DIR, "..");
 const DIST_DIR = join(SKILL_ROOT, "dist");
 
-// release iff dist/index.html exists at the skill root, else dev; the env
-// override wins either way (seams Contract 1). Release: zero reads of surface/
-// or bunfig.toml — static files only.
-function resolveMode(): "dev" | "release" {
-  const override = process.env.SPELLBOOK_SURFACE_MODE;
-  if (override === "dev" || override === "release") return override;
-  return existsSync(join(DIST_DIR, "index.html")) ? "release" : "dev";
-}
-
-const STATIC_CONTENT_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "text/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-};
-
-// Serves dist/ verbatim — entry index.html, hashed chunk-*.js/css by path
-// (Contract 2's flat, relative-href layout). Path traversal guarded (a static
-// asset request is always a bare filename, never nested), which is also what
-// keeps this clear of magpie's own /assets/<name> route above it.
+// Serves dist/ verbatim — entry index.html plus the hashed JS and CSS chunks
+// (Contract 2's flat, relative-href layout). THE URL-TO-FILENAME MAPPING IS
+// THIS SPELL'S; the file read, the traversal guard and the content type are
+// `src/kit/wire/serveDist.ts`. The guard is also what keeps this clear of
+// magpie's own `/assets/<name>` route above it — a nested path is refused here
+// rather than shadowed there.
 function serveDist(path: string): Response | null {
-  const rel = path === "/" ? "index.html" : path.slice(1);
-  if (rel.includes("..") || rel.includes("/")) return null;
-  const file = join(DIST_DIR, rel);
-  if (!existsSync(file)) return null;
-  const ext = rel.slice(rel.lastIndexOf("."));
-  return new Response(Bun.file(file), {
-    headers: { "Content-Type": STATIC_CONTENT_TYPES[ext] ?? "application/octet-stream" },
-  });
+  return serveFromDist(DIST_DIR, path === "/" ? "index.html" : path.slice(1));
 }
 
 type CloseReason = "submit" | "cancel" | "timeout" | "close";
@@ -217,14 +200,20 @@ async function main(argv: string[]): Promise<number> {
   }
 
   const sockets = new Set<ServerWebSocket<unknown>>();
-  const enc = new TextEncoder();
 
   // Append-only event log for the agent's SSE tail; monotonic ids so a
-  // reconnecting tail replays via ?since=<id>.
-  const events: Array<Record<string, unknown>> = [];
-  let eventSeq = 0;
-  const sseClients = new Set<ReadableStreamDefaultController>();
-  const sseTimers = new Set<ReturnType<typeof setInterval>>();
+  // reconnecting tail replays via ?since=<id>. Shared (`kit/wire/eventLog.ts`),
+  // which also bounds the replay window — census defect L5, an array this
+  // daemon used to grow for its whole life.
+  //
+  // ⚠ NO EPOCH HERE, DELIBERATELY. Astrolabe stamps one because it is a
+  // SINGLETON that gets respawned under a running tail; a magpie session is
+  // identified by its `session_id` and a restart is a different session, so a
+  // resuming tail is already talking to a different daemon by name. Epoch for
+  // the other daemons is out of this phase's scope and this is the reason it
+  // was not free-ridden into magpie just because the module offers it.
+  const log = createEventLog<Record<string, unknown>>();
+  const sseClients: SseClients = new Set();
 
   let resolveDone!: (val: DoneResult) => void;
   let settled = false;
@@ -242,16 +231,7 @@ async function main(argv: string[]): Promise<number> {
   };
 
   function emitEvent(msg: Record<string, unknown>) {
-    const ev = { id: ++eventSeq, ...msg };
-    events.push(ev);
-    const frame = enc.encode(`data: ${JSON.stringify(ev)}\n\n`);
-    for (const c of sseClients) {
-      try {
-        c.enqueue(frame);
-      } catch {
-        /* client gone */
-      }
-    }
+    log.emit(msg);
   }
 
   function broadcast(msg: object) {
@@ -668,51 +648,26 @@ async function main(argv: string[]): Promise<number> {
     }
   }
 
-  function sseResponse(url: URL): Response {
+  // GET /events?since=<id> — replay, then stay open for live frames plus a
+  // heartbeat comment. An open tail IS agent presence for the browsers, and it
+  // rides the kit's open/close hooks, which fire exactly once each — the funnel
+  // is what bounds presence accuracy.
+  function eventsResponse(req: Request, url: URL): Response {
     touch();
-    const since = parseInt(url.searchParams.get("since") ?? "-1", 10);
-    let ref: ReadableStreamDefaultController | null = null;
-    let hb: ReturnType<typeof setInterval> | null = null;
-    const stream = new ReadableStream({
-      start(controller) {
-        ref = controller;
-        for (const ev of events) {
-          if ((ev.id as number) > since) {
-            controller.enqueue(enc.encode(`data: ${JSON.stringify(ev)}\n\n`));
-          }
-        }
-        sseClients.add(controller);
-        broadcastPresence(); // an agent tail attached → tell the browsers
-        hb = setInterval(() => {
-          try {
-            controller.enqueue(enc.encode(`: hb\n\n`));
-          } catch {
-            /* gone */
-          }
-        }, 15000);
-        sseTimers.add(hb);
-      },
-      cancel() {
-        if (hb) {
-          clearInterval(hb);
-          sseTimers.delete(hb);
-        }
-        if (ref) sseClients.delete(ref);
-        broadcastPresence(); // the agent tail dropped → tell the browsers
-      },
-    });
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        Connection: "keep-alive",
-      },
+    return sseResponse({
+      log,
+      since: Number.parseInt(url.searchParams.get("since") ?? "-1", 10),
+      heartbeatMs: SSE_HEARTBEAT_MS,
+      clients: sseClients,
+      signal: req.signal,
+      onOpen: broadcastPresence, // an agent tail attached → tell the browsers
+      onClose: broadcastPresence, // the agent tail dropped → tell the browsers
     });
   }
 
   let sessionFilesDir = ""; // set once sessionId is known (after bind)
 
-  const mode = resolveMode();
+  const mode = resolveMode(DIST_DIR);
 
   // dev: the dynamic string-literal import keeps the surface graph off the
   // module load path (Contract 1) — Bun bundles the .tsx graph + Tailwind at
@@ -747,17 +702,12 @@ async function main(argv: string[]): Promise<number> {
       port,
       hostname: host,
       routes,
-      // ⛔ HELD SSE CONNECTIONS DIE WITHOUT THIS. Bun's default request
-      // idleTimeout is 10s and a server-sent heartbeat does NOT reset it, so an
-      // SSE client is closed before the 15s `: hb` below ever fires — the
-      // keepalive arrives five seconds after the thing it was keeping alive is
-      // gone, which is why raising the heartbeat rate would not have helped.
-      // 255 is Bun's maximum (0 is not "disabled"), matching bounty, grapevine
-      // and mind-mapper; astrolabe env-tunes it and clamps the heartbeat to half.
-      // Found 2026-09-08 by the backend duplication recon: four spells had hit
-      // this and fixed it, three had not, because the daemon spine is one design
-      // implemented six times.
-      idleTimeout: 255,
+      // ⛔ HELD SSE CONNECTIONS DIE WITHOUT THIS — and the pair of numbers is
+      // now ONE fact in `./heartbeat.ts`, imported by this daemon and by
+      // `cli.ts`, with the measurement re-homed to `kit/wire/heartbeat.ts`. The
+      // heartbeat literal that used to sit in `sseResponse` below (and was
+      // hand-mirrored in the CLI) comes from the same place.
+      idleTimeout: IDLE_TIMEOUT_SEC,
       development: { hmr: mode === "dev" },
       fetch: (req, srv) => {
         const url = new URL(req.url);
@@ -770,12 +720,12 @@ async function main(argv: string[]): Promise<number> {
         if (req.method === "GET" && path === "/state") {
           const lean = url.searchParams.get("lean") === "1";
           const payload = lean ? leanState(state) : state;
-          return new Response(JSON.stringify({ state: payload, cursor: eventSeq }), {
+          return new Response(JSON.stringify({ state: payload, cursor: log.cursor() }), {
             headers: { "Content-Type": "application/json" },
           });
         }
         if (req.method === "GET" && path === "/events") {
-          return sseResponse(url);
+          return eventsResponse(req, url);
         }
         if (req.method === "POST" && path === "/cmd") {
           return req
@@ -921,89 +871,77 @@ async function main(argv: string[]): Promise<number> {
     // `ready` event: same role, different transport, as imago does it.
     mode,
   });
-  // ⚠ ATOMIC, because readSession now treats unparseable content as corruption
-  // rather than absence. A bare writeFileSync is not atomic: a CLI reading
-  // while the daemon writes can observe a half-written pointer, and under the
-  // old best-effort read that surfaced as "no running session". Write beside
-  // the target and rename — rename within one directory is atomic, so a reader
-  // sees either the previous pointer or the new one, never a partial file.
-  // Fixed in glamour 2026-09-07; found standing in three siblings 2026-09-08
-  // (docs/investigations/2026-09-08-backend-duplication-recon.md).
-  const writeAtomic = (target: string, text: string) => {
-    const tmp = `${target}.${process.pid}.tmp`;
-    try {
-      writeFileSync(tmp, text);
-      renameSync(tmp, target);
-    } catch (err) {
-      try {
-        rmSync(tmp, { force: true });
-      } catch {
-        /* the temp file is already gone, or was never created */
-      }
-      throw err;
-    }
-  };
+  // ⚠ ATOMIC, because readSession treats unparseable content as corruption
+  // rather than absence — and this implementation is now `kit/wire/discovery.ts`,
+  // shared with the singleton convention D3 kept alive beside this one. The
+  // reasoning travelled with it; what stayed here is which files magpie writes.
   try {
-    writeAtomic(sessionFile, sessionInfo);
-    writeAtomic(latestFile, sessionInfo);
+    writeFileAtomic(sessionFile, sessionInfo);
+    writeFileAtomic(latestFile, sessionInfo);
   } catch (e) {
     process.stderr.write(
       `magpie: could not write discovery file: ${e instanceof Error ? e.message : String(e)}\n`,
     );
   }
-  const cleanupDiscovery = async () => {
+  // The session pointer is unconditionally ours; `magpie-latest.json` is NOT —
+  // a newer session may already have claimed it, and unlinking that would make
+  // the live daemon invisible to the next verb. `identify` is what lets one
+  // shared predicate serve both this JSON pointer and astrolabe's bare pid file.
+  const cleanupDiscovery = () => {
     try {
       unlinkSync(sessionFile);
-    } catch {}
-    try {
-      const cur = await Bun.file(latestFile).text();
-      if (JSON.parse(cur).session_id === sessionId) unlinkSync(latestFile);
     } catch {
       /* gone — fine */
     }
+    unlinkIfMatches(latestFile, sessionId, (raw) => {
+      try {
+        const id = (JSON.parse(raw) as { session_id?: unknown }).session_id;
+        return typeof id === "string" ? id : null;
+      } catch {
+        return null;
+      }
+    });
     try {
       if (sessionFilesDir) rmSync(sessionFilesDir, { recursive: true, force: true });
-    } catch {}
+    } catch {
+      /* already gone */
+    }
   };
 
   if (!v["no-open"]) openBrowser(url);
 
-  const idleTimer = setInterval(() => {
-    if ((performance.now() - lastActivity) / 1000 >= timeout) {
-      resolveDone({ code: 124, reason: "timeout" });
-    }
-  }, 250);
-
-  // Debounced persistence: snapshot ~1s after any change so a restart resumes.
-  const snapTimer = setInterval(() => {
-    if (snapDirty) {
-      snapDirty = false;
-      saveSnapshot(sessionId, state);
-    }
-  }, 1000);
+  // The idle sweep + the debounced snapshot (~1s after any change, so a restart
+  // resumes).
+  //
+  // ⛔ THE SWEEP NOW SEES ITS SUBSCRIBERS — census defect L1, closed by the
+  // shared housekeeper REQUIRING a `subscriberCount`. The old expression here
+  // read `(now - lastActivity)/1000 >= timeout` and nothing else, so an agent
+  // holding a `/events` tail on a quiet session was killed with its connection
+  // open at the 30-minute floor. `timeout` now means "linger this long after
+  // the LAST subscriber leaves", which is what bounty's copy has always meant
+  // and what magpie's prose already claimed.
+  const stopHousekeeping = startHousekeeping({
+    subscriberCount: () => sockets.size + sseClients.size,
+    idleMs: () => performance.now() - lastActivity,
+    touch,
+    timeoutMs: timeout * 1000,
+    onIdleClose: () => resolveDone({ code: 124, reason: "timeout" }),
+    snapshot: {
+      dirty: () => snapDirty,
+      clear: () => {
+        snapDirty = false;
+      },
+      write: () => saveSnapshot(sessionId, state),
+    },
+  });
 
   const { code, reason } = await done;
-  clearInterval(idleTimer);
-  clearInterval(snapTimer);
+  stopHousekeeping();
   saveSnapshot(sessionId, state); // final write — the resume point
   emitEvent({ type: "closed", reason });
   broadcast({ type: "message", text: `session ended: ${reason}` });
-  // Grace period so the closed event + submit/cancel broadcasts flush.
-  await new Promise((r) => setTimeout(r, 150));
-  for (const t of sseTimers) clearInterval(t);
-  for (const c of sseClients) {
-    try {
-      c.close();
-    } catch {}
-  }
-  for (const ws of sockets) {
-    try {
-      ws.close();
-    } catch {}
-  }
-  // Race the graceful stop against a timer — never hang teardown on a slow socket.
-  await Promise.race([server.stop(true), new Promise((r) => setTimeout(r, 200))]);
-  await cleanupDiscovery();
+  await drainAndStop({ server, clients: sseClients, sockets });
+  cleanupDiscovery();
   return code;
 }
 

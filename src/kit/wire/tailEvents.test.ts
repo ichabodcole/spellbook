@@ -498,7 +498,7 @@ describe("tailEvents", () => {
     expect(at.length).toBeGreaterThanOrEqual(4);
     const gaps = at.slice(1).map((t, i) => t - (at[i] as number));
     // Each wait is at least (nearly) double the one before — the property, not
-    // the timings: a constant-interval storm has gaps that never grow.
+    // the timings: a constant-interval storm has gaps that never widen.
     const last = gaps.at(-1) as number;
     const first = gaps[0] as number;
     expect(last).toBeGreaterThan(first * 2);

@@ -3,7 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { shouldIdleClose, validateProject } from "./server.ts";
+import { validateProject } from "./server.ts";
 
 // Daemon coverage (folded in from the t3 verification harness). The cli↔daemon
 // integration over the real verbs lands in t4/t8; this exercises the daemon's
@@ -120,12 +120,12 @@ describe("pure helpers", () => {
     });
   });
 
-  test("shouldIdleClose only fires with a positive timeout and no subscribers", () => {
-    expect(shouldIdleClose(0, 10_000, 0)).toBe(false); // timeout 0 = standing
-    expect(shouldIdleClose(1, 10_000, 5_000)).toBe(false); // a subscriber is present
-    expect(shouldIdleClose(0, 4_000, 5_000)).toBe(false); // not idle long enough
-    expect(shouldIdleClose(0, 6_000, 5_000)).toBe(true);
-  });
+  // `shouldIdleClose` moved to `src/kit/wire/housekeeping.ts` in Phase 1b
+  // chapter 2 and its cells moved with it — including the two this file never
+  // had, because the shared predicate now also carries magpie's case (L1: an
+  // agent tailing a quiet board must not be idle-closed under its own
+  // connection). The daemon no longer owns the decision, so asserting it here
+  // would be asserting a re-export.
 });
 
 describe("daemon — commands + projection", () => {

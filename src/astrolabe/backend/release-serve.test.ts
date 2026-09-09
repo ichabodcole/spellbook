@@ -138,7 +138,17 @@ test("the ready EVENT carries the resolved mode, not just the stdout handshake",
   const reader = (res.body as ReadableStream<Uint8Array>).getReader();
   const { value } = await reader.read();
   await reader.cancel();
-  const frame = new TextDecoder().decode(value).split("\n")[0] ?? "";
+  // ⚠ THE FIRST LINE IS A COMMENT, NOT A FRAME, SINCE PHASE 1b CHAPTER 2. The
+  // shared `sseResponse` opens with `: connected` so the response headers flush
+  // immediately — Bun's own `fetch()` buffers until the first body byte, so a
+  // quiet stream would otherwise leave this very call unresolved. Every house
+  // tail client already drops `:` lines; this cell read the first LINE and had
+  // to learn the same rule.
+  const frame =
+    new TextDecoder()
+      .decode(value)
+      .split("\n")
+      .find((l) => l.startsWith("data: ")) ?? "";
   const ready = JSON.parse(frame.replace(/^data: /, "")) as { type: string; mode: string };
   expect(ready.type).toBe("ready");
   expect(ready.mode).toBe("release");
