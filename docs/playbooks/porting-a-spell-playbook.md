@@ -1,12 +1,18 @@
 # Porting a Spell to the Built / Shared Layout — Playbook
 
-**Created:** 2026-08-31 **Last Updated:** 2026-09-07 **Status:** Active, and its
-subject population is **CLOSED** — five real runs, three of them rewrites
-(grapevine, bounty, digestify). Every spell in the roster builds; no
-hand-written HTML surface remains anywhere in the tree. **There is no next run
-scheduled, and that changes what this document is for** — it has stopped being a
-schedule and become the thing an agent reads before it writes a NEW spell's
-first surface (see Applicability)
+**Created:** 2026-08-31 **Last Updated:** 2026-09-08 **Status:** Active, and it
+has **TWO populations, one closed and one open.**
+
+- **The SURFACE port is CLOSED** — five real runs, three of them rewrites
+  (grapevine, bounty, digestify). Every spell in the roster builds; no
+  hand-written HTML surface remains anywhere in the tree. For that half this is
+  no longer a schedule, it is the thing an agent reads before writing a NEW
+  spell's first surface (see Applicability).
+- ⭐ **The BACKEND port is OPEN, and it re-opened this document.** **Phase B**
+  (added 2026-09-08 from glamour, the migration pathfinder) takes a spell's
+  whole backend — CLI and daemon — out of the deployed skill folder and ships it
+  built behind launchers. **Five subjects are queued: imago, bounty, digestify,
+  grapevine and mind-mapper.** Read Phase B as the live half
 
 ---
 
@@ -30,16 +36,18 @@ then neither is wrong.
 
 ## Applicability
 
-> **⛔ THE POPULATION IS CLOSED (2026-09-07).** digestify was the last spell
-> this playbook had a subject in; the roster is eight spells and eight built
-> surfaces. **Everything below still applies — to a spell that does not exist
-> yet.** Read that as the change it is: the phases were written by agents
-> porting things that were already shipping, under a fidelity ruling, against an
-> inventory that existed because the old page did. A NEW spell has none of that.
-> What survives for it is Phase 0 (instruments before the work), Phase S (the
-> registry is where primitives come from), and the destination shape R0 points
-> at. What does not is the premise of Phase R, which is that there is something
-> to be faithful to.
+> **⛔ THE SURFACE POPULATION IS CLOSED (2026-09-07); THE BACKEND POPULATION IS
+> NOT.** digestify was the last spell the SURFACE half had a subject in; the
+> roster is eight spells and eight built surfaces. **Phase B has five subjects
+> left** and everything under it is a live schedule, not a retrospective.
+> **Everything below still applies — to a spell that does not exist yet.** Read
+> that as the change it is: the phases were written by agents porting things
+> that were already shipping, under a fidelity ruling, against an inventory that
+> existed because the old page did. A NEW spell has none of that. What survives
+> for it is Phase 0 (instruments before the work), Phase S (the registry is
+> where primitives come from), and the destination shape R0 points at. What does
+> not is the premise of Phase R, which is that there is something to be faithful
+> to.
 >
 > **And one section is now a prediction with no population left to test it:**
 > R6's "expect four wards to red" was four for grapevine, four for bounty, and
@@ -50,8 +58,12 @@ then neither is wrong.
 
 **Use this playbook when:**
 
-- Moving a spell's `surface/` (or a future `backend/`) out to `src/<spell>/` and
-  committing a built `dist/`.
+- Moving a spell's `surface/` out to `src/<spell>/` and committing a built
+  `dist/`.
+- ⭐ **Moving a spell's whole BACKEND — CLI and daemon — out to
+  `src/<spell>/backend/`, emitting `dist/cli.js` + `dist/server.js` behind
+  launchers, and adopting `src/kit/wire/`. That is Phase B**, it runs after
+  Phases 1–3 on an already-ported spell, and it is the half with subjects left.
 - Cutting a spell's backend↔surface seam so its daemon stops reaching into
   surface source.
 - Making two spells share one implementation, on either side of that line.
@@ -129,6 +141,10 @@ then neither is wrong.
 remove the coupling that the move would break (seam), move (relocation), then
 prove the thing the gate cannot see (local-sim).
 
+> **Phase B sits AFTER Phase 3 and is a separate act**, run on a spell whose
+> surface already ported. Astrolabe and magpie did half of it (their CLIs
+> already built) before glamour did all of it.
+>
 > **How well-tested this order is.** Phase 0 and Phase 3 have run on every port;
 > Phase 1 has run on two (magpie, glamour), and glamour ran the whole sequence
 > on the playbook alone. **Skip Phase 1 only after counting the daemon's reaches
@@ -837,6 +853,353 @@ port is before Phase 1, because they have different done-whens below.
       `release-serve.test.ts` whose forced-dev cell convicts a daemon that boots
       without its surface — copy that cell, and have a non-author calibrate it.
 
+### Phase B: The whole backend builds — CLI and daemon behind launchers
+
+> **This phase runs AFTER Phases 1–3, on a spell whose surface is already
+> ported.** It is the backend convergence's Phase 2, generalised — written from
+> glamour, which is the first spell to take its whole backend out of the
+> deployed skill folder, and which was chosen as the pathfinder precisely so
+> five spells could follow it. **Its population is OPEN:** imago, bounty,
+> digestify, grapevine and mind-mapper all walk this. Astrolabe and magpie
+> walked half of it first (their CLIs already built), and where their experience
+> differs from glamour's the difference is recorded, because that difference is
+> the part a third spell cannot predict.
+
+**Goal:** `src/<spell>/backend/` holds the CLI and the daemon; the skill folder
+holds two launchers and a committed `dist/cli.js` + `dist/server.js`; the
+backend imports `src/kit/wire/`.
+
+**Prerequisite, and it has a test rather than a permission behind it:** **acc
+conformance first.** A backend goes conformant before it goes opaque (Phase 2's
+table). Re-run acc from the SKILL DIRECTORY at the end and say the level out
+loud; the port must not regrade it.
+
+#### B1 · Decide what moves, from the imports — never from the names
+
+**The rule, and it is checkable:** a module moves to `src/<spell>/backend/`
+**iff nothing under `src/<spell>/surface/` imports it.** A module both halves
+import is a **two-sided contract** and stays in the deployed skill folder, where
+both halves already reach it and where it needs no build of its own.
+
+Measure it; do not assume it. Three spells have now been measured and all three
+kept a `shared/`-shaped directory — but the count is what tells you the cost of
+being wrong, and **the brief's count has been under-stated before** (astrolabe:
+"roughly three" surface files imported `state.ts`; it was four).
+
+⚠ **A TEST FOLLOWS ITS SUBJECT, NOT ITS IMPORTS.** glamour's
+`imageOptimize.test.ts` imports the module that moves AND the two-sided module
+that stays. It moved, because its subject is the `.server.ts`. The one test that
+stayed behind is the one whose subject is `shared/types.ts`.
+
+#### B2 · The launcher pattern, and why its PATH is load-bearing
+
+The emitted bundle goes to `dist/`, because every instrument in this repo
+already defines "generated" as "under `dist/`" — so emitting there costs zero
+instrument changes. But `scripts/cli.ts` and `scripts/server.ts` are the paths
+**SKILL.md names, `grimoire/lib/entry-points.ts` enumerates,
+`exit-site-inventory` and `terminator-invariant` pin, and an installed caller
+types.** Keeping a real `.ts` at each of those addresses is what makes the
+relocation free instead of a roster-wide prose edit.
+
+A launcher is a comment block and two lines. **Put no logic in it** — anything
+there ships UNBUILT beside a built artifact and is invisible to the backend's
+own tests. And it takes **no arguments**: `run()` reads nothing, because a
+forwarder that touched `process.argv` would match the roster enumerator's
+arg-parsing predicate and the flag ward would then judge the spell's documented
+flags against a file that recognises none.
+
+The two launchers differ in exactly one line, and it is not a style choice:
+
+```ts
+// scripts/cli.ts   — a CLI's stdout is a pipe the caller parses
+process.exitCode = await run();
+
+// scripts/server.ts — a daemon's teardown already ran inside main()
+const exitCode = await run();
+process.exit(exitCode);
+```
+
+⛔ **DO NOT "TIDY" THEM INTO A MATCH.** Bun's stdout is ASYNCHRONOUS on a pipe,
+so an explicit exit discards whatever has not drained — measured at exactly
+65,536 bytes, and the caller receives well-formed-LOOKING JSON that stops
+mid-string. The daemon's terminal exit is a different case, is family
+**E-terminal** in the exit inventory, and stays pinned at the launcher — which
+is also why the inventory needs no edit for it.
+
+#### B3 · ⛔ `import.meta.main` IS FALSE IN A BUNDLE. It is the first thing that breaks.
+
+`dist/<name>.js` is **IMPORTED** by the launcher, never executed as the process
+entry. So `if (import.meta.main)` never runs. Left as-is:
+
+- the **daemon** boots, serves nothing, exits 0, and every test fails as "never
+  bound a port", which reads like flake;
+- the **CLI** prints nothing and exits 0 for every verb.
+
+Export a `run()` and delete the block.
+
+⛔ **AND THE DAEMON KEEPS NO SECOND ENTRY, DELIBERATELY.** Its `SKILL_ROOT` is
+`join(import.meta.dir, "..")`, which is the skill root only from `dist/`. Run
+from `src/<spell>/backend/` it computes `src/<spell>/`, finds no
+`dist/index.html`, **silently chooses DEV**, and then fails the dev import from
+the wrong anchor. Offering that entry is offering a wrong daemon. **The CLI may
+keep both** — its ancestor paths are correct from either address — but it has no
+reason to.
+
+#### B4 · ⛔ THE PATH-PINNED-SIBLING CLASS, AND THE WARD THAT CATCHES IT
+
+**Bundling changes what a module knows about its own location, and every symptom
+of getting it wrong is quiet and exit-zero.** Before anything moves, enumerate
+**every `import.meta.*` and every path-pinned non-TypeScript sibling** in the
+backend, and plan to DRIVE each one. No type-check, no unit test and no ward
+reaches them, because a path is a string until something opens or spawns it.
+
+Two shipped defects of this class so far, and they are the pattern:
+
+- magpie's `remove.py` resolved off `import.meta.dir`, which the bundle
+  re-anchored into `dist/`. **Dead for eight days in the shipped plugin**,
+  answering `{"ok":true,…,"failed":1}` at exit 0 the whole time.
+- glamour's CLI spawned its daemon as `join(SCRIPT_DIR, "server.ts")` — its own
+  directory, which was true for exactly as long as the CLI and the daemon shared
+  a folder. From `dist/` that is `dist/server.ts`, which does not exist. **The
+  symptom is not a crash:** `open` waits out its 45-second handshake and reports
+  a start timeout, which reads like a slow first bundle build.
+
+⛔ **DO NOT COPY A SIBLING'S LAUNCHER PATH AND ASSUME IT IS THE HOUSE
+CONVENTION.** Astrolabe and magpie both wrote
+`join(SCRIPT_DIR, "..", "scripts", "server.ts")` — up and back down — so their
+relocation paid nothing and the Phase 1b journal recorded "the launcher pattern
+transferred verbatim". That was their accident of style. **Read your spell's own
+spawn expression.** The correct form is up-and-back-down, because it is right
+from both addresses.
+
+`grimoire/spawn-path-ward.test.ts` is the instrument: it resolves the anchor
+arithmetic the way the RUNTIME will, from the emitted file's own directory, and
+asserts the file is there.
+
+⛔ **AND ON ITS FIRST ENCOUNTER WITH A SPELL IT HAD NEVER SEEN, IT WAS GREEN
+OVER EXACTLY THE DEFECT IT EXISTS FOR.** Its anchor pattern required a **bare**
+`fileURLToPath`; glamour writes `Bun.fileURLToPath`. `SCRIPT_DIR` was therefore
+never registered, every pin computed from it was dropped, and the ward printed
+eight pins — none of them glamour's — and reported 5 pass / 0 fail. Its
+"enumerate every escape" cell was silently wrong at the same time and for the
+same reason.
+
+**The generalisation, and it is the most transferable sentence in this phase: a
+ward whose POPULATION is derived is not thereby COVERED.** glamour arrived in
+the population automatically, on the same commit, exactly as designed — and the
+ward examined its files and found nothing, which is indistinguishable from
+finding nothing wrong. Phase 1b had already predicted this shape in writing and
+prescribed "print both". **Printing is not enough; nobody reads a green ward's
+console output.** The ward now ASSERTS coverage: every emitted `cli.js`/
+`server.js` that declares an anchor must yield at least one pin. Do the same for
+any ward you add.
+
+#### B5 · ⛔ THE REVERSE SURFACE-IMPORT RE-POINT — the specifier is written for the ARTIFACT
+
+The daemon's dev branch does
+`await import("../../../../../src/<spell>/surface/index.html")`, and
+`src/build.ts` passes `--external` for the surface-HTML glob — so **that
+specifier survives into `dist/server.js` BYTE-FOR-BYTE** and is resolved at
+runtime relative to `dist/`, not relative to the source file it is written in.
+
+**Read as an ordinary relative import of the `.ts` it sits in, it climbs out of
+the repo.** Do not "fix" the `..` count.
+
+It happens to be the SAME string before and after the relocation, because
+`dist/` sits at the same depth as the `scripts/` it replaced. **That is a
+coincidence of depth, not a property** — assert it rather than trusting it, and
+move `import-boundary-wards` ward 1a's pin to `…/dist/server.js`, where the
+specifier actually executes. (`trackedSources` is `.ts`/`.tsx` only, so left
+alone the pin is deleted as "no longer present" and the ward goes green because
+it stopped looking — Contract 19, exactly.)
+
+#### B6 · Re-anchor the backend's tests on an explicit SKILL ROOT, and test the ARTIFACT
+
+A backend's tests are full of paths that were relative to `tests/` or
+`scripts/`. **Every one is re-derived from an explicit `SKILL_ROOT`, never
+adjusted by counting `..`** — the count is the repair that rots, and a test
+whose spawn path is wrong fails as "the daemon never answered".
+
+Three specific moves, all earned:
+
+1. **Spawn the LAUNCHER, not the source.** The contract a CLI suite asserts is
+   what the PROCESS writes and exits with, and the process a caller runs is
+   `scripts/cli.ts` → `dist/cli.js`.
+2. **Anything computed from `import.meta.url` must be read out of the
+   ARTIFACT.** glamour's `daemonCwd()` and `SKILL_ROOT_FOR_TEST` answer
+   `src/<spell>/` when imported from source — a directory with no `SKILL.md`, no
+   `dist/`, and a dev cwd five levels above the repo. Importing the source
+   asserts arithmetic nothing executes. This makes the cell depend on a built
+   `dist/`; `bun run gate` builds before it tests, and the thing worth asserting
+   is the thing that ships.
+3. **A "fake release tree" fixture stops globbing and starts copying the two
+   files that run.** The glob carried a real scar ("a new module is in the
+   copied tree by construction"), and after the move it copies files whose
+   `../../../plugins/…` specifiers cannot resolve from a temp directory. **The
+   scar is re-homed, not deleted:** the property is now true by BUNDLING,
+   because `dist/server.js` IS the whole module graph.
+
+⚠ **An in-process daemon suite is the awkward case.** If it imports
+`startDaemon` rather than spawning, B3's ruling arrives as
+`Cannot find module '…/surface/index.html'` in `beforeAll`. Forcing
+`SPELLBOOK_SURFACE_MODE=release` around the boot is the honest answer — "mode is
+not what this file tests" — provided the spell's `release-serve.test.ts` spawns
+the real launcher and asserts mode there.
+
+⛔ **And set it in a `try/finally`, not as a bare assignment.** `bun test` runs
+a directory's files in ONE process, so `process.env` in a `beforeAll` is a
+global. glamour's first version of this repair leaked `release` into a sibling
+suite whose entire premise is that mode is AUTO-DETECTED; that suite skipped its
+guard, spawned a daemon and hung. **The signature is the tell: it passed alone
+and failed in the directory.** Clear the variable out of any child you spawn,
+too.
+
+#### B7 · Hand-check every hand-kept list, in both directions
+
+Population-derived wards gain the spell for free. **Lists do not**, and there
+are two kinds:
+
+- an **exclusion set** (`grimoire/lib/entry-points.ts`'s
+  `INTERNAL_ENTRY_POINTS`) — a stale key is silent when the file LEAVES, and
+  **loud when the file arrives somewhere the exclusion does not cover.** glamour
+  got the loud half: the relocated daemon stopped being excluded, so
+  `flag-invariant` reported its private `--port` and `--project` as undocumented
+  SKILL.md flags. ⚠ **A daemon with no private flags would have moved in
+  silence.**
+- a **root list** (`import-boundary-wards`'s `DECLARED_EMITTED_ROOTS`) — a
+  hand-written array that BOTH wards read to decide which emitted files they
+  open at all. An omission is not an over-broad exemption; it is **unseeing**.
+  The spell's `dist/*.js` leaves both populations and both cells go green
+  because they stopped looking.
+
+**The repair for either is the same: make the required set derivable and assert
+it.** A cell now derives the root list from the tree the way `src/build.ts`
+derives what to build, and names any spell missing from it.
+
+Expect these to red, and re-declare every one by hand: `exit-site-inventory`,
+`import-boundary-wards` (1a's pin, 1b's `bun` floor, the re-export inventory,
+and any line-number pin — **a line number is the wrong pin**, and that ward says
+so about itself, having paid for it four times), `terminator-invariant`,
+`daemon-lifecycle-ward`, `flag-invariant`.
+
+#### B8 · Adopt the kit — and `idleMs` is DERIVED, never copied
+
+All of `src/kit/wire/`: `tailEvents` + `errors` on the CLI side; `serveDist`,
+`eventLog`, `sse`, `housekeeping`, `discovery`, `heartbeat` on the daemon side.
+
+⛔ **THE ONE RULE THAT CANNOT BE COPIED FROM A SIBLING: `idleMs` — the tail's
+watchdog — is DERIVED FROM THAT SPELL'S OWN DAEMON HEARTBEAT.** Give the spell
+its own `src/<spell>/backend/heartbeat.ts`, holding its values and importing the
+kit's derivations, and let BOTH halves import it. Astrolabe measured what a
+copied number does: a hard-coded 45 s watchdog against an env-tuned heartbeat
+produced reconnects at **+47.4 s, +92.6 s and +137.9 s against a perfectly
+healthy daemon**, harmless only because an unrelated third constant absorbed the
+churn.
+
+⚠ **The number may coincide with a sibling's; the EXPRESSION must not.**
+glamour's `tailIdleMs(SSE_HEARTBEAT_MS)` evaluates to 45,000 today, which is
+also its `--start-timeout` default — the file says in as many words that the two
+are unrelated, so nobody de-duplicates them later.
+
+**That file IS the seam, and it is the cleanest proof the port worked:** before
+it, the heartbeat was a literal inside the daemon and hand-mirrored in the CLI
+under a comment saying "an edit there is an edit here", because the CLI could
+not import the daemon without dragging the whole server graph into
+`dist/cli.js`. A value that could not previously cross the seam now crosses it.
+
+#### B9 · ⛔ RUN D8's REACHABILITY AUDIT. Following the call graph, not a grep.
+
+The kit's `die` **THROWS** rather than exits, which is what stops a failure
+three frames down from truncating its own stdout. The cost, and it is the
+adopting spell's to pay: **a `die` REACHABLE from inside a `try` whose `catch`
+SWALLOWS is now a silent continue rather than an exit.**
+
+⛔ **REACHABILITY, NOT CALL SITES.** A helper that dies, invoked from inside a
+swallowing `catch`, has its `die` at a site that reads as perfectly safe.
+
+**Do this:**
+
+1. Enumerate every syntactic `die(` site.
+2. Compute the **transitive** set: every function that reaches a `die` directly
+   or through another function.
+3. For every invocation of every member of that set, ask whether it sits
+   lexically inside a `try`, and read that `try`'s `catch`. Classify
+   **PROPAGATES** (rethrows, or re-dies, or the catch does not enclose the die),
+   **SWALLOWS** (⛔ a defect — report file:line), or **CONDITIONAL** (say under
+   what condition it swallows).
+4. **Report the count.** Astrolabe 15 sites, magpie 29, glamour 12 sites plus 25
+   further invocation edges = 37 audited positions, zero inside a `try`.
+
+⭐ **The shape that makes a codebase pass this cheaply, worth copying:** try
+NARROWLY and die in the HANDLER. Nine of glamour's twelve dies sit inside a
+`catch` or after a `try`, never inside one — and no rule anywhere told its
+author to write it that way.
+
+⚠ **Report a CONDITIONAL even when it is currently unreachable, and do not
+silently fix it.** glamour's `postCmd` catches an ECONNRESET on `close` and
+answers `{"ok":true}` at exit 0, matching on `message.includes("ECONNRESET")`
+over an untyped error. Its only die-reachable call is three lines ABOVE the
+`try` today. One refactor moves it inside, and then a taxonomy failure is
+reported as success. The ward is one line —
+`if (err instanceof CliError) throw err;` — and it is a behaviour change, so it
+belongs in its own commit, filed rather than smuggled.
+
+#### B10 · Build, and mind the blast radius
+
+- **`bun run build` with NO ARGUMENTS.** ⛔ A per-spell build emits **different
+  bytes** for the same source — measured on glamour, deterministically:
+  Tailwind's palette at a different rounding and a different form of Bun's own
+  bundler helpers. `dist-check` ARM 2 verifies the WHOLE-ROSTER build, so that
+  is the artifact the house means. **Always rebuild the roster before reading
+  `git status` for artifact churn**, or you will diagnose a stale `dist/` that
+  is not stale. ⚠ And note the meta-rule that cost the most time here: **a
+  control that repeats the suspect step is not a control** — stashing the work
+  and rebuilding the same wrong way CONFIRMED the false finding.
+- **The server is its OWN `Bun.build` call**, not a second entrypoint in the
+  CLI's. One call with two entrypoints hoists shared modules into a hashed chunk
+  and rewrites `dist/cli.js`, which Contract 18 verifies by reproduction.
+- **A change to `src/kit/` dirties every spell that inlines it.** glamour's
+  chapter 2 touched three kit modules and rebuilt SIX artifacts across THREE
+  spells. Rebuild and commit them all in the same chapter.
+- **`bun run gate` is not sufficient after a `src/kit/` change.** Run
+  `bun scripts/dist-check.ts` and read `git status` for **stylesheet** churn in
+  spells you never opened: `src/kit/theme/base.css` declares `@source "../"`, so
+  Tailwind scans every file in `src/kit/` **including prose**, and one English
+  word in a comment once emitted `.grow` into four spells' CSS. A green gate and
+  a dirty artifact is the pairing to look for.
+
+**Validation:**
+
+- [ ] Both artifacts built and committed **in the same chapter as their
+      source**; `bun scripts/dist-check.ts` exit 0.
+- [ ] **Dev AND release both driven on a booted daemon, through the real
+      launcher chain**, and say which bytes you saw: release serves the
+      committed hashed chunks; dev serves `/_bun/client/…` and `/_bun/asset/…`
+      and its stylesheet carries Tailwind markers, which is what proves Contract
+      5's cwd pin survived. The `mode` on the ready frame is the only thing that
+      tells the two apart — a dev daemon with root deps present renders an
+      identical board.
+- [ ] Every path-pinned sibling **driven**, not reasoned about.
+- [ ] **acc re-run FROM THE SKILL DIRECTORY** (that is where `acc.config.json`
+      is discovered) and the level reported. It must not regrade.
+- [ ] D8's audit performed and its **count** reported.
+- [ ] Gate green **unpiped**, exit read from a file
+      (`bun run gate > /tmp/g.log 2>&1; echo $?`) — a piped gate reports the
+      pipe's exit and has produced a false green in this repo.
+- [ ] Every daemon you started has its own home under a scratchpad and is torn
+      down.
+
+**What adopting the kit is worth, so the phase has a number.** glamour's
+censused defects closed **by construction, not by anyone editing them**: the 250
+ms constant-interval reconnect storm (B5) — driven before and after against a
+server that accepts and immediately drops, **51 attempts in 14 seconds at a flat
+~252 ms** became **6 attempts at 252 · 503 · 1001 · 2002 · 4002**; the idle
+sweep that killed a watching agent with its connection open (L1); the non-atomic
+discovery pointer (L3); the unbounded event buffer (L5); a tail with no watchdog
+at all. And its CLI's three `process.exit` sites left the exit inventory
+entirely, because the shared tail client RETURNS a code instead of ending the
+process from inside three nested loops.
+
 ## Risks & Gotchas
 
 ### Gotcha 1: The gate is blind to the port's own failure classes (4 instances)
@@ -1118,6 +1481,24 @@ inventory at
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
 
+- **2026-09-08** — ⭐ **Phase B added: the whole backend builds.** Written from
+  glamour, the backend convergence's migration pathfinder, with astrolabe's and
+  magpie's half-runs folded in. Taught, and every item is a FAILURE rather than
+  a confirmation: `import.meta.main` is false in a bundle, so a relocated entry
+  runs no code and exits 0; a spell's own spawn expression must be read, because
+  "up and back down" was two spells' accident of style and glamour's `dist/`
+  spawn target did not exist; **a ward whose POPULATION is derived is not
+  thereby COVERED**, measured by the spawn-path ward being green over exactly
+  the defect it was written for; a hand-kept list inside a derived ward is
+  unseeing rather than exempting, and an exclusion set is silent when a file
+  leaves but loud when it arrives somewhere uncovered; `process.env` in a
+  `beforeAll` is process-global and leaks across a directory's suites; a
+  per-spell build emits different bytes than the whole-roster build, and **a
+  control that repeats the suspect step is not a control**; a module extracted
+  from two consumers encodes what those two AGREE on, which is why two kit
+  boundaries had to widen for the third; `idleMs` is DERIVED from the spell's
+  own heartbeat, never copied; and D8's reachability audit must follow the call
+  graph, not grep for `die(`.
 - **2026-08-31** — Initial, from four ports and two sharing operations
   (spell-kit sprints 01–02).
 - **2026-08-31** — Repaired after first non-author use (magpie's seam): the
