@@ -990,9 +990,28 @@ the population automatically, on the same commit, exactly as designed — and th
 ward examined its files and found nothing, which is indistinguishable from
 finding nothing wrong. Phase 1b had already predicted this shape in writing and
 prescribed "print both". **Printing is not enough; nobody reads a green ward's
-console output.** The ward now ASSERTS coverage: every emitted `cli.js`/
-`server.js` that declares an anchor must yield at least one pin. Do the same for
-any ward you add.
+console output.** The ward now ASSERTS coverage. Do the same for any ward you
+add.
+
+⛔ **AND THE FIRST VERSION OF THAT ASSERTION WAS THE SAME BUG ONE LEVEL UP —
+which is why the instruction below is a THING YOU DO, not a promise you can lean
+on.** It gated on "the file declares an anchor", computed with the same two
+regexes it existed to backstop; a spelling neither regex reads therefore made
+the file **exempt** rather than loud. Five real spellings were driven that
+proved it, `import.meta.dirname` and the `__filename` shim among them. The gate
+is now the INGREDIENTS of location-anchoring — `import.meta.url`,
+`import.meta.dir`, `import.meta.dirname`, `fileURLToPath` under any qualifier,
+`__dirname`/`__filename`, `Bun.main` — which no location-aware module can avoid
+naming, and every ingredient-bearing line must be READ (recognised as an anchor,
+or yielding a pin) or the ward reds naming the line. `process.argv[1]` is the
+declared remaining hole.
+
+⭐ **SO DO THIS, EVERY PORT, BY HAND:** read your emitted anchor line, then run
+the ward and **confirm its coverage row prints `anchor-read=yes` with a non-zero
+`pins=` for YOUR spell.** The row is one line of console output and it is the
+only thing that distinguishes "this backend is fine" from "this ward cannot see
+this backend". Do not skip it because the ward is green — green over exactly
+this defect is what it did the first two times.
 
 #### B5 · ⛔ THE REVERSE SURFACE-IMPORT RE-POINT — the specifier is written for the ARTIFACT
 
@@ -1119,16 +1138,27 @@ swallowing `catch`, has its `die` at a site that reads as perfectly safe.
 
 **Do this:**
 
-1. Enumerate every syntactic `die(` site.
-2. Compute the **transitive** set: every function that reaches a `die` directly
+1. Enumerate **every site that RAISES a `CliError`** — not the literal token
+   `die(`. ⛔ **Grepping `die(` under-counts, measurably.** glamour has 13 `die`
+   sites _plus_ seven `throw new UsageError` sites: roughly **20** raise sites,
+   where the first pass of this audit reported 12. A spell that raises through
+   its own error subclass, a wrapper, or a rethrow is invisible to the token.
+   Find the type, then find everything that constructs or throws it.
+2. Compute the **transitive** set: every function that reaches a raise directly
    or through another function.
 3. For every invocation of every member of that set, ask whether it sits
-   lexically inside a `try`, and read that `try`'s `catch`. Classify
-   **PROPAGATES** (rethrows, or re-dies, or the catch does not enclose the die),
-   **SWALLOWS** (⛔ a defect — report file:line), or **CONDITIONAL** (say under
-   what condition it swallows).
-4. **Report the count.** Astrolabe 15 sites, magpie 29, glamour 12 sites plus 25
-   further invocation edges = 37 audited positions, zero inside a `try`.
+   lexically inside a `try`, and read that `try`'s `catch`. ⚠ **The question is
+   never "is it inside a `try`" — it is "does any `catch` on the path
+   SWALLOW".** Almost everything is inside a `try` in a CLI with a top-level
+   handler: glamour's `dispatch` sits inside `main`'s `try` and its `parseArgs`
+   inside `dispatch`'s, so "zero sites inside a `try`" is literally false and
+   was reported anyway. The substantive claim survived only because **both of
+   those catches PROPAGATE.** Classify each enclosing catch: **PROPAGATES**
+   (rethrows, re-raises, or converts to an exit), **SWALLOWS** (⛔ a defect —
+   report file:line), or **CONDITIONAL** (say under what condition it swallows).
+4. **Report the count**, and say what you counted. Astrolabe 15 sites, magpie
+   29, glamour ~20 raise sites plus its further invocation edges — every
+   enclosing catch on every path PROPAGATES.
 
 ⭐ **The shape that makes a codebase pass this cheaply, worth copying:** try
 NARROWLY and die in the HANDLER. Nine of glamour's twelve dies sit inside a
@@ -1146,15 +1176,36 @@ belongs in its own commit, filed rather than smuggled.
 
 #### B10 · Build, and mind the blast radius
 
-- **`bun run build` with NO ARGUMENTS.** ⛔ A per-spell build emits **different
-  bytes** for the same source — measured on glamour, deterministically:
-  Tailwind's palette at a different rounding and a different form of Bun's own
-  bundler helpers. `dist-check` ARM 2 verifies the WHOLE-ROSTER build, so that
-  is the artifact the house means. **Always rebuild the roster before reading
-  `git status` for artifact churn**, or you will diagnose a stale `dist/` that
-  is not stale. ⚠ And note the meta-rule that cost the most time here: **a
-  control that repeats the suspect step is not a control** — stashing the work
-  and rebuilding the same wrong way CONFIRMED the false finding.
+- ⛔ **BUILD THROUGH THE PACKAGE SCRIPT — `bun run build` — and NEVER a bare
+  `bun src/build.ts` or `bun run src/build.ts`. The two are different
+  bundlers.** `bun run build` is a package script, so `bun` resolves to
+  `node_modules/.bin/bun` (**1.3.14**, arriving as `bun-plugin-tailwind`'s
+  peer); a bare invocation resolves through `PATH` (**1.4.0**, what
+  `.bun-version` declares). See
+  `docs/backlog/2026-09-08-bun-pin-disagrees-with-the-bun-that-builds.md` — the
+  declared pin is not the Bun that builds the shipped artifacts, and that is
+  filed, not fixed.
+
+  **Measured, and it corrects what the first draft of this bullet said.** The
+  first draft claimed "a per-spell build emits different bytes" and prescribed
+  "always rebuild the roster". ⛔ **That is right by accident and wrong in its
+  reason, and the remedy does not save you.** Through the pinned binary, a
+  per-spell build reproduces the committed bytes **exactly, tree clean**
+  (`./node_modules/bun/bin/bun.exe run src/build.ts glamour`). Through PATH, a
+  bare no-args ROSTER build dirties **all eight spells** — so rebuilding the
+  whole roster is precisely what an agent who typed the bare command would do
+  next, and it manufactures the repo-wide dirty tree rather than clearing it.
+  **The variable is the BINARY, not the scope.**
+
+  `dist-check` ARM 2 verifies by reproduction, so a build under the wrong binary
+  reads as a Contract 18 break on spells you never opened. **Before diagnosing
+  artifact churn from `git status`, confirm which `bun` built it** —
+  `bun run build` (correct) or a bare command (not).
+
+  ⚠ And the meta-rule that cost the most time here: **a control that repeats the
+  suspect step is not a control** — stashing the work and rebuilding the same
+  wrong way CONFIRMED the false finding.
+
 - **The server is its OWN `Bun.build` call**, not a second entrypoint in the
   CLI's. One call with two entrypoints hoists shared modules into a hashed chunk
   and rewrites `dist/cli.js`, which Contract 18 verifies by reproduction.
@@ -1492,13 +1543,28 @@ port **taught**, not what it confirmed.
   the defect it was written for; a hand-kept list inside a derived ward is
   unseeing rather than exempting, and an exclusion set is silent when a file
   leaves but loud when it arrives somewhere uncovered; `process.env` in a
-  `beforeAll` is process-global and leaks across a directory's suites; a
-  per-spell build emits different bytes than the whole-roster build, and **a
-  control that repeats the suspect step is not a control**; a module extracted
-  from two consumers encodes what those two AGREE on, which is why two kit
-  boundaries had to widen for the third; `idleMs` is DERIVED from the spell's
-  own heartbeat, never copied; and D8's reachability audit must follow the call
-  graph, not grep for `die(`.
+  `beforeAll` is process-global and leaks across a directory's suites; a build
+  through the package script and a bare `bun src/build.ts` are **different
+  bundlers**, and **a control that repeats the suspect step is not a control**;
+  a module extracted from two consumers encodes what those two AGREE on, which
+  is why two kit boundaries had to widen for the third; `idleMs` is DERIVED from
+  the spell's own heartbeat, never copied; and D8's reachability audit must
+  follow the call graph, not grep for `die(`.
+- **2026-09-08** — **Phase B repaired against its own verify pass** — three
+  corrections, all of them things the phase asserted and the drive falsified.
+  **B10:** "a per-spell build emits different bytes" is FALSE under the pinned
+  toolchain; the variable is the BINARY (`bun run build` →
+  `node_modules/.bin/bun` 1.3.14 vs a bare `bun src/build.ts` → PATH 1.4.0), so
+  the old remedy — "rebuild the roster" — is exactly what an agent who typed the
+  bare command does next, and it dirties all eight spells. **B4:** the coverage
+  assertion the phase was proudest of gated on a predicate computed from the two
+  regexes it backstopped, so an unread spelling was EXEMPT rather than loud
+  (five driven); the gate is now the INGREDIENTS of anchoring, and the
+  instruction is to READ YOUR COVERAGE ROW rather than to trust the ward.
+  **B9:** the audit scoped to the token `die(` and under-counted glamour 12 →
+  ~20, and "zero inside a `try`" was literally false — the real test is whether
+  any catch on the path SWALLOWS. The generalisation the corrections share: **a
+  backstop computed from the same predicate it backstops is not a backstop.**
 - **2026-08-31** — Initial, from four ports and two sharing operations
   (spell-kit sprints 01–02).
 - **2026-08-31** — Repaired after first non-author use (magpie's seam): the
