@@ -28,7 +28,17 @@
  *    progress: the runner checks out committed state, so dirt genuinely means
  *    "this commit shipped a stale artifact." ARMs 0+1 read the tree only and are
  *    safe in the suite — `grimoire/dist-roster-ward.test.ts` runs them there.
+ *
+ * ⛔ **ARM 1 COUNTS THE INDEX; ARM 1b COMPARES IT TO THE DISK (D42).** "≥1
+ *    tracked file in dist/" is satisfied by a spell's SURFACE chunks alone, and
+ *    it was: with imago's two backend artifacts unstaged this printed
+ *    `imago 3 tracked` and PASSED. A derived denominator counted from the index
+ *    cannot notice what the build left beside it. Every row now prints
+ *    `tracked / on disk`, and a BACKEND artifact on disk that the index does not
+ *    have is FATAL — see `isBackendArtifact` for why that clause is narrow
+ *    enough not to red on ordinary work in progress.
  */
+import { existsSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { buildableSpells } from "../src/build.ts";
 
@@ -102,7 +112,52 @@ export function trackedBuildInputs(spell: string, root: string = REPO_ROOT): str
   return trackedFiles([`${base}/surface`, `${base}/bunfig.toml`], root);
 }
 
-export type Roster = { spell: string; root: string; tracked: number }[];
+/** Files under a spell's deployed `dist/` **ON DISK**, repo-relative — the other
+ *  half of the measurement, and the one this script did not take until D42.
+ *
+ *  ⛔ ARM 1's PREDICATE WAS "≥1 TRACKED FILE" AND THAT IS A DERIVED DENOMINATOR
+ *  WITH AN UNCOVERED NUMERATOR. Driven: with imago's two backend artifacts left
+ *  unstaged, ARM 1 printed `imago 3 tracked` and PASSED **on its surface chunks
+ *  alone** — a green that named the spell and said nothing about the two files
+ *  that were the whole reason to look. A count of what is in the index cannot
+ *  notice what is beside it on the disk. */
+export function diskDistFiles(spell: string, root: string = REPO_ROOT): string[] {
+  const dir = join(root, distRoot(spell));
+  if (!existsSync(dir)) return [];
+  return readdirSync(dir)
+    .map((f) => `${distRoot(spell)}/${f}`)
+    .sort();
+}
+
+/** On the disk and not in the index — emitted, and not shipping. */
+export function untrackedDistFiles(spell: string, root: string = REPO_ROOT): string[] {
+  const tracked = new Set(trackedFiles([distRoot(spell)], root));
+  return diskDistFiles(spell, root).filter((f) => !tracked.has(f));
+}
+
+/** A backend artifact has a STABLE emitted name (`src/build.ts` names cli/server
+ *  entries `[dir]/[name].[ext]`); a surface chunk carries a content hash and is
+ *  RENAMED by every content change.
+ *
+ *  ⛔ THAT ASYMMETRY IS WHAT MAKES THE FATAL CLAUSE BELOW DISCRIMINATING RATHER
+ *  THAN A FALSE ALARM. An untracked `index-<hash>.js` is ordinary work in
+ *  progress — a rebuilt surface whose new chunk name is not staged yet — and the
+ *  ruling that keeps ARM 2 out of the local suite (Cole, 2026-09-01) is the same
+ *  ruling that keeps it non-fatal here. An untracked `cli.js` or `server.js`
+ *  cannot mean that: a rebuild of a tracked one leaves it MODIFIED, not
+ *  untracked. Untracked at a stable name means this spell's backend has never
+ *  been staged — the first-emit window, which is exactly the defect, and which
+ *  all four remaining ports pass through. */
+export const isBackendArtifact = (repoRelative: string): boolean =>
+  repoRelative.endsWith("/cli.js") || repoRelative.endsWith("/server.js");
+
+export type Roster = {
+  spell: string;
+  root: string;
+  tracked: number;
+  disk: number;
+  untracked: string[];
+}[];
 
 /** ARM 0's denominator, derived the way `src/build.ts` derives it — by importing
  * the same function, so the two cannot drift. A hand-kept list here would be a
@@ -113,6 +168,8 @@ export function roster(): Roster {
     spell,
     root: distRoot(spell),
     tracked: trackedDistFiles(spell).length,
+    disk: diskDistFiles(spell).length,
+    untracked: untrackedDistFiles(spell),
   }));
 }
 
@@ -126,9 +183,15 @@ function main(argv: string[]): number {
   console.log("\n  ARM 0 · denominator   (derived from src/build.ts, not a list here)");
   console.log(`  buildable spells      ${rows.length}`);
   for (const r of rows) {
-    console.log(`    ${r.spell.padEnd(14)} ${String(r.tracked).padStart(3)} tracked   ${r.root}`);
+    // ⛔ BOTH NUMBERS, ALWAYS. `3 tracked` alone read as a complete measurement
+    // of a spell whose disk held five files; the two it did not name were the
+    // backend artifacts (D42).
+    console.log(
+      `    ${r.spell.padEnd(14)} ${String(r.tracked).padStart(3)} tracked / ${String(r.disk).padStart(3)} on disk   ${r.root}`,
+    );
   }
   console.log(`  tracked files         ${trackedTotal}`);
+  console.log(`  files on disk         ${rows.reduce((n, r) => n + r.disk, 0)}`);
 
   if (rows.length === 0) {
     console.log("\n  ⚠ NO VERDICT — the walk found no buildable spells under src/.");
@@ -161,7 +224,54 @@ function main(argv: string[]): number {
     console.log("     dies importing a src/ tree the marketplace never copied.\n");
     return 1;
   }
+  // ── ARM 1b · THE INDEX IS NOT THE TREE ───────────────────────────────────
+  //
+  // ⛔ A POPULATION READ FROM THE INDEX IS NOT A POPULATION READ FROM THE TREE.
+  // ARM 1 above counts what git has; the build writes to the disk. On the commit
+  // that FIRST EMITS a spell's backend those two sets differ, and every check
+  // that only counts the first one is silent about a file it has already named
+  // the spell for. Nothing can LAND that way — ARM 2 reads `git status
+  // --porcelain`, which lists an unstaged artifact as `??`, and the `.gitignore`
+  // un-ignore lines exist for all eight spells — but ARM 1 said `✅ PASS` over
+  // it, and a green that means "unexamined" is the failure this whole script
+  // exists because of.
+  const unstagedBackends = rows.flatMap((r) => r.untracked.filter(isBackendArtifact));
+  const unstagedOther = rows.flatMap((r) => r.untracked.filter((f) => !isBackendArtifact(f)));
+
+  if (unstagedBackends.length > 0) {
+    console.log(
+      `  ⛔ FAIL — ${unstagedBackends.length} BACKEND artifact(s) NOT STAGED — NOT LOOKED AT:`,
+    );
+    for (const f of unstagedBackends) console.log(`     ${f}`);
+    console.log("");
+    console.log("     A backend artifact has a STABLE name, so untracked cannot mean `a rebuilt");
+    console.log("     chunk pending staging` — it means this spell's backend has never been");
+    console.log("     staged. Everything above counted the INDEX and therefore said nothing");
+    console.log("     about these files. Stage them, or add the two `.gitignore` un-ignore");
+    console.log("     lines if `git add` is silently refusing them at exit 0:");
+    console.log("");
+    for (const r of rows.filter((x) => x.untracked.some(isBackendArtifact))) {
+      console.log(`       git add -- ${r.root}`);
+    }
+    console.log("");
+    return 1;
+  }
+
   console.log(`  ✅ PASS — ${rows.length}/${rows.length} spells, ${trackedTotal} tracked files.`);
+
+  // ⚠ NON-FATAL, AND THE ASYMMETRY IS DELIBERATE (see `isBackendArtifact`). A
+  // hashed surface chunk is renamed by every content change, so untracked here is
+  // ordinary work in progress; failing on it would red the local gate on every
+  // surface edit, which is the same reason ARM 2 is CI-only. But it is NAMED, so
+  // the green above can never be read as "everything on the disk was examined".
+  if (unstagedOther.length > 0) {
+    console.log(
+      `  ⚠ ${unstagedOther.length} file(s) on disk are NOT STAGED and therefore NOT part of what`,
+    );
+    console.log("     ARM 1 measured. Expected mid-edit (a rebuilt surface chunk is renamed);");
+    console.log("     ARM 2 is what refuses to let them stay that way in a commit:");
+    for (const f of unstagedOther) console.log(`     ${f}`);
+  }
 
   if (noBuild) {
     console.log("\n  ARM 2 · reproduction  SKIPPED (--no-build).");

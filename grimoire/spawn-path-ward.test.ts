@@ -32,7 +32,16 @@
 
 import { describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -40,36 +49,87 @@ import { buildableSpells } from "../src/build.ts";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLUGIN_ROOT = join(REPO_ROOT, "plugins", "spellbook");
-const SKILLS_ROOT = join(PLUGIN_ROOT, "skills");
 
-/** Where a spell's build emits — the same expression `src/build.ts` uses. */
-const distDirFor = (spell: string) => join(SKILLS_ROOT, spell, "dist");
+/** Where a spell's build emits — the same expression `src/build.ts` uses. The
+ *  `root` parameter exists so the calibration below can drive these enumerators
+ *  against a throwaway repo whose index and disk IT chose, rather than proving
+ *  only that they can read this one. */
+const distDirFor = (spell: string, root: string = REPO_ROOT) =>
+  join(root, "plugins", "spellbook", "skills", spell, "dist");
 
-/** The TRACKED emitted JavaScript for one spell. Tracked, because an untracked
- *  file in `dist/` is a local build artifact and not something that ships —
- *  `dist-check` draws the same line for the same reason. */
-function emittedJs(spell: string): string[] {
-  const dir = distDirFor(spell);
+/** One emitted `.js` file, and whether the INDEX has it yet. */
+type Emitted = { abs: string; staged: boolean };
+
+/**
+ * The emitted JavaScript for one spell — **READ FROM THE DISK, then labelled
+ * against the index.**
+ *
+ * ⛔ THIS FUNCTION READ `git ls-files` AND THAT WAS THE THIRD INSTANCE OF ONE
+ * DEFECT (D42). The population line is derived from `buildableSpells()`, so a
+ * spell arrives in it on the commit that relocates it — but its emitted backend
+ * arrives in `dist/` from the BUILD, and `dist/` is gitignored with a hand-kept
+ * un-ignore list, so on the commit that FIRST EMITS a backend the artifact is on
+ * disk and not in the index. The ward then printed that spell in its population
+ * line and produced **no coverage row for it at all** — not `pins=0`, no row.
+ * Driven: a corrupted pin (`join(SCRIPT_DIR, "..", "NOWHERE", "server.ts")`) in
+ * an on-disk-but-untracked `bounty/dist/cli.js` produced **not one new failure**,
+ * 7 pass / 0 fail, while the population line said `across 8 spell(s): … bounty …`.
+ * A missing row reads as "nothing to cover". It meant "not looked at".
+ *
+ * ⛔ AND ALL FOUR REMAINING PORTS PASS THROUGH THAT WINDOW — bounty, digestify,
+ * grapevine and mind-mapper each first-emit their backend artifacts.
+ *
+ * **THE DISK IS THE HONEST SOURCE FOR THIS WARD'S QUESTION.** The question is
+ * "does the anchor arithmetic in the artifact the build just produced resolve?",
+ * and the artifact the build just produced is on disk whether or not anyone has
+ * run `git add` yet. Staging is a fact about shipping, which is `dist-check`'s
+ * question, not this one.
+ *
+ * ⚠ THE FALSE-POSITIVE THIS COULD HAVE CREATED, AND WHY IT DOES NOT.
+ * "Read the disk" invites stale build leftovers into the population. It cannot
+ * accumulate them: `src/build.ts` `rm`s each `dist/` before every build, so the
+ * disk holds exactly the last build's output and nothing older, and `bun run
+ * gate` builds before it tests. A leftover from a foreign checkout, examined by
+ * a bare `bun test` with no build, would produce a RED naming a path — loud and
+ * one `bun run build` from resolved — which is the direction this repo prefers
+ * to be wrong in.
+ *
+ * ⚠ AN INDEX-ONLY FILE (tracked, absent from disk) drops out here, as it always
+ * did — a rebuild renames a hashed chunk and the old name lingers in the index
+ * until staged. Before, reading it threw ENOENT from inside `pinnedPaths` and
+ * three cells failed with a stack trace about nothing (Playbook Gotcha 4). It is
+ * not this ward's subject; `dist-check`'s ARM 2 is what has an opinion about it.
+ * It is now REPORTED rather than merely skipped — see the population cell.
+ */
+function emittedFiles(spell: string, root: string = REPO_ROOT): Emitted[] {
+  const dir = distDirFor(spell, root);
   if (!existsSync(dir)) return [];
-  return (
-    execFileSync("git", ["-C", REPO_ROOT, "ls-files", relative(REPO_ROOT, dir)], {
-      encoding: "utf8",
-    })
-      .trim()
+  const staged = new Set(
+    execFileSync("git", ["-C", root, "ls-files", relative(root, dir)], { encoding: "utf8" })
       .split("\n")
-      .filter((f) => f.endsWith(".js"))
-      .map((f) => join(REPO_ROOT, f))
-      // ⚠ THE INDEX AND THE DISK DIVERGE DURING A PORT, and this ward used to
-      // CRASH on that rather than report it. A rebuild replaces a hashed chunk;
-      // until the result is staged, `git ls-files` still names the old chunk and
-      // `readFileSync` throws ENOENT from inside `pinnedPaths` — three cells fail
-      // with a stack trace that says nothing about paths. Playbook Gotcha 4, in a
-      // new file. A tracked-but-absent emitted file is not this ward's subject, so
-      // it is skipped; `dist-check`'s reproduction arm is what has an opinion about
-      // it, and the zero-guard below still refuses an empty population.
-      .filter((f) => existsSync(f))
+      .filter(Boolean)
+      .map((f) => join(root, f)),
   );
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".js"))
+    .map((f) => join(dir, f))
+    .sort()
+    .map((abs) => ({ abs, staged: staged.has(abs) }));
 }
+
+/** Tracked emitted `.js` the DISK does not have — the other side of the
+ *  divergence, reported so it cannot be confused with "there is nothing here". */
+function indexOnlyEmitted(spell: string, root: string = REPO_ROOT): string[] {
+  const dir = distDirFor(spell, root);
+  if (!existsSync(dir)) return [];
+  return execFileSync("git", ["-C", root, "ls-files", relative(root, dir)], { encoding: "utf8" })
+    .split("\n")
+    .filter((f) => f.endsWith(".js"))
+    .map((f) => join(root, f))
+    .filter((f) => !existsSync(f));
+}
+
+const emittedJs = (spell: string): string[] => emittedFiles(spell).map((e) => e.abs);
 
 /** The emitted files a spell's BACKEND produces — the ones whose anchor
  *  arithmetic this ward exists to check. A surface chunk is emitted too and
@@ -266,10 +326,29 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     // reading as "every emitted backend is correct".
     expect(buildableSpells().length).toBeGreaterThan(0);
     expect(spells.length).toBeGreaterThan(0);
-    const files = spells.flatMap(emittedJs);
+    const files = spells.flatMap((s) => emittedFiles(s));
     expect(files.length).toBeGreaterThan(0);
+
+    // ⛔ A SPELL THIS WARD NAMES BUT CANNOT SEE MUST SAY SO. Before D42 the line
+    // below printed `across 8 spell(s)` while contributing no row at all for the
+    // spell whose artifact was on disk and not in the index — a silence that read
+    // as "nothing to cover". The population is now the DISK, so there is no such
+    // spell; what remains is the reverse divergence, and it is PRINTED rather
+    // than merely skipped.
+    const unstaged = files.filter((f) => !f.staged).map((f) => relative(REPO_ROOT, f.abs));
+    const indexOnly = spells.flatMap((s) => indexOnlyEmitted(s)).map((f) => relative(REPO_ROOT, f));
     console.warn(
-      `\n  SPAWN-PATH WARD — ${files.length} emitted file(s) across ${spells.length} spell(s): ${spells.join(", ")}\n`,
+      [
+        "",
+        `  SPAWN-PATH WARD — ${files.length} emitted file(s) across ${spells.length} spell(s): ${spells.join(", ")}`,
+        `  read from the DISK · ${files.length - unstaged.length} staged · ${unstaged.length} NOT STAGED (examined anyway — staging is dist-check's question)`,
+        ...unstaged.map((f) => `      NOT STAGED  ${f}`),
+        ...indexOnly.map(
+          (f) =>
+            `      INDEX-ONLY, absent from disk — not looked at (dist-check ARM 2 owns it)  ${f}`,
+        ),
+        "",
+      ].join("\n"),
     );
   });
 
@@ -308,7 +387,8 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     const blind: string[] = [];
     const coverage: string[] = [];
     for (const spell of spells) {
-      for (const file of emittedJs(spell).filter(isBackendArtifact)) {
+      for (const emitted of emittedFiles(spell).filter((e) => isBackendArtifact(e.abs))) {
+        const file = emitted.abs;
         const rel = relative(REPO_ROOT, file);
         const text = readFileSync(file, "utf8");
         const pins = pinnedPaths(file);
@@ -317,9 +397,9 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
           unread.push(`${rel}:${hit.replace(":", "  UNREAD ANCHOR SPELLING  ")}`);
         }
         coverage.push(
-          `${rel}  anchors=${anchoring ? "yes" : "no "}  anchor-read=${
-            hasReadableAnchor(text) ? "yes" : "no "
-          }  pins=${pins.length}`,
+          `${rel}  ${emitted.staged ? "staged    " : "NOT STAGED"}  anchors=${
+            anchoring ? "yes" : "no "
+          }  anchor-read=${hasReadableAnchor(text) ? "yes" : "no "}  pins=${pins.length}`,
         );
         if (anchoring && pins.length === 0) blind.push(rel);
       }
@@ -478,5 +558,49 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(missing.map((p) => p.resolved.replace(root, "<tmp>"))).toEqual([
       "<tmp>/dist/nowhere.py",
     ]);
+  });
+
+  test("⛔ CALIBRATION — AN UNSTAGED EMITTED ARTIFACT IS IN THE POPULATION, NOT MISSING FROM IT", () => {
+    // ⛔ THE THIRD INSTANCE OF ONE DEFECT, MADE PERMANENT (D42). `emittedFiles`
+    // read `git ls-files`, so a spell whose backend artifact was on disk and not
+    // yet in the index contributed NO coverage row — while still being counted in
+    // the population line above. Driven by hand: a corrupted pin in an untracked
+    // `bounty/dist/cli.js` produced not one new failure. This cell is what stops
+    // the enumerator quietly returning to the index.
+    //
+    // ⛔ AND IT GOES THROUGH THE ENUMERATOR, AGAINST A REPO THE CELL BUILT.
+    // Asserting that `git ls-files` can read an index proves nothing about which
+    // set this ward walks (`dist-roster-ward`'s positive control records the same
+    // ruling, and the pathspec typo that earned it).
+    const root = mkdtempSync(join(tmpdir(), "spawn-path-population-"));
+    const dist = distDirFor("probe", root);
+    mkdirSync(dist, { recursive: true });
+    const git = (...a: string[]) =>
+      Bun.spawnSync(["git", ...a], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    expect(git("init", "-q").exitCode).toBe(0);
+    writeFileSync(join(dist, "server.js"), "// staged\n");
+    writeFileSync(join(dist, "index-oldhash.js"), "// about to be replaced\n");
+    // `-f`, because the real tree's `dist` is gitignored and a throwaway repo
+    // should not have to reproduce the un-ignore list to model the index.
+    expect(git("add", "-f", "--", "plugins").exitCode).toBe(0);
+    // …and now the two divergences a port actually produces:
+    writeFileSync(join(dist, "cli.js"), "// emitted, NOT yet staged\n"); // disk only
+    rmSync(join(dist, "index-oldhash.js")); // index only — the renamed chunk
+
+    const found = emittedFiles("probe", root);
+    expect(found.map((f) => `${relative(dist, f.abs)} staged=${f.staged}`)).toEqual([
+      // ⭐ THE ROW THAT DID NOT EXIST BEFORE. Present, labelled, and therefore
+      // scanned by every cell above.
+      "cli.js staged=false",
+      "server.js staged=true",
+    ]);
+    // The reverse divergence is REPORTED, not silently absent.
+    expect(indexOnlyEmitted("probe", root).map((f) => relative(dist, f))).toEqual([
+      "index-oldhash.js",
+    ]);
+    // …and the enumerator CAN measure empty, so the two rows above came from it
+    // discriminating rather than from a walk that returns everything.
+    expect(emittedFiles("no-such-spell-6f3a1c", root)).toEqual([]);
+    rmSync(root, { recursive: true, force: true });
   });
 });

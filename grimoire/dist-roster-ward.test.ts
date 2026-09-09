@@ -26,13 +26,25 @@
 //    ITS COMMITTED SOURCE. It says an artifact is PRESENT and TRACKED. Those are
 //    different failures with different remedies, and this is the cheap half.
 //
+// ⛔ AND ARM 1's "PRESENT AND TRACKED" IS TWO MEASUREMENTS, NOT ONE (D42). A
+//    spell's surface chunks satisfy "≥1 tracked file" on their own, so the arm
+//    passed over imago with both its backend artifacts unstaged. ARM 1b below is
+//    the missing half: the index compared to the DISK, fatal for a backend
+//    artifact, named-but-non-fatal for a hashed surface chunk.
+//
 // The arms are imported rather than re-derived, so this cell and CI cannot
 // disagree about what the roster is.
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { roster, trackedBuildInputs, trackedDistFiles } from "../scripts/dist-check.ts";
+import {
+  isBackendArtifact,
+  roster,
+  trackedBuildInputs,
+  trackedDistFiles,
+  untrackedDistFiles,
+} from "../scripts/dist-check.ts";
 
 describe("dist roster ward", () => {
   const rows = roster();
@@ -53,6 +65,70 @@ describe("dist roster ward", () => {
     // Named, not counted: the remedy is per-spell (two `!` lines in .gitignore),
     // so the failure message has to say which spell and which path.
     expect(absent).toEqual([]);
+  });
+
+  test("ARM 1b — every BACKEND artifact on disk is TRACKED: the index is not the tree", () => {
+    // ⛔ THE THIRD INSTANCE OF ONE DEFECT (D42). ARM 1's predicate was "≥1
+    // TRACKED file in dist/", and a spell's surface chunks satisfy it on their
+    // own. Driven: with imago's `cli.js` and `server.js` left unstaged, ARM 1
+    // printed `imago 3 tracked` and PASSED — a green over the two files that
+    // were the entire reason to look. A derived denominator counted from the
+    // INDEX cannot notice what the BUILD left beside it on the DISK.
+    //
+    // Named per path, because the remedy is per path: `git add`, or the two
+    // `.gitignore` un-ignore lines that make `git add` refuse at exit 0.
+    const unstaged = rows.flatMap((r) => r.untracked.filter(isBackendArtifact));
+    expect(unstaged).toEqual([]);
+  });
+
+  test("ARM 1b — BOTH numbers are measured, so a green cannot mean `unexamined`", () => {
+    // The disk count is what makes the tracked count falsifiable. Without it,
+    // `3 tracked ✅` and `3 tracked of 5 on disk ✅` print identically.
+    console.log(`  dist roster: ${rows.map((r) => `${r.spell}:${r.tracked}/${r.disk}`).join(" ")}`);
+    for (const r of rows) expect(r.disk).toBeGreaterThanOrEqual(0);
+    // A spell whose dist/ exists on disk must contribute to BOTH measurements —
+    // a zero disk count beside a non-zero tracked count means the walk read a
+    // path that is not there, which is how this script's v1 pathspec failed.
+    expect(rows.filter((r) => r.tracked > 0 && r.disk === 0)).toEqual([]);
+  });
+
+  test("positive control — untrackedDistFiles NAMES a file the index does not have", () => {
+    // ⛔ THROUGH THE PREDICATE, AGAINST A REPO THE CONTROL BUILT — the ruling
+    // `trackedBuildInputs`'s control earned. Proving `readdirSync` can list a
+    // directory says nothing about whether this function compares the right two
+    // sets.
+    const root = mkdtempSync(join(tmpdir(), "dist-unstaged-control-"));
+    try {
+      const dist = join(root, "plugins", "spellbook", "skills", "probe", "dist");
+      mkdirSync(dist, { recursive: true });
+      writeFileSync(join(dist, "server.js"), "// staged\n");
+      const git = (...a: string[]) =>
+        Bun.spawnSync(["git", ...a], { cwd: root, stdout: "pipe", stderr: "pipe" });
+      expect(git("init", "-q").exitCode).toBe(0);
+      // `-f`: the real tree's `dist` is gitignored, and a control should model
+      // the INDEX, not re-derive the un-ignore list.
+      expect(git("add", "-f", "--", "plugins").exitCode).toBe(0);
+      // The first-emit window, exactly: a backend artifact on disk, not staged.
+      writeFileSync(join(dist, "cli.js"), "// emitted, never staged\n");
+      writeFileSync(join(dist, "index-newhash.js"), "// a rebuilt surface chunk\n");
+
+      expect(untrackedDistFiles("probe", root)).toEqual([
+        "plugins/spellbook/skills/probe/dist/cli.js",
+        "plugins/spellbook/skills/probe/dist/index-newhash.js",
+      ]);
+      // ⭐ AND THE FATAL CLAUSE DISCRIMINATES. Only the stable-named artifact is
+      // fatal; the hashed chunk is ordinary work in progress and must stay
+      // non-fatal, or the local gate reds on every surface edit — the same
+      // reason ARM 2 is CI-only.
+      expect(untrackedDistFiles("probe", root).filter(isBackendArtifact)).toEqual([
+        "plugins/spellbook/skills/probe/dist/cli.js",
+      ]);
+      // …and it can measure empty in the SAME repo, so the rows above came from
+      // a comparison rather than from a function that returns the whole disk.
+      expect(untrackedDistFiles("probe-absent", root)).toEqual([]);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   test("S3 clause 1 — no roster spell ships build-input source: zero tracked surface/ paths, no bunfig.toml", () => {
