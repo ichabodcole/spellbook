@@ -1141,3 +1141,27 @@ which is B3's subject.
   today._ Rejected on the same ground D27 rejected it: five spells port against
   this instrument next, and the whole point of the cell is the spell it has
   never seen.
+
+## D37 · Building does NOT drag acc conformance in front of a spell
+
+**Closed:** orchestrator, 2026-09-08. **Open since Phase 0**, where the proposal
+listed it as a dependency to price rather than a surprise to absorb mid-phase:
+_"confirm whether building drags acc conformance in front of the four spells
+that have no acc.config.json (bounty, digestify, grapevine, imago)."_
+
+**Measured: it does not.** Nothing in `grimoire/`, `scripts/` or `src/` requires
+an `acc.config.json` to exist. The only two references in the tree are a
+fresh-agent record from 2026-08-26 and glamour's own `cli-contract.test.ts` — a
+spell-local test, not a ward. Four spells have a config (astrolabe, glamour,
+magpie, mind-mapper) and four do not; the build is indifferent to which.
+
+**Consequence for the roll.** Imago, bounty, digestify and grapevine port
+without acquiring an acc grade, and their ports are not gated on one. Where a
+spell DOES have a config, its grade is an acceptance criterion — glamour's
+CONFORMANT L0 was re-run and held in Phase 2 — because a port that regrades what
+an agent observes has changed behaviour.
+
+**Not taken:** _add `acc.config.json` to imago as part of its port_ — it is a
+day's work of its own, it is a different kind of change (a conformance grade,
+not a build), and bundling it would make the first playbook-driven port the one
+port that does not follow the playbook.
