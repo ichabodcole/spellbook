@@ -859,11 +859,25 @@ port is before Phase 1, because they have different done-whens below.
 > ported.** It is the backend convergence's Phase 2, generalised — written from
 > glamour, which is the first spell to take its whole backend out of the
 > deployed skill folder, and which was chosen as the pathfinder precisely so
-> five spells could follow it. **Its population is OPEN:** bounty, digestify,
-> grapevine and mind-mapper still walk this. Astrolabe and magpie walked half of
-> it first (their CLIs already built), and where their experience differs from
-> glamour's the difference is recorded, because that difference is the part a
-> third spell cannot predict.
+> five spells could follow it. **Its population is OPEN:** digestify, grapevine
+> and mind-mapper still walk this (bounty landed 2026-09-09). Astrolabe and
+> magpie walked half of it first (their CLIs already built), and where their
+> experience differs from glamour's the difference is recorded, because that
+> difference is the part a third spell cannot predict.
+>
+> ⭐⭐⭐ **AMENDED 2026-09-09 IN PRE-WORK FOR DIGESTIFY — THE FIRST
+> SINGLE-ENTRY, SINGLE-SHOT SPELL, AND THE PORT THIS PHASE WAS LEAST ABLE TO
+> CARRY.** An independent verify pass read Phase B cold as digestify's porting
+> agent and ruled it not safe to hand over: D43 had corrected the ARITHMETIC
+> ("two entries" → derived from launchers) and left the BODY keyed on a
+> `cli`/`server` pair. Four steps produced a wrong result if followed literally.
+> Every one is re-homed below onto a PROPERTY an agent can check rather than
+> onto a name, each marked `⭐ digestify`. **Nothing was deleted; every scar was
+> moved.** The account, with what was measured and what the report got wrong, is
+> `docs/projects/backend-convergence/phase-5-prework.md`. **What did NOT
+> transfer, stated once: the assumption that the spell has two halves.** Half of
+> B8's flagship instruction, B5's pin destination, B3's entry permission and
+> B7's expected-red list all read a second entry that digestify does not have.
 >
 > ⭐⭐ **AMENDED AGAIN 2026-09-09 FROM BOUNTY — the second port driven by this
 > document, the first with THREE entries, and the first of a spell the shared
@@ -913,6 +927,40 @@ your spell's `scripts/` directory and its SKILL.md; that is the entry set.
 Everywhere below that says "the two launchers", "the two files", "both
 artifacts", read "one per entry" — the shapes are all per-entry, the count is
 not two.
+
+#### ⛔ ⭐ AND THE NAMES ARE NOT THE KEY EITHER. ANSWER FOUR QUESTIONS PER ENTRY, BEFORE B1.
+
+⭐ **digestify.** D43 fixed the COUNT and left the BODY keyed on the pair. Read
+literally by a spell with one entry called `review.ts`, four steps below gave a
+wrong answer and two of them gave it quietly. The repair is not another special
+case: **every ruling in B3, B5, B7 and B8 is really about a PROPERTY, and the
+names `cli` and `server` were only ever a fast way to guess the property on the
+five spells that had both.** Guess it directly instead. Write the four answers
+down before B1 — they are what the steps below dispatch on, and each is one
+`grep` of your own entry:
+
+| #   | the question, of EACH entry                                                                                                            | how you answer it                                                                                                                                                                                | what it governs                                                        |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| 1   | **What ARITHMETIC does it carry?** Does it compute a path from its own location — a skill root, a sibling, a spawn?                    | grep the file for `import.meta.url` / `import.meta.dir` / `import.meta.dirname` / `fileURLToPath` (any qualifier) / `__dirname`. Then RESOLVE each from `src/<spell>/backend/` AND from `dist/`. | **B3** (may this entry keep `import.meta.main`?) · **B4** · **B5**     |
+| 2   | **Does it SERVE, and does any route return something other than a file on disk?**                                                      | grep for `Bun.serve`, then read every route that answers a document — is any of them substituted, templated, or re-addressed?                                                                    | **B8**'s `serveFromDist` row                                           |
+| 3   | **Does the spell have a SECOND HALF?** More than one entry, such that a value could be hand-mirrored between them?                     | count the entry set you just derived.                                                                                                                                                            | **B8**'s `heartbeat.ts` seam                                           |
+| 4   | **Is the entry LONG-RUNNING or SINGLE-SHOT?** Does it outlive the invocation and serve many callers, or serve one human once and exit? | read what `main` returns and when.                                                                                                                                                               | **B8**'s module table (which rows have a SUBJECT) and its epoch ruling |
+
+**Worked, on digestify, and this is why the four exist:**
+
+| #   | digestify's answer                                                                                                                                                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **DAEMON arithmetic in a CLI-shaped entry.** `review.ts:40-42` is `SCRIPT_DIR` → `SKILL_ROOT = join(SCRIPT_DIR, "..")` → `DIST_DIR`, correct only from the skill root's own children. **Its two properties are independent, and B3 assumed they were the same property.** |
+| 2   | **Yes — `/` is SUBSTITUTED IN MEMORY** and deliberately not served from `dist/`. Its local `serveDist` refuses `index.html` BY NAME so the unsubstituted document can never escape.                                                                                       |
+| 3   | **No.** One entry. There is nothing for a shared module to be shared BETWEEN.                                                                                                                                                                                             |
+| 4   | **Single-shot.** One human, one review, then exit — no event log, no SSE, no discovery pointer, no second client.                                                                                                                                                         |
+
+⚠ **Questions 1 and 2 are the two that go WRONG QUIETLY**, which is why they are
+first. Question 3 is the one that makes an instruction UNEXECUTABLE rather than
+wrong, and an unexecutable instruction is the safest of the four — an agent
+stops and asks. Question 4 mostly removes work, and removing work is the case
+where an agent is most likely to invent some; see B7 and B8 on saying an absence
+out loud.
 
 ⚠ **AND THE COUNT IS WHAT `grimoire/launcher-pairing-ward.test.ts` CHECKS**, in
 both directions: a launcher importing `../dist/X.js` with no built `X.js`, and a
@@ -972,6 +1020,17 @@ forward into the pre-work. bounty found a THIRD copy of the same defect
 (`scripts/dist-check.ts` ARM 1b, hard-coded to `cli.js`/`server.js`, silent on a
 first-emit `join.js`) DURING chapter 1's validation — nobody could have pulled
 it forward, because bounty's port is what made it observable.
+
+⚠ ⭐ **digestify — THAT PARTICULAR REPAIR HAS LANDED, AND THE PARAGRAPH STAYS
+BECAUSE THE CLASS HAS NOT.** `scripts/dist-check.ts` ARM 1b no longer reads two
+file names (D49); `isBackendArtifact` derives them, and its comment now names
+`review.js` and `daemon.js` in advance. **So do not go looking for that repair
+as a scheduled chapter — go looking for the NEXT one.** The pattern this row
+records is "the port makes an instrument defect observable for the first time",
+and it has now happened at bounty (ARM 1b) and again in digestify's pre-work
+(B4's `git add` step, below, which the ward it was written for has since made
+unnecessary). Budget the third chapter as a MAYBE with a commit slot, not as a
+list of known repairs.
 
 **Land it as its own commit BETWEEN the chapters, before the work it judges.**
 Not inline (D44 forbids it, and a 1,700-line relocation is not the diff to hide
@@ -1034,6 +1093,25 @@ caller parses) and one for a DAEMON — and they differ in exactly one line, whi
 is not a style choice. Pick by what the entry IS, not by what it is called:
 grapevine's `daemon.ts` is a daemon shape.
 
+⛔ ⭐ **digestify — AND "WHAT THE ENTRY IS" IS TWO QUESTIONS, NOT ONE. THIS STEP
+ANSWERS ONLY THE STDOUT ONE, AND EVERY STEP BELOW READS ITS ANSWER AS THOUGH IT
+ANSWERED BOTH.** The launcher shape is decided by **the stdout contract**. It is
+NOT a statement about the entry's lifecycle, and it is NOT a statement about its
+path arithmetic. Digestify's `review.ts` is a **CLI by stdout** (it prints one
+JSON object an agent parses, and it already carries the `process.exitCode` +
+natural-return comment for exactly that reason), a **server by lifecycle** (it
+calls `Bun.serve` and blocks until a human submits), and a **daemon by
+arithmetic** (`SKILL_ROOT = join(SCRIPT_DIR, "..")`). One entry, three different
+answers, and only the first of them belongs to this step.
+
+**So this step gives a single-entry spell the right launcher — and it gives it
+BY ACCIDENT unless you say which question you answered.** Write the shape down
+WITH its reason ("CLI shape, because its stdout is a pipe the agent parses"),
+and carry question 1's answer separately into B3. Two spells have now had a
+non-obvious pairing: bounty's `join.ts` is a CLI by stdout that ships the DAEMON
+shape, and digestify's `review.ts` is a CLI by stdout that carries DAEMON
+arithmetic. **The pairing being non-obvious twice out of two is the finding.**
+
 ⛔ ⭐ **bounty — AND THERE IS A THIRD CASE, WHICH THIS PARAGRAPH USED TO OFFER
 AS ITS EXAMPLE OF THE FIRST.** It said "bounty's `join.ts` is a CLI shape". By
 stdout contract that is right — `join.ts` writes JSON lines a caller parses, and
@@ -1047,12 +1125,17 @@ every exit path. The `process.exit` is doing DOUBLE DUTY: draining the payload
 is broken, and force-terminating a live socket is load-bearing.
 
 **So the third case is: an entry whose exit is LOAD-BEARING FOR SOMETHING OTHER
-THAN EXITING.** Read your entry for one before you pick a shape. Where you find
-it, keep the terminal exit, carry the truncation defect across UNCHANGED and
-deliberately, and write the reason at BOTH the launcher and the backend entry
-block — a relocation whose contract is "nothing the caller sees moves" is not
-the place to trade a truncation for a hang. File the lifecycle fix (close the
-socket on every path, then return naturally) separately.
+THAN EXITING.** Read your entry for one before you pick a shape — ⭐ **and
+READING IS NOT HOW BOUNTY FOUND IT.** Reading said "CLI shape"; the shape was
+chosen, and the suite then hung to a 15 s timeout. **So DRIVE the shape you
+picked before you commit chapter 1**: run the launcher end to end and watch it
+EXIT. An entry that does not return is the whole cost of guessing this one
+wrong, and it costs one invocation to rule out. Where you find it, keep the
+terminal exit, carry the truncation defect across UNCHANGED and deliberately,
+and write the reason at BOTH the launcher and the backend entry block — a
+relocation whose contract is "nothing the caller sees moves" is not the place to
+trade a truncation for a hang. File the lifecycle fix (close the socket on every
+path, then return naturally) separately.
 
 ```ts
 // scripts/cli.ts   — a CLI's stdout is a pipe the caller parses
@@ -1081,13 +1164,61 @@ entry. So `if (import.meta.main)` never runs. Left as-is:
 
 Export a `run()` and delete the block.
 
-⛔ **AND THE DAEMON KEEPS NO SECOND ENTRY, DELIBERATELY.** Its `SKILL_ROOT` is
-`join(import.meta.dir, "..")`, which is the skill root only from `dist/`. Run
-from `src/<spell>/backend/` it computes `src/<spell>/`, finds no
-`dist/index.html`, **silently chooses DEV**, and then fails the dev import from
-the wrong anchor. Offering that entry is offering a wrong daemon. **The CLI may
-keep both** — its ancestor paths are correct from either address — but it has no
-reason to.
+⛔ **AND AN ENTRY WHOSE ARITHMETIC IS ANCHORED AT THE SKILL ROOT KEEPS NO SECOND
+ENTRY, DELIBERATELY.** `SKILL_ROOT = join(import.meta.dir, "..")` is the skill
+root only from `dist/`. Run from `src/<spell>/backend/` it computes
+`src/<spell>/`, finds no `dist/index.html`, chooses DEV, and then fails the dev
+import from the wrong anchor. Offering that entry is offering a wrong process.
+
+⛔ ⭐ **digestify — AND THE GOVERNING PROPERTY IS THE ARITHMETIC, NOT THE LABEL.
+THIS PARAGRAPH USED TO SAY "THE DAEMON" AND "THE CLI", AND THE PERMISSION IT
+HANDED OUT WAS WRONG FOR THE FIRST SPELL THAT ASKED.** It read: _"The CLI may
+keep both — its ancestor paths are correct from either address."_ That is a
+statement about the five spells whose `cli.ts` happened to compute nothing from
+its own location. It is **not** a property of being a CLI, and B2 labels
+digestify's `review.ts` a CLI. Its arithmetic is the daemon's.
+
+**So the rule, restated on the property — this is question 1 from the entry
+block, and it is the only thing B3 dispatches on:**
+
+> **An entry may keep `import.meta.main` iff every path it computes from its own
+> location resolves correctly from `src/<spell>/backend/`.** Resolve them; do
+> not classify the file. Where any one does not, delete the block and export
+> `run()` — the artifact is then the only address the entry has, which is the
+> only address its arithmetic was ever true at.
+
+⚠ **AND THE SYMPTOM IS NOT ALWAYS SILENCE — WHICH IS WORSE THAN THIS STEP LED
+YOU TO EXPECT, NOT BETTER.** The prediction carried here (and repeated in
+digestify's own verify report) was "silently picks dev, exit 0, and the whole
+thing reads as a surface bug". **Measured, by copying `review.ts` to
+`src/digestify/backend/review.ts` and running it from two cwds:**
+
+```
+(a) from the repo root                    → exit 2, LOUD:
+    digestify: cannot start in dev mode from this directory.
+      cwd:    /Users/colereed/Projects/Spellbook
+      needed: … in a checkout of this repo that is /Users/colereed/src/digestify
+
+(b) from src/digestify (a cwd whose bunfig DOES load the plugin) → exit 2, LOUD:
+    digestify: cannot start in dev mode — the surface source is missing.
+      reason: Cannot find module '../../../../../src/digestify/surface/index.html'
+              imported from …/src/digestify/backend/review.ts
+```
+
+**Both are loud, and both blame the wrong thing.** (a) reports the operator's
+**cwd** — a Contract 5 problem — for what is a Contract 1 anchoring defect, and
+the directory it tells the operator to go to, `/Users/colereed/src/digestify`,
+**does not exist**: it is the same broken `SKILL_ROOT` run through
+`DEV_SURFACE_CWD`'s four `..`, so the error message is computed by the bug it is
+reporting. (b) blames the surface source, which is present and correct.
+
+⛔ **The generalisation, and it is why "silent" was the wrong thing to warn
+about: a spell that spent effort on good diagnostics has MORE ways to
+misattribute this, not fewer.** Every message a location-anchored entry prints
+about its own environment is computed from the anchor. Get the anchor wrong and
+the diagnostics are wrong TOGETHER, consistently, in a direction that reads like
+a real answer. **Do not accept a diagnostic as evidence about the anchor.**
+Resolve the paths yourself, from the address the file will actually sit at.
 
 #### B4 · ⛔ THE PATH-PINNED-SIBLING CLASS, AND THE WARD THAT CATCHES IT
 
@@ -1150,13 +1281,13 @@ naming, and every ingredient-bearing line must be READ (recognised as an anchor,
 or yielding a pin) or the ward reds naming the line. `process.argv[1]` is the
 declared remaining hole.
 
-⭐ **SO DO THIS, EVERY PORT, BY HAND:** `git add` your two emitted artifacts,
-read your emitted anchor line, then run the ward and **confirm its coverage row
-prints `anchor-read=yes` with a non-zero `pins=` for YOUR spell.** The row is
-one line of console output and it is the only thing that distinguishes "this
-backend is fine" from "this ward cannot see this backend". Do not skip it
-because the ward is green — green over exactly this defect is what it did the
-first two times.
+⭐ **SO DO THIS, EVERY PORT, BY HAND:** read your emitted anchor line, then run
+the ward and **confirm a coverage row prints `anchor-read=yes` with a non-zero
+`pins=` for EACH of YOUR spell's emitted artifacts** — one per entry, so one for
+digestify, two for most spells, three for bounty. The row is one line of console
+output and it is the only thing that distinguishes "this backend is fine" from
+"this ward cannot see this backend". Do not skip it because the ward is green —
+green over exactly this defect is what it did the first two times.
 
 ⛔ **⭐ imago — AND THE `git add` IS NOT HOUSEKEEPING. IT IS THE STEP, AND
 WITHOUT IT THE WARD IS BLIND TO EVERY SPELL ON THE COMMIT THAT FIRST EMITS ITS
@@ -1181,8 +1312,24 @@ SPAWN-PATH WARD — coverage:
 
 ⛔ **THE FAILURE MODE THIS TEXT USED TO DESCRIBE WAS `pins=0`. THE ONE THAT
 HAPPENS IS NO ROW.** A missing row reads as "nothing to cover"; it means "not
-looked at". `git add` the two files and re-run, with nothing else changed, and
-the rows appear (imago: `cli.js pins=5`, `server.js pins=4`).
+looked at". `git add` the files and re-run, with nothing else changed, and the
+rows appear (imago: `cli.js pins=5`, `server.js pins=4`).
+
+⚠ ⭐ **digestify — THE `git add` IS NO LONGER THE STEP, AND THE PARAGRAPH ABOVE
+STAYS BECAUSE THE SCAR OUTLIVED ITS REPAIR.** D42 closed this: the ward's
+`emittedFiles()` reads the **DISK** and then labels each file against the index,
+so the first-emit window is covered by construction and an index-only leftover
+is REPORTED rather than skipped. Its own comment names the reason — _"the
+artifact the build just produced is on disk whether or not anyone has run
+`git add` yet; staging is a fact about shipping, which is `dist-check`'s
+question, not this one"_ — and names all four remaining ports as passing through
+that window. **So do not stage artifacts as a ward workaround.** The surviving
+instruction is the one above it: read the coverage rows and confirm yours is
+there. **The reason to keep the history is that this defect has now been fixed
+at three levels and recurred at each** (D27 built coverage, D36 rebuilt its
+gate, D42 moved its population to the disk); a fourth level is likelier than
+not, and the shape of the miss — a row that does not appear — is what you are
+looking for, whatever produced it.
 
 ⚠ **AND THIS IS THE SAME DEFECT ONE LEVEL UP, FOR THE FOURTH TIME.** D27 built
 the coverage cell because population ≠ coverage; D36 rebuilt its gate because a
@@ -1195,7 +1342,13 @@ guard.
 
 #### B5 · ⛔ THE REVERSE SURFACE-IMPORT RE-POINT — the specifier is written for the ARTIFACT
 
-The daemon's dev branch does
+**The entry this step is about is the one that SERVES the surface** — question 2
+from the entry block, and for four spells that entry is called `server.ts`. ⭐
+**digestify's is `review.ts`, its only entry.** Everywhere below that says "the
+daemon" and `dist/server.js`, read "the entry that reaches the surface source"
+and `dist/<that entry>.js`.
+
+That entry's dev branch does
 `await import("../../../../../src/<spell>/surface/index.html")`, and
 `src/build.ts` passes `--external` for the surface-HTML glob — so **that
 specifier survives into `dist/server.js` BYTE-FOR-BYTE** and is resolved at
@@ -1207,10 +1360,41 @@ the repo.** Do not "fix" the `..` count.
 It happens to be the SAME string before and after the relocation, because
 `dist/` sits at the same depth as the `scripts/` it replaced. **That is a
 coincidence of depth, not a property** — assert it rather than trusting it, and
-move `import-boundary-wards` ward 1a's pin to `…/dist/server.js`, where the
+move `import-boundary-wards` ward 1a's pin to **`…/dist/<entry>.js`**, where the
 specifier actually executes. (`trackedSources` is `.ts`/`.tsx` only, so left
 alone the pin is deleted as "no longer present" and the ward goes green because
 it stopped looking — Contract 19, exactly.)
+
+⛔ ⭐ **digestify — `<entry>` IS NOT `server`, AND THIS STEP USED TO NAME
+`…/dist/server.js` AS A LITERAL. FOLLOWED LITERALLY IT PINS A FILE THAT DOES NOT
+EXIST, AND THE WARD GOES GREEN BECAUSE IT STOPPED LOOKING — WHICH IS CONTRACT
+19, THE EXACT FAILURE THIS STEP EXISTS TO PREVENT.** A step that reproduces its
+own scar while warning about it is the worst kind of literal.
+
+**Derive the destination; do not read it here.** The pin follows the FILE THAT
+CARRIES THE SPECIFIER, so: find the ward-1a row whose `file` is your entry's
+current source path, and re-point it at the emitted artifact for **that same
+entry**. Digestify's row, measured on today's tree:
+
+| field      | today                                                  | after the port                                      |
+| ---------- | ------------------------------------------------------ | --------------------------------------------------- |
+| `file`     | `plugins/spellbook/skills/digestify/scripts/review.ts` | `plugins/spellbook/skills/digestify/dist/review.js` |
+| `spec`     | `../../../../../src/digestify/surface/index.html`      | **unchanged**                                       |
+| `resolved` | `src/digestify/surface/index.html`                     | **unchanged**                                       |
+
+⚠ **The depth coincidence DOES hold for digestify — verify it, do not inherit
+it.** `scripts/review.ts` and `dist/review.js` are both exactly one level under
+the skill root, so the five `..` are right at both addresses. That is the same
+accident the paragraph above describes, and it is worth confirming per spell
+because the day it stops holding, nothing reds: the specifier is `--external`
+and never resolved at build time.
+
+⚠ **And `DEV_SURFACE_CWD` is the second string with the same shape**, computed
+rather than imported and therefore invisible to ward 1a. Digestify's
+`join(SKILL_ROOT, "..", "..", "..", "..", "src", "digestify")` is right from
+`dist/` for the same reason and wrong from `src/<spell>/backend/` — which is
+what B3's drive (b) printed. **Enumerate the computed ones too**; they belong to
+question 1, and `spawn-path-ward`'s escape list is where they get declared (B7).
 
 #### B6 · Re-anchor the backend's tests on an explicit SKILL ROOT, and test the ARTIFACT
 
@@ -1249,12 +1433,12 @@ Three specific moves, all earned:
    `dist/`; `bun run gate` builds before it tests, and the thing worth asserting
    is the thing that ships.
 3. **A "fake release tree" fixture stops globbing and starts copying the files
-   that run** — one per entry, so two for most spells and three for bounty. The
-   glob carried a real scar ("a new module is in the copied tree by
-   construction"), and after the move it copies files whose `../../../plugins/…`
-   specifiers cannot resolve from a temp directory. **The scar is re-homed, not
-   deleted:** the property is now true by BUNDLING, because `dist/server.js` IS
-   the whole module graph.
+   that run** — one per entry, so two for most spells, three for bounty and ⭐
+   **exactly one for digestify.** The glob carried a real scar ("a new module is
+   in the copied tree by construction"), and after the move it copies files
+   whose `../../../plugins/…` specifiers cannot resolve from a temp directory.
+   **The scar is re-homed, not deleted:** the property is now true by BUNDLING,
+   because `dist/server.js` IS the whole module graph.
 
 ⚠ **An in-process daemon suite is the awkward case.** If it imports
 `startDaemon` rather than spawning, B3's ruling arrives as
@@ -1314,6 +1498,36 @@ are two kinds:
 it.** A cell now derives the root list from the tree the way `src/build.ts`
 derives what to build, and names any spell missing from it.
 
+⛔ ⭐ **digestify — AND BEFORE YOU EXPECT ANYTHING TO RED, CHECK WHETHER YOUR
+SPELL IS IN THE LIST AT ALL. THIS STEP HAD NO WAY TO SAY "ZERO ROWS, AND THAT IS
+CORRECT", AND AN AGENT HANDED AN EXPECTED RED THAT CANNOT OCCUR EITHER HUNTS FOR
+IT OR MANUFACTURES IT.** That is D42's rule pointed at the playbook instead of
+at an instrument: _absence of a finding must never be spelled the same way as
+absence of a subject._ A list below with no row for your spell is not a missed
+step and not a stale expectation — it is a list with **no subject** here, and it
+is reported as such, out loud, in the same breath as the reds.
+
+**So do this first, and it is one `grep` per list:** `git grep -n <spell>` over
+`grimoire/` and `grimoire/lib/`, and write one line per list — RED EXPECTED, or
+**NO SUBJECT**. Measured for digestify on today's tree, and every one of these
+is correct:
+
+| list                                             | digestify                                                                                                                                                                                                                |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `exit-site-inventory`                            | **ZERO rows, and that is correct.** `review.ts` has no `process.exit` at all — it is `process.exitCode` + a natural return, under a comment that says why. Nothing to move in chapter 1; nothing to delete in chapter 2. |
+| `terminator-invariant`                           | **ZERO rows, and that is correct** — same reason.                                                                                                                                                                        |
+| `INTERNAL_ENTRY_POINTS`                          | **No key, and it must not gain one.** `review.ts` is caller-facing and its flags are SKILL.md's; an exclusion here would hide a real interface.                                                                          |
+| `flag-invariant`                                 | derived (`argParsingEntryPoints`, both roots) — the entry moves and it follows. No hand edit.                                                                                                                            |
+| `import-boundary-wards` ward 1a                  | **RED EXPECTED, one row** — re-point it (B5's table).                                                                                                                                                                    |
+| `import-boundary-wards` `DECLARED_EMITTED_ROOTS` | **RED EXPECTED** — `plugins/spellbook/skills/digestify/dist` is not in it. Today's five declared roots are astrolabe, bounty, glamour, imago, magpie.                                                                    |
+| `spawn-path-ward`'s escape list                  | **RED EXPECTED** — `DEV_SURFACE_CWD` becomes the fourth instance of the Contract 5 dev-cwd pin once it is EMITTED (B5).                                                                                                  |
+| `daemon-lifecycle-ward`                          | generic since Phase 1b; walks both roots. Green is the expected outcome, not a symptom.                                                                                                                                  |
+
+⚠ **A "ZERO rows" answer is a claim about the tree, and it expires.** Re-run the
+grep at the END of chapter 2: chapter 2 is where adopting `errors.ts` can ADD
+exit sites to a spell that had none, which is the one direction the table above
+cannot predict from chapter 1.
+
 Expect these to red, and re-declare every one by hand: `exit-site-inventory`,
 `import-boundary-wards` (1a's pin, 1b's `bun` floor, 1b's
 `DECLARED_EMITTED_ROOTS`, the re-export inventory, and any line-number pin — **a
@@ -1333,12 +1547,15 @@ it red for glamour; it is generic now. Said out loud because the cost of a stale
 expectation runs the other way — an agent seeing it green goes looking for what
 they broke.
 
-⚠ ⭐ **`exit-site-inventory` REDS TWICE, ONCE PER CHAPTER**, and this paragraph
-used to read as one event. Chapter 1 MOVES the rows (`<spell>/scripts/cli.ts` →
-`<spell>/backend/cli.ts`): addresses change, families and texts do not. Chapter
-2 DELETES them, because adopting `tailEvents` and `errors` leaves the CLI with
-zero live `process.exit` sites — imago is the fourth CLI to reach that, after
-magpie, mind-mapper and glamour. Edit it in both chapters.
+⚠ ⭐ **`exit-site-inventory` REDS TWICE, ONCE PER CHAPTER — FOR A SPELL THAT HAS
+ROWS THERE.** ⭐ **digestify has none, so it reds zero times, and the table
+above is where that gets said rather than discovered.** For everyone else, this
+paragraph used to read as one event and it is two. Chapter 1 MOVES the rows
+(`<spell>/scripts/cli.ts` → `<spell>/backend/cli.ts`): addresses change,
+families and texts do not. Chapter 2 DELETES them, because adopting `tailEvents`
+and `errors` leaves the CLI with zero live `process.exit` sites — imago is the
+fourth CLI to reach that, after magpie, mind-mapper and glamour. Edit it in both
+chapters.
 
 ⛔ ⭐ **AND THERE IS A CATEGORY THIS STEP DOES NOT COVER AT ALL: THE PROSE THAT
 NAMES THE FILES YOU MOVED.** No ward reads it, so nothing reds, and it rots
@@ -1362,6 +1579,33 @@ by counting first, not by trusting the number above.
 All of `src/kit/wire/`: `tailEvents` + `errors` on the CLI side; `serveDist`,
 `eventLog`, `sse`, `housekeeping`, `discovery`, `heartbeat` on the daemon side.
 
+⛔ ⭐ **digestify — AND "ALL OF" IS THE WORD THAT BREAKS HERE. HALF THESE
+MODULES HAVE NO SUBJECT IN A SINGLE-SHOT SPELL, AND A MODULE ADOPTED WITHOUT A
+SUBJECT IS EITHER DEAD CODE OR AN INVENTED FEATURE.** The eight were extracted
+from eight STANDING daemons that each serve many clients over time. Question 4
+from the entry block is what decides whether a row applies, and the honest
+answer for a row that does not is the same discipline as B7's: **say "no
+subject", say why, and move on** — never leave the row unmentioned, because an
+unmentioned row reads as a skipped step to the next person.
+
+Measured for digestify, before its port, against the table below:
+
+| kit module     | digestify                                                                                                                                                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serveDist`    | **PARTIAL, and read the row's own caveats below.** `resolveMode` and the content-type map transfer; `serveFromDist` transfers **for hashed chunks only**, and the router half stays local.                                                                          |
+| `heartbeat`    | **PARTIAL, and the seam does not exist** — see the `idleMs` ruling at the end of this step.                                                                                                                                                                         |
+| `housekeeping` | **PARTIAL.** It has ONE `setInterval` idle watcher, slid forward by a `POST /heartbeat` the page sends — `shouldIdleClose` has a subject. `drainAndStop` does **not**: there are no SSE clients, no sockets and no snapshot; teardown is one `await server.stop()`. |
+| `errors`       | **SUBJECT, and it is a documented caller contract** — see the `errors` ruling below.                                                                                                                                                                                |
+| `eventLog`     | **NO SUBJECT.** No `events` array, no `emitEvent`, no sequence. One human, one submission, one JSON object on stdout.                                                                                                                                               |
+| `sse`          | **NO SUBJECT.** No stream anywhere; the page polls `POST /heartbeat` and finishes with `POST /submit`.                                                                                                                                                              |
+| `tailEvents`   | **NO SUBJECT.** Nothing tails it — there is no second process, and the "CLI side" is the same process as the server side.                                                                                                                                           |
+| `discovery`    | **NO SUBJECT, and the file says so in as many words:** _"There is no discovery file, no ready EVENT and no stdout handshake"_ — one ready line to stdout, which SKILL.md documents.                                                                                 |
+
+**Four of eight have no subject at all, and two more are half-adoptions.** That
+is not a defect in digestify and it is not a shortfall in the port. It is what a
+single-shot spell looks like, and a port that reported "adopted the kit" without
+the four absences would be reporting something that did not happen.
+
 ⭐ **imago: WHAT EACH ONE REPLACES.** This step used to name the eight modules
 and stop, so the mapping had to be recovered by reading a ported sibling
 side-by-side — which works while the ported sibling is your own fork and works
@@ -1381,6 +1625,34 @@ adopting daemons, so it is a table:
 | a local `writeAtomic` (tmp + rename)                                    | `writeFileAtomic`            |
 | `cleanupDiscovery` comparing `session_id` before unlinking              | `unlinkIfMatches`            |
 | `idleTimeout: 255` and a literal `15000` heartbeat                      | `./heartbeat.ts` (yours)     |
+
+⛔ ⭐ **digestify — THE `serveFromDist` ROW SAYS "THE FILE HALF" AND IT IS THE
+ONE ROW WHOSE OTHER HALF CAN BREAK A ROUTE. THE KIT ALREADY KNOWS THIS; THIS
+TABLE DID NOT SAY IT.** `src/kit/wire/serveDist.ts`'s own header records the
+boundary, from the eight-daemon census: _"the URL-to-filename mapping stays in
+each router … digestify substitutes into the entry HTML in memory, and grapevine
+serves its surface at `/watch` rather than at `/`. A signature wide enough to
+absorb those stops being a file server and becomes a router."_ So:
+
+- **The caller decides WHICH file. The kit decides whether it may be read.** The
+  house caller is `path === "/" ? "index.html" : path.slice(1)` — ⛔ **and that
+  expression is exactly what digestify must NOT write.** Its `/` returns
+  `substitute(source)`, the built HTML with the review payload injected in
+  memory; handing `/` to `serveFromDist` serves the committed `dist/index.html`
+  **unsubstituted** — a page that renders with no questions in it, at HTTP 200,
+  with nothing red anywhere.
+- ⛔ **AND THE GUARD THAT PREVENTS THAT IS DIGESTIFY'S, NOT THE KIT'S.** Its
+  local `serveDist` refuses `index.html` **by name**
+  (`if (!rel || rel === "index.html" || …) return null`) under a comment saying
+  `"/" is NOT served from here`. `serveFromDist` has no such refusal — its
+  guards are empty/`..`/nested only. **Adopting it verbatim therefore deletes a
+  defence and leaves a live route (`GET /index.html`) that answers the
+  unsubstituted document.** Keep the refusal at the call site, and say at the
+  call site that the kit does not carry it.
+- **The general form, for whoever ports grapevine next:** if question 2 answered
+  YES, then this row is `serveFromDist` **plus a router you write and a refusal
+  you keep**, and the port owes a drive of the substituted route in release mode
+  — not a reading of it.
 
 ⛔ ⭐ **bounty — AND EVERY ROW OF THAT TABLE ASSUMES YOUR SPELL HAS THE WORSE
 CODE. FOR A CONVERGENCE-SOURCE SPELL, HALF OF THEM ARE DE-DUPLICATIONS AND ONE
@@ -1413,6 +1685,17 @@ talking to a different daemon by name. Session-scoped: glamour, imago, magpie,
 bounty. Singleton: astrolabe, mind-mapper, grapevine. Either way **say which you
 chose and whether L6 is closed or merely NARROWED** (D39).
 
+⭐ **digestify — AND THERE IS A THIRD ANSWER THIS RULING HAD NO ROW FOR: THE
+QUESTION DOES NOT ARISE.** The epoch is a field on `createEventLog`, and a
+single-shot spell with no event log never constructs one. Digestify is neither
+session-scoped nor singleton in the sense this criterion means; it is **one
+review, one process, and no log to stamp**. **So the ruling is N/A — and N/A is
+a ruling that gets WRITTEN DOWN**, because a port that simply omits the epoch
+line is indistinguishable from a port that forgot it, which is the confusion
+D42's coverage cells exist to end. The row to write: _digestify has no event
+log, therefore no epoch, therefore **L6 does not apply** — neither closed nor
+narrowed._
+
 ⛔ **AND `errors` IS NOT AN INTERNAL MODULE. READ YOUR SPELL'S `die` BEFORE YOU
 ADOPT IT.** It is listed above beside seven modules nobody outside the daemon
 can observe, and it is the one that changes what every caller sees. If the
@@ -1442,6 +1725,25 @@ exit codes, then adopting it re-spells every failure the spell can produce:
 - **Half the roster has no acc grade** (imago, bounty, digestify, grapevine), so
   **nothing in the gate will tell you.** D37 is right that building does not
   drag conformance in front of a spell; **B8 does.**
+- ⛔ ⭐ **digestify — AND A SPELL CAN HAVE NO `die` AND STILL HAVE THE WHOLE
+  CONTRACT. LOOK FOR THE RAISE, NOT FOR THE HELPER.** `review.ts` has no `die`,
+  no error class and no envelope: it raises by
+  `process.stderr.write("error: <msg>\n"); return 2;`, at **fourteen sites**. A
+  grep for `die(` finds nothing and would report "no error contract to change",
+  which is the loudest possible wrong answer for a spell whose exit codes
+  SKILL.md publishes in a table with per-code agent instructions.
+- ⛔ ⭐ **AND ITS EXIT CODES SPLIT INTO TWO POPULATIONS THAT MUST BE RULED ON
+  SEPARATELY — D52 IS THE PRECEDENT AND IT WAS WRITTEN FOR EXACTLY THIS.**
+  Digestify's documented codes are **0** (submitted), **2** (bad input), **124**
+  (idle timeout) and **130** (user closed the tab). Only `2` is a FAILURE; `124`
+  and `130` are **session OUTCOMES** — SKILL.md gives the agent a different
+  sentence to say to the human for each, and they are returned from `main`,
+  never raised. `errors.ts`'s taxonomy is
+  `usage:2 · internal:1 · not_found:5 · conflict:6`. So: **`usage` already
+  agrees at 2**, the ENVELOPE changes (prose → JSON) at all fourteen sites, and
+  **124/130 stay outside the taxonomy and keep their own numbers**, exactly as
+  `join.ts`'s session endings did. Adopting the taxonomy over the outcome codes
+  would re-spell the two states this spell exists to distinguish.
 
 ⛔ ⭐ **bounty — AND THE CONCERN YOUR SPELL KEEPS IS PART OF THIS STEP, WHICH
 NOTHING HERE SAID.** A kit module that names a deliberate ABSENCE (D17's "what
@@ -1490,6 +1792,30 @@ it, the heartbeat was a literal inside the daemon and hand-mirrored in the CLI
 under a comment saying "an edit there is an edit here", because the CLI could
 not import the daemon without dragging the whole server graph into
 `dist/cli.js`. A value that could not previously cross the seam now crosses it.
+
+⛔ ⭐ **digestify — AND THAT SENTENCE IS UNEXECUTABLE FOR A SINGLE-ENTRY SPELL.
+THERE ARE NO BOTH HALVES.** "Let BOTH halves import it … that file IS the seam"
+was the flagship instruction of this step and it presumes question 3 answered
+YES. Digestify has one entry; there is no second module to share a value WITH,
+and a `backend/heartbeat.ts` created anyway would be a one-consumer file whose
+only purpose is to look like the other spells' ports.
+
+**Separate the two claims this sentence had welded together, because only one of
+them was ever about having two halves:**
+
+| the claim                                                                                                                                                                                | applies when                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`idleMs` is DERIVED from the spell's own heartbeat, never copied from a sibling.** This is the RULE, and it is the part astrolabe's +47.4 s / +92.6 s / +137.9 s measurement paid for. | **ALWAYS.** A single-shot spell derives it too — digestify's idle watcher is slid forward by a `POST /heartbeat` the PAGE sends, so its own beat interval is the input, and the kit's derivations are what it imports. |
+| **A `backend/heartbeat.ts` of its own, imported by both halves — the seam, and the proof the port worked.**                                                                              | **ONLY when question 3 answered YES.** It is a de-duplication device. With one entry there is nothing to de-duplicate, and the values live at their single consumer.                                                   |
+
+⚠ **So a single-entry port loses this step's proof, and must say so rather than
+fake it.** The seam-crossing value was the tidiest evidence a port had worked;
+digestify's port cannot produce it, and inventing a one-consumer module to
+produce it anyway is theatre. **Report the derivation instead** — the expression
+the spell's `idleMs` is computed from, and that the number was not copied — and
+say out loud that the seam demonstration is N/A for a one-entry spell. Same
+discipline as B7's zero rows and the epoch's N/A: **the third time in this phase
+that an absence has to be spelled differently from a miss.**
 
 #### B9 · ⛔ RUN D8's REACHABILITY AUDIT. Following the call graph, not a grep.
 
@@ -1626,8 +1952,8 @@ belongs in its own commit, filed rather than smuggled.
 
 **Validation:**
 
-- [ ] Both artifacts built and committed **in the same chapter as their
-      source**; `bun scripts/dist-check.ts` exit 0.
+- [ ] **Every entry's artifact** built and committed **in the same chapter as
+      its source** — one per entry, not two; `bun scripts/dist-check.ts` exit 0.
 - [ ] **Dev AND release both driven on a booted daemon, through the real
       launcher chain**, and say which bytes you saw: release serves the
       committed hashed chunks; dev serves `/_bun/client/…` and `/_bun/asset/…`
@@ -1650,8 +1976,22 @@ belongs in its own commit, filed rather than smuggled.
 - [ ] ⭐ **The error-contract delta stated**, or stated to be nil: what the
       spell's failures looked like before adopting `errors.ts` and what they
       look like now, driven, not reasoned about (D38).
+- [ ] ⭐ **Every kit module with NO SUBJECT in your spell, named and reasoned**
+      (B8's table). Four of eight for a single-shot spell. A port that reports
+      only its adoptions is reporting half, and the half it drops is the half a
+      reader cannot tell from an oversight.
+- [ ] ⭐ **Every hand-kept list with ZERO rows for your spell, named and stated
+      to be correct** (B7's table) — `exit-site-inventory` and
+      `terminator-invariant` for digestify.
+- [ ] ⭐ **The `idleMs` DERIVATION reported** — the expression, not the number —
+      and, for a single-entry spell, the seam demonstration stated N/A rather
+      than manufactured.
+- [ ] ⭐ **Every substituted or re-addressed route DRIVEN in release mode**
+      (question 2). Digestify: `GET /` must answer the injected payload, and
+      `GET /index.html` must not answer the unsubstituted document.
 - [ ] ⭐ **Every census defect the spell carries, named with the module that
-      closed it — and every one that is NARROWED rather than closed said so.**
+      closed it — and every one that is NARROWED rather than closed said so. A
+      defect with no subject in your spell is NAMED AS SUCH, not omitted.**
       imago: L1/L2 by `housekeeping`, L5 by `eventLog`, L7 by `sse`, L3 already
       correct, **L6 narrowed and not closed** (D39). A port that reports only
       the closures is reporting half.
@@ -1969,6 +2309,33 @@ inventory at
 Git holds the detail (`git log --follow` this file); each entry names what a
 port **taught**, not what it confirmed.
 
+- **2026-09-09** — ⭐⭐⭐ **Phase B RE-KEYED FROM NAMES ONTO PROPERTIES, in
+  pre-work for digestify.** Not taught by a port: an independent verify pass
+  read Phase B cold as digestify's porting agent and found four steps that
+  produce a wrong result if followed literally by a single-entry, single-shot
+  spell. D43 had fixed the COUNT and left the BODY keyed on a `cli`/`server`
+  pair. Phase B now opens with **four questions asked of each entry** — what
+  arithmetic does it carry, does it serve a substituted payload, is there a
+  second half, is it long-running or single-shot — and B3, B5, B7 and B8
+  dispatch on those answers instead of on the names. The four repairs: **B3's
+  "the CLI may keep both entries" was a property of five spells' `cli.ts`, not
+  of being a CLI** (digestify's is a CLI by stdout carrying a daemon's
+  `SKILL_ROOT`); **B5 named `…/dist/server.js` as a literal** and a literal
+  follow pins a nonexistent file, going green because it stopped looking —
+  Contract 19, the failure the step exists to prevent; **B7 listed
+  `exit-site-inventory` as an expected red** where digestify has zero rows, so
+  the step now demands "NO SUBJECT" be said out loud, D42's rule aimed at the
+  playbook; **B8's `serveFromDist` row could delete a live defence**
+  (digestify's `index.html` refusal, which the kit does not carry) and its
+  flagship `heartbeat.ts` seam is unexecutable with one entry — the derivation
+  rule was separated from the de-duplication device. Also measured: **the
+  predicted symptom of B3's defect was wrong in the safer-sounding direction.**
+  It was reported as a silent exit 0; driven, it is a LOUD exit 2 whose
+  diagnostic blames the operator's cwd and names a directory outside the repo,
+  because the message is computed by the same broken anchor it is reporting. Two
+  instrument repairs the phase still prescribed (B0's `dist-check` ARM 1b, B4's
+  `git add`) had landed as D49 and D42; both paragraphs kept, re-homed as
+  history.
 - **2026-09-09** — ⭐⭐ **AMENDED FROM BOUNTY, the second port driven by this
   document and the first with three entries.** Six gaps, and the two that
   generalise past this spell: (1) **B8's whole module table assumed the porting

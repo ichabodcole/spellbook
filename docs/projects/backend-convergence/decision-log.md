@@ -2129,3 +2129,124 @@ at the synthetic population_ — that is the synthetic cell, and two derivations
 of one fact is the defect `entry-points.ts` exists because of. _Leave both and
 file them_ — they are one-line repairs in the instruments that judge every
 remaining port.
+
+## D55 · Phase B dispatches on PROPERTIES OF AN ENTRY, not on the names `cli` and `server`
+
+**Decided 2026-09-09, in pre-work for digestify. Nothing was ported.**
+
+D43 corrected Phase B's arithmetic — the entry set is derived from launchers,
+not fixed at two — and **left the body of the phase keyed on a `cli`/`server`
+pair.** An independent verify pass read Phase B cold, as digestify's porting
+agent, and found four steps that produce a wrong result if followed literally by
+a spell with ONE entry called `review.ts`. Two of the four go wrong silently.
+
+**The ruling: a name is a guess at a property, and Phase B now asks for the
+property directly.** Four questions, answered per entry before B1, and every
+step below dispatches on an answer rather than on a filename:
+
+1. **What arithmetic does the entry carry?** — governs B3's `import.meta.main`
+   permission, B4, B5.
+2. **Does it serve a substituted or re-addressed payload?** — governs B8's
+   `serveFromDist` row.
+3. **Does the spell have a second half?** — governs B8's `heartbeat.ts` seam.
+4. **Long-running or single-shot?** — governs which of B8's eight module rows
+   have a subject at all, and the epoch ruling.
+
+**Why a name was never the property.** The five spells that went first each had
+a `cli.ts` that computed nothing from its own location and a `server.ts` that
+computed everything from its own location, so "CLI" and "daemon" predicted the
+arithmetic perfectly — for those five. Digestify's `review.ts` is a **CLI by
+stdout contract** (one JSON object an agent parses), a **server by lifecycle**
+(`Bun.serve`, blocks until a human submits), and a **daemon by arithmetic**
+(`SKILL_ROOT = join(SCRIPT_DIR, "..")`). One entry, three answers. Bounty had
+already produced the same split once — `join.ts` is a CLI by stdout that ships
+the DAEMON launcher shape — and **a non-obvious pairing twice out of two is the
+argument that the correlation was an accident of the first five.**
+
+**The four repairs, each re-homed rather than replaced:**
+
+| step   | was keyed on                                     | now keyed on                                                                                                                                                         |
+| ------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **B3** | "the CLI may keep both entries"                  | may keep `import.meta.main` **iff every path it computes from its own location resolves from `src/<spell>/backend/`**                                                |
+| **B5** | re-pin ward 1a at `…/dist/server.js` (a literal) | re-pin at **`…/dist/<entry>.js`**, derived from the file that carries the specifier — with digestify's row spelled out                                               |
+| **B7** | `exit-site-inventory` "reds once per chapter"    | **grep the lists first**; a list with no row for your spell is NO SUBJECT and is reported as such                                                                    |
+| **B8** | eight modules, "all of `src/kit/wire/`"          | a subject test per row; four have none for a single-shot spell, and the `serveFromDist` row carries the router/refusal boundary the kit's own header already records |
+
+**Not taken:** _a "single-entry spells" appendix_ — an exception in a footnote
+is read by whoever already knows to look for it, and the porting agent who
+needed it is by definition the one who does not; it also leaves the four wrong
+steps wrong in the body. _Rewrite the phase generically and drop the
+`cli`/`server` worked examples_ — every one of those examples is a scar somebody
+paid for, and a generalised rule with no instance behind it is the shape this
+project has watched rot twice; the names are kept as the worked case and demoted
+from being the key. _Hand digestify's agent a per-spell brief that patches the
+four steps_ — that is a fifth copy of the correction, and D43's whole lesson was
+that the hard-coding survives in copies nobody knows about.
+
+## D56 · An ABSENCE gets written down — in the playbook, not only in the instruments
+
+**Decided 2026-09-09, alongside D55.**
+
+D42 ruled it for instruments: _a subject an instrument names and does not
+examine must produce a row saying "not looked at"; absence of a finding must
+never be spelled the same way as absence of a subject._ **The digestify pre-work
+found the same defect in the PLAYBOOK, three times in one phase**, and the
+playbook is read by an agent, which is exactly the reader D42 protects.
+
+- **B7** listed `exit-site-inventory` as an expected red "once per chapter".
+  Digestify has **zero rows** there — `review.ts` has no `process.exit` at all.
+  An agent handed an expected red that cannot occur either hunts for it or
+  manufactures the rows.
+- **B8** named eight kit modules under "all of `src/kit/wire/`". Four have **no
+  subject** in a single-shot spell (`eventLog`, `sse`, `tailEvents`,
+  `discovery`), and a module adopted without a subject is dead code or an
+  invented feature.
+- **B8's epoch ruling** offered session-scoped or singleton. Digestify has **no
+  event log**, so the question does not arise — and a port that simply omits the
+  epoch line is indistinguishable from one that forgot it.
+
+**The rule, now in the phase and in its checklist: a step that cannot apply must
+say so out loud, in the port's own report, in the same breath as the steps that
+did.** "Digestify has zero `exit-site-inventory` rows, and that is correct" is
+the shape. The cost of the discipline is three sentences; the cost of skipping
+it is a reader who cannot tell a clean absence from an oversight, which is the
+same cost D42 measured at three instruments.
+
+**Not taken:** _let the port's report imply it by omission_ — that is precisely
+the spelling D42 forbids. _Add a ward that checks the port's prose_ — the
+subject is a human-written report and Gotcha 12 already records what happens
+when a ward reads prose. _Say it once at the top of Phase B rather than at each
+step_ — an agent working a step reads the step; the three instances are three
+different questions and each is answered where it is asked.
+
+## D57 · The predicted symptom was SAFER than the measured one — a diagnostic computed from a broken anchor lies confidently
+
+**Measured 2026-09-09.** Phase B's B3 predicted, and digestify's verify report
+repeated, that keeping `import.meta.main` on `review.ts` would make it
+**"silently pick dev, exit 0, and read as a surface bug"**. Driven, by copying
+`review.ts` to `src/digestify/backend/review.ts` and running it from two cwds,
+that prediction is **false in the direction that matters**:
+
+- from the repo root → **exit 2, loud**, naming the operator's **cwd** and
+  telling them to go to `/Users/colereed/src/digestify` — a directory that does
+  not exist, computed by running the broken `SKILL_ROOT` through
+  `DEV_SURFACE_CWD`'s four `..`;
+- from `src/digestify` (a cwd whose `bunfig.toml` DOES load the Tailwind plugin)
+  → **exit 2, loud**, blaming a missing surface source that is present and
+  correct.
+
+**Both are loud. Both blame the wrong thing, consistently, in a direction that
+reads like a real answer.** The generalisation, which is the part worth keeping:
+**a spell that invested in good diagnostics has MORE ways to misattribute an
+anchoring defect, not fewer** — every message a location-anchored entry prints
+about its own environment is computed from the anchor, so a wrong anchor
+produces a coherent, specific, wrong story. **Do not accept a diagnostic as
+evidence about the anchor**; resolve the paths yourself, from the address the
+file will actually sit at.
+
+**Not taken:** _leave B3's "silently" in place, since the conclusion (delete the
+block) is unchanged_ — the conclusion is the same and the SEARCH is not: an
+agent told to look for silence, meeting a confident exit 2 about its cwd, will
+conclude B3 does not apply and go fix its cwd. _Record it only in the pre-work
+doc_ — the misdirection happens at the step, so the correction belongs at the
+step, with the pre-work doc holding the transcript.
