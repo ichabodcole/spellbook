@@ -250,8 +250,17 @@ function relativeEscapes(files: string[], boundary: string, kinds: ImportKind[])
   return out.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
 }
 
+// ⛔ **HAND-KEPT, AND THAT IS A HAZARD OF THE `INTERNAL_ENTRY_POINTS` FAMILY.**
+// This is a list of roots the wards LOOK INSIDE, so an omission is invisible in
+// both directions: a spell whose backend ports without being added here simply
+// leaves both wards' populations, and both go green because they stopped
+// looking. Phase 1b named the same shape in an exclusion set and said every
+// relocating spell must hand-check it. The cell
+// "EVERY SPELL THAT EMITS A BACKEND IS DECLARED HERE" below is the pin that
+// converts the silence into a failure; it is what glamour's arrival paid for.
 const DECLARED_EMITTED_ROOTS: string[] = [
   "plugins/spellbook/skills/astrolabe/dist",
+  "plugins/spellbook/skills/glamour/dist",
   "plugins/spellbook/skills/magpie/dist",
 ];
 
@@ -373,8 +382,14 @@ const PINNED_DYNAMIC_ESCAPES: EscapeIdentity[] = [
     spec: "../../../../../src/digestify/surface/index.html",
     resolved: "src/digestify/surface/index.html",
   },
+  // ⚠ AND ITS ADDRESS MOVED TO THE EMITTED FILE IN PHASE 2, for astrolabe's and
+  // magpie's reason: `trackedSources` is `.ts`/`.tsx` only, so after the
+  // relocation this pin would have been DELETED as "no longer present" and the
+  // ward would have gone green because it stopped looking (Contract 19, exactly).
+  // The pin now sits where the specifier EXECUTES — inside `dist/server.js`,
+  // whose five `..` are counted from `plugins/spellbook/skills/glamour/dist/`.
   {
-    file: "plugins/spellbook/skills/glamour/scripts/server.ts",
+    file: "plugins/spellbook/skills/glamour/dist/server.js",
     spec: "../../../../../src/glamour/surface/index.html",
     resolved: "src/glamour/surface/index.html",
   },
@@ -732,6 +747,31 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     }
   });
 
+  test("⛔ EVERY SPELL THAT EMITS A BACKEND IS DECLARED HERE — the list cannot go quietly short", () => {
+    // ⛔ THE LIST ABOVE IS HAND-KEPT AND BOTH WARDS READ IT. A ported spell that
+    // is not in it is not exempted-by-mistake — it is UNSEEN: its `dist/*.js`
+    // leaves ward 1a's population (which is otherwise `.ts`/`.tsx` only) and
+    // ward 1b's, and both cells stay green because they stopped looking. That is
+    // Contract 19 arriving through an omission rather than a shrink, which is the
+    // direction a pin does not normally cover.
+    //
+    // Derived from the tree the way `src/build.ts` derives what to build: a spell
+    // with `src/<spell>/backend/{cli,server}.ts` emits into `<spell>/dist`. So the
+    // day the next spell relocates, this cell names it.
+    const emitters = readdirSync(join(REPO_ROOT, "src"), { withFileTypes: true })
+      .filter(
+        (e) =>
+          e.isDirectory() &&
+          (existsSync(join(REPO_ROOT, "src", e.name, "backend", "cli.ts")) ||
+            existsSync(join(REPO_ROOT, "src", e.name, "backend", "server.ts"))),
+      )
+      .map((e) => `plugins/spellbook/skills/${e.name}/dist`)
+      .sort();
+    expect(emitters.length).toBeGreaterThan(0); // zero-guard: an empty walk is not a pass
+    const undeclared = emitters.filter((r) => !DECLARED_EMITTED_ROOTS.includes(r));
+    expect(undeclared).toEqual([]);
+  });
+
   test("the emitted exemption is SCOPED — it does not reach hand-authored files, and never covers a real dependency", () => {
     // ⛔ SYNTHETIC POPULATION, because the real one is empty by design. The
     // corpus cannot calibrate an exemption for a file class that does not exist
@@ -822,10 +862,17 @@ describe("R6 ward 1b — the shipped execution path carries no dependencies", ()
     // daemon into the build erases another of these, so a future reader finding
     // ONE here has not found a ward that stopped working — read the population,
     // not the number.
+    // ⚠ TWO SINCE PHASE 2. glamour is the third departure and it is the SAME
+    // mechanism as astrolabe's and magpie's, arriving through a different syntax:
+    // its dependency was written as a TYPE QUERY, `new Set<import("bun").
+    // ServerWebSocket<unknown>>()`, which is type-only for exactly the same reason
+    // an `import type` is — so once the daemon's source moved to
+    // `src/glamour/backend/server.ts` and shipped as `dist/server.js`, the
+    // bundler erased it and nothing that ships carries a `bun` import. The floor
+    // fell again; it did not break.
     const withoutBun = violationsUnder(makeIsBuiltin([], EMITTED_ROOTS));
     expect([...new Set(withoutBun.map((v) => v.split(":")[0]))].sort()).toEqual([
       "plugins/spellbook/skills/bounty/scripts/server.ts",
-      "plugins/spellbook/skills/glamour/scripts/server.ts",
       "plugins/spellbook/skills/imago/scripts/server.ts",
     ]);
   });
@@ -1276,7 +1323,13 @@ describe("the import scanner agrees with Bun's parser on every value import in t
     const at = (file: string, line: number) =>
       scanSpecifiers(readFileSync(join(REPO_ROOT, file), "utf8")).find((r) => r.line === line)
         ?.kind;
-    expect(at("plugins/spellbook/skills/glamour/scripts/server.ts", 154)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
+    // ⚠ RE-ADDRESSED in backend convergence Phase 2: the daemon moved to
+    // `src/glamour/backend/server.ts` and the type query went with it — same
+    // line number, by coincidence, and the SAME KIND, which is the property this
+    // cell is about. The file that used to hold it is now a launcher with no
+    // imports of its own; had the pin been left at the old address it would have
+    // read `undefined` and been indistinguishable from "the escape vanished".
+    expect(at("src/glamour/backend/server.ts", 154)).toBe("type"); // was 77, then 146; each move was an edit ABOVE the escape, never to it (2026-09-07: the pointer write became atomic and its `node:fs` import wrapped). ⚠ A LINE NUMBER IS THE WRONG PIN and this cell has now paid for it three times — it reds on any edit above the line and says only `undefined`, which reads as "the escape vanished". Re-pin when that happens; the finding would be a CHANGE OF KIND.
     expect(at("plugins/spellbook/skills/mind-mapper/scripts/propose.test.ts", 463)).toBe("type");
 
     // And a synthetic RELATIVE type query must still be an ESCAPE, not an

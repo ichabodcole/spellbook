@@ -86,8 +86,12 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
     text: `if (emit) process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
+  // ⚠ glamour's three CLI sites moved from `scripts/cli.ts` to
+  // `backend/cli.ts` in backend convergence Phase 2 — the same text, the same
+  // families, a new address. `scripts/cli.ts` is now a LAUNCHER holding
+  // `process.exitCode` and no exit at all, which is why nothing was added there.
   {
-    file: "glamour/scripts/cli.ts",
+    file: "glamour/backend/cli.ts",
     text: `process.stdout.write(\`${PH}\\n\`, () => process.exit(0));`,
     family: "A-drain",
   },
@@ -103,7 +107,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   // lane, and the third (uncaughtException) was ruled and kept with its reason
   // in the code. Was 'THREE OF THESE ARE DEFECTS' before that land.
   { file: "bounty/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
-  { file: "glamour/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
+  { file: "glamour/backend/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "imago/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/cli.ts", text: "process.exit(0);", family: "C-signal" },
   { file: "grapevine/scripts/daemon.ts", text: "process.exit(code),", family: "C-signal" },
@@ -155,7 +159,12 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   { file: "bounty/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "imago/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   { file: "magpie/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
-  { file: "glamour/scripts/server.ts", text: "process.exit(res.code);", family: "E-terminal" },
+  // ⚠ glamour's daemon exit STAYED IN `scripts/server.ts` across Phase 2 — the
+  // launcher is the process entry now, so this is still the site where the
+  // process ends. The TEXT changed (`res.code` → `exitCode`) because `main` now
+  // returns the code instead of the launcher reaching into the daemon's own
+  // result object; the family and the address did not.
+  { file: "glamour/scripts/server.ts", text: "process.exit(exitCode);", family: "E-terminal" },
   {
     file: "mind-mapper/scripts/server.ts",
     text: "process.exit(await main(process.argv.slice(2)));",
@@ -163,7 +172,7 @@ const PINNED: Array<{ file: string; text: string; family: Family }> = [
   },
   // F — live: an in-function exit with stdout pending upstream of it.
   {
-    file: "glamour/scripts/cli.ts",
+    file: "glamour/backend/cli.ts",
     text: "if (grounded) process.exit(0); // pinned session went away → done",
     family: "F-live",
   },

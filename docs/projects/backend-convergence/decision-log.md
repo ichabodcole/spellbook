@@ -783,3 +783,157 @@ they had been carried at all.
   as source and are inlined into three artifacts each; staleness is caught only
   by `dist-check` ARM 2. **Still true, still stable, still worth knowing**
   before a later phase adds more to those bundles.
+
+## D26 · glamour's `shared/` stays; the six `scripts/` modules move
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1, under D10's rule
+applied to a third spell.
+
+Measured against the tree rather than assumed: **17 surface import sites**, all
+into `shared/` — 16 of `types.ts` (`App.tsx` plus ten components plus `derive`,
+`derive.test`, `fileIntake`, `useSession`) and 1 of `imageOptimize.ts`
+(`fileIntake`). Zero surface files import anything under `scripts/`. So
+`cli.ts`, `server.ts`, `reduce.ts`, `styles.server.ts`, `persist.server.ts` and
+`imageOptimize.server.ts` move to `src/glamour/backend/`; `shared/` stays where
+both halves can already reach it.
+
+**The rule also decided a test that the rule does not obviously cover.**
+`tests/imageOptimize.test.ts` imports BOTH `scripts/imageOptimize.server.ts` and
+`shared/imageOptimize.ts`, so its imports point both ways. It moved, because **a
+test follows its SUBJECT, not its imports** — the subject is the `.server.ts`.
+`tests/types.test.ts`, whose subject is `shared/types.ts`, is the one test file
+that stayed behind.
+
+**Not taken:** _move `shared/` too, giving glamour one root._ Nicer story, and
+it re-points 17 surface sites inside a chapter whose entire contract is
+"behaviour unchanged" — the same reasoning D10 already recorded for magpie's
+twelve. It is re-openable as its own change, for all three spells at once.
+
+## D27 · The spawn-path ward's ANCHOR PATTERN is widened, and a COVERAGE cell is added
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1, on the brief's explicit
+instruction to report the ward's silence as a finding about the ward.
+
+The ward was **green over a real defect**: `dist/cli.js` spawning
+`dist/server.ts`, a file that does not exist. Cause, measured: `ANCHOR_URL`
+required a BARE `fileURLToPath`, glamour writes `Bun.fileURLToPath`, so
+`SCRIPT_DIR` was never registered and all four pins computed from it were
+dropped. The ward printed eight pins, none of them glamour's, and passed 5/0.
+Its "a pin that leaves the skill folder is ENUMERATED" cell was silently wrong
+at the same time and for the same reason.
+
+Three changes, and only the first is the bug fix:
+
+1. An optional member-expression qualifier before `dirname` and `fileURLToPath`.
+2. ⭐ **A COVERAGE cell.** Every emitted `cli.js`/`server.js` that DECLARES an
+   anchor must yield ≥1 pin. This is the general instrument: it fails on the
+   next unrecognised spelling without anyone having to think of it in advance.
+3. `emittedJs` skips a tracked-but-absent file instead of throwing ENOENT from
+   three cells mid-port.
+
+**⛔ The finding under the finding, and it amends Phase 1b's closing
+paragraph.** 1b ended "population and coverage are different measurements —
+**print both**", and printing is what it built. Printing is not enough: a green
+ward's console output is not read. **Coverage must be ASSERTED.** Phase 1b's own
+text is the strongest evidence for this: it correctly predicted the failure
+mode, in writing, one phase before it happened, and the instrument it prescribed
+did not stop it.
+
+**Not taken:**
+
+- _Rewrite the CLI to use a bare `fileURLToPath` so the existing pattern
+  matches._ Cheapest, and it makes the SPELL conform to the INSTRUMENT — the
+  ward would still be blind to the next spelling, and five spells are queued.
+- _Parse the emitted JS with a real parser instead of regexes._ Genuinely
+  better, and out of scope for a chapter whose contract is "behaviour
+  unchanged"; the ward's own header already declares the regex blind spots. The
+  coverage cell is what makes a future blind spot loud, which is the property a
+  parser would have bought.
+- _Report it and leave it broken_, per the brief's letter ("that is a finding
+  about the ward"). Rejected because chapter 1's premise is that the instruments
+  are honest before chapter 2 moves anything, and a knowingly blind ward is
+  worse than no ward.
+
+## D28 · `DECLARED_EMITTED_ROOTS` gets a derived completeness cell
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1.
+
+`import-boundary-wards` derives every population from the tree except this one
+hand-written array of root paths, which BOTH ward 1a and ward 1b read to decide
+which emitted files they open at all. An omission is not an over-broad
+exemption; it is **unseeing** — the spell's `dist/*.js` leaves both populations
+and both cells go green because they stopped looking. Identical in kind to
+`INTERNAL_ENTRY_POINTS`, which 1b flagged as silent-in-both-directions.
+
+glamour is added, and a new cell derives the REQUIRED set from the tree the way
+`src/build.ts` derives what to build — `src/<spell>/backend/{cli,server}.ts`
+exists ⇒ `<spell>/dist` must be declared — and fails naming any spell missing
+from the list.
+
+**Not taken:** _derive the list itself and delete the declaration._ It is the
+right end state and it changes what two wards examine inside the chapter that
+relocates a spell, which is the one chapter that must not also move an
+instrument's population. The cell delivers the safety now and leaves the
+deletion as a clean, separately-verifiable change.
+
+## D29 · glamour's daemon integration suite forces `release` rather than spawning
+
+**Decided:** implementer, 2026-09-08, Phase 2 chapter 1, forced by D12.
+
+The suite imports `startDaemon` and drives it in-process, thirty cells deep
+against one shared instance. After the relocation `SKILL_ROOT` computes to
+`src/glamour/`, `resolveMode()` answers DEV, and the dev surface import — whose
+five `..` are counted from `dist/` — climbs out of the repo. Every cell failed
+in `beforeAll`. That is D12 arriving as an error message: **a daemon booted from
+its source is a wrong daemon.**
+
+`SPELLBOOK_SURFACE_MODE=release` around the boot says "mode is not what this
+file tests". `release-serve.test.ts` spawns the real launcher and is where mode
+resolution, dev serving and release serving are asserted — so nothing is
+unasserted, it is asserted in the suite that can see it.
+
+**⛔ And the first form of this repair was a cross-suite defect.** A bare
+assignment in `beforeAll` is process-global; `bun test` runs a directory in one
+process; `cli-open-envelope.test.ts` spawns a CLI whose premise is that mode is
+AUTO-DETECTED, detected release instead, skipped the guard and hung. It is now
+set and restored in a `try/finally`, AND the spawning suite clears the variable
+out of its child's environment — belt and braces, because the two suites are
+only coupled by a runner detail that could change.
+
+**Not taken:** _convert the suite to spawn the launcher, as magpie's did._ The
+faithful answer and it is a rewrite of 430 lines of in-process HTTP driving
+whose subject is the reducer and the routes, not the process. Magpie's suite
+already spawned a daemon per cell, so its conversion was an address change;
+glamour's would be a different test.
+
+## D30 · The surface artifact depends on WHICH SPELLS share the build process
+
+**Found:** implementer, 2026-09-08, Phase 2 chapter 1, driven. Not a decision so
+much as a measurement the roll must carry.
+
+`bun run src/build.ts glamour` and `bun run build` emit **different bytes for
+glamour's surface from identical source**, deterministically and repeatably:
+`index-mccrznc4.js` / `index-me0sn06x.css` for a subset build (glamour alone, or
+glamour + astrolabe in either order), `index-39c5b79f.js` / `index-ek8hd2gz.css`
+for the whole roster. The differences are real content — Tailwind palette values
+at a different rounding (`#b75000` vs `#bb4d00`) and a different emitted form of
+Bun's own `__commonJS`/`__copyProps` helpers.
+
+`dist-check` ARM 2 runs `bun run build` with no arguments, so **the artifact the
+house verifies is the whole-roster build** and the committed tree is
+self-consistent. What is not safe is a per-spell build during a port: it dirties
+`dist/` with no source change and every downstream instrument that compares the
+index to the disk then reports something else.
+
+⚠ **This produced a FALSE FINDING before it produced a true one.** On the first
+per-spell rebuild I recorded "glamour's committed dist is stale at HEAD" and
+verified it by stashing the work and rebuilding at HEAD — **which confirmed the
+false conclusion, because the control repeated the suspect step.** The
+whole-roster rebuild restored the committed bytes exactly. The rule is now in
+the playbook in both halves: rebuild the roster, and a control that repeats the
+suspect step is not a control.
+
+**Not taken:** _investigate and fix the non-determinism here._ It is a real
+question about `bun-plugin-tailwind`'s shared state across `Bun.build` calls in
+one process, it is house-wide rather than glamour's, and a phase that grows is a
+phase nobody can verify. Recorded for its own investigation.

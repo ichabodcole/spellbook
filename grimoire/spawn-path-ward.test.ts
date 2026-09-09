@@ -51,14 +51,31 @@ const distDirFor = (spell: string) => join(SKILLS_ROOT, spell, "dist");
 function emittedJs(spell: string): string[] {
   const dir = distDirFor(spell);
   if (!existsSync(dir)) return [];
-  return execFileSync("git", ["-C", REPO_ROOT, "ls-files", relative(REPO_ROOT, dir)], {
-    encoding: "utf8",
-  })
-    .trim()
-    .split("\n")
-    .filter((f) => f.endsWith(".js"))
-    .map((f) => join(REPO_ROOT, f));
+  return (
+    execFileSync("git", ["-C", REPO_ROOT, "ls-files", relative(REPO_ROOT, dir)], {
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter((f) => f.endsWith(".js"))
+      .map((f) => join(REPO_ROOT, f))
+      // ⚠ THE INDEX AND THE DISK DIVERGE DURING A PORT, and this ward used to
+      // CRASH on that rather than report it. A rebuild replaces a hashed chunk;
+      // until the result is staged, `git ls-files` still names the old chunk and
+      // `readFileSync` throws ENOENT from inside `pinnedPaths` — three cells fail
+      // with a stack trace that says nothing about paths. Playbook Gotcha 4, in a
+      // new file. A tracked-but-absent emitted file is not this ward's subject, so
+      // it is skipped; `dist-check`'s reproduction arm is what has an opinion about
+      // it, and the zero-guard below still refuses an empty population.
+      .filter((f) => existsSync(f))
+  );
 }
+
+/** The emitted files a spell's BACKEND produces — the ones whose anchor
+ *  arithmetic this ward exists to check. A surface chunk is emitted too and
+ *  pins nothing, so it must not count toward coverage. */
+const isBackendArtifact = (abs: string): boolean =>
+  abs.endsWith("/cli.js") || abs.endsWith("/server.js");
 
 type Pin = { file: string; line: number; expr: string; resolved: string };
 
@@ -70,9 +87,24 @@ const JOIN_CALL =
 // `var X = import.meta.dir` and `var X = dirname(fileURLToPath(import.meta.url))`
 // — the two ways a bundled module asks where it is. Bun's bundler renames the
 // imported helpers (`dirname2`, `join3`), hence the digit-tolerant names.
+//
+// ⛔ AND THE CALLEE MAY BE QUALIFIED. `Bun.fileURLToPath` is the same function
+// under a namespace, and glamour's CLI has always written it that way. The first
+// draft of this pattern required a BARE identifier, so glamour's `SCRIPT_DIR` was
+// never registered as an anchor, so every pin computed from it — `SERVER_SCRIPT`,
+// `SKILL_ROOT`, `DIST_DIR`, `SURFACE_CWD` — was silently dropped, and this ward
+// passed 5/0 over a `dist/cli.js` that spawned a daemon at `dist/server.ts`, a
+// path that does not exist. Measured in Phase 2, on the first spell this ward had
+// never seen: it printed EIGHT pins, none of them glamour's, and reported green.
+// **That is the ward's own failure mode — a regex that recognises the two spellings
+// it was written against and reports silence for a third.** The optional
+// `(?:[A-Za-z_$][\w$]*\d*\s*\.\s*)?` prefix is the repair; the coverage cell below
+// is the instrument that would have made it loud without anyone reading the regex.
+const QUALIFIER = String.raw`(?:[A-Za-z_$][\w$]*\d*\s*\.\s*)?`;
 const ANCHOR_DIR = /\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*import\.meta\.dir\s*;/;
-const ANCHOR_URL =
-  /\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*dirname\d*\(\s*fileURLToPath\d*\(\s*import\.meta\.url\s*\)\s*\)\s*;/;
+const ANCHOR_URL = new RegExp(
+  String.raw`\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*${QUALIFIER}dirname\d*\(\s*${QUALIFIER}fileURLToPath\d*\(\s*import\.meta\.url\s*\)\s*\)\s*;`,
+);
 const ASSIGNED_JOIN = /\b(?:var|const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(join\d*\(.*)$/;
 
 const literals = (args: string): string[] =>
@@ -171,6 +203,42 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     expect(found.length).toBeGreaterThan(3);
   });
 
+  test("⛔ COVERAGE, NOT POPULATION — every emitted backend that DECLARES an anchor yields at least one pin", () => {
+    // ⛔ THIS CELL EXISTS BECAUSE THE WARD WENT SILENTLY BLIND ON THE FIRST
+    // SPELL IT HAD NEVER SEEN. Phase 1b's own closing finding was that a ward
+    // whose POPULATION is derived can still have ZERO COVERAGE of the thing it
+    // was written for, and that population and coverage are different
+    // measurements — "print both". Phase 2 paid for the half that was only
+    // printed: glamour arrived in the population automatically, contributed no
+    // pins because its anchor is written `Bun.fileURLToPath`, and the ward
+    // reported green over a `dist/cli.js` spawning a nonexistent
+    // `dist/server.ts`. Printing would not have caught it; ASSERTING does.
+    //
+    // The predicate is deliberately narrow and mechanical: a file that declares
+    // an anchor — `import.meta.dir`, or a (possibly qualified) dirname/
+    // fileURLToPath pair — is a file that asks where it is, and a file that asks
+    // where it is and then pins NOTHING is either a scanner that failed to read
+    // it or a backend that has genuinely stopped resolving siblings. Both are
+    // worth a human. A backend with no anchor at all is exempt and stays exempt.
+    const blind: string[] = [];
+    const coverage: string[] = [];
+    for (const spell of spells) {
+      for (const file of emittedJs(spell).filter(isBackendArtifact)) {
+        const text = readFileSync(file, "utf8");
+        const declaresAnchor = text
+          .split("\n")
+          .some((line) => ANCHOR_DIR.test(line) || ANCHOR_URL.test(line));
+        const pins = pinnedPaths(file).length;
+        coverage.push(
+          `${relative(REPO_ROOT, file)}  anchor=${declaresAnchor ? "yes" : "no "}  pins=${pins}`,
+        );
+        if (declaresAnchor && pins === 0) blind.push(relative(REPO_ROOT, file));
+      }
+    }
+    console.warn(`\n  SPAWN-PATH WARD — coverage:\n    ${coverage.join("\n    ")}\n`);
+    expect(blind).toEqual([]);
+  });
+
   test("⛔ EVERY SHIPPED PIN RESOLVES — this is the cell `remove.py` would have reddened", () => {
     const missing: string[] = [];
     const inventory: string[] = [];
@@ -211,6 +279,12 @@ describe("spawn-path ward — every path a BUILT backend pins resolves from the 
     }
     expect([...escapes].sort()).toEqual([
       "plugins/spellbook/skills/astrolabe/dist/cli.js -> src/astrolabe",
+      // glamour's `SURFACE_CWD`, the dev-mode daemon cwd Contract 5 pins. It
+      // arrived here in Phase 2 — and note it arrived only once the anchor
+      // pattern learned `Bun.fileURLToPath`: before that this cell was green
+      // because it could not see the escape at all, which is the same blindness
+      // the coverage cell above now asserts against.
+      "plugins/spellbook/skills/glamour/dist/cli.js -> src/glamour",
       "plugins/spellbook/skills/magpie/dist/cli.js -> src/magpie",
     ]);
   });

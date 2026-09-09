@@ -11,9 +11,14 @@
 import { expect, test } from "bun:test";
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const SKILL_SRC = join(import.meta.dir, "..");
+// ⛔ AN EXPLICIT SKILL ROOT, NOT A `..` COUNT. This file moved out of the skill's
+// own `tests/`; the count that was right there is wrong here, and adjusting it is
+// the repair that rots on the next relocation.
+const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_SRC = join(BACKEND_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "glamour");
 const shipping = (dir: string) =>
   readdirSync(join(SKILL_SRC, dir)).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"));
 
@@ -24,10 +29,21 @@ test("cli open at a destination with no dist/index.html and no src/glamour/ dies
   const tmp = mkdtempSync(join(tmpdir(), "glamour-cli-open-envelope-tmp-"));
   const home = mkdtempSync(join(tmpdir(), "glamour-cli-open-envelope-home-"));
   try {
-    for (const dir of ["scripts", "shared"] as const) {
-      mkdirSync(join(root, dir), { recursive: true });
-      for (const f of shipping(dir)) cpSync(join(SKILL_SRC, dir, f), join(root, dir, f));
-    }
+    // ⛔ THE COPY IS THE LAUNCHER PLUS ITS BUNDLE, NOT A GLOB OF `scripts/`.
+    // After the relocation `scripts/` holds two launchers and nothing else, and
+    // each imports `../dist/<name>.js` — so a tree with `scripts/` and no `dist/`
+    // fails at module resolution and never reaches the guard this cell is about.
+    // `dist/cli.js` is copied (it is what `scripts/cli.ts` imports) and
+    // `dist/index.html` deliberately is NOT: its absence is the whole premise.
+    mkdirSync(join(root, "shared"), { recursive: true });
+    for (const f of shipping("shared"))
+      cpSync(join(SKILL_SRC, "shared", f), join(root, "shared", f));
+    mkdirSync(join(root, "scripts"), { recursive: true });
+    for (const f of ["cli.ts", "server.ts"])
+      cpSync(join(SKILL_SRC, "scripts", f), join(root, "scripts", f));
+    mkdirSync(join(root, "dist"), { recursive: true });
+    for (const f of ["cli.js", "server.js"])
+      cpSync(join(SKILL_SRC, "dist", f), join(root, "dist", f));
     // PRECONDITIONS, asserted so a fixture that accidentally has what it must
     // lack cannot pass the cell vacuously.
     expect(existsSync(join(root, "dist", "index.html"))).toBe(false);
@@ -48,7 +64,18 @@ test("cli open at a destination with no dist/index.html and no src/glamour/ dies
       ],
       {
         cwd: root,
-        env: { ...process.env, GLAMOUR_HOME: home, TMPDIR: tmp },
+        // ⛔ THE MODE OVERRIDE IS EXPLICITLY CLEARED. This cell's whole premise is
+        // that mode is AUTO-DETECTED — no `dist/index.html`, therefore dev,
+        // therefore a cwd that does not exist, therefore the guard. An inherited
+        // `SPELLBOOK_SURFACE_MODE` from the runner (or from a sibling suite in
+        // the same `bun test` process) short-circuits the detection and this cell
+        // silently tests nothing.
+        env: {
+          ...process.env,
+          SPELLBOOK_SURFACE_MODE: undefined,
+          GLAMOUR_HOME: home,
+          TMPDIR: tmp,
+        },
         stdout: "pipe",
         stderr: "pipe",
       },

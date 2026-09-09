@@ -12,7 +12,7 @@ import type {
   SectionKey,
   SectionStatus,
   Swatch,
-} from "../shared/types";
+} from "../../../plugins/spellbook/skills/glamour/shared/types";
 
 export function makeItem(p: {
   id: string;

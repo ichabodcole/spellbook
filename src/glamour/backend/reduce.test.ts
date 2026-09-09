@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { defaultState } from "../../../plugins/spellbook/skills/glamour/shared/types";
 import {
   addItem,
   addMessage,
@@ -20,8 +21,7 @@ import {
   setLike,
   setStar,
   updateSection,
-} from "../scripts/reduce";
-import { defaultState } from "../shared/types";
+} from "./reduce";
 
 const img = () =>
   makeItem({

@@ -2,14 +2,9 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import {
-  loadSnapshot,
-  materializeItem,
-  saveDataUrl,
-  saveSnapshot,
-} from "../scripts/persist.server";
-import { makeItem } from "../scripts/reduce";
-import { defaultState } from "../shared/types";
+import { defaultState } from "../../../plugins/spellbook/skills/glamour/shared/types";
+import { loadSnapshot, materializeItem, saveDataUrl, saveSnapshot } from "./persist.server";
+import { makeItem } from "./reduce";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "glamour-persist-"));
 

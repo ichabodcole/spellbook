@@ -192,11 +192,20 @@ export const INTERNAL_ENTRY_POINTS: ReadonlySet<string> = new Set([
   // `<spell>/scripts/server.ts` after the move would have been an exclusion for
   // a file that is no longer a member: silently inert, and it would have
   // published each daemon's private argv as a caller-facing interface.
+  //
+  // ⚠ AND PHASE 2 IS WHERE THAT PARAGRAPH GOT ITS PROOF FROM THE OTHER SIDE.
+  // glamour's key was re-addressed here in the same commit that moved its daemon,
+  // and the ward that would have caught a miss is `flag-invariant`, LOUDLY: with
+  // the key left at `glamour/scripts/server.ts`, the relocated daemon became a
+  // caller-facing entry point and its private `--port` / `--project` were reported
+  // as undocumented SKILL.md flags. That is the OPPOSITE of 1b's silent case and
+  // both are the same defect — an exclusion set keyed by path is only correct for
+  // the path the file is at today.
   "astrolabe/backend/server.ts",
   "magpie/backend/server.ts",
   "magpie/backend/discover.ts",
   "bounty/scripts/server.ts",
-  "glamour/scripts/server.ts",
+  "glamour/backend/server.ts",
   "imago/scripts/server.ts",
   "mind-mapper/scripts/server.ts",
 ]);

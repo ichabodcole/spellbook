@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { optimizeImageBuffer, optimizeImageDataUrl } from "../scripts/imageOptimize.server";
-import { OPTIMIZE } from "../shared/imageOptimize";
+import { OPTIMIZE } from "../../../plugins/spellbook/skills/glamour/shared/imageOptimize";
+import { optimizeImageBuffer, optimizeImageDataUrl } from "./imageOptimize.server";
 
 // A valid 1×1 transparent PNG.
 const PNG_1x1 =

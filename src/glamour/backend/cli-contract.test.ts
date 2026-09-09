@@ -15,10 +15,28 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS, verbToken } from "../scripts/cli";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { flagsFor, RECOGNIZED_FLAGS, VERB_SPEC, VERBS, verbToken } from "./cli";
 
-const CLI = new URL("../scripts/cli.ts", import.meta.url).pathname;
+// ⛔ EVERY PATH HERE IS DERIVED FROM AN EXPLICIT SKILL ROOT, NEVER BY COUNTING
+// `..` FROM THE TEST FILE. Before the relocation `../scripts/cli.ts` and `..`
+// (the acc config dir) were both correct because this file sat in the skill's
+// own `tests/`. From `src/glamour/backend/` they resolve to
+// `src/glamour/scripts/cli.ts` and `src/glamour/` — the first does not exist and
+// the second holds no `acc.config.json`. Adjusting the `..` counts is the repair
+// that rots: the next relocation moves them again, silently. So the root is
+// named once and everything hangs off it.
+//
+// ⛔ AND `CLI` IS THE LAUNCHER, NOT THE SOURCE. The contract this file asserts
+// is what the PROCESS writes and exits with, and the process an installed caller
+// runs is `scripts/cli.ts` → `dist/cli.js`. Spawning the source would test a
+// second entry point that no longer exists (D12) and would leave the shipped
+// bundle unasserted — which is the artifact every one of these cells is really
+// about.
+const BACKEND_DIR = dirname(fileURLToPath(import.meta.url));
+const SKILL_ROOT = join(BACKEND_DIR, "..", "..", "..", "plugins", "spellbook", "skills", "glamour");
+const CLI = join(SKILL_ROOT, "scripts", "cli.ts");
 
 // An empty TMPDIR, so session discovery (glamour-latest.json lives in the
 // system temp dir) answers not_found — and no test here ever reaches a live
@@ -228,7 +246,9 @@ test("acc check against the emitted declaration finds zero disagreements (the ra
   const dir = mkdtempSync(join(tmpdir(), "glamour-schema-"));
   const declPath = join(dir, "declaration.json");
   writeFileSync(declPath, run(["schema"]).stdout);
-  const glamourDir = new URL("..", import.meta.url).pathname;
+  // The acc config dir is the DEPLOYED skill folder — that is where
+  // `acc.config.json` ships and where the acc conformance pass reads it from.
+  const glamourDir = SKILL_ROOT;
   const p = Bun.spawnSync(
     ["bunx", "acc", "check", CLI, "--declaration", declPath, "--config-dir", glamourDir],
     {
